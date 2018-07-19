@@ -13,4 +13,5 @@ jobs:
             source venv/bin/activate
             pip3 install -r requirements/requirements-dev.txt
             pip3 install -r requirements/requirements.txt
+            export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
             python3 -m unittest
