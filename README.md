@@ -1,4 +1,5 @@
 # securedrop-client
+[![CircleCI](https://circleci.com/gh/freedomofpress/securedrop-client.svg?style=svg)](https://circleci.com/gh/freedomofpress/securedrop-client)
 
 Qt-based client for working with SecureDrop submissions on the SecureDrop Qubes Workstation
 
