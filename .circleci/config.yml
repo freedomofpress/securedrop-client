@@ -1,0 +1,16 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/python:3.5
+    steps:
+      - checkout
+
+      - run:
+          name: Install requirements and run tests
+          command: |
+            virtualenv venv
+            source venv/bin/activate
+            pip3 install -r requirements/requirements-dev.txt
+            pip3 install -r requirements/requirements.txt
+            python3 -m unittest
