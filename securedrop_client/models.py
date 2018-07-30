@@ -6,7 +6,8 @@ from sqlalchemy import Column, create_engine, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 
 
-DB_PATH = 'svs.sqlite'
+# TODO: Store this in config file, see issue #2
+DB_PATH = os.path.abspath('svs.sqlite')
 
 if not os.path.exists(DB_PATH):
     sqlite3.connect(DB_PATH)
