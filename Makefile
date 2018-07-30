@@ -3,7 +3,7 @@ DEFAULT_GOAL: help
 .PHONY: update-pip-requirements
 update-pip-requirements: ## Updates all Python requirements files via pip-compile.
 	  pip-compile --generate-hashes --output-file requirements/requirements.txt requirements/requirements.in
-		pip-compile --generate-hashes --output-file requirements/requirements-dev.txt requirements/requirements-dev.in
+		pip-compile --generate-hashes --output-file requirements/requirements-dev.txt requirements/requirements-dev.in requirements/requirements.in
 
 # Explaination of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##
