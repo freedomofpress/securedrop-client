@@ -7,6 +7,14 @@
 alembic==1.0.0 \
     --hash=sha256:52d73b1d750f1414fa90c25a08da47b87de1e4ad883935718a8f36396e19e78e \
     --hash=sha256:eb7db9b4510562ec37c91d00b00d95fde076c1030d3f661aea882eec532b3565
+atomicwrites==1.1.5 \
+    --hash=sha256:240831ea22da9ab882b551b31d4225591e5e447a68c5e188db5b89ca1d487585 \
+    --hash=sha256:a24da68318b08ac9c9c45029f4a10371ab5b20e4226738e150e6e7c571630ae6 \
+    # via pytest
+attrs==18.1.0 \
+    --hash=sha256:4b90b09eeeb9b88c35bc642cbac057e45a5fd85367b985bd2809c62b7b939265 \
+    --hash=sha256:e0d0eb91441a3b53dab4d9b743eafc1ac44476296a2053b6ca3af0b139faf87b \
+    # via pytest
 click==6.7 \
     --hash=sha256:29f99fc6125fbc931b758dc053b3114e55c77a6e4c6c3a2674a2dc986016381d \
     --hash=sha256:f15516df478d5a56180fbf80e68f206010e6d160fc39fa508b65e035fd75130b \
@@ -21,9 +29,25 @@ mako==1.0.7 \
 markupsafe==1.0 \
     --hash=sha256:a6be69091dac236ea9c6bc7d012beab42010fa914c459791d627dad4910eb665 \
     # via mako
+more-itertools==4.2.0 \
+    --hash=sha256:2b6b9893337bfd9166bee6a62c2b0c9fe7735dcf85948b387ec8cba30e85d8e8 \
+    --hash=sha256:6703844a52d3588f951883005efcf555e49566a48afd4db4e965d69b883980d3 \
+    --hash=sha256:a18d870ef2ffca2b8463c0070ad17b5978056f403fb64e3f15fe62a52db21cc0 \
+    # via pytest
 pip-tools==2.0.2 \
     --hash=sha256:90bbe6731a6a34d339bf14d90cf2892475386c7d06c458208191ac9992110e0a \
     --hash=sha256:f11fc3bf1d87a0b4a68d4d595f619814e2396e92d75d7bdd2500edbf002ea6de
+pluggy==0.7.1 \
+    --hash=sha256:6e3836e39f4d36ae72840833db137f7b7d35105079aee6ec4a62d9f80d594dd1 \
+    --hash=sha256:95eb8364a4708392bae89035f45341871286a333f749c3141c20573d2b3876e1 \
+    # via pytest
+py==1.5.4 \
+    --hash=sha256:3fd59af7435864e1a243790d322d763925431213b6b8529c6ca71081ace3bbf7 \
+    --hash=sha256:e31fb2767eb657cbde86c454f02e99cb846d3cd9d61b318525140214fdc0e98e \
+    # via pytest
+pytest==3.6.4 \
+    --hash=sha256:341ec10361b64a24accaec3c7ba5f7d5ee1ca4cebea30f76fad3dd12db9f0541 \
+    --hash=sha256:952c0389db115437f966c4c2079ae9d54714b9455190e56acebe14e8c38a7efa
 python-dateutil==2.7.3 \
     --hash=sha256:1adb80e7a782c12e52ef9a8182bebeb73f1d7e24e374397af06fb4956c8dc5c0 \
     --hash=sha256:e27001de32f627c22380a688bcc43ce83504a7bc5da472209b4c70f02829f0b8 \
@@ -34,6 +58,6 @@ python-editor==1.0.3 \
 six==1.11.0 \
     --hash=sha256:70e8a77beed4562e7f14fe23a786b54f6296e34344c23bc42f07b15018ff98e9 \
     --hash=sha256:832dc0e10feb1aa2c68dcc57dbb658f1c7e65b9b61af69048abc87a2db00a0eb \
-    # via pip-tools, python-dateutil
+    # via more-itertools, pip-tools, pytest, python-dateutil
 sqlalchemy==1.2.10 \
     --hash=sha256:72325e67fb85f6e9ad304c603d83626d1df684fdf0c7ab1f0352e71feeab69d8

@@ -15,7 +15,7 @@ pip install -r requirements/requirements-dev.txt
 ## Run tests
 
 ```
-python -m unittest
+pytest -v
 ```
 
 ## Generate and run database migrations
