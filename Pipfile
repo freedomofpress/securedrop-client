@@ -5,3 +5,4 @@ alembic = "*"
 [dev-packages]
 pytest = "*"
 pip-tools = "*"
+flake8 = "*"
