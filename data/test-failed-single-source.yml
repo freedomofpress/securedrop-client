@@ -1,0 +1,24 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzMzE3NzQyNCwiaWF0IjoxNTMzMTQ4NjI0fQ.eyJpZCI6MX0.YEFvihaZz3E3kd-_55WWRGbNi9kl-v4Snse0yp65uZg]
+      Connection: [keep-alive]
+      User-Agent: [python-requests/2.19.1]
+    method: GET
+    uri: http://localhost:8081/api/v1/sources/not%20there
+  response:
+    body: {string: "{\n  \"error\": \"Not Found\", \n  \"message\": \"The requested\
+        \ URL was not found on the server.  If you entered the URL manually please\
+        \ check your spelling and try again.\"\n}\n"}
+    headers:
+      Content-Length: ['166']
+      Content-Type: [application/json]
+      Date: ['Wed, 01 Aug 2018 18:39:59 GMT']
+      Server: [Werkzeug/0.12.2 Python/2.7.6]
+      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiV2VkLCAwMSBBdWcgMjAxOCAyMDozOTo1OSBHTVQifX0.DkOP_w.8b-xLSoLZFqqdVP06n2HgF4MfXU;
+          HttpOnly; Path=/]
+    status: {code: 404, message: NOT FOUND}
+version: 1

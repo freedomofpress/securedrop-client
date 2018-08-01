@@ -1,0 +1,42 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzMzE3NzQyNCwiaWF0IjoxNTMzMTQ4NjI0fQ.eyJpZCI6MX0.YEFvihaZz3E3kd-_55WWRGbNi9kl-v4Snse0yp65uZg]
+      Connection: [keep-alive]
+      User-Agent: [python-requests/2.19.1]
+    method: GET
+    uri: http://localhost:8081/api/v1/submissions
+  response:
+    body: {string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/6d2fa74a-3edd-4afa-b7de-b78f14bd7a04/submissions/8f437890-dbab-442f-b608-50be3872c9ef/download\"\
+        , \n      \"filename\": \"1-indigestible_shorebird-msg.gpg\", \n      \"is_read\"\
+        : false, \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/6d2fa74a-3edd-4afa-b7de-b78f14bd7a04\"\
+        , \n      \"submission_url\": \"/api/v1/sources/6d2fa74a-3edd-4afa-b7de-b78f14bd7a04/submissions/8f437890-dbab-442f-b608-50be3872c9ef\"\
+        , \n      \"uuid\": \"8f437890-dbab-442f-b608-50be3872c9ef\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/6d2fa74a-3edd-4afa-b7de-b78f14bd7a04/submissions/20046355-6e1a-4b98-86dc-30d216569782/download\"\
+        , \n      \"filename\": \"2-indigestible_shorebird-msg.gpg\", \n      \"is_read\"\
+        : false, \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/6d2fa74a-3edd-4afa-b7de-b78f14bd7a04\"\
+        , \n      \"submission_url\": \"/api/v1/sources/6d2fa74a-3edd-4afa-b7de-b78f14bd7a04/submissions/20046355-6e1a-4b98-86dc-30d216569782\"\
+        , \n      \"uuid\": \"20046355-6e1a-4b98-86dc-30d216569782\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/c1c62203-023e-41ce-a1af-74a84adaac64/submissions/e2813920-0973-440b-ba03-bc4417317ff0/download\"\
+        , \n      \"filename\": \"1-contagious_evolution-msg.gpg\", \n      \"is_read\"\
+        : false, \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/c1c62203-023e-41ce-a1af-74a84adaac64\"\
+        , \n      \"submission_url\": \"/api/v1/sources/c1c62203-023e-41ce-a1af-74a84adaac64/submissions/e2813920-0973-440b-ba03-bc4417317ff0\"\
+        , \n      \"uuid\": \"e2813920-0973-440b-ba03-bc4417317ff0\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/c1c62203-023e-41ce-a1af-74a84adaac64/submissions/87e59b3c-c913-4b88-85e2-3efeacbf02e0/download\"\
+        , \n      \"filename\": \"2-contagious_evolution-msg.gpg\", \n      \"is_read\"\
+        : false, \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/c1c62203-023e-41ce-a1af-74a84adaac64\"\
+        , \n      \"submission_url\": \"/api/v1/sources/c1c62203-023e-41ce-a1af-74a84adaac64/submissions/87e59b3c-c913-4b88-85e2-3efeacbf02e0\"\
+        , \n      \"uuid\": \"87e59b3c-c913-4b88-85e2-3efeacbf02e0\"\n    }\n  ]\n\
+        }\n"}
+    headers:
+      Content-Length: ['2065']
+      Content-Type: [application/json]
+      Date: ['Wed, 01 Aug 2018 18:39:59 GMT']
+      Server: [Werkzeug/0.12.2 Python/2.7.6]
+      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiV2VkLCAwMSBBdWcgMjAxOCAyMDozOTo1OSBHTVQifX0.DkOP_w.8b-xLSoLZFqqdVP06n2HgF4MfXU;
+          HttpOnly; Path=/]
+    status: {code: 200, message: OK}
+version: 1
