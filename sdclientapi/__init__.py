@@ -12,6 +12,13 @@ class BaseError(Exception):
     pass
 
 
+class WrongSourceError(BaseError):
+    "For missing source"
+
+    def __init__(self, message):
+        self.message = message
+
+
 class AuthError(BaseError):
     "For Authentication errors"
 
@@ -114,6 +121,25 @@ class API:
             result.append(s)
 
         return result
+
+    def get_source(self, uuid: str) -> Source:
+        "This will return a single Source based on UUID"
+        url = self.server + "api/v1/sources/{}".format(uuid)
+
+        try:
+            res = requests.get(url, headers=self.auth_header)
+
+            if res.status_code == 404:
+                raise WrongSourceError("Missing source {}".format(uuid))
+
+            data = res.json()
+        except json.decoder.JSONDecodeError:
+            raise BaseError("Error in parsing JSON")
+
+        if "error" in data:
+            raise AuthError(data["error"])
+
+        return Source(**data)
 
     def add_star(self, source: Source) -> bool:
         url = self.server.rstrip("/") + source.add_star_url
