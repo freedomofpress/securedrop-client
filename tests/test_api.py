@@ -68,3 +68,15 @@ class TestAPI(unittest.TestCase):
     def test_failed_single_source(self):
         with self.assertRaises(WrongSourceError):
             self.api.get_source("not there")
+
+    def test_get_submissions(self):
+        s = self.api.get_sources()[0]
+
+        subs = self.api.get_submissions(s)
+        assert len(subs) == 2
+
+    def test_get_wroung_submissions(self):
+        s = self.api.get_sources()[0]
+        s.submissions_url = "/api/v1/sources/rofl-missing/submissions"
+        with self.assertRaises(WrongSourceError):
+            self.api.get_submissions(s)
