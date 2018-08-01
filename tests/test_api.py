@@ -35,7 +35,8 @@ class TestAPI(unittest.TestCase):
                 token = load_auth()
                 if token:
                     self.api.token = token
-                    continue
+                    self.api.update_auth_header()
+                    break
                 time.sleep(31)
 
             save_auth(self.api.token)
@@ -46,4 +47,12 @@ class TestAPI(unittest.TestCase):
 
     def test_get_sources(self):
         sources = self.api.get_sources()
-        assert (len(sources), 2)
+        assert len(sources) == 2
+
+    def test_star_add_remove(self):
+        s = self.api.get_sources()[0]
+        assert self.api.add_star(s)
+        assert self.api.remove_star(s)
+        for source in self.api.get_sources():
+            if source.uuid == s.uuid:
+                assert not source.is_starred
