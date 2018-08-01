@@ -1,3 +1,4 @@
+from pprint import pprint
 import json
 import requests
 
@@ -69,6 +70,7 @@ class API:
         self.passphrase = passphrase  # type: str
         self.totp = totp  # type: int
         self.token = {"token": "", "expiration": ""}  # type: T_token
+        self.auth_header = {"Authorization": ""}  # type: Dict
 
     def authenticate(self) -> bool:
         user_data = {
@@ -85,20 +87,24 @@ class API:
         if not "expiration" in token_data:
             raise AuthError("Authentication error")
         self.token = token_data
+        self.update_auth_header()
 
         return True
 
+    def update_auth_header(self):
+        self.auth_header = {"Authorization": "token " + self.token["token"]}
+
     def get_sources(self) -> List[Source]:
         url = self.server + "api/v1/sources"
-        auth_header = {"Authorization": "token " + self.token["token"]}
 
         try:
-            res = requests.get(
-                "http://localhost:8081/api/v1/sources", headers=auth_header
-            )
+            res = requests.get(url, headers=self.auth_header)
             data = res.json()
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
+
+        if "error" in data:
+            raise AuthError(data["error"])
 
         sources = data["sources"]
         result = []  # type: List[Source]
@@ -108,3 +114,17 @@ class API:
             result.append(s)
 
         return result
+
+    def add_star(self, source: Source) -> bool:
+        url = self.server.rstrip("/") + source.add_star_url
+
+        try:
+            res = requests.post(url, headers=self.auth_header)
+            data = res.json()
+        except json.decoder.JSONDecodeError:
+            raise BaseError("Error in parsing JSON")
+
+        if "message" in data and data["message"] == "Star added":
+            return True
+
+        return False
