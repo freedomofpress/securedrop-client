@@ -260,3 +260,17 @@ class API:
             result.append(s)
 
         return result
+
+    def flag_source(self, source: Source) -> bool:
+        url = self.server.rstrip("/") + "/api/v1/sources/{}/flag".format(source.uuid)
+
+        try:
+            res = requests.post(url, headers=self.auth_header)
+            data = res.json()
+        except json.decoder.JSONDecodeError:
+            raise BaseError("Error in parsing JSON")
+
+        if "error" in data:
+            raise AuthError(data["error"])
+
+        return True

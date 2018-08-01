@@ -23,8 +23,7 @@ def save_auth(token):
 
 
 class TestAPI(unittest.TestCase):
-    
-    @vcr.use_cassette('data/test-setup.yml')
+    @vcr.use_cassette("data/test-setup.yml")
     def setUp(self):
         self.totp = pyotp.TOTP("JHCOGO7VCER3EJ4L")
         self.username = "journalist"
@@ -48,12 +47,12 @@ class TestAPI(unittest.TestCase):
     def test_api_auth(self):
         assert self.api.token
 
-    @vcr.use_cassette('data/test-get-sources.yml')
+    @vcr.use_cassette("data/test-get-sources.yml")
     def test_get_sources(self):
         sources = self.api.get_sources()
         assert len(sources) == 2
 
-    @vcr.use_cassette('data/test-star-add-remove.yml')
+    @vcr.use_cassette("data/test-star-add-remove.yml")
     def test_star_add_remove(self):
         s = self.api.get_sources()[0]
         assert self.api.add_star(s)
@@ -62,7 +61,7 @@ class TestAPI(unittest.TestCase):
             if source.uuid == s.uuid:
                 assert not source.is_starred
 
-    @vcr.use_cassette('data/test-get-single-source.yml')
+    @vcr.use_cassette("data/test-get-single-source.yml")
     def test_get_single_source(self):
         s = self.api.get_sources()[0]
         # Now we will try to get the same source again
@@ -71,26 +70,34 @@ class TestAPI(unittest.TestCase):
         assert s.journalist_designation == s2.journalist_designation
         assert s.uuid == s2.uuid
 
-    @vcr.use_cassette('data/test-failed-single-source.yml')
+    @vcr.use_cassette("data/test-failed-single-source.yml")
     def test_failed_single_source(self):
         with self.assertRaises(WrongUUIDError):
             self.api.get_source("not there")
 
-    @vcr.use_cassette('data/test-get-submissions')
+    @vcr.use_cassette("data/test-get-submissions.yml")
     def test_get_submissions(self):
         s = self.api.get_sources()[0]
 
         subs = self.api.get_submissions(s)
         assert len(subs) == 2
 
-    @vcr.use_cassette('data/test-get-wrong-submissions')
+    @vcr.use_cassette("data/test-get-wrong-submissions.yml")
     def test_get_wrong_submissions(self):
         s = self.api.get_sources()[0]
         s.submissions_url = "/api/v1/sources/rofl-missing/submissions/2334"
         with self.assertRaises(WrongUUIDError):
             self.api.get_submissions(s)
 
-    @vcr.use_cassette('data/test-get-all-submissions.yml')
+    @vcr.use_cassette("data/test-get-all-submissions.yml")
     def test_get_all_submissions(self):
         subs = self.api.get_all_submissions()
         assert len(subs) == 4
+
+    @vcr.use_cassette("data/test-flag-source.yml")
+    def test_flag_source(self):
+        s = self.api.get_sources()[0]
+        assert self.api.flag_source(s)
+        # Now we will try to get the same source again
+        s2 = self.api.get_source(s.uuid)
+        assert s2.is_flagged
