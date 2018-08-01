@@ -56,3 +56,15 @@ class TestAPI(unittest.TestCase):
         for source in self.api.get_sources():
             if source.uuid == s.uuid:
                 assert not source.is_starred
+
+    def test_get_single_source(self):
+        s = self.api.get_sources()[0]
+        # Now we will try to get the same source again
+        s2 = self.api.get_source(s.uuid)
+
+        assert s.journalist_designation == s2.journalist_designation
+        assert s.uuid == s2.uuid
+
+    def test_failed_single_source(self):
+        with self.assertRaises(WrongSourceError):
+            self.api.get_source("not there")
