@@ -1,0 +1,14 @@
+FROM fedora:28
+LABEL MAINTAINER kushaldas@gmail.com
+
+RUN pip3 install black
+
+ENV HOME /home/kdas
+RUN useradd --create-home --home-dir $HOME kdas \
+    && mkdir $HOME/workplace \
+    && chown -R kdas:kdas $HOME
+
+
+WORKDIR $HOME/workplace
+VOLUME $HOME/workplace
+USER kdas
