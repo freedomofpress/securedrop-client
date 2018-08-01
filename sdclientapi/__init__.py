@@ -128,3 +128,18 @@ class API:
             return True
 
         return False
+
+    def remove_star(self, source: Source) -> bool:
+        "Removes star from a given Source"
+        url = self.server.rstrip("/") + source.remove_star_url
+
+        try:
+            res = requests.delete(url, headers=self.auth_header)
+            data = res.json()
+        except json.decoder.JSONDecodeError:
+            raise BaseError("Error in parsing JSON")
+
+        if "message" in data and data["message"] == "Star removed":
+            return True
+
+        return False
