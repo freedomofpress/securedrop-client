@@ -284,6 +284,27 @@ class API:
 
         return result
 
+    def delete_submission(self, submission: Submission) -> bool:
+        url = self.server.rstrip("/") + submission.submission_url
+
+        try:
+            res = requests.delete(url, headers=self.auth_header)
+
+            if res.status_code == 404:
+                raise WrongUUIDError("Missing submission {}".format(submission.uuid))
+
+            data = res.json()
+        except json.decoder.JSONDecodeError:
+            raise BaseError("Error in parsing JSON")
+
+        if "error" in data:
+            raise AuthError(data["error"])
+
+        if "message" in data and data["message"] == "Submission deleted":
+            return True
+        # We should never reach here
+        return False
+
     def flag_source(self, source: Source) -> bool:
         url = self.server.rstrip("/") + "/api/v1/sources/{}/flag".format(source.uuid)
 

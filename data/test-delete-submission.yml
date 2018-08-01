@@ -1,0 +1,98 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzMzE3NzQyNCwiaWF0IjoxNTMzMTQ4NjI0fQ.eyJpZCI6MX0.YEFvihaZz3E3kd-_55WWRGbNi9kl-v4Snse0yp65uZg]
+      Connection: [keep-alive]
+      User-Agent: [python-requests/2.19.1]
+    method: GET
+    uri: http://localhost:8081/api/v1/submissions
+  response:
+    body: {string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/69bbd6e9-52ec-41ae-b0a4-83843287ed2d/submissions/332be45e-794d-4c68-aa38-fe6e930b4c20/download\"\
+        , \n      \"filename\": \"1-disadvantageous_wildcatter-msg.gpg\", \n     \
+        \ \"is_read\": false, \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/69bbd6e9-52ec-41ae-b0a4-83843287ed2d\"\
+        , \n      \"submission_url\": \"/api/v1/sources/69bbd6e9-52ec-41ae-b0a4-83843287ed2d/submissions/332be45e-794d-4c68-aa38-fe6e930b4c20\"\
+        , \n      \"uuid\": \"332be45e-794d-4c68-aa38-fe6e930b4c20\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/69bbd6e9-52ec-41ae-b0a4-83843287ed2d/submissions/9ad01000-9fd8-43da-888f-320ca02ccae8/download\"\
+        , \n      \"filename\": \"2-disadvantageous_wildcatter-msg.gpg\", \n     \
+        \ \"is_read\": false, \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/69bbd6e9-52ec-41ae-b0a4-83843287ed2d\"\
+        , \n      \"submission_url\": \"/api/v1/sources/69bbd6e9-52ec-41ae-b0a4-83843287ed2d/submissions/9ad01000-9fd8-43da-888f-320ca02ccae8\"\
+        , \n      \"uuid\": \"9ad01000-9fd8-43da-888f-320ca02ccae8\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f/submissions/f5fd0c52-5a7c-4034-a43f-70a7e873e8df/download\"\
+        , \n      \"filename\": \"1-melodramatic_birthmark-msg.gpg\", \n      \"is_read\"\
+        : false, \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f\"\
+        , \n      \"submission_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f/submissions/f5fd0c52-5a7c-4034-a43f-70a7e873e8df\"\
+        , \n      \"uuid\": \"f5fd0c52-5a7c-4034-a43f-70a7e873e8df\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f/submissions/bcda9366-22a9-43c7-9485-f31313e3047c/download\"\
+        , \n      \"filename\": \"2-melodramatic_birthmark-msg.gpg\", \n      \"is_read\"\
+        : false, \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f\"\
+        , \n      \"submission_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f/submissions/bcda9366-22a9-43c7-9485-f31313e3047c\"\
+        , \n      \"uuid\": \"bcda9366-22a9-43c7-9485-f31313e3047c\"\n    }\n  ]\n\
+        }\n"}
+    headers:
+      Content-Length: ['2077']
+      Content-Type: [application/json]
+      Date: ['Wed, 01 Aug 2018 19:07:49 GMT']
+      Server: [Werkzeug/0.12.2 Python/2.7.6]
+      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiV2VkLCAwMSBBdWcgMjAxOCAyMTowNzo0OSBHTVQifX0.DkOWhQ.ADHqqekI351tuHZqPjLaoeqS8Hc;
+          HttpOnly; Path=/]
+    status: {code: 200, message: OK}
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzMzE3NzQyNCwiaWF0IjoxNTMzMTQ4NjI0fQ.eyJpZCI6MX0.YEFvihaZz3E3kd-_55WWRGbNi9kl-v4Snse0yp65uZg]
+      Connection: [keep-alive]
+      Content-Length: ['0']
+      User-Agent: [python-requests/2.19.1]
+    method: DELETE
+    uri: http://localhost:8081/api/v1/sources/69bbd6e9-52ec-41ae-b0a4-83843287ed2d/submissions/332be45e-794d-4c68-aa38-fe6e930b4c20
+  response:
+    body: {string: "{\n  \"message\": \"Submission deleted\"\n}\n"}
+    headers:
+      Content-Length: ['38']
+      Content-Type: [application/json]
+      Date: ['Wed, 01 Aug 2018 19:07:49 GMT']
+      Server: [Werkzeug/0.12.2 Python/2.7.6]
+      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiV2VkLCAwMSBBdWcgMjAxOCAyMTowNzo0OSBHTVQifX0.DkOWhQ.ADHqqekI351tuHZqPjLaoeqS8Hc;
+          HttpOnly; Path=/]
+    status: {code: 200, message: OK}
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzMzE3NzQyNCwiaWF0IjoxNTMzMTQ4NjI0fQ.eyJpZCI6MX0.YEFvihaZz3E3kd-_55WWRGbNi9kl-v4Snse0yp65uZg]
+      Connection: [keep-alive]
+      User-Agent: [python-requests/2.19.1]
+    method: GET
+    uri: http://localhost:8081/api/v1/submissions
+  response:
+    body: {string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/69bbd6e9-52ec-41ae-b0a4-83843287ed2d/submissions/9ad01000-9fd8-43da-888f-320ca02ccae8/download\"\
+        , \n      \"filename\": \"2-disadvantageous_wildcatter-msg.gpg\", \n     \
+        \ \"is_read\": false, \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/69bbd6e9-52ec-41ae-b0a4-83843287ed2d\"\
+        , \n      \"submission_url\": \"/api/v1/sources/69bbd6e9-52ec-41ae-b0a4-83843287ed2d/submissions/9ad01000-9fd8-43da-888f-320ca02ccae8\"\
+        , \n      \"uuid\": \"9ad01000-9fd8-43da-888f-320ca02ccae8\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f/submissions/f5fd0c52-5a7c-4034-a43f-70a7e873e8df/download\"\
+        , \n      \"filename\": \"1-melodramatic_birthmark-msg.gpg\", \n      \"is_read\"\
+        : false, \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f\"\
+        , \n      \"submission_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f/submissions/f5fd0c52-5a7c-4034-a43f-70a7e873e8df\"\
+        , \n      \"uuid\": \"f5fd0c52-5a7c-4034-a43f-70a7e873e8df\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f/submissions/bcda9366-22a9-43c7-9485-f31313e3047c/download\"\
+        , \n      \"filename\": \"2-melodramatic_birthmark-msg.gpg\", \n      \"is_read\"\
+        : false, \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f\"\
+        , \n      \"submission_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f/submissions/bcda9366-22a9-43c7-9485-f31313e3047c\"\
+        , \n      \"uuid\": \"bcda9366-22a9-43c7-9485-f31313e3047c\"\n    }\n  ]\n\
+        }\n"}
+    headers:
+      Content-Length: ['1562']
+      Content-Type: [application/json]
+      Date: ['Wed, 01 Aug 2018 19:07:49 GMT']
+      Server: [Werkzeug/0.12.2 Python/2.7.6]
+      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiV2VkLCAwMSBBdWcgMjAxOCAyMTowNzo0OSBHTVQifX0.DkOWhQ.ADHqqekI351tuHZqPjLaoeqS8Hc;
+          HttpOnly; Path=/]
+    status: {code: 200, message: OK}
+version: 1

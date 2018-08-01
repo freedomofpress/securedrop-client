@@ -110,3 +110,15 @@ class TestAPI(unittest.TestCase):
         # Now there should be one source left
         sources = self.api.get_sources()
         assert len(sources) == 1
+
+    @vcr.use_cassette("data/test-delete-submission.yml")
+    def test_delete_submission(self):
+        subs = self.api.get_all_submissions()
+        assert self.api.delete_submission(subs[0])
+        new_subs = self.api.get_all_submissions()
+        # We now should have 3 submissions
+        assert len(new_subs) == 3
+
+        # Let us make sure that sub[0] is not there
+        for s in new_subs:
+            assert s.uuid != subs[0].uuid
