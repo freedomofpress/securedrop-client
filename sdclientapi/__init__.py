@@ -168,6 +168,29 @@ class API:
 
         return Source(**data)
 
+    def delete_source(self, uuid: str) -> bool:
+        "This will delete the source and collection"
+        url = self.server + "api/v1/sources/{}".format(uuid)
+
+        try:
+            res = requests.delete(url, headers=self.auth_header)
+
+            if res.status_code == 404:
+                raise WrongUUIDError("Missing source {}".format(uuid))
+
+            data = res.json()
+        except json.decoder.JSONDecodeError:
+            raise BaseError("Error in parsing JSON")
+
+        if "error" in data:
+            raise AuthError(data["error"])
+
+        if "message" in data and data["message"] == "Source and submissions deleted":
+            return True
+
+        # We should never reach here
+        return False
+
     def add_star(self, source: Source) -> bool:
         url = self.server.rstrip("/") + source.add_star_url
 

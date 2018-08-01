@@ -101,3 +101,12 @@ class TestAPI(unittest.TestCase):
         # Now we will try to get the same source again
         s2 = self.api.get_source(s.uuid)
         assert s2.is_flagged
+
+    @vcr.use_cassette("data/test-delete-source.yml")
+    def test_delete_source(self):
+        s = self.api.get_sources()[0]
+        assert self.api.delete_source(s.uuid)
+
+        # Now there should be one source left
+        sources = self.api.get_sources()
+        assert len(sources) == 1
