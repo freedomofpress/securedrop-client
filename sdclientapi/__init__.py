@@ -31,6 +31,30 @@ class AttributeError(BaseError):
         self.message = message
 
 
+class Submission:
+    def __init__(self, **kargs) -> None:
+        self.download_url = ""  # type: str
+        self.filename = ""  # type: str
+        self.is_read = False  # type: bool
+        self.size = 0  # type: int
+        self.source_url = ""  # type: str
+        self.submission_url = ""  # type: str
+        self.uuid = ""  # type: str
+
+        for key in [
+            "download_url",
+            "filename",
+            "is_read",
+            "size",
+            "source_url",
+            "submission_url",
+            "uuid",
+        ]:
+            if not key in kargs:
+                AttributeError("Missing key {}".format(key))
+            setattr(self, key, kargs[key])
+
+
 class Source:
     def __init__(self, **kargs):
         self.add_star_url = ""  # type: str
@@ -71,6 +95,9 @@ class Source:
 
 class API:
     def __init__(self, address, username, passphrase, totp) -> None:
+        """
+        Primary API class, this is the only thing which will make network call.
+        """
 
         self.server = address
         self.username = username  # type: str
@@ -169,3 +196,28 @@ class API:
             return True
 
         return False
+
+    def get_submissions(self, source: Source) -> List[Submission]:
+        url = self.server.rstrip("/") + source.submissions_url
+
+        try:
+            res = requests.get(url, headers=self.auth_header)
+
+            if res.status_code == 404:
+                raise WrongSourceError("Missing source {}".format(source.uuid))
+
+            data = res.json()
+        except json.decoder.JSONDecodeError:
+            raise BaseError("Error in parsing JSON")
+
+        if "error" in data:
+            raise AuthError(data["error"])
+
+        result = []  # type: List[Submission]
+        values = data["submissions"]
+
+        for val in values:
+            s = Submission(**val)
+            result.append(s)
+
+        return result
