@@ -14,11 +14,20 @@ We are using [mypy](http://mypy-lang.org) for type annotation checks.
 We are using [Black](https://black.readthedocs.io/en/stable/) tool for code formatting. There is a dockerfile
 in the repository, which can be used to run Black on the code.
 
+```
+docker build -t kdas/black -f Dockerfile.black
+docker run --rm -v $PWD:/home/kdas/workplace kdas/black black .
+```
 
 Note: The dockerfile still needs work.
 
 
-We are yet to have all the available API for SecureDrop. This is work in progress.
+This is work in progress. The following API(s) are still missing.
+
+- post reply to source
+- download a submission
+
+We will also add a bunch of more tests.
 
 
 ### Testing
