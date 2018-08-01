@@ -239,3 +239,24 @@ class API:
             raise AuthError(data["error"])
 
         return Submission(**data)
+
+    def get_all_submissions(self) -> List[Submission]:
+        url = self.server.rstrip("/") + "/api/v1/submissions"
+
+        try:
+            res = requests.get(url, headers=self.auth_header)
+            data = res.json()
+        except json.decoder.JSONDecodeError:
+            raise BaseError("Error in parsing JSON")
+
+        if "error" in data:
+            raise AuthError(data["error"])
+
+        result = []  # type: List[Submission]
+        values = data["submissions"]
+
+        for val in values:
+            s = Submission(**val)
+            result.append(s)
+
+        return result

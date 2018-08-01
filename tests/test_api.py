@@ -80,3 +80,7 @@ class TestAPI(unittest.TestCase):
         s.submissions_url = "/api/v1/sources/rofl-missing/submissions/2334"
         with self.assertRaises(WrongUUIDError):
             self.api.get_submissions(s)
+
+    def test_get_all_submissions(self):
+        subs = self.api.get_all_submissions()
+        assert len(subs) == 4
