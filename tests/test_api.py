@@ -122,3 +122,9 @@ class TestAPI(unittest.TestCase):
         # Let us make sure that sub[0] is not there
         for s in new_subs:
             assert s.uuid != subs[0].uuid
+
+    @vcr.use_cassette("data/test-get-current-user.yml")
+    def test_get_current_user(self):
+        user = self.api.get_current_user()
+        assert user["is_admin"]
+        assert user["username"] == "journalist"

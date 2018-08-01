@@ -6,6 +6,7 @@ from typing import Optional, Dict, List
 from mypy_extensions import TypedDict
 
 T_token = TypedDict("T_token", {"expiration": str, "token": str})
+T_user = TypedDict("T_user", {"is_admin": bool, "last_login": str, "username": str})
 
 
 class BaseError(Exception):
@@ -318,3 +319,17 @@ class API:
             raise AuthError(data["error"])
 
         return True
+
+    def get_current_user(self) -> T_user:
+        url = self.server.rstrip("/") + "/api/v1/user"
+
+        try:
+            res = requests.get(url, headers=self.auth_header)
+            data = res.json()
+        except json.decoder.JSONDecodeError:
+            raise BaseError("Error in parsing JSON")
+
+        if "error" in data:
+            raise AuthError(data["error"])
+
+        return data
