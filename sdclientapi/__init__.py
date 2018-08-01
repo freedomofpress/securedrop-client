@@ -102,7 +102,7 @@ class API:
         self.server = address
         self.username = username  # type: str
         self.passphrase = passphrase  # type: str
-        self.totp = totp  # type: int
+        self.totp = totp  # type: str
         self.token = {"token": "", "expiration": ""}  # type: T_token
         self.auth_header = {"Authorization": ""}  # type: Dict
 
