@@ -66,7 +66,7 @@ class TestAPI(unittest.TestCase):
         assert s.uuid == s2.uuid
 
     def test_failed_single_source(self):
-        with self.assertRaises(WrongSourceError):
+        with self.assertRaises(WrongUUIDError):
             self.api.get_source("not there")
 
     def test_get_submissions(self):
@@ -77,6 +77,6 @@ class TestAPI(unittest.TestCase):
 
     def test_get_wroung_submissions(self):
         s = self.api.get_sources()[0]
-        s.submissions_url = "/api/v1/sources/rofl-missing/submissions"
-        with self.assertRaises(WrongSourceError):
+        s.submissions_url = "/api/v1/sources/rofl-missing/submissions/2334"
+        with self.assertRaises(WrongUUIDError):
             self.api.get_submissions(s)
