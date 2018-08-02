@@ -14,4 +14,4 @@ requests = "*"
 mypy-extensions = "*"
 mypy = "*"
 pyotp = "*"
-
+sphinx = "*"
