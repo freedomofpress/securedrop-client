@@ -22,10 +22,9 @@ docker run --rm -v $PWD:/home/kdas/workplace kdas/black black .
 Note: The dockerfile still needs work.
 
 
-This is work in progress. The following API(s) are still missing.
+We cover all the API calls of SecureDrop.
 
-- post reply to source
-- download a submission
+Note: The `get_source` will get an update to take a Source object as an input.
 
 We will also add a bunch of more tests.
 
