@@ -53,6 +53,9 @@ class AttributeError(BaseError):
 
 
 class Submission:
+    """
+    This class represents a submission object in the server.
+    """
     def __init__(self, **kargs) -> None:
         self.download_url = ""  # type: str
         self.filename = ""  # type: str
@@ -77,6 +80,9 @@ class Submission:
 
 
 class Source:
+    """
+    This class represents a source object in the server.
+    """
     def __init__(self, **kargs):
         self.add_star_url = ""  # type: str
         self.interaction_count = 0  # type: int
@@ -115,12 +121,21 @@ class Source:
 
 
 class API:
+    """
+    This is class to do all the network calls to the SecureDrop API server.
+
+    :param address: Server URL (http://localhost:8081/)
+    :param username: Journalist username
+    :param passphrase: Journalist passphrase
+    :param totp: Current TOTP value
+    :returns: An object of API class.
+    """
     def __init__(self, address, username, passphrase, totp) -> None:
         """
         Primary API class, this is the only thing which will make network call.
         """
 
-        self.server = address
+        self.server = address  # type: str
         self.username = username  # type: str
         self.passphrase = passphrase  # type: str
         self.totp = totp  # type: str
@@ -128,6 +143,11 @@ class API:
         self.auth_header = {"Authorization": ""}  # type: Dict
 
     def authenticate(self) -> bool:
+        """
+        Authenticate the user and fetches the token from the server.
+
+        :returns: True if authentication is successful, raise AuthError otherwise.
+        """
         user_data = {
             "username": self.username,
             "passphrase": self.passphrase,
@@ -154,6 +174,11 @@ class API:
         }
 
     def get_sources(self) -> List[Source]:
+        """
+        Returns a list of all the sources from the Server.
+
+        :returns: List of Source objects.
+        """
         url = self.server + "api/v1/sources"
 
         try:
@@ -175,7 +200,12 @@ class API:
         return result
 
     def get_source(self, uuid: str) -> Source:
-        "This will return a single Source based on UUID"
+        """
+        This will return a single Source based on UUID.
+
+        :param uuid: String containing the source's uuid value.
+        :returns: Source object for the given UUID value
+        """
         url = self.server + "api/v1/sources/{}".format(uuid)
 
         try:
@@ -194,7 +224,13 @@ class API:
         return Source(**data)
 
     def delete_source(self, uuid: str) -> bool:
-        "This will delete the source and collection"
+        """
+        This method will delete the source and collection. If the input uuid
+        is not found in the server, it will raise WrongUUIDError.
+
+        :param uuid: String containing the source's uuid value.
+        :returns: True if successful, raises Errors in case of wrong values.
+        """
         url = self.server + "api/v1/sources/{}".format(uuid)
 
         try:
@@ -217,6 +253,12 @@ class API:
         return False
 
     def add_star(self, source: Source) -> bool:
+        """
+        Adds a star to a given source.
+
+        :param source: The source object to whom we want add a star.
+        :returns: True if successful, raises Error otherwise.
+        """
         url = self.server.rstrip("/") + source.add_star_url
 
         try:
@@ -231,7 +273,11 @@ class API:
         return False
 
     def remove_star(self, source: Source) -> bool:
-        "Removes star from a given Source"
+        """Removes star from a given Source.
+
+        :param source: Source object to remove the star from.
+        :returns: True if successful, raises Error otherwise.
+        """
         url = self.server.rstrip("/") + source.remove_star_url
 
         try:
@@ -246,6 +292,12 @@ class API:
         return False
 
     def get_submissions(self, source: Source) -> List[Submission]:
+        """
+        Returns a list of Submission objects from the server for a given source.
+
+        :param source: Source object for whom we want to find all the submissions.
+        :returns: List of Submission objects.
+        """
         url = self.server.rstrip("/") + source.submissions_url
 
         try:
@@ -271,6 +323,12 @@ class API:
         return result
 
     def get_submission(self, submission: Submission) -> Submission:
+        """
+        Returns the updated Submission object from the server.
+
+        :param submission: Submission object we want to update.
+        :returns: Updated submission object from the server.
+        """
         url = self.server.rstrip("/") + submission.submission_url
 
         try:
@@ -289,6 +347,11 @@ class API:
         return Submission(**data)
 
     def get_all_submissions(self) -> List[Submission]:
+        """
+        Returns a list of Submission objects from the server.
+
+        :returns: List of Submission objects.
+        """
         url = self.server.rstrip("/") + "/api/v1/submissions"
 
         try:
@@ -310,6 +373,12 @@ class API:
         return result
 
     def delete_submission(self, submission: Submission) -> bool:
+        """
+        Deletes a given Submission object from the server.
+
+        :param submission: The Submission object we want to delete in the server.
+        :returns: True if successful, raises Error otherwise.
+        """
         url = self.server.rstrip("/") + submission.submission_url
 
         try:
@@ -331,6 +400,15 @@ class API:
         return False
 
     def download_submission(self, submission: Submission, path: str) -> Tuple[str, str]:
+        """
+        Returns a tuple of sha256sum and file path for a given Submission object. This method
+        also requires a directory path in where it will save the submission file.
+
+        :param submission: Submission object
+        :param path: Local directory path to save the submission
+
+        :returns: Tuple of sha256sum and path of the saved submission.
+        """
         url = self.server.rstrip("/") + submission.download_url
 
         if os.path.exists(path) and not os.path.isdir(path):
@@ -363,6 +441,12 @@ class API:
             raise BaseError(err)
 
     def flag_source(self, source: Source) -> bool:
+        """
+        Flags a source for reply.
+
+        :param source: Source object we want to flag.
+        :returns: True if successful, raises Error otherwise.
+        """
         url = self.server.rstrip("/") + "/api/v1/sources/{}/flag".format(source.uuid)
 
         try:
@@ -377,6 +461,17 @@ class API:
         return True
 
     def get_current_user(self) -> T_user:
+        """
+        Returns a dictionary of the current user data.
+
+        Example:
+
+        {
+            'is_admin': True,
+            'last_login': '2018-08-01T19:10:38.199429Z',
+            'username': 'journalist'
+        }
+        """
         url = self.server.rstrip("/") + "/api/v1/user"
 
         try:
@@ -391,6 +486,13 @@ class API:
         return data
 
     def reply_source(self, source: Source, msg: str) -> bool:
+        """
+        This method is used to reply to a given source. The message should be preencrypted with the source's
+        GPG public key.
+
+        :param source: Source object we want to reply.
+        :param msg: Encrypted message with Source's GPG public key.
+        """
         url = self.server.rstrip("/") + source.reply_url
 
         reply = {"reply": msg}
