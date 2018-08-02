@@ -13,6 +13,16 @@ class BaseError(Exception):
     pass
 
 
+class ReplyError(BaseError):
+    "For errors on reply messages"
+
+    def __init__(self, message):
+        self.msg = message
+
+    def __str__(self):
+        return repr(self.msg)
+
+
 class WrongUUIDError(BaseError):
     "For missing UUID, can be for source or submission"
 
@@ -127,7 +137,11 @@ class API:
         return True
 
     def update_auth_header(self):
-        self.auth_header = {"Authorization": "token " + self.token["token"]}
+        self.auth_header = {
+            "Authorization": "token " + self.token["token"],
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
 
     def get_sources(self) -> List[Source]:
         url = self.server + "api/v1/sources"
@@ -333,3 +347,28 @@ class API:
             raise AuthError(data["error"])
 
         return data
+
+    def reply_source(self, source: Source, msg: str) -> bool:
+        url = self.server.rstrip("/") + source.reply_url
+
+        reply = {"reply": msg}
+
+        try:
+            res = requests.post(url, headers=self.auth_header, data=json.dumps(reply))
+
+            if res.status_code == 400:
+                # Right now this API call from server can return text error or JSON error.
+                # We will update this to handle JSON data in future.
+                # https://github.com/freedomofpress/securedrop/issues/3684
+                raise ReplyError(res.text)
+            data = res.json()
+        except json.decoder.JSONDecodeError:
+            raise BaseError("Error in parsing JSON")
+
+        if "error" in data:
+            raise AuthError(data["error"])
+
+        if "message" in data and data["message"] == "Your reply has been stored":
+            return True
+        # We should never reach here
+        return False

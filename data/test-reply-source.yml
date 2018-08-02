@@ -1,0 +1,96 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: [application/json]
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzMzIzMTY3MiwiaWF0IjoxNTMzMjAyODcyfQ.eyJpZCI6MX0.ZLWdnxi3zmhYeP0bo7D25ktDuhk3n0Mio9Hn2kKh9fg]
+      Connection: [keep-alive]
+      Content-Type: [application/json]
+      User-Agent: [python-requests/2.19.1]
+    method: GET
+    uri: http://localhost:8081/api/v1/sources
+  response:
+    body: {string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/eff8ebce-e144-4e0d-939c-2c644cea90bf/add_star\"\
+        , \n      \"interaction_count\": 3, \n      \"is_flagged\": false, \n    \
+        \  \"is_starred\": false, \n      \"journalist_designation\": \"exhaustible\
+        \ synapse\", \n      \"key\": {\n        \"public\": \"-----BEGIN PGP PUBLIC\
+        \ KEY BLOCK-----\\n\\nmQINBFtiyOUBEADSwViZUdV75BD+X83ouWQjE46l7XHqrhAbm3BHh68VJGafrd1+\\\
+        nZXpFFINsUjAuPEPXWv5ocq1x8cZ8tlnxM60sT8OI1NRoLi28VD2d+wXOFNXLbYdg\\nP1tIMRthI+GYrXbOCinUNfMvpt/nt6ZSrmIIfpTH/n/Ozjj8vo4MCYO4bKy1HDjb\\\
+        n7srscfcyC1ZX6ycSSQeXFzvqdd4xylEWWl+7GYIqjAI0DALSK7v6s4epo2MBWP/s\\njlx8stGry/DfWqlTnSWHIbD+2E6WTMvHwJHUHDwZiPfDgBq3N4PK8JtbQd3nPClw\\\
+        nEjdqE8key105evwmUWoXJiyiIRxc4tFpQpwgmVPKH4W9GX18hY+I7iN+lfLUR8lZ\\nZyElepaQ4oBZylkhEZlx9x4lXgMLhAOqeTfighzJmrFTPOObzOFS+cIOblTfsCuZ\\\
+        nAHKNGdUfIGZmbDwyjElBlgL6x1J4KgZpkHXYnrKTPi//f9ZeMH1vjCkCJeaD/Psy\\n+/8HWO4xbTCGJlLXHA2I5Glc+yQZT8i5C5nwMh7+icj/Q62Wn2+GfrzkCayy+U5t\\\
+        nSoYqelnmNKxyHQ7PIpia03w7v55Wz5xFJRMxlKV4KAGiOOyXbsEEkdhRpsvFi/iM\\naTDJvV9uSvx3e8U20YTfFeL/Gmjtfz5Np8tYTplXtm9oWzUssGkBvPcXDQARAQAB\\\
+        ntHxBdXRvZ2VuZXJhdGVkIEtleSA8Q0VaQ1lJNjdNREQ1VDQzTVNPSFZVMlVGVVhX\\nSElRWlpHVUJGUllXWTRCRUdYS1dFWFRVR0xYTFRGUEtaWlBPQVhEQ1pVMlJaSU1O\\\
+        nQUVNWkhGSVROTkZWRkRJSDVWNlBTNjczSllKQT0+iQI/BBMBCgApBQJbYsjlAhsv\\nBQkB4VzbBwsJCAcDAgEGFQgCCQoLBBYCAwECHgECF4AACgkQ6B7pTPty6CoASBAA\\\
+        nwoy155avaJFg8ACaal4PvYGL1i8B2eu3vUMzvfdARkpQlWtrX48stCuCzIe6c1OZ\\nrx3d2uw70RojaXrHlJSBXhH+MdzgmH9vBzTbBAR4ODsRN5meMkDw9XgNFMPG3Kfe\\\
+        nNV/xLzEABkjAP+uO+sveQeUXsxiSS+F3KMfTR0JsKfhu3OgO6j80OUnox8EAI0nz\\n/foRQzPbLcIJu13U1VC/gEUasxnzd+yEj/rrPvmcC6Iey0YHHOLknnBXZ8/FBU1H\\\
+        n8OztDPQvN8+oyQUcUainpo1UOnECGkIZT6fnPsA2/dTu+agBCDcltrsFiMyP/53N\\nkntPC9jTK+Iv2/uIAFaEt6YHQm43kJEgzt0tr7VgVYStfcoNXPKlsdTaqrlK2rE6\\\
+        nbdoBGW1NBxnZIVFRptDauys2u3a5KpWNxe0TehW2ovHCUfKa/kzLwUPK+I8SXpC+\\nUtKHvdK9eG8SDdNlONA/zVHfrifVDzQiA4res29cLLnDlwlQXr6DdVeVbGpmvxRj\\\
+        n1x2hu0KufTrvgoRt+bt2rKKojxkDkf8LKegOTX2Qlm9ZpdTOnMcheTs0T1Bi1Bu/\\n1CgRyPSbUqrNYLr2DpUy0s0+sefgYYnD32GCI803h95n3/H3iKHyHTN+jt/AsxPD\\\
+        nHAiYqfQtqrqUeiJaybQZEMtcB8HT8euyATGRMsO6iTI=\\n=o0Fo\\n-----END PGP PUBLIC\
+        \ KEY BLOCK-----\\n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\"\
+        : \"2018-08-02T09:41:12.082987Z\", \n      \"number_of_documents\": 0, \n\
+        \      \"number_of_messages\": 2, \n      \"remove_star_url\": \"/api/v1/sources/eff8ebce-e144-4e0d-939c-2c644cea90bf/remove_star\"\
+        , \n      \"reply_url\": \"/api/v1/sources/eff8ebce-e144-4e0d-939c-2c644cea90bf/reply\"\
+        , \n      \"submissions_url\": \"/api/v1/sources/eff8ebce-e144-4e0d-939c-2c644cea90bf/submissions\"\
+        , \n      \"url\": \"/api/v1/sources/eff8ebce-e144-4e0d-939c-2c644cea90bf\"\
+        , \n      \"uuid\": \"eff8ebce-e144-4e0d-939c-2c644cea90bf\"\n    }, \n  \
+        \  {\n      \"add_star_url\": \"/api/v1/sources/09a28913-a9e6-4292-bc64-19ac75c340c6/add_star\"\
+        , \n      \"interaction_count\": 2, \n      \"is_flagged\": false, \n    \
+        \  \"is_starred\": false, \n      \"journalist_designation\": \"delayed audiometer\"\
+        , \n      \"key\": {\n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\\
+        n\\nmQINBFtiyOsBEADE6DowEkKFOllc6xM9BRpwMGRodNQKKPKi1TmehNVnrZOhW6/Y\\nXNqvuloA99oj2xKryH0xwQrl90hs9XzsyrTyoKbZDTDTa+GVeEKkTIGiBKxpQjfE\\\
+        n6ibntxgSCRA/VWNHl1gij7Wu51EBv7FcO+X8Jt9VcC7E53SQsPPrEbv+ICNeYm3p\\nMJ3pHVPoqtfksDcfFqXjyihQeBiDN58Ft0EH5W+P5t6Q0mr6/MFQqcEjc0wPLXKy\\\
+        nINU7gSaXJht2Gmk//aaV5njjHgQBoAsQh0CnML+iZcFR9kgpa7Qj00E0ffuyqQf4\\nDhQaeNaqDoEGtGHaMESDud9ISHmdMZzLC+iPFKzNXnkPM31KSDLm7P4uQgJyd330\\\
+        nV0SgVknHXCGfQsmRUwegLD1vVc7XpsadFGX/2aA18Dhm5So7zLoDtfr4aA+e5xr7\\nGoLuEO2IUUpIiTF1iiuiqzN19fMfXglF+DwTgwhQvvfYPLo0OZcz32LTQ8NwXkcp\\\
+        nI7gdJJzbcWCnhfe9QIVbJAqZgBFXQ1tDiD+hWQ2iZD5A8wuzxW79SlTcggwyitRQ\\n77DJffUfw5ym3b9vzAmL+o2rrnwWOBeSBXU1MdGpcYZVjizLrU1A7UanRx4Tz3dU\\\
+        n0CZtr2giy5etcMsd1cqYckgB4lSWQ2A/nyHevTtczsVj9jufTdmx2258yQARAQAB\\ntHxBdXRvZ2VuZXJhdGVkIEtleSA8WU9EVTMyN0hJTlJFWlVFUVJaWTNLVE4yVktW\\\
+        nTFlXNFZOM05WVUFCWElPQVRBS0tWNjQ1QTNYSUU0NkM2VFlDSEc3SFdVQ1hFMkIz\\nWUtETUFaWlUzU0Q1NTZDNVlFRzNRUDNMSlREQT0+iQI/BBMBCgApBQJbYsjrAhsv\\\
+        nBQkB4VzVBwsJCAcDAgEGFQgCCQoLBBYCAwECHgECF4AACgkQ+XTCLLamUoBYnBAA\\niL156Y8u97Rp/9I6tKK3d+8586zK/LOo5ILOfhuxoG087f/bNkfjtgQEqhYVuAv8\\\
+        n+ssd1Z/20dbi1+rhNEUWeoCA70yogJYjbvIhyoKAhHoPlatobnbV+CVS2MDFrg7r\\nTHyhmj69MdL0SXalE777tGt5D5oDDe6qZKFZloBc6BA2ee+bPGTW7O9bPVuYZ84o\\\
+        nnNyXANuqRseGl7YZYAvU8v2u/+g+PnhzkyIYazsMUdAzC7qrzpxgIrn9kiwJda+C\\nFM6jWRQrDWAq5dslTwOgJGRhnFlpGetjW29esm8ZN9JIgXszfgQ8kO6VMIAQUWTW\\\
+        nziDenUfkDjnD6wUS0Tb1APdNBKqpZG5WypJ8g551uoVAiNapdJLzUvjO5/Lo3Z8l\\nJ55QtRbxnJONzmADXHQL8eq497YO7p4eXdk9Tv8VNMLTzZ8eVQov8b1o9seglXyF\\\
+        nU5D8JCeTDjCZb9QgGVSadoJ4L+R63988I5hFT6I5dVdxuwjowqqTp7F40hgDotrV\\n+656IiWtkPuFaElAqOv+R+nHBHMnZpF9TVQUf7JjEnZ9OMT/KC+DxRCaUKP006Qr\\\
+        naDMefL9+/jl+bVVfrH8VBjRr4ZO9EHizabBmxTxPqabloil6Yt1BDslHAUoYtq/B\\nl53jaDIuGCNuofWgtyOxzn4T0YSMxh2ol5cFYfFlQT8=\\\
+        n=DAGH\\n-----END PGP PUBLIC KEY BLOCK-----\\n\", \n        \"type\": \"PGP\"\
+        \n      }, \n      \"last_updated\": \"2018-08-02T09:41:12.102926Z\", \n \
+        \     \"number_of_documents\": 0, \n      \"number_of_messages\": 2, \n  \
+        \    \"remove_star_url\": \"/api/v1/sources/09a28913-a9e6-4292-bc64-19ac75c340c6/remove_star\"\
+        , \n      \"reply_url\": \"/api/v1/sources/09a28913-a9e6-4292-bc64-19ac75c340c6/reply\"\
+        , \n      \"submissions_url\": \"/api/v1/sources/09a28913-a9e6-4292-bc64-19ac75c340c6/submissions\"\
+        , \n      \"url\": \"/api/v1/sources/09a28913-a9e6-4292-bc64-19ac75c340c6\"\
+        , \n      \"uuid\": \"09a28913-a9e6-4292-bc64-19ac75c340c6\"\n    }\n  ]\n\
+        }\n"}
+    headers:
+      Content-Length: ['5232']
+      Content-Type: [application/json]
+      Date: ['Thu, 02 Aug 2018 09:41:12 GMT']
+      Server: [Werkzeug/0.12.2 Python/2.7.6]
+      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiVGh1LCAwMiBBdWcgMjAxOCAxMTo0MToxMiBHTVQifX0.DkRjOA.4MsigA7TUgbuUCW2k9Vhsu7-S-k;
+          HttpOnly; Path=/]
+    status: {code: 200, message: OK}
+- request:
+    body: '{"reply": "-----BEGIN PGP MESSAGE-----\n\nhQIMA/uCql0ybaddAQ//dg2iojyiyXBaUzKbPaL9+FlEEvraxXO+BbhcsbEdLI5E\nKYxP5xb1LEOdaJjUcQaPjSARPnFbLzq3vsafZCBrEHtMWnSWxEpxbI1/DO+/Wbk1\nT+ZVltaAdOIulfuMlIlL4rVCbprg+QUQbsbtIIOFdXpvuS1kQdv+F/sfYsFQanQw\nV6u/yz3hgyymUyoBfZOXUfpFQ/t759s3rt3OGvwTzOx6o8Q3X+cKypwYsGsHzAUr\n/N2Ggy6hYVzDj1czjtgUF2EWyKKfTN2RO9y+E0PYnu7C6QN41dx4yPsXFq16kOWC\nLDyeXW2A/3/fGqp9176V4DRHMkUB6WkkXnekJBiyar1rG7WJ09KNdXGKJw6tjlqT\nz4mnjgkZopSbuwJJgs+RZFddpGU31PSQg3ODWZRmSQbL/7lFtsJCY0yFjGoEdJFw\npg5nJ6uOQN6bWPdM47nEPweFgNBIPmQccm0ayewaxvpIgTH+okBlLMPxnDg51vaA\nF7dzZP4SdNQuBkHKq3DW7tu21+haa5YcjY5vJry9o5Fu9qJJadiI8Cg0JJqTVsUs\n7Vu4eK1F9popI5hzdRBvBIdNB4LlIJiYmMKxD7l5yyOXSdoyINPU04PwxM3yO6QH\n5Uw7gVNYCvgKSHAvfFnYAjPSd1m7CPW/aI2EjIHMBf+8FEyyWdHduPCMHZhUZ5XS\nVAFdU++LS7PKxIFsXKtkHSMmO+GRfI/+SrVmGfw1YJbSmhaRAPk5ChqS7RQMgz/j\nt+mAINV0vHUNAJkMW/QZXgdVw+eca0ITs/1u3fKsBlmQNv4Efg==\n=686S\n-----END
+      PGP MESSAGE-----\n\n"}'
+    headers:
+      Accept: [application/json]
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzMzIzMTY3MiwiaWF0IjoxNTMzMjAyODcyfQ.eyJpZCI6MX0.ZLWdnxi3zmhYeP0bo7D25ktDuhk3n0Mio9Hn2kKh9fg]
+      Connection: [keep-alive]
+      Content-Length: ['926']
+      Content-Type: [application/json]
+      User-Agent: [python-requests/2.19.1]
+    method: POST
+    uri: http://localhost:8081/api/v1/sources/eff8ebce-e144-4e0d-939c-2c644cea90bf/reply
+  response:
+    body: {string: "{\n  \"message\": \"Your reply has been stored\"\n}\n"}
+    headers:
+      Content-Length: ['46']
+      Content-Type: [application/json]
+      Date: ['Thu, 02 Aug 2018 09:41:12 GMT']
+      Server: [Werkzeug/0.12.2 Python/2.7.6]
+      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiVGh1LCAwMiBBdWcgMjAxOCAxMTo0MToxMiBHTVQifX0.DkRjOA.4MsigA7TUgbuUCW2k9Vhsu7-S-k;
+          HttpOnly; Path=/]
+    status: {code: 201, message: CREATED}
+version: 1

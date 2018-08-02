@@ -128,3 +128,22 @@ class TestAPI(unittest.TestCase):
         user = self.api.get_current_user()
         assert user["is_admin"]
         assert user["username"] == "journalist"
+
+    @vcr.use_cassette("data/test-error-unencrypted-reply.yml")
+    def test_error_unencrypted_reply(self):
+        s = self.api.get_sources()[0]
+        with self.assertRaises(ReplyError) as err:
+            self.api.reply_source(s, "hello")
+        # Becasue the reply is JSON encoded
+        # https://github.com/freedomofpress/securedrop/issues/3684
+        msg = json.loads(err.exception.msg)
+        self.assertEqual(msg["message"], "You must encrypt replies client side")
+
+    @vcr.use_cassette("data/test-reply-source.yml")
+    def test_reply_source(self):
+        s = self.api.get_sources()[0]
+        dirname = os.path.dirname(__file__)
+        with open(os.path.join(dirname, "encrypted_msg.asc")) as fobj:
+            data = fobj.read()
+
+        self.assertTrue(self.api.reply_source(s, data))
