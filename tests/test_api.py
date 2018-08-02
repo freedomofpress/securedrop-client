@@ -2,6 +2,9 @@ from pprint import pprint
 import os
 import time
 import json
+import hashlib
+import shutil
+import tempfile
 import unittest
 from sdclientapi import *
 
@@ -147,3 +150,28 @@ class TestAPI(unittest.TestCase):
             data = fobj.read()
 
         self.assertTrue(self.api.reply_source(s, data))
+
+    @vcr.use_cassette("data/test-download-submission.yml")
+    def test_download_submission(self):
+        s = self.api.get_all_submissions()[0]
+
+        self.assertFalse(s.is_read)
+
+        # We need a temporary directory to download
+        tmpdir = tempfile.mkdtemp()
+        etag, filepath = self.api.download_submission(s, tmpdir)
+
+        # now let us read the downloaded file
+        with open(filepath, "rb") as fobj:
+            data = fobj.read()
+
+        shasum = hashlib.sha256(data).hexdigest()
+        self.assertEqual(etag, shasum)
+
+        # Now the submission should have is_read as True.
+
+        s = self.api.get_submission(s)
+        self.assertTrue(s.is_read)
+
+        # Let us remove the temporary directory
+        shutil.rmtree(tmpdir)

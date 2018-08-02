@@ -1,8 +1,9 @@
 from pprint import pprint
+import os
 import json
 import requests
 
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Tuple
 from mypy_extensions import TypedDict
 
 T_token = TypedDict("T_token", {"expiration": str, "token": str})
@@ -328,6 +329,38 @@ class API:
             return True
         # We should never reach here
         return False
+
+    def download_submission(self, submission: Submission, path: str) -> Tuple[str, str]:
+        url = self.server.rstrip("/") + submission.download_url
+
+        if os.path.exists(path) and not os.path.isdir(path):
+            raise BaseError("Please provide a vaild directory to save.")
+
+        try:
+            res = requests.get(url, headers=self.auth_header, stream=True)
+
+            if res.status_code == 404:
+                raise WrongUUIDError("Missing submission {}".format(submission.uuid))
+
+            # Get the headers
+            headers = res.headers
+            etag = headers["Etag"]
+
+            # This is where we will save our downloaded file
+            filepath = os.path.join(path, submission.filename)
+            with open(filepath, "wb") as fobj:
+                for chunk in res.iter_content(
+                    chunk_size=1024
+                ):  # Getting 1024 in each chunk
+                    if chunk:
+                        fobj.write(chunk)
+
+            # Because etag comes as JSON encoded string
+            etag = json.loads(etag)
+            # Return the tuple of sha256sum, filepath
+            return etag[7:], filepath
+        except Exception as err:
+            raise BaseError(err)
 
     def flag_source(self, source: Source) -> bool:
         url = self.server.rstrip("/") + "/api/v1/sources/{}/flag".format(source.uuid)
