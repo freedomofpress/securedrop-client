@@ -1,0 +1,14 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/python:3.5
+    steps:
+      - checkout
+
+      - run:
+          name: Install requirements and run tests
+          command: |
+            pipenv install --dev
+            export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
+            pipenv run pytest -v

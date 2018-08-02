@@ -1,0 +1,7 @@
+[packages]
+SQLALchemy = "*"
+alembic = "*"
+
+[dev-packages]
+pytest = "*"
+pip-tools = "*"
