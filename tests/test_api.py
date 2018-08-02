@@ -68,7 +68,7 @@ class TestAPI(unittest.TestCase):
     def test_get_single_source(self):
         s = self.api.get_sources()[0]
         # Now we will try to get the same source again
-        s2 = self.api.get_source(s.uuid)
+        s2 = self.api.get_source(s)
 
         self.assertEqual(s.journalist_designation, s2.journalist_designation)
         self.assertEqual(s.uuid, s2.uuid)
@@ -76,7 +76,7 @@ class TestAPI(unittest.TestCase):
     @vcr.use_cassette("data/test-failed-single-source.yml")
     def test_failed_single_source(self):
         with self.assertRaises(WrongUUIDError):
-            self.api.get_source("not there")
+            self.api.get_source(Source(uuid="not there"))
 
     @vcr.use_cassette("data/test-get-submissions.yml")
     def test_get_submissions(self):
@@ -102,7 +102,7 @@ class TestAPI(unittest.TestCase):
         s = self.api.get_sources()[0]
         self.assertTrue(self.api.flag_source(s))
         # Now we will try to get the same source again
-        s2 = self.api.get_source(s.uuid)
+        s2 = self.api.get_source(s)
         self.assertTrue(s2.is_flagged)
 
     @vcr.use_cassette("data/test-delete-source.yml")

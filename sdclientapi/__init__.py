@@ -56,7 +56,7 @@ class Submission:
     """
     This class represents a submission object in the server.
     """
-    def __init__(self, **kargs) -> None:
+    def __init__(self, **kwargs) -> None:
         self.download_url = ""  # type: str
         self.filename = ""  # type: str
         self.is_read = False  # type: bool
@@ -64,6 +64,11 @@ class Submission:
         self.source_url = ""  # type: str
         self.submission_url = ""  # type: str
         self.uuid = ""  # type: str
+
+        if ["uuid"] == list(kwargs.keys()):
+            # Means we are creating an object only for fetching from server.
+            self.uuid = kwargs["uuid"]
+            return
 
         for key in [
             "download_url",
@@ -74,16 +79,16 @@ class Submission:
             "submission_url",
             "uuid",
         ]:
-            if not key in kargs:
+            if not key in kwargs:
                 AttributeError("Missing key {}".format(key))
-            setattr(self, key, kargs[key])
+            setattr(self, key, kwargs[key])
 
 
 class Source:
     """
     This class represents a source object in the server.
     """
-    def __init__(self, **kargs):
+    def __init__(self,  **kwargs):
         self.add_star_url = ""  # type: str
         self.interaction_count = 0  # type: int
         self.is_flagged = False  # type: bool
@@ -98,6 +103,11 @@ class Source:
         self.submissions_url = ""  # type: str
         self.url = ""  # type: str
         self.uuid = ""  # type: str
+
+        if ["uuid"] == list(kwargs.keys()):
+            # Means we are creating an object only for fetching from server.
+            self.uuid = kwargs["uuid"]
+            return
 
         for key in [
             "add_star_url",
@@ -115,9 +125,9 @@ class Source:
             "url",
             "uuid",
         ]:
-            if not key in kargs:
+            if not key in kwargs:
                 AttributeError("Missing key {}".format(key))
-            setattr(self, key, kargs[key])
+            setattr(self, key, kwargs[key])
 
 
 class API:
@@ -199,20 +209,20 @@ class API:
 
         return result
 
-    def get_source(self, uuid: str) -> Source:
+    def get_source(self, source: Source) -> Source:
         """
         This will return a single Source based on UUID.
 
-        :param uuid: String containing the source's uuid value.
-        :returns: Source object for the given UUID value
+        :param source: Source object containing only source's uuid value.
+        :returns: Source object fetched from server for the given UUID value.
         """
-        url = self.server + "api/v1/sources/{}".format(uuid)
+        url = self.server + "api/v1/sources/{}".format(source.uuid)
 
         try:
             res = requests.get(url, headers=self.auth_header)
 
             if res.status_code == 404:
-                raise WrongUUIDError("Missing source {}".format(uuid))
+                raise WrongUUIDError("Missing source {}".format(source.uuid))
 
             data = res.json()
         except json.decoder.JSONDecodeError:
