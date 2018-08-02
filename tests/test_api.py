@@ -45,21 +45,21 @@ class TestAPI(unittest.TestCase):
             break
 
     def test_api_auth(self):
-        assert self.api.token
+        self.assertTrue(self.api.token)
 
     @vcr.use_cassette("data/test-get-sources.yml")
     def test_get_sources(self):
         sources = self.api.get_sources()
-        assert len(sources) == 2
+        self.assertEqual(len(sources), 2)
 
     @vcr.use_cassette("data/test-star-add-remove.yml")
     def test_star_add_remove(self):
         s = self.api.get_sources()[0]
-        assert self.api.add_star(s)
-        assert self.api.remove_star(s)
+        self.assertTrue(self.api.add_star(s))
+        self.assertTrue(self.api.remove_star(s))
         for source in self.api.get_sources():
             if source.uuid == s.uuid:
-                assert not source.is_starred
+                self.assertFalse(source.is_starred)
 
     @vcr.use_cassette("data/test-get-single-source.yml")
     def test_get_single_source(self):
@@ -67,8 +67,8 @@ class TestAPI(unittest.TestCase):
         # Now we will try to get the same source again
         s2 = self.api.get_source(s.uuid)
 
-        assert s.journalist_designation == s2.journalist_designation
-        assert s.uuid == s2.uuid
+        self.assertEqual(s.journalist_designation, s2.journalist_designation)
+        self.assertEqual(s.uuid, s2.uuid)
 
     @vcr.use_cassette("data/test-failed-single-source.yml")
     def test_failed_single_source(self):
@@ -80,7 +80,7 @@ class TestAPI(unittest.TestCase):
         s = self.api.get_sources()[0]
 
         subs = self.api.get_submissions(s)
-        assert len(subs) == 2
+        self.assertEqual(len(subs), 2)
 
     @vcr.use_cassette("data/test-get-wrong-submissions.yml")
     def test_get_wrong_submissions(self):
@@ -92,42 +92,42 @@ class TestAPI(unittest.TestCase):
     @vcr.use_cassette("data/test-get-all-submissions.yml")
     def test_get_all_submissions(self):
         subs = self.api.get_all_submissions()
-        assert len(subs) == 4
+        self.assertEqual(len(subs), 4)
 
     @vcr.use_cassette("data/test-flag-source.yml")
     def test_flag_source(self):
         s = self.api.get_sources()[0]
-        assert self.api.flag_source(s)
+        self.assertTrue(self.api.flag_source(s))
         # Now we will try to get the same source again
         s2 = self.api.get_source(s.uuid)
-        assert s2.is_flagged
+        self.assertTrue(s2.is_flagged)
 
     @vcr.use_cassette("data/test-delete-source.yml")
     def test_delete_source(self):
         s = self.api.get_sources()[0]
-        assert self.api.delete_source(s.uuid)
+        self.assertTrue(self.api.delete_source(s.uuid))
 
         # Now there should be one source left
         sources = self.api.get_sources()
-        assert len(sources) == 1
+        self.assertEqual(len(sources), 1)
 
     @vcr.use_cassette("data/test-delete-submission.yml")
     def test_delete_submission(self):
         subs = self.api.get_all_submissions()
-        assert self.api.delete_submission(subs[0])
+        self.assertTrue(self.api.delete_submission(subs[0]))
         new_subs = self.api.get_all_submissions()
         # We now should have 3 submissions
-        assert len(new_subs) == 3
+        self.assertEqual(len(new_subs), 3)
 
         # Let us make sure that sub[0] is not there
         for s in new_subs:
-            assert s.uuid != subs[0].uuid
+            self.assertNotEqual(s.uuid, subs[0].uuid)
 
     @vcr.use_cassette("data/test-get-current-user.yml")
     def test_get_current_user(self):
         user = self.api.get_current_user()
-        assert user["is_admin"]
-        assert user["username"] == "journalist"
+        self.assertTrue(user["is_admin"])
+        self.assertEqual(user["username"], "journalist")
 
     @vcr.use_cassette("data/test-error-unencrypted-reply.yml")
     def test_error_unencrypted_reply(self):
