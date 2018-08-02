@@ -27,19 +27,28 @@ class WrongUUIDError(BaseError):
     "For missing UUID, can be for source or submission"
 
     def __init__(self, message):
-        self.message = message
+        self.msg = message
+
+    def __str__(self):
+        return repr(self.msg)
 
 
 class AuthError(BaseError):
     "For Authentication errors"
 
     def __init__(self, message):
-        self.message = message
+        self.msg = message
+
+    def __str__(self):
+        return repr(self.msg)
 
 
 class AttributeError(BaseError):
     def __init__(self, message):
-        self.message = message
+        self.msg = message
+
+    def __str__(self):
+        return repr(self.msg)
 
 
 class Submission:
