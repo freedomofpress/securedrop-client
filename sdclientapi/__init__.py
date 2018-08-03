@@ -511,10 +511,8 @@ class API:
             res = requests.post(url, headers=self.auth_header, data=json.dumps(reply))
 
             if res.status_code == 400:
-                # Right now this API call from server can return text error or JSON error.
-                # We will update this to handle JSON data in future.
-                # https://github.com/freedomofpress/securedrop/issues/3684
-                raise ReplyError(res.text)
+                raise ReplyError(res.json()["message"])
+
             data = res.json()
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")

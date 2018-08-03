@@ -137,10 +137,8 @@ class TestAPI(unittest.TestCase):
         s = self.api.get_sources()[0]
         with self.assertRaises(ReplyError) as err:
             self.api.reply_source(s, "hello")
-        # Becasue the reply is JSON encoded
-        # https://github.com/freedomofpress/securedrop/issues/3684
-        msg = json.loads(err.exception.msg)
-        self.assertEqual(msg["message"], "You must encrypt replies client side")
+
+        self.assertEqual(err.exception.msg, "You must encrypt replies client side")
 
     @vcr.use_cassette("data/test-reply-source.yml")
     def test_reply_source(self):
