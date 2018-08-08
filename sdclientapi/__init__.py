@@ -52,6 +52,39 @@ class AttributeError(BaseError):
         return repr(self.msg)
 
 
+class Reply:
+    """
+    This class represents a reply to the source.
+    """
+
+    def __init__(self, **kwargs) -> None:
+        self.filename = ""  # type: str
+        self.journalist_username = ""  # type: str
+        self.is_deleted_by_source = False  # type: bool
+        self.reply_url = ""  # type: str
+        self.size = 0  # type: int
+        self.source_url = ""  # type: str
+        self.source_uuid = ""  # type: str
+        self.uuid = ""  # type: str
+
+        for key in [
+            "filename",
+            "journalist_username",
+            "is_deleted_by_source",
+            "reply_url",
+            "size",
+            "source_url",
+            "uuid",
+        ]:
+            if not key in kwargs:
+                AttributeError("Missing key {}".format(key))
+            setattr(self, key, kwargs[key])
+
+        # Now let us set source uuid
+        values = self.source_url.split("/")
+        self.source_uuid = values[-1]
+
+
 class Submission:
     """
     This class represents a submission object in the server.
@@ -583,3 +616,86 @@ class API:
             return True
         # We should never reach here
         return False
+
+    def get_replies_from_source(self, source: Source) -> List[Reply]:
+        """
+        This will return a list of replies associated with a source.
+
+        :param source: Source object containing only source's uuid value.
+        :returns: List of Reply objects.
+        """
+        url = self.server + "api/v1/sources/{}/replies".format(source.uuid)
+
+        try:
+            res = requests.get(url, headers=self.auth_header)
+
+            if res.status_code == 404:
+                raise WrongUUIDError("Missing source {}".format(source.uuid))
+
+            data = res.json()
+        except json.decoder.JSONDecodeError:
+            raise BaseError("Error in parsing JSON")
+
+        if "error" in data:
+            raise AuthError(data["error"])
+
+        result = []
+        for datum in data["replies"]:
+            reply = Reply(**datum)
+            result.append(reply)
+
+        return result
+
+    def get_reply_from_source(self, source: Source, reply_uuid: str) -> Reply:
+        """
+        This will return a single specific reply.
+
+        :param source: Source object.
+        :param reply_uuid: UUID of the reply.
+        :returns: A reply object
+        """
+        url = self.server + "api/v1/sources/{}/replies/{}".format(
+            source.uuid, reply_uuid
+        )
+
+        try:
+            res = requests.get(url, headers=self.auth_header)
+
+            if res.status_code == 404:
+                raise WrongUUIDError("Missing source {}".format(source.uuid))
+
+            data = res.json()
+        except json.decoder.JSONDecodeError:
+            raise BaseError("Error in parsing JSON")
+
+        if "error" in data:
+            raise AuthError(data["error"])
+
+        reply = Reply(**data)
+
+        return reply
+
+    def get_all_replies(self) -> List[Reply]:
+        """
+        This will return a list of all replies from the server.
+
+        :returns: List of Reply objects.
+        """
+        url = self.server + "api/v1/replies"
+
+        try:
+            res = requests.get(url, headers=self.auth_header)
+
+            data = res.json()
+        except json.decoder.JSONDecodeError:
+            raise BaseError("Error in parsing JSON")
+
+        if "error" in data:
+            raise AuthError(data["error"])
+
+        result = []
+        for datum in data["replies"]:
+            reply = Reply(**datum)
+            result.append(reply)
+
+        return result

@@ -222,3 +222,27 @@ class TestAPI(unittest.TestCase):
 
         # Let us remove the temporary directory
         shutil.rmtree(tmpdir)
+
+    @vcr.use_cassette("data/test-get-replies-from-source.yml")
+    def test_get_replies_from_source(self):
+        s = self.api.get_sources()[0]
+        replies = self.api.get_replies_from_source(s)
+        self.assertEqual(len(replies), 2)
+
+    @vcr.use_cassette("data/test-get-reply-from-source.yml")
+    def test_get_reply_from_source(self):
+        s = self.api.get_sources()[0]
+        replies = self.api.get_replies_from_source(s)
+        reply = replies[0]
+
+        r = self.api.get_reply_from_source(s, reply.uuid)
+
+        self.assertEqual(reply.filename, r.filename)
+        self.assertEqual(reply.size, r.size)
+        self.assertEqual(reply.reply_url, r.reply_url)
+        self.assertEqual(reply.journalist_username, r.journalist_username)
+
+    @vcr.use_cassette("data/test-get-all-replies.yml")
+    def test_get_all_replies(self):
+        replies = self.api.get_all_replies()
+        self.assertEqual(len(replies), 4)
