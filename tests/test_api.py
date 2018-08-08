@@ -108,7 +108,7 @@ class TestAPI(unittest.TestCase):
     @vcr.use_cassette("data/test-delete-source.yml")
     def test_delete_source(self):
         s = self.api.get_sources()[0]
-        self.assertTrue(self.api.delete_source(s.uuid))
+        self.assertTrue(self.api.delete_source(s))
 
         # Now there should be one source left
         sources = self.api.get_sources()

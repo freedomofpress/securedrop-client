@@ -233,21 +233,21 @@ class API:
 
         return Source(**data)
 
-    def delete_source(self, uuid: str) -> bool:
+    def delete_source(self, source: Source) -> bool:
         """
-        This method will delete the source and collection. If the input uuid
+        This method will delete the source and collection. If the uuid
         is not found in the server, it will raise WrongUUIDError.
 
-        :param uuid: String containing the source's uuid value.
+        :param source: Source object containing only source's uuid value.
         :returns: True if successful, raises Errors in case of wrong values.
         """
-        url = self.server + "api/v1/sources/{}".format(uuid)
+        url = self.server + "api/v1/sources/{}".format(source.uuid)
 
         try:
             res = requests.delete(url, headers=self.auth_header)
 
             if res.status_code == 404:
-                raise WrongUUIDError("Missing source {}".format(uuid))
+                raise WrongUUIDError("Missing source {}".format(source.uuid))
 
             data = res.json()
         except json.decoder.JSONDecodeError:
