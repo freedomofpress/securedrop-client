@@ -1,0 +1,4 @@
+include sdclientapi/*.py
+include README.md
+include LICENSE
+include setup.py
