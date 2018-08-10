@@ -73,6 +73,15 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(s.journalist_designation, s2.journalist_designation)
         self.assertEqual(s.uuid, s2.uuid)
 
+    @vcr.use_cassette("data/test-get-single-source.yml")
+    def test_get_single_source_from_string(self):
+        s = self.api.get_sources()[0]
+        # Now we will try to get the same source again using uuid
+        s2 = self.api.get_source_from_string(s.uuid)
+
+        self.assertEqual(s.journalist_designation, s2.journalist_designation)
+        self.assertEqual(s.uuid, s2.uuid)
+
     @vcr.use_cassette("data/test-failed-single-source.yml")
     def test_failed_single_source(self):
         with self.assertRaises(WrongUUIDError):
@@ -109,6 +118,15 @@ class TestAPI(unittest.TestCase):
     def test_delete_source(self):
         s = self.api.get_sources()[0]
         self.assertTrue(self.api.delete_source(s))
+
+        # Now there should be one source left
+        sources = self.api.get_sources()
+        self.assertEqual(len(sources), 1)
+
+    @vcr.use_cassette("data/test-delete-source.yml")
+    def test_delete_source_from_string(self):
+        s = self.api.get_sources()[0]
+        self.assertTrue(self.api.delete_source_from_string(s.uuid))
 
         # Now there should be one source left
         sources = self.api.get_sources()

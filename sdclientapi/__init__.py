@@ -56,6 +56,7 @@ class Submission:
     """
     This class represents a submission object in the server.
     """
+
     def __init__(self, **kwargs) -> None:
         self.download_url = ""  # type: str
         self.filename = ""  # type: str
@@ -88,7 +89,8 @@ class Source:
     """
     This class represents a source object in the server.
     """
-    def __init__(self,  **kwargs):
+
+    def __init__(self, **kwargs):
         self.add_star_url = ""  # type: str
         self.interaction_count = 0  # type: int
         self.is_flagged = False  # type: bool
@@ -140,6 +142,7 @@ class API:
     :param totp: Current TOTP value
     :returns: An object of API class.
     """
+
     def __init__(self, address, username, passphrase, totp) -> None:
         """
         Primary API class, this is the only thing which will make network call.
@@ -233,6 +236,17 @@ class API:
 
         return Source(**data)
 
+    def get_source_from_string(self, uuid: str) -> Source:
+        """
+        This will fetch a source from server and return it.
+
+        :param uuid: Source UUID as string.
+        :returns: Source object fetched from server for the given UUID value.
+        """
+
+        s = Source(uuid=uuid)
+        return self.get_source(s)
+
     def delete_source(self, source: Source) -> bool:
         """
         This method will delete the source and collection. If the uuid
@@ -261,6 +275,18 @@ class API:
 
         # We should never reach here
         return False
+
+    def delete_source_from_string(self, uuid: str) -> bool:
+        """
+        This method will delete the source and collection. If the uuid
+        is not found in the server, it will raise WrongUUIDError.
+
+        :param uuid: Source UUID as string.
+        :returns: True if the operation is successful.
+        """
+
+        s = Source(uuid=uuid)
+        return self.delete_source(s)
 
     def add_star(self, source: Source) -> bool:
         """
