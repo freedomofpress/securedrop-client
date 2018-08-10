@@ -160,6 +160,21 @@ class TestAPI(unittest.TestCase):
         for s in new_subs:
             self.assertNotEqual(s.uuid, subs[0].uuid)
 
+    @vcr.use_cassette("data/test-delete-submission-from-string.yml")
+    def test_delete_submission_from_string(self):
+        s = self.api.get_sources()[0]
+
+        subs = self.api.get_submissions(s)
+
+        self.assertTrue(self.api.delete_submission(subs[0]))
+        new_subs = self.api.get_all_submissions()
+        # We now should have 3 submissions
+        self.assertEqual(len(new_subs), 3)
+
+        # Let us make sure that sub[0] is not there
+        for s in new_subs:
+            self.assertNotEqual(s.uuid, subs[0].uuid)
+
     @vcr.use_cassette("data/test-get-current-user.yml")
     def test_get_current_user(self):
         user = self.api.get_current_user()

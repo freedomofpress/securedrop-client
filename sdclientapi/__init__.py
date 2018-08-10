@@ -430,7 +430,13 @@ class API:
         :param submission: The Submission object we want to delete in the server.
         :returns: True if successful, raises Error otherwise.
         """
-        url = self.server.rstrip("/") + submission.submission_url
+        # Not using direct URL because this helps to use the same method
+        # from local submission (not fetched from server) objects.
+        # See the *from_string for an example.
+        source_uuid = submission.source_url.split("/")[-1]
+        url = self.server.rstrip("/") + "/api/v1/sources/{}/submissions/{}".format(
+            source_uuid, submission.uuid
+        )
 
         try:
             res = requests.delete(url, headers=self.auth_header)
@@ -449,6 +455,18 @@ class API:
             return True
         # We should never reach here
         return False
+
+    def delete_submission_from_string(self, uuid: str, source_uuid: str) -> bool:
+        """
+        Deletes a given Submission based on uuids from the server.
+
+        :param uuid: UUID of the Submission object.
+        :param source_uuid: UUID of the source.
+        :returns: Updated submission object from the server.
+        """
+        s = Submission(uuid=uuid)
+        s.source_url = "/api/v1/sources/{}".format(source_uuid)
+        return self.delete_submission(s)
 
     def download_submission(self, submission: Submission, path: str) -> Tuple[str, str]:
         """
