@@ -12,15 +12,15 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=["requests", "mypy-extensions"],
-    python_requires='>=3.5',
+    python_requires=">=3.5",
     url="https://github.com/freedomofpress/sdclientapi",
-    packages=setuptools.find_packages(exclude=['docs', 'tests']),
+    packages=setuptools.find_packages(exclude=["docs", "tests"]),
     classifiers=(
         "Development Status :: 3 - Alpha",
         "Programming Language :: Python :: 3",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
-        'Intended Audience :: Developers',
+        "Intended Audience :: Developers",
         "Operating System :: OS Independent",
     ),
 )
