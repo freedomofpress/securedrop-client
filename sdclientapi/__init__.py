@@ -365,7 +365,10 @@ class API:
         :param submission: Submission object we want to update.
         :returns: Updated submission object from the server.
         """
-        url = self.server.rstrip("/") + submission.submission_url
+        source_uuid = submission.source_url.split("/")[-1]
+        url = self.server.rstrip("/") + "/api/v1/sources/{}/submissions/{}".format(
+            source_uuid, submission.uuid
+        )
 
         try:
             res = requests.get(url, headers=self.auth_header)
@@ -381,6 +384,18 @@ class API:
             raise AuthError(data["error"])
 
         return Submission(**data)
+
+    def get_submission_from_string(self, uuid: str, source_uuid: str) -> Submission:
+        """
+        Returns the updated Submission object from the server.
+
+        :param uuid: UUID of the Submission object.
+        :param source_uuid: UUID of the source.
+        :returns: Updated submission object from the server.
+        """
+        s = Submission(uuid=uuid)
+        s.source_url = "/api/v1/sources/{}".format(source_uuid)
+        return self.get_submission(s)
 
     def get_all_submissions(self) -> List[Submission]:
         """

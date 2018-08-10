@@ -94,6 +94,22 @@ class TestAPI(unittest.TestCase):
         subs = self.api.get_submissions(s)
         self.assertEqual(len(subs), 2)
 
+    @vcr.use_cassette("data/test-get-submission.yml")
+    def test_get_submission(self):
+        s = self.api.get_sources()[0]
+
+        subs = self.api.get_submissions(s)
+        sub = self.api.get_submission(subs[0])
+        self.assertEqual(sub.filename, subs[0].filename)
+
+    @vcr.use_cassette("data/test-get-submission.yml")
+    def test_get_submission_from_string(self):
+        s = self.api.get_sources()[0]
+
+        subs = self.api.get_submissions(s)
+        sub = self.api.get_submission_from_string(subs[0].uuid, s.uuid)
+        self.assertEqual(sub.filename, subs[0].filename)
+
     @vcr.use_cassette("data/test-get-wrong-submissions.yml")
     def test_get_wrong_submissions(self):
         s = self.api.get_sources()[0]
