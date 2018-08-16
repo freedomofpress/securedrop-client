@@ -9,5 +9,6 @@ python_version = "3.5"
 [packages]
 furl = "*"
 pyyaml = "*"
+requests = "*"
 
 [dev-packages]
