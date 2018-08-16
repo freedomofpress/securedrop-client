@@ -20,18 +20,13 @@ class Response:
         self.headers = None
         self.version = "0.1.1"
 
-class Conf:
-    scheme = ''
-    host = ''
-    port = 0
-
 class Proxy:
 
     @staticmethod
     def _on_done(res):
         print(json.dumps(res.__dict__))
 
-    def __init__(self, conf, req=Req(), on_save=None, on_done=None):
+    def __init__(self, conf=None, req=Req(), on_save=None, on_done=None):
         self.conf = conf
         self.req = req
         self.res = None
@@ -76,7 +71,6 @@ class Proxy:
         except Exception as e:
 
             self.simple_error(500, 'Proxy error while generating URL to request')
-            # XXX is this wrong?
             raise ValueError('Error generating URL from provided values')
 
         url.path.normalize()
@@ -111,7 +105,6 @@ class Proxy:
 
         self.on_save(fh, res)
 
-
         self.res = res
 
     def handle_response(self):
@@ -132,8 +125,8 @@ class Proxy:
         try:
             if self.on_save is None:
                 self.simple_error(400, 'Request callback is not set.')
-
                 raise ValueError('Request callback is not set.')
+
             self.prep_request()
             s = requests.Session()
             self._presp = s.send(self._prepared_request)
@@ -145,6 +138,7 @@ class Proxy:
             # we have set self.response to indicate an error
             pass
 
-        # catch server errors here, handle maybe-differently from ValueErrors...
+        # catch server errors here, handle maybe-differently from
+        # ValueErrors...
 
         self.on_done(self.res)
