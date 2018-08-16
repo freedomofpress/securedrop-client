@@ -118,7 +118,7 @@ class Proxy:
 
         # headers is a Requests class which doesn't JSON serialize.
         # coerce it into a normal dict so it will
-        self.res.headers = self.res.headers.__dict__
+        self.res.headers = dict(self.res.headers)
 
     def proxy(self):
 
