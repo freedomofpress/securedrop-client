@@ -10,4 +10,4 @@ jobs:
           name: Install requirements and run tests
           command: |
             pipenv install --dev
-            pipenv run python -m unittest
+            pipenv run python -m unittest -v
