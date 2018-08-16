@@ -28,7 +28,6 @@ p.on_done = err_on_done
 if len(sys.argv) != 2:
     p.simple_error(500, 'sd-proxy script not called with path to configuration file')
     p.on_done(p.res)
-    print(json.dumps(p.res.__dict__))
 
 # read config. `read_conf` will call `p.on_done` if there is a config
 # problem, and will return a Conf object on success.
@@ -75,10 +74,8 @@ def on_save(fh, res):
     fn = str(uuid.uuid4())
 
     try:
-        if p.conf.dev is True:
-            subprocess.run(["cp", fh.name, "/tmp/{}".format(fn)])
-        else:
-            subprocess.run(["cp", fh.name, "/tmp/{}".format(fn)])
+        subprocess.run(["cp", fh.name, "/tmp/{}".format(fn)])
+        if p.conf.dev is not True:
             subprocess.run(['qvm-move-to-vm', p.conf.target_vm, "/tmp/{}".format(fn)])
     except Exception:
         res.status = 500
@@ -91,8 +88,7 @@ def on_save(fh, res):
     res.headers['Content-Type'] = 'application/json'
     res.body = json.dumps({'filename': fn })
 
-# new on_done handler (which, in practice, is largely like the early
-# one)
+# new on_done handler
 def on_done(res):
     print(json.dumps(res.__dict__))
 
