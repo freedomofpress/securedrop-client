@@ -1,0 +1,13 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/python:3.5
+    steps:
+      - checkout
+
+      - run:
+          name: Install requirements and run tests
+          command: |
+            pipenv install --dev
+            pipenv run python -m unittest
