@@ -1,8 +1,8 @@
 import requests
 import furl
-import securedrop_proxy.util as util
 import tempfile
 import json
+import werkzeug
 
 class Req:
 
@@ -109,7 +109,7 @@ class Proxy:
 
     def handle_response(self):
 
-        ctype = util.parse_options_header(self._presp.headers['content-type'])
+        ctype = werkzeug.http.parse_options_header(self._presp.headers['content-type'])
 
         if ctype[0] == "application/json":
             self.handle_json_response()
