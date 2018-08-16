@@ -1,5 +1,6 @@
 import json
 import subprocess
+import vcr
 import unittest
 import uuid
 
@@ -36,6 +37,7 @@ class TestProxy(unittest.TestCase):
 
         assert p.res.status == 400
 
+    @vcr.use_cassette('fixtures/basic_proxy_functionality.yaml')
     def test_proxy_basic_functionality(self):
         req = proxy.Req()
         req.method = 'GET'
