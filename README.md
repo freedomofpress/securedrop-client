@@ -1,5 +1,7 @@
 ## securedrop workstation proxy
 
+[![CircleCI](https://circleci.com/gh/freedomofpress/securedrop-proxy.svg?style=svg)](https://circleci.com/gh/freedomofpress/securedrop-proxy)
+
 This implements a Qubes RPC <-> HTTP proxy, used to forward requests
 from the [securedrop workstation
 client](https://github.com/freedomofpress/securedrop-client) to the
