@@ -1,5 +1,3 @@
-from io import StringIO
-import json
 import sys
 import unittest
 from unittest.mock import patch
@@ -15,11 +13,11 @@ class TestConfig(unittest.TestCase):
     def test_config_file_does_not_exist(self):
         def err_on_done(res):
             res = res.__dict__
-            self.assertEquals(res['status'], 500)
+            self.assertEqual(res['status'], 500)
             self.assertIn("Configuration file does not exist",
                           res['body'])
-            self.assertEquals(res['headers']['Content-Type'],
-                              'application/json')
+            self.assertEqual(res['headers']['Content-Type'],
+                             'application/json')
             sys.exit(1)
 
         self.p.on_done = err_on_done
@@ -29,10 +27,10 @@ class TestConfig(unittest.TestCase):
     def test_config_file_when_yaml_is_invalid(self):
         def err_on_done(res):
             res = res.__dict__
-            self.assertEquals(res['status'], 500)
+            self.assertEqual(res['status'], 500)
             self.assertIn("YAML syntax error", res['body'])
-            self.assertEquals(res['headers']['Content-Type'],
-                              'application/json')
+            self.assertEqual(res['headers']['Content-Type'],
+                             'application/json')
             sys.exit(1)
 
         self.p.on_done = err_on_done
@@ -42,9 +40,9 @@ class TestConfig(unittest.TestCase):
     def test_config_file_open_generic_exception(self):
         def err_on_done(res):
             res = res.__dict__
-            self.assertEquals(res['status'], 500)
-            self.assertEquals(res['headers']['Content-Type'],
-                              'application/json')
+            self.assertEqual(res['status'], 500)
+            self.assertEqual(res['headers']['Content-Type'],
+                             'application/json')
             sys.exit(1)
 
         self.p.on_done = err_on_done
@@ -59,8 +57,36 @@ class TestConfig(unittest.TestCase):
         c = config.read_conf('tests/files/valid-config.yaml', self.p)
 
         # Verify we have a valid Conf object
-        self.assertEquals(c.host, 'jsonplaceholder.typicode.com')
-        self.assertEquals(c.port, 443)
+        self.assertEqual(c.host, 'jsonplaceholder.typicode.com')
+        self.assertEqual(c.port, 443)
         self.assertFalse(c.dev)
-        self.assertEquals(c.scheme, 'https')
-        self.assertEquals(c.target_vm, 'compost')
+        self.assertEqual(c.scheme, 'https')
+        self.assertEqual(c.target_vm, 'compost')
+
+    def test_config_500_when_missing_a_required_key(self):
+        def err_on_done(res):
+            res = res.__dict__
+            self.assertEqual(res['status'], 500)
+            self.assertIn("missing required keys", res['body'])
+            self.assertEqual(res['headers']['Content-Type'],
+                             'application/json')
+            sys.exit(1)
+
+        self.p.on_done = err_on_done
+
+        with self.assertRaises(SystemExit):
+            config.read_conf('tests/files/missing-key.yaml', self.p)
+
+    def test_config_500_when_missing_target_vm(self):
+        def err_on_done(res):
+            res = res.__dict__
+            self.assertEqual(res['status'], 500)
+            self.assertIn("missing `target_vm` key", res['body'])
+            self.assertEqual(res['headers']['Content-Type'],
+                             'application/json')
+            sys.exit(1)
+
+        self.p.on_done = err_on_done
+
+        with self.assertRaises(SystemExit):
+            config.read_conf('tests/files/missing-target-vm.yaml', self.p)
