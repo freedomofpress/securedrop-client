@@ -11,3 +11,8 @@ jobs:
           command: |
             pipenv install --dev
             pipenv run python -m unittest -v
+
+      - run:
+          name: Check Python dependencies for CVEs
+          command: |
+            pipenv check
