@@ -15,7 +15,7 @@ class TestProxyValidConfig(unittest.TestCase):
         self.conf.scheme = 'https'
         self.conf.port = 443
 
-    def on_save(self, fh, res):
+    def on_save(self, fh, res, conf):
 
         self.fn = str(uuid.uuid4())
 
@@ -141,7 +141,7 @@ class TestProxyInvalidConfig(unittest.TestCase):
         self.conf.scheme = 'https://http'  # bad
         self.conf.port = 443
 
-    def on_save(self, fh, res):
+    def on_save(self, fh, res, conf):
         self.fn = str(uuid.uuid4())
 
         # this will be `qvm-move...` in production

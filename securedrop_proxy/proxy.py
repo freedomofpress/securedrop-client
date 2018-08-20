@@ -103,7 +103,7 @@ class Proxy:
 
         res.headers = self._presp.headers
 
-        self.on_save(fh, res)
+        self.on_save(fh, res, self.conf)
 
         self.res = res
 
