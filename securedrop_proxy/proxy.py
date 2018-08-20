@@ -10,14 +10,14 @@ class Req:
         self.method = ''
         self.path_query = ''
         self.body = None
-        self.headers = None
+        self.headers = {}
 
 class Response:
 
     def __init__(self, status):
         self.status = status
         self.body = None
-        self.headers = None
+        self.headers = {}
         self.version = "0.1.1"
 
 class Proxy:
