@@ -56,6 +56,7 @@ class Submission:
     """
     This class represents a submission object in the server.
     """
+
     def __init__(self, **kwargs) -> None:
         self.download_url = ""  # type: str
         self.filename = ""  # type: str
@@ -88,7 +89,8 @@ class Source:
     """
     This class represents a source object in the server.
     """
-    def __init__(self,  **kwargs):
+
+    def __init__(self, **kwargs):
         self.add_star_url = ""  # type: str
         self.interaction_count = 0  # type: int
         self.is_flagged = False  # type: bool
@@ -140,6 +142,7 @@ class API:
     :param totp: Current TOTP value
     :returns: An object of API class.
     """
+
     def __init__(self, address, username, passphrase, totp) -> None:
         """
         Primary API class, this is the only thing which will make network call.
@@ -233,6 +236,17 @@ class API:
 
         return Source(**data)
 
+    def get_source_from_string(self, uuid: str) -> Source:
+        """
+        This will fetch a source from server and return it.
+
+        :param uuid: Source UUID as string.
+        :returns: Source object fetched from server for the given UUID value.
+        """
+
+        s = Source(uuid=uuid)
+        return self.get_source(s)
+
     def delete_source(self, source: Source) -> bool:
         """
         This method will delete the source and collection. If the uuid
@@ -261,6 +275,18 @@ class API:
 
         # We should never reach here
         return False
+
+    def delete_source_from_string(self, uuid: str) -> bool:
+        """
+        This method will delete the source and collection. If the uuid
+        is not found in the server, it will raise WrongUUIDError.
+
+        :param uuid: Source UUID as string.
+        :returns: True if the operation is successful.
+        """
+
+        s = Source(uuid=uuid)
+        return self.delete_source(s)
 
     def add_star(self, source: Source) -> bool:
         """
@@ -339,7 +365,10 @@ class API:
         :param submission: Submission object we want to update.
         :returns: Updated submission object from the server.
         """
-        url = self.server.rstrip("/") + submission.submission_url
+        source_uuid = submission.source_url.split("/")[-1]
+        url = self.server.rstrip("/") + "/api/v1/sources/{}/submissions/{}".format(
+            source_uuid, submission.uuid
+        )
 
         try:
             res = requests.get(url, headers=self.auth_header)
@@ -355,6 +384,18 @@ class API:
             raise AuthError(data["error"])
 
         return Submission(**data)
+
+    def get_submission_from_string(self, uuid: str, source_uuid: str) -> Submission:
+        """
+        Returns the updated Submission object from the server.
+
+        :param uuid: UUID of the Submission object.
+        :param source_uuid: UUID of the source.
+        :returns: Updated submission object from the server.
+        """
+        s = Submission(uuid=uuid)
+        s.source_url = "/api/v1/sources/{}".format(source_uuid)
+        return self.get_submission(s)
 
     def get_all_submissions(self) -> List[Submission]:
         """
@@ -389,7 +430,13 @@ class API:
         :param submission: The Submission object we want to delete in the server.
         :returns: True if successful, raises Error otherwise.
         """
-        url = self.server.rstrip("/") + submission.submission_url
+        # Not using direct URL because this helps to use the same method
+        # from local submission (not fetched from server) objects.
+        # See the *from_string for an example.
+        source_uuid = submission.source_url.split("/")[-1]
+        url = self.server.rstrip("/") + "/api/v1/sources/{}/submissions/{}".format(
+            source_uuid, submission.uuid
+        )
 
         try:
             res = requests.delete(url, headers=self.auth_header)
@@ -408,6 +455,18 @@ class API:
             return True
         # We should never reach here
         return False
+
+    def delete_submission_from_string(self, uuid: str, source_uuid: str) -> bool:
+        """
+        Deletes a given Submission based on uuids from the server.
+
+        :param uuid: UUID of the Submission object.
+        :param source_uuid: UUID of the source.
+        :returns: Updated submission object from the server.
+        """
+        s = Submission(uuid=uuid)
+        s.source_url = "/api/v1/sources/{}".format(source_uuid)
+        return self.delete_submission(s)
 
     def download_submission(self, submission: Submission, path: str) -> Tuple[str, str]:
         """

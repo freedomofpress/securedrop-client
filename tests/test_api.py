@@ -73,6 +73,15 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(s.journalist_designation, s2.journalist_designation)
         self.assertEqual(s.uuid, s2.uuid)
 
+    @vcr.use_cassette("data/test-get-single-source.yml")
+    def test_get_single_source_from_string(self):
+        s = self.api.get_sources()[0]
+        # Now we will try to get the same source again using uuid
+        s2 = self.api.get_source_from_string(s.uuid)
+
+        self.assertEqual(s.journalist_designation, s2.journalist_designation)
+        self.assertEqual(s.uuid, s2.uuid)
+
     @vcr.use_cassette("data/test-failed-single-source.yml")
     def test_failed_single_source(self):
         with self.assertRaises(WrongUUIDError):
@@ -84,6 +93,22 @@ class TestAPI(unittest.TestCase):
 
         subs = self.api.get_submissions(s)
         self.assertEqual(len(subs), 2)
+
+    @vcr.use_cassette("data/test-get-submission.yml")
+    def test_get_submission(self):
+        s = self.api.get_sources()[0]
+
+        subs = self.api.get_submissions(s)
+        sub = self.api.get_submission(subs[0])
+        self.assertEqual(sub.filename, subs[0].filename)
+
+    @vcr.use_cassette("data/test-get-submission.yml")
+    def test_get_submission_from_string(self):
+        s = self.api.get_sources()[0]
+
+        subs = self.api.get_submissions(s)
+        sub = self.api.get_submission_from_string(subs[0].uuid, s.uuid)
+        self.assertEqual(sub.filename, subs[0].filename)
 
     @vcr.use_cassette("data/test-get-wrong-submissions.yml")
     def test_get_wrong_submissions(self):
@@ -114,9 +139,33 @@ class TestAPI(unittest.TestCase):
         sources = self.api.get_sources()
         self.assertEqual(len(sources), 1)
 
+    @vcr.use_cassette("data/test-delete-source.yml")
+    def test_delete_source_from_string(self):
+        s = self.api.get_sources()[0]
+        self.assertTrue(self.api.delete_source_from_string(s.uuid))
+
+        # Now there should be one source left
+        sources = self.api.get_sources()
+        self.assertEqual(len(sources), 1)
+
     @vcr.use_cassette("data/test-delete-submission.yml")
     def test_delete_submission(self):
         subs = self.api.get_all_submissions()
+        self.assertTrue(self.api.delete_submission(subs[0]))
+        new_subs = self.api.get_all_submissions()
+        # We now should have 3 submissions
+        self.assertEqual(len(new_subs), 3)
+
+        # Let us make sure that sub[0] is not there
+        for s in new_subs:
+            self.assertNotEqual(s.uuid, subs[0].uuid)
+
+    @vcr.use_cassette("data/test-delete-submission-from-string.yml")
+    def test_delete_submission_from_string(self):
+        s = self.api.get_sources()[0]
+
+        subs = self.api.get_submissions(s)
+
         self.assertTrue(self.api.delete_submission(subs[0]))
         new_subs = self.api.get_all_submissions()
         # We now should have 3 submissions
