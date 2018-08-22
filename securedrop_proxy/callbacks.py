@@ -34,6 +34,6 @@ def on_save(fh, res, conf):
     res.headers['X-Origin-Content-Type'] = res.headers['Content-Type']
     res.body = json.dumps({'filename': fn })
 
-# new on_done handler
+
 def on_done(res):
     print(json.dumps(res.__dict__))

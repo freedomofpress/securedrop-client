@@ -16,12 +16,7 @@ class TestProxyValidConfig(unittest.TestCase):
         self.conf.port = 443
 
     def on_save(self, fh, res, conf):
-
         self.fn = str(uuid.uuid4())
-
-        # this will be `qvm-move...` in production
-        subprocess.run(["cp", fh.name, "/tmp/{}".format(self.fn)])
-
         res.headers['X-Origin-Content-Type'] = res.headers['Content-Type']
         res.headers['Content-Type'] = 'application/json'
         res.body = json.dumps({'filename': self.fn})
@@ -143,10 +138,6 @@ class TestProxyInvalidConfig(unittest.TestCase):
 
     def on_save(self, fh, res, conf):
         self.fn = str(uuid.uuid4())
-
-        # this will be `qvm-move...` in production
-        subprocess.run(["cp", fh.name, "/tmp/{}".format(self.fn)])
-
         res.headers['X-Origin-Content-Type'] = res.headers['Content-Type']
         res.headers['Content-Type'] = 'application/json'
         res.body = json.dumps({'filename': self.fn})
