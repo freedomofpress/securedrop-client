@@ -699,3 +699,44 @@ class API:
             result.append(reply)
 
         return result
+
+    def download_reply(self, reply: Reply, path: str) -> Tuple[str, str]:
+        """
+        Returns a tuple of sha256sum and file path for a given Reply object. This method
+        also requires a directory path in where it will save the reply file.
+
+        :param reply: Reply object
+        :param path: Local directory path to save the reply
+
+        :returns: Tuple of sha256sum and path of the saved Reply.
+        """
+        url = self.server.rstrip("/") + reply.reply_url + "/download"
+
+        if os.path.exists(path) and not os.path.isdir(path):
+            raise BaseError("Please provide a valid directory to save.")
+
+        try:
+            res = requests.get(url, headers=self.auth_header, stream=True)
+
+            if res.status_code == 404:
+                raise WrongUUIDError("Missing reply {}".format(reply.uuid))
+
+            # Get the headers
+            headers = res.headers
+            etag = headers["Etag"]
+
+            # This is where we will save our downloaded file
+            filepath = os.path.join(path, reply.filename)
+            with open(filepath, "wb") as fobj:
+                for chunk in res.iter_content(
+                    chunk_size=1024
+                ):  # Getting 1024 in each chunk
+                    if chunk:
+                        fobj.write(chunk)
+
+            # Because etag comes as JSON encoded string
+            etag = json.loads(etag)
+            # Return the tuple of sha256sum, filepath
+            return etag[7:], filepath
+        except Exception as err:
+            raise BaseError(err)

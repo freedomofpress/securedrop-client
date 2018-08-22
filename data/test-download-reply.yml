@@ -1,0 +1,91 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: [application/json]
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzNDk1Njk0NCwiaWF0IjoxNTM0OTI4MTQ0fQ.eyJpZCI6MX0.uPnfhnix_IzYesxsCgkR0OegnvlvMrrEkaAJDKMciko]
+      Connection: [keep-alive]
+      Content-Type: [application/json]
+      User-Agent: [python-requests/2.19.1]
+    method: GET
+    uri: http://localhost:8081/api/v1/replies
+  response:
+    body: {string: "{\n  \"replies\": [\n    {\n      \"filename\": \"3-iconoclastic_yoga-reply.gpg\"\
+        , \n      \"is_deleted_by_source\": false, \n      \"journalist_username\"\
+        : \"journalist\", \n      \"journalist_uuid\": \"4f74b9f2-5947-4cf6-bb95-7a260f555353\"\
+        , \n      \"reply_url\": \"/api/v1/sources/07994d71-ffc5-4621-aca1-ba9b88d8c029/replies/3b58a5ed-311b-400b-b0db-5386e7827dbd\"\
+        , \n      \"size\": 1116, \n      \"source_url\": \"/api/v1/sources/07994d71-ffc5-4621-aca1-ba9b88d8c029\"\
+        , \n      \"uuid\": \"3b58a5ed-311b-400b-b0db-5386e7827dbd\"\n    }, \n  \
+        \  {\n      \"filename\": \"4-iconoclastic_yoga-reply.gpg\", \n      \"is_deleted_by_source\"\
+        : false, \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\"\
+        : \"4f74b9f2-5947-4cf6-bb95-7a260f555353\", \n      \"reply_url\": \"/api/v1/sources/07994d71-ffc5-4621-aca1-ba9b88d8c029/replies/09460b7a-ca13-478a-8e86-18d4aea5d1e2\"\
+        , \n      \"size\": 1116, \n      \"source_url\": \"/api/v1/sources/07994d71-ffc5-4621-aca1-ba9b88d8c029\"\
+        , \n      \"uuid\": \"09460b7a-ca13-478a-8e86-18d4aea5d1e2\"\n    }, \n  \
+        \  {\n      \"filename\": \"3-depopulated_match-reply.gpg\", \n      \"is_deleted_by_source\"\
+        : false, \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\"\
+        : \"4f74b9f2-5947-4cf6-bb95-7a260f555353\", \n      \"reply_url\": \"/api/v1/sources/54dab7ea-364a-4a79-8676-7a138aeaa963/replies/a2ed2400-c36a-45f5-98da-f57b4c1fe3cb\"\
+        , \n      \"size\": 1116, \n      \"source_url\": \"/api/v1/sources/54dab7ea-364a-4a79-8676-7a138aeaa963\"\
+        , \n      \"uuid\": \"a2ed2400-c36a-45f5-98da-f57b4c1fe3cb\"\n    }, \n  \
+        \  {\n      \"filename\": \"4-depopulated_match-reply.gpg\", \n      \"is_deleted_by_source\"\
+        : false, \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\"\
+        : \"4f74b9f2-5947-4cf6-bb95-7a260f555353\", \n      \"reply_url\": \"/api/v1/sources/54dab7ea-364a-4a79-8676-7a138aeaa963/replies/1c0d7ad8-2de2-4942-ac9e-55775f9a6801\"\
+        , \n      \"size\": 1116, \n      \"source_url\": \"/api/v1/sources/54dab7ea-364a-4a79-8676-7a138aeaa963\"\
+        , \n      \"uuid\": \"1c0d7ad8-2de2-4942-ac9e-55775f9a6801\"\n    }\n  ]\n\
+        }\n"}
+    headers:
+      Content-Length: ['1965']
+      Content-Type: [application/json]
+      Date: ['Wed, 22 Aug 2018 08:57:28 GMT']
+      Server: [Werkzeug/0.12.2 Python/2.7.6]
+      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiV2VkLCAyMiBBdWcgMjAxOCAxMDo1NzoyOCBHTVQifX0.Dl62-A.jd5Kl_FcmI-R8d3OgLcuwByh5mk;
+          HttpOnly; Path=/]
+    status: {code: 200, message: OK}
+- request:
+    body: null
+    headers:
+      Accept: [application/json]
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzNDk1Njk0NCwiaWF0IjoxNTM0OTI4MTQ0fQ.eyJpZCI6MX0.uPnfhnix_IzYesxsCgkR0OegnvlvMrrEkaAJDKMciko]
+      Connection: [keep-alive]
+      Content-Type: [application/json]
+      User-Agent: [python-requests/2.19.1]
+    method: GET
+    uri: http://localhost:8081/api/v1/sources/07994d71-ffc5-4621-aca1-ba9b88d8c029/replies/3b58a5ed-311b-400b-b0db-5386e7827dbd/download
+  response:
+    body:
+      string: !!binary |
+        hQIMAw8uxjT2wyWpAQ/8Cx2i4ZxRuYMhs4/qsTRVKmNJ4F63IZs7YdxEj54ZeF6AOOzCZIV2c44h
+        kJAOUxjWJ2k5z63PZL5Hrfy3FEQ0u9BsMLVzTbfnP+s+KK7EuwY5OkZDTCpctGYfRWblksQg8fTT
+        26ZjxX0MMcu4nshwBHun3yUMuMSvHIV48RrgoQR3bzr2LU2AALrcNTwSmAatcxuGW2dlmhFlDA5y
+        gNBAmFtgtBPDiQg+1geq8eA7YR4zWkVggj6k4MPyFKniCYpU4enzxnb7k6xSNh63epVU/1uJ2wKS
+        n4r33z5wRgD9QpmPF7sLiI3zslrAWYMGYygrRDdiUcDv8ahgvCKn+o2UMmKbt0Y4nC8VYETtdvj9
+        CjN/o5h/7j7fFXpUVfVgIg+wtnIsb8iW5CuTa3ZfeQyjlk1myd5ff/BGhduCipQDkp4py/ndcWcD
+        EvGv2cQc8lh81NGO2KeQ47Tq8GBwK0kkJjuFIYcaW7eBTkL/B9C3F3XJKr1HKQjxXWq3vx91vN3C
+        VQH8LqC6XClaad2ZCpeKA324+ibx9886zELxC/cRF53Kjsyb7QmwBYaIMHRPm5LD1QoeiVSRHXFG
+        NKDpg50+72Zl+ixKT7SRwLi+iseYSCj2stxd3bEmS+m2nfbp/yCaWUZPFTq+h1mOwA+a7b3csGJ0
+        LxGZSKr8fYyJGHFIA26FAgwDw+fEwKIgGyoBD/wNm5yYTmiGQF5OhCXH79j1zuz4BG0NBVIQtNHw
+        zhhOxCUSBtIqIprS5NIva4ocRj7fL4mZjOhjUcFD59agZzRcYjrIi6xn8z+nMAFg67/dL91ekJvL
+        kN4+MBE1dN4lkBHuXPVfopNXEIP/GPXfMX4iWmh+72w7tkVzc6tLDviMshaRY3K9WjtX/9PFKK/D
+        OZvqliHSLutUYs7LnEdUnLnGYvjBFIvMD3pfnd+LHfYxgutQq/X+W7Rlm/SHxGrr6UjiQVUNI+Cx
+        bCazDh9XpridV2RBNG5wfzE11u1JVV/pcOPUyjBvBONMI762nbTSwLv0sVW9Qd2O1vykcbQeV/r7
+        2czLBKiH6OG35nP2Lt4JBbPHFGLycQJIHtUhZKES+HbaawnFbJzUHlIXJ+aSPXQVK7iF4N6IVlMg
+        YyETSDOuxlH9jywmETwCHrna1CzCzkYe5v2ABAGbiJfyfFdTgHMNctHghPyr22IzKsCHQZh/q0WC
+        tPtCf6RjRkYk9PuS6br9QSlkGb116heO3mTdMaKxBoU7vrpq96qRE5gOfOxBe9abPaYI2JWb75eP
+        Q1O7mBFi7D/Bd0ri0mZSVXyTGCkvZoyv9uE3OQyszLM6+sj1A5j2ewGDWzhkHN5m7kHNLiSBJ0Za
+        oql059Mu4pDx8R4YYOvFffk+rcgteuhMwTWyX9I8AcQu4NSX+Q+7j5xbaTtmvToSubIOc/Wq908A
+        WcUuNtqYmDOb4Hmv1e5/7yGTLEsp5mnnp5BPtj/NZtuz
+    headers:
+      Cache-Control: ['public, max-age=43200']
+      Content-Disposition: [attachment; filename=3-iconoclastic_yoga-reply.gpg]
+      Content-Length: ['1116']
+      Content-Type: [application/pgp-encrypted]
+      Date: ['Wed, 22 Aug 2018 08:57:28 GMT']
+      Etag: ['"sha256:64ec96de6ec4d1900e66b32583d5c8954d392cd2b3632acb2ded857d904917f7"']
+      Expires: ['Wed, 22 Aug 2018 20:57:28 GMT']
+      Last-Modified: ['Wed, 22 Aug 2018 08:54:01 GMT']
+      Server: [Werkzeug/0.12.2 Python/2.7.6]
+      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiV2VkLCAyMiBBdWcgMjAxOCAxMDo1NzoyOCBHTVQifX0.Dl62-A.jd5Kl_FcmI-R8d3OgLcuwByh5mk;
+          HttpOnly; Path=/]
+    status: {code: 200, message: OK}
+version: 1
