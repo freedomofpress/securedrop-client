@@ -1,8 +1,8 @@
 import requests
 import furl
-import securedrop_proxy.util as util
 import tempfile
 import json
+import werkzeug
 
 class Req:
 
@@ -10,14 +10,14 @@ class Req:
         self.method = ''
         self.path_query = ''
         self.body = None
-        self.headers = None
+        self.headers = {}
 
 class Response:
 
     def __init__(self, status):
         self.status = status
         self.body = None
-        self.headers = None
+        self.headers = {}
         self.version = "0.1.1"
 
 class Proxy:
@@ -103,13 +103,13 @@ class Proxy:
 
         res.headers = self._presp.headers
 
-        self.on_save(fh, res)
+        self.on_save(fh, res, self.conf)
 
         self.res = res
 
     def handle_response(self):
 
-        ctype = util.parse_options_header(self._presp.headers['content-type'])
+        ctype = werkzeug.http.parse_options_header(self._presp.headers['content-type'])
 
         if ctype[0] == "application/json":
             self.handle_json_response()
@@ -118,7 +118,7 @@ class Proxy:
 
         # headers is a Requests class which doesn't JSON serialize.
         # coerce it into a normal dict so it will
-        self.res.headers = self.res.headers.__dict__
+        self.res.headers = dict(self.res.headers)
 
     def proxy(self):
 
