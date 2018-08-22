@@ -51,6 +51,10 @@ mode, the file is not moved off the VM, but is saved as a temporary
 file in `/tmp`. In both cases, the response written to STDOUT includes
 the name of the new file.
 
+#### tests
+
+Unit tests can be run with `make tests`
+
 #### running
 
 The following commands can be used to demonstrate the proxy.
@@ -71,3 +75,70 @@ invalid JSON. The proxy detects that, and prints an error message
 (still a valid proxy response).
 
     $ cat examples/bad.json | ./sd-proxy.py ./config-example.yaml
+
+#### Qubes integration
+
+Until we determine how we wish to package and install this script,
+demonstrating the proxy in a Qubes environment is a somewhat manual
+process.
+
+First, determine which of your VMs will be acting as the proxy VM
+(where this code will be running), and which will be acting as the
+client VM (where the client code will be running). For the purposes of
+this documentation, we assume the client is running in
+`securedrop-client`, and the proxy is running in `seuredrop-proxy`.
+
+Edit `qubes/securedrop.Proxy` to reflect the path to `entrypoint.sh`
+in this repo. Run `make install`, which will move `securedrop.Proxy`
+(the qubes-rpc "server path definition" file) into place in
+`/etc/qubes-rpc/`.
+
+On `dom0`, create the file `/etc/qubes-rpc/policy/securedrop.Proxy`
+with the contents:
+
+    securedrop-client securedrop-proxy allow
+    $anyvm $anyvm deny
+
+(replacing the VM names with the correct source and destination names
+for your environment)
+
+Also in `dom0`, edit `/etc/qubes-rpc/policy/qubes.Filecopy`, to add
+near the top:
+
+    securedrop-proxy securedrop-client allow
+
+(again replacing the VM names with the correct source and destination
+names for your environment). This allows non-JSON responses to be
+moved to the client VM using Qubes' native inter-VM file copy service.
+
+Copy `config-example.yaml` to `config.yaml`, and edit it to reflect
+your situation- check that `target_vm` is set to the correct client VM
+name, and assure that `dev` is `False`. This documentation assumes
+you've left `host` set to `jsonplaceholder.typicode.com`.
+
+Now on the client VM you should be able to do:
+
+    $ echo '{"method":"GET","path_query":"/posts?userId=1"}' | /usr/lib/qubes/qrexec-client-vm securedrop-client securedrop.Proxy
+
+You should see a successful JSON response as returned by the remote server.
+
+Try now
+
+    $ echo '{"method":"GET","path_query":""}' | /usr/lib/qubes/qrexec-client-vm securedrop-client securedrop.Proxy
+
+If you have configured everything correctly, you should see a JSON
+response which include a `body` which looks like:
+
+    { ...
+      "body": "{\"filename\": \"7463c589-92d2-46ba-845f-3ace2587916d\"}"
+    }
+
+If you look in `~/QubesIncoming/securedrop-proxy`, you should see a
+new file with that name. The content of that file will be the content
+returned by the remote server.
+
+Finally, try invoking an error. Provide an invalid JSON request, and
+notice you receive a `400` response from the proxy:
+
+    $ echo '[INVALID' | /usr/lib/qubes/qrexec-client-vm securedrop-client securedrop.Proxy
+    {"body": "{\"error\": \"Invalid JSON in request\"}", "version": "0.1.1", "status": 400, "headers": {"Content-Type": "application/json"}}
