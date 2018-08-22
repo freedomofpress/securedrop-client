@@ -134,7 +134,7 @@ class Source:
         self.number_of_documents = 0  # type: int
         self.number_of_messages = 0  # type: int
         self.remove_star_url = ""  # type: str
-        self.reply_url = ""  # type: str
+        self.replies_url = ""  # type: str
         self.submissions_url = ""  # type: str
         self.url = ""  # type: str
         self.uuid = ""  # type: str
@@ -155,7 +155,7 @@ class Source:
             "number_of_documents",
             "number_of_messages",
             "remove_star_url",
-            "reply_url",
+            "replies_url",
             "submissions_url",
             "url",
             "uuid",
@@ -595,7 +595,7 @@ class API:
         :param source: Source object we want to reply.
         :param msg: Encrypted message with Source's GPG public key.
         """
-        url = self.server.rstrip("/") + source.reply_url
+        url = self.server.rstrip("/") + source.replies_url
 
         reply = {"reply": msg}
 
