@@ -86,7 +86,7 @@ First, determine which of your VMs will be acting as the proxy VM
 (where this code will be running), and which will be acting as the
 client VM (where the client code will be running). For the purposes of
 this documentation, we assume the client is running in
-`securedrop-client`, and the proxy is running in `seuredrop-proxy`.
+`securedrop-client`, and the proxy is running in `securedrop-proxy`.
 
 Edit `qubes/securedrop.Proxy` to reflect the path to `entrypoint.sh`
 in this repo. Run `make install`, which will move `securedrop.Proxy`
