@@ -1,0 +1,103 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: [application/json]
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzNDk1OTkwNywiaWF0IjoxNTM0OTMxMTA3fQ.eyJpZCI6MX0.TjQEJeRQHVqKjP3dA9ueanBPY-hvAjx7FsWwEdNntj8]
+      Connection: [keep-alive]
+      Content-Type: [application/json]
+      User-Agent: [python-requests/2.19.1]
+    method: GET
+    uri: http://localhost:8081/api/v1/replies
+  response:
+    body: {string: "{\n  \"replies\": [\n    {\n      \"filename\": \"3-sensitive_clarion-reply.gpg\"\
+        , \n      \"is_deleted_by_source\": false, \n      \"journalist_username\"\
+        : \"journalist\", \n      \"journalist_uuid\": \"9f7d04ed-2439-49bc-8c9f-de872cff258d\"\
+        , \n      \"reply_url\": \"/api/v1/sources/b8a2a77a-edd2-44bf-aebd-a0377b51d8c0/replies/961d557e-544d-402f-bb00-b566e08fb354\"\
+        , \n      \"size\": 1116, \n      \"source_url\": \"/api/v1/sources/b8a2a77a-edd2-44bf-aebd-a0377b51d8c0\"\
+        , \n      \"uuid\": \"961d557e-544d-402f-bb00-b566e08fb354\"\n    }, \n  \
+        \  {\n      \"filename\": \"4-sensitive_clarion-reply.gpg\", \n      \"is_deleted_by_source\"\
+        : false, \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\"\
+        : \"9f7d04ed-2439-49bc-8c9f-de872cff258d\", \n      \"reply_url\": \"/api/v1/sources/b8a2a77a-edd2-44bf-aebd-a0377b51d8c0/replies/295bad24-351a-4c62-8d62-3f5da027d51c\"\
+        , \n      \"size\": 1116, \n      \"source_url\": \"/api/v1/sources/b8a2a77a-edd2-44bf-aebd-a0377b51d8c0\"\
+        , \n      \"uuid\": \"295bad24-351a-4c62-8d62-3f5da027d51c\"\n    }, \n  \
+        \  {\n      \"filename\": \"3-sensorineural_bran-reply.gpg\", \n      \"is_deleted_by_source\"\
+        : false, \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\"\
+        : \"9f7d04ed-2439-49bc-8c9f-de872cff258d\", \n      \"reply_url\": \"/api/v1/sources/1edcfd04-9379-47de-91ee-6a649c05793c/replies/11537477-56e8-4e65-aff9-1e57a6039540\"\
+        , \n      \"size\": 1116, \n      \"source_url\": \"/api/v1/sources/1edcfd04-9379-47de-91ee-6a649c05793c\"\
+        , \n      \"uuid\": \"11537477-56e8-4e65-aff9-1e57a6039540\"\n    }, \n  \
+        \  {\n      \"filename\": \"4-sensorineural_bran-reply.gpg\", \n      \"is_deleted_by_source\"\
+        : false, \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\"\
+        : \"9f7d04ed-2439-49bc-8c9f-de872cff258d\", \n      \"reply_url\": \"/api/v1/sources/1edcfd04-9379-47de-91ee-6a649c05793c/replies/8789dbaf-295c-4771-a1a4-87438aaa2239\"\
+        , \n      \"size\": 1116, \n      \"source_url\": \"/api/v1/sources/1edcfd04-9379-47de-91ee-6a649c05793c\"\
+        , \n      \"uuid\": \"8789dbaf-295c-4771-a1a4-87438aaa2239\"\n    }\n  ]\n\
+        }\n"}
+    headers:
+      Content-Length: ['1967']
+      Content-Type: [application/json]
+      Date: ['Wed, 22 Aug 2018 09:45:07 GMT']
+      Server: [Werkzeug/0.12.2 Python/2.7.6]
+      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiV2VkLCAyMiBBdWcgMjAxOCAxMTo0NTowNyBHTVQifX0.Dl7CIw.KuIsM6oBlTZcpDnb14o9NED_4Z0;
+          HttpOnly; Path=/]
+    status: {code: 200, message: OK}
+- request:
+    body: null
+    headers:
+      Accept: [application/json]
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzNDk1OTkwNywiaWF0IjoxNTM0OTMxMTA3fQ.eyJpZCI6MX0.TjQEJeRQHVqKjP3dA9ueanBPY-hvAjx7FsWwEdNntj8]
+      Connection: [keep-alive]
+      Content-Length: ['0']
+      Content-Type: [application/json]
+      User-Agent: [python-requests/2.19.1]
+    method: DELETE
+    uri: http://localhost:8081/api/v1/sources/b8a2a77a-edd2-44bf-aebd-a0377b51d8c0/replies/961d557e-544d-402f-bb00-b566e08fb354
+  response:
+    body: {string: "{\n  \"message\": \"Reply deleted\"\n}\n"}
+    headers:
+      Content-Length: ['33']
+      Content-Type: [application/json]
+      Date: ['Wed, 22 Aug 2018 09:45:07 GMT']
+      Server: [Werkzeug/0.12.2 Python/2.7.6]
+      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiV2VkLCAyMiBBdWcgMjAxOCAxMTo0NTowNyBHTVQifX0.Dl7CIw.KuIsM6oBlTZcpDnb14o9NED_4Z0;
+          HttpOnly; Path=/]
+    status: {code: 200, message: OK}
+- request:
+    body: null
+    headers:
+      Accept: [application/json]
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzNDk1OTkwNywiaWF0IjoxNTM0OTMxMTA3fQ.eyJpZCI6MX0.TjQEJeRQHVqKjP3dA9ueanBPY-hvAjx7FsWwEdNntj8]
+      Connection: [keep-alive]
+      Content-Type: [application/json]
+      User-Agent: [python-requests/2.19.1]
+    method: GET
+    uri: http://localhost:8081/api/v1/replies
+  response:
+    body: {string: "{\n  \"replies\": [\n    {\n      \"filename\": \"4-sensitive_clarion-reply.gpg\"\
+        , \n      \"is_deleted_by_source\": false, \n      \"journalist_username\"\
+        : \"journalist\", \n      \"journalist_uuid\": \"9f7d04ed-2439-49bc-8c9f-de872cff258d\"\
+        , \n      \"reply_url\": \"/api/v1/sources/b8a2a77a-edd2-44bf-aebd-a0377b51d8c0/replies/295bad24-351a-4c62-8d62-3f5da027d51c\"\
+        , \n      \"size\": 1116, \n      \"source_url\": \"/api/v1/sources/b8a2a77a-edd2-44bf-aebd-a0377b51d8c0\"\
+        , \n      \"uuid\": \"295bad24-351a-4c62-8d62-3f5da027d51c\"\n    }, \n  \
+        \  {\n      \"filename\": \"3-sensorineural_bran-reply.gpg\", \n      \"is_deleted_by_source\"\
+        : false, \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\"\
+        : \"9f7d04ed-2439-49bc-8c9f-de872cff258d\", \n      \"reply_url\": \"/api/v1/sources/1edcfd04-9379-47de-91ee-6a649c05793c/replies/11537477-56e8-4e65-aff9-1e57a6039540\"\
+        , \n      \"size\": 1116, \n      \"source_url\": \"/api/v1/sources/1edcfd04-9379-47de-91ee-6a649c05793c\"\
+        , \n      \"uuid\": \"11537477-56e8-4e65-aff9-1e57a6039540\"\n    }, \n  \
+        \  {\n      \"filename\": \"4-sensorineural_bran-reply.gpg\", \n      \"is_deleted_by_source\"\
+        : false, \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\"\
+        : \"9f7d04ed-2439-49bc-8c9f-de872cff258d\", \n      \"reply_url\": \"/api/v1/sources/1edcfd04-9379-47de-91ee-6a649c05793c/replies/8789dbaf-295c-4771-a1a4-87438aaa2239\"\
+        , \n      \"size\": 1116, \n      \"source_url\": \"/api/v1/sources/1edcfd04-9379-47de-91ee-6a649c05793c\"\
+        , \n      \"uuid\": \"8789dbaf-295c-4771-a1a4-87438aaa2239\"\n    }\n  ]\n\
+        }\n"}
+    headers:
+      Content-Length: ['1481']
+      Content-Type: [application/json]
+      Date: ['Wed, 22 Aug 2018 09:45:07 GMT']
+      Server: [Werkzeug/0.12.2 Python/2.7.6]
+      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiV2VkLCAyMiBBdWcgMjAxOCAxMTo0NTowNyBHTVQifX0.Dl7CIw.KuIsM6oBlTZcpDnb14o9NED_4Z0;
+          HttpOnly; Path=/]
+    status: {code: 200, message: OK}
+version: 1

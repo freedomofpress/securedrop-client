@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"one_time_code": "983893", "username": "journalist", "passphrase": "correct
+    body: '{"one_time_code": "393600", "username": "journalist", "passphrase": "correct
       horse battery staple profanity oil chewy"}'
     headers:
       Accept: ['*/*']
@@ -11,15 +11,15 @@ interactions:
     method: POST
     uri: http://localhost:8081/api/v1/token
   response:
-    body: {string: "{\n  \"expiration\": \"2018-08-02T02:37:04.264450Z\", \n  \"token\"\
-        : \"eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzMzE3NzQyNCwiaWF0IjoxNTMzMTQ4NjI0fQ.eyJpZCI6MX0.YEFvihaZz3E3kd-_55WWRGbNi9kl-v4Snse0yp65uZg\"\
+    body: {string: "{\n  \"expiration\": \"2018-08-22T14:50:25.227570Z\", \n  \"token\"\
+        : \"eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzNDk0OTQyNSwiaWF0IjoxNTM0OTIwNjI1fQ.eyJpZCI6MX0.E_kW0WVV8WctTdccjI29xM3MWqFEyQEC-aRXREkxWUc\"\
         \n}\n"}
     headers:
       Content-Length: ['188']
       Content-Type: [application/json]
-      Date: ['Wed, 01 Aug 2018 18:37:04 GMT']
+      Date: ['Wed, 22 Aug 2018 06:50:25 GMT']
       Server: [Werkzeug/0.12.2 Python/2.7.6]
-      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiV2VkLCAwMSBBdWcgMjAxOCAyMDozNzowMyBHTVQifX0.DkOPUA.aQBNUxR2p39fw2L1EMojJLOjxbs;
+      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiV2VkLCAyMiBBdWcgMjAxOCAwODo1MDoyNCBHTVQifX0.Dl6ZMQ.DBxiUGUc0tZq3pu_2_KVaCXRug8;
           HttpOnly; Path=/]
     status: {code: 200, message: OK}
 version: 1

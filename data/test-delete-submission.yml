@@ -2,97 +2,100 @@ interactions:
 - request:
     body: null
     headers:
-      Accept: ['*/*']
+      Accept: [application/json]
       Accept-Encoding: ['gzip, deflate']
-      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzMzE3NzQyNCwiaWF0IjoxNTMzMTQ4NjI0fQ.eyJpZCI6MX0.YEFvihaZz3E3kd-_55WWRGbNi9kl-v4Snse0yp65uZg]
+      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzNDk0OTE1MCwiaWF0IjoxNTM0OTIwMzUwfQ.eyJpZCI6MX0.gADcy0eDjFAvFap5f2hTbHQjeBMtMeMtdYspHokrV0U]
       Connection: [keep-alive]
+      Content-Type: [application/json]
       User-Agent: [python-requests/2.19.1]
     method: GET
     uri: http://localhost:8081/api/v1/submissions
   response:
-    body: {string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/69bbd6e9-52ec-41ae-b0a4-83843287ed2d/submissions/332be45e-794d-4c68-aa38-fe6e930b4c20/download\"\
-        , \n      \"filename\": \"1-disadvantageous_wildcatter-msg.gpg\", \n     \
-        \ \"is_read\": false, \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/69bbd6e9-52ec-41ae-b0a4-83843287ed2d\"\
-        , \n      \"submission_url\": \"/api/v1/sources/69bbd6e9-52ec-41ae-b0a4-83843287ed2d/submissions/332be45e-794d-4c68-aa38-fe6e930b4c20\"\
-        , \n      \"uuid\": \"332be45e-794d-4c68-aa38-fe6e930b4c20\"\n    }, \n  \
-        \  {\n      \"download_url\": \"/api/v1/sources/69bbd6e9-52ec-41ae-b0a4-83843287ed2d/submissions/9ad01000-9fd8-43da-888f-320ca02ccae8/download\"\
-        , \n      \"filename\": \"2-disadvantageous_wildcatter-msg.gpg\", \n     \
-        \ \"is_read\": false, \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/69bbd6e9-52ec-41ae-b0a4-83843287ed2d\"\
-        , \n      \"submission_url\": \"/api/v1/sources/69bbd6e9-52ec-41ae-b0a4-83843287ed2d/submissions/9ad01000-9fd8-43da-888f-320ca02ccae8\"\
-        , \n      \"uuid\": \"9ad01000-9fd8-43da-888f-320ca02ccae8\"\n    }, \n  \
-        \  {\n      \"download_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f/submissions/f5fd0c52-5a7c-4034-a43f-70a7e873e8df/download\"\
-        , \n      \"filename\": \"1-melodramatic_birthmark-msg.gpg\", \n      \"is_read\"\
-        : false, \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f\"\
-        , \n      \"submission_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f/submissions/f5fd0c52-5a7c-4034-a43f-70a7e873e8df\"\
-        , \n      \"uuid\": \"f5fd0c52-5a7c-4034-a43f-70a7e873e8df\"\n    }, \n  \
-        \  {\n      \"download_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f/submissions/bcda9366-22a9-43c7-9485-f31313e3047c/download\"\
-        , \n      \"filename\": \"2-melodramatic_birthmark-msg.gpg\", \n      \"is_read\"\
-        : false, \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f\"\
-        , \n      \"submission_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f/submissions/bcda9366-22a9-43c7-9485-f31313e3047c\"\
-        , \n      \"uuid\": \"bcda9366-22a9-43c7-9485-f31313e3047c\"\n    }\n  ]\n\
+    body: {string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/01db3a8d-da48-4f8f-a148-d0296984935b/submissions/49e25441-b455-4372-8272-f670bcd685f0/download\"\
+        , \n      \"filename\": \"1-outstretched_washbasin-msg.gpg\", \n      \"is_read\"\
+        : false, \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/01db3a8d-da48-4f8f-a148-d0296984935b\"\
+        , \n      \"submission_url\": \"/api/v1/sources/01db3a8d-da48-4f8f-a148-d0296984935b/submissions/49e25441-b455-4372-8272-f670bcd685f0\"\
+        , \n      \"uuid\": \"49e25441-b455-4372-8272-f670bcd685f0\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/01db3a8d-da48-4f8f-a148-d0296984935b/submissions/8660c146-338e-4cf1-871d-dd89230b533f/download\"\
+        , \n      \"filename\": \"2-outstretched_washbasin-msg.gpg\", \n      \"is_read\"\
+        : false, \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/01db3a8d-da48-4f8f-a148-d0296984935b\"\
+        , \n      \"submission_url\": \"/api/v1/sources/01db3a8d-da48-4f8f-a148-d0296984935b/submissions/8660c146-338e-4cf1-871d-dd89230b533f\"\
+        , \n      \"uuid\": \"8660c146-338e-4cf1-871d-dd89230b533f\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/f5dfbbb5-ed29-4d93-984b-1a982161c2fc/submissions/f9bb52ce-dd72-425d-a4f5-d902ebcfb3c0/download\"\
+        , \n      \"filename\": \"1-thrifty_lure-msg.gpg\", \n      \"is_read\": false,\
+        \ \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/f5dfbbb5-ed29-4d93-984b-1a982161c2fc\"\
+        , \n      \"submission_url\": \"/api/v1/sources/f5dfbbb5-ed29-4d93-984b-1a982161c2fc/submissions/f9bb52ce-dd72-425d-a4f5-d902ebcfb3c0\"\
+        , \n      \"uuid\": \"f9bb52ce-dd72-425d-a4f5-d902ebcfb3c0\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/f5dfbbb5-ed29-4d93-984b-1a982161c2fc/submissions/6ce92d10-d865-4a86-8a34-3e063a9264ca/download\"\
+        , \n      \"filename\": \"2-thrifty_lure-msg.gpg\", \n      \"is_read\": false,\
+        \ \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/f5dfbbb5-ed29-4d93-984b-1a982161c2fc\"\
+        , \n      \"submission_url\": \"/api/v1/sources/f5dfbbb5-ed29-4d93-984b-1a982161c2fc/submissions/6ce92d10-d865-4a86-8a34-3e063a9264ca\"\
+        , \n      \"uuid\": \"6ce92d10-d865-4a86-8a34-3e063a9264ca\"\n    }\n  ]\n\
         }\n"}
     headers:
-      Content-Length: ['2077']
+      Content-Length: ['2049']
       Content-Type: [application/json]
-      Date: ['Wed, 01 Aug 2018 19:07:49 GMT']
+      Date: ['Wed, 22 Aug 2018 06:45:51 GMT']
       Server: [Werkzeug/0.12.2 Python/2.7.6]
-      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiV2VkLCAwMSBBdWcgMjAxOCAyMTowNzo0OSBHTVQifX0.DkOWhQ.ADHqqekI351tuHZqPjLaoeqS8Hc;
+      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiV2VkLCAyMiBBdWcgMjAxOCAwODo0NTo1MSBHTVQifX0.Dl6YHw.4WsxwYmCtaVOkiwxh4wiVeWvZ7M;
           HttpOnly; Path=/]
     status: {code: 200, message: OK}
 - request:
     body: null
     headers:
-      Accept: ['*/*']
+      Accept: [application/json]
       Accept-Encoding: ['gzip, deflate']
-      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzMzE3NzQyNCwiaWF0IjoxNTMzMTQ4NjI0fQ.eyJpZCI6MX0.YEFvihaZz3E3kd-_55WWRGbNi9kl-v4Snse0yp65uZg]
+      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzNDk0OTE1MCwiaWF0IjoxNTM0OTIwMzUwfQ.eyJpZCI6MX0.gADcy0eDjFAvFap5f2hTbHQjeBMtMeMtdYspHokrV0U]
       Connection: [keep-alive]
       Content-Length: ['0']
+      Content-Type: [application/json]
       User-Agent: [python-requests/2.19.1]
     method: DELETE
-    uri: http://localhost:8081/api/v1/sources/69bbd6e9-52ec-41ae-b0a4-83843287ed2d/submissions/332be45e-794d-4c68-aa38-fe6e930b4c20
+    uri: http://localhost:8081/api/v1/sources/01db3a8d-da48-4f8f-a148-d0296984935b/submissions/49e25441-b455-4372-8272-f670bcd685f0
   response:
     body: {string: "{\n  \"message\": \"Submission deleted\"\n}\n"}
     headers:
       Content-Length: ['38']
       Content-Type: [application/json]
-      Date: ['Wed, 01 Aug 2018 19:07:49 GMT']
+      Date: ['Wed, 22 Aug 2018 06:45:51 GMT']
       Server: [Werkzeug/0.12.2 Python/2.7.6]
-      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiV2VkLCAwMSBBdWcgMjAxOCAyMTowNzo0OSBHTVQifX0.DkOWhQ.ADHqqekI351tuHZqPjLaoeqS8Hc;
+      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiV2VkLCAyMiBBdWcgMjAxOCAwODo0NTo1MSBHTVQifX0.Dl6YHw.4WsxwYmCtaVOkiwxh4wiVeWvZ7M;
           HttpOnly; Path=/]
     status: {code: 200, message: OK}
 - request:
     body: null
     headers:
-      Accept: ['*/*']
+      Accept: [application/json]
       Accept-Encoding: ['gzip, deflate']
-      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzMzE3NzQyNCwiaWF0IjoxNTMzMTQ4NjI0fQ.eyJpZCI6MX0.YEFvihaZz3E3kd-_55WWRGbNi9kl-v4Snse0yp65uZg]
+      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzNDk0OTE1MCwiaWF0IjoxNTM0OTIwMzUwfQ.eyJpZCI6MX0.gADcy0eDjFAvFap5f2hTbHQjeBMtMeMtdYspHokrV0U]
       Connection: [keep-alive]
+      Content-Type: [application/json]
       User-Agent: [python-requests/2.19.1]
     method: GET
     uri: http://localhost:8081/api/v1/submissions
   response:
-    body: {string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/69bbd6e9-52ec-41ae-b0a4-83843287ed2d/submissions/9ad01000-9fd8-43da-888f-320ca02ccae8/download\"\
-        , \n      \"filename\": \"2-disadvantageous_wildcatter-msg.gpg\", \n     \
-        \ \"is_read\": false, \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/69bbd6e9-52ec-41ae-b0a4-83843287ed2d\"\
-        , \n      \"submission_url\": \"/api/v1/sources/69bbd6e9-52ec-41ae-b0a4-83843287ed2d/submissions/9ad01000-9fd8-43da-888f-320ca02ccae8\"\
-        , \n      \"uuid\": \"9ad01000-9fd8-43da-888f-320ca02ccae8\"\n    }, \n  \
-        \  {\n      \"download_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f/submissions/f5fd0c52-5a7c-4034-a43f-70a7e873e8df/download\"\
-        , \n      \"filename\": \"1-melodramatic_birthmark-msg.gpg\", \n      \"is_read\"\
-        : false, \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f\"\
-        , \n      \"submission_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f/submissions/f5fd0c52-5a7c-4034-a43f-70a7e873e8df\"\
-        , \n      \"uuid\": \"f5fd0c52-5a7c-4034-a43f-70a7e873e8df\"\n    }, \n  \
-        \  {\n      \"download_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f/submissions/bcda9366-22a9-43c7-9485-f31313e3047c/download\"\
-        , \n      \"filename\": \"2-melodramatic_birthmark-msg.gpg\", \n      \"is_read\"\
-        : false, \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f\"\
-        , \n      \"submission_url\": \"/api/v1/sources/e977e42e-d4da-4153-abf3-0912c689253f/submissions/bcda9366-22a9-43c7-9485-f31313e3047c\"\
-        , \n      \"uuid\": \"bcda9366-22a9-43c7-9485-f31313e3047c\"\n    }\n  ]\n\
+    body: {string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/01db3a8d-da48-4f8f-a148-d0296984935b/submissions/8660c146-338e-4cf1-871d-dd89230b533f/download\"\
+        , \n      \"filename\": \"2-outstretched_washbasin-msg.gpg\", \n      \"is_read\"\
+        : false, \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/01db3a8d-da48-4f8f-a148-d0296984935b\"\
+        , \n      \"submission_url\": \"/api/v1/sources/01db3a8d-da48-4f8f-a148-d0296984935b/submissions/8660c146-338e-4cf1-871d-dd89230b533f\"\
+        , \n      \"uuid\": \"8660c146-338e-4cf1-871d-dd89230b533f\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/f5dfbbb5-ed29-4d93-984b-1a982161c2fc/submissions/f9bb52ce-dd72-425d-a4f5-d902ebcfb3c0/download\"\
+        , \n      \"filename\": \"1-thrifty_lure-msg.gpg\", \n      \"is_read\": false,\
+        \ \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/f5dfbbb5-ed29-4d93-984b-1a982161c2fc\"\
+        , \n      \"submission_url\": \"/api/v1/sources/f5dfbbb5-ed29-4d93-984b-1a982161c2fc/submissions/f9bb52ce-dd72-425d-a4f5-d902ebcfb3c0\"\
+        , \n      \"uuid\": \"f9bb52ce-dd72-425d-a4f5-d902ebcfb3c0\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/f5dfbbb5-ed29-4d93-984b-1a982161c2fc/submissions/6ce92d10-d865-4a86-8a34-3e063a9264ca/download\"\
+        , \n      \"filename\": \"2-thrifty_lure-msg.gpg\", \n      \"is_read\": false,\
+        \ \n      \"size\": 604, \n      \"source_url\": \"/api/v1/sources/f5dfbbb5-ed29-4d93-984b-1a982161c2fc\"\
+        , \n      \"submission_url\": \"/api/v1/sources/f5dfbbb5-ed29-4d93-984b-1a982161c2fc/submissions/6ce92d10-d865-4a86-8a34-3e063a9264ca\"\
+        , \n      \"uuid\": \"6ce92d10-d865-4a86-8a34-3e063a9264ca\"\n    }\n  ]\n\
         }\n"}
     headers:
-      Content-Length: ['1562']
+      Content-Length: ['1538']
       Content-Type: [application/json]
-      Date: ['Wed, 01 Aug 2018 19:07:49 GMT']
+      Date: ['Wed, 22 Aug 2018 06:45:51 GMT']
       Server: [Werkzeug/0.12.2 Python/2.7.6]
-      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiV2VkLCAwMSBBdWcgMjAxOCAyMTowNzo0OSBHTVQifX0.DkOWhQ.ADHqqekI351tuHZqPjLaoeqS8Hc;
+      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiV2VkLCAyMiBBdWcgMjAxOCAwODo0NTo1MSBHTVQifX0.Dl6YHw.4WsxwYmCtaVOkiwxh4wiVeWvZ7M;
           HttpOnly; Path=/]
     status: {code: 200, message: OK}
 version: 1

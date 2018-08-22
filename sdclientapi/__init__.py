@@ -52,6 +52,39 @@ class AttributeError(BaseError):
         return repr(self.msg)
 
 
+class Reply:
+    """
+    This class represents a reply to the source.
+    """
+
+    def __init__(self, **kwargs) -> None:
+        self.filename = ""  # type: str
+        self.journalist_username = ""  # type: str
+        self.is_deleted_by_source = False  # type: bool
+        self.reply_url = ""  # type: str
+        self.size = 0  # type: int
+        self.source_url = ""  # type: str
+        self.source_uuid = ""  # type: str
+        self.uuid = ""  # type: str
+
+        for key in [
+            "filename",
+            "journalist_username",
+            "is_deleted_by_source",
+            "reply_url",
+            "size",
+            "source_url",
+            "uuid",
+        ]:
+            if not key in kwargs:
+                AttributeError("Missing key {}".format(key))
+            setattr(self, key, kwargs[key])
+
+        # Now let us set source uuid
+        values = self.source_url.split("/")
+        self.source_uuid = values[-1]
+
+
 class Submission:
     """
     This class represents a submission object in the server.
@@ -101,7 +134,7 @@ class Source:
         self.number_of_documents = 0  # type: int
         self.number_of_messages = 0  # type: int
         self.remove_star_url = ""  # type: str
-        self.reply_url = ""  # type: str
+        self.replies_url = ""  # type: str
         self.submissions_url = ""  # type: str
         self.url = ""  # type: str
         self.uuid = ""  # type: str
@@ -122,7 +155,7 @@ class Source:
             "number_of_documents",
             "number_of_messages",
             "remove_star_url",
-            "reply_url",
+            "replies_url",
             "submissions_url",
             "url",
             "uuid",
@@ -562,7 +595,7 @@ class API:
         :param source: Source object we want to reply.
         :param msg: Encrypted message with Source's GPG public key.
         """
-        url = self.server.rstrip("/") + source.reply_url
+        url = self.server.rstrip("/") + source.replies_url
 
         reply = {"reply": msg}
 
@@ -580,6 +613,163 @@ class API:
             raise AuthError(data["error"])
 
         if "message" in data and data["message"] == "Your reply has been stored":
+            return True
+        # We should never reach here
+        return False
+
+    def get_replies_from_source(self, source: Source) -> List[Reply]:
+        """
+        This will return a list of replies associated with a source.
+
+        :param source: Source object containing only source's uuid value.
+        :returns: List of Reply objects.
+        """
+        url = self.server + "api/v1/sources/{}/replies".format(source.uuid)
+
+        try:
+            res = requests.get(url, headers=self.auth_header)
+
+            if res.status_code == 404:
+                raise WrongUUIDError("Missing source {}".format(source.uuid))
+
+            data = res.json()
+        except json.decoder.JSONDecodeError:
+            raise BaseError("Error in parsing JSON")
+
+        if "error" in data:
+            raise AuthError(data["error"])
+
+        result = []
+        for datum in data["replies"]:
+            reply = Reply(**datum)
+            result.append(reply)
+
+        return result
+
+    def get_reply_from_source(self, source: Source, reply_uuid: str) -> Reply:
+        """
+        This will return a single specific reply.
+
+        :param source: Source object.
+        :param reply_uuid: UUID of the reply.
+        :returns: A reply object
+        """
+        url = self.server + "api/v1/sources/{}/replies/{}".format(
+            source.uuid, reply_uuid
+        )
+
+        try:
+            res = requests.get(url, headers=self.auth_header)
+
+            if res.status_code == 404:
+                raise WrongUUIDError("Missing source {}".format(source.uuid))
+
+            data = res.json()
+        except json.decoder.JSONDecodeError:
+            raise BaseError("Error in parsing JSON")
+
+        if "error" in data:
+            raise AuthError(data["error"])
+
+        reply = Reply(**data)
+
+        return reply
+
+    def get_all_replies(self) -> List[Reply]:
+        """
+        This will return a list of all replies from the server.
+
+        :returns: List of Reply objects.
+        """
+        url = self.server + "api/v1/replies"
+
+        try:
+            res = requests.get(url, headers=self.auth_header)
+
+            data = res.json()
+        except json.decoder.JSONDecodeError:
+            raise BaseError("Error in parsing JSON")
+
+        if "error" in data:
+            raise AuthError(data["error"])
+
+        result = []
+        for datum in data["replies"]:
+            reply = Reply(**datum)
+            result.append(reply)
+
+        return result
+
+    def download_reply(self, reply: Reply, path: str) -> Tuple[str, str]:
+        """
+        Returns a tuple of sha256sum and file path for a given Reply object. This method
+        also requires a directory path in where it will save the reply file.
+
+        :param reply: Reply object
+        :param path: Local directory path to save the reply
+
+        :returns: Tuple of sha256sum and path of the saved Reply.
+        """
+        url = self.server.rstrip("/") + reply.reply_url + "/download"
+
+        if os.path.exists(path) and not os.path.isdir(path):
+            raise BaseError("Please provide a valid directory to save.")
+
+        try:
+            res = requests.get(url, headers=self.auth_header, stream=True)
+
+            if res.status_code == 404:
+                raise WrongUUIDError("Missing reply {}".format(reply.uuid))
+
+            # Get the headers
+            headers = res.headers
+            etag = headers["Etag"]
+
+            # This is where we will save our downloaded file
+            filepath = os.path.join(path, reply.filename)
+            with open(filepath, "wb") as fobj:
+                for chunk in res.iter_content(
+                    chunk_size=1024
+                ):  # Getting 1024 in each chunk
+                    if chunk:
+                        fobj.write(chunk)
+
+            # Because etag comes as JSON encoded string
+            etag = json.loads(etag)
+            # Return the tuple of sha256sum, filepath
+            return etag[7:], filepath
+        except Exception as err:
+            raise BaseError(err)
+
+    def delete_reply(self, reply: Reply) -> bool:
+        """
+        Deletes a given Reply object from the server.
+
+        :param reply: The Reply object we want to delete in the server.
+        :returns: True if successful, raises Error otherwise.
+        """
+        # Not using direct URL because this helps to use the same method
+        # from local reply (not fetched from server) objects.
+        # See the *from_string for an example.
+        source_uuid = reply.source_url.split("/")[-1]
+        url = self.server.rstrip("/") + "/api/v1/sources/{}/replies/{}".format(
+            source_uuid, reply.uuid
+        )
+
+        try:
+            res = requests.delete(url, headers=self.auth_header)
+
+            if res.status_code == 404:
+                raise WrongUUIDError("Missing reply {}".format(reply.uuid))
+
+            data = res.json()
+        except json.decoder.JSONDecodeError:
+            raise BaseError("Error in parsing JSON")
+
+        if "error" in data:
+            raise AuthError(data["error"])
+
+        if "message" in data and data["message"] == "Reply deleted":
             return True
         # We should never reach here
         return False
