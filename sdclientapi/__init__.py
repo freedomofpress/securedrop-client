@@ -740,3 +740,36 @@ class API:
             return etag[7:], filepath
         except Exception as err:
             raise BaseError(err)
+
+    def delete_reply(self, reply: Reply) -> bool:
+        """
+        Deletes a given Reply object from the server.
+
+        :param reply: The Reply object we want to delete in the server.
+        :returns: True if successful, raises Error otherwise.
+        """
+        # Not using direct URL because this helps to use the same method
+        # from local reply (not fetched from server) objects.
+        # See the *from_string for an example.
+        source_uuid = reply.source_url.split("/")[-1]
+        url = self.server.rstrip("/") + "/api/v1/sources/{}/replies/{}".format(
+            source_uuid, reply.uuid
+        )
+
+        try:
+            res = requests.delete(url, headers=self.auth_header)
+
+            if res.status_code == 404:
+                raise WrongUUIDError("Missing reply {}".format(reply.uuid))
+
+            data = res.json()
+        except json.decoder.JSONDecodeError:
+            raise BaseError("Error in parsing JSON")
+
+        if "error" in data:
+            raise AuthError(data["error"])
+
+        if "message" in data and data["message"] == "Reply deleted":
+            return True
+        # We should never reach here
+        return False

@@ -266,3 +266,12 @@ class TestAPI(unittest.TestCase):
 
         # Let us remove the temporary directory
         shutil.rmtree(tmpdir)
+
+    @vcr.use_cassette("data/test-delete-reply.yml")
+    def test_delete_reply(self):
+        r = self.api.get_all_replies()[0]
+
+        self.assertTrue(self.api.delete_reply(r))
+
+        # We deleted one, so there must be 3 replies left
+        self.assertEqual(len(self.api.get_all_replies()), 3)
