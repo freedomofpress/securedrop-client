@@ -4,10 +4,6 @@ import json
 import requests
 
 from typing import Optional, Dict, List, Tuple
-from mypy_extensions import TypedDict
-
-T_token = TypedDict("T_token", {"expiration": str, "token": str})
-T_user = TypedDict("T_user", {"is_admin": bool, "last_login": str, "username": str})
 
 
 class BaseError(Exception):
@@ -185,7 +181,7 @@ class API:
         self.username = username  # type: str
         self.passphrase = passphrase  # type: str
         self.totp = totp  # type: str
-        self.token = {"token": "", "expiration": ""}  # type: T_token
+        self.token = {"token": "", "expiration": ""}
         self.auth_header = {"Authorization": ""}  # type: Dict
 
     def authenticate(self) -> bool:
@@ -202,7 +198,7 @@ class API:
 
         token = requests.post(self.server + "api/v1/token", data=json.dumps(user_data))
         try:
-            token_data = token.json()  # type: T_token
+            token_data = token.json()
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
         if not "expiration" in token_data:
@@ -562,7 +558,7 @@ class API:
 
         return True
 
-    def get_current_user(self) -> T_user:
+    def get_current_user(self):
         """
         Returns a dictionary of the current user data.
 
