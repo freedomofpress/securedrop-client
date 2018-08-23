@@ -11,10 +11,6 @@ from sqlalchemy.orm import relationship, backref
 # TODO: Store this in config file, see issue #2
 DB_PATH = os.path.abspath('svs.sqlite')
 
-if not os.path.exists(DB_PATH):
-    sqlite3.connect(DB_PATH)
-    subprocess.check_output('alembic upgrade head'.split())
-
 engine = create_engine('sqlite:///{}'.format(DB_PATH))
 Base = declarative_base()
 
