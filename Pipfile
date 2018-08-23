@@ -8,10 +8,9 @@ python_version = "3.5"
 
 [dev-packages]
 vcrpy = "*"
-
-[packages]
-requests = "*"
-mypy-extensions = "*"
 mypy = "*"
 pyotp = "*"
 sphinx = "*"
+
+[packages]
+requests = "*"

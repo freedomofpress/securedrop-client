@@ -251,7 +251,6 @@ class TestAPI(unittest.TestCase):
     def test_download_reply(self):
         r = self.api.get_all_replies()[0]
 
-
         # We need a temporary directory to download
         tmpdir = tempfile.mkdtemp()
         etag, filepath = self.api.download_reply(r, tmpdir)
@@ -262,7 +261,6 @@ class TestAPI(unittest.TestCase):
 
         shasum = hashlib.sha256(data).hexdigest()
         self.assertEqual(etag, shasum)
-
 
         # Let us remove the temporary directory
         shutil.rmtree(tmpdir)
