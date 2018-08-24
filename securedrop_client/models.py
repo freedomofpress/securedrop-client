@@ -1,6 +1,4 @@
 import os
-import sqlite3
-import subprocess
 
 from sqlalchemy import (Boolean, Column, create_engine, DateTime, ForeignKey,
                         Integer, String)
