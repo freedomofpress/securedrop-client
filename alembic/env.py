@@ -3,7 +3,7 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 from logging.config import fileConfig
 import sys
-import os
+from os import path
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -15,7 +15,7 @@ fileConfig(config.config_file_name)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-sys.path.append(os.getcwd())
+sys.path.insert(0, path.realpath(path.join(path.dirname(__file__), '..')))
 from securedrop_client.models import Base  # noqa
 target_metadata = Base.metadata
 
