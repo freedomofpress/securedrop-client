@@ -53,7 +53,7 @@ the name of the new file.
 
 #### tests
 
-Unit tests can be run with `make tests`
+Unit tests can be run with `make test`
 
 #### running
 
@@ -89,7 +89,8 @@ this documentation, we assume the client is running in
 `securedrop-client`, and the proxy is running in `securedrop-proxy`.
 
 Edit `qubes/securedrop.Proxy` to reflect the path to `entrypoint.sh`
-in this repo. Run `make install`, which will move `securedrop.Proxy`
+in this repo. Also edit the directory to this repo code in `entrypoint.sh`.
+Next, run `make install`, which will move `securedrop.Proxy`
 (the qubes-rpc "server path definition" file) into place in
 `/etc/qubes-rpc/`.
 
@@ -116,15 +117,15 @@ your situation- check that `target_vm` is set to the correct client VM
 name, and assure that `dev` is `False`. This documentation assumes
 you've left `host` set to `jsonplaceholder.typicode.com`.
 
-Now on the client VM you should be able to do:
+Now on the client VM you should be able to do (again replacing `securedrop-proxy` with the name of your proxy AppVM):
 
-    $ echo '{"method":"GET","path_query":"/posts?userId=1"}' | /usr/lib/qubes/qrexec-client-vm securedrop-client securedrop.Proxy
+    $ echo '{"method":"GET","path_query":"/posts?userId=1"}' | /usr/lib/qubes/qrexec-client-vm securedrop-proxy securedrop.Proxy
 
 You should see a successful JSON response as returned by the remote server.
 
 Try now
 
-    $ echo '{"method":"GET","path_query":""}' | /usr/lib/qubes/qrexec-client-vm securedrop-client securedrop.Proxy
+    $ echo '{"method":"GET","path_query":""}' | /usr/lib/qubes/qrexec-client-vm securedrop-proxy securedrop.Proxy
 
 If you have configured everything correctly, you should see a JSON
 response which include a `body` which looks like:
@@ -140,5 +141,5 @@ returned by the remote server.
 Finally, try invoking an error. Provide an invalid JSON request, and
 notice you receive a `400` response from the proxy:
 
-    $ echo '[INVALID' | /usr/lib/qubes/qrexec-client-vm securedrop-client securedrop.Proxy
+    $ echo '[INVALID' | /usr/lib/qubes/qrexec-client-vm securedrop-proxy securedrop.Proxy
     {"body": "{\"error\": \"Invalid JSON in request\"}", "version": "0.1.1", "status": 400, "headers": {"Content-Type": "application/json"}}
