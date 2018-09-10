@@ -25,7 +25,7 @@ def upgrade():
         sa.Column('journalist_designation', sa.String(length=255),
                   nullable=False),
         sa.Column('is_flagged', sa.Boolean(), nullable=True),
-        sa.Column('public_key', sa.String(length=10000), nullable=True),
+        sa.Column('public_key', sa.Text(), nullable=True),
         sa.Column('interaction_count', sa.Integer(), nullable=False),
         sa.Column('is_starred', sa.Boolean(), nullable=True),
         sa.Column('last_updated', sa.DateTime(), nullable=True),
