@@ -18,10 +18,10 @@ class Source(Base):
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
     journalist_designation = Column(String(255), nullable=False)
-    is_flagged = Column(Boolean, default=False)
+    is_flagged = Column(Boolean, server_default="false")
     public_key = Column(Text, nullable=True)
-    interaction_count = Column(Integer, default=0, nullable=False)
-    is_starred = Column(Boolean, default=False)
+    interaction_count = Column(Integer, server_default="0", nullable=False)
+    is_starred = Column(Boolean, server_default="false")
     last_updated = Column(DateTime)
 
     def __init__(self, uuid, journalist_designation):
