@@ -89,6 +89,7 @@ class Reply(Base):
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
+    uuid = Column(Integer, nullable=False, unique=True)
     username = Column(String(255), nullable=False, unique=True)
 
     def __init__(self, username):
