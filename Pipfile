@@ -5,3 +5,6 @@ alembic = "*"
 [dev-packages]
 pytest = "*"
 pip-tools = "*"
+coverage = "*"
+pytest-cov = "*"
+pytest-random-order = "*"

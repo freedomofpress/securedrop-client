@@ -1,0 +1,2 @@
+[run]
+omit = securedrop_client/__init__.py
