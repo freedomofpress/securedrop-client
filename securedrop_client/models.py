@@ -24,12 +24,18 @@ class Source(Base):
     is_starred = Column(Boolean, server_default="false")
     last_updated = Column(DateTime)
 
-    def __init__(self, uuid, journalist_designation):
+    def __init__(self, uuid, journalist_designation, is_flagged, public_key,
+                 interaction_count, is_starred, last_updated):
         self.uuid = uuid
         self.journalist_designation = journalist_designation
+        self.is_flagged = is_flagged
+        self.public_key = public_key
+        self.interaction_count = interaction_count
+        self.is_starred = is_starred
+        self.last_updated = last_updated
 
     def __repr__(self):
-        return '<Source %r>' % (self.journalist_designation)
+        return f'<Source {self.journalist_designation}>'
 
 
 class Submission(Base):
@@ -57,7 +63,7 @@ class Submission(Base):
         self.filename = filename
 
     def __repr__(self):
-        return '<Submission %r>' % (self.filename)
+        return f'<Submission {self.filename}>'
 
 
 class Reply(Base):
@@ -83,7 +89,7 @@ class Reply(Base):
         self.size = size
 
     def __repr__(self):
-        return '<Reply %r>' % (self.filename)
+        return f'<Reply {self.filename}>'
 
 
 class User(Base):
@@ -96,4 +102,4 @@ class User(Base):
         self.username = username
 
     def __repr__(self):
-        return "<Journalist: {}".format(self.username)
+        return "<Journalist: {}>".format(self.username)
