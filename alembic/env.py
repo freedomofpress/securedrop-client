@@ -2,6 +2,8 @@ from __future__ import with_statement
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 from logging.config import fileConfig
+import sys
+from os import path
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -13,7 +15,8 @@ fileConfig(config.config_file_name)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from securedrop_client.models import Base
+sys.path.insert(0, path.realpath(path.join(path.dirname(__file__), '..')))
+from securedrop_client.models import Base  # noqa
 target_metadata = Base.metadata
 
 
@@ -57,6 +60,7 @@ def run_migrations_online():
 
         with context.begin_transaction():
             context.run_migrations()
+
 
 if context.is_offline_mode():
     run_migrations_offline()
