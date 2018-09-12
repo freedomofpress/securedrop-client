@@ -1,3 +1,11 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[requires]
+python_version = "3.5"
+
 [packages]
 SQLALchemy = "*"
 alembic = "*"
@@ -8,3 +16,4 @@ pip-tools = "*"
 coverage = "*"
 pytest-cov = "*"
 pytest-random-order = "*"
+flake8 = "*"
