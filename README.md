@@ -15,7 +15,7 @@ pipenv shell
 ## Run tests
 
 ```
-pytest -v
+make test
 ```
 
 ## Generate and run database migrations
