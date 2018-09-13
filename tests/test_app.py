@@ -26,10 +26,13 @@ def test_configure_logging():
     Ensure logging directory is created and logging is configured in the
     expected (rotating logs) manner.
     """
-    with mock.patch('securedrop_client.app.TimedRotatingFileHandler') as log_conf, \
-            mock.patch('securedrop_client.app.os.path.exists', return_value=False),\
+    with mock.patch('securedrop_client.app.TimedRotatingFileHandler') as \
+            log_conf, \
+            mock.patch('securedrop_client.app.os.path.exists',
+                       return_value=False),\
             mock.patch('securedrop_client.app.logging') as logging, \
-            mock.patch('securedrop_client.app.os.makedirs', return_value=None) as mkdir:
+            mock.patch('securedrop_client.app.os.makedirs',
+                       return_value=None) as mkdir:
         configure_logging()
         mkdir.assert_called_once_with(LOG_DIR)
         log_conf.assert_called_once_with(LOG_FILE, when='midnight',

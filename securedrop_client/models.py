@@ -46,10 +46,9 @@ class Submission(Base):
     is_read = Column(Boolean, default=False)
 
     source_id = Column(Integer, ForeignKey('sources.id'))
-    source = relationship(
-        "Source",
-        backref=backref("submissions", order_by=id, cascade="delete")
-        )
+    source = relationship("Source",
+                          backref=backref("submissions", order_by=id,
+                                          cascade="delete"))
 
     def __init__(self, source, uuid, filename):
         self.source_id = source.id
@@ -64,10 +63,9 @@ class Reply(Base):
     __tablename__ = 'replies'
     id = Column(Integer, primary_key=True)
     source_id = Column(Integer, ForeignKey('sources.id'))
-    source = relationship(
-        "Source",
-        backref=backref("replies", order_by=id, cascade="delete")
-        )
+    source = relationship("Source",
+                          backref=backref("replies", order_by=id,
+                                          cascade="delete"))
 
     journalist_id = Column(Integer, ForeignKey('users.id'))
     journalist = relationship(

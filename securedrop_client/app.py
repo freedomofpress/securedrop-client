@@ -65,7 +65,7 @@ def configure_logging():
 
 def run():
     """
-    Create all the top-level assets for the application, set things up and 
+    Create all the top-level assets for the application, set things up and
     run the application. Specific tasks include:
 
     - set up logging.
