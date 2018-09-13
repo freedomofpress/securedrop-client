@@ -35,7 +35,7 @@ class Source(Base):
         self.last_updated = last_updated
 
     def __repr__(self):
-        return f'<Source {self.journalist_designation}>'
+        return '<Source {}>'.format(self.journalist_designation)
 
 
 class Submission(Base):
@@ -62,7 +62,7 @@ class Submission(Base):
         self.filename = filename
 
     def __repr__(self):
-        return f'<Submission {self.filename}>'
+        return '<Submission {}>'.format(self.filename)
 
 
 class Reply(Base):
@@ -87,7 +87,7 @@ class Reply(Base):
         self.size = size
 
     def __repr__(self):
-        return f'<Reply {self.filename}>'
+        return '<Reply {}>'.format(self.filename)
 
 
 class User(Base):

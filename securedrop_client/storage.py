@@ -27,59 +27,105 @@ from securedrop_client.models import Source, Submission
 logger = logging.getLogger(__name__)
 
 
-def sync_sources(api, session):
+def sync_with_api(api, session):
     """
-    Gets all sources from the remote server's API and ensure the local database
-    session updates as follows:
-
-    * Existing sources are updated in the local database.
-    * New sources have an entry in the local database.
-    * Local sources not returned by the remote server are deleted from the
-      local database.
+    Synchronises sources and submissions from the remote server's API.
     """
+    remote_submissions = []
     try:
         remote_sources = api.get_sources()
+        for source in remote_sources:
+            remote_submissions.extend(api.get_submissions(source))
     except Exception as ex:
         # Log any errors but allow the caller to handle the exception.
         logger.error(ex)
         raise(ex)
-    logger.info('Fetched {} remote sources.'.format(len(remote_sources)))
+    logger.info('Fetched {} remote sources and {} remote submissions.'.format(
+                len(remote_sources), len(remote_submissions)))
     local_sources = session.query(Source)
+    local_submissions = session.query(Submission)
+    update_sources(remote_sources, local_sources, session)
+    update_submissions(remote_submissions, local_submissions, session)
+
+
+def update_sources(remote_sources, local_sources, session):
+    """
+    Given collections of remote sources, the current local sources and a
+    session to the local database, ensure the state of the local database
+    matches that of the remote sources:
+
+    * Existing items are updated in the local database.
+    * New items are created in the local database.
+    * Local items not returned in the remote sources are deleted from the
+      local database.
+    """
     local_uuids = {source.uuid for source in local_sources}
     for source in remote_sources:
         if source.uuid in local_uuids:
             # Update an existing record.
-            existing_source = [s for s in local_sources if s.uuid==source.uuid][0]
-            existing_source.journalist_designation = source.journalist_designation
-            existing_source.is_flagged = source.is_flagged
-            existing_source.public_key = source.key
-            existing_source.interaction_count = source.interaction_count
-            existing_source.is_starred = source.is_starred
-            existing_source.last_updated = parse(source.last_updated)
+            local_source = [s for s in local_sources
+                            if s.uuid == source.uuid][0]
+            local_source.journalist_designation = source.journalist_designation
+            local_source.is_flagged = source.is_flagged
+            local_source.public_key = source.key
+            local_source.interaction_count = source.interaction_count
+            local_source.is_starred = source.is_starred
+            local_source.last_updated = parse(source.last_updated)
             # Removing the UUID from local_uuids ensures this record won't be
             # deleted at the end of this function.
             local_uuids.remove(source.uuid)
-            logger.info(f'Updated source {source.uuid}')
+            logger.info('Updated source {}'.format(source.uuid))
         else:
             # A new source to be added to the database.
-            new_source = Source(uuid=source.uuid,
-                                journalist_designation=source.journalist_designation,
-                                is_flagged=source.is_flagged,
-                                public_key=source.key,
-                                interaction_count=source.interaction_count,
-                                is_starred=source.is_starred,
-                                last_updated=parse(source.last_updated))
-            session.add(new_source)
-            logger.info(f'Added new source {source.uuid}')
+            ns = Source(uuid=source.uuid,
+                        journalist_designation=source.journalist_designation,
+                        is_flagged=source.is_flagged,
+                        public_key=source.key,
+                        interaction_count=source.interaction_count,
+                        is_starred=source.is_starred,
+                        last_updated=parse(source.last_updated))
+            session.add(ns)
+            logger.info('Added new source {}'.format(source.uuid))
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
     for deleted_source in [s for s in local_sources if s.uuid in local_uuids]:
         session.delete(deleted_source)
-        logger.info('Deleted source {deleted_source.uuid}')
+        logger.info('Deleted source {}'.format(deleted_source.uuid))
     session.commit()
 
 
-def sync_submissions(api, session):
+def update_submissions(remote_submissions, local_submissions, session):
     """
+    * Existing submissions are updated in the local database.
+    * New submissions have an entry created in the local database.
+    * Local submissions not returned in the remote submissions are deleted
+      from the local database.
     """
-    pass
+    local_uuids = {submission.uuid for submission in local_submissions}
+    for submission in remote_submissions:
+        if submission.uuid in local_uuids:
+            # Update an existing record.
+            local_submission = [s for s in local_submissions
+                                if s.uuid == submission.uuid][0]
+            local_submission.filename = submission.filename
+            local_submission.size = submission.size
+            local_submission.is_read = submission.is_read
+            # Removing the UUID from local_uuids ensures this record won't be
+            # deleted at the end of this function.
+            local_uuids.remove(submission.uuid)
+            logger.info('Updated submission {}'.format(submission.uuid))
+        else:
+            # A new submission to be added to the database.
+            source_uuid = submission.source_url.rsplit('/', 1)[1]
+            source = session.query(Source).filter_by(uuid=source_uuid)[0]
+            ns = Submission(source=source, uuid=submission.uuid,
+                            filename=submission.filename)
+            session.add(ns)
+            logger.info('Added new submission {}'.format(submission.uuid))
+    # The uuids remaining in local_uuids do not exist on the remote server, so
+    # delete the related records.
+    for deleted_submission in [s for s in local_submissions
+                               if s.uuid in local_uuids]:
+        session.delete(deleted_submission)
+        logger.info('Deleted submission {}'.format(deleted_submission.uuid))
+    session.commit()
