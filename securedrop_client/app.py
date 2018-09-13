@@ -76,4 +76,4 @@ def run():
     - create a window for the app.
     """
     configure_logging()
-    logging.info(f'Starting SecureDrop Client {__version__}')
+    logging.info('Starting SecureDrop Client {}'.format(__version__))
