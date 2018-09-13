@@ -65,7 +65,7 @@ def configure_logging():
 
 def run():
     """
-    Create all the top-level assets for the application, set things up and 
+    Create all the top-level assets for the application, set things up and
     run the application. Specific tasks include:
 
     - set up logging.
@@ -76,4 +76,4 @@ def run():
     - create a window for the app.
     """
     configure_logging()
-    logging.info(f'Starting SecureDrop Client {__version__}')
+    logging.info('Starting SecureDrop Client {}'.format(__version__))
