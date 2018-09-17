@@ -27,5 +27,5 @@ def test_string_representation_of_reply():
                     is_flagged=False, public_key='test', interaction_count=1,
                     is_starred=False, last_updated='test')
     reply = Reply(source=source, journalist=user, filename="reply.gpg",
-                  size=1234)
+                  size=1234, uuid='test')
     reply.__repr__()

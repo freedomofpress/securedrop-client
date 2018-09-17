@@ -68,6 +68,7 @@ class Submission(Base):
 class Reply(Base):
     __tablename__ = 'replies'
     id = Column(Integer, primary_key=True)
+    uuid = Column(String(36), unique=True, nullable=False)
     source_id = Column(Integer, ForeignKey('sources.id'))
     source = relationship("Source",
                           backref=backref("replies", order_by=id,
@@ -80,7 +81,8 @@ class Reply(Base):
     filename = Column(String(255), nullable=False)
     size = Column(Integer, nullable=False)
 
-    def __init__(self, journalist, source, filename, size):
+    def __init__(self, uuid, journalist, source, filename, size):
+        self.uuid = uuid
         self.journalist_id = journalist.id
         self.source_id = source.id
         self.filename = filename
@@ -93,7 +95,6 @@ class Reply(Base):
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
-    uuid = Column(Integer, nullable=False, unique=True)
     username = Column(String(255), nullable=False, unique=True)
 
     def __init__(self, username):

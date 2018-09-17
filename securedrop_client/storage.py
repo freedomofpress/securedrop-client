@@ -1,8 +1,8 @@
 """
-Functions needed to synchronise sources and submissions with the SecureDrop
-server (via the securedrop_sdk). Each function requires but two arguments: an
-authenticated instance of the securedrop_sdk API class, and a SQLAlchemy
-session to the local database.
+Functions needed to synchronise data with the SecureDrop server (via the
+securedrop_sdk). Each function requires but two arguments: an authenticated
+instance of the securedrop_sdk API class, and a SQLAlchemy session to the local
+database.
 
 Copyright (C) 2018  The Freedom of the Press Foundation.
 
@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 from dateutil.parser import parse
-from securedrop_client.models import Source, Submission
+from securedrop_client.models import Source, Submission, Reply, User
 
 
 logger = logging.getLogger(__name__)
@@ -36,16 +36,21 @@ def sync_with_api(api, session):
         remote_sources = api.get_sources()
         for source in remote_sources:
             remote_submissions.extend(api.get_submissions(source))
+        remote_replies = api.get_all_replies()
     except Exception as ex:
         # Log any errors but allow the caller to handle the exception.
         logger.error(ex)
         raise(ex)
-    logger.info('Fetched {} remote sources and {} remote submissions.'.format(
-                len(remote_sources), len(remote_submissions)))
+    logger.info('Fetched {} remote sources.'.format(len(remote_sources)))
+    logger.info('Fetched {} remote submissions.'.format(
+        len(remote_submissions)))
+    logger.info('Fetched {} remote replies.'.format(len(remote_replies)))
     local_sources = session.query(Source)
     local_submissions = session.query(Submission)
+    local_replies = session.query(Reply)
     update_sources(remote_sources, local_sources, session)
     update_submissions(remote_submissions, local_submissions, session)
+    update_replies(remote_replies, local_replies, session)
 
 
 def update_sources(remote_sources, local_sources, session):
@@ -116,7 +121,7 @@ def update_submissions(remote_submissions, local_submissions, session):
             logger.info('Updated submission {}'.format(submission.uuid))
         else:
             # A new submission to be added to the database.
-            source_uuid = submission.source_url.rsplit('/', 1)[1]
+            _, source_uuid = submission.source_url.rsplit('/', 1)
             source = session.query(Source).filter_by(uuid=source_uuid)[0]
             ns = Submission(source=source, uuid=submission.uuid,
                             filename=submission.filename)
@@ -129,3 +134,54 @@ def update_submissions(remote_submissions, local_submissions, session):
         session.delete(deleted_submission)
         logger.info('Deleted submission {}'.format(deleted_submission.uuid))
     session.commit()
+
+
+def update_replies(remote_replies, local_replies, session):
+    """
+    * Existing replies are updated in the local database.
+    * New replies have an entry created in the local database.
+    * Local replies not returned in the remote replies are deleted from the
+      local database.
+
+    If a reply references a new journalist username, add them to the database
+    as a new user.
+    """
+    local_uuids = {reply.uuid for reply in local_replies}
+    for reply in remote_replies:
+        if reply.uuid in local_uuids:
+            # Update an existing record.
+            local_reply = [r for r in local_replies if r.uuid == reply.uuid][0]
+            user = find_or_create_user(reply.journalist_username, session)
+            local_reply.journalist_id = user.id
+            local_reply.filename = reply.filename
+            local_reply.size = reply.size
+            local_uuids.remove(reply.uuid)
+            logger.info('Updated reply {}'.format(reply.uuid))
+        else:
+            # A new reply to be added to the database.
+            source_uuid = reply.source_uuid
+            source = session.query(Source).filter_by(uuid=source_uuid)[0]
+            user = find_or_create_user(reply.journalist_username, session)
+            nr = Reply(reply.uuid, user, source, reply.filename, reply.size)
+            session.add(nr)
+            logger.info('Added new reply {}'.format(reply.uuid))
+    # The uuids remaining in local_uuids do not exist on the remote server, so
+    # delete the related records.
+    for deleted_reply in [r for r in local_replies if r.uuid in local_uuids]:
+        session.delete(deleted_reply)
+        logger.info('Deleted reply {}'.format(deleted_reply.uuid))
+    session.commit()
+
+
+def find_or_create_user(username, session):
+    """
+    Returns a user object representing the referenced username. If the username
+    does not already exist in the data, a new instance is created.
+    """
+    user = session.query(User).filter_by(username=username)
+    if user:
+        return user[0]
+    new_user = User(username)
+    session.add(new_user)
+    session.commit()
+    return new_user

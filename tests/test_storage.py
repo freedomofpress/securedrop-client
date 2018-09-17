@@ -6,8 +6,9 @@ import uuid
 from dateutil.parser import parse
 from unittest import mock
 from securedrop_client.storage import (sync_with_api, update_sources,
-                                       update_submissions)
-from sdclientapi import Source, Submission
+                                       update_submissions, update_replies,
+                                       find_or_create_user)
+from sdclientapi import Source, Submission, Reply
 
 
 def make_remote_source():
@@ -36,6 +37,18 @@ def make_remote_submission(source_uuid):
                       uuid=str(uuid.uuid4()))
 
 
+def make_remote_reply(source_uuid, username='testymctestface'):
+    """
+    Utility function for generating sdclientapi Reply instances to act
+    upon in the following unit tests. The passed in source_uuid is used to
+    generate a valid URL.
+    """
+    source_url = '/api/v1/sources/{}'.format(source_uuid)
+    return Reply(filename='test.filename', journalist_username=username,
+                 is_deleted_by_source=False, reply_url='test', size=1234,
+                 source_url=source_url, uuid=str(uuid.uuid4()))
+
+
 def test_sync_with_api_handles_api_error():
     """
     Ensure any error encountered when accessing the API is logged but the
@@ -59,16 +72,23 @@ def test_sync_with_api():
     mock_api.get_sources.return_value = [source, ]
     submission = mock.MagicMock()
     mock_api.get_submissions.return_value = [submission, ]
+    reply = mock.MagicMock()
+    mock_api.get_all_replies.return_value = [reply, ]
     # Some local source and submission objects from the local database.
     mock_session = mock.MagicMock()
     local_source = mock.MagicMock()
     local_submission = mock.MagicMock()
-    mock_session.query.side_effect = [[local_source, ], [local_submission, ]]
+    local_replies = mock.MagicMock()
+    mock_session.query.side_effect = [[local_source, ], [local_submission, ],
+                                      [local_replies, ], ]
     with mock.patch('securedrop_client.storage.update_sources') as src_fn, \
+            mock.patch('securedrop_client.storage.update_replies') as rpl_fn, \
             mock.patch('securedrop_client.storage.update_submissions') \
             as sub_fn:
         sync_with_api(mock_api, mock_session)
         src_fn.assert_called_once_with([source, ], [local_source, ],
+                                       mock_session)
+        rpl_fn.assert_called_once_with([reply, ], [local_replies, ],
                                        mock_session)
         sub_fn.assert_called_once_with([submission, ], [local_submission, ],
                                        mock_session)
@@ -177,3 +197,88 @@ def test_update_submissions():
     mock_session.delete.assert_called_once_with(local_sub2)
     # Session is committed to database.
     assert mock_session.commit.call_count == 1
+
+
+def test_update_replies():
+    """
+    Check that:
+
+    * Existing replies are updated in the local database.
+    * New replies have an entry in the local database.
+    * Local replies not returned by the remote server are deleted from the
+      local database.
+    * References to journalist's usernames are correctly handled.
+    """
+    mock_session = mock.MagicMock()
+    # Source object related to the submissions.
+    source = mock.MagicMock()
+    source.uuid = str(uuid.uuid4())
+    # Some remote reply objects from the API, one of which will exist in the
+    # local database, the other will NOT exist in the local database
+    # (this will be added to the database)
+    reply_update = make_remote_reply(source.uuid)
+    reply_create = make_remote_reply(source.uuid, 'unknownuser')
+    remote_replies = [reply_update, reply_create]
+    # Some local reply objects. One already exists in the API results
+    # (this will be updated), one does NOT exist in the API results (this will
+    # be deleted from the local database).
+    local_reply1 = mock.MagicMock()
+    local_reply1.uuid = reply_update.uuid
+    local_reply2 = mock.MagicMock()
+    local_reply2.uuid = str(uuid.uuid4())
+    local_replies = [local_reply1, local_reply2]
+    # There needs to be a corresponding local_source and local_user
+    local_source = mock.MagicMock()
+    local_source.uuid = source.uuid
+    local_source.id = 666  # ;-)
+    local_user = mock.MagicMock()
+    local_user.username = reply_create.journalist_username
+    local_user.id = 42
+    mock_session.query().filter_by.side_effect = [[local_source, ],
+                                                  [local_user, ],
+                                                  [local_user, ], ]
+    mock_focu = mock.MagicMock(return_value=local_user)
+    with mock.patch('securedrop_client.storage.find_or_create_user',
+                    mock_focu):
+        update_replies(remote_replies, local_replies, mock_session)
+    # Check the expected local reply object has been updated with values
+    # from the API.
+    assert local_reply1.journalist_id == local_user.id
+    assert local_reply1.filename == reply_update.filename
+    assert local_reply1.size == reply_update.size
+    # Check the expected local source object has been created with values from
+    # the API.
+    assert mock_session.add.call_count == 1
+    new_reply = mock_session.add.call_args_list[0][0][0]
+    assert new_reply.uuid == reply_create.uuid
+    assert new_reply.source_id == local_source.id
+    assert new_reply.journalist_id == local_user.id
+    assert new_reply.size == reply_create.size
+    assert new_reply.filename == reply_create.filename
+    # Ensure the record for the local source that is missing from the results
+    # of the API is deleted.
+    mock_session.delete.assert_called_once_with(local_reply2)
+    # Session is committed to database.
+    assert mock_session.commit.call_count == 1
+
+
+def test_find_or_create_user_existing():
+    """
+    Return an existing user object.
+    """
+    mock_session = mock.MagicMock()
+    mock_user = mock.MagicMock()
+    mock_session.query().filter_by.return_value = [mock_user, ]
+    assert find_or_create_user('testymctestface', mock_session) == mock_user
+
+
+def test_find_or_create_user_new():
+    """
+    Create and return a user object for an unknown username.
+    """
+    mock_session = mock.MagicMock()
+    mock_session.query().filter_by.return_value = []
+    new_user = find_or_create_user('unknown', mock_session)
+    assert new_user.username == 'unknown'
+    mock_session.add.assert_called_once_with(new_user)
+    mock_session.commit.assert_called_once_with()
