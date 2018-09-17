@@ -92,6 +92,7 @@ class Submission:
         self.is_read = False  # type: bool
         self.size = 0  # type: int
         self.source_url = ""  # type: str
+        self.source_uuid = ""  # type: str
         self.submission_url = ""  # type: str
         self.uuid = ""  # type: str
 
@@ -112,6 +113,7 @@ class Submission:
             if not key in kwargs:
                 AttributeError("Missing key {}".format(key))
             setattr(self, key, kwargs[key])
+        _, self.source_uuid = self.source_url.rsplit('/', 1)
 
 
 class Source:
