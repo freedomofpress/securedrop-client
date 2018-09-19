@@ -20,8 +20,11 @@ import logging
 import pathlib
 import os
 import sys
+from PyQt5.QtWidgets import QApplication
+from PyQt5.QtCore import Qt
 from logging.handlers import TimedRotatingFileHandler
 from securedrop_client import __version__
+from securedrop_client.gui.main import Window
 
 
 LOG_DIR = os.path.join(str(pathlib.Path.home()), '.securedrop_client')
@@ -77,3 +80,12 @@ def run():
     """
     configure_logging()
     logging.info('Starting SecureDrop Client {}'.format(__version__))
+
+    app = QApplication(sys.argv)
+    app.setApplicationName('SecureDrop Client')
+    app.setDesktopFileName('org.freedomofthepress.securedrop.client')
+    app.setApplicationVersion(__version__)
+    app.setAttribute(Qt.AA_UseHighDpiPixmaps)
+    w = Window()
+    w.setup()
+    sys.exit(app.exec_())

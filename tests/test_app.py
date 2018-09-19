@@ -46,6 +46,9 @@ def test_run():
     """
     Ensure the expected things are configured and the application is started.
     """
-    with mock.patch('securedrop_client.app.configure_logging') as conf_log:
+    with mock.patch('securedrop_client.app.configure_logging') as conf_log, \
+            mock.patch('securedrop_client.app.QApplication') as mock_app, \
+            mock.patch('securedrop_client.app.Window') as mock_win, \
+            mock.patch('securedrop_client.app.sys') as mock_sys:
         run()
         conf_log.assert_called_once_with()
