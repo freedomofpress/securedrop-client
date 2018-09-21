@@ -24,12 +24,18 @@ class Source(Base):
     is_starred = Column(Boolean, server_default="false")
     last_updated = Column(DateTime)
 
-    def __init__(self, uuid, journalist_designation):
+    def __init__(self, uuid, journalist_designation, is_flagged, public_key,
+                 interaction_count, is_starred, last_updated):
         self.uuid = uuid
         self.journalist_designation = journalist_designation
+        self.is_flagged = is_flagged
+        self.public_key = public_key
+        self.interaction_count = interaction_count
+        self.is_starred = is_starred
+        self.last_updated = last_updated
 
     def __repr__(self):
-        return '<Source %r>' % (self.journalist_designation)
+        return '<Source {}>'.format(self.journalist_designation)
 
 
 class Submission(Base):
@@ -56,12 +62,13 @@ class Submission(Base):
         self.filename = filename
 
     def __repr__(self):
-        return '<Submission %r>' % (self.filename)
+        return '<Submission {}>'.format(self.filename)
 
 
 class Reply(Base):
     __tablename__ = 'replies'
     id = Column(Integer, primary_key=True)
+    uuid = Column(String(36), unique=True, nullable=False)
     source_id = Column(Integer, ForeignKey('sources.id'))
     source = relationship("Source",
                           backref=backref("replies", order_by=id,
@@ -74,24 +81,24 @@ class Reply(Base):
     filename = Column(String(255), nullable=False)
     size = Column(Integer, nullable=False)
 
-    def __init__(self, journalist, source, filename, size):
+    def __init__(self, uuid, journalist, source, filename, size):
+        self.uuid = uuid
         self.journalist_id = journalist.id
         self.source_id = source.id
         self.filename = filename
         self.size = size
 
     def __repr__(self):
-        return '<Reply %r>' % (self.filename)
+        return '<Reply {}>'.format(self.filename)
 
 
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
-    uuid = Column(Integer, nullable=False, unique=True)
     username = Column(String(255), nullable=False, unique=True)
 
     def __init__(self, username):
         self.username = username
 
     def __repr__(self):
-        return "<Journalist: {}".format(self.username)
+        return "<Journalist: {}>".format(self.username)
