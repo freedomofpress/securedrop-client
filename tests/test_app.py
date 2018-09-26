@@ -49,6 +49,10 @@ def test_run():
     with mock.patch('securedrop_client.app.configure_logging') as conf_log, \
             mock.patch('securedrop_client.app.QApplication') as mock_app, \
             mock.patch('securedrop_client.app.Window') as mock_win, \
+            mock.patch('securedrop_client.app.Client') as mock_client, \
             mock.patch('securedrop_client.app.sys') as mock_sys:
         run()
         conf_log.assert_called_once_with()
+        mock_app.assert_called_once_with(mock_sys.argv)
+        mock_win.assert_called_once_with()
+        mock_client.assert_called_once_with(mock_win(), None, None)

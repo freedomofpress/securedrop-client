@@ -24,7 +24,9 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt
 from logging.handlers import TimedRotatingFileHandler
 from securedrop_client import __version__
+from securedrop_client.logic import Client
 from securedrop_client.gui.main import Window
+from securedrop_client.resources import load_icon, load_css
 
 
 LOG_DIR = os.path.join(str(pathlib.Path.home()), '.securedrop_client')
@@ -72,11 +74,12 @@ def run():
     run the application. Specific tasks include:
 
     - set up logging.
-
-    ToDo:
-
     - create an application object.
     - create a window for the app.
+    - create an API connection to the SecureDrop proxy.
+    - create a SqlAlchemy session to local storage.
+    - configure the client (logic) object.
+    - ensure the application is setup in the default safe starting state.
     """
     configure_logging()
     logging.info('Starting SecureDrop Client {}'.format(__version__))
@@ -86,6 +89,11 @@ def run():
     app.setDesktopFileName('org.freedomofthepress.securedrop.client')
     app.setApplicationVersion(__version__)
     app.setAttribute(Qt.AA_UseHighDpiPixmaps)
-    w = Window()
-    w.setup()
+    gui = Window()
+    app.setWindowIcon(load_icon(gui.icon))
+    app.setStyleSheet(load_css('sdclient.css'))
+    api = None  # TODO: securedrop_sdk.API
+    session = None  # TODO: SqlAlchemy session.
+    client = Client(gui, api, session)
+    client.setup()
     sys.exit(app.exec_())

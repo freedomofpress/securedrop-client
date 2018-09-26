@@ -1,7 +1,28 @@
+"""
+Contains the core UI class for the application. All interactions with the UI
+go through an instance of this class.
+
+Copyright (C) 2018  The Freedom of the Press Foundation.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
 import logging
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QDesktopWidget
+from PyQt5.QtCore import Qt
 from securedrop_client import __version__
-from securedrop_client.gui.widgets import *
+from securedrop_client.gui.widgets import ToolBar, MainView, LoginView
+from securedrop_client.resources import load_icon
 
 
 logger = logging.getLogger(__name__)
@@ -10,28 +31,26 @@ logger = logging.getLogger(__name__)
 class Window(QMainWindow):
     """
     Represents the application's main window that will contain the UI widgets.
-
-    All interactions with the IU go through the object created by this class.
+    All interactions with the UI go through the object created by this class.
     """
 
-    title = _("SecureDrop Client {}").format(__version__)
-    
-    def setup(self):
+    icon = 'icon.png'
+
+    def __init__(self):
         """
-        Create the default start state:
-
-        * Not logged in.
-        * Display current state of synced data.
-
-        The window contains a root widget into which is placed:
+        Create the default start state. The window contains a root widget into
+        which is placed:
 
         * A status bar widget at the top, containing curent user / status
           information.
         * A main-view widget, itself containing a list view for sources and a
           place for details / message contents / forms.
         """
-        # self.setWindowIcon(load_icon(self.icon))
+        super().__init__()
+        self.setWindowTitle(_("SecureDrop Client {}").format(__version__))
+        self.setWindowIcon(load_icon(self.icon))
         self.widget = QWidget()
+        self.setWindowFlags(Qt.CustomizeWindowHint)
         widget_layout = QVBoxLayout()
         self.widget.setLayout(widget_layout)
         self.tool_bar = ToolBar(self.widget)
@@ -39,36 +58,27 @@ class Window(QMainWindow):
         widget_layout.addWidget(self.tool_bar, 1)
         widget_layout.addWidget(self.main_view, 6)
         self.setCentralWidget(self.widget)
-        self.main_view.source_list.update(['Benign Artichoke', 'Last Unicorn',
-                                           'Jocular Beehive',
-                                           'Sanitary Lemming'])
-        self.main_view.update_view(SourceView())
         self.show()
         self.autosize_window()
+        self.controller = None  # To reference the Client (logic) instance.
 
     def autosize_window(self):
         """
-        Makes the editor 80% of the width*height of the screen and centres it.
+        Ensure the application window takes up 100% of the available screen
+        (i.e. the whole of the virtualised desktop in Qubes dom)
         """
         screen = QDesktopWidget().screenGeometry()
-        w = int(screen.width() * 0.8)
-        h = int(screen.height() * 0.8)
-        self.resize(w, h)
-        size = self.geometry()
-        self.move((screen.width() - size.width()) / 2,
-                  (screen.height() - size.height()) / 2)
+        self.resize(screen.width(), screen.height())
 
     def show_login(self, error=False):
-        pass
+        """
+        Show the login form.
+        """
+        self.main_view.update_view(LoginView(self))
 
-    def show_logout(self):
-        pass
-
-    def update_list(self, items):
-        pass
-
-    def show_source(self, source):
-        pass
-
-    def update_view(self, widget):
-        pass
+    def show_sources(self, sources):
+        """
+        Update the left hand sources list in the UI with the passed in list of
+        sources.
+        """
+        self.main_view.source_list.update(sources)
