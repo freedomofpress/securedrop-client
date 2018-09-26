@@ -17,8 +17,39 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
+from PyQt5.QtCore import QObject, QThread, pyqtSignal
+
 
 logger = logging.getLogger(__name__)
+
+
+class APICallRunner(QObject):
+    """
+    Used to call the SecureDrop API in a non-blocking manner.
+    """
+
+    call_finished = pyqtSignal(str)
+
+    def __init__(self, api_call, *args, **kwargs):
+        """
+        Initialise with the function to call the API and any associated
+        args and kwargs.
+        """
+        self.api_call = api_call
+        self.args = args
+        self.kwargs = kwargs
+
+    def call_api(self):
+        """
+        Call the API.
+        """
+        try:
+            # TODO: Log details of the API call being made.
+            result = self.api_call(self.args, self.kwargs)
+        except Exception as ex:
+            logger.error(ex)
+            result = ''
+        self.call_finished.emit(result)
 
 
 class Client:
