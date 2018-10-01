@@ -1,1 +1,1 @@
-/home/user/projects/securedrop-proxy/entrypoint.sh
+/usr/bin/sd-proxy /etc/sd-proxy.yaml
