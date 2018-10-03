@@ -11,7 +11,7 @@ SQLALchemy = "*"
 alembic = "*"
 securedrop-sdk = {git = "https://github.com/freedomofpress/securedrop-sdk.git"}
 "pathlib2" = "*"
-"pyqt5" = "*"
+"pyqt5" = "==5.10.1"
 
 [dev-packages]
 pytest = "*"
