@@ -31,6 +31,8 @@ logger = logging.getLogger(__name__)
 class ToolBar(QWidget):
     """
     Represents the tool bar across the top of the user interface.
+
+    ToDo: this is a work in progress and will be updated soon.
     """
 
     def __init__(self, parent):
@@ -69,20 +71,21 @@ class MainView(QWidget):
         left_layout.addWidget(self.source_list)
         self.layout.addWidget(left_column, 2)
         self.view_holder = QWidget()
+        self.view_layout = QVBoxLayout()
+        self.view_holder.setLayout(self.view_layout)
         self.layout.addWidget(self.view_holder, 6)
 
     def update_view(self, widget):
         """
         Update the view holder to contain the referenced widget.
         """
-        layout = QVBoxLayout()
-        self.view_holder.setLayout(layout)
-        layout.addWidget(widget)
+        self.view_layout.takeAt(0)
+        self.view_layout.addWidget(widget)
 
 
 class SourceList(QListWidget):
     """
-    Represents the list of sources.
+    Displays the list of sources.
     """
 
     def update(self, sources):
@@ -91,7 +94,7 @@ class SourceList(QListWidget):
         """
         self.clear()
         for source in sources:
-            new_source = SourceWidget(source, self)
+            new_source = SourceWidget(self, source)
             list_item = QListWidgetItem(self)
             list_item.setSizeHint(new_source.sizeHint())
             self.addItem(list_item)
@@ -103,7 +106,7 @@ class SourceWidget(QWidget):
     Used to display summary information about a source in the list view.
     """
 
-    def __init__(self, source, parent):
+    def __init__(self, parent, source):
         """
         Set up the child widgets.
         """
@@ -134,15 +137,16 @@ class SourceWidget(QWidget):
     def update(self):
         """
         Updates the displayed values with the current values from self.source.
+
+        TODO: Style this widget properly and work out what should be in the
+        self.details label.
         """
-        self.updated.setText("5 minutes ago")  # str(self.source.last_updated))
-        """
+        self.updated.setText(str(self.source.last_updated))
         if self.source.is_starred:
-            self.starred.setText("[*]")
+            self.starred = load_svg('star_on.svg')
         else:
-            self.starred.setText("[ ]")
-        """
-        self.name.setText(self.source)  # self.source.journalist_designation)
+            self.starred = load_svg('star_off.svg')
+        self.name.setText(self.source.journalist_designation)
         self.details.setText("Lorum ipsum dolor sit amet thingy dodah...")
 
 
@@ -151,8 +155,9 @@ class LoginView(QWidget):
     A widget to display the login form.
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent, controller):
         super().__init__(parent)
+        self.controller = controller
         main_layout = QHBoxLayout()
         main_layout.addStretch()
         self.setLayout(main_layout)
@@ -184,8 +189,11 @@ class LoginView(QWidget):
         self.help_url.setTextFormat(Qt.RichText)
         self.help_url.setOpenExternalLinks(True)
         self.submit = QPushButton(_('Sign In'))
+        self.submit.clicked.connect(self.validate)
         gutter_layout.addWidget(self.help_url)
         gutter_layout.addWidget(self.submit)
+        self.error_label = QLabel('')
+        self.error_label.setObjectName('error_label')
         layout.addStretch()
         layout.addWidget(self.title)
         layout.addWidget(self.instructions)
@@ -196,4 +204,48 @@ class LoginView(QWidget):
         layout.addWidget(self.tfa_label)
         layout.addWidget(self.tfa_field)
         layout.addWidget(gutter)
+        layout.addWidget(self.error_label)
         layout.addStretch()
+
+    def reset(self):
+        """
+        Resets the login form to the default state.
+        """
+        self.username_field.setText('')
+        self.username_field.setFocus()
+        self.password_field.setText('')
+        self.tfa_field.setText('')
+        self.setDisabled(False)
+        self.error_label.setText('')
+
+    def error(self, message):
+        """
+        Ensures the passed in message is displayed as an error message.
+        """
+        self.error_label.setText(message)
+
+    def validate(self):
+        """
+        Validate the user input -- we expect values for:
+
+        * username (free text)
+        * password (free text)
+        * TFA token (numerals)
+        """
+        self.setDisabled(True)
+        username = self.username_field.text()
+        password = self.password_field.text()
+        tfa_token = self.tfa_field.text()
+        if username and password and tfa_token:
+            try:
+                int(tfa_token)
+            except ValueError:
+                self.setDisabled(False)
+                self.error(_('Please use only numerals (no spaces) for the '
+                             'two factor number.'))
+                return
+            self.controller.login(username, password, tfa_token)
+        else:
+            self.setDisabled(False)
+            self.error(_('Please enter a username, password and '
+                         'two factor number.'))

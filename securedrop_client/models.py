@@ -56,9 +56,10 @@ class Submission(Base):
                           backref=backref("submissions", order_by=id,
                                           cascade="delete"))
 
-    def __init__(self, source, uuid, filename):
+    def __init__(self, source, uuid, size, filename):
         self.source_id = source.id
         self.uuid = uuid
+        self.size = size
         self.filename = filename
 
     def __repr__(self):
@@ -102,3 +103,7 @@ class User(Base):
 
     def __repr__(self):
         return "<Journalist: {}>".format(self.username)
+
+
+# Populate the database.
+Base.metadata.create_all(engine)

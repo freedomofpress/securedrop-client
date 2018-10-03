@@ -46,13 +46,17 @@ def test_run():
     """
     Ensure the expected things are configured and the application is started.
     """
+    mock_session_class = mock.MagicMock()
     with mock.patch('securedrop_client.app.configure_logging') as conf_log, \
             mock.patch('securedrop_client.app.QApplication') as mock_app, \
             mock.patch('securedrop_client.app.Window') as mock_win, \
             mock.patch('securedrop_client.app.Client') as mock_client, \
-            mock.patch('securedrop_client.app.sys') as mock_sys:
+            mock.patch('securedrop_client.app.sys') as mock_sys, \
+            mock.patch('securedrop_client.app.sessionmaker',
+                       return_value=mock_session_class):
         run()
         conf_log.assert_called_once_with()
         mock_app.assert_called_once_with(mock_sys.argv)
         mock_win.assert_called_once_with()
-        mock_client.assert_called_once_with(mock_win(), None, None)
+        mock_client.assert_called_once_with('http://localhost:8081/',
+                                            mock_win(), mock_session_class())

@@ -60,7 +60,14 @@ class Window(QMainWindow):
         self.setCentralWidget(self.widget)
         self.show()
         self.autosize_window()
-        self.controller = None  # To reference the Client (logic) instance.
+
+    def setup(self, controller):
+        """
+        Create references to the controller logic and instantiate the various
+        views used in the UI.
+        """
+        self.controller = controller  # Reference the Client logic instance.
+        self.login_view = LoginView(self, self.controller)
 
     def autosize_window(self):
         """
@@ -70,11 +77,15 @@ class Window(QMainWindow):
         screen = QDesktopWidget().screenGeometry()
         self.resize(screen.width(), screen.height())
 
-    def show_login(self, error=False):
+    def show_login(self, error=None):
         """
-        Show the login form.
+        Show the login form. If an error message is passed in, the login
+        form will display this too.
         """
-        self.main_view.update_view(LoginView(self))
+        self.login_view.reset()
+        if error:
+            self.login_view.error(error)
+        self.main_view.update_view(self.login_view)
 
     def show_sources(self, sources):
         """

@@ -1,3 +1,7 @@
 QPushButton {
     background-color: #00ff00;
 }
+
+QLabel#error_label {
+    color: #FF0000;
+}

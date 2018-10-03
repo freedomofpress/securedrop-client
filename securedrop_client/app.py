@@ -20,6 +20,7 @@ import logging
 import pathlib
 import os
 import sys
+from sqlalchemy.orm import sessionmaker
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt
 from logging.handlers import TimedRotatingFileHandler
@@ -27,6 +28,7 @@ from securedrop_client import __version__
 from securedrop_client.logic import Client
 from securedrop_client.gui.main import Window
 from securedrop_client.resources import load_icon, load_css
+from securedrop_client.models import engine
 
 
 LOG_DIR = os.path.join(str(pathlib.Path.home()), '.securedrop_client')
@@ -92,8 +94,8 @@ def run():
     gui = Window()
     app.setWindowIcon(load_icon(gui.icon))
     app.setStyleSheet(load_css('sdclient.css'))
-    api = None  # TODO: securedrop_sdk.API
-    session = None  # TODO: SqlAlchemy session.
-    client = Client(gui, api, session)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    client = Client("http://localhost:8081/", gui, session)
     client.setup()
     sys.exit(app.exec_())

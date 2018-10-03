@@ -31,13 +31,11 @@ def test_MainView_update_view():
     (i.e. that area of the screen on the right hand side).
     """
     mv = MainView(None)
-    mv.view_holder = mock.MagicMock()
-    mock_layout = mock.MagicMock()
+    mv.view_layout = mock.MagicMock()
     mock_widget = mock.MagicMock()
-    with mock.patch('securedrop_client.gui.widgets.QVBoxLayout', mock_layout):
-        mv.update_view(mock_widget)
-        mv.view_holder.setLayout.assert_called_once_with(mock_layout())
-        mock_layout().addWidget.assert_called_once_with(mock_widget)
+    mv.update_view(mock_widget)
+    mv.view_layout.takeAt.assert_called_once_with(0)
+    mv.view_layout.addWidget.assert_called_once_with(mock_widget)
 
 
 def test_SourceList_update():
@@ -67,23 +65,128 @@ def test_SourceWidget_init():
     """
     The source widget is initialised with the passed-in source.
     """
-    sw = SourceWidget('foo', None)
-    assert sw.source == 'foo'
+    mock_source = mock.MagicMock()
+    mock_source.journalist_designation = 'foo bar baz'
+    sw = SourceWidget(None, mock_source)
+    assert sw.source == mock_source
 
 
-def test_SourceWidget_update():
+def test_SourceWidget_update_starred():
     """
     Ensure the widget displays the expected details from the source.
     """
-    sw = SourceWidget('foo', None)
+    mock_source = mock.MagicMock()
+    mock_source.journalist_designation = 'foo bar baz'
+    mock_source.is_starred = True
+    sw = SourceWidget(None, mock_source)
     sw.name = mock.MagicMock()
-    sw.update()
-    sw.name.setText.assert_called_once_with('foo')
+    with mock.patch('securedrop_client.gui.widgets.load_svg') as mock_load:
+        sw.update()
+        mock_load.assert_called_once_with('star_on.svg')
+    sw.name.setText.assert_called_once_with('foo bar baz')
+
+
+def test_SourceWidget_update_unstarred():
+    """
+    Ensure the widget displays the expected details from the source.
+    """
+    mock_source = mock.MagicMock()
+    mock_source.journalist_designation = 'foo bar baz'
+    mock_source.is_starred = False
+    sw = SourceWidget(None, mock_source)
+    sw.name = mock.MagicMock()
+    with mock.patch('securedrop_client.gui.widgets.load_svg') as mock_load:
+        sw.update()
+        mock_load.assert_called_once_with('star_off.svg')
+    sw.name.setText.assert_called_once_with('foo bar baz')
 
 
 def test_LoginView_init():
     """
     The LoginView is correctly initialised.
     """
-    lv = LoginView(None)
+    mock_controller = mock.MagicMock()
+    lv = LoginView(None, mock_controller)
+    assert lv.controller == mock_controller
     assert lv.title.text() == '<h1>Sign In</h1>'
+
+
+def test_LoginView_reset():
+    """
+    Ensure the state of the login view is returned to the correct state.
+    """
+    mock_controller = mock.MagicMock()
+    lv = LoginView(None, mock_controller)
+    lv.username_field = mock.MagicMock()
+    lv.password_field = mock.MagicMock()
+    lv.tfa_field = mock.MagicMock()
+    lv.setDisabled = mock.MagicMock()
+    lv.error_label = mock.MagicMock()
+    lv.reset()
+    lv.username_field.setText.assert_called_once_with('')
+    lv.password_field.setText.assert_called_once_with('')
+    lv.tfa_field.setText.assert_called_once_with('')
+    lv.setDisabled.assert_called_once_with(False)
+    lv.error_label.setText.assert_called_once_with('')
+
+
+def test_LoginView_error():
+    """
+    Any error message passed in is assigned as the text for the error label.
+    """
+    mock_controller = mock.MagicMock()
+    lv = LoginView(None, mock_controller)
+    lv.error_label = mock.MagicMock()
+    lv.error('foo')
+    lv.error_label.setText.assert_called_once_with('foo')
+
+
+def test_LoginView_validate_no_input():
+    """
+    If the user doesn't provide input, tell them and give guidance.
+    """
+    mock_controller = mock.MagicMock()
+    lv = LoginView(None, mock_controller)
+    lv.username_field.text = mock.MagicMock(return_value='')
+    lv.password_field.text = mock.MagicMock(return_value='')
+    lv.tfa_field.text = mock.MagicMock(return_value='')
+    lv.setDisabled = mock.MagicMock()
+    lv.error = mock.MagicMock()
+    lv.validate()
+    assert lv.setDisabled.call_count == 2
+    assert lv.error.call_count == 1
+
+
+def test_LoginView_validate_input_non_numeric_2fa():
+    """
+    If the user doesn't provide numeric 2fa input, tell them and give
+    guidance.
+    """
+    mock_controller = mock.MagicMock()
+    lv = LoginView(None, mock_controller)
+    lv.username_field.text = mock.MagicMock(return_value='foo')
+    lv.password_field.text = mock.MagicMock(return_value='bar')
+    lv.tfa_field.text = mock.MagicMock(return_value='baz')
+    lv.setDisabled = mock.MagicMock()
+    lv.error = mock.MagicMock()
+    lv.validate()
+    assert lv.setDisabled.call_count == 2
+    assert lv.error.call_count == 1
+    assert mock_controller.login.call_count == 0
+
+
+def test_LoginView_validate_input_ok():
+    """
+    Valid input from the user causes a call to the controller's login method.
+    """
+    mock_controller = mock.MagicMock()
+    lv = LoginView(None, mock_controller)
+    lv.username_field.text = mock.MagicMock(return_value='foo')
+    lv.password_field.text = mock.MagicMock(return_value='bar')
+    lv.tfa_field.text = mock.MagicMock(return_value='123456')
+    lv.setDisabled = mock.MagicMock()
+    lv.error = mock.MagicMock()
+    lv.validate()
+    assert lv.setDisabled.call_count == 1
+    assert lv.error.call_count == 0
+    mock_controller.login.assert_called_once_with('foo', 'bar', '123456')
