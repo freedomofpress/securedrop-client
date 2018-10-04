@@ -56,6 +56,7 @@ class Reply:
     def __init__(self, **kwargs) -> None:
         self.filename = ""  # type: str
         self.journalist_username = ""  # type: str
+        self.journalist_uuid = ""  # type: str
         self.is_deleted_by_source = False  # type: bool
         self.reply_url = ""  # type: str
         self.size = 0  # type: int
@@ -66,6 +67,7 @@ class Reply:
         for key in [
             "filename",
             "journalist_username",
+            "journalist_uuid",
             "is_deleted_by_source",
             "reply_url",
             "size",
