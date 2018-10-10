@@ -27,9 +27,34 @@ from securedrop_client.models import Source, Submission, Reply, User
 logger = logging.getLogger(__name__)
 
 
-def sync_with_api(api, session):
+def get_local_sources(session):
     """
-    Synchronises sources and submissions from the remote server's API.
+    Return all source objects from the local database.
+    """
+    return session.query(Source)
+
+
+def get_local_submissions(session):
+    """
+    Return all submission objects from the local database.
+    """
+    return session.query(Submission)
+
+
+def get_local_replies(session):
+    """
+    Return all reply objects from the local database.
+    """
+    return session.query(Reply)
+
+
+def get_remote_data(api):
+    """
+    Given an authenticated connection to the SecureDrop API, get sources,
+    submissions and replies from the remote server and return a tuple
+    containing lists of objects representing this data:
+
+    (remote_sources, remote_submissions, remote_replies)
     """
     remote_submissions = []
     try:
@@ -45,9 +70,19 @@ def sync_with_api(api, session):
     logger.info('Fetched {} remote submissions.'.format(
         len(remote_submissions)))
     logger.info('Fetched {} remote replies.'.format(len(remote_replies)))
-    local_sources = session.query(Source)
-    local_submissions = session.query(Submission)
-    local_replies = session.query(Reply)
+    return (remote_sources, remote_submissions, remote_replies)
+
+
+def update_local_storage(session, remote_sources, remote_submissions,
+                         remote_replies):
+    """
+    Given a database session and collections of remote sources, submissions and
+    replies from the SecureDrop API, ensures the local database is updated
+    with this data.
+    """
+    local_sources = get_local_sources(session)
+    local_submissions = get_local_submissions(session)
+    local_replies = get_local_replies(session)
     update_sources(remote_sources, local_sources, session)
     update_submissions(remote_submissions, local_submissions, session)
     update_replies(remote_replies, local_replies, session)
@@ -72,7 +107,7 @@ def update_sources(remote_sources, local_sources, session):
                             if s.uuid == source.uuid][0]
             local_source.journalist_designation = source.journalist_designation
             local_source.is_flagged = source.is_flagged
-            local_source.public_key = source.key
+            local_source.public_key = source.key['public']
             local_source.interaction_count = source.interaction_count
             local_source.is_starred = source.is_starred
             local_source.last_updated = parse(source.last_updated)
@@ -85,7 +120,7 @@ def update_sources(remote_sources, local_sources, session):
             ns = Source(uuid=source.uuid,
                         journalist_designation=source.journalist_designation,
                         is_flagged=source.is_flagged,
-                        public_key=source.key,
+                        public_key=source.key['public'],
                         interaction_count=source.interaction_count,
                         is_starred=source.is_starred,
                         last_updated=parse(source.last_updated))
@@ -124,6 +159,7 @@ def update_submissions(remote_submissions, local_submissions, session):
             _, source_uuid = submission.source_url.rsplit('/', 1)
             source = session.query(Source).filter_by(uuid=source_uuid)[0]
             ns = Submission(source=source, uuid=submission.uuid,
+                            size=submission.size,
                             filename=submission.filename)
             session.add(ns)
             logger.info('Added new submission {}'.format(submission.uuid))
@@ -151,7 +187,8 @@ def update_replies(remote_replies, local_replies, session):
         if reply.uuid in local_uuids:
             # Update an existing record.
             local_reply = [r for r in local_replies if r.uuid == reply.uuid][0]
-            user = find_or_create_user(reply.journalist_username, session)
+            user = find_or_create_user(reply.journalist_uuid,
+                                       reply.journalist_username, session)
             local_reply.journalist_id = user.id
             local_reply.filename = reply.filename
             local_reply.size = reply.size
@@ -161,7 +198,8 @@ def update_replies(remote_replies, local_replies, session):
             # A new reply to be added to the database.
             source_uuid = reply.source_uuid
             source = session.query(Source).filter_by(uuid=source_uuid)[0]
-            user = find_or_create_user(reply.journalist_username, session)
+            user = find_or_create_user(reply.journalist_uuid,
+                                       reply.journalist_username, session)
             nr = Reply(reply.uuid, user, source, reply.filename, reply.size)
             session.add(nr)
             logger.info('Added new reply {}'.format(reply.uuid))
@@ -173,15 +211,26 @@ def update_replies(remote_replies, local_replies, session):
     session.commit()
 
 
-def find_or_create_user(username, session):
+def find_or_create_user(uuid, username, session):
     """
-    Returns a user object representing the referenced username. If the username
-    does not already exist in the data, a new instance is created.
+    Returns a user object representing the referenced journalist UUID.
+    If the user does not already exist in the data, a new instance is created.
+    If the user exists but the username has changed, the username is updated.
     """
-    user = session.query(User).filter_by(username=username)
-    if user:
-        return user[0]
-    new_user = User(username)
-    session.add(new_user)
-    session.commit()
-    return new_user
+    user = session.query(User).filter_by(uuid=uuid).one_or_none()
+    if user and user.username == username:
+        # User exists in the local database and the username is unchanged.
+        return user
+    elif user and user.username != username:
+        # User exists in the local database but the username is changed.
+        user.username = username
+        session.add(user)
+        session.commit()
+        return user
+    else:
+        # User does not exist in the local database.
+        new_user = User(username)
+        new_user.uuid = uuid
+        session.add(new_user)
+        session.commit()
+        return new_user

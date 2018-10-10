@@ -11,11 +11,7 @@ jobs:
           command: |
             pipenv install --dev
             export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
-            pipenv run pytest -v
-
-      - run:
-          name: Run flake8
-          command: pipenv run flake8
+            pipenv run make check
 
       - run:
           name: Check Python dependencies for known vulnerabilities
