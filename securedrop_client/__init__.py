@@ -15,7 +15,7 @@ except (TypeError, ValueError):
     language_code = 'en'
 # DEBUG/TRANSLATE: override the language code here (e.g. to Chinese).
 # language_code = 'zh'
-gettext.translation('mu', localedir=localedir,
+gettext.translation('securedrop_client', localedir=localedir,
                     languages=[language_code], fallback=True).install()
 
 

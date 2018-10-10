@@ -17,12 +17,13 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
+import arrow
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QListWidget, QTextEdit, QLabel, QToolBar, QAction,
                              QWidget, QListWidgetItem, QHBoxLayout,
                              QPushButton, QVBoxLayout, QLineEdit,
                              QPlainTextEdit)
-from securedrop_client.resources import load_svg
+from securedrop_client.resources import load_svg, load_image
 
 
 logger = logging.getLogger(__name__)
@@ -37,13 +38,59 @@ class ToolBar(QWidget):
 
     def __init__(self, parent):
         super().__init__(parent)
-        self.setMaximumHeight(48)
         layout = QHBoxLayout(self)
-        self.status = QLabel(_("Synchronized: 5 minutes ago."))
-        self.user_state = QLabel(_("Logged in as: Testy McTestface"))
-        layout.addWidget(self.status)
+        self.logo = QLabel()
+        self.logo.setPixmap(load_image('header_logo.png'))
+        self.user_state = QLabel(_("Logged out."))
+        self.login = QPushButton(_('Sign In'))
+        self.login.clicked.connect(self.on_login_clicked)
+        self.logout = QPushButton(_('Log Out'))
+        self.logout.clicked.connect(self.on_logout_clicked)
+        self.logout.setVisible(False)
+        layout.addWidget(self.logo)
         layout.addStretch()
         layout.addWidget(self.user_state)
+        layout.addWidget(self.login)
+        layout.addWidget(self.logout)
+
+    def setup(self, window, controller):
+        """
+        Store a reference to the GUI window object (through which all wider GUI
+        state is controlled).
+
+        Assign a controller object (containing the application logic) to this
+        instance of the toolbar.
+        """
+        self.window = window
+        self.controller = controller
+
+    def set_logged_in_as(self, username):
+        """
+        Update the UI to reflect that the user is logged in as "username".
+        """
+        self.user_state.setText(_('Logged in as: ' + username))
+        self.login.setVisible(False)
+        self.logout.setVisible(True)
+
+    def set_logged_out(self):
+        """
+        Update the UI to a logged out state.
+        """
+        self.user_state.setText(_('Logged out.'))
+        self.login.setVisible(True)
+        self.logout.setVisible(False)
+
+    def on_login_clicked(self):
+        """
+        Called when the login button is clicked.
+        """
+        self.window.show_login()
+
+    def on_logout_clicked(self):
+        """
+        Called when the logout button is clicked.
+        """
+        self.controller.logout()
 
 
 class MainView(QWidget):
@@ -59,6 +106,8 @@ class MainView(QWidget):
         left_column = QWidget(parent=self)
         left_layout = QVBoxLayout()
         left_column.setLayout(left_layout)
+        self.status = QLabel(_('Waiting to Synchronize'))
+        left_layout.addWidget(self.status)
         filter_widget = QWidget()
         filter_layout = QHBoxLayout()
         filter_widget.setLayout(filter_layout)
@@ -117,18 +166,18 @@ class SourceWidget(QWidget):
         self.summary = QWidget(self)
         summary_layout = QHBoxLayout()
         self.summary.setLayout(summary_layout)
-        self.updated = QLabel()
         self.attached = load_svg('paperclip.svg')
         self.attached.setMaximumSize(16, 16)
         self.starred = load_svg('star_on.svg')
         self.starred.setMaximumSize(16, 16)
-        summary_layout.addWidget(self.updated)
+        self.name = QLabel()
+        summary_layout.addWidget(self.name)
         summary_layout.addStretch()
         summary_layout.addWidget(self.attached)
         summary_layout.addWidget(self.starred)
         layout.addWidget(self.summary)
-        self.name = QLabel()
-        layout.addWidget(self.name)
+        self.updated = QLabel()
+        layout.addWidget(self.updated)
         self.details = QLabel()
         self.details.setWordWrap(True)
         layout.addWidget(self.details)
@@ -141,12 +190,13 @@ class SourceWidget(QWidget):
         TODO: Style this widget properly and work out what should be in the
         self.details label.
         """
-        self.updated.setText(str(self.source.last_updated))
+        self.updated.setText(arrow.get(self.source.last_updated).humanize())
         if self.source.is_starred:
             self.starred = load_svg('star_on.svg')
         else:
             self.starred = load_svg('star_off.svg')
-        self.name.setText(self.source.journalist_designation)
+        self.name.setText("<strong>{}</strong>".format(
+                          self.source.journalist_designation))
         self.details.setText("Lorum ipsum dolor sit amet thingy dodah...")
 
 

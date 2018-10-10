@@ -43,14 +43,15 @@ def make_remote_submission(source_uuid):
                       uuid=str(uuid.uuid4()))
 
 
-def make_remote_reply(source_uuid, username='testymctestface'):
+def make_remote_reply(source_uuid, journalist_uuid='testymctestface'):
     """
     Utility function for generating sdclientapi Reply instances to act
     upon in the following unit tests. The passed in source_uuid is used to
     generate a valid URL.
     """
     source_url = '/api/v1/sources/{}'.format(source_uuid)
-    return Reply(filename='test.filename', journalist_username=username,
+    return Reply(filename='test.filename', journalist_uuid=journalist_uuid,
+                 journalist_username='test',
                  is_deleted_by_source=False, reply_url='test', size=1234,
                  source_url=source_url, uuid=str(uuid.uuid4()))
 
@@ -312,14 +313,31 @@ def test_update_replies():
     assert mock_session.commit.call_count == 1
 
 
-def test_find_or_create_user_existing():
+def test_find_or_create_user_existing_uuid():
     """
-    Return an existing user object.
+    Return an existing user object with the referenced uuid.
     """
     mock_session = mock.MagicMock()
     mock_user = mock.MagicMock()
-    mock_session.query().filter_by.return_value = [mock_user, ]
-    assert find_or_create_user('testymctestface', mock_session) == mock_user
+    mock_user.username = 'foobar'
+    mock_session.query().filter_by().one_or_none.return_value = mock_user
+    assert find_or_create_user('uuid', 'foobar',
+                               mock_session) == mock_user
+
+
+def test_find_or_create_user_existing_username():
+    """
+    Return an existing user object with the referenced username.
+    """
+    mock_session = mock.MagicMock()
+    mock_user = mock.MagicMock()
+    mock_user.username = 'foobar'
+    mock_session.query().filter_by().one_or_none.return_value = mock_user
+    assert find_or_create_user('uuid', 'testymctestface',
+                               mock_session) == mock_user
+    assert mock_user.username == 'testymctestface'
+    mock_session.add.assert_called_once_with(mock_user)
+    mock_session.commit.assert_called_once_with()
 
 
 def test_find_or_create_user_new():
@@ -327,8 +345,8 @@ def test_find_or_create_user_new():
     Create and return a user object for an unknown username.
     """
     mock_session = mock.MagicMock()
-    mock_session.query().filter_by.return_value = []
-    new_user = find_or_create_user('unknown', mock_session)
+    mock_session.query().filter_by().one_or_none.return_value = None
+    new_user = find_or_create_user('uuid', 'unknown', mock_session)
     assert new_user.username == 'unknown'
     mock_session.add.assert_called_once_with(new_user)
     mock_session.commit.assert_called_once_with()

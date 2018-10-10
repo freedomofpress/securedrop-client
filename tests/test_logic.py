@@ -2,6 +2,7 @@
 Make sure the Client object, containing the application logic, behaves as
 expected.
 """
+import arrow
 from securedrop_client import storage
 from securedrop_client.logic import APICallRunner, Client
 from unittest import mock
@@ -195,8 +196,11 @@ def test_Client_on_authenticate_ok():
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session)
     cl.sync_api = mock.MagicMock()
+    cl.api = mock.MagicMock()
+    cl.api.username = 'test'
     cl.on_authenticate(True)
     cl.sync_api.assert_called_once_with()
+    cl.gui.set_logged_in_as.assert_called_once_with('test')
 
 
 def test_Client_on_login_timeout():
@@ -276,6 +280,33 @@ def test_Client_sync_api():
                                         cl.on_login_timeout, cl.api)
 
 
+def test_Client_last_sync_with_file():
+    """
+    The flag indicating the time of the last sync with the API is stored in a
+    dotfile in the user's home directory. If such a file exists, ensure an
+    "arror" object (representing the date/time) is returned.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session)
+    timestamp = '2018-10-10 18:17:13+01:00'
+    with mock.patch("builtins.open", mock.mock_open(read_data=timestamp)):
+        result = cl.last_sync()
+        assert isinstance(result, arrow.Arrow)
+        assert result.format() == timestamp
+
+
+def test_Client_last_sync_no_file():
+    """
+    If there's no sync file, then just return None.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session)
+    with mock.patch("builtins.open", mock.MagicMock(side_effect=Exception())):
+        assert cl.last_sync() is None
+
+
 def test_Client_on_synced_no_result():
     """
     If there's no result to syncing, then don't attempt to update local storage
@@ -310,6 +341,19 @@ def test_Client_on_synced_with_result():
     cl.update_sources.assert_called_once_with()
 
 
+def test_Client_update_sync():
+    """
+    Cause the UI to update with the result of self.last_sync().
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session)
+    cl.last_sync = mock.MagicMock()
+    cl.update_sync()
+    assert cl.last_sync.call_count == 1
+    cl.gui.show_sync.assert_called_once_with(cl.last_sync())
+
+
 def test_Client_update_sources():
     """
     Ensure the UI displays a list of the available sources from local data
@@ -323,3 +367,16 @@ def test_Client_update_sources():
         cl.update_sources()
         mock_storage.get_local_sources.assert_called_once_with(mock_session)
         mock_gui.show_sources.assert_called_once_with([1, 2, 3])
+
+
+def test_Client_logout():
+    """
+    The API is reset to None and the UI is set to logged out state.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session)
+    cl.api = mock.MagicMock()
+    cl.logout()
+    assert cl.api is None
+    cl.gui.logout.assert_called_once_with()

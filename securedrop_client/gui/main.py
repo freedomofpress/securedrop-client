@@ -50,7 +50,6 @@ class Window(QMainWindow):
         self.setWindowTitle(_("SecureDrop Client {}").format(__version__))
         self.setWindowIcon(load_icon(self.icon))
         self.widget = QWidget()
-        self.setWindowFlags(Qt.CustomizeWindowHint)
         widget_layout = QVBoxLayout()
         self.widget.setLayout(widget_layout)
         self.tool_bar = ToolBar(self.widget)
@@ -67,6 +66,7 @@ class Window(QMainWindow):
         views used in the UI.
         """
         self.controller = controller  # Reference the Client logic instance.
+        self.tool_bar.setup(self, controller)
         self.login_view = LoginView(self, self.controller)
 
     def autosize_window(self):
@@ -93,3 +93,25 @@ class Window(QMainWindow):
         sources.
         """
         self.main_view.source_list.update(sources)
+
+    def show_sync(self, updated_on):
+        """
+        Display a message indicating the data-sync state.
+        """
+        if updated_on:
+            self.main_view.status.setText('Last Sync: ' +
+                                          updated_on.humanize())
+        else:
+            self.main_view.status.setText(_('Waiting to Synchronize'))
+
+    def set_logged_in_as(self, username):
+        """
+        Update the UI to show user logged in with username.
+        """
+        self.tool_bar.set_logged_in_as(username)
+
+    def logout(self):
+        """
+        Update the UI to show the user is logged out.
+        """
+        self.tool_bar.set_logged_out()

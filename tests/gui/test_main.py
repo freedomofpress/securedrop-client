@@ -82,3 +82,46 @@ def test_show_sources():
     w.main_view = mock.MagicMock()
     w.show_sources([1, 2, 3])
     w.main_view.source_list.update.assert_called_once_with([1, 2, 3])
+
+
+def test_show_sync():
+    """
+    If there's a value display the result of its "humanize" method.
+    """
+    w = Window()
+    w.main_view = mock.MagicMock()
+    updated_on = mock.MagicMock()
+    w.show_sync(updated_on)
+    w.main_view.status.setText.assert_called_once_with('Last Sync: ' +
+                                                       updated_on.humanize())
+
+
+def test_show_sync_no_sync():
+    """
+    If there's no value to display, default to a "waiting" message.
+    """
+    w = Window()
+    w.main_view = mock.MagicMock()
+    w.show_sync(None)
+    w.main_view.status.setText.\
+        assert_called_once_with('Waiting to Synchronize')
+
+
+def test_set_logged_in_as():
+    """
+    Given a username, the toolbar is appropriately called to update.
+    """
+    w = Window()
+    w.tool_bar = mock.MagicMock()
+    w.set_logged_in_as('test')
+    w.tool_bar.set_logged_in_as.assert_called_once_with('test')
+
+
+def test_logout():
+    """
+    Ensure the toolbar updates to the logged out state.
+    """
+    w = Window()
+    w.tool_bar = mock.MagicMock()
+    w.logout()
+    w.tool_bar.set_logged_out.assert_called_once_with()

@@ -187,7 +187,8 @@ def update_replies(remote_replies, local_replies, session):
         if reply.uuid in local_uuids:
             # Update an existing record.
             local_reply = [r for r in local_replies if r.uuid == reply.uuid][0]
-            user = find_or_create_user(reply.journalist_username, session)
+            user = find_or_create_user(reply.journalist_uuid,
+                                       reply.journalist_username, session)
             local_reply.journalist_id = user.id
             local_reply.filename = reply.filename
             local_reply.size = reply.size
@@ -197,7 +198,8 @@ def update_replies(remote_replies, local_replies, session):
             # A new reply to be added to the database.
             source_uuid = reply.source_uuid
             source = session.query(Source).filter_by(uuid=source_uuid)[0]
-            user = find_or_create_user(reply.journalist_username, session)
+            user = find_or_create_user(reply.journalist_uuid,
+                                       reply.journalist_username, session)
             nr = Reply(reply.uuid, user, source, reply.filename, reply.size)
             session.add(nr)
             logger.info('Added new reply {}'.format(reply.uuid))
@@ -209,15 +211,26 @@ def update_replies(remote_replies, local_replies, session):
     session.commit()
 
 
-def find_or_create_user(username, session):
+def find_or_create_user(uuid, username, session):
     """
-    Returns a user object representing the referenced username. If the username
-    does not already exist in the data, a new instance is created.
+    Returns a user object representing the referenced journalist UUID.
+    If the user does not already exist in the data, a new instance is created.
+    If the user exists but the username has changed, the username is updated.
     """
-    user = list(session.query(User).filter_by(username=username))
-    if user:
-        return user[0]
-    new_user = User(username)
-    session.add(new_user)
-    session.commit()
-    return new_user
+    user = session.query(User).filter_by(uuid=uuid).one_or_none()
+    if user and user.username == username:
+        # User exists in the local database and the username is unchanged.
+        return user
+    elif user and user.username != username:
+        # User exists in the local database but the username is changed.
+        user.username = username
+        session.add(user)
+        session.commit()
+        return user
+    else:
+        # User does not exist in the local database.
+        new_user = User(username)
+        new_user.uuid = uuid
+        session.add(new_user)
+        session.commit()
+        return new_user

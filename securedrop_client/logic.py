@@ -16,8 +16,10 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import os
 import logging
 import sdclientapi
+import arrow
 from securedrop_client import storage
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer
 
@@ -93,6 +95,7 @@ class Client(QObject):
         self.api = None  # Reference to the API for secure drop proxy.
         self.session = session  # Reference to the SqlAlchemy session.
         self.api_thread = None  # Currently active API call thread.
+        self.sync_flag = os.path.join(os.path.expanduser('~'), '.sdsync')
 
     def setup(self):
         """
@@ -101,6 +104,7 @@ class Client(QObject):
         * Not logged in.
         * Show most recent state of syncronised sources.
         * Show the login screen.
+        * Check the sync status every 30 seconds.
         """
         # The gui needs to reference this "controller" layer to call methods
         # triggered by UI events.
@@ -109,6 +113,10 @@ class Client(QObject):
         self.update_sources()
         # Show the login view.
         self.gui.show_login()
+        # Create a timer to check for sync status every 30 seconds.
+        self.sync_timer = QTimer()
+        self.sync_timer.timeout.connect(self.update_sync)
+        self.sync_timer.start(30000)
 
     def call_api(self, function, callback, timeout, *args, **kwargs):
         """
@@ -152,8 +160,9 @@ class Client(QObject):
         """
         self.call_reset()
         if result:
-            # It worked! Sync with the API.
+            # It worked! Sync with the API and update the UI.
             self.sync_api()
+            self.gui.set_logged_in_as(self.api.username)
         else:
             # Failed to authenticate. Reset state with failure message.
             self.api = None
@@ -184,6 +193,16 @@ class Client(QObject):
             self.call_api(storage.get_remote_data, self.on_synced,
                           self.on_login_timeout, self.api)
 
+    def last_sync(self):
+        """
+        Returns the time of last synchronisation with the remote SD server.
+        """
+        try:
+            with open(self.sync_flag) as f:
+                return arrow.get(f.read())
+        except Exception:
+            return None
+
     def on_synced(self, result):
         """
         Called when syncronisation of data via the API is complete.
@@ -195,11 +214,20 @@ class Client(QObject):
             storage.update_local_storage(self.session, remote_sources,
                                          remote_submissions,
                                          remote_replies)
+            # Set last sync flag.
+            with open(self.sync_flag, 'w') as f:
+                f.write(arrow.now().format())
         else:
             # How to handle a failure? Exceptions are already logged. Perhaps
             # a message in the UI?
             pass
         self.update_sources()
+
+    def update_sync(self):
+        """
+        Updates the UI to show human time of last sync.
+        """
+        self.gui.show_sync(self.last_sync())
 
     def update_sources(self):
         """
@@ -207,3 +235,12 @@ class Client(QObject):
         """
         sources = list(storage.get_local_sources(self.session))
         self.gui.show_sources(sources)
+        self.update_sync()
+
+    def logout(self):
+        """
+        Reset the API object and force the UI to update into a logged out
+        state.
+        """
+        self.api = None
+        self.gui.logout()

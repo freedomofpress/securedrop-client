@@ -12,7 +12,69 @@ def test_ToolBar_init():
     Ensure the ToolBar instance is correctly set up.
     """
     tb = ToolBar(None)
-    assert "Synchronized: " in tb.status.text()
+    assert "Logged out." in tb.user_state.text()
+
+
+def test_ToolBar_setup():
+    """
+    Calling setup with references to a window and controller object results in
+    them becoming attributes of self.
+    """
+    tb = ToolBar(None)
+    mock_window = mock.MagicMock()
+    mock_controller = mock.MagicMock()
+    tb.setup(mock_window, mock_controller)
+    assert tb.window == mock_window
+    assert tb.controller == mock_controller
+
+
+def test_ToolBar_set_logged_in_as():
+    """
+    Given a username, the user_state is updated and login/logout buttons are
+    in the correct state.
+    """
+    tb = ToolBar(None)
+    tb.user_state = mock.MagicMock()
+    tb.login = mock.MagicMock()
+    tb.logout = mock.MagicMock()
+    tb.set_logged_in_as('test')
+    tb.user_state.setText.assert_called_once_with('Logged in as: test')
+    tb.login.setVisible.assert_called_once_with(False)
+    tb.logout.setVisible.assert_called_once_with(True)
+
+
+def test_ToolBar_set_logged_out():
+    """
+    Ensure the UI reverts to the logged out state.
+    """
+    tb = ToolBar(None)
+    tb.user_state = mock.MagicMock()
+    tb.login = mock.MagicMock()
+    tb.logout = mock.MagicMock()
+    tb.set_logged_out()
+    tb.user_state.setText.assert_called_once_with('Logged out.')
+    tb.login.setVisible.assert_called_once_with(True)
+    tb.logout.setVisible.assert_called_once_with(False)
+
+
+def test_ToolBar_on_login_clicked():
+    """
+    When login button is clicked, the window activates the login form.
+    """
+    tb = ToolBar(None)
+    tb.window = mock.MagicMock()
+    tb.on_login_clicked()
+    tb.window.show_login.assert_called_once_with()
+
+
+def test_ToolBar_on_logout_clicked():
+    """
+    When logout is clicked, the logout logic from the controller is started.
+    """
+    tb = ToolBar(None)
+    tb.controller = mock.MagicMock()
+    tb.on_logout_clicked()
+    tb.controller.logout.assert_called_once_with()
 
 
 def test_MainView_init():
@@ -83,7 +145,7 @@ def test_SourceWidget_update_starred():
     with mock.patch('securedrop_client.gui.widgets.load_svg') as mock_load:
         sw.update()
         mock_load.assert_called_once_with('star_on.svg')
-    sw.name.setText.assert_called_once_with('foo bar baz')
+    sw.name.setText.assert_called_once_with('<strong>foo bar baz</strong>')
 
 
 def test_SourceWidget_update_unstarred():
@@ -98,7 +160,7 @@ def test_SourceWidget_update_unstarred():
     with mock.patch('securedrop_client.gui.widgets.load_svg') as mock_load:
         sw.update()
         mock_load.assert_called_once_with('star_off.svg')
-    sw.name.setText.assert_called_once_with('foo bar baz')
+    sw.name.setText.assert_called_once_with('<strong>foo bar baz</strong>')
 
 
 def test_LoginView_init():

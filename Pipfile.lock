@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "ff5d23714efb0b7c8f425f68a37c0b1b5aaae1332cb2f9028d877d7f087fa9be"
+            "sha256": "416eafb715e0e3cff552ab4df3de0e63d293062aab7912f30f0cf730e1238e86"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -23,6 +23,13 @@
             ],
             "index": "pypi",
             "version": "==1.0.0"
+        },
+        "arrow": {
+            "hashes": [
+                "sha256:a558d3b7b6ce7ffc74206a86c147052de23d3d4ef0e17c210dd478c53575c4cd"
+            ],
+            "index": "pypi",
+            "version": "==0.12.1"
         },
         "mako": {
             "hashes": [
@@ -69,7 +76,7 @@
         },
         "securedrop-sdk": {
             "git": "https://github.com/freedomofpress/securedrop-sdk.git",
-            "ref": "bb9ddc92d6b4cb246c6c66e67ea272a7a6dc009d"
+            "ref": "156bea470c756e1d6d8592311af862af4089b59f"
         },
         "sip": {
             "hashes": [
@@ -189,11 +196,11 @@
         },
         "pip-tools": {
             "hashes": [
-                "sha256:4a94997602848f77ff02f660c0fcdfeaf316924ebb236c865f9742ce212aa6f9",
-                "sha256:e45e5198ce3799068642ebb0e7c9be5520bcff944c0186f79c1199a2759c970a"
+                "sha256:31b43e5f8d605fc84f7506199025460abcb98a29d12cc99db268f73e39cf55e5",
+                "sha256:b1ceca03b4a48346b2f6870565abb09d8d257d5b1524b4c6b222185bf26c3870"
             ],
             "index": "pypi",
-            "version": "==3.0.0"
+            "version": "==3.1.0"
         },
         "pluggy": {
             "hashes": [
