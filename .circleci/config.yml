@@ -12,3 +12,15 @@ jobs:
             pipenv install --dev
             export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
             pipenv run make check 
+
+      - run:
+          name: Run flake8
+          command: pipenv run flake8
+
+      - run:
+          name: Check Python dependencies for known vulnerabilities
+          command: pipenv check
+
+      - run:
+          name: Run static analysis on source code to find security issues
+          command: pipenv install bandit && pipenv run bandit --recursive . -ll

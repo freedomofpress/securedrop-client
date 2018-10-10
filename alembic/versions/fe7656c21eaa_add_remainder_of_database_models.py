@@ -38,13 +38,15 @@ def upgrade():
     op.create_table(
         'replies',
         sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('uuid', sa.String(length=36), nullable=False),
         sa.Column('source_id', sa.Integer(), nullable=True),
         sa.Column('journalist_id', sa.Integer(), nullable=True),
         sa.Column('filename', sa.String(length=255), nullable=False),
         sa.Column('size', sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(['journalist_id'], ['users.id'], ),
         sa.ForeignKeyConstraint(['source_id'], ['sources.id'], ),
-        sa.PrimaryKeyConstraint('id')
+        sa.PrimaryKeyConstraint('id'),
+        sa.UniqueConstraint('uuid')
     )
     op.create_table(
         'submissions',
