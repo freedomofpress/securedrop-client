@@ -2,9 +2,13 @@
 Tests for the app module, which sets things up and runs the application.
 """
 import sys
+from PyQt5.QtWidgets import QApplication
 from unittest import mock
 from securedrop_client.app import (LOG_DIR, LOG_FILE, ENCODING, excepthook,
                                    configure_logging, run)
+
+
+app = QApplication([])
 
 
 def test_excpethook():

@@ -1,10 +1,13 @@
 """
 Make sure the UI widgets are configured correctly and work as expected.
 """
-from PyQt5.QtWidgets import QLineEdit, QWidget
+from PyQt5.QtWidgets import QLineEdit, QWidget, QApplication
 from securedrop_client.gui.widgets import (ToolBar, MainView, SourceList,
                                            SourceWidget, LoginView)
 from unittest import mock
+
+
+app = QApplication([])
 
 
 def test_ToolBar_init():
