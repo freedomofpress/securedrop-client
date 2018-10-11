@@ -12,19 +12,6 @@ from .utils import *
 import pyotp
 
 
-def load_auth():
-    "Helper function to load token"
-    if os.path.exists("testtoken.json"):
-        with open("testtoken.json") as fobj:
-            return json.load(fobj)
-    return None
-
-
-def save_auth(token):
-    with open("testtoken.json", "w") as fobj:
-        json.dump(token, fobj)
-
-
 class TestAPIProxy(unittest.TestCase):
     @dastollervey_datasaver
     def setUp(self):

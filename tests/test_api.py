@@ -7,22 +7,10 @@ import shutil
 import tempfile
 import unittest
 from sdclientapi import *
+from .utils import *
 
 import vcr
 import pyotp
-
-
-def load_auth():
-    "Helper function to load token"
-    if os.path.exists("testtoken.json"):
-        with open("testtoken.json") as fobj:
-            return json.load(fobj)
-    return None
-
-
-def save_auth(token):
-    with open("testtoken.json", "w") as fobj:
-        json.dump(token, fobj)
 
 
 class TestAPI(unittest.TestCase):
