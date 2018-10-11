@@ -1,6 +1,7 @@
 from pprint import pprint
 import os
 import json
+import configparser
 from subprocess import PIPE, Popen
 
 from .sdlocalobjects import *
@@ -8,12 +9,23 @@ from .sdlocalobjects import *
 from typing import Optional, Dict, List, Tuple
 
 
+proxyvmname = "sd-journalist"
+
+
 def json_query(data):
     """
     Takes a json based query and passes to the network proxy.
     Returns the JSON output from the proxy.
     """
-    proxyvmname = "proxy-debian"
+    global proxyvmname
+    config = configparser.ConfigParser()
+    try:
+        if os.path.exists("/etc/sd-sdk.conf"):
+            config.read("/etc/sd-sdk.conf")
+            proxyvmname = config["proxy"]["name"]
+    except:
+        pass  # We already have a default name
+
     p = Popen(
         ["/usr/lib/qubes/qrexec-client-vm", proxyvmname, "securedrop.Proxy"],
         stdin=PIPE,
