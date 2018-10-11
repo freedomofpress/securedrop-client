@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from sdclientapi import *
 
-from .utils import *
+from utils import *
 import pyotp
 
 

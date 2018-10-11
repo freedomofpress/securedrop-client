@@ -7,7 +7,7 @@ import shutil
 import tempfile
 import unittest
 from sdclientapi import *
-from .utils import *
+from utils import *
 
 import vcr
 import pyotp
