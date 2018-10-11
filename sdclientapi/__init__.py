@@ -6,7 +6,7 @@ import requests
 from typing import Optional, Dict, List, Tuple
 
 from .sdlocalobjects import *
-from .proxiapi import APIProxy, json_query
+from .proxyapi import APIProxy, json_query
 
 
 class API:
@@ -32,7 +32,7 @@ class API:
         self.token = {"token": "", "expiration": ""}
         self.auth_header = {"Authorization": ""}  # type: Dict
 
-    def authenticate(self, totp = "") -> bool:
+    def authenticate(self, totp="") -> bool:
         """
         Authenticate the user and fetches the token from the server.
 

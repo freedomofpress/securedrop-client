@@ -476,8 +476,6 @@ class APIProxy:
             "body": body,
         }
 
-        print(json.dumps(data))
-
         try:
             res = json.loads(json_query(json.dumps(data)))
             data = json.loads(res["body"])
