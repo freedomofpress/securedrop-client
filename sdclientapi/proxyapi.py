@@ -80,7 +80,7 @@ class APIProxy:
         data = {"method": method, "path_query": path_query, "body": body}
 
         try:
-            result = json.loads(json_query(json.dumps(data)))
+            result = json.loads(json_query(json.dumps(data, sort_keys=True)))
             token_data = json.loads(result["body"])
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")

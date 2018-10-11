@@ -37,8 +37,8 @@ def internal_sideeffect(*args, **kwargs):
         value_str = python_args["body"]
         value = json.loads(value_str)
         del value["one_time_code"]
-        python_args["body"] = json.dumps(value)
-        newargs = json.dumps(python_args)
+        python_args["body"] = json.dumps(value, sort_keys=True)
+        newargs = json.dumps(python_args, sort_keys=True)
         arguments = (newargs,)
     except:
         pass  # Means no body in the call
@@ -49,13 +49,13 @@ def internal_sideeffect(*args, **kwargs):
     try:
         value = python_args["headers"]
         del value["Authorization"]
-        python_args["headers"] = json.dumps(value)
-        newargs = json.dumps(python_args)
+        python_args["headers"] = json.dumps(value, sort_keys=True)
+        newargs = json.dumps(python_args, sort_keys=True)
         arguments = (newargs,)
     except Exception as err:
         pass  # Means no Authorization token in the call
 
-    key = str((arguments, CALLNUMBER))
+    key = arguments[0] + "+" + str(CALLNUMBER)
     answer = RES.get(key, None)
     if not answer:
         # Means it is not in cache.
