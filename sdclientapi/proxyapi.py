@@ -627,3 +627,75 @@ class APIProxy:
             return True
         # We should never reach here
         return False
+
+    def download_submission(self, submission: Submission) -> Tuple[str, str]:
+        """
+        Downloads the submission object from the server.
+
+        :param submission: Submission object we want to update.
+        :returns: Tuple of sha256sum, temporary filename
+        """
+        global proxyvmname
+        source_uuid = submission.source_url.split("/")[-1]
+        path_query = "/api/v1/sources/{}/submissions/{}/download".format(
+            source_uuid, submission.uuid
+        )
+        method = "GET"
+
+        data = {"method": method, "path_query": path_query, "headers": self.auth_header}
+
+        try:
+            res = json.loads(json_query(json.dumps(data)))
+
+            if res["status"] == 404:
+                raise WrongUUIDError("Missing submission {}".format(submission.uuid))
+            data = json.loads(res["body"])
+        except json.decoder.JSONDecodeError:
+            raise BaseError("Error in parsing JSON")
+
+        if "error" in data:
+            raise AuthError(data["error"])
+
+        etag = json.loads(res["headers"]["Etag"])
+
+        filename = os.path.join(
+            "/home/user/QubesIncoming/", proxyvmname, data["filename"]
+        )
+
+        return etag[7:], filename
+
+    def download_reply(self, reply: Reply) -> Tuple[str, str]:
+        """
+        Downloads the reply object from the server.
+
+        :param reply: Reply object we want to update.
+        :returns: Tuple of sha256sum, temporary filename
+        """
+        global proxyvmname
+        source_uuid = reply.source_url.split("/")[-1]
+        path_query = "/api/v1/sources/{}/replies/{}/download".format(
+            source_uuid, reply.uuid
+        )
+        method = "GET"
+
+        data = {"method": method, "path_query": path_query, "headers": self.auth_header}
+
+        try:
+            res = json.loads(json_query(json.dumps(data)))
+
+            if res["status"] == 404:
+                raise WrongUUIDError("Missing reply {}".format(reply.uuid))
+            data = json.loads(res["body"])
+        except json.decoder.JSONDecodeError:
+            raise BaseError("Error in parsing JSON")
+
+        if "error" in data:
+            raise AuthError(data["error"])
+
+        etag = json.loads(res["headers"]["Etag"])
+
+        filename = os.path.join(
+            "/home/user/QubesIncoming/", proxyvmname, data["filename"]
+        )
+
+        return etag[7:], filename

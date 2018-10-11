@@ -231,3 +231,21 @@ class TestAPIProxy(unittest.TestCase):
 
         # We deleted one, so there must be 3 replies left
         self.assertEqual(len(self.api.get_all_replies()), 3)
+
+    @dastollervey_datasaver
+    def test_download_reply(self):
+        r = self.api.get_all_replies()[0]
+
+        etag, filepath = self.api.download_reply(r)
+
+    @dastollervey_datasaver
+    def test_download_submission(self):
+        s = self.api.get_all_submissions()[0]
+
+        self.assertFalse(s.is_read)
+
+        etag, filepath = self.api.download_submission(s)
+
+        # Now the submission should have is_read as True.
+        s = self.api.get_submission(s)
+        self.assertTrue(s.is_read)
