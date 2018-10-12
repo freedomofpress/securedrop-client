@@ -83,6 +83,13 @@ class TestMain(unittest.TestCase):
         # The proxy should have created a filename in the response body
         self.assertIn('filename', response['body'])
 
+        # The file should not be empty
+        with open("/tmp/{}".format(self.fn)) as f:
+            saved_file = f.read()
+
+        # We expect HTML content in the file from the test data
+        self.assertIn("<html>", saved_file)
+
     def test_error_response(self):
         test_input_json = """"foo": "bar", "baz": "bliff" }"""
 

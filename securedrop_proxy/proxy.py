@@ -96,10 +96,14 @@ class Proxy:
 
         res = Response(self._presp.status_code)
 
-        fh = tempfile.NamedTemporaryFile()
+        # Create a NamedTemporaryFile, we don't want
+        # to delete it after closing.
+        fh = tempfile.NamedTemporaryFile(delete=False)
 
         for c in self._presp.iter_content(10):
             fh.write(c)
+
+        fh.close()
 
         res.headers = self._presp.headers
 
