@@ -1,12 +1,41 @@
 from pprint import pprint
 import os
+import configparser
 import json
 import requests
+from subprocess import PIPE, Popen
 
 from typing import Optional, Dict, List, Tuple
 
 from .sdlocalobjects import *
-from .proxyapi import APIProxy, json_query
+
+
+proxyvmname = "sd-journalist"
+
+
+def json_query(data):
+    """
+    Takes a json based query and passes to the network proxy.
+    Returns the JSON output from the proxy.
+    """
+    global proxyvmname
+    config = configparser.ConfigParser()
+    try:
+        if os.path.exists("/etc/sd-sdk.conf"):
+            config.read("/etc/sd-sdk.conf")
+            proxyvmname = config["proxy"]["name"]
+    except:
+        pass  # We already have a default name
+
+    p = Popen(
+        ["/usr/lib/qubes/qrexec-client-vm", proxyvmname, "securedrop.Proxy"],
+        stdin=PIPE,
+        stdout=PIPE,
+    )
+    p.stdin.write(data.encode("utf-8"))
+    d = p.communicate()
+    output = d[0].decode("utf-8")
+    return output.strip()
 
 
 class API:
@@ -20,7 +49,7 @@ class API:
     :returns: An object of API class.
     """
 
-    def __init__(self, address, username, passphrase, totp) -> None:
+    def __init__(self, address, username, passphrase, totp, proxy=False) -> None:
         """
         Primary API class, this is the only thing which will make network call.
         """
@@ -31,6 +60,29 @@ class API:
         self.totp = totp  # type: str
         self.token = {"token": "", "expiration": ""}
         self.auth_header = {"Authorization": ""}  # type: Dict
+        self.proxy = proxy  # type: bool
+
+    def _send_json_request(self, method, path_query, body=None, headers=None):
+        if self.proxy:  # We are using the Qubes securedrop-proxy
+            if method == "POST":
+                data = {"method": method, "path_query": path_query, "body": body, "headers": headers}
+            elif method == "GET" or method == "DELETE":
+                data = {"method": method, "path_query": path_query, "headers": headers}
+
+            result = json.loads(json_query(json.dumps(data, sort_keys=True)))
+            return json.loads(result["body"]), result["status"]
+
+        else:  # We are not using the Qubes securedrop-proxy
+            if method == "POST":
+                result = requests.post(self.server + path_query,
+                                     data=body)
+            elif method == "GET":
+                result = requests.get(self.server + path_query,
+                                    headers=headers)
+            elif method == "DELETE":
+                result = requests.delete(self.server + path_query, headers=headers)
+
+            return result.json(), result.status_code
 
     def authenticate(self, totp="") -> bool:
         """
@@ -46,9 +98,12 @@ class API:
             "one_time_code": totp,
         }
 
-        token = requests.post(self.server + "api/v1/token", data=json.dumps(user_data))
+        method = "POST"
+        path_query = "api/v1/token"
+        body = json.dumps(user_data)
+
         try:
-            token_data = token.json()
+            token_data, status_code = self._send_json_request(method, path_query, body=body)
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
         if not "expiration" in token_data:
@@ -71,11 +126,12 @@ class API:
 
         :returns: List of Source objects.
         """
-        url = self.server + "api/v1/sources"
+        path_query = "api/v1/sources"
+        method = "GET"
 
         try:
-            res = requests.get(url, headers=self.auth_header)
-            data = res.json()
+            data, status_code = self._send_json_request(method, path_query,
+                                          headers=self.auth_header)
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
 
@@ -98,15 +154,16 @@ class API:
         :param source: Source object containing only source's uuid value.
         :returns: Source object fetched from server for the given UUID value.
         """
-        url = self.server + "api/v1/sources/{}".format(source.uuid)
+        path_query = "api/v1/sources/{}".format(source.uuid)
+        method = "GET"
 
         try:
-            res = requests.get(url, headers=self.auth_header)
+            data, status_code = self._send_json_request(method, path_query,
+                                     headers=self.auth_header)
 
-            if res.status_code == 404:
+            if status_code == 404:
                 raise WrongUUIDError("Missing source {}".format(source.uuid))
 
-            data = res.json()
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
 
@@ -134,15 +191,16 @@ class API:
         :param source: Source object containing only source's uuid value.
         :returns: True if successful, raises Errors in case of wrong values.
         """
-        url = self.server + "api/v1/sources/{}".format(source.uuid)
+        path_query = "api/v1/sources/{}".format(source.uuid)
+        method = "DELETE"
 
         try:
-            res = requests.delete(url, headers=self.auth_header)
+            data, status_code = self._send_json_request(method, path_query,
+                                     headers=self.auth_header)
 
-            if res.status_code == 404:
+            if status_code == 404:
                 raise WrongUUIDError("Missing source {}".format(source.uuid))
 
-            data = res.json()
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
 
@@ -174,11 +232,14 @@ class API:
         :param source: The source object to whom we want add a star.
         :returns: True if successful, raises Error otherwise.
         """
-        url = self.server.rstrip("/") + source.add_star_url
+        path_query = "api/v1/sources/{}/add_star".format(source.uuid)
+        method = "POST"
 
         try:
-            res = requests.post(url, headers=self.auth_header)
-            data = res.json()
+            data, status_code = self._send_json_request(method, path_query,
+                                     headers=self.auth_header)
+            if status_code == 404:
+                raise WrongUUIDError("Missing source {}".format(source.uuid))
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
 
@@ -193,11 +254,14 @@ class API:
         :param source: Source object to remove the star from.
         :returns: True if successful, raises Error otherwise.
         """
-        url = self.server.rstrip("/") + source.remove_star_url
+        path_query = "api/v1/sources/{}/remove_star".format(source.uuid)
+        method = "DELETE"
 
         try:
-            res = requests.delete(url, headers=self.auth_header)
-            data = res.json()
+            data, status_code = self._send_json_request(method, path_query,
+                                     headers=self.auth_header)
+            if status_code == 404:
+                raise WrongUUIDError("Missing source {}".format(source.uuid))
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
 
@@ -213,15 +277,16 @@ class API:
         :param source: Source object for whom we want to find all the submissions.
         :returns: List of Submission objects.
         """
-        url = self.server.rstrip("/") + source.submissions_url
+        path_query = "api/v1/sources/{}/submissions".format(source.uuid)
+        method = "GET"
 
         try:
-            res = requests.get(url, headers=self.auth_header)
+            data, status_code = self._send_json_request(method, path_query,
+                                     headers=self.auth_header)
 
-            if res.status_code == 404:
+            if status_code == 404:
                 raise WrongUUIDError("Missing submission {}".format(source.uuid))
 
-            data = res.json()
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
 
@@ -245,17 +310,18 @@ class API:
         :returns: Updated submission object from the server.
         """
         source_uuid = submission.source_url.split("/")[-1]
-        url = self.server.rstrip("/") + "/api/v1/sources/{}/submissions/{}".format(
+        path_query = "api/v1/sources/{}/submissions/{}".format(
             source_uuid, submission.uuid
         )
+        method = "GET"
 
         try:
-            res = requests.get(url, headers=self.auth_header)
+            data, status_code = self._send_json_request(method, path_query,
+                                     headers=self.auth_header)
 
-            if res.status_code == 404:
+            if status_code == 404:
                 raise WrongUUIDError("Missing submission {}".format(submission.uuid))
 
-            data = res.json()
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
 
@@ -282,11 +348,12 @@ class API:
 
         :returns: List of Submission objects.
         """
-        url = self.server.rstrip("/") + "/api/v1/submissions"
+        path_query = "api/v1/submissions"
+        method = "GET"
 
         try:
-            res = requests.get(url, headers=self.auth_header)
-            data = res.json()
+            data, status_code = self._send_json_request(method, path_query,
+                                     headers=self.auth_header)
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
 
@@ -313,17 +380,18 @@ class API:
         # from local submission (not fetched from server) objects.
         # See the *from_string for an example.
         source_uuid = submission.source_url.split("/")[-1]
-        url = self.server.rstrip("/") + "/api/v1/sources/{}/submissions/{}".format(
+        path_query = "api/v1/sources/{}/submissions/{}".format(
             source_uuid, submission.uuid
         )
+        method = "DELETE"
 
         try:
-            res = requests.delete(url, headers=self.auth_header)
+            data, status_code = self._send_json_request(method, path_query,
+                                     headers=self.auth_header)
 
-            if res.status_code == 404:
+            if status_code == 404:
                 raise WrongUUIDError("Missing submission {}".format(submission.uuid))
 
-            data = res.json()
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
 
@@ -395,11 +463,16 @@ class API:
         :param source: Source object we want to flag.
         :returns: True if successful, raises Error otherwise.
         """
-        url = self.server.rstrip("/") + "/api/v1/sources/{}/flag".format(source.uuid)
+        path_query = "api/v1/sources/{}/flag".format(source.uuid)
+        method = "POST"
 
         try:
-            res = requests.post(url, headers=self.auth_header)
-            data = res.json()
+            data, status_code = self._send_json_request(method, path_query,
+                                     headers=self.auth_header)
+
+            if status_code == 404:
+                raise WrongUUIDError("Missing source {}".format(source.uuid))
+
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
 
@@ -420,11 +493,13 @@ class API:
             'username': 'journalist'
         }
         """
-        url = self.server.rstrip("/") + "/api/v1/user"
+        path_query = "api/v1/user"
+        method = "GET"
 
         try:
-            res = requests.get(url, headers=self.auth_header)
-            data = res.json()
+            data, status_code = self._send_json_request(method, path_query,
+                                     headers=self.auth_header)
+
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
 
@@ -441,17 +516,18 @@ class API:
         :param source: Source object we want to reply.
         :param msg: Encrypted message with Source's GPG public key.
         """
-        url = self.server.rstrip("/") + source.replies_url
-
+        path_query = "api/v1/sources/{}/replies".format(source.uuid)
+        method = "POST"
         reply = {"reply": msg}
 
         try:
-            res = requests.post(url, headers=self.auth_header, data=json.dumps(reply))
+            data, status_code = self._send_json_request(method, path_query,
+                                     body=json.dumps(reply),
+                                     headers=self.auth_header)
 
-            if res.status_code == 400:
+            if status_code == 400:
                 raise ReplyError(res.json()["message"])
 
-            data = res.json()
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
 
@@ -470,15 +546,16 @@ class API:
         :param source: Source object containing only source's uuid value.
         :returns: List of Reply objects.
         """
-        url = self.server + "api/v1/sources/{}/replies".format(source.uuid)
+        path_query = "api/v1/sources/{}/replies".format(source.uuid)
+        method = "GET"
 
         try:
-            res = requests.get(url, headers=self.auth_header)
+            data, status_code = self._send_json_request(method, path_query,
+                                     headers=self.auth_header)
 
-            if res.status_code == 404:
+            if status_code == 404:
                 raise WrongUUIDError("Missing source {}".format(source.uuid))
 
-            data = res.json()
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
 
@@ -500,17 +577,16 @@ class API:
         :param reply_uuid: UUID of the reply.
         :returns: A reply object
         """
-        url = self.server + "api/v1/sources/{}/replies/{}".format(
-            source.uuid, reply_uuid
-        )
+        path_query = "api/v1/sources/{}/replies/{}".format(source.uuid, reply_uuid)
+        method = "GET"
 
         try:
-            res = requests.get(url, headers=self.auth_header)
+            data, status_code = self._send_json_request(method, path_query,
+                                     headers=self.auth_header)
 
-            if res.status_code == 404:
+            if status_code == 404:
                 raise WrongUUIDError("Missing source {}".format(source.uuid))
 
-            data = res.json()
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
 
@@ -527,12 +603,19 @@ class API:
 
         :returns: List of Reply objects.
         """
-        url = self.server + "api/v1/replies"
+        source_uuid = submission.source_url.split("/")[-1]
+        path_query = "/api/v1/sources/{}/submissions/{}/download".format(
+            source_uuid, submission.uuid
+        )
+        method = "GET"
 
         try:
-            res = requests.get(url, headers=self.auth_header)
+            data, status_code = self._send_json_request(method, path_query,
+                                     headers=self.auth_header)
 
-            data = res.json()
+            if status_code == 404:
+                raise WrongUUIDError("Missing source {}".format(source.uuid))
+
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
 

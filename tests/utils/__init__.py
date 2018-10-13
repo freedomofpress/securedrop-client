@@ -79,7 +79,7 @@ def dastollervey_datasaver(func):
                 RES = json.load(fobj)
         mock = MagicMock()
         mock.side_effect = internal_sideeffect
-        with patch("sdclientapi.proxyapi.json_query", mock):
+        with patch("sdclientapi.json_query", mock):
             result = func(*args, **kwargs)
 
         if not os.path.exists(filename):

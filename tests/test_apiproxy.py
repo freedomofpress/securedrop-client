@@ -19,7 +19,8 @@ class TestAPIProxy(unittest.TestCase):
         self.username = "journalist"
         self.password = "correct horse battery staple profanity oil chewy"
         self.server = "http://localhost:8081/"
-        self.api = APIProxy(self.server, self.username, self.password, str(self.totp.now()))
+        self.api = API(self.server, self.username, self.password,
+                       str(self.totp.now()), proxy=True)
         for i in range(3):
             try:
                 self.api.authenticate()
@@ -41,7 +42,7 @@ class TestAPIProxy(unittest.TestCase):
     def test_get_sources(self):
         sources = self.api.get_sources()
         self.assertEqual(len(sources), 2)
-    
+
     @dastollervey_datasaver
     def test_star_add_remove(self):
         s = self.api.get_sources()[0]
