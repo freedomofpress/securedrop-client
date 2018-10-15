@@ -101,7 +101,7 @@ class TestAPI(unittest.TestCase):
     @vcr.use_cassette("data/test-get-wrong-submissions.yml")
     def test_get_wrong_submissions(self):
         s = self.api.get_sources()[0]
-        s.submissions_url = "/api/v1/sources/rofl-missing/submissions/2334"
+        s.uuid = "rofl-missing"
         with self.assertRaises(WrongUUIDError):
             self.api.get_submissions(s)
 

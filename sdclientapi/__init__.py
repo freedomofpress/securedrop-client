@@ -65,24 +65,28 @@ class API:
     def _send_json_request(self, method, path_query, body=None, headers=None):
         if self.proxy:  # We are using the Qubes securedrop-proxy
             if method == "POST":
-                data = {"method": method, "path_query": path_query, "body": body, "headers": headers}
+                data = {"method": method, "path_query": path_query, "body": body}
+                if headers:
+                    data["headers"] = headers
             elif method == "GET" or method == "DELETE":
                 data = {"method": method, "path_query": path_query, "headers": headers}
 
-            result = json.loads(json_query(json.dumps(data, sort_keys=True)))
-            return json.loads(result["body"]), result["status"]
+            data_str = json.dumps(data, sort_keys=True)
+            result = json.loads(json_query(data_str))
+            return json.loads(result["body"]), result["status"], result["headers"]
 
         else:  # We are not using the Qubes securedrop-proxy
             if method == "POST":
-                result = requests.post(self.server + path_query,
-                                     data=body)
+                result = requests.post(self.server + path_query, data=body)
             elif method == "GET":
-                result = requests.get(self.server + path_query,
-                                    headers=headers)
+                result = requests.get(self.server + path_query, headers=headers)
             elif method == "DELETE":
                 result = requests.delete(self.server + path_query, headers=headers)
 
-            return result.json(), result.status_code
+            # Because when we download a file there is no JSON in the body
+            if path_query.find("/download") != -1:
+                return result, result.status_code, result.headers
+            return result.json(), result.status_code, result.headers
 
     def authenticate(self, totp="") -> bool:
         """
@@ -103,7 +107,9 @@ class API:
         body = json.dumps(user_data)
 
         try:
-            token_data, status_code = self._send_json_request(method, path_query, body=body)
+            token_data, status_code, headers = self._send_json_request(
+                method, path_query, body=body
+            )
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
         if not "expiration" in token_data:
@@ -130,8 +136,9 @@ class API:
         method = "GET"
 
         try:
-            data, status_code = self._send_json_request(method, path_query,
-                                          headers=self.auth_header)
+            data, status_code, headers = self._send_json_request(
+                method, path_query, headers=self.auth_header
+            )
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
 
@@ -158,8 +165,9 @@ class API:
         method = "GET"
 
         try:
-            data, status_code = self._send_json_request(method, path_query,
-                                     headers=self.auth_header)
+            data, status_code, headers = self._send_json_request(
+                method, path_query, headers=self.auth_header
+            )
 
             if status_code == 404:
                 raise WrongUUIDError("Missing source {}".format(source.uuid))
@@ -195,8 +203,9 @@ class API:
         method = "DELETE"
 
         try:
-            data, status_code = self._send_json_request(method, path_query,
-                                     headers=self.auth_header)
+            data, status_code, headers = self._send_json_request(
+                method, path_query, headers=self.auth_header
+            )
 
             if status_code == 404:
                 raise WrongUUIDError("Missing source {}".format(source.uuid))
@@ -236,8 +245,9 @@ class API:
         method = "POST"
 
         try:
-            data, status_code = self._send_json_request(method, path_query,
-                                     headers=self.auth_header)
+            data, status_code, headers = self._send_json_request(
+                method, path_query, headers=self.auth_header
+            )
             if status_code == 404:
                 raise WrongUUIDError("Missing source {}".format(source.uuid))
         except json.decoder.JSONDecodeError:
@@ -258,8 +268,9 @@ class API:
         method = "DELETE"
 
         try:
-            data, status_code = self._send_json_request(method, path_query,
-                                     headers=self.auth_header)
+            data, status_code, headers = self._send_json_request(
+                method, path_query, headers=self.auth_header
+            )
             if status_code == 404:
                 raise WrongUUIDError("Missing source {}".format(source.uuid))
         except json.decoder.JSONDecodeError:
@@ -281,8 +292,9 @@ class API:
         method = "GET"
 
         try:
-            data, status_code = self._send_json_request(method, path_query,
-                                     headers=self.auth_header)
+            data, status_code, headers = self._send_json_request(
+                method, path_query, headers=self.auth_header
+            )
 
             if status_code == 404:
                 raise WrongUUIDError("Missing submission {}".format(source.uuid))
@@ -309,15 +321,15 @@ class API:
         :param submission: Submission object we want to update.
         :returns: Updated submission object from the server.
         """
-        source_uuid = submission.source_url.split("/")[-1]
         path_query = "api/v1/sources/{}/submissions/{}".format(
-            source_uuid, submission.uuid
+            submission.source_uuid, submission.uuid
         )
         method = "GET"
 
         try:
-            data, status_code = self._send_json_request(method, path_query,
-                                     headers=self.auth_header)
+            data, status_code, headers = self._send_json_request(
+                method, path_query, headers=self.auth_header
+            )
 
             if status_code == 404:
                 raise WrongUUIDError("Missing submission {}".format(submission.uuid))
@@ -339,7 +351,7 @@ class API:
         :returns: Updated submission object from the server.
         """
         s = Submission(uuid=uuid)
-        s.source_url = "/api/v1/sources/{}".format(source_uuid)
+        s.source_uuid = source_uuid
         return self.get_submission(s)
 
     def get_all_submissions(self) -> List[Submission]:
@@ -352,8 +364,9 @@ class API:
         method = "GET"
 
         try:
-            data, status_code = self._send_json_request(method, path_query,
-                                     headers=self.auth_header)
+            data, status_code, headers = self._send_json_request(
+                method, path_query, headers=self.auth_header
+            )
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
 
@@ -379,15 +392,15 @@ class API:
         # Not using direct URL because this helps to use the same method
         # from local submission (not fetched from server) objects.
         # See the *from_string for an example.
-        source_uuid = submission.source_url.split("/")[-1]
         path_query = "api/v1/sources/{}/submissions/{}".format(
-            source_uuid, submission.uuid
+            submission.source_uuid, submission.uuid
         )
         method = "DELETE"
 
         try:
-            data, status_code = self._send_json_request(method, path_query,
-                                     headers=self.auth_header)
+            data, status_code, headers = self._send_json_request(
+                method, path_query, headers=self.auth_header
+            )
 
             if status_code == 404:
                 raise WrongUUIDError("Missing submission {}".format(submission.uuid))
@@ -415,7 +428,9 @@ class API:
         s.source_url = "/api/v1/sources/{}".format(source_uuid)
         return self.delete_submission(s)
 
-    def download_submission(self, submission: Submission, path: str) -> Tuple[str, str]:
+    def download_submission(
+        self, submission: Submission, path: str = ""
+    ) -> Tuple[str, str]:
         """
         Returns a tuple of sha256sum and file path for a given Submission object. This method
         also requires a directory path in where it will save the submission file.
@@ -425,30 +440,41 @@ class API:
 
         :returns: Tuple of sha256sum and path of the saved submission.
         """
-        url = self.server.rstrip("/") + submission.download_url
+        path_query = "api/v1/sources/{}/submissions/{}/download".format(
+            submission.source_uuid, submission.uuid
+        )
+        method = "GET"
 
-        if os.path.exists(path) and not os.path.isdir(path):
-            raise BaseError("Please provide a vaild directory to save.")
+        if path:
+            if os.path.exists(path) and not os.path.isdir(path):
+                raise BaseError("Please provide a vaild directory to save.")
 
         try:
-            res = requests.get(url, headers=self.auth_header, stream=True)
+            data, status_code, headers = self._send_json_request(
+                method, path_query, headers=self.auth_header
+            )
 
-            if res.status_code == 404:
-                raise WrongUUIDError("Missing submission {}".format(submission.uuid))
+            if status_code == 404:
+                raise WrongUUIDError("Missing reply {}".format(submission.uuid))
 
             # Get the headers
-            headers = res.headers
+            headers = headers
             etag = headers["Etag"]
 
-            # This is where we will save our downloaded file
-            filepath = os.path.join(path, submission.filename)
-            with open(filepath, "wb") as fobj:
-                for chunk in res.iter_content(
-                    chunk_size=1024
-                ):  # Getting 1024 in each chunk
-                    if chunk:
-                        fobj.write(chunk)
+            if not self.proxy:
+                # This is where we will save our downloaded file
+                filepath = os.path.join(path, submission.filename)
+                with open(filepath, "wb") as fobj:
+                    for chunk in data.iter_content(
+                        chunk_size=1024
+                    ):  # Getting 1024 in each chunk
+                        if chunk:
+                            fobj.write(chunk)
 
+            else:
+                filepath = os.path.join(
+                    "/home/user/QubesIncoming/", proxyvmname, data["filename"]
+                )
             # Because etag comes as JSON encoded string
             etag = json.loads(etag)
             # Return the tuple of sha256sum, filepath
@@ -467,8 +493,9 @@ class API:
         method = "POST"
 
         try:
-            data, status_code = self._send_json_request(method, path_query,
-                                     headers=self.auth_header)
+            data, status_code, headers = self._send_json_request(
+                method, path_query, headers=self.auth_header
+            )
 
             if status_code == 404:
                 raise WrongUUIDError("Missing source {}".format(source.uuid))
@@ -497,8 +524,9 @@ class API:
         method = "GET"
 
         try:
-            data, status_code = self._send_json_request(method, path_query,
-                                     headers=self.auth_header)
+            data, status_code, headers = self._send_json_request(
+                method, path_query, headers=self.auth_header
+            )
 
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
@@ -521,12 +549,12 @@ class API:
         reply = {"reply": msg}
 
         try:
-            data, status_code = self._send_json_request(method, path_query,
-                                     body=json.dumps(reply),
-                                     headers=self.auth_header)
+            data, status_code, headers = self._send_json_request(
+                method, path_query, body=json.dumps(reply), headers=self.auth_header
+            )
 
             if status_code == 400:
-                raise ReplyError(res.json()["message"])
+                raise ReplyError(data["message"])
 
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
@@ -550,8 +578,9 @@ class API:
         method = "GET"
 
         try:
-            data, status_code = self._send_json_request(method, path_query,
-                                     headers=self.auth_header)
+            data, status_code, headers = self._send_json_request(
+                method, path_query, headers=self.auth_header
+            )
 
             if status_code == 404:
                 raise WrongUUIDError("Missing source {}".format(source.uuid))
@@ -581,8 +610,9 @@ class API:
         method = "GET"
 
         try:
-            data, status_code = self._send_json_request(method, path_query,
-                                     headers=self.auth_header)
+            data, status_code, headers = self._send_json_request(
+                method, path_query, headers=self.auth_header
+            )
 
             if status_code == 404:
                 raise WrongUUIDError("Missing source {}".format(source.uuid))
@@ -603,18 +633,13 @@ class API:
 
         :returns: List of Reply objects.
         """
-        source_uuid = submission.source_url.split("/")[-1]
-        path_query = "/api/v1/sources/{}/submissions/{}/download".format(
-            source_uuid, submission.uuid
-        )
+        path_query = "api/v1/replies"
         method = "GET"
 
         try:
-            data, status_code = self._send_json_request(method, path_query,
-                                     headers=self.auth_header)
-
-            if status_code == 404:
-                raise WrongUUIDError("Missing source {}".format(source.uuid))
+            data, status_code, headers = self._send_json_request(
+                method, path_query, headers=self.auth_header
+            )
 
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
@@ -629,7 +654,7 @@ class API:
 
         return result
 
-    def download_reply(self, reply: Reply, path: str) -> Tuple[str, str]:
+    def download_reply(self, reply: Reply, path: str = "") -> Tuple[str, str]:
         """
         Returns a tuple of sha256sum and file path for a given Reply object. This method
         also requires a directory path in where it will save the reply file.
@@ -639,30 +664,42 @@ class API:
 
         :returns: Tuple of sha256sum and path of the saved Reply.
         """
-        url = self.server.rstrip("/") + reply.reply_url + "/download"
+        path_query = "api/v1/sources/{}/replies/{}/download".format(
+            reply.source_uuid, reply.uuid
+        )
 
-        if os.path.exists(path) and not os.path.isdir(path):
-            raise BaseError("Please provide a valid directory to save.")
+        method = "GET"
+
+        if path:
+            if os.path.exists(path) and not os.path.isdir(path):
+                raise BaseError("Please provide a valid directory to save.")
 
         try:
-            res = requests.get(url, headers=self.auth_header, stream=True)
+            data, status_code, headers = self._send_json_request(
+                method, path_query, headers=self.auth_header
+            )
 
-            if res.status_code == 404:
+            if status_code == 404:
                 raise WrongUUIDError("Missing reply {}".format(reply.uuid))
 
             # Get the headers
-            headers = res.headers
+            headers = headers
             etag = headers["Etag"]
 
-            # This is where we will save our downloaded file
-            filepath = os.path.join(path, reply.filename)
-            with open(filepath, "wb") as fobj:
-                for chunk in res.iter_content(
-                    chunk_size=1024
-                ):  # Getting 1024 in each chunk
-                    if chunk:
-                        fobj.write(chunk)
+            if not self.proxy:
+                # This is where we will save our downloaded file
+                filepath = os.path.join(path, reply.filename)
+                with open(filepath, "wb") as fobj:
+                    for chunk in data.iter_content(
+                        chunk_size=1024
+                    ):  # Getting 1024 in each chunk
+                        if chunk:
+                            fobj.write(chunk)
 
+            else:
+                filepath = os.path.join(
+                    "/home/user/QubesIncoming/", proxyvmname, data["filename"]
+                )
             # Because etag comes as JSON encoded string
             etag = json.loads(etag)
             # Return the tuple of sha256sum, filepath
@@ -680,18 +717,19 @@ class API:
         # Not using direct URL because this helps to use the same method
         # from local reply (not fetched from server) objects.
         # See the *from_string for an example.
-        source_uuid = reply.source_url.split("/")[-1]
-        url = self.server.rstrip("/") + "/api/v1/sources/{}/replies/{}".format(
-            source_uuid, reply.uuid
+        path_query = "api/v1/sources/{}/replies/{}".format(
+            reply.source_uuid, reply.uuid
         )
 
+        method = "DELETE"
+
         try:
-            res = requests.delete(url, headers=self.auth_header)
+            data, status_code, headers = self._send_json_request(
+                method, path_query, headers=self.auth_header
+            )
 
-            if res.status_code == 404:
+            if status_code == 404:
                 raise WrongUUIDError("Missing reply {}".format(reply.uuid))
-
-            data = res.json()
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
 
