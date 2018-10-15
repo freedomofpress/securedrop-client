@@ -194,14 +194,11 @@ class TestAPI(unittest.TestCase):
 
         # We need a temporary directory to download
         tmpdir = tempfile.mkdtemp()
-        etag, filepath = self.api.download_submission(s, tmpdir)
+        _, filepath = self.api.download_submission(s, tmpdir)
 
         # now let us read the downloaded file
         with open(filepath, "rb") as fobj:
             data = fobj.read()
-
-        shasum = hashlib.sha256(data).hexdigest()
-        self.assertEqual(etag, shasum)
 
         # Now the submission should have is_read as True.
 
@@ -241,14 +238,11 @@ class TestAPI(unittest.TestCase):
 
         # We need a temporary directory to download
         tmpdir = tempfile.mkdtemp()
-        etag, filepath = self.api.download_reply(r, tmpdir)
+        _, filepath = self.api.download_reply(r, tmpdir)
 
         # now let us read the downloaded file
         with open(filepath, "rb") as fobj:
             data = fobj.read()
-
-        shasum = hashlib.sha256(data).hexdigest()
-        self.assertEqual(etag, shasum)
 
         # Let us remove the temporary directory
         shutil.rmtree(tmpdir)

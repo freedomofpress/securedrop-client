@@ -459,7 +459,6 @@ class API:
 
             # Get the headers
             headers = headers
-            etag = headers["Etag"]
 
             if not self.proxy:
                 # This is where we will save our downloaded file
@@ -475,10 +474,11 @@ class API:
                 filepath = os.path.join(
                     "/home/user/QubesIncoming/", proxyvmname, data["filename"]
                 )
-            # Because etag comes as JSON encoded string
-            etag = json.loads(etag)
             # Return the tuple of sha256sum, filepath
-            return etag[7:], filepath
+            # Returning empty string instead of sha256sum due to this
+            # SecureDrop server bug:
+            # https://github.com/freedomofpress/securedrop/issues/3877
+            return "", filepath
         except Exception as err:
             raise BaseError(err)
 
@@ -684,7 +684,6 @@ class API:
 
             # Get the headers
             headers = headers
-            etag = headers["Etag"]
 
             if not self.proxy:
                 # This is where we will save our downloaded file
@@ -700,10 +699,11 @@ class API:
                 filepath = os.path.join(
                     "/home/user/QubesIncoming/", proxyvmname, data["filename"]
                 )
-            # Because etag comes as JSON encoded string
-            etag = json.loads(etag)
             # Return the tuple of sha256sum, filepath
-            return etag[7:], filepath
+            # Returning empty string instead of sha256sum due to this
+            # SecureDrop server bug:
+            # https://github.com/freedomofpress/securedrop/issues/3877
+            return "", filepath
         except Exception as err:
             raise BaseError(err)
 

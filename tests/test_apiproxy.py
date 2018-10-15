@@ -224,7 +224,7 @@ class TestAPIProxy(unittest.TestCase):
     def test_download_reply(self):
         r = self.api.get_all_replies()[0]
 
-        etag, filepath = self.api.download_reply(r)
+        _, filepath = self.api.download_reply(r)
 
     @dastollervey_datasaver
     def test_download_submission(self):
@@ -232,7 +232,7 @@ class TestAPIProxy(unittest.TestCase):
 
         self.assertFalse(s.is_read)
 
-        etag, filepath = self.api.download_submission(s)
+        _, filepath = self.api.download_submission(s)
 
         # Now the submission should have is_read as True.
         s = self.api.get_submission(s)
