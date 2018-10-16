@@ -74,6 +74,8 @@ class Window(QMainWindow):
         self.status_bar = QStatusBar(self)
         self.setStatusBar(self.status_bar)
         self.set_status('Started SecureDrop Client. Please sign in.', 20000)
+        self.login_dialog = LoginDialog(self)
+        self.main_view.setup(self.controller)
 
     def autosize_window(self):
         """
@@ -105,6 +107,12 @@ class Window(QMainWindow):
         """
         self.login_dialog.accept()
         self.login_dialog = None
+
+    def update_error_status(self, error=None):
+        """
+        Show an error message on the sidebar.
+        """
+        self.main_view.update_error_status(error)
 
     def show_sources(self, sources):
         """

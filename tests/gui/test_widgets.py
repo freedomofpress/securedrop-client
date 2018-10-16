@@ -107,15 +107,29 @@ def test_MainView_update_view():
     mv.view_layout.addWidget.assert_called_once_with(mock_widget)
 
 
+def test_MainView_update_error_status():
+    """
+    Ensure when the update_error_status method is called on the MainView that
+    the error status text is set as expected.
+    """
+    mv = MainView(None)
+    expected_message = "this is the message to be displayed"
+    mv.error_status = mock.MagicMock()
+    mv.error_status.setText = mock.MagicMock()
+    mv.update_error_status(error=expected_message)
+    mv.error_status.setText.assert_called_once_with(expected_message)
+
+
 def test_SourceList_update():
     """
     Check the items in the source list are cleared and a new SourceWidget for
     each passed-in source is created along with an associated QListWidgetItem.
     """
-    sl = SourceList()
+    sl = SourceList(None)
     sl.clear = mock.MagicMock()
     sl.addItem = mock.MagicMock()
     sl.setItemWidget = mock.MagicMock()
+    sl.controller = mock.MagicMock()
     mock_sw = mock.MagicMock()
     mock_lwi = mock.MagicMock()
     with mock.patch('securedrop_client.gui.widgets.SourceWidget', mock_sw), \
@@ -140,6 +154,17 @@ def test_SourceWidget_init():
     assert sw.source == mock_source
 
 
+def test_SourceWidget_setup():
+    """
+    The setup method adds the controller as an attribute on the SourceWidget.
+    """
+    mock_controller = mock.MagicMock()
+    mock_source = mock.MagicMock()
+    sw = SourceWidget(None, mock_source)
+    sw.setup(mock_controller)
+    assert sw.controller == mock_controller
+
+
 def test_SourceWidget_update_starred():
     """
     Ensure the widget displays the expected details from the source.
@@ -149,6 +174,7 @@ def test_SourceWidget_update_starred():
     mock_source.is_starred = True
     sw = SourceWidget(None, mock_source)
     sw.name = mock.MagicMock()
+    sw.summary_layout = mock.MagicMock()
     with mock.patch('securedrop_client.gui.widgets.load_svg') as mock_load:
         sw.update()
         mock_load.assert_called_once_with('star_on.svg')
@@ -164,10 +190,25 @@ def test_SourceWidget_update_unstarred():
     mock_source.is_starred = False
     sw = SourceWidget(None, mock_source)
     sw.name = mock.MagicMock()
+    sw.summary_layout = mock.MagicMock()
     with mock.patch('securedrop_client.gui.widgets.load_svg') as mock_load:
         sw.update()
         mock_load.assert_called_once_with('star_off.svg')
     sw.name.setText.assert_called_once_with('<strong>foo bar baz</strong>')
+
+
+def test_SourceWidget_toggle_star():
+    """
+    The toggle_star method should call self.controller.update_star
+    """
+    mock_controller = mock.MagicMock()
+    mock_source = mock.MagicMock()
+    event = mock.MagicMock()
+    sw = SourceWidget(None, mock_source)
+    sw.controller = mock_controller
+    sw.controller.update_star = mock.MagicMock()
+    sw.toggle_star(event)
+    sw.controller.update_star.assert_called_once_with(mock_source)
 
 
 def test_LoginDialog_setup():

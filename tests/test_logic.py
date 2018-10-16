@@ -5,6 +5,7 @@ expected.
 import arrow
 import os
 import pytest
+import sdclientapi
 from securedrop_client import storage
 from securedrop_client.logic import APICallRunner, Client
 from unittest import mock
@@ -203,6 +204,8 @@ def test_Client_on_authenticate_ok(safe_tmpdir):
     cl.on_authenticate(True)
     cl.sync_api.assert_called_once_with()
     cl.gui.set_logged_in_as.assert_called_once_with('test')
+    # Error status bar should be cleared
+    cl.gui.update_error_status.assert_called_once_with("")
 
 
 def test_Client_on_login_timeout(safe_tmpdir):
@@ -218,6 +221,19 @@ def test_Client_on_login_timeout(safe_tmpdir):
     mock_gui.show_login_error.\
         assert_called_once_with(error='The connection to SecureDrop timed '
                                 'out. Please try again.')
+
+
+def test_Client_on_action_requiring_login(safe_tmpdir):
+    """
+    Ensure that when on_action_requiring_login is called, an error
+    is shown in the GUI status area.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.on_action_requiring_login()
+    mock_gui.update_error_status.assert_called_once_with(
+        'You must login to perform this action.')
 
 
 def test_Client_authenticated_yes(safe_tmpdir):
@@ -369,6 +385,118 @@ def test_Client_update_sources(safe_tmpdir):
         cl.update_sources()
         mock_storage.get_local_sources.assert_called_once_with(mock_session)
         mock_gui.show_sources.assert_called_once_with([1, 2, 3])
+
+
+def test_Client_unstars_a_source_if_starred(safe_tmpdir):
+    """
+    Ensure that the client unstars a source if it is starred.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    source_db_object = mock.MagicMock()
+    source_db_object.uuid = mock.MagicMock()
+    source_db_object.is_starred = True
+    cl.call_api = mock.MagicMock()
+    cl.api = mock.MagicMock()
+    cl.api.remove_star = mock.MagicMock()
+    cl.on_update_star_complete = mock.MagicMock()
+    cl.on_sidebar_action_timeout = mock.MagicMock()
+    source_sdk_object = mock.MagicMock()
+    with mock.patch('sdclientapi.Source') as mock_source:
+        mock_source.return_value = source_sdk_object
+        cl.update_star(source_db_object)
+        cl.call_api.assert_called_once_with(
+            cl.api.remove_star, cl.on_update_star_complete,
+            cl.on_sidebar_action_timeout, source_sdk_object)
+    mock_gui.update_error_status.assert_called_once_with("")
+
+
+def test_Client_unstars_a_source_if_unstarred(safe_tmpdir):
+    """
+    Ensure that the client stars a source if it is unstarred.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    source_db_object = mock.MagicMock()
+    source_db_object.uuid = mock.MagicMock()
+    source_db_object.is_starred = False
+    cl.call_api = mock.MagicMock()
+    cl.api = mock.MagicMock()
+    cl.api.add_star = mock.MagicMock()
+    cl.on_update_star_complete = mock.MagicMock()
+    cl.on_sidebar_action_timeout = mock.MagicMock()
+    source_sdk_object = mock.MagicMock()
+    with mock.patch('sdclientapi.Source') as mock_source:
+        mock_source.return_value = source_sdk_object
+        cl.update_star(source_db_object)
+        cl.call_api.assert_called_once_with(
+            cl.api.add_star, cl.on_update_star_complete,
+            cl.on_sidebar_action_timeout, source_sdk_object)
+    mock_gui.update_error_status.assert_called_once_with("")
+
+
+def test_Client_update_star_not_logged_in(safe_tmpdir):
+    """
+    Ensure that starring/unstarring a source when not logged in calls
+    the method that displays an error status in the left sidebar.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    source_db_object = mock.MagicMock()
+    cl.on_action_requiring_login = mock.MagicMock()
+    cl.api = None
+    cl.update_star(source_db_object)
+    cl.on_action_requiring_login.assert_called_with()
+
+
+def test_Client_sidebar_action_timeout(safe_tmpdir):
+    """
+    Show on error status sidebar that a timeout occurred.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.on_sidebar_action_timeout()
+    mock_gui.update_error_status.assert_called_once_with(
+        'The connection to SecureDrop timed out. Please try again.')
+
+
+def test_Client_on_update_star_success(safe_tmpdir):
+    """
+    If the starring occurs successfully, then a sync should occur to update
+    locally.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    result = True
+    cl.call_reset = mock.MagicMock()
+    cl.sync_api = mock.MagicMock()
+    cl.on_update_star_complete(result)
+    cl.call_reset.assert_called_once_with()
+    cl.sync_api.assert_called_once_with()
+    mock_gui.update_error_status.assert_called_once_with("")
+
+
+def test_Client_on_update_star_failed(safe_tmpdir):
+    """
+    If the starring does not occur properly, then an error should appear
+    on the error status sidebar, and a sync will not occur.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    result = False
+    cl.call_reset = mock.MagicMock()
+    cl.sync_api = mock.MagicMock()
+    cl.on_update_star_complete(result)
+    cl.call_reset.assert_called_once_with()
+    cl.sync_api.assert_not_called()
+    mock_gui.update_error_status.assert_called_once_with(
+        'Failed to apply change.')
 
 
 def test_Client_logout(safe_tmpdir):

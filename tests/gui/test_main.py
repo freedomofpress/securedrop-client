@@ -109,6 +109,18 @@ def test_show_sources():
     w.main_view.source_list.update.assert_called_once_with([1, 2, 3])
 
 
+def test_update_error_status():
+    """
+    Ensure that the error to be shown in the error status sidebar will
+    be passed to the left sidebar for display.
+    """
+    error_message = "this is a bad thing!"
+    w = Window()
+    w.main_view = mock.MagicMock()
+    w.update_error_status(error=error_message)
+    w.main_view.update_error_status.assert_called_once_with(error_message)
+
+
 def test_show_sync():
     """
     If there's a value display the result of its "humanize" method.
