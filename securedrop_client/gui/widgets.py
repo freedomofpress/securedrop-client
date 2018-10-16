@@ -165,27 +165,40 @@ class SourceWidget(QWidget):
         """
         super().__init__(parent)
         self.source = source
-        layout = QVBoxLayout()
-        self.setLayout(layout)
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
         self.summary = QWidget(self)
-        summary_layout = QHBoxLayout()
-        self.summary.setLayout(summary_layout)
+        self.summary_layout = QHBoxLayout()
+        self.summary.setLayout(self.summary_layout)
         self.attached = load_svg('paperclip.svg')
         self.attached.setMaximumSize(16, 16)
-        self.starred = load_svg('star_on.svg')
-        self.starred.setMaximumSize(16, 16)
         self.name = QLabel()
-        summary_layout.addWidget(self.name)
-        summary_layout.addStretch()
-        summary_layout.addWidget(self.attached)
-        summary_layout.addWidget(self.starred)
-        layout.addWidget(self.summary)
+        self.summary_layout.addWidget(self.name)
+        self.summary_layout.addStretch()
+        self.summary_layout.addWidget(self.attached)
+        self.layout.addWidget(self.summary)
         self.updated = QLabel()
-        layout.addWidget(self.updated)
+        self.layout.addWidget(self.updated)
         self.details = QLabel()
         self.details.setWordWrap(True)
-        layout.addWidget(self.details)
+        self.layout.addWidget(self.details)
         self.update()
+
+    def display_star_icon(self):
+        """
+        Show the correct star icon
+        """
+        if getattr(self, 'starred', None):  # Delete icon if it exists.
+            self.summary_layout.removeWidget(self.starred)
+
+        if self.source.is_starred:
+            self.starred = load_svg('star_on.svg')
+        else:
+            self.starred = load_svg('star_off.svg')
+
+        self.summary_layout.addWidget(self.starred)
+        self.starred.setMaximumSize(16, 16)
+        self.starred.mousePressEvent = self.toggle_star
 
     def update(self):
         """
@@ -195,14 +208,16 @@ class SourceWidget(QWidget):
         self.details label.
         """
         self.updated.setText(arrow.get(self.source.last_updated).humanize())
-        if self.source.is_starred:
-            self.starred = load_svg('star_on.svg')
-        else:
-            self.starred = load_svg('star_off.svg')
+        self.display_star_icon()
         self.name.setText("<strong>{}</strong>".format(
                           self.source.journalist_designation))
         self.details.setText("Lorum ipsum dolor sit amet thingy dodah...")
 
+    def toggle_star(self, event):
+        """
+        Called when the star is clicked.
+        """
+        logging.info('click')
 
 class LoginDialog(QDialog):
     """
