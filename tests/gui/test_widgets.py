@@ -1,9 +1,13 @@
 """
 Make sure the UI widgets are configured correctly and work as expected.
 """
-from PyQt5.QtWidgets import QLineEdit, QWidget, QApplication
+from PyQt5.QtWidgets import (QLineEdit, QWidget, QApplication, QWidgetItem,
+                             QSpacerItem, QVBoxLayout)
 from securedrop_client.gui.widgets import (ToolBar, MainView, SourceList,
-                                           SourceWidget, LoginView)
+                                           SourceWidget, LoginView,
+                                           SpeechBubble, ConversationWidget,
+                                           MessageWidget, ReplyWidget,
+                                           FileWidget, ConversationView)
 from unittest import mock
 
 
@@ -255,3 +259,111 @@ def test_LoginView_validate_input_ok():
     assert lv.setDisabled.call_count == 1
     assert lv.error.call_count == 0
     mock_controller.login.assert_called_once_with('foo', 'bar', '123456')
+
+
+def test_SpeechBubble_init():
+    """
+    Check the speech bubble is configured correctly (there's a label containing
+    the passed in text).
+    """
+    with mock.patch('securedrop_client.gui.widgets.QLabel') as mock_label, \
+            mock.patch('securedrop_client.gui.widgets.QVBoxLayout'), \
+            mock.patch('securedrop_client.gui.widgets.SpeechBubble.setLayout'):
+        sb = SpeechBubble('hello')
+        mock_label.assert_called_once_with('hello')
+
+
+def test_ConversationWidget_init_left():
+    """
+    Check the ConversationWidget is configured correctly for align-left.
+    """
+    cw = ConversationWidget('hello', align='left')
+    layout = cw.layout()
+    assert isinstance(layout.takeAt(0), QWidgetItem)
+    assert isinstance(layout.takeAt(0), QSpacerItem)
+
+
+def test_ConversationWidget_init_right():
+    """
+    Check the ConversationWidget is configured correctly for align-left.
+    """
+    cw = ConversationWidget('hello', align='right')
+    layout = cw.layout()
+    assert isinstance(layout.takeAt(0), QSpacerItem)
+    assert isinstance(layout.takeAt(0), QWidgetItem)
+
+
+def test_MessageWidget_init():
+    """
+    Check the CSS is set as expected.
+    """
+    mw = MessageWidget('hello')
+    ss = mw.styleSheet()
+    assert 'background-color' in ss
+
+
+def test_ReplyWidget_init():
+    """
+    Check the CSS is set as expected.
+    """
+    rw = ReplyWidget('hello')
+    ss = rw.styleSheet()
+    assert 'background-color' in ss
+
+
+def test_FileWidget_init_left():
+    """
+    Check the FileWidget is configured correctly for align-left.
+    """
+    fw = FileWidget('hello', 'left')
+    layout = fw.layout()
+    assert isinstance(layout.takeAt(0), QWidgetItem)
+    assert isinstance(layout.takeAt(0), QWidgetItem)
+    assert isinstance(layout.takeAt(0), QSpacerItem)
+
+
+def test_FileWidget_init_right():
+    """
+    Check the FileWidget is configured correctly for align-right.
+    """
+    fw = FileWidget('hello', 'right')
+    layout = fw.layout()
+    assert isinstance(layout.takeAt(0), QSpacerItem)
+    assert isinstance(layout.takeAt(0), QWidgetItem)
+    assert isinstance(layout.takeAt(0), QWidgetItem)
+
+
+def test_ConversationView_init():
+    """
+    Ensure the conversation view has a layout to add widgets to.
+    """
+    cv = ConversationView(None)
+    assert isinstance(cv.conversation_layout, QVBoxLayout)
+
+
+def test_ConversationView_add_message():
+    """
+    Adding a message results in a new MessageWidget added to the layout. Any
+    associated files are added as FileWidgets.
+    """
+    cv = ConversationView(None)
+    cv.conversation_layout = mock.MagicMock()
+    cv.add_message('hello', ['file1.pdf', ])
+    assert cv.conversation_layout.addWidget.call_count == 2
+    cal = cv.conversation_layout.addWidget.call_args_list
+    assert isinstance(cal[0][0][0], MessageWidget)
+    assert isinstance(cal[1][0][0], FileWidget)
+
+
+def test_ConversationView_add_reply():
+    """
+    Adding a reply results in a new ReplyWidget added to the layout. Any
+    associated files are added as FileWidgets.
+    """
+    cv = ConversationView(None)
+    cv.conversation_layout = mock.MagicMock()
+    cv.add_reply('hello', ['file1.pdf', ])
+    assert cv.conversation_layout.addWidget.call_count == 2
+    cal = cv.conversation_layout.addWidget.call_args_list
+    assert isinstance(cal[0][0][0], ReplyWidget)
+    assert isinstance(cal[1][0][0], FileWidget)

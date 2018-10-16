@@ -1,6 +1,7 @@
-QPushButton {
-}
-
 QLabel#error_label {
     color: #FF0000;
+}
+
+ConversationView {
+    background-color: white;
 }

@@ -85,7 +85,7 @@ def test_Client_setup():
     cl.setup()
     cl.gui.setup.assert_called_once_with(cl)
     cl.update_sources.assert_called_once_with()
-    cl.gui.show_login.assert_called_once_with()
+    cl.gui.show_conversation_for.assert_called_once_with()
 
 
 def test_Client_call_api_existing_thread():
