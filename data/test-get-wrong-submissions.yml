@@ -80,7 +80,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.19.1]
     method: GET
-    uri: http://localhost:8081/api/v1/sources/rofl-missing/submissions/2334
+    uri: http://localhost:8081/api/v1/sources/rofl-missing/submissions
   response:
     body: {string: "{\n  \"error\": \"Not Found\", \n  \"message\": \"The requested\
         \ URL was not found on the server.  If you entered the URL manually please\
