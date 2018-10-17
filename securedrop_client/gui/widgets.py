@@ -19,10 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 import arrow
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPainter
 from PyQt5.QtWidgets import (QListWidget, QTextEdit, QLabel, QToolBar, QAction,
                              QWidget, QListWidgetItem, QHBoxLayout,
-                             QPushButton, QVBoxLayout, QLineEdit,
-                             QPlainTextEdit)
+                             QPushButton, QVBoxLayout, QLineEdit, QScrollArea,
+                             QPlainTextEdit, QSpacerItem, QSizePolicy)
 from securedrop_client.resources import load_svg, load_image
 
 
@@ -299,3 +300,137 @@ class LoginView(QWidget):
             self.setDisabled(False)
             self.error(_('Please enter a username, password and '
                          'two factor number.'))
+
+
+class SpeechBubble(QWidget):
+    """
+    Represents a speech bubble that's part of a conversation between a source
+    and journalist.
+    """
+
+    css = "padding: 10px; border: 1px solid #999; border-radius: 20px;"
+
+    def __init__(self, text):
+        super().__init__()
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+        message = QLabel(text)
+        message.setWordWrap(True)
+        layout.addWidget(message)
+
+
+class ConversationWidget(QWidget):
+    """
+    Draws a message onto the screen.
+    """
+
+    def __init__(self, message, align):
+        """
+        Initialise with the message to display and some notion of which side
+        of the conversation ("left" or "right" [anything else]) to which the
+        widget should belong.
+        """
+        super().__init__()
+        layout = QHBoxLayout()
+        label = SpeechBubble(message)
+        if align is not "left":
+            # Float right...
+            layout.addStretch(5)
+            label.setStyleSheet(label.css + 'border-bottom-right-radius: 0px;')
+        layout.addWidget(label, 6)
+        if align is "left":
+            # Add space on right hand side...
+            layout.addStretch(5)
+            label.setStyleSheet(label.css + 'border-bottom-left-radius: 0px;')
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
+        self.setContentsMargins(0, 0, 0, 0)
+
+
+class MessageWidget(ConversationWidget):
+    """
+    Represents an incoming message from the source.
+    """
+
+    def __init__(self, message):
+        super().__init__(message, align="left")
+        self.setStyleSheet("""
+        background-color: #EEE;
+        """)
+
+
+class ReplyWidget(ConversationWidget):
+    """
+    Represents a reply to a source.
+    """
+
+    def __init__(self, message):
+        super().__init__(message, align="right")
+        self.setStyleSheet("""
+        background-color: #2299EE;
+        """)
+
+
+class FileWidget(QWidget):
+    """
+    Represents a file attached to a message.
+    """
+
+    def __init__(self, text, align):
+        """
+        """
+        super().__init__()
+        layout = QHBoxLayout()
+        icon = QLabel()
+        icon.setPixmap(load_image('file.png'))
+        description = QLabel(text)
+        if align is not "left":
+            # Float right...
+            layout.addStretch(5)
+        layout.addWidget(icon)
+        layout.addWidget(description, 5)
+        if align is "left":
+            # Add space on right hand side...
+            layout.addStretch(5)
+        self.setLayout(layout)
+
+
+class ConversationView(QWidget):
+    """
+    Renders a conversation.
+    """
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        container = QWidget()
+        self.conversation_layout = QVBoxLayout()
+        container.setLayout(self.conversation_layout)
+        container.setStyleSheet("background-color: #fff;")
+
+        scroll = QScrollArea()
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setWidget(container)
+        scroll.setWidgetResizable(True)
+
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(scroll)
+        self.setLayout(main_layout)
+
+    def add_message(self, message, files=None):
+        """
+        Add a message from the source.
+        """
+        self.conversation_layout.addWidget(MessageWidget(message))
+        if files:
+            for f in files:
+                self.conversation_layout.addWidget(FileWidget(f, 'left'))
+
+    def add_reply(self, reply, files=None):
+        """
+        Add a reply from a journalist.
+        """
+        self.conversation_layout.addWidget(ReplyWidget(reply))
+        if files:
+            for f in files:
+                self.conversation_layout.addWidget(FileWidget(f, 'right'))

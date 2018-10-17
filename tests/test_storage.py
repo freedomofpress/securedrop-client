@@ -275,8 +275,10 @@ def test_update_replies():
     # be deleted from the local database).
     local_reply1 = mock.MagicMock()
     local_reply1.uuid = reply_update.uuid
+    local_reply1.journalist_uuid = str(uuid.uuid4())
     local_reply2 = mock.MagicMock()
     local_reply2.uuid = str(uuid.uuid4())
+    local_reply2.journalist_uuid = str(uuid.uuid4())
     local_replies = [local_reply1, local_reply2]
     # There needs to be a corresponding local_source and local_user
     local_source = mock.MagicMock()

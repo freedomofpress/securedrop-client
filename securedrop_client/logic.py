@@ -112,7 +112,7 @@ class Client(QObject):
         # If possible, update the UI with available sources.
         self.update_sources()
         # Show the login view.
-        self.gui.show_login()
+        self.gui.show_conversation_for()
         # Create a timer to check for sync status every 30 seconds.
         self.sync_timer = QTimer()
         self.sync_timer.timeout.connect(self.update_sync)
@@ -217,6 +217,7 @@ class Client(QObject):
             # Set last sync flag.
             with open(self.sync_flag, 'w') as f:
                 f.write(arrow.now().format())
+            self.gui.show_conversation_for()
         else:
             # How to handle a failure? Exceptions are already logged. Perhaps
             # a message in the UI?

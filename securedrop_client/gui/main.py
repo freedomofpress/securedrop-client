@@ -21,7 +21,8 @@ import logging
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QDesktopWidget
 from PyQt5.QtCore import Qt
 from securedrop_client import __version__
-from securedrop_client.gui.widgets import ToolBar, MainView, LoginView
+from securedrop_client.gui.widgets import (ToolBar, MainView, LoginView,
+                                           ConversationView)
 from securedrop_client.resources import load_icon
 
 
@@ -115,3 +116,56 @@ class Window(QMainWindow):
         Update the UI to show the user is logged out.
         """
         self.tool_bar.set_logged_out()
+
+    def show_conversation_for(self, source=None):
+        """
+        TODO: Finish this...
+        """
+        conversation = ConversationView(self)
+        conversation.add_message('Hello, hello, is this thing switched on?')
+        conversation.add_reply('Yes, I can hear you loud and clear!')
+        conversation.add_reply('How can I help?')
+        conversation.add_message('I have top secret documents relating to '
+                                 'a massive technical scandal at the heart '
+                                 ' of the Freedom of the Press Foundation. '
+                                 'In a shocking turn of events, it appears '
+                                 'they give away all their software for FREE.')
+        conversation.add_message("Hello: I’m a nurse at one of the trauma "
+                                 "centers in town. We've had many patients in "
+                                 "the last several months, all with "
+                                 "similar/mysterious respiratory issues. My "
+                                 "staff has noticed that most live down-wind "
+                                 "from the Dole fields West of 696. Some of "
+                                 "the patients say they have complained to "
+                                 "local authorities about sewage smells. One "
+                                 "said she's spotted a truck spraying a "
+                                 "sludge of some kind, on the fields at "
+                                 "night. I'm attaching a video from the "
+                                 "patient who taped the trucks, and a PDF of "
+                                 "redacted police reports that other patients "
+                                 "shared. I don’t know if there's much you "
+                                 "can do, but if there is I would be happy "
+                                 "to help.")
+        conversation.add_message("I work at the City Water Department, and a "
+                                 "man named Reggie Esters is one of our board "
+                                 "directors. I believe Reggie is related to "
+                                 "Rep Monica Conyers. He's literally never "
+                                 "here, and the resume on file for him makes "
+                                 "no sense. I have a hunch he is not in his "
+                                 "job legitimately, and think you should look "
+                                 "into this. Also: someone I work with heard "
+                                 "him on the phone once, talking about his "
+                                 "'time' at Jackson—that contradicts his "
+                                 "resume. It really seems fishy.",
+                                 ['fishy_cv.PDF (234Kb)', ])
+        conversation.add_reply("THIS IS IT THIS IS THE TAPE EVERYONE'S "
+                               "LOOKING FOR!!!", ['filename.pdf (32Kb)', ])
+        conversation.add_reply("Hello: I read your story on Sally Dale, and "
+                               "her lawsuit against the St. Joseph's "
+                               "Orphanage. My great-aunt was one of the nuns "
+                               "there. She is willing to be interviewed, but "
+                               "does not want her name, location, or any "
+                               "identity details released. She feels "
+                               "horrible. She wants the children who survived "
+                               "to find peace. Thanks.")
+        self.main_view.update_view(conversation)

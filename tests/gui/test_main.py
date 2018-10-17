@@ -125,3 +125,19 @@ def test_logout():
     w.tool_bar = mock.MagicMock()
     w.logout()
     w.tool_bar.set_logged_out.assert_called_once_with()
+
+
+def test_conversation_for():
+    """
+    TODO: Finish this once we have data. Currently checks only the GUI layer
+    is called in the expected manner with dummy data.
+    """
+    w = Window()
+    w.main_view = mock.MagicMock()
+    mock_conview = mock.MagicMock()
+    with mock.patch('securedrop_client.gui.main.ConversationView',
+                    mock_conview):
+        w.show_conversation_for()
+    conv = mock_conview()
+    assert conv.add_message.call_count > 0
+    assert conv.add_reply.call_count > 0
