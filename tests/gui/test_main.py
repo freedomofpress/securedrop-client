@@ -2,8 +2,9 @@
 Check the core Window UI class works as expected.
 """
 from PyQt5.QtWidgets import QApplication, QVBoxLayout
+from PyQt5.QtCore import QTimer
 from securedrop_client.gui.main import Window
-from securedrop_client.gui.widgets import LoginView
+from securedrop_client.gui.widgets import LoginDialog
 from securedrop_client.resources import load_icon
 from unittest import mock
 
@@ -39,7 +40,6 @@ def test_setup():
     mock_controller = mock.MagicMock()
     w.setup(mock_controller)
     assert w.controller == mock_controller
-    assert isinstance(w.login_view, LoginView)
 
 
 def test_autosize_window():
@@ -61,17 +61,42 @@ def test_autosize_window():
 
 def test_show_login():
     """
-    Ensures the update_view is called with a LoginView instance.
+    The login dialog is displayed with a clean state.
     """
     mock_controller = mock.MagicMock()
     w = Window()
     w.setup(mock_controller)
-    w.login_view = mock.MagicMock()
-    w.main_view = mock.MagicMock()
-    w.show_login("error message")
-    w.login_view.reset.assert_called_once_with()
-    w.login_view.error.assert_called_once_with("error message")
-    w.main_view.update_view.assert_called_once_with(w.login_view)
+    with mock.patch('securedrop_client.gui.main.LoginDialog') as mock_ld:
+        w.show_login()
+        mock_ld.assert_called_once_with(w)
+    w.login_dialog.reset.assert_called_once_with()
+    w.login_dialog.exec.assert_called_once_with()
+
+
+def test_show_login_error():
+    """
+    Ensures that an error message is displayed in the login dialog.
+    """
+    mock_controller = mock.MagicMock()
+    w = Window()
+    w.setup(mock_controller)
+    w.login_dialog = mock.MagicMock()
+    w.show_login_error('boom')
+    w.login_dialog.error.assert_called_once_with('boom')
+
+
+def test_hide_login():
+    """
+    Ensure the login dialog is closed and hidden.
+    """
+    mock_controller = mock.MagicMock()
+    w = Window()
+    w.setup(mock_controller)
+    ld = mock.MagicMock()
+    w.login_dialog = ld
+    w.hide_login()
+    ld.accept.assert_called_once_with()
+    assert w.login_dialog is None
 
 
 def test_show_sources():
@@ -127,6 +152,20 @@ def test_logout():
     w.tool_bar.set_logged_out.assert_called_once_with()
 
 
+def test_on_source_changed():
+    """
+    Ensure the event handler for when a source is changed calls the
+    show_conversation_for method with the expected source object.
+    """
+    w = Window()
+    w.main_view = mock.MagicMock()
+    mock_si = w.main_view.source_list.currentItem()
+    mock_sw = w.main_view.source_list.itemWidget()
+    w.show_conversation_for = mock.MagicMock()
+    w.on_source_changed()
+    w.show_conversation_for.assert_called_once_with(mock_sw.source)
+
+
 def test_conversation_for():
     """
     TODO: Finish this once we have data. Currently checks only the GUI layer
@@ -135,9 +174,11 @@ def test_conversation_for():
     w = Window()
     w.main_view = mock.MagicMock()
     mock_conview = mock.MagicMock()
+    mock_source = mock.MagicMock()
+    mock_source.journalistic_designation = 'Testy McTestface'
     with mock.patch('securedrop_client.gui.main.ConversationView',
                     mock_conview):
-        w.show_conversation_for()
+        w.show_conversation_for(mock_source)
     conv = mock_conview()
     assert conv.add_message.call_count > 0
     assert conv.add_reply.call_count > 0

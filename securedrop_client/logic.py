@@ -111,8 +111,8 @@ class Client(QObject):
         self.gui.setup(self)
         # If possible, update the UI with available sources.
         self.update_sources()
-        # Show the login view.
-        self.gui.show_conversation_for()
+        # Show the login dialog.
+        self.gui.show_login()
         # Create a timer to check for sync status every 30 seconds.
         self.sync_timer = QTimer()
         self.sync_timer.timeout.connect(self.update_sync)
@@ -161,13 +161,14 @@ class Client(QObject):
         self.call_reset()
         if result:
             # It worked! Sync with the API and update the UI.
+            self.gui.hide_login()
             self.sync_api()
             self.gui.set_logged_in_as(self.api.username)
         else:
             # Failed to authenticate. Reset state with failure message.
             self.api = None
             error = _('There was a problem logging in. Please try again.')
-            self.gui.show_login(error=error)
+            self.gui.show_login_error(error=error)
 
     def on_login_timeout(self):
         """
@@ -176,7 +177,7 @@ class Client(QObject):
         self.call_reset()
         self.api = None
         error = _('The connection to SecureDrop timed out. Please try again.')
-        self.gui.show_login(error=error)
+        self.gui.show_login_error(error=error)
 
     def authenticated(self):
         """
