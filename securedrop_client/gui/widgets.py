@@ -23,7 +23,7 @@ from PyQt5.QtGui import QPainter
 from PyQt5.QtWidgets import (QListWidget, QTextEdit, QLabel, QToolBar, QAction,
                              QWidget, QListWidgetItem, QHBoxLayout,
                              QPushButton, QVBoxLayout, QLineEdit, QScrollArea,
-                             QPlainTextEdit, QSpacerItem, QSizePolicy)
+                             QPlainTextEdit, QSpacerItem, QSizePolicy, QDialog)
 from securedrop_client.resources import load_svg, load_image
 
 
@@ -129,7 +129,10 @@ class MainView(QWidget):
         """
         Update the view holder to contain the referenced widget.
         """
-        self.view_layout.takeAt(0)
+        old_widget = self.view_layout.takeAt(0)
+        if old_widget:
+            old_widget.widget().setVisible(False)
+        widget.setVisible(True)
         self.view_layout.addWidget(widget)
 
 
@@ -201,14 +204,18 @@ class SourceWidget(QWidget):
         self.details.setText("Lorum ipsum dolor sit amet thingy dodah...")
 
 
-class LoginView(QWidget):
+class LoginDialog(QDialog):
     """
-    A widget to display the login form.
+    A dialog to display the login form.
     """
 
-    def __init__(self, parent, controller):
+    def __init__(self, parent):
         super().__init__(parent)
+
+    def setup(self, controller):
         self.controller = controller
+        self.setMinimumSize(600, 400)
+        self.setWindowTitle(_('Login to SecureDrop'))
         main_layout = QHBoxLayout()
         main_layout.addStretch()
         self.setLayout(main_layout)

@@ -21,7 +21,7 @@ import logging
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QDesktopWidget
 from PyQt5.QtCore import Qt
 from securedrop_client import __version__
-from securedrop_client.gui.widgets import (ToolBar, MainView, LoginView,
+from securedrop_client.gui.widgets import (ToolBar, MainView, LoginDialog,
                                            ConversationView)
 from securedrop_client.resources import load_icon
 
@@ -55,6 +55,8 @@ class Window(QMainWindow):
         self.widget.setLayout(widget_layout)
         self.tool_bar = ToolBar(self.widget)
         self.main_view = MainView(self.widget)
+        self.main_view.source_list.itemSelectionChanged.\
+            connect(self.on_source_changed)
         widget_layout.addWidget(self.tool_bar, 1)
         widget_layout.addWidget(self.main_view, 6)
         self.setCentralWidget(self.widget)
@@ -68,7 +70,6 @@ class Window(QMainWindow):
         """
         self.controller = controller  # Reference the Client logic instance.
         self.tool_bar.setup(self, controller)
-        self.login_view = LoginView(self, self.controller)
 
     def autosize_window(self):
         """
@@ -78,15 +79,29 @@ class Window(QMainWindow):
         screen = QDesktopWidget().screenGeometry()
         self.resize(screen.width(), screen.height())
 
-    def show_login(self, error=None):
+    def show_login(self):
         """
         Show the login form. If an error message is passed in, the login
         form will display this too.
         """
-        self.login_view.reset()
-        if error:
-            self.login_view.error(error)
-        self.main_view.update_view(self.login_view)
+        self.login_dialog = LoginDialog(self)
+        self.login_dialog.setup(self.controller)
+        self.login_dialog.reset()
+        self.login_dialog.exec()
+
+    def show_login_error(self, error):
+        """
+        Display an error in the login dialog.
+        """
+        if self.login_dialog and error:
+            self.login_dialog.error(error)
+
+    def hide_login(self):
+        """
+        Kill the login dialog.
+        """
+        self.login_dialog.accept()
+        self.login_dialog = None
 
     def show_sources(self, sources):
         """
@@ -117,11 +132,21 @@ class Window(QMainWindow):
         """
         self.tool_bar.set_logged_out()
 
+    def on_source_changed(self):
+        """
+        React to when the selected source has changed.
+        """
+        source_item = self.main_view.source_list.currentItem()
+        source_widget = self.main_view.source_list.itemWidget(source_item)
+        self.show_conversation_for(source_widget.source)
+
     def show_conversation_for(self, source=None):
         """
         TODO: Finish this...
         """
         conversation = ConversationView(self)
+        conversation.add_message('Source name: {}'.format(
+                                 source.journalist_designation))
         conversation.add_message('Hello, hello, is this thing switched on?')
         conversation.add_reply('Yes, I can hear you loud and clear!')
         conversation.add_reply('How can I help?')
