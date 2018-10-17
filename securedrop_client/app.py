@@ -30,7 +30,7 @@ from securedrop_client import __version__
 from securedrop_client.logic import Client
 from securedrop_client.gui.main import Window
 from securedrop_client.resources import load_icon, load_css
-from securedrop_client.models import engine
+from securedrop_client.models import make_engine
 from securedrop_client.utils import safe_mkdir
 
 
@@ -132,6 +132,7 @@ def start_app(args, qt_args) -> None:
     app.setWindowIcon(load_icon(gui.icon))
     app.setStyleSheet(load_css('sdclient.css'))
 
+    engine = make_engine(args.sdc_home)
     Session = sessionmaker(bind=engine)
     session = Session()
 
