@@ -1,3 +1,8 @@
 #!/usr/bin/env bash
+set -e
 
-python -m securedrop_client
+HOME=$(mktemp -d)
+
+echo "Running app with home directory: $HOME"
+
+exec python -m securedrop_client --home "$HOME"
