@@ -21,6 +21,7 @@ import pathlib
 import os
 import signal
 import sys
+from argparse import ArgumentParser
 from sqlalchemy.orm import sessionmaker
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt, QTimer
@@ -32,6 +33,7 @@ from securedrop_client.resources import load_icon, load_css
 from securedrop_client.models import engine
 
 
+DEFAULT_HOME = os.path.expanduser('~/.securedrop_client')
 LOG_DIR = os.path.join(str(pathlib.Path.home()), '.securedrop_client')
 LOG_FILE = os.path.join(LOG_DIR, 'securedrop_client.log')
 ENCODING = 'utf-8'
@@ -71,7 +73,16 @@ def configure_logging():
     sys.excepthook = excepthook
 
 
-def run():
+def arg_parser() -> ArgumentParser:
+    parser = ArgumentParser('securedrop-client',
+                            description='SecureDrop Journalist GUI')
+    parser.add_argument(
+        '-H', '--home', default=DEFAULT_HOME,
+        help='Home directory for storing files and state')
+    return parser
+
+
+def start_app(args, qt_args) -> None:
     """
     Create all the top-level assets for the application, set things up and
     run the application. Specific tasks include:
@@ -87,7 +98,7 @@ def run():
     configure_logging()
     logging.info('Starting SecureDrop Client {}'.format(__version__))
 
-    app = QApplication(sys.argv)
+    app = QApplication(qt_args)
     app.setApplicationName('SecureDrop Client')
     app.setDesktopFileName('org.freedomofthepress.securedrop.client')
     app.setApplicationVersion(__version__)
@@ -113,3 +124,10 @@ def run():
     timer.timeout.connect(lambda: None)
 
     sys.exit(app.exec_())
+
+
+def run() -> None:
+    args, qt_args = arg_parser().parse_known_args()
+    # reinsert the program's name
+    qt_args.insert(0, 'securedrop-client')
+    start_app(args, qt_args)
