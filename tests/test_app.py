@@ -25,7 +25,7 @@ def test_excpethook():
         exit.assert_called_once_with(1)
 
 
-def test_configure_logging(tmpdir):
+def test_configure_logging(safe_tmpdir):
     """
     Ensure logging directory is created and logging is configured in the
     expected (rotating logs) manner.
@@ -35,9 +35,8 @@ def test_configure_logging(tmpdir):
             mock.patch('securedrop_client.app.os.path.exists',
                        return_value=False), \
             mock.patch('securedrop_client.app.logging') as logging:
-        log_dir = str(tmpdir)
-        log_file = tmpdir.join('client.log')
-        configure_logging(log_dir)
+        log_file = safe_tmpdir.mkdir('logs').join('client.log')
+        configure_logging(str(safe_tmpdir))
         log_conf.assert_called_once_with(log_file, when='midnight',
                                          backupCount=5, delay=0,
                                          encoding=ENCODING)
@@ -45,23 +44,26 @@ def test_configure_logging(tmpdir):
         assert sys.excepthook == excepthook
 
 
-def test_run():
+def test_run(safe_tmpdir):
     """
     Ensure the expected things are configured and the application is started.
     """
     mock_session_class = mock.MagicMock()
     mock_args = mock.MagicMock()
     mock_qt_args = mock.MagicMock()
+    sdc_home = str(safe_tmpdir)
+    mock_args.sdc_home = sdc_home
+
     with mock.patch('securedrop_client.app.configure_logging') as conf_log, \
             mock.patch('securedrop_client.app.QApplication') as mock_app, \
             mock.patch('securedrop_client.app.Window') as mock_win, \
             mock.patch('securedrop_client.app.Client') as mock_client, \
             mock.patch('securedrop_client.app.sys') as mock_sys, \
-            mock.patch('securedrop_client.app.init') as mock_init, \
             mock.patch('securedrop_client.app.sessionmaker',
                        return_value=mock_session_class):
         start_app(mock_args, mock_qt_args)
         mock_app.assert_called_once_with(mock_qt_args)
         mock_win.assert_called_once_with()
         mock_client.assert_called_once_with('http://localhost:8081/',
-                                            mock_win(), mock_session_class())
+                                            mock_win(), mock_session_class(),
+                                            sdc_home)
