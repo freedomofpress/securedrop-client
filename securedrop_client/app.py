@@ -34,9 +34,11 @@ from securedrop_client.models import engine
 
 
 DEFAULT_HOME = os.path.expanduser('~/.securedrop_client')
-LOG_DIR = os.path.join(str(pathlib.Path.home()), '.securedrop_client')
-LOG_FILE = os.path.join(LOG_DIR, 'securedrop_client.log')
 ENCODING = 'utf-8'
+
+
+def init(home: str) -> None:
+    os.makedirs(home, exist_ok=True)
 
 
 def excepthook(*exc_args):
@@ -49,18 +51,18 @@ def excepthook(*exc_args):
     sys.exit(1)
 
 
-def configure_logging():
+def configure_logging(home: str) -> None:
     """
     All logging related settings are set up by this function.
     """
-    if not os.path.exists(LOG_DIR):
-        os.makedirs(LOG_DIR)
+    log_file = os.path.join(home, 'client.log')
+
     # set logging format
     log_fmt = ('%(asctime)s - %(name)s:%(lineno)d(%(funcName)s) '
                '%(levelname)s: %(message)s')
     formatter = logging.Formatter(log_fmt)
     # define log handlers such as for rotating log files
-    handler = TimedRotatingFileHandler(LOG_FILE, when='midnight',
+    handler = TimedRotatingFileHandler(log_file, when='midnight',
                                        backupCount=5, delay=0,
                                        encoding=ENCODING)
     handler.setFormatter(formatter)
@@ -95,7 +97,8 @@ def start_app(args, qt_args) -> None:
     - configure the client (logic) object.
     - ensure the application is setup in the default safe starting state.
     """
-    configure_logging()
+    init(args.home)
+    configure_logging(args.home)
     logging.info('Starting SecureDrop Client {}'.format(__version__))
 
     app = QApplication(qt_args)
