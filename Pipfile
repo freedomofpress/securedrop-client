@@ -9,10 +9,10 @@ python_version = "3.5"
 [packages]
 SQLALchemy = "*"
 alembic = "*"
-"pathlib2" = "*"
 securedrop-sdk = "*"
-"pyqt5" = "==5.10.1"
+"pathlib2" = "*"
 arrow = "*"
+certifi = "*"
 
 [dev-packages]
 pytest = "*"
