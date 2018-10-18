@@ -9,9 +9,8 @@ python_version = "3.5"
 [packages]
 SQLALchemy = "*"
 alembic = "*"
-securedrop-sdk = {git = "https://github.com/freedomofpress/securedrop-sdk.git"}
 "pathlib2" = "*"
-"pyqt5" = "*"
+securedrop-sdk = "*"
 
 [dev-packages]
 pytest = "*"
