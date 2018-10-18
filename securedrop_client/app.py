@@ -19,10 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 import pathlib
 import os
+import signal
 import sys
 from sqlalchemy.orm import sessionmaker
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from logging.handlers import TimedRotatingFileHandler
 from securedrop_client import __version__
 from securedrop_client.logic import Client
@@ -91,11 +92,24 @@ def run():
     app.setDesktopFileName('org.freedomofthepress.securedrop.client')
     app.setApplicationVersion(__version__)
     app.setAttribute(Qt.AA_UseHighDpiPixmaps)
+
     gui = Window()
     app.setWindowIcon(load_icon(gui.icon))
     app.setStyleSheet(load_css('sdclient.css'))
+
     Session = sessionmaker(bind=engine)
     session = Session()
+
     client = Client("http://localhost:8081/", gui, session)
     client.setup()
+
+    def signal_handler(*nargs) -> None:
+        app.quit()
+
+    for sig in [signal.SIGINT, signal.SIGTERM]:
+        signal.signal(sig, signal_handler)
+    timer = QTimer()
+    timer.start(500)
+    timer.timeout.connect(lambda: None)
+
     sys.exit(app.exec_())
