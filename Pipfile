@@ -11,6 +11,8 @@ SQLALchemy = "*"
 alembic = "*"
 "pathlib2" = "*"
 securedrop-sdk = "*"
+"pyqt5" = "==5.10.1"
+arrow = "*"
 
 [dev-packages]
 pytest = "*"

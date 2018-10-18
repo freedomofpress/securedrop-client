@@ -56,9 +56,10 @@ class Submission(Base):
                           backref=backref("submissions", order_by=id,
                                           cascade="delete"))
 
-    def __init__(self, source, uuid, filename):
+    def __init__(self, source, uuid, size, filename):
         self.source_id = source.id
         self.uuid = uuid
+        self.size = size
         self.filename = filename
 
     def __repr__(self):
@@ -95,6 +96,7 @@ class Reply(Base):
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
+    uuid = Column(String(36), unique=True, nullable=False)
     username = Column(String(255), nullable=False, unique=True)
 
     def __init__(self, username):
@@ -102,3 +104,7 @@ class User(Base):
 
     def __repr__(self):
         return "<Journalist: {}>".format(self.username)
+
+
+# Populate the database.
+Base.metadata.create_all(engine)

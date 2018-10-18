@@ -17,12 +17,14 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
+import arrow
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPainter
 from PyQt5.QtWidgets import (QListWidget, QTextEdit, QLabel, QToolBar, QAction,
                              QWidget, QListWidgetItem, QHBoxLayout,
-                             QPushButton, QVBoxLayout, QLineEdit,
-                             QPlainTextEdit)
-from securedrop_client.resources import load_svg
+                             QPushButton, QVBoxLayout, QLineEdit, QScrollArea,
+                             QPlainTextEdit, QSpacerItem, QSizePolicy)
+from securedrop_client.resources import load_svg, load_image
 
 
 logger = logging.getLogger(__name__)
@@ -31,17 +33,65 @@ logger = logging.getLogger(__name__)
 class ToolBar(QWidget):
     """
     Represents the tool bar across the top of the user interface.
+
+    ToDo: this is a work in progress and will be updated soon.
     """
 
     def __init__(self, parent):
         super().__init__(parent)
-        self.setMaximumHeight(48)
         layout = QHBoxLayout(self)
-        self.status = QLabel(_("Synchronized: 5 minutes ago."))
-        self.user_state = QLabel(_("Logged in as: Testy McTestface"))
-        layout.addWidget(self.status)
+        self.logo = QLabel()
+        self.logo.setPixmap(load_image('header_logo.png'))
+        self.user_state = QLabel(_("Logged out."))
+        self.login = QPushButton(_('Sign In'))
+        self.login.clicked.connect(self.on_login_clicked)
+        self.logout = QPushButton(_('Log Out'))
+        self.logout.clicked.connect(self.on_logout_clicked)
+        self.logout.setVisible(False)
+        layout.addWidget(self.logo)
         layout.addStretch()
         layout.addWidget(self.user_state)
+        layout.addWidget(self.login)
+        layout.addWidget(self.logout)
+
+    def setup(self, window, controller):
+        """
+        Store a reference to the GUI window object (through which all wider GUI
+        state is controlled).
+
+        Assign a controller object (containing the application logic) to this
+        instance of the toolbar.
+        """
+        self.window = window
+        self.controller = controller
+
+    def set_logged_in_as(self, username):
+        """
+        Update the UI to reflect that the user is logged in as "username".
+        """
+        self.user_state.setText(_('Logged in as: ' + username))
+        self.login.setVisible(False)
+        self.logout.setVisible(True)
+
+    def set_logged_out(self):
+        """
+        Update the UI to a logged out state.
+        """
+        self.user_state.setText(_('Logged out.'))
+        self.login.setVisible(True)
+        self.logout.setVisible(False)
+
+    def on_login_clicked(self):
+        """
+        Called when the login button is clicked.
+        """
+        self.window.show_login()
+
+    def on_logout_clicked(self):
+        """
+        Called when the logout button is clicked.
+        """
+        self.controller.logout()
 
 
 class MainView(QWidget):
@@ -57,6 +107,8 @@ class MainView(QWidget):
         left_column = QWidget(parent=self)
         left_layout = QVBoxLayout()
         left_column.setLayout(left_layout)
+        self.status = QLabel(_('Waiting to Synchronize'))
+        left_layout.addWidget(self.status)
         filter_widget = QWidget()
         filter_layout = QHBoxLayout()
         filter_widget.setLayout(filter_layout)
@@ -69,20 +121,21 @@ class MainView(QWidget):
         left_layout.addWidget(self.source_list)
         self.layout.addWidget(left_column, 2)
         self.view_holder = QWidget()
+        self.view_layout = QVBoxLayout()
+        self.view_holder.setLayout(self.view_layout)
         self.layout.addWidget(self.view_holder, 6)
 
     def update_view(self, widget):
         """
         Update the view holder to contain the referenced widget.
         """
-        layout = QVBoxLayout()
-        self.view_holder.setLayout(layout)
-        layout.addWidget(widget)
+        self.view_layout.takeAt(0)
+        self.view_layout.addWidget(widget)
 
 
 class SourceList(QListWidget):
     """
-    Represents the list of sources.
+    Displays the list of sources.
     """
 
     def update(self, sources):
@@ -91,7 +144,7 @@ class SourceList(QListWidget):
         """
         self.clear()
         for source in sources:
-            new_source = SourceWidget(source, self)
+            new_source = SourceWidget(self, source)
             list_item = QListWidgetItem(self)
             list_item.setSizeHint(new_source.sizeHint())
             self.addItem(list_item)
@@ -103,7 +156,7 @@ class SourceWidget(QWidget):
     Used to display summary information about a source in the list view.
     """
 
-    def __init__(self, source, parent):
+    def __init__(self, parent, source):
         """
         Set up the child widgets.
         """
@@ -114,18 +167,18 @@ class SourceWidget(QWidget):
         self.summary = QWidget(self)
         summary_layout = QHBoxLayout()
         self.summary.setLayout(summary_layout)
-        self.updated = QLabel()
         self.attached = load_svg('paperclip.svg')
         self.attached.setMaximumSize(16, 16)
         self.starred = load_svg('star_on.svg')
         self.starred.setMaximumSize(16, 16)
-        summary_layout.addWidget(self.updated)
+        self.name = QLabel()
+        summary_layout.addWidget(self.name)
         summary_layout.addStretch()
         summary_layout.addWidget(self.attached)
         summary_layout.addWidget(self.starred)
         layout.addWidget(self.summary)
-        self.name = QLabel()
-        layout.addWidget(self.name)
+        self.updated = QLabel()
+        layout.addWidget(self.updated)
         self.details = QLabel()
         self.details.setWordWrap(True)
         layout.addWidget(self.details)
@@ -134,15 +187,17 @@ class SourceWidget(QWidget):
     def update(self):
         """
         Updates the displayed values with the current values from self.source.
+
+        TODO: Style this widget properly and work out what should be in the
+        self.details label.
         """
-        self.updated.setText("5 minutes ago")  # str(self.source.last_updated))
-        """
+        self.updated.setText(arrow.get(self.source.last_updated).humanize())
         if self.source.is_starred:
-            self.starred.setText("[*]")
+            self.starred = load_svg('star_on.svg')
         else:
-            self.starred.setText("[ ]")
-        """
-        self.name.setText(self.source)  # self.source.journalist_designation)
+            self.starred = load_svg('star_off.svg')
+        self.name.setText("<strong>{}</strong>".format(
+                          self.source.journalist_designation))
         self.details.setText("Lorum ipsum dolor sit amet thingy dodah...")
 
 
@@ -151,8 +206,9 @@ class LoginView(QWidget):
     A widget to display the login form.
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent, controller):
         super().__init__(parent)
+        self.controller = controller
         main_layout = QHBoxLayout()
         main_layout.addStretch()
         self.setLayout(main_layout)
@@ -184,8 +240,11 @@ class LoginView(QWidget):
         self.help_url.setTextFormat(Qt.RichText)
         self.help_url.setOpenExternalLinks(True)
         self.submit = QPushButton(_('Sign In'))
+        self.submit.clicked.connect(self.validate)
         gutter_layout.addWidget(self.help_url)
         gutter_layout.addWidget(self.submit)
+        self.error_label = QLabel('')
+        self.error_label.setObjectName('error_label')
         layout.addStretch()
         layout.addWidget(self.title)
         layout.addWidget(self.instructions)
@@ -196,4 +255,182 @@ class LoginView(QWidget):
         layout.addWidget(self.tfa_label)
         layout.addWidget(self.tfa_field)
         layout.addWidget(gutter)
+        layout.addWidget(self.error_label)
         layout.addStretch()
+
+    def reset(self):
+        """
+        Resets the login form to the default state.
+        """
+        self.username_field.setText('')
+        self.username_field.setFocus()
+        self.password_field.setText('')
+        self.tfa_field.setText('')
+        self.setDisabled(False)
+        self.error_label.setText('')
+
+    def error(self, message):
+        """
+        Ensures the passed in message is displayed as an error message.
+        """
+        self.error_label.setText(message)
+
+    def validate(self):
+        """
+        Validate the user input -- we expect values for:
+
+        * username (free text)
+        * password (free text)
+        * TFA token (numerals)
+        """
+        self.setDisabled(True)
+        username = self.username_field.text()
+        password = self.password_field.text()
+        tfa_token = self.tfa_field.text()
+        if username and password and tfa_token:
+            try:
+                int(tfa_token)
+            except ValueError:
+                self.setDisabled(False)
+                self.error(_('Please use only numerals (no spaces) for the '
+                             'two factor number.'))
+                return
+            self.controller.login(username, password, tfa_token)
+        else:
+            self.setDisabled(False)
+            self.error(_('Please enter a username, password and '
+                         'two factor number.'))
+
+
+class SpeechBubble(QWidget):
+    """
+    Represents a speech bubble that's part of a conversation between a source
+    and journalist.
+    """
+
+    css = "padding: 10px; border: 1px solid #999; border-radius: 20px;"
+
+    def __init__(self, text):
+        super().__init__()
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+        message = QLabel(text)
+        message.setWordWrap(True)
+        layout.addWidget(message)
+
+
+class ConversationWidget(QWidget):
+    """
+    Draws a message onto the screen.
+    """
+
+    def __init__(self, message, align):
+        """
+        Initialise with the message to display and some notion of which side
+        of the conversation ("left" or "right" [anything else]) to which the
+        widget should belong.
+        """
+        super().__init__()
+        layout = QHBoxLayout()
+        label = SpeechBubble(message)
+        if align is not "left":
+            # Float right...
+            layout.addStretch(5)
+            label.setStyleSheet(label.css + 'border-bottom-right-radius: 0px;')
+        layout.addWidget(label, 6)
+        if align is "left":
+            # Add space on right hand side...
+            layout.addStretch(5)
+            label.setStyleSheet(label.css + 'border-bottom-left-radius: 0px;')
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
+        self.setContentsMargins(0, 0, 0, 0)
+
+
+class MessageWidget(ConversationWidget):
+    """
+    Represents an incoming message from the source.
+    """
+
+    def __init__(self, message):
+        super().__init__(message, align="left")
+        self.setStyleSheet("""
+        background-color: #EEE;
+        """)
+
+
+class ReplyWidget(ConversationWidget):
+    """
+    Represents a reply to a source.
+    """
+
+    def __init__(self, message):
+        super().__init__(message, align="right")
+        self.setStyleSheet("""
+        background-color: #2299EE;
+        """)
+
+
+class FileWidget(QWidget):
+    """
+    Represents a file attached to a message.
+    """
+
+    def __init__(self, text, align):
+        """
+        """
+        super().__init__()
+        layout = QHBoxLayout()
+        icon = QLabel()
+        icon.setPixmap(load_image('file.png'))
+        description = QLabel(text)
+        if align is not "left":
+            # Float right...
+            layout.addStretch(5)
+        layout.addWidget(icon)
+        layout.addWidget(description, 5)
+        if align is "left":
+            # Add space on right hand side...
+            layout.addStretch(5)
+        self.setLayout(layout)
+
+
+class ConversationView(QWidget):
+    """
+    Renders a conversation.
+    """
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        container = QWidget()
+        self.conversation_layout = QVBoxLayout()
+        container.setLayout(self.conversation_layout)
+        container.setStyleSheet("background-color: #fff;")
+
+        scroll = QScrollArea()
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setWidget(container)
+        scroll.setWidgetResizable(True)
+
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(scroll)
+        self.setLayout(main_layout)
+
+    def add_message(self, message, files=None):
+        """
+        Add a message from the source.
+        """
+        self.conversation_layout.addWidget(MessageWidget(message))
+        if files:
+            for f in files:
+                self.conversation_layout.addWidget(FileWidget(f, 'left'))
+
+    def add_reply(self, reply, files=None):
+        """
+        Add a reply from a journalist.
+        """
+        self.conversation_layout.addWidget(ReplyWidget(reply))
+        if files:
+            for f in files:
+                self.conversation_layout.addWidget(FileWidget(f, 'right'))

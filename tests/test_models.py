@@ -17,7 +17,8 @@ def test_string_representation_of_submission():
     source = Source(journalist_designation="testy test", uuid="test",
                     is_flagged=False, public_key='test', interaction_count=1,
                     is_starred=False, last_updated='test')
-    submission = Submission(source=source, uuid="test", filename="test.docx")
+    submission = Submission(source=source, uuid="test", size=123,
+                            filename="test.docx")
     submission.__repr__()
 
 

@@ -24,7 +24,7 @@ clean:
 	find . | grep -E "(__pycache__)" | xargs rm -rf
 
 test: clean
-	pytest
+	xvfb-run python -m pytest
 
 pyflakes:
 	find . \( -name _build -o -name var -o -path ./docs -o -path \) -type d -prune -o -name '*.py' -print0 | $(XARGS) pyflakes
@@ -33,6 +33,6 @@ pycodestyle:
 	find . \( -name _build -o -name var \) -type d -prune -o -name '*.py' -print0 | $(XARGS) -n 1 pycodestyle --repeat --exclude=build/*,docs/*,.vscode/* --ignore=E731,E402,W504
 
 coverage: clean
-	pytest --cov-config .coveragerc --cov-report term-missing --cov=securedrop_client tests/
+	xvfb-run python -m pytest --cov-config .coveragerc --cov-report term-missing --cov=securedrop_client tests/
 
 check: clean pycodestyle pyflakes coverage
