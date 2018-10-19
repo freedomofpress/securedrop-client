@@ -81,8 +81,7 @@ class Window(QMainWindow):
 
     def show_login(self):
         """
-        Show the login form. If an error message is passed in, the login
-        form will display this too.
+        Show the login form.
         """
         self.login_dialog = LoginDialog(self)
         self.login_dialog.setup(self.controller)
@@ -140,7 +139,7 @@ class Window(QMainWindow):
         source_widget = self.main_view.source_list.itemWidget(source_item)
         self.show_conversation_for(source_widget.source)
 
-    def show_conversation_for(self, source=None):
+    def show_conversation_for(self, source):
         """
         TODO: Finish this...
         """

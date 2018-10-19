@@ -280,6 +280,7 @@ class LoginDialog(QDialog):
         """
         Ensures the passed in message is displayed as an error message.
         """
+        self.setDisabled(False)
         self.error_label.setText(message)
 
     def validate(self):

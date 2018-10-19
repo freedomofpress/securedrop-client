@@ -218,7 +218,8 @@ class Client(QObject):
             # Set last sync flag.
             with open(self.sync_flag, 'w') as f:
                 f.write(arrow.now().format())
-            self.gui.show_conversation_for()
+            # TODO: show something in the conversation view?
+            # self.gui.show_conversation_for()
         else:
             # How to handle a failure? Exceptions are already logged. Perhaps
             # a message in the UI?
