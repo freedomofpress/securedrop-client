@@ -1,6 +1,8 @@
 """
 Tests for the app module, which sets things up and runs the application.
 """
+import os
+import pytest
 import sys
 from PyQt5.QtWidgets import QApplication
 from unittest import mock
@@ -67,3 +69,73 @@ def test_run(safe_tmpdir):
         mock_client.assert_called_once_with('http://localhost:8081/',
                                             mock_win(), mock_session_class(),
                                             sdc_home)
+
+
+PERMISSIONS_CASES = [
+    {
+        'should_pass': True,
+        'home_perms': None,
+        'sub_dirs': [],
+    },
+    {
+        'should_pass': True,
+        'home_perms': 0o0700,
+        'sub_dirs': [],
+    },
+    {
+        'should_pass': False,
+        'home_perms': 0o0740,
+        'sub_dirs': [],
+    },
+    {
+        'should_pass': False,
+        'home_perms': 0o0704,
+        'sub_dirs': [],
+    },
+    {
+        'should_pass': True,
+        'home_perms': 0o0700,
+        'sub_dirs': [('logs', 0o0700)],
+    },
+    {
+        'should_pass': False,
+        'home_perms': 0o0700,
+        'sub_dirs': [('logs', 0o0740)],
+    },
+]
+
+
+def test_create_app_dir_permissions(tmpdir):
+    mock_session_class = mock.MagicMock()
+    mock_args = mock.MagicMock()
+    mock_qt_args = mock.MagicMock()
+
+    for idx, case in enumerate(PERMISSIONS_CASES):
+        sdc_home = os.path.join(str(tmpdir), 'case-{}'.format(idx))
+
+        # optionally create the dir
+        if case['home_perms'] is not None:
+            os.mkdir(sdc_home, case['home_perms'])
+
+        mock_args.sdc_home = sdc_home
+
+        for subdir, perms in case['sub_dirs']:
+            full_path = os.path.join(sdc_home, subdir)
+            os.makedirs(full_path, perms)
+
+        with mock.patch('logging.getLogger'), \
+                mock.patch('securedrop_client.app.QApplication') as mock_app, \
+                mock.patch('securedrop_client.app.Window') as mock_win, \
+                mock.patch('securedrop_client.app.Client') as mock_client, \
+                mock.patch('securedrop_client.app.sys') as mock_sys, \
+                mock.patch('securedrop_client.app.sessionmaker',
+                           return_value=mock_session_class):
+
+            def func():
+                start_app(mock_args, mock_qt_args)
+
+            if case['should_pass']:
+                func()
+            else:
+                with pytest.raises(RuntimeError):
+                    func()

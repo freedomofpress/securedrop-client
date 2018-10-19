@@ -3,6 +3,8 @@ Make sure the Client object, containing the application logic, behaves as
 expected.
 """
 import arrow
+import os
+import pytest
 from securedrop_client import storage
 from securedrop_client.logic import APICallRunner, Client
 from unittest import mock
@@ -380,3 +382,48 @@ def test_Client_logout(safe_tmpdir):
     cl.logout()
     assert cl.api is None
     cl.gui.logout.assert_called_once_with()
+
+
+PERMISSIONS_CASES = [
+    {
+        'should_pass': True,
+        'home_perms': None,
+    },
+    {
+        'should_pass': True,
+        'home_perms': 0o0700,
+    },
+    {
+        'should_pass': False,
+        'home_perms': 0o0740,
+    },
+    {
+        'should_pass': False,
+        'home_perms': 0o0704,
+    },
+]
+
+
+def test_create_client_dir_permissions(tmpdir):
+    '''
+    Check that creating an app behaves appropriately with different
+    permissions on the various directories needed for it to function.
+    '''
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+
+    for idx, case in enumerate(PERMISSIONS_CASES):
+        sdc_home = os.path.join(str(tmpdir), 'case-{}'.format(idx))
+
+        # optionally create the dir
+        if case['home_perms'] is not None:
+            os.mkdir(sdc_home, case['home_perms'])
+
+        def func() -> None:
+            Client('http://localhost', mock_gui, mock_session, sdc_home)
+
+        if case['should_pass']:
+            func()
+        else:
+            with pytest.raises(RuntimeError):
+                func()
