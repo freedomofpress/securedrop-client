@@ -4,7 +4,7 @@ Make sure the UI widgets are configured correctly and work as expected.
 from PyQt5.QtWidgets import (QLineEdit, QWidget, QApplication, QWidgetItem,
                              QSpacerItem, QVBoxLayout)
 from securedrop_client.gui.widgets import (ToolBar, MainView, SourceList,
-                                           SourceWidget, LoginView,
+                                           SourceWidget, LoginDialog,
                                            SpeechBubble, ConversationWidget,
                                            MessageWidget, ReplyWidget,
                                            FileWidget, ConversationView)
@@ -170,94 +170,100 @@ def test_SourceWidget_update_unstarred():
     sw.name.setText.assert_called_once_with('<strong>foo bar baz</strong>')
 
 
-def test_LoginView_init():
+def test_LoginDialog_setup():
     """
     The LoginView is correctly initialised.
     """
     mock_controller = mock.MagicMock()
-    lv = LoginView(None, mock_controller)
-    assert lv.controller == mock_controller
-    assert lv.title.text() == '<h1>Sign In</h1>'
+    ld = LoginDialog(None)
+    ld.setup(mock_controller)
+    assert ld.controller == mock_controller
+    assert ld.title.text() == '<h1>Sign In</h1>'
 
 
-def test_LoginView_reset():
+def test_LoginDialog_reset():
     """
     Ensure the state of the login view is returned to the correct state.
     """
     mock_controller = mock.MagicMock()
-    lv = LoginView(None, mock_controller)
-    lv.username_field = mock.MagicMock()
-    lv.password_field = mock.MagicMock()
-    lv.tfa_field = mock.MagicMock()
-    lv.setDisabled = mock.MagicMock()
-    lv.error_label = mock.MagicMock()
-    lv.reset()
-    lv.username_field.setText.assert_called_once_with('')
-    lv.password_field.setText.assert_called_once_with('')
-    lv.tfa_field.setText.assert_called_once_with('')
-    lv.setDisabled.assert_called_once_with(False)
-    lv.error_label.setText.assert_called_once_with('')
+    ld = LoginDialog(None)
+    ld.setup(mock_controller)
+    ld.username_field = mock.MagicMock()
+    ld.password_field = mock.MagicMock()
+    ld.tfa_field = mock.MagicMock()
+    ld.setDisabled = mock.MagicMock()
+    ld.error_label = mock.MagicMock()
+    ld.reset()
+    ld.username_field.setText.assert_called_once_with('')
+    ld.password_field.setText.assert_called_once_with('')
+    ld.tfa_field.setText.assert_called_once_with('')
+    ld.setDisabled.assert_called_once_with(False)
+    ld.error_label.setText.assert_called_once_with('')
 
 
-def test_LoginView_error():
+def test_LoginDialog_error():
     """
     Any error message passed in is assigned as the text for the error label.
     """
     mock_controller = mock.MagicMock()
-    lv = LoginView(None, mock_controller)
-    lv.error_label = mock.MagicMock()
-    lv.error('foo')
-    lv.error_label.setText.assert_called_once_with('foo')
+    ld = LoginDialog(None)
+    ld.setup(mock_controller)
+    ld.error_label = mock.MagicMock()
+    ld.error('foo')
+    ld.error_label.setText.assert_called_once_with('foo')
 
 
-def test_LoginView_validate_no_input():
+def test_LoginDialog_validate_no_input():
     """
     If the user doesn't provide input, tell them and give guidance.
     """
     mock_controller = mock.MagicMock()
-    lv = LoginView(None, mock_controller)
-    lv.username_field.text = mock.MagicMock(return_value='')
-    lv.password_field.text = mock.MagicMock(return_value='')
-    lv.tfa_field.text = mock.MagicMock(return_value='')
-    lv.setDisabled = mock.MagicMock()
-    lv.error = mock.MagicMock()
-    lv.validate()
-    assert lv.setDisabled.call_count == 2
-    assert lv.error.call_count == 1
+    ld = LoginDialog(None)
+    ld.setup(mock_controller)
+    ld.username_field.text = mock.MagicMock(return_value='')
+    ld.password_field.text = mock.MagicMock(return_value='')
+    ld.tfa_field.text = mock.MagicMock(return_value='')
+    ld.setDisabled = mock.MagicMock()
+    ld.error = mock.MagicMock()
+    ld.validate()
+    assert ld.setDisabled.call_count == 2
+    assert ld.error.call_count == 1
 
 
-def test_LoginView_validate_input_non_numeric_2fa():
+def test_LoginDialog_validate_input_non_numeric_2fa():
     """
     If the user doesn't provide numeric 2fa input, tell them and give
     guidance.
     """
     mock_controller = mock.MagicMock()
-    lv = LoginView(None, mock_controller)
-    lv.username_field.text = mock.MagicMock(return_value='foo')
-    lv.password_field.text = mock.MagicMock(return_value='bar')
-    lv.tfa_field.text = mock.MagicMock(return_value='baz')
-    lv.setDisabled = mock.MagicMock()
-    lv.error = mock.MagicMock()
-    lv.validate()
-    assert lv.setDisabled.call_count == 2
-    assert lv.error.call_count == 1
+    ld = LoginDialog(None)
+    ld.setup(mock_controller)
+    ld.username_field.text = mock.MagicMock(return_value='foo')
+    ld.password_field.text = mock.MagicMock(return_value='bar')
+    ld.tfa_field.text = mock.MagicMock(return_value='baz')
+    ld.setDisabled = mock.MagicMock()
+    ld.error = mock.MagicMock()
+    ld.validate()
+    assert ld.setDisabled.call_count == 2
+    assert ld.error.call_count == 1
     assert mock_controller.login.call_count == 0
 
 
-def test_LoginView_validate_input_ok():
+def test_LoginDialog_validate_input_ok():
     """
     Valid input from the user causes a call to the controller's login method.
     """
     mock_controller = mock.MagicMock()
-    lv = LoginView(None, mock_controller)
-    lv.username_field.text = mock.MagicMock(return_value='foo')
-    lv.password_field.text = mock.MagicMock(return_value='bar')
-    lv.tfa_field.text = mock.MagicMock(return_value='123456')
-    lv.setDisabled = mock.MagicMock()
-    lv.error = mock.MagicMock()
-    lv.validate()
-    assert lv.setDisabled.call_count == 1
-    assert lv.error.call_count == 0
+    ld = LoginDialog(None)
+    ld.setup(mock_controller)
+    ld.username_field.text = mock.MagicMock(return_value='foo')
+    ld.password_field.text = mock.MagicMock(return_value='bar')
+    ld.tfa_field.text = mock.MagicMock(return_value='123456')
+    ld.setDisabled = mock.MagicMock()
+    ld.error = mock.MagicMock()
+    ld.validate()
+    assert ld.setDisabled.call_count == 1
+    assert ld.error.call_count == 0
     mock_controller.login.assert_called_once_with('foo', 'bar', '123456')
 
 

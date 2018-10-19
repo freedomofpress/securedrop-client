@@ -85,7 +85,7 @@ def test_Client_setup():
     cl.setup()
     cl.gui.setup.assert_called_once_with(cl)
     cl.update_sources.assert_called_once_with()
-    cl.gui.show_conversation_for.assert_called_once_with()
+    cl.gui.show_login.assert_called_once_with()
 
 
 def test_Client_call_api_existing_thread():
@@ -183,9 +183,9 @@ def test_Client_on_authenticate_failed():
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session)
     cl.on_authenticate(False)
-    mock_gui.show_login.assert_called_once_with(error='There was a problem '
-                                                'logging in. Please try '
-                                                'again.')
+    mock_gui.show_login_error.\
+        assert_called_once_with(error='There was a problem logging in. Please '
+                                'try again.')
 
 
 def test_Client_on_authenticate_ok():
@@ -213,9 +213,9 @@ def test_Client_on_login_timeout():
     cl.call_reset = mock.MagicMock()
     cl.on_login_timeout()
     cl.call_reset.assert_called_once_with()
-    mock_gui.show_login.assert_called_once_with(error='The connection to '
-                                                'SecureDrop timed out. Please '
-                                                'try again.')
+    mock_gui.show_login_error.\
+        assert_called_once_with(error='The connection to SecureDrop timed '
+                                'out. Please try again.')
 
 
 def test_Client_authenticated_yes():
