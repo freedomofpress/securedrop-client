@@ -1,6 +1,11 @@
 DEFAULT_GOAL: help
 OPEN=$(word 1, $(wildcard /usr/bin/xdg-open /usr/bin/open))
 
+.PHONY: format
+format: ## Run the formatter
+	@docker build -t securedrop-sdk/black:latest -f Dockerfile.black . && \
+		docker run --rm -v $(PWD):/home/kdas/workplace securedrop-sdk/black:latest black .
+
 TESTS ?= tests
 .PHONY: test
 test: ## Run the test suite
