@@ -12,6 +12,20 @@ pipenv install --dev
 pipenv shell
 ```
 
+## Run the client
+
+You can run the client with an ephemeral data directory:
+
+```
+./run.sh
+```
+
+If you want to persist data across restarts, you will need to run the client with:
+
+```
+./run.sh --sdc-home /path/to/my/dir/
+```
+
 ## Run tests
 
 ```
