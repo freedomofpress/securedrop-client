@@ -1,7 +1,5 @@
 ## Python Client for SecureDrop
 
-Note: This is not an official recommended project.
-
 ### Development
 
 This project uses [pipenv](https://docs.pipenv.org) to manage all dependencies.
