@@ -7,7 +7,7 @@ import sys
 from PyQt5.QtWidgets import QApplication
 from unittest import mock
 from securedrop_client.app import ENCODING, excepthook, configure_logging, \
-    start_app
+    start_app, arg_parser, DEFAULT_SDC_HOME, run, configure_signal_handlers
 
 
 app = QApplication([])
@@ -46,7 +46,7 @@ def test_configure_logging(safe_tmpdir):
         assert sys.excepthook == excepthook
 
 
-def test_run(safe_tmpdir):
+def test_start_app(safe_tmpdir):
     """
     Ensure the expected things are configured and the application is started.
     """
@@ -139,3 +139,65 @@ def test_create_app_dir_permissions(tmpdir):
             else:
                 with pytest.raises(RuntimeError):
                     func()
+
+
+def test_argparse():
+    parser = arg_parser()
+
+    return_value = '/some/path'
+    with mock.patch('os.path.expanduser', return_value=return_value) \
+            as mock_expand:
+        args = parser.parse_args([])
+
+    # check that the default home is used when no args args supplied
+    mock_expand.assert_called_once_with(DEFAULT_SDC_HOME)
+    # check that sdc_home is set after parsing args
+    assert args.sdc_home == return_value
+
+
+def test_main():
+    with mock.patch('securedrop_client.app.run') as mock_run:
+        import securedrop_client.__main__  # noqa
+
+    assert mock_run.called
+
+
+def test_run():
+    mock_args = mock.MagicMock()
+    mock_qt_args = []
+
+    def fake_known_args():
+        return (mock_args, mock_qt_args)
+
+    with mock.patch('securedrop_client.app.start_app') as mock_start_app, \
+            mock.patch('argparse.ArgumentParser.parse_known_args',
+                       side_effect=fake_known_args) as wat:
+        run()
+
+        mock_start_app.assert_called_once_with(mock_args, mock_qt_args)
+
+
+def test_signal_interception():
+    # check that initializing an app calls configure_signal_handlers
+    with mock.patch('securedrop_client.app.QApplication'), \
+            mock.patch('sys.exit'), \
+            mock.patch('securedrop_client.models.make_engine'), \
+            mock.patch('securedrop_client.app.init'), \
+            mock.patch('securedrop_client.logic.Client.setup'), \
+            mock.patch('securedrop_client.app.configure_logging'), \
+            mock.patch('securedrop_client.app.configure_signal_handlers') \
+            as mock_signal_handlers:
+        start_app(mock.MagicMock(), [])
+    assert mock_signal_handlers.called
+
+    # check that a signal interception calls quit on the app
+    mock_app = mock.MagicMock()
+    with mock.patch.object(mock_app, 'quit') as mock_quit, \
+            mock.patch('signal.signal') as mock_signal:
+        configure_signal_handlers(mock_app)
+        assert mock_signal.called
+
+        assert not mock_quit.called
+        signal_handler = mock_signal.call_args_list[0][0][1]
+        signal_handler()
+        assert mock_quit.called
