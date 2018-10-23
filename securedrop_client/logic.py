@@ -21,6 +21,7 @@ import logging
 import sdclientapi
 import arrow
 from securedrop_client import storage
+from securedrop_client.utils import check_dir_permissions
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer
 
 
@@ -83,19 +84,22 @@ class Client(QObject):
 
     finish_api_call = pyqtSignal()  # Acknowledges reciept of an API call.
 
-    def __init__(self, hostname, gui, session):
+    def __init__(self, hostname, gui, session, home: str) -> None:
         """
         The hostname, gui and session objects are used to coordinate with the
         various other layers of the application: the location of the SecureDrop
         proxy, the user interface and SqlAlchemy local storage respectively.
         """
+
+        check_dir_permissions(home)
+
         super().__init__()
         self.hostname = hostname  # Location of the SecureDrop server.
         self.gui = gui  # Reference to the UI window.
         self.api = None  # Reference to the API for secure drop proxy.
         self.session = session  # Reference to the SqlAlchemy session.
         self.api_thread = None  # Currently active API call thread.
-        self.sync_flag = os.path.join(os.path.expanduser('~'), '.sdsync')
+        self.sync_flag = os.path.join(home, 'sync_flag')
 
     def setup(self):
         """
