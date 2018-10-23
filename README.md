@@ -12,6 +12,8 @@ pipenv install --dev
 pipenv shell
 ```
 
+Please install system libraries for PyQt rather than using PyPI-managed libraries- this makes packaging possible later. On Debian, `apt install python3-pyqt5 python3-pyqt5.qtsvg` will install what you need.
+
 ## Run the client
 
 You can run the client with an ephemeral data directory:
