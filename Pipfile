@@ -11,6 +11,8 @@ vcrpy = "*"
 mypy = "*"
 pyotp = "*"
 sphinx = "*"
+pytest = "*"
+pytest-cov = "*"
 
 [packages]
 requests = "*"

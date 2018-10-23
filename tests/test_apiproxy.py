@@ -19,8 +19,9 @@ class TestAPIProxy(unittest.TestCase):
         self.username = "journalist"
         self.password = "correct horse battery staple profanity oil chewy"
         self.server = "http://localhost:8081/"
-        self.api = API(self.server, self.username, self.password,
-                       str(self.totp.now()), proxy=True)
+        self.api = API(
+            self.server, self.username, self.password, str(self.totp.now()), proxy=True
+        )
         for i in range(3):
             try:
                 self.api.authenticate()
