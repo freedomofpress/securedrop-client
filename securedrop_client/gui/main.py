@@ -149,7 +149,8 @@ class Window(QMainWindow):
         """
         source_item = self.main_view.source_list.currentItem()
         source_widget = self.main_view.source_list.itemWidget(source_item)
-        self.show_conversation_for(source_widget.source)
+        if source_widget:
+            self.show_conversation_for(source_widget.source)
 
     def show_conversation_for(self, source):
         """
