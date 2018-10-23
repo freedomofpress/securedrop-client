@@ -48,11 +48,15 @@ class ToolBar(QWidget):
         self.logout = QPushButton(_('Log Out'))
         self.logout.clicked.connect(self.on_logout_clicked)
         self.logout.setVisible(False)
+        self.refresh = QPushButton(_('Refresh'))
+        self.refresh.clicked.connect(self.on_refresh_clicked)
+        self.refresh.setVisible(False)
         layout.addWidget(self.logo)
         layout.addStretch()
         layout.addWidget(self.user_state)
         layout.addWidget(self.login)
         layout.addWidget(self.logout)
+        layout.addWidget(self.refresh)
 
     def setup(self, window, controller):
         """
@@ -72,6 +76,7 @@ class ToolBar(QWidget):
         self.user_state.setText(_('Logged in as: ' + username))
         self.login.setVisible(False)
         self.logout.setVisible(True)
+        self.refresh.setVisible(True)
 
     def set_logged_out(self):
         """
@@ -80,6 +85,7 @@ class ToolBar(QWidget):
         self.user_state.setText(_('Logged out.'))
         self.login.setVisible(True)
         self.logout.setVisible(False)
+        self.refresh.setVisible(False)
 
     def on_login_clicked(self):
         """
@@ -93,6 +99,11 @@ class ToolBar(QWidget):
         """
         self.controller.logout()
 
+    def on_refresh_clicked(self):
+        """
+        Called when the refresh button is clicked.
+        """
+        self.controller.sync_api()
 
 class MainView(QWidget):
     """

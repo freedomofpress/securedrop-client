@@ -44,6 +44,7 @@ class Submission(Base):
     uuid = Column(String(36), unique=True, nullable=False)
     filename = Column(String(255), nullable=False)
     size = Column(Integer, nullable=False)
+    download_url = Column(String(255), nullable=False)
 
     # This is whether the submission has been downloaded in the local database.
     is_downloaded = Column(Boolean, default=False)
@@ -56,11 +57,12 @@ class Submission(Base):
                           backref=backref("submissions", order_by=id,
                                           cascade="delete"))
 
-    def __init__(self, source, uuid, size, filename):
+    def __init__(self, source, uuid, size, filename, download_url):
         self.source_id = source.id
         self.uuid = uuid
         self.size = size
         self.filename = filename
+        self.download_url = download_url
 
     def __repr__(self):
         return '<Submission {}>'.format(self.filename)

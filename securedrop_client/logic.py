@@ -22,7 +22,7 @@ import sdclientapi
 import arrow
 from securedrop_client import storage
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer
-
+from securedrop_client.message_sync import MessageSync
 
 logger = logging.getLogger(__name__)
 
@@ -96,6 +96,7 @@ class Client(QObject):
         self.session = session  # Reference to the SqlAlchemy session.
         self.api_thread = None  # Currently active API call thread.
         self.sync_flag = os.path.join(os.path.expanduser('~'), '.sdsync')
+        self.message_thread = None # A thread responsible for fetching messages
 
     def setup(self):
         """
@@ -136,6 +137,17 @@ class Client(QObject):
             self.api_thread.finished.connect(self.call_reset)
             self.api_thread.start()
 
+    def start_message_thread(self):
+        """
+        Starts the message-fetching thread in the background.
+        """
+        if not self.message_thread:
+            self.message_thread = QThread()
+            self.message_sync = MessageSync(self.api)
+            self.message_sync.moveToThread(self.message_thread)
+            self.message_thread.started.connect(self.message_sync.run)
+            self.message_thread.start()
+
     def call_reset(self):
         """
         Clean up this object's state after an API call.
@@ -150,7 +162,8 @@ class Client(QObject):
         Given a username, password and time based one-time-passcode (TOTP),
         create a new instance representing the SecureDrop api and authenticate.
         """
-        self.api = sdclientapi.API(self.hostname, username, password, totp)
+
+        self.api = sdclientapi.API(self.hostname, username, password, totp, proxy=True)
         self.call_api(self.api.authenticate, self.on_authenticate,
                       self.on_login_timeout)
 
@@ -164,6 +177,7 @@ class Client(QObject):
             self.gui.hide_login()
             self.sync_api()
             self.gui.set_logged_in_as(self.api.username)
+            self.start_message_thread()
         else:
             # Failed to authenticate. Reset state with failure message.
             self.api = None
@@ -246,4 +260,5 @@ class Client(QObject):
         state.
         """
         self.api = None
+        self.stop_message_thread()
         self.gui.logout()
