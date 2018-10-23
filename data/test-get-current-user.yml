@@ -4,22 +4,22 @@ interactions:
     headers:
       Accept: [application/json]
       Accept-Encoding: ['gzip, deflate']
-      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzNDk0OTA0OSwiaWF0IjoxNTM0OTIwMjQ5fQ.eyJpZCI6MX0.xNU4HC10fDaXwOFGIFxxuyft8sSDyNowOqkL4rnb28g]
+      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU0MDI3NjkxOCwiaWF0IjoxNTQwMjQ4MTE4fQ.eyJpZCI6MX0.fygpQy3CxB1ulUWLFz2UdrtcBKHz-fk5gyRxbcSY720]
       Connection: [keep-alive]
       Content-Type: [application/json]
-      User-Agent: [python-requests/2.19.1]
+      User-Agent: [python-requests/2.20.0]
     method: GET
     uri: http://localhost:8081/api/v1/user
   response:
-    body: {string: "{\n  \"is_admin\": true, \n  \"last_login\": \"2018-08-22T06:44:09.595366Z\"\
-        , \n  \"username\": \"journalist\", \n  \"uuid\": \"ae696839-47b6-4360-a91e-eebd5032012e\"\
-        \n}\n"}
+    body: {string: "{\n  \"is_admin\": true, \n  \"last_login\": \"2018-10-22T23:00:06.845751Z\",
+        \n  \"username\": \"journalist\", \n  \"uuid\": \"16db39ec-0f92-4299-a15d-f6053b3d52a7\"\n}\n"}
     headers:
       Content-Length: ['151']
       Content-Type: [application/json]
-      Date: ['Wed, 22 Aug 2018 06:44:10 GMT']
-      Server: [Werkzeug/0.12.2 Python/2.7.6]
-      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiV2VkLCAyMiBBdWcgMjAxOCAwODo0NDoxMCBHTVQifX0.Dl6Xug.toKbzc-0cb6jvYxA9TxHKjzeJdU;
+      Date: ['Mon, 22 Oct 2018 23:00:12 GMT']
+      Server: [Werkzeug/0.14.1 Python/2.7.6]
+      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiVHVlLCAyMyBPY3QgMjAxOCAwMTowMDoxMiBHTVQifX0.Dq_n_A.ati4ypL2flydeIpO5E3gW0YX364;
           HttpOnly; Path=/]
+      Vary: [Cookie]
     status: {code: 200, message: OK}
 version: 1

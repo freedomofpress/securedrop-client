@@ -77,7 +77,8 @@ class API:
 
         else:  # We are not using the Qubes securedrop-proxy
             if method == "POST":
-                result = requests.post(self.server + path_query, data=body)
+                result = requests.post(self.server + path_query,
+                                       headers=headers, data=body)
             elif method == "GET":
                 result = requests.get(self.server + path_query, headers=headers)
             elif method == "DELETE":

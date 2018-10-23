@@ -4,93 +4,66 @@ interactions:
     headers:
       Accept: [application/json]
       Accept-Encoding: ['gzip, deflate']
-      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzNDk0OTA0OSwiaWF0IjoxNTM0OTIwMjQ5fQ.eyJpZCI6MX0.xNU4HC10fDaXwOFGIFxxuyft8sSDyNowOqkL4rnb28g]
+      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU0MDI3NjkxOCwiaWF0IjoxNTQwMjQ4MTE4fQ.eyJpZCI6MX0.fygpQy3CxB1ulUWLFz2UdrtcBKHz-fk5gyRxbcSY720]
       Connection: [keep-alive]
       Content-Type: [application/json]
-      User-Agent: [python-requests/2.19.1]
+      User-Agent: [python-requests/2.20.0]
     method: GET
     uri: http://localhost:8081/api/v1/sources
   response:
-    body: {string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/fd61a83e-6157-4b13-b1c4-596dc2ccf81e/add_star\"\
-        , \n      \"interaction_count\": 4, \n      \"is_flagged\": true, \n     \
-        \ \"is_starred\": false, \n      \"journalist_designation\": \"humanistic\
-        \ recognition\", \n      \"key\": {\n        \"public\": \"-----BEGIN PGP\
-        \ PUBLIC KEY BLOCK-----\\n\\nmQINBFt9Bh0BEADBtzFogrYPtI+Kgpt/fbWd1Q28WcjH5ForWnjSghD/FediQudJ\\\
-        nzH1CKB0M1cF00Uvaq/TqsQxM0CG26OSDbbIhng4O3p4u186KqSL1GxXLvhaidLb+\\nrl449FCvJR1twjTj/tqWXrxIZG4QW7T2LU5d4pQxtVXy3PEloQsXYEhuM6pFCmKU\\\
-        nri/lLsWEplalFy3v+BBd1vVbM2oVhfBja51l7V/1XEAimNN3uBfOUOOl2tKTC01Y\\nsqG9i3NaU1Vf3uNtjwqfsZC6XfTiHNCrgn1mGDqWlmrLICGxGOmfFT2zfrFONV0V\\\
-        n5kixfYiZdFhV8f4zT1Ian6i53HhbuDhezY54FcScjBPzC8qrQLcuyE/Ey1AJPv6g\\nfT0vKfiMVI3NWcA+BL5oKDLifDwSp5WP7NUPUG9qbhRhNQgBR6oo3bVpsfw7d3Po\\\
-        nAfLMWLmdN5xT628SUb92g8msxWyxFy8uD3zytqnS8bYrrnbss+oSD2um3AAunGF4\\nkcKrtcT6ri4akseHL0o0W7flf+pD+goawjU8P8gKAYwRzy6aaW6F1vQP+lHUZmVZ\\\
-        nKQABvTLWbo6CuOcFrEvNOYWgkp3MD2TWihICzh445+GQAu1d4Rd8KiUMe+RCx/Nt\\nQ96peIQApdxRKDC9/60LHF7MHLITfkoAB2XmMMCWPzEWxnkiQ0srTfYHnwARAQAB\\\
-        ntHxBdXRvZ2VuZXJhdGVkIEtleSA8WFFQRUlLQ0pTTFFBNjZGWlZUTTVFREFNWklY\\nRDZFSDU0QUM2S1VJSlg0Nk9WTVBLTTZDSFpZVlBBVzdVMjM1VFRaR0RUS1JVQzNW\\\
-        nVklMWEpBQ1M0Mk5UMkEzUDY1VEJaT1pFRVdXUT0+iQI/BBMBCgApBQJbfQYdAhsv\\nBQkB4X2jBwsJCAcDAgEGFQgCCQoLBBYCAwECHgECF4AACgkQCX/S51ZK7cjB9w/9\\\
-        nFwcOQdrvb02GomWjugHAyQ+Yw/xXIhCI0U9fm3K2SgmGl0y0oGVQMNSG+fFv3u4G\\nA6AJyD1L2cCmkzhFo4Jz4K5WNshkeZjgF2VlstyVkKFF7RfojMqSmzrGBU4ySkUv\\\
-        nQQIDoa2AoLpq17sFt3sdgi9wm2MGowODAykO3D5HhCTnT4FJpU9jBcwJdaPDqK/i\\nEHuSfehzgtCJJ3ntP/Qat6e/aQ/XH/PH1/C/V5ZfxskxsuU7hJNkEgXVKz/kZ+t1\\\
-        njYuoK69+cNsARQtv4TwWz7qoqtYuy8+CfNmEtd67XgGi1NEA7/zdGcVa9UhYEP96\\n6lUlY9/o7uiYec/QwMdZdUtI5xufKP1ko8qOxHHxK/Vvm4fQEAjeGTNTl/zPT4bd\\\
-        nFBUxS+ul/Pkjs90ol9OMsJZXHy5GTZnSAAbNHw1RLE/lod/6a0NMepHkbJlobfyk\\nnaoJ5Xgu7tbEmInsa7FpPYzckL2o1GqGcOEjZvsp7owky2lfw9f5PIduUsjfTpXw\\\
-        nJr9KiGafvWenBf7dp31OX0Up5P6yY/PCfV3zy5JV8mdldVXpukxd/rQ6GoJ10X6X\\nabjun8x9/Z/5Ir8w5AQEIkrPk4my6PQC0F68W/TrTKIq36gRrkzHLVk5jbM5nvbA\\\
-        nWXHZM1gyVTx0JWUsKsrHhHwXjMrBTCi34GnBKl2gecQ=\\n=jbWk\\n-----END PGP PUBLIC\
-        \ KEY BLOCK-----\\n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\"\
-        : \"2018-08-22T06:43:45.506944Z\", \n      \"number_of_documents\": 0, \n\
-        \      \"number_of_messages\": 2, \n      \"remove_star_url\": \"/api/v1/sources/fd61a83e-6157-4b13-b1c4-596dc2ccf81e/remove_star\"\
-        , \n      \"replies_url\": \"/api/v1/sources/fd61a83e-6157-4b13-b1c4-596dc2ccf81e/replies\"\
-        , \n      \"submissions_url\": \"/api/v1/sources/fd61a83e-6157-4b13-b1c4-596dc2ccf81e/submissions\"\
-        , \n      \"url\": \"/api/v1/sources/fd61a83e-6157-4b13-b1c4-596dc2ccf81e\"\
-        , \n      \"uuid\": \"fd61a83e-6157-4b13-b1c4-596dc2ccf81e\"\n    }, \n  \
-        \  {\n      \"add_star_url\": \"/api/v1/sources/9091cf36-5195-49d5-a1a4-f6360b849262/add_star\"\
-        , \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n    \
-        \  \"is_starred\": false, \n      \"journalist_designation\": \"disaffected\
-        \ caliph\", \n      \"key\": {\n        \"public\": \"-----BEGIN PGP PUBLIC\
-        \ KEY BLOCK-----\\n\\nmQINBFt9BiYBEACsLGG2YX1ljDk4j93VDsNlHn7ruzK063XYFUTveVVFSg2BHvZj\\\
-        n/AaDilAyM0Ht0Zk1GhuXk5IDu7lqJcHJvBqJLTQRb3jQel9jY2v7ZDNtVdyWHUVe\\nU28A/i3+vm0tPmt/LCXjNaptnLVClOJUoDWJqVhgkWtkbE6Yqhg62a+skXMn+EUE\\\
-        nV8rXnU5qMhu4di7ACVP5z2l+VnKD8BZGOMeFx0nlOFZLFmV/Tucel8mMYF0B0oG7\\nLxYEu9GfdAJeZH1gsqoNx+yqSHpdG9AsYzKCOqzLhQmTD0ES9QJh3qS6VlAF3NOC\\\
-        nTMBJEQ1DqhAJtGerO6mYkxfZ0EWqyOOg4yMfGyLpvWVKo8+KP1fmU0v6bm1HDlFd\\noCr67p4NHrO6LPYc2MyzHC6IS6yDTpNmUQo9f0dRSOs3AWl4VGXTZJfl/SISmSIy\\\
-        nWuzjt9cYnq+uOv8ivhFfRlxuKQQTgKShr7AyMLRQeHFth5EPhprIgPMk163+9zp6\\ni29TBabnynJd2zFnc+moCzDO9rwPoaOeizwrzQWTpkyv7pcGATK/MJP5Ztvaocnp\\\
-        nMx0kxfpP3+ITUw5Yet/DFDfRvQxxhwfeqn7y8gjT4nzDxL/IKW/lUEws3Mbc9TK2\\nJBKITsflrOo737cugme0VR5l8bsJPfJcoNfHEttAbi8xGLCWz4HZxho7MwARAQAB\\\
-        ntHxBdXRvZ2VuZXJhdGVkIEtleSA8TERPTkxYMzJZSk5NVUZMTjNINE03WEVQWlJZ\\nM0JaRE1GMkIzWE9QQVhGRUVNRE9ERkNPSTNJQUZLVEdIUzQ2U09PUlZOMkNUREU1\\\
-        nM0FUUko3NVZDNk9UUEJZUzJRTlMzVVZKNEtFWT0+iQI/BBMBCgApBQJbfQYmAhsv\\nBQkB4X2aBwsJCAcDAgEGFQgCCQoLBBYCAwECHgECF4AACgkQwA0i80gzkCqdIxAA\\\
-        ni/FNrkqOhbnC4ovn+61+HqI9h08+qeLrHgK5JSZsj+5ZxRyVddjLtychVDyfMFcP\\nmeiUbWK7+kiyumQCd5mI7A9tWVgbUD+JUNcmQpSyx1oi/gf3/i8FChYdF0OLPeF9\\\
-        nZvF8r18E2y/JhPSB02rCixS8USStfv+Sc3uqKYvN7pJhgCW8fqYd3MNCqZtMMl/W\\noSDT0hM8I1IiRbhqo+YnlHV/tYLH0HkXWOuv++9KvuRLkPAzNp4TtvnBGO6JniXM\\\
-        nJJetjksEOpgZaQnCQxdVCSBx17Y6wZ2nxWIVnMiRgr4xkycN/648gZc/5dk1EG38\\nBVriXEEhAbIrTVXgnQkwWZTbh9wH73GinMH5ae5jaS2SYLRMbpJ2loYeLxr85FFV\\\
-        n3EJWj3m6JFWMivE9z3LG+jHUx+gDbhjbCOxjBj8/X6UkbbfeYRxC4Y+y5GJOIhEz\\nvPnH2wWR+jnEqv+BIV9QVY4MuYB9H7tmAOVBZFO0vBFtUQ8Sd6vkL2DImzri+TQn\\\
-        nbWYvEjM/O59slydttNhnXaIQ+5RYpwl83ZI0Vv+h+ZqPcnAhOQ3UKno1s8ZnmUq7\\naBM5jf2jIFSbUiziloSSZXNHEPxZB4jJEcC7EY21M50JFaxV0o+eu+zwxdPpMOR8\\\
-        nInPXqQkjltNZ507tqfW6Y4BtAVzQWMnNpLgDh9LqIHs=\\n=IM7J\\n-----END PGP PUBLIC\
-        \ KEY BLOCK-----\\n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\"\
-        : \"2018-08-22T06:43:52.318245Z\", \n      \"number_of_documents\": 0, \n\
-        \      \"number_of_messages\": 2, \n      \"remove_star_url\": \"/api/v1/sources/9091cf36-5195-49d5-a1a4-f6360b849262/remove_star\"\
-        , \n      \"replies_url\": \"/api/v1/sources/9091cf36-5195-49d5-a1a4-f6360b849262/replies\"\
-        , \n      \"submissions_url\": \"/api/v1/sources/9091cf36-5195-49d5-a1a4-f6360b849262/submissions\"\
-        , \n      \"url\": \"/api/v1/sources/9091cf36-5195-49d5-a1a4-f6360b849262\"\
-        , \n      \"uuid\": \"9091cf36-5195-49d5-a1a4-f6360b849262\"\n    }\n  ]\n\
-        }\n"}
+    body: {string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/e1f8baab-2a97-4590-8295-06f08d43731c/add_star\",
+        \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n      \"is_starred\":
+        false, \n      \"journalist_designation\": \"listed discharge\", \n      \"key\":
+        {\n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmQINBFvOUw4BEADXCkiULPPQSCYHTT87jL87VI2PY5GKeJYt5dErdbmLHQcp+Uv9\\nf9m41YQyw7t5RuQrXabrzlJunx2msGQiqoyorMsZEYKj6wGwcsohGnN6XTo3i19X\\nQGEkt3JHOrH+0wkO63kWstmSEb03bPFcVRZOwJW2FvixEB5kxeV/7/eFnNE2TZeG\\nfV5pOoJXe8yNJkw87Lv5a+nxDx3KZC48Y1jrQNoUwE8pv5bTLtpCJmIB9T/tQhL8\\ntnwV0M+FPzOhUAtRBNvoOcVXs4KlIZF+Gamqae4J1I8/hj9dd5qCBC6JMVQTiFJA\\n+dktwA6LDptLnyjTIRLrZb5G1aV8HEuDnimUIeC+Kxek/O3NUtmnk/edsMr5J0Vi\\nuGph/L1e6BgJl7nlCKDyOr0a3pCdpzboHglc//PLpmRUDwXr17v6UnizcYwlVFqg\\n+wbGm/mh/abABty/Skwf0E0nUQT67D2Px6CO+I7UbyqqQS4X9ellmy+1OFSvHgJN\\nlfa5MCH8+Ct/Hp+nVgoc8TibQClztrKFPS6hkwgjNUsJOKHPAzfKaRPNp9SPCdEx\\nH5O7H4FrogYqRyqW7xiSdKBzNunH1e+Xk4hu001DgtnjKRkZhJgOJ3dwWMrfH6v0\\nsqcKDLWfOeKRf5TbSz1K2er6/KSqH3v5tXlykqBC9kaRFUB7JTEhShK1GQARAQAB\\ntHxBdXRvZ2VuZXJhdGVkIEtleSA8VkxJQllPT0JVTDVWVERBSkFWWkJMSjYyQjZI\\nMlY1UTRVTUM1NUI2WFlUSVNSM0pEWlVIUFRYWFo1UFVKRzdWSFBQVFZBRERWS0JO\\nTEtPTU1CVVNMWDZUTlJQTUw2SVk1M0NKN1BXQT0+iQI/BBMBCgApBQJbzlMOAhsv\\nBQkB4JwyBwsJCAcDAgEGFQgCCQoLBBYCAwECHgECF4AACgkQY4c40rWx3BwJjg//\\nUj1F65v29lEgbnUL5wUfKTAP1QSe8IX77E+tgdZcWxS+hE9V5Of3cm1xe6ykQGZH\\n4+NK5fd4bGM6pEw4kNTFLiqs7gBM3Ckm9LzTkoC621zNkzbbZ0GpVpa64N3JFLM8\\nQgCakaI7rkM1oPKduvSbGhE10Mh/Ez3fuByej/PUutDqD9EKg3kbFzWaWVkEwJDl\\n4mM2tABAVdLLJIVsMonmZAzlmatzlJXHB1RYbhtb8Kn/6bVivOcPen3f2gVy4PiO\\ns6aVUFYTI2VqgNfpMGcBhlDoRGFv2TH2/4R7sDwsKfJ5eTum9CvvXXM6Y39EEv9K\\nFNJBI2afijtH+CMUpBCw/CrsxD8OSA/YIhu1XjTa3o60Q19V4duzRJyPSq64h1ly\\nH4/FMtH8mMqHpoRFuJRt8fqJ0xjl3OOQBpstqrgfNoRdeALeFR4CxzPyJEiX1frI\\nNfCoa3iYlOqCtkriiLOqZUs+iRT2SsnDu2DnwP9L0eEmCfn7xmRAUWj6o+cLRTAB\\nnyY91NhyGYEsL89YgAGPo3dThdOgWHyoZ0NigrrxBDZP582YdAgAjdvTIZoXUhLK\\nSNpQCSmizL/7s/errNGu+bx5dPt0RkjEHVNbTcatz8rdbqTMVfMWYcx/n3o2SMi4\\nFAYEMfb3aoUIlh32gVDcnWctPicat2NYmF846+cWKS4=\\n=khYV\\n-----END
+        PGP PUBLIC KEY BLOCK-----\\n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\":
+        \"2018-10-22T22:45:35.806763Z\", \n      \"number_of_documents\": 0, \n      \"number_of_messages\":
+        2, \n      \"remove_star_url\": \"/api/v1/sources/e1f8baab-2a97-4590-8295-06f08d43731c/remove_star\",
+        \n      \"replies_url\": \"/api/v1/sources/e1f8baab-2a97-4590-8295-06f08d43731c/replies\",
+        \n      \"submissions_url\": \"/api/v1/sources/e1f8baab-2a97-4590-8295-06f08d43731c/submissions\",
+        \n      \"url\": \"/api/v1/sources/e1f8baab-2a97-4590-8295-06f08d43731c\",
+        \n      \"uuid\": \"e1f8baab-2a97-4590-8295-06f08d43731c\"\n    }, \n    {\n
+        \     \"add_star_url\": \"/api/v1/sources/4aa5efbc-7793-46bb-b5f5-85ab66f40b10/add_star\",
+        \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n      \"is_starred\":
+        false, \n      \"journalist_designation\": \"green melancholy\", \n      \"key\":
+        {\n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmQINBFvOUxEBEAC3j9Jp7NlagBl+F3MQzrVWNHr4FULlu56E1zOPyz2lHG04JdoC\\n0T2tDTc5yDGb2uoCXfmf4YdIdTufqeAQLshPLtASwI/Ut3snztMYmPM1R7NFai+L\\n9eZCG68/wWePUuSbxx4hT1gfuUBwVdOUx/FMz6IdbLH8sKwbYH/WPozJQwnpc3Jt\\ntRWAut63QjC7/qgAdq4xZCN4p/kUEG9cpK3l2FD8VOVKCjY2nsMh/5tYGSMnll8Y\\nKX2ljSn6r2Jf8oe++3BX5OKqXMSA1yA7e3pNxSOFakrcgke3Vgc3GKwp1YmmPozf\\nrVy2TanHVOWrWAqF7sTtWV3XkJikJ+mgUOIZCOza6pDXPG4QWf5aKE/WIkI3ubFv\\nLDJEWj44r6bgbRNRGqSmolQE0GYvCGN+KzxhmIKqfKogWJ3/EIpFBBvNLnYERP9z\\nwE6n/WuQQ+hS0JlkveRhSc/UbCDt5vfPuyxnTvDsY/VZNW7VtDeGBFpzU5dU/GVF\\n7TFZJhMx4xTXxenQpN4KIC/tmI2aqq8wFVc8lBhqpHrDVkFdTaNM/Di3JreDjQov\\nTmzGpE4O4aPHmwBPTW6/0E0TW0lCVrzMv2mNbizyeZrO2l9laURhjhjfEcg9d3SF\\ngd7i3d6qbkdKoCftZ0VZjwkuDPOMIoFWekv9pSg16ywokd+Ty4BOO5/PYQARAQAB\\ntHxBdXRvZ2VuZXJhdGVkIEtleSA8TlBIWUlNSEFQVERDNEdFNFBCVTdKS1dSV0ZP\\nWVk3SERFSDJVNEk2MkpEQjJZSUxEWDdNNko3WDM0UlVXSkpUUENTTjI3UjRGSTNZ\\nWkwzNUJLSzc1RUNVNjUyTVc1NzNGWkVPVkJNST0+iQI/BBMBCgApBQJbzlMRAhsv\\nBQkB4JwvBwsJCAcDAgEGFQgCCQoLBBYCAwECHgECF4AACgkQklSQKhNOKvsW2A//\\ndHcw7rTMhTlV/LUGoVyoXCdKuniRu/LMqU2RP5GCVOX9C2xGb47eICJMNh9LgjP+\\nwFrfvZWA//n2qrPoy/fW7lm3M7CjEWUGABoi54/iFWRSpUZFSkRuFJYq0BAXG28Q\\nfigBbnCgxw+ImuH0OfYVz2RBqlRyUh82htzS/Gu5QOhNaSUGz6bd4fZUqCrHJcrw\\nnlW5INdT4CDFUMkNHsn1G8DSKl+xf5eHv4flInYEpE/jkxKgH7k8692aVZwxHjEn\\n1mB9IEpPktz8L1GFIZQbX28k/fpk+647w5zdF721sMpaFXD8ju4lBSw0gUbNJk/c\\nrfZUFb9BuQYLgx6YRWrwTI5ev2PwNLhTMhwvJvV+SJ+TGUzlMDXup2sVFikvAHfK\\nvyselV1vV6FpdimaGQ8d2qG4FDDGJ+BB7hc26H2rRLmzmi1S6gWcmFXI4DJ038I8\\nnVlvsUtD2Iyqk5ObboGgGXxVgiIFDvN1FoX1RHk3p/xd1dXBm6Gg9CPbHFSdQ6Du\\n40FlHPBjthd2m6brFji1JwBi/KusSDuJqDzxgPULL6EGxwdCCNWWOqD+iWYSKxpl\\n/oJCd77ph+bBrfNwOMiZ9kIdzOHFmQjnomHGMX5xVJLjYx+zvXWZpVJ/Mk2KuJ/L\\n+jiwGWkUP1qgZpWSX5CrU5I2GaUqL+TKVApKhA7LgKk=\\n=5blK\\n-----END
+        PGP PUBLIC KEY BLOCK-----\\n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\":
+        \"2018-10-22T22:45:38.020061Z\", \n      \"number_of_documents\": 0, \n      \"number_of_messages\":
+        2, \n      \"remove_star_url\": \"/api/v1/sources/4aa5efbc-7793-46bb-b5f5-85ab66f40b10/remove_star\",
+        \n      \"replies_url\": \"/api/v1/sources/4aa5efbc-7793-46bb-b5f5-85ab66f40b10/replies\",
+        \n      \"submissions_url\": \"/api/v1/sources/4aa5efbc-7793-46bb-b5f5-85ab66f40b10/submissions\",
+        \n      \"url\": \"/api/v1/sources/4aa5efbc-7793-46bb-b5f5-85ab66f40b10\",
+        \n      \"uuid\": \"4aa5efbc-7793-46bb-b5f5-85ab66f40b10\"\n    }\n  ]\n}\n"}
     headers:
-      Content-Length: ['5242']
+      Content-Length: ['5235']
       Content-Type: [application/json]
-      Date: ['Wed, 22 Aug 2018 06:44:11 GMT']
-      Server: [Werkzeug/0.12.2 Python/2.7.6]
-      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiV2VkLCAyMiBBdWcgMjAxOCAwODo0NDoxMSBHTVQifX0.Dl6Xuw.K-G3xjRZm0x94j9n8kSSCTX2JeA;
+      Date: ['Mon, 22 Oct 2018 22:46:22 GMT']
+      Server: [Werkzeug/0.14.1 Python/2.7.6]
+      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiVHVlLCAyMyBPY3QgMjAxOCAwMDo0NjoyMSBHTVQifX0.Dq_kvg.nj6Bk6SAiKWrtzV-KKT3ieUHxH4;
           HttpOnly; Path=/]
+      Vary: [Cookie]
     status: {code: 200, message: OK}
 - request:
     body: null
     headers:
       Accept: [application/json]
       Accept-Encoding: ['gzip, deflate']
-      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzNDk0OTA0OSwiaWF0IjoxNTM0OTIwMjQ5fQ.eyJpZCI6MX0.xNU4HC10fDaXwOFGIFxxuyft8sSDyNowOqkL4rnb28g]
+      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU0MDI3NjkxOCwiaWF0IjoxNTQwMjQ4MTE4fQ.eyJpZCI6MX0.fygpQy3CxB1ulUWLFz2UdrtcBKHz-fk5gyRxbcSY720]
       Connection: [keep-alive]
       Content-Type: [application/json]
-      User-Agent: [python-requests/2.19.1]
+      User-Agent: [python-requests/2.20.0]
     method: GET
     uri: http://localhost:8081/api/v1/sources/rofl-missing/submissions
   response:
-    body: {string: "{\n  \"error\": \"Not Found\", \n  \"message\": \"The requested\
-        \ URL was not found on the server.  If you entered the URL manually please\
-        \ check your spelling and try again.\"\n}\n"}
+    body: {string: "{\n  \"error\": \"Not Found\", \n  \"message\": \"The requested
+        URL was not found on the server.  If you entered the URL manually please check
+        your spelling and try again.\"\n}\n"}
     headers:
       Content-Length: ['166']
       Content-Type: [application/json]
-      Date: ['Wed, 22 Aug 2018 06:44:11 GMT']
-      Server: [Werkzeug/0.12.2 Python/2.7.6]
-      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiV2VkLCAyMiBBdWcgMjAxOCAwODo0NDoxMSBHTVQifX0.Dl6Xuw.K-G3xjRZm0x94j9n8kSSCTX2JeA;
+      Date: ['Mon, 22 Oct 2018 22:46:22 GMT']
+      Server: [Werkzeug/0.14.1 Python/2.7.6]
+      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiVHVlLCAyMyBPY3QgMjAxOCAwMDo0NjoyMiBHTVQifX0.Dq_kvg.O3TdpgxMzRQ74hSdEl29o7bHWW4;
           HttpOnly; Path=/]
+      Vary: [Cookie]
     status: {code: 404, message: NOT FOUND}
 version: 1

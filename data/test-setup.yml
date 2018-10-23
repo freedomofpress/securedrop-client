@@ -1,25 +1,25 @@
 interactions:
 - request:
-    body: '{"one_time_code": "393600", "username": "journalist", "passphrase": "correct
+    body: '{"one_time_code": "378795", "username": "journalist", "passphrase": "correct
       horse battery staple profanity oil chewy"}'
     headers:
       Accept: ['*/*']
       Accept-Encoding: ['gzip, deflate']
       Connection: [keep-alive]
       Content-Length: ['119']
-      User-Agent: [python-requests/2.19.1]
+      User-Agent: [python-requests/2.20.0]
     method: POST
     uri: http://localhost:8081/api/v1/token
   response:
-    body: {string: "{\n  \"expiration\": \"2018-08-22T14:50:25.227570Z\", \n  \"token\"\
-        : \"eyJhbGciOiJIUzI1NiIsImV4cCI6MTUzNDk0OTQyNSwiaWF0IjoxNTM0OTIwNjI1fQ.eyJpZCI6MX0.E_kW0WVV8WctTdccjI29xM3MWqFEyQEC-aRXREkxWUc\"\
-        \n}\n"}
+    body: {string: "{\n  \"expiration\": \"2018-10-23T06:41:58.606548Z\", \n  \"token\":
+        \"eyJhbGciOiJIUzI1NiIsImV4cCI6MTU0MDI3NjkxOCwiaWF0IjoxNTQwMjQ4MTE4fQ.eyJpZCI6MX0.fygpQy3CxB1ulUWLFz2UdrtcBKHz-fk5gyRxbcSY720\"\n}\n"}
     headers:
       Content-Length: ['188']
       Content-Type: [application/json]
-      Date: ['Wed, 22 Aug 2018 06:50:25 GMT']
-      Server: [Werkzeug/0.12.2 Python/2.7.6]
-      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiV2VkLCAyMiBBdWcgMjAxOCAwODo1MDoyNCBHTVQifX0.Dl6ZMQ.DBxiUGUc0tZq3pu_2_KVaCXRug8;
+      Date: ['Mon, 22 Oct 2018 22:41:58 GMT']
+      Server: [Werkzeug/0.14.1 Python/2.7.6]
+      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiVHVlLCAyMyBPY3QgMjAxOCAwMDo0MTo1OCBHTVQifX0.Dq_jtg.QIkHRFQrSFIxNmv3awdJjiXXT18;
           HttpOnly; Path=/]
+      Vary: [Cookie]
     status: {code: 200, message: OK}
 version: 1
