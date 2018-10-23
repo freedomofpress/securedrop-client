@@ -4,6 +4,7 @@ import configparser
 import json
 import requests
 from subprocess import PIPE, Popen
+from urllib.parse import urljoin
 
 from typing import Optional, Dict, List, Tuple
 
@@ -77,12 +78,15 @@ class API:
 
         else:  # We are not using the Qubes securedrop-proxy
             if method == "POST":
-                result = requests.post(self.server + path_query,
-                                       headers=headers, data=body)
+                result = requests.post(
+                    urljoin(self.server, path_query), headers=headers, data=body
+                )
             elif method == "GET":
-                result = requests.get(self.server + path_query, headers=headers)
+                result = requests.get(urljoin(self.server, path_query), headers=headers)
             elif method == "DELETE":
-                result = requests.delete(self.server + path_query, headers=headers)
+                result = requests.delete(
+                    urljoin(self.server, path_query), headers=headers
+                )
 
             # Because when we download a file there is no JSON in the body
             if path_query.find("/download") != -1:
