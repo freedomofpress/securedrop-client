@@ -23,8 +23,10 @@ clean:
 	find . \( -name '*.tgz' -o -name dropin.cache \) -delete
 	find . | grep -E "(__pycache__)" | xargs rm -rf
 
+TESTS ?= tests
+TESTOPTS ?= -v
 test: clean
-	xvfb-run python -m pytest
+	xvfb-run python -m pytest -v --cov-config .coveragerc --cov-report html --cov-report term-missing --cov=securedrop_client --cov-fail-under 100 $(TESTOPTS) $(TESTS)
 
 pyflakes:
 	find . \( -name _build -o -name var -o -path ./docs -o -path \) -type d -prune -o -name '*.py' -print0 | $(XARGS) pyflakes
@@ -32,7 +34,4 @@ pyflakes:
 pycodestyle:
 	find . \( -name _build -o -name var \) -type d -prune -o -name '*.py' -print0 | $(XARGS) -n 1 pycodestyle --repeat --exclude=build/*,docs/*,.vscode/* --ignore=E731,E402,W504
 
-coverage: clean
-	xvfb-run python -m pytest --cov-config .coveragerc --cov-report term-missing --cov=securedrop_client tests/
-
-check: clean pycodestyle pyflakes coverage
+check: clean pycodestyle pyflakes test

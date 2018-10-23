@@ -21,6 +21,7 @@ import logging
 import sdclientapi
 import arrow
 from securedrop_client import storage
+from securedrop_client.utils import check_dir_permissions
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer
 
 
@@ -83,19 +84,22 @@ class Client(QObject):
 
     finish_api_call = pyqtSignal()  # Acknowledges reciept of an API call.
 
-    def __init__(self, hostname, gui, session):
+    def __init__(self, hostname, gui, session, home: str) -> None:
         """
         The hostname, gui and session objects are used to coordinate with the
         various other layers of the application: the location of the SecureDrop
         proxy, the user interface and SqlAlchemy local storage respectively.
         """
+
+        check_dir_permissions(home)
+
         super().__init__()
         self.hostname = hostname  # Location of the SecureDrop server.
         self.gui = gui  # Reference to the UI window.
         self.api = None  # Reference to the API for secure drop proxy.
         self.session = session  # Reference to the SqlAlchemy session.
         self.api_thread = None  # Currently active API call thread.
-        self.sync_flag = os.path.join(os.path.expanduser('~'), '.sdsync')
+        self.sync_flag = os.path.join(home, 'sync_flag')
 
     def setup(self):
         """
@@ -111,8 +115,8 @@ class Client(QObject):
         self.gui.setup(self)
         # If possible, update the UI with available sources.
         self.update_sources()
-        # Show the login view.
-        self.gui.show_conversation_for()
+        # Show the login dialog.
+        self.gui.show_login()
         # Create a timer to check for sync status every 30 seconds.
         self.sync_timer = QTimer()
         self.sync_timer.timeout.connect(self.update_sync)
@@ -161,13 +165,14 @@ class Client(QObject):
         self.call_reset()
         if result:
             # It worked! Sync with the API and update the UI.
+            self.gui.hide_login()
             self.sync_api()
             self.gui.set_logged_in_as(self.api.username)
         else:
             # Failed to authenticate. Reset state with failure message.
             self.api = None
             error = _('There was a problem logging in. Please try again.')
-            self.gui.show_login(error=error)
+            self.gui.show_login_error(error=error)
 
     def on_login_timeout(self):
         """
@@ -176,7 +181,7 @@ class Client(QObject):
         self.call_reset()
         self.api = None
         error = _('The connection to SecureDrop timed out. Please try again.')
-        self.gui.show_login(error=error)
+        self.gui.show_login_error(error=error)
 
     def authenticated(self):
         """
@@ -217,7 +222,8 @@ class Client(QObject):
             # Set last sync flag.
             with open(self.sync_flag, 'w') as f:
                 f.write(arrow.now().format())
-            self.gui.show_conversation_for()
+            # TODO: show something in the conversation view?
+            # self.gui.show_conversation_for()
         else:
             # How to handle a failure? Exceptions are already logged. Perhaps
             # a message in the UI?
