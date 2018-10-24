@@ -462,6 +462,31 @@ class FileWidget(QWidget):
             self.controller.on_file_download(self.source, self.submission)
 
 
+class ReplyBoxWidget(QWidget):
+    """
+    A textbox where a journalist can enter a reply.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.text_edit = QTextEdit()
+
+        self.send_button = QPushButton('Send')
+        self.send_button.clicked.connect(self.send_reply)
+
+        layout = QHBoxLayout()
+        layout.addWidget(self.text_edit)
+        layout.addWidget(self.send_button)
+        self.setLayout(layout)
+
+    def setup(self, conversation) -> None:
+        self.conversation = conversation
+
+    def send_reply(self) -> None:
+        self.conversation.add_reply(self.text_edit.toPlainText())
+        self.text_edit.clear()
+
+
 class ConversationView(QWidget):
     """
     Renders a conversation.
@@ -484,8 +509,11 @@ class ConversationView(QWidget):
         sb = self.scroll.verticalScrollBar()
         sb.rangeChanged.connect(self.move_to_bottom)
 
+        self.reply_box = ReplyBoxWidget()
+
         main_layout = QVBoxLayout()
-        main_layout.addWidget(self.scroll)
+        main_layout.addWidget(self.scroll, 10)
+        main_layout.addWidget(self.reply_box, 1)
         self.setLayout(main_layout)
 
     def setup(self, controller):
@@ -493,6 +521,7 @@ class ConversationView(QWidget):
         Ensure there's a reference to program logic.
         """
         self.controller = controller
+        self.reply_box.setup(self)
 
     def add_file(self, source_db_object, submission_db_object):
         """
