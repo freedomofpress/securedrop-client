@@ -186,6 +186,7 @@ def test_conversation_for():
     w = Window()
     w.controller = mock.MagicMock()
     w.main_view = mock.MagicMock()
+    w.controller = mock.MagicMock()
     mock_conview = mock.MagicMock()
     mock_source = mock.MagicMock()
     mock_source.journalistic_designation = 'Testy McTestface'
