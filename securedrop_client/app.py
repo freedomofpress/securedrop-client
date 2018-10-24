@@ -49,6 +49,7 @@ def excepthook(*exc_args):
     """
     logging.error('Unrecoverable error', exc_info=(exc_args))
     sys.__excepthook__(*exc_args)
+    print('')  # force terminal prompt on to a new line
     sys.exit(1)
 
 
