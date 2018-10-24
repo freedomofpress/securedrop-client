@@ -182,3 +182,13 @@ def test_conversation_for():
     conv = mock_conview()
     assert conv.add_message.call_count > 0
     assert conv.add_reply.call_count > 0
+
+
+def test_set_status():
+    """
+    Ensure the status bar's text is updated.
+    """
+    w = Window()
+    w.status_bar = mock.MagicMock()
+    w.set_status('hello', 100)
+    w.status_bar.showMessage.assert_called_once_with('hello', 100)

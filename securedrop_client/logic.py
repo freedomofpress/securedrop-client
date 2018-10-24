@@ -247,3 +247,10 @@ class Client(QObject):
         """
         self.api = None
         self.gui.logout()
+
+    def set_status(self, message, duration=5000):
+        """
+        Set a textual status message to be displayed to the user for a certain
+        duration.
+        """
+        self.gui.set_status(message, duration)

@@ -380,3 +380,14 @@ def test_Client_logout():
     cl.logout()
     assert cl.api is None
     cl.gui.logout.assert_called_once_with()
+
+
+def test_Client_set_status():
+    """
+    Ensure the GUI set_status API is called.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session)
+    cl.set_status("Hello, World!", 1000)
+    mock_gui.set_status.assert_called_once_with("Hello, World!", 1000)
