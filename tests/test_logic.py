@@ -384,6 +384,17 @@ def test_Client_logout(safe_tmpdir):
     cl.gui.logout.assert_called_once_with()
 
 
+def test_Client_set_status(safe_tmpdir):
+    """
+    Ensure the GUI set_status API is called.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.set_status("Hello, World!", 1000)
+    mock_gui.set_status.assert_called_once_with("Hello, World!", 1000)
+
+
 PERMISSIONS_CASES = [
     {
         'should_pass': True,
