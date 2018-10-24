@@ -184,6 +184,7 @@ def test_conversation_for():
     is called in the expected manner with dummy data.
     """
     w = Window()
+    w.controller = mock.MagicMock()
     w.main_view = mock.MagicMock()
     mock_conview = mock.MagicMock()
     mock_source = mock.MagicMock()

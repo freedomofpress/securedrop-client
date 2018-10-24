@@ -566,3 +566,39 @@ def test_create_client_dir_permissions(tmpdir):
         else:
             with pytest.raises(RuntimeError):
                 func()
+
+
+def test_Client_on_file_click_Submission(safe_tmpdir):
+    """
+    If the handler is passed a submission, check the download_submission
+    function is the one called against the API.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    s = sdclientapi.Submission(download_url='foo', filename='test',
+                               is_read=True, size=123, source_url='foo/bar',
+                               submission_url='bar', uuid='test')
+    cl.call_api = mock.MagicMock()
+    cl.api = mock.MagicMock()
+    cl.on_file_click(s)
+    cl.call_api.assert_called_once_with(cl.api.download_submission,
+                                        cl.on_file_download,
+                                        cl.on_download_timeout, s, cl.data_dir)
+
+
+def test_Client_on_file_click_Reply(safe_tmpdir):
+    """
+    If the handler is passed a reply, check the download_reply
+    function is the one called against the API.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    r = mock.MagicMock()  # Not a sdclientapi.Submission
+    cl.call_api = mock.MagicMock()
+    cl.api = mock.MagicMock()
+    cl.on_file_click(r)
+    cl.call_api.assert_called_once_with(cl.api.download_reply,
+                                        cl.on_file_download,
+                                        cl.on_download_timeout, r, cl.data_dir)

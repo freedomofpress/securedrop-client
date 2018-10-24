@@ -362,22 +362,41 @@ def test_FileWidget_init_left():
     """
     Check the FileWidget is configured correctly for align-left.
     """
-    fw = FileWidget('hello', 'left')
+    mock_message = mock.MagicMock()
+    mock_controller = mock.MagicMock()
+    fw = FileWidget('hello', 'left', mock_message, mock_controller)
     layout = fw.layout()
     assert isinstance(layout.takeAt(0), QWidgetItem)
     assert isinstance(layout.takeAt(0), QWidgetItem)
     assert isinstance(layout.takeAt(0), QSpacerItem)
+    assert fw.message == mock_message
+    assert fw.controller == mock_controller
 
 
 def test_FileWidget_init_right():
     """
     Check the FileWidget is configured correctly for align-right.
     """
-    fw = FileWidget('hello', 'right')
+    mock_message = mock.MagicMock()
+    mock_controller = mock.MagicMock()
+    fw = FileWidget('hello', 'right', mock_message, mock_controller)
     layout = fw.layout()
     assert isinstance(layout.takeAt(0), QSpacerItem)
     assert isinstance(layout.takeAt(0), QWidgetItem)
     assert isinstance(layout.takeAt(0), QWidgetItem)
+    assert fw.message == mock_message
+    assert fw.controller == mock_controller
+
+
+def test_FileWidget_mouseDoubleClickEvent():
+    """
+    Should fire the expected event handler in the logic layer.
+    """
+    mock_message = mock.MagicMock()
+    mock_controller = mock.MagicMock()
+    fw = FileWidget('hello', 'right', mock_message, mock_controller)
+    fw.mouseDoubleClickEvent(None)
+    fw.controller.on_file_click.assert_called_once_with(mock_message)
 
 
 def test_ConversationView_init():
@@ -388,12 +407,23 @@ def test_ConversationView_init():
     assert isinstance(cv.conversation_layout, QVBoxLayout)
 
 
+def test_ConversationView_setup():
+    """
+    Ensure the controller is set
+    """
+    cv = ConversationView(None)
+    mock_controller = mock.MagicMock()
+    cv.setup(mock_controller)
+    assert cv.controller == mock_controller
+
+
 def test_ConversationView_add_message():
     """
     Adding a message results in a new MessageWidget added to the layout. Any
     associated files are added as FileWidgets.
     """
     cv = ConversationView(None)
+    cv.controller = mock.MagicMock()
     cv.conversation_layout = mock.MagicMock()
     cv.add_message('hello', ['file1.pdf', ])
     assert cv.conversation_layout.addWidget.call_count == 2
@@ -408,6 +438,7 @@ def test_ConversationView_add_reply():
     associated files are added as FileWidgets.
     """
     cv = ConversationView(None)
+    cv.controller = mock.MagicMock()
     cv.conversation_layout = mock.MagicMock()
     cv.add_reply('hello', ['file1.pdf', ])
     assert cv.conversation_layout.addWidget.call_count == 2

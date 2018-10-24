@@ -429,10 +429,14 @@ class FileWidget(QWidget):
     Represents a file attached to a message.
     """
 
-    def __init__(self, text, align):
+    def __init__(self, text, align, message, controller):
         """
+        Given some text, an indication of alignment ('left' or 'right') and
+        a reference to the controller, make something to display a file.
         """
         super().__init__()
+        self.message = message
+        self.controller = controller
         layout = QHBoxLayout()
         icon = QLabel()
         icon.setPixmap(load_image('file.png'))
@@ -446,6 +450,12 @@ class FileWidget(QWidget):
             # Add space on right hand side...
             layout.addStretch(5)
         self.setLayout(layout)
+
+    def mouseDoubleClickEvent(self, e):
+        """
+        Handle a double-click via the program logic.
+        """
+        self.controller.on_file_click(self.message)
 
 
 class ConversationView(QWidget):
@@ -470,6 +480,12 @@ class ConversationView(QWidget):
         main_layout.addWidget(scroll)
         self.setLayout(main_layout)
 
+    def setup(self, controller):
+        """
+        Ensure there's a reference to program logic.
+        """
+        self.controller = controller
+
     def add_message(self, message, files=None):
         """
         Add a message from the source.
@@ -477,7 +493,8 @@ class ConversationView(QWidget):
         self.conversation_layout.addWidget(MessageWidget(message))
         if files:
             for f in files:
-                self.conversation_layout.addWidget(FileWidget(f, 'left'))
+                self.conversation_layout.addWidget(FileWidget(f, 'left',
+                                                   message, self.controller))
 
     def add_reply(self, reply, files=None):
         """
@@ -486,4 +503,5 @@ class ConversationView(QWidget):
         self.conversation_layout.addWidget(ReplyWidget(reply))
         if files:
             for f in files:
-                self.conversation_layout.addWidget(FileWidget(f, 'right'))
+                self.conversation_layout.addWidget(FileWidget(f, 'right',
+                                                   reply, self.controller))

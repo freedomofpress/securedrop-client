@@ -100,6 +100,8 @@ class Client(QObject):
         self.session = session  # Reference to the SqlAlchemy session.
         self.api_thread = None  # Currently active API call thread.
         self.sync_flag = os.path.join(home, 'sync_flag')
+        self.home = home  # The "home" directory for client files.
+        self.data_dir = os.path.join(self.home, 'data')  # File data.
 
     def setup(self):
         """
@@ -313,3 +315,36 @@ class Client(QObject):
         duration.
         """
         self.gui.set_status(message, duration)
+
+    def on_file_click(self, message):
+        """
+        Download the file associated with the associated message (which may
+        be a Submission or Reply).
+        """
+        if isinstance(message, sdclientapi.Submission):
+            # Handle sources.
+            func = self.api.download_submission
+        else:
+            # Handle journalist's replies.
+            func = self.api.download_reply
+        self.call_api(func, self.on_file_download,
+                      self.on_download_timeout, message, self.data_dir)
+
+    def on_file_download(self):
+        """
+        Called when a file has downloaded. Cause a refresh to the conversation
+        view to display the contents of the new file.
+        """
+        if result:  # pragma: no cover
+            # Refresh the conversation with the content of the downloaded file.
+            pass
+        else:  # pragma: no cover
+            # Update the UI in some way to indicate a failure state.
+            pass
+
+    def on_download_timeout(self):
+        """
+        Called when downloading a file has timed out.
+        """
+        # Update the UI in some way to indicate a failure state.
+        pass  # pragma: no cover

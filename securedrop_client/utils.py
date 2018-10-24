@@ -1,7 +1,7 @@
 import os
 
 
-def safe_mkdir(sdc_home: str, relative_path: str=None) -> None:
+def safe_mkdir(sdc_home: str, relative_path: str = None) -> None:
     '''
     Safely create directories while checking permissions along the way.
     '''
