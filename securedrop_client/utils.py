@@ -45,3 +45,16 @@ def split_path(path: str) -> list:
 
     out.reverse()
     return out
+
+
+def humanize_filesize(filesize):
+    """
+    Returns a human readable string of a filesize 
+    (with an input unit of bytes)
+    """
+    if filesize < 1024:
+        return '{} bytes'.format(str(filesize))
+    elif filesize < 1024 * 1024:
+        return '{}KB'.format(str(filesize) / 1024)
+    else:
+        return '{}MB'.format(str(filesize) / 1024 ** 2)

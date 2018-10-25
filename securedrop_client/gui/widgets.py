@@ -25,6 +25,7 @@ from PyQt5.QtWidgets import (QListWidget, QTextEdit, QLabel, QToolBar, QAction,
                              QPushButton, QVBoxLayout, QLineEdit, QScrollArea,
                              QPlainTextEdit, QSpacerItem, QSizePolicy, QDialog)
 from securedrop_client.resources import load_svg, load_image
+from securedrop_client.utils import humanize_filesize
 
 
 logger = logging.getLogger(__name__)
@@ -426,21 +427,29 @@ class ReplyWidget(ConversationWidget):
 
 class FileWidget(QWidget):
     """
-    Represents a file attached to a message.
+    Represents a file.
     """
 
-    def __init__(self, text, align, message, controller):
+    def __init__(self, source_db_object, submission_db_object, controller, align="left"):
         """
         Given some text, an indication of alignment ('left' or 'right') and
         a reference to the controller, make something to display a file.
+
+        Align is set to left by default because currently SecureDrop can only
+        accept files from sources to journalists.
         """
         super().__init__()
-        self.message = message
         self.controller = controller
+        self.source = source_db_object
+        self.submission = submission_db_object
         layout = QHBoxLayout()
         icon = QLabel()
         icon.setPixmap(load_image('file.png'))
-        description = QLabel(text)
+        if submission_db_object.is_downloaded:
+            description = QLabel("Open")
+        else:
+            human_filesize = humanize_filesize(self.submission.size)
+            description = QLabel("Download ({})".format(human_filesize))
         if align is not "left":
             # Float right...
             layout.addStretch(5)
@@ -455,7 +464,7 @@ class FileWidget(QWidget):
         """
         Handle a double-click via the program logic.
         """
-        self.controller.on_file_click(self.message)
+        self.controller.on_file_click(self.source, self.submission)
 
 
 class ConversationView(QWidget):
@@ -486,22 +495,21 @@ class ConversationView(QWidget):
         """
         self.controller = controller
 
-    def add_message(self, message, files=None):
+    def add_file(self, source_db_object, submission_db_object):
+        """
+        Add a file from the source.
+        """
+        self.conversation_layout.addWidget(
+            FileWidget(source_db_object, submission_db_object, self.controller))
+
+    def add_message(self, message):
         """
         Add a message from the source.
         """
         self.conversation_layout.addWidget(MessageWidget(message))
-        if files:
-            for f in files:
-                self.conversation_layout.addWidget(FileWidget(f, 'left',
-                                                   message, self.controller))
 
     def add_reply(self, reply, files=None):
         """
         Add a reply from a journalist.
         """
         self.conversation_layout.addWidget(ReplyWidget(reply))
-        if files:
-            for f in files:
-                self.conversation_layout.addWidget(FileWidget(f, 'right',
-                                                   reply, self.controller))
