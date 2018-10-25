@@ -21,6 +21,7 @@ import logging
 import sdclientapi
 import arrow
 from securedrop_client import storage
+from securedrop_client import models
 from securedrop_client.utils import check_dir_permissions
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer
 
@@ -316,35 +317,44 @@ class Client(QObject):
         """
         self.gui.set_status(message, duration)
 
-    def on_file_click(self, message):
+    def on_file_click(self, source_db_object, message):
         """
         Download the file associated with the associated message (which may
         be a Submission or Reply).
         """
-        if isinstance(message, sdclientapi.Submission):
-            # Handle sources.
+        if isinstance(message, models.Submission):
+            # Handle submissions.
             func = self.api.download_submission
-        else:
+            sdk_object = sdclientapi.Submission(uuid=message.uuid)
+            sdk_object.filename = message.filename
+            sdk_object.source_uuid = source_db_object.uuid
+        elif isinstance(message, models.Reply):
             # Handle journalist's replies.
             func = self.api.download_reply
+            sdk_object = sdclientapi.Reply(uuid=message.uuid)
+            sdk_object.filename = message.filename
+            sdk_object.source_uuid = source_db_object.uuid
         self.call_api(func, self.on_file_download,
-                      self.on_download_timeout, message, self.data_dir)
+                      self.on_download_timeout, sdk_object, self.data_dir)
 
-    def on_file_download(self):
+    def on_file_download(self, result):
         """
         Called when a file has downloaded. Cause a refresh to the conversation
         view to display the contents of the new file.
         """
-        if result:  # pragma: no cover
+        sha256sum, filename = self.api_runner.result
+        self.call_reset()
+        if result:
+            storage.mark_file_as_downloaded(os.path.basename(filename),
+                                            self.session)
             # Refresh the conversation with the content of the downloaded file.
-            pass
-        else:  # pragma: no cover
+        else:
             # Update the UI in some way to indicate a failure state.
-            pass
+            self.set_status("Failed to download file, please try again.")
 
     def on_download_timeout(self):
         """
         Called when downloading a file has timed out.
         """
-        # Update the UI in some way to indicate a failure state.
-        pass  # pragma: no cover
+        # Update the status bar to indicate a failure state.
+        self.set_status("Connection to server timed out, please try again.")
