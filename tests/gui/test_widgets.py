@@ -9,7 +9,8 @@ from securedrop_client.gui.widgets import (ToolBar, MainView, SourceList,
                                            SourceWidget, LoginDialog,
                                            SpeechBubble, ConversationWidget,
                                            MessageWidget, ReplyWidget,
-                                           FileWidget, ConversationView)
+                                           FileWidget, ConversationView,
+                                           ReplyBoxWidget)
 from unittest import mock
 
 
@@ -545,3 +546,30 @@ def test_ConversationView_add_not_downloaded_file():
     assert cv.conversation_layout.addWidget.call_count == 1
     cal = cv.conversation_layout.addWidget.call_args_list
     assert isinstance(cal[0][0][0], FileWidget)
+
+
+def test_CoversationView_setup():
+    '''
+    Setting up a ConversationView should pass itself as a reference to the
+    ReplyBoxWidget.
+    '''
+    mock_controller = mock.MagicMock()
+    mock_reply_box_setup = mock.MagicMock()
+    cv = ConversationView(None)
+    cv.reply_box.setup = mock_reply_box_setup
+    cv.setup(mock_controller)
+    mock_reply_box_setup.assert_called_once_with(cv)
+
+
+def test_ReplyBoxWidget_send_reply():
+    msg = 'hi mom'
+    mock_cv = mock.MagicMock()
+    mock_add_reply = mock.MagicMock()
+    mock_cv.add_reply = mock_add_reply
+
+    reply_box = ReplyBoxWidget()
+    reply_box.setup(mock_cv)
+    reply_box.text_edit.setText(msg)
+    reply_box.send_reply()
+
+    mock_add_reply.assert_called_once_with(msg)
