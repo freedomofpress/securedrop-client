@@ -89,12 +89,9 @@ class TestSecondInstancePrevention(object):
     def test_unknown_kernel_error(self, mock_msgbox, mock_exit):
         mock_socket = self.socket_mock_generator(131)  # crazy unexpected error
         with mock.patch('securedrop_client.app.socket', new=mock_socket):
-            try:
+            with pytest.raises(OSError):
                 prevent_second_instance(self.mock_app, 'name1')
                 prevent_second_instance(self.mock_app, 'name1')
-                assert False  # an unhandled exception should have occurred
-            except OSError:
-                assert True
 
 
 def test_start_app(safe_tmpdir):
@@ -111,7 +108,7 @@ def test_start_app(safe_tmpdir):
             mock.patch('securedrop_client.app.QApplication') as mock_app, \
             mock.patch('securedrop_client.app.Window') as mock_win, \
             mock.patch('securedrop_client.app.Client') as mock_client, \
-            mock.patch('securedrop_client.app.socket'), \
+            mock.patch('securedrop_client.app.prevent_second_instance'), \
             mock.patch('securedrop_client.app.sys') as mock_sys, \
             mock.patch('securedrop_client.app.sessionmaker',
                        return_value=mock_session_class):
@@ -180,7 +177,7 @@ def test_create_app_dir_permissions(tmpdir):
                 mock.patch('securedrop_client.app.Window') as mock_win, \
                 mock.patch('securedrop_client.app.Client') as mock_client, \
                 mock.patch('securedrop_client.app.sys') as mock_sys, \
-                mock.patch('securedrop_client.app.socket'), \
+                mock.patch('securedrop_client.app.prevent_second_instance'), \
                 mock.patch('securedrop_client.app.sessionmaker',
                            return_value=mock_session_class):
 
@@ -233,7 +230,7 @@ def test_run():
 def test_signal_interception():
     # check that initializing an app calls configure_signal_handlers
     with mock.patch('securedrop_client.app.QApplication'), \
-            mock.patch('securedrop_client.app.socket'), \
+            mock.patch('securedrop_client.app.prevent_second_instance'), \
             mock.patch('sys.exit'), \
             mock.patch('securedrop_client.models.make_engine'), \
             mock.patch('securedrop_client.app.init'), \
