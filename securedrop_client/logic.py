@@ -168,6 +168,9 @@ class Client(QObject):
             self.gui.hide_login()
             self.sync_api()
             self.gui.set_logged_in_as(self.api.username)
+            # Clear the sidebar error status bar if a message was shown
+            # to the user indicating they should log in.
+            self.gui.update_error_status("")
         else:
             # Failed to authenticate. Reset state with failure message.
             self.api = None
@@ -182,6 +185,21 @@ class Client(QObject):
         self.api = None
         error = _('The connection to SecureDrop timed out. Please try again.')
         self.gui.show_login_error(error=error)
+
+    def on_action_requiring_login(self):
+        """
+        Indicate that a user needs to login to perform the specified action.
+        """
+        error = _('You must login to perform this action.')
+        self.gui.update_error_status(error)
+
+    def on_sidebar_action_timeout(self):
+        """
+        Indicate that a timeout occurred for an action occuring in the left
+        sidebar.
+        """
+        error = _('The connection to SecureDrop timed out. Please try again.')
+        self.gui.update_error_status(error)
 
     def authenticated(self):
         """
@@ -243,6 +261,43 @@ class Client(QObject):
         sources = list(storage.get_local_sources(self.session))
         self.gui.show_sources(sources)
         self.update_sync()
+
+    def on_update_star_complete(self, result):
+        """
+        After we star or unstar a source, we should sync the API
+        such that the local database is updated.
+
+        TODO: Improve the push to server sync logic.
+        """
+        self.call_reset()
+        if result:
+            self.sync_api()  # Syncing the API also updates the source list UI
+            self.gui.update_error_status("")
+        else:
+            # Here we need some kind of retry logic.
+            logging.info("failed to push change to server")
+            error = _('Failed to apply change.')
+            self.gui.update_error_status(error)
+
+    def update_star(self, source_db_object):
+        """
+        Star or unstar. The callback here is the API sync as we first make sure
+        that we apply the change to the server, and then update locally.
+        """
+        if not self.api:  # Then we should tell the user they need to login.
+            self.on_action_requiring_login()
+            return
+        else:  # Clear the error status bar
+            self.gui.update_error_status("")
+
+        source_sdk_object = sdclientapi.Source(uuid=source_db_object.uuid)
+
+        if source_db_object.is_starred:
+            self.call_api(self.api.remove_star, self.on_update_star_complete,
+                          self.on_sidebar_action_timeout, source_sdk_object)
+        else:
+            self.call_api(self.api.add_star, self.on_update_star_complete,
+                          self.on_sidebar_action_timeout, source_sdk_object)
 
     def logout(self):
         """

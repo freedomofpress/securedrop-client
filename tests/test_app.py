@@ -13,7 +13,7 @@ from securedrop_client.app import ENCODING, excepthook, configure_logging, \
 app = QApplication([])
 
 
-def test_excpethook():
+def test_excepthook():
     """
     Ensure the custom excepthook logs the error and calls sys.exit.
     """
