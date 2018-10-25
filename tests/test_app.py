@@ -7,8 +7,8 @@ import sys
 from PyQt5.QtWidgets import QApplication
 from unittest import mock
 from securedrop_client.app import ENCODING, excepthook, configure_logging, \
-    start_app, arg_parser, DEFAULT_SDC_HOME, run, configure_signal_handlers
-
+    start_app, arg_parser, DEFAULT_SDC_HOME, run, configure_signal_handlers, \
+    prevent_second_instance
 
 app = QApplication([])
 
@@ -46,6 +46,57 @@ def test_configure_logging(safe_tmpdir):
         assert sys.excepthook == excepthook
 
 
+@mock.patch('securedrop_client.app.sys.exit')
+@mock.patch('securedrop_client.app.QMessageBox')
+class TestSecondInstancePrevention(object):
+    @classmethod
+    def setup_class(cls):
+        cls.mock_app = mock.MagicMock()
+        cls.mock_app.applicationName = mock.MagicMock(return_value='sd')
+
+    @staticmethod
+    def socket_mock_generator(already_bound_errno=98):
+        namespace = set()
+
+        def kernel_bind(addr):
+            if addr in namespace:
+                error = OSError()
+                error.errno = already_bound_errno
+                raise error
+            else:
+                namespace.add(addr)
+
+        socket_mock = mock.MagicMock()
+        socket_mock.socket().bind = mock.MagicMock(side_effect=kernel_bind)
+        return socket_mock
+
+    def test_diff_name(self, mock_msgbox, mock_exit):
+        mock_socket = self.socket_mock_generator()
+        with mock.patch('securedrop_client.app.socket', new=mock_socket):
+            prevent_second_instance(self.mock_app, 'name1')
+            prevent_second_instance(self.mock_app, 'name2')
+
+            mock_exit.assert_not_called()
+
+    def test_same_name(self, mock_msgbox, mock_exit):
+        mock_socket = self.socket_mock_generator()
+        with mock.patch('securedrop_client.app.socket', new=mock_socket):
+            prevent_second_instance(self.mock_app, 'name1')
+            prevent_second_instance(self.mock_app, 'name1')
+
+            mock_exit.assert_any_call()
+
+    def test_unknown_kernel_error(self, mock_msgbox, mock_exit):
+        mock_socket = self.socket_mock_generator(131)  # crazy unexpected error
+        with mock.patch('securedrop_client.app.socket', new=mock_socket):
+            try:
+                prevent_second_instance(self.mock_app, 'name1')
+                prevent_second_instance(self.mock_app, 'name1')
+                assert False  # an unhandled exception should have occurred
+            except OSError:
+                assert True
+
+
 def test_start_app(safe_tmpdir):
     """
     Ensure the expected things are configured and the application is started.
@@ -60,6 +111,7 @@ def test_start_app(safe_tmpdir):
             mock.patch('securedrop_client.app.QApplication') as mock_app, \
             mock.patch('securedrop_client.app.Window') as mock_win, \
             mock.patch('securedrop_client.app.Client') as mock_client, \
+            mock.patch('securedrop_client.app.socket'), \
             mock.patch('securedrop_client.app.sys') as mock_sys, \
             mock.patch('securedrop_client.app.sessionmaker',
                        return_value=mock_session_class):
@@ -128,6 +180,7 @@ def test_create_app_dir_permissions(tmpdir):
                 mock.patch('securedrop_client.app.Window') as mock_win, \
                 mock.patch('securedrop_client.app.Client') as mock_client, \
                 mock.patch('securedrop_client.app.sys') as mock_sys, \
+                mock.patch('securedrop_client.app.socket'), \
                 mock.patch('securedrop_client.app.sessionmaker',
                            return_value=mock_session_class):
 
@@ -180,6 +233,7 @@ def test_run():
 def test_signal_interception():
     # check that initializing an app calls configure_signal_handlers
     with mock.patch('securedrop_client.app.QApplication'), \
+            mock.patch('securedrop_client.app.socket'), \
             mock.patch('sys.exit'), \
             mock.patch('securedrop_client.models.make_engine'), \
             mock.patch('securedrop_client.app.init'), \

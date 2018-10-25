@@ -21,9 +21,10 @@ import pathlib
 import os
 import signal
 import sys
+import socket
 from argparse import ArgumentParser
 from sqlalchemy.orm import sessionmaker
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5.QtCore import Qt, QTimer
 from logging.handlers import TimedRotatingFileHandler
 from securedrop_client import __version__
@@ -106,6 +107,24 @@ def arg_parser() -> ArgumentParser:
     return parser
 
 
+def prevent_second_instance(app: QApplication, unique_name: str) -> None:
+    # Null byte triggers abstract namespace
+    IDENTIFIER = '\0' + app.applicationName() + unique_name
+    ALREADY_BOUND_ERRNO = 98
+
+    app.instance_binding = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+    try:
+        app.instance_binding.bind(IDENTIFIER)
+    except OSError as e:
+        if e.errno == ALREADY_BOUND_ERRNO:
+            err_dialog = QMessageBox()
+            err_dialog.setText(app.applicationName() + ' is already running.')
+            err_dialog.exec()
+            sys.exit()
+        else:
+            raise
+
+
 def start_app(args, qt_args) -> None:
     """
     Create all the top-level assets for the application, set things up and
@@ -128,6 +147,8 @@ def start_app(args, qt_args) -> None:
     app.setDesktopFileName('org.freedomofthepress.securedrop.client')
     app.setApplicationVersion(__version__)
     app.setAttribute(Qt.AA_UseHighDpiPixmaps)
+
+    prevent_second_instance(app, args.sdc_home)
 
     gui = Window()
     app.setWindowIcon(load_icon(gui.icon))
