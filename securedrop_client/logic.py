@@ -25,7 +25,6 @@ from securedrop_client import storage
 from securedrop_client import models
 from securedrop_client.utils import check_dir_permissions
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer
-from securedrop_client.message_sync import MessageSync
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +96,6 @@ class Client(QObject):
         self.api = None  # Reference to the API for secure drop proxy.
         self.session = session  # Reference to the SqlAlchemy session.
         self.api_thread = None  # Currently active API call thread.
-        self.message_thread = None # A thread responsible for fetching messages
         self.home = home # used for finding DB in sync thread
         self.sync_flag = os.path.join(home, 'sync_flag')
         self.home = home  # The "home" directory for client files.
@@ -161,18 +159,6 @@ class Client(QObject):
         else:
             logger.info("There's already an API request running, so I'm not going to ignore this one (XXX this may not be the coolest thing to do...)")
 
-    def start_message_thread(self):
-        """
-        Starts the message-fetching thread in the background.
-        """
-        return True
-        if not self.message_thread:
-            self.message_thread = QThread()
-            self.message_sync = MessageSync(self.api, self.home)
-            self.message_sync.moveToThread(self.message_thread)
-            self.message_thread.started.connect(self.message_sync.run)
-            self.message_thread.start()
-
     def call_reset(self):
         """
         Clean up this object's state after an API call.
@@ -210,7 +196,6 @@ class Client(QObject):
             self.gui.hide_login()
             self.sync_api()
             self.gui.set_logged_in_as(self.api.username)
-            self.start_message_thread()
             # Clear the sidebar error status bar if a message was shown
             # to the user indicating they should log in.
             self.gui.update_error_status("")
