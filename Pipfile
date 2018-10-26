@@ -13,6 +13,7 @@ securedrop-sdk = "*"
 "pathlib2" = "*"
 arrow = "*"
 certifi = "*"
+pretty-bad-protocol = "*"
 
 [dev-packages]
 pytest = "*"
@@ -21,4 +22,4 @@ coverage = "*"
 pytest-cov = "*"
 pytest-random-order = "*"
 flake8 = "*"
-"pyqt5" = "==5.10.1" 
+"pyqt5" = "==5.10.1"
