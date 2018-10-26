@@ -243,3 +243,14 @@ def find_new_submissions(session):
                          .filter(Submission.filename.like('%-msg.gpg')) \
                          .all()
     return submissions
+
+def mark_file_as_downloaded(local_filename, session):
+    """Mark file as downloaded in the database. The file itself will be
+    stored in the data directory.
+    """
+    submission_db_object = session.query(Submission) \
+                                  .filter_by(filename=local_filename) \
+                                  .one_or_none()
+    submission_db_object.is_downloaded = True
+    session.add(submission_db_object)
+    session.commit()
