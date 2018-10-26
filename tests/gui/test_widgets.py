@@ -1,8 +1,10 @@
 """
 Make sure the UI widgets are configured correctly and work as expected.
 """
+from datetime import datetime
 from PyQt5.QtWidgets import (QLineEdit, QWidget, QApplication, QWidgetItem,
                              QSpacerItem, QVBoxLayout)
+from securedrop_client import models
 from securedrop_client.gui.widgets import (ToolBar, MainView, SourceList,
                                            SourceWidget, LoginDialog,
                                            SpeechBubble, ConversationWidget,
@@ -362,14 +364,19 @@ def test_FileWidget_init_left():
     """
     Check the FileWidget is configured correctly for align-left.
     """
-    mock_message = mock.MagicMock()
     mock_controller = mock.MagicMock()
-    fw = FileWidget('hello', 'left', mock_message, mock_controller)
+    source = models.Source('source-uuid', 'testy-mctestface', False, 
+                           'mah pub key', 1, False, datetime.now())
+    submission = models.Submission(source, 'submission-uuid', 123, 
+                                   'mah-reply.gpg')
+    submission.is_downloaded = True
+
+    fw = FileWidget(source, submission, mock_controller, align='left')
+
     layout = fw.layout()
     assert isinstance(layout.takeAt(0), QWidgetItem)
     assert isinstance(layout.takeAt(0), QWidgetItem)
     assert isinstance(layout.takeAt(0), QSpacerItem)
-    assert fw.message == mock_message
     assert fw.controller == mock_controller
 
 
@@ -377,14 +384,18 @@ def test_FileWidget_init_right():
     """
     Check the FileWidget is configured correctly for align-right.
     """
-    mock_message = mock.MagicMock()
     mock_controller = mock.MagicMock()
-    fw = FileWidget('hello', 'right', mock_message, mock_controller)
+    source = models.Source('source-uuid', 'testy-mctestface', False, 
+                           'mah pub key', 1, False, datetime.now())
+    submission = models.Submission(source, 'submission-uuid', 123, 
+                                   'mah-reply.gpg')
+    submission.is_downloaded = True
+
+    fw = FileWidget(source, submission, mock_controller, align='right')
     layout = fw.layout()
     assert isinstance(layout.takeAt(0), QSpacerItem)
     assert isinstance(layout.takeAt(0), QWidgetItem)
     assert isinstance(layout.takeAt(0), QWidgetItem)
-    assert fw.message == mock_message
     assert fw.controller == mock_controller
 
 
@@ -394,9 +405,15 @@ def test_FileWidget_mouseDoubleClickEvent():
     """
     mock_message = mock.MagicMock()
     mock_controller = mock.MagicMock()
-    fw = FileWidget('hello', 'right', mock_message, mock_controller)
+    source = models.Source('source-uuid', 'testy-mctestface', False, 
+                           'mah pub key', 1, False, datetime.now())
+    submission = models.Submission(source, 'submission-uuid', 123, 
+                                   'mah-reply.gpg')
+    submission.is_downloaded = True
+
+    fw = FileWidget(source, submission, mock_controller)
     fw.mouseDoubleClickEvent(None)
-    fw.controller.on_file_click.assert_called_once_with(mock_message)
+    fw.controller.on_file_click.assert_called_once_with(source, submission)
 
 
 def test_ConversationView_init():
@@ -419,29 +436,68 @@ def test_ConversationView_setup():
 
 def test_ConversationView_add_message():
     """
-    Adding a message results in a new MessageWidget added to the layout. Any
-    associated files are added as FileWidgets.
+    Adding a message results in a new MessageWidget added to the layout.
     """
     cv = ConversationView(None)
     cv.controller = mock.MagicMock()
     cv.conversation_layout = mock.MagicMock()
-    cv.add_message('hello', ['file1.pdf', ])
-    assert cv.conversation_layout.addWidget.call_count == 2
+    cv.add_message('hello')
+    assert cv.conversation_layout.addWidget.call_count == 1
     cal = cv.conversation_layout.addWidget.call_args_list
     assert isinstance(cal[0][0][0], MessageWidget)
-    assert isinstance(cal[1][0][0], FileWidget)
 
 
 def test_ConversationView_add_reply():
     """
-    Adding a reply results in a new ReplyWidget added to the layout. Any
-    associated files are added as FileWidgets.
+    Adding a reply results in a new ReplyWidget added to the layout.
     """
     cv = ConversationView(None)
     cv.controller = mock.MagicMock()
     cv.conversation_layout = mock.MagicMock()
-    cv.add_reply('hello', ['file1.pdf', ])
-    assert cv.conversation_layout.addWidget.call_count == 2
+    cv.add_reply('hello')
+    assert cv.conversation_layout.addWidget.call_count == 1
     cal = cv.conversation_layout.addWidget.call_args_list
     assert isinstance(cal[0][0][0], ReplyWidget)
-    assert isinstance(cal[1][0][0], FileWidget)
+
+
+def test_ConversationView_add_downloaded_file():
+    """
+    Adding a file results in a new FileWidget added to the layout with the
+    proper QLabel.
+    """
+    cv = ConversationView(None)
+    cv.controller = mock.MagicMock()
+    cv.conversation_layout = mock.MagicMock()
+    mock_source = mock.MagicMock()
+    mock_file = mock.MagicMock()
+    mock_file.is_downloaded = True
+    with mock.patch('securedrop_client.gui.widgets.QLabel') as mock_label, \
+            mock.patch('securedrop_client.gui.widgets.QHBoxLayout.addWidget'), \
+            mock.patch('securedrop_client.gui.widgets.FileWidget.setLayout'):
+        cv.add_file(mock_source, mock_file)
+    mock_label.assert_called_with("Open")
+    assert cv.conversation_layout.addWidget.call_count == 1
+    cal = cv.conversation_layout.addWidget.call_args_list
+    assert isinstance(cal[0][0][0], FileWidget)
+
+
+def test_ConversationView_add_not_downloaded_file():
+    """
+    Adding a file results in a new FileWidget added to the layout with the
+    proper QLabel.
+    """
+    cv = ConversationView(None)
+    cv.controller = mock.MagicMock()
+    cv.conversation_layout = mock.MagicMock()
+    mock_source = mock.MagicMock()
+    mock_file = mock.MagicMock()
+    mock_file.is_downloaded = False
+    mock_file.size = 123
+    with mock.patch('securedrop_client.gui.widgets.QLabel') as mock_label, \
+            mock.patch('securedrop_client.gui.widgets.QHBoxLayout.addWidget'), \
+            mock.patch('securedrop_client.gui.widgets.FileWidget.setLayout'):
+        cv.add_file(mock_source, mock_file)
+    mock_label.assert_called_with("Download (123 bytes)")
+    assert cv.conversation_layout.addWidget.call_count == 1
+    cal = cv.conversation_layout.addWidget.call_args_list
+    assert isinstance(cal[0][0][0], FileWidget)

@@ -1,4 +1,5 @@
 import os
+import math
 
 
 def safe_mkdir(sdc_home: str, relative_path: str = None) -> None:
@@ -55,6 +56,6 @@ def humanize_filesize(filesize):
     if filesize < 1024:
         return '{} bytes'.format(str(filesize))
     elif filesize < 1024 * 1024:
-        return '{}KB'.format(str(filesize) / 1024)
+        return '{}KB'.format(math.floor(filesize / 1024))
     else:
-        return '{}MB'.format(str(filesize) / 1024 ** 2)
+        return '{}MB'.format(math.floor(filesize / 1024 ** 2))

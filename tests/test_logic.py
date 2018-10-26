@@ -3,10 +3,11 @@ Make sure the Client object, containing the application logic, behaves as
 expected.
 """
 import arrow
+from datetime import datetime
 import os
 import pytest
 import sdclientapi
-from securedrop_client import storage
+from securedrop_client import storage, models
 from securedrop_client.logic import APICallRunner, Client
 from unittest import mock
 
@@ -576,17 +577,23 @@ def test_Client_on_file_click_Submission(safe_tmpdir):
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
-    s = sdclientapi.Submission(download_url='foo', filename='test',
-                               is_read=True, size=123, source_url='foo/bar',
-                               submission_url='bar', uuid='test')
+    source = models.Source('source-uuid', 'testy-mctestface', False, 'mah pub key',
+                 1, False, datetime.now())
+    submission = models.Submission(source, 'submission-uuid', 1234, 'myfile.doc.gpg')
     cl.call_api = mock.MagicMock()
     cl.api = mock.MagicMock()
-    cl.on_file_click(s)
+    submission_sdk_object = mock.MagicMock()
+    with mock.patch('sdclientapi.Submission') as mock_submission:
+        mock_submission.return_value = submission_sdk_object
+        cl.on_file_click(source, submission)
     cl.call_api.assert_called_once_with(cl.api.download_submission,
-                                        cl.on_file_download,
-                                        cl.on_download_timeout, s, cl.data_dir)
+        cl.on_file_download, cl.on_download_timeout, submission_sdk_object, 
+        cl.data_dir)
 
 
+# This can be unfailed when this SDK change is merged and released:
+# https://github.com/freedomofpress/securedrop-sdk/pull/32
+@pytest.mark.xfail(reason="needs SDK change merged")
 def test_Client_on_file_click_Reply(safe_tmpdir):
     """
     If the handler is passed a reply, check the download_reply
@@ -595,10 +602,14 @@ def test_Client_on_file_click_Reply(safe_tmpdir):
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
-    r = mock.MagicMock()  # Not a sdclientapi.Submission
+    source = models.Source('source-uuid', 'testy-mctestface', False, 'mah pub key',
+                 1, False, datetime.now())
+    journalist = models.User('Testy mcTestface')
+    reply = models.Reply('reply-uuid', journalist, source, 
+                         'my-reply.gpg', 123)  # Not a sdclientapi.Submission
     cl.call_api = mock.MagicMock()
     cl.api = mock.MagicMock()
-    cl.on_file_click(r)
+    cl.on_file_click(source, reply)
     cl.call_api.assert_called_once_with(cl.api.download_reply,
                                         cl.on_file_download,
-                                        cl.on_download_timeout, r, cl.data_dir)
+                                        cl.on_download_timeout, reply, cl.data_dir)
