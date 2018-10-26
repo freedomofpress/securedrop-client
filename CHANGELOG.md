@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.0.3
+-----
+
+* Support UUID-only creation of Replies (#31).
+
 0.0.2
 -----
 
