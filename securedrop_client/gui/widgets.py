@@ -430,7 +430,8 @@ class FileWidget(QWidget):
     Represents a file.
     """
 
-    def __init__(self, source_db_object, submission_db_object, controller, align="left"):
+    def __init__(self, source_db_object, submission_db_object,
+                 controller, align="left"):
         """
         Given some text, an indication of alignment ('left' or 'right') and
         a reference to the controller, make something to display a file.
@@ -500,7 +501,8 @@ class ConversationView(QWidget):
         Add a file from the source.
         """
         self.conversation_layout.addWidget(
-            FileWidget(source_db_object, submission_db_object, self.controller))
+            FileWidget(source_db_object, submission_db_object,
+                       self.controller))
 
     def add_message(self, message):
         """

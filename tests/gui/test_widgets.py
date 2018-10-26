@@ -365,9 +365,9 @@ def test_FileWidget_init_left():
     Check the FileWidget is configured correctly for align-left.
     """
     mock_controller = mock.MagicMock()
-    source = models.Source('source-uuid', 'testy-mctestface', False, 
+    source = models.Source('source-uuid', 'testy-mctestface', False,
                            'mah pub key', 1, False, datetime.now())
-    submission = models.Submission(source, 'submission-uuid', 123, 
+    submission = models.Submission(source, 'submission-uuid', 123,
                                    'mah-reply.gpg')
     submission.is_downloaded = True
 
@@ -385,9 +385,9 @@ def test_FileWidget_init_right():
     Check the FileWidget is configured correctly for align-right.
     """
     mock_controller = mock.MagicMock()
-    source = models.Source('source-uuid', 'testy-mctestface', False, 
+    source = models.Source('source-uuid', 'testy-mctestface', False,
                            'mah pub key', 1, False, datetime.now())
-    submission = models.Submission(source, 'submission-uuid', 123, 
+    submission = models.Submission(source, 'submission-uuid', 123,
                                    'mah-reply.gpg')
     submission.is_downloaded = True
 
@@ -405,9 +405,9 @@ def test_FileWidget_mouseDoubleClickEvent():
     """
     mock_message = mock.MagicMock()
     mock_controller = mock.MagicMock()
-    source = models.Source('source-uuid', 'testy-mctestface', False, 
+    source = models.Source('source-uuid', 'testy-mctestface', False,
                            'mah pub key', 1, False, datetime.now())
-    submission = models.Submission(source, 'submission-uuid', 123, 
+    submission = models.Submission(source, 'submission-uuid', 123,
                                    'mah-reply.gpg')
     submission.is_downloaded = True
 
@@ -472,7 +472,7 @@ def test_ConversationView_add_downloaded_file():
     mock_file = mock.MagicMock()
     mock_file.is_downloaded = True
     with mock.patch('securedrop_client.gui.widgets.QLabel') as mock_label, \
-            mock.patch('securedrop_client.gui.widgets.QHBoxLayout.addWidget'), \
+            mock.patch('securedrop_client.gui.widgets.QHBoxLayout.addWidget'),\
             mock.patch('securedrop_client.gui.widgets.FileWidget.setLayout'):
         cv.add_file(mock_source, mock_file)
     mock_label.assert_called_with("Open")
@@ -494,7 +494,7 @@ def test_ConversationView_add_not_downloaded_file():
     mock_file.is_downloaded = False
     mock_file.size = 123
     with mock.patch('securedrop_client.gui.widgets.QLabel') as mock_label, \
-            mock.patch('securedrop_client.gui.widgets.QHBoxLayout.addWidget'), \
+            mock.patch('securedrop_client.gui.widgets.QHBoxLayout.addWidget'),\
             mock.patch('securedrop_client.gui.widgets.FileWidget.setLayout'):
         cv.add_file(mock_source, mock_file)
     mock_label.assert_called_with("Download (123 bytes)")

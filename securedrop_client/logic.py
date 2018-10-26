@@ -345,7 +345,7 @@ class Client(QObject):
         sha256sum, filename = self.api_runner.result
         self.call_reset()
         if result:
-            storage.mark_file_as_downloaded(os.path.basename(filename), 
+            storage.mark_file_as_downloaded(os.path.basename(filename),
                                             self.session)
             # Refresh the conversation with the content of the downloaded file.
         else:

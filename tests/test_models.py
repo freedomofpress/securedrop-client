@@ -32,7 +32,7 @@ def test_string_representation_of_reply():
     reply.__repr__()
 
 
-def test_source_collection():    
+def test_source_collection():
     # Create some test submissions and replies
     source = Source(journalist_designation="testy test", uuid="test",
                     is_flagged=False, public_key='test', interaction_count=1,
@@ -41,10 +41,10 @@ def test_source_collection():
                             filename="2-test.doc.gpg")
     user = User('hehe')
     reply = Reply(source=source, journalist=user, filename="1-reply.gpg",
-                    size=1234, uuid='test')
+                  size=1234, uuid='test')
     source.submissions = [submission]
     source.replies = [reply]
-    
+
     # Now these items should be in the source collection in the proper order
     assert source.collection[0] == reply
     assert source.collection[1] == submission

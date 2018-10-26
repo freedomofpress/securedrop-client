@@ -48,7 +48,6 @@ class Source(Base):
         return collection
 
 
-
 class Submission(Base):
     __tablename__ = 'submissions'
     id = Column(Integer, primary_key=True)

@@ -246,4 +246,3 @@ def mark_file_as_downloaded(local_filename, session):
     submission_db_object.is_downloaded = True
     session.add(submission_db_object)
     session.commit()
-
