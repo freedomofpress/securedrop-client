@@ -180,8 +180,7 @@ def test_on_source_changed():
 
 def test_conversation_for():
     """
-    TODO: Finish this once we have data. Currently checks only the GUI layer
-    is called in the expected manner with dummy data.
+    Test that the source collection is displayed in the conversation view.
     """
     w = Window()
     w.controller = mock.MagicMock()
@@ -189,12 +188,20 @@ def test_conversation_for():
     mock_conview = mock.MagicMock()
     mock_source = mock.MagicMock()
     mock_source.journalistic_designation = 'Testy McTestface'
+    mock_file = mock.MagicMock()
+    mock_file.filename = '1-my-source-doc.gpg'
+    mock_message = mock.MagicMock()
+    mock_message.filename = '2-my-source-msg.gpg'
+    mock_reply = mock.MagicMock()
+    mock_reply.filename = '3-my-source-reply.gpg'
+    mock_source.collection = [mock_file, mock_message, mock_reply]
     with mock.patch('securedrop_client.gui.main.ConversationView',
                     mock_conview):
         w.show_conversation_for(mock_source)
     conv = mock_conview()
     assert conv.add_message.call_count > 0
     assert conv.add_reply.call_count > 0
+    assert conv.add_file.call_count > 0
 
 
 def test_set_status():
