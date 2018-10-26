@@ -109,6 +109,18 @@ def test_show_sources():
     w.main_view.source_list.update.assert_called_once_with([1, 2, 3])
 
 
+def test_update_error_status():
+    """
+    Ensure that the error to be shown in the error status sidebar will
+    be passed to the left sidebar for display.
+    """
+    error_message = "this is a bad thing!"
+    w = Window()
+    w.main_view = mock.MagicMock()
+    w.update_error_status(error=error_message)
+    w.main_view.update_error_status.assert_called_once_with(error_message)
+
+
 def test_show_sync():
     """
     If there's a value display the result of its "humanize" method.
@@ -182,3 +194,13 @@ def test_conversation_for():
     conv = mock_conview()
     assert conv.add_message.call_count > 0
     assert conv.add_reply.call_count > 0
+
+
+def test_set_status():
+    """
+    Ensure the status bar's text is updated.
+    """
+    w = Window()
+    w.status_bar = mock.MagicMock()
+    w.set_status('hello', 100)
+    w.status_bar.showMessage.assert_called_once_with('hello', 100)

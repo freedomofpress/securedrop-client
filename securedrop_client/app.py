@@ -21,6 +21,7 @@ import pathlib
 import os
 import signal
 import sys
+from argparse import ArgumentParser
 from sqlalchemy.orm import sessionmaker
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt, QTimer
@@ -29,12 +30,16 @@ from securedrop_client import __version__
 from securedrop_client.logic import Client
 from securedrop_client.gui.main import Window
 from securedrop_client.resources import load_icon, load_css
-from securedrop_client.models import engine
+from securedrop_client.models import make_engine
+from securedrop_client.utils import safe_mkdir
 
 
-LOG_DIR = os.path.join(str(pathlib.Path.home()), '.securedrop_client')
-LOG_FILE = os.path.join(LOG_DIR, 'securedrop_client.log')
+DEFAULT_SDC_HOME = '~/.securedrop_client'
 ENCODING = 'utf-8'
+
+
+def init(sdc_home: str) -> None:
+    safe_mkdir(sdc_home)
 
 
 def excepthook(*exc_args):
@@ -44,21 +49,23 @@ def excepthook(*exc_args):
     """
     logging.error('Unrecoverable error', exc_info=(exc_args))
     sys.__excepthook__(*exc_args)
+    print('')  # force terminal prompt on to a new line
     sys.exit(1)
 
 
-def configure_logging():
+def configure_logging(sdc_home: str) -> None:
     """
     All logging related settings are set up by this function.
     """
-    if not os.path.exists(LOG_DIR):
-        os.makedirs(LOG_DIR)
+    safe_mkdir(sdc_home, 'logs')
+    log_file = os.path.join(sdc_home, 'logs', 'client.log')
+
     # set logging format
     log_fmt = ('%(asctime)s - %(name)s:%(lineno)d(%(funcName)s) '
                '%(levelname)s: %(message)s')
     formatter = logging.Formatter(log_fmt)
     # define log handlers such as for rotating log files
-    handler = TimedRotatingFileHandler(LOG_FILE, when='midnight',
+    handler = TimedRotatingFileHandler(log_file, when='midnight',
                                        backupCount=5, delay=0,
                                        encoding=ENCODING)
     handler.setFormatter(formatter)
@@ -71,7 +78,35 @@ def configure_logging():
     sys.excepthook = excepthook
 
 
-def run():
+def configure_signal_handlers(app) -> None:
+    def signal_handler(*nargs) -> None:
+        app.quit()
+
+    for sig in [signal.SIGINT, signal.SIGTERM]:
+        signal.signal(sig, signal_handler)
+
+
+def expand_to_absolute(value: str) -> str:
+    '''
+    Helper that expands a path to the absolute path so users can provide
+    arguments in the form ``~/my/dir/``.
+    '''
+    return os.path.abspath(os.path.expanduser(value))
+
+
+def arg_parser() -> ArgumentParser:
+    parser = ArgumentParser('securedrop-client',
+                            description='SecureDrop Journalist GUI')
+    parser.add_argument(
+        '-H', '--sdc-home',
+        default=DEFAULT_SDC_HOME,
+        type=expand_to_absolute,
+        help=('SecureDrop Client home directory for storing files and state. '
+              '(Default {})'.format(DEFAULT_SDC_HOME)))
+    return parser
+
+
+def start_app(args, qt_args) -> None:
     """
     Create all the top-level assets for the application, set things up and
     run the application. Specific tasks include:
@@ -84,10 +119,11 @@ def run():
     - configure the client (logic) object.
     - ensure the application is setup in the default safe starting state.
     """
-    configure_logging()
+    init(args.sdc_home)
+    configure_logging(args.sdc_home)
     logging.info('Starting SecureDrop Client {}'.format(__version__))
 
-    app = QApplication(sys.argv)
+    app = QApplication(qt_args)
     app.setApplicationName('SecureDrop Client')
     app.setDesktopFileName('org.freedomofthepress.securedrop.client')
     app.setApplicationVersion(__version__)
@@ -97,19 +133,23 @@ def run():
     app.setWindowIcon(load_icon(gui.icon))
     app.setStyleSheet(load_css('sdclient.css'))
 
+    engine = make_engine(args.sdc_home)
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    client = Client("http://localhost:8081/", gui, session)
+    client = Client("http://localhost:8081/", gui, session, args.sdc_home)
     client.setup()
 
-    def signal_handler(*nargs) -> None:
-        app.quit()
-
-    for sig in [signal.SIGINT, signal.SIGTERM]:
-        signal.signal(sig, signal_handler)
+    configure_signal_handlers(app)
     timer = QTimer()
     timer.start(500)
     timer.timeout.connect(lambda: None)
 
     sys.exit(app.exec_())
+
+
+def run() -> None:
+    args, qt_args = arg_parser().parse_known_args()
+    # reinsert the program's name
+    qt_args.insert(0, 'securedrop-client')
+    start_app(args, qt_args)

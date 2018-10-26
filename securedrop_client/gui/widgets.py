@@ -119,7 +119,10 @@ class MainView(QWidget):
         left_layout = QVBoxLayout()
         left_column.setLayout(left_layout)
         self.status = QLabel(_('Waiting to Synchronize'))
+        self.error_status = QLabel('')
+        self.error_status.setObjectName('error_label')
         left_layout.addWidget(self.status)
+        left_layout.addWidget(self.error_status)
         filter_widget = QWidget()
         filter_layout = QHBoxLayout()
         filter_widget.setLayout(filter_layout)
@@ -135,6 +138,16 @@ class MainView(QWidget):
         self.view_layout = QVBoxLayout()
         self.view_holder.setLayout(self.view_layout)
         self.layout.addWidget(self.view_holder, 6)
+
+    def setup(self, controller):
+        """
+        Pass through the controller object to this widget.
+        """
+        self.controller = controller
+        self.source_list.setup(controller)
+
+    def update_error_status(self, error=None):
+        self.error_status.setText(error)
 
     def update_view(self, widget):
         """
@@ -152,6 +165,15 @@ class SourceList(QListWidget):
     Displays the list of sources.
     """
 
+    def __init__(self, parent):
+        super().__init__(parent)
+
+    def setup(self, controller):
+        """
+        Pass through the controller object to this widget.
+        """
+        self.controller = controller
+
     def update(self, sources):
         """
         Reset and update the list with the passed in list of sources.
@@ -159,6 +181,7 @@ class SourceList(QListWidget):
         self.clear()
         for source in sources:
             new_source = SourceWidget(self, source)
+            new_source.setup(self.controller)
             list_item = QListWidgetItem(self)
             list_item.setSizeHint(new_source.sizeHint())
             self.addItem(list_item)
@@ -179,17 +202,14 @@ class SourceWidget(QWidget):
         layout = QVBoxLayout()
         self.setLayout(layout)
         self.summary = QWidget(self)
-        summary_layout = QHBoxLayout()
-        self.summary.setLayout(summary_layout)
+        self.summary_layout = QHBoxLayout()
+        self.summary.setLayout(self.summary_layout)
         self.attached = load_svg('paperclip.svg')
         self.attached.setMaximumSize(16, 16)
-        self.starred = load_svg('star_on.svg')
-        self.starred.setMaximumSize(16, 16)
         self.name = QLabel()
-        summary_layout.addWidget(self.name)
-        summary_layout.addStretch()
-        summary_layout.addWidget(self.attached)
-        summary_layout.addWidget(self.starred)
+        self.summary_layout.addWidget(self.name)
+        self.summary_layout.addStretch()
+        self.summary_layout.addWidget(self.attached)
         layout.addWidget(self.summary)
         self.updated = QLabel()
         layout.addWidget(self.updated)
@@ -197,6 +217,28 @@ class SourceWidget(QWidget):
         self.details.setWordWrap(True)
         layout.addWidget(self.details)
         self.update()
+
+    def setup(self, controller):
+        """
+        Pass through the controller object to this widget.
+        """
+        self.controller = controller
+
+    def display_star_icon(self):
+        """
+        Show the correct star icon
+        """
+        if getattr(self, 'starred', None):  # Delete icon if it exists.
+            self.summary_layout.removeWidget(self.starred)
+
+        if self.source.is_starred:
+            self.starred = load_svg('star_on.svg')
+        else:
+            self.starred = load_svg('star_off.svg')
+
+        self.summary_layout.addWidget(self.starred)
+        self.starred.setMaximumSize(16, 16)
+        self.starred.mousePressEvent = self.toggle_star
 
     def update(self):
         """
@@ -206,13 +248,16 @@ class SourceWidget(QWidget):
         self.details label.
         """
         self.updated.setText(arrow.get(self.source.last_updated).humanize())
-        if self.source.is_starred:
-            self.starred = load_svg('star_on.svg')
-        else:
-            self.starred = load_svg('star_off.svg')
+        self.display_star_icon()
         self.name.setText("<strong>{}</strong>".format(
                           self.source.journalist_designation))
         self.details.setText("Lorum ipsum dolor sit amet thingy dodah...")
+
+    def toggle_star(self, event):
+        """
+        Called when the star is clicked.
+        """
+        self.controller.update_star(self.source)
 
 
 class LoginDialog(QDialog):

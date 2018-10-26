@@ -21,6 +21,7 @@ import logging
 import sdclientapi
 import arrow
 from securedrop_client import storage
+from securedrop_client.utils import check_dir_permissions
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer
 from securedrop_client.message_sync import MessageSync
 
@@ -83,20 +84,23 @@ class Client(QObject):
 
     finish_api_call = pyqtSignal()  # Acknowledges reciept of an API call.
 
-    def __init__(self, hostname, gui, session):
+    def __init__(self, hostname, gui, session, home: str) -> None:
         """
         The hostname, gui and session objects are used to coordinate with the
         various other layers of the application: the location of the SecureDrop
         proxy, the user interface and SqlAlchemy local storage respectively.
         """
+
+        check_dir_permissions(home)
+
         super().__init__()
         self.hostname = hostname  # Location of the SecureDrop server.
         self.gui = gui  # Reference to the UI window.
         self.api = None  # Reference to the API for secure drop proxy.
         self.session = session  # Reference to the SqlAlchemy session.
         self.api_thread = None  # Currently active API call thread.
-        self.sync_flag = os.path.join(os.path.expanduser('~'), '.sdsync')
         self.message_thread = None # A thread responsible for fetching messages
+        self.sync_flag = os.path.join(home, 'sync_flag')
 
     def setup(self):
         """
@@ -178,6 +182,9 @@ class Client(QObject):
             self.sync_api()
             self.gui.set_logged_in_as(self.api.username)
             self.start_message_thread()
+            # Clear the sidebar error status bar if a message was shown
+            # to the user indicating they should log in.
+            self.gui.update_error_status("")
         else:
             # Failed to authenticate. Reset state with failure message.
             self.api = None
@@ -192,6 +199,21 @@ class Client(QObject):
         self.api = None
         error = _('The connection to SecureDrop timed out. Please try again.')
         self.gui.show_login_error(error=error)
+
+    def on_action_requiring_login(self):
+        """
+        Indicate that a user needs to login to perform the specified action.
+        """
+        error = _('You must login to perform this action.')
+        self.gui.update_error_status(error)
+
+    def on_sidebar_action_timeout(self):
+        """
+        Indicate that a timeout occurred for an action occuring in the left
+        sidebar.
+        """
+        error = _('The connection to SecureDrop timed out. Please try again.')
+        self.gui.update_error_status(error)
 
     def authenticated(self):
         """
@@ -254,6 +276,43 @@ class Client(QObject):
         self.gui.show_sources(sources)
         self.update_sync()
 
+    def on_update_star_complete(self, result):
+        """
+        After we star or unstar a source, we should sync the API
+        such that the local database is updated.
+
+        TODO: Improve the push to server sync logic.
+        """
+        self.call_reset()
+        if result:
+            self.sync_api()  # Syncing the API also updates the source list UI
+            self.gui.update_error_status("")
+        else:
+            # Here we need some kind of retry logic.
+            logging.info("failed to push change to server")
+            error = _('Failed to apply change.')
+            self.gui.update_error_status(error)
+
+    def update_star(self, source_db_object):
+        """
+        Star or unstar. The callback here is the API sync as we first make sure
+        that we apply the change to the server, and then update locally.
+        """
+        if not self.api:  # Then we should tell the user they need to login.
+            self.on_action_requiring_login()
+            return
+        else:  # Clear the error status bar
+            self.gui.update_error_status("")
+
+        source_sdk_object = sdclientapi.Source(uuid=source_db_object.uuid)
+
+        if source_db_object.is_starred:
+            self.call_api(self.api.remove_star, self.on_update_star_complete,
+                          self.on_sidebar_action_timeout, source_sdk_object)
+        else:
+            self.call_api(self.api.add_star, self.on_update_star_complete,
+                          self.on_sidebar_action_timeout, source_sdk_object)
+
     def logout(self):
         """
         Reset the API object and force the UI to update into a logged out
@@ -262,3 +321,10 @@ class Client(QObject):
         self.api = None
         self.stop_message_thread()
         self.gui.logout()
+
+    def set_status(self, message, duration=5000):
+        """
+        Set a textual status message to be displayed to the user for a certain
+        duration.
+        """
+        self.gui.set_status(message, duration)

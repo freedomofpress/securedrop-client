@@ -5,12 +5,12 @@ from sqlalchemy import (Boolean, Column, create_engine, DateTime, ForeignKey,
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 
-
-# TODO: Store this in config file, see issue #2
-DB_PATH = os.path.abspath('svs.sqlite')
-
-engine = create_engine('sqlite:///{}'.format(DB_PATH))
 Base = declarative_base()
+
+
+def make_engine(home: str):
+    db_path = os.path.join(home, 'svs.sqlite')
+    return create_engine('sqlite:///{}'.format(db_path))
 
 
 class Source(Base):
@@ -106,7 +106,3 @@ class User(Base):
 
     def __repr__(self):
         return "<Journalist: {}>".format(self.username)
-
-
-# Populate the database.
-Base.metadata.create_all(engine)

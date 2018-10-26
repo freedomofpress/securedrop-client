@@ -18,7 +18,8 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
-from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QDesktopWidget
+from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QDesktopWidget,
+                             QStatusBar)
 from PyQt5.QtCore import Qt
 from securedrop_client import __version__
 from securedrop_client.gui.widgets import (ToolBar, MainView, LoginDialog,
@@ -70,6 +71,11 @@ class Window(QMainWindow):
         """
         self.controller = controller  # Reference the Client logic instance.
         self.tool_bar.setup(self, controller)
+        self.status_bar = QStatusBar(self)
+        self.setStatusBar(self.status_bar)
+        self.set_status('Started SecureDrop Client. Please sign in.', 20000)
+        self.login_dialog = LoginDialog(self)
+        self.main_view.setup(self.controller)
 
     def autosize_window(self):
         """
@@ -101,6 +107,12 @@ class Window(QMainWindow):
         """
         self.login_dialog.accept()
         self.login_dialog = None
+
+    def update_error_status(self, error=None):
+        """
+        Show an error message on the sidebar.
+        """
+        self.main_view.update_error_status(error)
 
     def show_sources(self, sources):
         """
@@ -137,7 +149,8 @@ class Window(QMainWindow):
         """
         source_item = self.main_view.source_list.currentItem()
         source_widget = self.main_view.source_list.itemWidget(source_item)
-        self.show_conversation_for(source_widget.source)
+        if source_widget:
+            self.show_conversation_for(source_widget.source)
 
     def show_conversation_for(self, source):
         """
@@ -193,3 +206,10 @@ class Window(QMainWindow):
                                "horrible. She wants the children who survived "
                                "to find peace. Thanks.")
         self.main_view.update_view(conversation)
+
+    def set_status(self, message, duration=5000):
+        """
+        Display a status message to the user. Optionally, supply a duration
+        (in milliseconds), the default value being a duration of 5 seconds.
+        """
+        self.status_bar.showMessage(message, duration)
