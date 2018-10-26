@@ -61,6 +61,7 @@ class Window(QMainWindow):
         widget_layout.addWidget(self.tool_bar, 1)
         widget_layout.addWidget(self.main_view, 6)
         self.setCentralWidget(self.widget)
+        self.current_source = None  # Tracks which source is shown
         self.show()
         self.autosize_window()
 
@@ -150,7 +151,8 @@ class Window(QMainWindow):
         source_item = self.main_view.source_list.currentItem()
         source_widget = self.main_view.source_list.itemWidget(source_item)
         if source_widget:
-            self.show_conversation_for(source_widget.source)
+            self.current_source = source_widget.source
+            self.show_conversation_for(self.current_source)
 
     def show_conversation_for(self, source):
         """

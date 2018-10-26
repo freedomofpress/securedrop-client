@@ -357,7 +357,10 @@ class Client(QObject):
             # and name it the same as the server (e.g. spotless-tater-msg.gpg).
             os.rename(filename, os.path.join(self.data_dir, server_filename))
             storage.mark_file_as_downloaded(file_uuid, self.session)
-            # Refresh the conversation with the content of the downloaded file.
+
+            # Refresh the current source conversation, bearing in mind
+            # that the user may have navigated to another source.
+            self.gui.show_conversation_for(self.gui.current_source)
         else:
             # Update the UI in some way to indicate a failure state.
             self.set_status("Failed to download file, please try again.")
