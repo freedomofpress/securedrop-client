@@ -125,7 +125,8 @@ class Client(QObject):
         self.sync_timer.timeout.connect(self.update_sync)
         self.sync_timer.start(30000)
 
-    def call_api(self, function, callback, timeout, *args, **kwargs):
+    def call_api(self, function, callback, timeout, *args, current_object=None,
+                 **kwargs):
         """
         Calls the function in a non-blocking manner. Upon completion calls the
         callback with the result. Calls timeout if the API call emits a
@@ -136,6 +137,7 @@ class Client(QObject):
             self.api_thread = QThread(self.gui)
             self.api_runner = APICallRunner(function, *args, **kwargs)
             self.api_runner.moveToThread(self.api_thread)
+            self.api_runner.current_object = current_object
             self.api_runner.call_finished.connect(callback)
             self.api_runner.timeout.connect(timeout)
             self.finish_api_call.connect(self.api_runner.on_cancel_timeout)
@@ -335,7 +337,8 @@ class Client(QObject):
             sdk_object.filename = message.filename
             sdk_object.source_uuid = source_db_object.uuid
         self.call_api(func, self.on_file_download,
-                      self.on_download_timeout, sdk_object, self.data_dir)
+                      self.on_download_timeout, sdk_object, self.data_dir,
+                      current_object=message)
 
     def on_file_download(self, result):
         """
@@ -343,10 +346,17 @@ class Client(QObject):
         view to display the contents of the new file.
         """
         sha256sum, filename = self.api_runner.result
+        file_uuid = self.api_runner.current_object.uuid
+        server_filename = self.api_runner.current_object.filename
         self.call_reset()
         if result:
-            storage.mark_file_as_downloaded(os.path.basename(filename),
-                                            self.session)
+            # The filename contains the location where the file has been
+            # stored. On non-Qubes OSes, this will be the data directory.
+            # On Qubes OS, this will a ~/QubesIncoming directory. In case
+            # we are on Qubes, we should move the file to the data directory
+            # and name it the same as the server (e.g. spotless-tater-msg.gpg).
+            os.rename(filename, os.path.join(self.data_dir, server_filename))
+            storage.mark_file_as_downloaded(file_uuid, self.session)
             # Refresh the conversation with the content of the downloaded file.
         else:
             # Update the UI in some way to indicate a failure state.

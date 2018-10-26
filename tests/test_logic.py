@@ -590,7 +590,7 @@ def test_Client_on_file_click_Submission(safe_tmpdir):
     cl.call_api.assert_called_once_with(
         cl.api.download_submission, cl.on_file_download,
         cl.on_download_timeout, submission_sdk_object,
-        cl.data_dir)
+        cl.data_dir, current_object=submission)
 
 
 def test_Client_on_file_download_success(safe_tmpdir):
@@ -601,13 +601,17 @@ def test_Client_on_file_download_success(safe_tmpdir):
     cl.api_runner = mock.MagicMock()
     test_filename = "my-file-location-msg.gpg"
     cl.api_runner.result = ("", test_filename)
+    cl.api_runner.current_object = mock.MagicMock()
+    test_object_uuid = 'uuid-of-downloaded-object'
+    cl.api_runner.current_object.uuid = test_object_uuid
     cl.call_reset = mock.MagicMock()
     result = True
-    with mock.patch('securedrop_client.logic.storage') as mock_storage:
+    with mock.patch('securedrop_client.logic.storage') as mock_storage, \
+            mock.patch('os.rename'):
         cl.on_file_download(result)
         cl.call_reset.assert_called_once_with()
         mock_storage.mark_file_as_downloaded.assert_called_once_with(
-            test_filename, mock_session)
+            test_object_uuid, mock_session)
 
 
 def test_Client_on_file_download_failure(safe_tmpdir):

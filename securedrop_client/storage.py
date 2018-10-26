@@ -236,12 +236,12 @@ def find_or_create_user(uuid, username, session):
         return new_user
 
 
-def mark_file_as_downloaded(local_filename, session):
+def mark_file_as_downloaded(uuid, session):
     """Mark file as downloaded in the database. The file itself will be
     stored in the data directory.
     """
     submission_db_object = session.query(Submission) \
-                                  .filter_by(filename=local_filename) \
+                                  .filter_by(uuid=uuid) \
                                   .one_or_none()
     submission_db_object.is_downloaded = True
     session.add(submission_db_object)
