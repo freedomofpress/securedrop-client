@@ -591,6 +591,55 @@ def test_Client_on_file_click_Submission(safe_tmpdir):
         cl.data_dir)
 
 
+def test_Client_on_file_download_success(safe_tmpdir):
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.update_sources = mock.MagicMock()
+    cl.api_runner = mock.MagicMock()
+    test_filename = "my-file-location-msg.gpg"
+    cl.api_runner.result = ("", test_filename)
+    cl.call_reset = mock.MagicMock()
+    result = True
+    with mock.patch('securedrop_client.logic.storage') as mock_storage:
+        cl.on_file_download(result)
+        cl.call_reset.assert_called_once_with()
+        mock_storage.mark_file_as_downloaded.assert_called_once_with(
+            test_filename, mock_session)
+
+
+def test_Client_on_file_download_failure(safe_tmpdir):
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.update_sources = mock.MagicMock()
+    cl.api_runner = mock.MagicMock()
+    test_filename = "my-file-location-msg.gpg"
+    cl.api_runner.result = ("", test_filename)
+    cl.call_reset = mock.MagicMock()
+    cl.set_status = mock.MagicMock()
+    result = False
+    cl.on_file_download(result)
+    cl.call_reset.assert_called_once_with()
+    cl.set_status.assert_called_once_with(
+        "Failed to download file, please try again.")
+
+
+def test_Client_on_download_timeout(safe_tmpdir):
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.update_sources = mock.MagicMock()
+    cl.api_runner = mock.MagicMock()
+    test_filename = "my-file-location-msg.gpg"
+    cl.api_runner.result = ("", test_filename)
+    cl.call_reset = mock.MagicMock()
+    cl.set_status = mock.MagicMock()
+    cl.on_download_timeout()
+    cl.set_status.assert_called_once_with(
+        "Connection to server timed out, please try again.")
+
+
 # This can be unfailed when this SDK change is merged and released:
 # https://github.com/freedomofpress/securedrop-sdk/pull/32
 @pytest.mark.xfail(reason="needs SDK change merged")
