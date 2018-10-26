@@ -1,3 +1,5 @@
+# coding: utf-8
+
 """
 Contains the core UI class for the application. All interactions with the UI
 go through an instance of this class.

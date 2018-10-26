@@ -20,11 +20,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
 import logging
+import os
+import shutil
+import subprocess
+import tempfile
+
 from PyQt5.QtCore import QObject
 from securedrop_client import storage
+from securedrop_client.models import make_engine
 
 from sqlalchemy.orm import sessionmaker
-from securedrop_client.models import engine
 
 
 logger = logging.getLogger(__name__)
@@ -35,11 +40,14 @@ class MessageSync(QObject):
     Runs in the background, finding messages to download and downloading them.
     """
 
-    def __init__(self, api):
+    def __init__(self, api, home):
         super().__init__()
+
+        engine = make_engine(home)
         Session = sessionmaker(bind=engine)
         self.session = Session() # Reference to the SqlAlchemy session.
         self.api = api
+        self.home = home
 
     def run(self):
         while True:
@@ -50,8 +58,44 @@ class MessageSync(QObject):
                 logger.info("Downloading {}".format(m.download_url))
                 shasum, filepath = self.api.download_submission_from_url(m.download_url)
                 logger.info("Downloaded {}".format(filepath))
-                # jt you are here... put that all in a try/except
-                # then try to decrypt
-                # then store the actual message on disk somewhere?
-                # then mark as downloaded in the db
+
+                # we're going to do the naive thing as an initial
+                # implementation: try to do the decryption
+                # synchronously with the download. this is probably OK
+                # for messages, but less OK for submissions (which are
+                # bigger and thus more expensive to download)
+
+                out = tempfile.NamedTemporaryFile(suffix=".message")
+                err = tempfile.NamedTemporaryFile(suffix=".message-error")
+                cmd = ["qubes-gpg-client", "--decrypt", filepath]
+                res = subprocess.call(cmd, stdout=out, stderr=err)
+
+                os.unlink(filepath) # original file
+
+                if res != 0:
+                    out.close()
+
+                    # with open(err.name) as e:
+                    #     msg = e.read()
+                    #     logger.error("GPG error: {}".format(msg))
+
+                    err.close()
+                else:
+                    fn_no_ext, _ = os.path.splitext(m.filename)
+                    dest = os.path.join(self.home, "data", fn_no_ext)
+
+                    shutil.move(out.name, dest)
+
+                    err.close()
+
+                    storage.mark_file_as_downloaded(m.filename, self.session)
+
+                    # with open(out.name) as o:
+                    #     msg = o.read()
+
+                    #     logger.info("This file's name is {}").format(fn_no_ext)
+                    #     logger.info("Got message: {}".format(msg))
+
+                    # logger.info("Stored message at {}".format(out.name))
+
             time.sleep(5)
