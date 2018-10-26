@@ -104,6 +104,7 @@ class ToolBar(QWidget):
         """
         Called when the refresh button is clicked.
         """
+        logger.info("Refresh button clicked")
         self.controller.sync_api()
 
 class MainView(QWidget):

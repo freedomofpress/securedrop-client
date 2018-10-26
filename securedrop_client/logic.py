@@ -20,6 +20,7 @@ import os
 import logging
 import sdclientapi
 import arrow
+import copy
 from securedrop_client import storage
 from securedrop_client import models
 from securedrop_client.utils import check_dir_permissions
@@ -134,6 +135,7 @@ class Client(QObject):
         timeout signal. Any further arguments are passed to the function to be
         called.
         """
+        logger.info("Entering call_api on thread {}".format(self.thread().currentThreadId()))
         if not self.api_thread:
             self.api_thread = QThread(self.gui)
             self.api_runner = APICallRunner(function, *args, **kwargs)
@@ -144,11 +146,15 @@ class Client(QObject):
             self.api_thread.started.connect(self.api_runner.call_api)
             self.api_thread.finished.connect(self.call_reset)
             self.api_thread.start()
+            logger.info("*** in call_api on thread {} self.api is here {}".format(self.thread().currentThreadId(), self.api))
+        else:
+            logger.info("api_thread is already a thing, so not going to run this?")
 
     def start_message_thread(self):
         """
         Starts the message-fetching thread in the background.
         """
+        return True
         if not self.message_thread:
             self.message_thread = QThread()
             self.message_sync = MessageSync(self.api, self.home)
@@ -172,6 +178,7 @@ class Client(QObject):
         """
 
         self.api = sdclientapi.API(self.hostname, username, password, totp, proxy=True)
+        logger.info("Hi, going to call api authenticate from thread {}".format(self.thread().currentThreadId()))
         self.call_api(self.api.authenticate, self.on_authenticate,
                       self.on_login_timeout)
 
@@ -230,9 +237,13 @@ class Client(QObject):
         """
         Grab data from the remote SecureDrop API in a non-blocking manner.
         """
+        logger.info("In sync_api on thread {}, self.api is {}".format(self.thread().currentThreadId(), self.api))
         if self.authenticated():
+            logger.info("You are authenticated, going to make your call")
+            # api_copy = copy.deepcopy(self.api)
             self.call_api(storage.get_remote_data, self.on_synced,
                           self.on_login_timeout, self.api)
+            logger.info("In sync_api, after call to call_api, I'm in thread {}, my API is {}".format(self.thread().currentThreadId(), self.api))
 
     def last_sync(self):
         """
@@ -248,6 +259,8 @@ class Client(QObject):
         """
         Called when syncronisation of data via the API is complete.
         """
+        logger.info("entering on_synced on thread {} api is {}".format(self.thread().currentThreadId(), self.api))
+
         if result and isinstance(self.api_runner.result, tuple):
             remote_sources, remote_submissions, remote_replies = \
                 self.api_runner.result
@@ -264,6 +277,9 @@ class Client(QObject):
             # How to handle a failure? Exceptions are already logged. Perhaps
             # a message in the UI?
             pass
+
+        logger.info("done with on_synced on thread {}, api is {}".format(self.thread().currentThreadId(), self.api))
+
         self.update_sources()
 
     def update_sync(self):

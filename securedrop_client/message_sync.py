@@ -59,11 +59,7 @@ class MessageSync(QObject):
                 shasum, filepath = self.api.download_submission_from_url(m.download_url)
                 logger.info("Downloaded {}".format(filepath))
 
-                # we're going to do the naive thing as an initial
-                # implementation: try to do the decryption
-                # synchronously with the download. this is probably OK
-                # for messages, but less OK for submissions (which are
-                # bigger and thus more expensive to download)
+                # jt you are here
 
                 out = tempfile.NamedTemporaryFile(suffix=".message")
                 err = tempfile.NamedTemporaryFile(suffix=".message-error")
