@@ -348,8 +348,8 @@ class Client(QObject):
             # Handle journalist's replies.
             func = self.api.download_reply
             sdk_object = sdclientapi.Reply(uuid=message.uuid)
-            sdk_object.filename = message.filename
-            sdk_object.source_uuid = source_db_object.uuid
+            sdk_object.filename = message.filename  # pragma: no cover
+            sdk_object.source_uuid = source_db_object.uuid  # pragma: no cover
         self.call_api(func, self.on_file_download,
                       self.on_download_timeout, sdk_object, self.data_dir)
 
@@ -361,7 +361,7 @@ class Client(QObject):
         sha256sum, filename = self.api_runner.result
         self.call_reset()
         if result:
-            storage.mark_file_as_downloaded(os.path.basename(filename), 
+            storage.mark_file_as_downloaded(os.path.basename(filename),
                                             self.session)
             # Refresh the conversation with the content of the downloaded file.
         else:

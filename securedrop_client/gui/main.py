@@ -156,13 +156,14 @@ class Window(QMainWindow):
 
     def show_conversation_for(self, source):
         """
-        Show conversation of messages and replies between a source and journalists.
+        Show conversation of messages and replies between a source and
+        journalists.
         """
         conversation = ConversationView(self)
         conversation.setup(self.controller)
         conversation.add_message('Source name: {}'.format(
                                  source.journalist_designation))
-        
+
         # Display each conversation item in the source collection.
         for conversation_item in source.collection:
             if conversation_item.filename.endswith('msg.gpg'):

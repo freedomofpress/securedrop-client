@@ -358,9 +358,9 @@ def test_find_or_create_user_new():
 def test_mark_file_as_downloaded():
     mock_session = mock.MagicMock()
     mock_submission = mock.MagicMock()
-    mock_submission.is_downloaded == False
+    mock_submission.is_downloaded is False
     mock_session.query().filter_by().one_or_none.return_value = mock_submission
     mark_file_as_downloaded('test-filename', mock_session)
-    assert mock_submission.is_downloaded == True
+    assert mock_submission.is_downloaded is True
     mock_session.add.assert_called_once_with(mock_submission)
     mock_session.commit.assert_called_once_with()

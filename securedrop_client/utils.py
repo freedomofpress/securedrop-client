@@ -50,7 +50,7 @@ def split_path(path: str) -> list:
 
 def humanize_filesize(filesize):
     """
-    Returns a human readable string of a filesize 
+    Returns a human readable string of a filesize
     (with an input unit of bytes)
     """
     if filesize < 1024:
