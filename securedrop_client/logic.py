@@ -275,8 +275,6 @@ class Client(QObject):
             self.call_api(storage.get_remote_data, self.on_synced,
                           self.on_sync_timeout, self.api)
             logger.info("In sync_api, after call to call_api, I'm in thread {}".format(self.thread().currentThreadId()))
-        else:
-            logger.info("It looks like you are not authenticated. Weird, isn't it.")
 
     def last_sync(self):
         """
