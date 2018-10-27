@@ -96,7 +96,6 @@ class Client(QObject):
         self.api = None  # Reference to the API for secure drop proxy.
         self.session = session  # Reference to the SqlAlchemy session.
         self.api_thread = None  # Currently active API call thread.
-        self.home = home # used for finding DB in sync thread
         self.sync_flag = os.path.join(home, 'sync_flag')
         self.home = home  # The "home" directory for client files.
         self.data_dir = os.path.join(self.home, 'data')  # File data.
