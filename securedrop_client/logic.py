@@ -582,3 +582,33 @@ class Client(QObject):
         # Update the status bar to indicate a failure state.
         self.set_status("The connection to the SecureDrop server timed out. "
                         "Please try again.")
+
+    def _on_delete_source_complete(self, result):
+        """Trigger this when delete operation on source is completed."""
+        if result:
+            self.sync_api()
+            self.gui.update_error_status("")
+        else:
+            logging.info("failed to delete source at server")
+            error = _('Failed to delete source at server')
+            self.gui.update_error_status(error)
+
+    def _on_delete_action_timeout(self):
+        """Trigger this when delete operation on source of is timeout."""
+        error = _('The connection to SecureDrop timed out. Please try again.')
+        self.gui.update_error_status(error)
+
+    def delete_source(self, source):
+        """Performs a delete operation on source record.
+
+        This method will first request server to delete the source record. If
+        the process of deleting record at server is successful, it will sync
+        the server records with the local state. On failure, it will display an
+        error.
+        """
+        self.call_api(
+            self.api.delete_source,
+            self._on_delete_source_complete,
+            self._on_delete_action_timeout,
+            source
+        )

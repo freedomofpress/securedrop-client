@@ -22,7 +22,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QDesktopWidget, QStatusBar
 from securedrop_client import __version__
-from securedrop_client.gui.widgets import ToolBar, MainView, LoginDialog, ConversationView
+from securedrop_client.gui.widgets import (ToolBar, MainView, LoginDialog,
+                                           ConversationView,
+                                           SourceProfileShortWidget)
 from securedrop_client.resources import load_icon
 
 logger = logging.getLogger(__name__)
@@ -186,7 +188,14 @@ class Window(QMainWindow):
             else:
                 conversation.add_file(source, conversation_item)
 
-        self.main_view.update_view(conversation)
+        container = QWidget()
+        layout = QVBoxLayout()
+        container.setLayout(layout)
+        source_profile = SourceProfileShortWidget(source, self.controller)
+
+        layout.addWidget(source_profile)
+        layout.addWidget(conversation)
+        self.main_view.update_view(container)
 
     def set_status(self, message, duration=5000):
         """

@@ -194,8 +194,11 @@ def test_conversation_for():
     mock_reply = mock.MagicMock()
     mock_reply.filename = '3-my-source-reply.gpg'
     mock_source.collection = [mock_file, mock_message, mock_reply]
-    with mock.patch('securedrop_client.gui.main.ConversationView',
-                    mock_conview):
+    with mock.patch(
+        'securedrop_client.gui.main.ConversationView', mock_conview
+    ), \
+            mock.patch('securedrop_client.gui.main.QVBoxLayout'), \
+            mock.patch('securedrop_client.gui.main.QWidget'):
         w.show_conversation_for(mock_source)
     conv = mock_conview()
     assert conv.add_message.call_count > 0
@@ -224,8 +227,11 @@ def test_conversation_pending_message():
 
     mock_source.collection = [submission]
 
-    with mock.patch('securedrop_client.gui.main.ConversationView',
-                    mock_conview):
+    with mock.patch(
+        'securedrop_client.gui.main.ConversationView', mock_conview
+    ), \
+            mock.patch('securedrop_client.gui.main.QVBoxLayout'), \
+            mock.patch('securedrop_client.gui.main.QWidget'):
         w.show_conversation_for(mock_source)
         conv = mock_conview()
 

@@ -983,3 +983,48 @@ def test_Client_on_file_open(safe_tmpdir):
         cl.on_file_open(mock_submission)
         mock_process.assert_called_once_with(cl)
         mock_subprocess.start.call_count == 1
+
+
+def test_Client_on_delete_action_timeout(safe_tmpdir):
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl._on_delete_action_timeout()
+    message = 'The connection to SecureDrop timed out. Please try again.'
+    cl.gui.update_error_status.assert_called_with(message)
+
+
+def test_Client_on_delete_source_complete_with_results(safe_tmpdir):
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.sync_api = mock.MagicMock()
+    cl._on_delete_source_complete(True)
+    cl.sync_api.assert_called_with()
+    cl.gui.update_error_status.assert_called_with("")
+
+
+def test_Client_on_delete_source_complete_without_results(safe_tmpdir):
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl._on_delete_source_complete(False)
+    cl.gui.update_error_status.assert_called_with(
+        'Failed to delete source at server'
+    )
+
+
+def test_Client_delete_source(safe_tmpdir):
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    mock_source = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.call_api = mock.MagicMock()
+    cl.api = mock.MagicMock()
+    cl.delete_source(mock_source)
+    cl.call_api.assert_called_with(
+        cl.api.delete_source,
+        cl._on_delete_source_complete,
+        cl._on_delete_action_timeout,
+        mock_source
+    )
