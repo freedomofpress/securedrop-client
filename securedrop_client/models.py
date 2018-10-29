@@ -37,6 +37,16 @@ class Source(Base):
     def __repr__(self):
         return '<Source {}>'.format(self.journalist_designation)
 
+    @property
+    def collection(self):
+        """Return the list of submissions and replies for this source, sorted
+        in ascending order by the filename/interaction count."""
+        collection = []
+        collection.extend(self.submissions)
+        collection.extend(self.replies)
+        collection.sort(key=lambda x: int(x.filename.split('-')[0]))
+        return collection
+
 
 class Submission(Base):
     __tablename__ = 'submissions'

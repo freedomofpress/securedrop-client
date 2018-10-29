@@ -12,7 +12,8 @@ from securedrop_client.storage import (get_local_sources,
                                        get_remote_data, update_local_storage,
                                        update_sources,
                                        update_submissions, update_replies,
-                                       find_or_create_user)
+                                       find_or_create_user,
+                                       mark_file_as_downloaded)
 from sdclientapi import Source, Submission, Reply
 
 
@@ -351,4 +352,15 @@ def test_find_or_create_user_new():
     new_user = find_or_create_user('uuid', 'unknown', mock_session)
     assert new_user.username == 'unknown'
     mock_session.add.assert_called_once_with(new_user)
+    mock_session.commit.assert_called_once_with()
+
+
+def test_mark_file_as_downloaded():
+    mock_session = mock.MagicMock()
+    mock_submission = mock.MagicMock()
+    mock_submission.is_downloaded is False
+    mock_session.query().filter_by().one_or_none.return_value = mock_submission
+    mark_file_as_downloaded('test-filename', mock_session)
+    assert mock_submission.is_downloaded is True
+    mock_session.add.assert_called_once_with(mock_submission)
     mock_session.commit.assert_called_once_with()

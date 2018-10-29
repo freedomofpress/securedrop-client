@@ -21,6 +21,7 @@ import logging
 import sdclientapi
 import arrow
 from securedrop_client import storage
+from securedrop_client import models
 from securedrop_client.utils import check_dir_permissions
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer
 
@@ -100,6 +101,8 @@ class Client(QObject):
         self.session = session  # Reference to the SqlAlchemy session.
         self.api_thread = None  # Currently active API call thread.
         self.sync_flag = os.path.join(home, 'sync_flag')
+        self.home = home  # The "home" directory for client files.
+        self.data_dir = os.path.join(self.home, 'data')  # File data.
 
     def setup(self):
         """
@@ -122,7 +125,8 @@ class Client(QObject):
         self.sync_timer.timeout.connect(self.update_sync)
         self.sync_timer.start(30000)
 
-    def call_api(self, function, callback, timeout, *args, **kwargs):
+    def call_api(self, function, callback, timeout, *args, current_object=None,
+                 **kwargs):
         """
         Calls the function in a non-blocking manner. Upon completion calls the
         callback with the result. Calls timeout if the API call emits a
@@ -133,6 +137,7 @@ class Client(QObject):
             self.api_thread = QThread(self.gui)
             self.api_runner = APICallRunner(function, *args, **kwargs)
             self.api_runner.moveToThread(self.api_thread)
+            self.api_runner.current_object = current_object
             self.api_runner.call_finished.connect(callback)
             self.api_runner.timeout.connect(timeout)
             self.finish_api_call.connect(self.api_runner.on_cancel_timeout)
@@ -313,3 +318,56 @@ class Client(QObject):
         duration.
         """
         self.gui.set_status(message, duration)
+
+    def on_file_click(self, source_db_object, message):
+        """
+        Download the file associated with the associated message (which may
+        be a Submission or Reply).
+        """
+        if isinstance(message, models.Submission):
+            # Handle submissions.
+            func = self.api.download_submission
+            sdk_object = sdclientapi.Submission(uuid=message.uuid)
+            sdk_object.filename = message.filename
+            sdk_object.source_uuid = source_db_object.uuid
+        elif isinstance(message, models.Reply):
+            # Handle journalist's replies.
+            func = self.api.download_reply
+            sdk_object = sdclientapi.Reply(uuid=message.uuid)
+            sdk_object.filename = message.filename
+            sdk_object.source_uuid = source_db_object.uuid
+        self.call_api(func, self.on_file_download,
+                      self.on_download_timeout, sdk_object, self.data_dir,
+                      current_object=message)
+
+    def on_file_download(self, result):
+        """
+        Called when a file has downloaded. Cause a refresh to the conversation
+        view to display the contents of the new file.
+        """
+        sha256sum, filename = self.api_runner.result
+        file_uuid = self.api_runner.current_object.uuid
+        server_filename = self.api_runner.current_object.filename
+        self.call_reset()
+        if result:
+            # The filename contains the location where the file has been
+            # stored. On non-Qubes OSes, this will be the data directory.
+            # On Qubes OS, this will a ~/QubesIncoming directory. In case
+            # we are on Qubes, we should move the file to the data directory
+            # and name it the same as the server (e.g. spotless-tater-msg.gpg).
+            os.rename(filename, os.path.join(self.data_dir, server_filename))
+            storage.mark_file_as_downloaded(file_uuid, self.session)
+
+            # Refresh the current source conversation, bearing in mind
+            # that the user may have navigated to another source.
+            self.gui.show_conversation_for(self.gui.current_source)
+        else:
+            # Update the UI in some way to indicate a failure state.
+            self.set_status("Failed to download file, please try again.")
+
+    def on_download_timeout(self):
+        """
+        Called when downloading a file has timed out.
+        """
+        # Update the status bar to indicate a failure state.
+        self.set_status("Connection to server timed out, please try again.")

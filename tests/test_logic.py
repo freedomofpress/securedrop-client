@@ -3,10 +3,11 @@ Make sure the Client object, containing the application logic, behaves as
 expected.
 """
 import arrow
+from datetime import datetime
 import os
 import pytest
 import sdclientapi
-from securedrop_client import storage
+from securedrop_client import storage, models
 from securedrop_client.logic import APICallRunner, Client
 from unittest import mock
 
@@ -566,3 +567,106 @@ def test_create_client_dir_permissions(tmpdir):
         else:
             with pytest.raises(RuntimeError):
                 func()
+
+
+def test_Client_on_file_click_Submission(safe_tmpdir):
+    """
+    If the handler is passed a submission, check the download_submission
+    function is the one called against the API.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    source = models.Source('source-uuid', 'testy-mctestface', False,
+                           'mah pub key', 1, False, datetime.now())
+    submission = models.Submission(source, 'submission-uuid', 1234,
+                                   'myfile.doc.gpg')
+    cl.call_api = mock.MagicMock()
+    cl.api = mock.MagicMock()
+    submission_sdk_object = mock.MagicMock()
+    with mock.patch('sdclientapi.Submission') as mock_submission:
+        mock_submission.return_value = submission_sdk_object
+        cl.on_file_click(source, submission)
+    cl.call_api.assert_called_once_with(
+        cl.api.download_submission, cl.on_file_download,
+        cl.on_download_timeout, submission_sdk_object,
+        cl.data_dir, current_object=submission)
+
+
+def test_Client_on_file_download_success(safe_tmpdir):
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.update_sources = mock.MagicMock()
+    cl.api_runner = mock.MagicMock()
+    test_filename = "my-file-location-msg.gpg"
+    cl.api_runner.result = ("", test_filename)
+    cl.api_runner.current_object = mock.MagicMock()
+    test_object_uuid = 'uuid-of-downloaded-object'
+    cl.api_runner.current_object.uuid = test_object_uuid
+    cl.call_reset = mock.MagicMock()
+    result = True
+    with mock.patch('securedrop_client.logic.storage') as mock_storage, \
+            mock.patch('os.rename'):
+        cl.on_file_download(result)
+        cl.call_reset.assert_called_once_with()
+        mock_storage.mark_file_as_downloaded.assert_called_once_with(
+            test_object_uuid, mock_session)
+
+
+def test_Client_on_file_download_failure(safe_tmpdir):
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.update_sources = mock.MagicMock()
+    cl.api_runner = mock.MagicMock()
+    test_filename = "my-file-location-msg.gpg"
+    cl.api_runner.result = ("", test_filename)
+    cl.call_reset = mock.MagicMock()
+    cl.set_status = mock.MagicMock()
+    result = False
+    cl.on_file_download(result)
+    cl.call_reset.assert_called_once_with()
+    cl.set_status.assert_called_once_with(
+        "Failed to download file, please try again.")
+
+
+def test_Client_on_download_timeout(safe_tmpdir):
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.update_sources = mock.MagicMock()
+    cl.api_runner = mock.MagicMock()
+    test_filename = "my-file-location-msg.gpg"
+    cl.api_runner.result = ("", test_filename)
+    cl.call_reset = mock.MagicMock()
+    cl.set_status = mock.MagicMock()
+    cl.on_download_timeout()
+    cl.set_status.assert_called_once_with(
+        "Connection to server timed out, please try again.")
+
+
+def test_Client_on_file_click_Reply(safe_tmpdir):
+    """
+    If the handler is passed a reply, check the download_reply
+    function is the one called against the API.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    source = models.Source('source-uuid', 'testy-mctestface', False,
+                           'mah pub key', 1, False, datetime.now())
+    journalist = models.User('Testy mcTestface')
+    reply = models.Reply('reply-uuid', journalist, source,
+                         'my-reply.gpg', 123)  # Not a sdclientapi.Submission
+    cl.call_api = mock.MagicMock()
+    cl.api = mock.MagicMock()
+    reply_sdk_object = mock.MagicMock()
+    with mock.patch('sdclientapi.Reply') as mock_reply:
+        mock_reply.return_value = reply_sdk_object
+        cl.on_file_click(source, reply)
+    cl.call_api.assert_called_once_with(cl.api.download_reply,
+                                        cl.on_file_download,
+                                        cl.on_download_timeout,
+                                        reply_sdk_object,
+                                        cl.data_dir, current_object=reply)

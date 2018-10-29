@@ -61,6 +61,7 @@ class Window(QMainWindow):
         widget_layout.addWidget(self.tool_bar, 1)
         widget_layout.addWidget(self.main_view, 6)
         self.setCentralWidget(self.widget)
+        self.current_source = None  # Tracks which source is shown
         self.show()
         self.autosize_window()
 
@@ -150,15 +151,30 @@ class Window(QMainWindow):
         source_item = self.main_view.source_list.currentItem()
         source_widget = self.main_view.source_list.itemWidget(source_item)
         if source_widget:
-            self.show_conversation_for(source_widget.source)
+            self.current_source = source_widget.source
+            self.show_conversation_for(self.current_source)
 
     def show_conversation_for(self, source):
         """
-        TODO: Finish this...
+        Show conversation of messages and replies between a source and
+        journalists.
         """
         conversation = ConversationView(self)
+        conversation.setup(self.controller)
         conversation.add_message('Source name: {}'.format(
                                  source.journalist_designation))
+
+        # Display each conversation item in the source collection.
+        for conversation_item in source.collection:
+            if conversation_item.filename.endswith('msg.gpg'):
+                # TODO: Decrypt and display the message
+                pass
+            elif conversation_item.filename.endswith('reply.gpg'):
+                # TODO: Decrypt and display the reply
+                pass
+            else:
+                conversation.add_file(source, conversation_item)
+
         conversation.add_message('Hello, hello, is this thing switched on?')
         conversation.add_reply('Yes, I can hear you loud and clear!')
         conversation.add_reply('How can I help?')
@@ -193,10 +209,9 @@ class Window(QMainWindow):
                                  "into this. Also: someone I work with heard "
                                  "him on the phone once, talking about his "
                                  "'time' at Jackson—that contradicts his "
-                                 "resume. It really seems fishy.",
-                                 ['fishy_cv.PDF (234Kb)', ])
+                                 "resume. It really seems fishy.")
         conversation.add_reply("THIS IS IT THIS IS THE TAPE EVERYONE'S "
-                               "LOOKING FOR!!!", ['filename.pdf (32Kb)', ])
+                               "LOOKING FOR!!!")
         conversation.add_reply("Hello: I read your story on Sally Dale, and "
                                "her lawsuit against the St. Joseph's "
                                "Orphanage. My great-aunt was one of the nuns "
