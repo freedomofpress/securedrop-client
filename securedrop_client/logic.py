@@ -87,7 +87,8 @@ class Client(QObject):
 
     timeout_api_call = pyqtSignal()  # Indicates there was a timeout.
 
-    def __init__(self, hostname, gui, session, home: str) -> None:
+    def __init__(self, hostname, gui, session,
+                 home: str, proxy: bool = False) -> None:
         """
         The hostname, gui and session objects are used to coordinate with the
         various other layers of the application: the location of the SecureDrop
@@ -106,6 +107,7 @@ class Client(QObject):
         self.home = home  # The "home" directory for client files.
         self.data_dir = os.path.join(self.home, 'data')  # File data.
         self.timer = None  # call timeout timer
+        self.proxy = proxy
 
     def setup(self):
         """
@@ -187,9 +189,8 @@ class Client(QObject):
         Given a username, password and time based one-time-passcode (TOTP),
         create a new instance representing the SecureDrop api and authenticate.
         """
-
-        self.api = sdclientapi.API(self.hostname, username, password, totp)
-
+        self.api = sdclientapi.API(self.hostname, username,
+                                   password, totp, self.proxy)
         self.call_api(self.api.authenticate, self.on_authenticate,
                       self.on_login_timeout)
 

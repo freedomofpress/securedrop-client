@@ -103,6 +103,7 @@ def test_start_app(safe_tmpdir):
     mock_qt_args = mock.MagicMock()
     sdc_home = str(safe_tmpdir)
     mock_args.sdc_home = sdc_home
+    mock_args.proxy = False
 
     with mock.patch('securedrop_client.app.configure_logging') as conf_log, \
             mock.patch('securedrop_client.app.QApplication') as mock_app, \
@@ -117,7 +118,7 @@ def test_start_app(safe_tmpdir):
         mock_win.assert_called_once_with()
         mock_client.assert_called_once_with('http://localhost:8081/',
                                             mock_win(), mock_session_class(),
-                                            sdc_home)
+                                            sdc_home, False)
 
 
 PERMISSIONS_CASES = [
