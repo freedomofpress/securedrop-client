@@ -183,7 +183,8 @@ def run() -> None:
         config = configparser.ConfigParser()
         config.read(config_file)
         args.sdc_home = config["client"]["homedir"]
-        args.proxy = config["client"]["use_securedrop_proxy"]
+        sdc_home = config["client"]["use_securedrop_proxy"]
+        args.proxy = expand_to_absolute(sdc_home)
     # reinsert the program's name
     qt_args.insert(0, 'securedrop-client')
     start_app(args, qt_args)
