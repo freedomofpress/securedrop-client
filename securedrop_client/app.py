@@ -22,6 +22,7 @@ import os
 import signal
 import sys
 import socket
+import configparser
 from argparse import ArgumentParser
 from sqlalchemy.orm import sessionmaker
 from PyQt5.QtWidgets import QApplication, QMessageBox
@@ -155,7 +156,7 @@ def start_app(args, qt_args) -> None:
     app.setWindowIcon(load_icon(gui.icon))
     app.setStyleSheet(load_css('sdclient.css'))
 
-    engine = make_engine(args.sdc_home)
+    engine = make_engine(os.path.join(args.sdc_home, "data"))
     Session = sessionmaker(bind=engine)
     session = Session()
 
@@ -171,7 +172,13 @@ def start_app(args, qt_args) -> None:
 
 
 def run() -> None:
+    config_file = "/etc/securdrop-client/client.ini"
     args, qt_args = arg_parser().parse_known_args()
+    if args.sdc_home == DEFAULT_SDC_HOME and \
+            os.path.exists(config_file):  # pragma: no cover
+        config = configparser.ConfigParser()
+        config.read(config_file)
+        args.sdc_home = config["client"]["homedir"]
     # reinsert the program's name
     qt_args.insert(0, 'securedrop-client')
     start_app(args, qt_args)
