@@ -17,8 +17,10 @@ def test_APICallRunner_init():
     Ensure everything is set up as expected.
     """
     mock_api_call = mock.MagicMock()
-    cr = APICallRunner(mock_api_call, 'foo', bar='baz')
+    mock_current_object = mock.MagicMock()
+    cr = APICallRunner(mock_api_call, mock_current_object, 'foo', bar='baz')
     assert cr.api_call == mock_api_call
+    assert cr.current_object == mock_current_object
     assert cr.args == ('foo', )
     assert cr.kwargs == {'bar': 'baz', }
 
@@ -29,11 +31,12 @@ def test_APICallRunner_call_api():
     """
     mock_api_call = mock.MagicMock(return_value='foo')
     mock_api_call.__name__ = 'my_function'
-    cr = APICallRunner(mock_api_call, 'foo', bar='baz')
+    mock_current_object = mock.MagicMock()
+    cr = APICallRunner(mock_api_call, mock_current_object, 'foo', bar='baz')
     cr.call_finished = mock.MagicMock()
     cr.call_api()
     assert cr.result == 'foo'
-    cr.call_finished.emit.assert_called_once_with(True)
+    cr.call_finished.emit.assert_called_once_with()
 
 
 def test_APICallRunner_with_exception():
@@ -43,12 +46,13 @@ def test_APICallRunner_with_exception():
     ex = Exception('boom')
     mock_api_call = mock.MagicMock(side_effect=ex)
     mock_api_call.__name__ = 'my_function'
-    cr = APICallRunner(mock_api_call, 'foo', bar='baz')
+    mock_current_object = mock.MagicMock()
+    cr = APICallRunner(mock_api_call, mock_current_object, 'foo', bar='baz')
     cr.call_finished = mock.MagicMock()
     with mock.patch('securedrop_client.logic.QTimer') as mock_timer:
         cr.call_api()
     assert cr.result == ex
-    cr.call_finished.emit.assert_called_once_with(False)
+    cr.call_finished.emit.assert_called_once_with()
 
 
 def test_Client_on_cancel_timeout(safe_tmpdir):
@@ -186,7 +190,7 @@ def test_Client_on_authenticate_failed(safe_tmpdir):
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
     result_data = 'false'
-    cl.on_authenticate(False, result_data)
+    cl.on_authenticate(result_data)
     mock_gui.show_login_error.\
         assert_called_once_with(error='There was a problem logging in. Please '
                                 'try again.')
@@ -202,15 +206,14 @@ def test_Client_on_authenticate_ok(safe_tmpdir):
     cl.sync_api = mock.MagicMock()
     cl.api = mock.MagicMock()
     cl.api.username = 'test'
-    result_data = 'true'
-    cl.on_authenticate(True, result_data)
+    cl.on_authenticate(True)
     cl.sync_api.assert_called_once_with()
     cl.gui.set_logged_in_as.assert_called_once_with('test')
     # Error status bar should be cleared
     cl.gui.update_error_status.assert_called_once_with("")
 
 
-def test_Client_successful_api_call_without_current_object(safe_tmpdir):
+def test_Client_completed_api_call_without_current_object(safe_tmpdir):
     """
     Ensure that cleanup is performed if an API call returns in the expected
     time.
@@ -224,16 +227,16 @@ def test_Client_successful_api_call_without_current_object(safe_tmpdir):
     cl.api_runner.current_object = None
     cl.call_reset = mock.MagicMock()
     mock_user_callback = mock.MagicMock()
-    res = mock.MagicMock()
+    cl.result = mock.MagicMock()
 
-    cl.successful_api_call(res, mock_user_callback)
+    cl.completed_api_call(mock_user_callback)
 
     cl.call_reset.assert_called_once_with()
     mock_user_callback.call_count == 1
     cl.timer.stop.assert_called_once_with()
 
 
-def test_Client_successful_api_call_with_current_object(safe_tmpdir):
+def test_Client_completed_api_call_with_current_object(safe_tmpdir):
     """
     Ensure that cleanup is performed if an API call returns in the expected
     time.
@@ -247,9 +250,9 @@ def test_Client_successful_api_call_with_current_object(safe_tmpdir):
     cl.api_runner.current_object = mock.MagicMock()
     cl.call_reset = mock.MagicMock()
     mock_user_callback = mock.MagicMock()
-    res = mock.MagicMock()
+    cl.result = mock.MagicMock()
 
-    cl.successful_api_call(res, mock_user_callback)
+    cl.completed_api_call(mock_user_callback)
 
     cl.call_reset.assert_called_once_with()
     mock_user_callback.call_count == 1
@@ -437,9 +440,9 @@ def test_Client_on_synced_no_result(safe_tmpdir):
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
     cl.update_sources = mock.MagicMock()
-    result_data = ('sources go here', 'submissions go here', 'replies go here')
+    result_data = Exception('Boom')  # Not the expected tuple.
     with mock.patch('securedrop_client.logic.storage') as mock_storage:
-        cl.on_synced(False, result_data)
+        cl.on_synced(result_data)
         assert mock_storage.update_local_storage.call_count == 0
     cl.update_sources.assert_called_once_with()
 
@@ -453,12 +456,13 @@ def test_Client_on_synced_with_result(safe_tmpdir):
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
     cl.update_sources = mock.MagicMock()
     cl.api_runner = mock.MagicMock()
-    result_data = (1, 2, 3, )
+    result_data = ('sources', 'submissions', 'replies')
     cl.call_reset = mock.MagicMock()
     with mock.patch('securedrop_client.logic.storage') as mock_storage:
-        cl.on_synced(True, result_data)
-        mock_storage.update_local_storage.assert_called_once_with(mock_session,
-                                                                  1, 2, 3)
+        cl.on_synced(result_data)
+        mock_storage.update_local_storage.\
+            assert_called_once_with(mock_session, "sources", "submissions",
+                                    "replies")
     cl.update_sources.assert_called_once_with()
 
 
@@ -578,8 +582,7 @@ def test_Client_on_update_star_success(safe_tmpdir):
     result = True
     cl.call_reset = mock.MagicMock()
     cl.sync_api = mock.MagicMock()
-    result_data = "Star added"
-    cl.on_update_star_complete(result, result_data)
+    cl.on_update_star_complete(result)
     cl.sync_api.assert_called_once_with()
     mock_gui.update_error_status.assert_called_once_with("")
 
@@ -592,11 +595,10 @@ def test_Client_on_update_star_failed(safe_tmpdir):
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
-    result = False
+    result = Exception('boom')
     cl.call_reset = mock.MagicMock()
     cl.sync_api = mock.MagicMock()
-    result_data = "error message"
-    cl.on_update_star_complete(result, result_data)
+    cl.on_update_star_complete(result)
     cl.sync_api.assert_not_called()
     mock_gui.update_error_status.assert_called_once_with(
         'Failed to apply change.')
@@ -704,15 +706,13 @@ def test_Client_on_file_download_success(safe_tmpdir):
     test_filename = "my-file-location-msg.gpg"
     test_object_uuid = 'uuid-of-downloaded-object'
     cl.call_reset = mock.MagicMock()
-    result = True
     result_data = ('this-is-a-sha256-sum', test_filename)
     submission_db_object = mock.MagicMock()
     submission_db_object.uuid = test_object_uuid
     submission_db_object.filename = test_filename
     with mock.patch('securedrop_client.logic.storage') as mock_storage, \
             mock.patch('os.rename'):
-        cl.on_file_download(result, result_data,
-                            current_object=submission_db_object)
+        cl.on_file_download(result_data, current_object=submission_db_object)
         mock_storage.mark_file_as_downloaded.assert_called_once_with(
             test_object_uuid, mock_session)
 
@@ -727,13 +727,11 @@ def test_Client_on_file_download_failure(safe_tmpdir):
     cl.api_runner.result = ("", test_filename)
     cl.call_reset = mock.MagicMock()
     cl.set_status = mock.MagicMock()
-    result = False
-    result_data = 'error message'
+    result_data = Exception('error message')
     submission_db_object = mock.MagicMock()
     submission_db_object.uuid = 'myuuid'
     submission_db_object.filename = 'filename'
-    cl.on_file_download(result, result_data,
-                        current_object=submission_db_object)
+    cl.on_file_download(result_data, current_object=submission_db_object)
     cl.set_status.assert_called_once_with(
         "Failed to download file, please try again.")
 
