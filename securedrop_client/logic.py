@@ -21,6 +21,7 @@ import logging
 import sdclientapi
 import arrow
 from securedrop_client import storage
+from securedrop_client import models
 from securedrop_client.utils import check_dir_permissions
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer
 
@@ -67,7 +68,8 @@ class APICallRunner(QObject):
         if self.i_timed_out is False:
             self.call_finished.emit(result_flag)
         else:
-            logger.info("Thread returned from API call, but it had timed out.")
+            logger.info("Thread returned from API call, "
+                        "but it had timed out.")  # pragma: no cover
 
 
 class Client(QObject):
@@ -137,6 +139,7 @@ class Client(QObject):
             self.api_thread = QThread(self.gui)
             self.api_runner = APICallRunner(function, *args, **kwargs)
             self.api_runner.moveToThread(self.api_thread)
+            self.api_runner.current_object = current_object
 
             # handle successful call: copy response data, reset the
             # client, give the user-provided callback the response
@@ -209,9 +212,19 @@ class Client(QObject):
 
         self.timer.stop()
         result_data = self.api_runner.result
+
+        # The callback may or may not have an associated current_object
+        if self.api_runner.current_object:
+            current_object = self.api_runner.current_object
+        else:
+            current_object = None
+
         self.call_reset()
 
-        user_callback(r, result_data)
+        if current_object:
+            user_callback(r, result_data, current_object=current_object)
+        else:
+            user_callback(r, result_data)
 
     def timeout_cleanup(self, user_callback):
         logger.info("API call timed out. Cleaning up and running "
@@ -219,9 +232,18 @@ class Client(QObject):
 
         if self.api_thread:
             self.api_runner.i_timed_out = True
+
+            if self.api_runner.current_object:
+                current_object = self.api_runner.current_object
+            else:
+                current_object = None
+
             self.call_reset()
 
-        user_callback()
+        if current_object:
+            user_callback(current_object=current_object)
+        else:
+            user_callback()
 
     def on_login_timeout(self):
         """
@@ -234,11 +256,15 @@ class Client(QObject):
 
     def on_sync_timeout(self):
         """
-        Reset the form and indicate the error.
+        Indicate that a sync failed.
+
+        TODO: We don't really want to alert in the error bar _every time_
+        this happens. Instead, we should do something like: alert if there
+        have been many timeouts in a row.
         """
 
         error = _('The connection to SecureDrop timed out. Please try again.')
-        self.gui.show_login_error(error=error)
+        self.gui.update_error_status(error=error)
 
     def on_action_requiring_login(self):
         """
@@ -368,7 +394,6 @@ class Client(QObject):
         state.
         """
         self.api = None
-        self.stop_message_thread()
         self.gui.logout()
 
     def set_status(self, message, duration=5000):
@@ -399,16 +424,15 @@ class Client(QObject):
                       self.on_download_timeout, sdk_object, self.data_dir,
                       current_object=message)
 
-    def on_file_download(self, result):
+    def on_file_download(self, result, result_data, current_object):
         """
         Called when a file has downloaded. Cause a refresh to the conversation
         view to display the contents of the new file.
         """
-        sha256sum, filename = self.api_runner.result
-        file_uuid = self.api_runner.current_object.uuid
-        server_filename = self.api_runner.current_object.filename
-        self.call_reset()
+        file_uuid = current_object.uuid
+        server_filename = current_object.filename
         if result:
+            sha256sum, filename = result_data
             # The filename contains the location where the file has been
             # stored. On non-Qubes OSes, this will be the data directory.
             # On Qubes OS, this will a ~/QubesIncoming directory. In case
@@ -424,7 +448,7 @@ class Client(QObject):
             # Update the UI in some way to indicate a failure state.
             self.set_status("Failed to download file, please try again.")
 
-    def on_download_timeout(self):
+    def on_download_timeout(self, current_object):
         """
         Called when downloading a file has timed out.
         """
