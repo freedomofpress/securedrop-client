@@ -124,6 +124,10 @@ class Client(QObject):
         self.sync_timer = QTimer()
         self.sync_timer.timeout.connect(self.update_sync)
         self.sync_timer.start(30000)
+        # Automagically sync with the API every 5 minutes.
+        self.sync_update = QTimer()
+        self.sync_update.timeout.connect(self.sync_api)
+        self.sync_update.start(1000 * 60 * 5)  # every 5 minutes.
 
     def call_api(self, function, callback, timeout, *args, current_object=None,
                  **kwargs):
