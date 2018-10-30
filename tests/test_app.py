@@ -235,6 +235,8 @@ def test_signal_interception():
             mock.patch('sys.exit'), \
             mock.patch('securedrop_client.models.make_engine'), \
             mock.patch('securedrop_client.app.init'), \
+            mock.patch('securedrop_client.logic.GpgHelper'), \
+            mock.patch('securedrop_client.logic.safe_mkdir'), \
             mock.patch('securedrop_client.logic.Client.setup'), \
             mock.patch('securedrop_client.app.configure_logging'), \
             mock.patch('securedrop_client.app.configure_signal_handlers') \

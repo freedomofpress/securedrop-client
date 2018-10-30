@@ -499,7 +499,8 @@ def test_Client_on_synced_with_result(safe_tmpdir):
     cl.api_runner = mock.MagicMock()
     result_data = ('sources', 'submissions', 'replies')
     cl.call_reset = mock.MagicMock()
-    with mock.patch('securedrop_client.logic.storage') as mock_storage:
+    with mock.patch('securedrop_client.logic.storage') as mock_storage, \
+            mock.patch('securedrop_client.logic.GpgHelper'):
         cl.on_synced(result_data)
         mock_storage.update_local_storage.\
             assert_called_once_with(mock_session, "sources", "submissions",

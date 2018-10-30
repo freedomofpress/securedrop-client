@@ -16,18 +16,19 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import os
-import logging
-import sdclientapi
-import shutil
 import arrow
 import copy
+import logging
+import os
+import sdclientapi
+import shutil
 import uuid
 from sqlalchemy import event
 from securedrop_client import crypto
 from securedrop_client import storage
 from securedrop_client import models
-from securedrop_client.utils import check_dir_permissions
+from securedrop_client.gpg import GpgHelper
+from securedrop_client.utils import check_dir_permissions, safe_mkdir
 from securedrop_client.data import Data
 from securedrop_client.message_sync import MessageSync, ReplySync
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess
@@ -99,11 +100,14 @@ class Client(QObject):
         """
 
         check_dir_permissions(home)
+        safe_mkdir(home, 'gpg')
+        gpg_home = os.path.join(home, 'gpg')
 
         super().__init__()
         self.hostname = hostname  # Location of the SecureDrop server.
         self.gui = gui  # Reference to the UI window.
         self.api = None  # Reference to the API for secure drop proxy.
+        self.gpg = GpgHelper(gpg_home)
         self.session = session  # Reference to the SqlAlchemy session.
         self.message_thread = None  # thread responsible for fetching messages
         self.reply_thread = None  # thread responsible for fetching replies
@@ -375,6 +379,13 @@ class Client(QObject):
             storage.update_local_storage(self.session, remote_sources,
                                          remote_submissions,
                                          remote_replies)
+
+            # Add source's keys to the GPG keyring
+            for source in remote_sources:
+                if source.key and source.key.get('type', None) == 'PGP':
+                    pub_key = source.key.get('public', None)
+                    if pub_key:
+                        self.gpg.import_key(pub_key)
 
             # Set last sync flag.
             with open(self.sync_flag, 'w') as f:
