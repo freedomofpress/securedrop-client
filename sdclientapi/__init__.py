@@ -460,7 +460,7 @@ class API:
             )
 
             if status_code == 404:
-                raise WrongUUIDError("Missing reply {}".format(submission.uuid))
+                raise WrongUUIDError("Missing submission {}".format(submission.uuid))
 
             # Get the headers
             headers = headers
