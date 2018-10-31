@@ -88,7 +88,7 @@ class Client(QObject):
     timeout_api_call = pyqtSignal()  # Indicates there was a timeout.
 
     def __init__(self, hostname, gui, session,
-                 home: str, proxy: bool = False) -> None:
+                 home: str, proxy: bool = True) -> None:
         """
         The hostname, gui and session objects are used to coordinate with the
         various other layers of the application: the location of the SecureDrop

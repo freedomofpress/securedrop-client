@@ -107,7 +107,7 @@ def arg_parser() -> ArgumentParser:
         help=('SecureDrop Client home directory for storing files and state. '
               '(Default {})'.format(DEFAULT_SDC_HOME)))
     parser.add_argument(
-        '--proxy', action='store_true',
+        '--no-proxy', action='store_true',
         help='Use proxy AppVM name to connect to server.')
     return parser
 
@@ -159,12 +159,12 @@ def start_app(args, qt_args) -> None:
     app.setWindowIcon(load_icon(gui.icon))
     app.setStyleSheet(load_css('sdclient.css'))
 
-    engine = make_engine(os.path.join(args.sdc_home, "data"))
+    engine = make_engine(args.sdc_home)
     Session = sessionmaker(bind=engine)
     session = Session()
 
     client = Client("http://localhost:8081/", gui, session,
-                    args.sdc_home, args.proxy)
+                    args.sdc_home, not args.no_proxy)
     client.setup()
 
     configure_signal_handlers(app)
@@ -176,15 +176,15 @@ def start_app(args, qt_args) -> None:
 
 
 def run() -> None:
-    config_file = "/etc/securedrop-client/client.ini"
+    config_file = "/usr/share/securedrop-client/client.ini"
     args, qt_args = arg_parser().parse_known_args()
     if args.sdc_home == expand_to_absolute(DEFAULT_SDC_HOME) and \
             os.path.exists(config_file):  # pragma: no cover
         config = configparser.ConfigParser()
         config.read(config_file)
         args.sdc_home = config["client"]["homedir"]
-        sdc_home = config["client"]["use_securedrop_proxy"]
-        args.proxy = expand_to_absolute(sdc_home)
+        use_proxy = config["client"].getboolean("use_securedrop_proxy")
+        args.no_proxy = not use_proxy
     # reinsert the program's name
     qt_args.insert(0, 'securedrop-client')
     start_app(args, qt_args)
