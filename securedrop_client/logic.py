@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import logging
 import sdclientapi
+import shutil
 import arrow
 from securedrop_client import storage
 from securedrop_client import models
@@ -449,7 +450,7 @@ class Client(QObject):
             # On Qubes OS, this will a ~/QubesIncoming directory. In case
             # we are on Qubes, we should move the file to the data directory
             # and name it the same as the server (e.g. spotless-tater-msg.gpg).
-            os.rename(filename, os.path.join(self.data_dir, server_filename))
+            shutil.move(filename, os.path.join(self.data_dir, server_filename))
             storage.mark_file_as_downloaded(file_uuid, self.session)
 
             # Refresh the current source conversation, bearing in mind

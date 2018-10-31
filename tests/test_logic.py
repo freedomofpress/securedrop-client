@@ -7,6 +7,7 @@ from datetime import datetime
 import os
 import pytest
 import sdclientapi
+import shutil
 from securedrop_client import storage, models
 from securedrop_client.logic import APICallRunner, Client
 from unittest import mock
@@ -711,7 +712,7 @@ def test_Client_on_file_download_success(safe_tmpdir):
     submission_db_object.uuid = test_object_uuid
     submission_db_object.filename = test_filename
     with mock.patch('securedrop_client.logic.storage') as mock_storage, \
-            mock.patch('os.rename'):
+            mock.patch('shutil.move'):
         cl.on_file_download(result_data, current_object=submission_db_object)
         mock_storage.mark_file_as_downloaded.assert_called_once_with(
             test_object_uuid, mock_session)
