@@ -426,6 +426,7 @@ class Client(QObject):
             sdk_object = sdclientapi.Reply(uuid=message.uuid)
             sdk_object.filename = message.filename
             sdk_object.source_uuid = source_db_object.uuid
+        self.set_status(_('Downloading {}'.format(sdk_object.filename)))
         self.call_api(func, self.on_file_download,
                       self.on_download_timeout, sdk_object, self.data_dir,
                       current_object=message)
@@ -450,6 +451,8 @@ class Client(QObject):
             # Refresh the current source conversation, bearing in mind
             # that the user may have navigated to another source.
             self.gui.show_conversation_for(self.gui.current_source)
+            self.set_status(
+                'Finished downloading {}'.format(current_object.filename))
         else:
             # Update the UI in some way to indicate a failure state.
             self.set_status("The file download failed. Please try again.")
