@@ -52,6 +52,7 @@ def test_ToolBar_set_logged_in_as():
     tb.logout.setVisible.assert_called_once_with(True)
     tb.refresh.setVisible.assert_called_once_with(True)
 
+
 def test_ToolBar_set_logged_out():
     """
     Ensure the UI reverts to the logged out state.
@@ -87,6 +88,7 @@ def test_ToolBar_on_logout_clicked():
     tb.on_logout_clicked()
     tb.controller.logout.assert_called_once_with()
 
+
 def test_ToolBar_on_refresh_clicked():
     """
     When refresh is clicked, the refresh logic from the controller is stated.
@@ -95,6 +97,7 @@ def test_ToolBar_on_refresh_clicked():
     tb.controller = mock.MagicMock()
     tb.on_refresh_clicked()
     tb.controller.sync_api.assert_called_once_with()
+
 
 def test_MainView_init():
     """

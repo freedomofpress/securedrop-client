@@ -88,7 +88,6 @@ class ToolBar(QWidget):
         self.logout.setVisible(False)
         self.refresh.setVisible(False)
 
-
     def on_login_clicked(self):
         """
         Called when the login button is clicked.
