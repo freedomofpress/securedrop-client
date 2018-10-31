@@ -7,10 +7,7 @@ from datetime import datetime
 import os
 import pytest
 import sdclientapi
-<<<<<<< HEAD
-=======
 import shutil
->>>>>>> master
 from securedrop_client import storage, models
 from securedrop_client.logic import APICallRunner, Client
 from unittest import mock

@@ -368,7 +368,8 @@ def test_FileWidget_init_left():
     source = models.Source('source-uuid', 'testy-mctestface', False,
                            'mah pub key', 1, False, datetime.now())
     submission = models.Submission(source, 'submission-uuid', 123,
-                                   'mah-reply.gpg')
+                                   'mah-reply.gpg',
+                                   'http://mah-server/mah-reply-url')
     submission.is_downloaded = True
 
     fw = FileWidget(source, submission, mock_controller, align='left')
@@ -388,7 +389,8 @@ def test_FileWidget_init_right():
     source = models.Source('source-uuid', 'testy-mctestface', False,
                            'mah pub key', 1, False, datetime.now())
     submission = models.Submission(source, 'submission-uuid', 123,
-                                   'mah-reply.gpg')
+                                   'mah-reply.gpg',
+                                   'http://mah-server/mah-reply-url')
     submission.is_downloaded = True
 
     fw = FileWidget(source, submission, mock_controller, align='right')
@@ -408,7 +410,8 @@ def test_FileWidget_mouseDoubleClickEvent():
     source = models.Source('source-uuid', 'testy-mctestface', False,
                            'mah pub key', 1, False, datetime.now())
     submission = models.Submission(source, 'submission-uuid', 123,
-                                   'mah-reply.gpg')
+                                   'mah-reply.gpg',
+                                   'http://mah-server/mah-reply-url')
     submission.is_downloaded = True
 
     fw = FileWidget(source, submission, mock_controller)

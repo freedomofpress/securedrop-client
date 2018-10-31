@@ -352,7 +352,7 @@ class Client(QObject):
         except Exception:
             return None
 
-    def on_synced(self, result, result_data):
+    def on_synced(self, result):
         """
         Called when syncronisation of data via the API is complete.
         """
@@ -390,7 +390,7 @@ class Client(QObject):
         self.gui.show_sources(sources)
         self.update_sync()
 
-    def on_update_star_complete(self, result, result_data):
+    def on_update_star_complete(self, result):
         """
         After we star or unstar a source, we should sync the API
         such that the local database is updated.
