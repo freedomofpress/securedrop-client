@@ -21,6 +21,7 @@ import logging
 import sdclientapi
 import shutil
 import arrow
+import uuid
 from securedrop_client import storage
 from securedrop_client import models
 from securedrop_client.utils import check_dir_permissions
@@ -62,7 +63,6 @@ class APICallRunner(QObject):
         Call the API. Emit a boolean signal to indicate the outcome of the
         call. Any return value or exception raised is stored in self.result.
         """
-
         # this blocks
         try:
             self.result = self.api_call(*self.args, **self.kwargs)
@@ -85,8 +85,6 @@ class Client(QObject):
     application, this is the controller.
     """
 
-    timeout_api_call = pyqtSignal()  # Indicates there was a timeout.
-
     def __init__(self, hostname, gui, session,
                  home: str, proxy: bool = True) -> None:
         """
@@ -102,7 +100,7 @@ class Client(QObject):
         self.gui = gui  # Reference to the UI window.
         self.api = None  # Reference to the API for secure drop proxy.
         self.session = session  # Reference to the SqlAlchemy session.
-        self.api_thread = None  # Currently active API call thread.
+        self.api_threads = {}  # Contains active threads calling the API.
         self.sync_flag = os.path.join(home, 'sync_flag')
         self.home = home  # The "home" directory for client files.
         self.data_dir = os.path.join(self.home, 'data')  # File data.
@@ -138,51 +136,91 @@ class Client(QObject):
                  **kwargs):
         """
         Calls the function in a non-blocking manner. Upon completion calls the
-        callback with the result. Calls timeout if the API call emits a
-        timeout signal. Any further arguments are passed to the function to be
-        called.
+        callback with the result. Calls timeout if the timer associated with
+        the call emits a timeout signal. Any further arguments are passed to
+        the function to be called.
         """
+        new_thread_id = str(uuid.uuid4())  # Uniquely id the new thread.
+        new_timer = QTimer()
+        new_timer.setSingleShot(True)
+        new_timer.start(20000)
 
-        if not self.api_thread:
-            self.timer = QTimer()
-            self.timer.timeout.connect(lambda: self.timeout_api_call.emit())
-            self.timer.setSingleShot(True)
-            self.timer.start(20000)
+        new_api_thread = QThread(self.gui)
+        new_api_runner = APICallRunner(function, current_object, *args,
+                                       **kwargs)
+        new_api_runner.moveToThread(new_api_thread)
+        # handle completed call: copy response data, reset the
+        # client, give the user-provided callback the response
+        # data
+        new_api_runner.call_finished.connect(
+            lambda: self.completed_api_call(new_thread_id, callback))
+        # we've started a timer. when that hits zero, call our
+        # timeout function
+        new_timer.timeout.connect(
+            lambda: self.timeout_cleanup(new_thread_id, timeout))
+        # when the thread starts, we want to run `call_api` on `api_runner`
+        new_api_thread.started.connect(new_api_runner.call_api)
+        # Add the thread related objects to the api_threads dictionary.
+        self.api_threads[new_thread_id] = {
+            'thread': new_api_thread,
+            'runner': new_api_runner,
+            'timer': new_timer,
+        }
+        # Start the thread and related activity.
+        new_api_thread.start()
 
-            self.api_thread = QThread(self.gui)
-            self.api_runner = APICallRunner(function, current_object, *args,
-                                            **kwargs)
-            self.api_runner.moveToThread(self.api_thread)
-
-            # handle completed call: copy response data, reset the
-            # client, give the user-provided callback the response
-            # data
-            self.api_runner.call_finished.connect(
-                lambda: self.completed_api_call(callback))
-
-            # we've started a timer. when that hits zero, call our
-            # timeout function
-            self.timeout_api_call.connect(
-                lambda: self.timeout_cleanup(timeout))
-
-            # when the thread starts, we want to run `call_api` on `api_runner`
-            self.api_thread.started.connect(self.api_runner.call_api)
-
-            self.api_thread.start()
-
-        else:
-            logger.info("Concurrent API requests are not implemented yet and "
-                        "an API request is already running.")
-
-    def call_reset(self):
+    def clean_thread(self, thread_id):
         """
-        Clean up this object's state after an API call.
+        Clean up the identified thread's state after an API call.
         """
-        if self.api_thread:
-            self.timeout_api_call.disconnect()
-            self.api_runner = None
-            self.api_thread = None
-            self.timer = None
+        if thread_id in self.api_threads:
+            timer = self.api_threads[thread_id]['timer']
+            timer.disconnect()
+            del(self.api_threads[thread_id])
+
+    def completed_api_call(self, thread_id, user_callback):
+        """
+        Manage a completed API call. The actual result *may* be an exception or
+        error result from the API. It's up to the handler (user_callback) to
+        handle these potential states.
+        """
+        logger.info("Completed API call. Cleaning up and running callback.")
+        if thread_id in self.api_threads:
+            thread_info = self.api_threads[thread_id]
+            runner = thread_info['runner']
+            timer = thread_info['timer']
+            timer.stop()
+            result_data = runner.result
+            # The callback may or may not have an associated current_object
+            if runner.current_object:
+                current_object = runner.current_object
+            else:
+                current_object = None
+            self.clean_thread(thread_id)
+            if current_object:
+                user_callback(result_data, current_object=current_object)
+            else:
+                user_callback(result_data)
+
+    def timeout_cleanup(self, thread_id, user_callback):
+        """
+        Clean up after the referenced thread has timed-out by setting some
+        flags and calling the passed user_callback.
+        """
+        logger.info("API call timed out. Cleaning up and running "
+                    "timeout callback.")
+        if thread_id in self.api_threads:
+            runner = self.api_threads[thread_id]['runner']
+            runner.i_timed_out = True
+            if runner.current_object:
+                current_object = runner.current_object
+            else:
+                current_object = None
+            self.clean_thread(thread_id)
+            if current_object:
+                user_callback(current_object=current_object)
+            else:
+                user_callback()
 
     def login(self, username, password, totp):
         """
@@ -193,12 +231,6 @@ class Client(QObject):
                                    password, totp, self.proxy)
         self.call_api(self.api.authenticate, self.on_authenticate,
                       self.on_login_timeout)
-
-    def on_cancel_timeout(self):
-        """
-        Handles a signal to indicate the timer should stop.
-        """
-        self.timer.stop()
 
     def on_authenticate(self, result):
         """
@@ -218,49 +250,6 @@ class Client(QObject):
             error = _('There was a problem signing in. '
                       'Please verify your credentials and try again.')
             self.gui.show_login_error(error=error)
-
-    def completed_api_call(self, user_callback):
-        """
-        Manage a completed API call. The actual result *may* be an exception or
-        error result from the API. It's up to the handler (user_callback) to
-        handle these potential states.
-        """
-        logger.info("Completed API call. Cleaning up and running callback.")
-
-        self.timer.stop()
-        result_data = self.api_runner.result
-
-        # The callback may or may not have an associated current_object
-        if self.api_runner.current_object:
-            current_object = self.api_runner.current_object
-        else:
-            current_object = None
-
-        self.call_reset()
-
-        if current_object:
-            user_callback(result_data, current_object=current_object)
-        else:
-            user_callback(result_data)
-
-    def timeout_cleanup(self, user_callback):
-        logger.info("API call timed out. Cleaning up and running "
-                    "timeout callback.")
-
-        if self.api_thread:
-            self.api_runner.i_timed_out = True
-
-            if self.api_runner.current_object:
-                current_object = self.api_runner.current_object
-            else:
-                current_object = None
-
-            self.call_reset()
-
-        if current_object:
-            user_callback(current_object=current_object)
-        else:
-            user_callback()
 
     def on_login_timeout(self):
         """
