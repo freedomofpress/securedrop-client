@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import logging
 import sdclientapi
+import shutil
 import arrow
 import copy
 from securedrop_client import storage
@@ -33,18 +34,26 @@ logger = logging.getLogger(__name__)
 class APICallRunner(QObject):
     """
     Used to call the SecureDrop API in a non-blocking manner. Will emit a
-    timeout signal after 5 seconds.
+    call_finished signal when a result becomes known. The caller should manage
+    the state of i_timed_out (a flag used to indicate the call to the API has
+    timed out).
+
+    See the call_api method of the Client class for how this is
+    done (hint: you should be using the call_api method and not directly
+    using this class).
     """
 
-    call_finished = pyqtSignal(bool)  # Indicates there is a result.
+    call_finished = pyqtSignal()  # Indicates there is a result.
 
-    def __init__(self, api_call, *args, **kwargs):
+    def __init__(self, api_call, current_object=None, *args, **kwargs):
         """
         Initialise with the function to call the API and any associated
-        args and kwargs.
+        args and kwargs. If current object is passed in, this represents some
+        state which the event handlers may need when they're eventually fired.
         """
         super().__init__()
         self.api_call = api_call
+        self.current_object = current_object
         self.args = args
         self.kwargs = kwargs
         self.result = None
@@ -59,18 +68,17 @@ class APICallRunner(QObject):
         # this blocks
         try:
             self.result = self.api_call(*self.args, **self.kwargs)
-            result_flag = bool(self.result)
         except Exception as ex:
             logger.error(ex)
             self.result = ex
-            result_flag = False
 
         # by the time we end up here, who knows how long it's taken
         # we may not want to emit this, if there's nothing to catch it
         if self.i_timed_out is False:
-            self.call_finished.emit(result_flag)
+            self.call_finished.emit()
         else:
-            logger.info("Huh, I am back from a remote API call and it seems like I timed out. Bye!")
+            logger.info("Thread returned from API call, "
+                        "but it had timed out.")  # pragma: no cover
 
 
 class Client(QObject):
@@ -79,7 +87,6 @@ class Client(QObject):
     application, this is the controller.
     """
 
-    # finish_api_call = pyqtSignal()  # Acknowledges reciept of an API call.
     timeout_api_call = pyqtSignal()  # Indicates there was a timeout.
 
     def __init__(self, hostname, gui, session, home: str) -> None:
@@ -102,7 +109,7 @@ class Client(QObject):
         self.sync_flag = os.path.join(home, 'sync_flag')
         self.home = home  # The "home" directory for client files.
         self.data_dir = os.path.join(self.home, 'data')  # File data.
-        self.timer = None # call timeout timer
+        self.timer = None  # call timeout timer
 
     def setup(self):
         """
@@ -124,8 +131,13 @@ class Client(QObject):
         self.sync_timer = QTimer()
         self.sync_timer.timeout.connect(self.update_sync)
         self.sync_timer.start(30000)
+        # Automagically sync with the API every 5 minutes.
+        self.sync_update = QTimer()
+        self.sync_update.timeout.connect(self.sync_api)
+        self.sync_update.start(1000 * 60 * 5)  # every 5 minutes.
 
-    def call_api(self, function, callback, timeout, *args, **kwargs):
+    def call_api(self, function, callback, timeout, *args, current_object=None,
+                 **kwargs):
         """
         Calls the function in a non-blocking manner. Upon completion calls the
         callback with the result. Calls timeout if the API call emits a
@@ -140,17 +152,20 @@ class Client(QObject):
             self.timer.start(20000)
 
             self.api_thread = QThread(self.gui)
-            self.api_runner = APICallRunner(function, *args, **kwargs)
+            self.api_runner = APICallRunner(function, current_object, *args,
+                                            **kwargs)
             self.api_runner.moveToThread(self.api_thread)
 
-            # handle successful call: copy response data, reset the
+            # handle completed call: copy response data, reset the
             # client, give the user-provided callback the response
             # data
-            self.api_runner.call_finished.connect(lambda r: self.successful_api_call(r, callback))
+            self.api_runner.call_finished.connect(
+                lambda: self.completed_api_call(callback))
 
             # we've started a timer. when that hits zero, call our
             # timeout function
-            self.timeout_api_call.connect(lambda: self.timeout_cleanup(timeout))
+            self.timeout_api_call.connect(
+                lambda: self.timeout_cleanup(timeout))
 
             # when the thread starts, we want to run `call_api` on `api_runner`
             self.api_thread.started.connect(self.api_runner.call_api)
@@ -158,7 +173,9 @@ class Client(QObject):
             self.api_thread.start()
 
         else:
-            logger.info("There's already an API request running, so I'm not going to ignore this one (XXX this may not be the coolest thing to do...)")
+            logger.info("Concurrent API requests are not implemented yet and "
+                        "an API request is already running.")
+
 
     def start_message_thread(self):
         """
@@ -188,7 +205,13 @@ class Client(QObject):
         create a new instance representing the SecureDrop api and authenticate.
         """
 
-        self.api = sdclientapi.API(self.hostname, username, password, totp, proxy=True)
+        # qubes
+        #self.api = sdclientapi.API(self.hostname, username,
+        #                           password, totp, proxy=True) # qubes
+
+        # not qubes
+        self.api = sdclientapi.API(self.hostname, username, password, totp)
+
 
         self.call_api(self.api.authenticate, self.on_authenticate,
                       self.on_login_timeout)
@@ -199,12 +222,12 @@ class Client(QObject):
         """
         self.timer.stop()
 
-    def on_authenticate(self, result, result_data):
+
+    def on_authenticate(self, result):
         """
         Handles the result of an authentication call against the API.
         """
-
-        if result:
+        if isinstance(result, bool) and result:
             # It worked! Sync with the API and update the UI.
             self.gui.hide_login()
             self.sync_api()
@@ -219,24 +242,48 @@ class Client(QObject):
             error = _('There was a problem logging in. Please try again.')
             self.gui.show_login_error(error=error)
 
-    def successful_api_call(self, r, user_callback):
-        logger.info("Hooray, successful API call. Cleaning up, then calling user function.")
+    def completed_api_call(self, user_callback):
+        """
+        Manage a completed API call. The actual result *may* be an exception or
+        error result from the API. It's up to the handler (user_callback) to
+        handle these potential states.
+        """
+        logger.info("Completed API call. Cleaning up and running callback.")
 
         self.timer.stop()
         result_data = self.api_runner.result
+
+        # The callback may or may not have an associated current_object
+        if self.api_runner.current_object:
+            current_object = self.api_runner.current_object
+        else:
+            current_object = None
+
         self.call_reset()
 
-        user_callback(r, result_data)
-
+        if current_object:
+            user_callback(result_data, current_object=current_object)
+        else:
+            user_callback(result_data)
 
     def timeout_cleanup(self, user_callback):
-        logger.info("API call timed out. Doing a cleanup, then calling user function.")
+        logger.info("API call timed out. Cleaning up and running "
+                    "timeout callback.")
 
         if self.api_thread:
             self.api_runner.i_timed_out = True
+
+            if self.api_runner.current_object:
+                current_object = self.api_runner.current_object
+            else:
+                current_object = None
+
             self.call_reset()
 
-        user_callback()
+        if current_object:
+            user_callback(current_object=current_object)
+        else:
+            user_callback()
 
     def on_login_timeout(self):
         """
@@ -249,12 +296,15 @@ class Client(QObject):
 
     def on_sync_timeout(self):
         """
-        Reset the form and indicate the error.
+        Indicate that a sync failed.
+
+        TODO: We don't really want to alert in the error bar _every time_
+        this happens. Instead, we should do something like: alert if there
+        have been many timeouts in a row.
         """
 
         error = _('The connection to SecureDrop timed out. Please try again.')
-        self.gui.show_login_error(error=error)
-
+        self.gui.update_error_status(error=error)
 
     def on_action_requiring_login(self):
         """
@@ -282,15 +332,15 @@ class Client(QObject):
         """
         Grab data from the remote SecureDrop API in a non-blocking manner.
         """
-        logger.info("In sync_api on thread {}".format(self.thread().currentThreadId()))
+        logger.debug("In sync_api on thread {}".format(
+            self.thread().currentThreadId()))
 
         if self.authenticated():
-            logger.info("You are authenticated, going to make your call")
+            logger.debug("You are authenticated, going to make your call")
             self.call_api(storage.get_remote_data, self.on_synced,
                           self.on_sync_timeout, self.api)
-            logger.info("In sync_api, after call to call_api, I'm in thread {}".format(self.thread().currentThreadId()))
-        else:
-            logger.info("It looks like you are not authenticated. Weird, isn't it.")
+            logger.debug("In sync_api, after call to call_api, on "
+                         "thread {}".format(self.thread().currentThreadId()))
 
     def last_sync(self):
         """
@@ -306,10 +356,9 @@ class Client(QObject):
         """
         Called when syncronisation of data via the API is complete.
         """
-
-        if result and isinstance(result_data, tuple):
+        if isinstance(result, tuple):
             remote_sources, remote_submissions, remote_replies = \
-                result_data
+                result
 
             storage.update_local_storage(self.session, remote_sources,
                                          remote_submissions,
@@ -348,8 +397,7 @@ class Client(QObject):
 
         TODO: Improve the push to server sync logic.
         """
-
-        if result:
+        if isinstance(result, bool) and result:  # result may be an exception.
             self.sync_api()  # Syncing the API also updates the source list UI
             self.gui.update_error_status("")
         else:
@@ -409,27 +457,37 @@ class Client(QObject):
             # Handle journalist's replies.
             func = self.api.download_reply
             sdk_object = sdclientapi.Reply(uuid=message.uuid)
-            sdk_object.filename = message.filename  # pragma: no cover
-            sdk_object.source_uuid = source_db_object.uuid  # pragma: no cover
+            sdk_object.filename = message.filename
+            sdk_object.source_uuid = source_db_object.uuid
         self.call_api(func, self.on_file_download,
-                      self.on_download_timeout, sdk_object, self.data_dir)
+                      self.on_download_timeout, sdk_object, self.data_dir,
+                      current_object=message)
 
-    def on_file_download(self, result, result_data):
+    def on_file_download(self, result, current_object):
         """
         Called when a file has downloaded. Cause a refresh to the conversation
         view to display the contents of the new file.
         """
-        sha256sum, filename = result_data
+        file_uuid = current_object.uuid
+        server_filename = current_object.filename
+        if isinstance(result, tuple):
+            sha256sum, filename = result
+            # The filename contains the location where the file has been
+            # stored. On non-Qubes OSes, this will be the data directory.
+            # On Qubes OS, this will a ~/QubesIncoming directory. In case
+            # we are on Qubes, we should move the file to the data directory
+            # and name it the same as the server (e.g. spotless-tater-msg.gpg).
+            shutil.move(filename, os.path.join(self.data_dir, server_filename))
+            storage.mark_file_as_downloaded(file_uuid, self.session)
 
-        if result:
-            storage.mark_file_as_downloaded(os.path.basename(filename),
-                                            self.session)
-            # Refresh the conversation with the content of the downloaded file.
+            # Refresh the current source conversation, bearing in mind
+            # that the user may have navigated to another source.
+            self.gui.show_conversation_for(self.gui.current_source)
         else:
             # Update the UI in some way to indicate a failure state.
             self.set_status("Failed to download file, please try again.")
 
-    def on_download_timeout(self):
+    def on_download_timeout(self, current_object):
         """
         Called when downloading a file has timed out.
         """

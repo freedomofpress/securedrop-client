@@ -487,19 +487,23 @@ class ConversationView(QWidget):
 
     def __init__(self, parent):
         super().__init__(parent)
-        container = QWidget()
+        self.container = QWidget()
         self.conversation_layout = QVBoxLayout()
-        container.setLayout(self.conversation_layout)
-        container.setStyleSheet("background-color: #fff;")
+        self.container.setLayout(self.conversation_layout)
+        self.container.setStyleSheet("background-color: #fff;")
 
-        scroll = QScrollArea()
-        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        scroll.setWidget(container)
-        scroll.setWidgetResizable(True)
+        self.scroll = QScrollArea()
+        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scroll.setWidget(self.container)
+        self.scroll.setWidgetResizable(True)
+        # Completely unintuitive way to ensure the view remains scrolled to the
+        # bottom.
+        sb = self.scroll.verticalScrollBar()
+        sb.rangeChanged.connect(self.move_to_bottom)
 
         main_layout = QVBoxLayout()
-        main_layout.addWidget(scroll)
+        main_layout.addWidget(self.scroll)
         self.setLayout(main_layout)
 
     def setup(self, controller):
@@ -515,6 +519,13 @@ class ConversationView(QWidget):
         self.conversation_layout.addWidget(
             FileWidget(source_db_object, submission_db_object,
                        self.controller))
+
+    def move_to_bottom(self, min_val, max_val):
+        """
+        Handler called when a new item is added to the conversation. Ensures
+        it's scrolled to the bottom and thus visible.
+        """
+        self.scroll.verticalScrollBar().setValue(max_val)
 
     def add_message(self, message):
         """

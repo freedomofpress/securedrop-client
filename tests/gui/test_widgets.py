@@ -434,6 +434,17 @@ def test_ConversationView_setup():
     assert cv.controller == mock_controller
 
 
+def test_ConversationView_move_to_bottom():
+    """
+    Check the signal handler sets the correct value for the scrollbar to be
+    the maximum possible value.
+    """
+    cv = ConversationView(None)
+    cv.scroll = mock.MagicMock()
+    cv.move_to_bottom(0, 6789)
+    cv.scroll.verticalScrollBar().setValue.assert_called_once_with(6789)
+
+
 def test_ConversationView_add_message():
     """
     Adding a message results in a new MessageWidget added to the layout.
