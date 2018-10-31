@@ -38,19 +38,19 @@ def test_ToolBar_setup():
 
 
 def test_ToolBar_set_logged_in_as():
-    """
-    Given a username, the user_state is updated and login/logout buttons are
-    in the correct state.
+    """Given a username, the user_state is updated and login/logout
+    buttons, and refresh buttons, are in the correct state.
     """
     tb = ToolBar(None)
     tb.user_state = mock.MagicMock()
     tb.login = mock.MagicMock()
     tb.logout = mock.MagicMock()
+    tb.refresh = mock.MagicMock()
     tb.set_logged_in_as('test')
     tb.user_state.setText.assert_called_once_with('Logged in as: test')
     tb.login.setVisible.assert_called_once_with(False)
     tb.logout.setVisible.assert_called_once_with(True)
-
+    tb.refresh.setVisible.assert_called_once_with(True)
 
 def test_ToolBar_set_logged_out():
     """
@@ -60,10 +60,12 @@ def test_ToolBar_set_logged_out():
     tb.user_state = mock.MagicMock()
     tb.login = mock.MagicMock()
     tb.logout = mock.MagicMock()
+    tb.refresh = mock.MagicMock()
     tb.set_logged_out()
     tb.user_state.setText.assert_called_once_with('Logged out.')
     tb.login.setVisible.assert_called_once_with(True)
     tb.logout.setVisible.assert_called_once_with(False)
+    tb.refresh.setVisible.assert_called_once_with(False)
 
 
 def test_ToolBar_on_login_clicked():
@@ -85,6 +87,14 @@ def test_ToolBar_on_logout_clicked():
     tb.on_logout_clicked()
     tb.controller.logout.assert_called_once_with()
 
+def test_ToolBar_on_refresh_clicked():
+    """
+    When refresh is clicked, the refresh logic from the controller is stated.
+    """
+    tb = ToolBar(None)
+    tb.controller = mock.MagicMock()
+    tb.on_refresh_clicked()
+    tb.controller.sync_api.assert_called_once_with()
 
 def test_MainView_init():
     """
