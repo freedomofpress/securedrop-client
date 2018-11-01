@@ -43,10 +43,10 @@ class ToolBar(QWidget):
         layout = QHBoxLayout(self)
         self.logo = QLabel()
         self.logo.setPixmap(load_image('header_logo.png'))
-        self.user_state = QLabel(_("Logged out."))
-        self.login = QPushButton(_('Sign In'))
+        self.user_state = QLabel(_("Signed out."))
+        self.login = QPushButton(_('Sign in'))
         self.login.clicked.connect(self.on_login_clicked)
-        self.logout = QPushButton(_('Log Out'))
+        self.logout = QPushButton(_('Sign out'))
         self.logout.clicked.connect(self.on_logout_clicked)
         self.logout.setVisible(False)
         self.refresh = QPushButton(_('Refresh'))
@@ -74,7 +74,7 @@ class ToolBar(QWidget):
         """
         Update the UI to reflect that the user is logged in as "username".
         """
-        self.user_state.setText(_('Logged in as: ' + username))
+        self.user_state.setText(_('Signed in as: ' + username))
         self.login.setVisible(False)
         self.logout.setVisible(True)
         self.refresh.setVisible(True)
@@ -83,7 +83,7 @@ class ToolBar(QWidget):
         """
         Update the UI to a logged out state.
         """
-        self.user_state.setText(_('Logged out.'))
+        self.user_state.setText(_('Signed out.'))
         self.login.setVisible(True)
         self.logout.setVisible(False)
         self.refresh.setVisible(False)
@@ -120,7 +120,7 @@ class MainView(QWidget):
         left_column = QWidget(parent=self)
         left_layout = QVBoxLayout()
         left_column.setLayout(left_layout)
-        self.status = QLabel(_('Waiting to Synchronize'))
+        self.status = QLabel(_('Waiting to refresh...'))
         self.error_status = QLabel('')
         self.error_status.setObjectName('error_label')
         left_layout.addWidget(self.status)
@@ -273,7 +273,7 @@ class LoginDialog(QDialog):
     def setup(self, controller):
         self.controller = controller
         self.setMinimumSize(600, 400)
-        self.setWindowTitle(_('Login to SecureDrop'))
+        self.setWindowTitle(_('Sign in to SecureDrop'))
         main_layout = QHBoxLayout()
         main_layout.addStretch()
         self.setLayout(main_layout)
@@ -282,7 +282,7 @@ class LoginDialog(QDialog):
         form.setLayout(layout)
         main_layout.addWidget(form)
         main_layout.addStretch()
-        self.title = QLabel(_('<h1>Sign In</h1>'))
+        self.title = QLabel(_('<h1>Sign in</h1>'))
         self.title.setTextFormat(Qt.RichText)
         self.instructions = QLabel(_('You may read all documents and messages '
                                      'shown here, without signing in. To '
@@ -301,10 +301,10 @@ class LoginDialog(QDialog):
         gutter = QWidget(self)
         gutter_layout = QHBoxLayout()
         gutter.setLayout(gutter_layout)
-        self.help_url = QLabel(_('<a href="#">Trouble Signing In?</a>'))
+        self.help_url = QLabel(_('<a href="#">Trouble signing in?</a>'))
         self.help_url.setTextFormat(Qt.RichText)
         self.help_url.setOpenExternalLinks(True)
-        self.submit = QPushButton(_('Sign In'))
+        self.submit = QPushButton(_('Sign in'))
         self.submit.clicked.connect(self.validate)
         gutter_layout.addWidget(self.help_url)
         gutter_layout.addWidget(self.submit)

@@ -193,8 +193,8 @@ def test_Client_on_authenticate_failed(safe_tmpdir):
     result_data = 'false'
     cl.on_authenticate(result_data)
     mock_gui.show_login_error.\
-        assert_called_once_with(error='There was a problem logging in. Please '
-                                'try again.')
+        assert_called_once_with(error='There was a problem signing in. Please '
+                                'verify your credentials and try again.')
 
 
 def test_Client_on_authenticate_ok(safe_tmpdir):
@@ -311,8 +311,8 @@ def test_Client_on_sync_timeout(safe_tmpdir):
     cl.on_sync_timeout()
     assert cl.api is not None
     mock_gui.update_error_status.\
-        assert_called_once_with(error='The connection to SecureDrop timed '
-                                'out. Please try again.')
+        assert_called_once_with(error='The connection to the SecureDrop '
+                                'server timed out. Please try again.')
 
 
 def test_Client_on_login_timeout(safe_tmpdir):
@@ -326,8 +326,8 @@ def test_Client_on_login_timeout(safe_tmpdir):
     cl.on_login_timeout()
     assert cl.api is None
     mock_gui.show_login_error.\
-        assert_called_once_with(error='The connection to SecureDrop timed '
-                                'out. Please try again.')
+        assert_called_once_with(error='The connection to the SecureDrop '
+                                'server timed out. Please try again.')
 
 
 def test_Client_on_action_requiring_login(safe_tmpdir):
@@ -340,7 +340,7 @@ def test_Client_on_action_requiring_login(safe_tmpdir):
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
     cl.on_action_requiring_login()
     mock_gui.update_error_status.assert_called_once_with(
-        'You must login to perform this action.')
+        'You must sign in to perform this action.')
 
 
 def test_Client_authenticated_yes(safe_tmpdir):
@@ -569,7 +569,7 @@ def test_Client_sidebar_action_timeout(safe_tmpdir):
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
     cl.on_sidebar_action_timeout()
     mock_gui.update_error_status.assert_called_once_with(
-        'The connection to SecureDrop timed out. Please try again.')
+        'The connection to the SecureDrop server timed out. Please try again.')
 
 
 def test_Client_on_update_star_success(safe_tmpdir):
@@ -734,7 +734,7 @@ def test_Client_on_file_download_failure(safe_tmpdir):
     submission_db_object.filename = 'filename'
     cl.on_file_download(result_data, current_object=submission_db_object)
     cl.set_status.assert_called_once_with(
-        "Failed to download file, please try again.")
+        "The file download failed. Please try again.")
 
 
 def test_Client_on_download_timeout(safe_tmpdir):
@@ -750,7 +750,7 @@ def test_Client_on_download_timeout(safe_tmpdir):
     cl.set_status = mock.MagicMock()
     cl.on_download_timeout(current_object)
     cl.set_status.assert_called_once_with(
-        "Connection to server timed out, please try again.")
+        "The connection to the SecureDrop server timed out. Please try again.")
 
 
 def test_Client_on_file_click_Reply(safe_tmpdir):

@@ -127,10 +127,10 @@ class Window(QMainWindow):
         Display a message indicating the data-sync state.
         """
         if updated_on:
-            self.main_view.status.setText('Last Sync: ' +
+            self.main_view.status.setText('Last refresh: ' +
                                           updated_on.humanize())
         else:
-            self.main_view.status.setText(_('Waiting to Synchronize'))
+            self.main_view.status.setText(_('Waiting to refresh...'))
 
     def set_logged_in_as(self, username):
         """
