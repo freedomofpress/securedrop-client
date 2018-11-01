@@ -49,7 +49,7 @@ class MessageSync(QObject):
         self.api = api
         self.home = home
 
-    def run(self):
+    def run(self, loop=True):
         while True:
             logger.info("Fetching messages...")
             submissions = storage.find_new_submissions(self.session)
@@ -94,4 +94,7 @@ class MessageSync(QObject):
 
                     # logger.info("Stored message at {}".format(out.name))
 
-            time.sleep(5)
+            if not loop:
+                break
+            else:
+                time.sleep(5) # pragma: no cover

@@ -181,7 +181,6 @@ class Client(QObject):
         """
         Starts the message-fetching thread in the background.
         """
-        return True
         if not self.message_thread:
             self.message_thread = QThread()
             self.message_sync = MessageSync(self.api, self.home)
@@ -432,7 +431,7 @@ class Client(QObject):
         state.
         """
         self.api = None
-        self.stop_message_thread()
+        # self.stop_message_thread()
         self.gui.logout()
 
     def set_status(self, message, duration=5000):

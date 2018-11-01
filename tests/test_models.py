@@ -18,7 +18,8 @@ def test_string_representation_of_submission():
                     is_flagged=False, public_key='test', interaction_count=1,
                     is_starred=False, last_updated='test')
     submission = Submission(source=source, uuid="test", size=123,
-                            filename="test.docx")
+                            filename="test.docx",
+                            download_url='http://test/test')
     submission.__repr__()
 
 
@@ -38,7 +39,8 @@ def test_source_collection():
                     is_flagged=False, public_key='test', interaction_count=1,
                     is_starred=False, last_updated='test')
     submission = Submission(source=source, uuid="test", size=123,
-                            filename="2-test.doc.gpg")
+                            filename="2-test.doc.gpg",
+                            download_url='http://test/test')
     user = User('hehe')
     reply = Reply(source=source, journalist=user, filename="1-reply.gpg",
                   size=1234, uuid='test')
