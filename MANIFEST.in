@@ -1,0 +1,15 @@
+include requirements.txt
+include README.md
+include LICENSE
+include setup.py
+include Pipfile
+include Pipfile.lock
+include files/alembic.ini
+include files/client.ini
+include files/securedrop-client
+
+recursive-include alembic *
+recursive-include securedrop_client *
+	
+recursive-exclude alembic *.pyc
+recursive-exclude securedrop_client *.pyc
