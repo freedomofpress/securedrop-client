@@ -454,7 +454,7 @@ def test_ConversationView_init():
     """
     Ensure the conversation view has a layout to add widgets to.
     """
-    cv = ConversationView(None)
+    cv = ConversationView(None, mock.MagicMock())
     assert isinstance(cv.conversation_layout, QVBoxLayout)
 
 
@@ -462,7 +462,7 @@ def test_ConversationView_setup():
     """
     Ensure the controller is set
     """
-    cv = ConversationView(None)
+    cv = ConversationView(None, mock.MagicMock())
     mock_controller = mock.MagicMock()
     cv.setup(mock_controller)
     assert cv.controller == mock_controller
@@ -473,7 +473,7 @@ def test_ConversationView_move_to_bottom():
     Check the signal handler sets the correct value for the scrollbar to be
     the maximum possible value.
     """
-    cv = ConversationView(None)
+    cv = ConversationView(None, mock.MagicMock())
     cv.scroll = mock.MagicMock()
     cv.move_to_bottom(0, 6789)
     cv.scroll.verticalScrollBar().setValue.assert_called_once_with(6789)
@@ -483,7 +483,7 @@ def test_ConversationView_add_message():
     """
     Adding a message results in a new MessageWidget added to the layout.
     """
-    cv = ConversationView(None)
+    cv = ConversationView(None, mock.MagicMock())
     cv.controller = mock.MagicMock()
     cv.conversation_layout = mock.MagicMock()
     cv.add_message('hello')
@@ -496,7 +496,7 @@ def test_ConversationView_add_reply():
     """
     Adding a reply results in a new ReplyWidget added to the layout.
     """
-    cv = ConversationView(None)
+    cv = ConversationView(None, mock.MagicMock())
     cv.controller = mock.MagicMock()
     cv.conversation_layout = mock.MagicMock()
     cv.add_reply('hello')
@@ -510,7 +510,7 @@ def test_ConversationView_add_downloaded_file():
     Adding a file results in a new FileWidget added to the layout with the
     proper QLabel.
     """
-    cv = ConversationView(None)
+    cv = ConversationView(None, mock.MagicMock())
     cv.controller = mock.MagicMock()
     cv.conversation_layout = mock.MagicMock()
     mock_source = mock.MagicMock()
@@ -531,7 +531,7 @@ def test_ConversationView_add_not_downloaded_file():
     Adding a file results in a new FileWidget added to the layout with the
     proper QLabel.
     """
-    cv = ConversationView(None)
+    cv = ConversationView(None, mock.MagicMock())
     cv.controller = mock.MagicMock()
     cv.conversation_layout = mock.MagicMock()
     mock_source = mock.MagicMock()
@@ -555,7 +555,7 @@ def test_CoversationView_setup():
     '''
     mock_controller = mock.MagicMock()
     mock_reply_box_setup = mock.MagicMock()
-    cv = ConversationView(None)
+    cv = ConversationView(None, mock.MagicMock())
     cv.reply_box.setup = mock_reply_box_setup
     cv.setup(mock_controller)
     mock_reply_box_setup.assert_called_once_with(cv)
