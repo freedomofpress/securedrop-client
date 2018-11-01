@@ -105,7 +105,6 @@ def test_MainView_init():
     """
     mv = MainView(None)
     assert isinstance(mv.source_list, SourceList)
-    assert isinstance(mv.filter_term, QLineEdit)
     assert isinstance(mv.view_holder, QWidget)
 
 
