@@ -214,7 +214,8 @@ class Client(QObject):
         else:
             # Failed to authenticate. Reset state with failure message.
             self.api = None
-            error = _('There was a problem logging in. Please try again.')
+            error = _('There was a problem signing in. '
+                      'Please verify your credentials and try again.')
             self.gui.show_login_error(error=error)
 
     def completed_api_call(self, user_callback):
@@ -266,7 +267,8 @@ class Client(QObject):
         """
 
         self.api = None
-        error = _('The connection to SecureDrop timed out. Please try again.')
+        error = _('The connection to the SecureDrop server timed out. '
+                  'Please try again.')
         self.gui.show_login_error(error=error)
 
     def on_sync_timeout(self):
@@ -278,14 +280,15 @@ class Client(QObject):
         have been many timeouts in a row.
         """
 
-        error = _('The connection to SecureDrop timed out. Please try again.')
+        error = _('The connection to the SecureDrop server timed out. '
+                  'Please try again.')
         self.gui.update_error_status(error=error)
 
     def on_action_requiring_login(self):
         """
         Indicate that a user needs to login to perform the specified action.
         """
-        error = _('You must login to perform this action.')
+        error = _('You must sign in to perform this action.')
         self.gui.update_error_status(error)
 
     def on_sidebar_action_timeout(self):
@@ -293,7 +296,8 @@ class Client(QObject):
         Indicate that a timeout occurred for an action occuring in the left
         sidebar.
         """
-        error = _('The connection to SecureDrop timed out. Please try again.')
+        error = _('The connection to the SecureDrop server timed out. '
+                  'Please try again.')
         self.gui.update_error_status(error)
 
     def authenticated(self):
@@ -458,11 +462,12 @@ class Client(QObject):
             self.gui.show_conversation_for(self.gui.current_source)
         else:
             # Update the UI in some way to indicate a failure state.
-            self.set_status("Failed to download file, please try again.")
+            self.set_status("The file download failed. Please try again.")
 
     def on_download_timeout(self, current_object):
         """
         Called when downloading a file has timed out.
         """
         # Update the status bar to indicate a failure state.
-        self.set_status("Connection to server timed out, please try again.")
+        self.set_status("The connection to the SecureDrop server timed out. "
+                        "Please try again.")
