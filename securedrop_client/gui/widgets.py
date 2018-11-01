@@ -26,6 +26,7 @@ from PyQt5.QtWidgets import (QListWidget, QTextEdit, QLabel, QToolBar, QAction,
                              QPlainTextEdit, QSpacerItem, QSizePolicy, QDialog)
 from securedrop_client.resources import load_svg, load_image
 from securedrop_client.utils import humanize_filesize
+from uuid import UUID
 
 
 logger = logging.getLogger(__name__)
@@ -492,8 +493,9 @@ class ConversationView(QWidget):
     Renders a conversation.
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent, source_uuid: UUID):
         super().__init__(parent)
+        self.source_uuid = source_uuid
         self.container = QWidget()
         self.conversation_layout = QVBoxLayout()
         self.container.setLayout(self.conversation_layout)
@@ -548,4 +550,5 @@ class ConversationView(QWidget):
         """
         Add a reply from a journalist.
         """
+        self.controller.reply_to_source(self.source_uuid, reply)
         self.conversation_layout.addWidget(ReplyWidget(reply))

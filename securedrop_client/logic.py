@@ -22,16 +22,16 @@ import logging
 import os
 import sdclientapi
 import shutil
-import uuid
 from sqlalchemy import event
 from securedrop_client import crypto
 from securedrop_client import storage
 from securedrop_client import models
-from securedrop_client.gpg import GpgHelper
 from securedrop_client.utils import check_dir_permissions, safe_mkdir
+from securedrop_client.gpg import GpgHelper
 from securedrop_client.data import Data
 from securedrop_client.message_sync import MessageSync, ReplySync
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess
+from uuid import UUID, uuid4
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +107,7 @@ class Client(QObject):
         self.hostname = hostname  # Location of the SecureDrop server.
         self.gui = gui  # Reference to the UI window.
         self.api = None  # Reference to the API for secure drop proxy.
-        self.gpg = GpgHelper(gpg_home)
+        self.gpg = GpgHelper(gpg_home, session)
         self.session = session  # Reference to the SqlAlchemy session.
         self.message_thread = None  # thread responsible for fetching messages
         self.reply_thread = None  # thread responsible for fetching replies
@@ -163,7 +163,7 @@ class Client(QObject):
         the call emits a timeout signal. Any further arguments are passed to
         the function to be called.
         """
-        new_thread_id = str(uuid.uuid4())  # Uniquely id the new thread.
+        new_thread_id = str(uuid4())  # Uniquely id the new thread.
         new_timer = QTimer()
         new_timer.setSingleShot(True)
         new_timer.start(20000)
@@ -385,7 +385,7 @@ class Client(QObject):
                 if source.key and source.key.get('type', None) == 'PGP':
                     pub_key = source.key.get('public', None)
                     if pub_key:
-                        self.gpg.import_key(pub_key)
+                        self.gpg.import_key(source.uuid, pub_key)
 
             # Set last sync flag.
             with open(self.sync_flag, 'w') as f:
@@ -561,3 +561,25 @@ class Client(QObject):
         # Update the status bar to indicate a failure state.
         self.set_status("The connection to the SecureDrop server timed out. "
                         "Please try again.")
+
+    def reply_to_source(self, source_uuid: UUID, message: str) -> None:
+        '''
+        Send a reply to a `Source`.
+        '''
+        if not self.api:  # Then we should tell the user they need to login.
+            self.on_action_requiring_login()
+            return
+        else:  # Clear the error status bar
+            self.gui.update_error_status("")
+
+        message = self.gpg.encrypt_to_source(source_uuid, message)
+
+        self.call_api(self.api.reply_source, self.on_reply_to_source,
+                      self.on_sidebar_action_timeout, None,
+                      source_uuid, message)
+
+    def on_reply_to_source(self, result) -> None:
+        pass
+
+    def on_reply_timeout(self) -> None:
+        self.set_status("Connection to server timed out, please try again.")

@@ -171,7 +171,7 @@ class Window(QMainWindow):
         Show conversation of messages and replies between a source and
         journalists.
         """
-        conversation = ConversationView(self)
+        conversation = ConversationView(self, source.uuid)
         conversation.setup(self.controller)
         conversation.add_message('Source name: {}'.format(
                                  source.journalist_designation))
