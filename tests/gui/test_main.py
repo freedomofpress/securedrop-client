@@ -129,7 +129,7 @@ def test_show_sync():
     w.main_view = mock.MagicMock()
     updated_on = mock.MagicMock()
     w.show_sync(updated_on)
-    w.main_view.status.setText.assert_called_once_with('Last Sync: ' +
+    w.main_view.status.setText.assert_called_once_with('Last refresh: ' +
                                                        updated_on.humanize())
 
 
@@ -141,7 +141,7 @@ def test_show_sync_no_sync():
     w.main_view = mock.MagicMock()
     w.show_sync(None)
     w.main_view.status.setText.\
-        assert_called_once_with('Waiting to Synchronize')
+        assert_called_once_with('Waiting to refresh...')
 
 
 def test_set_logged_in_as():

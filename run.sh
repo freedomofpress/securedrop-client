@@ -17,13 +17,13 @@ done
 
 SDC_HOME=${SDC_HOME:-$(mktemp -d)}
 
+export SDC_HOME
+
+chmod 0700 $SDC_HOME
+
 echo "Running app with home directory: $SDC_HOME"
 
 # create the database for local testing
+./createdb.py $SDC_HOME
 
-python - << EOF
-from securedrop_client.models import Base, make_engine
-Base.metadata.create_all(make_engine("$SDC_HOME"))
-EOF
-
-exec python -m securedrop_client --sdc-home "$SDC_HOME" $@
+exec python -m securedrop_client --sdc-home "$SDC_HOME" --no-proxy $@

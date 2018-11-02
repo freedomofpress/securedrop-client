@@ -21,7 +21,7 @@ def test_ToolBar_init():
     Ensure the ToolBar instance is correctly set up.
     """
     tb = ToolBar(None)
-    assert "Logged out." in tb.user_state.text()
+    assert "Signed out." in tb.user_state.text()
 
 
 def test_ToolBar_setup():
@@ -47,7 +47,7 @@ def test_ToolBar_set_logged_in_as():
     tb.logout = mock.MagicMock()
     tb.refresh = mock.MagicMock()
     tb.set_logged_in_as('test')
-    tb.user_state.setText.assert_called_once_with('Logged in as: test')
+    tb.user_state.setText.assert_called_once_with('Signed in as: test')
     tb.login.setVisible.assert_called_once_with(False)
     tb.logout.setVisible.assert_called_once_with(True)
     tb.refresh.setVisible.assert_called_once_with(True)
@@ -63,7 +63,7 @@ def test_ToolBar_set_logged_out():
     tb.logout = mock.MagicMock()
     tb.refresh = mock.MagicMock()
     tb.set_logged_out()
-    tb.user_state.setText.assert_called_once_with('Logged out.')
+    tb.user_state.setText.assert_called_once_with('Signed out.')
     tb.login.setVisible.assert_called_once_with(True)
     tb.logout.setVisible.assert_called_once_with(False)
     tb.refresh.setVisible.assert_called_once_with(False)
@@ -105,7 +105,6 @@ def test_MainView_init():
     """
     mv = MainView(None)
     assert isinstance(mv.source_list, SourceList)
-    assert isinstance(mv.filter_term, QLineEdit)
     assert isinstance(mv.view_holder, QWidget)
 
 
@@ -234,7 +233,7 @@ def test_LoginDialog_setup():
     ld = LoginDialog(None)
     ld.setup(mock_controller)
     assert ld.controller == mock_controller
-    assert ld.title.text() == '<h1>Sign In</h1>'
+    assert ld.title.text() == '<h1>Sign in</h1>'
 
 
 def test_LoginDialog_reset():

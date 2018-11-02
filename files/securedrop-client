@@ -1,0 +1,11 @@
+#!/bin/sh
+
+mkdir -p ~/.securedrop_client
+chmod 0700 ~/.securedrop_client
+cd /opt/venvs/securedrop-client
+
+# Now let us try to run alembic first
+./bin/alembic -c /usr/share/securedrop-client/alembic.ini upgrade head
+
+# Now execute the actual client
+./bin/sd-client

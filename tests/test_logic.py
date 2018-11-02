@@ -56,18 +56,6 @@ def test_APICallRunner_with_exception():
     cr.call_finished.emit.assert_called_once_with()
 
 
-def test_Client_on_cancel_timeout(safe_tmpdir):
-    """
-    Ensure the timer's stop method is called.
-    """
-    mock_gui = mock.MagicMock()
-    mock_session = mock.MagicMock()
-    cl = Client('http://localhost/', mock_gui, mock_session, str(safe_tmpdir))
-    cl.timer = mock.MagicMock()
-    cl.on_cancel_timeout()
-    cl.timer.stop.assert_called_once_with()
-
-
 def test_Client_init(safe_tmpdir):
     """
     The passed in gui, app and session instances are correctly referenced and,
@@ -79,7 +67,7 @@ def test_Client_init(safe_tmpdir):
     assert cl.hostname == 'http://localhost/'
     assert cl.gui == mock_gui
     assert cl.session == mock_session
-    assert cl.api_thread is None
+    assert cl.api_threads == {}
 
 
 def test_Client_setup(safe_tmpdir):
@@ -111,19 +99,6 @@ def test_Client_start_message_thread(safe_tmpdir):
         cl.message_thread.start.assert_called_once_with()
 
 
-def test_Client_call_api_existing_thread(safe_tmpdir):
-    """
-    The client will ignore attempt to call API if an existing request is in
-    progress.
-    """
-    mock_gui = mock.MagicMock()
-    mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
-    cl.api_thread = True
-    cl.call_api(mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
-    assert cl.api_thread is True
-
-
 def test_Client_call_api(safe_tmpdir):
     """
     A new thread and APICallRunner is created / setup.
@@ -141,44 +116,49 @@ def test_Client_call_api(safe_tmpdir):
         mock_timeout = mock.MagicMock()
         cl.call_api(mock_api_call, mock_callback, mock_timeout, 'foo',
                     bar='baz')
-        cl.api_thread.started.connect.\
-            assert_called_once_with(cl.api_runner.call_api)
-        cl.api_thread.start.assert_called_once_with()
-        cl.api_runner.moveToThread.assert_called_once_with(cl.api_thread)
-        cl.timer.timeout.connect.call_count == 1
-        cl.api_runner.call_finished.connect.call_count == 1
-        cl.finish_api_call.connect(cl.api_runner.on_cancel_timeout)
+    assert len(cl.api_threads) == 1
+    thread_info = cl.api_threads[list(cl.api_threads.keys())[0]]
+    thread = thread_info['thread']
+    runner = thread_info['runner']
+    timer = thread_info['timer']
+    thread.started.connect.assert_called_once_with(runner.call_api)
+    thread.start.assert_called_once_with()
+    runner.moveToThread.assert_called_once_with(thread)
+    timer.timeout.connect.call_count == 1
+    runner.call_finished.connect.call_count == 1
 
 
-def test_Client_call_reset_no_thread(safe_tmpdir):
+def test_Client_clean_thread_no_thread(safe_tmpdir):
     """
-    The client will ignore an attempt to reset an API call is there's no such
+    The client will ignore an attempt to reset an API call if there's no such
     call "in flight".
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
     cl.finish_api_call = mock.MagicMock()
-    cl.api_thread = None
-    cl.call_reset()
-    assert cl.finish_api_call.emit.call_count == 0
+    cl.api_threads = {'a': 'b'}
+    cl.clean_thread('foo')
+    assert len(cl.api_threads) == 1
 
 
-def test_Client_call_reset(safe_tmpdir):
+def test_Client_clean_thread(safe_tmpdir):
     """
-    Call reset emits the expected signal and resets the state of client
-    attributes.
+    Cleaning up an existing thread disconnects the timer and removes it from
+    the api_threads collection.
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
-    cl.timeout_api_call = mock.MagicMock()
-    cl.api_thread = True
-    cl.call_reset()
-    assert cl.timeout_api_call.disconnect.call_count == 1
-    assert cl.api_runner is None
-    assert cl.api_thread is None
-    assert cl.timer is None
+    mock_timer = mock.MagicMock()
+    cl.api_threads = {
+        'foo': {
+            'timer': mock_timer,
+        }
+    }
+    cl.clean_thread('foo')
+    assert mock_timer.disconnect.call_count == 1
+    assert 'foo' not in cl.api_threads
 
 
 def test_Client_login(safe_tmpdir):
@@ -208,8 +188,8 @@ def test_Client_on_authenticate_failed(safe_tmpdir):
     result_data = 'false'
     cl.on_authenticate(result_data)
     mock_gui.show_login_error.\
-        assert_called_once_with(error='There was a problem logging in. Please '
-                                'try again.')
+        assert_called_once_with(error='There was a problem signing in. Please '
+                                'verify your credentials and try again.')
 
 
 def test_Client_on_authenticate_ok(safe_tmpdir):
@@ -239,19 +219,24 @@ def test_Client_completed_api_call_without_current_object(safe_tmpdir):
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
-    cl.timer = mock.MagicMock()
-    cl.api_thread = mock.MagicMock()
-    cl.api_runner = mock.MagicMock()
-    cl.api_runner.current_object = None
-    cl.call_reset = mock.MagicMock()
+    mock_thread = mock.MagicMock()
+    mock_runner = mock.MagicMock()
+    mock_runner.result = 'result'
+    mock_runner.current_object = None
+    mock_timer = mock.MagicMock()
+    cl.api_threads = {
+        'thread_uuid': {
+            'thread': mock_thread,
+            'runner': mock_runner,
+            'timer': mock_timer,
+        }
+    }
+    cl.clean_thread = mock.MagicMock()
     mock_user_callback = mock.MagicMock()
-    cl.result = mock.MagicMock()
-
-    cl.completed_api_call(mock_user_callback)
-
-    cl.call_reset.assert_called_once_with()
-    mock_user_callback.call_count == 1
-    cl.timer.stop.assert_called_once_with()
+    cl.completed_api_call('thread_uuid', mock_user_callback)
+    cl.clean_thread.assert_called_once_with('thread_uuid')
+    mock_user_callback.assert_called_once_with('result')
+    mock_timer.stop.assert_called_once_with()
 
 
 def test_Client_completed_api_call_with_current_object(safe_tmpdir):
@@ -262,19 +247,25 @@ def test_Client_completed_api_call_with_current_object(safe_tmpdir):
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
-    cl.timer = mock.MagicMock()
-    cl.api_thread = mock.MagicMock()
-    cl.api_runner = mock.MagicMock()
-    cl.api_runner.current_object = mock.MagicMock()
-    cl.call_reset = mock.MagicMock()
+    mock_thread = mock.MagicMock()
+    mock_runner = mock.MagicMock()
+    mock_runner.result = 'result'
+    mock_runner.current_object = 'current_object'
+    mock_timer = mock.MagicMock()
+    cl.api_threads = {
+        'thread_uuid': {
+            'thread': mock_thread,
+            'runner': mock_runner,
+            'timer': mock_timer,
+        }
+    }
+    cl.clean_thread = mock.MagicMock()
     mock_user_callback = mock.MagicMock()
-    cl.result = mock.MagicMock()
-
-    cl.completed_api_call(mock_user_callback)
-
-    cl.call_reset.assert_called_once_with()
-    mock_user_callback.call_count == 1
-    cl.timer.stop.assert_called_once_with()
+    cl.completed_api_call('thread_uuid', mock_user_callback)
+    cl.clean_thread.assert_called_once_with('thread_uuid')
+    mock_user_callback.assert_called_once_with('result',
+                                               current_object='current_object')
+    mock_timer.stop.assert_called_once_with()
 
 
 def test_Client_timeout_cleanup_without_current_object(safe_tmpdir):
@@ -284,17 +275,23 @@ def test_Client_timeout_cleanup_without_current_object(safe_tmpdir):
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
-    cl.api_thread = mock.MagicMock()
-    cl.api_runner = mock.MagicMock()
-    cl.api_runner.current_object = None
-    cl.call_reset = mock.MagicMock()
+    mock_thread = mock.MagicMock()
+    mock_runner = mock.MagicMock()
+    mock_runner.current_object = None
+    mock_timer = mock.MagicMock()
+    cl.api_threads = {
+        'thread_uuid': {
+            'thread': mock_thread,
+            'runner': mock_runner,
+            'timer': mock_timer,
+        }
+    }
+    cl.clean_thread = mock.MagicMock()
     mock_user_callback = mock.MagicMock()
-
-    cl.timeout_cleanup(mock_user_callback)
-
-    assert cl.api_runner.i_timed_out is True
-    cl.call_reset.assert_called_once_with()
-    mock_user_callback.call_count == 1
+    cl.timeout_cleanup('thread_uuid', mock_user_callback)
+    assert mock_runner.i_timed_out is True
+    cl.clean_thread.assert_called_once_with('thread_uuid')
+    mock_user_callback.assert_called_once_with()
 
 
 def test_Client_timeout_cleanup_with_current_object(safe_tmpdir):
@@ -304,17 +301,23 @@ def test_Client_timeout_cleanup_with_current_object(safe_tmpdir):
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
-    cl.api_thread = mock.MagicMock()
-    cl.api_runner = mock.MagicMock()
-    cl.api_runner.current_object = mock.MagicMock()
-    cl.call_reset = mock.MagicMock()
+    mock_thread = mock.MagicMock()
+    mock_runner = mock.MagicMock()
+    mock_runner.current_object = 'current_object'
+    mock_timer = mock.MagicMock()
+    cl.api_threads = {
+        'thread_uuid': {
+            'thread': mock_thread,
+            'runner': mock_runner,
+            'timer': mock_timer,
+        }
+    }
+    cl.clean_thread = mock.MagicMock()
     mock_user_callback = mock.MagicMock()
-
-    cl.timeout_cleanup(mock_user_callback)
-
-    assert cl.api_runner.i_timed_out is True
-    cl.call_reset.assert_called_once_with()
-    mock_user_callback.call_count == 1
+    cl.timeout_cleanup('thread_uuid', mock_user_callback)
+    assert mock_runner.i_timed_out is True
+    cl.clean_thread.assert_called_once_with('thread_uuid')
+    mock_user_callback.assert_called_once_with(current_object='current_object')
 
 
 def test_Client_on_sync_timeout(safe_tmpdir):
@@ -328,8 +331,8 @@ def test_Client_on_sync_timeout(safe_tmpdir):
     cl.on_sync_timeout()
     assert cl.api is not None
     mock_gui.update_error_status.\
-        assert_called_once_with(error='The connection to SecureDrop timed '
-                                'out. Please try again.')
+        assert_called_once_with(error='The connection to the SecureDrop '
+                                'server timed out. Please try again.')
 
 
 def test_Client_on_login_timeout(safe_tmpdir):
@@ -343,8 +346,8 @@ def test_Client_on_login_timeout(safe_tmpdir):
     cl.on_login_timeout()
     assert cl.api is None
     mock_gui.show_login_error.\
-        assert_called_once_with(error='The connection to SecureDrop timed '
-                                'out. Please try again.')
+        assert_called_once_with(error='The connection to the SecureDrop '
+                                'server timed out. Please try again.')
 
 
 def test_Client_on_action_requiring_login(safe_tmpdir):
@@ -357,7 +360,7 @@ def test_Client_on_action_requiring_login(safe_tmpdir):
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
     cl.on_action_requiring_login()
     mock_gui.update_error_status.assert_called_once_with(
-        'You must login to perform this action.')
+        'You must sign in to perform this action.')
 
 
 def test_Client_authenticated_yes(safe_tmpdir):
@@ -586,7 +589,7 @@ def test_Client_sidebar_action_timeout(safe_tmpdir):
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
     cl.on_sidebar_action_timeout()
     mock_gui.update_error_status.assert_called_once_with(
-        'The connection to SecureDrop timed out. Please try again.')
+        'The connection to the SecureDrop server timed out. Please try again.')
 
 
 def test_Client_on_update_star_success(safe_tmpdir):
@@ -750,7 +753,7 @@ def test_Client_on_file_download_failure(safe_tmpdir):
     submission_db_object.filename = 'filename'
     cl.on_file_download(result_data, current_object=submission_db_object)
     cl.set_status.assert_called_once_with(
-        "Failed to download file, please try again.")
+        "The file download failed. Please try again.")
 
 
 def test_Client_on_download_timeout(safe_tmpdir):
@@ -766,7 +769,7 @@ def test_Client_on_download_timeout(safe_tmpdir):
     cl.set_status = mock.MagicMock()
     cl.on_download_timeout(current_object)
     cl.set_status.assert_called_once_with(
-        "Connection to server timed out, please try again.")
+        "The connection to the SecureDrop server timed out. Please try again.")
 
 
 # This can be unfailed when this SDK change is merged and released:

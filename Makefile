@@ -32,6 +32,6 @@ pyflakes:
 	find . \( -name _build -o -name var -o -path ./docs -o -path \) -type d -prune -o -name '*.py' -print0 | $(XARGS) pyflakes
 
 pycodestyle:
-	find . \( -name _build -o -name var \) -type d -prune -o -name '*.py' -print0 | $(XARGS) -n 1 pycodestyle --repeat --exclude=build/*,docs/*,.vscode/* --ignore=E731,E402,W504
+	find . \( -name _build -o -name var \) -type d -prune -o -name '*.py' -print0 | $(XARGS) -n 1 pycodestyle --repeat --exclude=build/*,docs/*,.vscode/*,setup.py --ignore=E731,E402,W504
 
 check: clean pycodestyle pyflakes test
