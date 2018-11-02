@@ -15,6 +15,25 @@ def make_engine(home: str):
     return create_engine('sqlite:///{}'.format(db_path))
 
 
+class WithContent():
+
+    def __init__(self):
+        self.data = None
+
+    @property
+    def content(self):
+        if self.is_downloaded:
+            fn_no_ext, _ = os.path.splitext(self.filename)
+            content = None
+            try:
+                content = self.data.get(fn_no_ext)
+            except Exception as ex:
+                content = "<Could not open message content: {}>".format(ex)
+
+            return content
+        else:
+            return "<Message not yet downloaded>"
+
 class Source(Base):
     __tablename__ = 'sources'
     id = Column(Integer, primary_key=True)
@@ -50,7 +69,7 @@ class Source(Base):
         return collection
 
 
-class Submission(Base):
+class Submission(Base, WithContent):
     __tablename__ = 'submissions'
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
@@ -70,21 +89,13 @@ class Submission(Base):
                                           cascade="delete"))
 
     def __init__(self, source, uuid, size, filename, download_url):
-        self.data = Data()
+        self.data = None
         self.source_id = source.id
         self.uuid = uuid
         self.size = size
         self.filename = filename
         self.download_url = download_url
 
-    @property
-    def content(self):
-        if self.is_downloaded:
-            data = Data()
-            fn_no_ext, _ = os.path.splitext(self.filename)
-            return data.get(fn_no_ext)
-        else:
-            return None
 
 
     def __repr__(self):
@@ -108,7 +119,6 @@ class Reply(Base):
     size = Column(Integer, nullable=False)
 
     def __init__(self, uuid, journalist, source, filename, size):
-        self.data = Data()
         self.uuid = uuid
         self.journalist_id = journalist.id
         self.source_id = source.id

@@ -23,11 +23,14 @@ import shutil
 import arrow
 import copy
 import uuid
+from sqlalchemy import event
 from securedrop_client import storage
 from securedrop_client import models
 from securedrop_client.utils import check_dir_permissions
+from securedrop_client.data import Data
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer
 from securedrop_client.message_sync import MessageSync
+
 
 logger = logging.getLogger(__name__)
 
@@ -135,6 +138,16 @@ class Client(QObject):
         self.sync_update = QTimer()
         self.sync_update.timeout.connect(self.sync_api)
         self.sync_update.start(1000 * 60 * 5)  # every 5 minutes.
+
+        event.listen(models.Submission, 'load', self.on_object_loaded)
+        event.listen(models.Submission, 'init', self.on_object_instantiated)
+
+    def on_object_instantiated(self, target, args, kwargs):
+        target.data = Data(self.data_dir)
+
+    def on_object_loaded(self, target, context):
+        target.data = Data(self.data_dir)
+
 
     def call_api(self, function, callback, timeout, *args, current_object=None,
                  **kwargs):
