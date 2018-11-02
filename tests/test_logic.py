@@ -362,7 +362,6 @@ def test_Client_on_login_timeout(safe_tmpdir):
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
-    cl.call_reset = mock.MagicMock()
     cl.on_login_timeout()
     assert cl.api is None
     mock_gui.show_login_error.\
@@ -498,7 +497,6 @@ def test_Client_on_synced_with_result(safe_tmpdir):
     cl.update_sources = mock.MagicMock()
     cl.api_runner = mock.MagicMock()
     result_data = ([], 'submissions', 'replies')
-    cl.call_reset = mock.MagicMock()
     with mock.patch('securedrop_client.logic.storage') as mock_storage, \
             mock.patch('securedrop_client.logic.GpgHelper'):
         cl.on_synced(result_data)
@@ -621,7 +619,6 @@ def test_Client_on_update_star_success(safe_tmpdir):
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
     result = True
-    cl.call_reset = mock.MagicMock()
     cl.sync_api = mock.MagicMock()
     cl.on_update_star_complete(result)
     cl.sync_api.assert_called_once_with()
@@ -637,7 +634,6 @@ def test_Client_on_update_star_failed(safe_tmpdir):
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
     result = Exception('boom')
-    cl.call_reset = mock.MagicMock()
     cl.sync_api = mock.MagicMock()
     cl.on_update_star_complete(result)
     cl.sync_api.assert_not_called()
@@ -746,7 +742,6 @@ def test_Client_on_file_downloaded_success(safe_tmpdir):
     cl.api_runner = mock.MagicMock()
     test_filename = "my-file-location-msg.gpg"
     test_object_uuid = 'uuid-of-downloaded-object'
-    cl.call_reset = mock.MagicMock()
     result_data = ('this-is-a-sha256-sum', test_filename)
     submission_db_object = mock.MagicMock()
     submission_db_object.uuid = test_object_uuid
@@ -769,7 +764,6 @@ def test_Client_on_file_downloaded_api_failure(safe_tmpdir):
     cl.api_runner = mock.MagicMock()
     test_filename = "my-file-location-msg.gpg"
     cl.api_runner.result = ("", test_filename)
-    cl.call_reset = mock.MagicMock()
     cl.set_status = mock.MagicMock()
     result_data = Exception('error message')
     submission_db_object = mock.MagicMock()
@@ -811,7 +805,6 @@ def test_Client_on_download_timeout(safe_tmpdir):
     current_object = mock.MagicMock()
     test_filename = "my-file-location-msg.gpg"
     cl.api_runner.result = ("", test_filename)
-    cl.call_reset = mock.MagicMock()
     cl.set_status = mock.MagicMock()
     cl.on_download_timeout(current_object)
     cl.set_status.assert_called_once_with(
