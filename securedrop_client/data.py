@@ -14,13 +14,13 @@ class Data:
             Data.__instance.home = home
             return Data.__instance
 
-        if Data.__instance is None and home is None:
+        if Data.__instance is None and home is None: # pragma: no cover
             raise Exception('Data class must be instantiated with the home path initially!')
 
         if home is None:
             return Data.__instance
 
-        logger.warn("Unusual pattern: resetting home path of Data singleton")
+        logger.warning("Unusual pattern: resetting home path of Data singleton")
         Data.__instance.home = home
         return Data.__instance
 

@@ -38,14 +38,15 @@ def test_MessageSync_run_success():
             mock.patch('subprocess.call',
                        return_value=0), \
             mock.patch('shutil.move') as mock_move, \
+            mock.patch('shutil.copy') as mock_copy, \
             mock.patch('os.unlink') as mock_unlink, \
             mock.patch(
               'securedrop_client.message_sync.storage.mark_file_as_downloaded' \
             ) as mock_mark_as_dl, \
             mock.patch(
                 'tempfile.NamedTemporaryFile',
-                return_value=fh) as mock_temp_file:
-
+                return_value=fh) as mock_temp_file, \
+            mock.patch('builtins.open', mock.mock_open(read_data="blah")):
 
         api = mock.MagicMock()
         home = "/home/user/.sd"
@@ -72,13 +73,15 @@ def test_MessageSync_run_success():
             mock.patch('subprocess.call',
                        return_value=0), \
             mock.patch('shutil.move') as mock_move, \
+            mock.patch('shutil.copy') as mock_copy, \
             mock.patch('os.unlink') as mock_unlink, \
             mock.patch(
               'securedrop_client.message_sync.storage.mark_file_as_downloaded' \
             ) as mock_mark_as_dl, \
             mock.patch(
                 'tempfile.NamedTemporaryFile',
-                return_value=fh) as mock_temp_file:
+                return_value=fh) as mock_temp_file, \
+            mock.patch('builtins.open', mock.mock_open(read_data="blah")):
 
 
         api = mock.MagicMock()
@@ -106,13 +109,15 @@ def test_MessageSync_run_failure():
             mock.patch('subprocess.call',
                        return_value=1), \
             mock.patch('shutil.move') as mock_move, \
+            mock.patch('shutil.copy') as mock_copy, \
             mock.patch('os.unlink') as mock_unlink, \
             mock.patch(
               'securedrop_client.message_sync.storage.mark_file_as_downloaded' \
             ) as mock_mark_as_dl, \
             mock.patch(
                 'tempfile.NamedTemporaryFile',
-                return_value=fh) as mock_temp_file:
+                return_value=fh) as mock_temp_file, \
+            mock.patch('builtins.open', mock.mock_open(read_data="blah")):
 
 
         api = mock.MagicMock()
