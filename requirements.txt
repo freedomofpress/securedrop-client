@@ -1,0 +1,15 @@
+alembic==1.0.2
+arrow==0.12.1
+certifi==2018.10.15
+chardet==3.0.4
+idna==2.7
+mako==1.0.7
+markupsafe==1.0
+pathlib2==2.3.2
+python-dateutil==2.7.5
+python-editor==1.0.3
+requests==2.20.0
+securedrop-sdk==0.0.3
+six==1.11.0
+sqlalchemy==1.2.13
+urllib3==1.24
