@@ -1,10 +1,10 @@
-./localwheels/Werkzeug-0.14.1-py2.py3-none-any.whl --hash=sha256:e224b7be15904cc4fbfdcd0d13dff5c7500d026e634af48c85766d5362fa7b36
-./localwheels/PyYAML-3.13-cp35-cp35m-linux_x86_64.whl --hash=sha256:da7175daaeff8a86a56cc398fb6628d3c3a6965f282789c2c9898e274e4691cd
-./localwheels/chardet-3.0.4-py2.py3-none-any.whl --hash=sha256:e22445af14d9591037e995ee6c59a68b8d7df85b9a47b49a4b28d8601c405ff3
-./localwheels/requests-2.19.1-py2.py3-none-any.whl --hash=sha256:ed6aedaa095be7005b77b157936338883144d9b9c41cbe7665523a313343cca8
-./localwheels/idna-2.7-py2.py3-none-any.whl --hash=sha256:6e8569c478f0343de79c76418c80b7cd13dc93631ede79225dd1314bc8eaf2ed
-./localwheels/urllib3-1.23-py2.py3-none-any.whl --hash=sha256:fc12686dea2604ce4967c45f6aabaf102016320020fd68175f4b0914e017aca5
-./localwheels/orderedmultidict-1.0-py3-none-any.whl --hash=sha256:0519055d46a45f8b44a950f97a8fa7c36f8c5adeb44f3f1a0910a674c95ffbc9
-./localwheels/furl-1.2.1-py3-none-any.whl --hash=sha256:af82dc925eb94ec60fd7ab06ab7ba11209d1dc40a7ee3fa8c9e9c08c6889c94f
-./localwheels/six-1.11.0-py2.py3-none-any.whl --hash=sha256:c2dac6747d031463c7d5873d1ea5d43d4c20ce888f4762d457908f567997c670
-./localwheels/certifi-2018.8.24-py2.py3-none-any.whl --hash=sha256:d232833167262107f3aa658b00e1051d31a6ec095669710eeb8f8f8c888033f9
+certifi==2018.10.15
+chardet==3.0.4
+furl==2.0.0
+idna==2.7
+orderedmultidict==1.0
+pyyaml==3.13
+requests==2.20.0
+six==1.11.0
+urllib3==1.24.1
+werkzeug==0.14.1
