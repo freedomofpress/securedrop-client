@@ -32,7 +32,7 @@ from securedrop_client.gui.main import Window
 from securedrop_client.resources import load_icon, load_css
 from securedrop_client.models import make_engine
 from securedrop_client.utils import safe_mkdir
-
+from securedrop_client.data import Data
 
 DEFAULT_SDC_HOME = '~/.securedrop_client'
 ENCODING = 'utf-8'
@@ -123,6 +123,9 @@ def start_app(args, qt_args) -> None:
     init(args.sdc_home)
     configure_logging(args.sdc_home)
     logging.info('Starting SecureDrop Client {}'.format(__version__))
+
+    # init data singleton
+    Data(args.sdc_home)
 
     app = QApplication(qt_args)
     app.setApplicationName('SecureDrop Client')

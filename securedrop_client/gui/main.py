@@ -27,7 +27,7 @@ from securedrop_client import __version__
 from securedrop_client.gui.widgets import (ToolBar, MainView, LoginDialog,
                                            ConversationView)
 from securedrop_client.resources import load_icon
-
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +64,7 @@ class Window(QMainWindow):
         widget_layout.addWidget(self.main_view, 6)
         self.setCentralWidget(self.widget)
         self.current_source = None  # Tracks which source is shown
+        self.conversations = {}
         self.show()
         self.autosize_window()
 
@@ -169,59 +170,12 @@ class Window(QMainWindow):
         # Display each conversation item in the source collection.
         for conversation_item in source.collection:
             if conversation_item.filename.endswith('msg.gpg'):
-                # TODO: Decrypt and display the message
-                pass
+                conversation.add_message(conversation_item.content)
             elif conversation_item.filename.endswith('reply.gpg'):
-                # TODO: Decrypt and display the reply
-                pass
+                conversation.add_reply(conversation_item.content)
             else:
                 conversation.add_file(source, conversation_item)
 
-        conversation.add_message('Hello, hello, is this thing switched on?')
-        conversation.add_reply('Yes, I can hear you loud and clear!')
-        conversation.add_reply('How can I help?')
-        conversation.add_message('I have top secret documents relating to '
-                                 'a massive technical scandal at the heart '
-                                 ' of the Freedom of the Press Foundation. '
-                                 'In a shocking turn of events, it appears '
-                                 'they give away all their software for FREE.')
-        conversation.add_message("Hello: I’m a nurse at one of the trauma "
-                                 "centers in town. We've had many patients in "
-                                 "the last several months, all with "
-                                 "similar/mysterious respiratory issues. My "
-                                 "staff has noticed that most live down-wind "
-                                 "from the Dole fields West of 696. Some of "
-                                 "the patients say they have complained to "
-                                 "local authorities about sewage smells. One "
-                                 "said she's spotted a truck spraying a "
-                                 "sludge of some kind, on the fields at "
-                                 "night. I'm attaching a video from the "
-                                 "patient who taped the trucks, and a PDF of "
-                                 "redacted police reports that other patients "
-                                 "shared. I don’t know if there's much you "
-                                 "can do, but if there is I would be happy "
-                                 "to help.")
-        conversation.add_message("I work at the City Water Department, and a "
-                                 "man named Reggie Esters is one of our board "
-                                 "directors. I believe Reggie is related to "
-                                 "Rep Monica Conyers. He's literally never "
-                                 "here, and the resume on file for him makes "
-                                 "no sense. I have a hunch he is not in his "
-                                 "job legitimately, and think you should look "
-                                 "into this. Also: someone I work with heard "
-                                 "him on the phone once, talking about his "
-                                 "'time' at Jackson—that contradicts his "
-                                 "resume. It really seems fishy.")
-        conversation.add_reply("THIS IS IT THIS IS THE TAPE EVERYONE'S "
-                               "LOOKING FOR!!!")
-        conversation.add_reply("Hello: I read your story on Sally Dale, and "
-                               "her lawsuit against the St. Joseph's "
-                               "Orphanage. My great-aunt was one of the nuns "
-                               "there. She is willing to be interviewed, but "
-                               "does not want her name, location, or any "
-                               "identity details released. She feels "
-                               "horrible. She wants the children who survived "
-                               "to find peace. Thanks.")
         self.main_view.update_view(conversation)
 
     def set_status(self, message, duration=5000):

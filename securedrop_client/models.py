@@ -5,6 +5,8 @@ from sqlalchemy import (Boolean, Column, create_engine, DateTime, ForeignKey,
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 
+from securedrop_client.data import Data
+
 Base = declarative_base()
 
 
@@ -68,11 +70,22 @@ class Submission(Base):
                                           cascade="delete"))
 
     def __init__(self, source, uuid, size, filename, download_url):
+        self.data = Data()
         self.source_id = source.id
         self.uuid = uuid
         self.size = size
         self.filename = filename
         self.download_url = download_url
+
+    @property
+    def content(self):
+        if self.is_downloaded:
+            data = Data()
+            fn_no_ext, _ = os.path.splitext(self.filename)
+            return data.get(fn_no_ext)
+        else:
+            return None
+
 
     def __repr__(self):
         return '<Submission {}>'.format(self.filename)
@@ -95,11 +108,17 @@ class Reply(Base):
     size = Column(Integer, nullable=False)
 
     def __init__(self, uuid, journalist, source, filename, size):
+        self.data = Data()
         self.uuid = uuid
         self.journalist_id = journalist.id
         self.source_id = source.id
         self.filename = filename
         self.size = size
+
+
+    @property
+    def content(self):
+        return "(reply content, TODO)"
 
     def __repr__(self):
         return '<Reply {}>'.format(self.filename)

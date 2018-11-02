@@ -51,18 +51,12 @@ class MessageSync(QObject):
 
     def run(self, loop=True):
         while True:
-            logger.info("Fetching messages...")
             submissions = storage.find_new_submissions(self.session)
 
             for m in submissions:
-                logger.info("Downloading {}".format(m.download_url))
                 shasum, filepath = self.api.download_submission_from_url(m.download_url)
-                logger.info("Downloaded {}".format(filepath))
-
-                # jt you are here
-
                 out = tempfile.NamedTemporaryFile(suffix=".message")
-                err = tempfile.NamedTemporaryFile(suffix=".message-error")
+                err = tempfile.NamedTemporaryFile(suffix=".message-error", delete=False)
                 cmd = ["qubes-gpg-client", "--decrypt", filepath]
                 res = subprocess.call(cmd, stdout=out, stderr=err)
 
@@ -70,29 +64,21 @@ class MessageSync(QObject):
 
                 if res != 0:
                     out.close()
-
-                    # with open(err.name) as e:
-                    #     msg = e.read()
-                    #     logger.error("GPG error: {}".format(msg))
-
                     err.close()
+
+                    with open(err.name) as e:
+                        msg = e.read()
+                        logger.error("GPG error: {}".format(msg))
+
+                    os.unlink(err.name)
                 else:
                     fn_no_ext, _ = os.path.splitext(m.filename)
                     dest = os.path.join(self.home, "data", fn_no_ext)
-
-                    shutil.move(out.name, dest)
-
+                    shutil.copy(out.name, dest)
                     err.close()
+                    storage.mark_file_as_downloaded(m.uuid, self.session)
 
-                    storage.mark_file_as_downloaded(m.filename, self.session)
-
-                    # with open(out.name) as o:
-                    #     msg = o.read()
-
-                    #     logger.info("This file's name is {}").format(fn_no_ext)
-                    #     logger.info("Got message: {}".format(msg))
-
-                    # logger.info("Stored message at {}".format(out.name))
+                    logger.info("Stored message at {}".format(out.name))
 
             if not loop:
                 break

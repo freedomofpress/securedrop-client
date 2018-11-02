@@ -205,11 +205,11 @@ class Client(QObject):
         """
 
         # qubes
-        #self.api = sdclientapi.API(self.hostname, username,
-        #                           password, totp, proxy=True) # qubes
+        self.api = sdclientapi.API(self.hostname, username,
+                                  password, totp, proxy=True) # qubes
 
         # not qubes
-        self.api = sdclientapi.API(self.hostname, username, password, totp)
+        # self.api = sdclientapi.API(self.hostname, username, password, totp)
 
 
         self.call_api(self.api.authenticate, self.on_authenticate,
