@@ -1,0 +1,7 @@
+idna==2.7
+multidict==4.4.2 ; python_version >= '3.4.1'
+pyyaml==3.13
+six==1.11.0
+vcrpy==2.0.1
+wrapt==1.10.11
+yarl==1.2.6 ; python_version >= '3.4'
