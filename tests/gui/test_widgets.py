@@ -555,20 +555,22 @@ def test_CoversationView_setup():
     '''
     mock_controller = mock.MagicMock()
     mock_reply_box_setup = mock.MagicMock()
-    cv = ConversationView(None, mock.MagicMock())
+    mock_uuid = mock.MagicMock()
+    cv = ConversationView(None, mock_uuid)
     cv.reply_box.setup = mock_reply_box_setup
     cv.setup(mock_controller)
-    mock_reply_box_setup.assert_called_once_with(cv)
+    mock_reply_box_setup.assert_called_once_with(cv, mock_controller)
 
 
 def test_ReplyBoxWidget_send_reply():
     msg = 'hi mom'
     mock_cv = mock.MagicMock()
+    mock_ctl = mock.MagicMock()
     mock_add_reply = mock.MagicMock()
     mock_cv.add_reply = mock_add_reply
 
     reply_box = ReplyBoxWidget()
-    reply_box.setup(mock_cv)
+    reply_box.setup(mock_cv, mock_ctl)
     reply_box.text_edit.setText(msg)
     reply_box.send_reply()
 
