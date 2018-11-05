@@ -11,9 +11,7 @@ pluggy==0.8.0
 py==1.7.0
 pycodestyle==2.4.0
 pyflakes==2.0.0
-pyqt5==5.10.1
 pytest-cov==2.6.0
-pytest-random-order==1.0.0
-pytest==3.9.3
-sip==4.19.8
+pytest-random-order==1.0.2
+pytest==3.10.0
 six==1.11.0
