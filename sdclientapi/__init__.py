@@ -32,6 +32,7 @@ def json_query(data):
         ["/usr/lib/qubes/qrexec-client-vm", proxyvmname, "securedrop.Proxy"],
         stdin=PIPE,
         stdout=PIPE,
+        stderr=PIPE,
     )
     p.stdin.write(data.encode("utf-8"))
     d = p.communicate()
