@@ -465,9 +465,9 @@ class FileWidget(QWidget):
             layout.addStretch(5)
         self.setLayout(layout)
 
-    def mouseDoubleClickEvent(self, e):
+    def mouseReleaseEvent(self, e):
         """
-        Handle a double-click via the program logic.
+        Handle a completed click via the program logic.
         """
         self.controller.on_file_click(self.source, self.submission)
 
