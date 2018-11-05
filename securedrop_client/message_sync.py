@@ -24,6 +24,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+import sdclientapi.sdlocalobjects as sdkobjects
 
 from PyQt5.QtCore import QObject
 from securedrop_client import storage
@@ -54,7 +55,14 @@ class MessageSync(QObject):
             submissions = storage.find_new_submissions(self.session)
 
             for m in submissions:
-                shasum, filepath = self.api.download_submission_from_url(m.download_url)
+                # api.download_submission wants an _api_ submission
+                # object, which is different from own submission
+                # object. so we coerce that here.
+                sdk_submission = sdkobjects.Submission(
+                    uuid=m.uuid
+                )
+                sdk_submission.source_uuid = m.source.uuid
+                shasum, filepath = self.api.download_submission(sdk_submission)
                 out = tempfile.NamedTemporaryFile(suffix=".message")
                 err = tempfile.NamedTemporaryFile(suffix=".message-error", delete=False)
                 cmd = ["qubes-gpg-client", "--decrypt", filepath]
