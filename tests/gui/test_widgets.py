@@ -411,7 +411,7 @@ def test_FileWidget_init_right():
     assert fw.controller == mock_controller
 
 
-def test_FileWidget_mouseDoubleClickEvent():
+def test_FileWidget_mousePressEvent():
     """
     Should fire the expected event handler in the logic layer.
     """
@@ -424,7 +424,7 @@ def test_FileWidget_mouseDoubleClickEvent():
     submission.is_downloaded = True
 
     fw = FileWidget(source, submission, mock_controller)
-    fw.mouseDoubleClickEvent(None)
+    fw.mouseReleaseEvent(None)
     fw.controller.on_file_click.assert_called_once_with(source, submission)
 
 
