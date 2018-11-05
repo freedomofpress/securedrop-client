@@ -480,12 +480,18 @@ class ReplyBoxWidget(QWidget):
         layout.addWidget(self.send_button)
         self.setLayout(layout)
 
-    def setup(self, conversation) -> None:
+    def setup(self, conversation, controller) -> None:
         self.conversation = conversation
+        self.controller = controller
 
     def send_reply(self) -> None:
-        self.conversation.add_reply(self.text_edit.toPlainText())
+        reply_txt = self.text_edit.toPlainText()
+        if not reply_txt:
+            return
         self.text_edit.clear()
+        self.conversation.add_reply(reply_txt)
+        self.controller.reply_to_source(self.conversation.source_uuid,
+                                        reply_txt)
 
 
 class ConversationView(QWidget):
@@ -523,7 +529,7 @@ class ConversationView(QWidget):
         Ensure there's a reference to program logic.
         """
         self.controller = controller
-        self.reply_box.setup(self)
+        self.reply_box.setup(self, controller)
 
     def add_file(self, source_db_object, submission_db_object):
         """
@@ -550,5 +556,4 @@ class ConversationView(QWidget):
         """
         Add a reply from a journalist.
         """
-        self.controller.reply_to_source(self.source_uuid, reply)
         self.conversation_layout.addWidget(ReplyWidget(reply))

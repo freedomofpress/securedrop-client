@@ -574,12 +574,16 @@ class Client(QObject):
 
         message = self.gpg.encrypt_to_source(source_uuid, message)
 
+        source_sdk_obj = sdclientapi.Source(uuid=source_uuid)
         self.call_api(self.api.reply_source, self.on_reply_to_source,
-                      self.on_sidebar_action_timeout, None,
-                      source_uuid, message)
+                      self.on_reply_timeout,
+                      source_sdk_obj, message)
 
     def on_reply_to_source(self, result) -> None:
-        pass
+        self.sync_api()
 
     def on_reply_timeout(self) -> None:
         self.set_status("Connection to server timed out, please try again.")
+        # we can't fetch replies by ID yet, so we have to do a naive full sync
+        # https://github.com/freedomofpress/securedrop/issues/3915
+        self.sync_api()

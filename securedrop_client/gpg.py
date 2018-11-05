@@ -38,7 +38,7 @@ class GpgHelper:
 
         out = self.gpg.encrypt(message, local_source.fingerprint)
         if out.ok:
-            return out.data
+            return out.data.decode('utf-8')
         else:
             raise RuntimeError('Could not encrypt to source {!r}: {}'.format(
                 source_uuid, out.stderr))
