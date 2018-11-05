@@ -411,9 +411,26 @@ def test_FileWidget_init_right():
     assert fw.controller == mock_controller
 
 
-def test_FileWidget_mouseDoubleClickEvent():
+def test_FileWidget_mouseDoubleClickEvent_download():
     """
-    Should fire the expected event handler in the logic layer.
+    Should fire the expected download event handler in the logic layer.
+    """
+    mock_message = mock.MagicMock()
+    mock_controller = mock.MagicMock()
+    source = models.Source('source-uuid', 'testy-mctestface', False,
+                           'mah pub key', 1, False, datetime.now())
+    submission = models.Submission(source, 'submission-uuid', 123,
+                                   'mah-reply.gpg')
+    submission.is_downloaded = False
+
+    fw = FileWidget(source, submission, mock_controller)
+    fw.mouseDoubleClickEvent(None)
+    fw.controller.on_file_download.assert_called_once_with(source, submission)
+
+
+def test_FileWidget_mouseDoubleClickEvent_open():
+    """
+    Should fire the expected open event handler in the logic layer.
     """
     mock_message = mock.MagicMock()
     mock_controller = mock.MagicMock()
@@ -425,7 +442,7 @@ def test_FileWidget_mouseDoubleClickEvent():
 
     fw = FileWidget(source, submission, mock_controller)
     fw.mouseDoubleClickEvent(None)
-    fw.controller.on_file_click.assert_called_once_with(source, submission)
+    fw.controller.on_file_open.assert_called_once_with(submission)
 
 
 def test_ConversationView_init():

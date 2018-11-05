@@ -467,9 +467,15 @@ class FileWidget(QWidget):
 
     def mouseDoubleClickEvent(self, e):
         """
-        Handle a double-click via the program logic.
+        Handle a double-click via the program logic. The download state of the
+        file distinguishes which function in the logic layet to call.
         """
-        self.controller.on_file_click(self.source, self.submission)
+        if self.submission.is_downloaded:
+            # Open the already downloaded file.
+            self.controller.on_file_open(self.submission)
+        else:
+            # Download the file.
+            self.controller.on_file_download(self.source, self.submission)
 
 
 class ConversationView(QWidget):

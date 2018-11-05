@@ -25,7 +25,7 @@ import uuid
 from securedrop_client import storage
 from securedrop_client import models
 from securedrop_client.utils import check_dir_permissions
-from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer
+from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess
 
 logger = logging.getLogger(__name__)
 
@@ -409,7 +409,25 @@ class Client(QObject):
         """
         self.gui.set_status(message, duration)
 
-    def on_file_click(self, source_db_object, message):
+    def on_file_open(self, source_db_object):
+        """
+        Open the already doanloaded file associated with the message (which
+        may be a Submission or a Repl).
+        """
+        if self.proxy:
+            # Running on Qubes.
+            command = "qvm-open-in-vm"
+            args = ["'$dispvm:sd-svs-disp'", source_db_object.filename]
+            # QProcess (Qt) or Python's subprocess? Who cares? They do the
+            # same thing. :-)
+            process = QProcess(self)
+            process.start(command, args)
+            # TODO: Set marked as read?
+        else:  # pragma: no cover
+            # Non Qubes OS. Just log the event for now.
+            logger.info('Opening file "{}".'.format(message.filename))
+
+    def on_file_download(self, source_db_object, message):
         """
         Download the file associated with the associated message (which may
         be a Submission or Reply).
@@ -427,11 +445,11 @@ class Client(QObject):
             sdk_object.filename = message.filename
             sdk_object.source_uuid = source_db_object.uuid
         self.set_status(_('Downloading {}'.format(sdk_object.filename)))
-        self.call_api(func, self.on_file_download,
+        self.call_api(func, self.on_file_downloaded,
                       self.on_download_timeout, sdk_object, self.data_dir,
                       current_object=message)
 
-    def on_file_download(self, result, current_object):
+    def on_file_downloaded(self, result, current_object):
         """
         Called when a file has downloaded. Cause a refresh to the conversation
         view to display the contents of the new file.
