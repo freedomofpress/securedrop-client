@@ -11,6 +11,12 @@ import shutil
 from securedrop_client import storage, models
 from securedrop_client.logic import APICallRunner, Client
 from unittest import mock
+from uuid import uuid4
+
+KEY_DIR = os.path.join(os.path.dirname(__file__), 'keys')
+
+with open(os.path.join(KEY_DIR, 'test-key.gpg.pub.asc')) as f:
+    PUB_KEY = f.read()
 
 
 def test_APICallRunner_init():
@@ -496,7 +502,15 @@ def test_Client_on_synced_with_result(safe_tmpdir):
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
     cl.update_sources = mock.MagicMock()
     cl.api_runner = mock.MagicMock()
-    result_data = ([], 'submissions', 'replies')
+
+    # we need a source with a key to test key import
+    mock_source = mock.MagicMock()
+    mock_source.key = {
+        'type': 'PGP',
+        'public': PUB_KEY,
+    }
+    result_data = ([mock_source], 'submissions', 'replies')
+
     with mock.patch('securedrop_client.logic.storage') as mock_storage, \
             mock.patch('securedrop_client.logic.GpgHelper'):
         cl.on_synced(result_data)
@@ -865,3 +879,50 @@ def test_Client_on_file_open(safe_tmpdir):
         cl.on_file_open(mock_submission)
         mock_process.assert_called_once_with(cl)
         mock_subprocess.start.call_count == 1
+
+
+def test_Client_reply_to_source(safe_tmpdir, db_session):
+    mock_gui = mock.MagicMock()
+
+    cl = Client('http://localhost', mock_gui, db_session, str(safe_tmpdir))
+    cl.api = mock.MagicMock()
+    mock_call_api = mock.Mock()
+    cl.call_api = mock_call_api
+
+    source_uuid = str(uuid4())
+    source = models.Source(source_uuid, 'testy-mctestface', False,
+                           PUB_KEY, 1, False, datetime.now())
+    db_session.add(source)
+    db_session.commit()
+    cl.gpg.import_key(source_uuid, PUB_KEY)
+
+    msg = 'rememeber remember'
+    cl.reply_to_source(source_uuid, msg)
+    assert mock_call_api.called
+
+    # check helpers for reply complection / failure
+
+    with mock.patch.object(cl, 'sync_api') as mock_sync_api:
+        cl.on_reply_to_source(None)
+        assert mock_sync_api.called
+
+    with mock.patch.object(cl, 'sync_api') as mock_sync_api:
+        cl.on_reply_timeout()
+        assert mock_sync_api.called
+
+
+def test_Client_reply_to_source_not_logged_in(safe_tmpdir):
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    mock_call_api = mock.Mock()
+    mock_on_action = mock.Mock()
+    cl.call_api = mock_call_api
+    cl.on_action_requiring_login = mock_on_action
+
+    source_uuid = str(uuid4())
+    msg = 'rememeber remember'
+    cl.reply_to_source(source_uuid, msg)
+    assert mock_on_action.called
+    assert not mock_call_api.called

@@ -575,3 +575,18 @@ def test_ReplyBoxWidget_send_reply():
     reply_box.send_reply()
 
     mock_add_reply.assert_called_once_with(msg)
+
+
+def test_ReplyBoxWidget_send_empty_reply():
+    msg = ''
+    mock_cv = mock.MagicMock()
+    mock_ctl = mock.MagicMock()
+    mock_add_reply = mock.MagicMock()
+    mock_cv.add_reply = mock_add_reply
+
+    reply_box = ReplyBoxWidget()
+    reply_box.setup(mock_cv, mock_ctl)
+    reply_box.text_edit.setText(msg)
+    reply_box.send_reply()
+
+    mock_add_reply.assert_not_called()
