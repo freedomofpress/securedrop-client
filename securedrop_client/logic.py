@@ -411,8 +411,8 @@ class Client(QObject):
 
     def on_file_open(self, source_db_object):
         """
-        Open the already doanloaded file associated with the message (which
-        may be a Submission or a Repl).
+        Open the already downloaded file associated with the message (which
+        may be a Submission or a Reply).
         """
         if self.proxy:
             # Running on Qubes.
