@@ -14,6 +14,9 @@ pipenv shell
 
 Please install system libraries for PyQt rather than using PyPI-managed libraries- this makes packaging possible later. On Debian, `apt install python3-pyqt5 python3-pyqt5.qtsvg` will install what you need.
 
+In order to run the test suite you should also install the `xvfb` package (to
+make the `xvfb-run` command available): `apt install xvfb`.
+
 ## Run the client
 
 You can run the client with an ephemeral data directory:
