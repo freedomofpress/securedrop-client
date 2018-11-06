@@ -46,7 +46,7 @@ class MessageSync(QObject):
 
         engine = make_engine(home)
         Session = sessionmaker(bind=engine)
-        self.session = Session() # Reference to the SqlAlchemy session.
+        self.session = Session()  # Reference to the SqlAlchemy session.
         self.api = api
         self.home = home
 
@@ -64,13 +64,16 @@ class MessageSync(QObject):
                         uuid=m.uuid
                     )
                     sdk_submission.source_uuid = m.source.uuid
-                    shasum, filepath = self.api.download_submission(sdk_submission)
+                    shasum, filepath = self.api.download_submission(
+                        sdk_submission
+                    )
                     out = tempfile.NamedTemporaryFile(suffix=".message")
-                    err = tempfile.NamedTemporaryFile(suffix=".message-error", delete=False)
+                    err = tempfile.NamedTemporaryFile(suffix=".message-error",
+                                                      delete=False)
                     cmd = ["qubes-gpg-client", "--decrypt", filepath]
                     res = subprocess.call(cmd, stdout=out, stderr=err)
 
-                    os.unlink(filepath) # original file
+                    os.unlink(filepath)  # original file
 
                     if res != 0:
                         out.close()
@@ -90,9 +93,11 @@ class MessageSync(QObject):
 
                         logger.info("Stored message at {}".format(out.name))
                 except Exception as e:
-                    logger.critical("Exception while downloading submission! {}".format(e))
+                    logger.critical(
+                        "Exception while downloading submission! {}".format(e)
+                    )
 
             if not loop:
                 break
             else:
-                time.sleep(5) # pragma: no cover
+                time.sleep(5)  # pragma: no cover

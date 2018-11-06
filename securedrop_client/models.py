@@ -25,6 +25,7 @@ class WithContent():
         else:
             return None
 
+
 class Source(Base):
     __tablename__ = 'sources'
     id = Column(Integer, primary_key=True)
@@ -89,7 +90,6 @@ class Submission(Base, WithContent):
         self.download_url = download_url
         self.is_download = False
 
-
     def __repr__(self):
         return '<Submission {}>'.format(self.filename)
 
@@ -116,7 +116,6 @@ class Reply(Base):
         self.source_id = source.id
         self.filename = filename
         self.size = size
-
 
     @property
     def content(self):

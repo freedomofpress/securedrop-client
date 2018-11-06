@@ -157,7 +157,6 @@ class Window(QMainWindow):
             self.current_source = source_widget.source
             self.show_conversation_for(self.current_source)
 
-
     def add_item_content_or(self, adder, item, default):
         """
         Private helper function to add correct message to conversation widgets
@@ -182,8 +181,8 @@ class Window(QMainWindow):
 
             if conversation_item.filename.endswith('msg.gpg'):
                 self.add_item_content_or(conversation.add_message,
-                                       conversation_item,
-                                       "<Message not yet downloaded>")
+                                         conversation_item,
+                                         "<Message not yet downloaded>")
             elif conversation_item.filename.endswith('reply.gpg'):
                 conversation.add_reply(conversation_item.content)
                 # leaving this for the Reply ticket!

@@ -83,6 +83,7 @@ def test_Client_setup(safe_tmpdir):
     cl.update_sources.assert_called_once_with()
     cl.gui.show_login.assert_called_once_with()
 
+
 def test_Client_start_message_thread(safe_tmpdir):
     """
     When starting message-fetching thread, make sure we do a few things.
@@ -91,11 +92,12 @@ def test_Client_start_message_thread(safe_tmpdir):
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
     with mock.patch('securedrop_client.logic.QThread') as mock_qthread, \
-         mock.patch('securedrop_client.logic.MessageSync') as mock_msync:
+            mock.patch('securedrop_client.logic.MessageSync') as mock_msync:
         cl.message_sync = mock.MagicMock()
         cl.start_message_thread()
         cl.message_sync.moveToThread.assert_called_once_with(mock_qthread())
-        cl.message_thread.started.connect.assert_called_once_with(cl.message_sync.run)
+        cl.message_thread.started.connect.assert_called_once_with(
+            cl.message_sync.run)
         cl.message_thread.start.assert_called_once_with()
 
 
@@ -737,6 +739,7 @@ def test_Client_on_file_download_success(safe_tmpdir):
         mock_storage.mark_file_as_downloaded.assert_called_once_with(
             test_object_uuid, mock_session)
 
+
 def test_Client_on_file_download_failure(safe_tmpdir):
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
@@ -796,6 +799,7 @@ def test_Client_on_file_click_Reply(safe_tmpdir):
                                         cl.on_download_timeout,
                                         reply_sdk_object,
                                         cl.data_dir, current_object=reply)
+
 
 def test_Client_on_object_loaded(safe_tmpdir):
     """

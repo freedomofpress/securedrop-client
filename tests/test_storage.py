@@ -355,6 +355,7 @@ def test_find_or_create_user_new():
     mock_session.add.assert_called_once_with(new_user)
     mock_session.commit.assert_called_once_with()
 
+
 def test_find_new_submissions():
     mock_session = mock.MagicMock()
     mock_submission = mock.MagicMock()
@@ -364,6 +365,7 @@ def test_find_new_submissions():
                         .filter().all.return_value = mock_submissions
     submissions = find_new_submissions(mock_session)
     assert submissions[0].is_downloaded is False
+
 
 def test_mark_file_as_downloaded():
     mock_session = mock.MagicMock()

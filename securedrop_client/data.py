@@ -3,6 +3,7 @@ import os
 import logging
 logger = logging.getLogger(__name__)
 
+
 class Data:
 
     def __init__(self, data_dir):

@@ -237,6 +237,7 @@ def find_or_create_user(uuid, username, session):
         session.commit()
         return new_user
 
+
 def find_new_submissions(session):
     submissions = session.query(Submission) \
                          .filter_by(is_downloaded=False) \

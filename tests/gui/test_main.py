@@ -226,7 +226,6 @@ def test_conversation_pending_message():
 
     mock_source.collection = [submission]
 
-
     with mock.patch('securedrop_client.gui.main.ConversationView',
                     mock_conview):
         w.show_conversation_for(mock_source)
@@ -234,7 +233,9 @@ def test_conversation_pending_message():
 
         # once for source name, once for message
         assert conv.add_message.call_count == 2
-        assert conv.add_message.call_args == mock.call("<Message not yet downloaded>")
+        assert conv.add_message.call_args == \
+            mock.call("<Message not yet downloaded>")
+
 
 def test_set_status():
 

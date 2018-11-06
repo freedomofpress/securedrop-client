@@ -404,6 +404,7 @@ class ConversationWidget(QWidget):
         self.setLayout(layout)
         self.setContentsMargins(0, 0, 0, 0)
 
+
 class MessageWidget(ConversationWidget):
     """
     Represents an incoming message from the source.

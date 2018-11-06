@@ -105,8 +105,8 @@ class Client(QObject):
         self.gui = gui  # Reference to the UI window.
         self.api = None  # Reference to the API for secure drop proxy.
         self.session = session  # Reference to the SqlAlchemy session.
-        self.message_thread = None # A thread responsible for fetching messages
-        self.home = home # used for finding DB in sync thread
+        self.message_thread = None  # thread responsible for fetching messages
+        self.home = home  # used for finding DB in sync thread
         self.api_threads = {}  # Contains active threads calling the API.
         self.sync_flag = os.path.join(home, 'sync_flag')
         self.home = home  # The "home" directory for client files.
@@ -148,7 +148,6 @@ class Client(QObject):
 
     def on_object_loaded(self, target, context):
         target.data = Data(self.data_dir)
-
 
     def call_api(self, function, callback, timeout, *args, current_object=None,
                  **kwargs):
@@ -219,8 +218,6 @@ class Client(QObject):
                 user_callback(result_data, current_object=current_object)
             else:
                 user_callback(result_data)
-
-
 
     def start_message_thread(self):
         """
