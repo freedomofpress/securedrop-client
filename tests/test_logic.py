@@ -743,7 +743,7 @@ def test_Client_on_file_downloaded_success(safe_tmpdir):
             test_object_uuid, mock_session)
 
 
-def test_Client_on_file_downloaded_failure(safe_tmpdir):
+def test_Client_on_file_downloaded_api_failure(safe_tmpdir):
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
@@ -760,6 +760,28 @@ def test_Client_on_file_downloaded_failure(safe_tmpdir):
     cl.on_file_downloaded(result_data, current_object=submission_db_object)
     cl.set_status.assert_called_once_with(
         "The file download failed. Please try again.")
+
+
+def test_Client_on_file_downloaded_decrypt_failure(safe_tmpdir):
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.update_sources = mock.MagicMock()
+    cl.api_runner = mock.MagicMock()
+    test_filename = "my-file-location-msg.gpg"
+    cl.api_runner.result = ("", test_filename)
+    cl.set_status = mock.MagicMock()
+    result_data = ('this-is-a-sha256-sum', test_filename)
+    submission_db_object = mock.MagicMock()
+    submission_db_object.uuid = 'myuuid'
+    submission_db_object.filename = 'filename'
+    with mock.patch('securedrop_client.crypto.decrypt_submission',
+                    return_value=(1, '')) as mock_gpg, \
+            mock.patch('shutil.move'):
+        cl.on_file_downloaded(result_data, current_object=submission_db_object)
+        mock_gpg.call_count == 1
+        cl.set_status.assert_called_once_with(
+            "Failed to download and decrypt file, please try again.")
 
 
 def test_Client_on_download_timeout(safe_tmpdir):
@@ -831,6 +853,4 @@ def test_Client_on_file_open(safe_tmpdir):
     with mock.patch('securedrop_client.logic.QProcess', mock_process):
         cl.on_file_open(mock_submission)
         mock_process.assert_called_once_with(cl)
-        mock_subprocess.start.assert_called_once_with("qvm-open-in-vm",
-                                                      ["'$dispvm:sd-svs-disp'",
-                                                       'test.pdf', ])
+        mock_subprocess.start.call_count == 1

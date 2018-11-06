@@ -450,7 +450,7 @@ class Client(QObject):
         # stripped off.
         server_filename = submission_db_object.filename
         fn_no_ext, _ = os.path.splitext(
-                os.path.splitext(server_filename)[0])
+            os.path.splitext(server_filename)[0])
         submission_filepath = os.path.join(self.data_dir, fn_no_ext)
 
         if self.proxy:
@@ -462,6 +462,11 @@ class Client(QObject):
             process = QProcess(self)
             process.start(command, args)
         else:  # pragma: no cover
+            # Running on mac.
+            command = "open"
+            args = [submission_filepath]
+            process = QProcess(self)
+            process.start(command, args)
             # Non Qubes OS. Just log the event for now.
             logger.info('Opening file "{}".'.format(submission_filepath))
 

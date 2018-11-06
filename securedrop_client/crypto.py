@@ -1,7 +1,4 @@
 """
-Contains the MessageSync class, which runs in the background and loads new
- messages from the SecureDrop server.
-
 Copyright (C) 2018  The Freedom of the Press Foundation.
 
 This program is free software: you can redistribute it and/or modify
@@ -18,7 +15,6 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import time
 import gzip
 import logging
 import os
@@ -28,11 +24,8 @@ import tempfile
 
 from securedrop_client.models import make_engine
 
-from sqlalchemy.orm import sessionmaker
-
 
 logger = logging.getLogger(__name__)
-
 
 
 def decrypt_submission(filepath, target_filename, home_dir, is_qubes=True,
@@ -57,10 +50,10 @@ def decrypt_submission(filepath, target_filename, home_dir, is_qubes=True,
             logger.error("GPG error: {}".format(msg))
 
         os.unlink(err.name)
-        return "", ""
+        dest = ""
     else:
         if is_doc:
-            # Now also unzip the file
+            # Docs are gzipped, so gunzip the file
             with gzip.open(out.name, 'rb') as infile:
                 unzipped_decrypted_data = infile.read()
 
