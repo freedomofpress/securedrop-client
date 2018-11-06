@@ -462,11 +462,6 @@ class Client(QObject):
             process = QProcess(self)
             process.start(command, args)
         else:  # pragma: no cover
-            # Running on mac.
-            command = "open"
-            args = [submission_filepath]
-            process = QProcess(self)
-            process.start(command, args)
             # Non Qubes OS. Just log the event for now.
             logger.info('Opening file "{}".'.format(submission_filepath))
 
