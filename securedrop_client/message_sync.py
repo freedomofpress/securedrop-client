@@ -28,6 +28,7 @@ import sdclientapi.sdlocalobjects as sdkobjects
 
 from PyQt5.QtCore import QObject
 from securedrop_client import storage
+from securedrop_client import crypto
 from securedrop_client.models import make_engine
 
 from sqlalchemy.orm import sessionmaker
@@ -57,7 +58,6 @@ class MessageSync(QObject):
 
             for m in submissions:
                 try:
-
                     # api.download_submission wants an _api_ submission
                     # object, which is different from own submission
                     # object. so we coerce that here.
@@ -65,40 +65,17 @@ class MessageSync(QObject):
                         uuid=m.uuid
                     )
                     sdk_submission.source_uuid = m.source.uuid
-                    # Need to set filename on non-Qubes platforms
+                    # Needed for non-Qubes platforms
                     sdk_submission.filename = m.filename
                     shasum, filepath = self.api.download_submission(
-                        sdk_submission
-                    )
-                    out = tempfile.NamedTemporaryFile(suffix=".message")
-                    err = tempfile.NamedTemporaryFile(suffix=".message-error",
-                                                      delete=False)
-                    if self.is_qubes:
-                        gpg_binary = "qubes-gpg-client"
-                    else:
-                        gpg_binary = "gpg"
-                    cmd = [gpg_binary, "--decrypt", filepath]
-                    res = subprocess.call(cmd, stdout=out, stderr=err)
-
-                    os.unlink(filepath)  # original file
-
-                    if res != 0:
-                        out.close()
-                        err.close()
-
-                        with open(err.name) as e:
-                            msg = e.read()
-                            logger.error("GPG error: {}".format(msg))
-
-                            os.unlink(err.name)
-                    else:
-                        fn_no_ext, _ = os.path.splitext(m.filename)
-                        dest = os.path.join(self.home, "data", fn_no_ext)
-                        shutil.copy(out.name, dest)
-                        err.close()
+                        sdk_submission)
+                    res, stored_filename = crypto.decrypt_submission(
+                        filepath, m.filename, self.home,
+                        is_qubes=self.is_qubes)
+                    if res == 0:
                         storage.mark_file_as_downloaded(m.uuid, self.session)
-
-                        logger.info("Stored message at {}".format(out.name))
+                        logger.info("Stored message at {}".format(
+                            stored_filename))
                 except Exception as e:
                     logger.critical(
                         "Exception while downloading submission! {}".format(e)
