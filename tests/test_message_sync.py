@@ -17,8 +17,9 @@ def test_MessageSync_init():
 
         api = mock.MagicMock()
         home = "/home/user/.sd"
+        is_qubes = False
 
-        ms = MessageSync(api, home)
+        ms = MessageSync(api, home, is_qubes)
 
         assert ms.home == "/home/user/.sd"
         assert ms.api == api
@@ -51,8 +52,9 @@ def test_MessageSync_run_success():
 
         api = mock.MagicMock()
         home = "/home/user/.sd"
+        is_qubes = True
 
-        ms = MessageSync(api, home)
+        ms = MessageSync(api, home, is_qubes)
         ms.api.download_submission = mock.MagicMock(
             return_value=(1234, "/home/user/downloads/foo")
         )
@@ -69,7 +71,8 @@ def test_MessageSync_exception():
     submission = mock.MagicMock()
     api = mock.MagicMock()
     home = "/home/user/.sd"
-    ms = MessageSync(api, home)
+    is_qubes = False
+    ms = MessageSync(api, home, is_qubes)
 
     with mock.patch('securedrop_client.storage.find_new_submissions',
                     return_value=[
@@ -106,8 +109,9 @@ def test_MessageSync_run_failure():
 
         api = mock.MagicMock()
         home = "/home/user/.sd"
+        is_qubes = False
 
-        ms = MessageSync(api, home)
+        ms = MessageSync(api, home, is_qubes)
         ms.api.download_submission = mock.MagicMock(
             return_value=(1234, "/home/user/downloads/foo")
         )

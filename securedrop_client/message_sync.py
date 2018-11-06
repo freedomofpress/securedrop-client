@@ -41,7 +41,7 @@ class MessageSync(QObject):
     Runs in the background, finding messages to download and downloading them.
     """
 
-    def __init__(self, api, home):
+    def __init__(self, api, home, is_qubes):
         super().__init__()
 
         engine = make_engine(home)
@@ -49,6 +49,7 @@ class MessageSync(QObject):
         self.session = Session()  # Reference to the SqlAlchemy session.
         self.api = api
         self.home = home
+        self.is_qubes = is_qubes
 
     def run(self, loop=True):
         while True:
@@ -64,13 +65,19 @@ class MessageSync(QObject):
                         uuid=m.uuid
                     )
                     sdk_submission.source_uuid = m.source.uuid
+                    # Need to set filename on non-Qubes platforms
+                    sdk_submission.filename = m.filename
                     shasum, filepath = self.api.download_submission(
                         sdk_submission
                     )
                     out = tempfile.NamedTemporaryFile(suffix=".message")
                     err = tempfile.NamedTemporaryFile(suffix=".message-error",
                                                       delete=False)
-                    cmd = ["qubes-gpg-client", "--decrypt", filepath]
+                    if self.is_qubes:
+                        gpg_binary = "qubes-gpg-client"
+                    else:
+                        gpg_binary = "gpg"
+                    cmd = [gpg_binary, "--decrypt", filepath]
                     res = subprocess.call(cmd, stdout=out, stderr=err)
 
                     os.unlink(filepath)  # original file

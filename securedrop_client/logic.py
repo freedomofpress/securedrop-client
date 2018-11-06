@@ -109,7 +109,6 @@ class Client(QObject):
         self.home = home  # used for finding DB in sync thread
         self.api_threads = {}  # Contains active threads calling the API.
         self.sync_flag = os.path.join(home, 'sync_flag')
-        self.home = home  # The "home" directory for client files.
         self.data_dir = os.path.join(self.home, 'data')  # File data.
         self.timer = None  # call timeout timer
         self.proxy = proxy
@@ -225,7 +224,7 @@ class Client(QObject):
         """
         if not self.message_thread:
             self.message_thread = QThread()
-            self.message_sync = MessageSync(self.api, self.home)
+            self.message_sync = MessageSync(self.api, self.home, self.proxy)
             self.message_sync.moveToThread(self.message_thread)
             self.message_thread.started.connect(self.message_sync.run)
             self.message_thread.start()
