@@ -55,38 +55,42 @@ class MessageSync(QObject):
             submissions = storage.find_new_submissions(self.session)
 
             for m in submissions:
-                # api.download_submission wants an _api_ submission
-                # object, which is different from own submission
-                # object. so we coerce that here.
-                sdk_submission = sdkobjects.Submission(
-                    uuid=m.uuid
-                )
-                sdk_submission.source_uuid = m.source.uuid
-                shasum, filepath = self.api.download_submission(sdk_submission)
-                out = tempfile.NamedTemporaryFile(suffix=".message")
-                err = tempfile.NamedTemporaryFile(suffix=".message-error", delete=False)
-                cmd = ["qubes-gpg-client", "--decrypt", filepath]
-                res = subprocess.call(cmd, stdout=out, stderr=err)
+                try:
 
-                os.unlink(filepath) # original file
+                    # api.download_submission wants an _api_ submission
+                    # object, which is different from own submission
+                    # object. so we coerce that here.
+                    sdk_submission = sdkobjects.Submission(
+                        uuid=m.uuid
+                    )
+                    sdk_submission.source_uuid = m.source.uuid
+                    shasum, filepath = self.api.download_submission(sdk_submission)
+                    out = tempfile.NamedTemporaryFile(suffix=".message")
+                    err = tempfile.NamedTemporaryFile(suffix=".message-error", delete=False)
+                    cmd = ["qubes-gpg-client", "--decrypt", filepath]
+                    res = subprocess.call(cmd, stdout=out, stderr=err)
 
-                if res != 0:
-                    out.close()
-                    err.close()
+                    os.unlink(filepath) # original file
 
-                    with open(err.name) as e:
-                        msg = e.read()
-                        logger.error("GPG error: {}".format(msg))
+                    if res != 0:
+                        out.close()
+                        err.close()
 
-                    os.unlink(err.name)
-                else:
-                    fn_no_ext, _ = os.path.splitext(m.filename)
-                    dest = os.path.join(self.home, "data", fn_no_ext)
-                    shutil.copy(out.name, dest)
-                    err.close()
-                    storage.mark_file_as_downloaded(m.uuid, self.session)
+                        with open(err.name) as e:
+                            msg = e.read()
+                            logger.error("GPG error: {}".format(msg))
 
-                    logger.info("Stored message at {}".format(out.name))
+                            os.unlink(err.name)
+                    else:
+                        fn_no_ext, _ = os.path.splitext(m.filename)
+                        dest = os.path.join(self.home, "data", fn_no_ext)
+                        shutil.copy(out.name, dest)
+                        err.close()
+                        storage.mark_file_as_downloaded(m.uuid, self.session)
+
+                        logger.info("Stored message at {}".format(out.name))
+                except Exception as e:
+                    logger.critical("Exception while downloading submission! {}".format(e))
 
             if not loop:
                 break

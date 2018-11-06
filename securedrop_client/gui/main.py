@@ -185,9 +185,11 @@ class Window(QMainWindow):
                                        conversation_item,
                                        "<Message not yet downloaded>")
             elif conversation_item.filename.endswith('reply.gpg'):
-                self.add_item_content_or(conversation.add_reply,
-                                       conversation_item,
-                                       "<Reply not yet downloaded>")
+                conversation.add_reply(conversation_item.content)
+                # leaving this for the Reply ticket!
+                # self.add_item_content_or(conversation.add_reply,
+                #                        conversation_item,
+                #                        "<Reply not yet downloaded>")
             else:
                 conversation.add_file(source, conversation_item)
 

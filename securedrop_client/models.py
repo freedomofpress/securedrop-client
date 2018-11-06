@@ -17,9 +17,6 @@ def make_engine(home: str):
 
 class WithContent():
 
-    def __init__(self):
-        self.data = None
-
     @property
     def content(self):
         if self.is_downloaded:
@@ -84,8 +81,6 @@ class Submission(Base, WithContent):
 
     def __init__(self, source, uuid, size, filename, download_url):
         # ORM event catching _should_ have already initialized `self.data`
-        if not hasattr(self, 'data'):
-            self.data = None
 
         self.source_id = source.id
         self.uuid = uuid
