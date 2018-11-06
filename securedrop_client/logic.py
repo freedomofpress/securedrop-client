@@ -21,11 +21,16 @@ import logging
 import sdclientapi
 import shutil
 import arrow
+import copy
 import uuid
+from sqlalchemy import event
 from securedrop_client import storage
 from securedrop_client import models
 from securedrop_client.utils import check_dir_permissions
+from securedrop_client.data import Data
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer
+from securedrop_client.message_sync import MessageSync
+
 
 logger = logging.getLogger(__name__)
 
@@ -100,9 +105,10 @@ class Client(QObject):
         self.gui = gui  # Reference to the UI window.
         self.api = None  # Reference to the API for secure drop proxy.
         self.session = session  # Reference to the SqlAlchemy session.
+        self.message_thread = None  # thread responsible for fetching messages
+        self.home = home  # used for finding DB in sync thread
         self.api_threads = {}  # Contains active threads calling the API.
         self.sync_flag = os.path.join(home, 'sync_flag')
-        self.home = home  # The "home" directory for client files.
         self.data_dir = os.path.join(self.home, 'data')  # File data.
         self.timer = None  # call timeout timer
         self.proxy = proxy
@@ -131,6 +137,16 @@ class Client(QObject):
         self.sync_update = QTimer()
         self.sync_update.timeout.connect(self.sync_api)
         self.sync_update.start(1000 * 60 * 5)  # every 5 minutes.
+
+        event.listen(models.Submission, 'load', self.on_object_loaded)
+        event.listen(models.Submission, 'init', self.on_object_instantiated)
+
+    def on_object_instantiated(self, target, args, kwargs):
+        target.data = Data(self.data_dir)
+        return target
+
+    def on_object_loaded(self, target, context):
+        target.data = Data(self.data_dir)
 
     def call_api(self, function, callback, timeout, *args, current_object=None,
                  **kwargs):
@@ -202,6 +218,17 @@ class Client(QObject):
             else:
                 user_callback(result_data)
 
+    def start_message_thread(self):
+        """
+        Starts the message-fetching thread in the background.
+        """
+        if not self.message_thread:
+            self.message_thread = QThread()
+            self.message_sync = MessageSync(self.api, self.home, self.proxy)
+            self.message_sync.moveToThread(self.message_thread)
+            self.message_thread.started.connect(self.message_sync.run)
+            self.message_thread.start()
+
     def timeout_cleanup(self, thread_id, user_callback):
         """
         Clean up after the referenced thread has timed-out by setting some
@@ -241,6 +268,7 @@ class Client(QObject):
             self.gui.hide_login()
             self.sync_api()
             self.gui.set_logged_in_as(self.api.username)
+            self.start_message_thread()
             # Clear the sidebar error status bar if a message was shown
             # to the user indicating they should log in.
             self.gui.update_error_status("")
@@ -342,6 +370,7 @@ class Client(QObject):
             # How to handle a failure? Exceptions are already logged. Perhaps
             # a message in the UI?
             pass
+
         self.update_sources()
 
     def update_sync(self):
@@ -400,6 +429,7 @@ class Client(QObject):
         state.
         """
         self.api = None
+        # self.stop_message_thread()
         self.gui.logout()
 
     def set_status(self, message, duration=5000):

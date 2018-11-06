@@ -19,7 +19,9 @@ make the `xvfb-run` command available): `apt install xvfb`.
 
 ## Run the client
 
-You can run the client with an ephemeral data directory:
+To ensure that file decryption works, please import [this test private key](https://raw.githubusercontent.com/freedomofpress/securedrop/0a901362b84a5378fba80e9cd0ffe4542bdcd598/securedrop/tests/files/test_journalist_key.sec) into your GnuPG keyring. Submissions in the SecureDrop development environment can be decrypted with this test key. 
+
+You can then run the client with an ephemeral data directory:
 
 ```
 ./run.sh

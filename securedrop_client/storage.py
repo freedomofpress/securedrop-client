@@ -150,6 +150,7 @@ def update_submissions(remote_submissions, local_submissions, session):
             local_submission.filename = submission.filename
             local_submission.size = submission.size
             local_submission.is_read = submission.is_read
+            local_submission.download_url = submission.download_url
             # Removing the UUID from local_uuids ensures this record won't be
             # deleted at the end of this function.
             local_uuids.remove(submission.uuid)
@@ -160,7 +161,8 @@ def update_submissions(remote_submissions, local_submissions, session):
             source = session.query(Source).filter_by(uuid=source_uuid)[0]
             ns = Submission(source=source, uuid=submission.uuid,
                             size=submission.size,
-                            filename=submission.filename)
+                            filename=submission.filename,
+                            download_url=submission.download_url)
             session.add(ns)
             logger.info('Added new submission {}'.format(submission.uuid))
     # The uuids remaining in local_uuids do not exist on the remote server, so
@@ -234,6 +236,14 @@ def find_or_create_user(uuid, username, session):
         session.add(new_user)
         session.commit()
         return new_user
+
+
+def find_new_submissions(session):
+    submissions = session.query(Submission) \
+                         .filter_by(is_downloaded=False) \
+                         .filter(Submission.filename.like('%-msg.gpg')) \
+                         .all()
+    return submissions
 
 
 def mark_file_as_downloaded(uuid, session):

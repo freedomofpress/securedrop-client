@@ -5,12 +5,25 @@ from sqlalchemy import (Boolean, Column, create_engine, DateTime, ForeignKey,
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 
+from securedrop_client.data import Data
+
 Base = declarative_base()
 
 
 def make_engine(home: str):
     db_path = os.path.join(home, 'svs.sqlite')
     return create_engine('sqlite:///{}'.format(db_path))
+
+
+class WithContent():
+
+    @property
+    def content(self):
+        if self.is_downloaded:
+            fn_no_ext, _ = os.path.splitext(self.filename)
+            return self.data.get(fn_no_ext)
+        else:
+            return None
 
 
 class Source(Base):
@@ -48,12 +61,13 @@ class Source(Base):
         return collection
 
 
-class Submission(Base):
+class Submission(Base, WithContent):
     __tablename__ = 'submissions'
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
     filename = Column(String(255), nullable=False)
     size = Column(Integer, nullable=False)
+    download_url = Column(String(255), nullable=False)
 
     # This is whether the submission has been downloaded in the local database.
     is_downloaded = Column(Boolean, default=False)
@@ -66,11 +80,15 @@ class Submission(Base):
                           backref=backref("submissions", order_by=id,
                                           cascade="delete"))
 
-    def __init__(self, source, uuid, size, filename):
+    def __init__(self, source, uuid, size, filename, download_url):
+        # ORM event catching _should_ have already initialized `self.data`
+
         self.source_id = source.id
         self.uuid = uuid
         self.size = size
         self.filename = filename
+        self.download_url = download_url
+        self.is_download = False
 
     def __repr__(self):
         return '<Submission {}>'.format(self.filename)
@@ -98,6 +116,10 @@ class Reply(Base):
         self.source_id = source.id
         self.filename = filename
         self.size = size
+
+    @property
+    def content(self):
+        return "(reply content, TODO)"
 
     def __repr__(self):
         return '<Reply {}>'.format(self.filename)

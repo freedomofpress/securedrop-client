@@ -84,7 +84,7 @@
                 "sha256:a3c066acee22a1c94f63938341d4fb374e3fdd69366ed6603d7b24bed1efc565"
             ],
             "version": "==1.0.3"
-        },
+        },        
         "requests": {
             "hashes": [
                 "sha256:99dcfdaaeb17caf6e526f32b6a7b780461512ab3f1d992187801694cba42770c",

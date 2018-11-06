@@ -84,6 +84,23 @@ def test_Client_setup(safe_tmpdir):
     cl.gui.show_login.assert_called_once_with()
 
 
+def test_Client_start_message_thread(safe_tmpdir):
+    """
+    When starting message-fetching thread, make sure we do a few things.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.QThread') as mock_qthread, \
+            mock.patch('securedrop_client.logic.MessageSync') as mock_msync:
+        cl.message_sync = mock.MagicMock()
+        cl.start_message_thread()
+        cl.message_sync.moveToThread.assert_called_once_with(mock_qthread())
+        cl.message_thread.started.connect.assert_called_once_with(
+            cl.message_sync.run)
+        cl.message_thread.start.assert_called_once_with()
+
+
 def test_Client_call_api(safe_tmpdir):
     """
     A new thread and APICallRunner is created / setup.
@@ -186,9 +203,11 @@ def test_Client_on_authenticate_ok(safe_tmpdir):
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
     cl.sync_api = mock.MagicMock()
     cl.api = mock.MagicMock()
+    cl.start_message_thread = mock.MagicMock()
     cl.api.username = 'test'
     cl.on_authenticate(True)
     cl.sync_api.assert_called_once_with()
+    cl.start_message_thread.assert_called_once_with()
     cl.gui.set_logged_in_as.assert_called_once_with('test')
     # Error status bar should be cleared
     cl.gui.update_error_status.assert_called_once_with("")
@@ -688,7 +707,7 @@ def test_Client_on_file_click_Submission(safe_tmpdir):
     source = models.Source('source-uuid', 'testy-mctestface', False,
                            'mah pub key', 1, False, datetime.now())
     submission = models.Submission(source, 'submission-uuid', 1234,
-                                   'myfile.doc.gpg')
+                                   'myfile.doc.gpg', 'http://myserver/myfile')
     cl.call_api = mock.MagicMock()
     cl.api = mock.MagicMock()
     submission_sdk_object = mock.MagicMock()
@@ -780,3 +799,14 @@ def test_Client_on_file_click_Reply(safe_tmpdir):
                                         cl.on_download_timeout,
                                         reply_sdk_object,
                                         cl.data_dir, current_object=reply)
+
+
+def test_Client_on_object_loaded(safe_tmpdir):
+    """
+    Tests that the ORM "loaded" callback correctly configures the target object
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.on_object_loaded(cl, None)
+    assert cl.data.data_dir == os.path.join(str(safe_tmpdir), "data")
