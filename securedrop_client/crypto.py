@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import time
+import gzip
 import logging
 import os
 import shutil
@@ -33,7 +34,9 @@ from sqlalchemy.orm import sessionmaker
 logger = logging.getLogger(__name__)
 
 
-def decrypt_submission(filepath, target_filename, home_dir, is_qubes=True):
+
+def decrypt_submission(filepath, target_filename, home_dir, is_qubes=True,
+                       is_doc=False):
     out = tempfile.NamedTemporaryFile(suffix=".message")
     err = tempfile.NamedTemporaryFile(suffix=".message-error", delete=False)
     if is_qubes:
@@ -54,10 +57,27 @@ def decrypt_submission(filepath, target_filename, home_dir, is_qubes=True):
             logger.error("GPG error: {}".format(msg))
 
         os.unlink(err.name)
+        return "", ""
     else:
-        fn_no_ext, _ = os.path.splitext(target_filename)
-        dest = os.path.join(home_dir, "data", fn_no_ext)
-        shutil.copy(out.name, dest)
+        if is_doc:
+            # Now also unzip the file
+            with gzip.open(out.name, 'rb') as infile:
+                unzipped_decrypted_data = infile.read()
+
+            # Need to split twice as filename is e.g.
+            # 1-impractical_thing-doc.gz.gpg
+            fn_no_ext, _ = os.path.splitext(
+                os.path.splitext(os.path.basename(filepath))[0])
+            dest = os.path.join(home_dir, "data", fn_no_ext)
+
+            with open(dest, 'wb') as outfile:
+                outfile.write(unzipped_decrypted_data)
+        else:
+            fn_no_ext, _ = os.path.splitext(target_filename)
+            dest = os.path.join(home_dir, "data", fn_no_ext)
+            shutil.copy(out.name, dest)
+
+        out.close()
         err.close()
         logger.info("Downloaded and decrypted: {}".format(dest))
 
