@@ -101,6 +101,23 @@ def test_Client_start_message_thread(safe_tmpdir):
         cl.message_thread.start.assert_called_once_with()
 
 
+def test_Client_start_reply_thread(safe_tmpdir):
+    """
+    When starting reply-fetching thread, make sure we do a few things.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.QThread') as mock_qthread, \
+            mock.patch('securedrop_client.logic.ReplySync') as mock_msync:
+        cl.reply_sync = mock.MagicMock()
+        cl.start_reply_thread()
+        cl.reply_sync.moveToThread.assert_called_once_with(mock_qthread())
+        cl.reply_thread.started.connect.assert_called_once_with(
+            cl.reply_sync.run)
+        cl.reply_thread.start.assert_called_once_with()
+
+
 def test_Client_call_api(safe_tmpdir):
     """
     A new thread and APICallRunner is created / setup.
