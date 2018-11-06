@@ -54,7 +54,7 @@ def test_MessageSync_run_success():
 
         ms = MessageSync(api, home)
         ms.api.download_submission = mock.MagicMock(
-            return_value=(1234, "/tmp/foo")
+            return_value=(1234, "/home/user/downloads/foo")
         )
 
         ms.run(False)
@@ -89,7 +89,7 @@ def test_MessageSync_run_success():
 
         ms = MessageSync(api, home)
         ms.api.download_submission = mock.MagicMock(
-            return_value=(1234, "/tmp/foo")
+            return_value=(1234, "/home/user/downloads/foo")
         )
 
         ms.run(False)
@@ -144,7 +144,7 @@ def test_MessageSync_run_failure():
 
         ms = MessageSync(api, home)
         ms.api.download_submission = mock.MagicMock(
-            return_value=(1234, "/tmp/foo")
+            return_value=(1234, "/home/user/downloads/foo")
         )
 
         ms.run(False)
