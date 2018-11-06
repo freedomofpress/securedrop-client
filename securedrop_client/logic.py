@@ -456,7 +456,7 @@ class Client(QObject):
         if self.proxy:
             # Running on Qubes.
             command = "qvm-open-in-vm"
-            args = ["'$dispvm:sd-svs-disp'", submission_filepath]
+            args = ['$dispvm:sd-svs-disp', submission_filepath]
             # QProcess (Qt) or Python's subprocess? Who cares? They do the
             # same thing. :-)
             process = QProcess(self)
