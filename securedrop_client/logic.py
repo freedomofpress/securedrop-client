@@ -439,23 +439,31 @@ class Client(QObject):
         """
         self.gui.set_status(message, duration)
 
-    def on_file_open(self, source_db_object):
+    def on_file_open(self, submission_db_object):
         """
-        Open the already doanloaded file associated with the message (which
-        may be a Submission or a Repl).
+        Open the already downloaded file associated with the message (which
+        is a Submission).
         """
+
+        # Once downloaded, submissions are stored in the data directory
+        # with the same filename as the server, except with the .gz.gpg
+        # stripped off.
+        server_filename = submission_db_object.filename
+        fn_no_ext, _ = os.path.splitext(
+                os.path.splitext(server_filename)[0])
+        submission_filepath = os.path.join(self.data_dir, fn_no_ext)
+
         if self.proxy:
             # Running on Qubes.
             command = "qvm-open-in-vm"
-            args = ["'$dispvm:sd-svs-disp'", source_db_object.filename]
+            args = ["'$dispvm:sd-svs-disp'", submission_filepath]
             # QProcess (Qt) or Python's subprocess? Who cares? They do the
             # same thing. :-)
             process = QProcess(self)
             process.start(command, args)
-            # TODO: Set marked as read?
         else:  # pragma: no cover
             # Non Qubes OS. Just log the event for now.
-            logger.info('Opening file "{}".'.format(message.filename))
+            logger.info('Opening file "{}".'.format(submission_filepath))
 
     def on_file_download(self, source_db_object, message):
         """
