@@ -110,7 +110,7 @@ class Reply(Base, WithContent):
     filename = Column(String(255), nullable=False)
     size = Column(Integer, nullable=False)
 
-    # This is whether the submission has been downloaded in the local database.
+    # This is whether the reply has been downloaded in the local database.
     is_downloaded = Column(Boolean, default=False)
 
     def __init__(self, uuid, journalist, source, filename, size):

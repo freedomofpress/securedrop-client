@@ -204,6 +204,7 @@ def test_Client_on_authenticate_ok(safe_tmpdir):
     cl.sync_api = mock.MagicMock()
     cl.api = mock.MagicMock()
     cl.start_message_thread = mock.MagicMock()
+    cl.start_reply_thread = mock.MagicMock()
     cl.api.username = 'test'
     cl.on_authenticate(True)
     cl.sync_api.assert_called_once_with()

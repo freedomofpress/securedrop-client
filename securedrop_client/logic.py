@@ -144,7 +144,6 @@ class Client(QObject):
         event.listen(models.Reply, 'load', self.on_object_loaded)
         event.listen(models.Reply, 'init', self.on_object_instantiated)
 
-
     def on_object_instantiated(self, target, args, kwargs):
         target.data = Data(self.data_dir)
         return target

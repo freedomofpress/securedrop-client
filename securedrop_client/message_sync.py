@@ -35,6 +35,7 @@ from sqlalchemy.orm import sessionmaker
 
 logger = logging.getLogger(__name__)
 
+
 class APISyncObject(QObject):
 
     def __init__(self, api, home, is_qubes):
