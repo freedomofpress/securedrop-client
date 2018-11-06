@@ -772,9 +772,6 @@ def test_Client_on_download_timeout(safe_tmpdir):
         "The connection to the SecureDrop server timed out. Please try again.")
 
 
-# This can be unfailed when this SDK change is merged and released:
-# https://github.com/freedomofpress/securedrop-sdk/pull/32
-@pytest.mark.xfail(reason="needs SDK change merged")
 def test_Client_on_file_click_Reply(safe_tmpdir):
     """
     If the handler is passed a reply, check the download_reply
@@ -799,3 +796,13 @@ def test_Client_on_file_click_Reply(safe_tmpdir):
                                         cl.on_download_timeout,
                                         reply_sdk_object,
                                         cl.data_dir, current_object=reply)
+
+def test_Client_on_object_loaded(safe_tmpdir):
+    """
+    Tests that the ORM "loaded" callback correctly configures the target object
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.on_object_loaded(cl, None)
+    assert cl.data.data_dir == os.path.join(str(safe_tmpdir), "data")

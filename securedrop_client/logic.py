@@ -144,6 +144,7 @@ class Client(QObject):
 
     def on_object_instantiated(self, target, args, kwargs):
         target.data = Data(self.data_dir)
+        return target
 
     def on_object_loaded(self, target, context):
         target.data = Data(self.data_dir)

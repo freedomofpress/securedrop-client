@@ -52,7 +52,7 @@ def test_MessageSync_run_success():
         home = "/home/user/.sd"
 
         ms = MessageSync(api, home)
-        ms.api.download_submission_from_url = mock.MagicMock(
+        ms.api.download_submission = mock.MagicMock(
             return_value=(1234, "/tmp/foo")
         )
 
@@ -88,7 +88,7 @@ def test_MessageSync_run_success():
         home = "/home/user/.sd"
 
         ms = MessageSync(api, home)
-        ms.api.download_submission_from_url = mock.MagicMock(
+        ms.api.download_submission = mock.MagicMock(
             return_value=(1234, "/tmp/foo")
         )
 
@@ -124,7 +124,7 @@ def test_MessageSync_run_failure():
         home = "/home/user/.sd"
 
         ms = MessageSync(api, home)
-        ms.api.download_submission_from_url = mock.MagicMock(
+        ms.api.download_submission = mock.MagicMock(
             return_value=(1234, "/tmp/foo")
         )
 

@@ -24,15 +24,9 @@ class WithContent():
     def content(self):
         if self.is_downloaded:
             fn_no_ext, _ = os.path.splitext(self.filename)
-            content = None
-            try:
-                content = self.data.get(fn_no_ext)
-            except Exception as ex:
-                content = "<Could not open message content: {}>".format(ex)
-
-            return content
+            return self.data.get(fn_no_ext)
         else:
-            return "<Message not yet downloaded>"
+            return None
 
 class Source(Base):
     __tablename__ = 'sources'
@@ -89,13 +83,16 @@ class Submission(Base, WithContent):
                                           cascade="delete"))
 
     def __init__(self, source, uuid, size, filename, download_url):
-        self.data = None
+        # ORM event catching _should_ have already initialized `self.data`
+        if not hasattr(self, 'data'):
+            self.data = None
+
         self.source_id = source.id
         self.uuid = uuid
         self.size = size
         self.filename = filename
         self.download_url = download_url
-
+        self.is_download = False
 
 
     def __repr__(self):

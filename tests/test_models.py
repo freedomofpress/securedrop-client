@@ -1,5 +1,5 @@
 from securedrop_client.models import Reply, Source, Submission, User
-
+from unittest import mock
 
 def test_string_representation_of_user():
     user = User('hehe')
@@ -39,7 +39,8 @@ def test_submission_content_downloaded():
                             filename="test.docx",
                             download_url='http://test/test')
     submission.is_downloaded = True
-    assert submission.content == ""
+    with  mock.patch('builtins.open', mock.mock_open(read_data="blah")):
+        assert submission.content == "blah"
 
 def test_string_representation_of_reply():
     user = User('hehe')
