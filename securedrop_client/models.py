@@ -94,7 +94,7 @@ class Submission(Base, WithContent):
         return '<Submission {}>'.format(self.filename)
 
 
-class Reply(Base):
+class Reply(Base, WithContent):
     __tablename__ = 'replies'
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
@@ -110,16 +110,16 @@ class Reply(Base):
     filename = Column(String(255), nullable=False)
     size = Column(Integer, nullable=False)
 
+    # This is whether the submission has been downloaded in the local database.
+    is_downloaded = Column(Boolean, default=False)
+
     def __init__(self, uuid, journalist, source, filename, size):
         self.uuid = uuid
         self.journalist_id = journalist.id
         self.source_id = source.id
         self.filename = filename
         self.size = size
-
-    @property
-    def content(self):
-        return "(reply content, TODO)"
+        self.is_downloaded = False
 
     def __repr__(self):
         return '<Reply {}>'.format(self.filename)

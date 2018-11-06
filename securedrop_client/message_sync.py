@@ -35,11 +35,7 @@ from sqlalchemy.orm import sessionmaker
 
 logger = logging.getLogger(__name__)
 
-
-class MessageSync(QObject):
-    """
-    Runs in the background, finding messages to download and downloading them.
-    """
+class APISyncObject(QObject):
 
     def __init__(self, api, home, is_qubes):
         super().__init__()
@@ -51,54 +47,110 @@ class MessageSync(QObject):
         self.home = home
         self.is_qubes = is_qubes
 
+    def fetch_the_thing(self, item, msg, download_fn, update_fn):
+        shasum, filepath = download_fn(item)
+
+        out = tempfile.NamedTemporaryFile(suffix=".message")
+        err = tempfile.NamedTemporaryFile(suffix=".message-error",
+                                          delete=False)
+
+        if self.is_qubes:
+            gpg_binary = "qubes-gpg-client"
+        else:
+            gpg_binary = "gpg"
+
+        cmd = [gpg_binary, "--decrypt", filepath]
+        res = subprocess.call(cmd, stdout=out, stderr=err)
+        os.unlink(filepath)
+
+        if res != 0:
+            out.close()
+            err.close()
+
+            with open(err.name) as e:
+                msg = e.read()
+                logger.error("GPG error: {}".format(msg))
+                os.unlink(err.name)
+
+        else:
+            fn_no_ext, _ = os.path.splitext(msg.filename)
+            dest = os.path.join(self.home, "data", fn_no_ext)
+            shutil.copy(out.name, dest)
+            err.close()
+            update_fn(msg.uuid, self.session)
+
+
+class MessageSync(APISyncObject):
+    """
+    Runs in the background, finding messages to download and downloading them.
+    """
+
+    def __init__(self, api, home, is_qubes):
+        super().__init__(api, home, is_qubes)
+
     def run(self, loop=True):
         while True:
             submissions = storage.find_new_submissions(self.session)
 
-            for m in submissions:
+            for msg in submissions:
                 try:
 
-                    # api.download_submission wants an _api_ submission
-                    # object, which is different from own submission
-                    # object. so we coerce that here.
+                    # the API wants API objects. here in the client,
+                    # we have client objects. let's take care of that
+                    # here
                     sdk_submission = sdkobjects.Submission(
-                        uuid=m.uuid
+                        uuid=msg.uuid
                     )
-                    sdk_submission.source_uuid = m.source.uuid
+                    sdk_submission.source_uuid = msg.source.uuid
                     # Need to set filename on non-Qubes platforms
-                    sdk_submission.filename = m.filename
-                    shasum, filepath = self.api.download_submission(
-                        sdk_submission
+                    sdk_submission.filename = msg.filename
+
+                    self.fetch_the_thing(sdk_submission,
+                                         msg,
+                                         self.api.download_submission,
+                                         storage.mark_file_as_downloaded)
+
+                except Exception as e:
+                    logger.critical(
+                        "Exception while downloading submission! {}".format(e)
                     )
-                    out = tempfile.NamedTemporaryFile(suffix=".message")
-                    err = tempfile.NamedTemporaryFile(suffix=".message-error",
-                                                      delete=False)
-                    if self.is_qubes:
-                        gpg_binary = "qubes-gpg-client"
-                    else:
-                        gpg_binary = "gpg"
-                    cmd = [gpg_binary, "--decrypt", filepath]
-                    res = subprocess.call(cmd, stdout=out, stderr=err)
 
-                    os.unlink(filepath)  # original file
+            if not loop:
+                break
+            else:
+                time.sleep(5)  # pragma: no cover
 
-                    if res != 0:
-                        out.close()
-                        err.close()
 
-                        with open(err.name) as e:
-                            msg = e.read()
-                            logger.error("GPG error: {}".format(msg))
+class ReplySync(APISyncObject):
+    """
+    Runs in the background, finding replies to download and downloading them.
+    """
 
-                            os.unlink(err.name)
-                    else:
-                        fn_no_ext, _ = os.path.splitext(m.filename)
-                        dest = os.path.join(self.home, "data", fn_no_ext)
-                        shutil.copy(out.name, dest)
-                        err.close()
-                        storage.mark_file_as_downloaded(m.uuid, self.session)
+    def __init__(self, api, home, is_qubes):
+        super().__init__(api, home, is_qubes)
 
-                        logger.info("Stored message at {}".format(out.name))
+    def run(self, loop=True):
+        while True:
+            replies = storage.find_new_replies(self.session)
+
+            for msg in replies:
+                try:
+
+                    # the API wants API objects. here in the client,
+                    # we have client objects. let's take care of that
+                    # here
+                    sdk_reply = sdkobjects.Reply(
+                        uuid=msg.uuid
+                    )
+                    sdk_reply.source_uuid = msg.source.uuid
+                    # Need to set filename on non-Qubes platforms
+                    sdk_reply.filename = msg.filename
+
+                    self.fetch_the_thing(sdk_reply,
+                                         msg,
+                                         self.api.download_reply,
+                                         storage.mark_reply_as_downloaded)
+
                 except Exception as e:
                     logger.critical(
                         "Exception while downloading submission! {}".format(e)

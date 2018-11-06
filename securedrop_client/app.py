@@ -147,9 +147,6 @@ def start_app(args, qt_args) -> None:
     configure_logging(args.sdc_home)
     logging.info('Starting SecureDrop Client {}'.format(__version__))
 
-    # init data singleton
-    Data(args.sdc_home)
-
     app = QApplication(qt_args)
     app.setApplicationName('SecureDrop Client')
     app.setDesktopFileName('org.freedomofthepress.securedrop.client')

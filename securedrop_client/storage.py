@@ -246,11 +246,30 @@ def find_new_submissions(session):
     return submissions
 
 
+def find_new_replies(session):
+    submissions = session.query(Reply) \
+                         .filter_by(is_downloaded=False) \
+                         .all()
+    return submissions
+
+
 def mark_file_as_downloaded(uuid, session):
     """Mark file as downloaded in the database. The file itself will be
     stored in the data directory.
     """
     submission_db_object = session.query(Submission) \
+                                  .filter_by(uuid=uuid) \
+                                  .one_or_none()
+    submission_db_object.is_downloaded = True
+    session.add(submission_db_object)
+    session.commit()
+
+
+def mark_reply_as_downloaded(uuid, session):
+    """Mark reply as downloaded in the database. The file itself will be
+    stored in the data directory.
+    """
+    submission_db_object = session.query(Reply) \
                                   .filter_by(uuid=uuid) \
                                   .one_or_none()
     submission_db_object.is_downloaded = True
