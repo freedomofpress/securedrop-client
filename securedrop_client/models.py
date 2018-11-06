@@ -1,13 +1,23 @@
 import os
 
 from sqlalchemy import (Boolean, Column, create_engine, DateTime, ForeignKey,
-                        Integer, String, Text)
+                        Integer, String, Text, MetaData)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 
 from securedrop_client.data import Data
 
-Base = declarative_base()
+convention = {
+    "ix": 'ix_%(column_0_label)s',
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s"
+}
+
+metadata = MetaData(naming_convention=convention)
+
+Base = declarative_base(metadata=metadata)
 
 
 def make_engine(home: str):
@@ -31,10 +41,12 @@ class Source(Base):
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
     journalist_designation = Column(String(255), nullable=False)
-    is_flagged = Column(Boolean, server_default="false")
+    is_flagged = Column(Boolean(name='ck_sources_is_flagged'),
+                        server_default="false")
     public_key = Column(Text, nullable=True)
     interaction_count = Column(Integer, server_default="0", nullable=False)
-    is_starred = Column(Boolean, server_default="false")
+    is_starred = Column(Boolean(name='ck_soruces_is_starred'),
+                        server_default="false")
     last_updated = Column(DateTime)
 
     def __init__(self, uuid, journalist_designation, is_flagged, public_key,
@@ -70,10 +82,12 @@ class Submission(Base, WithContent):
     download_url = Column(String(255), nullable=False)
 
     # This is whether the submission has been downloaded in the local database.
-    is_downloaded = Column(Boolean, default=False)
+    is_downloaded = Column(Boolean(name='ck_submissions_is_downloaded'),
+                           default=False)
 
     # This reflects read status stored on the server.
-    is_read = Column(Boolean, default=False)
+    is_read = Column(Boolean(name='ck_submissions_is_read'),
+                     default=False)
 
     source_id = Column(Integer, ForeignKey('sources.id'))
     source = relationship("Source",
