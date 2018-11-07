@@ -28,6 +28,7 @@ import sdclientapi.sdlocalobjects as sdkobjects
 
 from PyQt5.QtCore import QObject
 from securedrop_client import storage
+from securedrop_client import crypto
 from securedrop_client.models import make_engine
 
 from sqlalchemy.orm import sessionmaker
@@ -51,34 +52,15 @@ class APISyncObject(QObject):
     def fetch_the_thing(self, item, msg, download_fn, update_fn):
         shasum, filepath = download_fn(item)
 
-        out = tempfile.NamedTemporaryFile(suffix=".message")
-        err = tempfile.NamedTemporaryFile(suffix=".message-error",
-                                          delete=False)
+        res, dest = crypto.decrypt_submission_or_reply(filepath,
+                                                       msg.filename,
+                                                       self.home,
+                                                       self.is_qubes, False)
 
-        if self.is_qubes:
-            gpg_binary = "qubes-gpg-client"
-        else:
-            gpg_binary = "gpg"
-
-        cmd = [gpg_binary, "--decrypt", filepath]
-        res = subprocess.call(cmd, stdout=out, stderr=err)
-        os.unlink(filepath)
-
-        if res != 0:
-            out.close()
-            err.close()
-
-            with open(err.name) as e:
-                msg = e.read()
-                logger.error("GPG error: {}".format(msg))
-                os.unlink(err.name)
-
-        else:
-            fn_no_ext, _ = os.path.splitext(msg.filename)
-            dest = os.path.join(self.home, "data", fn_no_ext)
-            shutil.copy(out.name, dest)
-            err.close()
+        if res == 0:
             update_fn(msg.uuid, self.session)
+            logger.info("Stored message or reply at {}".format(
+                stored_filename))
 
 
 class MessageSync(APISyncObject):
@@ -95,10 +77,6 @@ class MessageSync(APISyncObject):
 
             for db_submission in submissions:
                 try:
-
-                    # the API wants API objects. here in the client,
-                    # we have client objects. let's take care of that
-                    # here
                     sdk_submission = sdkobjects.Submission(
                         uuid=db_submission.uuid
                     )
