@@ -93,21 +93,21 @@ class MessageSync(APISyncObject):
         while True:
             submissions = storage.find_new_submissions(self.session)
 
-            for msg in submissions:
+            for db_submission in submissions:
                 try:
 
                     # the API wants API objects. here in the client,
                     # we have client objects. let's take care of that
                     # here
                     sdk_submission = sdkobjects.Submission(
-                        uuid=msg.uuid
+                        uuid=db_submission.uuid
                     )
-                    sdk_submission.source_uuid = msg.source.uuid
+                    sdk_submission.source_uuid = db_submission.source.uuid
                     # Need to set filename on non-Qubes platforms
-                    sdk_submission.filename = msg.filename
+                    sdk_submission.filename = db_submission.filename
 
                     self.fetch_the_thing(sdk_submission,
-                                         msg,
+                                         db_submission,
                                          self.api.download_submission,
                                          storage.mark_file_as_downloaded)
 
@@ -134,27 +134,27 @@ class ReplySync(APISyncObject):
         while True:
             replies = storage.find_new_replies(self.session)
 
-            for msg in replies:
+            for db_reply in replies:
                 try:
 
                     # the API wants API objects. here in the client,
                     # we have client objects. let's take care of that
                     # here
                     sdk_reply = sdkobjects.Reply(
-                        uuid=msg.uuid
+                        uuid=db_reply.uuid
                     )
-                    sdk_reply.source_uuid = msg.source.uuid
+                    sdk_reply.source_uuid = db_reply.source.uuid
                     # Need to set filename on non-Qubes platforms
-                    sdk_reply.filename = msg.filename
+                    sdk_reply.filename = db_reply.filename
 
                     self.fetch_the_thing(sdk_reply,
-                                         msg,
+                                         db_reply,
                                          self.api.download_reply,
                                          storage.mark_reply_as_downloaded)
 
                 except Exception as e:
                     logger.critical(
-                        "Exception while downloading submission! {}".format(e)
+                        "Exception while downloading reply! {}".format(e)
                     )
 
             if not loop:

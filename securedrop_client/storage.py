@@ -247,10 +247,10 @@ def find_new_submissions(session):
 
 
 def find_new_replies(session):
-    submissions = session.query(Reply) \
-                         .filter_by(is_downloaded=False) \
-                         .all()
-    return submissions
+    replies = session.query(Reply) \
+                     .filter_by(is_downloaded=False) \
+                     .all()
+    return replies
 
 
 def mark_file_as_downloaded(uuid, session):
@@ -269,9 +269,9 @@ def mark_reply_as_downloaded(uuid, session):
     """Mark reply as downloaded in the database. The file itself will be
     stored in the data directory.
     """
-    submission_db_object = session.query(Reply) \
-                                  .filter_by(uuid=uuid) \
-                                  .one_or_none()
-    submission_db_object.is_downloaded = True
-    session.add(submission_db_object)
+    reply_db_object = session.query(Reply) \
+                             .filter_by(uuid=uuid) \
+                             .one_or_none()
+    reply_db_object.is_downloaded = True
+    session.add(reply_db_object)
     session.commit()
