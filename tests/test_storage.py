@@ -14,7 +14,9 @@ from securedrop_client.storage import (get_local_sources,
                                        update_submissions, update_replies,
                                        find_or_create_user,
                                        find_new_submissions,
-                                       mark_file_as_downloaded)
+                                       find_new_replies,
+                                       mark_file_as_downloaded,
+                                       mark_reply_as_downloaded)
 from sdclientapi import Source, Submission, Reply
 
 
@@ -367,6 +369,17 @@ def test_find_new_submissions():
     assert submissions[0].is_downloaded is False
 
 
+def test_find_new_replies():
+    mock_session = mock.MagicMock()
+    mock_reply = mock.MagicMock()
+    mock_reply.is_downloaded = False
+    mock_replies = [mock_reply]
+    mock_session.query().filter_by() \
+                        .all.return_value = mock_replies
+    replies = find_new_replies(mock_session)
+    assert replies[0].is_downloaded is False
+
+
 def test_mark_file_as_downloaded():
     mock_session = mock.MagicMock()
     mock_submission = mock.MagicMock()
@@ -375,4 +388,15 @@ def test_mark_file_as_downloaded():
     mark_file_as_downloaded('test-filename', mock_session)
     assert mock_submission.is_downloaded is True
     mock_session.add.assert_called_once_with(mock_submission)
+    mock_session.commit.assert_called_once_with()
+
+
+def test_mark_reply_as_downloaded():
+    mock_session = mock.MagicMock()
+    mock_reply = mock.MagicMock()
+    mock_reply.is_downloaded is False
+    mock_session.query().filter_by().one_or_none.return_value = mock_reply
+    mark_reply_as_downloaded('test-filename', mock_session)
+    assert mock_reply.is_downloaded is True
+    mock_session.add.assert_called_once_with(mock_reply)
     mock_session.commit.assert_called_once_with()

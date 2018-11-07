@@ -28,8 +28,8 @@ from securedrop_client.models import make_engine
 logger = logging.getLogger(__name__)
 
 
-def decrypt_submission(filepath, target_filename, home_dir, is_qubes=True,
-                       is_doc=False):
+def decrypt_submission_or_reply(filepath, target_filename, home_dir,
+                                is_qubes=True, is_doc=False):
     out = tempfile.NamedTemporaryFile(suffix=".message")
     err = tempfile.NamedTemporaryFile(suffix=".message-error", delete=False)
     if is_qubes:

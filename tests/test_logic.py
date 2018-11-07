@@ -101,6 +101,23 @@ def test_Client_start_message_thread(safe_tmpdir):
         cl.message_thread.start.assert_called_once_with()
 
 
+def test_Client_start_reply_thread(safe_tmpdir):
+    """
+    When starting reply-fetching thread, make sure we do a few things.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.QThread') as mock_qthread, \
+            mock.patch('securedrop_client.logic.ReplySync') as mock_msync:
+        cl.reply_sync = mock.MagicMock()
+        cl.start_reply_thread()
+        cl.reply_sync.moveToThread.assert_called_once_with(mock_qthread())
+        cl.reply_thread.started.connect.assert_called_once_with(
+            cl.reply_sync.run)
+        cl.reply_thread.start.assert_called_once_with()
+
+
 def test_Client_call_api(safe_tmpdir):
     """
     A new thread and APICallRunner is created / setup.
@@ -204,6 +221,7 @@ def test_Client_on_authenticate_ok(safe_tmpdir):
     cl.sync_api = mock.MagicMock()
     cl.api = mock.MagicMock()
     cl.start_message_thread = mock.MagicMock()
+    cl.start_reply_thread = mock.MagicMock()
     cl.api.username = 'test'
     cl.on_authenticate(True)
     cl.sync_api.assert_called_once_with()
@@ -734,7 +752,7 @@ def test_Client_on_file_downloaded_success(safe_tmpdir):
     submission_db_object.uuid = test_object_uuid
     submission_db_object.filename = test_filename
     with mock.patch('securedrop_client.logic.storage') as mock_storage, \
-            mock.patch('securedrop_client.crypto.decrypt_submission',
+            mock.patch('securedrop_client.crypto.decrypt_submission_or_reply',
                        return_value=(0, 'filepath')) as mock_gpg, \
             mock.patch('shutil.move'):
         cl.on_file_downloaded(result_data, current_object=submission_db_object)
@@ -775,7 +793,7 @@ def test_Client_on_file_downloaded_decrypt_failure(safe_tmpdir):
     submission_db_object = mock.MagicMock()
     submission_db_object.uuid = 'myuuid'
     submission_db_object.filename = 'filename'
-    with mock.patch('securedrop_client.crypto.decrypt_submission',
+    with mock.patch('securedrop_client.crypto.decrypt_submission_or_reply',
                     return_value=(1, '')) as mock_gpg, \
             mock.patch('shutil.move'):
         cl.on_file_downloaded(result_data, current_object=submission_db_object)

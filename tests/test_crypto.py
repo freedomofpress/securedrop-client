@@ -2,7 +2,7 @@ import pytest
 import os
 from unittest import mock
 
-from securedrop_client.crypto import decrypt_submission
+from securedrop_client.crypto import decrypt_submission_or_reply
 
 
 def test_gunzip_logic(safe_tmpdir):
@@ -20,7 +20,7 @@ def test_gunzip_logic(safe_tmpdir):
     with mock.patch('subprocess.call',
                     return_value=0) as mock_gpg, \
             mock.patch('os.unlink') as mock_unlink:
-        res, dest = decrypt_submission(
+        res, dest = decrypt_submission_or_reply(
             test_gzip, expected_output_filename,
             str(safe_tmpdir), is_qubes=False,
             is_doc=True)

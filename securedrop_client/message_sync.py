@@ -37,10 +37,7 @@ from sqlalchemy.orm import sessionmaker
 logger = logging.getLogger(__name__)
 
 
-class MessageSync(QObject):
-    """
-    Runs in the background, finding messages to download and downloading them.
-    """
+class APISyncObject(QObject):
 
     def __init__(self, api, home, is_qubes):
         super().__init__()
@@ -52,33 +49,90 @@ class MessageSync(QObject):
         self.home = home
         self.is_qubes = is_qubes
 
+    def fetch_the_thing(self, item, msg, download_fn, update_fn):
+        shasum, filepath = download_fn(item)
+
+        res, dest = crypto.decrypt_submission_or_reply(filepath,
+                                                       msg.filename,
+                                                       self.home,
+                                                       self.is_qubes, False)
+
+        if res == 0:
+            update_fn(msg.uuid, self.session)
+            logger.info("Stored message or reply at {}".format(
+                msg.filename))
+
+
+class MessageSync(APISyncObject):
+    """
+    Runs in the background, finding messages to download and downloading them.
+    """
+
+    def __init__(self, api, home, is_qubes):
+        super().__init__(api, home, is_qubes)
+
     def run(self, loop=True):
         while True:
             submissions = storage.find_new_submissions(self.session)
 
-            for m in submissions:
+            for db_submission in submissions:
                 try:
-                    # api.download_submission wants an _api_ submission
-                    # object, which is different from own submission
-                    # object. so we coerce that here.
                     sdk_submission = sdkobjects.Submission(
-                        uuid=m.uuid
+                        uuid=db_submission.uuid
                     )
-                    sdk_submission.source_uuid = m.source.uuid
-                    # Needed for non-Qubes platforms
-                    sdk_submission.filename = m.filename
-                    shasum, filepath = self.api.download_submission(
-                        sdk_submission)
-                    res, stored_filename = crypto.decrypt_submission(
-                        filepath, m.filename, self.home,
-                        is_qubes=self.is_qubes)
-                    if res == 0:
-                        storage.mark_file_as_downloaded(m.uuid, self.session)
-                        logger.info("Stored message at {}".format(
-                            stored_filename))
+                    sdk_submission.source_uuid = db_submission.source.uuid
+                    # Need to set filename on non-Qubes platforms
+                    sdk_submission.filename = db_submission.filename
+
+                    self.fetch_the_thing(sdk_submission,
+                                         db_submission,
+                                         self.api.download_submission,
+                                         storage.mark_file_as_downloaded)
+
                 except Exception as e:
                     logger.critical(
                         "Exception while downloading submission! {}".format(e)
+                    )
+
+            if not loop:
+                break
+            else:
+                time.sleep(5)  # pragma: no cover
+
+
+class ReplySync(APISyncObject):
+    """
+    Runs in the background, finding replies to download and downloading them.
+    """
+
+    def __init__(self, api, home, is_qubes):
+        super().__init__(api, home, is_qubes)
+
+    def run(self, loop=True):
+        while True:
+            replies = storage.find_new_replies(self.session)
+
+            for db_reply in replies:
+                try:
+
+                    # the API wants API objects. here in the client,
+                    # we have client objects. let's take care of that
+                    # here
+                    sdk_reply = sdkobjects.Reply(
+                        uuid=db_reply.uuid
+                    )
+                    sdk_reply.source_uuid = db_reply.source.uuid
+                    # Need to set filename on non-Qubes platforms
+                    sdk_reply.filename = db_reply.filename
+
+                    self.fetch_the_thing(sdk_reply,
+                                         db_reply,
+                                         self.api.download_reply,
+                                         storage.mark_reply_as_downloaded)
+
+                except Exception as e:
+                    logger.critical(
+                        "Exception while downloading reply! {}".format(e)
                     )
 
             if not loop:

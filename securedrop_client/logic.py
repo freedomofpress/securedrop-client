@@ -29,8 +29,8 @@ from securedrop_client import storage
 from securedrop_client import models
 from securedrop_client.utils import check_dir_permissions
 from securedrop_client.data import Data
+from securedrop_client.message_sync import MessageSync, ReplySync
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess
-from securedrop_client.message_sync import MessageSync
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +106,7 @@ class Client(QObject):
         self.api = None  # Reference to the API for secure drop proxy.
         self.session = session  # Reference to the SqlAlchemy session.
         self.message_thread = None  # thread responsible for fetching messages
+        self.reply_thread = None  # thread responsible for fetching replies
         self.home = home  # used for finding DB in sync thread
         self.api_threads = {}  # Contains active threads calling the API.
         self.sync_flag = os.path.join(home, 'sync_flag')
@@ -140,6 +141,8 @@ class Client(QObject):
 
         event.listen(models.Submission, 'load', self.on_object_loaded)
         event.listen(models.Submission, 'init', self.on_object_instantiated)
+        event.listen(models.Reply, 'load', self.on_object_loaded)
+        event.listen(models.Reply, 'init', self.on_object_instantiated)
 
     def on_object_instantiated(self, target, args, kwargs):
         target.data = Data(self.data_dir)
@@ -229,6 +232,17 @@ class Client(QObject):
             self.message_thread.started.connect(self.message_sync.run)
             self.message_thread.start()
 
+    def start_reply_thread(self):
+        """
+        Starts the reply-fetching thread in the background.
+        """
+        if not self.reply_thread:
+            self.reply_thread = QThread()
+            self.reply_sync = ReplySync(self.api, self.home, self.proxy)
+            self.reply_sync.moveToThread(self.reply_thread)
+            self.reply_thread.started.connect(self.reply_sync.run)
+            self.reply_thread.start()
+
     def timeout_cleanup(self, thread_id, user_callback):
         """
         Clean up after the referenced thread has timed-out by setting some
@@ -269,6 +283,7 @@ class Client(QObject):
             self.sync_api()
             self.gui.set_logged_in_as(self.api.username)
             self.start_message_thread()
+            self.start_reply_thread()
             # Clear the sidebar error status bar if a message was shown
             # to the user indicating they should log in.
             self.gui.update_error_status("")
@@ -505,7 +520,7 @@ class Client(QObject):
             shutil.move(filename, filepath_in_datadir)
 
             # Attempt to decrypt the file.
-            res, filepath = crypto.decrypt_submission(
+            res, filepath = crypto.decrypt_submission_or_reply(
                 filepath_in_datadir, server_filename, self.home,
                 self.proxy, is_doc=True)
 
