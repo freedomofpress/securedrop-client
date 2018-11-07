@@ -696,7 +696,7 @@ def test_create_client_dir_permissions(tmpdir):
                 func()
 
 
-def test_Client_on_file_click_Submission(safe_tmpdir):
+def test_Client_on_file_download_Submission(safe_tmpdir):
     """
     If the handler is passed a submission, check the download_submission
     function is the one called against the API.
@@ -713,14 +713,14 @@ def test_Client_on_file_click_Submission(safe_tmpdir):
     submission_sdk_object = mock.MagicMock()
     with mock.patch('sdclientapi.Submission') as mock_submission:
         mock_submission.return_value = submission_sdk_object
-        cl.on_file_click(source, submission)
+        cl.on_file_download(source, submission)
     cl.call_api.assert_called_once_with(
-        cl.api.download_submission, cl.on_file_download,
+        cl.api.download_submission, cl.on_file_downloaded,
         cl.on_download_timeout, submission_sdk_object,
         cl.data_dir, current_object=submission)
 
 
-def test_Client_on_file_download_success(safe_tmpdir):
+def test_Client_on_file_downloaded_success(safe_tmpdir):
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
@@ -734,13 +734,16 @@ def test_Client_on_file_download_success(safe_tmpdir):
     submission_db_object.uuid = test_object_uuid
     submission_db_object.filename = test_filename
     with mock.patch('securedrop_client.logic.storage') as mock_storage, \
+            mock.patch('securedrop_client.crypto.decrypt_submission',
+                       return_value=(0, 'filepath')) as mock_gpg, \
             mock.patch('shutil.move'):
-        cl.on_file_download(result_data, current_object=submission_db_object)
+        cl.on_file_downloaded(result_data, current_object=submission_db_object)
+        mock_gpg.call_count == 1
         mock_storage.mark_file_as_downloaded.assert_called_once_with(
             test_object_uuid, mock_session)
 
 
-def test_Client_on_file_download_failure(safe_tmpdir):
+def test_Client_on_file_downloaded_api_failure(safe_tmpdir):
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
@@ -754,9 +757,31 @@ def test_Client_on_file_download_failure(safe_tmpdir):
     submission_db_object = mock.MagicMock()
     submission_db_object.uuid = 'myuuid'
     submission_db_object.filename = 'filename'
-    cl.on_file_download(result_data, current_object=submission_db_object)
+    cl.on_file_downloaded(result_data, current_object=submission_db_object)
     cl.set_status.assert_called_once_with(
         "The file download failed. Please try again.")
+
+
+def test_Client_on_file_downloaded_decrypt_failure(safe_tmpdir):
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.update_sources = mock.MagicMock()
+    cl.api_runner = mock.MagicMock()
+    test_filename = "my-file-location-msg.gpg"
+    cl.api_runner.result = ("", test_filename)
+    cl.set_status = mock.MagicMock()
+    result_data = ('this-is-a-sha256-sum', test_filename)
+    submission_db_object = mock.MagicMock()
+    submission_db_object.uuid = 'myuuid'
+    submission_db_object.filename = 'filename'
+    with mock.patch('securedrop_client.crypto.decrypt_submission',
+                    return_value=(1, '')) as mock_gpg, \
+            mock.patch('shutil.move'):
+        cl.on_file_downloaded(result_data, current_object=submission_db_object)
+        mock_gpg.call_count == 1
+        cl.set_status.assert_called_once_with(
+            "Failed to download and decrypt file, please try again.")
 
 
 def test_Client_on_download_timeout(safe_tmpdir):
@@ -775,7 +800,7 @@ def test_Client_on_download_timeout(safe_tmpdir):
         "The connection to the SecureDrop server timed out. Please try again.")
 
 
-def test_Client_on_file_click_Reply(safe_tmpdir):
+def test_Client_on_file_download_Reply(safe_tmpdir):
     """
     If the handler is passed a reply, check the download_reply
     function is the one called against the API.
@@ -793,9 +818,9 @@ def test_Client_on_file_click_Reply(safe_tmpdir):
     reply_sdk_object = mock.MagicMock()
     with mock.patch('sdclientapi.Reply') as mock_reply:
         mock_reply.return_value = reply_sdk_object
-        cl.on_file_click(source, reply)
+        cl.on_file_download(source, reply)
     cl.call_api.assert_called_once_with(cl.api.download_reply,
-                                        cl.on_file_download,
+                                        cl.on_file_downloaded,
                                         cl.on_download_timeout,
                                         reply_sdk_object,
                                         cl.data_dir, current_object=reply)
@@ -810,3 +835,22 @@ def test_Client_on_object_loaded(safe_tmpdir):
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
     cl.on_object_loaded(cl, None)
     assert cl.data.data_dir == os.path.join(str(safe_tmpdir), "data")
+
+
+def test_Client_on_file_open(safe_tmpdir):
+    """
+    If running on Qubes, a new QProcess with the expected command and args
+    should be started.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.proxy = True
+    mock_submission = mock.MagicMock()
+    mock_submission.filename = 'test.pdf'
+    mock_subprocess = mock.MagicMock()
+    mock_process = mock.MagicMock(return_value=mock_subprocess)
+    with mock.patch('securedrop_client.logic.QProcess', mock_process):
+        cl.on_file_open(mock_submission)
+        mock_process.assert_called_once_with(cl)
+        mock_subprocess.start.call_count == 1

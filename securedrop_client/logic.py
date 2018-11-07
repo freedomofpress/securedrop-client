@@ -24,13 +24,13 @@ import arrow
 import copy
 import uuid
 from sqlalchemy import event
+from securedrop_client import crypto
 from securedrop_client import storage
 from securedrop_client import models
 from securedrop_client.utils import check_dir_permissions
 from securedrop_client.data import Data
-from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer
+from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess
 from securedrop_client.message_sync import MessageSync
-
 
 logger = logging.getLogger(__name__)
 
@@ -439,7 +439,33 @@ class Client(QObject):
         """
         self.gui.set_status(message, duration)
 
-    def on_file_click(self, source_db_object, message):
+    def on_file_open(self, submission_db_object):
+        """
+        Open the already downloaded file associated with the message (which
+        is a Submission).
+        """
+
+        # Once downloaded, submissions are stored in the data directory
+        # with the same filename as the server, except with the .gz.gpg
+        # stripped off.
+        server_filename = submission_db_object.filename
+        fn_no_ext, _ = os.path.splitext(
+            os.path.splitext(server_filename)[0])
+        submission_filepath = os.path.join(self.data_dir, fn_no_ext)
+
+        if self.proxy:
+            # Running on Qubes.
+            command = "qvm-open-in-vm"
+            args = ['$dispvm:sd-svs-disp', submission_filepath]
+            # QProcess (Qt) or Python's subprocess? Who cares? They do the
+            # same thing. :-)
+            process = QProcess(self)
+            process.start(command, args)
+        else:  # pragma: no cover
+            # Non Qubes OS. Just log the event for now.
+            logger.info('Opening file "{}".'.format(submission_filepath))
+
+    def on_file_download(self, source_db_object, message):
         """
         Download the file associated with the associated message (which may
         be a Submission or Reply).
@@ -457,25 +483,40 @@ class Client(QObject):
             sdk_object.filename = message.filename
             sdk_object.source_uuid = source_db_object.uuid
         self.set_status(_('Downloading {}'.format(sdk_object.filename)))
-        self.call_api(func, self.on_file_download,
+        self.call_api(func, self.on_file_downloaded,
                       self.on_download_timeout, sdk_object, self.data_dir,
                       current_object=message)
 
-    def on_file_download(self, result, current_object):
+    def on_file_downloaded(self, result, current_object):
         """
         Called when a file has downloaded. Cause a refresh to the conversation
         view to display the contents of the new file.
         """
         file_uuid = current_object.uuid
         server_filename = current_object.filename
-        if isinstance(result, tuple):
+        if isinstance(result, tuple):  # The file properly downloaded.
             sha256sum, filename = result
             # The filename contains the location where the file has been
             # stored. On non-Qubes OSes, this will be the data directory.
             # On Qubes OS, this will a ~/QubesIncoming directory. In case
             # we are on Qubes, we should move the file to the data directory
             # and name it the same as the server (e.g. spotless-tater-msg.gpg).
-            shutil.move(filename, os.path.join(self.data_dir, server_filename))
+            filepath_in_datadir = os.path.join(self.data_dir, server_filename)
+            shutil.move(filename, filepath_in_datadir)
+
+            # Attempt to decrypt the file.
+            res, filepath = crypto.decrypt_submission(
+                filepath_in_datadir, server_filename, self.home,
+                self.proxy, is_doc=True)
+
+            if res != 0:  # Then the file did not decrypt properly.
+                self.set_status("Failed to download and decrypt file, "
+                                "please try again.")
+                # TODO: We should save the downloaded content, and just
+                # try to decrypt again if there was a failure.
+                return  # If we failed we should stop here.
+
+            # Now that download and decrypt are done, mark the file as such.
             storage.mark_file_as_downloaded(file_uuid, self.session)
 
             # Refresh the current source conversation, bearing in mind
@@ -483,7 +524,7 @@ class Client(QObject):
             self.gui.show_conversation_for(self.gui.current_source)
             self.set_status(
                 'Finished downloading {}'.format(current_object.filename))
-        else:
+        else:  # The file did not download properly.
             # Update the UI in some way to indicate a failure state.
             self.set_status("The file download failed. Please try again.")
 
