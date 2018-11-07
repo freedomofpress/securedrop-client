@@ -60,7 +60,7 @@ class APISyncObject(QObject):
         if res == 0:
             update_fn(msg.uuid, self.session)
             logger.info("Stored message or reply at {}".format(
-                stored_filename))
+                msg.filename))
 
 
 class MessageSync(APISyncObject):
