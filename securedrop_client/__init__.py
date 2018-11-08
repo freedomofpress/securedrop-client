@@ -19,4 +19,4 @@ gettext.translation('securedrop_client', localedir=localedir,
                     languages=[language_code], fallback=True).install()
 
 
-__version__ = '0.0.1-alpha.1'
+__version__ = '0.0.2'
