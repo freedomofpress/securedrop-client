@@ -45,7 +45,7 @@ class Source(Base):
                         server_default="false")
     public_key = Column(Text, nullable=True)
     interaction_count = Column(Integer, server_default="0", nullable=False)
-    is_starred = Column(Boolean(name='ck_soruces_is_starred'),
+    is_starred = Column(Boolean(name='ck_sources_is_starred'),
                         server_default="false")
     last_updated = Column(DateTime)
 
@@ -125,7 +125,8 @@ class Reply(Base, WithContent):
     size = Column(Integer, nullable=False)
 
     # This is whether the reply has been downloaded in the local database.
-    is_downloaded = Column(Boolean, default=False)
+    is_downloaded = Column(Boolean(name='ck_replies_is_downloaded'),
+                           default=False)
 
     def __init__(self, uuid, journalist, source, filename, size):
         self.uuid = uuid
