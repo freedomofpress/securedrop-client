@@ -1,7 +1,7 @@
 # securedrop-client
 [![CircleCI](https://circleci.com/gh/freedomofpress/securedrop-client.svg?style=svg)](https://circleci.com/gh/freedomofpress/securedrop-client)
 
-Qt-based client for working with SecureDrop submissions on the SecureDrop Qubes Workstation
+Qt-based client for working with SecureDrop submissions on the SecureDrop Qubes Workstation. For additional background, see the [main SecureDrop Workstation repository](https://github.com/freedomofpress/securedrop-workstation), and read about the [user research and design work that informs this work](https://github.com/freedomofpress/securedrop-ux/wiki/Qubes-Journalist-Workstation).
 
 ## Getting Started
 
@@ -19,7 +19,7 @@ make the `xvfb-run` command available): `apt install xvfb`.
 
 ## Run the client
 
-To ensure that file decryption works, please import [this test private key](https://raw.githubusercontent.com/freedomofpress/securedrop/0a901362b84a5378fba80e9cd0ffe4542bdcd598/securedrop/tests/files/test_journalist_key.sec) into your GnuPG keyring. Submissions in the SecureDrop development environment can be decrypted with this test key. 
+To ensure that file decryption works, please import [this test private key](https://raw.githubusercontent.com/freedomofpress/securedrop/0a901362b84a5378fba80e9cd0ffe4542bdcd598/securedrop/tests/files/test_journalist_key.sec) into your GnuPG keyring. Submissions in the SecureDrop development environment can be decrypted with this test key.
 
 You can then run the client with an ephemeral data directory:
 
