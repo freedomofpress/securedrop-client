@@ -542,7 +542,7 @@ class API:
 
         return data
 
-    def reply_source(self, source: Source, msg: str) -> bool:
+    def reply_source(self, source: Source, msg: str) -> Reply:
         """
         This method is used to reply to a given source. The message should be preencrypted with the source's
         GPG public key.
@@ -569,9 +569,10 @@ class API:
             raise AuthError(data["error"])
 
         if "message" in data and data["message"] == "Your reply has been stored":
-            return True
-        # We should never reach here
-        return False
+            if "uuid" in data:
+                return Reply(uuid=data["uuid"])
+
+        raise BaseError("Error handling HTTP response to sending a reply")
 
     def get_replies_from_source(self, source: Source) -> List[Reply]:
         """

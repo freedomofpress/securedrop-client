@@ -56,7 +56,7 @@ interactions:
     method: POST
     uri: http://localhost:8081/api/v1/sources/5afc9480-7d30-42b1-9463-4990a940b5d4/replies
   response:
-    body: {string: "{\n  \"message\": \"Your reply has been stored\"\n}\n"}
+    body: {string: "{\n  \"message\": \"Your reply has been stored\"\n, \"uuid\": \"4efb9719-57f4-4fad-870f-207b1931ac14\"}\n"}
     headers:
       Content-Length: ['46']
       Content-Type: [application/json]
