@@ -8,7 +8,7 @@ from securedrop_client import models
 from securedrop_client.gui.widgets import (ToolBar, MainView, SourceList,
                                            SourceWidget, LoginDialog,
                                            SpeechBubble, ConversationWidget,
-                                           MessageWidget, ReplyWidget,
+                                           SubmissionWidget, ReplyWidget,
                                            FileWidget, ConversationView)
 from unittest import mock
 
@@ -338,7 +338,9 @@ def test_ConversationWidget_init_left():
     """
     Check the ConversationWidget is configured correctly for align-left.
     """
-    cw = ConversationWidget('hello', align='left')
+    mock_controller = mock.MagicMock()
+    cw = ConversationWidget('hello', mock_controller, align='left')
+    assert cw.controller == mock_controller
     layout = cw.layout()
     assert isinstance(layout.takeAt(0), QWidgetItem)
     assert isinstance(layout.takeAt(0), QSpacerItem)
@@ -348,26 +350,37 @@ def test_ConversationWidget_init_right():
     """
     Check the ConversationWidget is configured correctly for align-left.
     """
-    cw = ConversationWidget('hello', align='right')
+    mock_controller = mock.MagicMock()
+    cw = ConversationWidget('hello', mock_controller, align='right')
+    assert cw.controller == mock_controller
     layout = cw.layout()
     assert isinstance(layout.takeAt(0), QSpacerItem)
     assert isinstance(layout.takeAt(0), QWidgetItem)
 
 
-def test_MessageWidget_init():
+def test_SubmissionWidget_init_downloaded():
     """
-    Check the CSS is set as expected.
+    Check the CSS is set as expected and state of the message reflects
+    downloaded status.
     """
-    mw = MessageWidget('hello')
+    mock_controller = mock.MagicMock()
+    mock_controller.load_file.return_value = 'hello'
+    mock_submission = mock.MagicMock()
+    mock_submission.is_downloaded = True
+    mw = SubmissionWidget(mock_submission, mock_controller)
+    assert mw.controller == mock_controller
     ss = mw.styleSheet()
     assert 'background-color' in ss
+    mock_controller.load_file.assert_called_once_with(mock_submission.filename)
 
 
 def test_ReplyWidget_init():
     """
     Check the CSS is set as expected.
     """
-    rw = ReplyWidget('hello')
+    mock_controller = mock.MagicMock()
+    mock_reply = mock.MagicMock()
+    rw = ReplyWidget(mock_reply, mock_controller)
     ss = rw.styleSheet()
     assert 'background-color' in ss
 
@@ -460,17 +473,20 @@ def test_ConversationView_move_to_bottom():
     cv.scroll.verticalScrollBar().setValue.assert_called_once_with(6789)
 
 
-def test_ConversationView_add_message():
+def test_ConversationView_add_submission():
     """
-    Adding a message results in a new MessageWidget added to the layout.
+    Adding a submission results in a new SubmissionWidget added to the layout.
     """
     cv = ConversationView(None)
     cv.controller = mock.MagicMock()
+    cv.controller.load_file.return_value = 'hello'
     cv.conversation_layout = mock.MagicMock()
-    cv.add_message('hello')
+    mock_submission = mock.MagicMock()
+    mock_submission.is_downloaded = True
+    cv.add_submission(mock_submission)
     assert cv.conversation_layout.addWidget.call_count == 1
     cal = cv.conversation_layout.addWidget.call_args_list
-    assert isinstance(cal[0][0][0], MessageWidget)
+    assert isinstance(cal[0][0][0], SubmissionWidget)
 
 
 def test_ConversationView_add_reply():

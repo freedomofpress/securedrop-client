@@ -23,13 +23,15 @@ import shutil
 import arrow
 import copy
 import uuid
+import tempfile
+import subprocess
+import sdclientapi.sdlocalobjects as sdkobjects
 from sqlalchemy import event
 from securedrop_client import storage
 from securedrop_client import models
 from securedrop_client.utils import check_dir_permissions
 from securedrop_client.data import Data
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer
-from securedrop_client.message_sync import MessageSync
 
 
 logger = logging.getLogger(__name__)
@@ -111,7 +113,7 @@ class Client(QObject):
         self.sync_flag = os.path.join(home, 'sync_flag')
         self.data_dir = os.path.join(self.home, 'data')  # File data.
         self.timer = None  # call timeout timer
-        self.proxy = proxy
+        self.proxy = proxy  # True is running on Qubes.
 
     def setup(self):
         """
@@ -218,17 +220,6 @@ class Client(QObject):
             else:
                 user_callback(result_data)
 
-    def start_message_thread(self):
-        """
-        Starts the message-fetching thread in the background.
-        """
-        if not self.message_thread:
-            self.message_thread = QThread()
-            self.message_sync = MessageSync(self.api, self.home, self.proxy)
-            self.message_sync.moveToThread(self.message_thread)
-            self.message_thread.started.connect(self.message_sync.run)
-            self.message_thread.start()
-
     def timeout_cleanup(self, thread_id, user_callback):
         """
         Clean up after the referenced thread has timed-out by setting some
@@ -268,7 +259,6 @@ class Client(QObject):
             self.gui.hide_login()
             self.sync_api()
             self.gui.set_logged_in_as(self.api.username)
-            self.start_message_thread()
             # Clear the sidebar error status bar if a message was shown
             # to the user indicating they should log in.
             self.gui.update_error_status("")
@@ -354,24 +344,86 @@ class Client(QObject):
         Called when syncronisation of data via the API is complete.
         """
         if isinstance(result, tuple):
+            self.gui.update_error_status("")
             remote_sources, remote_submissions, remote_replies = \
                 result
-
             storage.update_local_storage(self.session, remote_sources,
                                          remote_submissions,
                                          remote_replies)
-
             # Set last sync flag.
             with open(self.sync_flag, 'w') as f:
                 f.write(arrow.now().format())
-            # TODO: show something in the conversation view?
-            # self.gui.show_conversation_for()
+            # Download submission files.
+            new_submissions = storage.find_new_submissions(self.session)
+            self.call_api(self.download_new_submissions,
+                          self.on_submission_download,
+                          self.on_submission_timeout, new_submissions)
         else:
             # How to handle a failure? Exceptions are already logged. Perhaps
             # a message in the UI?
-            pass
-
+            self.gui.update_error_status(_("Unable to sync with server."))
         self.update_sources()
+
+    def download_new_submissions(self, new_submissions):
+        """
+        Encapsulates download of NEW submission messages to be run on a new
+        thread as/when needed. Returns a list of UUIDs of submissions to be
+        marked as downloaded.
+        """
+        result = []  # To contain UUIDs of downloaded submissions
+        for submission in new_submissions:
+            try:
+                # api.download_submission wants an _api_ submission
+                # object, which is different from own submission
+                # object. so we coerce that here.
+                sdk_submission = sdkobjects.Submission(uuid=submission.uuid)
+                sdk_submission.source_uuid = submission.source.uuid
+                # Need to set filename on non-Qubes platforms
+                sdk_submission.filename = submission.filename
+                shasum, filepath = self.api.download_submission(sdk_submission)
+                out = tempfile.NamedTemporaryFile(suffix=".message")
+                err = tempfile.NamedTemporaryFile(suffix=".message-err",
+                                                  delete=False)
+                if self.proxy:
+                    gpg_binary = "qubes-gpg-client"
+                else:
+                    gpg_binary = "gpg"
+                cmd = [gpg_binary, "--decrypt", filepath]
+                res = subprocess.call(cmd, stdout=out, stderr=err)
+                os.remove(filepath)  # delete original file
+                if res:
+                    out.close()
+                    err.close()
+                    with open(err.name) as e:
+                        msg = e.read()
+                        logger.error("GPG error: {}".format(msg))
+                        os.unlink(err.name)
+                else:
+                    filename, ext = os.path.splitext(submission.filename)
+                    dest = os.path.join(self.home, "data", filename)
+                    shutil.copy(out.name, dest)
+                    err.close()
+                    logger.info("Stored message at {}".format(out.name))
+                    result.append(submission.uuid)
+            except Exception as e:
+                logger.error("Exception while downloading submission!")
+                logger.error(e)
+        return result
+
+    def on_submission_download(self, result):
+        """
+        Mark all submissions as downloaded.
+        """
+        for uuid in result:
+            storage.mark_file_as_downloaded(uuid, self.session)
+        # TODO: Update the UI?
+        self.gui.update_error_status('')
+
+    def on_submission_timeout(self):
+        """
+        Downloading and decrypting submissions has timed out. Tell the user!
+        """
+        self.gui.update_error_status(_("Submission download timed out."))
 
     def update_sync(self):
         """

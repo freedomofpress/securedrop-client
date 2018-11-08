@@ -26,6 +26,7 @@ from PyQt5.QtWidgets import (QListWidget, QTextEdit, QLabel, QToolBar, QAction,
                              QPlainTextEdit, QSpacerItem, QSizePolicy, QDialog)
 from securedrop_client.resources import load_svg, load_image
 from securedrop_client.utils import humanize_filesize
+from securedrop_client.models import Submission, Reply
 
 
 logger = logging.getLogger(__name__)
@@ -382,13 +383,14 @@ class ConversationWidget(QWidget):
     Draws a message onto the screen.
     """
 
-    def __init__(self, message, align):
+    def __init__(self, message, controller, align):
         """
         Initialise with the message to display and some notion of which side
         of the conversation ("left" or "right" [anything else]) to which the
         widget should belong.
         """
         super().__init__()
+        self.controller = controller
         layout = QHBoxLayout()
         label = SpeechBubble(message)
         if align is not "left":
@@ -405,13 +407,20 @@ class ConversationWidget(QWidget):
         self.setContentsMargins(0, 0, 0, 0)
 
 
-class MessageWidget(ConversationWidget):
+class SubmissionWidget(ConversationWidget):
     """
     Represents an incoming message from the source.
     """
 
-    def __init__(self, message):
-        super().__init__(message, align="left")
+    def __init__(self, submission, controller):
+        """
+        Takes the submission container class and, if downloaded, uses that as
+        the message to display.
+        """
+        message = _('<Not yet downloaded>')
+        if submission.is_downloaded:
+            message = controller.load_file(submission.filename)
+        super().__init__(message, controller, align="left")
         self.setStyleSheet("""
         background-color: #EEE;
         """)
@@ -422,8 +431,10 @@ class ReplyWidget(ConversationWidget):
     Represents a reply to a source.
     """
 
-    def __init__(self, message):
-        super().__init__(message, align="right")
+    def __init__(self, reply, controller):
+        # TODO: Fix this...
+        message = '<NOT YET IMPLEMENTED>'
+        super().__init__(message, controller, align="right")
         self.setStyleSheet("""
         background-color: #2299EE;
         """)
@@ -483,7 +494,6 @@ class ConversationView(QWidget):
         self.conversation_layout = QVBoxLayout()
         self.container.setLayout(self.conversation_layout)
         self.container.setStyleSheet("background-color: #fff;")
-
         self.scroll = QScrollArea()
         self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -512,21 +522,22 @@ class ConversationView(QWidget):
             FileWidget(source_db_object, submission_db_object,
                        self.controller))
 
+    def add_submission(self, submission: Submission):
+        """
+        Add a submission from the source.
+        """
+        self.conversation_layout.addWidget(SubmissionWidget(submission,
+                                                            self.controller))
+
+    def add_reply(self, reply: Reply):
+        """
+        Add a reply from a journalist.
+        """
+        self.conversation_layout.addWidget(ReplyWidget(reply, self.controller))
+
     def move_to_bottom(self, min_val, max_val):
         """
         Handler called when a new item is added to the conversation. Ensures
         it's scrolled to the bottom and thus visible.
         """
         self.scroll.verticalScrollBar().setValue(max_val)
-
-    def add_message(self, message):
-        """
-        Add a message from the source.
-        """
-        self.conversation_layout.addWidget(MessageWidget(message))
-
-    def add_reply(self, reply, files=None):
-        """
-        Add a reply from a journalist.
-        """
-        self.conversation_layout.addWidget(ReplyWidget(reply))

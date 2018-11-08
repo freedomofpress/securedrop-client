@@ -1,5 +1,3 @@
-# coding: utf-8
-
 """
 Contains the core UI class for the application. All interactions with the UI
 go through an instance of this class.
@@ -27,6 +25,7 @@ from securedrop_client import __version__
 from securedrop_client.gui.widgets import (ToolBar, MainView, LoginDialog,
                                            ConversationView)
 from securedrop_client.resources import load_icon
+from securedrop_client import models
 import os
 
 logger = logging.getLogger(__name__)
@@ -157,15 +156,6 @@ class Window(QMainWindow):
             self.current_source = source_widget.source
             self.show_conversation_for(self.current_source)
 
-    def add_item_content_or(self, adder, item, default):
-        """
-        Private helper function to add correct message to conversation widgets
-        """
-        if item.is_downloaded is False:
-            adder(default)
-        else:
-            adder(item.content)
-
     def show_conversation_for(self, source):
         """
         Show conversation of messages and replies between a source and
@@ -173,25 +163,14 @@ class Window(QMainWindow):
         """
         conversation = ConversationView(self)
         conversation.setup(self.controller)
-        conversation.add_message('Source name: {}'.format(
-                                 source.journalist_designation))
-
         # Display each conversation item in the source collection.
         for conversation_item in source.collection:
-
-            if conversation_item.filename.endswith('msg.gpg'):
-                self.add_item_content_or(conversation.add_message,
-                                         conversation_item,
-                                         "<Message not yet downloaded>")
-            elif conversation_item.filename.endswith('reply.gpg'):
-                conversation.add_reply(conversation_item.content)
-                # leaving this for the Reply ticket!
-                # self.add_item_content_or(conversation.add_reply,
-                #                        conversation_item,
-                #                        "<Reply not yet downloaded>")
+            if isinstance(conversation_item, models.Submission):
+                conversation.add_submission(conversation_item)
+            elif isinstance(conversation_item, models.Reply):
+                conversation.add_reply(conversation_item)
             else:
                 conversation.add_file(source, conversation_item)
-
         self.main_view.update_view(conversation)
 
     def set_status(self, message, duration=5000):

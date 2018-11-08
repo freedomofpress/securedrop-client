@@ -6,7 +6,7 @@ from PyQt5.QtCore import QTimer
 from securedrop_client.gui.main import Window
 from securedrop_client.gui.widgets import LoginDialog
 from securedrop_client.resources import load_icon
-from securedrop_client.models import Submission, Source
+from securedrop_client.models import Submission, Reply, Source
 from unittest import mock
 
 
@@ -191,50 +191,17 @@ def test_conversation_for():
     mock_source.journalistic_designation = 'Testy McTestface'
     mock_file = mock.MagicMock()
     mock_file.filename = '1-my-source-doc.gpg'
-    mock_message = mock.MagicMock()
-    mock_message.filename = '2-my-source-msg.gpg'
-    mock_reply = mock.MagicMock()
-    mock_reply.filename = '3-my-source-reply.gpg'
-    mock_source.collection = [mock_file, mock_message, mock_reply]
+    submission = Submission(mock.MagicMock(), 'uuid', 123, 'filename',
+                            'download_url')
+    reply = Reply('uuid', mock.MagicMock(), mock.MagicMock(), 'filename', 123)
+    mock_source.collection = [mock_file, submission, reply]
     with mock.patch('securedrop_client.gui.main.ConversationView',
                     mock_conview):
         w.show_conversation_for(mock_source)
     conv = mock_conview()
-    assert conv.add_message.call_count > 0
-    assert conv.add_reply.call_count > 0
-    assert conv.add_file.call_count > 0
-
-
-def test_conversation_pending_message():
-    """
-    Test that a conversation with a message that's not yet downloaded
-    shows the right placeholder text
-    """
-    w = Window()
-    w.controller = mock.MagicMock()
-    w.main_view = mock.MagicMock()
-    w._add_item_content_or = mock.MagicMock()
-    mock_conview = mock.MagicMock()
-    mock_source = mock.MagicMock()
-    mock_source.journalistic_designation = 'Testy McTestface'
-
-    submission = Submission(source=mock_source, uuid="test", size=123,
-                            filename="test.msg.gpg",
-                            download_url='http://test/test')
-
-    submission.is_downloaded = False
-
-    mock_source.collection = [submission]
-
-    with mock.patch('securedrop_client.gui.main.ConversationView',
-                    mock_conview):
-        w.show_conversation_for(mock_source)
-        conv = mock_conview()
-
-        # once for source name, once for message
-        assert conv.add_message.call_count == 2
-        assert conv.add_message.call_args == \
-            mock.call("<Message not yet downloaded>")
+    conv.add_submission.assert_called_once_with(submission)
+    conv.add_reply.assert_called_once_with(reply)
+    conv.add_file.assert_called_once_with(mock_source, mock_file)
 
 
 def test_set_status():

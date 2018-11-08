@@ -84,23 +84,6 @@ def test_Client_setup(safe_tmpdir):
     cl.gui.show_login.assert_called_once_with()
 
 
-def test_Client_start_message_thread(safe_tmpdir):
-    """
-    When starting message-fetching thread, make sure we do a few things.
-    """
-    mock_gui = mock.MagicMock()
-    mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
-    with mock.patch('securedrop_client.logic.QThread') as mock_qthread, \
-            mock.patch('securedrop_client.logic.MessageSync') as mock_msync:
-        cl.message_sync = mock.MagicMock()
-        cl.start_message_thread()
-        cl.message_sync.moveToThread.assert_called_once_with(mock_qthread())
-        cl.message_thread.started.connect.assert_called_once_with(
-            cl.message_sync.run)
-        cl.message_thread.start.assert_called_once_with()
-
-
 def test_Client_call_api(safe_tmpdir):
     """
     A new thread and APICallRunner is created / setup.
@@ -207,7 +190,6 @@ def test_Client_on_authenticate_ok(safe_tmpdir):
     cl.api.username = 'test'
     cl.on_authenticate(True)
     cl.sync_api.assert_called_once_with()
-    cl.start_message_thread.assert_called_once_with()
     cl.gui.set_logged_in_as.assert_called_once_with('test')
     # Error status bar should be cleared
     cl.gui.update_error_status.assert_called_once_with("")
@@ -472,7 +454,8 @@ def test_Client_on_synced_no_result(safe_tmpdir):
 
 def test_Client_on_synced_with_result(safe_tmpdir):
     """
-    If there's a result to syncing, then update local storage.
+    If there's a result to syncing, then update local storage and download
+    new submission contents.
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
@@ -481,12 +464,17 @@ def test_Client_on_synced_with_result(safe_tmpdir):
     cl.api_runner = mock.MagicMock()
     result_data = ('sources', 'submissions', 'replies')
     cl.call_reset = mock.MagicMock()
+    cl.call_api = mock.MagicMock()
     with mock.patch('securedrop_client.logic.storage') as mock_storage:
         cl.on_synced(result_data)
         mock_storage.update_local_storage.\
             assert_called_once_with(mock_session, "sources", "submissions",
                                     "replies")
     cl.update_sources.assert_called_once_with()
+    cl.call_api.assert_called_once_with(cl.download_new_submissions,
+                                        cl.on_submission_download,
+                                        cl.on_submission_timeout,
+                                        mock_storage.find_new_submissions())
 
 
 def test_Client_update_sync(safe_tmpdir):
@@ -810,3 +798,117 @@ def test_Client_on_object_loaded(safe_tmpdir):
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
     cl.on_object_loaded(cl, None)
     assert cl.data.data_dir == os.path.join(str(safe_tmpdir), "data")
+
+
+def test_Client_download_new_submissions(safe_tmpdir):
+    """
+    Check submissions to be downloaded are handled correctly.
+    """
+    submission = mock.MagicMock()
+    submission.download_url = "http://foo"
+    submission.uuid = 'uuid'
+    submission.filename = "foo.gpg"
+    fh = mock.MagicMock()
+    fh.name = "foo"
+    new_submissions = [submission, ]
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.proxy = True
+    cl.api = mock.MagicMock()
+    cl.api.download_submission.return_value = (1234,
+                                               "/home/user/downloads/foo")
+    with mock.patch('subprocess.call', return_value=0), \
+            mock.patch('shutil.move') as mock_move, \
+            mock.patch('shutil.copy') as mock_copy, \
+            mock.patch('os.remove') as mock_remove, \
+            mock.patch('tempfile.NamedTemporaryFile',
+                return_value=fh) as mock_temp_file, \
+            mock.patch('builtins.open', mock.mock_open(read_data="blah")):
+        result = cl.download_new_submissions(new_submissions)
+        assert result == ['uuid', ]
+
+
+def test_Client_download_new_submissions_error(safe_tmpdir):
+    """
+    Ensure errored submission is not in collection to mark as downloaded.
+    """
+    submission = mock.MagicMock()
+    submission.download_url = "http://foo"
+    submission.uuid = 'uuid'
+    submission.filename = "foo.gpg"
+    fh = mock.MagicMock()
+    fh.name = "foo"
+    new_submissions = [submission, ]
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.proxy = False 
+    cl.api = mock.MagicMock()
+    cl.api.download_submission.return_value = (1234,
+                                               "/home/user/downloads/foo")
+    with mock.patch('subprocess.call', side_effect=Exception('Bang')), \
+            mock.patch('shutil.move') as mock_move, \
+            mock.patch('shutil.copy') as mock_copy, \
+            mock.patch('os.remove') as mock_remove, \
+            mock.patch(
+                'tempfile.NamedTemporaryFile',
+                return_value=fh) as mock_temp_file, \
+            mock.patch('builtins.open', mock.mock_open(read_data="blah")):
+        result = cl.download_new_submissions(new_submissions)
+        assert result == []
+
+
+def test_Client_download_new_submissions_decrypt_error(safe_tmpdir):
+    """
+    Ensure errored submission is not in collection to mark as downloaded.
+    """
+    submission = mock.MagicMock()
+    submission.download_url = "http://foo"
+    submission.uuid = 'uuid'
+    submission.filename = "foo.gpg"
+    fh = mock.MagicMock()
+    fh.name = "foo"
+    new_submissions = [submission, ]
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.proxy = False 
+    cl.api = mock.MagicMock()
+    cl.api.download_submission.return_value = (1234,
+                                               "/home/user/downloads/foo")
+    with mock.patch('subprocess.call', return_value=1), \
+            mock.patch('shutil.move') as mock_move, \
+            mock.patch('shutil.copy') as mock_copy, \
+            mock.patch('os.remove') as mock_remove, \
+            mock.patch(
+                'tempfile.NamedTemporaryFile',
+                return_value=fh) as mock_temp_file, \
+            mock.patch('builtins.open', mock.mock_open(read_data="blah")):
+        result = cl.download_new_submissions(new_submissions)
+        assert result == []
+
+
+def test_Client_on_submission_download(safe_tmpdir):
+    """
+    Submissions are marked as downloaded.
+    """
+    result = ['uuid', ]
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.storage') as mock_storage:
+        cl.on_submission_download(result)
+        mock_storage.mark_file_as_downloaded.\
+            assert_called_once_with('uuid', mock_session)
+
+
+def test_Client_on_submission_timeout(safe_tmpdir):
+    """
+    Ensure a useful message is shown.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.on_submission_timeout()
+    assert mock_gui.update_error_status.call_count == 1

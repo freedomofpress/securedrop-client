@@ -239,11 +239,11 @@ def find_or_create_user(uuid, username, session):
 
 
 def find_new_submissions(session):
-    submissions = session.query(Submission) \
-                         .filter_by(is_downloaded=False) \
-                         .filter(Submission.filename.like('%-msg.gpg')) \
-                         .all()
-    return submissions
+    """
+    New submissions are those that have not been downloaded yet.
+    """
+    return session.query(Submission).filter_by(is_downloaded=False).filter(
+        Submission.filename.like('%-msg.gpg')).all()
 
 
 def mark_file_as_downloaded(uuid, session):
