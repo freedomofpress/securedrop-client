@@ -289,7 +289,6 @@ class LoginDialog(QDialog):
         self.password_field.setEchoMode(QLineEdit.Password)
         self.tfa_label = QLabel(_('Two-Factor Number'))
         self.tfa_field = QLineEdit()
-        self.tfa_field.setEchoMode(QLineEdit.Password)
         self.submit = QPushButton(_('Sign in'))
         self.submit.clicked.connect(self.validate)
         self.error_label = QLabel('')
