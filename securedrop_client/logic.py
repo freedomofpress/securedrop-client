@@ -411,11 +411,12 @@ class Client(QObject):
 
     def update_conversation_view(self):
         """
-        Updates the conversation view every 15 seconds to reflect progress
+        Updates the conversation view to reflect progress
         of the download and decryption of messages and replies.
         """
         # Redraw the conversation view if we have clicked on a source.
         if self.gui.current_source:
+            self.session.refresh(self.gui.current_source)
             self.gui.show_conversation_for(self.gui.current_source)
 
     def on_update_star_complete(self, result):
