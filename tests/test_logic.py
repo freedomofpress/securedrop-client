@@ -535,6 +535,34 @@ def test_Client_update_sources(safe_tmpdir):
         mock_gui.show_sources.assert_called_once_with([1, 2, 3])
 
 
+def test_Client_update_conversation_view_current_source(safe_tmpdir):
+    """
+    Ensure the UI displays the latest version of the messages/replies that
+    have been downloaded/decrypted in the current conversation view.
+    """
+    mock_gui = mock.MagicMock()
+    mock_gui.current_source = 'teehee'
+    mock_gui.show_conversation_for = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.update_conversation_view()
+    mock_gui.show_conversation_for.assert_called_once_with(
+        mock_gui.current_source)
+
+
+def test_Client_update_conversation_view_no_current_source(safe_tmpdir):
+    """
+    Ensure that if there is no current source (i.e. the user has not clicked
+    a source in the sidebar), the UI will not redraw the conversation view.
+    """
+    mock_gui = mock.MagicMock()
+    mock_gui.current_source = None
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.update_conversation_view()
+    mock_gui.show_conversation_for.assert_not_called()
+
+
 def test_Client_unstars_a_source_if_starred(safe_tmpdir):
     """
     Ensure that the client unstars a source if it is starred.
