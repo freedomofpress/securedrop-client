@@ -10,23 +10,18 @@ def test_MessageSync_init():
     """
     Ensure things are set up as expected
     """
-    mock_session_class = mock.MagicMock()
-    with mock.patch('securedrop_client.models.make_engine'), \
-        mock.patch('securedrop_client.message_sync.sessionmaker',
-                   return_value=mock_session_class):
+    mock_session = mock.MagicMock()
+    mock_api = mock.MagicMock()
+    mock_gpg = mock.MagicMock()
 
-        api = mock.MagicMock()
-        home = "/home/user/.sd"
-        is_qubes = False
+    ms = MessageSync(mock_api, mock_session, mock_gpg)
 
-        ms = MessageSync(api, home, is_qubes)
-
-        assert ms.home == "/home/user/.sd"
-        assert ms.api == api
-        assert ms.session == mock_session_class()
+    assert ms.api == mock_api
+    assert ms.session == mock_session
+    assert ms.gpg == mock_gpg
 
 
-def test_MessageSync_run_success():
+def test_MessageSync_run_success(db_session):
     submission = mock.MagicMock()
     submission.download_url = "http://foo"
     submission.filename = "foo.gpg"
@@ -48,18 +43,21 @@ def test_MessageSync_run_success():
             mock.patch(
                 'tempfile.NamedTemporaryFile',
                 return_value=fh) as mock_temp_file, \
-            mock.patch('builtins.open', mock.mock_open(read_data="blah")):
+            mock.patch('builtins.open', mock.mock_open(read_data="blah")), \
+            mock.patch('securedrop_client.message_sync.logger.critical') \
+            as mock_critical:
 
         api = mock.MagicMock()
-        home = "/home/user/.sd"
-        is_qubes = True
+        mock_gpg = mock.MagicMock()
 
-        ms = MessageSync(api, home, is_qubes)
+        ms = MessageSync(api, db_session, mock_gpg)
         ms.api.download_submission = mock.MagicMock(
             return_value=(1234, "/home/user/downloads/foo")
         )
 
         ms.run(False)
+
+        assert not mock_critical.called, mock_critical.call_args
 
 
 def test_MessageSync_exception():

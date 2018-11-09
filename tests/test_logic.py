@@ -69,7 +69,9 @@ def test_Client_init(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost/', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost/', mock_gui, mock_session,
+                    str(safe_tmpdir))
     assert cl.hostname == 'http://localhost/'
     assert cl.gui == mock_gui
     assert cl.session == mock_session
@@ -82,7 +84,9 @@ def test_Client_setup(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     cl.update_sources = mock.MagicMock()
     cl.setup()
     cl.gui.setup.assert_called_once_with(cl)
@@ -96,12 +100,16 @@ def test_Client_start_message_thread(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
+
     with mock.patch('securedrop_client.logic.QThread') as mock_qthread, \
             mock.patch('securedrop_client.logic.MessageSync') as mock_msync:
         cl.message_sync = mock.MagicMock()
         cl.start_message_thread()
-        cl.message_sync.moveToThread.assert_called_once_with(mock_qthread())
+        cl.message_sync.moveToThread.assert_called_once_with(
+            mock_qthread())
         cl.message_thread.started.connect.assert_called_once_with(
             cl.message_sync.run)
         cl.message_thread.start.assert_called_once_with()
@@ -113,7 +121,8 @@ def test_Client_start_reply_thread(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir),
+                proxy=False)
     with mock.patch('securedrop_client.logic.QThread') as mock_qthread, \
             mock.patch('securedrop_client.logic.ReplySync') as mock_msync:
         cl.reply_sync = mock.MagicMock()
@@ -130,7 +139,9 @@ def test_Client_call_api(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     cl.finish_api_call = mock.MagicMock()
     with mock.patch('securedrop_client.logic.QThread') as mock_qthread, \
             mock.patch(
@@ -160,7 +171,9 @@ def test_Client_clean_thread_no_thread(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     cl.finish_api_call = mock.MagicMock()
     cl.api_threads = {'a': 'b'}
     cl.clean_thread('foo')
@@ -174,7 +187,9 @@ def test_Client_clean_thread(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     mock_timer = mock.MagicMock()
     cl.api_threads = {
         'foo': {
@@ -193,7 +208,9 @@ def test_Client_login(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     cl.call_api = mock.MagicMock()
     with mock.patch('securedrop_client.logic.sdclientapi.API') as mock_api:
         cl.login('username', 'password', '123456')
@@ -209,7 +226,9 @@ def test_Client_on_authenticate_failed(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     result_data = 'false'
     cl.on_authenticate(result_data)
     mock_gui.show_login_error.\
@@ -223,7 +242,9 @@ def test_Client_on_authenticate_ok(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     cl.sync_api = mock.MagicMock()
     cl.api = mock.MagicMock()
     cl.start_message_thread = mock.MagicMock()
@@ -244,7 +265,9 @@ def test_Client_completed_api_call_without_current_object(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     mock_thread = mock.MagicMock()
     mock_runner = mock.MagicMock()
     mock_runner.result = 'result'
@@ -272,7 +295,9 @@ def test_Client_completed_api_call_with_current_object(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     mock_thread = mock.MagicMock()
     mock_runner = mock.MagicMock()
     mock_runner.result = 'result'
@@ -300,7 +325,9 @@ def test_Client_timeout_cleanup_without_current_object(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     mock_thread = mock.MagicMock()
     mock_runner = mock.MagicMock()
     mock_runner.current_object = None
@@ -326,7 +353,9 @@ def test_Client_timeout_cleanup_with_current_object(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     mock_thread = mock.MagicMock()
     mock_runner = mock.MagicMock()
     mock_runner.current_object = 'current_object'
@@ -352,7 +381,9 @@ def test_Client_on_sync_timeout(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     cl.api = "this is populated"
     cl.on_sync_timeout()
     assert cl.api is not None
@@ -367,7 +398,9 @@ def test_Client_on_login_timeout(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     cl.on_login_timeout()
     assert cl.api is None
     mock_gui.show_login_error.\
@@ -382,7 +415,9 @@ def test_Client_on_action_requiring_login(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     cl.on_action_requiring_login()
     mock_gui.update_error_status.assert_called_once_with(
         'You must sign in to perform this action.')
@@ -394,7 +429,9 @@ def test_Client_authenticated_yes(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     cl.api = mock.MagicMock()
     cl.api.token = {'token': 'foo'}
     assert cl.authenticated() is True
@@ -406,7 +443,9 @@ def test_Client_authenticated_no(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     cl.api = mock.MagicMock()
     cl.api.token = {'token': ''}
     assert cl.authenticated() is False
@@ -418,7 +457,9 @@ def test_Client_authenticated_no_api(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     cl.api = None
     assert cl.authenticated() is False
 
@@ -429,7 +470,9 @@ def test_Client_sync_api_not_authenticated(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     cl.authenticated = mock.MagicMock(return_value=False)
     cl.call_api = mock.MagicMock()
     cl.sync_api()
@@ -442,7 +485,9 @@ def test_Client_sync_api(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     cl.authenticated = mock.MagicMock(return_value=True)
     cl.call_api = mock.MagicMock()
     cl.sync_api()
@@ -458,7 +503,9 @@ def test_Client_last_sync_with_file(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     timestamp = '2018-10-10 18:17:13+01:00'
     with mock.patch("builtins.open", mock.mock_open(read_data=timestamp)):
         result = cl.last_sync()
@@ -472,7 +519,9 @@ def test_Client_last_sync_no_file(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     with mock.patch("builtins.open", mock.MagicMock(side_effect=Exception())):
         assert cl.last_sync() is None
 
@@ -484,7 +533,9 @@ def test_Client_on_synced_no_result(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     cl.update_sources = mock.MagicMock()
     result_data = Exception('Boom')  # Not the expected tuple.
     with mock.patch('securedrop_client.logic.storage') as mock_storage:
@@ -499,7 +550,9 @@ def test_Client_on_synced_with_result(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     cl.update_sources = mock.MagicMock()
     cl.api_runner = mock.MagicMock()
 
@@ -525,7 +578,9 @@ def test_Client_update_sync(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     cl.last_sync = mock.MagicMock()
     cl.update_sync()
     assert cl.last_sync.call_count == 1
@@ -539,7 +594,9 @@ def test_Client_update_sources(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     with mock.patch('securedrop_client.logic.storage') as mock_storage:
         mock_storage.get_local_sources.return_value = (1, 2, 3)
         cl.update_sources()
@@ -553,7 +610,9 @@ def test_Client_unstars_a_source_if_starred(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     source_db_object = mock.MagicMock()
     source_db_object.uuid = mock.MagicMock()
     source_db_object.is_starred = True
@@ -578,7 +637,9 @@ def test_Client_unstars_a_source_if_unstarred(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     source_db_object = mock.MagicMock()
     source_db_object.uuid = mock.MagicMock()
     source_db_object.is_starred = False
@@ -604,7 +665,9 @@ def test_Client_update_star_not_logged_in(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     source_db_object = mock.MagicMock()
     cl.on_action_requiring_login = mock.MagicMock()
     cl.api = None
@@ -618,7 +681,9 @@ def test_Client_sidebar_action_timeout(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     cl.on_sidebar_action_timeout()
     mock_gui.update_error_status.assert_called_once_with(
         'The connection to the SecureDrop server timed out. Please try again.')
@@ -631,7 +696,9 @@ def test_Client_on_update_star_success(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     result = True
     cl.sync_api = mock.MagicMock()
     cl.on_update_star_complete(result)
@@ -646,7 +713,9 @@ def test_Client_on_update_star_failed(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     result = Exception('boom')
     cl.sync_api = mock.MagicMock()
     cl.on_update_star_complete(result)
@@ -661,7 +730,9 @@ def test_Client_logout(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     cl.api = mock.MagicMock()
     cl.logout()
     assert cl.api is None
@@ -674,7 +745,9 @@ def test_Client_set_status(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     cl.set_status("Hello, World!", 1000)
     mock_gui.set_status.assert_called_once_with("Hello, World!", 1000)
 
@@ -715,7 +788,8 @@ def test_create_client_dir_permissions(tmpdir):
             os.mkdir(sdc_home, case['home_perms'])
 
         def func() -> None:
-            Client('http://localhost', mock_gui, mock_session, sdc_home)
+            with mock.patch('securedrop_client.logic.GpgHelper'):
+                Client('http://localhost', mock_gui, mock_session, sdc_home)
 
         if case['should_pass']:
             func()
@@ -731,7 +805,9 @@ def test_Client_on_file_download_Submission(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     source = models.Source('source-uuid', 'testy-mctestface', False,
                            'mah pub key', 1, False, datetime.now())
     submission = models.Submission(source, 'submission-uuid', 1234,
@@ -751,7 +827,8 @@ def test_Client_on_file_download_Submission(safe_tmpdir):
 def test_Client_on_file_downloaded_success(safe_tmpdir):
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir),
+                proxy=False)
     cl.update_sources = mock.MagicMock()
     cl.api_runner = mock.MagicMock()
     test_filename = "my-file-location-msg.gpg"
@@ -761,8 +838,8 @@ def test_Client_on_file_downloaded_success(safe_tmpdir):
     submission_db_object.uuid = test_object_uuid
     submission_db_object.filename = test_filename
     with mock.patch('securedrop_client.logic.storage') as mock_storage, \
-            mock.patch('securedrop_client.crypto.decrypt_submission_or_reply',
-                       return_value=(0, 'filepath')) as mock_gpg, \
+            mock.patch.object(cl.gpg, 'decrypt_submission_or_reply',
+                              return_value=(0, 'filepath')) as mock_gpg, \
             mock.patch('shutil.move'):
         cl.on_file_downloaded(result_data, current_object=submission_db_object)
         mock_gpg.call_count == 1
@@ -773,7 +850,8 @@ def test_Client_on_file_downloaded_success(safe_tmpdir):
 def test_Client_on_file_downloaded_api_failure(safe_tmpdir):
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir),
+                proxy=False)
     cl.update_sources = mock.MagicMock()
     cl.api_runner = mock.MagicMock()
     test_filename = "my-file-location-msg.gpg"
@@ -791,7 +869,8 @@ def test_Client_on_file_downloaded_api_failure(safe_tmpdir):
 def test_Client_on_file_downloaded_decrypt_failure(safe_tmpdir):
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir),
+                proxy=False)
     cl.update_sources = mock.MagicMock()
     cl.api_runner = mock.MagicMock()
     test_filename = "my-file-location-msg.gpg"
@@ -801,8 +880,8 @@ def test_Client_on_file_downloaded_decrypt_failure(safe_tmpdir):
     submission_db_object = mock.MagicMock()
     submission_db_object.uuid = 'myuuid'
     submission_db_object.filename = 'filename'
-    with mock.patch('securedrop_client.crypto.decrypt_submission_or_reply',
-                    return_value=(1, '')) as mock_gpg, \
+    with mock.patch.object(cl.gpg, 'decrypt_submission_or_reply',
+                           return_value=(1, '')) as mock_gpg, \
             mock.patch('shutil.move'):
         cl.on_file_downloaded(result_data, current_object=submission_db_object)
         mock_gpg.call_count == 1
@@ -813,7 +892,9 @@ def test_Client_on_file_downloaded_decrypt_failure(safe_tmpdir):
 def test_Client_on_download_timeout(safe_tmpdir):
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     cl.update_sources = mock.MagicMock()
     cl.api_runner = mock.MagicMock()
     current_object = mock.MagicMock()
@@ -832,7 +913,9 @@ def test_Client_on_file_download_Reply(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     source = models.Source('source-uuid', 'testy-mctestface', False,
                            'mah pub key', 1, False, datetime.now())
     journalist = models.User('Testy mcTestface')
@@ -857,7 +940,9 @@ def test_Client_on_object_loaded(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     cl.on_object_loaded(cl, None)
     assert cl.data.data_dir == os.path.join(str(safe_tmpdir), "data")
 
@@ -869,7 +954,9 @@ def test_Client_on_file_open(safe_tmpdir):
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    with mock.patch('securedrop_client.logic.GpgHelper'):
+        cl = Client('http://localhost', mock_gui, mock_session,
+                    str(safe_tmpdir))
     cl.proxy = True
     mock_submission = mock.MagicMock()
     mock_submission.filename = 'test.pdf'
@@ -884,7 +971,8 @@ def test_Client_on_file_open(safe_tmpdir):
 def test_Client_reply_to_source(safe_tmpdir, db_session):
     mock_gui = mock.MagicMock()
 
-    cl = Client('http://localhost', mock_gui, db_session, str(safe_tmpdir))
+    cl = Client('http://localhost', mock_gui, db_session, str(safe_tmpdir),
+                proxy=False)
     cl.api = mock.MagicMock()
     mock_call_api = mock.Mock()
     cl.call_api = mock_call_api
@@ -915,7 +1003,8 @@ def test_Client_reply_to_source_not_logged_in(safe_tmpdir):
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
 
-    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir),
+                proxy=False)
     mock_call_api = mock.Mock()
     mock_on_action = mock.Mock()
     cl.call_api = mock_call_api
