@@ -29,9 +29,6 @@ import sdclientapi.sdlocalobjects as sdkobjects
 from PyQt5.QtCore import QObject
 from securedrop_client import storage
 from securedrop_client import crypto
-from securedrop_client.models import make_engine
-
-from sqlalchemy.orm import sessionmaker
 
 
 logger = logging.getLogger(__name__)
@@ -39,28 +36,26 @@ logger = logging.getLogger(__name__)
 
 class APISyncObject(QObject):
 
-    def __init__(self, api, home, is_qubes):
+    def __init__(self, api, session, gpg):
         super().__init__()
-
-        engine = make_engine(home)
-        Session = sessionmaker(bind=engine)
-        self.session = Session()  # Reference to the SqlAlchemy session.
+        self.session = session
         self.api = api
-        self.home = home
-        self.is_qubes = is_qubes
+        self.gpg = gpg
 
     def fetch_the_thing(self, item, msg, download_fn, update_fn):
         shasum, filepath = download_fn(item)
 
-        res, dest = crypto.decrypt_submission_or_reply(filepath,
-                                                       msg.filename,
-                                                       self.home,
-                                                       self.is_qubes, False)
+        try:
+            self.gpg.decrypt_submission_or_reply(filepath,
+                                                 msg.filename,
+                                                 False)
 
-        if res == 0:
-            update_fn(msg.uuid, self.session)
-            logger.info("Stored message or reply at {}".format(
-                msg.filename))
+        except Exception:
+            return
+
+        update_fn(msg.uuid, self.session)
+        logger.info("Stored message or reply at {}".format(
+            msg.filename))
 
 
 class MessageSync(APISyncObject):
@@ -68,8 +63,8 @@ class MessageSync(APISyncObject):
     Runs in the background, finding messages to download and downloading them.
     """
 
-    def __init__(self, api, home, is_qubes):
-        super().__init__(api, home, is_qubes)
+    def __init__(self, api, session, gpg):
+        super().__init__(api, session, gpg)
 
     def run(self, loop=True):
         while True:
@@ -105,8 +100,8 @@ class ReplySync(APISyncObject):
     Runs in the background, finding replies to download and downloading them.
     """
 
-    def __init__(self, api, home, is_qubes):
-        super().__init__(api, home, is_qubes)
+    def __init__(self, api, session, gpg):
+        super().__init__(api, session, gpg)
 
     def run(self, loop=True):
         while True:

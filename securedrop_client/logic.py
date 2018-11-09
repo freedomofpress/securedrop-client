@@ -27,7 +27,7 @@ from securedrop_client import crypto
 from securedrop_client import storage
 from securedrop_client import models
 from securedrop_client.utils import check_dir_permissions, safe_mkdir
-from securedrop_client.gpg import GpgHelper
+from securedrop_client.crypto import GpgHelper
 from securedrop_client.data import Data
 from securedrop_client.message_sync import MessageSync, ReplySync
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess
@@ -107,7 +107,7 @@ class Client(QObject):
         self.hostname = hostname  # Location of the SecureDrop server.
         self.gui = gui  # Reference to the UI window.
         self.api = None  # Reference to the API for secure drop proxy.
-        self.gpg = GpgHelper(gpg_home, session)
+        self.gpg = GpgHelper(gpg_home, session, proxy)
         self.session = session  # Reference to the SqlAlchemy session.
         self.message_thread = None  # thread responsible for fetching messages
         self.reply_thread = None  # thread responsible for fetching replies
@@ -231,7 +231,7 @@ class Client(QObject):
         """
         if not self.message_thread:
             self.message_thread = QThread()
-            self.message_sync = MessageSync(self.api, self.home, self.proxy)
+            self.message_sync = MessageSync(self.api, self.session, self.gpg)
             self.message_sync.moveToThread(self.message_thread)
             self.message_thread.started.connect(self.message_sync.run)
             self.message_thread.start()
@@ -242,7 +242,7 @@ class Client(QObject):
         """
         if not self.reply_thread:
             self.reply_thread = QThread()
-            self.reply_sync = ReplySync(self.api, self.home, self.proxy)
+            self.reply_sync = ReplySync(self.api, self.session, self.gpg)
             self.reply_sync.moveToThread(self.reply_thread)
             self.reply_thread.started.connect(self.reply_sync.run)
             self.reply_thread.start()
@@ -531,9 +531,8 @@ class Client(QObject):
             shutil.move(filename, filepath_in_datadir)
 
             # Attempt to decrypt the file.
-            res, filepath = crypto.decrypt_submission_or_reply(
-                filepath_in_datadir, server_filename, self.home,
-                self.proxy, is_doc=True)
+            res, filepath = self.gpg.decrypt_submission_or_reply(
+                filepath_in_datadir, server_filename, is_doc=True)
 
             if res != 0:  # Then the file did not decrypt properly.
                 self.set_status("Failed to download and decrypt file, "
