@@ -207,9 +207,6 @@ class SourceWidget(QWidget):
         layout.addWidget(self.summary)
         self.updated = QLabel()
         layout.addWidget(self.updated)
-        self.details = QLabel()
-        self.details.setWordWrap(True)
-        layout.addWidget(self.details)
         self.update()
 
     def setup(self, controller):
@@ -237,15 +234,11 @@ class SourceWidget(QWidget):
     def update(self):
         """
         Updates the displayed values with the current values from self.source.
-
-        TODO: Style this widget properly and work out what should be in the
-        self.details label.
         """
         self.updated.setText(arrow.get(self.source.last_updated).humanize())
         self.display_star_icon()
         self.name.setText("<strong>{}</strong>".format(
                           self.source.journalist_designation))
-        self.details.setText("Lorum ipsum dolor sit amet thingy dodah...")
 
     def toggle_star(self, event):
         """
