@@ -7,6 +7,7 @@ include Pipfile.lock
 include files/alembic.ini
 include files/client.ini
 include files/securedrop-client
+include files/securedrop-client.desktop
 
 recursive-include alembic *
 recursive-include securedrop_client *
