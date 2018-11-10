@@ -11,7 +11,7 @@ from typing import Optional, Dict, List, Tuple
 from .sdlocalobjects import *
 
 
-proxyvmname = "sd-journalist"
+proxyvmname = "sd-proxy"
 
 
 def json_query(data):
