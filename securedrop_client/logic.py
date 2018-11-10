@@ -89,6 +89,8 @@ class Client(QObject):
     application, this is the controller.
     """
 
+    sync_events = pyqtSignal(str)
+
     def __init__(self, hostname, gui, session,
                  home: str, proxy: bool = True) -> None:
         """
@@ -345,6 +347,7 @@ class Client(QObject):
         """
         logger.debug("In sync_api on thread {}".format(
             self.thread().currentThreadId()))
+        self.sync_events.emit('syncing')
 
         if self.authenticated():
             logger.debug("You are authenticated, going to make your call")
@@ -367,6 +370,7 @@ class Client(QObject):
         """
         Called when syncronisation of data via the API is complete.
         """
+        self.sync_events.emit('synced')
         if isinstance(result, tuple):
             remote_sources, remote_submissions, remote_replies = \
                 result
