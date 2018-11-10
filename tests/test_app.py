@@ -2,6 +2,7 @@
 Tests for the app module, which sets things up and runs the application.
 """
 import os
+import platform
 import pytest
 import sys
 from PyQt5.QtWidgets import QApplication
@@ -46,6 +47,8 @@ def test_configure_logging(safe_tmpdir):
         assert sys.excepthook == excepthook
 
 
+@pytest.mark.skipif(platform.system() != 'Linux',
+                    reason="concurrent app prevention skipped on non Linux")
 @mock.patch('securedrop_client.app.sys.exit')
 @mock.patch('securedrop_client.app.QMessageBox')
 class TestSecondInstancePrevention(object):
