@@ -1,6 +1,14 @@
 Changelog
 =========
 
+0.0.4
+-----
+
+* Rename default proxy VM from sd-journalist to sd-proxy (#43).
+* Get stderr text when using Qubes proxy (#38).
+* Parse reply UUID (#42).
+* Fix incorrect error message when downloading a file (#36).
+
 0.0.3
 -----
 
