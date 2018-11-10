@@ -17,6 +17,21 @@ Please install system libraries for PyQt rather than using PyPI-managed librarie
 In order to run the test suite you should also install the `xvfb` package (to
 make the `xvfb-run` command available): `apt install xvfb`.
 
+### OSX
+
+```
+# install Homebrew https://brew.sh/
+
+brew install pyenv
+# follow step 3 onwards of https://github.com/pyenv/pyenv#basic-github-checkout
+pyenv install 3.5.0
+
+brew install pip
+pip install pipenv
+pipenv install --dev
+pipenv shell
+```
+
 ## Run the client
 
 To ensure that file decryption works, please import [this test private key](https://raw.githubusercontent.com/freedomofpress/securedrop/0a901362b84a5378fba80e9cd0ffe4542bdcd598/securedrop/tests/files/test_journalist_key.sec) into your GnuPG keyring. Submissions in the SecureDrop development environment can be decrypted with this test key.
