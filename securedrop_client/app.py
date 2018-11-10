@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 import os
+import platform
 import signal
 import sys
 import socket
@@ -111,6 +112,10 @@ def arg_parser() -> ArgumentParser:
 
 
 def prevent_second_instance(app: QApplication, unique_name: str) -> None:
+    # This function is only necessary on Qubes, so we can skip it on other platforms to help devs
+    if platform.system() != 'Linux':  # pragma: no cover
+        return
+
     # Null byte triggers abstract namespace
     IDENTIFIER = '\0' + app.applicationName() + unique_name
     ALREADY_BOUND_ERRNO = 98
