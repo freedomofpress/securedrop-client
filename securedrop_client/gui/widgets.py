@@ -19,11 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 import arrow
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPainter
-from PyQt5.QtWidgets import (QListWidget, QTextEdit, QLabel, QToolBar, QAction,
-                             QWidget, QListWidgetItem, QHBoxLayout,
-                             QPushButton, QVBoxLayout, QLineEdit, QScrollArea,
-                             QPlainTextEdit, QSpacerItem, QSizePolicy, QDialog)
+from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
+    QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog
 from securedrop_client.resources import load_svg, load_image
 from securedrop_client.utils import humanize_filesize
 

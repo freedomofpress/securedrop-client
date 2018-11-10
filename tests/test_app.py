@@ -105,12 +105,12 @@ def test_start_app(safe_tmpdir):
     mock_args.sdc_home = sdc_home
     mock_args.proxy = False
 
-    with mock.patch('securedrop_client.app.configure_logging') as conf_log, \
+    with mock.patch('securedrop_client.app.configure_logging'), \
             mock.patch('securedrop_client.app.QApplication') as mock_app, \
             mock.patch('securedrop_client.app.Window') as mock_win, \
             mock.patch('securedrop_client.app.Client') as mock_client, \
             mock.patch('securedrop_client.app.prevent_second_instance'), \
-            mock.patch('securedrop_client.app.sys') as mock_sys, \
+            mock.patch('securedrop_client.app.sys'), \
             mock.patch('securedrop_client.app.sessionmaker',
                        return_value=mock_session_class):
         start_app(mock_args, mock_qt_args)
@@ -174,10 +174,10 @@ def test_create_app_dir_permissions(tmpdir):
             os.makedirs(full_path, perms)
 
         with mock.patch('logging.getLogger'), \
-                mock.patch('securedrop_client.app.QApplication') as mock_app, \
-                mock.patch('securedrop_client.app.Window') as mock_win, \
-                mock.patch('securedrop_client.app.Client') as mock_client, \
-                mock.patch('securedrop_client.app.sys') as mock_sys, \
+                mock.patch('securedrop_client.app.QApplication'), \
+                mock.patch('securedrop_client.app.Window'), \
+                mock.patch('securedrop_client.app.Client'), \
+                mock.patch('securedrop_client.app.sys'), \
                 mock.patch('securedrop_client.app.prevent_second_instance'), \
                 mock.patch('securedrop_client.app.sessionmaker',
                            return_value=mock_session_class):
@@ -222,7 +222,7 @@ def test_run():
 
     with mock.patch('securedrop_client.app.start_app') as mock_start_app, \
             mock.patch('argparse.ArgumentParser.parse_known_args',
-                       side_effect=fake_known_args) as wat:
+                       side_effect=fake_known_args):
         run()
 
         mock_start_app.assert_called_once_with(mock_args, mock_qt_args)

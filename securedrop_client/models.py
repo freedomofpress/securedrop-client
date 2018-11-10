@@ -1,11 +1,10 @@
 import os
 
-from sqlalchemy import (Boolean, Column, create_engine, DateTime, ForeignKey,
-                        Integer, String, Text, MetaData)
+from sqlalchemy import Boolean, Column, create_engine, DateTime, ForeignKey, Integer, String, \
+    Text, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 
-from securedrop_client.data import Data
 
 convention = {
     "ix": 'ix_%(column_0_label)s',

@@ -20,10 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
 import logging
-import os
-import shutil
-import subprocess
-import tempfile
 import sdclientapi.sdlocalobjects as sdkobjects
 
 from PyQt5.QtCore import QObject

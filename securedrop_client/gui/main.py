@@ -20,14 +20,10 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
-from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QDesktopWidget,
-                             QStatusBar)
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QDesktopWidget, QStatusBar
 from securedrop_client import __version__
-from securedrop_client.gui.widgets import (ToolBar, MainView, LoginDialog,
-                                           ConversationView)
+from securedrop_client.gui.widgets import ToolBar, MainView, LoginDialog, ConversationView
 from securedrop_client.resources import load_icon
-import os
 
 logger = logging.getLogger(__name__)
 
