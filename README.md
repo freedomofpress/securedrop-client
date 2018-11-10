@@ -73,7 +73,7 @@ Currently, this must be done by running the SecureDrop server dev container. To 
 
 1. Follow the instructions [in the SecureDrop documentation](https://docs.securedrop.org/en/latest/development/setup_development.html#quick-start) to set up the development container. The journalist interface API will be running on `127.0.0.1:8081` with a test
 journalist, admin, and test sources and replies.
-2. Clone the [SDK repository]((https://github.com/freedomofpress/securedrop-sdk) and install the package in the same virtualenv you are using to develop this client.
+2. Clone the [SDK repository]((https://github.com/freedomofpress/securedrop-sdk) and install the package (`pip install ../path/to/securedrop-sdk`) in the same virtualenv you are using to develop this client.
 3. Now at the Python interpreter you should be able to `import sdclientapi` without issue.
 
 For further development, you should use the SDK methods to interact with the server.
