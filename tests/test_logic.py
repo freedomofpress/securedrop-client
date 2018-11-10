@@ -3,11 +3,9 @@ Make sure the Client object, containing the application logic, behaves as
 expected.
 """
 import arrow
-from datetime import datetime
 import os
 import pytest
-import sdclientapi
-import shutil
+from datetime import datetime
 from securedrop_client import storage, models
 from securedrop_client.logic import APICallRunner, Client
 from unittest import mock
@@ -50,7 +48,7 @@ def test_APICallRunner_with_exception():
     mock_current_object = mock.MagicMock()
     cr = APICallRunner(mock_api_call, mock_current_object, 'foo', bar='baz')
     cr.call_finished = mock.MagicMock()
-    with mock.patch('securedrop_client.logic.QTimer') as mock_timer:
+    with mock.patch('securedrop_client.logic.QTimer'):
         cr.call_api()
     assert cr.result == ex
     cr.call_finished.emit.assert_called_once_with()
@@ -92,7 +90,7 @@ def test_Client_start_message_thread(safe_tmpdir):
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
     with mock.patch('securedrop_client.logic.QThread') as mock_qthread, \
-            mock.patch('securedrop_client.logic.MessageSync') as mock_msync:
+            mock.patch('securedrop_client.logic.MessageSync'):
         cl.message_sync = mock.MagicMock()
         cl.start_message_thread()
         cl.message_sync.moveToThread.assert_called_once_with(mock_qthread())
@@ -109,7 +107,7 @@ def test_Client_start_reply_thread(safe_tmpdir):
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
     with mock.patch('securedrop_client.logic.QThread') as mock_qthread, \
-            mock.patch('securedrop_client.logic.ReplySync') as mock_msync:
+            mock.patch('securedrop_client.logic.ReplySync'):
         cl.reply_sync = mock.MagicMock()
         cl.start_reply_thread()
         cl.reply_sync.moveToThread.assert_called_once_with(mock_qthread())
@@ -126,10 +124,10 @@ def test_Client_call_api(safe_tmpdir):
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
     cl.finish_api_call = mock.MagicMock()
-    with mock.patch('securedrop_client.logic.QThread') as mock_qthread, \
+    with mock.patch('securedrop_client.logic.QThread'), \
             mock.patch(
-                'securedrop_client.logic.APICallRunner') as mock_runner, \
-            mock.patch('securedrop_client.logic.QTimer') as mock_timer:
+                'securedrop_client.logic.APICallRunner'), \
+            mock.patch('securedrop_client.logic.QTimer'):
         mock_api_call = mock.MagicMock()
         mock_callback = mock.MagicMock()
         mock_timeout = mock.MagicMock()

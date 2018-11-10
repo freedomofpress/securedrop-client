@@ -2,11 +2,9 @@
 Check the core Window UI class works as expected.
 """
 from PyQt5.QtWidgets import QApplication, QVBoxLayout
-from PyQt5.QtCore import QTimer
 from securedrop_client.gui.main import Window
-from securedrop_client.gui.widgets import LoginDialog
 from securedrop_client.resources import load_icon
-from securedrop_client.models import Submission, Source
+from securedrop_client.models import Submission
 from unittest import mock
 
 
@@ -24,7 +22,7 @@ def test_init():
             mock.patch('securedrop_client.gui.main.ToolBar') as mock_tb, \
             mock.patch('securedrop_client.gui.main.MainView') as mock_mv, \
             mock.patch('securedrop_client.gui.main.QVBoxLayout', mock_lo), \
-            mock.patch('securedrop_client.gui.main.QMainWindow') as mock_qmw:
+            mock.patch('securedrop_client.gui.main.QMainWindow'):
         w = Window()
         mock_li.assert_called_once_with(w.icon)
         mock_tb.assert_called_once_with(w.widget)
@@ -172,7 +170,7 @@ def test_on_source_changed():
     """
     w = Window()
     w.main_view = mock.MagicMock()
-    mock_si = w.main_view.source_list.currentItem()
+    w.main_view.source_list.currentItem()
     mock_sw = w.main_view.source_list.itemWidget()
     w.show_conversation_for = mock.MagicMock()
     w.on_source_changed()

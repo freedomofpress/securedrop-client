@@ -22,8 +22,6 @@ import shutil
 import subprocess
 import tempfile
 
-from securedrop_client.models import make_engine
-
 
 logger = logging.getLogger(__name__)
 

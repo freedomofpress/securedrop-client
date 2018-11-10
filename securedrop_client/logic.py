@@ -21,7 +21,6 @@ import logging
 import sdclientapi
 import shutil
 import arrow
-import copy
 import uuid
 from sqlalchemy import event
 from securedrop_client import crypto

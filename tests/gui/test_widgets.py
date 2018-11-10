@@ -2,14 +2,11 @@
 Make sure the UI widgets are configured correctly and work as expected.
 """
 from datetime import datetime
-from PyQt5.QtWidgets import (QLineEdit, QWidget, QApplication, QWidgetItem,
-                             QSpacerItem, QVBoxLayout)
+from PyQt5.QtWidgets import QWidget, QApplication, QWidgetItem, QSpacerItem, QVBoxLayout
 from securedrop_client import models
-from securedrop_client.gui.widgets import (ToolBar, MainView, SourceList,
-                                           SourceWidget, LoginDialog,
-                                           SpeechBubble, ConversationWidget,
-                                           MessageWidget, ReplyWidget,
-                                           FileWidget, ConversationView)
+from securedrop_client.gui.widgets import ToolBar, MainView, SourceList, SourceWidget, \
+    LoginDialog, SpeechBubble, ConversationWidget, MessageWidget, ReplyWidget, FileWidget, \
+    ConversationView
 from unittest import mock
 
 
@@ -330,7 +327,7 @@ def test_SpeechBubble_init():
     with mock.patch('securedrop_client.gui.widgets.QLabel') as mock_label, \
             mock.patch('securedrop_client.gui.widgets.QVBoxLayout'), \
             mock.patch('securedrop_client.gui.widgets.SpeechBubble.setLayout'):
-        sb = SpeechBubble('hello')
+        SpeechBubble('hello')
         mock_label.assert_called_once_with('hello')
 
 
@@ -417,7 +414,6 @@ def test_FileWidget_mousePressEvent_download():
     """
     Should fire the expected download event handler in the logic layer.
     """
-    mock_message = mock.MagicMock()
     mock_controller = mock.MagicMock()
     source = models.Source('source-uuid', 'testy-mctestface', False,
                            'mah pub key', 1, False, datetime.now())
@@ -435,7 +431,6 @@ def test_FileWidget_mousePressEvent_open():
     """
     Should fire the expected open event handler in the logic layer.
     """
-    mock_message = mock.MagicMock()
     mock_controller = mock.MagicMock()
     source = models.Source('source-uuid', 'testy-mctestface', False,
                            'mah pub key', 1, False, datetime.now())

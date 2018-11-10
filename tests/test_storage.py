@@ -6,17 +6,10 @@ import uuid
 import securedrop_client.models
 from dateutil.parser import parse
 from unittest import mock
-from securedrop_client.storage import (get_local_sources,
-                                       get_local_submissions,
-                                       get_local_replies,
-                                       get_remote_data, update_local_storage,
-                                       update_sources,
-                                       update_submissions, update_replies,
-                                       find_or_create_user,
-                                       find_new_submissions,
-                                       find_new_replies,
-                                       mark_file_as_downloaded,
-                                       mark_reply_as_downloaded)
+from securedrop_client.storage import get_local_sources, get_local_submissions, get_local_replies, \
+    get_remote_data, update_local_storage, update_sources, update_submissions, update_replies, \
+    find_or_create_user, find_new_submissions, find_new_replies, mark_file_as_downloaded, \
+    mark_reply_as_downloaded
 from sdclientapi import Source, Submission, Reply
 
 
@@ -95,7 +88,6 @@ def test_get_remote_data_handles_api_error():
     """
     mock_api = mock.MagicMock()
     mock_api.get_sources.side_effect = Exception('BANG!')
-    mock_session = mock.MagicMock()
     with pytest.raises(Exception):
         get_remote_data(mock_api)
 

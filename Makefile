@@ -1,37 +1,41 @@
-XARGS := xargs -0 $(shell test $$(uname) = Linux && echo -r)
-GREP_T_FLAG := $(shell test $$(uname) = Linux && echo -T)
-export PYFLAKES_BUILTINS=_
+DEFAULT_GOAL: help
+SHELL := /bin/bash
 
-all:
-	@echo "\nThere is no default Makefile target right now. Try:\n"
-	@echo "make clean - reset the project and remove auto-generated assets."
-	@echo "make test - run the unit test suite."
-	@echo "make coverage - view a report on unit test coverage."
-	@echo "make check  - run all checkers and tests."
-
-clean:
-	rm -rf build
-	rm -rf dist
-	rm -rf securedrop_client.egg-info
-	rm -rf .coverage
-	rm -rf .eggs
-	rm -rf docs/_build
-	rm -rf .pytest_cache
-	rm -rf lib
-	find . \( -name '*.py[co]' -o -name dropin.cache \) -delete
-	find . \( -name '*.bak' -o -name dropin.cache \) -delete
-	find . \( -name '*.tgz' -o -name dropin.cache \) -delete
-	find . | grep -E "(__pycache__)" | xargs rm -rf
+.PHONY: clean
+clean:  ## Clean the workspace of generated resources
+	@rm -rf build dist *.egg-info .coverage .eggs docs/_build .pytest_cache lib htmlcov && \
+		find . \( -name '*.py[co]' -o -name dropin.cache \) -delete && \
+		find . \( -name '*.bak' -o -name dropin.cache \) -delete && \
+		find . \( -name '*.tgz' -o -name dropin.cache \) -delete && \
+		find . -name __pycache__ -print0 | xargs rm -rf
 
 TESTS ?= tests
 TESTOPTS ?= -v
-test: clean
-	xvfb-run python -m pytest -v --cov-config .coveragerc --cov-report html --cov-report term-missing --cov=securedrop_client --cov-fail-under 100 $(TESTOPTS) $(TESTS)
+.PHONY: test
+test: ## Run the application tests
+	@TEST_CMD="python -m pytest -v --cov-config .coveragerc --cov-report html --cov-report term-missing --cov=securedrop_client --cov-fail-under 100 $(TESTOPTS) $(TESTS)" ; \
+		if hash xvfb-run; then \
+		xvfb-run $$TEST_CMD ; else \
+		$$TEST_CMD ; fi
 
-pyflakes:
-	find . \( -name _build -o -name var -o -path ./docs -o -path \) -type d -prune -o -name '*.py' -print0 | $(XARGS) pyflakes
+.PHONY: lint
+lint: ## Run the linters
+	@flake8 .
 
-pycodestyle:
-	find . \( -name _build -o -name var \) -type d -prune -o -name '*.py' -print0 | $(XARGS) -n 1 pycodestyle --repeat --exclude=build/*,docs/*,.vscode/*,setup.py --ignore=E731,E402,W504
+.PHONY: check
+check: clean lint test ## Run the full CI test suite
 
-check: clean pycodestyle pyflakes test
+# Explaination of the below shell command should it ever break.
+# 1. Set the field separator to ": ##" and any make targets that might appear between : and ##
+# 2. Use sed-like syntax to remove the make targets
+# 3. Format the split fields into $$1) the target name (in blue) and $$2) the target descrption
+# 4. Pass this file as an arg to awk
+# 5. Sort it alphabetically
+# 6. Format columns with colon as delimiter.
+.PHONY: help
+help: ## Print this message and exit.
+	@printf "Makefile for developing and testing SecureDrop.\n"
+	@printf "Subcommands:\n\n"
+	@awk 'BEGIN {FS = ":.*?## "} /^[0-9a-zA-Z_-]+:.*?## / {printf "\033[36m%s\033[0m : %s\n", $$1, $$2}' $(MAKEFILE_LIST) \
+		| sort \
+		| column -s ':' -t

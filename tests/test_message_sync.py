@@ -1,7 +1,6 @@
 """
 Make sure the message sync object behaves as expected.
 """
-import pytest
 from unittest import mock
 from securedrop_client.message_sync import MessageSync, ReplySync
 
@@ -40,14 +39,14 @@ def test_MessageSync_run_success():
                     ]),\
             mock.patch('subprocess.call',
                        return_value=0), \
-            mock.patch('shutil.move') as mock_move, \
-            mock.patch('shutil.copy') as mock_copy, \
-            mock.patch('os.unlink') as mock_unlink, \
+            mock.patch('shutil.move'), \
+            mock.patch('shutil.copy'), \
+            mock.patch('os.unlink'), \
             mock.patch('securedrop_client.message_sync.storage'
-                       '.mark_file_as_downloaded') as mock_mark_as_dl, \
+                       '.mark_file_as_downloaded'), \
             mock.patch(
                 'tempfile.NamedTemporaryFile',
-                return_value=fh) as mock_temp_file, \
+                return_value=fh), \
             mock.patch('builtins.open', mock.mock_open(read_data="blah")):
 
         api = mock.MagicMock()
@@ -97,14 +96,14 @@ def test_MessageSync_run_failure():
                     ]),\
             mock.patch('subprocess.call',
                        return_value=1), \
-            mock.patch('shutil.move') as mock_move, \
-            mock.patch('shutil.copy') as mock_copy, \
-            mock.patch('os.unlink') as mock_unlink, \
+            mock.patch('shutil.move'), \
+            mock.patch('shutil.copy'), \
+            mock.patch('os.unlink'), \
             mock.patch('securedrop_client.message_sync.storage'
-                       '.mark_file_as_downloaded') as mock_mark_as_dl, \
+                       '.mark_file_as_downloaded'), \
             mock.patch(
                 'tempfile.NamedTemporaryFile',
-                return_value=fh) as mock_temp_file, \
+                return_value=fh), \
             mock.patch('builtins.open', mock.mock_open(read_data="blah")):
 
         api = mock.MagicMock()
@@ -133,14 +132,14 @@ def test_ReplySync_run_success():
                     ]),\
             mock.patch('subprocess.call',
                        return_value=0), \
-            mock.patch('shutil.move') as mock_move, \
-            mock.patch('shutil.copy') as mock_copy, \
-            mock.patch('os.unlink') as mock_unlink, \
+            mock.patch('shutil.move'), \
+            mock.patch('shutil.copy'), \
+            mock.patch('os.unlink'), \
             mock.patch('securedrop_client.message_sync.storage'
-                       '.mark_file_as_downloaded') as mock_mark_as_dl, \
+                       '.mark_file_as_downloaded'), \
             mock.patch(
                 'tempfile.NamedTemporaryFile',
-                return_value=fh) as mock_temp_file, \
+                return_value=fh), \
             mock.patch('builtins.open', mock.mock_open(read_data="blah")):
 
         api = mock.MagicMock()
@@ -190,14 +189,14 @@ def test_ReplySync_run_failure():
                     ]),\
             mock.patch('subprocess.call',
                        return_value=1), \
-            mock.patch('shutil.move') as mock_move, \
-            mock.patch('shutil.copy') as mock_copy, \
-            mock.patch('os.unlink') as mock_unlink, \
+            mock.patch('shutil.move'), \
+            mock.patch('shutil.copy'), \
+            mock.patch('os.unlink'), \
             mock.patch('securedrop_client.message_sync.storage'
-                       '.mark_reply_as_downloaded') as mock_mark_as_dl, \
+                       '.mark_reply_as_downloaded'), \
             mock.patch(
                 'tempfile.NamedTemporaryFile',
-                return_value=fh) as mock_temp_file, \
+                return_value=fh), \
             mock.patch('builtins.open', mock.mock_open(read_data="blah")):
 
         api = mock.MagicMock()
