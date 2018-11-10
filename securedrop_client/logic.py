@@ -144,7 +144,7 @@ class Client(QObject):
         self.conv_view_update = QTimer()
         self.conv_view_update.timeout.connect(
             self.update_conversation_view)
-        self.conv_view_update.start(1000 * 60 * 0.25)  # every 15 seconds
+        self.conv_view_update.start(1000 * 60 * 0.10)  # every 6 seconds
 
         event.listen(models.Submission, 'load', self.on_object_loaded)
         event.listen(models.Submission, 'init', self.on_object_instantiated)
