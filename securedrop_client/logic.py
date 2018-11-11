@@ -484,6 +484,10 @@ class Client(QObject):
         Download the file associated with the associated message (which may
         be a Submission or Reply).
         """
+        if not self.api:  # Then we should tell the user they need to login.
+            self.on_action_requiring_login()
+            return
+
         if isinstance(message, models.Submission):
             # Handle submissions.
             func = self.api.download_submission

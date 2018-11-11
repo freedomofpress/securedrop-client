@@ -800,6 +800,27 @@ def test_Client_on_file_downloaded_decrypt_failure(safe_tmpdir):
             "Failed to download and decrypt file, please try again.")
 
 
+def test_Client_on_file_download_user_not_signed_in(safe_tmpdir):
+    """
+    If a user clicks the download button but is not logged in,
+    an error should appear.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    source = models.Source('source-uuid', 'testy-mctestface', False,
+                           'mah pub key', 1, False, datetime.now())
+    submission = models.Submission(source, 'submission-uuid', 1234,
+                                   'myfile.doc.gpg', 'http://myserver/myfile')
+    cl.on_action_requiring_login = mock.MagicMock()
+    cl.api = None
+    submission_sdk_object = mock.MagicMock()
+    with mock.patch('sdclientapi.Submission') as mock_submission:
+        mock_submission.return_value = submission_sdk_object
+        cl.on_file_download(source, submission)
+    cl.on_action_requiring_login.assert_called_once_with()
+
+
 def test_Client_on_download_timeout(safe_tmpdir):
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
