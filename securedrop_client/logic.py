@@ -402,6 +402,8 @@ class Client(QObject):
         Display the updated list of sources with those found in local storage.
         """
         sources = list(storage.get_local_sources(self.session))
+        if sources:
+            sources.sort(key=lambda x: x.last_updated, reverse=True)
         self.gui.show_sources(sources)
         self.update_sync()
 
