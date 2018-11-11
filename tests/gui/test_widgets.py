@@ -96,6 +96,17 @@ def test_ToolBar_on_refresh_clicked():
     tb.controller.sync_api.assert_called_once_with()
 
 
+def test_ToolBar_sync_event():
+    """Toggles refresh button when syncing
+    """
+    tb = ToolBar(None)
+    tb._on_sync_event('syncing')
+    assert not tb.refresh.isEnabled()
+
+    tb._on_sync_event('synced')
+    assert tb.refresh.isEnabled()
+
+
 def test_MainView_init():
     """
     Ensure the MainView instance is correctly set up.
