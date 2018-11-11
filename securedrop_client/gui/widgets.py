@@ -245,6 +245,9 @@ class SourceWidget(QWidget):
         self.name.setText("<strong>{}</strong>".format(
                           self.source.journalist_designation))
 
+        if self.source.document_count == 0:
+            self.attached.hide()
+
     def toggle_star(self, event):
         """
         Called when the star is clicked.

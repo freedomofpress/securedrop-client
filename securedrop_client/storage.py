@@ -109,6 +109,7 @@ def update_sources(remote_sources, local_sources, session):
             local_source.is_flagged = source.is_flagged
             local_source.public_key = source.key['public']
             local_source.interaction_count = source.interaction_count
+            local_source.document_count = source.number_of_documents
             local_source.is_starred = source.is_starred
             local_source.last_updated = parse(source.last_updated)
             # Removing the UUID from local_uuids ensures this record won't be
@@ -123,7 +124,8 @@ def update_sources(remote_sources, local_sources, session):
                         public_key=source.key['public'],
                         interaction_count=source.interaction_count,
                         is_starred=source.is_starred,
-                        last_updated=parse(source.last_updated))
+                        last_updated=parse(source.last_updated),
+                        document_count=source.number_of_documents)
             session.add(ns)
             logger.info('Added new source {}'.format(source.uuid))
     # The uuids remaining in local_uuids do not exist on the remote server, so
