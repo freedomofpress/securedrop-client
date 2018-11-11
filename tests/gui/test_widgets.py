@@ -1,8 +1,8 @@
 """
 Make sure the UI widgets are configured correctly and work as expected.
 """
-from datetime import datetime
 from PyQt5.QtWidgets import QWidget, QApplication, QWidgetItem, QSpacerItem, QVBoxLayout
+from tests import factory
 from securedrop_client import models
 from securedrop_client.gui.widgets import ToolBar, MainView, SourceList, SourceWidget, \
     LoginDialog, SpeechBubble, ConversationWidget, MessageWidget, ReplyWidget, FileWidget, \
@@ -208,6 +208,22 @@ def test_SourceWidget_update_unstarred():
     sw.name.setText.assert_called_once_with('<strong>foo bar baz</strong>')
 
 
+def test_SourceWidget_update_attachment_icon():
+    """
+    Attachment icon identicates document count
+    """
+    source = factory.Source(document_count=1)
+    sw = SourceWidget(None, source)
+
+    sw.update()
+    assert not sw.attached.isHidden()
+
+    source.document_count = 0
+
+    sw.update()
+    assert sw.attached.isHidden()
+
+
 def test_SourceWidget_toggle_star():
     """
     The toggle_star method should call self.controller.update_star
@@ -374,8 +390,7 @@ def test_FileWidget_init_left():
     Check the FileWidget is configured correctly for align-left.
     """
     mock_controller = mock.MagicMock()
-    source = models.Source('source-uuid', 'testy-mctestface', False,
-                           'mah pub key', 1, False, datetime.now())
+    source = factory.Source()
     submission = models.Submission(source, 'submission-uuid', 123,
                                    'mah-reply.gpg',
                                    'http://mah-server/mah-reply-url')
@@ -395,8 +410,7 @@ def test_FileWidget_init_right():
     Check the FileWidget is configured correctly for align-right.
     """
     mock_controller = mock.MagicMock()
-    source = models.Source('source-uuid', 'testy-mctestface', False,
-                           'mah pub key', 1, False, datetime.now())
+    source = factory.Source()
     submission = models.Submission(source, 'submission-uuid', 123,
                                    'mah-reply.gpg',
                                    'http://mah-server/mah-reply-url')
@@ -415,8 +429,7 @@ def test_FileWidget_mousePressEvent_download():
     Should fire the expected download event handler in the logic layer.
     """
     mock_controller = mock.MagicMock()
-    source = models.Source('source-uuid', 'testy-mctestface', False,
-                           'mah pub key', 1, False, datetime.now())
+    source = factory.Source()
     submission = models.Submission(source, 'submission-uuid', 123,
                                    'mah-reply.gpg',
                                    'http://mah-server/mah-reply-url')
@@ -432,8 +445,7 @@ def test_FileWidget_mousePressEvent_open():
     Should fire the expected open event handler in the logic layer.
     """
     mock_controller = mock.MagicMock()
-    source = models.Source('source-uuid', 'testy-mctestface', False,
-                           'mah pub key', 1, False, datetime.now())
+    source = factory.Source()
     submission = models.Submission(source, 'submission-uuid', 123,
                                    'mah-reply.gpg',
                                    'http://mah-server/mah-reply-url')

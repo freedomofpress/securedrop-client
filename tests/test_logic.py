@@ -5,7 +5,7 @@ expected.
 import arrow
 import os
 import pytest
-from datetime import datetime
+from tests import factory
 from securedrop_client import storage, models
 from securedrop_client.logic import APICallRunner, Client
 from unittest import mock
@@ -720,8 +720,7 @@ def test_Client_on_file_download_Submission(safe_tmpdir):
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
-    source = models.Source('source-uuid', 'testy-mctestface', False,
-                           'mah pub key', 1, False, datetime.now())
+    source = factory.Source()
     submission = models.Submission(source, 'submission-uuid', 1234,
                                    'myfile.doc.gpg', 'http://myserver/myfile')
     cl.call_api = mock.MagicMock()
@@ -824,8 +823,7 @@ def test_Client_on_file_download_Reply(safe_tmpdir):
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
-    source = models.Source('source-uuid', 'testy-mctestface', False,
-                           'mah pub key', 1, False, datetime.now())
+    source = factory.Source()
     journalist = models.User('Testy mcTestface')
     reply = models.Reply('reply-uuid', journalist, source,
                          'my-reply.gpg', 123)  # Not a sdclientapi.Submission

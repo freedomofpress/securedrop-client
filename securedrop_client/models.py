@@ -37,9 +37,11 @@ class WithContent():
 
 class Source(Base):
     __tablename__ = 'sources'
+    # TODO - add number_of_docs
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
     journalist_designation = Column(String(255), nullable=False)
+    document_count = Column(Integer, server_default="0", nullable=False)
     is_flagged = Column(Boolean(name='ck_sources_is_flagged'),
                         server_default="false")
     public_key = Column(Text, nullable=True)
@@ -49,11 +51,12 @@ class Source(Base):
     last_updated = Column(DateTime)
 
     def __init__(self, uuid, journalist_designation, is_flagged, public_key,
-                 interaction_count, is_starred, last_updated):
+                 interaction_count, is_starred, last_updated, document_count):
         self.uuid = uuid
         self.journalist_designation = journalist_designation
         self.is_flagged = is_flagged
         self.public_key = public_key
+        self.document_count = document_count
         self.interaction_count = interaction_count
         self.is_starred = is_starred
         self.last_updated = last_updated
