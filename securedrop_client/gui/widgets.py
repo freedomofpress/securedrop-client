@@ -325,13 +325,13 @@ class LoginDialog(QDialog):
         self.setDisabled(True)
         username = self.username_field.text()
         password = self.password_field.text()
-        tfa_token = self.tfa_field.text()
+        tfa_token = self.tfa_field.text().replace(' ', '')
         if username and password and tfa_token:
             try:
                 int(tfa_token)
             except ValueError:
                 self.setDisabled(False)
-                self.error(_('Please use only numerals (no spaces) for the '
+                self.error(_('Please use only numerals for the '
                              'two factor number.'))
                 return
             self.controller.login(username, password, tfa_token)
