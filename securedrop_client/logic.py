@@ -107,7 +107,7 @@ class Client(QObject):
         self.hostname = hostname  # Location of the SecureDrop server.
         self.gui = gui  # Reference to the UI window.
         self.api = None  # Reference to the API for secure drop proxy.
-        self.gpg = GpgHelper(gpg_home, session, proxy)
+        self.gpg = GpgHelper(gpg_home, proxy)
         self.session = session  # Reference to the SqlAlchemy session.
         self.message_thread = None  # thread responsible for fetching messages
         self.reply_thread = None  # thread responsible for fetching replies
@@ -231,7 +231,7 @@ class Client(QObject):
         """
         if not self.message_thread:
             self.message_thread = QThread()
-            self.message_sync = MessageSync(self.api, self.session, self.gpg)
+            self.message_sync = MessageSync(self.api, self.home, self.gpg)
             self.message_sync.moveToThread(self.message_thread)
             self.message_thread.started.connect(self.message_sync.run)
             self.message_thread.start()
@@ -242,7 +242,7 @@ class Client(QObject):
         """
         if not self.reply_thread:
             self.reply_thread = QThread()
-            self.reply_sync = ReplySync(self.api, self.session, self.gpg)
+            self.reply_sync = ReplySync(self.api, self.home, self.gpg)
             self.reply_sync.moveToThread(self.reply_thread)
             self.reply_thread.started.connect(self.reply_sync.run)
             self.reply_thread.start()
@@ -385,7 +385,21 @@ class Client(QObject):
                 if source.key and source.key.get('type', None) == 'PGP':
                     pub_key = source.key.get('public', None)
                     if pub_key:
-                        self.gpg.import_key(source.uuid, pub_key)
+                        local_source = self.session \
+                                           .query(models.Source) \
+                                           .filter_by(uuid=source.uuid) \
+                                           .one_or_none()
+                        if local_source is None:
+                            raise RuntimeError('Local source not found: {}'
+                               .format(source_uuid))
+
+                        fingerprint = self.gpg.import_key(local_source, pub_key)
+                        logger.info("Imported key! {}".format(fingerprint))
+
+                        local_source.fingerprint = fingerprint
+
+                        self.session.add(local_source)
+                        self.session.commit()
 
             # Set last sync flag.
             with open(self.sync_flag, 'w') as f:
@@ -571,7 +585,10 @@ class Client(QObject):
         else:  # Clear the error status bar
             self.gui.update_error_status("")
 
-        message = self.gpg.encrypt_to_source(source_uuid, message)
+        local_source = self.session.query(models.Source) \
+                                   .filter_by(uuid=source_uuid).one()
+
+        message = self.gpg.encrypt_to_source(local_source, message)
 
         source_sdk_obj = sdclientapi.Source(uuid=source_uuid)
         self.call_api(self.api.reply_source, self.on_reply_to_source,

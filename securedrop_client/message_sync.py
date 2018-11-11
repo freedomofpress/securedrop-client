@@ -29,27 +29,33 @@ import sdclientapi.sdlocalobjects as sdkobjects
 from PyQt5.QtCore import QObject
 from securedrop_client import storage
 from securedrop_client import crypto
+from securedrop_client.models import make_engine
 
+from sqlalchemy.orm import sessionmaker
 
 logger = logging.getLogger(__name__)
 
 
 class APISyncObject(QObject):
 
-    def __init__(self, api, session, gpg):
+    def __init__(self, api, home, gpg):
         super().__init__()
-        self.session = session
+
+        engine = make_engine(home)
+        Session = sessionmaker(bind=engine)
+        self.session = Session()
+
+        self.home = home
         self.api = api
         self.gpg = gpg
 
-    def fetch_the_thing(self, item, msg, download_fn, update_fn):
+    def fetch_msg_or_reply(self, item, msg, download_fn, update_fn):
         shasum, filepath = download_fn(item)
 
         try:
             self.gpg.decrypt_submission_or_reply(filepath,
                                                  msg.filename,
                                                  False)
-
         except Exception:
             return
 
@@ -63,8 +69,8 @@ class MessageSync(APISyncObject):
     Runs in the background, finding messages to download and downloading them.
     """
 
-    def __init__(self, api, session, gpg):
-        super().__init__(api, session, gpg)
+    def __init__(self, api, home, gpg):
+        super().__init__(api, home, gpg)
 
     def run(self, loop=True):
         while True:
@@ -79,10 +85,10 @@ class MessageSync(APISyncObject):
                     # Need to set filename on non-Qubes platforms
                     sdk_submission.filename = db_submission.filename
 
-                    self.fetch_the_thing(sdk_submission,
-                                         db_submission,
-                                         self.api.download_submission,
-                                         storage.mark_file_as_downloaded)
+                    self.fetch_msg_or_reply(sdk_submission,
+                                            db_submission,
+                                            self.api.download_submission,
+                                            storage.mark_file_as_downloaded)
 
                 except Exception as e:
                     logger.critical(
@@ -100,8 +106,8 @@ class ReplySync(APISyncObject):
     Runs in the background, finding replies to download and downloading them.
     """
 
-    def __init__(self, api, session, gpg):
-        super().__init__(api, session, gpg)
+    def __init__(self, api, home, gpg):
+        super().__init__(api, home, gpg)
 
     def run(self, loop=True):
         while True:
@@ -120,10 +126,10 @@ class ReplySync(APISyncObject):
                     # Need to set filename on non-Qubes platforms
                     sdk_reply.filename = db_reply.filename
 
-                    self.fetch_the_thing(sdk_reply,
-                                         db_reply,
-                                         self.api.download_reply,
-                                         storage.mark_reply_as_downloaded)
+                    self.fetch_msg_or_reply(sdk_reply,
+                                            db_reply,
+                                            self.api.download_reply,
+                                            storage.mark_reply_as_downloaded)
 
                 except Exception as e:
                     logger.critical(

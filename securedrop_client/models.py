@@ -7,6 +7,11 @@ from sqlalchemy.orm import relationship, backref
 
 from securedrop_client.data import Data
 
+# jt remove
+import logging
+logger = logging.getLogger(__name__)
+
+
 convention = {
     "ix": 'ix_%(column_0_label)s',
     "uq": "uq_%(table_name)s_%(column_0_name)s",
@@ -70,6 +75,10 @@ class Source(Base):
         collection = []
         collection.extend(self.submissions)
         collection.extend(self.replies)
+        logger.info("Here in collection, here are filenames")
+        for f in collection:
+            logger.info(f)
+            logger.info(f.filename)
         collection.sort(key=lambda x: int(x.filename.split('-')[0]))
         return collection
 

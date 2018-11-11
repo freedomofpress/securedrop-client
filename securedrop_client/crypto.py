@@ -19,6 +19,7 @@ import logging
 import os
 import shutil
 import tempfile
+import subprocess
 from pretty_bad_protocol import GPG
 from uuid import UUID
 
@@ -31,12 +32,9 @@ class CryptoException(Exception):
 
     pass
 
-# [ ] make sure that when we instantiate GpgHelper we give the path to
-# the gpg dir (HOME/gpg) when we are not running under qubes
-
 class GpgHelper:
 
-    def __init__(self, gpg_home: str, session, is_qubes: bool) -> None:
+    def __init__(self, gpg_home: str, is_qubes: bool) -> None:
 
         self.is_qubes = is_qubes
         self.gpg_home = gpg_home
@@ -45,8 +43,6 @@ class GpgHelper:
             self.gpg_binary = "qubes-gpg-client-wrapper"
         else:
             self.gpg_binary = "gpg"
-
-        self.session = session
 
     def _decrypt(self, source_path):
         out = tempfile.NamedTemporaryFile(suffix="sd-client-decrypt",
@@ -78,16 +74,22 @@ class GpgHelper:
         return out.name
 
 
-    def _encrypt(self, source_path, fingerprint):
+    def _encrypt(self, source_content, fingerprint):
         """
-        Take the path to some file and the fingerprint of a key, encrypt
-        the file to the given key, return the name of a closed
+        Take some data and the fingerprint of a key, encrypt
+        the data to the given key, return the name of a closed
         temporary file containing the encrypted content
-
         """
-        out = tempfile.NamedTemporaryFile(suffix="sd-client-encrypt",
-                                          delete=False)
 
+        content = tempfile.NamedTemporaryFile(
+            suffix="sd-client-encrypt-content",
+            delete=False)
+
+        content.write(source_content.encode())
+        content.close()
+
+        out = tempfile.NamedTemporaryFile(suffix="sd-client-encrypt-out",
+                                          delete=False)
         err = tempfile.NamedTemporaryFile(suffix="sd-client-encrypt-error",
                                           delete=False)
 
@@ -95,16 +97,16 @@ class GpgHelper:
 
             cmd = [self.gpg_binary, "--encrypt",
                    "--trust-model", "always",
-                   "-r", fingerprint,
-                   source_path]
+                   "-r", fingerprint, "--armor", "-o-",
+                   content.name]
         else:
 
-            cmd = [self.gpg_binary, "--encrypt",
-                   "--trust-model", "always",
+            cmd = [self.gpg_binary,
                    "--homedir", self.gpg_home,
+                   "--trust-model", "always",
+                   "--encrypt", "--armor", "-o-",
                    "-r", fingerprint,
-                   source_path]
-
+                   content.name]
 
         res = subprocess.call(cmd, stdout=out, stderr=err)
 
@@ -118,31 +120,35 @@ class GpgHelper:
 
             os.unlink(err.name)
             os.unlink(out.name)
+            os.unlink(content.name)
             raise CryptoException()
 
         err.close()
         os.unlink(err.name)
+        os.unlink(content.name)
 
         out.close()
         return out.name
 
     def _import(self, key_material: str) -> str:
-        keyfile = tempfile.NamedTemporaryFile(suffix="sd-client-pubkey-import",
-                                              delete=False)
+        keyfile = tempfile.NamedTemporaryFile(
+            mode='w',
+            suffix="sd-client-pubkey-import",
+            delete=False)
+
         keyfile.write(key_material)
         keyfile.close()
 
         out = tempfile.NamedTemporaryFile(suffix="sd-client-import",
                                           delete=False)
-
         err = tempfile.NamedTemporaryFile(suffix="sd-client-import-error",
                                           delete=False)
 
         if self.is_qubes:
             cmd = [self.gpg_binary, "--import", keyfile.name]
         else:
-            cmd = [self.gpg_binary, "--import", keyfile.name,
-                   "--homedir", self.gpg_home]
+            cmd = [self.gpg_binary, "--homedir", self.gpg_home,
+                   "--import", keyfile.name]
 
         res = subprocess.call(cmd, stdout=out, stderr=err)
 
@@ -158,8 +164,9 @@ class GpgHelper:
             os.unlink(out.name)
             raise CryptoException()
 
-        err.close()
-        os.unlink(err.name)
+        err.close()  # in success case, output is written to STDERR
+        out.close()
+        os.unlink(out.name)
 
         def is_hex(s):
             try:
@@ -168,24 +175,17 @@ class GpgHelper:
             except ValueError:
                 return False
 
-        with open(out.name) as o:
+        with open(err.name) as o:
             cmd_res = o.read(1024)
-
             fingerprints = filter(lambda w: len(w) == 16 and is_hex(w),
-                                      [w.strip(':') for w in cmd_res.split()])
+                                  [w.strip(':') for w in cmd_res.split()])
 
-        out.close()
-        out.unlink()
+        os.unlink(err.name)
 
         fingerprints = set(fingerprints)
-        return fingerprint
+        return fingerprints
 
-    def import_key(self, source_uuid: UUID, key_data: str) -> None:
-        local_source = self.session.query(Source).filter_by(uuid=source_uuid) \
-            .one_or_none()
-        if local_source is None:
-            raise RuntimeError('Local source not found: {}'
-                               .format(source_uuid))
+    def import_key(self, local_source, key_data: str) -> str:
 
         fingerprints = self._import(key_data)
 
@@ -195,27 +195,21 @@ class GpgHelper:
         if len(fingerprints) > 1:
             raise RuntimeError('Expected only one fingerprint.')
 
-        local_source.fingerprint = fingerprints.pop()
+        return fingerprints.pop()
 
-        self.session.add(local_source)
-        self.session.commit()
 
-    def encrypt_to_source(self, source_uuid: UUID, message: str) -> str:
-        local_source = self.session.query(Source) \
-            .filter_by(uuid=source_uuid).one()
+    def encrypt_to_source(self, local_source, message: str) -> str:
+        out_file = self._encrypt(message, local_source.fingerprint)
 
-        out = self.gpg.encrypt(message, local_source.fingerprint)
-        if out.ok:
-            return out.data.decode('utf-8')
-        else:
-            raise RuntimeError('Could not encrypt to source {!r}: {}'.format(
-                source_uuid, out.stderr))
+        with open(out_file, 'r') as fh:
+            encrypted = fh.read()
+            return encrypted
 
-    def decrypt_submission_or_reply(self, filepath: str, target_filename: str,
+    def decrypt_submission_or_reply(self, filepath: str,
+                                    target_filename: str,
                                     is_doc: bool = False):
 
         decrypted_fn = self._decrypt(filepath)
-
 
         if is_doc:
             # Need to split twice as filename is e.g.
