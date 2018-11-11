@@ -166,6 +166,22 @@ def test_SourceList_update():
         assert sl.setItemWidget.call_count == len(sources)
 
 
+def test_SourceList_maintains_selection():
+    """
+    Maintains the selected item if present in new list
+    """
+    sl = SourceList(None)
+    sources = [factory.Source(), factory.Source()]
+    sl.setup(mock.MagicMock())
+    sl.update(sources)
+
+    sl.setCurrentItem(sl.itemAt(0, 0))
+    sl.update(sources)
+
+    assert sl.currentItem()
+    assert sl.itemWidget(sl.currentItem()).source.id == sources[0].id
+
+
 def test_SourceWidget_init():
     """
     The source widget is initialised with the passed-in source.

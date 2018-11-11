@@ -807,8 +807,7 @@ def test_Client_on_file_download_user_not_signed_in(safe_tmpdir):
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
-    source = models.Source('source-uuid', 'testy-mctestface', False,
-                           'mah pub key', 1, False, datetime.now())
+    source = factory.Source()
     submission = models.Submission(source, 'submission-uuid', 1234,
                                    'myfile.doc.gpg', 'http://myserver/myfile')
     cl.on_action_requiring_login = mock.MagicMock()

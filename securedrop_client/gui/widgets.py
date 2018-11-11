@@ -177,7 +177,10 @@ class SourceList(QListWidget):
         """
         Reset and update the list with the passed in list of sources.
         """
+        current_maybe = self.currentItem() and self.itemWidget(self.currentItem())
         self.clear()
+
+        new_current_maybe = None
         for source in sources:
             new_source = SourceWidget(self, source)
             new_source.setup(self.controller)
@@ -185,6 +188,11 @@ class SourceList(QListWidget):
             list_item.setSizeHint(new_source.sizeHint())
             self.addItem(list_item)
             self.setItemWidget(list_item, new_source)
+            if current_maybe and (source.id == current_maybe.source.id):
+                new_current_maybe = list_item
+
+        if new_current_maybe:
+            self.setCurrentItem(new_current_maybe)
 
 
 class SourceWidget(QWidget):

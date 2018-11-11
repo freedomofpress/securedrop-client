@@ -4,10 +4,14 @@ changes forcing an update of all test code.
 from datetime import datetime
 from securedrop_client import models
 
+count = 0
+
 
 def Source(**attrs):
+    global count
+    count += 1
     defaults = dict(
-        uuid='source-uuid',
+        uuid='source-uuid-{}'.format(count),
         journalist_designation='testy-mctestface',
         is_flagged=False,
         public_key='mah pub key',
