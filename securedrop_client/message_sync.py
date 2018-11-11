@@ -53,7 +53,7 @@ class APISyncObject(QObject):
         shasum, filepath = download_fn(item)
 
         try:
-            self.gpg.decrypt_submission_or_reply(filepath,
+            dest = self.gpg.decrypt_submission_or_reply(filepath,
                                                  msg.filename,
                                                  False)
         except Exception:

@@ -117,6 +117,7 @@ class Client(QObject):
         self.data_dir = os.path.join(self.home, 'data')  # File data.
         self.timer = None  # call timeout timer
         self.proxy = proxy
+        self.journalist_fingerprint = None
 
     def setup(self):
         """
@@ -288,6 +289,7 @@ class Client(QObject):
             self.gui.set_logged_in_as(self.api.username)
             self.start_message_thread()
             self.start_reply_thread()
+            self.journalist_fingerprint = self.gpg.secret_key_fingerprint()
             # Clear the sidebar error status bar if a message was shown
             # to the user indicating they should log in.
             self.gui.update_error_status("")
@@ -545,10 +547,10 @@ class Client(QObject):
             shutil.move(filename, filepath_in_datadir)
 
             # Attempt to decrypt the file.
-            res, filepath = self.gpg.decrypt_submission_or_reply(
-                filepath_in_datadir, server_filename, is_doc=True)
-
-            if res != 0:  # Then the file did not decrypt properly.
+            try:
+                self.gpg.decrypt_submission_or_reply(
+                    filepath_in_datadir, server_filename, is_doc=True)
+            except:
                 self.set_status("Failed to download and decrypt file, "
                                 "please try again.")
                 # TODO: We should save the downloaded content, and just
@@ -588,7 +590,9 @@ class Client(QObject):
         local_source = self.session.query(models.Source) \
                                    .filter_by(uuid=source_uuid).one()
 
-        message = self.gpg.encrypt_to_source(local_source, message)
+        message = self.gpg.encrypt_to_source(local_source,
+                                             self.journalist_fingerprint,
+                                             message)
 
         source_sdk_obj = sdclientapi.Source(uuid=source_uuid)
         self.call_api(self.api.reply_source, self.on_reply_to_source,

@@ -28,6 +28,14 @@ from securedrop_client.models import Source
 logger = logging.getLogger(__name__)
 
 
+def is_hex(s):
+    try:
+        int(s, 16)
+        return True
+    except ValueError:
+        return False
+
+
 class CryptoException(Exception):
 
     pass
@@ -74,7 +82,7 @@ class GpgHelper:
         return out.name
 
 
-    def _encrypt(self, source_content, fingerprint):
+    def _encrypt(self, source_content, fingerprint, journalist_fingerprint):
         """
         Take some data and the fingerprint of a key, encrypt
         the data to the given key, return the name of a closed
@@ -97,7 +105,8 @@ class GpgHelper:
 
             cmd = [self.gpg_binary, "--encrypt",
                    "--trust-model", "always",
-                   "-r", fingerprint, "--armor", "-o-",
+                   "-r", fingerprint, "-r", journalist_fingerprint,
+                   "--armor", "-o-",
                    content.name]
         else:
 
@@ -129,6 +138,43 @@ class GpgHelper:
 
         out.close()
         return out.name
+
+    def _list_secret_keys(self):
+        out = tempfile.NamedTemporaryFile(suffix="sd-client-list-keys",
+                                          delete=False)
+        err = tempfile.NamedTemporaryFile(suffix="sd-client-list-keys-error",
+                                          delete=False)
+
+        cmd = [self.gpg_binary, "--list-secret-keys"]
+
+        res = subprocess.call(cmd, stdout=out, stderr=err)
+
+        if res != 0:
+            out.close()
+            err.close()
+
+            with open(err.name) as e:
+                msg = e.read()
+                logger.error("GPG list secret key error: {}".format(msg))
+
+            os.unlink(err.name)
+            os.unlink(out.name)
+            raise CryptoException()
+
+        err.close()
+        out.close()
+        os.unlink(err.name)
+
+        with open(out.name) as o:
+            cmd_res = o.read(1024)
+            fingerprints = filter(lambda w: len(w) == 40 and is_hex(w),
+                                  cmd_res.split())
+
+        os.unlink(out.name)
+
+        fingerprints = set(fingerprints)
+        return fingerprints
+
 
     def _import(self, key_material: str) -> str:
         keyfile = tempfile.NamedTemporaryFile(
@@ -168,13 +214,6 @@ class GpgHelper:
         out.close()
         os.unlink(out.name)
 
-        def is_hex(s):
-            try:
-                int(s, 16)
-                return True
-            except ValueError:
-                return False
-
         with open(err.name) as o:
             cmd_res = o.read(1024)
             fingerprints = filter(lambda w: len(w) == 16 and is_hex(w),
@@ -197,13 +236,29 @@ class GpgHelper:
 
         return fingerprints.pop()
 
+    def secret_key_fingerprint(self):
+        fingerprints = self._list_secret_keys()
 
-    def encrypt_to_source(self, local_source, message: str) -> str:
-        out_file = self._encrypt(message, local_source.fingerprint)
+        if len(fingerprints) == 0:
+            raise RuntimeError('Need a secret key to run at all')
+
+        if len(fingerprints) > 1:
+            raise RuntimeError('Somehow running with more than one secret key?')
+
+        return fingerprints.pop()
+
+    def encrypt_to_source(self, local_source,
+                          journalist_key, message: str) -> str:
+
+        out_file = self._encrypt(message,
+                                 local_source.fingerprint,
+                                 journalist_key)
 
         with open(out_file, 'r') as fh:
             encrypted = fh.read()
-            return encrypted
+
+        os.unlink(out_file)
+        return encrypted
 
     def decrypt_submission_or_reply(self, filepath: str,
                                     target_filename: str,
@@ -228,8 +283,8 @@ class GpgHelper:
             fn_no_ext, _ = os.path.splitext(target_filename)
             dest = os.path.abspath(
                 os.path.join(self.gpg_home, "..", "data", fn_no_ext))
-            shutil.copy(output.name, dest)
-
+            shutil.copy(decrypted_fn, dest)
+            os.unlink(decrypted_fn)
         logger.info("Downloaded and decrypted: {}".format(dest))
 
         return dest
