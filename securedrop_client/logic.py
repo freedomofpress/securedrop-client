@@ -377,7 +377,7 @@ class Client(QObject):
 
             storage.update_local_storage(self.session, remote_sources,
                                          remote_submissions,
-                                         remote_replies)
+                                         remote_replies, self.data_dir)
 
             # Set last sync flag.
             with open(self.sync_flag, 'w') as f:

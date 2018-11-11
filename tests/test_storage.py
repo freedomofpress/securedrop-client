@@ -111,7 +111,7 @@ def test_get_remote_data():
     assert replies == [reply, ]
 
 
-def test_update_local_storage():
+def test_update_local_storage(safe_tmpdir):
     """
     Assuming no errors getting data, check the expected functions to update
     the state of the local database are called with the necessary data.
@@ -133,13 +133,14 @@ def test_update_local_storage():
             mock.patch('securedrop_client.storage.update_replies') as rpl_fn, \
             mock.patch('securedrop_client.storage.update_submissions') \
             as sub_fn:
-        update_local_storage(mock_session, sources, submissions, replies)
+        update_local_storage(mock_session, sources, submissions, replies,
+                             str(safe_tmpdir))
         src_fn.assert_called_once_with([source, ], [local_source, ],
                                        mock_session)
         rpl_fn.assert_called_once_with([reply, ], [local_replies, ],
                                        mock_session)
         sub_fn.assert_called_once_with([submission, ], [local_submission, ],
-                                       mock_session)
+                                       mock_session, str(safe_tmpdir))
 
 
 def test_update_sources():
@@ -200,11 +201,7 @@ def add_test_file_to_temp_dir(home_dir, filename):
     Add test file with the given filename to data dir.
     """
 
-    if not os.path.exists(os.path.join(home_dir, 'data')):
-        os.mkdir(os.path.join(home_dir, 'data'))
-
-    dest = os.path.join(home_dir, 'data', filename)
-
+    dest = os.path.join(home_dir, filename)
     with open(dest, 'w') as f:
         f.write('I am test content for tests')
 
@@ -241,7 +238,8 @@ def test_update_submissions_deletes_files_associated_with_the_submission(safe_tm
     local_source.uuid = 'test-source-uuid'
     local_source.id = 666
     mock_session.query().filter_by.return_value = [local_source, ]
-    update_submissions(remote_submissions, local_submissions, mock_session)
+    update_submissions(remote_submissions, local_submissions, mock_session,
+                       str(safe_tmpdir))
 
     # Ensure the files associated with the submission are deleted on disk.
     assert not os.path.exists(abs_server_filename)
@@ -286,7 +284,8 @@ def test_update_submissions(safe_tmpdir):
     local_source.uuid = source.uuid
     local_source.id = 666  # ;-)
     mock_session.query().filter_by.return_value = [local_source, ]
-    update_submissions(remote_submissions, local_submissions, mock_session)
+    update_submissions(remote_submissions, local_submissions, mock_session,
+                       str(safe_tmpdir))
     # Check the expected local submission object has been updated with values
     # from the API.
     assert local_sub1.filename == submission_update.filename

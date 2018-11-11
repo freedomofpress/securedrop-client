@@ -501,7 +501,8 @@ def test_Client_on_synced_with_result(safe_tmpdir):
         cl.on_synced(result_data)
         mock_storage.update_local_storage.\
             assert_called_once_with(mock_session, "sources", "submissions",
-                                    "replies")
+                                    "replies",
+                                    os.path.join(str(safe_tmpdir), 'data'))
     cl.update_sources.assert_called_once_with()
 
 
