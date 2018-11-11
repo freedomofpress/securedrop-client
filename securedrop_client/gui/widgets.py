@@ -67,6 +67,8 @@ class ToolBar(QWidget):
         self.window = window
         self.controller = controller
 
+        self.controller.sync_events.connect(self._on_sync_event)
+
     def set_logged_in_as(self, username):
         """
         Update the UI to reflect that the user is logged in as "username".
@@ -102,6 +104,12 @@ class ToolBar(QWidget):
         Called when the refresh button is clicked.
         """
         self.controller.sync_api()
+
+    def _on_sync_event(self, data):
+        """
+        Called when the refresh call completes
+        """
+        self.refresh.setEnabled(data != 'syncing')
 
 
 class MainView(QWidget):
