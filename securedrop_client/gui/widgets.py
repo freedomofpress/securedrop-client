@@ -109,8 +109,7 @@ class ToolBar(QWidget):
         """
         Called when the refresh call completes
         """
-        self.refresh.setEnabled(data!='syncing')
-
+        self.refresh.setEnabled(data != 'syncing')
 
 
 class MainView(QWidget):
