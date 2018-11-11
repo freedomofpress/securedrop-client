@@ -2,6 +2,7 @@
 Tests for storage sync logic.
 """
 import pytest
+import os
 import uuid
 import securedrop_client.models
 from dateutil.parser import parse
@@ -194,7 +195,66 @@ def test_update_sources():
     assert mock_session.commit.call_count == 1
 
 
-def test_update_submissions():
+def add_test_file_to_temp_dir(home_dir, filename):
+    """
+    Add test file with the given filename to data dir.
+    """
+
+    if not os.path.exists(os.path.join(home_dir, 'data')):
+        os.mkdir(os.path.join(home_dir, 'data'))
+
+    dest = os.path.join(home_dir, 'data', filename)
+
+    with open(dest, 'w') as f:
+        f.write('I am test content for tests')
+
+    return dest
+
+
+def test_update_submissions_deletes_files_associated_with_the_submission(safe_tmpdir):
+    """
+    Check that:
+
+    * Submissions are deleted on disk after sync.
+    """
+    mock_session = mock.MagicMock()
+
+    # Test scenario: one submission locally, no submissions on server.
+    remote_submissions = []
+
+    # A local submission object. To ensure that all files from various
+    # stages of processing are cleaned up, we'll add several filenames.
+    server_filename = '1-pericardial-surfacing-msg.gpg'
+    local_filename_when_decrypted = '1-pericardial-surfacing-msg'
+
+    local_submission = mock.MagicMock()
+    local_submission.uuid = 'test-uuid'
+    local_submission.filename = server_filename
+    abs_server_filename = add_test_file_to_temp_dir(
+        str(safe_tmpdir), server_filename)
+    abs_local_filename = add_test_file_to_temp_dir(
+        str(safe_tmpdir), local_filename_when_decrypted)
+    local_submissions = [local_submission]
+
+    # There needs to be a corresponding local_source.
+    local_source = mock.MagicMock()
+    local_source.uuid = 'test-source-uuid'
+    local_source.id = 666
+    mock_session.query().filter_by.return_value = [local_source, ]
+    update_submissions(remote_submissions, local_submissions, mock_session)
+
+    # Ensure the files associated with the submission are deleted on disk.
+    assert not os.path.exists(abs_server_filename)
+    assert not os.path.exists(abs_local_filename)
+
+    # Ensure the record for the local submission is gone.
+    mock_session.delete.assert_called_once_with(local_submission)
+
+    # Session is committed to database.
+    assert mock_session.commit.call_count == 1
+
+
+def test_update_submissions(safe_tmpdir):
     """
     Check that:
 
