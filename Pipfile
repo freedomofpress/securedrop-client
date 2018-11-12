@@ -13,7 +13,6 @@ securedrop-sdk = "*"
 "pathlib2" = "*"
 arrow = "*"
 certifi = "*"
-pretty-bad-protocol = "*"
 
 [dev-packages]
 pytest = "*"
