@@ -114,7 +114,7 @@ class GpgHelper:
                    "--homedir", self.gpg_home,
                    "--trust-model", "always",
                    "--encrypt", "--armor", "-o-",
-                   "-r", fingerprint,
+                   "-r", fingerprint, "-r", journalist_fingerprint,
                    content.name]
 
         res = subprocess.call(cmd, stdout=out, stderr=err)
@@ -145,7 +145,9 @@ class GpgHelper:
         err = tempfile.NamedTemporaryFile(suffix="sd-client-list-keys-error",
                                           delete=False)
 
-        cmd = [self.gpg_binary, "--list-secret-keys"]
+        cmd = [self.gpg_binary,
+               "--homedir", self.gpg_home,
+               "--list-secret-keys"]
 
         res = subprocess.call(cmd, stdout=out, stderr=err)
 
@@ -173,6 +175,7 @@ class GpgHelper:
         os.unlink(out.name)
 
         fingerprints = set(fingerprints)
+        logger.info("Secret key fingerprint: {}".format(fingerprints))
         return fingerprints
 
 
@@ -197,6 +200,7 @@ class GpgHelper:
                    "--import", keyfile.name]
 
         res = subprocess.call(cmd, stdout=out, stderr=err)
+        os.unlink(keyfile.name)
 
         if res != 0:
             out.close()
@@ -224,7 +228,7 @@ class GpgHelper:
         fingerprints = set(fingerprints)
         return fingerprints
 
-    def import_key(self, local_source, key_data: str) -> str:
+    def import_key(self, key_data: str) -> str:
 
         fingerprints = self._import(key_data)
 

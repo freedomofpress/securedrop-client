@@ -23,6 +23,11 @@ chmod 0700 $SDC_HOME
 
 echo "Running app with home directory: $SDC_HOME"
 
+# create gpg directory, add private key
+mkdir -p "${SDC_HOME}/gpg"
+chmod 0700 "${SDC_HOME}/gpg"
+gpg --homedir "${SDC_HOME}/gpg" --trust-model always --import files/dev_key.asc
+
 # create the database for local testing
 ./createdb.py $SDC_HOME
 

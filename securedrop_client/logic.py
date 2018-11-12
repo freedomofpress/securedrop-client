@@ -108,6 +108,7 @@ class Client(QObject):
         self.gui = gui  # Reference to the UI window.
         self.api = None  # Reference to the API for secure drop proxy.
         self.gpg = GpgHelper(gpg_home, proxy)
+
         self.session = session  # Reference to the SqlAlchemy session.
         self.message_thread = None  # thread responsible for fetching messages
         self.reply_thread = None  # thread responsible for fetching replies
@@ -395,7 +396,7 @@ class Client(QObject):
                             raise RuntimeError('Local source not found: {}'
                                .format(source_uuid))
 
-                        fingerprint = self.gpg.import_key(local_source, pub_key)
+                        fingerprint = self.gpg.import_key(pub_key)
                         logger.info("Imported key! {}".format(fingerprint))
 
                         local_source.fingerprint = fingerprint
