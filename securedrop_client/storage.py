@@ -87,7 +87,7 @@ def update_local_storage(session, remote_sources, remote_submissions,
     local_replies = get_local_replies(session)
     update_sources(remote_sources, local_sources, session)
     update_submissions(remote_submissions, local_submissions, session, data_dir)
-    update_replies(remote_replies, local_replies, session)
+    update_replies(remote_replies, local_replies, session, data_dir)
 
 
 def update_sources(remote_sources, local_sources, session):
@@ -179,7 +179,7 @@ def update_submissions(remote_submissions, local_submissions, session, data_dir)
     session.commit()
 
 
-def update_replies(remote_replies, local_replies, session):
+def update_replies(remote_replies, local_replies, session, data_dir):
     """
     * Existing replies are updated in the local database.
     * New replies have an entry created in the local database.
@@ -213,6 +213,7 @@ def update_replies(remote_replies, local_replies, session):
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
     for deleted_reply in [r for r in local_replies if r.uuid in local_uuids]:
+        delete_single_submission_or_reply_on_disk(deleted_reply, data_dir)
         session.delete(deleted_reply)
         logger.info('Deleted reply {}'.format(deleted_reply.uuid))
     session.commit()

@@ -138,7 +138,7 @@ def test_update_local_storage(safe_tmpdir):
         src_fn.assert_called_once_with([source, ], [local_source, ],
                                        mock_session)
         rpl_fn.assert_called_once_with([reply, ], [local_replies, ],
-                                       mock_session)
+                                       mock_session, str(safe_tmpdir))
         sub_fn.assert_called_once_with([submission, ], [local_submission, ],
                                        mock_session, str(safe_tmpdir))
 
@@ -282,7 +282,7 @@ def test_update_replies_deletes_files_associated_with_the_reply(safe_tmpdir):
     local_source.uuid = 'test-source-uuid'
     local_source.id = 666
     mock_session.query().filter_by.return_value = [local_source, ]
-    update_replies(remote_replies, local_replies, mock_session)
+    update_replies(remote_replies, local_replies, mock_session, str(safe_tmpdir))
 
     # Ensure the files associated with the reply are deleted on disk.
     assert not os.path.exists(abs_server_filename)
@@ -348,7 +348,7 @@ def test_update_submissions(safe_tmpdir):
     assert mock_session.commit.call_count == 1
 
 
-def test_update_replies():
+def test_update_replies(safe_tmpdir):
     """
     Check that:
 
@@ -391,7 +391,8 @@ def test_update_replies():
     mock_focu = mock.MagicMock(return_value=local_user)
     with mock.patch('securedrop_client.storage.find_or_create_user',
                     mock_focu):
-        update_replies(remote_replies, local_replies, mock_session)
+        update_replies(remote_replies, local_replies, mock_session,
+                       str(safe_tmpdir))
     # Check the expected local reply object has been updated with values
     # from the API.
     assert local_reply1.journalist_id == local_user.id
