@@ -213,7 +213,7 @@ def test_SourceWidget_html_init():
     sw = SourceWidget(None, mock_source)
     sw.name = mock.MagicMock()
     sw.summary_layout = mock.MagicMock()
-    with mock.patch('securedrop_client.gui.widgets.load_svg') as mock_load:
+    with mock.patch('securedrop_client.gui.widgets.load_svg'):
         sw.update()
 
     sw.name.setText.assert_called_once_with('<strong>foo &lt;b&gt;bar&lt;/b&gt; baz</strong>')
@@ -389,6 +389,7 @@ def test_SpeechBubble_init():
         SpeechBubble('hello')
         mock_label.assert_called_once_with('hello')
 
+
 def test_SpeechBubble_html_init():
     """
     Check the speech bubble is configured correctly (there's a label containing
@@ -399,6 +400,7 @@ def test_SpeechBubble_html_init():
             mock.patch('securedrop_client.gui.widgets.SpeechBubble.setLayout'):
         SpeechBubble('<b>hello</b>')
         mock_label.assert_called_once_with('&lt;b&gt;hello&lt;/b&gt;')
+
 
 def test_ConversationWidget_init_left():
     """
