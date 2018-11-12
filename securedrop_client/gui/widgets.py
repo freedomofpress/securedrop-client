@@ -206,10 +206,12 @@ class SourceWidget(QWidget):
         self.attached = load_svg('paperclip.svg')
         self.attached.setMaximumSize(16, 16)
         self.name = QLabel()
+        self.last_content = QLabel()
         self.summary_layout.addWidget(self.name)
         self.summary_layout.addStretch()
         self.summary_layout.addWidget(self.attached)
         layout.addWidget(self.summary)
+        layout.addWidget(self.last_content)
         self.updated = QLabel()
         layout.addWidget(self.updated)
         self.update()
@@ -247,6 +249,8 @@ class SourceWidget(QWidget):
 
         if self.source.document_count == 0:
             self.attached.hide()
+
+        self.last_content.setText(self.source.last_activity_summary_text)
 
     def toggle_star(self, event):
         """

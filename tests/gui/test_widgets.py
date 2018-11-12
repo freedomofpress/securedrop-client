@@ -166,11 +166,15 @@ def test_SourceList_update():
         assert sl.setItemWidget.call_count == len(sources)
 
 
+def MockSource():
+    return mock.MagicMock(last_activity_summary_text='')
+
+
 def test_SourceWidget_init():
     """
     The source widget is initialised with the passed-in source.
     """
-    mock_source = mock.MagicMock()
+    mock_source = MockSource()
     mock_source.journalist_designation = 'foo bar baz'
     sw = SourceWidget(None, mock_source)
     assert sw.source == mock_source
@@ -181,7 +185,7 @@ def test_SourceWidget_setup():
     The setup method adds the controller as an attribute on the SourceWidget.
     """
     mock_controller = mock.MagicMock()
-    mock_source = mock.MagicMock()
+    mock_source = MockSource()
     sw = SourceWidget(None, mock_source)
     sw.setup(mock_controller)
     assert sw.controller == mock_controller
@@ -191,7 +195,7 @@ def test_SourceWidget_update_starred():
     """
     Ensure the widget displays the expected details from the source.
     """
-    mock_source = mock.MagicMock()
+    mock_source = MockSource()
     mock_source.journalist_designation = 'foo bar baz'
     mock_source.is_starred = True
     sw = SourceWidget(None, mock_source)
@@ -207,7 +211,7 @@ def test_SourceWidget_update_unstarred():
     """
     Ensure the widget displays the expected details from the source.
     """
-    mock_source = mock.MagicMock()
+    mock_source = MockSource()
     mock_source.journalist_designation = 'foo bar baz'
     mock_source.is_starred = False
     sw = SourceWidget(None, mock_source)
@@ -240,7 +244,7 @@ def test_SourceWidget_toggle_star():
     The toggle_star method should call self.controller.update_star
     """
     mock_controller = mock.MagicMock()
-    mock_source = mock.MagicMock()
+    mock_source = MockSource()
     event = mock.MagicMock()
     sw = SourceWidget(None, mock_source)
     sw.controller = mock_controller
@@ -530,7 +534,7 @@ def test_ConversationView_add_downloaded_file():
     cv = ConversationView(None)
     cv.controller = mock.MagicMock()
     cv.conversation_layout = mock.MagicMock()
-    mock_source = mock.MagicMock()
+    mock_source = MockSource()
     mock_file = mock.MagicMock()
     mock_file.is_downloaded = True
     with mock.patch('securedrop_client.gui.widgets.QLabel') as mock_label, \
@@ -551,7 +555,7 @@ def test_ConversationView_add_not_downloaded_file():
     cv = ConversationView(None)
     cv.controller = mock.MagicMock()
     cv.conversation_layout = mock.MagicMock()
-    mock_source = mock.MagicMock()
+    mock_source = MockSource()
     mock_file = mock.MagicMock()
     mock_file.is_downloaded = False
     mock_file.size = 123

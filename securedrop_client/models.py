@@ -26,9 +26,11 @@ def make_engine(home: str):
 
 class WithContent():
 
+    data = None
+
     @property
     def content(self):
-        if self.is_downloaded:
+        if self.is_downloaded and self.data:
             fn_no_ext, _ = os.path.splitext(self.filename)
             return self.data.get(fn_no_ext)
         else:
@@ -74,6 +76,23 @@ class Source(Base):
         collection.sort(key=lambda x: int(x.filename.split('-')[0]))
         return collection
 
+    @property
+    def last_activity_summary_text(self):
+        if len(self.collection) == 0:
+            return ''
+
+        def ellipsis(content, n):
+            if len(content) <= n:
+                return content
+            else:
+                return '{}…'.format(content[:n])
+
+        last = self.collection[-1]
+
+        prefix = '↳' if isinstance(last, Submission) else ''
+        content = last.content or ''
+        return '{}{}'.format(prefix, ellipsis(content, 100))
+
 
 class Submission(Base, WithContent):
     __tablename__ = 'submissions'
@@ -98,7 +117,6 @@ class Submission(Base, WithContent):
 
     def __init__(self, source, uuid, size, filename, download_url):
         # ORM event catching _should_ have already initialized `self.data`
-
         self.source_id = source.id
         self.uuid = uuid
         self.size = size

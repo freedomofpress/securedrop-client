@@ -82,3 +82,25 @@ def test_source_collection():
     # Now these items should be in the source collection in the proper order
     assert source.collection[0] == reply
     assert source.collection[1] == submission
+
+
+def test_last_activity_summary_text():
+    source = factory.Source()
+    submission = Submission(source=source, uuid="test", size=123,
+                            filename="2-test.doc.gpg",
+                            download_url='http://test/test')
+    user = User('hehe')
+    reply = Reply(source=source, journalist=user, filename="1-reply.gpg",
+                  size=1234, uuid='test')
+
+    reply_with_content = mock.MagicMock(wrap=reply, content='reply content')
+    submission_content = mock.MagicMock(wrap=submission, content='submission content')
+
+    source.submissions = [reply_with_content]
+    source.replies = [submission_content]
+
+    assert source.last_activity_summary_text == 'submission content'
+
+    submission_content.content = 'extremely long content' * 50
+    assert source.last_activity_summary_text[-1] == '…'
+    assert len(source.last_activity_summary_text) < len(submission_content.content)
