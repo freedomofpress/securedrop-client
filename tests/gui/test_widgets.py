@@ -205,7 +205,8 @@ def test_SourceWidget_setup():
 
 def test_SourceWidget_html_init():
     """
-    The source widget is initialised with the passed-in source.
+    The source widget is initialised with the given source name, with
+    HTML escaped properly.
     """
     mock_source = mock.MagicMock()
     mock_source.journalist_designation = 'foo <b>bar</b> baz'
@@ -391,7 +392,7 @@ def test_SpeechBubble_init():
 def test_SpeechBubble_html_init():
     """
     Check the speech bubble is configured correctly (there's a label containing
-    the passed in text).
+    the passed in text, with HTML escaped properly).
     """
     with mock.patch('securedrop_client.gui.widgets.QLabel') as mock_label, \
             mock.patch('securedrop_client.gui.widgets.QVBoxLayout'), \
