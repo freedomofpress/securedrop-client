@@ -203,6 +203,21 @@ def test_SourceWidget_setup():
     assert sw.controller == mock_controller
 
 
+def test_SourceWidget_html_init():
+    """
+    The source widget is initialised with the passed-in source.
+    """
+    mock_source = mock.MagicMock()
+    mock_source.journalist_designation = 'foo <b>bar</b> baz'
+    sw = SourceWidget(None, mock_source)
+    sw.name = mock.MagicMock()
+    sw.summary_layout = mock.MagicMock()
+    with mock.patch('securedrop_client.gui.widgets.load_svg') as mock_load:
+        sw.update()
+
+    sw.name.setText.assert_called_once_with('<strong>foo &lt;b&gt;bar&lt;/b&gt; baz</strong>')
+
+
 def test_SourceWidget_update_starred():
     """
     Ensure the widget displays the expected details from the source.
@@ -373,6 +388,16 @@ def test_SpeechBubble_init():
         SpeechBubble('hello')
         mock_label.assert_called_once_with('hello')
 
+def test_SpeechBubble_html_init():
+    """
+    Check the speech bubble is configured correctly (there's a label containing
+    the passed in text).
+    """
+    with mock.patch('securedrop_client.gui.widgets.QLabel') as mock_label, \
+            mock.patch('securedrop_client.gui.widgets.QVBoxLayout'), \
+            mock.patch('securedrop_client.gui.widgets.SpeechBubble.setLayout'):
+        SpeechBubble('<b>hello</b>')
+        mock_label.assert_called_once_with('&lt;b&gt;hello&lt;/b&gt;')
 
 def test_ConversationWidget_init_left():
     """
