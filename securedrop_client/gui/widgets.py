@@ -258,7 +258,9 @@ class SourceWidget(QWidget):
         if self.source.document_count == 0:
             self.attached.hide()
 
-        self.last_content.setText(self.source.last_activity_summary_text)
+        self.last_content.setText(
+            "{}".format(html.escape(self.source.last_activity_summary_text))
+        )
 
     def toggle_star(self, event):
         """

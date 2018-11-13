@@ -1,3 +1,5 @@
+# coding: utf-8
+
 import os
 
 from sqlalchemy import Boolean, Column, create_engine, DateTime, ForeignKey, Integer, String, \
@@ -91,6 +93,7 @@ class Source(Base):
 
         prefix = '↳' if isinstance(last, Submission) else ''
         content = last.content or ''
+
         return '{}{}'.format(prefix, ellipsis(content, 100))
 
 
