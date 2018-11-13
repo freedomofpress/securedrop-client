@@ -48,6 +48,7 @@ def decrypt_submission_or_reply(filepath, target_filename, home_dir,
             logger.error("GPG error: {}".format(msg))
 
         os.unlink(err.name)
+        os.unlink(out.name)
         dest = ""
     else:
         if is_doc:
