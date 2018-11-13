@@ -85,12 +85,12 @@ def update_local_storage(session, remote_sources, remote_submissions,
     local_sources = get_local_sources(session)
     local_submissions = get_local_submissions(session)
     local_replies = get_local_replies(session)
-    update_sources(remote_sources, local_sources, session)
+    update_sources(remote_sources, local_sources, session, data_dir)
     update_submissions(remote_submissions, local_submissions, session, data_dir)
     update_replies(remote_replies, local_replies, session, data_dir)
 
 
-def update_sources(remote_sources, local_sources, session):
+def update_sources(remote_sources, local_sources, session, data_dir):
     """
     Given collections of remote sources, the current local sources and a
     session to the local database, ensure the state of the local database
@@ -133,6 +133,8 @@ def update_sources(remote_sources, local_sources, session):
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
     for deleted_source in [s for s in local_sources if s.uuid in local_uuids]:
+        for document in deleted_source.collection:
+            delete_single_submission_or_reply_on_disk(document, data_dir)
         session.delete(deleted_source)
         logger.info('Deleted source {}'.format(deleted_source.uuid))
     session.commit()

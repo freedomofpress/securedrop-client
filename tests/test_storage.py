@@ -139,14 +139,14 @@ def test_update_local_storage(safe_tmpdir):
         update_local_storage(mock_session, sources, submissions, replies,
                              str(safe_tmpdir))
         src_fn.assert_called_once_with([source, ], [local_source, ],
-                                       mock_session)
+                                       mock_session, str(safe_tmpdir))
         rpl_fn.assert_called_once_with([reply, ], [local_replies, ],
                                        mock_session, str(safe_tmpdir))
         sub_fn.assert_called_once_with([submission, ], [local_submission, ],
                                        mock_session, str(safe_tmpdir))
 
 
-def test_update_sources():
+def test_update_sources(safe_tmpdir):
     """
     Check that:
 
@@ -170,7 +170,7 @@ def test_update_sources():
     local_source2 = mock.MagicMock()
     local_source2.uuid = str(uuid.uuid4())
     local_sources = [local_source1, local_source2]
-    update_sources(remote_sources, local_sources, mock_session)
+    update_sources(remote_sources, local_sources, mock_session, str(safe_tmpdir))
     # Check the expected local source object has been updated with values from
     # the API.
     assert local_source1.journalist_designation == \
@@ -349,7 +349,7 @@ def test_update_sources_deletes_files_associated_with_the_source(safe_tmpdir):
         test_filename_absolute_paths.append(abs_server_filename)
 
     local_sources = [local_source]
-    update_sources(remote_sources, local_sources, mock_session)
+    update_sources(remote_sources, local_sources, mock_session, str(safe_tmpdir))
 
     # Ensure the files associated with the reply are deleted on disk.
     for test_filename in test_filename_absolute_paths:
