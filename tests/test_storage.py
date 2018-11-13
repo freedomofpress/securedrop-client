@@ -10,7 +10,7 @@ from unittest import mock
 from securedrop_client.storage import get_local_sources, get_local_submissions, get_local_replies, \
     get_remote_data, update_local_storage, update_sources, update_submissions, update_replies, \
     find_or_create_user, find_new_submissions, find_new_replies, mark_file_as_downloaded, \
-    mark_reply_as_downloaded
+    mark_reply_as_downloaded, delete_single_submission_or_reply_on_disk
 from securedrop_client import models
 from sdclientapi import Source, Submission, Reply
 
@@ -563,3 +563,21 @@ def test_mark_reply_as_downloaded():
     assert mock_reply.is_downloaded is True
     mock_session.add.assert_called_once_with(mock_reply)
     mock_session.commit.assert_called_once_with()
+
+
+def test_delete_single_submission_or_reply_race_guard(safe_tmpdir):
+    """
+    This test checks that if there is a file is deleted
+    locally through another method, that an unhandled exception
+    will not occur in delete_single_submission_or_reply_on_disk
+    """
+
+    test_obj = mock.MagicMock()
+    test_obj.filename = '1-dissolved-steak-msg.gpg'
+    add_test_file_to_temp_dir(str(safe_tmpdir), test_obj.filename)
+
+    with mock.patch('os.remove',
+                    side_effect=FileNotFoundError) as mock_remove:
+        delete_single_submission_or_reply_on_disk(test_obj, str(safe_tmpdir))
+
+    mock_remove.call_count == 1
