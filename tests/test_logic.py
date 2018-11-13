@@ -527,10 +527,11 @@ def test_Client_update_sources(safe_tmpdir):
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
     with mock.patch('securedrop_client.logic.storage') as mock_storage:
-        mock_storage.get_local_sources.return_value = (1, 2, 3)
+        source_list = [factory.Source(last_updated=2), factory.Source(last_updated=1)]
+        mock_storage.get_local_sources.return_value = source_list
         cl.update_sources()
         mock_storage.get_local_sources.assert_called_once_with(mock_session)
-        mock_gui.show_sources.assert_called_once_with([1, 2, 3])
+        mock_gui.show_sources.assert_called_once_with(source_list)
 
 
 def test_Client_unstars_a_source_if_starred(safe_tmpdir):

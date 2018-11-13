@@ -1,7 +1,23 @@
 # securedrop-client
 [![CircleCI](https://circleci.com/gh/freedomofpress/securedrop-client.svg?style=svg)](https://circleci.com/gh/freedomofpress/securedrop-client)
 
-Qt-based client for working with SecureDrop submissions on the SecureDrop Qubes Workstation. For additional background, see the [main SecureDrop Workstation repository](https://github.com/freedomofpress/securedrop-workstation), and read about the [user research and design work that informs this work](https://github.com/freedomofpress/securedrop-ux/wiki/Qubes-Journalist-Workstation).
+Qt-based client for working with SecureDrop submissions on the SecureDrop Qubes Workstation. In Qubes, this application runs within a VM that has no direct network access, and files open in individual, non-networked, disposable VMs. API requests and responses to and from the SecureDrop application server are sent through an intermediate VM using the [Qubes SecureDrop proxy](https://github.com/freedomofpress/securedrop-proxy). For additional background, see the [main SecureDrop Workstation repository](https://github.com/freedomofpress/securedrop-workstation), and read about the [user research and design work that informs this work](https://github.com/freedomofpress/securedrop-ux/wiki/Qubes-Journalist-Workstation).
+
+**IMPORTANT:** This project is in alpha and should not be used in production environments. There are known bugs which can be found in this project’s issue tracker.
+
+# Current limitations
+
+This client is under active development and currently supports a minimal feature set. Major supported features include:
+
+- the download and decryption of files, messages, and replies (using [Qubes split-gpg](https://www.qubes-os.org/doc/split-gpg/))
+- the display of decrypted messages and replies in a new conversation view
+- the opening of all files in individual, non-networked, Qubes disposable VMs
+
+Features to be added include:
+
+- Reply to sources (encrypted client-side) - tracked in https://github.com/freedomofpress/securedrop-client/issues/16. These replies will be encrypted both to individual sources, and to the submission key of the instance. Source public keys are provided by the journalist API.
+- Deletion of source collection - tracked in https://github.com/freedomofpress/securedrop-client/issues/18. This will delete all files associated with a source both locally and on the server.
+- Export workflows - tracked in https://github.com/freedomofpress/securedrop-client/issues/21. These workflows (initially a USB drive) enable a journalist to transfer a document out of the Qubes workstation and to another computer for further analysis or sharing with the rest of the newsroom.
 
 ## Getting Started
 
@@ -23,7 +39,7 @@ make the `xvfb-run` command available): `apt install xvfb`.
 # install Homebrew https://brew.sh/
 
 brew install pyenv
-# follow step 3 onwards of https://github.com/pyenv/pyenv#basic-github-checkout
+# follow step 3 onwards of https://github.com/pyenv/pyenv#basic-github-checkout
 pyenv install 3.5.0
 
 brew install pip
@@ -33,8 +49,6 @@ pipenv shell
 ```
 
 ## Run the client
-
-To ensure that file decryption works, please import [this test private key](https://raw.githubusercontent.com/freedomofpress/securedrop/0a901362b84a5378fba80e9cd0ffe4542bdcd598/securedrop/tests/files/test_journalist_key.sec) into your GnuPG keyring. Submissions in the SecureDrop development environment can be decrypted with this test key.
 
 You can then run the client with an ephemeral data directory:
 
@@ -46,6 +60,35 @@ If you want to persist data across restarts, you will need to run the client wit
 
 ```
 ./run.sh --sdc-home /path/to/my/dir/
+```
+
+
+## Debugging
+
+To use `pdb`, add these lines:
+
+```
+from PyQt5.QtCore import pyqtRemoveInputHook; pyqtRemoveInputHook()
+import pdb; pdb.set_trace()
+```
+Then you can use [`pdb` commands](https://docs.python.org/3/library/pdb.html#debugger-commands) as normal.
+
+## Running against a test server
+
+In order to login, or take other actions involving network access, you will need to use the SecureDrop server dev container.
+
+Follow the instructions [in the SecureDrop documentation](https://docs.securedrop.org/en/latest/development/setup_development.html#quick-start) to set that up.
+
+The client uses the [SecureDrop SDK](https://github.com/freedomofpress/securedrop-sdk) to interact with the [SecureDrop Journalist API](https://docs.securedrop.org/en/latest/development/journalist_api.html).
+After you run the server container, the journalist interface API will be running on `127.0.0.1:8081` with a test journalist, admin, and test sources and replies.
+
+To ensure that file decryption works, please import [this test private key](https://raw.githubusercontent.com/freedomofpress/securedrop/0a901362b84a5378fba80e9cd0ffe4542bdcd598/securedrop/tests/files/test_journalist_key.sec) into your GnuPG keyring. Submissions in the SecureDrop server dev environment can be decrypted with this test key.
+
+
+## Run linter
+
+```
+make lint
 ```
 
 ## Run tests
@@ -60,20 +103,3 @@ make test
 alembic revision --autogenerate -m "describe your revision here"
 alembic upgrade head
 ```
-
-## Qubes Integration
-
-This client will sit in a Qubes vault AppVM:
-
-[![diagram](https://user-images.githubusercontent.com/7832803/39219841-d7037bb4-47e1-11e8-84dc-eaaaa06ef87b.png)](https://github.com/freedomofpress/securedrop-workstation/issues/88)
-
-It will use the [SecureDrop SDK](https://github.com/freedomofpress/securedrop-sdk)
-to interact with the [SecureDrop Journalist API](https://docs.securedrop.org/en/latest/development/journalist_api.html).
-Currently, this must be done by running the SecureDrop server dev container. To do this:
-
-1. Follow the instructions [in the SecureDrop documentation](https://docs.securedrop.org/en/latest/development/setup_development.html#quick-start) to set up the development container. The journalist interface API will be running on `127.0.0.1:8081` with a test
-journalist, admin, and test sources and replies.
-2. Clone the [SDK repository]((https://github.com/freedomofpress/securedrop-sdk) and install the package (`pip install ../path/to/securedrop-sdk`) in the same virtualenv you are using to develop this client.
-3. Now at the Python interpreter you should be able to `import sdclientapi` without issue.
-
-For further development, you should use the SDK methods to interact with the server.
