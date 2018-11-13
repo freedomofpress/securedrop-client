@@ -18,12 +18,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 import arrow
+import html
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog
 from securedrop_client.resources import load_svg, load_image
 from securedrop_client.utils import humanize_filesize
-
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ class ToolBar(QWidget):
         """
         Update the UI to reflect that the user is logged in as "username".
         """
-        self.user_state.setText(_('Signed in as: ' + username))
+        self.user_state.setText(_('Signed in as: ' + html.escape(username)))
         self.login.setVisible(False)
         self.logout.setVisible(True)
         self.refresh.setVisible(True)
@@ -146,7 +146,7 @@ class MainView(QWidget):
         self.source_list.setup(controller)
 
     def update_error_status(self, error=None):
-        self.error_status.setText(error)
+        self.error_status.setText(html.escape(error))
 
     def update_view(self, widget):
         """
@@ -251,7 +251,7 @@ class SourceWidget(QWidget):
         self.updated.setText(arrow.get(self.source.last_updated).humanize())
         self.display_star_icon()
         self.name.setText("<strong>{}</strong>".format(
-                          self.source.journalist_designation))
+                          html.escape(self.source.journalist_designation)))
 
         if self.source.document_count == 0:
             self.attached.hide()
@@ -331,7 +331,7 @@ class LoginDialog(QDialog):
         Ensures the passed in message is displayed as an error message.
         """
         self.setDisabled(False)
-        self.error_label.setText(message)
+        self.error_label.setText(html.escape(message))
 
     def validate(self):
         """
@@ -372,7 +372,7 @@ class SpeechBubble(QWidget):
         super().__init__()
         layout = QVBoxLayout()
         self.setLayout(layout)
-        message = QLabel(text)
+        message = QLabel(html.escape(text))
         message.setWordWrap(True)
         layout.addWidget(message)
 
