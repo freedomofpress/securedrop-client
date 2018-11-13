@@ -7,10 +7,10 @@ verify_ssl = true
 python_version = "3.5"
 
 [packages]
-furl = "*"
-pyyaml = "*"
-requests = "*"
-werkzeug = "*"
+furl = "==2.0.0"
+pyyaml = "==3.13"
+requests = "==2.20.0"
+werkzeug = "==0.14.1"
 
 [dev-packages]
-vcrpy = "*"
+vcrpy = "==2.0.1"
