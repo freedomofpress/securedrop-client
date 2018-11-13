@@ -29,4 +29,6 @@ jobs:
           path: test-results
       - store_artifacts:
           path: test-results
+      - run:
+          command: pipenv check
 destination: tr1
