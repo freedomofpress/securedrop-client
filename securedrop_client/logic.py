@@ -139,6 +139,13 @@ class Client(QObject):
         self.sync_update = QTimer()
         self.sync_update.timeout.connect(self.sync_api)
         self.sync_update.start(1000 * 60 * 5)  # every 5 minutes.
+        # Use a QTimer to update the current conversation view such
+        # that as downloads/decryption occur, the messages and replies
+        # populate the view.
+        self.conv_view_update = QTimer()
+        self.conv_view_update.timeout.connect(
+            self.update_conversation_view)
+        self.conv_view_update.start(1000 * 60 * 0.10)  # every 6 seconds
 
         event.listen(models.Submission, 'load', self.on_object_loaded)
         event.listen(models.Submission, 'init', self.on_object_instantiated)
@@ -406,6 +413,16 @@ class Client(QObject):
             sources.sort(key=lambda x: x.last_updated, reverse=True)
         self.gui.show_sources(sources)
         self.update_sync()
+
+    def update_conversation_view(self):
+        """
+        Updates the conversation view to reflect progress
+        of the download and decryption of messages and replies.
+        """
+        # Redraw the conversation view if we have clicked on a source.
+        if self.gui.current_source:
+            self.session.refresh(self.gui.current_source)
+            self.gui.show_conversation_for(self.gui.current_source)
 
     def on_update_star_complete(self, result):
         """
