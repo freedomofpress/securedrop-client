@@ -2,6 +2,7 @@
 Tests for storage sync logic.
 """
 import pytest
+import os
 import uuid
 import securedrop_client.models
 from dateutil.parser import parse
@@ -9,8 +10,11 @@ from unittest import mock
 from securedrop_client.storage import get_local_sources, get_local_submissions, get_local_replies, \
     get_remote_data, update_local_storage, update_sources, update_submissions, update_replies, \
     find_or_create_user, find_new_submissions, find_new_replies, mark_file_as_downloaded, \
-    mark_reply_as_downloaded
+    mark_reply_as_downloaded, delete_single_submission_or_reply_on_disk
+from securedrop_client import models
 from sdclientapi import Source, Submission, Reply
+
+from tests import factory
 
 
 def make_remote_source():
@@ -110,7 +114,7 @@ def test_get_remote_data():
     assert replies == [reply, ]
 
 
-def test_update_local_storage():
+def test_update_local_storage(safe_tmpdir):
     """
     Assuming no errors getting data, check the expected functions to update
     the state of the local database are called with the necessary data.
@@ -132,16 +136,17 @@ def test_update_local_storage():
             mock.patch('securedrop_client.storage.update_replies') as rpl_fn, \
             mock.patch('securedrop_client.storage.update_submissions') \
             as sub_fn:
-        update_local_storage(mock_session, sources, submissions, replies)
+        update_local_storage(mock_session, sources, submissions, replies,
+                             str(safe_tmpdir))
         src_fn.assert_called_once_with([source, ], [local_source, ],
-                                       mock_session)
+                                       mock_session, str(safe_tmpdir))
         rpl_fn.assert_called_once_with([reply, ], [local_replies, ],
-                                       mock_session)
+                                       mock_session, str(safe_tmpdir))
         sub_fn.assert_called_once_with([submission, ], [local_submission, ],
-                                       mock_session)
+                                       mock_session, str(safe_tmpdir))
 
 
-def test_update_sources():
+def test_update_sources(safe_tmpdir):
     """
     Check that:
 
@@ -165,7 +170,7 @@ def test_update_sources():
     local_source2 = mock.MagicMock()
     local_source2.uuid = str(uuid.uuid4())
     local_sources = [local_source1, local_source2]
-    update_sources(remote_sources, local_sources, mock_session)
+    update_sources(remote_sources, local_sources, mock_session, str(safe_tmpdir))
     # Check the expected local source object has been updated with values from
     # the API.
     assert local_source1.journalist_designation == \
@@ -194,7 +199,171 @@ def test_update_sources():
     assert mock_session.commit.call_count == 1
 
 
-def test_update_submissions():
+def add_test_file_to_temp_dir(home_dir, filename):
+    """
+    Add test file with the given filename to data dir.
+    """
+
+    dest = os.path.join(home_dir, filename)
+    with open(dest, 'w') as f:
+        f.write('I am test content for tests')
+
+    return dest
+
+
+def test_update_submissions_deletes_files_associated_with_the_submission(safe_tmpdir):
+    """
+    Check that:
+
+    * Submissions are deleted on disk after sync.
+    """
+    mock_session = mock.MagicMock()
+
+    # Test scenario: one submission locally, no submissions on server.
+    remote_submissions = []
+
+    # A local submission object. To ensure that all files from various
+    # stages of processing are cleaned up, we'll add several filenames.
+    server_filename = '1-pericardial-surfacing-msg.gpg'
+    local_filename_when_decrypted = '1-pericardial-surfacing-msg'
+
+    local_submission = mock.MagicMock()
+    local_submission.uuid = 'test-uuid'
+    local_submission.filename = server_filename
+    abs_server_filename = add_test_file_to_temp_dir(
+        str(safe_tmpdir), server_filename)
+    abs_local_filename = add_test_file_to_temp_dir(
+        str(safe_tmpdir), local_filename_when_decrypted)
+    local_submissions = [local_submission]
+
+    # There needs to be a corresponding local_source.
+    local_source = mock.MagicMock()
+    local_source.uuid = 'test-source-uuid'
+    local_source.id = 666
+    mock_session.query().filter_by.return_value = [local_source, ]
+    update_submissions(remote_submissions, local_submissions, mock_session,
+                       str(safe_tmpdir))
+
+    # Ensure the files associated with the submission are deleted on disk.
+    assert not os.path.exists(abs_server_filename)
+    assert not os.path.exists(abs_local_filename)
+
+    # Ensure the record for the local submission is gone.
+    mock_session.delete.assert_called_once_with(local_submission)
+
+    # Session is committed to database.
+    assert mock_session.commit.call_count == 1
+
+
+def test_update_replies_deletes_files_associated_with_the_reply(safe_tmpdir):
+    """
+    Check that:
+
+    * Replies are deleted on disk after sync.
+    """
+    mock_session = mock.MagicMock()
+
+    # Test scenario: one reply locally, no replies on server.
+    remote_replies = []
+
+    # A local reply object. To ensure that all files from various
+    # stages of processing are cleaned up, we'll add several filenames.
+    server_filename = '1-pericardial-surfacing-reply.gpg'
+    local_filename_when_decrypted = '1-pericardial-surfacing-reply'
+
+    local_reply = mock.MagicMock()
+    local_reply.uuid = 'test-uuid'
+    local_reply.filename = server_filename
+    abs_server_filename = add_test_file_to_temp_dir(
+        str(safe_tmpdir), server_filename)
+    abs_local_filename = add_test_file_to_temp_dir(
+        str(safe_tmpdir), local_filename_when_decrypted)
+    local_replies = [local_reply]
+
+    # There needs to be a corresponding local_source.
+    local_source = mock.MagicMock()
+    local_source.uuid = 'test-source-uuid'
+    local_source.id = 666
+    mock_session.query().filter_by.return_value = [local_source, ]
+    update_replies(remote_replies, local_replies, mock_session, str(safe_tmpdir))
+
+    # Ensure the files associated with the reply are deleted on disk.
+    assert not os.path.exists(abs_server_filename)
+    assert not os.path.exists(abs_local_filename)
+
+    # Ensure the record for the local reply is gone.
+    mock_session.delete.assert_called_once_with(local_reply)
+
+    # Session is committed to database.
+    assert mock_session.commit.call_count == 1
+
+
+def test_update_sources_deletes_files_associated_with_the_source(safe_tmpdir):
+    """
+    Check that:
+
+    * Sources are deleted on disk after sync.
+    """
+    mock_session = mock.MagicMock()
+
+    # Test scenario: one source locally, no sources on server.
+    remote_sources = []
+
+    # A local source object. To ensure that all submissions/replies from
+    # various stages of processing are cleaned up, we'll add several filenames
+    # associated with each message, document, and reply for each stage of processing.
+    # This simulates if a step failed.
+    msg_server_filename = '1-pericardial-surfacing-msg.gpg'
+    msg_local_filename_decrypted = '1-pericardial-surfacing-msg'
+
+    file_server_filename = '1-pericardial-surfacing-doc.gz.gpg'
+    file_local_filename_decompressed = '1-pericardial-surfacing-doc'
+    file_local_filename_decrypted = '1-pericardial-surfacing-doc.gz'
+
+    reply_server_filename = '1-pericardial-surfacing-reply.gpg'
+    reply_local_filename_decrypted = '1-pericardial-surfacing-reply'
+
+    # Here we're not mocking out the models use so that we can use the collection attribute.
+    local_source = factory.Source()
+    file_submission = models.Submission(
+        source=local_source, uuid="test", size=123, filename=file_server_filename,
+        download_url='http://test/test')
+    msg_submission = models.Submission(
+        source=local_source, uuid="test", size=123, filename=msg_server_filename,
+        download_url='http://test/test')
+    user = models.User('hehe')
+    reply = models.Reply(
+        source=local_source, journalist=user, filename=reply_server_filename,
+        size=1234, uuid='test')
+    local_source.submissions = [file_submission, msg_submission]
+    local_source.replies = [reply]
+
+    # Make the test files on disk in tmpdir so we can check they get deleted.
+    test_filename_absolute_paths = []
+    for test_filename in [msg_server_filename, msg_local_filename_decrypted,
+                          file_server_filename, file_local_filename_decompressed,
+                          file_local_filename_decrypted, reply_server_filename,
+                          reply_local_filename_decrypted]:
+        abs_server_filename = add_test_file_to_temp_dir(
+            str(safe_tmpdir), test_filename)
+        test_filename_absolute_paths.append(abs_server_filename)
+
+    local_sources = [local_source]
+    update_sources(remote_sources, local_sources, mock_session, str(safe_tmpdir))
+
+    # Ensure the files associated with the reply are deleted on disk.
+    for test_filename in test_filename_absolute_paths:
+        assert not os.path.exists(test_filename)
+
+    # Ensure the record for the local source is gone, along with its
+    # related files.
+    mock_session.delete.assert_called_with(local_source)
+
+    # Session is committed to database.
+    assert mock_session.commit.call_count == 1
+
+
+def test_update_submissions(safe_tmpdir):
     """
     Check that:
 
@@ -226,7 +395,8 @@ def test_update_submissions():
     local_source.uuid = source.uuid
     local_source.id = 666  # ;-)
     mock_session.query().filter_by.return_value = [local_source, ]
-    update_submissions(remote_submissions, local_submissions, mock_session)
+    update_submissions(remote_submissions, local_submissions, mock_session,
+                       str(safe_tmpdir))
     # Check the expected local submission object has been updated with values
     # from the API.
     assert local_sub1.filename == submission_update.filename
@@ -246,7 +416,7 @@ def test_update_submissions():
     assert mock_session.commit.call_count == 1
 
 
-def test_update_replies():
+def test_update_replies(safe_tmpdir):
     """
     Check that:
 
@@ -289,7 +459,8 @@ def test_update_replies():
     mock_focu = mock.MagicMock(return_value=local_user)
     with mock.patch('securedrop_client.storage.find_or_create_user',
                     mock_focu):
-        update_replies(remote_replies, local_replies, mock_session)
+        update_replies(remote_replies, local_replies, mock_session,
+                       str(safe_tmpdir))
     # Check the expected local reply object has been updated with values
     # from the API.
     assert local_reply1.journalist_id == local_user.id
@@ -392,3 +563,21 @@ def test_mark_reply_as_downloaded():
     assert mock_reply.is_downloaded is True
     mock_session.add.assert_called_once_with(mock_reply)
     mock_session.commit.assert_called_once_with()
+
+
+def test_delete_single_submission_or_reply_race_guard(safe_tmpdir):
+    """
+    This test checks that if there is a file is deleted
+    locally through another method, that an unhandled exception
+    will not occur in delete_single_submission_or_reply_on_disk
+    """
+
+    test_obj = mock.MagicMock()
+    test_obj.filename = '1-dissolved-steak-msg.gpg'
+    add_test_file_to_temp_dir(str(safe_tmpdir), test_obj.filename)
+
+    with mock.patch('os.remove',
+                    side_effect=FileNotFoundError) as mock_remove:
+        delete_single_submission_or_reply_on_disk(test_obj, str(safe_tmpdir))
+
+    mock_remove.call_count == 1

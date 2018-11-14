@@ -12,7 +12,10 @@ class Data:
     def get(self, fn):
         full_path = os.path.join(self.data_dir, fn)
 
-        with open(full_path) as fh:
-            msg = fh.read()
+        try:
+            with open(full_path) as fh:
+                msg = fh.read()
+        except FileNotFoundError:
+            msg = "<Content deleted>"
 
         return msg
