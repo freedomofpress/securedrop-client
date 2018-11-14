@@ -350,8 +350,65 @@ def test_LoginDialog_validate_input_non_numeric_2fa():
     ld = LoginDialog(None)
     ld.setup(mock_controller)
     ld.username_field.text = mock.MagicMock(return_value='foo')
-    ld.password_field.text = mock.MagicMock(return_value='bar')
+    ld.password_field.text = mock.MagicMock(return_value='nicelongpassword')
     ld.tfa_field.text = mock.MagicMock(return_value='baz')
+    ld.setDisabled = mock.MagicMock()
+    ld.error = mock.MagicMock()
+    ld.validate()
+    assert ld.setDisabled.call_count == 2
+    assert ld.error.call_count == 1
+    assert mock_controller.login.call_count == 0
+
+
+def test_LoginDialog_validate_too_short_username():
+    """
+    If the username is too small, we show an informative error message.
+    """
+    mock_controller = mock.MagicMock()
+    ld = LoginDialog(None)
+    ld.setup(mock_controller)
+    ld.username_field.text = mock.MagicMock(return_value='he')
+    ld.password_field.text = mock.MagicMock(return_value='nicelongpassword')
+    ld.tfa_field.text = mock.MagicMock(return_value='123456')
+    ld.setDisabled = mock.MagicMock()
+    ld.error = mock.MagicMock()
+    ld.validate()
+    assert ld.setDisabled.call_count == 2
+    assert ld.error.call_count == 1
+    assert mock_controller.login.call_count == 0
+
+
+def test_LoginDialog_validate_too_short_password():
+    """
+    If the password is too small, we show an informative error message.
+    """
+    mock_controller = mock.MagicMock()
+    ld = LoginDialog(None)
+    ld.setup(mock_controller)
+    ld.username_field.text = mock.MagicMock(return_value='foo')
+    ld.password_field.text = mock.MagicMock(return_value='bar')
+    ld.tfa_field.text = mock.MagicMock(return_value='123456')
+    ld.setDisabled = mock.MagicMock()
+    ld.error = mock.MagicMock()
+    ld.validate()
+    assert ld.setDisabled.call_count == 2
+    assert ld.error.call_count == 1
+    assert mock_controller.login.call_count == 0
+
+
+def test_LoginDialog_validate_too_long_password():
+    """
+    If the password is too long, we show an informative error message.
+    """
+    mock_controller = mock.MagicMock()
+    ld = LoginDialog(None)
+    ld.setup(mock_controller)
+
+    max_password_len = 128
+    too_long_password = 'a' * (max_password_len + 1)
+    ld.username_field.text = mock.MagicMock(return_value='foo')
+    ld.password_field.text = mock.MagicMock(return_value=too_long_password)
+    ld.tfa_field.text = mock.MagicMock(return_value='123456')
     ld.setDisabled = mock.MagicMock()
     ld.error = mock.MagicMock()
     ld.validate()
@@ -368,14 +425,14 @@ def test_LoginDialog_validate_input_ok():
     ld = LoginDialog(None)
     ld.setup(mock_controller)
     ld.username_field.text = mock.MagicMock(return_value='foo')
-    ld.password_field.text = mock.MagicMock(return_value='bar')
+    ld.password_field.text = mock.MagicMock(return_value='nicelongpassword')
     ld.tfa_field.text = mock.MagicMock(return_value='123456')
     ld.setDisabled = mock.MagicMock()
     ld.error = mock.MagicMock()
     ld.validate()
     assert ld.setDisabled.call_count == 1
     assert ld.error.call_count == 0
-    mock_controller.login.assert_called_once_with('foo', 'bar', '123456')
+    mock_controller.login.assert_called_once_with('foo', 'nicelongpassword', '123456')
 
 
 def test_SpeechBubble_init():
