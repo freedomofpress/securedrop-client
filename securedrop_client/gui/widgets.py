@@ -268,6 +268,10 @@ class LoginDialog(QDialog):
     A dialog to display the login form.
     """
 
+    MIN_PASSWORD_LEN = 14  # Journalist.MIN_PASSWORD_LEN on server
+    MAX_PASSWORD_LEN = 128  # Journalist.MAX_PASSWORD_LEN on server
+    MIN_JOURNALIST_USERNAME = 3  # Journalist.MIN_USERNAME_LEN on server
+
     def __init__(self, parent):
         super().__init__(parent)
 
@@ -346,12 +350,24 @@ class LoginDialog(QDialog):
         password = self.password_field.text()
         tfa_token = self.tfa_field.text().replace(' ', '')
         if username and password and tfa_token:
+            # Validate username
+            if len(username) < self.MIN_JOURNALIST_USERNAME:
+                self.setDisabled(False)
+                self.error(_('Your username should be at least 3 characters. '))
+                return
+
+            # Validate password
+            if len(password) < self.MIN_PASSWORD_LEN or len(password) > self.MAX_PASSWORD_LEN:
+                self.setDisabled(False)
+                self.error(_('Your password should be between 14 and 128 characters. '))
+                return
+
+            # Validate 2FA token
             try:
                 int(tfa_token)
             except ValueError:
                 self.setDisabled(False)
-                self.error(_('Please use only numerals for the '
-                             'two factor number.'))
+                self.error(_('Please use only numerals for the two factor number.'))
                 return
             self.controller.login(username, password, tfa_token)
         else:
