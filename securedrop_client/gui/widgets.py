@@ -268,6 +268,10 @@ class LoginDialog(QDialog):
     A dialog to display the login form.
     """
 
+    MIN_PASSWORD_LEN = 14  # Journalist.MIN_PASSWORD_LEN on server
+    MAX_PASSWORD_LEN = 128  # Journalist.MAX_PASSWORD_LEN on server
+    MIN_JOURNALIST_USERNAME = 3  # Journalist.MIN_USERNAME_LEN on server
+
     def __init__(self, parent):
         super().__init__(parent)
 
@@ -347,16 +351,13 @@ class LoginDialog(QDialog):
         tfa_token = self.tfa_field.text().replace(' ', '')
         if username and password and tfa_token:
             # Validate username
-            min_journalist_username = 3  # Journalist.MIN_USERNAME_LEN on server
-            if len(username) < min_journalist_username:
+            if len(username) < self.MIN_JOURNALIST_USERNAME:
                 self.setDisabled(False)
                 self.error(_('Your username should be at least 3 characters. '))
                 return
 
             # Validate password
-            min_password_len = 14  # Journalist.MIN_PASSWORD_LEN on server
-            max_password_len = 128  # Journalist.MAX_PASSWORD_LEN on server
-            if len(password) < min_password_len or len(password) > max_password_len:
+            if len(password) < self.MIN_PASSWORD_LEN or len(password) > self.MAX_PASSWORD_LEN:
                 self.setDisabled(False)
                 self.error(_('Your password should be between 14 and 128 characters. '))
                 return
