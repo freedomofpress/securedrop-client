@@ -544,10 +544,34 @@ def test_Client_update_conversation_view_current_source(safe_tmpdir):
     mock_gui.current_source = 'teehee'
     mock_gui.show_conversation_for = mock.MagicMock()
     mock_session = mock.MagicMock()
+
+    # Since we use the set-like behavior of self.session
+    # to check if the source is still persistent, let's mock that here
+    mock_session.__contains__ = mock.MagicMock()
+    mock_session.__contains__.return_value = [mock_gui.current_source]
+
+    mock_session.refresh = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
     cl.update_conversation_view()
+    mock_session.refresh.assert_called_with(mock_gui.current_source)
     mock_gui.show_conversation_for.assert_called_once_with(
         mock_gui.current_source)
+
+
+def test_Client_update_conversation_deleted_source(safe_tmpdir):
+    """
+    Ensure the UI does not attempt to refresh and display a deleted
+    source.
+    """
+    mock_gui = mock.MagicMock()
+    mock_gui.current_source = 'teehee'
+    mock_gui.show_conversation_for = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    mock_session.refresh = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.update_conversation_view()
+    mock_session.refresh.assert_not_called()
+    mock_gui.show_conversation_for.assert_not_called()
 
 
 def test_Client_update_conversation_view_no_current_source(safe_tmpdir):
