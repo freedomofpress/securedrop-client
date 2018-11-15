@@ -80,10 +80,11 @@ class MessageSync(APISyncObject):
                     # Need to set filename on non-Qubes platforms
                     sdk_submission.filename = db_submission.filename
 
-                    self.fetch_the_thing(sdk_submission,
-                                         db_submission,
-                                         self.api.download_submission,
-                                         storage.mark_file_as_downloaded)
+                    if self.api:
+                        self.fetch_the_thing(sdk_submission,
+                                             db_submission,
+                                             self.api.download_submission,
+                                             storage.mark_file_as_downloaded)
 
                 except Exception as e:
                     logger.critical(
@@ -121,10 +122,11 @@ class ReplySync(APISyncObject):
                     # Need to set filename on non-Qubes platforms
                     sdk_reply.filename = db_reply.filename
 
-                    self.fetch_the_thing(sdk_reply,
-                                         db_reply,
-                                         self.api.download_reply,
-                                         storage.mark_reply_as_downloaded)
+                    if self.api:
+                        self.fetch_the_thing(sdk_reply,
+                                             db_reply,
+                                             self.api.download_reply,
+                                             storage.mark_reply_as_downloaded)
 
                 except Exception as e:
                     logger.critical(
