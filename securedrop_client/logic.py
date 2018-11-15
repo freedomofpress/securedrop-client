@@ -419,8 +419,9 @@ class Client(QObject):
         Updates the conversation view to reflect progress
         of the download and decryption of messages and replies.
         """
-        # Redraw the conversation view if we have clicked on a source.
-        if self.gui.current_source:
+        # Redraw the conversation view if we have clicked on a source
+        # and the source has not been deleted.
+        if self.gui.current_source and self.gui.current_source in self.session:
             self.session.refresh(self.gui.current_source)
             self.gui.show_conversation_for(self.gui.current_source)
 
