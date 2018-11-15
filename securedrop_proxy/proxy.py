@@ -18,7 +18,7 @@ class Response:
         self.status = status
         self.body = None
         self.headers = {}
-        self.version = "0.1.1"
+        self.version = "0.1.2"
 
 class Proxy:
 
