@@ -99,6 +99,23 @@ def test_Client_start_message_thread(safe_tmpdir):
         cl.message_thread.start.assert_called_once_with()
 
 
+def test_Client_start_message_thread_if_already_running(safe_tmpdir):
+    """
+    Ensure that when starting the message thread, we don't start another thread
+    if it's already running. Instead, we just authenticate the existing thread.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.api = 'api object'
+    cl.message_sync = mock.MagicMock()
+    cl.message_thread = mock.MagicMock()
+    cl.message_thread.api = None
+    cl.start_message_thread()
+    cl.message_sync.api = cl.api
+    cl.message_thread.start.assert_not_called()
+
+
 def test_Client_start_reply_thread(safe_tmpdir):
     """
     When starting reply-fetching thread, make sure we do a few things.
@@ -114,6 +131,23 @@ def test_Client_start_reply_thread(safe_tmpdir):
         cl.reply_thread.started.connect.assert_called_once_with(
             cl.reply_sync.run)
         cl.reply_thread.start.assert_called_once_with()
+
+
+def test_Client_start_reply_thread_if_already_running(safe_tmpdir):
+    """
+    Ensure that when starting the reply thread, we don't start another thread
+    if it's already running. Instead, we just authenticate the existing thread.
+    """
+    mock_gui = mock.MagicMock()
+    mock_session = mock.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.api = 'api object'
+    cl.reply_sync = mock.MagicMock()
+    cl.reply_thread = mock.MagicMock()
+    cl.reply_thread.api = None
+    cl.start_reply_thread()
+    cl.reply_sync.api = cl.api
+    cl.reply_thread.start.assert_not_called()
 
 
 def test_Client_call_api(safe_tmpdir):
@@ -700,13 +734,20 @@ def test_Client_on_update_star_failed(safe_tmpdir):
 def test_Client_logout(safe_tmpdir):
     """
     The API is reset to None and the UI is set to logged out state.
+    The message and reply threads should also have the
     """
     mock_gui = mock.MagicMock()
     mock_session = mock.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
     cl.api = mock.MagicMock()
+    cl.message_sync = mock.MagicMock()
+    cl.reply_sync = mock.MagicMock()
+    cl.message_sync.api = mock.MagicMock()
+    cl.reply_sync.api = mock.MagicMock()
     cl.logout()
     assert cl.api is None
+    assert cl.message_sync.api is None
+    assert cl.reply_sync.api is None
     cl.gui.logout.assert_called_once_with()
 
 

@@ -239,6 +239,8 @@ class Client(QObject):
             self.message_sync.moveToThread(self.message_thread)
             self.message_thread.started.connect(self.message_sync.run)
             self.message_thread.start()
+        else:  # Already running from last login
+            self.message_sync.api = self.api
 
     def start_reply_thread(self):
         """
@@ -250,6 +252,8 @@ class Client(QObject):
             self.reply_sync.moveToThread(self.reply_thread)
             self.reply_thread.started.connect(self.reply_sync.run)
             self.reply_thread.start()
+        else:  # Already running from last login
+            self.reply_sync.api = self.api
 
     def timeout_cleanup(self, thread_id, user_callback):
         """
@@ -467,7 +471,8 @@ class Client(QObject):
         state.
         """
         self.api = None
-        # self.stop_message_thread()
+        self.message_sync.api = None
+        self.reply_sync.api = None
         self.gui.logout()
 
     def set_status(self, message, duration=5000):
