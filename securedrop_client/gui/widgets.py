@@ -388,7 +388,7 @@ class SpeechBubble(QWidget):
         super().__init__()
         layout = QVBoxLayout()
         self.setLayout(layout)
-        message = QLabel(html.escape(text))
+        message = QLabel(html.escape(text, quote=False))
         message.setWordWrap(True)
         layout.addWidget(message)
 
