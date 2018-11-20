@@ -22,61 +22,72 @@ import shutil
 import subprocess
 import tempfile
 
+from securedrop_client.utils import safe_mkdir
 
 logger = logging.getLogger(__name__)
 
 
-def decrypt_submission_or_reply(filepath, target_filename, home_dir,
-                                is_qubes=True, is_doc=False):
-    out = tempfile.NamedTemporaryFile(suffix=".message")
-    err = tempfile.NamedTemporaryFile(suffix=".message-error", delete=False)
-    if is_qubes:
-        gpg_binary = "qubes-gpg-client"
-    else:
-        gpg_binary = "gpg"
-    cmd = [gpg_binary, "--decrypt", filepath]
-    res = subprocess.call(cmd, stdout=out, stderr=err)
+class CryptoError(Exception):
 
-    os.unlink(filepath)  # original file
+    pass
 
-    if res != 0:
-        # The out tempfile will be automatically deleted after closing.
-        out.close()
-        # The err tempfile was created with delete=False, so needs to
-        # be explicitly cleaned up. We will do that after we've read the file.
-        err.close()
 
-        with open(err.name) as e:
-            msg = e.read()
-            logger.error("GPG error: {}".format(msg))
+class GpgHelper:
 
-        os.unlink(err.name)
-        dest = ""
-    else:
-        # Cleanup err file
-        err.close()
-        os.unlink(err.name)
+    def __init__(self, sdc_home: str, is_qubes: bool) -> None:
+        '''
+        :param sdc_home: Home directory for the SecureDrop client
+        :param is_qubes: Whether the client is running in Qubes or not
+        '''
+        safe_mkdir(os.path.join(sdc_home), "gpg")
+        self.sdc_home = sdc_home
+        self.is_qubes = is_qubes
 
-        if is_doc:
-            # Docs are gzipped, so gunzip the file
-            with gzip.open(out.name, 'rb') as infile:
-                unzipped_decrypted_data = infile.read()
+    def decrypt_submission_or_reply(self, filepath, target_filename, is_doc=False) -> None:
+        err = tempfile.NamedTemporaryFile(suffix=".message-error", delete=False)
+        with tempfile.NamedTemporaryFile(suffix=".message") as out:
+            if self.is_qubes:  # pragma: no cover
+                cmd = ["qubes-gpg-client"]
+            else:
+                cmd = ["gpg", "--homedir", os.path.join(self.sdc_home, "gpg")]
 
-            # Need to split twice as filename is e.g.
-            # 1-impractical_thing-doc.gz.gpg
-            fn_no_ext, _ = os.path.splitext(
-                os.path.splitext(os.path.basename(filepath))[0])
-            dest = os.path.join(home_dir, "data", fn_no_ext)
+            cmd.extend(["--decrypt", filepath])
+            res = subprocess.call(cmd, stdout=out, stderr=err)
 
-            with open(dest, 'wb') as outfile:
-                outfile.write(unzipped_decrypted_data)
-        else:
-            fn_no_ext, _ = os.path.splitext(target_filename)
-            dest = os.path.join(home_dir, "data", fn_no_ext)
-            shutil.copy(out.name, dest)
+            os.unlink(filepath)  # original file
 
-        # Now close to automatically delete the out tempfile.
-        out.close()
-        logger.info("Downloaded and decrypted: {}".format(dest))
+            if res != 0:
+                # The err tempfile was created with delete=False, so needs to
+                # be explicitly cleaned up. We will do that after we've read the file.
+                err.close()
 
-    return res, dest
+                with open(err.name) as e:
+                    msg = "GPG Error: {}".format(e.read())
+
+                logger.error(msg)
+                os.unlink(err.name)
+
+                raise CryptoError(msg)
+            else:
+                # Cleanup err file
+                err.close()
+                os.unlink(err.name)
+
+                if is_doc:
+                    # Need to split twice as filename is e.g.
+                    # 1-impractical_thing-doc.gz.gpg
+                    fn_no_ext, _ = os.path.splitext(
+                        os.path.splitext(os.path.basename(filepath))[0])
+                    dest = os.path.join(self.sdc_home, "data", fn_no_ext)
+
+                    # Docs are gzipped, so gunzip the file
+                    with gzip.open(out.name, 'rb') as infile, \
+                            open(dest, 'wb') as outfile:
+                        shutil.copyfileobj(infile, outfile)
+                else:
+                    fn_no_ext, _ = os.path.splitext(target_filename)
+                    dest = os.path.join(self.sdc_home, "data", fn_no_ext)
+                    shutil.copy(out.name, dest)
+                logger.info("Downloaded and decrypted: {}".format(dest))
+
+                return dest
