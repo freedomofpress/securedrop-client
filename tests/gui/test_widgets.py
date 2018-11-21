@@ -1,12 +1,13 @@
 """
 Make sure the UI widgets are configured correctly and work as expected.
 """
-from PyQt5.QtWidgets import QWidget, QApplication, QWidgetItem, QSpacerItem, QVBoxLayout
+from PyQt5.QtWidgets import QWidget, QApplication, QWidgetItem, QSpacerItem, QVBoxLayout, \
+    QMessageBox
 from tests import factory
 from securedrop_client import models
 from securedrop_client.gui.widgets import ToolBar, MainView, SourceList, SourceWidget, \
     LoginDialog, SpeechBubble, ConversationWidget, MessageWidget, ReplyWidget, FileWidget, \
-    ConversationView
+    ConversationView, DeleteSourceMessageBox, DeleteSourceAction
 from unittest import mock
 
 
@@ -279,6 +280,43 @@ def test_SourceWidget_toggle_star():
     sw.controller.update_star = mock.MagicMock()
     sw.toggle_star(event)
     sw.controller.update_star.assert_called_once_with(mock_source)
+
+
+def test_SourceWidget_delete_source():
+    mock_source = mock.MagicMock()
+    mock_delete_source_message_box_object = mock.MagicMock(
+        DeleteSourceMessageBox
+    )
+    mock_controller = mock.MagicMock()
+    mock_delete_source_message = mock.MagicMock(
+        return_value=mock_delete_source_message_box_object
+    )
+    sw = SourceWidget(None, mock_source)
+    sw.controller = mock_controller
+    with mock.patch(
+        "securedrop_client.gui.widgets.DeleteSourceMessageBox",
+        mock_delete_source_message
+    ):
+        sw.delete_source(None)
+        mock_delete_source_message_box_object.launch.assert_called_with()
+
+
+def test_SourceWidget_delete_source_when_user_chooses_cancel():
+    mock_message_box_question = mock.MagicMock(QMessageBox.question)
+    mock_message_box_question.return_value = QMessageBox.Cancel
+    mock_source = mock.MagicMock()
+    mock_source.journalist_designation = 'foo bar baz'
+    mock_source.submissions = ["submission_1", "submission_2"]
+    mock_source.replies = ["reply_1", "reply_2"]
+    mock_controller = mock.MagicMock()
+    sw = SourceWidget(None, mock_source)
+    sw.controller = mock_controller
+    with mock.patch(
+        "securedrop_client.gui.widgets.QMessageBox.question",
+        mock_message_box_question
+    ):
+        sw.delete_source(None)
+    sw.controller.delete_source.assert_not_called()
 
 
 def test_LoginDialog_setup():
@@ -664,3 +702,93 @@ def test_ConversationView_add_not_downloaded_file():
     assert cv.conversation_layout.addWidget.call_count == 1
     cal = cv.conversation_layout.addWidget.call_args_list
     assert isinstance(cal[0][0][0], FileWidget)
+
+
+def test_DeleteSourceMessageBox_init():
+    mock_controller = mock.MagicMock()
+    mock_source = mock.MagicMock()
+    DeleteSourceMessageBox(None, mock_source, mock_controller)
+
+
+def test_DeleteSourceMessage_launch_when_user_chooses_cancel():
+    mock_message_box_question = mock.MagicMock(QMessageBox.question)
+    mock_message_box_question.return_value = QMessageBox.Cancel
+    mock_source = mock.MagicMock()
+    mock_source.journalist_designation = 'foo bar baz'
+    mock_source.submissions = ["submission_1", "submission_2"]
+    mock_source.replies = ["reply_1", "reply_2"]
+    mock_controller = mock.MagicMock()
+    delete_source_message_box = DeleteSourceMessageBox(
+        None, mock_source, mock_controller
+    )
+    with mock.patch(
+        "securedrop_client.gui.widgets.QMessageBox.question",
+        mock_message_box_question
+    ):
+        delete_source_message_box.launch()
+    mock_controller.delete_source.assert_not_called()
+
+
+def test_DeleteSourceMssageBox_launch_when_user_chooses_yes():
+    mock_message_box_question = mock.MagicMock(QMessageBox.question)
+    mock_message_box_question.return_value = QMessageBox.Yes
+    mock_source = mock.MagicMock()
+    mock_source.journalist_designation = 'foo bar baz'
+    mock_source.submissions = ["submission_1", "submission_2"]
+    mock_source.replies = ["reply_1", "reply_2"]
+    mock_controller = mock.MagicMock()
+    delete_source_message_box = DeleteSourceMessageBox(
+        None, mock_source, mock_controller
+    )
+    with mock.patch(
+        "securedrop_client.gui.widgets.QMessageBox.question",
+        mock_message_box_question
+    ):
+        delete_source_message_box.launch()
+    mock_controller.delete_source.assert_called_once_with(mock_source)
+    message = (
+        "<big>Deleting the Source account for "
+        "<b>foo bar baz</b> will also "
+        "delete 2 files and 2 messages.</big> "
+        "<br> "
+        "<small>This Source will no longer be able to correspond "
+        "through the log-in tied to this account.</small>"
+    )
+    mock_message_box_question.assert_called_once_with(
+        None,
+        "",
+        message,
+        QMessageBox.Cancel | QMessageBox.Yes,
+        QMessageBox.Cancel
+    )
+
+
+def test_DeleteSourceMessageBox_construct_message():
+    mock_controller = mock.MagicMock()
+    mock_source = mock.MagicMock()
+    mock_source.journalist_designation = 'foo bar baz'
+    mock_source.submissions = ["submission_1", "submission_2"]
+    mock_source.replies = ["reply_1", "reply_2"]
+    delete_source_message_box = DeleteSourceMessageBox(
+        None, mock_source, mock_controller
+    )
+    message = delete_source_message_box._construct_message(mock_source)
+    expected_message = (
+        "<big>Deleting the Source account for "
+        "<b>foo bar baz</b> will also "
+        "delete 2 files and 2 messages.</big> "
+        "<br> "
+        "<small>This Source will no longer be able to correspond "
+        "through the log-in tied to this account.</small>"
+    )
+    assert message == expected_message
+
+
+def test_DeleteSourceAction_init():
+    mock_controller = mock.MagicMock()
+    mock_source = mock.MagicMock()
+    DeleteSourceAction(
+        mock_source,
+        None,
+        mock_controller
+    )
