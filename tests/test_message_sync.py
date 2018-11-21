@@ -2,6 +2,7 @@
 Make sure the message sync object behaves as expected.
 """
 from unittest import mock
+from securedrop_client.crypto import CryptoError
 from securedrop_client.message_sync import MessageSync, ReplySync
 
 
@@ -11,8 +12,9 @@ def test_MessageSync_init():
     """
     mock_session_class = mock.MagicMock()
     with mock.patch('securedrop_client.models.make_engine'), \
-        mock.patch('securedrop_client.message_sync.sessionmaker',
-                   return_value=mock_session_class):
+            mock.patch('securedrop_client.message_sync.sessionmaker',
+                       return_value=mock_session_class), \
+            mock.patch('securedrop_client.message_sync.GpgHelper'):
 
         api = mock.MagicMock()
         home = "/home/user/.sd"
@@ -47,7 +49,8 @@ def test_MessageSync_run_success():
             mock.patch(
                 'tempfile.NamedTemporaryFile',
                 return_value=fh), \
-            mock.patch('builtins.open', mock.mock_open(read_data="blah")):
+            mock.patch('builtins.open', mock.mock_open(read_data="blah")), \
+            mock.patch('securedrop_client.message_sync.GpgHelper'):
 
         api = mock.MagicMock()
         home = "/home/user/.sd"
@@ -71,15 +74,16 @@ def test_MessageSync_exception():
     api = mock.MagicMock()
     home = "/home/user/.sd"
     is_qubes = False
-    ms = MessageSync(api, home, is_qubes)
 
     with mock.patch('securedrop_client.storage.find_new_submissions',
                     return_value=[
                         submission
                     ]),\
-        mock.patch("sdclientapi.sdlocalobjects.Submission",
-                   mock.MagicMock(side_effect=Exception())):
-        ms.run(False)
+            mock.patch('securedrop_client.crypto.safe_mkdir'):
+
+        ms = MessageSync(api, home, is_qubes)
+        with mock.patch.object(ms.gpg, 'decrypt_submission_or_reply', side_effect=CryptoError):
+            ms.run(False)
 
 
 def test_MessageSync_run_failure():
@@ -104,6 +108,7 @@ def test_MessageSync_run_failure():
             mock.patch(
                 'tempfile.NamedTemporaryFile',
                 return_value=fh), \
+            mock.patch('securedrop_client.message_sync.GpgHelper'), \
             mock.patch('builtins.open', mock.mock_open(read_data="blah")):
 
         api = mock.MagicMock()
@@ -140,6 +145,7 @@ def test_ReplySync_run_success():
             mock.patch(
                 'tempfile.NamedTemporaryFile',
                 return_value=fh), \
+            mock.patch('securedrop_client.message_sync.GpgHelper'), \
             mock.patch('builtins.open', mock.mock_open(read_data="blah")):
 
         api = mock.MagicMock()
@@ -164,14 +170,16 @@ def test_ReplySync_exception():
     api = mock.MagicMock()
     home = "/home/user/.sd"
     is_qubes = False
-    rs = ReplySync(api, home, is_qubes)
 
     with mock.patch('securedrop_client.storage.find_new_replies',
                     return_value=[
                         reply
                     ]),\
+        mock.patch('securedrop_client.message_sync.GpgHelper'), \
         mock.patch("sdclientapi.sdlocalobjects.Reply",
                    mock.MagicMock(side_effect=Exception())):
+
+        rs = ReplySync(api, home, is_qubes)
         rs.run(False)
 
 
@@ -197,6 +205,7 @@ def test_ReplySync_run_failure():
             mock.patch(
                 'tempfile.NamedTemporaryFile',
                 return_value=fh), \
+            mock.patch('securedrop_client.message_sync.GpgHelper'), \
             mock.patch('builtins.open', mock.mock_open(read_data="blah")):
 
         api = mock.MagicMock()

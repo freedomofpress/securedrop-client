@@ -23,10 +23,10 @@ import shutil
 import arrow
 import uuid
 from sqlalchemy import event
-from securedrop_client import crypto
 from securedrop_client import storage
 from securedrop_client import models
 from securedrop_client.utils import check_dir_permissions
+from securedrop_client.crypto import GpgHelper, CryptoError
 from securedrop_client.data import Data
 from securedrop_client.message_sync import MessageSync, ReplySync
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess
@@ -114,6 +114,7 @@ class Client(QObject):
         self.data_dir = os.path.join(self.home, 'data')  # File data.
         self.timer = None  # call timeout timer
         self.proxy = proxy
+        self.gpg = GpgHelper(home, proxy)
 
     def setup(self):
         """
@@ -551,12 +552,11 @@ class Client(QObject):
             filepath_in_datadir = os.path.join(self.data_dir, server_filename)
             shutil.move(filename, filepath_in_datadir)
 
-            # Attempt to decrypt the file.
-            res, filepath = crypto.decrypt_submission_or_reply(
-                filepath_in_datadir, server_filename, self.home,
-                self.proxy, is_doc=True)
-
-            if res != 0:  # Then the file did not decrypt properly.
+            try:
+                # Attempt to decrypt the file.
+                self.gpg.decrypt_submission_or_reply(
+                    filepath_in_datadir, server_filename, is_doc=True)
+            except CryptoError:
                 self.set_status("Failed to download and decrypt file, "
                                 "please try again.")
                 # TODO: We should save the downloaded content, and just
