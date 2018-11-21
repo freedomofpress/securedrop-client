@@ -7,6 +7,7 @@ import os
 import pytest
 from tests import factory
 from securedrop_client import storage, models
+from securedrop_client.crypto import CryptoError
 from securedrop_client.logic import APICallRunner, Client
 from unittest import mock
 
@@ -844,8 +845,8 @@ def test_Client_on_file_downloaded_success(safe_tmpdir):
     submission_db_object.uuid = test_object_uuid
     submission_db_object.filename = test_filename
     with mock.patch('securedrop_client.logic.storage') as mock_storage, \
-            mock.patch('securedrop_client.crypto.decrypt_submission_or_reply',
-                       return_value=(0, 'filepath')) as mock_gpg, \
+            mock.patch.object(cl.gpg, 'decrypt_submission_or_reply',
+                              return_value='filepath') as mock_gpg, \
             mock.patch('shutil.move'):
         cl.on_file_downloaded(result_data, current_object=submission_db_object)
         mock_gpg.call_count == 1
@@ -885,8 +886,8 @@ def test_Client_on_file_downloaded_decrypt_failure(safe_tmpdir):
     submission_db_object = mock.MagicMock()
     submission_db_object.uuid = 'myuuid'
     submission_db_object.filename = 'filename'
-    with mock.patch('securedrop_client.crypto.decrypt_submission_or_reply',
-                    return_value=(1, '')) as mock_gpg, \
+    with mock.patch.object(cl.gpg, 'decrypt_submission_or_reply',
+                           side_effect=CryptoError()) as mock_gpg, \
             mock.patch('shutil.move'):
         cl.on_file_downloaded(result_data, current_object=submission_db_object)
         mock_gpg.call_count == 1
