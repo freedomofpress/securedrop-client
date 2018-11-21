@@ -497,6 +497,16 @@ def test_SpeechBubble_html_init():
         mock_label.assert_called_once_with('&lt;b&gt;hello&lt;/b&gt;')
 
 
+def test_SpeechBubble_with_apostrophe_in_text():
+    """Check Speech Bubble is displaying text with apostrophe correctly."""
+    with mock.patch('securedrop_client.gui.widgets.QLabel') as mock_label, \
+            mock.patch('securedrop_client.gui.widgets.QVBoxLayout'), \
+            mock.patch('securedrop_client.gui.widgets.SpeechBubble.setLayout'):
+        message = "I'm sure, you are reading my message."
+        SpeechBubble(message)
+        mock_label.assert_called_once_with(message)
+
+
 def test_ConversationWidget_init_left():
     """
     Check the ConversationWidget is configured correctly for align-left.
