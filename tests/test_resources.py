@@ -2,21 +2,20 @@
 Tests for the resources sub-module.
 """
 import securedrop_client.resources
-from unittest import mock
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtSvg import QSvgWidget
 
 
-def test_path():
+def test_path(mocker):
     """
     Ensure the resource_filename function is called with the expected args and
     the path function under test returns its result.
     """
-    with mock.patch('securedrop_client.resources.resource_filename',
-                    return_value='bar') as r:
-        assert securedrop_client.resources.path('foo') == 'bar'
-        r.assert_called_once_with(securedrop_client.resources.__name__,
-                                  'images/foo')
+    r = mocker.patch('securedrop_client.resources.resource_filename',
+                     return_value='bar')
+    assert securedrop_client.resources.path('foo') == 'bar'
+    r.assert_called_once_with(securedrop_client.resources.__name__,
+                              'images/foo')
 
 
 def test_load_icon():
@@ -43,13 +42,13 @@ def test_load_image():
     assert isinstance(result, QPixmap)
 
 
-def test_load_css():
+def test_load_css(mocker):
     """
     Ensure the resource_string function is called with the expected args and
     the load_css function returns its result.
     """
-    with mock.patch('securedrop_client.resources.resource_string',
-                    return_value=b'foo') as rs:
-        assert 'foo' == securedrop_client.resources.load_css('foo')
-        rs.assert_called_once_with(securedrop_client.resources.__name__,
-                                   'css/foo')
+    rs = mocker.patch('securedrop_client.resources.resource_string',
+                      return_value=b'foo')
+    assert 'foo' == securedrop_client.resources.load_css('foo')
+    rs.assert_called_once_with(securedrop_client.resources.__name__,
+                               'css/foo')
