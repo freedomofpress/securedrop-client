@@ -10,6 +10,9 @@ from securedrop_client import storage, models
 from securedrop_client.crypto import CryptoError
 from securedrop_client.logic import APICallRunner, Client
 
+with open(os.path.join(os.path.dirname(__file__), 'files', 'test-key.gpg.pub.asc')) as f:
+    PUB_KEY = f.read()
+
 
 def test_APICallRunner_init(mocker):
     """
@@ -528,12 +531,89 @@ def test_Client_on_synced_with_result(safe_tmpdir, mocker):
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
     cl.update_sources = mocker.MagicMock()
     cl.api_runner = mocker.MagicMock()
+    cl.gpg = mocker.MagicMock()
+
     result_data = ('sources', 'submissions', 'replies')
+
+    cl.update_sources = mocker.MagicMock()
+    cl.api_runner = mocker.MagicMock()
+
+    mock_source = mocker.MagicMock()
+    mock_source.key = {
+        'type': 'PGP',
+        'public': PUB_KEY,
+    }
+
+    mock_sources = [mock_source]
+
+    result_data = (mock_sources, 'submissions', 'replies')
+
     cl.call_reset = mocker.MagicMock()
     mock_storage = mocker.patch('securedrop_client.logic.storage')
     cl.on_synced(result_data)
     mock_storage.update_local_storage. \
-        assert_called_once_with(mock_session, "sources", "submissions",
+        assert_called_once_with(mock_session, mock_sources, "submissions",
+                                "replies",
+                                os.path.join(str(safe_tmpdir), 'data'))
+
+    cl.update_sources.assert_called_once_with()
+
+
+def test_Client_on_synced_with_non_pgp_key(safe_tmpdir, mocker):
+    """
+    If there's a result to syncing, then update local storage.
+    This is it to check that we can gracefully handle missing keys.
+    """
+    mock_gui = mocker.MagicMock()
+    mock_session = mocker.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.update_sources = mocker.MagicMock()
+    cl.api_runner = mocker.MagicMock()
+
+    mock_source = mocker.MagicMock()
+    mock_source.key = {
+        'type': 'PGP',
+    }
+
+    mock_sources = [mock_source]
+    result_data = (mock_sources, 'submissions', 'replies')
+
+    cl.call_reset = mocker.MagicMock()
+    mock_storage = mocker.patch('securedrop_client.logic.storage')
+    cl.on_synced(result_data)
+    mock_storage.update_local_storage. \
+        assert_called_once_with(mock_session, mock_sources, "submissions",
+                                "replies",
+                                os.path.join(str(safe_tmpdir), 'data'))
+    cl.update_sources.assert_called_once_with()
+
+
+def test_Client_on_synced_with_key_import_fail(safe_tmpdir, mocker):
+    """
+    If there's a result to syncing, then update local storage.
+    This is it to check that we can gracefully handle an import failure.
+    """
+    mock_gui = mocker.MagicMock()
+    mock_session = mocker.MagicMock()
+    cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
+    cl.update_sources = mocker.MagicMock()
+    cl.api_runner = mocker.MagicMock()
+
+    mock_source = mocker.MagicMock()
+    mock_source.key = {
+        'type': 'PGP',
+        'public': PUB_KEY,
+    }
+
+    mock_sources = [mock_source]
+    result_data = (mock_sources, 'submissions', 'replies')
+
+    cl.call_reset = mocker.MagicMock()
+    mock_storage = mocker.patch('securedrop_client.logic.storage')
+    mocker.patch.object(cl.gpg, 'import_key', side_effect=CryptoError)
+    cl.on_synced(result_data)
+    mock_storage.update_local_storage. \
+        assert_called_once_with(mock_session, mock_sources, "submissions",
                                 "replies",
                                 os.path.join(str(safe_tmpdir), 'data'))
     cl.update_sources.assert_called_once_with()
