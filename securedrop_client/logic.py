@@ -394,6 +394,18 @@ class Client(QObject):
             # Set last sync flag.
             with open(self.sync_flag, 'w') as f:
                 f.write(arrow.now().format())
+
+            # import keys into keyring
+            for source in remote_sources:
+                if source.key and source.key.get('type', None) == 'PGP':
+                    pub_key = source.key.get('public', None)
+                    if not pub_key:
+                        continue
+                    try:
+                        self.gpg.import_key(source.uuid, pub_key)
+                    except CryptoError:
+                        logger.warning('Failed to import key for source {}'.format(source.uuid))
+
             # TODO: show something in the conversation view?
             # self.gui.show_conversation_for()
         else:
