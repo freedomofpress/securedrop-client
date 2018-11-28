@@ -57,10 +57,11 @@ def test_APICallRunner_with_exception(mocker):
     cr.call_finished.emit.assert_called_once_with()
 
 
-def test_Client_init(safe_tmpdir, mocker):
+def test_Client_init(safe_tmpdir, config, mocker):
     """
     The passed in gui, app and session instances are correctly referenced and,
     where appropriate, have a reference back to the client.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -71,9 +72,10 @@ def test_Client_init(safe_tmpdir, mocker):
     assert cl.api_threads == {}
 
 
-def test_Client_setup(safe_tmpdir, mocker):
+def test_Client_setup(safe_tmpdir, config, mocker):
     """
     Ensure the application is set up with the following default state:
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -85,9 +87,10 @@ def test_Client_setup(safe_tmpdir, mocker):
     cl.gui.show_login.assert_called_once_with()
 
 
-def test_Client_start_message_thread(safe_tmpdir, mocker):
+def test_Client_start_message_thread(safe_tmpdir, config, mocker):
     """
     When starting message-fetching thread, make sure we do a few things.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -101,10 +104,11 @@ def test_Client_start_message_thread(safe_tmpdir, mocker):
     cl.message_thread.start.assert_called_once_with()
 
 
-def test_Client_start_message_thread_if_already_running(safe_tmpdir, mocker):
+def test_Client_start_message_thread_if_already_running(safe_tmpdir, config, mocker):
     """
     Ensure that when starting the message thread, we don't start another thread
     if it's already running. Instead, we just authenticate the existing thread.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -118,9 +122,10 @@ def test_Client_start_message_thread_if_already_running(safe_tmpdir, mocker):
     cl.message_thread.start.assert_not_called()
 
 
-def test_Client_start_reply_thread(safe_tmpdir, mocker):
+def test_Client_start_reply_thread(safe_tmpdir, config, mocker):
     """
     When starting reply-fetching thread, make sure we do a few things.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -135,10 +140,11 @@ def test_Client_start_reply_thread(safe_tmpdir, mocker):
     cl.reply_thread.start.assert_called_once_with()
 
 
-def test_Client_start_reply_thread_if_already_running(safe_tmpdir, mocker):
+def test_Client_start_reply_thread_if_already_running(safe_tmpdir, config, mocker):
     """
     Ensure that when starting the reply thread, we don't start another thread
     if it's already running. Instead, we just authenticate the existing thread.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -152,9 +158,10 @@ def test_Client_start_reply_thread_if_already_running(safe_tmpdir, mocker):
     cl.reply_thread.start.assert_not_called()
 
 
-def test_Client_call_api(safe_tmpdir, mocker):
+def test_Client_call_api(safe_tmpdir, config, mocker):
     """
     A new thread and APICallRunner is created / setup.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -181,10 +188,11 @@ def test_Client_call_api(safe_tmpdir, mocker):
     runner.call_finished.connect.call_count == 1
 
 
-def test_Client_clean_thread_no_thread(safe_tmpdir, mocker):
+def test_Client_clean_thread_no_thread(safe_tmpdir, config, mocker):
     """
     The client will ignore an attempt to reset an API call if there's no such
     call "in flight".
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -195,10 +203,11 @@ def test_Client_clean_thread_no_thread(safe_tmpdir, mocker):
     assert len(cl.api_threads) == 1
 
 
-def test_Client_clean_thread(safe_tmpdir, mocker):
+def test_Client_clean_thread(safe_tmpdir, config, mocker):
     """
     Cleaning up an existing thread disconnects the timer and removes it from
     the api_threads collection.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -214,10 +223,11 @@ def test_Client_clean_thread(safe_tmpdir, mocker):
     assert 'foo' not in cl.api_threads
 
 
-def test_Client_login(safe_tmpdir, mocker):
+def test_Client_login(safe_tmpdir, config, mocker):
     """
     Ensures the API is called in the expected manner for logging in the user
     given the username, password and 2fa token.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -230,10 +240,11 @@ def test_Client_login(safe_tmpdir, mocker):
                                         cl.on_login_timeout)
 
 
-def test_Client_on_authenticate_failed(safe_tmpdir, mocker):
+def test_Client_on_authenticate_failed(safe_tmpdir, config, mocker):
     """
     If the server responds with a negative to the request to authenticate, make
     sure the user knows.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -245,9 +256,10 @@ def test_Client_on_authenticate_failed(safe_tmpdir, mocker):
                                 'verify your credentials and try again.')
 
 
-def test_Client_on_authenticate_ok(safe_tmpdir, mocker):
+def test_Client_on_authenticate_ok(safe_tmpdir, config, mocker):
     """
     Ensure the client syncs when the user successfully logs in.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -265,10 +277,11 @@ def test_Client_on_authenticate_ok(safe_tmpdir, mocker):
     cl.gui.update_error_status.assert_called_once_with("")
 
 
-def test_Client_completed_api_call_without_current_object(safe_tmpdir, mocker):
+def test_Client_completed_api_call_without_current_object(safe_tmpdir, config, mocker):
     """
     Ensure that cleanup is performed if an API call returns in the expected
     time.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -293,10 +306,11 @@ def test_Client_completed_api_call_without_current_object(safe_tmpdir, mocker):
     mock_timer.stop.assert_called_once_with()
 
 
-def test_Client_completed_api_call_with_current_object(safe_tmpdir, mocker):
+def test_Client_completed_api_call_with_current_object(safe_tmpdir, config, mocker):
     """
     Ensure that cleanup is performed if an API call returns in the expected
     time.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -322,9 +336,10 @@ def test_Client_completed_api_call_with_current_object(safe_tmpdir, mocker):
     mock_timer.stop.assert_called_once_with()
 
 
-def test_Client_timeout_cleanup_without_current_object(safe_tmpdir, mocker):
+def test_Client_timeout_cleanup_without_current_object(safe_tmpdir, config, mocker):
     """
     Ensure that cleanup is performed if an API call times out.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -348,9 +363,10 @@ def test_Client_timeout_cleanup_without_current_object(safe_tmpdir, mocker):
     mock_user_callback.assert_called_once_with()
 
 
-def test_Client_timeout_cleanup_with_current_object(safe_tmpdir, mocker):
+def test_Client_timeout_cleanup_with_current_object(safe_tmpdir, config, mocker):
     """
     Ensure that cleanup is performed if an API call times out.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -374,9 +390,10 @@ def test_Client_timeout_cleanup_with_current_object(safe_tmpdir, mocker):
     mock_user_callback.assert_called_once_with(current_object='current_object')
 
 
-def test_Client_on_sync_timeout(safe_tmpdir, mocker):
+def test_Client_on_sync_timeout(safe_tmpdir, config, mocker):
     """
     Display error message in status bar if sync times out.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -389,9 +406,10 @@ def test_Client_on_sync_timeout(safe_tmpdir, mocker):
                                 'server timed out. Please try again.')
 
 
-def test_Client_on_login_timeout(safe_tmpdir, mocker):
+def test_Client_on_login_timeout(safe_tmpdir, config, mocker):
     """
     Reset the form if the API call times out.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -404,10 +422,11 @@ def test_Client_on_login_timeout(safe_tmpdir, mocker):
                                 'server timed out. Please try again.')
 
 
-def test_Client_on_action_requiring_login(safe_tmpdir, mocker):
+def test_Client_on_action_requiring_login(safe_tmpdir, config, mocker):
     """
     Ensure that when on_action_requiring_login is called, an error
     is shown in the GUI status area.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -417,9 +436,10 @@ def test_Client_on_action_requiring_login(safe_tmpdir, mocker):
         'You must sign in to perform this action.')
 
 
-def test_Client_authenticated_yes(safe_tmpdir, mocker):
+def test_Client_authenticated_yes(safe_tmpdir, config, mocker):
     """
     If the API is authenticated return True.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -429,9 +449,10 @@ def test_Client_authenticated_yes(safe_tmpdir, mocker):
     assert cl.authenticated() is True
 
 
-def test_Client_authenticated_no(safe_tmpdir, mocker):
+def test_Client_authenticated_no(safe_tmpdir, config, mocker):
     """
     If the API is authenticated return True.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -441,9 +462,10 @@ def test_Client_authenticated_no(safe_tmpdir, mocker):
     assert cl.authenticated() is False
 
 
-def test_Client_authenticated_no_api(safe_tmpdir, mocker):
+def test_Client_authenticated_no_api(safe_tmpdir, config, mocker):
     """
     If the API is authenticated return True.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -452,9 +474,10 @@ def test_Client_authenticated_no_api(safe_tmpdir, mocker):
     assert cl.authenticated() is False
 
 
-def test_Client_sync_api_not_authenticated(safe_tmpdir, mocker):
+def test_Client_sync_api_not_authenticated(safe_tmpdir, config, mocker):
     """
     If the API isn't authenticated, don't sync.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -465,9 +488,10 @@ def test_Client_sync_api_not_authenticated(safe_tmpdir, mocker):
     assert cl.call_api.call_count == 0
 
 
-def test_Client_sync_api(safe_tmpdir, mocker):
+def test_Client_sync_api(safe_tmpdir, config, mocker):
     """
     Sync the API is authenticated.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -479,11 +503,12 @@ def test_Client_sync_api(safe_tmpdir, mocker):
                                         cl.on_sync_timeout, cl.api)
 
 
-def test_Client_last_sync_with_file(safe_tmpdir, mocker):
+def test_Client_last_sync_with_file(safe_tmpdir, config, mocker):
     """
     The flag indicating the time of the last sync with the API is stored in a
     dotfile in the user's home directory. If such a file exists, ensure an
-    "arror" object (representing the date/time) is returned.
+    "arrow" object (representing the date/time) is returned.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -495,9 +520,10 @@ def test_Client_last_sync_with_file(safe_tmpdir, mocker):
     assert result.format() == timestamp
 
 
-def test_Client_last_sync_no_file(safe_tmpdir, mocker):
+def test_Client_last_sync_no_file(safe_tmpdir, config, mocker):
     """
     If there's no sync file, then just return None.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -506,10 +532,11 @@ def test_Client_last_sync_no_file(safe_tmpdir, mocker):
     assert cl.last_sync() is None
 
 
-def test_Client_on_synced_no_result(safe_tmpdir, mocker):
+def test_Client_on_synced_no_result(safe_tmpdir, config, mocker):
     """
     If there's no result to syncing, then don't attempt to update local storage
     and perhaps implement some as-yet-undefined UI update.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -522,9 +549,10 @@ def test_Client_on_synced_no_result(safe_tmpdir, mocker):
     cl.update_sources.assert_called_once_with()
 
 
-def test_Client_on_synced_with_result(safe_tmpdir, mocker):
+def test_Client_on_synced_with_result(safe_tmpdir, config, mocker):
     """
     If there's a result to syncing, then update local storage.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -559,10 +587,11 @@ def test_Client_on_synced_with_result(safe_tmpdir, mocker):
     cl.update_sources.assert_called_once_with()
 
 
-def test_Client_on_synced_with_non_pgp_key(safe_tmpdir, mocker):
+def test_Client_on_synced_with_non_pgp_key(safe_tmpdir, config, mocker):
     """
     If there's a result to syncing, then update local storage.
     This is it to check that we can gracefully handle missing keys.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -588,10 +617,11 @@ def test_Client_on_synced_with_non_pgp_key(safe_tmpdir, mocker):
     cl.update_sources.assert_called_once_with()
 
 
-def test_Client_on_synced_with_key_import_fail(safe_tmpdir, mocker):
+def test_Client_on_synced_with_key_import_fail(safe_tmpdir, config, mocker):
     """
     If there's a result to syncing, then update local storage.
     This is it to check that we can gracefully handle an import failure.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -619,9 +649,10 @@ def test_Client_on_synced_with_key_import_fail(safe_tmpdir, mocker):
     cl.update_sources.assert_called_once_with()
 
 
-def test_Client_update_sync(safe_tmpdir, mocker):
+def test_Client_update_sync(safe_tmpdir, config, mocker):
     """
     Cause the UI to update with the result of self.last_sync().
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -632,10 +663,11 @@ def test_Client_update_sync(safe_tmpdir, mocker):
     cl.gui.show_sync.assert_called_once_with(cl.last_sync())
 
 
-def test_Client_update_sources(safe_tmpdir, mocker):
+def test_Client_update_sources(safe_tmpdir, config, mocker):
     """
     Ensure the UI displays a list of the available sources from local data
     store.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -648,10 +680,11 @@ def test_Client_update_sources(safe_tmpdir, mocker):
     mock_gui.show_sources.assert_called_once_with(source_list)
 
 
-def test_Client_update_conversation_view_current_source(safe_tmpdir, mocker):
+def test_Client_update_conversation_view_current_source(safe_tmpdir, config, mocker):
     """
     Ensure the UI displays the latest version of the messages/replies that
     have been downloaded/decrypted in the current conversation view.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_gui.current_source = 'teehee'
@@ -671,10 +704,11 @@ def test_Client_update_conversation_view_current_source(safe_tmpdir, mocker):
         mock_gui.current_source)
 
 
-def test_Client_update_conversation_deleted_source(safe_tmpdir, mocker):
+def test_Client_update_conversation_deleted_source(safe_tmpdir, config, mocker):
     """
     Ensure the UI does not attempt to refresh and display a deleted
     source.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_gui.current_source = 'teehee'
@@ -687,10 +721,11 @@ def test_Client_update_conversation_deleted_source(safe_tmpdir, mocker):
     mock_gui.show_conversation_for.assert_not_called()
 
 
-def test_Client_update_conversation_view_no_current_source(safe_tmpdir, mocker):
+def test_Client_update_conversation_view_no_current_source(safe_tmpdir, config, mocker):
     """
     Ensure that if there is no current source (i.e. the user has not clicked
     a source in the sidebar), the UI will not redraw the conversation view.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_gui.current_source = None
@@ -700,9 +735,10 @@ def test_Client_update_conversation_view_no_current_source(safe_tmpdir, mocker):
     mock_gui.show_conversation_for.assert_not_called()
 
 
-def test_Client_unstars_a_source_if_starred(safe_tmpdir, mocker):
+def test_Client_unstars_a_source_if_starred(safe_tmpdir, config, mocker):
     """
     Ensure that the client unstars a source if it is starred.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -725,9 +761,10 @@ def test_Client_unstars_a_source_if_starred(safe_tmpdir, mocker):
     mock_gui.update_error_status.assert_called_once_with("")
 
 
-def test_Client_unstars_a_source_if_unstarred(safe_tmpdir, mocker):
+def test_Client_unstars_a_source_if_unstarred(safe_tmpdir, config, mocker):
     """
     Ensure that the client stars a source if it is unstarred.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -750,10 +787,11 @@ def test_Client_unstars_a_source_if_unstarred(safe_tmpdir, mocker):
     mock_gui.update_error_status.assert_called_once_with("")
 
 
-def test_Client_update_star_not_logged_in(safe_tmpdir, mocker):
+def test_Client_update_star_not_logged_in(safe_tmpdir, config, mocker):
     """
     Ensure that starring/unstarring a source when not logged in calls
     the method that displays an error status in the left sidebar.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -765,9 +803,10 @@ def test_Client_update_star_not_logged_in(safe_tmpdir, mocker):
     cl.on_action_requiring_login.assert_called_with()
 
 
-def test_Client_sidebar_action_timeout(safe_tmpdir, mocker):
+def test_Client_sidebar_action_timeout(safe_tmpdir, config, mocker):
     """
     Show on error status sidebar that a timeout occurred.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -777,10 +816,11 @@ def test_Client_sidebar_action_timeout(safe_tmpdir, mocker):
         'The connection to the SecureDrop server timed out. Please try again.')
 
 
-def test_Client_on_update_star_success(safe_tmpdir, mocker):
+def test_Client_on_update_star_success(safe_tmpdir, config, mocker):
     """
     If the starring occurs successfully, then a sync should occur to update
     locally.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -793,10 +833,11 @@ def test_Client_on_update_star_success(safe_tmpdir, mocker):
     mock_gui.update_error_status.assert_called_once_with("")
 
 
-def test_Client_on_update_star_failed(safe_tmpdir, mocker):
+def test_Client_on_update_star_failed(safe_tmpdir, config, mocker):
     """
     If the starring does not occur properly, then an error should appear
     on the error status sidebar, and a sync will not occur.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -810,10 +851,11 @@ def test_Client_on_update_star_failed(safe_tmpdir, mocker):
         'Failed to apply change.')
 
 
-def test_Client_logout(safe_tmpdir, mocker):
+def test_Client_logout(safe_tmpdir, config, mocker):
     """
     The API is reset to None and the UI is set to logged out state.
     The message and reply threads should also have the
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -830,9 +872,10 @@ def test_Client_logout(safe_tmpdir, mocker):
     cl.gui.logout.assert_called_once_with()
 
 
-def test_Client_set_status(safe_tmpdir, mocker):
+def test_Client_set_status(safe_tmpdir, config, mocker):
     """
     Ensure the GUI set_status API is called.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -869,6 +912,12 @@ def test_create_client_dir_permissions(tmpdir, mocker):
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
 
+    # we can't rely on the config fixture, and because of the order of exectution,
+    # we can't create the config at the right time, we we have to mock both
+    # `open` and `json.loads`
+    mock_open = mocker.patch('securedrop_client.config.open')
+    mock_json = mocker.patch('securedrop_client.config.json.loads')
+
     for idx, case in enumerate(PERMISSIONS_CASES):
         sdc_home = os.path.join(str(tmpdir), 'case-{}'.format(idx))
 
@@ -885,11 +934,16 @@ def test_create_client_dir_permissions(tmpdir, mocker):
             with pytest.raises(RuntimeError):
                 func()
 
+    # check that both mocks were called to ensure they aren't "dead code"
+    assert mock_open.called
+    assert mock_json.called
 
-def test_Client_on_file_download_Submission(safe_tmpdir, mocker):
+
+def test_Client_on_file_download_Submission(safe_tmpdir, config, mocker):
     """
     If the handler is passed a submission, check the download_submission
     function is the one called against the API.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -909,7 +963,10 @@ def test_Client_on_file_download_Submission(safe_tmpdir, mocker):
         cl.data_dir, current_object=submission)
 
 
-def test_Client_on_file_downloaded_success(safe_tmpdir, mocker):
+def test_Client_on_file_downloaded_success(safe_tmpdir, config, mocker):
+    '''
+    Using the `config` fixture to ensture the config is written to disk.
+    '''
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
@@ -931,7 +988,10 @@ def test_Client_on_file_downloaded_success(safe_tmpdir, mocker):
         test_object_uuid, mock_session)
 
 
-def test_Client_on_file_downloaded_api_failure(safe_tmpdir, mocker):
+def test_Client_on_file_downloaded_api_failure(safe_tmpdir, config, mocker):
+    '''
+    Using the `config` fixture to ensture the config is written to disk.
+    '''
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
@@ -950,7 +1010,10 @@ def test_Client_on_file_downloaded_api_failure(safe_tmpdir, mocker):
         "The file download failed. Please try again.")
 
 
-def test_Client_on_file_downloaded_decrypt_failure(safe_tmpdir, mocker):
+def test_Client_on_file_downloaded_decrypt_failure(safe_tmpdir, config, mocker):
+    '''
+    Using the `config` fixture to ensture the config is written to disk.
+    '''
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
@@ -973,10 +1036,11 @@ def test_Client_on_file_downloaded_decrypt_failure(safe_tmpdir, mocker):
         "Failed to download and decrypt file, please try again.")
 
 
-def test_Client_on_file_download_user_not_signed_in(safe_tmpdir, mocker):
+def test_Client_on_file_download_user_not_signed_in(safe_tmpdir, config, mocker):
     """
     If a user clicks the download button but is not logged in,
     an error should appear.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -993,7 +1057,10 @@ def test_Client_on_file_download_user_not_signed_in(safe_tmpdir, mocker):
     cl.on_action_requiring_login.assert_called_once_with()
 
 
-def test_Client_on_download_timeout(safe_tmpdir, mocker):
+def test_Client_on_download_timeout(safe_tmpdir, config, mocker):
+    '''
+    Using the `config` fixture to ensture the config is written to disk.
+    '''
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
@@ -1009,10 +1076,11 @@ def test_Client_on_download_timeout(safe_tmpdir, mocker):
         "The connection to the SecureDrop server timed out. Please try again.")
 
 
-def test_Client_on_file_download_Reply(safe_tmpdir, mocker):
+def test_Client_on_file_download_Reply(safe_tmpdir, config, mocker):
     """
     If the handler is passed a reply, check the download_reply
     function is the one called against the API.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -1034,9 +1102,10 @@ def test_Client_on_file_download_Reply(safe_tmpdir, mocker):
                                         cl.data_dir, current_object=reply)
 
 
-def test_Client_on_object_loaded(safe_tmpdir, mocker):
+def test_Client_on_object_loaded(safe_tmpdir, config, mocker):
     """
     Tests that the ORM "loaded" callback correctly configures the target object
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -1045,10 +1114,11 @@ def test_Client_on_object_loaded(safe_tmpdir, mocker):
     assert cl.data.data_dir == os.path.join(str(safe_tmpdir), "data")
 
 
-def test_Client_on_file_open(safe_tmpdir, mocker):
+def test_Client_on_file_open(safe_tmpdir, config, mocker):
     """
     If running on Qubes, a new QProcess with the expected command and args
     should be started.
+    Using the `config` fixture to ensture the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
@@ -1064,7 +1134,10 @@ def test_Client_on_file_open(safe_tmpdir, mocker):
     mock_subprocess.start.call_count == 1
 
 
-def test_Client_on_delete_action_timeout(safe_tmpdir, mocker):
+def test_Client_on_delete_action_timeout(safe_tmpdir, config, mocker):
+    '''
+    Using the `config` fixture to ensture the config is written to disk.
+    '''
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
@@ -1073,7 +1146,10 @@ def test_Client_on_delete_action_timeout(safe_tmpdir, mocker):
     cl.gui.update_error_status.assert_called_with(message)
 
 
-def test_Client_on_delete_source_complete_with_results(safe_tmpdir, mocker):
+def test_Client_on_delete_source_complete_with_results(safe_tmpdir, config, mocker):
+    '''
+    Using the `config` fixture to ensture the config is written to disk.
+    '''
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
@@ -1083,7 +1159,10 @@ def test_Client_on_delete_source_complete_with_results(safe_tmpdir, mocker):
     cl.gui.update_error_status.assert_called_with("")
 
 
-def test_Client_on_delete_source_complete_without_results(safe_tmpdir, mocker):
+def test_Client_on_delete_source_complete_without_results(safe_tmpdir, config, mocker):
+    '''
+    Using the `config` fixture to ensture the config is written to disk.
+    '''
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, str(safe_tmpdir))
@@ -1091,7 +1170,10 @@ def test_Client_on_delete_source_complete_without_results(safe_tmpdir, mocker):
     cl.gui.update_error_status.assert_called_with('Failed to delete source at server')
 
 
-def test_Client_delete_source(safe_tmpdir, mocker):
+def test_Client_delete_source(safe_tmpdir, config, mocker):
+    '''
+    Using the `config` fixture to ensture the config is written to disk.
+    '''
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
     mock_source = mocker.MagicMock()
