@@ -119,9 +119,11 @@ class GpgHelper:
         self.session.add(local_source)
         self.session.commit()
 
-    def _import(self, key_data: str) -> set:
+    def _import(self, key_data: str, is_private: bool = False) -> set:
         '''Wrapper for `gpg --import-keys`'''
         cmd = self._gpg_cmd_base()
+        if is_private:
+            cmd.append('--allow-secret-key-import')
 
         with tempfile.NamedTemporaryFile('w+') as temp_key, \
                 tempfile.NamedTemporaryFile('w+') as stdout, \
@@ -156,3 +158,34 @@ class GpgHelper:
                 reading_pub = False
 
             return key_fingerprints
+
+    def encrypt_to_source(self, source_uuid: str, data: str) -> str:
+        '''
+        :param data: A string of data to encrypt to a source.
+        '''
+        source = self.session.query(Source).filter_by(uuid=source_uuid).one()
+        cmd = self._gpg_cmd_base()
+
+        with tempfile.NamedTemporaryFile('w+') as content, \
+                tempfile.NamedTemporaryFile('w+') as stdout, \
+                tempfile.NamedTemporaryFile('w+') as stderr:
+
+            content.write(data)
+            content.seek(0)
+
+            cmd.extend(['--encrypt',
+                        '-r', source.fingerprint,
+                        '-r', self.journalist_key_fingerprint,
+                        '--armor',
+                        '-o-',  # write to stdout
+                        content.name])
+            try:
+                subprocess.check_call(cmd, stdout=stdout, stderr=stderr)
+            except subprocess.CalledProcessError as e:
+                stderr.seek(0)
+                logger.error(
+                    'Could not encrypt to source {}: {}\n{}'.format(source_uuid, e, stderr.read()))
+                raise CryptoError('Could not encrypt to source: {}.'.format(source_uuid))
+
+            stdout.seek(0)
+            return stdout.read()
