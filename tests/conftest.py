@@ -51,6 +51,7 @@ def source(session) -> dict:
                     last_updated=datetime.now(),
                     document_count=0,
                     **args)
+    args['fingerprint'] = source.fingerprint = 'B2FF7FB28EED8CABEBC5FB6C6179D97BCFA52E5F'
     session.add(source)
     session.commit()
     args['id'] = source.id

@@ -1,4 +1,5 @@
 import os
+import subprocess
 import pytest
 
 from subprocess import CalledProcessError
@@ -7,6 +8,9 @@ from securedrop_client.crypto import GpgHelper, CryptoError
 
 with open(os.path.join(os.path.dirname(__file__), 'files', 'test-key.gpg.pub.asc')) as f:
     PUB_KEY = f.read()
+
+with open(os.path.join(os.path.dirname(__file__), 'files', 'securedrop.gpg.asc')) as f:
+    JOURNO_KEY = f.read()
 
 
 def test_message_logic(safe_tmpdir, config, mocker):
@@ -118,3 +122,62 @@ def test_import_key_multiple_fingerprints(safe_tmpdir, source, config, mocker):
 
     # ensure the mock was used
     assert mock_import.called
+
+
+def test_encrypt(safe_tmpdir, source, config, mocker):
+    '''
+    Check that calling `encrypt` encrypts the message.
+    Using the `config` fixture to ensure the config is written to disk.
+    '''
+    helper = GpgHelper(str(safe_tmpdir), is_qubes=False)
+
+    # first we have to ensure the pubkeys are available
+    helper._import(PUB_KEY)
+    helper._import(JOURNO_KEY, is_private=True)
+
+    plaintext = 'bueller?'
+    cyphertext = helper.encrypt_to_source(source['uuid'], plaintext)
+
+    # check that we go *any* output just for sanity
+    assert cyphertext
+
+    cyphertext_file = str(safe_tmpdir.join('cyphertext.out'))
+    decrypted_file = str(safe_tmpdir.join('decrypted.out'))
+    gpg_home = str(safe_tmpdir.join('gpg'))
+
+    with open(cyphertext_file, 'w') as f:
+        f.write(cyphertext)
+
+    subprocess.check_call(['gpg',
+                           '--homedir', gpg_home,
+                           '--output', decrypted_file,
+                           '--decrypt', cyphertext_file])
+
+    with open(decrypted_file) as f:
+        decrypted = f.read()
+
+    assert decrypted == plaintext
+
+
+def test_encrypt_fail(safe_tmpdir, source, config, mocker):
+    '''
+    Check that a `CryptoError` is raised if the call to `gpg` fails.
+    Using the `config` fixture to ensure the config is written to disk.
+    '''
+    helper = GpgHelper(str(safe_tmpdir), is_qubes=False)
+
+    # first we have to ensure the pubkeys are available
+    helper._import(PUB_KEY)
+    helper._import(JOURNO_KEY, is_private=True)
+
+    plaintext = 'bueller?'
+
+    err = CalledProcessError(cmd=['foo'], returncode=1)
+    mock_gpg = mocker.patch('securedrop_client.crypto.subprocess.check_call',
+                            side_effect=err)
+
+    with pytest.raises(CryptoError):
+        helper.encrypt_to_source(source['uuid'], plaintext)
+
+    # check mock called to prevent "dead code"
+    assert mock_gpg.called
