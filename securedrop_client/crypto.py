@@ -25,6 +25,7 @@ import tempfile
 from sqlalchemy.orm import sessionmaker
 from uuid import UUID
 
+from securedrop_client.config import Config
 from securedrop_client.models import make_engine, Source
 from securedrop_client.utils import safe_mkdir
 
@@ -49,6 +50,9 @@ class GpgHelper:
         engine = make_engine(sdc_home)
         Session = sessionmaker(bind=engine)
         self.session = Session()
+
+        config = Config.from_home_dir(self.sdc_home)
+        self.journalist_key_fingerprint = config.journalist_key_fingerprint
 
     def decrypt_submission_or_reply(self, filepath, target_filename, is_doc=False) -> None:
         err = tempfile.NamedTemporaryFile(suffix=".message-error", delete=False)
