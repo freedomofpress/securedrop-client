@@ -1,5 +1,6 @@
 import json
 import os
+import tempfile
 import pytest
 
 from datetime import datetime
@@ -14,14 +15,32 @@ with open(os.path.join(os.path.dirname(__file__), 'files', 'test-key.gpg.pub.asc
 
 
 @pytest.fixture(scope='function')
-def safe_tmpdir(tmpdir):
-    os.chmod(str(tmpdir), 0o0700)
-    return tmpdir
+def homedir():
+    '''
+    Create a "homedir" for a client.
+
+    Using `mkdtemp` and not `TemporaryDirectory` because the latter will remove the directory
+    when the object is destroyed, and we want to leave it on the file system so developers can
+    inspect the contents for debugging purposes.
+    '''
+
+    tmpdir = tempfile.mkdtemp(prefix='sdc-')
+    os.chmod(tmpdir, 0o0700)
+
+    data_dir = os.path.join(tmpdir, 'data')
+    gpg_dir = os.path.join(tmpdir, 'gpg')
+    logs_dir = os.path.join(tmpdir, 'logs')
+
+    for dir_ in [data_dir, gpg_dir, logs_dir]:
+        os.mkdir(dir_)
+        os.chmod(dir_, 0o0700)
+
+    yield tmpdir
 
 
 @pytest.fixture(scope='function')
-def config(safe_tmpdir) -> str:
-    full_path = str(safe_tmpdir.join(Config.CONFIG_NAME))
+def config(homedir) -> str:
+    full_path = os.path.join(homedir, Config.CONFIG_NAME)
     with open(full_path, 'w') as f:
         f.write(json.dumps({
             'journalist_key_fingerprint': '65A1B5FF195B56353CC63DFFCC40EF1228271441',
@@ -30,8 +49,8 @@ def config(safe_tmpdir) -> str:
 
 
 @pytest.fixture(scope='function')
-def session(safe_tmpdir):
-    engine = make_engine(str(safe_tmpdir))
+def session(homedir):
+    engine = make_engine(homedir)
     Base.metadata.create_all(bind=engine)
     Session = sessionmaker(bind=engine)
     session = Session()
