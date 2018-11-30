@@ -20,7 +20,7 @@ SDC_HOME=${SDC_HOME:-$(mktemp -d)}
 export SDC_HOME
 
 GPG_HOME="$SDC_HOME/gpg"
-mkdir "$GPG_HOME"
+mkdir -p "$GPG_HOME"
 chmod 0700 "$SDC_HOME" "$GPG_HOME"
 
 echo "Running app with home directory: $SDC_HOME"
