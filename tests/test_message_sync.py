@@ -58,15 +58,15 @@ def test_MessageSync_run_success(mocker):
     ms.run(False)
 
 
-def test_MessageSync_exception(mocker):
+def test_MessageSync_exception(homedir, config, mocker):
     """
     Mostly here for code coverage- makes sure that if an exception is
     raised in the download thread, the code which catches it is actually
-    run
+    run.
+    Using the `config` fixture to ensure the config is written to disk.
     """
     submission = mocker.MagicMock()
     api = mocker.MagicMock()
-    home = "/home/user/.sd"
     is_qubes = False
 
     # mock to return the submission we want
@@ -74,7 +74,7 @@ def test_MessageSync_exception(mocker):
     # mock to prevent GpgHelper from raising errors on init
     mocker.patch('securedrop_client.crypto.safe_mkdir')
 
-    ms = MessageSync(api, home, is_qubes)
+    ms = MessageSync(api, str(homedir), is_qubes)
     mocker.patch.object(ms.gpg, 'decrypt_submission_or_reply', side_effect=CryptoError)
     ms.run(False)
 

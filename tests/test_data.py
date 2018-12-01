@@ -5,20 +5,20 @@ storage directory) works as expected.
 from securedrop_client.data import Data
 
 
-def test_Data_init(safe_tmpdir):
+def test_Data_init(homedir):
     """
     Ensure the Data class instantiates as expected
     """
-    data = Data(str(safe_tmpdir))
-    assert data.data_dir == safe_tmpdir
+    data = Data(homedir)
+    assert data.data_dir == homedir
 
 
-def test_Data_file_not_found(safe_tmpdir):
+def test_Data_file_not_found(homedir):
     """
     Ensure the data class handles missing files gracefully
     (e.g. if the file gets deleted)
     """
-    data = Data(str(safe_tmpdir))
+    data = Data(homedir)
     msg = data.get('my-file.gpg')
 
     # No unhandled exceptions should occur, and a 'nice' msg

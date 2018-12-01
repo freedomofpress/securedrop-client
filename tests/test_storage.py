@@ -113,7 +113,7 @@ def test_get_remote_data(mocker):
     assert replies == [reply, ]
 
 
-def test_update_local_storage(safe_tmpdir, mocker):
+def test_update_local_storage(homedir, mocker):
     """
     Assuming no errors getting data, check the expected functions to update
     the state of the local database are called with the necessary data.
@@ -136,16 +136,16 @@ def test_update_local_storage(safe_tmpdir, mocker):
     sub_fn = mocker.patch('securedrop_client.storage.update_submissions')
 
     update_local_storage(mock_session, sources, submissions, replies,
-                         str(safe_tmpdir))
+                         homedir)
     src_fn.assert_called_once_with([source, ], [local_source, ],
-                                   mock_session, str(safe_tmpdir))
+                                   mock_session, homedir)
     rpl_fn.assert_called_once_with([reply, ], [local_replies, ],
-                                   mock_session, str(safe_tmpdir))
+                                   mock_session, homedir)
     sub_fn.assert_called_once_with([submission, ], [local_submission, ],
-                                   mock_session, str(safe_tmpdir))
+                                   mock_session, homedir)
 
 
-def test_update_sources(safe_tmpdir, mocker):
+def test_update_sources(homedir, mocker):
     """
     Check that:
 
@@ -169,7 +169,7 @@ def test_update_sources(safe_tmpdir, mocker):
     local_source2 = mocker.MagicMock()
     local_source2.uuid = str(uuid.uuid4())
     local_sources = [local_source1, local_source2]
-    update_sources(remote_sources, local_sources, mock_session, str(safe_tmpdir))
+    update_sources(remote_sources, local_sources, mock_session, homedir)
     # Check the expected local source object has been updated with values from
     # the API.
     assert local_source1.journalist_designation == \
@@ -211,7 +211,7 @@ def add_test_file_to_temp_dir(home_dir, filename):
 
 
 def test_update_submissions_deletes_files_associated_with_the_submission(
-        safe_tmpdir,
+        homedir,
         mocker):
     """
     Check that:
@@ -232,9 +232,9 @@ def test_update_submissions_deletes_files_associated_with_the_submission(
     local_submission.uuid = 'test-uuid'
     local_submission.filename = server_filename
     abs_server_filename = add_test_file_to_temp_dir(
-        str(safe_tmpdir), server_filename)
+        homedir, server_filename)
     abs_local_filename = add_test_file_to_temp_dir(
-        str(safe_tmpdir), local_filename_when_decrypted)
+        homedir, local_filename_when_decrypted)
     local_submissions = [local_submission]
 
     # There needs to be a corresponding local_source.
@@ -243,7 +243,7 @@ def test_update_submissions_deletes_files_associated_with_the_submission(
     local_source.id = 666
     mock_session.query().filter_by.return_value = [local_source, ]
     update_submissions(remote_submissions, local_submissions, mock_session,
-                       str(safe_tmpdir))
+                       homedir)
 
     # Ensure the files associated with the submission are deleted on disk.
     assert not os.path.exists(abs_server_filename)
@@ -257,7 +257,7 @@ def test_update_submissions_deletes_files_associated_with_the_submission(
 
 
 def test_update_replies_deletes_files_associated_with_the_reply(
-        safe_tmpdir,
+        homedir,
         mocker):
     """
     Check that:
@@ -278,9 +278,9 @@ def test_update_replies_deletes_files_associated_with_the_reply(
     local_reply.uuid = 'test-uuid'
     local_reply.filename = server_filename
     abs_server_filename = add_test_file_to_temp_dir(
-        str(safe_tmpdir), server_filename)
+        homedir, server_filename)
     abs_local_filename = add_test_file_to_temp_dir(
-        str(safe_tmpdir), local_filename_when_decrypted)
+        homedir, local_filename_when_decrypted)
     local_replies = [local_reply]
 
     # There needs to be a corresponding local_source.
@@ -288,7 +288,7 @@ def test_update_replies_deletes_files_associated_with_the_reply(
     local_source.uuid = 'test-source-uuid'
     local_source.id = 666
     mock_session.query().filter_by.return_value = [local_source, ]
-    update_replies(remote_replies, local_replies, mock_session, str(safe_tmpdir))
+    update_replies(remote_replies, local_replies, mock_session, homedir)
 
     # Ensure the files associated with the reply are deleted on disk.
     assert not os.path.exists(abs_server_filename)
@@ -302,7 +302,7 @@ def test_update_replies_deletes_files_associated_with_the_reply(
 
 
 def test_update_sources_deletes_files_associated_with_the_source(
-        safe_tmpdir,
+        homedir,
         mocker):
     """
     Check that:
@@ -350,11 +350,11 @@ def test_update_sources_deletes_files_associated_with_the_source(
                           file_local_filename_decrypted, reply_server_filename,
                           reply_local_filename_decrypted]:
         abs_server_filename = add_test_file_to_temp_dir(
-            str(safe_tmpdir), test_filename)
+            homedir, test_filename)
         test_filename_absolute_paths.append(abs_server_filename)
 
     local_sources = [local_source]
-    update_sources(remote_sources, local_sources, mock_session, str(safe_tmpdir))
+    update_sources(remote_sources, local_sources, mock_session, homedir)
 
     # Ensure the files associated with the reply are deleted on disk.
     for test_filename in test_filename_absolute_paths:
@@ -368,7 +368,7 @@ def test_update_sources_deletes_files_associated_with_the_source(
     assert mock_session.commit.call_count == 1
 
 
-def test_update_submissions(safe_tmpdir, mocker):
+def test_update_submissions(homedir, mocker):
     """
     Check that:
 
@@ -401,7 +401,7 @@ def test_update_submissions(safe_tmpdir, mocker):
     local_source.id = 666  # ;-)
     mock_session.query().filter_by.return_value = [local_source, ]
     update_submissions(remote_submissions, local_submissions, mock_session,
-                       str(safe_tmpdir))
+                       homedir)
     # Check the expected local submission object has been updated with values
     # from the API.
     assert local_sub1.filename == submission_update.filename
@@ -421,7 +421,7 @@ def test_update_submissions(safe_tmpdir, mocker):
     assert mock_session.commit.call_count == 1
 
 
-def test_update_replies(safe_tmpdir, mocker):
+def test_update_replies(homedir, mocker):
     """
     Check that:
 
@@ -464,7 +464,7 @@ def test_update_replies(safe_tmpdir, mocker):
     mock_focu = mocker.MagicMock(return_value=local_user)
     mocker.patch('securedrop_client.storage.find_or_create_user', mock_focu)
     update_replies(remote_replies, local_replies, mock_session,
-                   str(safe_tmpdir))
+                   homedir)
     # Check the expected local reply object has been updated with values
     # from the API.
     assert local_reply1.journalist_id == local_user.id
@@ -569,7 +569,7 @@ def test_mark_reply_as_downloaded(mocker):
     mock_session.commit.assert_called_once_with()
 
 
-def test_delete_single_submission_or_reply_race_guard(safe_tmpdir, mocker):
+def test_delete_single_submission_or_reply_race_guard(homedir, mocker):
     """
     This test checks that if there is a file is deleted
     locally through another method, that an unhandled exception
@@ -578,9 +578,9 @@ def test_delete_single_submission_or_reply_race_guard(safe_tmpdir, mocker):
 
     test_obj = mocker.MagicMock()
     test_obj.filename = '1-dissolved-steak-msg.gpg'
-    add_test_file_to_temp_dir(str(safe_tmpdir), test_obj.filename)
+    add_test_file_to_temp_dir(homedir, test_obj.filename)
 
     mock_remove = mocker.patch('os.remove', side_effect=FileNotFoundError)
-    delete_single_submission_or_reply_on_disk(test_obj, str(safe_tmpdir))
+    delete_single_submission_or_reply_on_disk(test_obj, homedir)
 
     mock_remove.call_count == 1

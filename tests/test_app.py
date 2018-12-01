@@ -27,7 +27,7 @@ def test_excepthook(mocker):
     mock_exit.assert_called_once_with(1)
 
 
-def test_configure_logging(safe_tmpdir, mocker):
+def test_configure_logging(homedir, mocker):
     """
     Ensure logging directory is created and logging is configured in the
     expected (rotating logs) manner.
@@ -35,8 +35,8 @@ def test_configure_logging(safe_tmpdir, mocker):
     mock_log_conf = mocker.patch('securedrop_client.app.TimedRotatingFileHandler')
     mocker.patch('securedrop_client.app.os.path.exists', return_value=False)
     mock_logging = mocker.patch('securedrop_client.app.logging')
-    mock_log_file = safe_tmpdir.mkdir('logs').join('client.log')
-    configure_logging(str(safe_tmpdir))
+    mock_log_file = os.path.join(homedir, 'logs', 'client.log')
+    configure_logging(homedir)
     mock_log_conf.assert_called_once_with(mock_log_file, when='midnight',
                                           backupCount=5, delay=0,
                                           encoding=ENCODING)
@@ -101,15 +101,14 @@ class TestSecondInstancePrevention(object):
             prevent_second_instance(mock_app, 'name1')
 
 
-def test_start_app(safe_tmpdir, mocker):
+def test_start_app(homedir, mocker):
     """
     Ensure the expected things are configured and the application is started.
     """
     mock_session_class = mocker.MagicMock()
     mock_args = mocker.MagicMock()
     mock_qt_args = mocker.MagicMock()
-    sdc_home = str(safe_tmpdir)
-    mock_args.sdc_home = sdc_home
+    mock_args.sdc_home = str(homedir)
     mock_args.proxy = False
 
     mocker.patch('securedrop_client.app.configure_logging')
@@ -125,7 +124,7 @@ def test_start_app(safe_tmpdir, mocker):
     mock_win.assert_called_once_with()
     mock_client.assert_called_once_with('http://localhost:8081/',
                                         mock_win(), mock_session_class(),
-                                        sdc_home, False)
+                                        homedir, False)
 
 
 PERMISSIONS_CASES = [
