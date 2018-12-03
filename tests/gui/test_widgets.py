@@ -4,7 +4,7 @@ Make sure the UI widgets are configured correctly and work as expected.
 from PyQt5.QtWidgets import QWidget, QApplication, QWidgetItem, QSpacerItem, QVBoxLayout, \
     QMessageBox
 from tests import factory
-from securedrop_client import models
+from securedrop_client import db
 from securedrop_client import logic
 from securedrop_client.gui.widgets import ToolBar, MainView, SourceList, SourceWidget, \
     LoginDialog, SpeechBubble, ConversationWidget, MessageWidget, ReplyWidget, FileWidget, \
@@ -554,9 +554,9 @@ def test_FileWidget_init_left(mocker):
     """
     mock_controller = mocker.MagicMock()
     source = factory.Source()
-    submission = models.Submission(source, 'submission-uuid', 123,
-                                   'mah-reply.gpg',
-                                   'http://mah-server/mah-reply-url')
+    submission = db.Submission(source, 'submission-uuid', 123,
+                               'mah-reply.gpg',
+                               'http://mah-server/mah-reply-url')
     submission.is_downloaded = True
 
     fw = FileWidget(source, submission, mock_controller, align='left')
@@ -574,9 +574,9 @@ def test_FileWidget_init_right(mocker):
     """
     mock_controller = mocker.MagicMock()
     source = factory.Source()
-    submission = models.Submission(source, 'submission-uuid', 123,
-                                   'mah-reply.gpg',
-                                   'http://mah-server/mah-reply-url')
+    submission = db.Submission(source, 'submission-uuid', 123,
+                               'mah-reply.gpg',
+                               'http://mah-server/mah-reply-url')
     submission.is_downloaded = True
 
     fw = FileWidget(source, submission, mock_controller, align='right')
@@ -593,9 +593,9 @@ def test_FileWidget_mousePressEvent_download(mocker):
     """
     mock_controller = mocker.MagicMock()
     source = factory.Source()
-    submission = models.Submission(source, 'submission-uuid', 123,
-                                   'mah-reply.gpg',
-                                   'http://mah-server/mah-reply-url')
+    submission = db.Submission(source, 'submission-uuid', 123,
+                               'mah-reply.gpg',
+                               'http://mah-server/mah-reply-url')
     submission.is_downloaded = False
 
     fw = FileWidget(source, submission, mock_controller)
@@ -609,9 +609,9 @@ def test_FileWidget_mousePressEvent_open(mocker):
     """
     mock_controller = mocker.MagicMock()
     source = factory.Source()
-    submission = models.Submission(source, 'submission-uuid', 123,
-                                   'mah-reply.gpg',
-                                   'http://mah-server/mah-reply-url')
+    submission = db.Submission(source, 'submission-uuid', 123,
+                               'mah-reply.gpg',
+                               'http://mah-server/mah-reply-url')
     submission.is_downloaded = True
 
     fw = FileWidget(source, submission, mock_controller)

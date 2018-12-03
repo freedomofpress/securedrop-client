@@ -23,7 +23,7 @@ import logging
 from dateutil.parser import parse
 import glob
 import os
-from securedrop_client.models import Source, Submission, Reply, User
+from securedrop_client.db import Source, Submission, Reply, User
 
 
 logger = logging.getLogger(__name__)

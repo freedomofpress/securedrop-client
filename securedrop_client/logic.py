@@ -24,7 +24,7 @@ import arrow
 import uuid
 from sqlalchemy import event
 from securedrop_client import storage
-from securedrop_client import models
+from securedrop_client import db
 from securedrop_client.utils import check_dir_permissions
 from securedrop_client.crypto import GpgHelper, CryptoError
 from securedrop_client.data import Data
@@ -148,10 +148,10 @@ class Client(QObject):
             self.update_conversation_view)
         self.conv_view_update.start(1000 * 60 * 0.10)  # every 6 seconds
 
-        event.listen(models.Submission, 'load', self.on_object_loaded)
-        event.listen(models.Submission, 'init', self.on_object_instantiated)
-        event.listen(models.Reply, 'load', self.on_object_loaded)
-        event.listen(models.Reply, 'init', self.on_object_instantiated)
+        event.listen(db.Submission, 'load', self.on_object_loaded)
+        event.listen(db.Submission, 'init', self.on_object_instantiated)
+        event.listen(db.Reply, 'load', self.on_object_loaded)
+        event.listen(db.Reply, 'init', self.on_object_instantiated)
 
     def on_object_instantiated(self, target, args, kwargs):
         target.data = Data(self.data_dir)
@@ -530,13 +530,13 @@ class Client(QObject):
             self.on_action_requiring_login()
             return
 
-        if isinstance(message, models.Submission):
+        if isinstance(message, db.Submission):
             # Handle submissions.
             func = self.api.download_submission
             sdk_object = sdclientapi.Submission(uuid=message.uuid)
             sdk_object.filename = message.filename
             sdk_object.source_uuid = source_db_object.uuid
-        elif isinstance(message, models.Reply):
+        elif isinstance(message, db.Reply):
             # Handle journalist's replies.
             func = self.api.download_reply
             sdk_object = sdclientapi.Reply(uuid=message.uuid)

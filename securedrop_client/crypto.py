@@ -26,7 +26,7 @@ from sqlalchemy.orm import sessionmaker
 from uuid import UUID
 
 from securedrop_client.config import Config
-from securedrop_client.models import make_engine, Source
+from securedrop_client.db import make_engine, Source
 from securedrop_client.utils import safe_mkdir
 
 logger = logging.getLogger(__name__)

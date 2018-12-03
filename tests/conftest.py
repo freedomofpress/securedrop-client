@@ -5,7 +5,7 @@ import pytest
 
 from datetime import datetime
 from securedrop_client.config import Config
-from securedrop_client.models import Base, make_engine, Source
+from securedrop_client.db import Base, make_engine, Source
 from sqlalchemy.orm import sessionmaker
 from uuid import uuid4
 

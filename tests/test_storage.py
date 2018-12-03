@@ -4,13 +4,13 @@ Tests for storage sync logic.
 import pytest
 import os
 import uuid
-import securedrop_client.models
+import securedrop_client.db
 from dateutil.parser import parse
 from securedrop_client.storage import get_local_sources, get_local_submissions, get_local_replies, \
     get_remote_data, update_local_storage, update_sources, update_submissions, update_replies, \
     find_or_create_user, find_new_submissions, find_new_replies, mark_file_as_downloaded, \
     mark_reply_as_downloaded, delete_single_submission_or_reply_on_disk
-from securedrop_client import models
+from securedrop_client import db
 from sdclientapi import Source, Submission, Reply
 
 from tests import factory
@@ -62,7 +62,7 @@ def test_get_local_sources(mocker):
     """
     mock_session = mocker.MagicMock()
     get_local_sources(mock_session)
-    mock_session.query.assert_called_once_with(securedrop_client.models.Source)
+    mock_session.query.assert_called_once_with(securedrop_client.db.Source)
 
 
 def test_get_local_submissions(mocker):
@@ -72,7 +72,7 @@ def test_get_local_submissions(mocker):
     mock_session = mocker.MagicMock()
     get_local_submissions(mock_session)
     mock_session.query.\
-        assert_called_once_with(securedrop_client.models.Submission)
+        assert_called_once_with(securedrop_client.db.Submission)
 
 
 def test_get_local_replies(mocker):
@@ -81,7 +81,7 @@ def test_get_local_replies(mocker):
     """
     mock_session = mocker.MagicMock()
     get_local_replies(mock_session)
-    mock_session.query.assert_called_once_with(securedrop_client.models.Reply)
+    mock_session.query.assert_called_once_with(securedrop_client.db.Reply)
 
 
 def test_get_remote_data_handles_api_error(mocker):
@@ -330,14 +330,14 @@ def test_update_sources_deletes_files_associated_with_the_source(
 
     # Here we're not mocking out the models use so that we can use the collection attribute.
     local_source = factory.Source()
-    file_submission = models.Submission(
+    file_submission = db.Submission(
         source=local_source, uuid="test", size=123, filename=file_server_filename,
         download_url='http://test/test')
-    msg_submission = models.Submission(
+    msg_submission = db.Submission(
         source=local_source, uuid="test", size=123, filename=msg_server_filename,
         download_url='http://test/test')
-    user = models.User('hehe')
-    reply = models.Reply(
+    user = db.User('hehe')
+    reply = db.Reply(
         source=local_source, journalist=user, filename=reply_server_filename,
         size=1234, uuid='test')
     local_source.submissions = [file_submission, msg_submission]
