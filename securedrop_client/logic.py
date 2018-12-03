@@ -629,8 +629,16 @@ class Client(QObject):
     def _on_delete_source_complete(self, result):
         """Trigger this when delete operation on source is completed."""
         if result:
-            self.sync_api()
             self.gui.update_error_status("")
+            current_item = self.gui.main_view.source_list.currentItem()
+            self.gui.main_view.current_source = None
+            self.gui.main_view.source_list.setCurrentItem(None)
+            if current_item:
+                self.gui.main_view.source_list.takeItem(
+                    self.gui.main_view.source_list.row(current_item)
+                )
+                self.gui.main_view.re_create_conversation_view()
+            self.sync_api()
         else:
             logging.info("failed to delete source at server")
             error = _('Failed to delete source at server')

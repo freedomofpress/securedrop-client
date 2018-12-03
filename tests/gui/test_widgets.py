@@ -157,6 +157,15 @@ def test_MainView_update_error_status(mocker):
     mv.error_status.setText.assert_called_once_with(expected_message)
 
 
+def test_MainView_re_create_conversation_view(mocker):
+    mv = MainView(None)
+    old_view_holder = mv.view_holder
+    old_view_layout = mv.view_layout
+    mv.re_create_conversation_view()
+    assert old_view_holder != mv.view_holder
+    assert old_view_layout != mv.view_layout
+
+
 def test_SourceList_update(mocker):
     """
     Check the items in the source list are cleared and a new SourceWidget for

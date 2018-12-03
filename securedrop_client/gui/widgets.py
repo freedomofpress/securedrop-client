@@ -176,6 +176,20 @@ class MainView(QWidget):
         self.view_layout.addWidget(widget)
         widget.setVisible(True)
 
+    def re_create_conversation_view(self):
+        """Take old conversation view off, and re-create it
+
+        The re created conversation view is blank(without any conversation).
+        """
+        deprecated_widget = self.layout.takeAt(1)
+        if deprecated_widget:
+            deprecated_widget.widget().setVisible(False)
+            self.view_holder = QWidget()
+            self.view_layout = QVBoxLayout()
+            self.view_holder.setLayout(self.view_layout)
+            self.view_holder.setVisible(True)
+            self.layout.addWidget(self.view_holder, 6)
+
 
 class SourceList(QListWidget):
     """
