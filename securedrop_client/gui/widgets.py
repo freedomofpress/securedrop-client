@@ -313,8 +313,12 @@ class SourceWidget(QWidget):
         self.controller.update_star(self.source)
 
     def delete_source(self, event):
-        messagebox = DeleteSourceMessageBox(self, self.source, self.controller)
-        messagebox.launch()
+        if self.controller.api is None:
+            self.controller.on_action_requiring_login()
+            return
+        else:
+            messagebox = DeleteSourceMessageBox(self, self.source, self.controller)
+            messagebox.launch()
 
 
 class LoginDialog(QDialog):
@@ -619,7 +623,14 @@ class DeleteSourceAction(QAction):
         self.messagebox = DeleteSourceMessageBox(
             parent, self.source, self.controller
         )
-        self.triggered.connect(self.messagebox.launch)
+        self.triggered.connect(self.trigger)
+
+    def trigger(self):
+        if self.controller.api is None:
+            self.controller.on_action_requiring_login()
+            return
+        else:
+            self.messagebox.launch()
 
 
 class SourceMenu(QMenu):

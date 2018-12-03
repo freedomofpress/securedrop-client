@@ -5,9 +5,10 @@ from PyQt5.QtWidgets import QWidget, QApplication, QWidgetItem, QSpacerItem, QVB
     QMessageBox
 from tests import factory
 from securedrop_client import models
+from securedrop_client import logic
 from securedrop_client.gui.widgets import ToolBar, MainView, SourceList, SourceWidget, \
     LoginDialog, SpeechBubble, ConversationWidget, MessageWidget, ReplyWidget, FileWidget, \
-    ConversationView, DeleteSourceMessageBox, DeleteSourceAction
+    ConversationView, DeleteSourceMessageBox, DeleteSourceAction, SourceMenu
 
 
 app = QApplication([])
@@ -804,3 +805,62 @@ def test_DeleteSourceAction_init(mocker):
         None,
         mock_controller
     )
+
+
+def test_DeleteSourceAction_trigger(mocker):
+    mock_controller = mocker.MagicMock()
+    mock_source = mocker.MagicMock()
+    mock_delete_source_message_box_obj = mocker.MagicMock()
+    mock_delete_source_message_box = mocker.MagicMock()
+    mock_delete_source_message_box.return_value = (
+        mock_delete_source_message_box_obj
+    )
+    with mocker.patch(
+        'securedrop_client.gui.widgets.DeleteSourceMessageBox',
+        mock_delete_source_message_box
+    ):
+        delete_source_action = DeleteSourceAction(
+            mock_source,
+            None,
+            mock_controller
+        )
+        delete_source_action.trigger()
+        mock_delete_source_message_box_obj.launch.assert_called_once_with()
+
+
+def test_DeleteSource_from_source_menu_when_user_is_loggedout(mocker):
+    mock_source = mocker.MagicMock()
+    mock_controller = mocker.MagicMock(logic.Client)
+    mock_controller.api = None
+    mock_delete_source_message_box_obj = mocker.MagicMock()
+    mock_delete_source_message_box = mocker.MagicMock()
+    mock_delete_source_message_box.return_value = (
+        mock_delete_source_message_box_obj
+    )
+    with mocker.patch(
+        'securedrop_client.gui.widgets.DeleteSourceMessageBox',
+        mock_delete_source_message_box
+    ):
+        source_menu = SourceMenu(mock_source, mock_controller)
+        source_menu.actions()[0].trigger()
+        mock_delete_source_message_box_obj.launch.assert_not_called()
+
+
+def test_DeleteSource_from_source_widget_when_user_is_loggedout(mocker):
+    mock_source = mocker.MagicMock()
+    mock_controller = mocker.MagicMock(logic.Client)
+    mock_controller.api = None
+    mock_event = mocker.MagicMock()
+    mock_delete_source_message_box_obj = mocker.MagicMock()
+    mock_delete_source_message_box = mocker.MagicMock()
+    mock_delete_source_message_box.return_value = (
+        mock_delete_source_message_box_obj
+    )
+    with mocker.patch(
+        'securedrop_client.gui.widgets.DeleteSourceMessageBox',
+        mock_delete_source_message_box
+    ):
+        source_widget = SourceWidget(None, mock_source)
+        source_widget.setup(mock_controller)
+        source_widget.delete_source(mock_event)
+        mock_delete_source_message_box_obj.launch.assert_not_called()
