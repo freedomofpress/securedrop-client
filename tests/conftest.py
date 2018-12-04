@@ -3,6 +3,7 @@ import os
 import tempfile
 import pytest
 
+from configparser import ConfigParser
 from datetime import datetime
 from securedrop_client.config import Config
 from securedrop_client.db import Base, make_engine, Source
@@ -49,12 +50,36 @@ def config(homedir) -> str:
 
 
 @pytest.fixture(scope='function')
+def alembic_config(homedir):
+    return _alembic_config(homedir)
+
+
+def _alembic_config(homedir):
+    base_dir = os.path.join(os.path.dirname(__file__), '..')
+    migrations_dir = os.path.join(base_dir, 'alembic')
+    ini = ConfigParser()
+    ini.read(os.path.join(base_dir, 'alembic.ini'))
+
+    ini.set('alembic', 'script_location', os.path.join(migrations_dir))
+    ini.set('alembic', 'sqlalchemy.url',
+            'sqlite:///{}'.format(os.path.join(homedir, 'svs.sqlite')))
+
+    alembic_path = os.path.join(homedir, 'alembic.ini')
+
+    with open(alembic_path, 'w') as f:
+        ini.write(f)
+
+    return alembic_path
+
+
+@pytest.fixture(scope='function')
 def session(homedir):
     engine = make_engine(homedir)
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=engine, checkfirst=False)
     Session = sessionmaker(bind=engine)
     session = Session()
-    return session
+    yield session
+    session.close()
 
 
 @pytest.fixture(scope='function')
