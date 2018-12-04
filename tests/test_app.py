@@ -239,7 +239,7 @@ def test_signal_interception(mocker):
     mocker.patch('securedrop_client.app.QApplication')
     mocker.patch('securedrop_client.app.prevent_second_instance')
     mocker.patch('sys.exit')
-    mocker.patch('securedrop_client.models.make_engine')
+    mocker.patch('securedrop_client.db.make_engine')
     mocker.patch('securedrop_client.app.init')
     mocker.patch('securedrop_client.logic.Client.setup')
     mocker.patch('securedrop_client.logic.GpgHelper')

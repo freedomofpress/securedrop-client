@@ -1,6 +1,6 @@
 from tests import factory
 from securedrop_client.data import Data
-from securedrop_client.models import Reply, Submission, User
+from securedrop_client.db import Reply, Submission, User
 
 
 def test_string_representation_of_user():

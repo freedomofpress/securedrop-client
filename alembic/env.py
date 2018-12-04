@@ -18,7 +18,7 @@ fileConfig(config.config_file_name)
 sys.path.insert(0, path.realpath(path.join(path.dirname(__file__), '..')))
 # This path is purely for alembic to work on the packaged application
 sys.path.insert(1, "/opt/venvs/securedrop-client/lib/python3.5/site-packages")
-from securedrop_client.models import Base  # noqa
+from securedrop_client.db import Base  # noqa
 target_metadata = Base.metadata
 
 

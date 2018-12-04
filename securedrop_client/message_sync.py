@@ -25,7 +25,7 @@ import sdclientapi.sdlocalobjects as sdkobjects
 from PyQt5.QtCore import QObject
 from securedrop_client import storage
 from securedrop_client.crypto import GpgHelper
-from securedrop_client.models import make_engine
+from securedrop_client.db import make_engine
 
 from sqlalchemy.orm import sessionmaker
 

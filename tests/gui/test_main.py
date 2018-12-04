@@ -4,7 +4,7 @@ Check the core Window UI class works as expected.
 from PyQt5.QtWidgets import QApplication, QVBoxLayout
 from securedrop_client.gui.main import Window
 from securedrop_client.resources import load_icon
-from securedrop_client.models import Submission
+from securedrop_client.db import Submission
 
 
 app = QApplication([])

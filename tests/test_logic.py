@@ -6,7 +6,7 @@ import arrow
 import os
 import pytest
 from tests import factory
-from securedrop_client import storage, models
+from securedrop_client import storage, db
 from securedrop_client.crypto import CryptoError
 from securedrop_client.logic import APICallRunner, Client
 
@@ -949,8 +949,8 @@ def test_Client_on_file_download_Submission(homedir, config, mocker):
     mock_session = mocker.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, homedir)
     source = factory.Source()
-    submission = models.Submission(source, 'submission-uuid', 1234,
-                                   'myfile.doc.gpg', 'http://myserver/myfile')
+    submission = db.Submission(source, 'submission-uuid', 1234,
+                               'myfile.doc.gpg', 'http://myserver/myfile')
     cl.call_api = mocker.MagicMock()
     cl.api = mocker.MagicMock()
     submission_sdk_object = mocker.MagicMock()
@@ -1046,8 +1046,8 @@ def test_Client_on_file_download_user_not_signed_in(homedir, config, mocker):
     mock_session = mocker.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, homedir)
     source = factory.Source()
-    submission = models.Submission(source, 'submission-uuid', 1234,
-                                   'myfile.doc.gpg', 'http://myserver/myfile')
+    submission = db.Submission(source, 'submission-uuid', 1234,
+                               'myfile.doc.gpg', 'http://myserver/myfile')
     cl.on_action_requiring_login = mocker.MagicMock()
     cl.api = None
     submission_sdk_object = mocker.MagicMock()
@@ -1086,9 +1086,9 @@ def test_Client_on_file_download_Reply(homedir, config, mocker):
     mock_session = mocker.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, homedir)
     source = factory.Source()
-    journalist = models.User('Testy mcTestface')
-    reply = models.Reply('reply-uuid', journalist, source,
-                         'my-reply.gpg', 123)  # Not a sdclientapi.Submission
+    journalist = db.User('Testy mcTestface')
+    reply = db.Reply('reply-uuid', journalist, source,
+                     'my-reply.gpg', 123)  # Not a sdclientapi.Submission
     cl.call_api = mocker.MagicMock()
     cl.api = mocker.MagicMock()
     reply_sdk_object = mocker.MagicMock()

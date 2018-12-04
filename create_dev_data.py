@@ -3,7 +3,7 @@ import json
 import os
 import sys
 from securedrop_client.config import Config
-from securedrop_client.models import Base, make_engine
+from securedrop_client.db import Base, make_engine
 
 sdc_home = sys.argv[1]
 Base.metadata.create_all(make_engine(sdc_home))

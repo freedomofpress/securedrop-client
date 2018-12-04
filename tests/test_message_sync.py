@@ -11,7 +11,7 @@ def test_MessageSync_init(mocker):
     """
     # patch the session and use our own
     mock_session_class = mocker.MagicMock()
-    mocker.patch('securedrop_client.models.make_engine')
+    mocker.patch('securedrop_client.db.make_engine')
     mocker.patch('securedrop_client.message_sync.sessionmaker', return_value=mock_session_class)
 
     # don't create a GpgHelper because it will error on missing directories
