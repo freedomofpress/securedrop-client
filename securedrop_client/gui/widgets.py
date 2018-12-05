@@ -20,8 +20,11 @@ import logging
 import arrow
 import html
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
-    QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog
+    QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, \
+    QMessageBox, QToolButton
+
 from securedrop_client.resources import load_svg, load_image
 from securedrop_client.utils import humanize_filesize
 
@@ -195,6 +198,49 @@ class SourceList(QListWidget):
             self.setCurrentItem(new_current_maybe)
 
 
+class DeleteSourceMessageBox:
+    """Use this to display operation details and confirm user choice."""
+
+    def __init__(self, parent, source, controller):
+        self.parent = parent
+        self.source = source
+        self.controller = controller
+
+    def launch(self):
+        """It will launch the message box.
+
+        The Message box will warns the user regarding the severity of the
+        operation. It will confirm the desire to delete the source. On positive
+        answer, it will delete the record of source both from SecureDrop server
+        and local state.
+        """
+        message = self._construct_message(self.source)
+        reply = QMessageBox.question(
+            self.parent,
+            "",
+            _(message),
+            QMessageBox.Cancel | QMessageBox.Yes,
+            QMessageBox.Cancel
+        )
+        if reply == QMessageBox.Yes:
+            logger.debug("Deleting source %s" % (self.source.uuid,))
+            self.controller.delete_source(self.source)
+
+    def _construct_message(self, source):
+        message = (
+            "<big>Deleting the Source account for",
+            "<b>%s</b> will also" % (source.journalist_designation,),
+            "delete %d files and %d messages.</big>" % (
+                len(source.submissions), len(source.replies)
+            ),
+            "<br>",
+            "<small>This Source will no longer be able to correspond",
+            "through the log-in tied to this account.</small>",
+        )
+        message = ' '.join(message)
+        return message
+
+
 class SourceWidget(QWidget):
     """
     Used to display summary information about a source in the list view.
@@ -222,6 +268,10 @@ class SourceWidget(QWidget):
         layout.addWidget(self.last_content)
         self.updated = QLabel()
         layout.addWidget(self.updated)
+        self.delete = load_svg('cross.svg')
+        self.delete.setMaximumSize(16, 16)
+        self.delete.mouseReleaseEvent = self.delete_source
+        self.summary_layout.addWidget(self.delete)
         self.update()
 
     def setup(self, controller):
@@ -268,11 +318,23 @@ class SourceWidget(QWidget):
         """
         self.controller.update_star(self.source)
 
+    def delete_source(self, event):
+        if self.controller.api is None:
+            self.controller.on_action_requiring_login()
+            return
+        else:
+            messagebox = DeleteSourceMessageBox(self, self.source, self.controller)
+            messagebox.launch()
+
 
 class LoginDialog(QDialog):
     """
     A dialog to display the login form.
     """
+
+    MIN_PASSWORD_LEN = 14  # Journalist.MIN_PASSWORD_LEN on server
+    MAX_PASSWORD_LEN = 128  # Journalist.MAX_PASSWORD_LEN on server
+    MIN_JOURNALIST_USERNAME = 3  # Journalist.MIN_USERNAME_LEN on server
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -352,12 +414,24 @@ class LoginDialog(QDialog):
         password = self.password_field.text()
         tfa_token = self.tfa_field.text().replace(' ', '')
         if username and password and tfa_token:
+            # Validate username
+            if len(username) < self.MIN_JOURNALIST_USERNAME:
+                self.setDisabled(False)
+                self.error(_('Your username should be at least 3 characters. '))
+                return
+
+            # Validate password
+            if len(password) < self.MIN_PASSWORD_LEN or len(password) > self.MAX_PASSWORD_LEN:
+                self.setDisabled(False)
+                self.error(_('Your password should be between 14 and 128 characters. '))
+                return
+
+            # Validate 2FA token
             try:
                 int(tfa_token)
             except ValueError:
                 self.setDisabled(False)
-                self.error(_('Please use only numerals for the '
-                             'two factor number.'))
+                self.error(_('Please use only numerals for the two factor number.'))
                 return
             self.controller.login(username, password, tfa_token)
         else:
@@ -378,7 +452,7 @@ class SpeechBubble(QWidget):
         super().__init__()
         layout = QVBoxLayout()
         self.setLayout(layout)
-        message = QLabel(html.escape(text))
+        message = QLabel(html.escape(text, quote=False))
         message.setWordWrap(True)
         layout.addWidget(message)
 
@@ -542,3 +616,97 @@ class ConversationView(QWidget):
         Add a reply from a journalist.
         """
         self.conversation_layout.addWidget(ReplyWidget(reply))
+
+
+class DeleteSourceAction(QAction):
+    """Use this action to delete the source record."""
+
+    def __init__(self, source, parent, controller):
+        self.source = source
+        self.controller = controller
+        self.text = _("Delete source account")
+        super().__init__(self.text, parent)
+        self.messagebox = DeleteSourceMessageBox(
+            parent, self.source, self.controller
+        )
+        self.triggered.connect(self.trigger)
+
+    def trigger(self):
+        if self.controller.api is None:
+            self.controller.on_action_requiring_login()
+            return
+        else:
+            self.messagebox.launch()
+
+
+class SourceMenu(QMenu):
+    """Renders menu having various operations.
+
+    This menu provides below functionality via menu actions:
+
+    1. Delete source
+
+    Note: At present this only supports "delete" operation.
+    """
+
+    def __init__(self, source, controller):
+        super().__init__()
+        self.source = source
+        self.controller = controller
+        actions = (
+            DeleteSourceAction(
+                self.source,
+                self,
+                self.controller
+            ),
+        )
+        for action in actions:
+            self.addAction(action)
+
+
+class SourceMenuButton(QToolButton):
+    """An ellipse based source menu button.
+
+    This button is responsible for launching menu on click.
+    """
+
+    def __init__(self, source, controller):
+        super().__init__()
+        self.controller = controller
+        self.source = source
+        ellipsis_icon = load_image("ellipsis.svg")
+        self.setIcon(QIcon(ellipsis_icon))
+        self.menu = SourceMenu(self.source, self.controller)
+        self.setMenu(self.menu)
+        self.setPopupMode(QToolButton.InstantPopup)
+
+
+class TitleLabel(QLabel):
+    """Centered aligned, HTML heading level 3 label."""
+
+    def __init__(self, text):
+        html_text = "<h3>%s</h3>" % (text,)
+        super().__init__(_(html_text))
+        self.setAlignment(Qt.AlignCenter)
+
+
+class SourceProfileShortWidget(QWidget):
+    """A widget for displaying short view for Source.
+
+    It contains below information.
+    1. Journalist designation
+    2. A menu to perform various operations on Source.
+    """
+
+    def __init__(self, source, controller):
+        super().__init__()
+        self.source = source
+        self.controller = controller
+        self.layout = QHBoxLayout()
+        self.setLayout(self.layout)
+        widgets = (
+            TitleLabel(self.source.journalist_designation),
+            SourceMenuButton(self.source, self.controller)
+        )
+        for widget in widgets:
+            self.layout.addWidget(widget)

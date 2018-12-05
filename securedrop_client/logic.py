@@ -23,10 +23,10 @@ import shutil
 import arrow
 import uuid
 from sqlalchemy import event
-from securedrop_client import crypto
 from securedrop_client import storage
-from securedrop_client import models
+from securedrop_client import db
 from securedrop_client.utils import check_dir_permissions
+from securedrop_client.crypto import GpgHelper, CryptoError
 from securedrop_client.data import Data
 from securedrop_client.message_sync import MessageSync, ReplySync
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess
@@ -114,6 +114,7 @@ class Client(QObject):
         self.data_dir = os.path.join(self.home, 'data')  # File data.
         self.timer = None  # call timeout timer
         self.proxy = proxy
+        self.gpg = GpgHelper(home, proxy)
 
     def setup(self):
         """
@@ -139,11 +140,18 @@ class Client(QObject):
         self.sync_update = QTimer()
         self.sync_update.timeout.connect(self.sync_api)
         self.sync_update.start(1000 * 60 * 5)  # every 5 minutes.
+        # Use a QTimer to update the current conversation view such
+        # that as downloads/decryption occur, the messages and replies
+        # populate the view.
+        self.conv_view_update = QTimer()
+        self.conv_view_update.timeout.connect(
+            self.update_conversation_view)
+        self.conv_view_update.start(1000 * 60 * 0.10)  # every 6 seconds
 
-        event.listen(models.Submission, 'load', self.on_object_loaded)
-        event.listen(models.Submission, 'init', self.on_object_instantiated)
-        event.listen(models.Reply, 'load', self.on_object_loaded)
-        event.listen(models.Reply, 'init', self.on_object_instantiated)
+        event.listen(db.Submission, 'load', self.on_object_loaded)
+        event.listen(db.Submission, 'init', self.on_object_instantiated)
+        event.listen(db.Reply, 'load', self.on_object_loaded)
+        event.listen(db.Reply, 'init', self.on_object_instantiated)
 
     def on_object_instantiated(self, target, args, kwargs):
         target.data = Data(self.data_dir)
@@ -232,6 +240,8 @@ class Client(QObject):
             self.message_sync.moveToThread(self.message_thread)
             self.message_thread.started.connect(self.message_sync.run)
             self.message_thread.start()
+        else:  # Already running from last login
+            self.message_sync.api = self.api
 
     def start_reply_thread(self):
         """
@@ -243,6 +253,8 @@ class Client(QObject):
             self.reply_sync.moveToThread(self.reply_thread)
             self.reply_thread.started.connect(self.reply_sync.run)
             self.reply_thread.start()
+        else:  # Already running from last login
+            self.reply_sync.api = self.api
 
     def timeout_cleanup(self, thread_id, user_callback):
         """
@@ -377,11 +389,23 @@ class Client(QObject):
 
             storage.update_local_storage(self.session, remote_sources,
                                          remote_submissions,
-                                         remote_replies)
+                                         remote_replies, self.data_dir)
 
             # Set last sync flag.
             with open(self.sync_flag, 'w') as f:
                 f.write(arrow.now().format())
+
+            # import keys into keyring
+            for source in remote_sources:
+                if source.key and source.key.get('type', None) == 'PGP':
+                    pub_key = source.key.get('public', None)
+                    if not pub_key:
+                        continue
+                    try:
+                        self.gpg.import_key(source.uuid, pub_key)
+                    except CryptoError:
+                        logger.warning('Failed to import key for source {}'.format(source.uuid))
+
             # TODO: show something in the conversation view?
             # self.gui.show_conversation_for()
         else:
@@ -406,6 +430,17 @@ class Client(QObject):
             sources.sort(key=lambda x: x.last_updated, reverse=True)
         self.gui.show_sources(sources)
         self.update_sync()
+
+    def update_conversation_view(self):
+        """
+        Updates the conversation view to reflect progress
+        of the download and decryption of messages and replies.
+        """
+        # Redraw the conversation view if we have clicked on a source
+        # and the source has not been deleted.
+        if self.gui.current_source and self.gui.current_source in self.session:
+            self.session.refresh(self.gui.current_source)
+            self.gui.show_conversation_for(self.gui.current_source)
 
     def on_update_star_complete(self, result):
         """
@@ -449,7 +484,8 @@ class Client(QObject):
         state.
         """
         self.api = None
-        # self.stop_message_thread()
+        self.message_sync.api = None
+        self.reply_sync.api = None
         self.gui.logout()
 
     def set_status(self, message, duration=5000):
@@ -494,13 +530,13 @@ class Client(QObject):
             self.on_action_requiring_login()
             return
 
-        if isinstance(message, models.Submission):
+        if isinstance(message, db.Submission):
             # Handle submissions.
             func = self.api.download_submission
             sdk_object = sdclientapi.Submission(uuid=message.uuid)
             sdk_object.filename = message.filename
             sdk_object.source_uuid = source_db_object.uuid
-        elif isinstance(message, models.Reply):
+        elif isinstance(message, db.Reply):
             # Handle journalist's replies.
             func = self.api.download_reply
             sdk_object = sdclientapi.Reply(uuid=message.uuid)
@@ -528,12 +564,11 @@ class Client(QObject):
             filepath_in_datadir = os.path.join(self.data_dir, server_filename)
             shutil.move(filename, filepath_in_datadir)
 
-            # Attempt to decrypt the file.
-            res, filepath = crypto.decrypt_submission_or_reply(
-                filepath_in_datadir, server_filename, self.home,
-                self.proxy, is_doc=True)
-
-            if res != 0:  # Then the file did not decrypt properly.
+            try:
+                # Attempt to decrypt the file.
+                self.gpg.decrypt_submission_or_reply(
+                    filepath_in_datadir, server_filename, is_doc=True)
+            except CryptoError:
                 self.set_status("Failed to download and decrypt file, "
                                 "please try again.")
                 # TODO: We should save the downloaded content, and just
@@ -559,3 +594,33 @@ class Client(QObject):
         # Update the status bar to indicate a failure state.
         self.set_status("The connection to the SecureDrop server timed out. "
                         "Please try again.")
+
+    def _on_delete_source_complete(self, result):
+        """Trigger this when delete operation on source is completed."""
+        if result:
+            self.sync_api()
+            self.gui.update_error_status("")
+        else:
+            logging.info("failed to delete source at server")
+            error = _('Failed to delete source at server')
+            self.gui.update_error_status(error)
+
+    def _on_delete_action_timeout(self):
+        """Trigger this when delete operation on source of is timeout."""
+        error = _('The connection to SecureDrop timed out. Please try again.')
+        self.gui.update_error_status(error)
+
+    def delete_source(self, source):
+        """Performs a delete operation on source record.
+
+        This method will first request server to delete the source record. If
+        the process of deleting record at server is successful, it will sync
+        the server records with the local state. On failure, it will display an
+        error.
+        """
+        self.call_api(
+            self.api.delete_source,
+            self._on_delete_source_complete,
+            self._on_delete_action_timeout,
+            source
+        )

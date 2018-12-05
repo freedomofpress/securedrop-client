@@ -2,7 +2,7 @@
 changes forcing an update of all test code.
 """
 from datetime import datetime
-from securedrop_client import models
+from securedrop_client import db
 
 count = 0
 
@@ -23,4 +23,4 @@ def Source(**attrs):
 
     defaults.update(attrs)
 
-    return models.Source(**defaults)
+    return db.Source(**defaults)

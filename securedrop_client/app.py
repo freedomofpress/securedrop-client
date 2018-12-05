@@ -22,7 +22,6 @@ import platform
 import signal
 import sys
 import socket
-import configparser
 from argparse import ArgumentParser
 from sqlalchemy.orm import sessionmaker
 from PyQt5.QtWidgets import QApplication, QMessageBox
@@ -32,7 +31,7 @@ from securedrop_client import __version__
 from securedrop_client.logic import Client
 from securedrop_client.gui.main import Window
 from securedrop_client.resources import load_icon, load_css
-from securedrop_client.models import make_engine
+from securedrop_client.db import make_engine
 from securedrop_client.utils import safe_mkdir
 
 DEFAULT_SDC_HOME = '~/.securedrop_client'
@@ -179,15 +178,7 @@ def start_app(args, qt_args) -> None:
 
 
 def run() -> None:
-    config_file = "/usr/share/securedrop-client/client.ini"
     args, qt_args = arg_parser().parse_known_args()
-    if args.sdc_home == expand_to_absolute(DEFAULT_SDC_HOME) and \
-            os.path.exists(config_file):  # pragma: no cover
-        config = configparser.ConfigParser()
-        config.read(config_file)
-        args.sdc_home = config["client"]["homedir"]
-        use_proxy = config["client"].getboolean("use_securedrop_proxy")
-        args.no_proxy = not use_proxy
     # reinsert the program's name
     qt_args.insert(0, 'securedrop-client')
     start_app(args, qt_args)

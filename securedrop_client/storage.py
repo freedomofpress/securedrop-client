@@ -21,7 +21,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 from dateutil.parser import parse
-from securedrop_client.models import Source, Submission, Reply, User
+import glob
+import os
+from securedrop_client.db import Source, Submission, Reply, User
 
 
 logger = logging.getLogger(__name__)
@@ -74,7 +76,7 @@ def get_remote_data(api):
 
 
 def update_local_storage(session, remote_sources, remote_submissions,
-                         remote_replies):
+                         remote_replies, data_dir):
     """
     Given a database session and collections of remote sources, submissions and
     replies from the SecureDrop API, ensures the local database is updated
@@ -83,12 +85,12 @@ def update_local_storage(session, remote_sources, remote_submissions,
     local_sources = get_local_sources(session)
     local_submissions = get_local_submissions(session)
     local_replies = get_local_replies(session)
-    update_sources(remote_sources, local_sources, session)
-    update_submissions(remote_submissions, local_submissions, session)
-    update_replies(remote_replies, local_replies, session)
+    update_sources(remote_sources, local_sources, session, data_dir)
+    update_submissions(remote_submissions, local_submissions, session, data_dir)
+    update_replies(remote_replies, local_replies, session, data_dir)
 
 
-def update_sources(remote_sources, local_sources, session):
+def update_sources(remote_sources, local_sources, session, data_dir):
     """
     Given collections of remote sources, the current local sources and a
     session to the local database, ensure the state of the local database
@@ -131,12 +133,14 @@ def update_sources(remote_sources, local_sources, session):
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
     for deleted_source in [s for s in local_sources if s.uuid in local_uuids]:
+        for document in deleted_source.collection:
+            delete_single_submission_or_reply_on_disk(document, data_dir)
         session.delete(deleted_source)
         logger.info('Deleted source {}'.format(deleted_source.uuid))
     session.commit()
 
 
-def update_submissions(remote_submissions, local_submissions, session):
+def update_submissions(remote_submissions, local_submissions, session, data_dir):
     """
     * Existing submissions are updated in the local database.
     * New submissions have an entry created in the local database.
@@ -171,12 +175,13 @@ def update_submissions(remote_submissions, local_submissions, session):
     # delete the related records.
     for deleted_submission in [s for s in local_submissions
                                if s.uuid in local_uuids]:
+        delete_single_submission_or_reply_on_disk(deleted_submission, data_dir)
         session.delete(deleted_submission)
         logger.info('Deleted submission {}'.format(deleted_submission.uuid))
     session.commit()
 
 
-def update_replies(remote_replies, local_replies, session):
+def update_replies(remote_replies, local_replies, session, data_dir):
     """
     * Existing replies are updated in the local database.
     * New replies have an entry created in the local database.
@@ -210,6 +215,7 @@ def update_replies(remote_replies, local_replies, session):
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
     for deleted_reply in [r for r in local_replies if r.uuid in local_uuids]:
+        delete_single_submission_or_reply_on_disk(deleted_reply, data_dir)
         session.delete(deleted_reply)
         logger.info('Deleted reply {}'.format(deleted_reply.uuid))
     session.commit()
@@ -277,3 +283,21 @@ def mark_reply_as_downloaded(uuid, session):
     reply_db_object.is_downloaded = True
     session.add(reply_db_object)
     session.commit()
+
+
+def delete_single_submission_or_reply_on_disk(obj_db, data_dir):
+    """
+    Delete on disk a single submission or reply.
+    """
+    filename_without_extensions = obj_db.filename.split('.')[0]
+    files_to_delete = os.path.join(
+        data_dir,
+        '{}*'.format(filename_without_extensions))
+    logging.info('Deleting all {} files'.format(filename_without_extensions))
+
+    try:
+        for file_to_delete in glob.glob(files_to_delete):
+            os.remove(file_to_delete)
+    except FileNotFoundError:
+        logging.info(
+            'File {} already deleted, skipping'.format(file_to_delete))

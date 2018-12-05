@@ -19,11 +19,16 @@ SDC_HOME=${SDC_HOME:-$(mktemp -d)}
 
 export SDC_HOME
 
-chmod 0700 $SDC_HOME
+GPG_HOME="$SDC_HOME/gpg"
+mkdir -p "$GPG_HOME"
+chmod 0700 "$SDC_HOME" "$GPG_HOME"
 
 echo "Running app with home directory: $SDC_HOME"
+echo ""
 
-# create the database for local testing
-./createdb.py $SDC_HOME
+gpg --homedir "$GPG_HOME" --allow-secret-key-import --import tests/files/securedrop.gpg.asc
+
+# create the database and config for local testing
+./create_dev_data.py "$SDC_HOME"
 
 exec python -m securedrop_client --sdc-home "$SDC_HOME" --no-proxy $@

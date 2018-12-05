@@ -49,6 +49,7 @@ class Source(Base):
     is_flagged = Column(Boolean(name='ck_sources_is_flagged'),
                         server_default="false")
     public_key = Column(Text, nullable=True)
+    fingerprint = Column(String(64))
     interaction_count = Column(Integer, server_default="0", nullable=False)
     is_starred = Column(Boolean(name='ck_sources_is_starred'),
                         server_default="false")

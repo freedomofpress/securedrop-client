@@ -24,8 +24,8 @@ import sdclientapi.sdlocalobjects as sdkobjects
 
 from PyQt5.QtCore import QObject
 from securedrop_client import storage
-from securedrop_client import crypto
-from securedrop_client.models import make_engine
+from securedrop_client.crypto import GpgHelper
+from securedrop_client.db import make_engine
 
 from sqlalchemy.orm import sessionmaker
 
@@ -44,19 +44,13 @@ class APISyncObject(QObject):
         self.api = api
         self.home = home
         self.is_qubes = is_qubes
+        self.gpg = GpgHelper(home, is_qubes)
 
     def fetch_the_thing(self, item, msg, download_fn, update_fn):
         shasum, filepath = download_fn(item)
-
-        res, dest = crypto.decrypt_submission_or_reply(filepath,
-                                                       msg.filename,
-                                                       self.home,
-                                                       self.is_qubes, False)
-
-        if res == 0:
-            update_fn(msg.uuid, self.session)
-            logger.info("Stored message or reply at {}".format(
-                msg.filename))
+        self.gpg.decrypt_submission_or_reply(filepath, msg.filename, False)
+        update_fn(msg.uuid, self.session)
+        logger.info("Stored message or reply at {}".format(msg.filename))
 
 
 class MessageSync(APISyncObject):
@@ -80,10 +74,11 @@ class MessageSync(APISyncObject):
                     # Need to set filename on non-Qubes platforms
                     sdk_submission.filename = db_submission.filename
 
-                    self.fetch_the_thing(sdk_submission,
-                                         db_submission,
-                                         self.api.download_submission,
-                                         storage.mark_file_as_downloaded)
+                    if self.api:
+                        self.fetch_the_thing(sdk_submission,
+                                             db_submission,
+                                             self.api.download_submission,
+                                             storage.mark_file_as_downloaded)
 
                 except Exception as e:
                     logger.critical(
@@ -121,10 +116,11 @@ class ReplySync(APISyncObject):
                     # Need to set filename on non-Qubes platforms
                     sdk_reply.filename = db_reply.filename
 
-                    self.fetch_the_thing(sdk_reply,
-                                         db_reply,
-                                         self.api.download_reply,
-                                         storage.mark_reply_as_downloaded)
+                    if self.api:
+                        self.fetch_the_thing(sdk_reply,
+                                             db_reply,
+                                             self.api.download_reply,
+                                             storage.mark_reply_as_downloaded)
 
                 except Exception as e:
                     logger.critical(
