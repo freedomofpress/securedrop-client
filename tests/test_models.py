@@ -1,5 +1,4 @@
 from tests import factory
-from securedrop_client.data import Data
 from securedrop_client.db import Reply, Submission, User
 
 
@@ -34,7 +33,6 @@ def test_submission_content_downloaded(mocker):
     submission = Submission(source=source, uuid="test", size=123,
                             filename="test.docx",
                             download_url='http://test/test')
-    submission.data = Data('foo')
     submission.is_downloaded = True
     mocker.patch('builtins.open', mocker.mock_open(read_data="blah"))
     assert submission.content == "blah"
@@ -53,7 +51,6 @@ def test_reply_content_downloaded(mocker):
     journalist = User('Testy mcTestface')
     reply = Reply(source=source, uuid="test", size=123,
                   filename="test.docx", journalist=journalist)
-    reply.data = Data('foo')
     reply.is_downloaded = True
     mocker.patch('builtins.open', mocker.mock_open(read_data="blah"))
     assert reply.content == "blah"
