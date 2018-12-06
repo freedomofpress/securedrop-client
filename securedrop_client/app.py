@@ -157,7 +157,7 @@ def start_app(args, qt_args) -> None:
 
     prevent_second_instance(app, args.sdc_home)
 
-    gui = Window()
+    gui = Window(args.sdc_home)
     app.setWindowIcon(load_icon(gui.icon))
     app.setStyleSheet(load_css('sdclient.css'))
 

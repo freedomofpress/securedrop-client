@@ -301,3 +301,15 @@ def delete_single_submission_or_reply_on_disk(obj_db, data_dir):
     except FileNotFoundError:
         logging.info(
             'File {} already deleted, skipping'.format(file_to_delete))
+
+
+def get_data(sdc_home: str, filename: str) -> str:
+    filename, _ = os.path.splitext(filename)
+    full_path = os.path.join(sdc_home, 'data', filename)
+    try:
+        with open(full_path) as f:
+            msg = f.read()
+    except FileNotFoundError:
+        logger.debug('File not found: {}'.format(full_path))
+        msg = '<Content deleted>'
+    return msg

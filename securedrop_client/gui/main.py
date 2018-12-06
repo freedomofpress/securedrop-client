@@ -26,6 +26,7 @@ from securedrop_client.gui.widgets import (ToolBar, MainView, LoginDialog,
                                            ConversationView,
                                            SourceProfileShortWidget)
 from securedrop_client.resources import load_icon
+from securedrop_client.storage import get_data
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ class Window(QMainWindow):
 
     icon = 'icon.png'
 
-    def __init__(self):
+    def __init__(self, sdc_home: str):
         """
         Create the default start state. The window contains a root widget into
         which is placed:
@@ -49,6 +50,7 @@ class Window(QMainWindow):
           place for details / message contents / forms.
         """
         super().__init__()
+        self.sdc_home = sdc_home
         self.setWindowTitle(_("SecureDrop Client {}").format(__version__))
         self.setWindowIcon(load_icon(self.icon))
         self.widget = QWidget()
@@ -56,8 +58,7 @@ class Window(QMainWindow):
         self.widget.setLayout(widget_layout)
         self.tool_bar = ToolBar(self.widget)
         self.main_view = MainView(self.widget)
-        self.main_view.source_list.itemSelectionChanged.\
-            connect(self.on_source_changed)
+        self.main_view.source_list.itemSelectionChanged.connect(self.on_source_changed)
         widget_layout.addWidget(self.tool_bar, 1)
         widget_layout.addWidget(self.main_view, 6)
         self.setCentralWidget(self.widget)
@@ -162,7 +163,7 @@ class Window(QMainWindow):
         if item.is_downloaded is False:
             adder(default)
         else:
-            adder(item.content)
+            adder(get_data(self.sdc_home, item.filename))
 
     def show_conversation_for(self, source):
         """
