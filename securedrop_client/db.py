@@ -28,17 +28,16 @@ class Source(Base):
 
     __tablename__ = 'sources'
 
-    # TODO - add number_of_docs
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
     journalist_designation = Column(String(255), nullable=False)
     document_count = Column(Integer, server_default="0", nullable=False)
-    is_flagged = Column(Boolean(name='ck_sources_is_flagged'),
+    is_flagged = Column(Boolean(name='is_flagged'),
                         server_default="false")
     public_key = Column(Text, nullable=True)
     fingerprint = Column(String(64))
     interaction_count = Column(Integer, server_default="0", nullable=False)
-    is_starred = Column(Boolean(name='ck_sources_is_starred'),
+    is_starred = Column(Boolean(name='is_starred'),
                         server_default="false")
     last_updated = Column(DateTime)
 
@@ -78,11 +77,11 @@ class Submission(Base):
     download_url = Column(String(255), nullable=False)
 
     # This is whether the submission has been downloaded in the local database.
-    is_downloaded = Column(Boolean(name='ck_submissions_is_downloaded'),
+    is_downloaded = Column(Boolean(name='is_downloaded'),
                            default=False)
 
     # This reflects read status stored on the server.
-    is_read = Column(Boolean(name='ck_submissions_is_read'),
+    is_read = Column(Boolean(name='is_read'),
                      default=False)
 
     source_id = Column(Integer, ForeignKey('sources.id'))
@@ -123,7 +122,7 @@ class Reply(Base):
     size = Column(Integer)
 
     # This is whether the reply has been downloaded in the local database.
-    is_downloaded = Column(Boolean(name='ck_replies_is_downloaded'),
+    is_downloaded = Column(Boolean(name='is_downloaded'),
                            default=False)
 
     def __repr__(self):
