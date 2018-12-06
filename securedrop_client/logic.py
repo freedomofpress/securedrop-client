@@ -491,8 +491,7 @@ class Client(QObject):
         # with the same filename as the server, except with the .gz.gpg
         # stripped off.
         server_filename = submission_db_object.filename
-        fn_no_ext, _ = os.path.splitext(
-            os.path.splitext(server_filename)[0])
+        fn_no_ext, _ = os.path.splitext(os.path.splitext(server_filename)[0])
         submission_filepath = os.path.join(self.data_dir, fn_no_ext)
 
         if self.proxy:

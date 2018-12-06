@@ -9,7 +9,7 @@ from dateutil.parser import parse
 from securedrop_client.storage import get_local_sources, get_local_submissions, get_local_replies, \
     get_remote_data, update_local_storage, update_sources, update_submissions, update_replies, \
     find_or_create_user, find_new_submissions, find_new_replies, mark_file_as_downloaded, \
-    mark_reply_as_downloaded, delete_single_submission_or_reply_on_disk
+    mark_reply_as_downloaded, delete_single_submission_or_reply_on_disk, get_data
 from securedrop_client import db
 from sdclientapi import Source, Submission, Reply
 
@@ -584,3 +584,19 @@ def test_delete_single_submission_or_reply_race_guard(homedir, mocker):
     delete_single_submission_or_reply_on_disk(test_obj, homedir)
 
     mock_remove.call_count == 1
+
+
+def test_get_data_success(homedir):
+    orig_filename = 'foo.txt'
+    filename, _ = os.path.splitext(orig_filename)
+    contents = 'bar'
+    with open(os.path.join(homedir, 'data', filename), 'w') as f:
+        f.write(contents)
+    out = get_data(homedir, orig_filename)
+    assert out == contents
+
+
+def test_get_data_missing_data(homedir):
+    orig_filename = 'foo.txt'
+    out = get_data(homedir, orig_filename)
+    assert out == '<Content deleted>'
