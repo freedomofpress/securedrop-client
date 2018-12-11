@@ -86,7 +86,7 @@ def test_source_collection():
     assert source.collection[1] == submission
 
 
-def test_last_activity_summary_text():
+def test_last_activity_summary_text(mocker):
     source = factory.Source()
     submission = Submission(source=source, uuid="test", size=123,
                             filename="2-test.doc.gpg",
@@ -95,8 +95,8 @@ def test_last_activity_summary_text():
     reply = Reply(source=source, journalist=user, filename="1-reply.gpg",
                   size=1234, uuid='test')
 
-    reply_with_content = mock.MagicMock(wrap=reply, content='reply content')
-    submission_content = mock.MagicMock(wrap=submission, content='submission content')
+    reply_with_content = mocker.MagicMock(wrap=reply, content='reply content')
+    submission_content = mocker.MagicMock(wrap=submission, content='submission content')
 
     source.submissions = [reply_with_content]
     source.replies = [submission_content]

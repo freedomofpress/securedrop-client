@@ -149,15 +149,15 @@ def test_SourceList_update(mocker):
     each passed-in source is created along with an associated QListWidgetItem.
     """
     sl = SourceList(None)
-    sl.clear = mock.MagicMock()
-    sl.addItem = mock.MagicMock()
-    sl.setItemWidget = mock.MagicMock()
-    sl.controller = mock.MagicMock()
-    mock_sw = mock.MagicMock()
-    mock_lwi = mock.MagicMock()
-    with mock.patch('securedrop_client.gui.widgets.SourceWidget', mock_sw), \
-            mock.patch('securedrop_client.gui.widgets.QListWidgetItem',
-                       mock_lwi):
+    sl.clear = mocker.MagicMock()
+    sl.addItem = mocker.MagicMock()
+    sl.setItemWidget = mocker.MagicMock()
+    sl.controller = mocker.MagicMock()
+    mock_sw = mocker.MagicMock()
+    mock_lwi = mocker.MagicMock()
+    with mocker.patch('securedrop_client.gui.widgets.SourceWidget', mock_sw), \
+            mocker.patch('securedrop_client.gui.widgets.QListWidgetItem',
+                         mock_lwi):
         sources = ['a', 'b', 'c', ]
         sl.update(sources)
         sl.clear.assert_called_once_with()
@@ -165,30 +165,6 @@ def test_SourceList_update(mocker):
         assert mock_lwi.call_count == len(sources)
         assert sl.addItem.call_count == len(sources)
         assert sl.setItemWidget.call_count == len(sources)
-
-
-def MockSource():
-    return mock.MagicMock(last_activity_summary_text='')
-
-
-def test_SourceList_maintains_selection():
-    sl.clear = mocker.MagicMock()
-    sl.addItem = mocker.MagicMock()
-    sl.setItemWidget = mocker.MagicMock()
-    sl.controller = mocker.MagicMock()
-
-    mock_sw = mocker.MagicMock()
-    mock_lwi = mocker.MagicMock()
-    mocker.patch('securedrop_client.gui.widgets.SourceWidget', mock_sw)
-    mocker.patch('securedrop_client.gui.widgets.QListWidgetItem', mock_lwi)
-
-    sources = ['a', 'b', 'c', ]
-    sl.update(sources)
-    sl.clear.assert_called_once_with()
-    assert mock_sw.call_count == len(sources)
-    assert mock_lwi.call_count == len(sources)
-    assert sl.addItem.call_count == len(sources)
-    assert sl.setItemWidget.call_count == len(sources)
 
 
 def test_SourceList_maintains_selection(mocker):
