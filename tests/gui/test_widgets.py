@@ -305,8 +305,16 @@ def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker):
     mock_message_box_question.return_value = QMessageBox.Cancel
     mock_source = mocker.MagicMock()
     mock_source.journalist_designation = 'foo bar baz'
-    mock_source.submissions = ["submission_1", "submission_2"]
-    mock_source.replies = ["reply_1", "reply_2"]
+    mock_source.submissions = []
+    submission_files = (
+        "submission_1-msg.gpg",
+        "submission_2-msg.gpg",
+        "submission_3-doc.gpg",
+    )
+    for filename in submission_files:
+        submission = mocker.MagicMock()
+        submission.filename = filename
+        mock_source.submissions.append(submission)
     mock_controller = mocker.MagicMock()
     sw = SourceWidget(None, mock_source)
     sw.controller = mock_controller
@@ -727,8 +735,16 @@ def test_DeleteSourceMessage_launch_when_user_chooses_cancel(mocker):
     mock_message_box_question.return_value = QMessageBox.Cancel
     mock_source = mocker.MagicMock()
     mock_source.journalist_designation = 'foo bar baz'
-    mock_source.submissions = ["submission_1", "submission_2"]
-    mock_source.replies = ["reply_1", "reply_2"]
+    mock_source.submissions = []
+    submission_files = (
+        "submission_1-msg.gpg",
+        "submission_2-msg.gpg",
+        "submission_3-doc.gpg",
+    )
+    for filename in submission_files:
+        submission = mocker.MagicMock()
+        submission.filename = filename
+        mock_source.submissions.append(submission)
     mock_controller = mocker.MagicMock()
     delete_source_message_box = DeleteSourceMessageBox(
         None, mock_source, mock_controller
@@ -746,8 +762,16 @@ def test_DeleteSourceMssageBox_launch_when_user_chooses_yes(mocker):
     mock_message_box_question.return_value = QMessageBox.Yes
     mock_source = mocker.MagicMock()
     mock_source.journalist_designation = 'foo bar baz'
-    mock_source.submissions = ["submission_1", "submission_2"]
-    mock_source.replies = ["reply_1", "reply_2"]
+    mock_source.submissions = []
+    submission_files = (
+        "submission_1-msg.gpg",
+        "submission_2-msg.gpg",
+        "submission_3-doc.gpg",
+    )
+    for filename in submission_files:
+        submission = mocker.MagicMock()
+        submission.filename = filename
+        mock_source.submissions.append(submission)
     mock_controller = mocker.MagicMock()
     delete_source_message_box = DeleteSourceMessageBox(
         None, mock_source, mock_controller
@@ -761,7 +785,7 @@ def test_DeleteSourceMssageBox_launch_when_user_chooses_yes(mocker):
     message = (
         "<big>Deleting the Source account for "
         "<b>foo bar baz</b> will also "
-        "delete 2 files and 2 messages.</big> "
+        "delete 1 files and 2 messages.</big> "
         "<br> "
         "<small>This Source will no longer be able to correspond "
         "through the log-in tied to this account.</small>"
@@ -779,8 +803,16 @@ def test_DeleteSourceMessageBox_construct_message(mocker):
     mock_controller = mocker.MagicMock()
     mock_source = mocker.MagicMock()
     mock_source.journalist_designation = 'foo bar baz'
-    mock_source.submissions = ["submission_1", "submission_2"]
-    mock_source.replies = ["reply_1", "reply_2"]
+    mock_source.submissions = []
+    submission_files = (
+        "submission_1-msg.gpg",
+        "submission_2-msg.gpg",
+        "submission_3-doc.gpg",
+    )
+    for filename in submission_files:
+        submission = mocker.MagicMock()
+        submission.filename = filename
+        mock_source.submissions.append(submission)
     delete_source_message_box = DeleteSourceMessageBox(
         None, mock_source, mock_controller
     )
@@ -788,11 +820,12 @@ def test_DeleteSourceMessageBox_construct_message(mocker):
     expected_message = (
         "<big>Deleting the Source account for "
         "<b>foo bar baz</b> will also "
-        "delete 2 files and 2 messages.</big> "
+        "delete {files} files and {messages} messages.</big> "
         "<br> "
         "<small>This Source will no longer be able to correspond "
         "through the log-in tied to this account.</small>"
     )
+    expected_message = expected_message.format(files=1, messages=2)
     assert message == expected_message
 
 

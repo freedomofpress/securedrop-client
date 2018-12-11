@@ -227,12 +227,17 @@ class DeleteSourceMessageBox:
             self.controller.delete_source(self.source)
 
     def _construct_message(self, source):
+        files = 0
+        messages = 0
+        for submission in source.submissions:
+            if submission.filename.endswith("msg.gpg"):
+                messages += 1
+            else:
+                files += 1
         message = (
             "<big>Deleting the Source account for",
-            "<b>%s</b> will also" % (source.journalist_designation,),
-            "delete %d files and %d messages.</big>" % (
-                len(source.submissions), len(source.replies)
-            ),
+            "<b>{}</b> will also".format(source.journalist_designation,),
+            "delete {} files and {} messages.</big>".format(files, messages),
             "<br>",
             "<small>This Source will no longer be able to correspond",
             "through the log-in tied to this account.</small>",
