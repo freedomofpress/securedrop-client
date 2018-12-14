@@ -79,8 +79,10 @@ class Source(Base):
         collection.sort(key=lambda x: int(x.filename.split('-')[0]))
         return collection
 
+    # XXX jt you are here, fix these.
     @property
     def last_activity_summary_text(self):
+        print("Last activity summary text!", self.collection)
         if len(self.collection) == 0:
             return ''
 
@@ -91,7 +93,7 @@ class Source(Base):
                 return '{}…'.format(content[:n])
 
         last = self.collection[-1]
-
+        print("Last", last, "content", last.content)
         prefix = '↳' if isinstance(last, Submission) else ''
         content = last.content or ''
 

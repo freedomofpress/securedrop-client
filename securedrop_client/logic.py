@@ -144,14 +144,18 @@ class Client(QObject):
         # that as downloads/decryption occur, the messages and replies
         # populate the view.
         self.conv_view_update = QTimer()
-        self.conv_view_update.timeout.connect(
-            self.update_conversation_view)
+        self.conv_view_update.timeout.connect(self.update_views)
+
         self.conv_view_update.start(1000 * 60 * 0.10)  # every 6 seconds
 
         event.listen(db.Submission, 'load', self.on_object_loaded)
         event.listen(db.Submission, 'init', self.on_object_instantiated)
         event.listen(db.Reply, 'load', self.on_object_loaded)
         event.listen(db.Reply, 'init', self.on_object_instantiated)
+
+    def update_views(self):
+        self.update_sources()
+        self.update_conversation_view()
 
     def on_object_instantiated(self, target, args, kwargs):
         target.data = Data(self.data_dir)
@@ -581,6 +585,7 @@ class Client(QObject):
             # Refresh the current source conversation, bearing in mind
             # that the user may have navigated to another source.
             self.gui.show_conversation_for(self.gui.current_source)
+            # self.update_sources()
             self.set_status(
                 'Finished downloading {}'.format(current_object.filename))
         else:  # The file did not download properly.
