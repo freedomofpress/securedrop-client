@@ -113,6 +113,42 @@ def source(s):
                       'max-size': (16, 16)}]],
             ['label', {'id': "source-updated-" + id}, updated]]
 
+def speech_bubble(id, content, type):
+    # XXX margins- see widgets.py
+    # XXX other CSS?
+
+    if type == "message":
+        css = 'border-bottom-right-radius: 0px;'
+    else:
+        css = 'border-bottom-left-radius: 0px;'
+
+    r = ['vbox', {'id': "speech-bubble-" + id},
+         ['label', {'id': "speech-content-" + id,
+                    'style': css,
+                    'stretch': 6},
+          content]]
+
+    return r
+
+def conversation_widget(c):
+    type = c['type']
+    content = c['content']
+    id = c['id']
+
+    box = ['hbox', {'id': "conv-hbox" + id}]
+
+    if type == 'message':
+        box.append(['stretch', {'id': "msg-space" + id,
+                                'stretch-val': 5}])
+
+    box.append(speech_bubble(id, content, type))
+
+    if type == 'reply':
+        box.append(['stretch', {'id': "msg-space" + id,
+                                'stretch-val': 5}])
+
+    return box
+
 @component
 @subscribes(['sources'], subscriptions)
 def source_list(subs):
@@ -124,32 +160,32 @@ def source_list(subs):
 
     return source_container
 
+
 @component
 @subscribes(['conversation'], subscriptions)
 def conversation(subs):
-    # c = ['vbox/conversation-vbox', {'style': "background-color: #fff;"}]
-    # XXX jt you are here- can't set style on a vbox, only on a widget.
 
     c = ['vbox/conversation-vbox', {}]
 
     for msg in subs['conversation']:
-        c.append(['label', {'id': "msg-" + msg['id']}, msg['content']])
+        c.append(conversation_widget(msg))
 
-    # XXX see above. want you want to do here is:
-    # return ['widget/conv-container,
-    #         {'style': "background-color: #fff;"},
-    #         c]
-
-    return c
+    return ['widget/conv-container',
+            {'stretch': 6,
+             'style': "background-color: #fff;"},
+            c]
 
 @component
 @subscribes([], subscriptions)
 def mainview(subs):
+    # XXX jt need to contain the columns in their own widgets
+    # because we need to add stretches to those widgets (2 and 6)
     return ['hbox/main-container',
-            ['vbox/main-left-column',
-             ['label/status', {}, "Waiting to refresh..."],
-             ['label/error-status', {}, ""],
-             ['source_list/source-list', {}]],
+            ['widget/main-left-column-container', {'stretch': 2},
+             ['vbox/main-left-column',
+              ['label/status', {}, "Waiting to refresh..."],
+              ['label/error-status', {}, ""],
+              ['source_list/source-list', {}]]],
             ['conversation/conversation', {}]]
 
 @component
