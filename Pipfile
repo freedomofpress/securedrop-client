@@ -9,7 +9,7 @@ python_version = "3.5"
 [packages]
 SQLALchemy = "==1.2.13"
 alembic = "==1.0.2"
-securedrop-sdk = "==0.0.4"
+securedrop-sdk = {git = "https://github.com/freedomofpress/securedrop-sdk", editable = "true", ref = "master"}
 "pathlib2" = "==2.3.2"
 arrow = "==0.12.1"
 certifi = "==2018.10.15"
@@ -22,6 +22,10 @@ python-editor = "==1.0.3"
 requests = "==2.20.0"
 six = "==1.11.0"
 urllib3 = "==1.24"
+qframe = {editable = true, git = "https://github.com/joshuathayer/qframe.git", ref = "master"}
+spot = {editable = true, git = "https://github.com/joshuathayer/spot.git", ref = "master"}
+reactive-qt = {editable = true, git = "https://github.com/joshuathayer/reactive-qt.git", ref = "master"}
+toolz = "*"
 
 [dev-packages]
 atomicwrites = "==1.2.1"
@@ -44,3 +48,4 @@ pytest = "==3.9.3"
 sip = "==4.19.8"
 six = "==1.11.0"
 pytest-mock = "==1.10.0"
+v = {version = "*",editable = true}
