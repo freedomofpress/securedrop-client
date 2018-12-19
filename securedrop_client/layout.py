@@ -147,11 +147,11 @@ def conversation_widget(c):
     if type == 'reply':
         box.append(['stretch', {'id': "msg-space-" + id,
                                 'stretch-val': 5}])
+    return box
 
-    return ['widget', {'id': 'message-widget-' + id,
-                       # 'style': "background-color: #eee;"
-    },
-            box]
+    # return ['widget', {'id': 'message-widget-' + id,
+    #                    'style': "background-color: #eee;"},
+    #         box]
 
 @component
 @subscribes(['sources'], subscriptions)
@@ -185,10 +185,11 @@ def mainview(subs):
 
     return ['hbox/main-container',
             ['widget/main-left-column-container', {'stretch': 2},
-             ['vbox/main-left-column',
+             ['vbox/main-left-column', {'alignment': 'top'},
               ['label/status', {}, "Waiting to refresh..."],
               ['label/error-status', {}, ""],
-              ['source_list/source-list', {}]]],
+              ['source_list/source-list', {}],
+             ]],
             ['conversation/conversation', {}]]
 
 @component
