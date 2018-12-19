@@ -30,7 +30,7 @@ vbox = QVBoxLayout()
 # element)
 appwindow = StatefulReactiveQtAppWindow({'id': 'container',
                                          'contains': []},
-                                        {'container': vbox})
+                                        {'container': (vbox,)})
 
 # When the local db updates and we have a new rendered UI description,
 # tell the stateful UI handler about it.

@@ -117,10 +117,11 @@ def speech_bubble(id, content, type):
     # XXX margins- see widgets.py
     # XXX other CSS?
 
+    css = "background: #eee; padding: 10px; border: 1px solid #999; border-radius: 20px; "
     if type == "message":
-        css = 'border-bottom-right-radius: 0px;'
+        css += 'border-bottom-right-radius: 0px;'
     else:
-        css = 'border-bottom-left-radius: 0px;'
+        css += 'border-bottom-left-radius: 0px;'
 
     r = ['vbox', {'id': "speech-bubble-" + id},
          ['label', {'id': "speech-content-" + id,
@@ -135,19 +136,22 @@ def conversation_widget(c):
     content = c['content']
     id = c['id']
 
-    box = ['hbox', {'id': "conv-hbox" + id}]
+    box = ['hbox', {'id': "conv-hbox-" + id}]
 
     if type == 'message':
-        box.append(['stretch', {'id': "msg-space" + id,
+        box.append(['stretch', {'id': "msg-space-" + id,
                                 'stretch-val': 5}])
 
     box.append(speech_bubble(id, content, type))
 
     if type == 'reply':
-        box.append(['stretch', {'id': "msg-space" + id,
+        box.append(['stretch', {'id': "msg-space-" + id,
                                 'stretch-val': 5}])
 
-    return box
+    return ['widget', {'id': 'message-widget-' + id,
+                       # 'style': "background-color: #eee;"
+    },
+            box]
 
 @component
 @subscribes(['sources'], subscriptions)
@@ -178,8 +182,7 @@ def conversation(subs):
 @component
 @subscribes([], subscriptions)
 def mainview(subs):
-    # XXX jt need to contain the columns in their own widgets
-    # because we need to add stretches to those widgets (2 and 6)
+
     return ['hbox/main-container',
             ['widget/main-left-column-container', {'stretch': 2},
              ['vbox/main-left-column',
