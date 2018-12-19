@@ -53,19 +53,29 @@ class Window(QMainWindow):
         self.sdc_home = sdc_home
         self.setWindowTitle(_("SecureDrop Client {}").format(__version__))
         self.setWindowIcon(load_icon(self.icon))
+
         self.widget = QWidget()
         widget_layout = QVBoxLayout()
         self.widget.setLayout(widget_layout)
+        self.setCentralWidget(self.widget)
+
         self.tool_bar = ToolBar(self.widget)
+
         self.main_view = MainView(self.widget)
         self.main_view.source_list.itemSelectionChanged.connect(self.on_source_changed)
+
         widget_layout.addWidget(self.tool_bar, 1)
         widget_layout.addWidget(self.main_view, 6)
-        self.setCentralWidget(self.widget)
-        self.current_source = None  # Tracks which source is shown
+
+        # Cache a dict of source.uuid -> ConversationView
+        # We do this to not create/destroy widgets constantly (because it causes UI "flicker")
         self.conversations = {}
-        self.show()
+
+        # Tracks which source is shown
+        self.current_source = None
+
         self.autosize_window()
+        self.show()
 
     def setup(self, controller):
         """
@@ -74,9 +84,11 @@ class Window(QMainWindow):
         """
         self.controller = controller  # Reference the Client logic instance.
         self.tool_bar.setup(self, controller)
+
         self.status_bar = QStatusBar(self)
         self.setStatusBar(self.status_bar)
         self.set_status('Started SecureDrop Client. Please sign in.', 20000)
+
         self.login_dialog = LoginDialog(self)
         self.main_view.setup(self.controller)
 
@@ -190,10 +202,12 @@ class Window(QMainWindow):
         container = QWidget()
         layout = QVBoxLayout()
         container.setLayout(layout)
+
         source_profile = SourceProfileShortWidget(source, self.controller)
 
         layout.addWidget(source_profile)
         layout.addWidget(conversation)
+
         self.main_view.update_view(container)
 
     def set_status(self, message, duration=5000):

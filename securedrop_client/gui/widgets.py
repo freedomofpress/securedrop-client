@@ -43,15 +43,20 @@ class ToolBar(QWidget):
         layout = QHBoxLayout(self)
         self.logo = QLabel()
         self.logo.setPixmap(load_image('header_logo.png'))
+
         self.user_state = QLabel(_("Signed out."))
+
         self.login = QPushButton(_('Sign in'))
         self.login.clicked.connect(self.on_login_clicked)
+
         self.logout = QPushButton(_('Sign out'))
         self.logout.clicked.connect(self.on_logout_clicked)
         self.logout.setVisible(False)
+
         self.refresh = QPushButton(_('Refresh'))
         self.refresh.clicked.connect(self.on_refresh_clicked)
         self.refresh.setVisible(False)
+
         layout.addWidget(self.logo)
         layout.addStretch()
         layout.addWidget(self.user_state)
@@ -125,17 +130,23 @@ class MainView(QWidget):
         super().__init__(parent)
         self.layout = QHBoxLayout(self)
         self.setLayout(self.layout)
+
         left_column = QWidget(parent=self)
         left_layout = QVBoxLayout()
         left_column.setLayout(left_layout)
+
         self.status = QLabel(_('Waiting to refresh...'))
         self.error_status = QLabel('')
         self.error_status.setObjectName('error_label')
+
         left_layout.addWidget(self.status)
         left_layout.addWidget(self.error_status)
+
         self.source_list = SourceList(left_column)
         left_layout.addWidget(self.source_list)
+
         self.layout.addWidget(left_column, 2)
+
         self.view_holder = QWidget()
         self.view_layout = QVBoxLayout()
         self.view_holder.setLayout(self.view_layout)
@@ -187,10 +198,13 @@ class SourceList(QListWidget):
         for source in sources:
             new_source = SourceWidget(self, source)
             new_source.setup(self.controller)
+
             list_item = QListWidgetItem(self)
             list_item.setSizeHint(new_source.sizeHint())
+
             self.addItem(list_item)
             self.setItemWidget(list_item, new_source)
+
             if current_maybe and (source.id == current_maybe.source.id):
                 new_current_maybe = list_item
 
@@ -222,6 +236,7 @@ class DeleteSourceMessageBox:
             QMessageBox.Cancel | QMessageBox.Yes,
             QMessageBox.Cancel
         )
+
         if reply == QMessageBox.Yes:
             logger.debug("Deleting source %s" % (self.source.uuid,))
             self.controller.delete_source(self.source)
@@ -234,6 +249,7 @@ class DeleteSourceMessageBox:
                 messages += 1
             else:
                 files += 1
+
         message = (
             "<big>Deleting the Source account for",
             "<b>{}</b> will also".format(source.journalist_designation,),
@@ -257,23 +273,30 @@ class SourceWidget(QWidget):
         """
         super().__init__(parent)
         self.source = source
+        self.name = QLabel()
+        self.updated = QLabel()
+
         layout = QVBoxLayout()
         self.setLayout(layout)
+
         self.summary = QWidget(self)
         self.summary_layout = QHBoxLayout()
         self.summary.setLayout(self.summary_layout)
+
         self.attached = load_svg('paperclip.svg')
         self.attached.setMaximumSize(16, 16)
-        self.name = QLabel()
+
         self.summary_layout.addWidget(self.name)
         self.summary_layout.addStretch()
         self.summary_layout.addWidget(self.attached)
+
         layout.addWidget(self.summary)
-        self.updated = QLabel()
         layout.addWidget(self.updated)
+
         self.delete = load_svg('cross.svg')
         self.delete.setMaximumSize(16, 16)
         self.delete.mouseReleaseEvent = self.delete_source
+
         self.summary_layout.addWidget(self.delete)
         self.update()
 
@@ -342,33 +365,44 @@ class LoginDialog(QDialog):
         self.controller = controller
         self.setMinimumSize(600, 400)
         self.setWindowTitle(_('Sign in to SecureDrop'))
+
         main_layout = QHBoxLayout()
         main_layout.addStretch()
         self.setLayout(main_layout)
+
         form = QWidget()
         layout = QVBoxLayout()
         form.setLayout(layout)
+
         main_layout.addWidget(form)
         main_layout.addStretch()
+
         self.title = QLabel(_('<h1>Sign in</h1>'))
         self.title.setTextFormat(Qt.RichText)
+
         self.instructions = QLabel(_('You may read all documents and messages '
                                      'shown here, without signing in. To '
                                      'correspond with a Source or to check '
                                      'the server for updates, you must sign '
                                      'in.'))
         self.instructions.setWordWrap(True)
+
         self.username_label = QLabel(_('Username'))
         self.username_field = QLineEdit()
+
         self.password_label = QLabel(_('Password'))
         self.password_field = QLineEdit()
         self.password_field.setEchoMode(QLineEdit.Password)
+
         self.tfa_label = QLabel(_('Two-Factor Number'))
         self.tfa_field = QLineEdit()
+
         self.submit = QPushButton(_('Sign in'))
         self.submit.clicked.connect(self.validate)
+
         self.error_label = QLabel('')
         self.error_label.setObjectName('error_label')
+
         layout.addStretch()
         layout.addWidget(self.title)
         layout.addWidget(self.instructions)
@@ -432,6 +466,7 @@ class LoginDialog(QDialog):
                 self.setDisabled(False)
                 self.error(_('Please use only numerals for the two factor number.'))
                 return
+
             self.controller.login(username, password, tfa_token)
         else:
             self.setDisabled(False)
@@ -451,8 +486,10 @@ class SpeechBubble(QWidget):
         super().__init__()
         layout = QVBoxLayout()
         self.setLayout(layout)
+
         message = QLabel(html.escape(text, quote=False))
         message.setWordWrap(True)
+
         layout.addWidget(message)
 
 
@@ -470,16 +507,21 @@ class ConversationWidget(QWidget):
         super().__init__()
         layout = QHBoxLayout()
         label = SpeechBubble(message)
+
         if align is not "left":
             # Float right...
             layout.addStretch(5)
             label.setStyleSheet(label.css + 'border-bottom-right-radius: 0px;')
+
         layout.addWidget(label, 6)
+
         if align is "left":
             # Add space on right hand side...
             layout.addStretch(5)
             label.setStyleSheet(label.css + 'border-bottom-left-radius: 0px;')
+
         layout.setContentsMargins(0, 0, 0, 0)
+
         self.setLayout(layout)
         self.setContentsMargins(0, 0, 0, 0)
 
@@ -526,22 +568,28 @@ class FileWidget(QWidget):
         self.controller = controller
         self.source = source_db_object
         self.submission = submission_db_object
+
         layout = QHBoxLayout()
         icon = QLabel()
         icon.setPixmap(load_image('file.png'))
+
         if submission_db_object.is_downloaded:
             description = QLabel("Open")
         else:
             human_filesize = humanize_filesize(self.submission.size)
             description = QLabel("Download ({})".format(human_filesize))
+
         if align is not "left":
             # Float right...
             layout.addStretch(5)
+
         layout.addWidget(icon)
         layout.addWidget(description, 5)
+
         if align is "left":
             # Add space on right hand side...
             layout.addStretch(5)
+
         self.setLayout(layout)
 
     def mouseReleaseEvent(self, e):
@@ -574,6 +622,7 @@ class ConversationView(QWidget):
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll.setWidget(self.container)
         self.scroll.setWidgetResizable(True)
+
         # Completely unintuitive way to ensure the view remains scrolled to the
         # bottom.
         sb = self.scroll.verticalScrollBar()
@@ -624,7 +673,9 @@ class DeleteSourceAction(QAction):
         self.source = source
         self.controller = controller
         self.text = _("Delete source account")
+
         super().__init__(self.text, parent)
+
         self.messagebox = DeleteSourceMessageBox(
             parent, self.source, self.controller
         )
@@ -673,10 +724,13 @@ class SourceMenuButton(QToolButton):
         super().__init__()
         self.controller = controller
         self.source = source
+
         ellipsis_icon = load_image("ellipsis.svg")
         self.setIcon(QIcon(ellipsis_icon))
+
         self.menu = SourceMenu(self.source, self.controller)
         self.setMenu(self.menu)
+
         self.setPopupMode(QToolButton.InstantPopup)
 
 
@@ -701,11 +755,14 @@ class SourceProfileShortWidget(QWidget):
         super().__init__()
         self.source = source
         self.controller = controller
+
         self.layout = QHBoxLayout()
         self.setLayout(self.layout)
+
         widgets = (
             TitleLabel(self.source.journalist_designation),
-            SourceMenuButton(self.source, self.controller)
+            SourceMenuButton(self.source, self.controller),
         )
+
         for widget in widgets:
             self.layout.addWidget(widget)

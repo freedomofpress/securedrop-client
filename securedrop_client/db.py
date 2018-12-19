@@ -25,7 +25,9 @@ def make_engine(home: str):
 
 
 class Source(Base):
+
     __tablename__ = 'sources'
+
     # TODO - add number_of_docs
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
@@ -66,7 +68,9 @@ class Source(Base):
 
 
 class Submission(Base):
+
     __tablename__ = 'submissions'
+
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
     filename = Column(String(255), nullable=False)
@@ -101,7 +105,9 @@ class Submission(Base):
 
 
 class Reply(Base):
+
     __tablename__ = 'replies'
+
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
     source_id = Column(Integer, ForeignKey('sources.id'))
@@ -133,7 +139,9 @@ class Reply(Base):
 
 
 class User(Base):
+
     __tablename__ = 'users'
+
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
     username = Column(String(255), nullable=False, unique=True)

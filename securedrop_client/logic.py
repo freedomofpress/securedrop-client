@@ -126,24 +126,28 @@ class Client(QObject):
         # The gui needs to reference this "controller" layer to call methods
         # triggered by UI events.
         self.gui.setup(self)
+
         # If possible, update the UI with available sources.
         self.update_sources()
+
         # Show the login dialog.
         self.gui.show_login()
+
         # Create a timer to check for sync status every 30 seconds.
         self.sync_timer = QTimer()
         self.sync_timer.timeout.connect(self.update_sync)
         self.sync_timer.start(30000)
+
         # Automagically sync with the API every 5 minutes.
         self.sync_update = QTimer()
         self.sync_update.timeout.connect(self.sync_api)
         self.sync_update.start(1000 * 60 * 5)  # every 5 minutes.
+
         # Use a QTimer to update the current conversation view such
         # that as downloads/decryption occur, the messages and replies
         # populate the view.
         self.conv_view_update = QTimer()
-        self.conv_view_update.timeout.connect(
-            self.update_conversation_view)
+        self.conv_view_update.timeout.connect(self.update_conversation_view)
         self.conv_view_update.start(1000 * 60 * 0.10)  # every 6 seconds
 
     def call_api(self, function, callback, timeout, *args, current_object=None,
@@ -163,23 +167,28 @@ class Client(QObject):
         new_api_runner = APICallRunner(function, current_object, *args,
                                        **kwargs)
         new_api_runner.moveToThread(new_api_thread)
+
         # handle completed call: copy response data, reset the
         # client, give the user-provided callback the response
         # data
         new_api_runner.call_finished.connect(
             lambda: self.completed_api_call(new_thread_id, callback))
+
         # we've started a timer. when that hits zero, call our
         # timeout function
         new_timer.timeout.connect(
             lambda: self.timeout_cleanup(new_thread_id, timeout))
+
         # when the thread starts, we want to run `call_api` on `api_runner`
         new_api_thread.started.connect(new_api_runner.call_api)
+
         # Add the thread related objects to the api_threads dictionary.
         self.api_threads[new_thread_id] = {
             'thread': new_api_thread,
             'runner': new_api_runner,
             'timer': new_timer,
         }
+
         # Start the thread and related activity.
         new_api_thread.start()
 
@@ -205,11 +214,13 @@ class Client(QObject):
             timer = thread_info['timer']
             timer.stop()
             result_data = runner.result
+
             # The callback may or may not have an associated current_object
             if runner.current_object:
                 current_object = runner.current_object
             else:
                 current_object = None
+
             self.clean_thread(thread_id)
             if current_object:
                 user_callback(result_data, current_object=current_object)
@@ -252,10 +263,12 @@ class Client(QObject):
         if thread_id in self.api_threads:
             runner = self.api_threads[thread_id]['runner']
             runner.i_timed_out = True
+
             if runner.current_object:
                 current_object = runner.current_object
             else:
                 current_object = None
+
             self.clean_thread(thread_id)
             if current_object:
                 user_callback(current_object=current_object)
@@ -283,6 +296,7 @@ class Client(QObject):
             self.gui.set_logged_in_as(self.api.username)
             self.start_message_thread()
             self.start_reply_thread()
+
             # Clear the sidebar error status bar if a message was shown
             # to the user indicating they should log in.
             self.gui.update_error_status("")
@@ -498,6 +512,7 @@ class Client(QObject):
             # Running on Qubes.
             command = "qvm-open-in-vm"
             args = ['$dispvm:sd-svs-disp', submission_filepath]
+
             # QProcess (Qt) or Python's subprocess? Who cares? They do the
             # same thing. :-)
             process = QProcess(self)
@@ -527,6 +542,7 @@ class Client(QObject):
             sdk_object = sdclientapi.Reply(uuid=message.uuid)
             sdk_object.filename = message.filename
             sdk_object.source_uuid = source_db_object.uuid
+
         self.set_status(_('Downloading {}'.format(sdk_object.filename)))
         self.call_api(func, self.on_file_downloaded,
                       self.on_download_timeout, sdk_object, self.data_dir,
