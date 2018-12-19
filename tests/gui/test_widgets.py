@@ -117,7 +117,7 @@ def test_MainView_init():
     assert isinstance(mv.view_holder, QWidget)
 
 
-def test_MainView_update_view(mocker):
+def test_MainView_show_conversation(mocker):
     """
     Ensure the passed-in widget is added to the layout of the main view holder
     (i.e. that area of the screen on the right hand side).
@@ -125,7 +125,7 @@ def test_MainView_update_view(mocker):
     mv = MainView(None)
     mv.view_layout = mocker.MagicMock()
     mock_widget = mocker.MagicMock()
-    mv.update_view(mock_widget)
+    mv.set_conversation(mock_widget)
     mv.view_layout.takeAt.assert_called_once_with(0)
     mv.view_layout.addWidget.assert_called_once_with(mock_widget)
 

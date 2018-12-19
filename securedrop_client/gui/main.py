@@ -182,33 +182,37 @@ class Window(QMainWindow):
         Show conversation of messages and replies between a source and
         journalists.
         """
-        conversation = ConversationView(self)
-        conversation.setup(self.controller)
 
-        # Display each conversation item in the source collection.
-        for conversation_item in source.collection:
+        conversation_container = self.conversations.get(source.uuid, None)
 
-            if conversation_item.filename.endswith('msg.gpg'):
-                self.add_item_content_or(conversation.add_message,
-                                         conversation_item,
-                                         "<Message not yet downloaded>")
-            elif conversation_item.filename.endswith('reply.gpg'):
-                self.add_item_content_or(conversation.add_reply,
-                                         conversation_item,
-                                         "<Reply not yet downloaded>")
-            else:
-                conversation.add_file(source, conversation_item)
+        if conversation_container is None:
+            conversation = ConversationView(self)
+            conversation.setup(self.controller)
 
-        container = QWidget()
-        layout = QVBoxLayout()
-        container.setLayout(layout)
+            # Display each conversation item in the source collection.
+            for conversation_item in source.collection:
 
-        source_profile = SourceProfileShortWidget(source, self.controller)
+                if conversation_item.filename.endswith('msg.gpg'):
+                    self.add_item_content_or(conversation.add_message,
+                                             conversation_item,
+                                             "<Message not yet downloaded>")
+                elif conversation_item.filename.endswith('reply.gpg'):
+                    self.add_item_content_or(conversation.add_reply,
+                                             conversation_item,
+                                             "<Reply not yet downloaded>")
+                else:
+                    conversation.add_file(source, conversation_item)
 
-        layout.addWidget(source_profile)
-        layout.addWidget(conversation)
+            conversation_container = QWidget()
+            layout = QVBoxLayout()
+            conversation_container.setLayout(layout)
 
-        self.main_view.update_view(container)
+            source_profile = SourceProfileShortWidget(source, self.controller)
+
+            layout.addWidget(source_profile)
+            layout.addWidget(conversation)
+
+        self.main_view.set_conversation(conversation_container)
 
     def set_status(self, message, duration=5000):
         """

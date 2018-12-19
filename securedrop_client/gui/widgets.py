@@ -162,15 +162,17 @@ class MainView(QWidget):
     def update_error_status(self, error=None):
         self.error_status.setText(html.escape(error))
 
-    def update_view(self, widget):
+    def set_conversation(self, widget):
         """
         Update the view holder to contain the referenced widget.
         """
         old_widget = self.view_layout.takeAt(0)
+
         if old_widget:
             old_widget.widget().setVisible(False)
-        widget.setVisible(True)
+
         self.view_layout.addWidget(widget)
+        widget.setVisible(True)
 
 
 class SourceList(QListWidget):
