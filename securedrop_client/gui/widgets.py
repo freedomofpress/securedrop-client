@@ -612,8 +612,10 @@ class ConversationView(QWidget):
     Renders a conversation.
     """
 
-    def __init__(self, parent):
+    def __init__(self, source_db_object, parent=None):
         super().__init__(parent)
+        self.source = source_db_object
+
         self.container = QWidget()
         self.conversation_layout = QVBoxLayout()
         self.container.setLayout(self.conversation_layout)
@@ -633,6 +635,39 @@ class ConversationView(QWidget):
         main_layout = QVBoxLayout()
         main_layout.addWidget(self.scroll)
         self.setLayout(main_layout)
+
+        self.update_conversation(self.source.collection)
+
+    def update_conversation(self, collection: list) -> None:
+        # clear all old items
+        while True:
+            w = self.conversation_layout.takeAt(0)
+            if w:
+                del w
+            else:
+                break
+
+        # add new items
+        for conversation_item in collection:
+            if conversation_item.filename.endswith('msg.gpg'):
+                self.add_item_content_or(self.add_message,
+                                         conversation_item,
+                                         "<Message not yet downloaded>")
+            elif conversation_item.filename.endswith('reply.gpg'):
+                self.add_item_content_or(self.add_reply,
+                                         conversation_item,
+                                         "<Reply not yet downloaded>")
+            else:
+                self.add_file(self.source, conversation_item)
+
+    def add_item_content_or(self, adder, item, default):
+        """
+        Private helper function to add correct message to conversation widgets
+        """
+        if item.is_downloaded is False:
+            adder(default)
+        else:
+            adder(item.content)
 
     def setup(self, controller):
         """
