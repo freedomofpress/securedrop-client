@@ -172,8 +172,6 @@ class Window(QMainWindow):
         """
         conversation = ConversationView(self)
         conversation.setup(self.controller)
-        conversation.add_message('Source name: {}'.format(
-                                 source.journalist_designation))
 
         # Display each conversation item in the source collection.
         for conversation_item in source.collection:

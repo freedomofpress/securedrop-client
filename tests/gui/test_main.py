@@ -236,8 +236,7 @@ def test_conversation_pending_message(mocker):
     w.show_conversation_for(mock_source)
     conv = mock_conview()
 
-    # once for source name, once for message
-    assert conv.add_message.call_count == 2
+    assert conv.add_message.call_count == 1
     assert conv.add_message.call_args == mocker.call("<Message not yet downloaded>")
 
 
