@@ -680,11 +680,12 @@ def test_FileWidget_mousePressEvent_open(mocker):
     fw.controller.on_file_open.assert_called_once_with(submission)
 
 
-def test_ConversationView_init():
+def test_ConversationView_init(mocker):
     """
     Ensure the conversation view has a layout to add widgets to.
     """
-    cv = ConversationView(None)
+    mocked_source = mocker.MagicMock()
+    cv = ConversationView(mocked_source)
     assert isinstance(cv.conversation_layout, QVBoxLayout)
 
 
@@ -692,7 +693,8 @@ def test_ConversationView_setup(mocker):
     """
     Ensure the controller is set
     """
-    cv = ConversationView(None)
+    mocked_source = mocker.MagicMock()
+    cv = ConversationView(mocked_source)
     mock_controller = mocker.MagicMock()
     cv.setup(mock_controller)
     assert cv.controller == mock_controller
@@ -703,7 +705,8 @@ def test_ConversationView_move_to_bottom(mocker):
     Check the signal handler sets the correct value for the scrollbar to be
     the maximum possible value.
     """
-    cv = ConversationView(None)
+    mocked_source = mocker.MagicMock()
+    cv = ConversationView(mocked_source)
     cv.scroll = mocker.MagicMock()
     cv.move_to_bottom(0, 6789)
     cv.scroll.verticalScrollBar().setValue.assert_called_once_with(6789)
@@ -713,7 +716,8 @@ def test_ConversationView_add_message(mocker):
     """
     Adding a message results in a new MessageWidget added to the layout.
     """
-    cv = ConversationView(None)
+    mocked_source = mocker.MagicMock()
+    cv = ConversationView(mocked_source)
     cv.controller = mocker.MagicMock()
     cv.conversation_layout = mocker.MagicMock()
 
@@ -728,7 +732,8 @@ def test_ConversationView_add_reply(mocker):
     """
     Adding a reply results in a new ReplyWidget added to the layout.
     """
-    cv = ConversationView(None)
+    mocked_source = mocker.MagicMock()
+    cv = ConversationView(mocked_source)
     cv.controller = mocker.MagicMock()
     cv.conversation_layout = mocker.MagicMock()
 
@@ -744,7 +749,8 @@ def test_ConversationView_add_downloaded_file(mocker):
     Adding a file results in a new FileWidget added to the layout with the
     proper QLabel.
     """
-    cv = ConversationView(None)
+    mocked_source = mocker.MagicMock()
+    cv = ConversationView(mocked_source)
     cv.controller = mocker.MagicMock()
     cv.conversation_layout = mocker.MagicMock()
 
@@ -768,7 +774,8 @@ def test_ConversationView_add_not_downloaded_file(mocker):
     Adding a file results in a new FileWidget added to the layout with the
     proper QLabel.
     """
-    cv = ConversationView(None)
+    mocked_source = mocker.MagicMock()
+    cv = ConversationView(mocked_source)
     cv.controller = mocker.MagicMock()
     cv.conversation_layout = mocker.MagicMock()
 
