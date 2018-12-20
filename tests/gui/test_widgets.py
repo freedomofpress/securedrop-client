@@ -28,9 +28,12 @@ def test_ToolBar_setup(mocker):
     them becoming attributes of self.
     """
     tb = ToolBar(None)
+
     mock_window = mocker.MagicMock()
     mock_controller = mocker.MagicMock()
+
     tb.setup(mock_window, mock_controller)
+
     assert tb.window == mock_window
     assert tb.controller == mock_controller
 
@@ -40,11 +43,14 @@ def test_ToolBar_set_logged_in_as(mocker):
     buttons, and refresh buttons, are in the correct state.
     """
     tb = ToolBar(None)
+
     tb.user_state = mocker.MagicMock()
     tb.login = mocker.MagicMock()
     tb.logout = mocker.MagicMock()
     tb.refresh = mocker.MagicMock()
+
     tb.set_logged_in_as('test')
+
     tb.user_state.setText.assert_called_once_with('Signed in as: test')
     tb.login.setVisible.assert_called_once_with(False)
     tb.logout.setVisible.assert_called_once_with(True)
@@ -56,11 +62,14 @@ def test_ToolBar_set_logged_out(mocker):
     Ensure the UI reverts to the logged out state.
     """
     tb = ToolBar(None)
+
     tb.user_state = mocker.MagicMock()
     tb.login = mocker.MagicMock()
     tb.logout = mocker.MagicMock()
     tb.refresh = mocker.MagicMock()
+
     tb.set_logged_out()
+
     tb.user_state.setText.assert_called_once_with('Signed out.')
     tb.login.setVisible.assert_called_once_with(True)
     tb.logout.setVisible.assert_called_once_with(False)
@@ -124,8 +133,10 @@ def test_MainView_show_conversation(mocker):
     """
     mv = MainView(None)
     mv.view_layout = mocker.MagicMock()
+
     mock_widget = mocker.MagicMock()
     mv.set_conversation(mock_widget)
+
     mv.view_layout.takeAt.assert_called_once_with(0)
     mv.view_layout.addWidget.assert_called_once_with(mock_widget)
 
@@ -137,8 +148,10 @@ def test_MainView_update_error_status(mocker):
     """
     mv = MainView(None)
     expected_message = "this is the message to be displayed"
+
     mv.error_status = mocker.MagicMock()
     mv.error_status.setText = mocker.MagicMock()
+
     mv.update_error_status(error=expected_message)
     mv.error_status.setText.assert_called_once_with(expected_message)
 
@@ -149,6 +162,7 @@ def test_SourceList_update(mocker):
     each passed-in source is created along with an associated QListWidgetItem.
     """
     sl = SourceList(None)
+
     sl.clear = mocker.MagicMock()
     sl.addItem = mocker.MagicMock()
     sl.setItemWidget = mocker.MagicMock()
@@ -161,6 +175,7 @@ def test_SourceList_update(mocker):
 
     sources = ['a', 'b', 'c', ]
     sl.update(sources)
+
     sl.clear.assert_called_once_with()
     assert mock_sw.call_count == len(sources)
     assert mock_lwi.call_count == len(sources)
@@ -200,8 +215,10 @@ def test_SourceWidget_setup(mocker):
     """
     mock_controller = mocker.MagicMock()
     mock_source = mocker.MagicMock()
+
     sw = SourceWidget(None, mock_source)
     sw.setup(mock_controller)
+
     assert sw.controller == mock_controller
 
 
@@ -212,11 +229,14 @@ def test_SourceWidget_html_init(mocker):
     """
     mock_source = mocker.MagicMock()
     mock_source.journalist_designation = 'foo <b>bar</b> baz'
+
     sw = SourceWidget(None, mock_source)
     sw.name = mocker.MagicMock()
     sw.summary_layout = mocker.MagicMock()
+
     mocker.patch('securedrop_client.gui.widgets.load_svg')
     sw.update()
+
     sw.name.setText.assert_called_once_with('<strong>foo &lt;b&gt;bar&lt;/b&gt; baz</strong>')
 
 
@@ -227,11 +247,14 @@ def test_SourceWidget_update_starred(mocker):
     mock_source = mocker.MagicMock()
     mock_source.journalist_designation = 'foo bar baz'
     mock_source.is_starred = True
+
     sw = SourceWidget(None, mock_source)
     sw.name = mocker.MagicMock()
     sw.summary_layout = mocker.MagicMock()
+
     mock_load = mocker.patch('securedrop_client.gui.widgets.load_svg')
     sw.update()
+
     mock_load.assert_called_once_with('star_on.svg')
     sw.name.setText.assert_called_once_with('<strong>foo bar baz</strong>')
 
@@ -243,11 +266,14 @@ def test_SourceWidget_update_unstarred(mocker):
     mock_source = mocker.MagicMock()
     mock_source.journalist_designation = 'foo bar baz'
     mock_source.is_starred = False
+
     sw = SourceWidget(None, mock_source)
     sw.name = mocker.MagicMock()
     sw.summary_layout = mocker.MagicMock()
+
     mock_load = mocker.patch('securedrop_client.gui.widgets.load_svg')
     sw.update()
+
     mock_load.assert_called_once_with('star_off.svg')
     sw.name.setText.assert_called_once_with('<strong>foo bar baz</strong>')
 
@@ -275,9 +301,11 @@ def test_SourceWidget_toggle_star(mocker):
     mock_controller = mocker.MagicMock()
     mock_source = mocker.MagicMock()
     event = mocker.MagicMock()
+
     sw = SourceWidget(None, mock_source)
     sw.controller = mock_controller
     sw.controller.update_star = mocker.MagicMock()
+
     sw.toggle_star(event)
     sw.controller.update_star.assert_called_once_with(mock_source)
 
@@ -304,9 +332,11 @@ def test_SourceWidget_delete_source(mocker):
 def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker):
     mock_message_box_question = mocker.MagicMock(QMessageBox.question)
     mock_message_box_question.return_value = QMessageBox.Cancel
+
     mock_source = mocker.MagicMock()
     mock_source.journalist_designation = 'foo bar baz'
     mock_source.submissions = []
+
     submission_files = (
         "submission_1-msg.gpg",
         "submission_2-msg.gpg",
@@ -316,9 +346,11 @@ def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker):
         submission = mocker.MagicMock()
         submission.filename = filename
         mock_source.submissions.append(submission)
+
     mock_controller = mocker.MagicMock()
     sw = SourceWidget(None, mock_source)
     sw.controller = mock_controller
+
     mocker.patch(
         "securedrop_client.gui.widgets.QMessageBox.question",
         mock_message_box_question,
@@ -343,6 +375,7 @@ def test_LoginDialog_reset(mocker):
     Ensure the state of the login view is returned to the correct state.
     """
     mock_controller = mocker.MagicMock()
+
     ld = LoginDialog(None)
     ld.setup(mock_controller)
     ld.username_field = mocker.MagicMock()
@@ -350,7 +383,9 @@ def test_LoginDialog_reset(mocker):
     ld.tfa_field = mocker.MagicMock()
     ld.setDisabled = mocker.MagicMock()
     ld.error_label = mocker.MagicMock()
+
     ld.reset()
+
     ld.username_field.setText.assert_called_once_with('')
     ld.password_field.setText.assert_called_once_with('')
     ld.tfa_field.setText.assert_called_once_with('')
@@ -375,6 +410,7 @@ def test_LoginDialog_validate_no_input(mocker):
     If the user doesn't provide input, tell them and give guidance.
     """
     mock_controller = mocker.MagicMock()
+
     ld = LoginDialog(None)
     ld.setup(mock_controller)
     ld.username_field.text = mocker.MagicMock(return_value='')
@@ -382,7 +418,9 @@ def test_LoginDialog_validate_no_input(mocker):
     ld.tfa_field.text = mocker.MagicMock(return_value='')
     ld.setDisabled = mocker.MagicMock()
     ld.error = mocker.MagicMock()
+
     ld.validate()
+
     assert ld.setDisabled.call_count == 2
     assert ld.error.call_count == 1
 
@@ -393,6 +431,7 @@ def test_LoginDialog_validate_input_non_numeric_2fa(mocker):
     guidance.
     """
     mock_controller = mocker.MagicMock()
+
     ld = LoginDialog(None)
     ld.setup(mock_controller)
     ld.username_field.text = mocker.MagicMock(return_value='foo')
@@ -400,7 +439,9 @@ def test_LoginDialog_validate_input_non_numeric_2fa(mocker):
     ld.tfa_field.text = mocker.MagicMock(return_value='baz')
     ld.setDisabled = mocker.MagicMock()
     ld.error = mocker.MagicMock()
+
     ld.validate()
+
     assert ld.setDisabled.call_count == 2
     assert ld.error.call_count == 1
     assert mock_controller.login.call_count == 0
@@ -411,6 +452,7 @@ def test_LoginDialog_validate_too_short_username(mocker):
     If the username is too small, we show an informative error message.
     """
     mock_controller = mocker.MagicMock()
+
     ld = LoginDialog(None)
     ld.setup(mock_controller)
     ld.username_field.text = mocker.MagicMock(return_value='he')
@@ -418,7 +460,9 @@ def test_LoginDialog_validate_too_short_username(mocker):
     ld.tfa_field.text = mocker.MagicMock(return_value='123456')
     ld.setDisabled = mocker.MagicMock()
     ld.error = mocker.MagicMock()
+
     ld.validate()
+
     assert ld.setDisabled.call_count == 2
     assert ld.error.call_count == 1
     assert mock_controller.login.call_count == 0
@@ -429,6 +473,7 @@ def test_LoginDialog_validate_too_short_password(mocker):
     If the password is too small, we show an informative error message.
     """
     mock_controller = mocker.MagicMock()
+
     ld = LoginDialog(None)
     ld.setup(mock_controller)
     ld.username_field.text = mocker.MagicMock(return_value='foo')
@@ -436,7 +481,9 @@ def test_LoginDialog_validate_too_short_password(mocker):
     ld.tfa_field.text = mocker.MagicMock(return_value='123456')
     ld.setDisabled = mocker.MagicMock()
     ld.error = mocker.MagicMock()
+
     ld.validate()
+
     assert ld.setDisabled.call_count == 2
     assert ld.error.call_count == 1
     assert mock_controller.login.call_count == 0
@@ -452,12 +499,15 @@ def test_LoginDialog_validate_too_long_password(mocker):
 
     max_password_len = 128
     too_long_password = 'a' * (max_password_len + 1)
+
     ld.username_field.text = mocker.MagicMock(return_value='foo')
     ld.password_field.text = mocker.MagicMock(return_value=too_long_password)
     ld.tfa_field.text = mocker.MagicMock(return_value='123456')
     ld.setDisabled = mocker.MagicMock()
     ld.error = mocker.MagicMock()
+
     ld.validate()
+
     assert ld.setDisabled.call_count == 2
     assert ld.error.call_count == 1
     assert mock_controller.login.call_count == 0
@@ -468,6 +518,7 @@ def test_LoginDialog_validate_input_ok(mocker):
     Valid input from the user causes a call to the controller's login method.
     """
     mock_controller = mocker.MagicMock()
+
     ld = LoginDialog(None)
     ld.setup(mock_controller)
     ld.username_field.text = mocker.MagicMock(return_value='foo')
@@ -475,7 +526,9 @@ def test_LoginDialog_validate_input_ok(mocker):
     ld.tfa_field.text = mocker.MagicMock(return_value='123456')
     ld.setDisabled = mocker.MagicMock()
     ld.error = mocker.MagicMock()
+
     ld.validate()
+
     assert ld.setDisabled.call_count == 1
     assert ld.error.call_count == 0
     mock_controller.login.assert_called_once_with('foo', 'nicelongpassword', '123456')
@@ -663,8 +716,10 @@ def test_ConversationView_add_message(mocker):
     cv = ConversationView(None)
     cv.controller = mocker.MagicMock()
     cv.conversation_layout = mocker.MagicMock()
+
     cv.add_message('hello')
     assert cv.conversation_layout.addWidget.call_count == 1
+
     cal = cv.conversation_layout.addWidget.call_args_list
     assert isinstance(cal[0][0][0], MessageWidget)
 
@@ -676,8 +731,10 @@ def test_ConversationView_add_reply(mocker):
     cv = ConversationView(None)
     cv.controller = mocker.MagicMock()
     cv.conversation_layout = mocker.MagicMock()
+
     cv.add_reply('hello')
     assert cv.conversation_layout.addWidget.call_count == 1
+
     cal = cv.conversation_layout.addWidget.call_args_list
     assert isinstance(cal[0][0][0], ReplyWidget)
 
@@ -690,15 +747,18 @@ def test_ConversationView_add_downloaded_file(mocker):
     cv = ConversationView(None)
     cv.controller = mocker.MagicMock()
     cv.conversation_layout = mocker.MagicMock()
+
     mock_source = mocker.MagicMock()
     mock_file = mocker.MagicMock()
     mock_file.is_downloaded = True
     mock_label = mocker.patch('securedrop_client.gui.widgets.QLabel')
     mocker.patch('securedrop_client.gui.widgets.QHBoxLayout.addWidget')
     mocker.patch('securedrop_client.gui.widgets.FileWidget.setLayout')
+
     cv.add_file(mock_source, mock_file)
     mock_label.assert_called_with("Open")
     assert cv.conversation_layout.addWidget.call_count == 1
+
     cal = cv.conversation_layout.addWidget.call_args_list
     assert isinstance(cal[0][0][0], FileWidget)
 
@@ -711,6 +771,7 @@ def test_ConversationView_add_not_downloaded_file(mocker):
     cv = ConversationView(None)
     cv.controller = mocker.MagicMock()
     cv.conversation_layout = mocker.MagicMock()
+
     mock_source = mocker.MagicMock()
     mock_file = mocker.MagicMock()
     mock_file.is_downloaded = False
@@ -718,9 +779,11 @@ def test_ConversationView_add_not_downloaded_file(mocker):
     mock_label = mocker.patch('securedrop_client.gui.widgets.QLabel')
     mocker.patch('securedrop_client.gui.widgets.QHBoxLayout.addWidget')
     mocker.patch('securedrop_client.gui.widgets.FileWidget.setLayout')
+
     cv.add_file(mock_source, mock_file)
     mock_label.assert_called_with("Download (123 bytes)")
     assert cv.conversation_layout.addWidget.call_count == 1
+
     cal = cv.conversation_layout.addWidget.call_args_list
     assert isinstance(cal[0][0][0], FileWidget)
 
@@ -737,6 +800,7 @@ def test_DeleteSourceMessage_launch_when_user_chooses_cancel(mocker):
     mock_source = mocker.MagicMock()
     mock_source.journalist_designation = 'foo bar baz'
     mock_source.submissions = []
+
     submission_files = (
         "submission_1-msg.gpg",
         "submission_2-msg.gpg",
@@ -746,6 +810,7 @@ def test_DeleteSourceMessage_launch_when_user_chooses_cancel(mocker):
         submission = mocker.MagicMock()
         submission.filename = filename
         mock_source.submissions.append(submission)
+
     mock_controller = mocker.MagicMock()
     delete_source_message_box = DeleteSourceMessageBox(
         None, mock_source, mock_controller
@@ -754,6 +819,7 @@ def test_DeleteSourceMessage_launch_when_user_chooses_cancel(mocker):
         "securedrop_client.gui.widgets.QMessageBox.question",
         mock_message_box_question,
     )
+
     delete_source_message_box.launch()
     mock_controller.delete_source.assert_not_called()
 
@@ -764,6 +830,7 @@ def test_DeleteSourceMssageBox_launch_when_user_chooses_yes(mocker):
     mock_source = mocker.MagicMock()
     mock_source.journalist_designation = 'foo bar baz'
     mock_source.submissions = []
+
     submission_files = (
         "submission_1-msg.gpg",
         "submission_2-msg.gpg",
@@ -773,6 +840,7 @@ def test_DeleteSourceMssageBox_launch_when_user_chooses_yes(mocker):
         submission = mocker.MagicMock()
         submission.filename = filename
         mock_source.submissions.append(submission)
+
     mock_controller = mocker.MagicMock()
     delete_source_message_box = DeleteSourceMessageBox(
         None, mock_source, mock_controller
@@ -781,8 +849,10 @@ def test_DeleteSourceMssageBox_launch_when_user_chooses_yes(mocker):
         "securedrop_client.gui.widgets.QMessageBox.question",
         mock_message_box_question,
     )
+
     delete_source_message_box.launch()
     mock_controller.delete_source.assert_called_once_with(mock_source)
+
     message = (
         "<big>Deleting the Source account for "
         "<b>foo bar baz</b> will also "
@@ -805,6 +875,7 @@ def test_DeleteSourceMessageBox_construct_message(mocker):
     mock_source = mocker.MagicMock()
     mock_source.journalist_designation = 'foo bar baz'
     mock_source.submissions = []
+
     submission_files = (
         "submission_1-msg.gpg",
         "submission_2-msg.gpg",
@@ -814,10 +885,12 @@ def test_DeleteSourceMessageBox_construct_message(mocker):
         submission = mocker.MagicMock()
         submission.filename = filename
         mock_source.submissions.append(submission)
+
     delete_source_message_box = DeleteSourceMessageBox(
         None, mock_source, mock_controller
     )
     message = delete_source_message_box._construct_message(mock_source)
+
     expected_message = (
         "<big>Deleting the Source account for "
         "<b>foo bar baz</b> will also "
@@ -825,8 +898,7 @@ def test_DeleteSourceMessageBox_construct_message(mocker):
         "<br> "
         "<small>This Source will no longer be able to correspond "
         "through the log-in tied to this account.</small>"
-    )
-    expected_message = expected_message.format(files=1, messages=2)
+    ).format(files=1, messages=2)
     assert message == expected_message
 
 
@@ -848,6 +920,7 @@ def test_DeleteSourceAction_trigger(mocker):
     mock_delete_source_message_box.return_value = (
         mock_delete_source_message_box_obj
     )
+
     with mocker.patch(
         'securedrop_client.gui.widgets.DeleteSourceMessageBox',
         mock_delete_source_message_box
@@ -870,6 +943,7 @@ def test_DeleteSource_from_source_menu_when_user_is_loggedout(mocker):
     mock_delete_source_message_box.return_value = (
         mock_delete_source_message_box_obj
     )
+
     with mocker.patch(
         'securedrop_client.gui.widgets.DeleteSourceMessageBox',
         mock_delete_source_message_box
@@ -889,6 +963,7 @@ def test_DeleteSource_from_source_widget_when_user_is_loggedout(mocker):
     mock_delete_source_message_box.return_value = (
         mock_delete_source_message_box_obj
     )
+
     with mocker.patch(
         'securedrop_client.gui.widgets.DeleteSourceMessageBox',
         mock_delete_source_message_box
