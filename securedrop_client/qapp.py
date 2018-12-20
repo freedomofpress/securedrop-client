@@ -68,6 +68,9 @@ db = state.DB([rapp, login_rapp], layout.app_state)
 
 system.create_actor(actors.DBUpdater(db), 'updater')
 system.create_actor(actors.EventCatcher(), 'event')
+system.create_actor(actors.APIMultiplexer(), 'api-multiplexer')
+system.create_actor(actors.Receiver(), 'api-receiver')
+system.create_actor(actors.LoginResult(), 'login-result')
 
 # kick off the actor network
 # system.tell('timer','click')

@@ -28,10 +28,11 @@ app_state = { 'sources': [{'name': 'avro vulcan',
               'current-user': None,
               'view': None,
               'login': {
-                  'new-user-text': "Cool",
-                  'new-password-text': "Cool",
-                  'new-tfa-text': "274611",
-                  'error': ""
+                  'new-user-text': "joshua",
+                  'new-password-text': "",
+                  'new-tfa-text': "",
+                  'error': "",
+                  'submitting': False
               },
 }
 
