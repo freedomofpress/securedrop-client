@@ -29,7 +29,7 @@ app_state = { 'sources': [{'name': 'avro vulcan',
               'view': None,
               'login': {
                   'new-user-text': "joshua",
-                  'new-password-text': "",
+                  'new-password-text': "bundle imprecise equity reiterate rewire confused abide",
                   'new-tfa-text': "",
                   'error': "",
                   'submitting': False

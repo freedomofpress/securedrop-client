@@ -23,7 +23,6 @@ login_rapp.set_top(layout.login_app)
 
 # Qt boilerplate for app initialization
 qapp = QApplication([])
-# window = QWidget()
 
 # This will be the element that'll hold our entire UI
 vbox = QVBoxLayout()
@@ -70,7 +69,7 @@ system.create_actor(actors.DBUpdater(db), 'updater')
 system.create_actor(actors.EventCatcher(), 'event')
 system.create_actor(actors.APIMultiplexer(), 'api-multiplexer')
 system.create_actor(actors.Receiver(), 'api-receiver')
-system.create_actor(actors.LoginResult(), 'login-result')
+system.create_actor(actors.LoginResult(login_appwindow), 'login-result')
 
 # kick off the actor network
 # system.tell('timer','click')

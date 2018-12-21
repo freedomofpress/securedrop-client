@@ -35,7 +35,10 @@ class APIClient:
 
         req_id = msg['req_id']
         cmd = msg['cmd']
-        [call_args, result, timeout] = msg['cmd-args']
+        cmd_args = msg['cmd-args']
+        success = msg['success']
+        timeout = msg['timeout']
+        error = msg['error']
 
         tell('api-receiver', {'req_id': req_id,
                               'action': 'newreq'})
@@ -47,16 +50,24 @@ class APIClient:
                                                'action': 'timeout',
                                                'action-cb': timeout}})
 
-
         fn = getattr(self.api, cmd)
-        res = fn(*call_args)
+        if cmd_args is None:
+            cmd_args = []
+        try:
+            res = fn(*cmd_args)
+            print("Res here is", res)
 
-        tell('api-receiver', {'req_id': req_id,
-                              'action': 'result',
-                              'action-cb': result,
-                              'action-args': res})
+            tell('api-receiver', {'req_id': req_id,
+                              'action': 'resp',
+                              'action-cb': success,
+                              'server-response': res})
 
-        print("GOT RES", res)
+        except Exception as e:
+            print("Error while attempting remote API call")
+            tell('api-receiver', {'req_id': req_id,
+                                  'action': 'error',
+                                  'action-cb': error,
+                                  'server-response': e})
 
 
 class APIMultiplexer:
@@ -64,10 +75,14 @@ class APIMultiplexer:
         self.api = None
 
     def act(self, msg, tell, create):
-        [cmd, args] = msg
+        cmd = msg['command']
+        cmd_args = msg.get('args')
+        success = msg.get('success')
+        timeout = msg.get('timeout')
+        error = msg.get('error')
 
         if cmd == "configure":
-            [hostname, username, password, totp, proxy] = args
+            [hostname, username, password, totp, proxy] = cmd_args
             self.api = sdclientapi.API(hostname, username,
                                        password, totp, proxy)
             # tell('nothing', {})
@@ -76,7 +91,10 @@ class APIMultiplexer:
             api = create(APIClient(self.api))
             tell(api.name, {'req_id': req_id,
                             'cmd': cmd,
-                            'cmd-args': args})
+                            'cmd-args': cmd_args,
+                            'success': success,
+                            'timeout': timeout,
+                            'error': error})
 
 class Receiver:
     def __init__(self):
@@ -100,14 +118,24 @@ class Receiver:
 
             del self.current_reqs[req_id]
 
-        elif action == 'resp' and req_id in self.current_reqs:
-            del self.current_reqs[req_id]
+        elif action == 'error' and req_id in self.current_reqs:
+            print("Request error.")
 
-            resp = msg['resp']
             action_cb = msg['action-cb']
             cb_actor = action_cb[0]
             cb_args = action_cb[1:]
-            cb_args.append(resp)
+            cb_args.append(msg['server-response'])
+            tell(cb_actor, cb_args)
+
+            del self.current_reqs[req_id]
+
+        elif action == 'resp' and req_id in self.current_reqs:
+            del self.current_reqs[req_id]
+
+            action_cb = msg['action-cb']
+            cb_actor = action_cb[0]
+            cb_args = action_cb[1:]
+            cb_args.append(msg['server-response'])
             tell(cb_actor, cb_args)
 
         else:
@@ -115,8 +143,27 @@ class Receiver:
 
 
 class LoginResult:
+    def __init__(self, window):
+        self.window = window
+
     def act(self, msg, tell, create):
-        print("Login result got", msg)
+        print("Login result!", msg)
+        [disposition, response] = msg
+
+        if disposition == 'response':
+            if response is True:
+                print("Yay, you're logged in!")
+                # you want to close the login app here, somehow
+                self.window.close()
+            else:
+                print("Your login failed")
+
+        elif disposition == 'timeout':
+            print("Your login timed out!")
+
+        elif disposition == 'error':
+            print("There was a login error :/", msg)
+
 
 class LoginSubmitter:
     def act(self, msg, tell, create):
@@ -125,13 +172,22 @@ class LoginSubmitter:
         hostname = "http://localhost:8081"
         proxy = True
 
-        tell('api-multiplexer', ['configure',
-                                 [hostname, username, password, totp, proxy]])
+        tell('api-multiplexer', {'command': 'configure',
+                                 'args': [hostname, username, password, totp, proxy]})
 
-        tell('api-multiplexer', ['authenticate',
-                                 [[], # args to command (authenticate, in this case)
-                                  ['login-result','result'],
-                                  ['login-result','timeout']]])
+        tell('api-multiplexer', {'command': 'authenticate',
+                                 # args: [],
+                                 'success': ['login-result', 'response'],
+                                 'timeout': ['login-result', 'timeout'],
+                                 'error': ['login-result', 'error']})
+
+        # tell('api-multiplexer', ['configure',
+        #                          [hostname, username, password, totp, proxy]])
+
+        # tell('api-multiplexer', ['authenticate',
+        #                          [[], # args to command (authenticate, in this case)
+        #                           ['login-result','result'],
+        #                           ['login-result','timeout']]])
 
 # All database mutations route through this actor
 class DBUpdater:
