@@ -445,7 +445,7 @@ class SpeechBubble(QWidget):
     and journalist.
     """
 
-    css = "padding: 10px; border: 1px solid #999; border-radius: 20px;"
+    css = "padding: 10px; border: 1px solid #999; border-radius: 18px;"
 
     def __init__(self, text):
         super().__init__()
@@ -481,7 +481,7 @@ class ConversationWidget(QWidget):
             label.setStyleSheet(label.css + 'border-bottom-left-radius: 0px;')
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
-        self.setContentsMargins(0, 0, 0, 0)
+        self.setContentsMargins(38, 38, 38, 38)
 
 
 class MessageWidget(ConversationWidget):
