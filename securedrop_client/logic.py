@@ -22,12 +22,10 @@ import sdclientapi
 import shutil
 import arrow
 import uuid
-from sqlalchemy import event
 from securedrop_client import storage
 from securedrop_client import db
 from securedrop_client.utils import check_dir_permissions
 from securedrop_client.crypto import GpgHelper, CryptoError
-from securedrop_client.data import Data
 from securedrop_client.message_sync import MessageSync, ReplySync
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess
 
@@ -147,18 +145,6 @@ class Client(QObject):
         self.conv_view_update.timeout.connect(
             self.update_conversation_view)
         self.conv_view_update.start(1000 * 60 * 0.10)  # every 6 seconds
-
-        event.listen(db.Submission, 'load', self.on_object_loaded)
-        event.listen(db.Submission, 'init', self.on_object_instantiated)
-        event.listen(db.Reply, 'load', self.on_object_loaded)
-        event.listen(db.Reply, 'init', self.on_object_instantiated)
-
-    def on_object_instantiated(self, target, args, kwargs):
-        target.data = Data(self.data_dir)
-        return target
-
-    def on_object_loaded(self, target, context):
-        target.data = Data(self.data_dir)
 
     def call_api(self, function, callback, timeout, *args, current_object=None,
                  **kwargs):
@@ -505,8 +491,7 @@ class Client(QObject):
         # with the same filename as the server, except with the .gz.gpg
         # stripped off.
         server_filename = submission_db_object.filename
-        fn_no_ext, _ = os.path.splitext(
-            os.path.splitext(server_filename)[0])
+        fn_no_ext, _ = os.path.splitext(os.path.splitext(server_filename)[0])
         submission_filepath = os.path.join(self.data_dir, fn_no_ext)
 
         if self.proxy:

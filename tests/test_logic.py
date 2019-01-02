@@ -1102,18 +1102,6 @@ def test_Client_on_file_download_Reply(homedir, config, mocker):
                                         cl.data_dir, current_object=reply)
 
 
-def test_Client_on_object_loaded(homedir, config, mocker):
-    """
-    Tests that the ORM "loaded" callback correctly configures the target object
-    Using the `config` fixture to ensure the config is written to disk.
-    """
-    mock_gui = mocker.MagicMock()
-    mock_session = mocker.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, homedir)
-    cl.on_object_loaded(cl, None)
-    assert cl.data.data_dir == os.path.join(homedir, "data")
-
-
 def test_Client_on_file_open(homedir, config, mocker):
     """
     If running on Qubes, a new QProcess with the expected command and args

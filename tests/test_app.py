@@ -121,7 +121,7 @@ def test_start_app(homedir, mocker):
 
     start_app(mock_args, mock_qt_args)
     mock_app.assert_called_once_with(mock_qt_args)
-    mock_win.assert_called_once_with()
+    mock_win.assert_called_once_with(str(homedir))
     mock_client.assert_called_once_with('http://localhost:8081/',
                                         mock_win(), mock_session_class(),
                                         homedir, False)
