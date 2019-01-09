@@ -26,7 +26,6 @@ from securedrop_client.gui.widgets import (ToolBar, MainView, LoginDialog,
                                            ConversationView,
                                            SourceProfileShortWidget)
 from securedrop_client.resources import load_icon
-from securedrop_client.storage import get_data
 
 logger = logging.getLogger(__name__)
 
@@ -177,8 +176,7 @@ class Window(QMainWindow):
         conversation_container = self.conversations.get(source.uuid, None)
 
         if conversation_container is None:
-            conversation = ConversationView(source, parent=self)
-            conversation.setup(self.controller)
+            conversation = ConversationView(source, self.sdc_home, self.controller, parent=self)
 
             conversation_container = QWidget()
             layout = QVBoxLayout()

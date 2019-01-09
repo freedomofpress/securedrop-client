@@ -19,13 +19,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 import arrow
 import html
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, \
     QMessageBox, QToolButton
 
+from securedrop_client.logic import Client
 from securedrop_client.resources import load_svg, load_image
+from securedrop_client.storage import get_data
 from securedrop_client.utils import humanize_filesize
 
 logger = logging.getLogger(__name__)
@@ -484,15 +486,28 @@ class SpeechBubble(QWidget):
 
     css = "padding: 10px; border: 1px solid #999; border-radius: 20px;"
 
-    def __init__(self, text):
+    def __init__(self, message_id: str, text: str, update_signal) -> None:
         super().__init__()
+        self.message_id = message_id
+
         layout = QVBoxLayout()
         self.setLayout(layout)
 
-        message = QLabel(html.escape(text, quote=False))
-        message.setWordWrap(True)
+        self.message = QLabel(html.escape(text, quote=False))
+        self.message.setWordWrap(True)
 
-        layout.addWidget(message)
+        layout.addWidget(self.message)
+
+        update_signal.connect(self._update_text)
+
+    @pyqtSlot(str, str)
+    def _update_text(self, message_id: str, text: str) -> None:
+        """
+        Conditionally update this SpeechBubble's text if and only if the message_id of the emitted
+        signal matche the message_id of this speech bubble.
+        """
+        if message_id == self.message_id:
+            self.message.setText(html.escape(text, quote=False))
 
 
 class ConversationWidget(QWidget):
@@ -500,7 +515,11 @@ class ConversationWidget(QWidget):
     Draws a message onto the screen.
     """
 
-    def __init__(self, message, align):
+    def __init__(self,
+                 message_id: str,
+                 message: str,
+                 update_signal,
+                 align: str) -> None:
         """
         Initialise with the message to display and some notion of which side
         of the conversation ("left" or "right" [anything else]) to which the
@@ -508,7 +527,7 @@ class ConversationWidget(QWidget):
         """
         super().__init__()
         layout = QHBoxLayout()
-        label = SpeechBubble(message)
+        label = SpeechBubble(message_id, message, update_signal)
 
         if align is not "left":
             # Float right...
@@ -533,8 +552,11 @@ class MessageWidget(ConversationWidget):
     Represents an incoming message from the source.
     """
 
-    def __init__(self, message):
-        super().__init__(message, align="left")
+    def __init__(self, message_id: str, message: str, update_signal) -> None:
+        super().__init__(message_id,
+                         message,
+                         update_signal,
+                         align="left")
         self.setStyleSheet("""
         background-color: #EEE;
         """)
@@ -545,8 +567,11 @@ class ReplyWidget(ConversationWidget):
     Represents a reply to a source.
     """
 
-    def __init__(self, message):
-        super().__init__(message, align="right")
+    def __init__(self, message_id: str, message: str, update_signal) -> None:
+        super().__init__(message_id,
+                         message,
+                         update_signal,
+                         align="right")
         self.setStyleSheet("""
         background-color: #2299EE;
         """)
@@ -612,9 +637,11 @@ class ConversationView(QWidget):
     Renders a conversation.
     """
 
-    def __init__(self, source_db_object, parent=None):
+    def __init__(self, source_db_object, sdc_home: str, controller: Client, parent=None):
         super().__init__(parent)
         self.source = source_db_object
+        self.sdc_home = sdc_home
+        self.controller = controller
 
         self.container = QWidget()
         self.conversation_layout = QVBoxLayout()
@@ -642,7 +669,7 @@ class ConversationView(QWidget):
         # clear all old items
         while True:
             w = self.conversation_layout.takeAt(0)
-            if w:
+            if w:  # pragma: no cover
                 del w
             else:
                 break
@@ -665,15 +692,9 @@ class ConversationView(QWidget):
         Private helper function to add correct message to conversation widgets
         """
         if item.is_downloaded is False:
-            adder(default)
+            adder(item.uuid, default)
         else:
-            adder(item.content)
-
-    def setup(self, controller):
-        """
-        Ensure there's a reference to program logic.
-        """
-        self.controller = controller
+            adder(item.uuid, get_data(self.sdc_home, item.filename))
 
     def add_file(self, source_db_object, submission_db_object):
         """
@@ -690,17 +711,19 @@ class ConversationView(QWidget):
         """
         self.scroll.verticalScrollBar().setValue(max_val)
 
-    def add_message(self, message):
+    def add_message(self, message_id: str, message: str) -> None:
         """
         Add a message from the source.
         """
-        self.conversation_layout.addWidget(MessageWidget(message))
+        self.conversation_layout.addWidget(
+            MessageWidget(message_id, message, self.controller.message_sync.message_downloaded))
 
-    def add_reply(self, reply, files=None):
+    def add_reply(self, message_id: str, reply: str, files=None) -> None:
         """
         Add a reply from a journalist.
         """
-        self.conversation_layout.addWidget(ReplyWidget(reply))
+        self.conversation_layout.addWidget(
+            ReplyWidget(message_id, reply, self.controller.reply_sync.reply_downloaded))
 
 
 class DeleteSourceAction(QAction):
