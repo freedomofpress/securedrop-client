@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QApplication, QVBoxLayout
 from securedrop_client.gui.main import Window
 from securedrop_client.resources import load_icon
 from securedrop_client.db import Submission
+from uuid import uuid4
 
 
 app = QApplication([])
@@ -233,7 +234,8 @@ def test_conversation_pending_message(mocker):
     mock_source = mocker.MagicMock()
     mock_source.journalistic_designation = 'Testy McTestface'
 
-    submission = Submission(source=mock_source, uuid="test", size=123,
+    msg_uuid = str(uuid4())
+    submission = Submission(source=mock_source, uuid=msg_uuid, size=123,
                             filename="test.msg.gpg",
                             download_url='http://test/test')
 
@@ -248,7 +250,7 @@ def test_conversation_pending_message(mocker):
     w.show_conversation_for(mock_source)
 
     assert mocked_add_message.call_count == 1
-    assert mocked_add_message.call_args == mocker.call("<Message not yet downloaded>")
+    assert mocked_add_message.call_args == mocker.call(msg_uuid, "<Message not yet downloaded>")
 
 
 def test_set_status(mocker):

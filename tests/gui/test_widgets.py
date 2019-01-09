@@ -542,9 +542,33 @@ def test_SpeechBubble_init(mocker):
     mock_label = mocker.patch('securedrop_client.gui.widgets.QLabel')
     mocker.patch('securedrop_client.gui.widgets.QVBoxLayout')
     mocker.patch('securedrop_client.gui.widgets.SpeechBubble.setLayout')
+    mock_signal = mocker.Mock()
+    mock_connect = mocker.Mock()
+    mock_signal.connect = mock_connect
 
-    SpeechBubble('hello')
+    SpeechBubble('mock id', 'hello', mock_signal)
     mock_label.assert_called_once_with('hello')
+    assert mock_connect.called
+
+
+def test_SpeechBubble_update_text(mocker):
+    """
+    Check that the calling the slot updates the text.
+    """
+    mocker.patch('securedrop_client.gui.widgets.QVBoxLayout')
+    mocker.patch('securedrop_client.gui.widgets.SpeechBubble.setLayout')
+    mock_signal = mocker.MagicMock()
+
+    msg_id = 'abc123'
+    sb = SpeechBubble(msg_id, 'hello', mock_signal)
+
+    new_msg = 'new message'
+    sb._update_text(msg_id, new_msg)
+    assert sb.message.text() == new_msg
+
+    newer_msg = 'an even newer message'
+    sb._update_text(msg_id + 'xxxxx', newer_msg)
+    assert sb.message.text() == new_msg
 
 
 def test_SpeechBubble_html_init(mocker):
@@ -555,8 +579,9 @@ def test_SpeechBubble_html_init(mocker):
     mock_label = mocker.patch('securedrop_client.gui.widgets.QLabel')
     mocker.patch('securedrop_client.gui.widgets.QVBoxLayout')
     mocker.patch('securedrop_client.gui.widgets.SpeechBubble.setLayout')
+    mock_signal = mocker.MagicMock()
 
-    SpeechBubble('<b>hello</b>')
+    SpeechBubble('mock id', '<b>hello</b>', mock_signal)
     mock_label.assert_called_once_with('&lt;b&gt;hello&lt;/b&gt;')
 
 
@@ -565,48 +590,73 @@ def test_SpeechBubble_with_apostrophe_in_text(mocker):
     mock_label = mocker.patch('securedrop_client.gui.widgets.QLabel')
     mocker.patch('securedrop_client.gui.widgets.QVBoxLayout')
     mocker.patch('securedrop_client.gui.widgets.SpeechBubble.setLayout')
+    mock_signal = mocker.MagicMock()
 
     message = "I'm sure, you are reading my message."
-    SpeechBubble(message)
+    SpeechBubble('mock id', message, mock_signal)
     mock_label.assert_called_once_with(message)
 
 
-def test_ConversationWidget_init_left():
+def test_ConversationWidget_init_left(mocker):
     """
     Check the ConversationWidget is configured correctly for align-left.
     """
-    cw = ConversationWidget('hello', align='left')
+    mock_signal = mocker.Mock()
+    mock_connect = mocker.Mock()
+    mock_signal.connect = mock_connect
+
+    cw = ConversationWidget('mock id', 'hello', mock_signal, align='left')
     layout = cw.layout()
+
     assert isinstance(layout.takeAt(0), QWidgetItem)
     assert isinstance(layout.takeAt(0), QSpacerItem)
+    assert mock_connect.called
 
 
-def test_ConversationWidget_init_right():
+def test_ConversationWidget_init_right(mocker):
     """
     Check the ConversationWidget is configured correctly for align-left.
     """
-    cw = ConversationWidget('hello', align='right')
+    mock_signal = mocker.Mock()
+    mock_connect = mocker.Mock()
+    mock_signal.connect = mock_connect
+
+    cw = ConversationWidget('mock id', 'hello', mock_signal, align='right')
     layout = cw.layout()
+
     assert isinstance(layout.takeAt(0), QSpacerItem)
     assert isinstance(layout.takeAt(0), QWidgetItem)
+    assert mock_connect.called
 
 
-def test_MessageWidget_init():
+def test_MessageWidget_init(mocker):
     """
     Check the CSS is set as expected.
     """
-    mw = MessageWidget('hello')
+    mock_signal = mocker.Mock()
+    mock_connected = mocker.Mock()
+    mock_signal.connect = mock_connected
+
+    mw = MessageWidget('mock id', 'hello', mock_signal)
     ss = mw.styleSheet()
+
     assert 'background-color' in ss
+    assert mock_connected.called
 
 
-def test_ReplyWidget_init():
+def test_ReplyWidget_init(mocker):
     """
     Check the CSS is set as expected.
     """
-    rw = ReplyWidget('hello')
+    mock_signal = mocker.Mock()
+    mock_connected = mocker.Mock()
+    mock_signal.connect = mock_connected
+
+    rw = ReplyWidget('mock id', 'hello', mock_signal)
     ss = rw.styleSheet()
+
     assert 'background-color' in ss
+    assert mock_connected.called
 
 
 def test_FileWidget_init_left(mocker):
@@ -680,78 +730,74 @@ def test_FileWidget_mousePressEvent_open(mocker):
     fw.controller.on_file_open.assert_called_once_with(submission)
 
 
-def test_ConversationView_init(mocker):
+def test_ConversationView_init(mocker, homedir):
     """
     Ensure the conversation view has a layout to add widgets to.
     """
     mocked_source = mocker.MagicMock()
-    cv = ConversationView(mocked_source)
+    mocked_controller = mocker.MagicMock()
+    cv = ConversationView(mocked_source, homedir, mocked_controller)
     assert isinstance(cv.conversation_layout, QVBoxLayout)
 
 
-def test_ConversationView_setup(mocker):
-    """
-    Ensure the controller is set
-    """
-    mocked_source = mocker.MagicMock()
-    cv = ConversationView(mocked_source)
-    mock_controller = mocker.MagicMock()
-    cv.setup(mock_controller)
-    assert cv.controller == mock_controller
-
-
-def test_ConversationView_move_to_bottom(mocker):
+def test_ConversationView_move_to_bottom(mocker, homedir):
     """
     Check the signal handler sets the correct value for the scrollbar to be
     the maximum possible value.
     """
     mocked_source = mocker.MagicMock()
-    cv = ConversationView(mocked_source)
+    mocked_controller = mocker.MagicMock()
+
+    cv = ConversationView(mocked_source, homedir, mocked_controller)
+
     cv.scroll = mocker.MagicMock()
     cv.move_to_bottom(0, 6789)
     cv.scroll.verticalScrollBar().setValue.assert_called_once_with(6789)
 
 
-def test_ConversationView_add_message(mocker):
+def test_ConversationView_add_message(mocker, homedir):
     """
     Adding a message results in a new MessageWidget added to the layout.
     """
     mocked_source = mocker.MagicMock()
-    cv = ConversationView(mocked_source)
-    cv.controller = mocker.MagicMock()
+    mocked_controller = mocker.MagicMock()
+
+    cv = ConversationView(mocked_source, homedir, mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
 
-    cv.add_message('hello')
+    cv.add_message('mock id', 'hello')
     assert cv.conversation_layout.addWidget.call_count == 1
 
     cal = cv.conversation_layout.addWidget.call_args_list
     assert isinstance(cal[0][0][0], MessageWidget)
 
 
-def test_ConversationView_add_reply(mocker):
+def test_ConversationView_add_reply(mocker, homedir):
     """
     Adding a reply results in a new ReplyWidget added to the layout.
     """
     mocked_source = mocker.MagicMock()
-    cv = ConversationView(mocked_source)
-    cv.controller = mocker.MagicMock()
+    mocked_controller = mocker.MagicMock()
+
+    cv = ConversationView(mocked_source, homedir, mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
 
-    cv.add_reply('hello')
+    cv.add_reply('mock id', 'hello')
     assert cv.conversation_layout.addWidget.call_count == 1
 
     cal = cv.conversation_layout.addWidget.call_args_list
     assert isinstance(cal[0][0][0], ReplyWidget)
 
 
-def test_ConversationView_add_downloaded_file(mocker):
+def test_ConversationView_add_downloaded_file(mocker, homedir):
     """
     Adding a file results in a new FileWidget added to the layout with the
     proper QLabel.
     """
     mocked_source = mocker.MagicMock()
-    cv = ConversationView(mocked_source)
-    cv.controller = mocker.MagicMock()
+    mocked_controller = mocker.MagicMock()
+
+    cv = ConversationView(mocked_source, homedir, mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
 
     mock_source = mocker.MagicMock()
@@ -769,14 +815,15 @@ def test_ConversationView_add_downloaded_file(mocker):
     assert isinstance(cal[0][0][0], FileWidget)
 
 
-def test_ConversationView_add_not_downloaded_file(mocker):
+def test_ConversationView_add_not_downloaded_file(mocker, homedir):
     """
     Adding a file results in a new FileWidget added to the layout with the
     proper QLabel.
     """
     mocked_source = mocker.MagicMock()
-    cv = ConversationView(mocked_source)
-    cv.controller = mocker.MagicMock()
+    mocked_controller = mocker.MagicMock()
+
+    cv = ConversationView(mocked_source, homedir, mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
 
     mock_source = mocker.MagicMock()

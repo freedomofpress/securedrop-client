@@ -30,20 +30,15 @@ def test_MessageSync_init(mocker):
 
 def test_MessageSync_run_success(mocker):
     submission = mocker.MagicMock()
+    submission.uuid = 'mock id'
     submission.download_url = "http://foo"
     submission.filename = "foo.gpg"
 
-    fh = mocker.MagicMock()
-    fh.name = "foo"
-
     # mock the fetching of submissions
     mocker.patch('securedrop_client.storage.find_new_submissions', return_value=[submission])
-    # mock the handling of the downloaded files
-    mocker.patch('shutil.move')
-    mocker.patch('os.unlink')
-    mocker.patch('tempfile.NamedTemporaryFile', return_value=fh)
     mocker.patch('securedrop_client.message_sync.storage.mark_file_as_downloaded')
-    mocker.patch('builtins.open', mocker.mock_open(read_data="blah"))
+    # don't create the signal
+    mocker.patch('securedrop_client.message_sync.pyqtSignal')
     # mock the GpgHelper creation since we don't have directories/keys setup
     mocker.patch('securedrop_client.message_sync.GpgHelper')
 
@@ -54,8 +49,15 @@ def test_MessageSync_run_success(mocker):
     ms = MessageSync(api, home, is_qubes)
     ms.api.download_submission = mocker.MagicMock(return_value=(1234, "/home/user/downloads/foo"))
 
+    mock_message_downloaded = mocker.Mock()
+    mock_emit = mocker.Mock()
+    mock_message_downloaded.emit = mock_emit
+    mocker.patch.object(ms, 'message_downloaded', new=mock_message_downloaded)
+
     # check that it runs without raising exceptions
     ms.run(False)
+
+    assert mock_emit.called
 
 
 def test_MessageSync_exception(homedir, config, mocker):
@@ -76,6 +78,8 @@ def test_MessageSync_exception(homedir, config, mocker):
 
     ms = MessageSync(api, str(homedir), is_qubes)
     mocker.patch.object(ms.gpg, 'decrypt_submission_or_reply', side_effect=CryptoError)
+
+    # check that it runs without raising exceptions
     ms.run(False)
 
 
@@ -84,17 +88,10 @@ def test_MessageSync_run_failure(mocker):
     submission.download_url = "http://foo"
     submission.filename = "foo.gpg"
 
-    fh = mocker.MagicMock()
-    fh.name = "foo"
-
     # mock the fetching of submissions
     mocker.patch('securedrop_client.storage.find_new_submissions', return_value=[submission])
     # mock the handling of the downloaded files
-    mocker.patch('shutil.move')
-    mocker.patch('os.unlink')
     mocker.patch('securedrop_client.message_sync.storage.mark_file_as_downloaded')
-    mocker.patch('tempfile.NamedTemporaryFile', return_value=fh)
-    mocker.patch('builtins.open', mocker.mock_open(read_data="blah"))
     # mock the GpgHelper creation since we don't have directories/keys setup
     mocker.patch('securedrop_client.message_sync.GpgHelper')
 
@@ -105,16 +102,15 @@ def test_MessageSync_run_failure(mocker):
     ms = MessageSync(api, home, is_qubes)
     ms.api.download_submission = mocker.MagicMock(return_value=(1234, "/home/user/downloads/foo"))
 
+    # check that it runs without raising exceptions
     ms.run(False)
 
 
 def test_ReplySync_run_success(mocker):
     reply = mocker.MagicMock()
+    reply.uuid = 'mock id'
     reply.download_url = "http://foo"
     reply.filename = "foo.gpg"
-
-    fh = mocker.MagicMock()
-    fh.name = "foo"
 
     api = mocker.MagicMock()
     home = "/home/user/.sd"
@@ -122,13 +118,11 @@ def test_ReplySync_run_success(mocker):
 
     # mock the fetching of replies
     mocker.patch('securedrop_client.storage.find_new_replies', return_value=[reply])
+    # don't create the signal
+    mocker.patch('securedrop_client.message_sync.pyqtSignal')
     # mock the handling of the replies
-    mocker.patch('shutil.move')
-    mocker.patch('os.unlink')
-    mocker.patch('securedrop_client.message_sync.storage.mark_file_as_downloaded')
-    mocker.patch('tempfile.NamedTemporaryFile', return_value=fh)
+    mocker.patch('securedrop_client.message_sync.storage.mark_reply_as_downloaded')
     mocker.patch('securedrop_client.message_sync.GpgHelper')
-    mocker.patch('builtins.open', mocker.mock_open(read_data="blah"))
 
     api = mocker.MagicMock()
     home = "/home/user/.sd"
@@ -137,8 +131,15 @@ def test_ReplySync_run_success(mocker):
     ms = ReplySync(api, home, is_qubes)
     ms.api.download_reply = mocker.MagicMock(return_value=(1234, "/home/user/downloads/foo"))
 
+    mock_reply_downloaded = mocker.Mock()
+    mock_emit = mocker.Mock()
+    mock_reply_downloaded.emit = mock_emit
+    mocker.patch.object(ms, 'reply_downloaded', new=mock_reply_downloaded)
+
     # check that it runs without raising exceptions
     ms.run(False)
+
+    assert mock_emit.called
 
 
 def test_ReplySync_exception(mocker):
@@ -157,6 +158,8 @@ def test_ReplySync_exception(mocker):
     mocker.patch("sdclientapi.sdlocalobjects.Reply", mocker.MagicMock(side_effect=Exception()))
 
     rs = ReplySync(api, home, is_qubes)
+
+    # check that it runs without raise exceptions
     rs.run(False)
 
 
@@ -165,18 +168,11 @@ def test_ReplySync_run_failure(mocker):
     reply.download_url = "http://foo"
     reply.filename = "foo.gpg"
 
-    fh = mocker.MagicMock()
-    fh.name = "foo"
-
     # mock finding new replies
     mocker.patch('securedrop_client.storage.find_new_replies', return_value=[reply])
     # mock handling the new reply
-    mocker.patch('shutil.move')
-    mocker.patch('os.unlink')
     mocker.patch('securedrop_client.message_sync.storage.mark_file_as_downloaded')
-    mocker.patch('tempfile.NamedTemporaryFile', return_value=fh)
     mocker.patch('securedrop_client.message_sync.GpgHelper')
-    mocker.patch('builtins.open', mocker.mock_open(read_data="blah"))
 
     api = mocker.MagicMock()
     home = "/home/user/.sd"
