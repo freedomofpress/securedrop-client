@@ -3,11 +3,11 @@ SHELL := /bin/bash
 
 .PHONY: clean
 clean:  ## Clean the workspace of generated resources
-	@rm -rf build dist *.egg-info .coverage .eggs docs/_build .pytest_cache lib htmlcov && \
+	@rm -rf build dist *.egg-info .coverage .eggs docs/_build .pytest_cache lib htmlcov .cache && \
 		find . \( -name '*.py[co]' -o -name dropin.cache \) -delete && \
 		find . \( -name '*.bak' -o -name dropin.cache \) -delete && \
 		find . \( -name '*.tgz' -o -name dropin.cache \) -delete && \
-		find . -name __pycache__ -print0 | xargs rm -rf
+		find . -name __pycache__ -print0 | xargs -0 rm -rf
 
 TESTS ?= tests
 TESTOPTS ?= -v
@@ -34,7 +34,7 @@ check: clean lint test ## Run the full CI test suite
 # 6. Format columns with colon as delimiter.
 .PHONY: help
 help: ## Print this message and exit.
-	@printf "Makefile for developing and testing SecureDrop.\n"
+	@printf "Makefile for developing and testing the SecureDrop client.\n"
 	@printf "Subcommands:\n\n"
 	@awk 'BEGIN {FS = ":.*?## "} /^[0-9a-zA-Z_-]+:.*?## / {printf "\033[36m%s\033[0m : %s\n", $$1, $$2}' $(MAKEFILE_LIST) \
 		| sort \
