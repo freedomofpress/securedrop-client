@@ -23,8 +23,7 @@ import logging
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QDesktopWidget, QStatusBar
 from securedrop_client import __version__
 from securedrop_client.gui.widgets import (ToolBar, MainView, LoginDialog,
-                                           ConversationView,
-                                           SourceProfileShortWidget)
+                                           SourceConversationWrapper)
 from securedrop_client.resources import load_icon
 
 logger = logging.getLogger(__name__)
@@ -66,7 +65,7 @@ class Window(QMainWindow):
         widget_layout.addWidget(self.tool_bar, 1)
         widget_layout.addWidget(self.main_view, 6)
 
-        # Cache a dict of source.uuid -> ConversationView
+        # Cache a dict of source.uuid -> SourceConversationWrapper
         # We do this to not create/destroy widgets constantly (because it causes UI "flicker")
         self.conversations = {}
 
@@ -176,16 +175,10 @@ class Window(QMainWindow):
         conversation_container = self.conversations.get(source.uuid, None)
 
         if conversation_container is None:
-            conversation = ConversationView(source, self.sdc_home, self.controller, parent=self)
-
-            conversation_container = QWidget()
-            layout = QVBoxLayout()
-            conversation_container.setLayout(layout)
-
-            source_profile = SourceProfileShortWidget(source, self.controller)
-
-            layout.addWidget(source_profile)
-            layout.addWidget(conversation)
+            conversation_container = SourceConversationWrapper(source,
+                                                               self.sdc_home,
+                                                               self.controller)
+            self.conversations[source.uuid] = conversation_container
 
         self.main_view.set_conversation(conversation_container)
 

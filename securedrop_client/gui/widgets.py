@@ -25,6 +25,7 @@ from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBox
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, \
     QMessageBox, QToolButton
 
+from securedrop_client.db import Source
 from securedrop_client.logic import Client
 from securedrop_client.resources import load_svg, load_image
 from securedrop_client.storage import get_data
@@ -637,7 +638,7 @@ class ConversationView(QWidget):
     Renders a conversation.
     """
 
-    def __init__(self, source_db_object, sdc_home: str, controller: Client, parent=None):
+    def __init__(self, source_db_object: Source, sdc_home: str, controller: Client, parent=None):
         super().__init__(parent)
         self.source = source_db_object
         self.sdc_home = sdc_home
@@ -724,6 +725,24 @@ class ConversationView(QWidget):
         """
         self.conversation_layout.addWidget(
             ReplyWidget(message_id, reply, self.controller.reply_sync.reply_downloaded))
+
+
+class SourceConversationWrapper(QWidget):
+    """
+    Wrapper for a source's conversation including the chat window, profile tab, and other
+    per-soruce resources.
+    """
+
+    def __init__(self, source: Source, sdc_home: str, controller: Client, parent=None) -> None:
+        super().__init__(parent)
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+
+        self.conversation = ConversationView(source, sdc_home, controller, parent=self)
+        self.source_profile = SourceProfileShortWidget(source, controller)
+
+        self.layout.addWidget(self.source_profile)
+        self.layout.addWidget(self.conversation)
 
 
 class DeleteSourceAction(QAction):
