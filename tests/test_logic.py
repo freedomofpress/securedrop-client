@@ -503,6 +503,31 @@ def test_Client_sync_api(homedir, config, mocker):
                                         cl.on_sync_timeout, cl.api)
 
 
+def test_Client_on_synced_remove_stale_sources(homedir, config, mocker):
+    """
+    On an API sync, if a source no longer exists, remove it from the GUI.
+    Using the `config` fixture to ensure the config is written to disk.
+    """
+    mock_source_id = 'abc123'
+    mock_conv_wrapper = 'mock'
+
+    gui = mocker.Mock()
+    gui.conversations = {mock_source_id: mock_conv_wrapper}
+
+    mock_session = mocker.MagicMock()
+    cl = Client('http://localhost', gui, mock_session, homedir)
+
+    mock_source = mocker.Mock()
+    mock_source.uuid = mock_source_id
+
+    # not that the first item does *not* have the mock_source
+    api_res = ([], mocker.MagicMock(), mocker.MagicMock())
+    cl.on_synced(api_res)
+
+    # check that the uuid is not longer in the dict
+    assert mock_source_id not in gui.conversations
+
+
 def test_Client_last_sync_with_file(homedir, config, mocker):
     """
     The flag indicating the time of the last sync with the API is stored in a
