@@ -196,11 +196,12 @@ def test_conversation_for(mocker):
     mock_reply.filename = '3-my-source-reply.gpg'
     mock_source.collection = [mock_file, mock_message, mock_reply]
 
-    mocked_add_message = mocker.patch('securedrop_client.gui.main.ConversationView.add_message')
-    mocked_add_reply = mocker.patch('securedrop_client.gui.main.ConversationView.add_reply')
-    mocked_add_file = mocker.patch('securedrop_client.gui.main.ConversationView.add_file')
-    mocker.patch('securedrop_client.gui.main.QVBoxLayout')
-    mocker.patch('securedrop_client.gui.main.QWidget')
+    mocked_add_message = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_message',
+                                      new=mocker.Mock())
+    mocked_add_reply = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_reply',
+                                    new=mocker.Mock())
+    mocked_add_file = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_file',
+                                   new=mocker.Mock())
 
     w.show_conversation_for(mock_source)
 
@@ -210,16 +211,25 @@ def test_conversation_for(mocker):
 
     # check that showing the conversation a second time doesn't break anything
 
+    # stop the old mockers
+    mocked_add_message.stop()
+    mocked_add_reply.stop()
+    mocked_add_file.stop()
+
     # use new mocks to check the count again
-    mocked_add_message = mocker.patch('securedrop_client.gui.main.ConversationView.add_message')
-    mocked_add_reply = mocker.patch('securedrop_client.gui.main.ConversationView.add_reply')
-    mocked_add_file = mocker.patch('securedrop_client.gui.main.ConversationView.add_file')
+    mocked_add_message = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_message',
+                                      new=mocker.Mock())
+    mocked_add_reply = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_reply',
+                                    new=mocker.Mock())
+    mocked_add_file = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_file',
+                                   new=mocker.Mock())
 
     w.show_conversation_for(mock_source)
 
-    assert mocked_add_message.call_count > 0
-    assert mocked_add_reply.call_count > 0
-    assert mocked_add_file.call_count > 0
+    # because the conversation was cached, we don't call these functions again
+    assert mocked_add_message.call_count == 0
+    assert mocked_add_reply.call_count == 0
+    assert mocked_add_file.call_count == 0
 
 
 def test_conversation_pending_message(mocker):
@@ -243,7 +253,7 @@ def test_conversation_pending_message(mocker):
 
     mock_source.collection = [submission]
 
-    mocked_add_message = mocker.patch('securedrop_client.gui.main.ConversationView.add_message')
+    mocked_add_message = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_message')
     mocker.patch('securedrop_client.gui.main.QVBoxLayout')
     mocker.patch('securedrop_client.gui.main.QWidget')
 

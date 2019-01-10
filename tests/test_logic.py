@@ -687,10 +687,12 @@ def test_Client_update_conversation_views(homedir, config, mocker):
     Using the `config` fixture to ensure the config is written to disk.
     """
     mock_gui = mocker.Mock()
+    mock_conversation_wrapper = mocker.Mock()
     mock_conversation = mocker.MagicMock()
+    mock_conversation_wrapper.conversation = mock_conversation
     mock_update_conversation = mocker.MagicMock()
     mock_conversation.update_conversation = mock_update_conversation
-    mock_gui.conversations = {'foo': mock_conversation}
+    mock_gui.conversations = {'foo': mock_conversation_wrapper}
     mock_session = mocker.MagicMock()
 
     # Since we use the set-like behavior of self.session
