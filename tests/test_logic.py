@@ -503,6 +503,31 @@ def test_Client_sync_api(homedir, config, mocker):
                                         cl.on_sync_timeout, cl.api)
 
 
+def test_Client_on_synced_remove_stale_sources(homedir, config, mocker):
+    """
+    On an API sync, if a source no longer exists, remove it from the GUI.
+    Using the `config` fixture to ensure the config is written to disk.
+    """
+    mock_source_id = 'abc123'
+    mock_conv_wrapper = 'mock'
+
+    gui = mocker.Mock()
+    gui.conversations = {mock_source_id: mock_conv_wrapper}
+
+    mock_session = mocker.MagicMock()
+    cl = Client('http://localhost', gui, mock_session, homedir)
+
+    mock_source = mocker.Mock()
+    mock_source.uuid = mock_source_id
+
+    # not that the first item does *not* have the mock_source
+    api_res = ([], mocker.MagicMock(), mocker.MagicMock())
+    cl.on_synced(api_res)
+
+    # check that the uuid is not longer in the dict
+    assert mock_source_id not in gui.conversations
+
+
 def test_Client_last_sync_with_file(homedir, config, mocker):
     """
     The flag indicating the time of the last sync with the API is stored in a
@@ -680,59 +705,31 @@ def test_Client_update_sources(homedir, config, mocker):
     mock_gui.show_sources.assert_called_once_with(source_list)
 
 
-def test_Client_update_conversation_view_current_source(homedir, config, mocker):
+def test_Client_update_conversation_views(homedir, config, mocker):
     """
     Ensure the UI displays the latest version of the messages/replies that
     have been downloaded/decrypted in the current conversation view.
     Using the `config` fixture to ensure the config is written to disk.
     """
-    mock_gui = mocker.MagicMock()
-    mock_gui.current_source = 'teehee'
-    mock_gui.show_conversation_for = mocker.MagicMock()
+    mock_gui = mocker.Mock()
+    mock_conversation_wrapper = mocker.Mock()
+    mock_conversation = mocker.MagicMock()
+    mock_conversation_wrapper.conversation = mock_conversation
+    mock_update_conversation = mocker.MagicMock()
+    mock_conversation.update_conversation = mock_update_conversation
+    mock_gui.conversations = {'foo': mock_conversation_wrapper}
     mock_session = mocker.MagicMock()
 
     # Since we use the set-like behavior of self.session
     # to check if the source is still persistent, let's mock that here
-    mock_session.__contains__ = mocker.MagicMock()
-    mock_session.__contains__.return_value = [mock_gui.current_source]
+    mock_session.__contains__ = mocker.Mock()
+    mock_session.__contains__.return_value = True
 
     mock_session.refresh = mocker.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, homedir)
-    cl.update_conversation_view()
-    mock_session.refresh.assert_called_with(mock_gui.current_source)
-    mock_gui.show_conversation_for.assert_called_once_with(
-        mock_gui.current_source)
-
-
-def test_Client_update_conversation_deleted_source(homedir, config, mocker):
-    """
-    Ensure the UI does not attempt to refresh and display a deleted
-    source.
-    Using the `config` fixture to ensure the config is written to disk.
-    """
-    mock_gui = mocker.MagicMock()
-    mock_gui.current_source = 'teehee'
-    mock_gui.show_conversation_for = mocker.MagicMock()
-    mock_session = mocker.MagicMock()
-    mock_session.refresh = mocker.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, homedir)
-    cl.update_conversation_view()
-    mock_session.refresh.assert_not_called()
-    mock_gui.show_conversation_for.assert_not_called()
-
-
-def test_Client_update_conversation_view_no_current_source(homedir, config, mocker):
-    """
-    Ensure that if there is no current source (i.e. the user has not clicked
-    a source in the sidebar), the UI will not redraw the conversation view.
-    Using the `config` fixture to ensure the config is written to disk.
-    """
-    mock_gui = mocker.MagicMock()
-    mock_gui.current_source = None
-    mock_session = mocker.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, homedir)
-    cl.update_conversation_view()
-    mock_gui.show_conversation_for.assert_not_called()
+    cl.update_conversation_views()
+    assert mock_session.refresh.called
+    assert mock_update_conversation.called
 
 
 def test_Client_unstars_a_source_if_starred(homedir, config, mocker):
@@ -743,18 +740,22 @@ def test_Client_unstars_a_source_if_starred(homedir, config, mocker):
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, homedir)
+
     source_db_object = mocker.MagicMock()
     source_db_object.uuid = mocker.MagicMock()
     source_db_object.is_starred = True
+
     cl.call_api = mocker.MagicMock()
     cl.api = mocker.MagicMock()
     cl.api.remove_star = mocker.MagicMock()
     cl.on_update_star_complete = mocker.MagicMock()
     cl.on_sidebar_action_timeout = mocker.MagicMock()
+
     source_sdk_object = mocker.MagicMock()
     mock_source = mocker.patch('sdclientapi.Source')
     mock_source.return_value = source_sdk_object
     cl.update_star(source_db_object)
+
     cl.call_api.assert_called_once_with(
         cl.api.remove_star, cl.on_update_star_complete,
         cl.on_sidebar_action_timeout, source_sdk_object)

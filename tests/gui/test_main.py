@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QApplication, QVBoxLayout
 from securedrop_client.gui.main import Window
 from securedrop_client.resources import load_icon
 from securedrop_client.db import Submission
+from uuid import uuid4
 
 
 app = QApplication([])
@@ -185,7 +186,6 @@ def test_conversation_for(mocker):
     w = Window('mock')
     w.controller = mocker.MagicMock()
     w.main_view = mocker.MagicMock()
-    mock_conview = mocker.MagicMock()
     mock_source = mocker.MagicMock()
     mock_source.journalistic_designation = 'Testy McTestface'
     mock_file = mocker.MagicMock()
@@ -196,16 +196,40 @@ def test_conversation_for(mocker):
     mock_reply.filename = '3-my-source-reply.gpg'
     mock_source.collection = [mock_file, mock_message, mock_reply]
 
-    mocker.patch('securedrop_client.gui.main.ConversationView', mock_conview)
-    mocker.patch('securedrop_client.gui.main.QVBoxLayout')
-    mocker.patch('securedrop_client.gui.main.QWidget')
+    mocked_add_message = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_message',
+                                      new=mocker.Mock())
+    mocked_add_reply = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_reply',
+                                    new=mocker.Mock())
+    mocked_add_file = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_file',
+                                   new=mocker.Mock())
 
     w.show_conversation_for(mock_source)
-    conv = mock_conview()
 
-    assert conv.add_message.call_count > 0
-    assert conv.add_reply.call_count > 0
-    assert conv.add_file.call_count > 0
+    assert mocked_add_message.call_count > 0
+    assert mocked_add_reply.call_count > 0
+    assert mocked_add_file.call_count > 0
+
+    # check that showing the conversation a second time doesn't break anything
+
+    # stop the old mockers
+    mocked_add_message.stop()
+    mocked_add_reply.stop()
+    mocked_add_file.stop()
+
+    # use new mocks to check the count again
+    mocked_add_message = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_message',
+                                      new=mocker.Mock())
+    mocked_add_reply = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_reply',
+                                    new=mocker.Mock())
+    mocked_add_file = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_file',
+                                   new=mocker.Mock())
+
+    w.show_conversation_for(mock_source)
+
+    # because the conversation was cached, we don't call these functions again
+    assert mocked_add_message.call_count == 0
+    assert mocked_add_reply.call_count == 0
+    assert mocked_add_file.call_count == 0
 
 
 def test_conversation_pending_message(mocker):
@@ -217,11 +241,11 @@ def test_conversation_pending_message(mocker):
     w.controller = mocker.MagicMock()
     w.main_view = mocker.MagicMock()
     w._add_item_content_or = mocker.MagicMock()
-    mock_conview = mocker.MagicMock()
     mock_source = mocker.MagicMock()
     mock_source.journalistic_designation = 'Testy McTestface'
 
-    submission = Submission(source=mock_source, uuid="test", size=123,
+    msg_uuid = str(uuid4())
+    submission = Submission(source=mock_source, uuid=msg_uuid, size=123,
                             filename="test.msg.gpg",
                             download_url='http://test/test')
 
@@ -229,16 +253,14 @@ def test_conversation_pending_message(mocker):
 
     mock_source.collection = [submission]
 
-    mocker.patch('securedrop_client.gui.main.ConversationView', mock_conview)
+    mocked_add_message = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_message')
     mocker.patch('securedrop_client.gui.main.QVBoxLayout')
     mocker.patch('securedrop_client.gui.main.QWidget')
 
     w.show_conversation_for(mock_source)
-    conv = mock_conview()
 
-    # once for source name, once for message
-    assert conv.add_message.call_count == 2
-    assert conv.add_message.call_args == mocker.call("<Message not yet downloaded>")
+    assert mocked_add_message.call_count == 1
+    assert mocked_add_message.call_args == mocker.call(msg_uuid, "<Message not yet downloaded>")
 
 
 def test_set_status(mocker):

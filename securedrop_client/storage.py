@@ -68,10 +68,12 @@ def get_remote_data(api):
         # Log any errors but allow the caller to handle the exception.
         logger.error(ex)
         raise(ex)
+
     logger.info('Fetched {} remote sources.'.format(len(remote_sources)))
     logger.info('Fetched {} remote submissions.'.format(
         len(remote_submissions)))
     logger.info('Fetched {} remote replies.'.format(len(remote_replies)))
+
     return (remote_sources, remote_submissions, remote_replies)
 
 
@@ -85,6 +87,7 @@ def update_local_storage(session, remote_sources, remote_submissions,
     local_sources = get_local_sources(session)
     local_submissions = get_local_submissions(session)
     local_replies = get_local_replies(session)
+
     update_sources(remote_sources, local_sources, session, data_dir)
     update_submissions(remote_submissions, local_submissions, session, data_dir)
     update_replies(remote_replies, local_replies, session, data_dir)
@@ -114,6 +117,7 @@ def update_sources(remote_sources, local_sources, session, data_dir):
             local_source.document_count = source.number_of_documents
             local_source.is_starred = source.is_starred
             local_source.last_updated = parse(source.last_updated)
+
             # Removing the UUID from local_uuids ensures this record won't be
             # deleted at the end of this function.
             local_uuids.remove(source.uuid)
@@ -130,13 +134,16 @@ def update_sources(remote_sources, local_sources, session, data_dir):
                         document_count=source.number_of_documents)
             session.add(ns)
             logger.info('Added new source {}'.format(source.uuid))
+
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
     for deleted_source in [s for s in local_sources if s.uuid in local_uuids]:
         for document in deleted_source.collection:
             delete_single_submission_or_reply_on_disk(document, data_dir)
+
         session.delete(deleted_source)
         logger.info('Deleted source {}'.format(deleted_source.uuid))
+
     session.commit()
 
 
@@ -157,6 +164,7 @@ def update_submissions(remote_submissions, local_submissions, session, data_dir)
             local_submission.size = submission.size
             local_submission.is_read = submission.is_read
             local_submission.download_url = submission.download_url
+
             # Removing the UUID from local_uuids ensures this record won't be
             # deleted at the end of this function.
             local_uuids.remove(submission.uuid)
@@ -171,6 +179,7 @@ def update_submissions(remote_submissions, local_submissions, session, data_dir)
                             download_url=submission.download_url)
             session.add(ns)
             logger.info('Added new submission {}'.format(submission.uuid))
+
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
     for deleted_submission in [s for s in local_submissions
@@ -178,6 +187,7 @@ def update_submissions(remote_submissions, local_submissions, session, data_dir)
         delete_single_submission_or_reply_on_disk(deleted_submission, data_dir)
         session.delete(deleted_submission)
         logger.info('Deleted submission {}'.format(deleted_submission.uuid))
+
     session.commit()
 
 
@@ -201,6 +211,7 @@ def update_replies(remote_replies, local_replies, session, data_dir):
             local_reply.journalist_id = user.id
             local_reply.filename = reply.filename
             local_reply.size = reply.size
+
             local_uuids.remove(reply.uuid)
             logger.info('Updated reply {}'.format(reply.uuid))
         else:
@@ -212,12 +223,14 @@ def update_replies(remote_replies, local_replies, session, data_dir):
             nr = Reply(reply.uuid, user, source, reply.filename, reply.size)
             session.add(nr)
             logger.info('Added new reply {}'.format(reply.uuid))
+
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
     for deleted_reply in [r for r in local_replies if r.uuid in local_uuids]:
         delete_single_submission_or_reply_on_disk(deleted_reply, data_dir)
         session.delete(deleted_reply)
         logger.info('Deleted reply {}'.format(deleted_reply.uuid))
+
     session.commit()
 
 

@@ -22,11 +22,11 @@ import time
 import logging
 import sdclientapi.sdlocalobjects as sdkobjects
 
-from PyQt5.QtCore import QObject
+from PyQt5.QtCore import QObject, pyqtSignal
 from securedrop_client import storage
 from securedrop_client.crypto import GpgHelper
 from securedrop_client.db import make_engine
-
+from securedrop_client.storage import get_data
 from sqlalchemy.orm import sessionmaker
 
 
@@ -58,11 +58,18 @@ class MessageSync(APISyncObject):
     Runs in the background, finding messages to download and downloading them.
     """
 
+    """
+    Signal emitted notifying that a message has been downloaded. The signal is a tuple of
+    (str, str) containing the message's UUID and the content of the message.
+    """
+    message_downloaded = pyqtSignal([str, str])
+
     def __init__(self, api, home, is_qubes):
         super().__init__(api, home, is_qubes)
 
     def run(self, loop=True):
         while True:
+            logger.debug('Syncing messages.')
             submissions = storage.find_new_submissions(self.session)
 
             for db_submission in submissions:
@@ -79,11 +86,14 @@ class MessageSync(APISyncObject):
                                              db_submission,
                                              self.api.download_submission,
                                              storage.mark_file_as_downloaded)
-
+                        self.message_downloaded.emit(db_submission.uuid,
+                                                     get_data(self.home, db_submission.filename))
                 except Exception as e:
                     logger.critical(
                         "Exception while downloading submission! {}".format(e)
                     )
+
+            logger.debug('Completed message sync.')
 
             if not loop:
                 break
@@ -96,16 +106,22 @@ class ReplySync(APISyncObject):
     Runs in the background, finding replies to download and downloading them.
     """
 
+    """
+    Signal emitted notifying that a reply has been downloaded. The signal is a tuple of
+    (str, str) containing the message's UUID and the content of the reply.
+    """
+    reply_downloaded = pyqtSignal([str, str])
+
     def __init__(self, api, home, is_qubes):
         super().__init__(api, home, is_qubes)
 
     def run(self, loop=True):
         while True:
+            logger.debug('Syncing replies.')
             replies = storage.find_new_replies(self.session)
 
             for db_reply in replies:
                 try:
-
                     # the API wants API objects. here in the client,
                     # we have client objects. let's take care of that
                     # here
@@ -121,11 +137,14 @@ class ReplySync(APISyncObject):
                                              db_reply,
                                              self.api.download_reply,
                                              storage.mark_reply_as_downloaded)
-
+                        self.reply_downloaded.emit(db_reply.uuid,
+                                                   get_data(self.home, db_reply.filename))
                 except Exception as e:
                     logger.critical(
                         "Exception while downloading reply! {}".format(e)
                     )
+
+            logger.debug('Completed reply sync.')
 
             if not loop:
                 break

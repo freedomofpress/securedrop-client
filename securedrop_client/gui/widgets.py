@@ -19,13 +19,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 import arrow
 import html
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, \
     QMessageBox, QToolButton
 
+from securedrop_client.db import Source
+from securedrop_client.logic import Client
 from securedrop_client.resources import load_svg, load_image
+from securedrop_client.storage import get_data
 from securedrop_client.utils import humanize_filesize
 
 logger = logging.getLogger(__name__)
@@ -43,15 +46,20 @@ class ToolBar(QWidget):
         layout = QHBoxLayout(self)
         self.logo = QLabel()
         self.logo.setPixmap(load_image('header_logo.png'))
+
         self.user_state = QLabel(_("Signed out."))
+
         self.login = QPushButton(_('Sign in'))
         self.login.clicked.connect(self.on_login_clicked)
+
         self.logout = QPushButton(_('Sign out'))
         self.logout.clicked.connect(self.on_logout_clicked)
         self.logout.setVisible(False)
+
         self.refresh = QPushButton(_('Refresh'))
         self.refresh.clicked.connect(self.on_refresh_clicked)
         self.refresh.setVisible(False)
+
         layout.addWidget(self.logo)
         layout.addStretch()
         layout.addWidget(self.user_state)
@@ -125,17 +133,23 @@ class MainView(QWidget):
         super().__init__(parent)
         self.layout = QHBoxLayout(self)
         self.setLayout(self.layout)
+
         left_column = QWidget(parent=self)
         left_layout = QVBoxLayout()
         left_column.setLayout(left_layout)
+
         self.status = QLabel(_('Waiting to refresh...'))
         self.error_status = QLabel('')
         self.error_status.setObjectName('error_label')
+
         left_layout.addWidget(self.status)
         left_layout.addWidget(self.error_status)
+
         self.source_list = SourceList(left_column)
         left_layout.addWidget(self.source_list)
+
         self.layout.addWidget(left_column, 2)
+
         self.view_holder = QWidget()
         self.view_layout = QVBoxLayout()
         self.view_holder.setLayout(self.view_layout)
@@ -151,15 +165,17 @@ class MainView(QWidget):
     def update_error_status(self, error=None):
         self.error_status.setText(html.escape(error))
 
-    def update_view(self, widget):
+    def set_conversation(self, widget):
         """
         Update the view holder to contain the referenced widget.
         """
         old_widget = self.view_layout.takeAt(0)
+
         if old_widget:
             old_widget.widget().setVisible(False)
-        widget.setVisible(True)
+
         self.view_layout.addWidget(widget)
+        widget.setVisible(True)
 
 
 class SourceList(QListWidget):
@@ -187,10 +203,13 @@ class SourceList(QListWidget):
         for source in sources:
             new_source = SourceWidget(self, source)
             new_source.setup(self.controller)
+
             list_item = QListWidgetItem(self)
             list_item.setSizeHint(new_source.sizeHint())
+
             self.addItem(list_item)
             self.setItemWidget(list_item, new_source)
+
             if current_maybe and (source.id == current_maybe.source.id):
                 new_current_maybe = list_item
 
@@ -222,6 +241,7 @@ class DeleteSourceMessageBox:
             QMessageBox.Cancel | QMessageBox.Yes,
             QMessageBox.Cancel
         )
+
         if reply == QMessageBox.Yes:
             logger.debug("Deleting source %s" % (self.source.uuid,))
             self.controller.delete_source(self.source)
@@ -234,6 +254,7 @@ class DeleteSourceMessageBox:
                 messages += 1
             else:
                 files += 1
+
         message = (
             "<big>Deleting the Source account for",
             "<b>{}</b> will also".format(source.journalist_designation,),
@@ -257,23 +278,30 @@ class SourceWidget(QWidget):
         """
         super().__init__(parent)
         self.source = source
+        self.name = QLabel()
+        self.updated = QLabel()
+
         layout = QVBoxLayout()
         self.setLayout(layout)
+
         self.summary = QWidget(self)
         self.summary_layout = QHBoxLayout()
         self.summary.setLayout(self.summary_layout)
+
         self.attached = load_svg('paperclip.svg')
         self.attached.setMaximumSize(16, 16)
-        self.name = QLabel()
+
         self.summary_layout.addWidget(self.name)
         self.summary_layout.addStretch()
         self.summary_layout.addWidget(self.attached)
+
         layout.addWidget(self.summary)
-        self.updated = QLabel()
         layout.addWidget(self.updated)
+
         self.delete = load_svg('cross.svg')
         self.delete.setMaximumSize(16, 16)
         self.delete.mouseReleaseEvent = self.delete_source
+
         self.summary_layout.addWidget(self.delete)
         self.update()
 
@@ -342,33 +370,44 @@ class LoginDialog(QDialog):
         self.controller = controller
         self.setMinimumSize(600, 400)
         self.setWindowTitle(_('Sign in to SecureDrop'))
+
         main_layout = QHBoxLayout()
         main_layout.addStretch()
         self.setLayout(main_layout)
+
         form = QWidget()
         layout = QVBoxLayout()
         form.setLayout(layout)
+
         main_layout.addWidget(form)
         main_layout.addStretch()
+
         self.title = QLabel(_('<h1>Sign in</h1>'))
         self.title.setTextFormat(Qt.RichText)
+
         self.instructions = QLabel(_('You may read all documents and messages '
                                      'shown here, without signing in. To '
                                      'correspond with a Source or to check '
                                      'the server for updates, you must sign '
                                      'in.'))
         self.instructions.setWordWrap(True)
+
         self.username_label = QLabel(_('Username'))
         self.username_field = QLineEdit()
+
         self.password_label = QLabel(_('Password'))
         self.password_field = QLineEdit()
         self.password_field.setEchoMode(QLineEdit.Password)
+
         self.tfa_label = QLabel(_('Two-Factor Number'))
         self.tfa_field = QLineEdit()
+
         self.submit = QPushButton(_('Sign in'))
         self.submit.clicked.connect(self.validate)
+
         self.error_label = QLabel('')
         self.error_label.setObjectName('error_label')
+
         layout.addStretch()
         layout.addWidget(self.title)
         layout.addWidget(self.instructions)
@@ -432,6 +471,7 @@ class LoginDialog(QDialog):
                 self.setDisabled(False)
                 self.error(_('Please use only numerals for the two factor number.'))
                 return
+
             self.controller.login(username, password, tfa_token)
         else:
             self.setDisabled(False)
@@ -447,13 +487,28 @@ class SpeechBubble(QWidget):
 
     css = "padding: 10px; border: 1px solid #999; border-radius: 20px;"
 
-    def __init__(self, text):
+    def __init__(self, message_id: str, text: str, update_signal) -> None:
         super().__init__()
+        self.message_id = message_id
+
         layout = QVBoxLayout()
         self.setLayout(layout)
-        message = QLabel(html.escape(text, quote=False))
-        message.setWordWrap(True)
-        layout.addWidget(message)
+
+        self.message = QLabel(html.escape(text, quote=False))
+        self.message.setWordWrap(True)
+
+        layout.addWidget(self.message)
+
+        update_signal.connect(self._update_text)
+
+    @pyqtSlot(str, str)
+    def _update_text(self, message_id: str, text: str) -> None:
+        """
+        Conditionally update this SpeechBubble's text if and only if the message_id of the emitted
+        signal matche the message_id of this speech bubble.
+        """
+        if message_id == self.message_id:
+            self.message.setText(html.escape(text, quote=False))
 
 
 class ConversationWidget(QWidget):
@@ -461,7 +516,11 @@ class ConversationWidget(QWidget):
     Draws a message onto the screen.
     """
 
-    def __init__(self, message, align):
+    def __init__(self,
+                 message_id: str,
+                 message: str,
+                 update_signal,
+                 align: str) -> None:
         """
         Initialise with the message to display and some notion of which side
         of the conversation ("left" or "right" [anything else]) to which the
@@ -469,17 +528,22 @@ class ConversationWidget(QWidget):
         """
         super().__init__()
         layout = QHBoxLayout()
-        label = SpeechBubble(message)
+        label = SpeechBubble(message_id, message, update_signal)
+
         if align is not "left":
             # Float right...
             layout.addStretch(5)
             label.setStyleSheet(label.css + 'border-bottom-right-radius: 0px;')
+
         layout.addWidget(label, 6)
+
         if align is "left":
             # Add space on right hand side...
             layout.addStretch(5)
             label.setStyleSheet(label.css + 'border-bottom-left-radius: 0px;')
+
         layout.setContentsMargins(0, 0, 0, 0)
+
         self.setLayout(layout)
         self.setContentsMargins(0, 0, 0, 0)
 
@@ -489,8 +553,11 @@ class MessageWidget(ConversationWidget):
     Represents an incoming message from the source.
     """
 
-    def __init__(self, message):
-        super().__init__(message, align="left")
+    def __init__(self, message_id: str, message: str, update_signal) -> None:
+        super().__init__(message_id,
+                         message,
+                         update_signal,
+                         align="left")
         self.setStyleSheet("""
         background-color: #EEE;
         """)
@@ -501,8 +568,11 @@ class ReplyWidget(ConversationWidget):
     Represents a reply to a source.
     """
 
-    def __init__(self, message):
-        super().__init__(message, align="right")
+    def __init__(self, message_id: str, message: str, update_signal) -> None:
+        super().__init__(message_id,
+                         message,
+                         update_signal,
+                         align="right")
         self.setStyleSheet("""
         background-color: #2299EE;
         """)
@@ -526,22 +596,28 @@ class FileWidget(QWidget):
         self.controller = controller
         self.source = source_db_object
         self.submission = submission_db_object
+
         layout = QHBoxLayout()
         icon = QLabel()
         icon.setPixmap(load_image('file.png'))
+
         if submission_db_object.is_downloaded:
             description = QLabel("Open")
         else:
             human_filesize = humanize_filesize(self.submission.size)
             description = QLabel("Download ({})".format(human_filesize))
+
         if align is not "left":
             # Float right...
             layout.addStretch(5)
+
         layout.addWidget(icon)
         layout.addWidget(description, 5)
+
         if align is "left":
             # Add space on right hand side...
             layout.addStretch(5)
+
         self.setLayout(layout)
 
     def mouseReleaseEvent(self, e):
@@ -562,8 +638,12 @@ class ConversationView(QWidget):
     Renders a conversation.
     """
 
-    def __init__(self, parent):
+    def __init__(self, source_db_object: Source, sdc_home: str, controller: Client, parent=None):
         super().__init__(parent)
+        self.source = source_db_object
+        self.sdc_home = sdc_home
+        self.controller = controller
+
         self.container = QWidget()
         self.conversation_layout = QVBoxLayout()
         self.container.setLayout(self.conversation_layout)
@@ -574,6 +654,7 @@ class ConversationView(QWidget):
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll.setWidget(self.container)
         self.scroll.setWidgetResizable(True)
+
         # Completely unintuitive way to ensure the view remains scrolled to the
         # bottom.
         sb = self.scroll.verticalScrollBar()
@@ -583,11 +664,38 @@ class ConversationView(QWidget):
         main_layout.addWidget(self.scroll)
         self.setLayout(main_layout)
 
-    def setup(self, controller):
+        self.update_conversation(self.source.collection)
+
+    def update_conversation(self, collection: list) -> None:
+        # clear all old items
+        while True:
+            w = self.conversation_layout.takeAt(0)
+            if w:  # pragma: no cover
+                del w
+            else:
+                break
+
+        # add new items
+        for conversation_item in collection:
+            if conversation_item.filename.endswith('msg.gpg'):
+                self.add_item_content_or(self.add_message,
+                                         conversation_item,
+                                         "<Message not yet downloaded>")
+            elif conversation_item.filename.endswith('reply.gpg'):
+                self.add_item_content_or(self.add_reply,
+                                         conversation_item,
+                                         "<Reply not yet downloaded>")
+            else:
+                self.add_file(self.source, conversation_item)
+
+    def add_item_content_or(self, adder, item, default):
         """
-        Ensure there's a reference to program logic.
+        Private helper function to add correct message to conversation widgets
         """
-        self.controller = controller
+        if item.is_downloaded is False:
+            adder(item.uuid, default)
+        else:
+            adder(item.uuid, get_data(self.sdc_home, item.filename))
 
     def add_file(self, source_db_object, submission_db_object):
         """
@@ -604,17 +712,37 @@ class ConversationView(QWidget):
         """
         self.scroll.verticalScrollBar().setValue(max_val)
 
-    def add_message(self, message):
+    def add_message(self, message_id: str, message: str) -> None:
         """
         Add a message from the source.
         """
-        self.conversation_layout.addWidget(MessageWidget(message))
+        self.conversation_layout.addWidget(
+            MessageWidget(message_id, message, self.controller.message_sync.message_downloaded))
 
-    def add_reply(self, reply, files=None):
+    def add_reply(self, message_id: str, reply: str, files=None) -> None:
         """
         Add a reply from a journalist.
         """
-        self.conversation_layout.addWidget(ReplyWidget(reply))
+        self.conversation_layout.addWidget(
+            ReplyWidget(message_id, reply, self.controller.reply_sync.reply_downloaded))
+
+
+class SourceConversationWrapper(QWidget):
+    """
+    Wrapper for a source's conversation including the chat window, profile tab, and other
+    per-soruce resources.
+    """
+
+    def __init__(self, source: Source, sdc_home: str, controller: Client, parent=None) -> None:
+        super().__init__(parent)
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+
+        self.conversation = ConversationView(source, sdc_home, controller, parent=self)
+        self.source_profile = SourceProfileShortWidget(source, controller)
+
+        self.layout.addWidget(self.source_profile)
+        self.layout.addWidget(self.conversation)
 
 
 class DeleteSourceAction(QAction):
@@ -624,7 +752,9 @@ class DeleteSourceAction(QAction):
         self.source = source
         self.controller = controller
         self.text = _("Delete source account")
+
         super().__init__(self.text, parent)
+
         self.messagebox = DeleteSourceMessageBox(
             parent, self.source, self.controller
         )
@@ -673,10 +803,13 @@ class SourceMenuButton(QToolButton):
         super().__init__()
         self.controller = controller
         self.source = source
+
         ellipsis_icon = load_image("ellipsis.svg")
         self.setIcon(QIcon(ellipsis_icon))
+
         self.menu = SourceMenu(self.source, self.controller)
         self.setMenu(self.menu)
+
         self.setPopupMode(QToolButton.InstantPopup)
 
 
@@ -701,11 +834,14 @@ class SourceProfileShortWidget(QWidget):
         super().__init__()
         self.source = source
         self.controller = controller
+
         self.layout = QHBoxLayout()
         self.setLayout(self.layout)
+
         widgets = (
             TitleLabel(self.source.journalist_designation),
-            SourceMenuButton(self.source, self.controller)
+            SourceMenuButton(self.source, self.controller),
         )
+
         for widget in widgets:
             self.layout.addWidget(widget)

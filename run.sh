@@ -26,9 +26,11 @@ chmod 0700 "$SDC_HOME" "$GPG_HOME"
 echo "Running app with home directory: $SDC_HOME"
 echo ""
 
-gpg --homedir "$GPG_HOME" --allow-secret-key-import --import tests/files/securedrop.gpg.asc
+gpg --homedir "$GPG_HOME" --allow-secret-key-import --import tests/files/securedrop.gpg.asc &
 
 # create the database and config for local testing
-./create_dev_data.py "$SDC_HOME"
+./create_dev_data.py "$SDC_HOME" &
+
+wait
 
 exec python -m securedrop_client --sdc-home "$SDC_HOME" --no-proxy $@
