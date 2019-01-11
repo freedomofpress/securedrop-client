@@ -1,0 +1,93 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: [application/json]
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU0NzIzODU3MywiaWF0IjoxNTQ3MjA5NzczfQ.eyJpZCI6MX0.VYoJPy_DIQhsnZ2Tnn2bEq6ejcTc3R-bRn2UtvEqtRs]
+      Connection: [keep-alive]
+      Content-Type: [application/json]
+      User-Agent: [python-requests/2.20.0]
+    method: GET
+    uri: http://localhost:8081/api/v1/sources
+  response:
+    body: {string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/b1461156-3326-478b-afab-8771ab251726/add_star\"\
+        , \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n    \
+        \  \"is_starred\": false, \n      \"journalist_designation\": \"adventitious\
+        \ decentralization\", \n      \"key\": {\n        \"public\": \"-----BEGIN\
+        \ PGP PUBLIC KEY BLOCK-----\\n\\nmQINBFGRfoABEACqV6dzvCVmqriX7/PFrVQn6CjgYyhbVBXkRn6Hcu4lraBMBwtB\\\
+        nNjZxjXqebw9THLTZaaf8BvznjcpNI8N6XeiS7UBbk1H4ey7oPBIUXPFIynkiveLg\\nCyA8/bZcx3zYWD6BZR8trM0RbbSK7Ng5Ur6n5JiCBgmjX22eCF0FiDH9cMCN/6LF\\\
+        n4glXSQI5hZ+A/78yAKIgFm8KZkUfcGMUigt+pk0uTIXGXHpU+gEBmAxMGB8EawAj\\nXxgj6d0lJranq7lcbbPjiOkr0/4WVzsIO4XG49p94rsDgHo5XX11kEzOFELZOnBN\\\
+        nveJoQARsp1SgaWapT7lhwiHm5AEYdIjE1ABKJwheQp6/naF0rCnzpkt0+M+Gg+g6\\nvuV1e6rjY8wybZ6lZ0CQHnqFb4caA31B1DqVJcgMm8WpjkXhRfxc54UfID0DAfrh\\\
+        nuTgsjRCVC90Jp+w0ikULCjsqKUOyNCdDA00b3voUaDHDKgK7hnHUE9y6XKHAuL+5\\nORw2HHlgPcPCVmGkbkykJwKG63pIeUg9jOYXsnopDtvJPM33KVdWAaCGbVqjUnbU\\\
+        nGXf/FEfxYH4py2KWrN91KIXVp8Kts8Y+Z7w7UDokcu4ah1w+xrmZQFu/QpPbroeA\\nJP4GR24GvoQSJtqJhTRlmsoNF3lLIS0jG+qY7cSmHX3dHn3rFII+uG5FgQARAQAB\\\
+        ntHxBdXRvZ2VuZXJhdGVkIEtleSA8UllNN1NNWEI0WkFKVFRLTlNNVDYzWUhGS0E3\\nM0QyWTNER0NVWVE1NkZITFRKRk5MVURMT0lGU1VZQ0hNTTRNVVhCQ1JLSTc2RkhS\\\
+        nVkJORVRISFNQUkpHSUhFN0JJRzNRNTc0QUI1QT0+iQI5BBMBCgAjBQJRkX6AAhsv\\nBwsJCAcDAgEGFQgCCQoLBBYCAwECHgECF4AACgkQpKEC6n7NelGg4Q/+PmC+nik1\\\
+        nzkxuyGoAmZC7fdp86uzQ/sm0AYlCkpFrg02ExntZYSzeels4jtDlhJtnVgroFhXI\\nUuPEAs9BR/WBG+S2zmgkeS3hs60NC4pBhsxq02C3j6eh7Sd+5TlbczihvEbapk42\\\
+        nS2dXeQrUmwKRlnXTl/zcrx5F5cO0a9IFcsbPnRAathEMQnYmNVdtko3+GURUzc9A\\n+Hn68BdS61HNsJ6FXNLRWNVz3XJzsCsan88gweVKt2neZStVDCXOnik+yWP2HiUd\\\
+        n86tXPgp5TLezygmXYlWC0oGw5mhlnKOXdlWLRQNYsz10ZVW3Eh+Kwnh2IXAB/0tS\\nziwoeEQ3cQxO+zujBuQK7i3Wua5P3RaaQ1Gv2hS+9rCVwmgArudivnCdOFCL3S/X\\\
+        nzJR5vxZLCx1rfSEn1RurI18NYIsBAKZE6Tdvo0mY2cI0uc9w2fK9y5rB9VZAFpr5\\nn52bSSShbzspDq8uckZg71H0x2YcYr5oUWKRvM+CP7acmzojmbVdADcdt6nqMRw2\\\
+        npCUE1w2YSDXqBFArWD95mK1rzEqnugWKP0uDqnxbGzlWwh47s2RATb9qpuv6JzBj\\nu+rv/+6OtUjQJzgzc3QY/GNpWOpUiKD53q8n2WXEvZp20RRqVTim6xyxdt/ZNNfB\\\
+        n7q1u5RV7vvqImSgQDOCCk5DC97o10x9Yins=\\n=hRiM\\n-----END PGP PUBLIC KEY BLOCK-----\\\
+        n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\": \"2019-01-11T09:36:35.728746Z\"\
+        , \n      \"number_of_documents\": 0, \n      \"number_of_messages\": 2, \n\
+        \      \"remove_star_url\": \"/api/v1/sources/b1461156-3326-478b-afab-8771ab251726/remove_star\"\
+        , \n      \"replies_url\": \"/api/v1/sources/b1461156-3326-478b-afab-8771ab251726/replies\"\
+        , \n      \"submissions_url\": \"/api/v1/sources/b1461156-3326-478b-afab-8771ab251726/submissions\"\
+        , \n      \"url\": \"/api/v1/sources/b1461156-3326-478b-afab-8771ab251726\"\
+        , \n      \"uuid\": \"b1461156-3326-478b-afab-8771ab251726\"\n    }, \n  \
+        \  {\n      \"add_star_url\": \"/api/v1/sources/5af7a9f6-d0eb-479d-8ee6-32b5df429cb0/add_star\"\
+        , \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n    \
+        \  \"is_starred\": false, \n      \"journalist_designation\": \"frenzied sedation\"\
+        , \n      \"key\": {\n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\\
+        n\\nmQINBFGRfoABEADBdMTK70O10p/irJoFIDEObSwVM4IVrLO65NPMcfRiXtrtSqPR\\nseG4vRnXJP2tQetv47+rI3MF4WKggVOX4c8d8JBBWQbPF3EZ9DDVY3rbmvNB1i2f\\\
+        nLARYvvXDBkIILOZVdua9V2wy596aOEuwbH60mD7M+/Ww7JtEScbTokM05wQbYwHq\\nmaZ+u0D+NHNqvb5l9BIkR+zYmIcnUF/Ciu1oQ3i+rvp0e6C2KvpQcuhCJBychjgr\\\
+        nvY3KhA8ewm1EMNdulDuMHSt01hRJTx5cBghj6xKphcNBLW5MbqwO3q7nkwpuvT+F\\nQbwQPNwgFYeKskUenN5fRBw37f7QeS11189Vet5bSFHa9bt0wAaMfslSwnxqWl7l\\\
+        nV12qMAUqFLp1ENSM3rCUpxTuFAkUvH0PXo9yljzQBNfy5OIp9L4qzsY89UvZwkps\\ncSvBxK8URIPNbCqZ5ctTNtdQtmyMJVweflmMVyy1DUnmSJmTO+IsHqQXsCzq3OB3\\\
+        nuIKBoPUCwDeMXAnQktWepxqaSSJkRlUvtv1f0Qk9kXLnDWCI4ONrf2p+AjAfAsi0\\n0yh2/UomT4js1pNnyz3r0ZmCI2vM2ZaN+Qhk/o+XVWXACcKMNYvnEwqB5kvWI2fV\\\
+        nju05I7gH2DpN4oku99NPpJjx0DmTQDku1QA83hk6OrpCfrcQBwWfxyYzrwARAQAB\\ntHxBdXRvZ2VuZXJhdGVkIEtleSA8TjVCSUhMS1VaVVdaN1NYTE5DMkNIWjNYQkZI\\\
+        nUVRDUzY1N0kyM09JVDNOTUZUQzJRNE9LUUg3VzM1SDZCREo2Qk9NNkZQQzJPS1ZX\\nRVQ2RksyNlZEVVk1MlFDSVJENUdDT1g1VUNMQT0+iQI5BBMBCgAjBQJRkX6AAhsv\\\
+        nBwsJCAcDAgEGFQgCCQoLBBYCAwECHgECF4AACgkQkgFy2s9+/27WKRAAwHhvXDYa\\nV54Prh9/wAt6GrDOCj6oaNF1HdULZXGYpdy7be0Hhy0vvcvbYU7XAS/dpqwMc2gS\\\
+        n+9gsXNf6hRVBhW6C8rh8j8oArpTciOAVcTIGihmLEzBbldKv0q2rbDeA+IBG/Rkv\\nInTb4hbwFGZVwS+CeHZegVRTnFPUsWrz6Z4T7uci8hQWNeZXIpqvTCIGn2jOfAwO\\\
+        nPwZlbh4hwT0UrSZlhdb4Sc0yRlLjoLC+kDt4Mo1BvsxqrJKIbJPCZMHgU6aYa7pi\\ndVvq9/uzlqZzOggM5AJxgw/w4ZqDu/dl5wkuKkqE1DFrIzyx0yPq19za9ZI2r84m\\\
+        nzO7n2VKh/j3ij3jluRhSeM26dkAFt0YH7jIu0Jo9NhbX1EVpfoIT7n4mAAbTliBN\\nhEq2rkiMCNvE8ouMH9cuawNrieUKuFIfejxT+dwCJXtSGIOTwiKndGgoi3ZNlngI\\\
+        nCpcPakLdXPPidB6inNB4Y+pKlPmdZ4bwqKscEsDy9+6SMRtBa0F6iIYTiB3QNelL\\nmJ4ymUhbVgHtMDacxSAW2Qc/+ILV0naHb4MYO0P5p0DUnuuIZhhjj8oHXWGs8dy7\\\
+        n2ucWzgcVLxCrVuse1EGIUOASOdngmjshFnG6GesA3sjaPav651qGY2cNF1VtmhGe\\n63zdUzrbb25wXChFeSbqifOGJyXqcXib9YA=\\\
+        n=vGVV\\n-----END PGP PUBLIC KEY BLOCK-----\\n\", \n        \"type\": \"PGP\"\
+        \n      }, \n      \"last_updated\": \"2019-01-11T09:36:41.986215Z\", \n \
+        \     \"number_of_documents\": 0, \n      \"number_of_messages\": 2, \n  \
+        \    \"remove_star_url\": \"/api/v1/sources/5af7a9f6-d0eb-479d-8ee6-32b5df429cb0/remove_star\"\
+        , \n      \"replies_url\": \"/api/v1/sources/5af7a9f6-d0eb-479d-8ee6-32b5df429cb0/replies\"\
+        , \n      \"submissions_url\": \"/api/v1/sources/5af7a9f6-d0eb-479d-8ee6-32b5df429cb0/submissions\"\
+        , \n      \"url\": \"/api/v1/sources/5af7a9f6-d0eb-479d-8ee6-32b5df429cb0\"\
+        , \n      \"uuid\": \"5af7a9f6-d0eb-479d-8ee6-32b5df429cb0\"\n    }\n  ]\n\
+        }\n"}
+    headers:
+      Content-Length: ['5233']
+      Content-Type: [application/json]
+      Date: ['Fri, 11 Jan 2019 12:29:34 GMT']
+      Server: [Werkzeug/0.14.1 Python/2.7.6]
+    status: {code: 200, message: OK}
+- request:
+    body: '{"reply": "-----BEGIN PGP MESSAGE-----\n\nhQIMA/uCql0ybaddAQ//dg2iojyiyXBaUzKbPaL9+FlEEvraxXO+BbhcsbEdLI5E\nKYxP5xb1LEOdaJjUcQaPjSARPnFbLzq3vsafZCBrEHtMWnSWxEpxbI1/DO+/Wbk1\nT+ZVltaAdOIulfuMlIlL4rVCbprg+QUQbsbtIIOFdXpvuS1kQdv+F/sfYsFQanQw\nV6u/yz3hgyymUyoBfZOXUfpFQ/t759s3rt3OGvwTzOx6o8Q3X+cKypwYsGsHzAUr\n/N2Ggy6hYVzDj1czjtgUF2EWyKKfTN2RO9y+E0PYnu7C6QN41dx4yPsXFq16kOWC\nLDyeXW2A/3/fGqp9176V4DRHMkUB6WkkXnekJBiyar1rG7WJ09KNdXGKJw6tjlqT\nz4mnjgkZopSbuwJJgs+RZFddpGU31PSQg3ODWZRmSQbL/7lFtsJCY0yFjGoEdJFw\npg5nJ6uOQN6bWPdM47nEPweFgNBIPmQccm0ayewaxvpIgTH+okBlLMPxnDg51vaA\nF7dzZP4SdNQuBkHKq3DW7tu21+haa5YcjY5vJry9o5Fu9qJJadiI8Cg0JJqTVsUs\n7Vu4eK1F9popI5hzdRBvBIdNB4LlIJiYmMKxD7l5yyOXSdoyINPU04PwxM3yO6QH\n5Uw7gVNYCvgKSHAvfFnYAjPSd1m7CPW/aI2EjIHMBf+8FEyyWdHduPCMHZhUZ5XS\nVAFdU++LS7PKxIFsXKtkHSMmO+GRfI/+SrVmGfw1YJbSmhaRAPk5ChqS7RQMgz/j\nt+mAINV0vHUNAJkMW/QZXgdVw+eca0ITs/1u3fKsBlmQNv4Efg==\n=686S\n-----END
+      PGP MESSAGE-----\n\n", "uuid": "e467868c-1fbb-4b5e-bca2-87944ea83855"}'
+    headers:
+      Accept: [application/json]
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU0NzIzODU3MywiaWF0IjoxNTQ3MjA5NzczfQ.eyJpZCI6MX0.VYoJPy_DIQhsnZ2Tnn2bEq6ejcTc3R-bRn2UtvEqtRs]
+      Connection: [keep-alive]
+      Content-Length: ['974']
+      Content-Type: [application/json]
+      User-Agent: [python-requests/2.20.0]
+    method: POST
+    uri: http://localhost:8081/api/v1/sources/b1461156-3326-478b-afab-8771ab251726/replies
+  response:
+    body: {string: "{\n  \"message\": \"Your reply has been stored\", \n  \"uuid\"\
+        : \"e467868c-1fbb-4b5e-bca2-87944ea83855\"\n}\n"}
+    headers:
+      Content-Length: ['97']
+      Content-Type: [application/json]
+      Date: ['Fri, 11 Jan 2019 12:29:34 GMT']
+      Server: [Werkzeug/0.14.1 Python/2.7.6]
+    status: {code: 201, message: CREATED}
+version: 1

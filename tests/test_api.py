@@ -1,16 +1,16 @@
-from pprint import pprint
-import os
-import time
-import json
 import hashlib
+import json
+import os
+import pyotp
 import shutil
 import tempfile
+import time
 import unittest
+import vcr
+from pprint import pprint
+
 from sdclientapi import *
 from utils import *
-
-import vcr
-import pyotp
 
 
 class TestAPI(unittest.TestCase):
@@ -185,6 +185,17 @@ class TestAPI(unittest.TestCase):
             data = fobj.read()
 
         self.assertTrue(self.api.reply_source(s, data))
+
+    @vcr.use_cassette("data/test-reply-source-with-uuid.yml")
+    def test_reply_source_with_uuid(self):
+        s = self.api.get_sources()[0]
+        dirname = os.path.dirname(__file__)
+        with open(os.path.join(dirname, "encrypted_msg.asc")) as fobj:
+            data = fobj.read()
+
+        msg_uuid = 'e467868c-1fbb-4b5e-bca2-87944ea83855'
+        reply = self.api.reply_source(s, data, msg_uuid)
+        assert reply.uuid == msg_uuid
 
     @vcr.use_cassette("data/test-download-submission.yml")
     def test_download_submission(self):
