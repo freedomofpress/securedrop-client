@@ -23,8 +23,7 @@ import logging
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QDesktopWidget, QStatusBar
 from securedrop_client import __version__
 from securedrop_client.gui.widgets import (ToolBar, MainView, LoginDialog,
-                                           ConversationView,
-                                           SourceProfileShortWidget)
+                                           SourceConversationWrapper)
 from securedrop_client.resources import load_icon
 
 logger = logging.getLogger(__name__)
@@ -38,7 +37,7 @@ class Window(QMainWindow):
 
     icon = 'icon.png'
 
-    def __init__(self):
+    def __init__(self, sdc_home: str):
         """
         Create the default start state. The window contains a root widget into
         which is placed:
@@ -49,22 +48,32 @@ class Window(QMainWindow):
           place for details / message contents / forms.
         """
         super().__init__()
+        self.sdc_home = sdc_home
         self.setWindowTitle(_("SecureDrop Client {}").format(__version__))
         self.setWindowIcon(load_icon(self.icon))
+
         self.widget = QWidget()
         widget_layout = QVBoxLayout()
         self.widget.setLayout(widget_layout)
+        self.setCentralWidget(self.widget)
+
         self.tool_bar = ToolBar(self.widget)
+
         self.main_view = MainView(self.widget)
-        self.main_view.source_list.itemSelectionChanged.\
-            connect(self.on_source_changed)
+        self.main_view.source_list.itemSelectionChanged.connect(self.on_source_changed)
+
         widget_layout.addWidget(self.tool_bar, 1)
         widget_layout.addWidget(self.main_view, 6)
-        self.setCentralWidget(self.widget)
-        self.current_source = None  # Tracks which source is shown
+
+        # Cache a dict of source.uuid -> SourceConversationWrapper
+        # We do this to not create/destroy widgets constantly (because it causes UI "flicker")
         self.conversations = {}
-        self.show()
+
+        # Tracks which source is shown
+        self.current_source = None
+
         self.autosize_window()
+        self.show()
 
     def setup(self, controller):
         """
@@ -73,9 +82,11 @@ class Window(QMainWindow):
         """
         self.controller = controller  # Reference the Client logic instance.
         self.tool_bar.setup(self, controller)
+
         self.status_bar = QStatusBar(self)
         self.setStatusBar(self.status_bar)
         self.set_status('Started SecureDrop Client. Please sign in.', 20000)
+
         self.login_dialog = LoginDialog(self)
         self.main_view.setup(self.controller)
 
@@ -155,47 +166,21 @@ class Window(QMainWindow):
             self.current_source = source_widget.source
             self.show_conversation_for(self.current_source)
 
-    def add_item_content_or(self, adder, item, default):
-        """
-        Private helper function to add correct message to conversation widgets
-        """
-        if item.is_downloaded is False:
-            adder(default)
-        else:
-            adder(item.content)
-
     def show_conversation_for(self, source):
         """
         Show conversation of messages and replies between a source and
         journalists.
         """
-        conversation = ConversationView(self)
-        conversation.setup(self.controller)
-        conversation.add_message('Source name: {}'.format(
-                                 source.journalist_designation))
 
-        # Display each conversation item in the source collection.
-        for conversation_item in source.collection:
+        conversation_container = self.conversations.get(source.uuid, None)
 
-            if conversation_item.filename.endswith('msg.gpg'):
-                self.add_item_content_or(conversation.add_message,
-                                         conversation_item,
-                                         "<Message not yet downloaded>")
-            elif conversation_item.filename.endswith('reply.gpg'):
-                self.add_item_content_or(conversation.add_reply,
-                                         conversation_item,
-                                         "<Reply not yet downloaded>")
-            else:
-                conversation.add_file(source, conversation_item)
+        if conversation_container is None:
+            conversation_container = SourceConversationWrapper(source,
+                                                               self.sdc_home,
+                                                               self.controller)
+            self.conversations[source.uuid] = conversation_container
 
-        container = QWidget()
-        layout = QVBoxLayout()
-        container.setLayout(layout)
-        source_profile = SourceProfileShortWidget(source, self.controller)
-
-        layout.addWidget(source_profile)
-        layout.addWidget(conversation)
-        self.main_view.update_view(container)
+        self.main_view.set_conversation(conversation_container)
 
     def set_status(self, message, duration=5000):
         """

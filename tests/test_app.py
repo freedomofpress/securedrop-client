@@ -121,7 +121,7 @@ def test_start_app(homedir, mocker):
 
     start_app(mock_args, mock_qt_args)
     mock_app.assert_called_once_with(mock_qt_args)
-    mock_win.assert_called_once_with()
+    mock_win.assert_called_once_with(str(homedir))
     mock_client.assert_called_once_with('http://localhost:8081/',
                                         mock_win(), mock_session_class(),
                                         homedir, False)
@@ -234,7 +234,7 @@ def test_run(mocker):
     mock_start_app.assert_called_once_with(mock_args, mock_qt_args)
 
 
-def test_signal_interception(mocker):
+def test_signal_interception(mocker, homedir):
     # check that initializing an app calls configure_signal_handlers
     mocker.patch('securedrop_client.app.QApplication')
     mocker.patch('securedrop_client.app.prevent_second_instance')
@@ -245,8 +245,10 @@ def test_signal_interception(mocker):
     mocker.patch('securedrop_client.logic.GpgHelper')
     mocker.patch('securedrop_client.app.configure_logging')
     mock_signal_handlers = mocker.patch('securedrop_client.app.configure_signal_handlers')
+    mock_args = mocker.Mock()
+    mock_args.sdc_home = homedir
 
-    start_app(mocker.MagicMock(), [])
+    start_app(mock_args, [])
     assert mock_signal_handlers.called
 
     # check that a signal interception calls quit on the app

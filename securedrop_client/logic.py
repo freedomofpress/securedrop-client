@@ -22,12 +22,10 @@ import sdclientapi
 import shutil
 import arrow
 import uuid
-from sqlalchemy import event
 from securedrop_client import storage
 from securedrop_client import db
 from securedrop_client.utils import check_dir_permissions
 from securedrop_client.crypto import GpgHelper, CryptoError
-from securedrop_client.data import Data
 from securedrop_client.message_sync import MessageSync, ReplySync
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess
 
@@ -98,22 +96,42 @@ class Client(QObject):
         various other layers of the application: the location of the SecureDrop
         proxy, the user interface and SqlAlchemy local storage respectively.
         """
-
         check_dir_permissions(home)
-
         super().__init__()
-        self.hostname = hostname  # Location of the SecureDrop server.
-        self.gui = gui  # Reference to the UI window.
-        self.api = None  # Reference to the API for secure drop proxy.
-        self.session = session  # Reference to the SqlAlchemy session.
-        self.message_thread = None  # thread responsible for fetching messages
-        self.reply_thread = None  # thread responsible for fetching replies
-        self.home = home  # used for finding DB in sync thread
-        self.api_threads = {}  # Contains active threads calling the API.
-        self.sync_flag = os.path.join(home, 'sync_flag')
-        self.data_dir = os.path.join(self.home, 'data')  # File data.
-        self.timer = None  # call timeout timer
+
+        # used for finding DB in sync thread
+        self.home = home
+
+        # boolean flag for whether or not the client is operating behind a proxy
         self.proxy = proxy
+
+        # Location of the SecureDrop server.
+        self.hostname = hostname
+
+        # Reference to the UI window.
+        self.gui = gui
+
+        # Reference to the API for secure drop proxy.
+        self.api = None
+        # Contains active threads calling the API.
+        self.api_threads = {}
+
+        # Reference to the SqlAlchemy session.
+        self.session = session
+
+        # thread responsible for fetching messages
+        self.message_thread = None
+        self.message_sync = MessageSync(self.api, self.home, self.proxy)
+
+        # thread responsible for fetching replies
+        self.reply_thread = None
+        self.reply_sync = ReplySync(self.api, self.home, self.proxy)
+
+        self.sync_flag = os.path.join(home, 'sync_flag')
+
+        # File data.
+        self.data_dir = os.path.join(self.home, 'data')
+
         self.gpg = GpgHelper(home, proxy)
 
     def setup(self):
@@ -128,37 +146,22 @@ class Client(QObject):
         # The gui needs to reference this "controller" layer to call methods
         # triggered by UI events.
         self.gui.setup(self)
+
         # If possible, update the UI with available sources.
         self.update_sources()
+
         # Show the login dialog.
         self.gui.show_login()
+
         # Create a timer to check for sync status every 30 seconds.
         self.sync_timer = QTimer()
         self.sync_timer.timeout.connect(self.update_sync)
         self.sync_timer.start(30000)
+
         # Automagically sync with the API every 5 minutes.
         self.sync_update = QTimer()
         self.sync_update.timeout.connect(self.sync_api)
         self.sync_update.start(1000 * 60 * 5)  # every 5 minutes.
-        # Use a QTimer to update the current conversation view such
-        # that as downloads/decryption occur, the messages and replies
-        # populate the view.
-        self.conv_view_update = QTimer()
-        self.conv_view_update.timeout.connect(
-            self.update_conversation_view)
-        self.conv_view_update.start(1000 * 60 * 0.10)  # every 6 seconds
-
-        event.listen(db.Submission, 'load', self.on_object_loaded)
-        event.listen(db.Submission, 'init', self.on_object_instantiated)
-        event.listen(db.Reply, 'load', self.on_object_loaded)
-        event.listen(db.Reply, 'init', self.on_object_instantiated)
-
-    def on_object_instantiated(self, target, args, kwargs):
-        target.data = Data(self.data_dir)
-        return target
-
-    def on_object_loaded(self, target, context):
-        target.data = Data(self.data_dir)
 
     def call_api(self, function, callback, timeout, *args, current_object=None,
                  **kwargs):
@@ -177,23 +180,28 @@ class Client(QObject):
         new_api_runner = APICallRunner(function, current_object, *args,
                                        **kwargs)
         new_api_runner.moveToThread(new_api_thread)
+
         # handle completed call: copy response data, reset the
         # client, give the user-provided callback the response
         # data
         new_api_runner.call_finished.connect(
             lambda: self.completed_api_call(new_thread_id, callback))
+
         # we've started a timer. when that hits zero, call our
         # timeout function
         new_timer.timeout.connect(
             lambda: self.timeout_cleanup(new_thread_id, timeout))
+
         # when the thread starts, we want to run `call_api` on `api_runner`
         new_api_thread.started.connect(new_api_runner.call_api)
+
         # Add the thread related objects to the api_threads dictionary.
         self.api_threads[new_thread_id] = {
             'thread': new_api_thread,
             'runner': new_api_runner,
             'timer': new_timer,
         }
+
         # Start the thread and related activity.
         new_api_thread.start()
 
@@ -219,11 +227,13 @@ class Client(QObject):
             timer = thread_info['timer']
             timer.stop()
             result_data = runner.result
+
             # The callback may or may not have an associated current_object
             if runner.current_object:
                 current_object = runner.current_object
             else:
                 current_object = None
+
             self.clean_thread(thread_id)
             if current_object:
                 user_callback(result_data, current_object=current_object)
@@ -235,8 +245,8 @@ class Client(QObject):
         Starts the message-fetching thread in the background.
         """
         if not self.message_thread:
+            self.message_sync.api = self.api
             self.message_thread = QThread()
-            self.message_sync = MessageSync(self.api, self.home, self.proxy)
             self.message_sync.moveToThread(self.message_thread)
             self.message_thread.started.connect(self.message_sync.run)
             self.message_thread.start()
@@ -248,8 +258,8 @@ class Client(QObject):
         Starts the reply-fetching thread in the background.
         """
         if not self.reply_thread:
+            self.reply_sync.api = self.api
             self.reply_thread = QThread()
-            self.reply_sync = ReplySync(self.api, self.home, self.proxy)
             self.reply_sync.moveToThread(self.reply_thread)
             self.reply_thread.started.connect(self.reply_sync.run)
             self.reply_thread.start()
@@ -266,10 +276,12 @@ class Client(QObject):
         if thread_id in self.api_threads:
             runner = self.api_threads[thread_id]['runner']
             runner.i_timed_out = True
+
             if runner.current_object:
                 current_object = runner.current_object
             else:
                 current_object = None
+
             self.clean_thread(thread_id)
             if current_object:
                 user_callback(current_object=current_object)
@@ -297,6 +309,7 @@ class Client(QObject):
             self.gui.set_logged_in_as(self.api.username)
             self.start_message_thread()
             self.start_reply_thread()
+
             # Clear the sidebar error status bar if a message was shown
             # to the user indicating they should log in.
             self.gui.update_error_status("")
@@ -391,6 +404,13 @@ class Client(QObject):
                                          remote_submissions,
                                          remote_replies, self.data_dir)
 
+            # clean up locally cached conversation views
+            remote_source_uuids = [s.uuid for s in remote_sources]
+            cached_sources = list(self.gui.conversations.keys())
+            for cached_source in cached_sources:
+                if cached_source not in remote_source_uuids:
+                    self.gui.conversations.pop(cached_source, None)
+
             # Set last sync flag.
             with open(self.sync_flag, 'w') as f:
                 f.write(arrow.now().format())
@@ -406,8 +426,7 @@ class Client(QObject):
                     except CryptoError:
                         logger.warning('Failed to import key for source {}'.format(source.uuid))
 
-            # TODO: show something in the conversation view?
-            # self.gui.show_conversation_for()
+            self.update_conversation_views()
         else:
             # How to handle a failure? Exceptions are already logged. Perhaps
             # a message in the UI?
@@ -431,16 +450,15 @@ class Client(QObject):
         self.gui.show_sources(sources)
         self.update_sync()
 
-    def update_conversation_view(self):
+    def update_conversation_views(self):
         """
         Updates the conversation view to reflect progress
         of the download and decryption of messages and replies.
         """
-        # Redraw the conversation view if we have clicked on a source
-        # and the source has not been deleted.
-        if self.gui.current_source and self.gui.current_source in self.session:
-            self.session.refresh(self.gui.current_source)
-            self.gui.show_conversation_for(self.gui.current_source)
+        for conversation_wrapper in self.gui.conversations.values():
+            conv = conversation_wrapper.conversation
+            self.session.refresh(conv.source)
+            conv.update_conversation(conv.source.collection)
 
     def on_update_star_complete(self, result):
         """
@@ -505,14 +523,14 @@ class Client(QObject):
         # with the same filename as the server, except with the .gz.gpg
         # stripped off.
         server_filename = submission_db_object.filename
-        fn_no_ext, _ = os.path.splitext(
-            os.path.splitext(server_filename)[0])
+        fn_no_ext, _ = os.path.splitext(os.path.splitext(server_filename)[0])
         submission_filepath = os.path.join(self.data_dir, fn_no_ext)
 
         if self.proxy:
             # Running on Qubes.
             command = "qvm-open-in-vm"
             args = ['$dispvm:sd-svs-disp', submission_filepath]
+
             # QProcess (Qt) or Python's subprocess? Who cares? They do the
             # same thing. :-)
             process = QProcess(self)
@@ -542,6 +560,7 @@ class Client(QObject):
             sdk_object = sdclientapi.Reply(uuid=message.uuid)
             sdk_object.filename = message.filename
             sdk_object.source_uuid = source_db_object.uuid
+
         self.set_status(_('Downloading {}'.format(sdk_object.filename)))
         self.call_api(func, self.on_file_downloaded,
                       self.on_download_timeout, sdk_object, self.data_dir,
@@ -568,7 +587,9 @@ class Client(QObject):
                 # Attempt to decrypt the file.
                 self.gpg.decrypt_submission_or_reply(
                     filepath_in_datadir, server_filename, is_doc=True)
-            except CryptoError:
+            except CryptoError as e:
+                logger.debug('Failed to decrypt file {}: {}'.format(server_filename, e))
+
                 self.set_status("Failed to download and decrypt file, "
                                 "please try again.")
                 # TODO: We should save the downloaded content, and just
@@ -578,12 +599,9 @@ class Client(QObject):
             # Now that download and decrypt are done, mark the file as such.
             storage.mark_file_as_downloaded(file_uuid, self.session)
 
-            # Refresh the current source conversation, bearing in mind
-            # that the user may have navigated to another source.
-            self.gui.show_conversation_for(self.gui.current_source)
-            self.set_status(
-                'Finished downloading {}'.format(current_object.filename))
+            self.set_status('Finished downloading {}'.format(current_object.filename))
         else:  # The file did not download properly.
+            logger.debug('Failed to download file {}'.format(server_filename))
             # Update the UI in some way to indicate a failure state.
             self.set_status("The file download failed. Please try again.")
 

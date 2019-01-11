@@ -65,16 +65,19 @@ def configure_logging(sdc_home: str) -> None:
     log_fmt = ('%(asctime)s - %(name)s:%(lineno)d(%(funcName)s) '
                '%(levelname)s: %(message)s')
     formatter = logging.Formatter(log_fmt)
+
     # define log handlers such as for rotating log files
     handler = TimedRotatingFileHandler(log_file, when='midnight',
                                        backupCount=5, delay=0,
                                        encoding=ENCODING)
     handler.setFormatter(formatter)
     handler.setLevel(logging.DEBUG)
+
     # set up primary log
     log = logging.getLogger()
     log.setLevel(logging.DEBUG)
     log.addHandler(handler)
+
     # override excepthook to capture a log of catastrophic failures.
     sys.excepthook = excepthook
 
@@ -157,7 +160,7 @@ def start_app(args, qt_args) -> None:
 
     prevent_second_instance(app, args.sdc_home)
 
-    gui = Window()
+    gui = Window(args.sdc_home)
     app.setWindowIcon(load_icon(gui.icon))
     app.setStyleSheet(load_css('sdclient.css'))
 

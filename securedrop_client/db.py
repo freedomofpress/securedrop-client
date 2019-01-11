@@ -24,19 +24,10 @@ def make_engine(home: str):
     return create_engine('sqlite:///{}'.format(db_path))
 
 
-class WithContent():
-
-    @property
-    def content(self):
-        if self.is_downloaded:
-            fn_no_ext, _ = os.path.splitext(self.filename)
-            return self.data.get(fn_no_ext)
-        else:
-            return None
-
-
 class Source(Base):
+
     __tablename__ = 'sources'
+
     # TODO - add number_of_docs
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
@@ -76,8 +67,10 @@ class Source(Base):
         return collection
 
 
-class Submission(Base, WithContent):
+class Submission(Base):
+
     __tablename__ = 'submissions'
+
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
     filename = Column(String(255), nullable=False)
@@ -111,8 +104,10 @@ class Submission(Base, WithContent):
         return '<Submission {}>'.format(self.filename)
 
 
-class Reply(Base, WithContent):
+class Reply(Base):
+
     __tablename__ = 'replies'
+
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
     source_id = Column(Integer, ForeignKey('sources.id'))
@@ -144,7 +139,9 @@ class Reply(Base, WithContent):
 
 
 class User(Base):
+
     __tablename__ = 'users'
+
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
     username = Column(String(255), nullable=False, unique=True)
