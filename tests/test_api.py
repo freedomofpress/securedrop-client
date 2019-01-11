@@ -184,7 +184,7 @@ class TestAPI(unittest.TestCase):
         with open(os.path.join(dirname, "encrypted_msg.asc")) as fobj:
             data = fobj.read()
 
-        self.assertTrue(self.api.reply_source(s, data))
+        self.assertTrue(isinstance(self.api.reply_source(s, data), Reply))
 
     @vcr.use_cassette("data/test-reply-source-with-uuid.yml")
     def test_reply_source_with_uuid(self):
