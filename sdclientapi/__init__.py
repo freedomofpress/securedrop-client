@@ -542,17 +542,21 @@ class API:
 
         return data
 
-    def reply_source(self, source: Source, msg: str) -> Reply:
+    def reply_source(self, source: Source, msg: str, reply_uuid: str = None) -> Reply:
         """
         This method is used to reply to a given source. The message should be preencrypted with the source's
         GPG public key.
 
         :param source: Source object we want to reply.
         :param msg: Encrypted message with Source's GPG public key.
+        :param reply_uuid: The UUID that will be used to identify the reply on the server.
         """
         path_query = "api/v1/sources/{}/replies".format(source.uuid)
         method = "POST"
         reply = {"reply": msg}
+
+        if reply_uuid:
+            reply["uuid"] = reply_uuid
 
         try:
             data, status_code, headers = self._send_json_request(
