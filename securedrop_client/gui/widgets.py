@@ -23,7 +23,7 @@ from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, \
-    QMessageBox, QToolButton
+    QMessageBox, QToolButton, QSizePolicy
 
 from securedrop_client.db import Source
 from securedrop_client.logic import Client
@@ -485,7 +485,7 @@ class SpeechBubble(QWidget):
     and journalist.
     """
 
-    css = "padding: 10px; border: 1px solid #999; border-radius: 18px;"
+    css = "padding: 10px; min-height:20px;border: 1px solid #999; border-radius: 18px;"
 
     def __init__(self, message_id: str, text: str, update_signal) -> None:
         super().__init__()
@@ -496,7 +496,7 @@ class SpeechBubble(QWidget):
 
         self.message = QLabel(html.escape(text, quote=False))
         self.message.setWordWrap(True)
-
+        self.message.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout.addWidget(self.message)
 
         update_signal.connect(self._update_text)
@@ -545,7 +545,12 @@ class ConversationWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.setLayout(layout)
-        self.setContentsMargins(38, 38, 38, 38)
+        self.setContentsMargins(0, 0, 0, 0)
+        self.container = QWidget()
+        self.conversation_layout = QVBoxLayout()
+        self.container.setLayout(self.conversation_layout)
+ #      self.container.setStyleSheet("background-color: #fff;")
+        self.container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
 
 class MessageWidget(ConversationWidget):
