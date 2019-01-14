@@ -549,7 +549,6 @@ class ConversationWidget(QWidget):
         self.container = QWidget()
         self.conversation_layout = QVBoxLayout()
         self.container.setLayout(self.conversation_layout)
- #      self.container.setStyleSheet("background-color: #fff;")
         self.container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
 
