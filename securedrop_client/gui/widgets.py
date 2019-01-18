@@ -546,10 +546,6 @@ class ConversationWidget(QWidget):
 
         self.setLayout(layout)
         self.setContentsMargins(0, 0, 0, 0)
-        self.container = QWidget()
-        self.conversation_layout = QVBoxLayout()
-        self.container.setLayout(self.conversation_layout)
-        self.container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
 
 class MessageWidget(ConversationWidget):
@@ -647,11 +643,12 @@ class ConversationView(QWidget):
         self.source = source_db_object
         self.sdc_home = sdc_home
         self.controller = controller
+        self.setStyleSheet("background-color: #fff;")
 
         self.container = QWidget()
         self.conversation_layout = QVBoxLayout()
         self.container.setLayout(self.conversation_layout)
-        self.container.setStyleSheet("background-color: #fff;")
+        self.container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         self.scroll = QScrollArea()
         self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
