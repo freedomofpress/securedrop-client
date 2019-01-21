@@ -573,8 +573,7 @@ class API:
             raise AuthError(data["error"])
 
         if "message" in data and data["message"] == "Your reply has been stored":
-            if "uuid" in data:
-                return Reply(uuid=data["uuid"])
+            return Reply(uuid=data["uuid"], filename=data["filename"])
 
         raise BaseError("Error handling HTTP response to sending a reply")
 
