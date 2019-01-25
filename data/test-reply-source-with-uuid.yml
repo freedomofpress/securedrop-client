@@ -4,7 +4,7 @@ interactions:
     headers:
       Accept: [application/json]
       Accept-Encoding: ['gzip, deflate']
-      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU0ODExOTU4MywiaWF0IjoxNTQ4MDkwNzgzfQ.eyJpZCI6MX0.j9mJdalAHiFTWDT-vvmH_PUGofW625Z8M4hOrYcNmuo]
+      Authorization: [Token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU0ODExOTU4MywiaWF0IjoxNTQ4MDkwNzgzfQ.eyJpZCI6MX0.j9mJdalAHiFTWDT-vvmH_PUGofW625Z8M4hOrYcNmuo]
       Connection: [keep-alive]
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
@@ -74,7 +74,7 @@ interactions:
     headers:
       Accept: [application/json]
       Accept-Encoding: ['gzip, deflate']
-      Authorization: [token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU0ODExOTU4MywiaWF0IjoxNTQ4MDkwNzgzfQ.eyJpZCI6MX0.j9mJdalAHiFTWDT-vvmH_PUGofW625Z8M4hOrYcNmuo]
+      Authorization: [Token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU0ODExOTU4MywiaWF0IjoxNTQ4MDkwNzgzfQ.eyJpZCI6MX0.j9mJdalAHiFTWDT-vvmH_PUGofW625Z8M4hOrYcNmuo]
       Connection: [keep-alive]
       Content-Length: ['974']
       Content-Type: [application/json]
