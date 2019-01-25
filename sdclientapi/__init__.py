@@ -127,7 +127,7 @@ class API:
 
     def update_auth_header(self):
         self.auth_header = {
-            "Authorization": "token " + self.token["token"],
+            "Authorization": "Token " + self.token["token"],
             "Content-Type": "application/json",
             "Accept": "application/json",
         }
