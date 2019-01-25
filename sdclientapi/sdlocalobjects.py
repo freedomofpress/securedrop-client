@@ -56,9 +56,10 @@ class Reply:
         self.source_uuid = ""  # type: str
         self.uuid = ""  # type: str
 
-        if ["uuid"] == list(kwargs.keys()):
+        if {"uuid", "filename"} == set(kwargs.keys()):
             # Then we are creating an object for fetching from the server.
             self.uuid = kwargs["uuid"]
+            self.filename = kwargs["filename"]
             return
 
         for key in [

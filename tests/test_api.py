@@ -184,7 +184,10 @@ class TestAPI(unittest.TestCase):
         with open(os.path.join(dirname, "encrypted_msg.asc")) as fobj:
             data = fobj.read()
 
-        self.assertTrue(isinstance(self.api.reply_source(s, data), Reply))
+        reply = self.api.reply_source(s, data)
+        assert isinstance(reply, Reply)
+        assert reply.uuid
+        assert reply.filename
 
     @vcr.use_cassette("data/test-reply-source-with-uuid.yml")
     def test_reply_source_with_uuid(self):
@@ -193,7 +196,7 @@ class TestAPI(unittest.TestCase):
         with open(os.path.join(dirname, "encrypted_msg.asc")) as fobj:
             data = fobj.read()
 
-        msg_uuid = 'e467868c-1fbb-4b5e-bca2-87944ea83855'
+        msg_uuid = "e467868c-1fbb-4b5e-bca2-87944ea83855"
         reply = self.api.reply_source(s, data, msg_uuid)
         assert reply.uuid == msg_uuid
 
