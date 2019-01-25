@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  build:
+  test-run:
     working_directory: ~/sdclientapi
     docker:
       - image: circleci/python:3.5.3
@@ -13,6 +13,7 @@ jobs:
       - restore_cache:
           key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
       - run:
+          name: Install dependencies
           command: |
             set -e
             sudo pip install pipenv
@@ -24,11 +25,68 @@ jobs:
             - "/usr/local/bin"
             - "/usr/local/lib/python3.5/site-packages"
       - run:
+          name: Run linters
           command: pipenv run make check
-      - store_test_results:
-          path: test-results
-      - store_artifacts:
-          path: test-results
       - run:
+          name: Run tests
+          command: |
+            pipenv run python -m unittest discover -v tests/
+      - run:
+          name: Check for known CVEs
           command: pipenv check
-destination: tr1
+  test-against-latest-api:
+    working_directory: ~/project
+    machine:
+      enabled: true
+    environment:
+      DOCKER_API_VERSION: 1.23
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            sudo pip install pipenv
+            pipenv install -d
+      - run:
+          name: Download SecureDrop server code
+          command: git clone https://github.com/freedomofpress/securedrop.git
+      - run:
+          name: Start spinning up the SecureDrop server container
+          command: |
+            cd securedrop
+            make -C securedrop dev
+          background: true  
+      - run:  # As suggested in https://discuss.circleci.com/t/prevent-race-conditions-by-waiting-for-services-with-dockerize/11215
+          name: Install dockerize
+          command: |
+            wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz &&
+            sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz &&
+            rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
+          environment:
+            DOCKERIZE_VERSION: v0.6.1
+      - run:
+          name: Wait for server to be up
+          command: |
+            dockerize -wait tcp://127.0.0.1:8080 -timeout 15m
+            sleep 10
+      - run:
+          name: Remove VCR cassettes and run tests against latest API
+          command: |
+            rm data/*.yml  # Removing VCR cassettes
+            pipenv run python -m unittest discover -v tests/
+workflows:
+  version: 2
+  securedrop_ci:
+    jobs:
+      - test-run
+      - test-against-latest-api
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 4 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - test-against-latest-api
