@@ -23,7 +23,7 @@ class TestAPI(unittest.TestCase):
         self.totp = pyotp.TOTP("JHCOGO7VCER3EJ4L")
         self.username = "journalist"
         self.password = "correct horse battery staple profanity oil chewy"
-        self.server = "http://localhost:8081/"
+        self.server = "http://127.0.0.1:8081/"
         self.api = API(self.server, self.username, self.password, str(self.totp.now()))
         for i in range(3):
             try:
