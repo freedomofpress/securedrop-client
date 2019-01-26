@@ -9,7 +9,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/submissions
+    uri: http://127.0.0.1:8081/api/v1/submissions
   response:
     body: {string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/0ec00900-64ab-4f76-8e09-faaf577e5633/submissions/32bbe523-9262-4fcd-a859-25c729b6dca5/download\",
         \n      \"filename\": \"1-vibrational_sleep-msg.gpg\", \n      \"is_read\":

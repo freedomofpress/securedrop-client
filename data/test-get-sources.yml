@@ -9,7 +9,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources
+    uri: http://127.0.0.1:8081/api/v1/sources
   response:
     body: {string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/c7abe6eb-e9f6-4bea-9d82-740ffcf833b0/add_star\",
         \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n      \"is_starred\":

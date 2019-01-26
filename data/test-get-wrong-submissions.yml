@@ -9,7 +9,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources
+    uri: http://127.0.0.1:8081/api/v1/sources
   response:
     body: {string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/e1f8baab-2a97-4590-8295-06f08d43731c/add_star\",
         \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n      \"is_starred\":
@@ -52,7 +52,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources/rofl-missing/submissions
+    uri: http://127.0.0.1:8081/api/v1/sources/rofl-missing/submissions
   response:
     body: {string: "{\n  \"error\": \"Not Found\", \n  \"message\": \"The requested
         URL was not found on the server.  If you entered the URL manually please check

@@ -9,7 +9,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources
+    uri: http://127.0.0.1:8081/api/v1/sources
   response:
     body: {string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/812948a6-796f-4d2b-8112-5dd25e09130e/add_star\",
         \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n      \"is_starred\":
@@ -52,7 +52,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources/812948a6-796f-4d2b-8112-5dd25e09130e/submissions
+    uri: http://127.0.0.1:8081/api/v1/sources/812948a6-796f-4d2b-8112-5dd25e09130e/submissions
   response:
     body: {string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/812948a6-796f-4d2b-8112-5dd25e09130e/submissions/fd20e9ce-663b-48c8-8cc2-bdaff00f95da/download\",
         \n      \"filename\": \"1-liked_crockery-msg.gpg\", \n      \"is_read\": false,
@@ -83,7 +83,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources/812948a6-796f-4d2b-8112-5dd25e09130e/submissions/fd20e9ce-663b-48c8-8cc2-bdaff00f95da
+    uri: http://127.0.0.1:8081/api/v1/sources/812948a6-796f-4d2b-8112-5dd25e09130e/submissions/fd20e9ce-663b-48c8-8cc2-bdaff00f95da
   response:
     body: {string: "{\n  \"download_url\": \"/api/v1/sources/812948a6-796f-4d2b-8112-5dd25e09130e/submissions/fd20e9ce-663b-48c8-8cc2-bdaff00f95da/download\",
         \n  \"filename\": \"1-liked_crockery-msg.gpg\", \n  \"is_read\": false, \n

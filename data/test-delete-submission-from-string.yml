@@ -9,7 +9,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources
+    uri: http://127.0.0.1:8081/api/v1/sources
   response:
     body: {string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/83442bde-13e7-49a7-b162-646e7f8f87f4/add_star\",
         \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n      \"is_starred\":
@@ -52,7 +52,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources/83442bde-13e7-49a7-b162-646e7f8f87f4/submissions
+    uri: http://127.0.0.1:8081/api/v1/sources/83442bde-13e7-49a7-b162-646e7f8f87f4/submissions
   response:
     body: {string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/83442bde-13e7-49a7-b162-646e7f8f87f4/submissions/5b157795-1f3f-47ad-96ce-a8b6fe69f6e3/download\",
         \n      \"filename\": \"1-divided_sawdust-msg.gpg\", \n      \"is_read\":
@@ -84,7 +84,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: DELETE
-    uri: http://localhost:8081/api/v1/sources/83442bde-13e7-49a7-b162-646e7f8f87f4/submissions/5b157795-1f3f-47ad-96ce-a8b6fe69f6e3
+    uri: http://127.0.0.1:8081/api/v1/sources/83442bde-13e7-49a7-b162-646e7f8f87f4/submissions/5b157795-1f3f-47ad-96ce-a8b6fe69f6e3
   response:
     body: {string: "{\n  \"message\": \"Submission deleted\"\n}\n"}
     headers:
@@ -106,7 +106,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/submissions
+    uri: http://127.0.0.1:8081/api/v1/submissions
   response:
     body: {string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/83442bde-13e7-49a7-b162-646e7f8f87f4/submissions/50207602-863b-41cd-8451-2af42e45ece8/download\",
         \n      \"filename\": \"2-divided_sawdust-msg.gpg\", \n      \"is_read\":

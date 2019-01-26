@@ -9,7 +9,7 @@ interactions:
       Content-Length: ['119']
       User-Agent: [python-requests/2.20.0]
     method: POST
-    uri: http://localhost:8081/api/v1/token
+    uri: http://127.0.0.1:8081/api/v1/token
   response:
     body: {string: "{\n  \"expiration\": \"2018-10-23T06:41:58.606548Z\", \n  \"token\":
         \"eyJhbGciOiJIUzI1NiIsImV4cCI6MTU0MDI3NjkxOCwiaWF0IjoxNTQwMjQ4MTE4fQ.eyJpZCI6MX0.fygpQy3CxB1ulUWLFz2UdrtcBKHz-fk5gyRxbcSY720\"\n}\n"}

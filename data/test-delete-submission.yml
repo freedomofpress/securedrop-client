@@ -9,7 +9,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/submissions
+    uri: http://127.0.0.1:8081/api/v1/submissions
   response:
     body: {string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/58393a75-75b4-4c9b-9696-9b15741d0e19/submissions/e476e1a2-0f8b-4708-977a-23ce0c5ce2ff/download\",
         \n      \"filename\": \"1-unfulfilled_ardor-msg.gpg\", \n      \"is_read\":
@@ -51,7 +51,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: DELETE
-    uri: http://localhost:8081/api/v1/sources/58393a75-75b4-4c9b-9696-9b15741d0e19/submissions/e476e1a2-0f8b-4708-977a-23ce0c5ce2ff
+    uri: http://127.0.0.1:8081/api/v1/sources/58393a75-75b4-4c9b-9696-9b15741d0e19/submissions/e476e1a2-0f8b-4708-977a-23ce0c5ce2ff
   response:
     body: {string: "{\n  \"message\": \"Submission deleted\"\n}\n"}
     headers:
@@ -73,7 +73,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/submissions
+    uri: http://127.0.0.1:8081/api/v1/submissions
   response:
     body: {string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/58393a75-75b4-4c9b-9696-9b15741d0e19/submissions/25670770-6772-439b-8ce4-733799dc32f8/download\",
         \n      \"filename\": \"2-unfulfilled_ardor-msg.gpg\", \n      \"is_read\":

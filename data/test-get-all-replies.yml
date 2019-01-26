@@ -9,7 +9,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/replies
+    uri: http://127.0.0.1:8081/api/v1/replies
   response:
     body: {string: "{\n  \"replies\": [\n    {\n      \"filename\": \"3-concealed_straight-reply.gpg\",
         \n      \"is_deleted_by_source\": false, \n      \"journalist_username\":

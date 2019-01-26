@@ -9,7 +9,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/replies
+    uri: http://127.0.0.1:8081/api/v1/replies
   response:
     body: {string: "{\n  \"replies\": [\n    {\n      \"filename\": \"3-die-hard_chancellor-reply.gpg\",
         \n      \"is_deleted_by_source\": false, \n      \"journalist_username\":
@@ -52,7 +52,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: DELETE
-    uri: http://localhost:8081/api/v1/sources/664259e9-bd0e-41a0-85b2-bd0d618038c5/replies/68603968-b307-4607-80f7-cc7856f90f2f
+    uri: http://127.0.0.1:8081/api/v1/sources/664259e9-bd0e-41a0-85b2-bd0d618038c5/replies/68603968-b307-4607-80f7-cc7856f90f2f
   response:
     body: {string: "{\n  \"message\": \"Reply deleted\"\n}\n"}
     headers:
@@ -74,7 +74,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/replies
+    uri: http://127.0.0.1:8081/api/v1/replies
   response:
     body: {string: "{\n  \"replies\": [\n    {\n      \"filename\": \"4-die-hard_chancellor-reply.gpg\",
         \n      \"is_deleted_by_source\": false, \n      \"journalist_username\":

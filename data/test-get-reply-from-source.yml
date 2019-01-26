@@ -9,7 +9,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources
+    uri: http://127.0.0.1:8081/api/v1/sources
   response:
     body: {string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/562bc2f3-6c23-4168-8218-be8309463bd1/add_star\",
         \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n      \"is_starred\":
@@ -52,7 +52,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources/562bc2f3-6c23-4168-8218-be8309463bd1/replies
+    uri: http://127.0.0.1:8081/api/v1/sources/562bc2f3-6c23-4168-8218-be8309463bd1/replies
   response:
     body: {string: "{\n  \"replies\": [\n    {\n      \"filename\": \"3-unabated_dysphagia-reply.gpg\",
         \n      \"is_deleted_by_source\": false, \n      \"journalist_username\":
@@ -84,7 +84,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources/562bc2f3-6c23-4168-8218-be8309463bd1/replies/c6cb5121-3585-4587-99de-7c82a46cc74e
+    uri: http://127.0.0.1:8081/api/v1/sources/562bc2f3-6c23-4168-8218-be8309463bd1/replies/c6cb5121-3585-4587-99de-7c82a46cc74e
   response:
     body: {string: "{\n  \"filename\": \"3-unabated_dysphagia-reply.gpg\", \n  \"is_deleted_by_source\":
         false, \n  \"journalist_username\": \"journalist\", \n  \"journalist_uuid\":

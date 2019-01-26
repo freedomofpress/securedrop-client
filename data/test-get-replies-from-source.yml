@@ -9,7 +9,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources
+    uri: http://127.0.0.1:8081/api/v1/sources
   response:
     body: {string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/1f2f6b0e-a152-4ae1-92aa-7e9953ee9db4/add_star\",
         \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n      \"is_starred\":
@@ -52,7 +52,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources/1f2f6b0e-a152-4ae1-92aa-7e9953ee9db4/replies
+    uri: http://127.0.0.1:8081/api/v1/sources/1f2f6b0e-a152-4ae1-92aa-7e9953ee9db4/replies
   response:
     body: {string: "{\n  \"replies\": [\n    {\n      \"filename\": \"3-make-believe_pharmacist-reply.gpg\",
         \n      \"is_deleted_by_source\": false, \n      \"journalist_username\":

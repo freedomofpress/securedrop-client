@@ -9,7 +9,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources
+    uri: http://127.0.0.1:8081/api/v1/sources
   response:
     body: {string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/26fe81f9-4d35-4999-9fd6-70963e9fd664/add_star\",
         \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n      \"is_starred\":
@@ -52,7 +52,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources/26fe81f9-4d35-4999-9fd6-70963e9fd664/submissions
+    uri: http://127.0.0.1:8081/api/v1/sources/26fe81f9-4d35-4999-9fd6-70963e9fd664/submissions
   response:
     body: {string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/26fe81f9-4d35-4999-9fd6-70963e9fd664/submissions/0f939198-de40-4689-bacd-983c1c678bbd/download\",
         \n      \"filename\": \"1-edifying_skirl-msg.gpg\", \n      \"is_read\": false,
