@@ -9,7 +9,7 @@ format: ## Run the formatter
 TESTS ?= tests
 .PHONY: test
 test: ## Run the test suite
-	@pipenv run python -m pytest -v --cov sdclientapi --cov-report html --cov-report term-missing $(TESTS)
+	@python -m pytest -v --cov sdclientapi --cov-report html --cov-report term-missing $(TESTS)
 
 .PHONY: open-coverage-report
 open-coverage-report: ## Open the coverage report in your browser
