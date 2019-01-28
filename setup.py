@@ -12,7 +12,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="GPLv3+",
-    install_requires=["requests"],
+    install_requires=["requests", "urllib3"],
     python_requires=">=3.5",
     url="https://github.com/freedomofpress/securedrop-sdk",
     packages=setuptools.find_packages(exclude=["docs", "tests"]),
