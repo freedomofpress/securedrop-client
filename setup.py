@@ -22,7 +22,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     license="GPLv3+",
     install_requires=["SQLALchemy", "alembic", "securedrop-sdk",
-                      "pathlib2", "arrow", "certifi"],
+                      "python-dateutil", "arrow"],
     python_requires=">=3.5",
     url="https://github.com/freedomofpress/securedrop-proxy",
     packages=["securedrop_client", "securedrop_client.gui",
