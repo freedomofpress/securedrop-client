@@ -126,11 +126,11 @@ class ReplySync(APISyncObject):
                     # we have client objects. let's take care of that
                     # here
                     sdk_reply = sdkobjects.Reply(
-                        uuid=db_reply.uuid
+                        uuid=db_reply.uuid,
+                        filename=db_reply.filename,
                     )
                     sdk_reply.source_uuid = db_reply.source.uuid
                     # Need to set filename on non-Qubes platforms
-                    sdk_reply.filename = db_reply.filename
 
                     if self.api:
                         self.fetch_the_thing(sdk_reply,

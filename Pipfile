@@ -9,7 +9,7 @@ python_version = "3.5"
 [packages]
 SQLALchemy = "==1.2.13"
 alembic = "==1.0.2"
-securedrop-sdk = "==0.0.4"
+securedrop-sdk = "==0.0.6"
 "pathlib2" = "==2.3.2"
 arrow = "==0.12.1"
 certifi = "==2018.10.15"
