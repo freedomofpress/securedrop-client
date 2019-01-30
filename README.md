@@ -9,9 +9,8 @@ The SDK is currently used by the [SecureDrop Client](https://github.com/freedomo
 ### Development
 
 This project uses [pipenv](https://docs.pipenv.org) to manage all dependencies.
-This is a Python 3 project.
-
-We are using [mypy](http://mypy-lang.org) for type annotation checks.
+This is a Python 3 project. When using `pipenv` locally, ensure you used the `--keep-outdated` flag to prevent
+dependencies from being unnecessarily upgraded during normal development.
 
 We cover all the API calls supported by the SecureDrop Journalist Interface API.
 

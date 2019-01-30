@@ -15,7 +15,7 @@ jobs:
       - run:
           command: |
             sudo pip install pipenv
-            pipenv install -d
+            pipenv install --keep-outdated --dev
       - save_cache:
           key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
           paths:
@@ -23,12 +23,11 @@ jobs:
             - "/usr/local/bin"
             - "/usr/local/lib/python3.5/site-packages"
       - run:
-          command: |
-            pipenv run python -m unittest discover -v tests/
+          command: pipenv run make test
       - store_test_results:
           path: test-results
       - store_artifacts:
           path: test-results
       - run:
-          command: pipenv check
+          command: pipenv check --keep-outdated
 destination: tr1
