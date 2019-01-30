@@ -6,18 +6,14 @@ verify_ssl = true
 [requires]
 python_version = "3.5"
 
-[dev-packages]
-coverage = "==4.5.1"
-markupsafe = "==1.0"
-pyparsing = "==2.2.2"
-pytz = "==2018.5"
-vcrpy = "==2.0.1"
-mypy = "==0.641"
-pyotp = "==2.2.6"
-sphinx = "==1.8.1"
-pytest = "==3.9.1"
-pytest-cov = "==2.6.0"
-
 [packages]
-requests = "==2.20.0"
-urllib3 = "==1.24"
+requests = "*"
+urllib3 = "*"
+
+[dev-packages]
+coverage = "*"
+pyotp = "*"
+pytest = "*"
+pytest-cov = "*"
+sphinx = "*"
+vcrpy = "*"
