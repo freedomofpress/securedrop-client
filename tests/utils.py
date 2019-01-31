@@ -1,10 +1,8 @@
-import os
 import json
-from pprint import pprint
-from sdclientapi import json_query
+import os
 from unittest.mock import MagicMock, patch
 
-from typing import Optional, Dict, List, Tuple
+from sdclientapi import json_query
 
 # We are making calls to securedrop.Proxy qrexec service
 # in the QubesOS to get the data from the server. This is difficult to test
@@ -40,7 +38,7 @@ def internal_sideeffect(*args, **kwargs):
         python_args["body"] = json.dumps(value, sort_keys=True)
         newargs = json.dumps(python_args, sort_keys=True)
         arguments = (newargs,)
-    except:
+    except Exception:
         pass  # Means no body in the call
 
     # Now remove the authorization token from the key
@@ -52,7 +50,7 @@ def internal_sideeffect(*args, **kwargs):
         python_args["headers"] = json.dumps(value, sort_keys=True)
         newargs = json.dumps(python_args, sort_keys=True)
         arguments = (newargs,)
-    except Exception as err:
+    except Exception:
         pass  # Means no Authorization token in the call
 
     key = arguments[0] + "+" + str(CALLNUMBER)
