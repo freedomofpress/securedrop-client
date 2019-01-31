@@ -12,6 +12,8 @@ urllib3 = "*"
 
 [dev-packages]
 coverage = "*"
+flake8 = "*"
+mypy = "*"
 pyotp = "*"
 pytest = "*"
 pytest-cov = "*"
