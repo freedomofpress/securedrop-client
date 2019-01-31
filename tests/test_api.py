@@ -1,5 +1,3 @@
-import hashlib
-import json
 import os
 import pyotp
 import shutil
@@ -7,10 +5,16 @@ import tempfile
 import time
 import unittest
 import vcr
-from pprint import pprint
 
-from sdclientapi import *
-from utils import *
+from sdclientapi import API
+from sdclientapi.sdlocalobjects import (
+    BaseError,
+    WrongUUIDError,
+    ReplyError,
+    Reply,
+    Source,
+)
+from utils import load_auth, save_auth
 
 
 class TestAPI(unittest.TestCase):
@@ -212,7 +216,7 @@ class TestAPI(unittest.TestCase):
 
         # now let us read the downloaded file
         with open(filepath, "rb") as fobj:
-            data = fobj.read()
+            fobj.read()
 
         # Now the submission should have is_read as True.
 
@@ -256,7 +260,7 @@ class TestAPI(unittest.TestCase):
 
         # now let us read the downloaded file
         with open(filepath, "rb") as fobj:
-            data = fobj.read()
+            fobj.read()
 
         # Let us remove the temporary directory
         shutil.rmtree(tmpdir)

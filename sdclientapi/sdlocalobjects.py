@@ -1,3 +1,9 @@
+import typing
+
+if typing.TYPE_CHECKING:
+    from typing import Dict
+
+
 class BaseError(Exception):
     pass
 
@@ -5,38 +11,38 @@ class BaseError(Exception):
 class ReplyError(BaseError):
     "For errors on reply messages"
 
-    def __init__(self, message):
+    def __init__(self, message: str) -> None:
         self.msg = message
 
-    def __str__(self):
+    def __str__(self) -> str:
         return repr(self.msg)
 
 
 class WrongUUIDError(BaseError):
     "For missing UUID, can be for source or submission"
 
-    def __init__(self, message):
+    def __init__(self, message: str) -> None:
         self.msg = message
 
-    def __str__(self):
+    def __str__(self) -> str:
         return repr(self.msg)
 
 
 class AuthError(BaseError):
     "For Authentication errors"
 
-    def __init__(self, message):
+    def __init__(self, message: str) -> None:
         self.msg = message
 
-    def __str__(self):
+    def __str__(self) -> str:
         return repr(self.msg)
 
 
 class AttributeError(BaseError):
-    def __init__(self, message):
+    def __init__(self, message: str) -> None:
         self.msg = message
 
-    def __str__(self):
+    def __str__(self) -> str:
         return repr(self.msg)
 
 
@@ -45,7 +51,7 @@ class Reply:
     This class represents a reply to the source.
     """
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs) -> None:  # type: ignore
         self.filename = ""  # type: str
         self.journalist_username = ""  # type: str
         self.journalist_uuid = ""  # type: str
@@ -72,7 +78,7 @@ class Reply:
             "source_url",
             "uuid",
         ]:
-            if not key in kwargs:
+            if key not in kwargs:
                 AttributeError("Missing key {}".format(key))
             setattr(self, key, kwargs[key])
 
@@ -86,7 +92,7 @@ class Submission:
     This class represents a submission object in the server.
     """
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs) -> None:  # type: ignore
         self.download_url = ""  # type: str
         self.filename = ""  # type: str
         self.is_read = False  # type: bool
@@ -110,7 +116,7 @@ class Submission:
             "submission_url",
             "uuid",
         ]:
-            if not key in kwargs:
+            if key not in kwargs:
                 AttributeError("Missing key {}".format(key))
             setattr(self, key, kwargs[key])
         _, self.source_uuid = self.source_url.rsplit("/", 1)
@@ -121,7 +127,7 @@ class Source:
     This class represents a source object in the server.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:  # type: ignore
         self.add_star_url = ""  # type: str
         self.interaction_count = 0  # type: int
         self.is_flagged = False  # type: bool
@@ -158,6 +164,6 @@ class Source:
             "url",
             "uuid",
         ]:
-            if not key in kwargs:
+            if key not in kwargs:
                 AttributeError("Missing key {}".format(key))
             setattr(self, key, kwargs[key])
