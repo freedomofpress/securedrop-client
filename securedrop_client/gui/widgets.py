@@ -530,14 +530,14 @@ class ConversationWidget(QWidget):
         layout = QHBoxLayout()
         label = SpeechBubble(message_id, message, update_signal)
 
-        if align is not "left":
+        if align != "left":
             # Float right...
             layout.addStretch(5)
             label.setStyleSheet(label.css + 'border-bottom-right-radius: 0px;')
 
         layout.addWidget(label, 6)
 
-        if align is "left":
+        if align == "left":
             # Add space on right hand side...
             layout.addStretch(5)
             label.setStyleSheet(label.css + 'border-bottom-left-radius: 0px;')
@@ -607,14 +607,14 @@ class FileWidget(QWidget):
             human_filesize = humanize_filesize(self.submission.size)
             description = QLabel("Download ({})".format(human_filesize))
 
-        if align is not "left":
+        if align != "left":
             # Float right...
             layout.addStretch(5)
 
         layout.addWidget(icon)
         layout.addWidget(description, 5)
 
-        if align is "left":
+        if align == "left":
             # Add space on right hand side...
             layout.addStretch(5)
 
