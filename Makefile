@@ -11,6 +11,17 @@ TESTS ?= tests
 test: ## Run the test suite
 	@python -m pytest -v --cov sdclientapi --cov-report html --cov-report term-missing $(TESTS)
 
+.PHONY: lint
+lint: ## Run the flake8 lints
+	@flake8 sdclientapi tests
+
+.PHONY: mypy
+mypy: ## Run the mypy typechecker
+	@mypy sdclientapi
+
+.PHONY: check
+check: lint mypy test ## Run all checks and tests
+
 .PHONY: open-coverage-report
 open-coverage-report: ## Open the coverage report in your browser
 	@$(OPEN) htmlcov/index.html
