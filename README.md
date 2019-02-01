@@ -24,7 +24,7 @@ Features to be added include:
 Set up a Python 3 virtual environment and set up dependencies:
 
 ```
-pipenv install --dev
+pipenv install --dev --keep-outdated
 pipenv shell
 ```
 
@@ -44,7 +44,7 @@ pyenv install 3.5.0
 
 brew install pip
 pip install pipenv
-pipenv install --dev
+pipenv install --dev --keep-outdated
 pipenv shell
 ```
 
