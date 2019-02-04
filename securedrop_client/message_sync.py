@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
 import logging
+import traceback
 import sdclientapi.sdlocalobjects as sdkobjects
 
 from PyQt5.QtCore import QObject, pyqtSignal
@@ -88,10 +89,9 @@ class MessageSync(APISyncObject):
                                              storage.mark_file_as_downloaded)
                         self.message_downloaded.emit(db_submission.uuid,
                                                      get_data(self.home, db_submission.filename))
-                except Exception as e:
-                    logger.critical(
-                        "Exception while downloading submission! {}".format(e)
-                    )
+                except Exception:
+                    tb = traceback.format_exc()
+                    logger.critical("Exception while downloading submission!\n{}".format(tb))
 
             logger.debug('Completed message sync.')
 
@@ -139,10 +139,9 @@ class ReplySync(APISyncObject):
                                              storage.mark_reply_as_downloaded)
                         self.reply_downloaded.emit(db_reply.uuid,
                                                    get_data(self.home, db_reply.filename))
-                except Exception as e:
-                    logger.critical(
-                        "Exception while downloading reply! {}".format(e)
-                    )
+                except Exception:
+                    tb = traceback.format_exc()
+                    logger.critical("Exception while downloading reply!\n{}".format(tb))
 
             logger.debug('Completed reply sync.')
 
