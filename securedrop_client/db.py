@@ -120,19 +120,11 @@ class Reply(Base):
         "User", backref=backref('replies', order_by=id))
 
     filename = Column(String(255), nullable=False)
-    size = Column(Integer, nullable=False)
+    size = Column(Integer)
 
     # This is whether the reply has been downloaded in the local database.
     is_downloaded = Column(Boolean(name='ck_replies_is_downloaded'),
                            default=False)
-
-    def __init__(self, uuid, journalist, source, filename, size):
-        self.uuid = uuid
-        self.journalist_id = journalist.id
-        self.source_id = source.id
-        self.filename = filename
-        self.size = size
-        self.is_downloaded = False
 
     def __repr__(self):
         return '<Reply {}>'.format(self.filename)
