@@ -37,8 +37,6 @@ logger = logging.getLogger(__name__)
 class ToolBar(QWidget):
     """
     Represents the tool bar across the top of the user interface.
-
-    ToDo: this is a work in progress and will be updated soon.
     """
 
     def __init__(self, parent):
