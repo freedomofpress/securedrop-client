@@ -220,7 +220,11 @@ def update_replies(remote_replies, local_replies, session, data_dir):
             source = session.query(Source).filter_by(uuid=source_uuid)[0]
             user = find_or_create_user(reply.journalist_uuid,
                                        reply.journalist_username, session)
-            nr = Reply(reply.uuid, user, source, reply.filename, reply.size)
+            nr = Reply(uuid=reply.uuid,
+                       journalist_id=user.id,
+                       source_id=source.id,
+                       filename=reply.filename,
+                       size=reply.size)
             session.add(nr)
             logger.info('Added new reply {}'.format(reply.uuid))
 

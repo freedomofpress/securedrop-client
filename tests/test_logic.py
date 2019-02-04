@@ -1088,8 +1088,11 @@ def test_Client_on_file_download_Reply(homedir, config, mocker):
     cl = Client('http://localhost', mock_gui, mock_session, homedir)
     source = factory.Source()
     journalist = db.User('Testy mcTestface')
-    reply = db.Reply('reply-uuid', journalist, source,
-                     'my-reply.gpg', 123)  # Not a sdclientapi.Submission
+    reply = db.Reply(uuid='reply-uuid',
+                     journalist=journalist,
+                     source=source,
+                     filename='my-reply.gpg',
+                     size=123)  # Not a sdclientapi.Submission
     cl.call_api = mocker.MagicMock()
     cl.api = mocker.MagicMock()
     reply_sdk_object = mocker.MagicMock()
