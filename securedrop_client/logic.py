@@ -16,11 +16,12 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import os
+import arrow
 import logging
+import os
 import sdclientapi
 import shutil
-import arrow
+import traceback
 import uuid
 from securedrop_client import storage
 from securedrop_client import db
@@ -88,6 +89,18 @@ class Client(QObject):
     """
 
     sync_events = pyqtSignal(str)
+
+    """
+    Signal that notifies that a reply was accepted by the server. Emits the reply's UUID as a
+    string.
+    """
+    reply_succeeded = pyqtSignal(str)
+
+    """
+    Signal that notifies that a reply failed to be accepted by the server. Emits the reply's UUID
+    as a string.
+    """
+    reply_failed = pyqtSignal(str)
 
     def __init__(self, hostname, gui, session,
                  home: str, proxy: bool = True) -> None:
@@ -642,3 +655,43 @@ class Client(QObject):
             self._on_delete_action_timeout,
             source
         )
+
+    def send_reply(self, source_uuid: str, msg_uuid: str, message: str) -> None:
+        sdk_source = sdclientapi.Source(uuid=source_uuid)
+
+        try:
+            encrypted_reply = self.gpg.encrypt_to_source(source_uuid, message)
+        except Exception:
+            tb = traceback.format_exc()
+            logger.error('Failed to encrypt to source {}:\n'.format(source_uuid, tb))
+            self.reply_failed.emit(msg_uuid)
+        else:
+            self.call_api(
+                self.api.reply_source,
+                self._on_reply_complete,
+                self._on_reply_timeout,
+                sdk_source,
+                encrypted_reply,
+                msg_uuid,
+                current_object=(source_uuid, msg_uuid),
+            )
+
+    def _on_reply_complete(self, result, current_object: (str, str)) -> None:
+        source_uuid, reply_uuid = current_object
+        source = self.session.query(db.Source).filter_by(uuid=source_uuid).one()
+        if isinstance(result, sdclientapi.Reply):
+            reply_db_object = db.Reply(
+                uuid=result.uuid,
+                source_id=source.id,
+                journalist_id=self.api.token['journalist_uuid'],
+                filename=result.filename,
+            )
+            self.session.add(reply_db_object)
+            self.session.commit()
+            self.reply_succeeded.emit(reply_uuid)
+        else:
+            self.reply_failed.emit(reply_uuid)
+
+    def _on_reply_timeout(self, current_object: (str, str)) -> None:
+        _, reply_uuid = current_object
+        self.reply_failed.emit(reply_uuid)
