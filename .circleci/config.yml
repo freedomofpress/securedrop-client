@@ -11,7 +11,7 @@ jobs:
           command: |
             pipenv install --keep-outdated --dev
             export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
-            pipenv run make check
+            pipenv run make check --keep-going
 
       - run:
           name: Check Python dependencies for known vulnerabilities

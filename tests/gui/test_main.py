@@ -264,7 +264,6 @@ def test_conversation_pending_message(mocker):
 
 
 def test_set_status(mocker):
-
     """
     Ensure the status bar's text is updated.
     """
