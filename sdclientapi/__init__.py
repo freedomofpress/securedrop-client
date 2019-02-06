@@ -1,20 +1,26 @@
-from pprint import pprint
-import os
 import configparser
 import json
+import os
 import requests
+from datetime import datetime
 from subprocess import PIPE, Popen
+from typing import List, Tuple, Dict, Optional, Any
 from urllib.parse import urljoin
 
-from typing import Optional, Dict, List, Tuple
-
-from .sdlocalobjects import *
-
+from .sdlocalobjects import (
+    BaseError,
+    WrongUUIDError,
+    AuthError,
+    ReplyError,
+    Source,
+    Reply,
+    Submission,
+)
 
 proxyvmname = "sd-proxy"
 
 
-def json_query(data):
+def json_query(data: str) -> str:
     """
     Takes a json based query and passes to the network proxy.
     Returns the JSON output from the proxy.
@@ -25,7 +31,7 @@ def json_query(data):
         if os.path.exists("/etc/sd-sdk.conf"):
             config.read("/etc/sd-sdk.conf")
             proxyvmname = config["proxy"]["name"]
-    except:
+    except Exception:
         pass  # We already have a default name
 
     p = Popen(
@@ -35,8 +41,8 @@ def json_query(data):
         stderr=PIPE,
     )
     p.stdin.write(data.encode("utf-8"))
-    d = p.communicate()
-    output = d[0].decode("utf-8")
+    stdout, _ = p.communicate()  # type: (bytes, bytes)
+    output = stdout.decode("utf-8")
     return output.strip()
 
 
@@ -51,24 +57,43 @@ class API:
     :returns: An object of API class.
     """
 
-    def __init__(self, address, username, passphrase, totp, proxy=False) -> None:
+    def __init__(
+        self,
+        address: str,
+        username: str,
+        passphrase: str,
+        totp: str,
+        proxy: bool = False,
+    ) -> None:
         """
         Primary API class, this is the only thing which will make network call.
         """
 
-        self.server = address  # type: str
-        self.username = username  # type: str
-        self.passphrase = passphrase  # type: str
-        self.totp = totp  # type: str
-        self.token = {"token": "", "expiration": ""}
-        self.auth_header = {"Authorization": ""}  # type: Dict
+        self.server = address
+        self.username = username
+        self.passphrase = passphrase
+        self.totp = totp
+        self.token = None  # type: Optional[str]
+        self.token_expiration = None  # type: Optional[datetime]
+        self.req_headers = dict()  # type: Dict[str, str]
         self.proxy = proxy  # type: bool
 
-    def _send_json_request(self, method, path_query, body=None, headers=None):
+    def _send_json_request(
+        self,
+        method: str,
+        path_query: str,
+        body: Optional[str] = None,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Tuple[Any, int, Dict[str, str]]:
+
         if self.proxy:  # We are using the Qubes securedrop-proxy
             if method == "POST":
-                data = {"method": method, "path_query": path_query, "body": body}
-                if headers:
+                data = {
+                    "method": method,
+                    "path_query": path_query,
+                    "body": body,
+                }  # type: Dict[str, Any]
+                if headers is not None and headers:
                     data["headers"] = headers
             elif method == "GET" or method == "DELETE":
                 data = {"method": method, "path_query": path_query, "headers": headers}
@@ -94,14 +119,15 @@ class API:
                 return result, result.status_code, result.headers
             return result.json(), result.status_code, result.headers
 
-    def authenticate(self, totp="") -> bool:
+    def authenticate(self, totp: Optional[str] = None) -> None:
         """
         Authenticate the user and fetches the token from the server.
 
         :returns: True if authentication is successful, raise AuthError otherwise.
         """
-        if not totp:
+        if totp is None:
             totp = self.totp
+
         user_data = {
             "username": self.username,
             "passphrase": self.passphrase,
@@ -118,19 +144,21 @@ class API:
             )
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
-        if not "expiration" in token_data:
+        if "expiration" not in token_data:
             raise AuthError("Authentication error")
-        self.token = token_data
+        self.token = token_data["token"]
+        self.token_expiration = datetime.strptime(
+            token_data["expiration"], "%Y-%m-%dT%H:%M:%S.%fZ"
+        )
         self.update_auth_header()
 
-        return True
-
-    def update_auth_header(self):
-        self.auth_header = {
-            "Authorization": "Token " + self.token["token"],
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-        }
+    def update_auth_header(self) -> None:
+        if self.token is not None:
+            self.req_headers = {
+                "Authorization": "Token " + self.token,
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            }
 
     def get_sources(self) -> List[Source]:
         """
@@ -143,7 +171,7 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.auth_header
+                method, path_query, headers=self.req_headers
             )
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
@@ -172,7 +200,7 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.auth_header
+                method, path_query, headers=self.req_headers
             )
 
             if status_code == 404:
@@ -210,7 +238,7 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.auth_header
+                method, path_query, headers=self.req_headers
             )
 
             if status_code == 404:
@@ -252,7 +280,7 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.auth_header
+                method, path_query, headers=self.req_headers
             )
             if status_code == 404:
                 raise WrongUUIDError("Missing source {}".format(source.uuid))
@@ -275,7 +303,7 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.auth_header
+                method, path_query, headers=self.req_headers
             )
             if status_code == 404:
                 raise WrongUUIDError("Missing source {}".format(source.uuid))
@@ -299,7 +327,7 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.auth_header
+                method, path_query, headers=self.req_headers
             )
 
             if status_code == 404:
@@ -334,7 +362,7 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.auth_header
+                method, path_query, headers=self.req_headers
             )
 
             if status_code == 404:
@@ -371,7 +399,7 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.auth_header
+                method, path_query, headers=self.req_headers
             )
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
@@ -405,7 +433,7 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.auth_header
+                method, path_query, headers=self.req_headers
             )
 
             if status_code == 404:
@@ -457,7 +485,7 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.auth_header
+                method, path_query, headers=self.req_headers
             )
 
             if status_code == 404:
@@ -500,7 +528,7 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.auth_header
+                method, path_query, headers=self.req_headers
             )
 
             if status_code == 404:
@@ -514,7 +542,7 @@ class API:
 
         return True
 
-    def get_current_user(self):
+    def get_current_user(self) -> Any:
         """
         Returns a dictionary of the current user data.
 
@@ -531,7 +559,7 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.auth_header
+                method, path_query, headers=self.req_headers
             )
 
         except json.decoder.JSONDecodeError:
@@ -542,10 +570,12 @@ class API:
 
         return data
 
-    def reply_source(self, source: Source, msg: str, reply_uuid: str = None) -> Reply:
+    def reply_source(
+        self, source: Source, msg: str, reply_uuid: Optional[str] = None
+    ) -> Reply:
         """
-        This method is used to reply to a given source. The message should be preencrypted with the source's
-        GPG public key.
+        This method is used to reply to a given source. The message should be preencrypted with the
+        source's GPG public key.
 
         :param source: Source object we want to reply.
         :param msg: Encrypted message with Source's GPG public key.
@@ -560,7 +590,7 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, body=json.dumps(reply), headers=self.auth_header
+                method, path_query, body=json.dumps(reply), headers=self.req_headers
             )
 
             if status_code == 400:
@@ -589,7 +619,7 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.auth_header
+                method, path_query, headers=self.req_headers
             )
 
             if status_code == 404:
@@ -621,7 +651,7 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.auth_header
+                method, path_query, headers=self.req_headers
             )
 
             if status_code == 404:
@@ -648,7 +678,7 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.auth_header
+                method, path_query, headers=self.req_headers
             )
 
         except json.decoder.JSONDecodeError:
@@ -686,7 +716,7 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.auth_header
+                method, path_query, headers=self.req_headers
             )
 
             if status_code == 404:
@@ -735,7 +765,7 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.auth_header
+                method, path_query, headers=self.req_headers
             )
 
             if status_code == 404:

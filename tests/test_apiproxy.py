@@ -1,15 +1,11 @@
-from pprint import pprint
 import os
-import time
-import json
-import hashlib
-import shutil
-import tempfile
-import unittest
-from sdclientapi import *
-
-from utils import *
 import pyotp
+import time
+import unittest
+
+from sdclientapi import API
+from sdclientapi.sdlocalobjects import BaseError, WrongUUIDError, ReplyError, Source
+from utils import load_auth, save_auth, dastollervey_datasaver
 
 
 class TestAPIProxy(unittest.TestCase):
