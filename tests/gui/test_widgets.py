@@ -1116,3 +1116,69 @@ def test_ReplyWidget_success_failure_slots(mocker):
     assert not mock_logger.debug.called
     widget._on_reply_failure(msg_id)
     assert mock_logger.debug.called
+
+
+def test_update_conversation_maintains_old_items(mocker, homedir):
+    """
+    Calling update_conversation deletes and adds old items back to layout
+    """
+    mock_controller = mocker.MagicMock()
+    mock_source = mocker.MagicMock()
+    mock_source.collection = []
+    mock_file = mocker.MagicMock()
+    mock_file.filename = '1-source-doc.gpg'
+    mock_source.collection.append(mock_file)
+    mock_message = mocker.MagicMock()
+    mock_message.filename = '2-source-msg.gpg'
+    mock_source.collection.append(mock_message)
+    mock_reply = mocker.MagicMock()
+    mock_reply.filename = '3-source-reply.gpg'
+    mock_source.collection.append(mock_reply)
+    cv = ConversationView(mock_source, homedir, mock_controller)
+    assert cv.conversation_layout.count() == 3
+
+    cv.update_conversation(cv.source.collection)
+
+    assert cv.conversation_layout.count() == 3
+
+
+def test_update_conversation_adds_new_items(mocker, homedir):
+    """
+    Calling update_conversation adds new items to layout
+    """
+    mock_controller = mocker.MagicMock()
+    mock_source = mocker.MagicMock()
+    mock_source.collection = []
+    mock_file = mocker.MagicMock()
+    mock_file.filename = '1-source-doc.gpg'
+    mock_source.collection.append(mock_file)
+    mock_message = mocker.MagicMock()
+    mock_message.filename = '2-source-msg.gpg'
+    mock_source.collection.append(mock_message)
+    mock_reply = mocker.MagicMock()
+    mock_reply.filename = '3-source-reply.gpg'
+    mock_source.collection.append(mock_reply)
+    cv = ConversationView(mock_source, homedir, mock_controller)
+    mock_new_message = mocker.MagicMock()
+    mock_new_message.filename = '4-source-msg.gpg'
+    mock_source.collection.append(mock_new_message)
+    assert cv.conversation_layout.count() == 3
+
+    cv.update_conversation(cv.source.collection)
+
+    assert cv.conversation_layout.count() == 4
+
+
+def test_clear_conversation_deletes_items(mocker, homedir):
+    """
+    Calling clear_conversation deletes items from layout
+    """
+    mock_controller = mocker.MagicMock()
+    mock_source = mocker.MagicMock()
+    cv = ConversationView(mock_source, homedir, mock_controller)
+    cv.add_message('mock id', 'hello')
+    assert cv.conversation_layout.count() == 1
+
+    cv.clear_conversation()
+
+    assert cv.conversation_layout.count() == 0

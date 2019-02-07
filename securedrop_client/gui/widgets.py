@@ -697,15 +697,15 @@ class ConversationView(QWidget):
 
         self.update_conversation(self.source.collection)
 
+    def clear_conversation(self):
+        while self.conversation_layout.count():
+            child = self.conversation_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+
     def update_conversation(self, collection: list) -> None:
         # clear all old items
-        while True:
-            w = self.conversation_layout.takeAt(0)
-            if w:  # pragma: no cover
-                del w
-            else:
-                break
-
+        self.clear_conversation()
         # add new items
         for conversation_item in collection:
             if conversation_item.filename.endswith('msg.gpg'):
