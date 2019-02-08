@@ -666,15 +666,20 @@ class Client(QObject):
             logger.error('Failed to encrypt to source {}:\n'.format(source_uuid, tb))
             self.reply_failed.emit(msg_uuid)
         else:
-            self.call_api(
-                self.api.reply_source,
-                self._on_reply_complete,
-                self._on_reply_timeout,
-                sdk_source,
-                encrypted_reply,
-                msg_uuid,
-                current_object=(source_uuid, msg_uuid),
-            )
+            # Guard against calling the API if we're not logged in
+            if self.api:
+                self.call_api(
+                    self.api.reply_source,
+                    self._on_reply_complete,
+                    self._on_reply_timeout,
+                    sdk_source,
+                    encrypted_reply,
+                    msg_uuid,
+                    current_object=(source_uuid, msg_uuid),
+                )
+            else:
+                logger.error('not logged in - not implemented!')  # pragma: no cover
+                self.reply_failed.emit(msg_uuid)  # pragma: no cover
 
     def _on_reply_complete(self, result, current_object: (str, str)) -> None:
         source_uuid, reply_uuid = current_object
