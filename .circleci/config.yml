@@ -14,8 +14,9 @@ jobs:
           key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
       - run:
           command: |
+            set -e
             sudo pip install pipenv
-            pipenv install --keep-outdated --dev
+            pipenv sync --dev
       - save_cache:
           key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
           paths:
@@ -29,5 +30,5 @@ jobs:
       - store_artifacts:
           path: test-results
       - run:
-          command: pipenv check --keep-outdated
+          command: pipenv check
 destination: tr1
