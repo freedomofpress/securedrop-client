@@ -9,7 +9,8 @@ jobs:
       - run:
           name: Install requirements and run tests
           command: |
-            pipenv install --keep-outdated --dev
+            set -e
+            pipenv sync --dev
             export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
             pipenv run make check
 
@@ -19,4 +20,7 @@ jobs:
 
       - run:
           name: Run static analysis on source code to find security issues
-          command: pipenv install --keep-outdated --dev bandit && pipenv run bandit --recursive . -ll
+          command: |
+            set -e
+            pipenv install --keep-outdated --ignore-pipfile --dev bandit
+            pipenv run bandit --recursive . -ll
