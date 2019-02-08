@@ -8,7 +8,8 @@ from securedrop_client import db
 from securedrop_client import logic
 from securedrop_client.gui.widgets import ToolBar, MainView, SourceList, SourceWidget, \
     LoginDialog, SpeechBubble, ConversationWidget, MessageWidget, ReplyWidget, FileWidget, \
-    ConversationView, DeleteSourceMessageBox, DeleteSourceAction, SourceMenu
+    ConversationView, DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, \
+    SourceConversationWrapper, ReplyBoxWidget
 
 
 app = QApplication([])
@@ -648,15 +649,31 @@ def test_ReplyWidget_init(mocker):
     """
     Check the CSS is set as expected.
     """
-    mock_signal = mocker.Mock()
-    mock_connected = mocker.Mock()
-    mock_signal.connect = mock_connected
+    mock_update_signal = mocker.Mock()
+    mock_update_connected = mocker.Mock()
+    mock_update_signal.connect = mock_update_connected
 
-    rw = ReplyWidget('mock id', 'hello', mock_signal)
+    mock_success_signal = mocker.MagicMock()
+    mock_success_connected = mocker.Mock()
+    mock_success_signal.connect = mock_success_connected
+
+    mock_failure_signal = mocker.MagicMock()
+    mock_failure_connected = mocker.Mock()
+    mock_failure_signal.connect = mock_failure_connected
+
+    rw = ReplyWidget(
+        'mock id',
+        'hello',
+        mock_update_signal,
+        mock_success_signal,
+        mock_failure_signal,
+    )
     ss = rw.styleSheet()
 
     assert 'background-color' in ss
-    assert mock_connected.called
+    assert mock_update_connected.called
+    assert mock_success_connected.called
+    assert mock_failure_connected.called
 
 
 def test_FileWidget_init_left(mocker):
@@ -1026,3 +1043,76 @@ def test_DeleteSource_from_source_widget_when_user_is_loggedout(mocker):
         source_widget.setup(mock_controller)
         source_widget.delete_source(mock_event)
         mock_delete_source_message_box_obj.launch.assert_not_called()
+
+
+def test_SourceConversationWrapper_send_reply(mocker):
+    mock_source = mocker.Mock()
+    mock_source.uuid = 'abc123'
+    mock_source.collection = []
+    mock_uuid = '456xyz'
+    mocker.patch('securedrop_client.gui.widgets.uuid4', return_value=mock_uuid)
+    mock_controller = mocker.MagicMock()
+
+    cw = SourceConversationWrapper(mock_source, 'mock home', mock_controller)
+    mock_add_reply = mocker.Mock()
+    cw.conversation.add_reply = mock_add_reply
+
+    msg = 'Alles für Alle'
+    cw.send_reply(msg)
+
+    mock_add_reply.assert_called_once_with(mock_uuid, msg)
+    mock_controller.send_reply.assert_called_once_with(mock_source.uuid, mock_uuid, msg)
+
+
+def test_ReplyBoxWidget_send_reply(mocker):
+    mock_conversation = mocker.Mock()
+    rw = ReplyBoxWidget(mock_conversation)
+
+    # when empty, don't sent message
+    assert not rw.text_edit.toPlainText()  # precondition
+    rw.send_reply()
+    assert not mock_conversation.send_reply.called
+
+    # when only whitespace, don't sent message
+    rw.text_edit.setText('  \n\n  ')
+    rw.send_reply()
+    assert not mock_conversation.send_reply.called
+
+    # send send send send
+    msg = 'nein'
+    rw.text_edit.setText(msg)
+    rw.send_reply()
+    mock_conversation.send_reply.assert_called_once_with(msg)
+
+
+def test_ReplyWidget_success_failure_slots(mocker):
+    mock_update_signal = mocker.Mock()
+    mock_success_signal = mocker.Mock()
+    mock_failure_signal = mocker.Mock()
+    msg_id = 'abc123'
+
+    widget = ReplyWidget(msg_id,
+                         'lol',
+                         mock_update_signal,
+                         mock_success_signal,
+                         mock_failure_signal)
+
+    # ensure we have connected the slots
+    mock_success_signal.connect.assert_called_once_with(widget._on_reply_success)
+    mock_failure_signal.connect.assert_called_once_with(widget._on_reply_failure)
+    assert mock_update_signal.connect.called  # to ensure no stale mocks
+
+    # check the success slog
+    mock_logger = mocker.patch('securedrop_client.gui.widgets.logger')
+    widget._on_reply_success(msg_id + "x")
+    assert not mock_logger.debug.called
+    widget._on_reply_success(msg_id)
+    assert mock_logger.debug.called
+    mock_logger.reset_mock()
+
+    # check the failure slot
+    mock_logger = mocker.patch('securedrop_client.gui.widgets.logger')
+    widget._on_reply_failure(msg_id + "x")
+    assert not mock_logger.debug.called
+    widget._on_reply_failure(msg_id)
+    assert mock_logger.debug.called

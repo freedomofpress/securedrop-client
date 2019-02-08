@@ -5,6 +5,7 @@ expected.
 import arrow
 import os
 import pytest
+from sdclientapi import sdlocalobjects
 from tests import factory
 from securedrop_client import storage, db
 from securedrop_client.crypto import CryptoError
@@ -1088,8 +1089,11 @@ def test_Client_on_file_download_Reply(homedir, config, mocker):
     cl = Client('http://localhost', mock_gui, mock_session, homedir)
     source = factory.Source()
     journalist = db.User('Testy mcTestface')
-    reply = db.Reply('reply-uuid', journalist, source,
-                     'my-reply.gpg', 123)  # Not a sdclientapi.Submission
+    reply = db.Reply(uuid='reply-uuid',
+                     journalist=journalist,
+                     source=source,
+                     filename='my-reply.gpg',
+                     size=123)  # Not a sdclientapi.Submission
     cl.call_api = mocker.MagicMock()
     cl.api = mocker.MagicMock()
     reply_sdk_object = mocker.MagicMock()
@@ -1176,3 +1180,149 @@ def test_Client_delete_source(homedir, config, mocker):
         cl._on_delete_action_timeout,
         mock_source
     )
+
+
+def test_Client_send_reply_success(homedir, mocker):
+    '''
+    Check that the "happy path" of encrypting a message and sending it to the sever behaves as
+    expected.
+    '''
+    mock_gui = mocker.MagicMock()
+    mock_session = mocker.MagicMock()
+
+    cl = Client('http://localhost', mock_gui, mock_session, homedir)
+
+    cl.call_api = mocker.Mock()
+    cl.api = mocker.Mock()
+    encrypted_reply = 's3kr1t m3ss1dg3'
+    mock_encrypt = mocker.patch.object(cl.gpg, 'encrypt_to_source', return_value=encrypted_reply)
+    source_uuid = 'abc123'
+    msg_uuid = 'xyz456'
+    msg = 'wat'
+    mock_sdk_source = mocker.Mock()
+    mock_source_init = mocker.patch('securedrop_client.logic.sdclientapi.Source',
+                                    return_value=mock_sdk_source)
+
+    cl.send_reply(source_uuid, msg_uuid, msg)
+
+    # ensure message is encrypted
+    mock_encrypt.assert_called_once_with(source_uuid, msg)
+
+    # ensure api is called
+    cl.call_api.assert_called_once_with(
+        cl.api.reply_source,
+        cl._on_reply_complete,
+        cl._on_reply_timeout,
+        mock_sdk_source,
+        encrypted_reply,
+        msg_uuid,
+        current_object=(source_uuid, msg_uuid),
+    )
+
+    assert mock_source_init.called  # to prevent stale mocks
+
+
+def test_Client_send_reply_gpg_error(homedir, mocker):
+    '''
+    Check that if gpg fails when sending a message, we alert the UI and do *not* call the API.
+    '''
+    mock_gui = mocker.MagicMock()
+    mock_session = mocker.MagicMock()
+
+    cl = Client('http://localhost', mock_gui, mock_session, homedir)
+
+    cl.call_api = mocker.Mock()
+    cl.api = mocker.Mock()
+    mock_encrypt = mocker.patch.object(cl.gpg, 'encrypt_to_source', side_effect=Exception)
+    source_uuid = 'abc123'
+    msg_uuid = 'xyz456'
+    msg = 'wat'
+    mock_sdk_source = mocker.Mock()
+    mock_source_init = mocker.patch('securedrop_client.logic.sdclientapi.Source',
+                                    return_value=mock_sdk_source)
+    mock_reply_failed = mocker.patch.object(cl, 'reply_failed')
+
+    cl.send_reply(source_uuid, msg_uuid, msg)
+
+    # ensure there is an attempt to encrypt the message
+    mock_encrypt.assert_called_once_with(source_uuid, msg)
+
+    # ensure we emit a failure on gpg errors
+    mock_reply_failed.emit.assert_called_once_with(msg_uuid)
+
+    # ensure api not is called after a gpg error
+    assert not cl.call_api.called
+
+    assert mock_source_init.called  # to prevent stale mocks
+
+
+def test_Client_on_reply_complete_success(homedir, mocker):
+    '''
+    Check that when the result is a success, the client emits the correct signal.
+    '''
+    mock_gui = mocker.MagicMock()
+    mock_session = mocker.MagicMock()
+    mock_reply_init = mocker.patch('securedrop_client.logic.db.Reply')
+
+    cl = Client('http://localhost', mock_gui, mock_session, homedir)
+    cl.api = mocker.Mock()
+    journalist_uuid = 'abc123'
+    cl.api.token = {'journalist_uuid': journalist_uuid}
+    mock_reply_succeeded = mocker.patch.object(cl, 'reply_succeeded')
+    mock_reply_failed = mocker.patch.object(cl, 'reply_failed')
+
+    reply = sdlocalobjects.Reply(uuid='xyz456', filename='1-wat.gpg')
+
+    source_uuid = 'foo111'
+    msg_uuid = 'bar222'
+    current_object = (source_uuid, msg_uuid)
+    cl._on_reply_complete(reply, current_object)
+    cl.session.commit.assert_called_once_with()
+    mock_reply_succeeded.emit.assert_called_once_with(msg_uuid)
+    assert not mock_reply_failed.emit.called
+
+    assert mock_reply_init.called  # to prevent stale mocks
+
+
+def test_Client_on_reply_complete_failure(homedir, mocker):
+    '''
+    Check that when the result is a failure, the client emits the correct signal.
+    '''
+    mock_gui = mocker.MagicMock()
+    mock_session = mocker.MagicMock()
+
+    cl = Client('http://localhost', mock_gui, mock_session, homedir)
+    cl.api = mocker.Mock()
+    journalist_uuid = 'abc123'
+    cl.api.token = {'journalist_uuid': journalist_uuid}
+    mock_reply_succeeded = mocker.patch.object(cl, 'reply_succeeded')
+    mock_reply_failed = mocker.patch.object(cl, 'reply_failed')
+
+    source_uuid = 'foo111'
+    msg_uuid = 'bar222'
+    current_object = (source_uuid, msg_uuid)
+    cl._on_reply_complete(Exception, current_object)
+    mock_reply_failed.emit.assert_called_once_with(msg_uuid)
+    assert not mock_reply_succeeded.emit.called
+
+
+def test_Client_on_reply_timeout(homedir, mocker):
+    '''
+    Check that when the reply timesout, the correct signal is emitted.
+    '''
+    mock_gui = mocker.MagicMock()
+    mock_session = mocker.MagicMock()
+
+    cl = Client('http://localhost', mock_gui, mock_session, homedir)
+    cl.api = mocker.Mock()
+    journalist_uuid = 'abc123'
+    cl.api.token = {'journalist_uuid': journalist_uuid}
+    mock_reply_succeeded = mocker.patch.object(cl, 'reply_succeeded')
+    mock_reply_failed = mocker.patch.object(cl, 'reply_failed')
+
+    source_uuid = 'foo111'
+    msg_uuid = 'bar222'
+    current_object = (source_uuid, msg_uuid)
+    cl._on_reply_timeout(current_object)
+    mock_reply_failed.emit.assert_called_once_with(msg_uuid)
+    assert not mock_reply_succeeded.emit.called

@@ -23,7 +23,8 @@ from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, \
-    QMessageBox, QToolButton, QSizePolicy
+    QMessageBox, QToolButton, QSizePolicy, QTextEdit
+from uuid import uuid4
 
 from securedrop_client.db import Source
 from securedrop_client.logic import Client
@@ -37,8 +38,6 @@ logger = logging.getLogger(__name__)
 class ToolBar(QWidget):
     """
     Represents the tool bar across the top of the user interface.
-
-    ToDo: this is a work in progress and will be updated soon.
     """
 
     def __init__(self, parent):
@@ -505,7 +504,7 @@ class SpeechBubble(QWidget):
     def _update_text(self, message_id: str, text: str) -> None:
         """
         Conditionally update this SpeechBubble's text if and only if the message_id of the emitted
-        signal matche the message_id of this speech bubble.
+        signal matches the message_id of this speech bubble.
         """
         if message_id == self.message_id:
             self.message.setText(html.escape(text, quote=False))
@@ -568,14 +567,45 @@ class ReplyWidget(ConversationWidget):
     Represents a reply to a source.
     """
 
-    def __init__(self, message_id: str, message: str, update_signal) -> None:
+    def __init__(
+        self,
+        message_id: str,
+        message: str,
+        update_signal,
+        message_succeeded_signal,
+        message_failed_signal,
+    ) -> None:
         super().__init__(message_id,
                          message,
                          update_signal,
                          align="right")
+        self.message_id = message_id
         self.setStyleSheet("""
         background-color: #2299EE;
         """)
+        message_succeeded_signal.connect(self._on_reply_success)
+        message_failed_signal.connect(self._on_reply_failure)
+
+    @pyqtSlot(str)
+    def _on_reply_success(self, message_id: str) -> None:
+        """
+        Conditionally update this ReplyWidget's state if and only if the message_id of the emitted
+        signal matches the message_id of this widget.
+        """
+        if message_id == self.message_id:
+            logger.debug('Message {} succeeded'.format(message_id))
+
+    @pyqtSlot(str)
+    def _on_reply_failure(self, message_id: str) -> None:
+        """
+        Conditionally update this ReplyWidget's state if and only if the message_id of the emitted
+        signal matches the message_id of this widget.
+        """
+        if message_id == self.message_id:
+            logger.debug('Message {} failed'.format(message_id))
+            self.setStyleSheet("""
+            background-color: #FF3E3C;
+            """)
 
 
 class FileWidget(QWidget):
@@ -725,7 +755,12 @@ class ConversationView(QWidget):
         Add a reply from a journalist.
         """
         self.conversation_layout.addWidget(
-            ReplyWidget(message_id, reply, self.controller.reply_sync.reply_downloaded))
+            ReplyWidget(message_id,
+                        reply,
+                        self.controller.reply_sync.reply_downloaded,
+                        self.controller.reply_succeeded,
+                        self.controller.reply_failed,
+                        ))
 
 
 class SourceConversationWrapper(QWidget):
@@ -736,14 +771,50 @@ class SourceConversationWrapper(QWidget):
 
     def __init__(self, source: Source, sdc_home: str, controller: Client, parent=None) -> None:
         super().__init__(parent)
+        self.source = source
+        self.controller = controller
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
-        self.conversation = ConversationView(source, sdc_home, controller, parent=self)
-        self.source_profile = SourceProfileShortWidget(source, controller)
+        self.conversation = ConversationView(self.source, sdc_home, self.controller, parent=self)
+        self.source_profile = SourceProfileShortWidget(self.source, self.controller)
+        self.reply_box = ReplyBoxWidget(self)
 
         self.layout.addWidget(self.source_profile)
         self.layout.addWidget(self.conversation)
+        self.layout.addWidget(self.reply_box)
+
+    def send_reply(self, message: str) -> None:
+        msg_uuid = str(uuid4())
+        self.conversation.add_reply(msg_uuid, message)
+        self.controller.send_reply(self.source.uuid, msg_uuid, message)
+
+
+class ReplyBoxWidget(QWidget):
+    """
+    A textbox where a journalist can enter a reply.
+    """
+
+    def __init__(self, conversation: SourceConversationWrapper) -> None:
+        super().__init__()
+        self.conversation = conversation
+
+        self.text_edit = QTextEdit()
+
+        self.send_button = QPushButton('Send')
+        self.send_button.clicked.connect(self.send_reply)
+
+        layout = QHBoxLayout()
+        layout.addWidget(self.text_edit)
+        layout.addWidget(self.send_button)
+        self.setLayout(layout)
+
+    def send_reply(self) -> None:
+        msg = self.text_edit.toPlainText().strip()
+        if not msg:
+            return
+        self.conversation.send_reply(msg)
+        self.text_edit.clear()
 
 
 class DeleteSourceAction(QAction):
