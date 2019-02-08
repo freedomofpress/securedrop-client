@@ -12,11 +12,11 @@ This client is under active development and currently supports a minimal feature
 - the download and decryption of files, messages, and replies (using [Qubes split-gpg](https://www.qubes-os.org/doc/split-gpg/))
 - the display of decrypted messages and replies in a new conversation view
 - the opening of all files in individual, non-networked, Qubes disposable VMs
+- replying to sources
+- deleting sources
 
 Features to be added include:
 
-- Reply to sources (encrypted client-side) - tracked in https://github.com/freedomofpress/securedrop-client/issues/16. These replies will be encrypted both to individual sources, and to the submission key of the instance. Source public keys are provided by the journalist API.
-- Deletion of source collection - tracked in https://github.com/freedomofpress/securedrop-client/issues/18. This will delete all files associated with a source both locally and on the server.
 - Export workflows - tracked in https://github.com/freedomofpress/securedrop-client/issues/21. These workflows (initially a USB drive) enable a journalist to transfer a document out of the Qubes workstation and to another computer for further analysis or sharing with the rest of the newsroom.
 
 ## Getting Started
