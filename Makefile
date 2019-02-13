@@ -14,7 +14,7 @@ TESTOPTS ?= -v
 .PHONY: test
 test: ## Run the application tests
 	@TEST_CMD="python -m pytest -v --random-order-bucket=global --cov-config .coveragerc --cov-report html --cov-report term-missing --cov=securedrop_client --cov-fail-under 100 $(TESTOPTS) $(TESTS)" ; \
-		if hash xvfb-run; then \
+		if command -v xvfb-run > /dev/null; then \
 		xvfb-run $$TEST_CMD ; else \
 		$$TEST_CMD ; fi
 
