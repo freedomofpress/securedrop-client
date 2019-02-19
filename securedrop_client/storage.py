@@ -121,7 +121,7 @@ def update_sources(remote_sources, local_sources, session, data_dir):
             # Removing the UUID from local_uuids ensures this record won't be
             # deleted at the end of this function.
             local_uuids.remove(source.uuid)
-            logger.info('Updated source {}'.format(source.uuid))
+            logger.debug('Updated source {}'.format(source.uuid))
         else:
             # A new source to be added to the database.
             ns = Source(uuid=source.uuid,
@@ -133,7 +133,7 @@ def update_sources(remote_sources, local_sources, session, data_dir):
                         last_updated=parse(source.last_updated),
                         document_count=source.number_of_documents)
             session.add(ns)
-            logger.info('Added new source {}'.format(source.uuid))
+            logger.debug('Added new source {}'.format(source.uuid))
 
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
@@ -142,7 +142,7 @@ def update_sources(remote_sources, local_sources, session, data_dir):
             delete_single_submission_or_reply_on_disk(document, data_dir)
 
         session.delete(deleted_source)
-        logger.info('Deleted source {}'.format(deleted_source.uuid))
+        logger.debug('Deleted source {}'.format(deleted_source.uuid))
 
     session.commit()
 
@@ -157,9 +157,13 @@ def update_submissions(remote_submissions, local_submissions, session, data_dir)
     local_uuids = {submission.uuid for submission in local_submissions}
     for submission in remote_submissions:
         if submission.uuid in local_uuids:
-            # Update an existing record.
             local_submission = [s for s in local_submissions
                                 if s.uuid == submission.uuid][0]
+            # Update files on disk to match new filename.
+            if (local_submission.filename != submission.filename):
+                rename_file(data_dir, local_submission.filename,
+                            submission.filename)
+            # Update an existing record.
             local_submission.filename = submission.filename
             local_submission.size = submission.size
             local_submission.is_read = submission.is_read
@@ -168,7 +172,7 @@ def update_submissions(remote_submissions, local_submissions, session, data_dir)
             # Removing the UUID from local_uuids ensures this record won't be
             # deleted at the end of this function.
             local_uuids.remove(submission.uuid)
-            logger.info('Updated submission {}'.format(submission.uuid))
+            logger.debug('Updated submission {}'.format(submission.uuid))
         else:
             # A new submission to be added to the database.
             _, source_uuid = submission.source_url.rsplit('/', 1)
@@ -178,7 +182,7 @@ def update_submissions(remote_submissions, local_submissions, session, data_dir)
                             filename=submission.filename,
                             download_url=submission.download_url)
             session.add(ns)
-            logger.info('Added new submission {}'.format(submission.uuid))
+            logger.debug('Added new submission {}'.format(submission.uuid))
 
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
@@ -186,7 +190,7 @@ def update_submissions(remote_submissions, local_submissions, session, data_dir)
                                if s.uuid in local_uuids]:
         delete_single_submission_or_reply_on_disk(deleted_submission, data_dir)
         session.delete(deleted_submission)
-        logger.info('Deleted submission {}'.format(deleted_submission.uuid))
+        logger.debug('Deleted submission {}'.format(deleted_submission.uuid))
 
     session.commit()
 
@@ -204,8 +208,11 @@ def update_replies(remote_replies, local_replies, session, data_dir):
     local_uuids = {reply.uuid for reply in local_replies}
     for reply in remote_replies:
         if reply.uuid in local_uuids:
-            # Update an existing record.
             local_reply = [r for r in local_replies if r.uuid == reply.uuid][0]
+            # Update files on disk to match new filename.
+            if (local_reply.filename != reply.filename):
+                rename_file(data_dir, local_reply.filename, reply.filename)
+            # Update an existing record.
             user = find_or_create_user(reply.journalist_uuid,
                                        reply.journalist_username, session)
             local_reply.journalist_id = user.id
@@ -213,7 +220,7 @@ def update_replies(remote_replies, local_replies, session, data_dir):
             local_reply.size = reply.size
 
             local_uuids.remove(reply.uuid)
-            logger.info('Updated reply {}'.format(reply.uuid))
+            logger.debug('Updated reply {}'.format(reply.uuid))
         else:
             # A new reply to be added to the database.
             source_uuid = reply.source_uuid
@@ -226,14 +233,14 @@ def update_replies(remote_replies, local_replies, session, data_dir):
                        filename=reply.filename,
                        size=reply.size)
             session.add(nr)
-            logger.info('Added new reply {}'.format(reply.uuid))
+            logger.debug('Added new reply {}'.format(reply.uuid))
 
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
     for deleted_reply in [r for r in local_replies if r.uuid in local_uuids]:
         delete_single_submission_or_reply_on_disk(deleted_reply, data_dir)
         session.delete(deleted_reply)
-        logger.info('Deleted reply {}'.format(deleted_reply.uuid))
+        logger.debug('Deleted reply {}'.format(deleted_reply.uuid))
 
     session.commit()
 
@@ -320,6 +327,16 @@ def delete_single_submission_or_reply_on_disk(obj_db, data_dir):
             'File {} already deleted, skipping'.format(file_to_delete))
 
 
+def rename_file(data_dir: str, filename: str, new_filename: str):
+    filename, _ = os.path.splitext(filename)
+    new_filename, _ = os.path.splitext(new_filename)
+    try:
+        os.rename(os.path.join(data_dir, filename),
+                  os.path.join(data_dir, new_filename))
+    except OSError as e:
+        logger.debug('File could not be renamed: {}'.format(e))
+
+
 def get_data(sdc_home: str, filename: str) -> str:
     filename, _ = os.path.splitext(filename)
     full_path = os.path.join(sdc_home, 'data', filename)
@@ -328,5 +345,5 @@ def get_data(sdc_home: str, filename: str) -> str:
             msg = f.read()
     except FileNotFoundError:
         logger.debug('File not found: {}'.format(full_path))
-        msg = '<Content deleted>'
+        msg = '<Not Found>'
     return msg

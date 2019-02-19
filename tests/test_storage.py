@@ -9,7 +9,7 @@ from dateutil.parser import parse
 from securedrop_client.storage import get_local_sources, get_local_submissions, get_local_replies, \
     get_remote_data, update_local_storage, update_sources, update_submissions, update_replies, \
     find_or_create_user, find_new_submissions, find_new_replies, mark_file_as_downloaded, \
-    mark_reply_as_downloaded, delete_single_submission_or_reply_on_disk, get_data
+    mark_reply_as_downloaded, delete_single_submission_or_reply_on_disk, get_data, rename_file
 from securedrop_client import db
 from sdclientapi import Source, Submission, Reply
 
@@ -38,9 +38,9 @@ def make_remote_submission(source_uuid):
     generate a valid URL.
     """
     source_url = '/api/v1/sources/{}'.format(source_uuid)
-    return Submission(download_url='test', filename='test', is_read=False,
-                      size=123, source_url=source_url, submission_url='test',
-                      uuid=str(uuid.uuid4()))
+    return Submission(download_url='test', filename='submission.filename',
+                      is_read=False, size=123, source_url=source_url,
+                      submission_url='test', uuid=str(uuid.uuid4()))
 
 
 def make_remote_reply(source_uuid, journalist_uuid='testymctestface'):
@@ -50,7 +50,7 @@ def make_remote_reply(source_uuid, journalist_uuid='testymctestface'):
     generate a valid URL.
     """
     source_url = '/api/v1/sources/{}'.format(source_uuid)
-    return Reply(filename='test.filename', journalist_uuid=journalist_uuid,
+    return Reply(filename='reply.filename', journalist_uuid=journalist_uuid,
                  journalist_username='test',
                  is_deleted_by_source=False, reply_url='test', size=1234,
                  source_url=source_url, uuid=str(uuid.uuid4()))
@@ -196,6 +196,83 @@ def test_update_sources(homedir, mocker):
     mock_session.delete.assert_called_once_with(local_source2)
     # Session is committed to database.
     assert mock_session.commit.call_count == 1
+
+
+def test_update_submissions_renames_file_on_disk(homedir, mocker):
+    """
+    Check that:
+
+    * Submissions are renamed on disk after sync.
+    """
+    data_dir = os.path.join(homedir, 'data')
+    mock_session = mocker.MagicMock()
+    # Remote submission with new filename
+    server_filename = '1-spotted-potato-msg.gpg'
+    remote_submission = mocker.MagicMock()
+    remote_submission.uuid = 'test-uuid'
+    remote_submission.filename = server_filename
+    remote_submissions = [remote_submission]
+    # Local submission that needs to be updated
+    local_filename = '1-pericardial-surfacing-msg.gpg'
+    local_submission = mocker.MagicMock()
+    local_submission.uuid = 'test-uuid'
+    local_submission.filename = local_filename
+    local_submissions = [local_submission]
+    # Add submission file to test directory
+    local_filename_decrypted = '1-pericardial-surfacing-msg'
+    add_test_file_to_temp_dir(data_dir, local_filename_decrypted)
+    # There needs to be a corresponding local_source.
+    local_source = mocker.MagicMock()
+    local_source.uuid = 'test-source-uuid'
+    local_source.id = 123
+    mock_session.query().filter_by.return_value = [local_source, ]
+
+    update_submissions(remote_submissions, local_submissions, mock_session,
+                       data_dir)
+
+    updated_local_filename = '1-spotted-potato-msg'
+    assert local_submission.filename == remote_submission.filename
+    assert os.path.exists(os.path.join(data_dir, updated_local_filename))
+
+
+def test_update_replies_renames_file_on_disk(homedir, mocker):
+    """
+    Check that:
+
+    * Replies are renamed on disk after sync.
+    """
+    data_dir = os.path.join(homedir, 'data')
+    mock_session = mocker.MagicMock()
+    # Remote replies with new filename
+    server_filename = '1-spotted-potato-reply.gpg'
+    remote_reply = mocker.MagicMock()
+    remote_reply.uuid = 'test-uuid'
+    remote_reply.filename = server_filename
+    remote_replies = [remote_reply]
+    # Local reply that needs to be updated
+    local_filename = '1-pericardial-surfacing-reply.gpg'
+    local_reply = mocker.MagicMock()
+    local_reply.uuid = 'test-uuid'
+    local_reply.filename = local_filename
+    local_replies = [local_reply]
+    # Add reply file to test directory
+    local_filename_decrypted = '1-pericardial-surfacing-reply'
+    add_test_file_to_temp_dir(data_dir, local_filename_decrypted)
+    # There needs to be a corresponding local_source and local_user
+    local_source = mocker.MagicMock()
+    local_source.uuid = 'test-source-uuid'
+    local_source.id = 123
+    local_user = mocker.MagicMock()
+    local_user.username = 'jounalist designation'
+    local_user.id = 42
+    mock_focu = mocker.MagicMock(return_value=local_user)
+    mocker.patch('securedrop_client.storage.find_or_create_user', mock_focu)
+
+    update_replies(remote_replies, local_replies, mock_session, data_dir)
+
+    updated_local_filename = '1-spotted-potato-reply'
+    assert local_reply.filename == remote_reply.filename
+    assert os.path.exists(os.path.join(data_dir, updated_local_filename))
 
 
 def add_test_file_to_temp_dir(home_dir, filename):
@@ -376,7 +453,12 @@ def test_update_submissions(homedir, mocker):
     * New submissions have an entry in the local database.
     * Local submission not returned by the remote server are deleted from the
       local database.
+    * `rename_file` is called if local data files need to be updated with new
+      filenames to match remote. Note: The only reason this should happen is if
+      there is a new journalist_designation that causes remote filenames to be
+      updated.
     """
+    data_dir = os.path.join(homedir, 'data')
     mock_session = mocker.MagicMock()
     # Source object related to the submissions.
     source = mocker.MagicMock()
@@ -384,39 +466,47 @@ def test_update_submissions(homedir, mocker):
     # Some submission objects from the API, one of which will exist in the
     # local database, the other will NOT exist in the local source database
     # (this will be added to the database)
-    submission_update = make_remote_submission(source.uuid)
-    submission_create = make_remote_submission(source.uuid)
-    remote_submissions = [submission_update, submission_create]
+    remote_sub_update = make_remote_submission(source.uuid)
+    remote_sub_create = make_remote_submission(source.uuid)
+    remote_submissions = [remote_sub_update, remote_sub_create]
     # Some local submission objects. One already exists in the API results
     # (this will be updated), one does NOT exist in the API results (this will
     # be deleted from the local database).
-    local_sub1 = mocker.MagicMock()
-    local_sub1.uuid = submission_update.uuid
-    local_sub2 = mocker.MagicMock()
-    local_sub2.uuid = str(uuid.uuid4())
-    local_submissions = [local_sub1, local_sub2]
+    local_sub_update = mocker.MagicMock()
+    local_sub_update.uuid = remote_sub_update.uuid
+    local_sub_update.filename = "overwrite_this.filename"
+    local_sub_delete = mocker.MagicMock()
+    local_sub_delete.uuid = str(uuid.uuid4())
+    local_sub_delete.filename = "local_sub_delete.filename"
+    local_submissions = [local_sub_update, local_sub_delete]
     # There needs to be a corresponding local_source.
     local_source = mocker.MagicMock()
     local_source.uuid = source.uuid
-    local_source.id = 666  # ;-)
+    local_source.id = 666  # };-)
     mock_session.query().filter_by.return_value = [local_source, ]
+    patch_rename_file = mocker.patch('securedrop_client.storage.rename_file')
+
     update_submissions(remote_submissions, local_submissions, mock_session,
-                       homedir)
+                       data_dir)
+
     # Check the expected local submission object has been updated with values
     # from the API.
-    assert local_sub1.filename == submission_update.filename
-    assert local_sub1.size == submission_update.size
-    assert local_sub1.is_read == submission_update.is_read
+    assert local_sub_update.filename == remote_sub_update.filename
+    assert local_sub_update.size == remote_sub_update.size
+    assert local_sub_update.is_read == remote_sub_update.is_read
+    # Check that rename_file is called if the local storage filenames need to
+    # be updated
+    assert patch_rename_file.called
     # Check the expected local source object has been created with values from
     # the API.
     assert mock_session.add.call_count == 1
     new_sub = mock_session.add.call_args_list[0][0][0]
-    assert new_sub.uuid == submission_create.uuid
+    assert new_sub.uuid == remote_sub_create.uuid
     assert new_sub.source_id == local_source.id
-    assert new_sub.filename == submission_create.filename
+    assert new_sub.filename == remote_sub_create.filename
     # Ensure the record for the local source that is missing from the results
     # of the API is deleted.
-    mock_session.delete.assert_called_once_with(local_sub2)
+    mock_session.delete.assert_called_once_with(local_sub_delete)
     # Session is committed to database.
     assert mock_session.commit.call_count == 1
 
@@ -430,7 +520,12 @@ def test_update_replies(homedir, mocker):
     * Local replies not returned by the remote server are deleted from the
       local database.
     * References to journalist's usernames are correctly handled.
+    * `rename_file` is called if local data files need to be updated with new
+      filenames to match remote. Note: The only reason this should happen is if
+      there is a new journalist_designation that causes remote filenames to be
+      updated.
     """
+    data_dir = os.path.join(homedir, 'data')
     mock_session = mocker.MagicMock()
     # Source object related to the submissions.
     source = mocker.MagicMock()
@@ -438,50 +533,57 @@ def test_update_replies(homedir, mocker):
     # Some remote reply objects from the API, one of which will exist in the
     # local database, the other will NOT exist in the local database
     # (this will be added to the database)
-    reply_update = make_remote_reply(source.uuid)
-    reply_create = make_remote_reply(source.uuid, 'unknownuser')
-    remote_replies = [reply_update, reply_create]
+    remote_reply_update = make_remote_reply(source.uuid)
+    remote_reply_create = make_remote_reply(source.uuid, 'unknownuser')
+    remote_replies = [remote_reply_update, remote_reply_create]
     # Some local reply objects. One already exists in the API results
     # (this will be updated), one does NOT exist in the API results (this will
     # be deleted from the local database).
-    local_reply1 = mocker.MagicMock()
-    local_reply1.uuid = reply_update.uuid
-    local_reply1.journalist_uuid = str(uuid.uuid4())
-    local_reply2 = mocker.MagicMock()
-    local_reply2.uuid = str(uuid.uuid4())
-    local_reply2.journalist_uuid = str(uuid.uuid4())
-    local_replies = [local_reply1, local_reply2]
+    local_reply_update = mocker.MagicMock()
+    local_reply_update.uuid = remote_reply_update.uuid
+    local_reply_update.filename = "overwrite_this.filename"
+    local_reply_update.journalist_uuid = str(uuid.uuid4())
+    local_reply_delete = mocker.MagicMock()
+    local_reply_delete.uuid = str(uuid.uuid4())
+    local_reply_delete.filename = "local_reply_delete.filename"
+    local_reply_delete.journalist_uuid = str(uuid.uuid4())
+    local_replies = [local_reply_update, local_reply_delete]
     # There needs to be a corresponding local_source and local_user
     local_source = mocker.MagicMock()
     local_source.uuid = source.uuid
-    local_source.id = 666  # ;-)
+    local_source.id = 666  # };-)
     local_user = mocker.MagicMock()
-    local_user.username = reply_create.journalist_username
+    local_user.username = remote_reply_create.journalist_username
     local_user.id = 42
     mock_session.query().filter_by.side_effect = [[local_source, ],
                                                   [local_user, ],
                                                   [local_user, ], ]
     mock_focu = mocker.MagicMock(return_value=local_user)
     mocker.patch('securedrop_client.storage.find_or_create_user', mock_focu)
-    update_replies(remote_replies, local_replies, mock_session,
-                   homedir)
+    patch_rename_file = mocker.patch('securedrop_client.storage.rename_file')
+
+    update_replies(remote_replies, local_replies, mock_session, data_dir)
+
     # Check the expected local reply object has been updated with values
     # from the API.
-    assert local_reply1.journalist_id == local_user.id
-    assert local_reply1.filename == reply_update.filename
-    assert local_reply1.size == reply_update.size
+    assert local_reply_update.journalist_id == local_user.id
+    assert local_reply_update.filename == remote_reply_update.filename
+    assert local_reply_update.size == remote_reply_update.size
+    # Check that rename_file is called if the local storage filenames need to
+    # be updated
+    assert patch_rename_file.called
     # Check the expected local source object has been created with values from
     # the API.
     assert mock_session.add.call_count == 1
     new_reply = mock_session.add.call_args_list[0][0][0]
-    assert new_reply.uuid == reply_create.uuid
+    assert new_reply.uuid == remote_reply_create.uuid
     assert new_reply.source_id == local_source.id
     assert new_reply.journalist_id == local_user.id
-    assert new_reply.size == reply_create.size
-    assert new_reply.filename == reply_create.filename
+    assert new_reply.size == remote_reply_create.size
+    assert new_reply.filename == remote_reply_create.filename
     # Ensure the record for the local source that is missing from the results
     # of the API is deleted.
-    mock_session.delete.assert_called_once_with(local_reply2)
+    mock_session.delete.assert_called_once_with(local_reply_delete)
     # Session is committed to database.
     assert mock_session.commit.call_count == 1
 
@@ -586,6 +688,35 @@ def test_delete_single_submission_or_reply_race_guard(homedir, mocker):
     mock_remove.call_count == 1
 
 
+def test_rename_file_does_not_throw(homedir):
+    """
+    If file cannot be found then OSError is caught and logged.
+    """
+    rename_file(os.path.join(homedir, 'data'), 'nonexistent.txt', 'bar.txt')
+    # quick coherence check
+    out = get_data(homedir, 'nonexistent.txt')
+    assert out == '<Not Found>'
+
+
+def test_rename_file_success(homedir):
+    """
+    If file was renamed successfully then we should be able to retrieve the
+    file's content using the new filename.
+    """
+    data_dir = os.path.join(homedir, 'data')
+    orig_filename = 'foo.txt'
+    new_filename = 'bar.txt'
+    filename, _ = os.path.splitext(orig_filename)
+    contents = 'bar'
+    with open(os.path.join(data_dir, filename), 'w') as f:
+        f.write(contents)
+
+    rename_file(data_dir, orig_filename, new_filename)
+
+    out = get_data(homedir, new_filename)
+    assert out == contents
+
+
 def test_get_data_success(homedir):
     orig_filename = 'foo.txt'
     filename, _ = os.path.splitext(orig_filename)
@@ -599,4 +730,4 @@ def test_get_data_success(homedir):
 def test_get_data_missing_data(homedir):
     orig_filename = 'foo.txt'
     out = get_data(homedir, orig_filename)
-    assert out == '<Content deleted>'
+    assert out == '<Not Found>'
