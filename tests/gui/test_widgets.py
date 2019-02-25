@@ -756,6 +756,7 @@ def test_ConversationView_init(mocker, homedir):
     cv = ConversationView(mocked_source, homedir, mocked_controller)
     assert isinstance(cv.conversation_layout, QVBoxLayout)
 
+
 def test_ConversationView_update_conversation_position_follow(mocker, homedir):
     """
     Check the signal handler sets the correct value for the scrollbar to be
@@ -775,12 +776,12 @@ def test_ConversationView_update_conversation_position_follow(mocker, homedir):
 
     cv.scroll.verticalScrollBar().setValue.assert_called_once_with(6000)
 
+
 def test_ConversationView_update_conversation_position_stay_fixed(mocker, homedir):
     """
     Check the signal handler does not change the conversation position when
     journalist is reading older messages
     """
-
     mocked_source = mocker.MagicMock()
     mocked_controller = mocker.MagicMock()
 
@@ -793,6 +794,7 @@ def test_ConversationView_update_conversation_position_stay_fixed(mocker, homedi
     cv.update_conversation_position(0, 6000)
 
     cv.scroll.verticalScrollBar().setValue.assert_not_called()
+
 
 def test_ConversationView_add_message(mocker, homedir):
     """
