@@ -70,7 +70,6 @@ class MessageSync(APISyncObject):
 
     def run(self, loop=True):
         while True:
-            logger.debug('Syncing messages.')
             submissions = storage.find_new_submissions(self.session)
 
             for db_submission in submissions:
@@ -93,7 +92,7 @@ class MessageSync(APISyncObject):
                     tb = traceback.format_exc()
                     logger.critical("Exception while downloading submission!\n{}".format(tb))
 
-            logger.debug('Completed message sync.')
+            logger.debug('Submissions synced')
 
             if not loop:
                 break
@@ -117,7 +116,6 @@ class ReplySync(APISyncObject):
 
     def run(self, loop=True):
         while True:
-            logger.debug('Syncing replies.')
             replies = storage.find_new_replies(self.session)
 
             for db_reply in replies:
@@ -143,7 +141,7 @@ class ReplySync(APISyncObject):
                     tb = traceback.format_exc()
                     logger.critical("Exception while downloading reply!\n{}".format(tb))
 
-            logger.debug('Completed reply sync.')
+            logger.debug('Replies synced')
 
             if not loop:
                 break
