@@ -172,10 +172,10 @@ class MainView(QWidget):
         old_widget = self.view_layout.takeAt(0)
 
         if old_widget:
-            old_widget.widget().setVisible(False)
+            old_widget.widget().hide()
 
         self.view_layout.addWidget(widget)
-        widget.setVisible(True)
+        widget.show()
 
 
 class SourceList(QListWidget):
@@ -407,6 +407,7 @@ class LoginDialog(QDialog):
 
         self.error_label = QLabel('')
         self.error_label.setObjectName('error_label')
+        self.error_label.setStyleSheet('color: red')
 
         layout.addStretch()
         layout.addWidget(self.title)
@@ -695,7 +696,6 @@ class ConversationView(QWidget):
         main_layout = QVBoxLayout()
         main_layout.addWidget(self.scroll)
         self.setLayout(main_layout)
-
         self.update_conversation(self.source.collection)
 
     def clear_conversation(self):
@@ -771,7 +771,7 @@ class ConversationView(QWidget):
 class SourceConversationWrapper(QWidget):
     """
     Wrapper for a source's conversation including the chat window, profile tab, and other
-    per-soruce resources.
+    per-source resources.
     """
 
     def __init__(
