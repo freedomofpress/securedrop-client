@@ -12,7 +12,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
 from . import conftest
-from securedrop_client.db import make_engine, Base
+from securedrop_client.db import make_engine, Base, convention
 
 MIGRATION_PATH = path.join(path.dirname(__file__), '..', 'alembic', 'versions')
 
@@ -100,15 +100,23 @@ def test_alembic_head_matches_db_models(tmpdir):
     subprocess.check_call(['sqlite3', os.path.join(models_homedir, 'svs.sqlite'), '.databases'])
     engine = make_engine(models_homedir)
     Base.metadata.create_all(bind=engine, checkfirst=False)
+    assert Base.metadata.naming_convention == convention
     session = sessionmaker(engine)()
     models_schema = get_schema(session)
+    Base.metadata.drop_all(bind=engine)
+    session.close()
+    engine.dispose()
 
     alembic_homedir = str(tmpdir.mkdir('alembic'))
     subprocess.check_call(['sqlite3', os.path.join(alembic_homedir, 'svs.sqlite'), '.databases'])
-    session = sessionmaker(make_engine(alembic_homedir))()
+    engine = make_engine(alembic_homedir)
+    session = sessionmaker(engine)()
     alembic_config = conftest._alembic_config(alembic_homedir)
     upgrade(alembic_config, 'head')
     alembic_schema = get_schema(session)
+    Base.metadata.drop_all(bind=engine)
+    session.close()
+    engine.dispose()
 
     # The initial migration creates the table 'alembic_version', but this is
     # not present in the schema created by `Base.metadata.create_all()`.

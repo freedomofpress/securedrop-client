@@ -13,21 +13,17 @@ TESTS ?= tests
 TESTOPTS ?= -v
 .PHONY: test
 test: ## Run the application tests
-	@TEST_CMD="python -m pytest -v --random-order-bucket=global --cov-config .coveragerc --cov-report html --cov-report term-missing --cov=securedrop_client --cov-fail-under 100 -k-test_alembic.py $(TESTOPTS) $(TESTS)" ; \
+	@TEST_CMD="python -m pytest -v --random-order-bucket=global --cov-config .coveragerc --cov-report html --cov-report term-missing --cov=securedrop_client --cov-fail-under 100 $(TESTOPTS) $(TESTS)" ; \
 		if command -v xvfb-run > /dev/null; then \
 		xvfb-run $$TEST_CMD ; else \
 		$$TEST_CMD ; fi
-
-.PHONY: test-alembic
-test-alembic: ## Run the alembic migration tests
-	@python -m pytest -v $(TESTOPTS) tests/test_alembic.py
 
 .PHONY: lint
 lint: ## Run the linters
 	@flake8 .
 
 .PHONY: check
-check: clean lint test test-alembic ## Run the full CI test suite
+check: clean lint test ## Run the full CI test suite
 
 # Explaination of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##
