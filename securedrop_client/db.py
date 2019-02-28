@@ -1,8 +1,8 @@
 import os
 
 from sqlalchemy import Boolean, Column, create_engine, DateTime, ForeignKey, Integer, String, \
-    Text, MetaData
-from sqlalchemy.ext.declarative import declarative_base
+    Text, MetaData, CheckConstraint
+from sqlalchemy.ext.declarative import declarative_base, AbstractConcreteBase
 from sqlalchemy.orm import relationship, backref
 
 
@@ -60,15 +60,24 @@ class Source(Base):
         """Return the list of submissions and replies for this source, sorted
         in ascending order by the filename/interaction count."""
         collection = []
-        collection.extend(self.submissions)
+        collection.extend(self.messages)
+        collection.extend(self.files)
         collection.extend(self.replies)
         collection.sort(key=lambda x: int(x.filename.split('-')[0]))
         return collection
 
 
-class Submission(Base):
+class Submission(AbstractConcreteBase, Base):
+    pass
 
-    __tablename__ = 'submissions'
+
+class Message(Submission):
+
+    __tablename__ = 'messages'
+    __mapper_args__ = {
+        'polymorphic_identity': 'message',
+        'concrete': True,
+    }
 
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
@@ -77,30 +86,54 @@ class Submission(Base):
     download_url = Column(String(255), nullable=False)
 
     # This is whether the submission has been downloaded in the local database.
-    is_downloaded = Column(Boolean(name='is_downloaded'),
-                           default=False)
+    is_downloaded = Column(Boolean(name='is_downloaded'), nullable=False, server_default='false')
 
     # This reflects read status stored on the server.
-    is_read = Column(Boolean(name='is_read'),
-                     default=False)
+    is_read = Column(Boolean(name='is_read'), nullable=False, server_default='false')
+
+    content = Column(
+        Text,
+        # this check contraint ensures the state of the DB is what one would expect
+        CheckConstraint('CASE WHEN is_downloaded = 0 THEN content IS NULL ELSE 1 END',
+                        name='compare_download_vs_content')
+    )
 
     source_id = Column(Integer, ForeignKey('sources.id'))
     source = relationship("Source",
-                          backref=backref("submissions", order_by=id,
+                          backref=backref("messages", order_by=id,
                                           cascade="delete"))
 
-    def __init__(self, source, uuid, size, filename, download_url):
-        # ORM event catching _should_ have already initialized `self.data`
+    def __repr__(self):
+        return '<Message {}>'.format(self.filename)
 
-        self.source_id = source.id
-        self.uuid = uuid
-        self.size = size
-        self.filename = filename
-        self.download_url = download_url
-        self.is_download = False
+
+class File(Submission):
+
+    __tablename__ = 'files'
+    __mapper_args__ = {
+        'polymorphic_identity': 'file',
+        'concrete': True,
+    }
+
+    id = Column(Integer, primary_key=True)
+    uuid = Column(String(36), unique=True, nullable=False)
+    filename = Column(String(255), nullable=False)
+    size = Column(Integer, nullable=False)
+    download_url = Column(String(255), nullable=False)
+
+    # This is whether the submission has been downloaded in the local database.
+    is_downloaded = Column(Boolean(name='is_downloaded'), nullable=False, server_default='false')
+
+    # This reflects read status stored on the server.
+    is_read = Column(Boolean(name='is_read'), nullable=False, server_default='false')
+
+    source_id = Column(Integer, ForeignKey('sources.id'))
+    source = relationship("Source",
+                          backref=backref("files", order_by=id,
+                                          cascade="delete"))
 
     def __repr__(self):
-        return '<Submission {}>'.format(self.filename)
+        return '<File {}>'.format(self.filename)
 
 
 class Reply(Base):
