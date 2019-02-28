@@ -85,21 +85,26 @@ After you run the server container, the journalist interface API will be running
 To ensure that file decryption works, please import [this test private key](https://raw.githubusercontent.com/freedomofpress/securedrop/0a901362b84a5378fba80e9cd0ffe4542bdcd598/securedrop/tests/files/test_journalist_key.sec) into your GnuPG keyring. Submissions in the SecureDrop server dev environment can be decrypted with this test key.
 
 
-## Run linter
+## Run the tests and checks
 
-```
-make lint
-```
+To run everything, run:
 
-## Run tests
-
-```
-make test
+```bash
+make check
 ```
 
 ## Generate and run database migrations
 
-```
-alembic revision --autogenerate -m "describe your revision here"
+```bash
+rm -f svs.sqlite
+sqlite3 svs.sqlite .databases > /dev/null
 alembic upgrade head
+alembic revision --autogenerate -m "describe your revision here"
+make test-alembic
 ```
+
+### Merging Migrations
+
+This project aims to have at most one migration per release. There may be cases where this is not feasible,
+but developers should merge their migration into the latest migration that has been generated since the last
+release. The above mentioned autogenerate command will not do this for you.

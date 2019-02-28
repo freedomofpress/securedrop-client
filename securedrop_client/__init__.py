@@ -11,8 +11,8 @@ try:
     current_locale, encoding = locale.getdefaultlocale()
     # Get the language code.
     language_code = current_locale[:2]
-except (TypeError, ValueError):
-    language_code = 'en'
+except (TypeError, ValueError):  # pragma: no cover
+    language_code = 'en'  # pragma: no cover
 # DEBUG/TRANSLATE: override the language code here (e.g. to Chinese).
 # language_code = 'zh'
 gettext.translation('securedrop_client', localedir=localedir,

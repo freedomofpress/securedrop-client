@@ -6,13 +6,15 @@ jobs:
     steps:
       - checkout
 
+      - run: sudo apt-get install -y sqlite3
+
       - run:
           name: Install requirements and run tests
           command: |
             set -e
             pipenv sync --dev
             export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
-            pipenv run make check
+            pipenv run make check --keep-going
 
       - run:
           name: Check Python dependencies for known vulnerabilities
