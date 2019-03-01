@@ -23,6 +23,14 @@ GPG_HOME="$SDC_HOME/gpg"
 mkdir -p "$GPG_HOME"
 chmod 0700 "$SDC_HOME" "$GPG_HOME"
 
+function cleanup {
+  PID=$(ps -ef | grep gpg-agent | grep "$GPG_HOME" | grep -v grep | awk '{print $2}')
+  if [ "$PID" ]; then
+    kill "$PID"
+  fi
+}
+trap cleanup EXIT
+
 echo "Running app with home directory: $SDC_HOME"
 echo ""
 
@@ -31,6 +39,6 @@ gpg --homedir "$GPG_HOME" --allow-secret-key-import --import tests/files/secured
 # create the database and config for local testing
 ./create_dev_data.py "$SDC_HOME" &
 
-wait
+exec python -m securedrop_client --sdc-home "$SDC_HOME" --no-proxy $@ &
 
-exec python -m securedrop_client --sdc-home "$SDC_HOME" --no-proxy $@
+wait
