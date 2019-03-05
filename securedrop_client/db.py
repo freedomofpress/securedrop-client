@@ -2,7 +2,7 @@ import os
 
 from sqlalchemy import Boolean, Column, create_engine, DateTime, ForeignKey, Integer, String, \
     Text, MetaData, CheckConstraint
-from sqlalchemy.ext.declarative import declarative_base, AbstractConcreteBase
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 
 
@@ -65,17 +65,9 @@ class Source(Base):
         return collection
 
 
-class Submission(AbstractConcreteBase, Base):
-    pass
-
-
-class Message(Submission):
+class Message(Base):
 
     __tablename__ = 'messages'
-    __mapper_args__ = {
-        'polymorphic_identity': 'message',
-        'concrete': True,
-    }
 
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
@@ -105,13 +97,9 @@ class Message(Submission):
         return '<Message {}>'.format(self.filename)
 
 
-class File(Submission):
+class File(Base):
 
     __tablename__ = 'files'
-    __mapper_args__ = {
-        'polymorphic_identity': 'file',
-        'concrete': True,
-    }
 
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)

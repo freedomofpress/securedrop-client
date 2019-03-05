@@ -526,16 +526,14 @@ class Client(QObject):
         """
         self.gui.set_status(message, duration)
 
-    def on_file_open(self, submission_db_object):
+    def on_file_open(self, file_db_object):
         """
-        Open the already downloaded file associated with the message (which
-        is a Submission).
+        Open the already downloaded file associated with the message (which is a `File`).
         """
-
         # Once downloaded, submissions are stored in the data directory
         # with the same filename as the server, except with the .gz.gpg
         # stripped off.
-        server_filename = submission_db_object.filename
+        server_filename = file_db_object.filename
         fn_no_ext, _ = os.path.splitext(os.path.splitext(server_filename)[0])
         submission_filepath = os.path.join(self.data_dir, fn_no_ext)
 
@@ -561,7 +559,7 @@ class Client(QObject):
             self.on_action_requiring_login()
             return
 
-        if isinstance(message, db.Submission):
+        if isinstance(message, db.File) or isinstance(message, db.Message):
             # Handle submissions.
             func = self.api.download_submission
             sdk_object = sdclientapi.Submission(uuid=message.uuid)

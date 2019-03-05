@@ -23,7 +23,7 @@ import logging
 from dateutil.parser import parse
 import glob
 import os
-from securedrop_client.db import Source, Submission, Reply, User
+from securedrop_client.db import Source, Message, File, Reply, User
 
 
 logger = logging.getLogger(__name__)
@@ -36,11 +36,18 @@ def get_local_sources(session):
     return session.query(Source)
 
 
-def get_local_submissions(session):
+def get_local_messages(session):
     """
     Return all submission objects from the local database.
     """
-    return session.query(Submission)
+    return session.query(Message)
+
+
+def get_local_files(session):
+    """
+    Return all file (a submitted file) objects from the local database.
+    """
+    return session.query(File)
 
 
 def get_local_replies(session):
@@ -85,11 +92,16 @@ def update_local_storage(session, remote_sources, remote_submissions,
     with this data.
     """
     local_sources = get_local_sources(session)
-    local_submissions = get_local_submissions(session)
+    local_files = get_local_files(session)
+    local_messages = get_local_messages(session)
     local_replies = get_local_replies(session)
 
+    remote_messages = [x for x in remote_submissions if x.filename.endswith('.msg.gpg')]
+    remote_files = [x for x in remote_submissions if not x.filename.endswith('.msg.gpg')]
+
     update_sources(remote_sources, local_sources, session, data_dir)
-    update_submissions(remote_submissions, local_submissions, session, data_dir)
+    update_files(remote_files, local_files, session, data_dir)
+    update_messages(remote_messages, local_messages, session, data_dir)
     update_replies(remote_replies, local_replies, session, data_dir)
 
 
@@ -147,8 +159,19 @@ def update_sources(remote_sources, local_sources, session, data_dir):
     session.commit()
 
 
-def update_submissions(remote_submissions, local_submissions, session, data_dir):
+def update_files(remote_submissions, local_submissions, session, data_dir):
+    __update_submissions(File, remote_submissions, local_submissions, session, data_dir)
+
+
+def update_messages(remote_submissions, local_submissions, session, data_dir):
+    __update_submissions(Message, remote_submissions, local_submissions, session, data_dir)
+
+
+def __update_submissions(model, remote_submissions, local_submissions, session, data_dir):
     """
+    The logic for updating files and messages is effectively the same, so this function is somewhat
+    overloaded to allow us to do both in a DRY way.
+
     * Existing submissions are updated in the local database.
     * New submissions have an entry created in the local database.
     * Local submissions not returned in the remote submissions are deleted
@@ -159,10 +182,12 @@ def update_submissions(remote_submissions, local_submissions, session, data_dir)
         if submission.uuid in local_uuids:
             local_submission = [s for s in local_submissions
                                 if s.uuid == submission.uuid][0]
+
             # Update files on disk to match new filename.
             if (local_submission.filename != submission.filename):
                 rename_file(data_dir, local_submission.filename,
                             submission.filename)
+
             # Update an existing record.
             local_submission.filename = submission.filename
             local_submission.size = submission.size
@@ -177,10 +202,8 @@ def update_submissions(remote_submissions, local_submissions, session, data_dir)
             # A new submission to be added to the database.
             _, source_uuid = submission.source_url.rsplit('/', 1)
             source = session.query(Source).filter_by(uuid=source_uuid)[0]
-            ns = Submission(source=source, uuid=submission.uuid,
-                            size=submission.size,
-                            filename=submission.filename,
-                            download_url=submission.download_url)
+            ns = model(source_id=source.id, uuid=submission.uuid, size=submission.size,
+                       filename=submission.filename, download_url=submission.download_url)
             session.add(ns)
             logger.debug('Added new submission {}'.format(submission.uuid))
 
@@ -270,40 +293,43 @@ def find_or_create_user(uuid, username, session):
         return new_user
 
 
-def find_new_submissions(session):
-    submissions = session.query(Submission) \
-                         .filter_by(is_downloaded=False) \
-                         .filter(Submission.filename.like('%-msg.gpg')) \
-                         .all()
-    return submissions
+def find_new_messages(session):
+    return session.query(Message).filter_by(is_downloaded=False).all()
+
+
+def find_new_files(session):
+    return session.query(File).filter_by(is_downloaded=False).all()
 
 
 def find_new_replies(session):
-    replies = session.query(Reply) \
-                     .filter_by(is_downloaded=False) \
-                     .all()
-    return replies
+    return session.query(Reply).filter_by(is_downloaded=False).all()
 
 
 def mark_file_as_downloaded(uuid, session):
-    """Mark file as downloaded in the database. The file itself will be
-    stored in the data directory.
     """
-    submission_db_object = session.query(Submission) \
-                                  .filter_by(uuid=uuid) \
-                                  .one_or_none()
-    submission_db_object.is_downloaded = True
-    session.add(submission_db_object)
+    Mark file as downloaded in the database.
+    """
+    file_db_object = session.query(File).filter_by(uuid=uuid).one()
+    file_db_object.is_downloaded = True
+    session.add(file_db_object)
+    session.commit()
+
+
+def mark_message_as_downloaded(uuid, session):
+    """
+    Mark message as downloaded in the database.
+    """
+    message_db_object = session.query(Message).filter_by(uuid=uuid).one()
+    message_db_object.is_downloaded = True
+    session.add(message_db_object)
     session.commit()
 
 
 def mark_reply_as_downloaded(uuid, session):
-    """Mark reply as downloaded in the database. The file itself will be
-    stored in the data directory.
     """
-    reply_db_object = session.query(Reply) \
-                             .filter_by(uuid=uuid) \
-                             .one_or_none()
+    Mark reply as downloaded in the database.
+    """
+    reply_db_object = session.query(Reply).filter_by(uuid=uuid).one()
     reply_db_object.is_downloaded = True
     session.add(reply_db_object)
     session.commit()
