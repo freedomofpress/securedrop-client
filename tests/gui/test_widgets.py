@@ -339,6 +339,11 @@ def test_SourceWidget_delete_source(mocker):
     mock_delete_source_message_box_object.launch.assert_called_with()
 
 
+def test_SourceWidget_delete_source_when_current_source_has_changed(mocker):
+    """When current source is changed while delete operation is in-progress"""
+    pass
+
+
 def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker):
     mock_message_box_question = mocker.MagicMock(QMessageBox.question)
     mock_message_box_question.return_value = QMessageBox.Cancel

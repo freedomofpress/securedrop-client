@@ -128,6 +128,8 @@ class MainView(QWidget):
     and main context view).
     """
 
+    CONVERSATION_VIEW_STRETCH = 6
+
     def __init__(self, parent):
         super().__init__(parent)
         self.layout = QHBoxLayout(self)
@@ -152,7 +154,7 @@ class MainView(QWidget):
         self.view_holder = QWidget()
         self.view_layout = QVBoxLayout()
         self.view_holder.setLayout(self.view_layout)
-        self.layout.addWidget(self.view_holder, 6)
+        self.layout.addWidget(self.view_holder, self.CONVERSATION_VIEW_STRETCH)
 
     def setup(self, controller):
         """
@@ -181,14 +183,17 @@ class MainView(QWidget):
 
         The re created conversation view is blank(without any conversation).
         """
-        deprecated_widget = self.layout.takeAt(1)
+        conversation_view_index = 1
+        deprecated_widget = self.layout.takeAt(conversation_view_index)
         if deprecated_widget:
             deprecated_widget.widget().setVisible(False)
             self.view_holder = QWidget()
             self.view_layout = QVBoxLayout()
             self.view_holder.setLayout(self.view_layout)
             self.view_holder.setVisible(True)
-            self.layout.addWidget(self.view_holder, 6)
+            self.layout.addWidget(
+                self.view_holder, self.CONVERSATION_VIEW_STRETCH
+            )
 
 
 class SourceList(QListWidget):
