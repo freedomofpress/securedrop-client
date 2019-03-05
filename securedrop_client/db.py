@@ -32,13 +32,11 @@ class Source(Base):
     uuid = Column(String(36), unique=True, nullable=False)
     journalist_designation = Column(String(255), nullable=False)
     document_count = Column(Integer, server_default="0", nullable=False)
-    is_flagged = Column(Boolean(name='is_flagged'),
-                        server_default="false")
+    is_flagged = Column(Boolean(name='is_flagged'), server_default="0")
     public_key = Column(Text, nullable=True)
     fingerprint = Column(String(64))
     interaction_count = Column(Integer, server_default="0", nullable=False)
-    is_starred = Column(Boolean(name='is_starred'),
-                        server_default="false")
+    is_starred = Column(Boolean(name='is_starred'), server_default="0")
     last_updated = Column(DateTime)
 
     def __init__(self, uuid, journalist_designation, is_flagged, public_key,
@@ -86,10 +84,10 @@ class Message(Submission):
     download_url = Column(String(255), nullable=False)
 
     # This is whether the submission has been downloaded in the local database.
-    is_downloaded = Column(Boolean(name='is_downloaded'), nullable=False, server_default='false')
+    is_downloaded = Column(Boolean(name='is_downloaded'), nullable=False, server_default="0")
 
     # This reflects read status stored on the server.
-    is_read = Column(Boolean(name='is_read'), nullable=False, server_default='false')
+    is_read = Column(Boolean(name='is_read'), nullable=False, server_default="0")
 
     content = Column(
         Text,
@@ -122,10 +120,10 @@ class File(Submission):
     download_url = Column(String(255), nullable=False)
 
     # This is whether the submission has been downloaded in the local database.
-    is_downloaded = Column(Boolean(name='is_downloaded'), nullable=False, server_default='false')
+    is_downloaded = Column(Boolean(name='is_downloaded'), nullable=False, server_default="0")
 
     # This reflects read status stored on the server.
-    is_read = Column(Boolean(name='is_read'), nullable=False, server_default='false')
+    is_read = Column(Boolean(name='is_read'), nullable=False, server_default="0")
 
     source_id = Column(Integer, ForeignKey('sources.id'))
     source = relationship("Source",
