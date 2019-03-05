@@ -23,17 +23,16 @@ def upgrade():
         sa.Column('uuid', sa.String(length=36), nullable=False),
         sa.Column('journalist_designation', sa.String(length=255), nullable=False),
         sa.Column('document_count', sa.Integer(), server_default='0', nullable=False),
-        sa.Column('is_flagged', sa.Boolean(name='is_flagged'), server_default='false',
-                  nullable=True),
+        sa.Column('is_flagged', sa.Boolean(name='is_flagged'), server_default='0', nullable=True),
         sa.Column('public_key', sa.Text(), nullable=True),
         sa.Column('fingerprint', sa.String(length=64), nullable=True),
         sa.Column('interaction_count', sa.Integer(), server_default='0', nullable=False),
-        sa.Column('is_starred', sa.Boolean(name='is_starred'), server_default='false',
-                  nullable=True),
+        sa.Column('is_starred', sa.Boolean(name='is_starred'), server_default='0', nullable=True),
         sa.Column('last_updated', sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint('id', name=op.f('pk_sources')),
         sa.UniqueConstraint('uuid', name=op.f('uq_sources_uuid'))
     )
+
     op.create_table(
         'users',
         sa.Column('id', sa.Integer(), nullable=False),
@@ -42,6 +41,44 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name=op.f('pk_users')),
         sa.UniqueConstraint('uuid', name=op.f('uq_users_uuid'))
     )
+
+    op.create_table(
+        'files',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('uuid', sa.String(length=36), nullable=False),
+        sa.Column('filename', sa.String(length=255), nullable=False),
+        sa.Column('size', sa.Integer(), nullable=False),
+        sa.Column('download_url', sa.String(length=255), nullable=False),
+        sa.Column('is_downloaded', sa.Boolean(name='is_downloaded'), server_default='0',
+                  nullable=False),
+        sa.Column('is_read', sa.Boolean(name='is_read'), server_default='0', nullable=False),
+        sa.Column('source_id', sa.Integer(), nullable=True),
+        sa.ForeignKeyConstraint(['source_id'], ['sources.id'],
+                                name=op.f('fk_files_source_id_sources')),
+        sa.PrimaryKeyConstraint('id', name=op.f('pk_files')),
+        sa.UniqueConstraint('uuid', name=op.f('uq_files_uuid')),
+    )
+
+    op.create_table(
+        'messages',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('uuid', sa.String(length=36), nullable=False),
+        sa.Column('filename', sa.String(length=255), nullable=False),
+        sa.Column('size', sa.Integer(), nullable=False),
+        sa.Column('download_url', sa.String(length=255), nullable=False),
+        sa.Column('is_downloaded', sa.Boolean(name='is_downloaded'), server_default='0',
+                  nullable=False),
+        sa.Column('is_read', sa.Boolean(name='is_read'), server_default='0', nullable=False),
+        sa.Column('content', sa.Text(), nullable=True),
+        sa.Column('source_id', sa.Integer(), nullable=True),
+        sa.ForeignKeyConstraint(['source_id'], ['sources.id'],
+                                name=op.f('fk_messages_source_id_sources')),
+        sa.PrimaryKeyConstraint('id', name=op.f('pk_messages')),
+        sa.UniqueConstraint('uuid', name=op.f('uq_messages_uuid')),
+        sa.CheckConstraint('CASE WHEN is_downloaded = 0 THEN content IS NULL ELSE 1 END',
+                           name='compare_download_vs_content'),
+    )
+
     op.create_table(
         'replies',
         sa.Column('id', sa.Integer(), nullable=False),
@@ -58,25 +95,11 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name=op.f('pk_replies')),
         sa.UniqueConstraint('uuid', name=op.f('uq_replies_uuid'))
     )
-    op.create_table(
-        'submissions',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('uuid', sa.String(length=36), nullable=False),
-        sa.Column('filename', sa.String(length=255), nullable=False),
-        sa.Column('size', sa.Integer(), nullable=False),
-        sa.Column('download_url', sa.String(length=255), nullable=False),
-        sa.Column('is_downloaded', sa.Boolean(name='is_downloaded'), nullable=True),
-        sa.Column('is_read', sa.Boolean(name='is_read'), nullable=True),
-        sa.Column('source_id', sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(['source_id'], ['sources.id'],
-                                name=op.f('fk_submissions_source_id_sources')),
-        sa.PrimaryKeyConstraint('id', name=op.f('pk_submissions')),
-        sa.UniqueConstraint('uuid', name=op.f('uq_submissions_uuid'))
-    )
 
 
 def downgrade():
-    op.drop_table('submissions')
     op.drop_table('replies')
+    op.drop_table('messages')
+    op.drop_table('files')
     op.drop_table('users')
     op.drop_table('sources')
