@@ -2,6 +2,7 @@
 Make sure the message sync object behaves as expected.
 """
 from securedrop_client.crypto import CryptoError
+from securedrop_client.db import Message, File
 from securedrop_client.message_sync import MessageSync, ReplySync
 
 
@@ -28,15 +29,17 @@ def test_MessageSync_init(mocker):
     assert ms.session == mock_session_class()
 
 
-def test_MessageSync_run_success(mocker):
-    submission = mocker.MagicMock()
-    submission.uuid = 'mock id'
-    submission.download_url = "http://foo"
-    submission.filename = "foo.gpg"
+def test_MessageSync_run_success(mocker, source):
+    submission1 = File(source=source['source'], uuid='uuid1', filename='filename',
+                       download_url='http://test.net')
+    submission2 = Message(source=source['source'], uuid='uuid2', filename='filename',
+                          download_url='http://test.net')
 
     # mock the fetching of submissions
-    mocker.patch('securedrop_client.storage.find_new_submissions', return_value=[submission])
+    mocker.patch('securedrop_client.storage.find_new_messages', return_value=[submission1])
+    mocker.patch('securedrop_client.storage.find_new_files', return_value=[submission2])
     mocker.patch('securedrop_client.message_sync.storage.mark_file_as_downloaded')
+    mocker.patch('securedrop_client.message_sync.storage.mark_message_as_downloaded')
     # don't create the signal
     mocker.patch('securedrop_client.message_sync.pyqtSignal')
     # mock the GpgHelper creation since we don't have directories/keys setup
@@ -72,7 +75,8 @@ def test_MessageSync_exception(homedir, config, mocker):
     is_qubes = False
 
     # mock to return the submission we want
-    mocker.patch('securedrop_client.storage.find_new_submissions', return_value=[submission])
+    mocker.patch('securedrop_client.storage.find_new_messages', return_value=[submission])
+    mocker.patch('securedrop_client.storage.find_new_files', return_value=[])
     # mock to prevent GpgHelper from raising errors on init
     mocker.patch('securedrop_client.crypto.safe_mkdir')
 
@@ -89,9 +93,11 @@ def test_MessageSync_run_failure(mocker):
     submission.filename = "foo.gpg"
 
     # mock the fetching of submissions
-    mocker.patch('securedrop_client.storage.find_new_submissions', return_value=[submission])
+    mocker.patch('securedrop_client.storage.find_new_messages', return_value=[submission])
+    mocker.patch('securedrop_client.storage.find_new_files', return_value=[])
     # mock the handling of the downloaded files
     mocker.patch('securedrop_client.message_sync.storage.mark_file_as_downloaded')
+    mocker.patch('securedrop_client.message_sync.storage.mark_message_as_downloaded')
     # mock the GpgHelper creation since we don't have directories/keys setup
     mocker.patch('securedrop_client.message_sync.GpgHelper')
 
@@ -171,7 +177,7 @@ def test_ReplySync_run_failure(mocker):
     # mock finding new replies
     mocker.patch('securedrop_client.storage.find_new_replies', return_value=[reply])
     # mock handling the new reply
-    mocker.patch('securedrop_client.message_sync.storage.mark_file_as_downloaded')
+    mocker.patch('securedrop_client.message_sync.storage.mark_reply_as_downloaded')
     mocker.patch('securedrop_client.message_sync.GpgHelper')
 
     api = mocker.MagicMock()

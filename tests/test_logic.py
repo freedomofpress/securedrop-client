@@ -951,18 +951,18 @@ def test_Client_on_file_download_Submission(homedir, config, mocker):
     mock_session = mocker.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, homedir)
     source = factory.Source()
-    submission = db.Submission(source, 'submission-uuid', 1234,
-                               'myfile.doc.gpg', 'http://myserver/myfile')
+    file_ = db.File(source=source, uuid='uuid', size=1234, filename='myfile.doc.gpg',
+                    download_url='http://myserver/myfile', is_downloaded=False)
     cl.call_api = mocker.MagicMock()
     cl.api = mocker.MagicMock()
     submission_sdk_object = mocker.MagicMock()
     mock_submission = mocker.patch('sdclientapi.Submission')
     mock_submission.return_value = submission_sdk_object
-    cl.on_file_download(source, submission)
+    cl.on_file_download(source, file_)
     cl.call_api.assert_called_once_with(
         cl.api.download_submission, cl.on_file_downloaded,
         cl.on_download_timeout, submission_sdk_object,
-        cl.data_dir, current_object=submission)
+        cl.data_dir, current_object=file_)
 
 
 def test_Client_on_file_downloaded_success(homedir, config, mocker):
@@ -1048,14 +1048,14 @@ def test_Client_on_file_download_user_not_signed_in(homedir, config, mocker):
     mock_session = mocker.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, homedir)
     source = factory.Source()
-    submission = db.Submission(source, 'submission-uuid', 1234,
-                               'myfile.doc.gpg', 'http://myserver/myfile')
+    file_ = db.File(source=source, uuid='uuid', size=1234, filename='myfile.doc.gpg',
+                    download_url='http://myserver/myfile', is_downloaded=False)
     cl.on_action_requiring_login = mocker.MagicMock()
     cl.api = None
     submission_sdk_object = mocker.MagicMock()
     mock_submission = mocker.patch('sdclientapi.Submission')
     mock_submission.return_value = submission_sdk_object
-    cl.on_file_download(source, submission)
+    cl.on_file_download(source, file_)
     cl.on_action_requiring_login.assert_called_once_with()
 
 
