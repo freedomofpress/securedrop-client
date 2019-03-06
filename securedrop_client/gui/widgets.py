@@ -24,6 +24,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, \
     QMessageBox, QToolButton, QSizePolicy, QTextEdit
+from typing import List
 from uuid import uuid4
 
 from securedrop_client.db import Source
@@ -40,7 +41,7 @@ class ToolBar(QWidget):
     Represents the tool bar across the top of the user interface.
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent: QWidget):
         super().__init__(parent)
         layout = QHBoxLayout(self)
         self.logo = QLabel()
@@ -191,7 +192,7 @@ class SourceList(QListWidget):
         """
         self.controller = controller
 
-    def update(self, sources):
+    def update(self, sources: List[Source]):
         """
         Reset and update the list with the passed in list of sources.
         """
@@ -271,7 +272,7 @@ class SourceWidget(QWidget):
     Used to display summary information about a source in the list view.
     """
 
-    def __init__(self, parent, source):
+    def __init__(self, parent: QWidget, source: Source):
         """
         Set up the child widgets.
         """
