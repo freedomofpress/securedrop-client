@@ -102,6 +102,13 @@ class Client(QObject):
     """
     reply_failed = pyqtSignal(str)
 
+    """
+    A signal that emits a signal when the authentication state changes.
+    - `True` when the client becomes authenticated
+    - `False` when the client becomes unauthenticated
+    """
+    authentication_state = pyqtSignal(bool)
+
     def __init__(self, hostname, gui, session,
                  home: str, proxy: bool = True) -> None:
         """
@@ -111,6 +118,9 @@ class Client(QObject):
         """
         check_dir_permissions(home)
         super().__init__()
+
+        # Client is unauthenticated by default
+        self.__is_authenticated = False
 
         # used for finding DB in sync thread
         self.home = home
@@ -146,6 +156,20 @@ class Client(QObject):
         self.data_dir = os.path.join(self.home, 'data')
 
         self.gpg = GpgHelper(home, proxy)
+
+    @property
+    def is_authenticated(self) -> bool:
+        return self.__is_authenticated
+
+    @is_authenticated.setter
+    def is_authenticated(self, is_authenticated: bool) -> None:
+        if self.__is_authenticated != is_authenticated:
+            self.authentication_state.emit(is_authenticated)
+            self.__is_authenticated = is_authenticated
+
+    @is_authenticated.deleter
+    def is_authenticated(self) -> None:
+        raise AttributeError('Cannot delete is_authenticated')
 
     def setup(self):
         """
@@ -326,6 +350,8 @@ class Client(QObject):
             # Clear the sidebar error status bar if a message was shown
             # to the user indicating they should log in.
             self.gui.update_error_status("")
+
+            self.is_authenticated = True
         else:
             # Failed to authenticate. Reset state with failure message.
             self.api = None
@@ -518,6 +544,7 @@ class Client(QObject):
         self.message_sync.api = None
         self.reply_sync.api = None
         self.gui.logout()
+        self.is_authenticated = False
 
     def set_status(self, message, duration=5000):
         """
