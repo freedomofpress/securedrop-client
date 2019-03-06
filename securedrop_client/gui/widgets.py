@@ -774,25 +774,49 @@ class SourceConversationWrapper(QWidget):
     per-soruce resources.
     """
 
-    def __init__(self, source: Source, sdc_home: str, controller: Client, parent=None) -> None:
+    def __init__(
+        self,
+        source: Source,
+        sdc_home: str,
+        controller: Client,
+        is_authenticated: bool,
+        parent=None
+    ) -> None:
         super().__init__(parent)
         self.source = source
         self.controller = controller
+        self.sdc_home = sdc_home
+
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
-        self.conversation = ConversationView(self.source, sdc_home, self.controller, parent=self)
+        self.conversation = ConversationView(self.source, self.sdc_home, self.controller,
+                                             parent=self)
         self.source_profile = SourceProfileShortWidget(self.source, self.controller)
-        self.reply_box = ReplyBoxWidget(self)
 
         self.layout.addWidget(self.source_profile)
         self.layout.addWidget(self.conversation)
-        self.layout.addWidget(self.reply_box)
+
+        self.controller.authentication_state.connect(self._on_authentication_update)
+        self._on_authentication_update(is_authenticated)
 
     def send_reply(self, message: str) -> None:
         msg_uuid = str(uuid4())
         self.conversation.add_reply(msg_uuid, message)
         self.controller.send_reply(self.source.uuid, msg_uuid, message)
+
+    def _on_authentication_update(self, is_authenticated: bool) -> None:
+        if is_authenticated:
+            new_widget = ReplyBoxWidget(self)
+        else:
+            new_widget = QLabel(_('You need to log in to send replies.'))
+
+        old_widget = self.layout.takeAt(2)
+        if old_widget is not None:
+            old_widget.widget().deleteLater()
+
+        self.reply_box = new_widget
+        self.layout.addWidget(new_widget)
 
 
 class ReplyBoxWidget(QWidget):

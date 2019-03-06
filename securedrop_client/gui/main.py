@@ -169,9 +169,9 @@ class Window(QMainWindow):
         source_widget = self.main_view.source_list.itemWidget(source_item)
         if source_widget:
             self.current_source = source_widget.source
-            self.show_conversation_for(self.current_source)
+            self.show_conversation_for(self.current_source, self.controller.is_authenticated)
 
-    def show_conversation_for(self, source):
+    def show_conversation_for(self, source: Source, is_authenticated: bool):
         """
         Show conversation of messages and replies between a source and
         journalists.
@@ -182,7 +182,8 @@ class Window(QMainWindow):
         if conversation_container is None:
             conversation_container = SourceConversationWrapper(source,
                                                                self.sdc_home,
-                                                               self.controller)
+                                                               self.controller,
+                                                               is_authenticated)
             self.conversations[source.uuid] = conversation_container
 
         self.main_view.set_conversation(conversation_container)
