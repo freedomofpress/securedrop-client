@@ -1206,3 +1206,45 @@ def test_clear_conversation_deletes_items(mocker, homedir):
     cv.clear_conversation()
 
     assert cv.conversation_layout.count() == 0
+
+
+def test_SourceConversationWrapper_auth_signals(mocker, homedir):
+    """
+    Ensure we connect to the auth signal and set the intial state on update
+    """
+    mock_source = mocker.Mock(collection=[])
+    mock_connect = mocker.MagicMock()
+    mock_signal = mocker.MagicMock(connect=mock_connect)
+    mock_controller = mocker.MagicMock(authentication_state=mock_signal)
+    mock_is_auth = mocker.MagicMock()
+
+    mock_on_auth = mocker.patch.object(SourceConversationWrapper, '_on_authentication_update')
+    SourceConversationWrapper(mock_source, 'mock home', mock_controller, mock_is_auth)
+
+    mock_connect.assert_called_once_with(mock_on_auth)
+    mock_on_auth.assert_called_with(mock_is_auth)
+
+
+def test_SourceConversationWrapper_set_widgets_via_auth_value(mocker, homedir):
+    """
+    When the client is authenticated, we should create a ReplyBoxWidget otherwise a warning.
+    """
+    mock_source = mocker.Mock(collection=[])
+    mock_controller = mocker.MagicMock()
+
+    cw = SourceConversationWrapper(mock_source, 'mock home', mock_controller, True)
+    mocker.patch.object(cw, 'layout')
+
+    mock_reply_box = mocker.patch('securedrop_client.gui.widgets.ReplyBoxWidget',
+                                  return_value=QWidget())
+    mock_label = mocker.patch('securedrop_client.gui.widgets.QLabel', return_value=QWidget())
+
+    cw._on_authentication_update(True)
+    mock_reply_box.assert_called_once_with(cw)
+    assert not mock_label.called
+
+    mock_reply_box.reset_mock()
+
+    cw._on_authentication_update(False)
+    assert not mock_reply_box.called
+    assert mock_label.called

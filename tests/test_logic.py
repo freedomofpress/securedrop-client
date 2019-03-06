@@ -1326,3 +1326,40 @@ def test_Client_on_reply_timeout(homedir, mocker):
     cl._on_reply_timeout(current_object)
     mock_reply_failed.emit.assert_called_once_with(msg_uuid)
     assert not mock_reply_succeeded.emit.called
+
+
+def test_Client_is_authenticated_property(homedir, mocker):
+    '''
+    Check that the @property `is_authenticated`:
+      - Cannot be deleted
+      - Emits the correct signals when updated
+      - Sets internal state to ensure signals are only set when the state changes
+    '''
+    mock_gui = mocker.MagicMock()
+    mock_session = mocker.MagicMock()
+
+    cl = Client('http://localhost', mock_gui, mock_session, homedir)
+    mock_signal = mocker.patch.object(cl, 'authentication_state')
+
+    # default state is unauthenticated
+    assert cl.is_authenticated is False
+
+    # the property cannot be deleted
+    with pytest.raises(AttributeError):
+        del cl.is_authenticated
+
+    # setting the signal to its current value does not fire the signal
+    cl.is_authenticated = False
+    assert not mock_signal.emit.called
+    assert cl.is_authenticated is False
+
+    # setting the property to True sends a signal
+    cl.is_authenticated = True
+    mock_signal.emit.assert_called_once_with(True)
+    assert cl.is_authenticated is True
+
+    mock_signal.reset_mock()
+
+    cl.is_authenticated = False
+    mock_signal.emit.assert_called_once_with(False)
+    assert cl.is_authenticated is False
