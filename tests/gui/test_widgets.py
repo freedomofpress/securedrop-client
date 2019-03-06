@@ -1077,7 +1077,7 @@ def test_SourceConversationWrapper_send_reply(mocker):
     mocker.patch('securedrop_client.gui.widgets.uuid4', return_value=mock_uuid)
     mock_controller = mocker.MagicMock()
 
-    cw = SourceConversationWrapper(mock_source, 'mock home', mock_controller)
+    cw = SourceConversationWrapper(mock_source, 'mock home', mock_controller, True)
     mock_add_reply = mocker.Mock()
     cw.conversation.add_reply = mock_add_reply
 

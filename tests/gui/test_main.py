@@ -175,8 +175,11 @@ def test_on_source_changed(mocker):
     w.main_view.source_list.currentItem()
     mock_sw = w.main_view.source_list.itemWidget()
     w.show_conversation_for = mocker.MagicMock()
+    mock_controller = mocker.MagicMock(is_authenticated=True)
+    w.controller = mock_controller
     w.on_source_changed()
-    w.show_conversation_for.assert_called_once_with(mock_sw.source)
+    w.show_conversation_for.assert_called_once_with(mock_sw.source,
+                                                    mock_controller.is_authenticated)
 
 
 def test_conversation_for(mocker):
@@ -203,7 +206,7 @@ def test_conversation_for(mocker):
     mocked_add_file = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_file',
                                    new=mocker.Mock())
 
-    w.show_conversation_for(mock_source)
+    w.show_conversation_for(mock_source, is_authenticated=True)
 
     assert mocked_add_message.call_count > 0
     assert mocked_add_reply.call_count > 0
@@ -224,7 +227,8 @@ def test_conversation_for(mocker):
     mocked_add_file = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_file',
                                    new=mocker.Mock())
 
-    w.show_conversation_for(mock_source)
+    # checking with is_authenticated=False just to ensure this doesn't break either
+    w.show_conversation_for(mock_source, is_authenticated=False)
 
     # because the conversation was cached, we don't call these functions again
     assert mocked_add_message.call_count == 0
@@ -257,7 +261,7 @@ def test_conversation_pending_message(mocker):
     mocker.patch('securedrop_client.gui.main.QVBoxLayout')
     mocker.patch('securedrop_client.gui.main.QWidget')
 
-    w.show_conversation_for(mock_source)
+    w.show_conversation_for(mock_source, True)
 
     assert mocked_add_message.call_count == 1
     assert mocked_add_message.call_args == mocker.call(msg_uuid, "<Message not yet downloaded>")
