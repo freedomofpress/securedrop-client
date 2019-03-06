@@ -339,9 +339,27 @@ def test_SourceWidget_delete_source(mocker):
     mock_delete_source_message_box_object.launch.assert_called_with()
 
 
-def test_SourceWidget_delete_source_when_current_source_has_changed(mocker):
+def test_SourceWidget_delete_source_for_change_in_source_in_between(mocker):
     """When current source is changed while delete operation is in-progress"""
-    pass
+    sources = [
+        factory.Source(),
+        factory.Source(),
+        factory.Source()
+    ]
+    mock_controller = mocker.MagicMock()
+    sl = SourceList(None)
+    sl.setup(mock_controller)
+    sl.update(sources)
+
+    # TODO:
+    # 1. Find a way to set the current item of Source List
+    # 2. Call the delete_source() for current source item
+    # 3. Change the current source item while the delete_source is in progress
+    # 4. When delete operation is over, Assert SourceList has correct source
+    #    list items.
+    # 5. Assert delete_source() operation deleted the source item from which
+    #    it is called and not the current source selected while the operation
+    #    was in progress.
 
 
 def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker):
