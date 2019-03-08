@@ -78,6 +78,9 @@ class Message(Base):
     # This is whether the submission has been downloaded in the local database.
     is_downloaded = Column(Boolean(name='is_downloaded'), nullable=False, server_default="0")
 
+    # This tracks if the file had been successfully decrypted after download.
+    is_decrypted = Column(Boolean(name='is_decrypted'), nullable=True)
+
     # This reflects read status stored on the server.
     is_read = Column(Boolean(name='is_read'), nullable=False, server_default="0")
 
@@ -109,6 +112,9 @@ class File(Base):
 
     # This is whether the submission has been downloaded in the local database.
     is_downloaded = Column(Boolean(name='is_downloaded'), nullable=False, server_default="0")
+
+    # This tracks if the file had been successfully decrypted after download.
+    is_decrypted = Column(Boolean(name='is_decrypted'), nullable=True)
 
     # This reflects read status stored on the server.
     is_read = Column(Boolean(name='is_read'), nullable=False, server_default="0")
@@ -143,6 +149,9 @@ class Reply(Base):
     # This is whether the reply has been downloaded in the local database.
     is_downloaded = Column(Boolean(name='is_downloaded'),
                            default=False)
+
+    # This tracks if the file had been successfully decrypted after download.
+    is_decrypted = Column(Boolean(name='is_decrypted'), nullable=True)
 
     def __repr__(self):
         return '<Reply {}>'.format(self.filename)
