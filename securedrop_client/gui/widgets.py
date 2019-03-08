@@ -797,16 +797,16 @@ class SourceConversationWrapper(QWidget):
         self.layout.addWidget(self.source_profile)
         self.layout.addWidget(self.conversation)
 
-        self.controller.authentication_state.connect(self._on_authentication_update)
-        self._on_authentication_update(is_authenticated)
+        self.controller.authentication_state.connect(self._show_or_hide_replybox)
+        self._show_or_hide_replybox(is_authenticated)
 
     def send_reply(self, message: str) -> None:
         msg_uuid = str(uuid4())
         self.conversation.add_reply(msg_uuid, message)
         self.controller.send_reply(self.source.uuid, msg_uuid, message)
 
-    def _on_authentication_update(self, is_authenticated: bool) -> None:
-        if is_authenticated:
+    def _show_or_hide_replybox(self, show: bool) -> None:
+        if show:
             new_widget = ReplyBoxWidget(self)
         else:
             new_widget = QLabel(_('You need to log in to send replies.'))

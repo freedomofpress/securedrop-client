@@ -1218,11 +1218,11 @@ def test_SourceConversationWrapper_auth_signals(mocker, homedir):
     mock_controller = mocker.MagicMock(authentication_state=mock_signal)
     mock_is_auth = mocker.MagicMock()
 
-    mock_on_auth = mocker.patch.object(SourceConversationWrapper, '_on_authentication_update')
+    mock_sh = mocker.patch.object(SourceConversationWrapper, '_show_or_hide_replybox')
     SourceConversationWrapper(mock_source, 'mock home', mock_controller, mock_is_auth)
 
-    mock_connect.assert_called_once_with(mock_on_auth)
-    mock_on_auth.assert_called_with(mock_is_auth)
+    mock_connect.assert_called_once_with(mock_sh)
+    mock_sh.assert_called_with(mock_is_auth)
 
 
 def test_SourceConversationWrapper_set_widgets_via_auth_value(mocker, homedir):
@@ -1239,12 +1239,12 @@ def test_SourceConversationWrapper_set_widgets_via_auth_value(mocker, homedir):
                                   return_value=QWidget())
     mock_label = mocker.patch('securedrop_client.gui.widgets.QLabel', return_value=QWidget())
 
-    cw._on_authentication_update(True)
+    cw._show_or_hide_replybox(True)
     mock_reply_box.assert_called_once_with(cw)
     assert not mock_label.called
 
     mock_reply_box.reset_mock()
 
-    cw._on_authentication_update(False)
+    cw._show_or_hide_replybox(False)
     assert not mock_reply_box.called
     assert mock_label.called
