@@ -630,8 +630,8 @@ class Client(QObject):
             except CryptoError as e:
                 logger.debug('Failed to decrypt file {}: {}'.format(server_filename, e))
                 storage.set_object_decryption_status(file_uuid, self.session, db.File, False)
-                self.set_status("Failed to download and decrypt file, "
-                                "please try again.")
+                self.set_status("Failed to decrypt file, "
+                                "please try again or talk to your administrator.")
                 # TODO: We should save the downloaded content, and just
                 # try to decrypt again if there was a failure.
                 return  # If we failed we should stop here.

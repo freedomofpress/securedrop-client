@@ -1038,7 +1038,7 @@ def test_Client_on_file_downloaded_decrypt_failure(homedir, config, mocker):
     cl.on_file_downloaded(result_data, current_object=submission_db_object)
     mock_gpg.call_count == 1
     cl.set_status.assert_called_once_with(
-        "Failed to download and decrypt file, please try again.")
+        "Failed to decrypt file, please try again or talk to your administrator.")
     mock_storage.set_object_decryption_status.assert_called_once_with(
         submission_db_object.uuid, mock_session, db.File, False)
 
