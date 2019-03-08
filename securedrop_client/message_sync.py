@@ -25,7 +25,7 @@ import sdclientapi.sdlocalobjects as sdkobjects
 
 from PyQt5.QtCore import QObject, pyqtSignal
 from securedrop_client import storage
-from securedrop_client.crypto import GpgHelper
+from securedrop_client.crypto import GpgHelper, CryptoError
 from securedrop_client.db import make_engine, Message
 from securedrop_client.storage import get_data
 from sqlalchemy.orm import sessionmaker
@@ -48,10 +48,17 @@ class APISyncObject(QObject):
         self.gpg = GpgHelper(home, is_qubes)
 
     def fetch_the_thing(self, item, msg, download_fn, update_fn):
-        shasum, filepath = download_fn(item)
-        self.gpg.decrypt_submission_or_reply(filepath, msg.filename, False)
+        _, filepath = download_fn(item)
         update_fn(msg.uuid, self.session)
         logger.info("Stored message or reply at {}".format(msg.filename))
+
+        try:
+            self.gpg.decrypt_submission_or_reply(filepath, msg.filename, False)
+            storage.set_object_decryption_status(msg.uuid, self.session, type(msg), True)
+            logger.info("Message or reply decrypted: {}".format(msg.filename))
+        except CryptoError:
+            storage.set_object_decryption_status(msg.uuid, self.session, type(msg), False)
+            logger.info("Message or reply failed to decrypt: {}".format(msg.filename))
 
 
 class MessageSync(APISyncObject):

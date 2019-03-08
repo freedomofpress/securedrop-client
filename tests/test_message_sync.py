@@ -40,6 +40,7 @@ def test_MessageSync_run_success(mocker, source):
     mocker.patch('securedrop_client.storage.find_new_files', return_value=[submission2])
     mocker.patch('securedrop_client.message_sync.storage.mark_file_as_downloaded')
     mocker.patch('securedrop_client.message_sync.storage.mark_message_as_downloaded')
+    mocker.patch('securedrop_client.message_sync.storage.set_object_decryption_status')
     # don't create the signal
     mocker.patch('securedrop_client.message_sync.pyqtSignal')
     # mock the GpgHelper creation since we don't have directories/keys setup
@@ -128,6 +129,7 @@ def test_ReplySync_run_success(mocker):
     mocker.patch('securedrop_client.message_sync.pyqtSignal')
     # mock the handling of the replies
     mocker.patch('securedrop_client.message_sync.storage.mark_reply_as_downloaded')
+    mocker.patch('securedrop_client.message_sync.storage.set_object_decryption_status')
     mocker.patch('securedrop_client.message_sync.GpgHelper')
 
     api = mocker.MagicMock()
