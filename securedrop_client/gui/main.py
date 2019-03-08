@@ -20,13 +20,13 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
-from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QDesktopWidget, QStatusBar
+from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QDesktopWidget, \
+    QStatusBar
 from typing import List
 
 from securedrop_client import __version__
 from securedrop_client.db import Source
-from securedrop_client.gui.widgets import (ToolBar, MainView, LoginDialog,
-                                           SourceConversationWrapper)
+from securedrop_client.gui.widgets import ToolBar, MainView, LoginDialog, SourceConversationWrapper
 from securedrop_client.resources import load_icon
 
 logger = logging.getLogger(__name__)
@@ -57,18 +57,29 @@ class Window(QMainWindow):
         self.setWindowTitle(_("SecureDrop Client {}").format(__version__))
         self.setWindowIcon(load_icon(self.icon))
 
+        self.central_widget = QWidget()
+        central_widget_layout = QVBoxLayout()
+        central_widget_layout.setContentsMargins(0, 0, 0, 0)
+        self.central_widget.setLayout(central_widget_layout)
+        self.setCentralWidget(self.central_widget)
+
+        self.status_bar = QStatusBar(self)
+        self.status_bar.setStyleSheet('background-color: #fff;')
+        central_widget_layout.addWidget(self.status_bar)
+
         self.widget = QWidget()
-        widget_layout = QVBoxLayout()
+        widget_layout = QHBoxLayout()
+        widget_layout.setContentsMargins(0, 0, 0, 0)
         self.widget.setLayout(widget_layout)
-        self.setCentralWidget(self.widget)
 
         self.tool_bar = ToolBar(self.widget)
-
         self.main_view = MainView(self.widget)
         self.main_view.source_list.itemSelectionChanged.connect(self.on_source_changed)
 
         widget_layout.addWidget(self.tool_bar, 1)
-        widget_layout.addWidget(self.main_view, 6)
+        widget_layout.addWidget(self.main_view, 8)
+
+        central_widget_layout.addWidget(self.widget)
 
         # Cache a dict of source.uuid -> SourceConversationWrapper
         # We do this to not create/destroy widgets constantly (because it causes UI "flicker")
@@ -88,9 +99,7 @@ class Window(QMainWindow):
         self.controller = controller  # Reference the Client logic instance.
         self.tool_bar.setup(self, controller)
 
-        self.status_bar = QStatusBar(self)
-        self.setStatusBar(self.status_bar)
-        self.set_status('Started SecureDrop Client. Please sign in.', 20000)
+        self.set_status(_('Started SecureDrop Client. Please sign in.'), 20000)
 
         self.login_dialog = LoginDialog(self)
         self.main_view.setup(self.controller)
@@ -144,10 +153,9 @@ class Window(QMainWindow):
         Display a message indicating the data-sync state.
         """
         if updated_on:
-            self.main_view.status.setText('Last refresh: ' +
-                                          updated_on.humanize())
+            self.set_status(_('Last refresh: {}').format(updated_on.humanize()))
         else:
-            self.main_view.status.setText(_('Waiting to refresh...'))
+            self.set_status(_('Waiting to refresh...'), 5000)
 
     def set_logged_in_as(self, username):
         """
@@ -188,9 +196,9 @@ class Window(QMainWindow):
 
         self.main_view.set_conversation(conversation_container)
 
-    def set_status(self, message, duration=5000):
+    def set_status(self, message, duration=0):
         """
         Display a status message to the user. Optionally, supply a duration
-        (in milliseconds), the default value being a duration of 5 seconds.
+        (in milliseconds), the default will continuously show the message.
         """
         self.status_bar.showMessage(message, duration)

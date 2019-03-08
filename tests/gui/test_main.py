@@ -1,7 +1,7 @@
 """
 Check the core Window UI class works as expected.
 """
-from PyQt5.QtWidgets import QApplication, QVBoxLayout
+from PyQt5.QtWidgets import QApplication, QHBoxLayout
 from securedrop_client.gui.main import Window
 from securedrop_client.resources import load_icon
 from securedrop_client.db import Message
@@ -16,13 +16,13 @@ def test_init(mocker):
     Ensure the Window instance is setup in the expected manner.
     """
     mock_li = mocker.MagicMock(return_value=load_icon('icon.png'))
-    mock_lo = mocker.MagicMock(return_value=QVBoxLayout())
+    mock_lo = mocker.MagicMock(return_value=QHBoxLayout())
     mock_lo().addWidget = mocker.MagicMock()
 
     mocker.patch('securedrop_client.gui.main.load_icon', mock_li)
     mock_tb = mocker.patch('securedrop_client.gui.main.ToolBar')
     mock_mv = mocker.patch('securedrop_client.gui.main.MainView')
-    mocker.patch('securedrop_client.gui.main.QVBoxLayout', mock_lo)
+    mocker.patch('securedrop_client.gui.main.QHBoxLayout', mock_lo)
     mocker.patch('securedrop_client.gui.main.QMainWindow')
 
     w = Window('mock')
@@ -126,13 +126,13 @@ def test_update_error_status(mocker):
 
 def test_show_sync(mocker):
     """
-    If there's a value display the result of its "humanize" method.
+    If there's a value display the result of its "humanize" method.humanize
     """
     w = Window('mock')
-    w.main_view = mocker.MagicMock()
+    w.set_status = mocker.MagicMock()
     updated_on = mocker.MagicMock()
     w.show_sync(updated_on)
-    w.main_view.status.setText.assert_called_once_with('Last refresh: ' + updated_on.humanize())
+    w.set_status.assert_called_once_with('Last refresh: {}'.format(updated_on.humanize()))
 
 
 def test_show_sync_no_sync(mocker):
@@ -140,9 +140,9 @@ def test_show_sync_no_sync(mocker):
     If there's no value to display, default to a "waiting" message.
     """
     w = Window('mock')
-    w.main_view = mocker.MagicMock()
+    w.set_status = mocker.MagicMock()
     w.show_sync(None)
-    w.main_view.status.setText.assert_called_once_with('Waiting to refresh...')
+    w.set_status.assert_called_once_with('Waiting to refresh...', 5000)
 
 
 def test_set_logged_in_as(mocker):
@@ -255,7 +255,7 @@ def test_conversation_pending_message(mocker):
     mock_source.collection = [message]
 
     mocked_add_message = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_message')
-    mocker.patch('securedrop_client.gui.main.QVBoxLayout')
+    mocker.patch('securedrop_client.gui.main.QHBoxLayout')
     mocker.patch('securedrop_client.gui.main.QWidget')
 
     w.show_conversation_for(mock_source, True)

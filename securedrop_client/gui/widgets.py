@@ -22,8 +22,8 @@ import html
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
-    QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, \
-    QMessageBox, QToolButton, QSizePolicy, QTextEdit
+    QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
+    QToolButton, QSizePolicy, QTextEdit
 from typing import List
 from uuid import uuid4
 
@@ -43,29 +43,42 @@ class ToolBar(QWidget):
 
     def __init__(self, parent: QWidget):
         super().__init__(parent)
-        layout = QHBoxLayout(self)
-        self.logo = QLabel()
-        self.logo.setPixmap(load_image('header_logo.png'))
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
 
-        self.user_state = QLabel(_("Signed out."))
+        self.user_state = QLabel(_('Signed out.'))
 
         self.login = QPushButton(_('Sign in'))
+        self.login.setMaximumSize(80, 30)
         self.login.clicked.connect(self.on_login_clicked)
 
         self.logout = QPushButton(_('Sign out'))
         self.logout.clicked.connect(self.on_logout_clicked)
+        self.logout.setMaximumSize(80, 30)
         self.logout.setVisible(False)
 
-        self.refresh = QPushButton(_('Refresh'))
+        self.refresh = QPushButton()
         self.refresh.clicked.connect(self.on_refresh_clicked)
-        self.refresh.setVisible(False)
+        self.refresh.setMaximumSize(30, 30)
+        refresh_pixmap = load_image('refresh.svg')
 
+        self.refresh.setIcon(QIcon(refresh_pixmap))
+        self.refresh.show()
+
+        self.logo = QLabel()
+        self.logo.setPixmap(load_image('icon.png'))
+        self.logo.setMinimumSize(200, 200)
+
+        journalist_layout = QHBoxLayout()
+        journalist_layout.addWidget(self.refresh, 1)
+        journalist_layout.addWidget(self.user_state, 5)
+        journalist_layout.addWidget(self.login, 5)
+        journalist_layout.addWidget(self.logout, 5)
+        journalist_layout.addStretch()
+
+        layout.addLayout(journalist_layout)
         layout.addWidget(self.logo)
         layout.addStretch()
-        layout.addWidget(self.user_state)
-        layout.addWidget(self.login)
-        layout.addWidget(self.logout)
-        layout.addWidget(self.refresh)
 
     def setup(self, window, controller):
         """
@@ -84,7 +97,7 @@ class ToolBar(QWidget):
         """
         Update the UI to reflect that the user is logged in as "username".
         """
-        self.user_state.setText(_('Signed in as: ' + html.escape(username)))
+        self.user_state.setText(html.escape(username))
         self.login.setVisible(False)
         self.logout.setVisible(True)
         self.refresh.setVisible(True)
@@ -132,27 +145,28 @@ class MainView(QWidget):
     def __init__(self, parent):
         super().__init__(parent)
         self.layout = QHBoxLayout(self)
+        self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
 
         left_column = QWidget(parent=self)
         left_layout = QVBoxLayout()
+        left_layout.setContentsMargins(0, 0, 0, 0)
         left_column.setLayout(left_layout)
-
-        self.status = QLabel(_('Waiting to refresh...'))
-        self.error_status = QLabel('')
-        self.error_status.setObjectName('error_label')
-
-        left_layout.addWidget(self.status)
-        left_layout.addWidget(self.error_status)
 
         self.source_list = SourceList(left_column)
         left_layout.addWidget(self.source_list)
 
-        self.layout.addWidget(left_column, 2)
+        self.error_status = QLabel('')
+        self.error_status.setObjectName('error_label')
+        left_layout.addWidget(self.error_status)
 
-        self.view_holder = QWidget()
+        self.layout.addWidget(left_column, 4)
+
         self.view_layout = QVBoxLayout()
+        self.view_layout.setContentsMargins(0, 0, 0, 0)
+        self.view_holder = QWidget()
         self.view_holder.setLayout(self.view_layout)
+
         self.layout.addWidget(self.view_holder, 6)
 
     def setup(self, controller):
@@ -372,11 +386,13 @@ class LoginDialog(QDialog):
         self.setWindowTitle(_('Sign in to SecureDrop'))
 
         main_layout = QHBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.addStretch()
         self.setLayout(main_layout)
 
         form = QWidget()
         layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
         form.setLayout(layout)
 
         main_layout.addWidget(form)
@@ -486,7 +502,7 @@ class SpeechBubble(QWidget):
     and journalist.
     """
 
-    css = "padding: 10px; min-height:20px;border: 1px solid #999; border-radius: 18px;"
+    css = "padding:8px; min-height:32px; border:1px solid #999; border-radius:18px;"
 
     def __init__(self, message_id: str, text: str, update_signal) -> None:
         super().__init__()
@@ -494,7 +510,6 @@ class SpeechBubble(QWidget):
 
         layout = QVBoxLayout()
         self.setLayout(layout)
-
         self.message = QLabel(html.escape(text, quote=False))
         self.message.setWordWrap(True)
         self.message.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
@@ -508,6 +523,7 @@ class SpeechBubble(QWidget):
         Conditionally update this SpeechBubble's text if and only if the message_id of the emitted
         signal matches the message_id of this speech bubble.
         """
+
         if message_id == self.message_id:
             self.message.setText(html.escape(text, quote=False))
 
@@ -529,12 +545,14 @@ class ConversationWidget(QWidget):
         """
         super().__init__()
         layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+
         label = SpeechBubble(message_id, message, update_signal)
 
         if align != "left":
             # Float right...
             layout.addStretch(5)
-            label.setStyleSheet(label.css + 'border-bottom-right-radius: 0px;')
+            label.setStyleSheet(label.css)
 
         layout.addWidget(label, 6)
 
@@ -543,10 +561,7 @@ class ConversationWidget(QWidget):
             layout.addStretch(5)
             label.setStyleSheet(label.css + 'border-bottom-left-radius: 0px;')
 
-        layout.setContentsMargins(0, 0, 0, 0)
-
         self.setLayout(layout)
-        self.setContentsMargins(0, 0, 0, 0)
 
 
 class MessageWidget(ConversationWidget):
@@ -679,6 +694,7 @@ class ConversationView(QWidget):
 
         self.container = QWidget()
         self.conversation_layout = QVBoxLayout()
+        self.conversation_layout.setContentsMargins(0, 0, 0, 0)
         self.container.setLayout(self.conversation_layout)
         self.container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
@@ -694,6 +710,7 @@ class ConversationView(QWidget):
         sb.rangeChanged.connect(self.update_conversation_position)
 
         main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.addWidget(self.scroll)
         self.setLayout(main_layout)
         self.update_conversation(self.source.collection)
@@ -788,14 +805,15 @@ class SourceConversationWrapper(QWidget):
         self.sdc_home = sdc_home
 
         self.layout = QVBoxLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
 
         self.conversation = ConversationView(self.source, self.sdc_home, self.controller,
                                              parent=self)
         self.source_profile = SourceProfileShortWidget(self.source, self.controller)
 
-        self.layout.addWidget(self.source_profile)
-        self.layout.addWidget(self.conversation)
+        self.layout.addWidget(self.source_profile, 1)
+        self.layout.addWidget(self.conversation, 9)
 
         self.controller.authentication_state.connect(self._show_or_hide_replybox)
         self._show_or_hide_replybox(is_authenticated)
@@ -816,7 +834,7 @@ class SourceConversationWrapper(QWidget):
             old_widget.widget().deleteLater()
 
         self.reply_box = new_widget
-        self.layout.addWidget(new_widget)
+        self.layout.addWidget(new_widget, 3)
 
 
 class ReplyBoxWidget(QWidget):
@@ -830,12 +848,20 @@ class ReplyBoxWidget(QWidget):
 
         self.text_edit = QTextEdit()
 
-        self.send_button = QPushButton('Send')
+        self.send_button = QPushButton()
         self.send_button.clicked.connect(self.send_reply)
+        self.send_button.setMaximumSize(40, 40)
 
-        layout = QHBoxLayout()
+        button_pixmap = load_image('send.png')
+        button_icon = QIcon(button_pixmap)
+        self.send_button.setIcon(button_icon)
+        self.send_button.setIconSize(button_pixmap.rect().size())
+
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.text_edit)
-        layout.addWidget(self.send_button)
+
+        layout.addWidget(self.send_button, 0, Qt.AlignRight)
         self.setLayout(layout)
 
     def send_reply(self) -> None:
@@ -915,12 +941,19 @@ class SourceMenuButton(QToolButton):
 
 
 class TitleLabel(QLabel):
-    """Centered aligned, HTML heading level 3 label."""
+    """The title for a conversation."""
 
     def __init__(self, text):
-        html_text = "<h3>%s</h3>" % (text,)
-        super().__init__(_(html_text))
-        self.setAlignment(Qt.AlignCenter)
+        html_text = _('<h1>{}</h1>').format(text)
+        super().__init__(html_text)
+
+
+class LastUpdatedLabel(QLabel):
+    """Time the conversation was last updated."""
+
+    def __init__(self, last_updated):
+        html_text = _('<h3>{}</h3>').format(arrow.get(last_updated).humanize())
+        super().__init__(html_text)
 
 
 class SourceProfileShortWidget(QWidget):
@@ -939,10 +972,10 @@ class SourceProfileShortWidget(QWidget):
         self.layout = QHBoxLayout()
         self.setLayout(self.layout)
 
-        widgets = (
-            TitleLabel(self.source.journalist_designation),
-            SourceMenuButton(self.source, self.controller),
-        )
+        self.title = TitleLabel(self.source.journalist_designation)
+        self.updated = LastUpdatedLabel(self.source.last_updated)
+        self.menu = SourceMenuButton(self.source, self.controller)
 
-        for widget in widgets:
-            self.layout.addWidget(widget)
+        self.layout.addWidget(self.title, 10, Qt.AlignLeft)
+        self.layout.addWidget(self.updated, 1, Qt.AlignRight)
+        self.layout.addWidget(self.menu, 1, Qt.AlignRight)
