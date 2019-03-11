@@ -96,8 +96,8 @@ def update_local_storage(session, remote_sources, remote_submissions,
     local_messages = get_local_messages(session)
     local_replies = get_local_replies(session)
 
-    remote_messages = [x for x in remote_submissions if x.filename.endswith('.msg.gpg')]
-    remote_files = [x for x in remote_submissions if not x.filename.endswith('.msg.gpg')]
+    remote_messages = [x for x in remote_submissions if x.filename.endswith('msg.gpg')]
+    remote_files = [x for x in remote_submissions if not x.filename.endswith('msg.gpg')]
 
     update_sources(remote_sources, local_sources, session, data_dir)
     update_files(remote_files, local_files, session, data_dir)
