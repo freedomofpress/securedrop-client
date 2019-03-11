@@ -100,7 +100,6 @@ rm -f svs.sqlite
 sqlite3 svs.sqlite .databases > /dev/null
 alembic upgrade head
 alembic revision --autogenerate -m "describe your revision here"
-make test-alembic
 ```
 
 ### Merging Migrations

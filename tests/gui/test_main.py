@@ -4,7 +4,7 @@ Check the core Window UI class works as expected.
 from PyQt5.QtWidgets import QApplication, QVBoxLayout
 from securedrop_client.gui.main import Window
 from securedrop_client.resources import load_icon
-from securedrop_client.db import Submission
+from securedrop_client.db import Message
 from uuid import uuid4
 
 
@@ -249,13 +249,10 @@ def test_conversation_pending_message(mocker):
     mock_source.journalistic_designation = 'Testy McTestface'
 
     msg_uuid = str(uuid4())
-    submission = Submission(source=mock_source, uuid=msg_uuid, size=123,
-                            filename="test.msg.gpg",
-                            download_url='http://test/test')
+    message = Message(source=mock_source, uuid=msg_uuid, size=123, filename="test.msg.gpg",
+                      download_url='http://test/test', is_downloaded=False)
 
-    submission.is_downloaded = False
-
-    mock_source.collection = [submission]
+    mock_source.collection = [message]
 
     mocked_add_message = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_message')
     mocker.patch('securedrop_client.gui.main.QVBoxLayout')

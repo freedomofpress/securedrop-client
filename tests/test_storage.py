@@ -6,10 +6,11 @@ import os
 import uuid
 import securedrop_client.db
 from dateutil.parser import parse
-from securedrop_client.storage import get_local_sources, get_local_submissions, get_local_replies, \
-    get_remote_data, update_local_storage, update_sources, update_submissions, update_replies, \
-    find_or_create_user, find_new_submissions, find_new_replies, mark_file_as_downloaded, \
-    mark_reply_as_downloaded, delete_single_submission_or_reply_on_disk, get_data, rename_file
+from securedrop_client.storage import get_local_sources, get_local_messages, get_local_replies, \
+    get_remote_data, update_local_storage, update_sources, update_files, update_replies, \
+    find_or_create_user, find_new_messages, find_new_replies, mark_file_as_downloaded, \
+    mark_reply_as_downloaded, delete_single_submission_or_reply_on_disk, get_data, rename_file, \
+    get_local_files, find_new_files, mark_message_as_downloaded
 from securedrop_client import db
 from sdclientapi import Source, Submission, Reply
 
@@ -65,14 +66,24 @@ def test_get_local_sources(mocker):
     mock_session.query.assert_called_once_with(securedrop_client.db.Source)
 
 
-def test_get_local_submissions(mocker):
+def test_get_local_messages(mocker):
     """
-    At this moment, just return all submissions.
+    At this moment, just return all messages.
     """
     mock_session = mocker.MagicMock()
-    get_local_submissions(mock_session)
+    get_local_messages(mock_session)
     mock_session.query.\
-        assert_called_once_with(securedrop_client.db.Submission)
+        assert_called_once_with(securedrop_client.db.Message)
+
+
+def test_get_local_files(mocker):
+    """
+    At this moment, just return all files (submissions)
+    """
+    mock_session = mocker.MagicMock()
+    get_local_files(mock_session)
+    mock_session.query.\
+        assert_called_once_with(securedrop_client.db.File)
 
 
 def test_get_local_replies(mocker):
@@ -118,31 +129,29 @@ def test_update_local_storage(homedir, mocker):
     Assuming no errors getting data, check the expected functions to update
     the state of the local database are called with the necessary data.
     """
-    source = make_remote_source()
-    submission = mocker.MagicMock()
-    reply = mocker.MagicMock()
-    sources = [source, ]
-    submissions = [submission, ]
-    replies = [reply, ]
+    remote_source = make_remote_source()
+    remote_message = mocker.Mock(filename='foo.msg.gpg')
+    remote_file = mocker.Mock(filename='foo.gpg')
+    remote_submissions = [remote_message, remote_file]
+    remote_reply = mocker.MagicMock()
     # Some local source, submission and reply objects from the local database.
     mock_session = mocker.MagicMock()
     local_source = mocker.MagicMock()
-    local_submission = mocker.MagicMock()
-    local_replies = mocker.MagicMock()
-    mock_session.query.side_effect = [[local_source, ], [local_submission, ],
-                                      [local_replies, ], ]
+    local_file = mocker.MagicMock()
+    local_message = mocker.MagicMock()
+    local_reply = mocker.MagicMock()
+    mock_session.query.side_effect = [
+        [local_source], [local_file], [local_message], [local_reply]]
     src_fn = mocker.patch('securedrop_client.storage.update_sources')
     rpl_fn = mocker.patch('securedrop_client.storage.update_replies')
-    sub_fn = mocker.patch('securedrop_client.storage.update_submissions')
+    file_fn = mocker.patch('securedrop_client.storage.update_files')
+    msg_fn = mocker.patch('securedrop_client.storage.update_messages')
 
-    update_local_storage(mock_session, sources, submissions, replies,
-                         homedir)
-    src_fn.assert_called_once_with([source, ], [local_source, ],
-                                   mock_session, homedir)
-    rpl_fn.assert_called_once_with([reply, ], [local_replies, ],
-                                   mock_session, homedir)
-    sub_fn.assert_called_once_with([submission, ], [local_submission, ],
-                                   mock_session, homedir)
+    update_local_storage(mock_session, [remote_source], remote_submissions, [remote_reply], homedir)
+    src_fn.assert_called_once_with([remote_source], [local_source], mock_session, homedir)
+    rpl_fn.assert_called_once_with([remote_reply], [local_reply], mock_session, homedir)
+    file_fn.assert_called_once_with([remote_file], [local_file], mock_session, homedir)
+    msg_fn.assert_called_once_with([remote_message], [local_message], mock_session, homedir)
 
 
 def test_update_sources(homedir, mocker):
@@ -198,7 +207,7 @@ def test_update_sources(homedir, mocker):
     assert mock_session.commit.call_count == 1
 
 
-def test_update_submissions_renames_file_on_disk(homedir, mocker):
+def test_update_files_renames_file_on_disk(homedir, mocker):
     """
     Check that:
 
@@ -227,8 +236,7 @@ def test_update_submissions_renames_file_on_disk(homedir, mocker):
     local_source.id = 123
     mock_session.query().filter_by.return_value = [local_source, ]
 
-    update_submissions(remote_submissions, local_submissions, mock_session,
-                       data_dir)
+    update_files(remote_submissions, local_submissions, mock_session, data_dir)
 
     updated_local_filename = '1-spotted-potato-msg'
     assert local_submission.filename == remote_submission.filename
@@ -319,8 +327,7 @@ def test_update_submissions_deletes_files_associated_with_the_submission(
     local_source.uuid = 'test-source-uuid'
     local_source.id = 666
     mock_session.query().filter_by.return_value = [local_source, ]
-    update_submissions(remote_submissions, local_submissions, mock_session,
-                       homedir)
+    update_files(remote_submissions, local_submissions, mock_session, homedir)
 
     # Ensure the files associated with the submission are deleted on disk.
     assert not os.path.exists(abs_server_filename)
@@ -407,10 +414,10 @@ def test_update_sources_deletes_files_associated_with_the_source(
 
     # Here we're not mocking out the models use so that we can use the collection attribute.
     local_source = factory.Source()
-    file_submission = db.Submission(
+    file_submission = db.File(
         source=local_source, uuid="test", size=123, filename=file_server_filename,
         download_url='http://test/test')
-    msg_submission = db.Submission(
+    msg_submission = db.File(
         source=local_source, uuid="test", size=123, filename=msg_server_filename,
         download_url='http://test/test')
     user = db.User('hehe')
@@ -445,7 +452,7 @@ def test_update_sources_deletes_files_associated_with_the_source(
     assert mock_session.commit.call_count == 1
 
 
-def test_update_submissions(homedir, mocker):
+def test_update_files(homedir, mocker):
     """
     Check that:
 
@@ -486,8 +493,7 @@ def test_update_submissions(homedir, mocker):
     mock_session.query().filter_by.return_value = [local_source, ]
     patch_rename_file = mocker.patch('securedrop_client.storage.rename_file')
 
-    update_submissions(remote_submissions, local_submissions, mock_session,
-                       data_dir)
+    update_files(remote_submissions, local_submissions, mock_session, data_dir)
 
     # Check the expected local submission object has been updated with values
     # from the API.
@@ -627,14 +633,23 @@ def test_find_or_create_user_new(mocker):
     mock_session.commit.assert_called_once_with()
 
 
-def test_find_new_submissions(mocker):
+def test_find_new_messages(mocker):
     mock_session = mocker.MagicMock()
     mock_submission = mocker.MagicMock()
     mock_submission.is_downloaded = False
     mock_submissions = [mock_submission]
-    mock_session.query().filter_by() \
-                        .filter().all.return_value = mock_submissions
-    submissions = find_new_submissions(mock_session)
+    mock_session.query().filter_by().all.return_value = mock_submissions
+    submissions = find_new_messages(mock_session)
+    assert submissions[0].is_downloaded is False
+
+
+def test_find_new_files(mocker):
+    mock_session = mocker.MagicMock()
+    mock_submission = mocker.MagicMock()
+    mock_submission.is_downloaded = False
+    mock_submissions = [mock_submission]
+    mock_session.query().filter_by().all.return_value = mock_submissions
+    submissions = find_new_files(mock_session)
     assert submissions[0].is_downloaded is False
 
 
@@ -653,8 +668,19 @@ def test_mark_file_as_downloaded(mocker):
     mock_session = mocker.MagicMock()
     mock_submission = mocker.MagicMock()
     mock_submission.is_downloaded is False
-    mock_session.query().filter_by().one_or_none.return_value = mock_submission
+    mock_session.query().filter_by().one.return_value = mock_submission
     mark_file_as_downloaded('test-filename', mock_session)
+    assert mock_submission.is_downloaded is True
+    mock_session.add.assert_called_once_with(mock_submission)
+    mock_session.commit.assert_called_once_with()
+
+
+def test_mark_message_as_downloaded(mocker):
+    mock_session = mocker.MagicMock()
+    mock_submission = mocker.MagicMock()
+    mock_submission.is_downloaded is False
+    mock_session.query().filter_by().one.return_value = mock_submission
+    mark_message_as_downloaded('test-messagename', mock_session)
     assert mock_submission.is_downloaded is True
     mock_session.add.assert_called_once_with(mock_submission)
     mock_session.commit.assert_called_once_with()
@@ -664,7 +690,7 @@ def test_mark_reply_as_downloaded(mocker):
     mock_session = mocker.MagicMock()
     mock_reply = mocker.MagicMock()
     mock_reply.is_downloaded is False
-    mock_session.query().filter_by().one_or_none.return_value = mock_reply
+    mock_session.query().filter_by().one.return_value = mock_reply
     mark_reply_as_downloaded('test-filename', mock_session)
     assert mock_reply.is_downloaded is True
     mock_session.add.assert_called_once_with(mock_reply)

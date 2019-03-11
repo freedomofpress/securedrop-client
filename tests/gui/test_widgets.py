@@ -682,12 +682,10 @@ def test_FileWidget_init_left(mocker):
     """
     mock_controller = mocker.MagicMock()
     source = factory.Source()
-    submission = db.Submission(source, 'submission-uuid', 123,
-                               'mah-reply.gpg',
-                               'http://mah-server/mah-reply-url')
-    submission.is_downloaded = True
+    message = db.Message(source=source, uuid='uuid', size=123, filename='mah-reply.gpg',
+                         download_url='http://mah-server/mah-reply-url', is_downloaded=True)
 
-    fw = FileWidget(source, submission, mock_controller, align='left')
+    fw = FileWidget(source, message, mock_controller, align='left')
 
     layout = fw.layout()
     assert isinstance(layout.takeAt(0), QWidgetItem)
@@ -702,12 +700,10 @@ def test_FileWidget_init_right(mocker):
     """
     mock_controller = mocker.MagicMock()
     source = factory.Source()
-    submission = db.Submission(source, 'submission-uuid', 123,
-                               'mah-reply.gpg',
-                               'http://mah-server/mah-reply-url')
-    submission.is_downloaded = True
+    message = db.Message(source=source, uuid='uuid', size=123, filename='mah-reply.gpg',
+                         download_url='http://mah-server/mah-reply-url', is_downloaded=True)
 
-    fw = FileWidget(source, submission, mock_controller, align='right')
+    fw = FileWidget(source, message, mock_controller, align='right')
     layout = fw.layout()
     assert isinstance(layout.takeAt(0), QSpacerItem)
     assert isinstance(layout.takeAt(0), QWidgetItem)
@@ -721,14 +717,12 @@ def test_FileWidget_mousePressEvent_download(mocker):
     """
     mock_controller = mocker.MagicMock()
     source = factory.Source()
-    submission = db.Submission(source, 'submission-uuid', 123,
-                               'mah-reply.gpg',
-                               'http://mah-server/mah-reply-url')
-    submission.is_downloaded = False
+    file_ = db.File(source=source, uuid='uuid', size=123, filename='mah-reply.gpg',
+                    download_url='http://mah-server/mah-reply-url', is_downloaded=False)
 
-    fw = FileWidget(source, submission, mock_controller)
+    fw = FileWidget(source, file_, mock_controller)
     fw.mouseReleaseEvent(None)
-    fw.controller.on_file_download.assert_called_once_with(source, submission)
+    fw.controller.on_file_download.assert_called_once_with(source, file_)
 
 
 def test_FileWidget_mousePressEvent_open(mocker):
@@ -737,14 +731,12 @@ def test_FileWidget_mousePressEvent_open(mocker):
     """
     mock_controller = mocker.MagicMock()
     source = factory.Source()
-    submission = db.Submission(source, 'submission-uuid', 123,
-                               'mah-reply.gpg',
-                               'http://mah-server/mah-reply-url')
-    submission.is_downloaded = True
+    file_ = db.File(source=source, uuid='uuid', size=123, filename='mah-reply.gpg',
+                    download_url='http://mah-server/mah-reply-url', is_downloaded=True)
 
-    fw = FileWidget(source, submission, mock_controller)
+    fw = FileWidget(source, file_, mock_controller)
     fw.mouseReleaseEvent(None)
-    fw.controller.on_file_open.assert_called_once_with(submission)
+    fw.controller.on_file_open.assert_called_once_with(file_)
 
 
 def test_ConversationView_init(mocker, homedir):
