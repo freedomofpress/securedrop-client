@@ -21,7 +21,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QDesktopWidget, QStatusBar
+from typing import List
+
 from securedrop_client import __version__
+from securedrop_client.db import Source
 from securedrop_client.gui.widgets import (ToolBar, MainView, LoginDialog,
                                            SourceConversationWrapper)
 from securedrop_client.resources import load_icon
@@ -49,6 +52,8 @@ class Window(QMainWindow):
         """
         super().__init__()
         self.sdc_home = sdc_home
+        self.controller = None
+
         self.setWindowTitle(_("SecureDrop Client {}").format(__version__))
         self.setWindowIcon(load_icon(self.icon))
 
@@ -127,7 +132,7 @@ class Window(QMainWindow):
         """
         self.main_view.update_error_status(error)
 
-    def show_sources(self, sources):
+    def show_sources(self, sources: List[Source]):
         """
         Update the left hand sources list in the UI with the passed in list of
         sources.
@@ -164,9 +169,9 @@ class Window(QMainWindow):
         source_widget = self.main_view.source_list.itemWidget(source_item)
         if source_widget:
             self.current_source = source_widget.source
-            self.show_conversation_for(self.current_source)
+            self.show_conversation_for(self.current_source, self.controller.is_authenticated)
 
-    def show_conversation_for(self, source):
+    def show_conversation_for(self, source: Source, is_authenticated: bool):
         """
         Show conversation of messages and replies between a source and
         journalists.
@@ -177,7 +182,8 @@ class Window(QMainWindow):
         if conversation_container is None:
             conversation_container = SourceConversationWrapper(source,
                                                                self.sdc_home,
-                                                               self.controller)
+                                                               self.controller,
+                                                               is_authenticated)
             self.conversations[source.uuid] = conversation_container
 
         self.main_view.set_conversation(conversation_container)
