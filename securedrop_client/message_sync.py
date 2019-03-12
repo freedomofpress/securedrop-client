@@ -54,10 +54,10 @@ class APISyncObject(QObject):
 
         try:
             self.gpg.decrypt_submission_or_reply(filepath, msg.filename, False)
-            storage.set_object_decryption_status(msg.uuid, self.session, type(msg), True)
+            storage.set_object_decryption_status(msg, self.session, True)
             logger.info("Message or reply decrypted: {}".format(msg.filename))
         except CryptoError:
-            storage.set_object_decryption_status(msg.uuid, self.session, type(msg), False)
+            storage.set_object_decryption_status(msg, self.session, False)
             logger.info("Message or reply failed to decrypt: {}".format(msg.filename))
 
 

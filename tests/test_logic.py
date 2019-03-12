@@ -989,7 +989,7 @@ def test_Client_on_file_downloaded_success(homedir, config, mocker):
     mock_storage.mark_file_as_downloaded.assert_called_once_with(
         test_object_uuid, mock_session)
     mock_storage.set_object_decryption_status.assert_called_once_with(
-        submission_db_object.uuid, mock_session, db.File, True)
+        submission_db_object, mock_session, True)
 
 
 def test_Client_on_file_downloaded_api_failure(homedir, config, mocker):
@@ -1040,7 +1040,7 @@ def test_Client_on_file_downloaded_decrypt_failure(homedir, config, mocker):
     cl.set_status.assert_called_once_with(
         "Failed to decrypt file, please try again or talk to your administrator.")
     mock_storage.set_object_decryption_status.assert_called_once_with(
-        submission_db_object.uuid, mock_session, db.File, False)
+        submission_db_object, mock_session, False)
 
 
 def test_Client_on_file_download_user_not_signed_in(homedir, config, mocker):

@@ -671,7 +671,7 @@ def test_set_object_decryption_status_null_to_false(mocker):
     mock_session.query().filter_by().one_or_none.return_value = mock_file
 
     decryption_status = False
-    set_object_decryption_status('uuid', mock_session, db.File, decryption_status)
+    set_object_decryption_status(mock_file, mock_session, decryption_status)
 
     assert mock_file.is_decrypted is False
 
@@ -686,7 +686,7 @@ def test_set_object_decryption_status_false_to_true(mocker):
     mock_session.query().filter_by().one_or_none.return_value = mock_file
 
     decryption_status = True
-    set_object_decryption_status('uuid', mock_session, db.File, decryption_status)
+    set_object_decryption_status(mock_file, mock_session, decryption_status)
 
     assert mock_file.is_decrypted is True
 

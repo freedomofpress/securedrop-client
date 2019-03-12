@@ -325,9 +325,11 @@ def mark_message_as_downloaded(uuid, session):
     session.commit()
 
 
-def set_object_decryption_status(uuid, session, model, is_successful: bool):
+def set_object_decryption_status(obj, session, is_successful: bool):
     """Mark object as decrypted or not in the database."""
-    db_object = session.query(model).filter_by(uuid=uuid).one_or_none()
+
+    model = type(obj)
+    db_object = session.query(model).filter_by(uuid=obj.uuid).one_or_none()
     db_object.is_decrypted = is_successful
     session.add(db_object)
     session.commit()
