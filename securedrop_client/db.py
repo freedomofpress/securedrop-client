@@ -1,7 +1,7 @@
 import os
 
 from sqlalchemy import Boolean, Column, create_engine, DateTime, ForeignKey, Integer, String, \
-    Text, MetaData, CheckConstraint
+    Text, MetaData, CheckConstraint, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 
@@ -31,12 +31,12 @@ class Source(Base):
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
     journalist_designation = Column(String(255), nullable=False)
-    document_count = Column(Integer, server_default="0", nullable=False)
-    is_flagged = Column(Boolean(name='is_flagged'), server_default="0")
+    document_count = Column(Integer, server_default=text("0"), nullable=False)
+    is_flagged = Column(Boolean(name='is_flagged'), server_default=text("0"))
     public_key = Column(Text, nullable=True)
     fingerprint = Column(String(64))
-    interaction_count = Column(Integer, server_default="0", nullable=False)
-    is_starred = Column(Boolean(name='is_starred'), server_default="0")
+    interaction_count = Column(Integer, server_default=text("0"), nullable=False)
+    is_starred = Column(Boolean(name='is_starred'), server_default=text("0"))
     last_updated = Column(DateTime)
 
     def __init__(self, uuid, journalist_designation, is_flagged, public_key,
@@ -76,7 +76,7 @@ class Message(Base):
     download_url = Column(String(255), nullable=False)
 
     # This is whether the submission has been downloaded in the local database.
-    is_downloaded = Column(Boolean(name='is_downloaded'), nullable=False, server_default="0")
+    is_downloaded = Column(Boolean(name='is_downloaded'), nullable=False, server_default=text("0"))
 
     # This tracks if the file had been successfully decrypted after download.
     is_decrypted = Column(
@@ -89,7 +89,7 @@ class Message(Base):
     )
 
     # This reflects read status stored on the server.
-    is_read = Column(Boolean(name='is_read'), nullable=False, server_default="0")
+    is_read = Column(Boolean(name='is_read'), nullable=False, server_default=text("0"))
 
     content = Column(
         Text,
@@ -118,7 +118,7 @@ class File(Base):
     download_url = Column(String(255), nullable=False)
 
     # This is whether the submission has been downloaded in the local database.
-    is_downloaded = Column(Boolean(name='is_downloaded'), nullable=False, server_default="0")
+    is_downloaded = Column(Boolean(name='is_downloaded'), nullable=False, server_default=text("0"))
 
     # This tracks if the file had been successfully decrypted after download.
     is_decrypted = Column(
@@ -129,7 +129,7 @@ class File(Base):
     )
 
     # This reflects read status stored on the server.
-    is_read = Column(Boolean(name='is_read'), nullable=False, server_default="0")
+    is_read = Column(Boolean(name='is_read'), nullable=False, server_default=text("0"))
 
     source_id = Column(Integer, ForeignKey('sources.id'))
     source = relationship("Source",
