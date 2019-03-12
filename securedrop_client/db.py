@@ -98,7 +98,7 @@ class Message(Base):
                         name='ck_message_compare_download_vs_content')
     )
 
-    source_id = Column(Integer, ForeignKey('sources.id'))
+    source_id = Column(Integer, ForeignKey('sources.id'), nullable=False)
     source = relationship("Source",
                           backref=backref("messages", order_by=id,
                                           cascade="delete"))
@@ -131,7 +131,7 @@ class File(Base):
     # This reflects read status stored on the server.
     is_read = Column(Boolean(name='is_read'), nullable=False, server_default=text("0"))
 
-    source_id = Column(Integer, ForeignKey('sources.id'))
+    source_id = Column(Integer, ForeignKey('sources.id'), nullable=False)
     source = relationship("Source",
                           backref=backref("files", order_by=id,
                                           cascade="delete"))
@@ -146,7 +146,7 @@ class Reply(Base):
 
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
-    source_id = Column(Integer, ForeignKey('sources.id'))
+    source_id = Column(Integer, ForeignKey('sources.id'), nullable=False)
     source = relationship("Source",
                           backref=backref("replies", order_by=id,
                                           cascade="delete"))
