@@ -95,7 +95,7 @@ class Message(Base):
         Text,
         # this check contraint ensures the state of the DB is what one would expect
         CheckConstraint('CASE WHEN is_downloaded = 0 THEN content IS NULL ELSE 1 END',
-                        name='messages_compare_download_vs_content')
+                        name='ck_message_compare_download_vs_content')
     )
 
     source_id = Column(Integer, ForeignKey('sources.id'))

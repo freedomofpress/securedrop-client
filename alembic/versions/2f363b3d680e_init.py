@@ -84,7 +84,7 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name=op.f('pk_messages')),
         sa.UniqueConstraint('uuid', name=op.f('uq_messages_uuid')),
         sa.CheckConstraint('CASE WHEN is_downloaded = 0 THEN content IS NULL ELSE 1 END',
-                           name='messages_compare_download_vs_content'),
+                           name=op.f('ck_message_compare_download_vs_content')),
         sa.CheckConstraint('CASE WHEN is_downloaded = 0 THEN is_decrypted IS NULL ELSE 1 END',
                            name='messages_compare_is_downloaded_vs_is_decrypted'),
         sa.CheckConstraint('CASE WHEN is_decrypted = 0 THEN content IS NULL ELSE 1 END',
