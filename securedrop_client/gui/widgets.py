@@ -174,6 +174,8 @@ class MainView(QWidget):
         if old_widget:
             old_widget.widget().setVisible(False)
 
+        logger.debug('new parent: {}'.format(widget.parentWidget()))
+
         self.view_layout.addWidget(widget)
         widget.setVisible(True)
 
@@ -485,7 +487,7 @@ class SpeechBubble(QWidget):
     and journalist.
     """
 
-    css = "padding: 10px; min-height:20px;border: 1px solid #999; border-radius: 18px;"
+    #css = "padding: 10px; min-height:20px;border: 1px solid #999; border-radius: 18px;"
 
     def __init__(self, message_id: str, text: str, update_signal) -> None:
         super().__init__()
@@ -507,6 +509,7 @@ class SpeechBubble(QWidget):
         Conditionally update this SpeechBubble's text if and only if the message_id of the emitted
         signal matches the message_id of this speech bubble.
         """
+        logger.debug('signal! _update_text weeeee')
         if message_id == self.message_id:
             self.message.setText(html.escape(text, quote=False))
 
@@ -533,14 +536,14 @@ class ConversationWidget(QWidget):
         if align != "left":
             # Float right...
             layout.addStretch(5)
-            label.setStyleSheet(label.css + 'border-bottom-right-radius: 0px;')
+            #label.setStyleSheet(label.css + 'border-bottom-right-radius: 0px;')
 
         layout.addWidget(label, 6)
 
         if align == "left":
             # Add space on right hand side...
             layout.addStretch(5)
-            label.setStyleSheet(label.css + 'border-bottom-left-radius: 0px;')
+            #label.setStyleSheet(label.css + 'border-bottom-left-radius: 0px;')
 
         layout.setContentsMargins(0, 0, 0, 0)
 
@@ -593,6 +596,7 @@ class ReplyWidget(ConversationWidget):
         Conditionally update this ReplyWidget's state if and only if the message_id of the emitted
         signal matches the message_id of this widget.
         """
+        logger.debug('signal! on_reply_success')
         if message_id == self.message_id:
             logger.debug('Message {} succeeded'.format(message_id))
 
@@ -602,6 +606,7 @@ class ReplyWidget(ConversationWidget):
         Conditionally update this ReplyWidget's state if and only if the message_id of the emitted
         signal matches the message_id of this widget.
         """
+        logger.debug('signal! on_reply_failure')
         if message_id == self.message_id:
             logger.debug('Message {} failed'.format(message_id))
             self.setStyleSheet("""
@@ -695,8 +700,8 @@ class ConversationView(QWidget):
         main_layout = QVBoxLayout()
         main_layout.addWidget(self.scroll)
         self.setLayout(main_layout)
-
         self.update_conversation(self.source.collection)
+        logger.debug('i got to end of conversation view init!')
 
     def clear_conversation(self):
         while self.conversation_layout.count():
@@ -719,15 +724,24 @@ class ConversationView(QWidget):
                                          "<Reply not yet downloaded>")
             else:
                 self.add_file(self.source, conversation_item)
+        logger.debug('got to end of update_conversation!')
 
     def add_item_content_or(self, adder, item, default):
         """
         Private helper function to add correct message to conversation widgets
         """
         if item.is_downloaded is False:
+            logger.debug('in is_downloaded=False path')
+            logger.debug('Trying to add item: {}'.format(item.uuid))
+            logger.debug('default = {}'.format(default))
             adder(item.uuid, default)
+            logger.debug('added item: {}'.format(item.uuid))
         else:
+            logger.debug('in is_downloaded=True path')
+            logger.debug('Trying to add item: {}'.format(item.uuid))
+            logger.debug('text = {}'.format(get_data(self.sdc_home, item.filename)))
             adder(item.uuid, get_data(self.sdc_home, item.filename))
+            logger.debug('added item: {}'.format(item.uuid))
 
     def add_file(self, source_db_object, submission_db_object):
         """
@@ -795,7 +809,9 @@ class SourceConversationWrapper(QWidget):
         self.source_profile = SourceProfileShortWidget(self.source, self.controller)
 
         self.layout.addWidget(self.source_profile)
+        logger.debug('bout to add dat conversation!')
         self.layout.addWidget(self.conversation)
+        logger.debug('added dat conversation!')
 
         self.controller.authentication_state.connect(self._show_or_hide_replybox)
         self._show_or_hide_replybox(is_authenticated)
@@ -806,6 +822,7 @@ class SourceConversationWrapper(QWidget):
         self.controller.send_reply(self.source.uuid, msg_uuid, message)
 
     def _show_or_hide_replybox(self, show: bool) -> None:
+        logger.debug('entering _show_or_hide_replybox')
         if show:
             new_widget = ReplyBoxWidget(self)
         else:
@@ -817,6 +834,7 @@ class SourceConversationWrapper(QWidget):
 
         self.reply_box = new_widget
         self.layout.addWidget(new_widget)
+        logger.debug('leaving _show_or_hide_replybox')
 
 
 class ReplyBoxWidget(QWidget):

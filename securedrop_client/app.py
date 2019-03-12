@@ -162,7 +162,7 @@ def start_app(args, qt_args) -> None:
 
     gui = Window(args.sdc_home)
     app.setWindowIcon(load_icon(gui.icon))
-    app.setStyleSheet(load_css('sdclient.css'))
+    #app.setStyleSheet(load_css('sdclient.css'))
 
     engine = make_engine(args.sdc_home)
     Session = sessionmaker(bind=engine)

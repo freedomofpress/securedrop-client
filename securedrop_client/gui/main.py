@@ -177,16 +177,21 @@ class Window(QMainWindow):
         journalists.
         """
 
+        logger.debug('entering show_conversation_for')
         conversation_container = self.conversations.get(source.uuid, None)
 
         if conversation_container is None:
+            logger.debug('no conversation is set')
             conversation_container = SourceConversationWrapper(source,
                                                                self.sdc_home,
                                                                self.controller,
                                                                is_authenticated)
             self.conversations[source.uuid] = conversation_container
 
+        logger.debug('setting conversation... show_conversation_for')
+        logger.debug(self.conversations[source.uuid])
         self.main_view.set_conversation(conversation_container)
+        logger.debug('leaving show_conversation_for')
 
     def set_status(self, message, duration=5000):
         """

@@ -69,7 +69,9 @@ class MessageSync(APISyncObject):
         super().__init__(api, home, is_qubes)
 
     def run(self, loop=True):
+        logger.debug('message sync begins...')
         while True:
+            logger.debug('starting sync again...')
             submissions = storage.find_new_messages(self.session)
             submissions.extend(storage.find_new_files(self.session))
 
@@ -92,6 +94,7 @@ class MessageSync(APISyncObject):
                                              db_submission,
                                              self.api.download_submission,
                                              callback)
+                        logger.debug('signal bout to be emitted here we go!!!')
                         self.message_downloaded.emit(db_submission.uuid,
                                                      get_data(self.home, db_submission.filename))
                 except Exception:
