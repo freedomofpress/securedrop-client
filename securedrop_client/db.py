@@ -1,7 +1,7 @@
 import os
 
 from sqlalchemy import Boolean, Column, create_engine, DateTime, ForeignKey, Integer, String, \
-    Text, MetaData, CheckConstraint, text
+    Text, MetaData, CheckConstraint, text, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 
@@ -68,10 +68,14 @@ class Source(Base):
 class Message(Base):
 
     __tablename__ = 'messages'
+    __table_args__ = (
+        UniqueConstraint('source_id', 'file_counter', name='uq_messages_source_id_file_counter'),
+    )
 
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
     filename = Column(String(255), nullable=False)
+    file_counter = Column(Integer, nullable=False)
     size = Column(Integer, nullable=False)
     download_url = Column(String(255), nullable=False)
 
@@ -103,6 +107,13 @@ class Message(Base):
                           backref=backref("messages", order_by=id,
                                           cascade="delete"))
 
+    def __init__(self, **kwargs) -> None:
+        if 'file_counter' in kwargs:
+            raise TypeError('Cannot manually set file_counter')
+        filename = kwargs['filename']
+        kwargs['file_counter'] = int(filename.split('-')[0])
+        super().__init__(**kwargs)
+
     def __repr__(self):
         return '<Message {}>'.format(self.filename)
 
@@ -110,10 +121,14 @@ class Message(Base):
 class File(Base):
 
     __tablename__ = 'files'
+    __table_args__ = (
+        UniqueConstraint('source_id', 'file_counter', name='uq_messages_source_id_file_counter'),
+    )
 
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
     filename = Column(String(255), nullable=False)
+    file_counter = Column(Integer, nullable=False)
     size = Column(Integer, nullable=False)
     download_url = Column(String(255), nullable=False)
 
@@ -136,6 +151,13 @@ class File(Base):
                           backref=backref("files", order_by=id,
                                           cascade="delete"))
 
+    def __init__(self, **kwargs) -> None:
+        if 'file_counter' in kwargs:
+            raise TypeError('Cannot manually set file_counter')
+        filename = kwargs['filename']
+        kwargs['file_counter'] = int(filename.split('-')[0])
+        super().__init__(**kwargs)
+
     def __repr__(self):
         return '<File {}>'.format(self.filename)
 
@@ -143,6 +165,9 @@ class File(Base):
 class Reply(Base):
 
     __tablename__ = 'replies'
+    __table_args__ = (
+        UniqueConstraint('source_id', 'file_counter', name='uq_messages_source_id_file_counter'),
+    )
 
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
@@ -156,6 +181,7 @@ class Reply(Base):
         "User", backref=backref('replies', order_by=id))
 
     filename = Column(String(255), nullable=False)
+    file_counter = Column(Integer, nullable=False)
     size = Column(Integer)
 
     # This is whether the reply has been downloaded in the local database.
@@ -177,6 +203,13 @@ class Reply(Base):
                         name='replies_compare_is_decrypted_vs_content'),
         nullable=True,
     )
+
+    def __init__(self, **kwargs) -> None:
+        if 'file_counter' in kwargs:
+            raise TypeError('Cannot manually set file_counter')
+        filename = kwargs['filename']
+        kwargs['file_counter'] = int(filename.split('-')[0])
+        super().__init__(**kwargs)
 
     def __repr__(self):
         return '<Reply {}>'.format(self.filename)
