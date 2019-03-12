@@ -14,14 +14,14 @@ def test_string_representation_of_source():
 
 def test_string_representation_of_message():
     source = factory.Source()
-    msg = Message(source=source, uuid="test", size=123, filename="test.docx",
+    msg = Message(source=source, uuid="test", size=123, filename="1-test.docx",
                   download_url='http://test/test')
     msg.__repr__()
 
 
 def test_string_representation_of_file():
     source = factory.Source()
-    file_ = File(source=source, uuid="test", size=123, filename="test.docx",
+    file_ = File(source=source, uuid="test", size=123, filename="1-test.docx",
                  download_url='http://test/test')
     file_.__repr__()
 
@@ -29,7 +29,7 @@ def test_string_representation_of_file():
 def test_string_representation_of_reply():
     user = User('hehe')
     source = factory.Source()
-    reply = Reply(source=source, journalist=user, filename="reply.gpg",
+    reply = Reply(source=source, journalist=user, filename="1-reply.gpg",
                   size=1234, uuid='test')
     reply.__repr__()
 

@@ -32,7 +32,7 @@ def test_MessageSync_init(mocker):
 def test_MessageSync_run_success(mocker, source):
     """Test when a message successfully downloads and decrypts."""
 
-    submission = Message(source=source['source'], uuid='uuid2', filename='filename',
+    submission = Message(source=source['source'], uuid='uuid2', filename='1-filename',
                          download_url='http://test.net')
 
     # mock the fetching of submissions
@@ -70,7 +70,7 @@ def test_MessageSync_run_success(mocker, source):
 def test_MessageSync_run_decryption_error(mocker, source):
     """Test when a message successfully downloads, but does not successfully decrypt."""
 
-    submission = File(source=source['source'], uuid='uuid1', filename='filename',
+    submission = File(source=source['source'], uuid='uuid1', filename='1-filename',
                       download_url='http://test.net')
 
     # mock the fetching of submissions
@@ -136,7 +136,7 @@ def test_MessageSync_exception(homedir, config, mocker):
 def test_MessageSync_run_failure(mocker):
     submission = mocker.MagicMock()
     submission.download_url = "http://foo"
-    submission.filename = "foo.gpg"
+    submission.filename = "1-foo.gpg"
 
     # mock the fetching of submissions
     mocker.patch('securedrop_client.storage.find_new_messages', return_value=[submission])
@@ -162,7 +162,7 @@ def test_ReplySync_run_success(mocker):
     reply = mocker.MagicMock()
     reply.uuid = 'mock id'
     reply.download_url = "http://foo"
-    reply.filename = "foo.gpg"
+    reply.filename = "1-foo.gpg"
 
     api = mocker.MagicMock()
     home = "/home/user/.sd"
@@ -219,7 +219,7 @@ def test_ReplySync_exception(mocker):
 def test_ReplySync_run_failure(mocker):
     reply = mocker.MagicMock()
     reply.download_url = "http://foo"
-    reply.filename = "foo.gpg"
+    reply.filename = "1-foo.gpg"
 
     # mock finding new replies
     mocker.patch('securedrop_client.storage.find_new_replies', return_value=[reply])

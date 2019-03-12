@@ -249,7 +249,7 @@ def test_conversation_pending_message(mocker):
     mock_source.journalistic_designation = 'Testy McTestface'
 
     msg_uuid = str(uuid4())
-    message = Message(source=mock_source, uuid=msg_uuid, size=123, filename="test.msg.gpg",
+    message = Message(source=mock_source, uuid=msg_uuid, size=123, filename="1-test.msg.gpg",
                       download_url='http://test/test', is_downloaded=False)
 
     mock_source.collection = [message]

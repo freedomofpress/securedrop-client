@@ -339,9 +339,9 @@ def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker):
     mock_source.submissions = []
 
     submission_files = (
-        "submission_1-msg.gpg",
-        "submission_2-msg.gpg",
-        "submission_3-doc.gpg",
+        "1-submission-msg.gpg",
+        "2-submission-msg.gpg",
+        "3-submission-doc.gpg",
     )
     for filename in submission_files:
         submission = mocker.MagicMock()
@@ -682,7 +682,7 @@ def test_FileWidget_init_left(mocker):
     """
     mock_controller = mocker.MagicMock()
     source = factory.Source()
-    message = db.Message(source=source, uuid='uuid', size=123, filename='mah-reply.gpg',
+    message = db.Message(source=source, uuid='uuid', size=123, filename='1-mah-reply.gpg',
                          download_url='http://mah-server/mah-reply-url', is_downloaded=True)
 
     fw = FileWidget(source, message, mock_controller, align='left')
@@ -700,7 +700,7 @@ def test_FileWidget_init_right(mocker):
     """
     mock_controller = mocker.MagicMock()
     source = factory.Source()
-    message = db.Message(source=source, uuid='uuid', size=123, filename='mah-reply.gpg',
+    message = db.Message(source=source, uuid='uuid', size=123, filename='1-mah-reply.gpg',
                          download_url='http://mah-server/mah-reply-url', is_downloaded=True)
 
     fw = FileWidget(source, message, mock_controller, align='right')
@@ -717,7 +717,7 @@ def test_FileWidget_mousePressEvent_download(mocker):
     """
     mock_controller = mocker.MagicMock()
     source = factory.Source()
-    file_ = db.File(source=source, uuid='uuid', size=123, filename='mah-reply.gpg',
+    file_ = db.File(source=source, uuid='uuid', size=123, filename='1-mah-reply.gpg',
                     download_url='http://mah-server/mah-reply-url', is_downloaded=False)
 
     fw = FileWidget(source, file_, mock_controller)
@@ -731,7 +731,7 @@ def test_FileWidget_mousePressEvent_open(mocker):
     """
     mock_controller = mocker.MagicMock()
     source = factory.Source()
-    file_ = db.File(source=source, uuid='uuid', size=123, filename='mah-reply.gpg',
+    file_ = db.File(source=source, uuid='uuid', size=123, filename='1-mah-reply.gpg',
                     download_url='http://mah-server/mah-reply-url', is_downloaded=True)
 
     fw = FileWidget(source, file_, mock_controller)
