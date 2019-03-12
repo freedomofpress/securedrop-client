@@ -61,7 +61,7 @@ class Source(Base):
         collection.extend(self.messages)
         collection.extend(self.files)
         collection.extend(self.replies)
-        collection.sort(key=lambda x: int(x.filename.split('-')[0]))
+        collection.sort(key=lambda x: x.file_counter)
         return collection
 
 
