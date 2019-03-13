@@ -79,7 +79,14 @@ class Message(Base):
     is_downloaded = Column(Boolean(name='is_downloaded'), nullable=False, server_default="0")
 
     # This tracks if the file had been successfully decrypted after download.
-    is_decrypted = Column(Boolean(name='is_decrypted'), nullable=True)
+    is_decrypted = Column(
+        Boolean(name='is_decrypted'),
+        CheckConstraint('CASE WHEN is_downloaded = 0 THEN is_decrypted IS NULL ELSE 1 END',
+                        name='messages_compare_is_downloaded_vs_is_decrypted'),
+        CheckConstraint('CASE WHEN is_decrypted = 0 THEN content IS NULL ELSE 1 END',
+                        name='messages_compare_is_decrypted_vs_content'),
+        nullable=True,
+    )
 
     # This reflects read status stored on the server.
     is_read = Column(Boolean(name='is_read'), nullable=False, server_default="0")
@@ -88,7 +95,7 @@ class Message(Base):
         Text,
         # this check contraint ensures the state of the DB is what one would expect
         CheckConstraint('CASE WHEN is_downloaded = 0 THEN content IS NULL ELSE 1 END',
-                        name='compare_download_vs_content')
+                        name='messages_compare_download_vs_content')
     )
 
     source_id = Column(Integer, ForeignKey('sources.id'))
@@ -114,7 +121,12 @@ class File(Base):
     is_downloaded = Column(Boolean(name='is_downloaded'), nullable=False, server_default="0")
 
     # This tracks if the file had been successfully decrypted after download.
-    is_decrypted = Column(Boolean(name='is_decrypted'), nullable=True)
+    is_decrypted = Column(
+        Boolean(name='is_decrypted'),
+        CheckConstraint('CASE WHEN is_downloaded = 0 THEN is_decrypted IS NULL ELSE 1 END',
+                        name='files_compare_is_downloaded_vs_is_decrypted'),
+        nullable=True,
+    )
 
     # This reflects read status stored on the server.
     is_read = Column(Boolean(name='is_read'), nullable=False, server_default="0")
@@ -150,8 +162,21 @@ class Reply(Base):
     is_downloaded = Column(Boolean(name='is_downloaded'),
                            default=False)
 
+    content = Column(
+        Text,
+        CheckConstraint('CASE WHEN is_downloaded = 0 THEN content IS NULL ELSE 1 END',
+                        name='replies_compare_download_vs_content')
+    )
+
     # This tracks if the file had been successfully decrypted after download.
-    is_decrypted = Column(Boolean(name='is_decrypted'), nullable=True)
+    is_decrypted = Column(
+        Boolean(name='is_decrypted'),
+        CheckConstraint('CASE WHEN is_downloaded = 0 THEN is_decrypted IS NULL ELSE 1 END',
+                        name='replies_compare_is_downloaded_vs_is_decrypted'),
+        CheckConstraint('CASE WHEN is_decrypted = 0 THEN content IS NULL ELSE 1 END',
+                        name='replies_compare_is_decrypted_vs_content'),
+        nullable=True,
+    )
 
     def __repr__(self):
         return '<Reply {}>'.format(self.filename)

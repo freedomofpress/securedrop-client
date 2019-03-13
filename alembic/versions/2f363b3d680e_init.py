@@ -58,6 +58,8 @@ def upgrade():
                                 name=op.f('fk_files_source_id_sources')),
         sa.PrimaryKeyConstraint('id', name=op.f('pk_files')),
         sa.UniqueConstraint('uuid', name=op.f('uq_files_uuid')),
+        sa.CheckConstraint('CASE WHEN is_downloaded = 0 THEN is_decrypted IS NULL ELSE 1 END',
+                           name='files_compare_is_downloaded_vs_is_decrypted'),
     )
 
     op.create_table(
@@ -78,7 +80,11 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name=op.f('pk_messages')),
         sa.UniqueConstraint('uuid', name=op.f('uq_messages_uuid')),
         sa.CheckConstraint('CASE WHEN is_downloaded = 0 THEN content IS NULL ELSE 1 END',
-                           name='compare_download_vs_content'),
+                           name='messages_compare_download_vs_content'),
+        sa.CheckConstraint('CASE WHEN is_downloaded = 0 THEN is_decrypted IS NULL ELSE 1 END',
+                           name='messages_compare_is_downloaded_vs_is_decrypted'),
+        sa.CheckConstraint('CASE WHEN is_decrypted = 0 THEN content IS NULL ELSE 1 END',
+                           name='messages_compare_is_decrypted_vs_content'),
     )
 
     op.create_table(
@@ -89,6 +95,7 @@ def upgrade():
         sa.Column('journalist_id', sa.Integer(), nullable=True),
         sa.Column('filename', sa.String(length=255), nullable=False),
         sa.Column('size', sa.Integer(), nullable=True),
+        sa.Column('content', sa.Text(), nullable=True),
         sa.Column('is_downloaded', sa.Boolean(name='is_downloaded'), nullable=True),
         sa.Column('is_decrypted', sa.Boolean(name='is_decrypted'), nullable=True),
         sa.ForeignKeyConstraint(['journalist_id'], ['users.id'],
@@ -96,7 +103,13 @@ def upgrade():
         sa.ForeignKeyConstraint(['source_id'], ['sources.id'],
                                 name=op.f('fk_replies_source_id_sources')),
         sa.PrimaryKeyConstraint('id', name=op.f('pk_replies')),
-        sa.UniqueConstraint('uuid', name=op.f('uq_replies_uuid'))
+        sa.UniqueConstraint('uuid', name=op.f('uq_replies_uuid')),
+        sa.CheckConstraint('CASE WHEN is_downloaded = 0 THEN content IS NULL ELSE 1 END',
+                           name='replies_compare_download_vs_content'),
+        sa.CheckConstraint('CASE WHEN is_downloaded = 0 THEN is_decrypted IS NULL ELSE 1 END',
+                           name='replies_compare_is_downloaded_vs_is_decrypted'),
+        sa.CheckConstraint('CASE WHEN is_decrypted = 0 THEN content IS NULL ELSE 1 END',
+                           name='replies_compare_is_decrypted_vs_content'),
     )
 
 
