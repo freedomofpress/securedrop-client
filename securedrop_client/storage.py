@@ -96,8 +96,8 @@ def update_local_storage(session, remote_sources, remote_submissions,
     local_messages = get_local_messages(session)
     local_replies = get_local_replies(session)
 
-    remote_messages = [x for x in remote_submissions if x.filename.endswith('.msg.gpg')]
-    remote_files = [x for x in remote_submissions if not x.filename.endswith('.msg.gpg')]
+    remote_messages = [x for x in remote_submissions if x.filename.endswith('msg.gpg')]
+    remote_files = [x for x in remote_submissions if not x.filename.endswith('msg.gpg')]
 
     update_sources(remote_sources, local_sources, session, data_dir)
     update_files(remote_files, local_files, session, data_dir)
@@ -322,6 +322,16 @@ def mark_message_as_downloaded(uuid, session):
     message_db_object = session.query(Message).filter_by(uuid=uuid).one()
     message_db_object.is_downloaded = True
     session.add(message_db_object)
+    session.commit()
+
+
+def set_object_decryption_status(obj, session, is_successful: bool):
+    """Mark object as decrypted or not in the database."""
+
+    model = type(obj)
+    db_object = session.query(model).filter_by(uuid=obj.uuid).one_or_none()
+    db_object.is_decrypted = is_successful
+    session.add(db_object)
     session.commit()
 
 

@@ -30,16 +30,18 @@ def test_MessageSync_init(mocker):
 
 
 def test_MessageSync_run_success(mocker, source):
-    submission1 = File(source=source['source'], uuid='uuid1', filename='filename',
-                       download_url='http://test.net')
-    submission2 = Message(source=source['source'], uuid='uuid2', filename='filename',
-                          download_url='http://test.net')
+    """Test when a message successfully downloads and decrypts."""
+
+    submission = Message(source=source['source'], uuid='uuid2', filename='filename',
+                         download_url='http://test.net')
 
     # mock the fetching of submissions
-    mocker.patch('securedrop_client.storage.find_new_messages', return_value=[submission1])
-    mocker.patch('securedrop_client.storage.find_new_files', return_value=[submission2])
-    mocker.patch('securedrop_client.message_sync.storage.mark_file_as_downloaded')
-    mocker.patch('securedrop_client.message_sync.storage.mark_message_as_downloaded')
+    mocker.patch('securedrop_client.storage.find_new_messages', return_value=[submission])
+    mock_download_status = mocker.patch(
+        'securedrop_client.message_sync.storage.mark_message_as_downloaded')
+    mock_decryption_status = mocker.patch(
+        'securedrop_client.message_sync.storage.set_object_decryption_status')
+
     # don't create the signal
     mocker.patch('securedrop_client.message_sync.pyqtSignal')
     # mock the GpgHelper creation since we don't have directories/keys setup
@@ -60,6 +62,50 @@ def test_MessageSync_run_success(mocker, source):
     # check that it runs without raising exceptions
     ms.run(False)
 
+    assert mock_emit.called
+    assert mock_decryption_status.called_with(submission.uuid, api.session, type(submission), False)
+    assert mock_download_status.called_with(submission.uuid, api.mock_session)
+
+
+def test_MessageSync_run_decryption_error(mocker, source):
+    """Test when a message successfully downloads, but does not successfully decrypt."""
+
+    submission = File(source=source['source'], uuid='uuid1', filename='filename',
+                      download_url='http://test.net')
+
+    # mock the fetching of submissions
+    mocker.patch('securedrop_client.storage.find_new_messages', return_value=[submission])
+    mock_download_status = mocker.patch(
+        'securedrop_client.message_sync.storage.mark_message_as_downloaded')
+    mock_decryption_status = mocker.patch(
+        'securedrop_client.message_sync.storage.set_object_decryption_status')
+
+    # don't create the signal
+    mocker.patch('securedrop_client.message_sync.pyqtSignal')
+    # mock the GpgHelper creation since we don't have directories/keys setup
+    mocker.patch('securedrop_client.message_sync.GpgHelper')
+
+    api = mocker.MagicMock()
+    api.session = mocker.MagicMock()
+    home = "/home/user/.sd"
+    is_qubes = True
+
+    ms = MessageSync(api, home, is_qubes)
+    mocker.patch.object(ms.gpg, 'decrypt_submission_or_reply', side_effect=CryptoError)
+
+    ms.api.download_submission = mocker.MagicMock(return_value=(1234, "/home/user/downloads/foo"))
+
+    mock_message_downloaded = mocker.Mock()
+    mock_emit = mocker.Mock()
+    mock_message_downloaded.emit = mock_emit
+    mocker.patch.object(ms, 'message_downloaded', new=mock_message_downloaded)
+
+    # check that it runs without raising exceptions
+    ms.run(False)
+
+    assert mock_download_status.called_with(submission.uuid, api.mock_session)
+    assert mock_decryption_status.called_with(submission.uuid, api.session,
+                                              type(submission), False)
     assert mock_emit.called
 
 
@@ -128,6 +174,7 @@ def test_ReplySync_run_success(mocker):
     mocker.patch('securedrop_client.message_sync.pyqtSignal')
     # mock the handling of the replies
     mocker.patch('securedrop_client.message_sync.storage.mark_reply_as_downloaded')
+    mocker.patch('securedrop_client.message_sync.storage.set_object_decryption_status')
     mocker.patch('securedrop_client.message_sync.GpgHelper')
 
     api = mocker.MagicMock()

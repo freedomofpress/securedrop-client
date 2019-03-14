@@ -988,6 +988,8 @@ def test_Client_on_file_downloaded_success(homedir, config, mocker):
     mock_gpg.call_count == 1
     mock_storage.mark_file_as_downloaded.assert_called_once_with(
         test_object_uuid, mock_session)
+    mock_storage.set_object_decryption_status.assert_called_once_with(
+        submission_db_object, mock_session, True)
 
 
 def test_Client_on_file_downloaded_api_failure(homedir, config, mocker):
@@ -1030,12 +1032,15 @@ def test_Client_on_file_downloaded_decrypt_failure(homedir, config, mocker):
     submission_db_object.filename = 'filename'
     mock_gpg = mocker.patch.object(cl.gpg, 'decrypt_submission_or_reply',
                                    side_effect=CryptoError())
+    mock_storage = mocker.patch('securedrop_client.logic.storage')
     mocker.patch('shutil.move')
 
     cl.on_file_downloaded(result_data, current_object=submission_db_object)
     mock_gpg.call_count == 1
     cl.set_status.assert_called_once_with(
-        "Failed to download and decrypt file, please try again.")
+        "Failed to decrypt file, please try again or talk to your administrator.")
+    mock_storage.set_object_decryption_status.assert_called_once_with(
+        submission_db_object, mock_session, False)
 
 
 def test_Client_on_file_download_user_not_signed_in(homedir, config, mocker):

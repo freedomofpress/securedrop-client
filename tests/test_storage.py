@@ -10,7 +10,7 @@ from securedrop_client.storage import get_local_sources, get_local_messages, get
     get_remote_data, update_local_storage, update_sources, update_files, update_replies, \
     find_or_create_user, find_new_messages, find_new_replies, mark_file_as_downloaded, \
     mark_reply_as_downloaded, delete_single_submission_or_reply_on_disk, get_data, rename_file, \
-    get_local_files, find_new_files, mark_message_as_downloaded
+    get_local_files, find_new_files, mark_message_as_downloaded, set_object_decryption_status
 from securedrop_client import db
 from sdclientapi import Source, Submission, Reply
 
@@ -662,6 +662,36 @@ def test_find_new_replies(mocker):
                         .all.return_value = mock_replies
     replies = find_new_replies(mock_session)
     assert replies[0].is_downloaded is False
+
+
+def test_set_object_decryption_status_null_to_false(mocker):
+    mock_session = mocker.MagicMock()
+    mock_file = mocker.MagicMock()
+    mock_file.is_decrypted is None
+    mock_session.query().filter_by().one_or_none.return_value = mock_file
+
+    decryption_status = False
+    set_object_decryption_status(mock_file, mock_session, decryption_status)
+
+    assert mock_file.is_decrypted is False
+
+    mock_session.add.assert_called_once_with(mock_file)
+    mock_session.commit.assert_called_once_with()
+
+
+def test_set_object_decryption_status_false_to_true(mocker):
+    mock_session = mocker.MagicMock()
+    mock_file = mocker.MagicMock()
+    mock_file.is_decrypted is False
+    mock_session.query().filter_by().one_or_none.return_value = mock_file
+
+    decryption_status = True
+    set_object_decryption_status(mock_file, mock_session, decryption_status)
+
+    assert mock_file.is_decrypted is True
+
+    mock_session.add.assert_called_once_with(mock_file)
+    mock_session.commit.assert_called_once_with()
 
 
 def test_mark_file_as_downloaded(mocker):

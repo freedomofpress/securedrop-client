@@ -612,7 +612,7 @@ class Client(QObject):
         file_uuid = current_object.uuid
         server_filename = current_object.filename
         if isinstance(result, tuple):  # The file properly downloaded.
-            sha256sum, filename = result
+            _, filename = result
             # The filename contains the location where the file has been
             # stored. On non-Qubes OSes, this will be the data directory.
             # On Qubes OS, this will a ~/QubesIncoming directory. In case
@@ -620,22 +620,21 @@ class Client(QObject):
             # and name it the same as the server (e.g. spotless-tater-msg.gpg).
             filepath_in_datadir = os.path.join(self.data_dir, server_filename)
             shutil.move(filename, filepath_in_datadir)
+            storage.mark_file_as_downloaded(file_uuid, self.session)
 
             try:
                 # Attempt to decrypt the file.
                 self.gpg.decrypt_submission_or_reply(
                     filepath_in_datadir, server_filename, is_doc=True)
+                storage.set_object_decryption_status(current_object, self.session, True)
             except CryptoError as e:
                 logger.debug('Failed to decrypt file {}: {}'.format(server_filename, e))
-
-                self.set_status("Failed to download and decrypt file, "
-                                "please try again.")
+                storage.set_object_decryption_status(current_object, self.session, False)
+                self.set_status("Failed to decrypt file, "
+                                "please try again or talk to your administrator.")
                 # TODO: We should save the downloaded content, and just
                 # try to decrypt again if there was a failure.
                 return  # If we failed we should stop here.
-
-            # Now that download and decrypt are done, mark the file as such.
-            storage.mark_file_as_downloaded(file_uuid, self.session)
 
             self.set_status('Finished downloading {}'.format(current_object.filename))
         else:  # The file did not download properly.
