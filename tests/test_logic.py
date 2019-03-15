@@ -951,7 +951,7 @@ def test_Client_on_file_download_Submission(homedir, config, mocker):
     mock_session = mocker.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, homedir)
     source = factory.Source()
-    file_ = db.File(source=source, uuid='uuid', size=1234, filename='myfile.doc.gpg',
+    file_ = db.File(source=source, uuid='uuid', size=1234, filename='1-myfile.doc.gpg',
                     download_url='http://myserver/myfile', is_downloaded=False)
     cl.call_api = mocker.MagicMock()
     cl.api = mocker.MagicMock()
@@ -974,7 +974,7 @@ def test_Client_on_file_downloaded_success(homedir, config, mocker):
     cl = Client('http://localhost', mock_gui, mock_session, homedir)
     cl.update_sources = mocker.MagicMock()
     cl.api_runner = mocker.MagicMock()
-    test_filename = "my-file-location-msg.gpg"
+    test_filename = "1-my-file-location-msg.gpg"
     test_object_uuid = 'uuid-of-downloaded-object'
     cl.call_reset = mocker.MagicMock()
     result_data = ('this-is-a-sha256-sum', test_filename)
@@ -1001,7 +1001,7 @@ def test_Client_on_file_downloaded_api_failure(homedir, config, mocker):
     cl = Client('http://localhost', mock_gui, mock_session, homedir)
     cl.update_sources = mocker.MagicMock()
     cl.api_runner = mocker.MagicMock()
-    test_filename = "my-file-location-msg.gpg"
+    test_filename = "1-my-file-location-msg.gpg"
     cl.api_runner.result = ("", test_filename)
     cl.call_reset = mocker.MagicMock()
     cl.set_status = mocker.MagicMock()
@@ -1023,7 +1023,7 @@ def test_Client_on_file_downloaded_decrypt_failure(homedir, config, mocker):
     cl = Client('http://localhost', mock_gui, mock_session, homedir)
     cl.update_sources = mocker.MagicMock()
     cl.api_runner = mocker.MagicMock()
-    test_filename = "my-file-location-msg.gpg"
+    test_filename = "1-my-file-location-msg.gpg"
     cl.api_runner.result = ("", test_filename)
     cl.set_status = mocker.MagicMock()
     result_data = ('this-is-a-sha256-sum', test_filename)
@@ -1053,7 +1053,7 @@ def test_Client_on_file_download_user_not_signed_in(homedir, config, mocker):
     mock_session = mocker.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, homedir)
     source = factory.Source()
-    file_ = db.File(source=source, uuid='uuid', size=1234, filename='myfile.doc.gpg',
+    file_ = db.File(source=source, uuid='uuid', size=1234, filename='1-myfile.doc.gpg',
                     download_url='http://myserver/myfile', is_downloaded=False)
     cl.on_action_requiring_login = mocker.MagicMock()
     cl.api = None
@@ -1074,7 +1074,7 @@ def test_Client_on_download_timeout(homedir, config, mocker):
     cl.update_sources = mocker.MagicMock()
     cl.api_runner = mocker.MagicMock()
     current_object = mocker.MagicMock()
-    test_filename = "my-file-location-msg.gpg"
+    test_filename = "1-my-file-location-msg.gpg"
     cl.api_runner.result = ("", test_filename)
     cl.call_reset = mocker.MagicMock()
     cl.set_status = mocker.MagicMock()
@@ -1097,7 +1097,7 @@ def test_Client_on_file_download_Reply(homedir, config, mocker):
     reply = db.Reply(uuid='reply-uuid',
                      journalist=journalist,
                      source=source,
-                     filename='my-reply.gpg',
+                     filename='1-my-reply.gpg',
                      size=123)  # Not a sdclientapi.Submission
     cl.call_api = mocker.MagicMock()
     cl.api = mocker.MagicMock()
@@ -1123,7 +1123,7 @@ def test_Client_on_file_open(homedir, config, mocker):
     cl = Client('http://localhost', mock_gui, mock_session, homedir)
     cl.proxy = True
     mock_submission = mocker.MagicMock()
-    mock_submission.filename = 'test.pdf'
+    mock_submission.filename = '1-test.pdf'
     mock_subprocess = mocker.MagicMock()
     mock_process = mocker.MagicMock(return_value=mock_subprocess)
     mocker.patch('securedrop_client.logic.QProcess', mock_process)

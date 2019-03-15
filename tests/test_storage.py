@@ -39,7 +39,7 @@ def make_remote_submission(source_uuid):
     generate a valid URL.
     """
     source_url = '/api/v1/sources/{}'.format(source_uuid)
-    return Submission(download_url='test', filename='submission.filename',
+    return Submission(download_url='test', filename='1-submission.filename',
                       is_read=False, size=123, source_url=source_url,
                       submission_url='test', uuid=str(uuid.uuid4()))
 
@@ -51,7 +51,7 @@ def make_remote_reply(source_uuid, journalist_uuid='testymctestface'):
     generate a valid URL.
     """
     source_url = '/api/v1/sources/{}'.format(source_uuid)
-    return Reply(filename='reply.filename', journalist_uuid=journalist_uuid,
+    return Reply(filename='1-reply.filename', journalist_uuid=journalist_uuid,
                  journalist_username='test',
                  is_deleted_by_source=False, reply_url='test', size=1234,
                  source_url=source_url, uuid=str(uuid.uuid4()))
@@ -130,8 +130,8 @@ def test_update_local_storage(homedir, mocker):
     the state of the local database are called with the necessary data.
     """
     remote_source = make_remote_source()
-    remote_message = mocker.Mock(filename='foo.msg.gpg')
-    remote_file = mocker.Mock(filename='foo.gpg')
+    remote_message = mocker.Mock(filename='1-foo.msg.gpg')
+    remote_file = mocker.Mock(filename='2-foo.gpg')
     remote_submissions = [remote_message, remote_file]
     remote_reply = mocker.MagicMock()
     # Some local source, submission and reply objects from the local database.

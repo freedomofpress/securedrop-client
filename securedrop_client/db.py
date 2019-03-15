@@ -1,7 +1,7 @@
 import os
 
 from sqlalchemy import Boolean, Column, create_engine, DateTime, ForeignKey, Integer, String, \
-    Text, MetaData, CheckConstraint
+    Text, MetaData, CheckConstraint, text, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 
@@ -31,12 +31,12 @@ class Source(Base):
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
     journalist_designation = Column(String(255), nullable=False)
-    document_count = Column(Integer, server_default="0", nullable=False)
-    is_flagged = Column(Boolean(name='is_flagged'), server_default="0")
+    document_count = Column(Integer, server_default=text("0"), nullable=False)
+    is_flagged = Column(Boolean(name='is_flagged'), server_default=text("0"))
     public_key = Column(Text, nullable=True)
     fingerprint = Column(String(64))
-    interaction_count = Column(Integer, server_default="0", nullable=False)
-    is_starred = Column(Boolean(name='is_starred'), server_default="0")
+    interaction_count = Column(Integer, server_default=text("0"), nullable=False)
+    is_starred = Column(Boolean(name='is_starred'), server_default=text("0"))
     last_updated = Column(DateTime)
 
     def __init__(self, uuid, journalist_designation, is_flagged, public_key,
@@ -61,22 +61,26 @@ class Source(Base):
         collection.extend(self.messages)
         collection.extend(self.files)
         collection.extend(self.replies)
-        collection.sort(key=lambda x: int(x.filename.split('-')[0]))
+        collection.sort(key=lambda x: x.file_counter)
         return collection
 
 
 class Message(Base):
 
     __tablename__ = 'messages'
+    __table_args__ = (
+        UniqueConstraint('source_id', 'file_counter', name='uq_messages_source_id_file_counter'),
+    )
 
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
     filename = Column(String(255), nullable=False)
+    file_counter = Column(Integer, nullable=False)
     size = Column(Integer, nullable=False)
     download_url = Column(String(255), nullable=False)
 
     # This is whether the submission has been downloaded in the local database.
-    is_downloaded = Column(Boolean(name='is_downloaded'), nullable=False, server_default="0")
+    is_downloaded = Column(Boolean(name='is_downloaded'), nullable=False, server_default=text("0"))
 
     # This tracks if the file had been successfully decrypted after download.
     is_decrypted = Column(
@@ -89,19 +93,26 @@ class Message(Base):
     )
 
     # This reflects read status stored on the server.
-    is_read = Column(Boolean(name='is_read'), nullable=False, server_default="0")
+    is_read = Column(Boolean(name='is_read'), nullable=False, server_default=text("0"))
 
     content = Column(
         Text,
         # this check contraint ensures the state of the DB is what one would expect
         CheckConstraint('CASE WHEN is_downloaded = 0 THEN content IS NULL ELSE 1 END',
-                        name='messages_compare_download_vs_content')
+                        name='ck_message_compare_download_vs_content')
     )
 
-    source_id = Column(Integer, ForeignKey('sources.id'))
+    source_id = Column(Integer, ForeignKey('sources.id'), nullable=False)
     source = relationship("Source",
                           backref=backref("messages", order_by=id,
                                           cascade="delete"))
+
+    def __init__(self, **kwargs) -> None:
+        if 'file_counter' in kwargs:
+            raise TypeError('Cannot manually set file_counter')
+        filename = kwargs['filename']
+        kwargs['file_counter'] = int(filename.split('-')[0])
+        super().__init__(**kwargs)
 
     def __repr__(self):
         return '<Message {}>'.format(self.filename)
@@ -110,15 +121,19 @@ class Message(Base):
 class File(Base):
 
     __tablename__ = 'files'
+    __table_args__ = (
+        UniqueConstraint('source_id', 'file_counter', name='uq_messages_source_id_file_counter'),
+    )
 
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
     filename = Column(String(255), nullable=False)
+    file_counter = Column(Integer, nullable=False)
     size = Column(Integer, nullable=False)
     download_url = Column(String(255), nullable=False)
 
     # This is whether the submission has been downloaded in the local database.
-    is_downloaded = Column(Boolean(name='is_downloaded'), nullable=False, server_default="0")
+    is_downloaded = Column(Boolean(name='is_downloaded'), nullable=False, server_default=text("0"))
 
     # This tracks if the file had been successfully decrypted after download.
     is_decrypted = Column(
@@ -129,12 +144,19 @@ class File(Base):
     )
 
     # This reflects read status stored on the server.
-    is_read = Column(Boolean(name='is_read'), nullable=False, server_default="0")
+    is_read = Column(Boolean(name='is_read'), nullable=False, server_default=text("0"))
 
-    source_id = Column(Integer, ForeignKey('sources.id'))
+    source_id = Column(Integer, ForeignKey('sources.id'), nullable=False)
     source = relationship("Source",
                           backref=backref("files", order_by=id,
                                           cascade="delete"))
+
+    def __init__(self, **kwargs) -> None:
+        if 'file_counter' in kwargs:
+            raise TypeError('Cannot manually set file_counter')
+        filename = kwargs['filename']
+        kwargs['file_counter'] = int(filename.split('-')[0])
+        super().__init__(**kwargs)
 
     def __repr__(self):
         return '<File {}>'.format(self.filename)
@@ -143,10 +165,13 @@ class File(Base):
 class Reply(Base):
 
     __tablename__ = 'replies'
+    __table_args__ = (
+        UniqueConstraint('source_id', 'file_counter', name='uq_messages_source_id_file_counter'),
+    )
 
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
-    source_id = Column(Integer, ForeignKey('sources.id'))
+    source_id = Column(Integer, ForeignKey('sources.id'), nullable=False)
     source = relationship("Source",
                           backref=backref("replies", order_by=id,
                                           cascade="delete"))
@@ -156,6 +181,7 @@ class Reply(Base):
         "User", backref=backref('replies', order_by=id))
 
     filename = Column(String(255), nullable=False)
+    file_counter = Column(Integer, nullable=False)
     size = Column(Integer)
 
     # This is whether the reply has been downloaded in the local database.
@@ -177,6 +203,13 @@ class Reply(Base):
                         name='replies_compare_is_decrypted_vs_content'),
         nullable=True,
     )
+
+    def __init__(self, **kwargs) -> None:
+        if 'file_counter' in kwargs:
+            raise TypeError('Cannot manually set file_counter')
+        filename = kwargs['filename']
+        kwargs['file_counter'] = int(filename.split('-')[0])
+        super().__init__(**kwargs)
 
     def __repr__(self):
         return '<Reply {}>'.format(self.filename)
