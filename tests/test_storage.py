@@ -9,8 +9,9 @@ from dateutil.parser import parse
 from securedrop_client.storage import get_local_sources, get_local_messages, get_local_replies, \
     get_remote_data, update_local_storage, update_sources, update_files, update_replies, \
     find_or_create_user, find_new_messages, find_new_replies, mark_file_as_downloaded, \
-    mark_reply_as_downloaded, delete_single_submission_or_reply_on_disk, get_data, rename_file, \
-    get_local_files, find_new_files, mark_message_as_downloaded, set_object_decryption_status
+    mark_reply_as_downloaded, delete_single_submission_or_reply_on_disk, rename_file, \
+    get_local_files, find_new_files, mark_message_as_downloaded, \
+    set_object_decryption_status_with_content
 from securedrop_client import db
 from sdclientapi import Source, Submission, Reply
 
@@ -664,14 +665,14 @@ def test_find_new_replies(mocker):
     assert replies[0].is_downloaded is False
 
 
-def test_set_object_decryption_status_null_to_false(mocker):
+def test_set_object_decryption_status_with_content_null_to_false(mocker, source):
     mock_session = mocker.MagicMock()
     mock_file = mocker.MagicMock()
     mock_file.is_decrypted is None
     mock_session.query().filter_by().one_or_none.return_value = mock_file
 
     decryption_status = False
-    set_object_decryption_status(mock_file, mock_session, decryption_status)
+    set_object_decryption_status_with_content(mock_file, mock_session, decryption_status)
 
     assert mock_file.is_decrypted is False
 
@@ -679,19 +680,42 @@ def test_set_object_decryption_status_null_to_false(mocker):
     mock_session.commit.assert_called_once_with()
 
 
-def test_set_object_decryption_status_false_to_true(mocker):
+def test_set_object_decryption_status_with_content_false_to_true(mocker):
     mock_session = mocker.MagicMock()
     mock_file = mocker.MagicMock()
     mock_file.is_decrypted is False
     mock_session.query().filter_by().one_or_none.return_value = mock_file
 
     decryption_status = True
-    set_object_decryption_status(mock_file, mock_session, decryption_status)
+    set_object_decryption_status_with_content(mock_file, mock_session, decryption_status)
 
     assert mock_file.is_decrypted is True
 
     mock_session.add.assert_called_once_with(mock_file)
     mock_session.commit.assert_called_once_with()
+
+
+def test_set_object_decryption_status_with_content_with_content(session, source):
+    '''
+    It should be possible to set the decryption status of an object in the database to `True`.
+    Additionally, if `content` is passed in, the `content` column of the DB should take that
+    value. This is to ensure that we have a way to decrypt something without violating the
+    condition: if is_decrypted then content is not none.
+    '''
+    message = factory.Message(source=source['source'],
+                              is_downloaded=True,
+                              is_decrypted=None,
+                              content=None)
+    session.add(message)
+    session.commit()
+
+    content = 'test'
+    set_object_decryption_status_with_content(message, session, True, content)
+
+    # requery to ensure new object
+    message = session.query(db.Message).get(message.id)
+    assert message.is_decrypted is True
+    assert message.content == content
 
 
 def test_mark_file_as_downloaded(mocker):
@@ -748,10 +772,12 @@ def test_rename_file_does_not_throw(homedir):
     """
     If file cannot be found then OSError is caught and logged.
     """
-    rename_file(os.path.join(homedir, 'data'), 'nonexistent.txt', 'bar.txt')
-    # quick coherence check
-    out = get_data(homedir, 'nonexistent.txt')
-    assert out == '<Not Found>'
+    original_file = 'foo.txt'
+    new_file = 'bar.txt'
+    rename_file(os.path.join(homedir, 'data'), original_file, new_file)
+
+    assert not os.path.exists(os.path.join(homedir, 'data', original_file))
+    assert not os.path.exists(os.path.join(homedir, 'data', new_file))
 
 
 def test_rename_file_success(homedir):
@@ -763,27 +789,13 @@ def test_rename_file_success(homedir):
     orig_filename = 'foo.txt'
     new_filename = 'bar.txt'
     filename, _ = os.path.splitext(orig_filename)
+    trunc_new_filename, _ = os.path.splitext(new_filename)
     contents = 'bar'
     with open(os.path.join(data_dir, filename), 'w') as f:
         f.write(contents)
 
     rename_file(data_dir, orig_filename, new_filename)
 
-    out = get_data(homedir, new_filename)
+    with open(os.path.join(homedir, 'data', trunc_new_filename)) as f:
+        out = f.read()
     assert out == contents
-
-
-def test_get_data_success(homedir):
-    orig_filename = 'foo.txt'
-    filename, _ = os.path.splitext(orig_filename)
-    contents = 'bar'
-    with open(os.path.join(homedir, 'data', filename), 'w') as f:
-        f.write(contents)
-    out = get_data(homedir, orig_filename)
-    assert out == contents
-
-
-def test_get_data_missing_data(homedir):
-    orig_filename = 'foo.txt'
-    out = get_data(homedir, orig_filename)
-    assert out == '<Not Found>'
