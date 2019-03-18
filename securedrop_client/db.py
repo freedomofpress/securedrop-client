@@ -39,17 +39,6 @@ class Source(Base):
     is_starred = Column(Boolean(name='is_starred'), server_default=text("0"))
     last_updated = Column(DateTime)
 
-    def __init__(self, uuid, journalist_designation, is_flagged, public_key,
-                 interaction_count, is_starred, last_updated, document_count):
-        self.uuid = uuid
-        self.journalist_designation = journalist_designation
-        self.is_flagged = is_flagged
-        self.public_key = public_key
-        self.document_count = document_count
-        self.interaction_count = interaction_count
-        self.is_starred = is_starred
-        self.last_updated = last_updated
-
     def __repr__(self):
         return '<Source {}>'.format(self.journalist_designation)
 
