@@ -9,7 +9,7 @@ environment. The second command is to enable the virtual environment.
 
 ::
 
-    pipenv install
+    pipenv sync --dev
     pipenv shell
 
 
