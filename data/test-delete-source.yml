@@ -4,97 +4,128 @@ interactions:
     headers:
       Accept: [application/json]
       Accept-Encoding: ['gzip, deflate']
-      Authorization: [Token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU0MDI3NjkxOCwiaWF0IjoxNTQwMjQ4MTE4fQ.eyJpZCI6MX0.fygpQy3CxB1ulUWLFz2UdrtcBKHz-fk5gyRxbcSY720]
+      Authorization: [Token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU1Mjk3OTkzMSwiaWF0IjoxNTUyOTUxMTMxfQ.eyJpZCI6MX0.9P3wxI-3_VKsD2YC5HZ31pfWuqLEBJsy9aBhW_cdqXE]
       Connection: [keep-alive]
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
     uri: http://127.0.0.1:8081/api/v1/sources
   response:
-    body: {string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/f1ed565f-ed3f-4316-9de8-56dd8af3b4a4/add_star\",
+    body: {string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/d9eb4d27-b7c8-4599-ba22-daee6d939f17/add_star\",
         \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n      \"is_starred\":
-        false, \n      \"journalist_designation\": \"yellow-white fecklessness\",
-        \n      \"key\": {\n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmQINBFvOU64BEADXKtc0RnZlzIpI2fM7rH0fhWXJ2oJqTMl9HEX3/G4d05PqSu9R\\nxXczPVAAeCpWR+1PwiBndkeLZ3wBJX7ergkHc+c8zas41HVoPpEKydXSi3n/CgZP\\nDs8t8KbT9N6D5ZCMOGfqr3CXSTtUOYT7BRU/mo47fQgp+5EfL1TKoU7/E65KETK/\\nH7NPJY5F+LFh9X8QjpiwUTcna2l+rWVLHBmhV7s+tnSKpO8bF6ah49QbKPZV7QGG\\nsI0KGOiOK+R5eHPtkImPE2s6EvdLKOerbYD0aZI+B/71sQM2jwvjr1+1eS9iWTNs\\nYQ42ba62/3Uz+3yEk9P9/2nArxthrZZmRxrXRrVNqYBc9oAiGmxdf7aBPP3zaJmU\\nrv9maAfMEdxKIQIhhBfw+GWhT5Le21bslkwh9mnCDRTIi+Tfl/x8PtCF95jJQcF3\\nuatin3PTm2hupt7sDVDV06eM/LTgdKrxFaFn6eEyPR7LsqNRO4fHoeXONvphN+/j\\nrfgTQsfsyNlmbsaaqk2BkE6d+f8HU8g136B14TA14tpC2m/XuUvx5MZ6aHeERhAK\\nfRj4gm4YPEhJSXJRJ6orsYEdbxzq+vgWrfJTxVd9qPs2m2DOQCutRwEcbKWdHTqv\\nz3jGX569AUNGp6+4M/LSaKNw/D7xVm9MecIsQJb6AkdVJ8eyPMAHi39tywARAQAB\\ntHxBdXRvZ2VuZXJhdGVkIEtleSA8VUtKQlhKN1dTTzc2R0xaN0ZBS1NKU0hRRUYz\\nT0dXTjM0VzNWVUZQWURaVFFPQ05DRDVTRzQ2U1BJSDZNNFJJWUkyRkpBMlZLNzNG\\nREROVjJGWDNMN0I2TVdYVktITTNFNFdNRkQzQT0+iQI/BBMBCgApBQJbzlOuAhsv\\nBQkB4JuSBwsJCAcDAgEGFQgCCQoLBBYCAwECHgECF4AACgkQQqyrJapUHeCs3Q/+\\nIWYg+AFSY9PJLmC/m/oqv4Y8IHfXxOxWvoiQBodbdcKxOyjTgm6QItA5jP3t+t0J\\n9CjcVCa0rSqC3/p8X/WtoZHcJCU6MmBPaDdbh+3zpKWPdHRUzdHFO7sWYmOL9Kmu\\nPmed4nz46CvfHcBjGAHeAsbsxM+3i+yPT1rKUpqPYsk4ZrAi0B4OHKowwVkV723n\\nZNlpNeQXMcwYVylR9+10vTf8lFh9hMRisk99FJ16R3p/Lamy6I1lqLiBOgDLmLt0\\nSO0qOK5jI1qTBUNDaxay7JAKpFYQftN3JzCnGJZPEsc3+Y2hJF6RPw8OlU10Bocv\\nmkM9N2pBbbiAVIqiaB0hFHxLNihnbYqhmhksxofbEqLk744fb9p8Y8yhIPw7jCZ2\\niqiGARmdAQ2ZNXaq5FqrT7nvkReONrAQ1sQ0FVk9h1A7NfYN9eqXV7U3FjnFf8Uy\\n9EvmgTYNDBGA4ZI6bgTyVI3zFeToKz9OWRnN+EunoAuvuzqzcPMTUsHsjCnMST8W\\nuTyU7nEUHN/Li9TE2vW8vvpkl46XWBNBtsD+DGwstyfjqGQfZPHDbM+Ikjo/amMw\\nod4WT07+zXlz4PGzTpEENE0MQW/eaw9iI2DqrhX++plZljoORdqDMvqzbXDWIaHc\\nYU7zX9Ff163XuaDuIDqekUo2DP83qGWq9brLfg6qxoo=\\n=jT2/\\n-----END
+        false, \n      \"journalist_designation\": \"raging azure\", \n      \"key\":
+        {\n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmQINBFGRfoABEADEQMD9oHNCk7gvgk6/W2kx+DkaoM1I24fDlx3soKXqmRjyK1MK\\nx/ecx6ta3I1KRIwl6Iy1QCEhGjmR3PNEY61n6n2Jv8n2NtDx31Gagp1f8ckhPtYq\\n2BP9VzxkTIqbwi6oOaKl3GCarkZD1/detSH8Sdzk9uzlE49Qn/wCsFyW69GtJBFT\\nVZ0F5hPJItXOAT1mHrRc1Hl/lsmax61rqLGuvuCxnpe3UrDKtfxL2uNKzGYm687P\\nAxVBbHE7HlOLJ8YAVlIJQzcWXHvj5yBE2U6ANYrUYqLsuOImA5Ruwb/UwhKP+zQ5\\nhGOgizEmE3NvH5Hmex2ir+Bl3FKSn8QgvbOwXhSxkNcn+YREB8exNxZJ2SH80JvQ\\ndYR0Onfcr9W2Qn4xdvpaaR1i1faGJ9Mc2O1bg/lubpJKNh0KJsqX5yZMWFbA5nQJ\\nAO7/3tU1a9BSISEc5ICeAD+DSHYc+vsDoBcN8Fmh/p0fzDAM6AXfpl5vggzhPXTN\\ncJlJGVBTPZh4SLDLmL1lvEytoLBErzjF+rYpLDrQurflN3bGdWEKoQZxwc1I5f/h\\n/v3ZkHFwIcOV1TwVfRvmYP2Q3H+86pHeFFStb1mCh0EuS+ygwMkPIirQnIpDa3iB\\nNRLTZvdQW0T8XswQWisGL/R+mKUX1HkMkqYp/lPAqmFuNtzgWcg4pTeOmQARAQAB\\ntHxBdXRvZ2VuZXJhdGVkIEtleSA8M0hBT0VaUzVVSkZUQ0tOU0FGNjRHSDJaT082\\nN0NCSUhGWkxXTEdaTTI2MzYzQ1BEQ1ZERUtBSEdIWU1HVlFJTk5OUVVDQVRHREJQ\\nRFNJRlYyUEoyWFE2UFpZWllSN09VNkROWUFXST0+iQI3BBMBCgAhBQJRkX6AAhsv\\nBQsJCAcCBhUICQoLAgQWAgMBAh4BAheAAAoJEL+uIhVjsHuRvuMP/16AhT5kbRJQ\\n109ZhDfH7pOl4avUutY7OYPHDEgFR+6BwStKZcmP/1Amx+2eUcRno8dAlSbTKYFI\\nq1gss9e/xwz1xK7qtUDFxfZL2dbNq877kmCEjNY63kLkme6O6ltCxNJ+TINKK2ff\\nkOanD3t58xILFV4nxzZd2GRWy1IEYJb3OCZ9UD0alCAZcV2RHJjJoMCRqTSfW7rV\\njrZlQZEQHIocDBlYLM461ZyP/TnCwfc/quz0GoJR+qVU+hY5sYrUh1M62cT+bKxd\\nL5Rnk/4DIx89QvcQKR0l330iB9Pu16+Ks7DaOU85M17Smg7Pjc9nYsUwgS6vQQmV\\nU6Rjlfqa7JglA54cWPd9WkRlT+cUlCUlctowgpTiAA0uzc3bu6YQ7RefGU5qnLIH\\ndDtAzIDTCeJdaJZvd2MaV0KICe4mU2RpJYlDSVUfzVb/xK6vVN6maN5tnJ6dpirj\\nA6WhGl+aKA4Ou6ok1mOHLEfAcCEbUrR8FF1MPZ9/DWRYpQpJhAfBG3pSfUByf5/w\\nt3WVNpiXWet/DXwFLsUpra7sNAb5+BFaEv22Y2bFF0TEkai39PdKUnVzc7jjSRvZ\\n84cfRurWK9GR8ynSLEmu47/beWzRIO5qBe3VIdDUL2w0PhH/rKiGg5zBDy8b8otz\\n2OCPH1/t36o/CP6SrIJdE1l1Z6RoS0C/\\n=DXES\\n-----END
         PGP PUBLIC KEY BLOCK-----\\n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\":
-        \"2018-10-22T22:48:15.508121Z\", \n      \"number_of_documents\": 0, \n      \"number_of_messages\":
-        2, \n      \"remove_star_url\": \"/api/v1/sources/f1ed565f-ed3f-4316-9de8-56dd8af3b4a4/remove_star\",
-        \n      \"replies_url\": \"/api/v1/sources/f1ed565f-ed3f-4316-9de8-56dd8af3b4a4/replies\",
-        \n      \"submissions_url\": \"/api/v1/sources/f1ed565f-ed3f-4316-9de8-56dd8af3b4a4/submissions\",
-        \n      \"url\": \"/api/v1/sources/f1ed565f-ed3f-4316-9de8-56dd8af3b4a4\",
-        \n      \"uuid\": \"f1ed565f-ed3f-4316-9de8-56dd8af3b4a4\"\n    }, \n    {\n
-        \     \"add_star_url\": \"/api/v1/sources/eb01cec4-7216-4112-b542-fcc9c3979b90/add_star\",
+        \"2019-03-18T22:23:44.186714Z\", \n      \"number_of_documents\": 0, \n      \"number_of_messages\":
+        2, \n      \"remove_star_url\": \"/api/v1/sources/d9eb4d27-b7c8-4599-ba22-daee6d939f17/remove_star\",
+        \n      \"replies_url\": \"/api/v1/sources/d9eb4d27-b7c8-4599-ba22-daee6d939f17/replies\",
+        \n      \"submissions_url\": \"/api/v1/sources/d9eb4d27-b7c8-4599-ba22-daee6d939f17/submissions\",
+        \n      \"url\": \"/api/v1/sources/d9eb4d27-b7c8-4599-ba22-daee6d939f17\",
+        \n      \"uuid\": \"d9eb4d27-b7c8-4599-ba22-daee6d939f17\"\n    }, \n    {\n
+        \     \"add_star_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38/add_star\",
         \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n      \"is_starred\":
-        false, \n      \"journalist_designation\": \"downstairs depth\", \n      \"key\":
-        {\n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmQINBFvOU7ABEADagsl6IqF46/B502qxTKB2OS6FsqQT3BOyseZpALgvrs7tBmsU\\n9qZrEZ5mEVKQK0wA/4Axt+J0rwNieC3egz/hSfJrxdedIEeX6GYJpN9C2tGj2X1Q\\nn9OCPT7GtgVuwUX+2WUyVsmcikF0gQL+VgFAW3TRAT1qWZ2TROYloQGvZZNJM7cx\\n/UKZDOBxyuuhgn1OqSXQF9W/tzZB+7TfN1xdxMDlfr4JVMuh8H2dK+KLdfcaw3BK\\ndOEw8XWTkqDK9E7ZHbzQImOqWJG0TMvo1k02zuPiA2E4JQHg7+mnL8rrRjZ92k+3\\ndsfWoNhKqlcy8Yd9uxb4OY3uo4u+VF6fShTpbYngYmFImg/54C1rge0UpZX0uc1f\\ndYJP6GH41NC/+kaUROTq66tVsKZM+jewIs+FvgvUmLF0jH2Tv/o2K0urw8LNiY9W\\nc+3zkNAq+K/Q+QjhLF7fFXUf7JVT7z3pyjuphrLmUT+yyJvFGOjAOau0YKygCoiG\\nHWmneB1SFoY2d5CnyWW1tfaG2TcN8Beiv1tOLayvLmweVCyyrziidOjwRx3yKDdd\\nD0XyJ2ducIfN4z04OVb14Bfbq4D9s1MpZ4P+jRQcEx+F6xS+Zm/UWOrZgGElCDMs\\nKzVGy4G090xGGKdyqt3d+yEMVHoI1TbWnHdIMzALL4SpIBL36aPouWa56QARAQAB\\ntHxBdXRvZ2VuZXJhdGVkIEtleSA8SENCQ040SVpVTjY0RkEyNTNCTlVLTkMzNUFE\\nRk5DQlgzRkhJSjVIRElSQk1DUEdDSTZSQk03T1M0VUgyV1NUQzI1WkVaU1JOWFkz\\nU1VZV1ZNN1ZTWUhMNEJPTjNNWUhDTVg2RzVUQT0+iQI/BBMBCgApBQJbzlOwAhsv\\nBQkB4JuQBwsJCAcDAgEGFQgCCQoLBBYCAwECHgECF4AACgkQJa7v8Llgs7oVBA/9\\nHZMYvqlcRBca1UHTF8TVR3DhB97TN34smOvGNlh8OJEoPQ+4GKIcbToJ1cgWSf6Q\\nHECs/++DJYSlEj1fRi3xPDxMOKerkzCU6Hm0g1FzX7O/v/p0OpTGgLC3PSFMTZ26\\neP+1r5EfdEr4f0yvT7LhiUOWpPJSlobgQtb0up75eVjJeuSlYd2l2DYi8Lo6K+pX\\ndq1g532s/Elc7GpJfvanfR8lz5NVerAe1oYccjWF4iukiID1MsdVS0LMk4zRklND\\nolOoHOY+Set6jdvbC2y8bDr/o92wgBiTVL1tBqY66xIDN/F+sxFtF7slg9hMrIN8\\nIlhCEURDm/H6HeJn4hqGSCfbCL2DwZb1/X5eYc0w1y69tyzCgiGVUdwMu34LfurU\\nxQeX+CLXhNrbi4iVUJkH8L3NRhSIiemfss032oswXWzidwDjv9iwAYC6dbYy/4al\\n39Prp9chEt23bWJ20F/t7nsyDyGO3u1Y2wFUXev5FZ0seNAuDRkjwSltgvAumB+x\\noB7n6MeN8wHckbVMLYkwKxg2PT+V7mj8zVdwTMfmfV7opoDRxHtvLzCJAveUOhnR\\n6iwt4dtDm08FjBoot1bVz15jqtR+MLbdoYGMFnuBOXJ7jym0mmQjLb3kGpbEwD03\\ndUPFTKGdN/KLrYD005pi8cBIFKznKKs/WZkSQGnUG7Q=\\n=AoO+\\n-----END
+        false, \n      \"journalist_designation\": \"untrammeled dancing\", \n      \"key\":
+        {\n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmQINBFGRfoABEADzzNyczWaTEHPlB0YCa6Kxu4tXmXl7VOXdfCPb7G6XkjWGBSKN\\nQqPJ0rsfilX00vRLf2xxf4036zZ0CO358405eDmN/BNBtLahP8EJBTDi40NebdXf\\nxNE0gaos/MkMIL9fL2SJHcUvJZj7+YfBe+9FatRf1M7+m4Zh4KfRK3xaF0VYGRuo\\nGZ551+16D7243TaM+KNy1oEy3kYXxU32/pdqrxJ4jAGy4J6l++M47o5i0drNbQ4D\\nVNQgYihhCLWGdMAIcF8ORg8j3s196Xv9tQSl89eofw22ccAfqoHCVdcbvcZQ0YKU\\noVXrUoALdueS4imyksmOaKjhJANCxs7ChEnHRNcpGN0XbGITwT6rjLeNCYAVdYVM\\nb4fqM2wHA/y+g3hElrBiBHXvc0hp8S9162CQPSJj60hIe0dJw1dkrAZUFMLA0nvm\\n8SWCnE+2r8J52pI515CY5G6ndnwtrruIigoDazKfIWU/SQWi+eDR0QGzsNzOTJ5L\\n5T4EEO3cXj9DIdBHwaYJ1CvNyxI1mfP2yiDi6Jpb1dVfExh1/yhrZyCkEQfbEAFG\\npvUSIBlh/n6ZDGiUDFmH8wOoNMC0C3Q7N458Y/L8VhliCisANhh2R0SXiY+gAUK2\\nisN3N/+/ed5sglP4HCFn2hgog1vAO1FV3PMWOfiE+8sVixi7xVhatJqw5QARAQAB\\ntHxBdXRvZ2VuZXJhdGVkIEtleSA8WURLRk4zQUtWVUJIWURSVVlCTkFZVEVZNjdB\\nRTdaRkJXTVRCS0ZMU1BSQjJLUTVUVU9IVTVITlkzUDZVUk1LVlRPWEVVUlFVWFlS\\nRklCUVhUS1JJMlJVRU1BRjdVUzdHNE5WWjRWUT0+iQI3BBMBCgAhBQJRkX6AAhsv\\nBQsJCAcCBhUICQoLAgQWAgMBAh4BAheAAAoJEHKp8dqMthpjUyoP/2wgVwZYK7Cr\\nM+RP6jrEyV3WV/LqE9hUp5r5pTI6qAslp3APLCBp6Q1BuNWEsx4b/GFhkPrhwZpS\\nJkngPmxw7JHo0aK0SX9+/jBTwb2+orDIHcs+IiDpyRjkpKi8KV87cfvGLvaTE+Jc\\niopTsafJ9O9IE5WpVlwyA7CxESe+2M7cLWknbpImcytlcxPot61a87oIdWk/BZv1\\nwDpsfO/Tv3q5YFbNaGn5kPvUGaVbxhRODqaNcxE/24AxgtrimPpbaf3s5zWERf5k\\nTC6PUq2z3qEmtuKUkj8skBv5DFkaAeq7Ulx4PPkaeguLvQOIhRHDie3pX9cuak2B\\nb/7lFs4FKpMGE4XSkOqXJY4q/kkKlEk7x9sTqI29tkOVbhYaUBw6vDT+O/zLxjg1\\nvKPXFO7ylegdAECUSIJnzDqyN9v+hVOXxt726EYYfMQqIo384zZOp/JOngNWKNfr\\nT2VhBnANjeLCqLcN3ofwJK8jY9fidqqpidZ50IX5lEI2s3/QaouldLhlAKqKH0e5\\nCgmg2F68MJN1o/LbYPCt5hE8xCI9i3Q//MefQKG3GspFRdS3BiXyoLwTf7HrGOoC\\nXzC7byFTxOMYPYj/EYTQd8I6NByvjGbRYMZrv6Dy6NAqZobq9QdrR/F7kYiTLRF/\\ncd3FLzg6d15rMyHMeEQQCj/8Bzrbx0QV\\n=e2OF\\n-----END
         PGP PUBLIC KEY BLOCK-----\\n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\":
-        \"2018-10-22T22:48:17.821470Z\", \n      \"number_of_documents\": 0, \n      \"number_of_messages\":
-        2, \n      \"remove_star_url\": \"/api/v1/sources/eb01cec4-7216-4112-b542-fcc9c3979b90/remove_star\",
-        \n      \"replies_url\": \"/api/v1/sources/eb01cec4-7216-4112-b542-fcc9c3979b90/replies\",
-        \n      \"submissions_url\": \"/api/v1/sources/eb01cec4-7216-4112-b542-fcc9c3979b90/submissions\",
-        \n      \"url\": \"/api/v1/sources/eb01cec4-7216-4112-b542-fcc9c3979b90\",
-        \n      \"uuid\": \"eb01cec4-7216-4112-b542-fcc9c3979b90\"\n    }\n  ]\n}\n"}
+        \"2019-03-18T22:23:46.635201Z\", \n      \"number_of_documents\": 0, \n      \"number_of_messages\":
+        2, \n      \"remove_star_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38/remove_star\",
+        \n      \"replies_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38/replies\",
+        \n      \"submissions_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38/submissions\",
+        \n      \"url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38\",
+        \n      \"uuid\": \"8b8325d9-20a5-4687-8bdf-f0d45408ca38\"\n    }\n  ]\n}\n"}
     headers:
-      Content-Length: ['5244']
+      Content-Length: ['5210']
       Content-Type: [application/json]
-      Date: ['Mon, 22 Oct 2018 22:48:28 GMT']
-      Server: [Werkzeug/0.14.1 Python/2.7.6]
-      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiVHVlLCAyMyBPY3QgMjAxOCAwMDo0ODoyOCBHTVQifX0.Dq_lPA.xCBt3s1su7-BcVhsHXG7gP-oQD0;
-          HttpOnly; Path=/]
-      Vary: [Cookie]
+      Date: ['Mon, 18 Mar 2019 23:18:51 GMT']
+      Server: [Werkzeug/0.14.1 Python/2.7.12]
     status: {code: 200, message: OK}
 - request:
     body: null
     headers:
       Accept: [application/json]
       Accept-Encoding: ['gzip, deflate']
-      Authorization: [Token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU0MDI3NjkxOCwiaWF0IjoxNTQwMjQ4MTE4fQ.eyJpZCI6MX0.fygpQy3CxB1ulUWLFz2UdrtcBKHz-fk5gyRxbcSY720]
+      Authorization: [Token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU1Mjk3OTkzMSwiaWF0IjoxNTUyOTUxMTMxfQ.eyJpZCI6MX0.9P3wxI-3_VKsD2YC5HZ31pfWuqLEBJsy9aBhW_cdqXE]
+      Connection: [keep-alive]
+      Content-Type: [application/json]
+      User-Agent: [python-requests/2.20.0]
+    method: GET
+    uri: http://127.0.0.1:8081/api/v1/sources
+  response:
+    body: {string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/d9eb4d27-b7c8-4599-ba22-daee6d939f17/add_star\",
+        \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n      \"is_starred\":
+        false, \n      \"journalist_designation\": \"raging azure\", \n      \"key\":
+        {\n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmQINBFGRfoABEADEQMD9oHNCk7gvgk6/W2kx+DkaoM1I24fDlx3soKXqmRjyK1MK\\nx/ecx6ta3I1KRIwl6Iy1QCEhGjmR3PNEY61n6n2Jv8n2NtDx31Gagp1f8ckhPtYq\\n2BP9VzxkTIqbwi6oOaKl3GCarkZD1/detSH8Sdzk9uzlE49Qn/wCsFyW69GtJBFT\\nVZ0F5hPJItXOAT1mHrRc1Hl/lsmax61rqLGuvuCxnpe3UrDKtfxL2uNKzGYm687P\\nAxVBbHE7HlOLJ8YAVlIJQzcWXHvj5yBE2U6ANYrUYqLsuOImA5Ruwb/UwhKP+zQ5\\nhGOgizEmE3NvH5Hmex2ir+Bl3FKSn8QgvbOwXhSxkNcn+YREB8exNxZJ2SH80JvQ\\ndYR0Onfcr9W2Qn4xdvpaaR1i1faGJ9Mc2O1bg/lubpJKNh0KJsqX5yZMWFbA5nQJ\\nAO7/3tU1a9BSISEc5ICeAD+DSHYc+vsDoBcN8Fmh/p0fzDAM6AXfpl5vggzhPXTN\\ncJlJGVBTPZh4SLDLmL1lvEytoLBErzjF+rYpLDrQurflN3bGdWEKoQZxwc1I5f/h\\n/v3ZkHFwIcOV1TwVfRvmYP2Q3H+86pHeFFStb1mCh0EuS+ygwMkPIirQnIpDa3iB\\nNRLTZvdQW0T8XswQWisGL/R+mKUX1HkMkqYp/lPAqmFuNtzgWcg4pTeOmQARAQAB\\ntHxBdXRvZ2VuZXJhdGVkIEtleSA8M0hBT0VaUzVVSkZUQ0tOU0FGNjRHSDJaT082\\nN0NCSUhGWkxXTEdaTTI2MzYzQ1BEQ1ZERUtBSEdIWU1HVlFJTk5OUVVDQVRHREJQ\\nRFNJRlYyUEoyWFE2UFpZWllSN09VNkROWUFXST0+iQI3BBMBCgAhBQJRkX6AAhsv\\nBQsJCAcCBhUICQoLAgQWAgMBAh4BAheAAAoJEL+uIhVjsHuRvuMP/16AhT5kbRJQ\\n109ZhDfH7pOl4avUutY7OYPHDEgFR+6BwStKZcmP/1Amx+2eUcRno8dAlSbTKYFI\\nq1gss9e/xwz1xK7qtUDFxfZL2dbNq877kmCEjNY63kLkme6O6ltCxNJ+TINKK2ff\\nkOanD3t58xILFV4nxzZd2GRWy1IEYJb3OCZ9UD0alCAZcV2RHJjJoMCRqTSfW7rV\\njrZlQZEQHIocDBlYLM461ZyP/TnCwfc/quz0GoJR+qVU+hY5sYrUh1M62cT+bKxd\\nL5Rnk/4DIx89QvcQKR0l330iB9Pu16+Ks7DaOU85M17Smg7Pjc9nYsUwgS6vQQmV\\nU6Rjlfqa7JglA54cWPd9WkRlT+cUlCUlctowgpTiAA0uzc3bu6YQ7RefGU5qnLIH\\ndDtAzIDTCeJdaJZvd2MaV0KICe4mU2RpJYlDSVUfzVb/xK6vVN6maN5tnJ6dpirj\\nA6WhGl+aKA4Ou6ok1mOHLEfAcCEbUrR8FF1MPZ9/DWRYpQpJhAfBG3pSfUByf5/w\\nt3WVNpiXWet/DXwFLsUpra7sNAb5+BFaEv22Y2bFF0TEkai39PdKUnVzc7jjSRvZ\\n84cfRurWK9GR8ynSLEmu47/beWzRIO5qBe3VIdDUL2w0PhH/rKiGg5zBDy8b8otz\\n2OCPH1/t36o/CP6SrIJdE1l1Z6RoS0C/\\n=DXES\\n-----END
+        PGP PUBLIC KEY BLOCK-----\\n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\":
+        \"2019-03-18T22:23:44.186714Z\", \n      \"number_of_documents\": 0, \n      \"number_of_messages\":
+        2, \n      \"remove_star_url\": \"/api/v1/sources/d9eb4d27-b7c8-4599-ba22-daee6d939f17/remove_star\",
+        \n      \"replies_url\": \"/api/v1/sources/d9eb4d27-b7c8-4599-ba22-daee6d939f17/replies\",
+        \n      \"submissions_url\": \"/api/v1/sources/d9eb4d27-b7c8-4599-ba22-daee6d939f17/submissions\",
+        \n      \"url\": \"/api/v1/sources/d9eb4d27-b7c8-4599-ba22-daee6d939f17\",
+        \n      \"uuid\": \"d9eb4d27-b7c8-4599-ba22-daee6d939f17\"\n    }, \n    {\n
+        \     \"add_star_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38/add_star\",
+        \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n      \"is_starred\":
+        false, \n      \"journalist_designation\": \"untrammeled dancing\", \n      \"key\":
+        {\n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmQINBFGRfoABEADzzNyczWaTEHPlB0YCa6Kxu4tXmXl7VOXdfCPb7G6XkjWGBSKN\\nQqPJ0rsfilX00vRLf2xxf4036zZ0CO358405eDmN/BNBtLahP8EJBTDi40NebdXf\\nxNE0gaos/MkMIL9fL2SJHcUvJZj7+YfBe+9FatRf1M7+m4Zh4KfRK3xaF0VYGRuo\\nGZ551+16D7243TaM+KNy1oEy3kYXxU32/pdqrxJ4jAGy4J6l++M47o5i0drNbQ4D\\nVNQgYihhCLWGdMAIcF8ORg8j3s196Xv9tQSl89eofw22ccAfqoHCVdcbvcZQ0YKU\\noVXrUoALdueS4imyksmOaKjhJANCxs7ChEnHRNcpGN0XbGITwT6rjLeNCYAVdYVM\\nb4fqM2wHA/y+g3hElrBiBHXvc0hp8S9162CQPSJj60hIe0dJw1dkrAZUFMLA0nvm\\n8SWCnE+2r8J52pI515CY5G6ndnwtrruIigoDazKfIWU/SQWi+eDR0QGzsNzOTJ5L\\n5T4EEO3cXj9DIdBHwaYJ1CvNyxI1mfP2yiDi6Jpb1dVfExh1/yhrZyCkEQfbEAFG\\npvUSIBlh/n6ZDGiUDFmH8wOoNMC0C3Q7N458Y/L8VhliCisANhh2R0SXiY+gAUK2\\nisN3N/+/ed5sglP4HCFn2hgog1vAO1FV3PMWOfiE+8sVixi7xVhatJqw5QARAQAB\\ntHxBdXRvZ2VuZXJhdGVkIEtleSA8WURLRk4zQUtWVUJIWURSVVlCTkFZVEVZNjdB\\nRTdaRkJXTVRCS0ZMU1BSQjJLUTVUVU9IVTVITlkzUDZVUk1LVlRPWEVVUlFVWFlS\\nRklCUVhUS1JJMlJVRU1BRjdVUzdHNE5WWjRWUT0+iQI3BBMBCgAhBQJRkX6AAhsv\\nBQsJCAcCBhUICQoLAgQWAgMBAh4BAheAAAoJEHKp8dqMthpjUyoP/2wgVwZYK7Cr\\nM+RP6jrEyV3WV/LqE9hUp5r5pTI6qAslp3APLCBp6Q1BuNWEsx4b/GFhkPrhwZpS\\nJkngPmxw7JHo0aK0SX9+/jBTwb2+orDIHcs+IiDpyRjkpKi8KV87cfvGLvaTE+Jc\\niopTsafJ9O9IE5WpVlwyA7CxESe+2M7cLWknbpImcytlcxPot61a87oIdWk/BZv1\\nwDpsfO/Tv3q5YFbNaGn5kPvUGaVbxhRODqaNcxE/24AxgtrimPpbaf3s5zWERf5k\\nTC6PUq2z3qEmtuKUkj8skBv5DFkaAeq7Ulx4PPkaeguLvQOIhRHDie3pX9cuak2B\\nb/7lFs4FKpMGE4XSkOqXJY4q/kkKlEk7x9sTqI29tkOVbhYaUBw6vDT+O/zLxjg1\\nvKPXFO7ylegdAECUSIJnzDqyN9v+hVOXxt726EYYfMQqIo384zZOp/JOngNWKNfr\\nT2VhBnANjeLCqLcN3ofwJK8jY9fidqqpidZ50IX5lEI2s3/QaouldLhlAKqKH0e5\\nCgmg2F68MJN1o/LbYPCt5hE8xCI9i3Q//MefQKG3GspFRdS3BiXyoLwTf7HrGOoC\\nXzC7byFTxOMYPYj/EYTQd8I6NByvjGbRYMZrv6Dy6NAqZobq9QdrR/F7kYiTLRF/\\ncd3FLzg6d15rMyHMeEQQCj/8Bzrbx0QV\\n=e2OF\\n-----END
+        PGP PUBLIC KEY BLOCK-----\\n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\":
+        \"2019-03-18T22:23:46.635201Z\", \n      \"number_of_documents\": 0, \n      \"number_of_messages\":
+        2, \n      \"remove_star_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38/remove_star\",
+        \n      \"replies_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38/replies\",
+        \n      \"submissions_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38/submissions\",
+        \n      \"url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38\",
+        \n      \"uuid\": \"8b8325d9-20a5-4687-8bdf-f0d45408ca38\"\n    }\n  ]\n}\n"}
+    headers:
+      Content-Length: ['5210']
+      Content-Type: [application/json]
+      Date: ['Mon, 18 Mar 2019 23:18:51 GMT']
+      Server: [Werkzeug/0.14.1 Python/2.7.12]
+    status: {code: 200, message: OK}
+- request:
+    body: null
+    headers:
+      Accept: [application/json]
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [Token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU1Mjk3OTkzMSwiaWF0IjoxNTUyOTUxMTMxfQ.eyJpZCI6MX0.9P3wxI-3_VKsD2YC5HZ31pfWuqLEBJsy9aBhW_cdqXE]
       Connection: [keep-alive]
       Content-Length: ['0']
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: DELETE
-    uri: http://127.0.0.1:8081/api/v1/sources/f1ed565f-ed3f-4316-9de8-56dd8af3b4a4
+    uri: http://127.0.0.1:8081/api/v1/sources/d9eb4d27-b7c8-4599-ba22-daee6d939f17
   response:
     body: {string: "{\n  \"message\": \"Source and submissions deleted\"\n}\n"}
     headers:
       Content-Length: ['50']
       Content-Type: [application/json]
-      Date: ['Mon, 22 Oct 2018 22:48:28 GMT']
-      Server: [Werkzeug/0.14.1 Python/2.7.6]
-      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiVHVlLCAyMyBPY3QgMjAxOCAwMDo0ODoyOCBHTVQifX0.Dq_lPA.xCBt3s1su7-BcVhsHXG7gP-oQD0;
-          HttpOnly; Path=/]
-      Vary: [Cookie]
+      Date: ['Mon, 18 Mar 2019 23:18:51 GMT']
+      Server: [Werkzeug/0.14.1 Python/2.7.12]
     status: {code: 200, message: OK}
 - request:
     body: null
     headers:
       Accept: [application/json]
       Accept-Encoding: ['gzip, deflate']
-      Authorization: [Token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU0MDI3NjkxOCwiaWF0IjoxNTQwMjQ4MTE4fQ.eyJpZCI6MX0.fygpQy3CxB1ulUWLFz2UdrtcBKHz-fk5gyRxbcSY720]
+      Authorization: [Token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU1Mjk3OTkzMSwiaWF0IjoxNTUyOTUxMTMxfQ.eyJpZCI6MX0.9P3wxI-3_VKsD2YC5HZ31pfWuqLEBJsy9aBhW_cdqXE]
       Connection: [keep-alive]
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
     uri: http://127.0.0.1:8081/api/v1/sources
   response:
-    body: {string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/eb01cec4-7216-4112-b542-fcc9c3979b90/add_star\",
+    body: {string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38/add_star\",
         \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n      \"is_starred\":
-        false, \n      \"journalist_designation\": \"downstairs depth\", \n      \"key\":
-        {\n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmQINBFvOU7ABEADagsl6IqF46/B502qxTKB2OS6FsqQT3BOyseZpALgvrs7tBmsU\\n9qZrEZ5mEVKQK0wA/4Axt+J0rwNieC3egz/hSfJrxdedIEeX6GYJpN9C2tGj2X1Q\\nn9OCPT7GtgVuwUX+2WUyVsmcikF0gQL+VgFAW3TRAT1qWZ2TROYloQGvZZNJM7cx\\n/UKZDOBxyuuhgn1OqSXQF9W/tzZB+7TfN1xdxMDlfr4JVMuh8H2dK+KLdfcaw3BK\\ndOEw8XWTkqDK9E7ZHbzQImOqWJG0TMvo1k02zuPiA2E4JQHg7+mnL8rrRjZ92k+3\\ndsfWoNhKqlcy8Yd9uxb4OY3uo4u+VF6fShTpbYngYmFImg/54C1rge0UpZX0uc1f\\ndYJP6GH41NC/+kaUROTq66tVsKZM+jewIs+FvgvUmLF0jH2Tv/o2K0urw8LNiY9W\\nc+3zkNAq+K/Q+QjhLF7fFXUf7JVT7z3pyjuphrLmUT+yyJvFGOjAOau0YKygCoiG\\nHWmneB1SFoY2d5CnyWW1tfaG2TcN8Beiv1tOLayvLmweVCyyrziidOjwRx3yKDdd\\nD0XyJ2ducIfN4z04OVb14Bfbq4D9s1MpZ4P+jRQcEx+F6xS+Zm/UWOrZgGElCDMs\\nKzVGy4G090xGGKdyqt3d+yEMVHoI1TbWnHdIMzALL4SpIBL36aPouWa56QARAQAB\\ntHxBdXRvZ2VuZXJhdGVkIEtleSA8SENCQ040SVpVTjY0RkEyNTNCTlVLTkMzNUFE\\nRk5DQlgzRkhJSjVIRElSQk1DUEdDSTZSQk03T1M0VUgyV1NUQzI1WkVaU1JOWFkz\\nU1VZV1ZNN1ZTWUhMNEJPTjNNWUhDTVg2RzVUQT0+iQI/BBMBCgApBQJbzlOwAhsv\\nBQkB4JuQBwsJCAcDAgEGFQgCCQoLBBYCAwECHgECF4AACgkQJa7v8Llgs7oVBA/9\\nHZMYvqlcRBca1UHTF8TVR3DhB97TN34smOvGNlh8OJEoPQ+4GKIcbToJ1cgWSf6Q\\nHECs/++DJYSlEj1fRi3xPDxMOKerkzCU6Hm0g1FzX7O/v/p0OpTGgLC3PSFMTZ26\\neP+1r5EfdEr4f0yvT7LhiUOWpPJSlobgQtb0up75eVjJeuSlYd2l2DYi8Lo6K+pX\\ndq1g532s/Elc7GpJfvanfR8lz5NVerAe1oYccjWF4iukiID1MsdVS0LMk4zRklND\\nolOoHOY+Set6jdvbC2y8bDr/o92wgBiTVL1tBqY66xIDN/F+sxFtF7slg9hMrIN8\\nIlhCEURDm/H6HeJn4hqGSCfbCL2DwZb1/X5eYc0w1y69tyzCgiGVUdwMu34LfurU\\nxQeX+CLXhNrbi4iVUJkH8L3NRhSIiemfss032oswXWzidwDjv9iwAYC6dbYy/4al\\n39Prp9chEt23bWJ20F/t7nsyDyGO3u1Y2wFUXev5FZ0seNAuDRkjwSltgvAumB+x\\noB7n6MeN8wHckbVMLYkwKxg2PT+V7mj8zVdwTMfmfV7opoDRxHtvLzCJAveUOhnR\\n6iwt4dtDm08FjBoot1bVz15jqtR+MLbdoYGMFnuBOXJ7jym0mmQjLb3kGpbEwD03\\ndUPFTKGdN/KLrYD005pi8cBIFKznKKs/WZkSQGnUG7Q=\\n=AoO+\\n-----END
+        false, \n      \"journalist_designation\": \"untrammeled dancing\", \n      \"key\":
+        {\n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmQINBFGRfoABEADzzNyczWaTEHPlB0YCa6Kxu4tXmXl7VOXdfCPb7G6XkjWGBSKN\\nQqPJ0rsfilX00vRLf2xxf4036zZ0CO358405eDmN/BNBtLahP8EJBTDi40NebdXf\\nxNE0gaos/MkMIL9fL2SJHcUvJZj7+YfBe+9FatRf1M7+m4Zh4KfRK3xaF0VYGRuo\\nGZ551+16D7243TaM+KNy1oEy3kYXxU32/pdqrxJ4jAGy4J6l++M47o5i0drNbQ4D\\nVNQgYihhCLWGdMAIcF8ORg8j3s196Xv9tQSl89eofw22ccAfqoHCVdcbvcZQ0YKU\\noVXrUoALdueS4imyksmOaKjhJANCxs7ChEnHRNcpGN0XbGITwT6rjLeNCYAVdYVM\\nb4fqM2wHA/y+g3hElrBiBHXvc0hp8S9162CQPSJj60hIe0dJw1dkrAZUFMLA0nvm\\n8SWCnE+2r8J52pI515CY5G6ndnwtrruIigoDazKfIWU/SQWi+eDR0QGzsNzOTJ5L\\n5T4EEO3cXj9DIdBHwaYJ1CvNyxI1mfP2yiDi6Jpb1dVfExh1/yhrZyCkEQfbEAFG\\npvUSIBlh/n6ZDGiUDFmH8wOoNMC0C3Q7N458Y/L8VhliCisANhh2R0SXiY+gAUK2\\nisN3N/+/ed5sglP4HCFn2hgog1vAO1FV3PMWOfiE+8sVixi7xVhatJqw5QARAQAB\\ntHxBdXRvZ2VuZXJhdGVkIEtleSA8WURLRk4zQUtWVUJIWURSVVlCTkFZVEVZNjdB\\nRTdaRkJXTVRCS0ZMU1BSQjJLUTVUVU9IVTVITlkzUDZVUk1LVlRPWEVVUlFVWFlS\\nRklCUVhUS1JJMlJVRU1BRjdVUzdHNE5WWjRWUT0+iQI3BBMBCgAhBQJRkX6AAhsv\\nBQsJCAcCBhUICQoLAgQWAgMBAh4BAheAAAoJEHKp8dqMthpjUyoP/2wgVwZYK7Cr\\nM+RP6jrEyV3WV/LqE9hUp5r5pTI6qAslp3APLCBp6Q1BuNWEsx4b/GFhkPrhwZpS\\nJkngPmxw7JHo0aK0SX9+/jBTwb2+orDIHcs+IiDpyRjkpKi8KV87cfvGLvaTE+Jc\\niopTsafJ9O9IE5WpVlwyA7CxESe+2M7cLWknbpImcytlcxPot61a87oIdWk/BZv1\\nwDpsfO/Tv3q5YFbNaGn5kPvUGaVbxhRODqaNcxE/24AxgtrimPpbaf3s5zWERf5k\\nTC6PUq2z3qEmtuKUkj8skBv5DFkaAeq7Ulx4PPkaeguLvQOIhRHDie3pX9cuak2B\\nb/7lFs4FKpMGE4XSkOqXJY4q/kkKlEk7x9sTqI29tkOVbhYaUBw6vDT+O/zLxjg1\\nvKPXFO7ylegdAECUSIJnzDqyN9v+hVOXxt726EYYfMQqIo384zZOp/JOngNWKNfr\\nT2VhBnANjeLCqLcN3ofwJK8jY9fidqqpidZ50IX5lEI2s3/QaouldLhlAKqKH0e5\\nCgmg2F68MJN1o/LbYPCt5hE8xCI9i3Q//MefQKG3GspFRdS3BiXyoLwTf7HrGOoC\\nXzC7byFTxOMYPYj/EYTQd8I6NByvjGbRYMZrv6Dy6NAqZobq9QdrR/F7kYiTLRF/\\ncd3FLzg6d15rMyHMeEQQCj/8Bzrbx0QV\\n=e2OF\\n-----END
         PGP PUBLIC KEY BLOCK-----\\n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\":
-        \"2018-10-22T22:48:17.821470Z\", \n      \"number_of_documents\": 0, \n      \"number_of_messages\":
-        2, \n      \"remove_star_url\": \"/api/v1/sources/eb01cec4-7216-4112-b542-fcc9c3979b90/remove_star\",
-        \n      \"replies_url\": \"/api/v1/sources/eb01cec4-7216-4112-b542-fcc9c3979b90/replies\",
-        \n      \"submissions_url\": \"/api/v1/sources/eb01cec4-7216-4112-b542-fcc9c3979b90/submissions\",
-        \n      \"url\": \"/api/v1/sources/eb01cec4-7216-4112-b542-fcc9c3979b90\",
-        \n      \"uuid\": \"eb01cec4-7216-4112-b542-fcc9c3979b90\"\n    }\n  ]\n}\n"}
+        \"2019-03-18T22:23:46.635201Z\", \n      \"number_of_documents\": 0, \n      \"number_of_messages\":
+        2, \n      \"remove_star_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38/remove_star\",
+        \n      \"replies_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38/replies\",
+        \n      \"submissions_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38/submissions\",
+        \n      \"url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38\",
+        \n      \"uuid\": \"8b8325d9-20a5-4687-8bdf-f0d45408ca38\"\n    }\n  ]\n}\n"}
     headers:
-      Content-Length: ['2628']
+      Content-Length: ['2619']
       Content-Type: [application/json]
-      Date: ['Mon, 22 Oct 2018 22:48:28 GMT']
-      Server: [Werkzeug/0.14.1 Python/2.7.6]
-      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiVHVlLCAyMyBPY3QgMjAxOCAwMDo0ODoyOCBHTVQifX0.Dq_lPA.xCBt3s1su7-BcVhsHXG7gP-oQD0;
-          HttpOnly; Path=/]
-      Vary: [Cookie]
+      Date: ['Mon, 18 Mar 2019 23:18:51 GMT']
+      Server: [Werkzeug/0.14.1 Python/2.7.12]
     status: {code: 200, message: OK}
 version: 1
