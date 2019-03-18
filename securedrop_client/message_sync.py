@@ -27,8 +27,8 @@ from PyQt5.QtCore import QObject, pyqtSignal
 from securedrop_client import storage
 from securedrop_client.crypto import GpgHelper, CryptoError
 from securedrop_client.db import make_engine
-from securedrop_client.storage import get_data
 from sqlalchemy.orm import sessionmaker
+from tempfile import NamedTemporaryFile
 
 
 logger = logging.getLogger(__name__)
@@ -52,13 +52,16 @@ class APISyncObject(QObject):
         update_fn(msg.uuid, self.session)
         logger.info("Stored message or reply at {}".format(msg.filename))
 
-        try:
-            self.gpg.decrypt_submission_or_reply(filepath, msg.filename, False)
-            storage.set_object_decryption_status(msg, self.session, True)
-            logger.info("Message or reply decrypted: {}".format(msg.filename))
-        except CryptoError:
-            storage.set_object_decryption_status(msg, self.session, False)
-            logger.info("Message or reply failed to decrypt: {}".format(msg.filename))
+        with NamedTemporaryFile('w+') as plaintext_file:
+            try:
+                self.gpg.decrypt_submission_or_reply(filepath, plaintext_file.name, False)
+                plaintext_file.seek(0)
+                content = plaintext_file.read()
+                storage.set_object_decryption_status_with_content(msg, self.session, True, content)
+                logger.info("Message or reply decrypted: {}".format(msg.filename))
+            except CryptoError:
+                storage.set_object_decryption_status_with_content(msg, self.session, False)
+                logger.info("Message or reply failed to decrypt: {}".format(msg.filename))
 
 
 class MessageSync(APISyncObject):
@@ -67,10 +70,10 @@ class MessageSync(APISyncObject):
     """
 
     """
-    Signal emitted notifying that a message has been downloaded. The signal is a tuple of
+    Signal emitted notifying that a message is ready to be displayed. The signal is a tuple of
     (str, str) containing the message's UUID and the content of the message.
     """
-    message_downloaded = pyqtSignal([str, str])
+    message_ready = pyqtSignal([str, str])
 
     def __init__(self, api, home, is_qubes):
         super().__init__(api, home, is_qubes)
@@ -93,8 +96,13 @@ class MessageSync(APISyncObject):
                                              db_submission,
                                              self.api.download_submission,
                                              storage.mark_message_as_downloaded)
-                        self.message_downloaded.emit(db_submission.uuid,
-                                                     get_data(self.home, db_submission.filename))
+
+                        if db_submission.content is not None:
+                            content = db_submission.content
+                        else:
+                            content = '<Message not yet available>'
+
+                        self.message_ready.emit(db_submission.uuid, content)
                 except Exception:
                     tb = traceback.format_exc()
                     logger.critical("Exception while downloading submission!\n{}".format(tb))
@@ -113,10 +121,10 @@ class ReplySync(APISyncObject):
     """
 
     """
-    Signal emitted notifying that a reply has been downloaded. The signal is a tuple of
-    (str, str) containing the message's UUID and the content of the reply.
+    Signal emitted notifying that a reply is ready to be displayed. The signal is a tuple of
+    (str, str) containing the reply's UUID and the content of the reply.
     """
-    reply_downloaded = pyqtSignal([str, str])
+    reply_ready = pyqtSignal([str, str])
 
     def __init__(self, api, home, is_qubes):
         super().__init__(api, home, is_qubes)
@@ -142,8 +150,13 @@ class ReplySync(APISyncObject):
                                              db_reply,
                                              self.api.download_reply,
                                              storage.mark_reply_as_downloaded)
-                        self.reply_downloaded.emit(db_reply.uuid,
-                                                   get_data(self.home, db_reply.filename))
+
+                        if db_reply.content is not None:
+                            content = db_reply.content
+                        else:
+                            content = '<Reply not yet available>'
+
+                        self.reply_ready.emit(db_reply.uuid, content)
                 except Exception:
                     tb = traceback.format_exc()
                     logger.critical("Exception while downloading reply!\n{}".format(tb))

@@ -626,10 +626,12 @@ class Client(QObject):
                 # Attempt to decrypt the file.
                 self.gpg.decrypt_submission_or_reply(
                     filepath_in_datadir, server_filename, is_doc=True)
-                storage.set_object_decryption_status(current_object, self.session, True)
+                storage.set_object_decryption_status_with_content(
+                    current_object, self.session, True)
             except CryptoError as e:
                 logger.debug('Failed to decrypt file {}: {}'.format(server_filename, e))
-                storage.set_object_decryption_status(current_object, self.session, False)
+                storage.set_object_decryption_status_with_content(
+                    current_object, self.session, False)
                 self.set_status("Failed to decrypt file, "
                                 "please try again or talk to your administrator.")
                 # TODO: We should save the downloaded content, and just

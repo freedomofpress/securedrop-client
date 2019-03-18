@@ -184,7 +184,6 @@ class Window(QMainWindow):
         Show conversation of messages and replies between a source and
         journalists.
         """
-
         conversation_container = self.conversations.get(source.uuid, None)
 
         if conversation_container is None:
