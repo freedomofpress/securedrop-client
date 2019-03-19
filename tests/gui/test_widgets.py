@@ -2,7 +2,7 @@
 Make sure the UI widgets are configured correctly and work as expected.
 """
 from PyQt5.QtWidgets import QWidget, QApplication, QWidgetItem, QSpacerItem, QVBoxLayout, \
-    QMessageBox
+    QMessageBox, QLabel
 from tests import factory
 from securedrop_client import db
 from securedrop_client import logic
@@ -52,7 +52,7 @@ def test_ToolBar_set_logged_in_as(mocker):
 
     tb.set_logged_in_as('test')
 
-    tb.user_state.setText.assert_called_once_with('Signed in as: test')
+    tb.user_state.setText.assert_called_once_with('test')
     tb.login.setVisible.assert_called_once_with(False)
     tb.logout.setVisible.assert_called_once_with(True)
     tb.refresh.setVisible.assert_called_once_with(True)
@@ -1068,6 +1068,7 @@ def test_SourceConversationWrapper_send_reply(mocker):
     mock_uuid = '456xyz'
     mocker.patch('securedrop_client.gui.widgets.uuid4', return_value=mock_uuid)
     mock_controller = mocker.MagicMock()
+    mocker.patch('securedrop_client.gui.widgets.LastUpdatedLabel', return_value=QLabel('now'))
 
     cw = SourceConversationWrapper(mock_source, 'mock home', mock_controller, True)
     mock_add_reply = mocker.Mock()
@@ -1211,6 +1212,8 @@ def test_SourceConversationWrapper_auth_signals(mocker, homedir):
     mock_is_auth = mocker.MagicMock()
 
     mock_sh = mocker.patch.object(SourceConversationWrapper, '_show_or_hide_replybox')
+    mocker.patch('securedrop_client.gui.widgets.LastUpdatedLabel', return_value=QLabel('now'))
+
     SourceConversationWrapper(mock_source, 'mock home', mock_controller, mock_is_auth)
 
     mock_connect.assert_called_once_with(mock_sh)
@@ -1224,9 +1227,9 @@ def test_SourceConversationWrapper_set_widgets_via_auth_value(mocker, homedir):
     mock_source = mocker.Mock(collection=[])
     mock_controller = mocker.MagicMock()
 
+    mocker.patch('securedrop_client.gui.widgets.LastUpdatedLabel', return_value=QLabel('now'))
     cw = SourceConversationWrapper(mock_source, 'mock home', mock_controller, True)
     mocker.patch.object(cw, 'layout')
-
     mock_reply_box = mocker.patch('securedrop_client.gui.widgets.ReplyBoxWidget',
                                   return_value=QWidget())
     mock_label = mocker.patch('securedrop_client.gui.widgets.QLabel', return_value=QWidget())
