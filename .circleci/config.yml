@@ -54,7 +54,7 @@ jobs:
           name: Start spinning up the SecureDrop server container
           command: |
             cd securedrop
-            make -C securedrop dev
+            NUM_SOURCES=5 make -C securedrop dev
           background: true  
       - run:  # As suggested in https://discuss.circleci.com/t/prevent-race-conditions-by-waiting-for-services-with-dockerize/11215
           name: Install dockerize
@@ -65,10 +65,10 @@ jobs:
           environment:
             DOCKERIZE_VERSION: v0.6.1
       - run:
-          name: Wait for server to be up
+          name: Wait for server to be up and for test sources to load
           command: |
             dockerize -wait tcp://127.0.0.1:8080 -timeout 15m
-            sleep 10
+            sleep 30
       - run:
           name: Remove VCR cassettes and run tests against latest API
           command: |
