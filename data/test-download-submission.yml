@@ -9,7 +9,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/submissions
+    uri: http://127.0.0.1:8081/api/v1/submissions
   response:
     body: {string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/a4f133ff-ba19-4986-a2bd-735b6c33be75/submissions/455db36c-16c5-455e-b06f-5e3e8fc6a8b6/download\",
         \n      \"filename\": \"1-structural_ageratum-msg.gpg\", \n      \"is_read\":
@@ -50,7 +50,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources/a4f133ff-ba19-4986-a2bd-735b6c33be75/submissions/455db36c-16c5-455e-b06f-5e3e8fc6a8b6/download
+    uri: http://127.0.0.1:8081/api/v1/sources/a4f133ff-ba19-4986-a2bd-735b6c33be75/submissions/455db36c-16c5-455e-b06f-5e3e8fc6a8b6/download
   response:
     body:
       string: !!binary |
@@ -89,7 +89,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources/a4f133ff-ba19-4986-a2bd-735b6c33be75/submissions/455db36c-16c5-455e-b06f-5e3e8fc6a8b6
+    uri: http://127.0.0.1:8081/api/v1/sources/a4f133ff-ba19-4986-a2bd-735b6c33be75/submissions/455db36c-16c5-455e-b06f-5e3e8fc6a8b6
   response:
     body: {string: "{\n  \"download_url\": \"/api/v1/sources/a4f133ff-ba19-4986-a2bd-735b6c33be75/submissions/455db36c-16c5-455e-b06f-5e3e8fc6a8b6/download\",
         \n  \"filename\": \"1-structural_ageratum-msg.gpg\", \n  \"is_read\": true,

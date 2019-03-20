@@ -9,7 +9,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/replies
+    uri: http://127.0.0.1:8081/api/v1/replies
   response:
     body: {string: "{\n  \"replies\": [\n    {\n      \"filename\": \"3-bumptious_arthropod-reply.gpg\",
         \n      \"is_deleted_by_source\": false, \n      \"journalist_username\":
@@ -51,7 +51,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources/1f0a8826-a118-4a2f-b295-4abc0b41e1b8/replies/e1f1db54-9cd7-41f3-907d-6a260e269a60/download
+    uri: http://127.0.0.1:8081/api/v1/sources/1f0a8826-a118-4a2f-b295-4abc0b41e1b8/replies/e1f1db54-9cd7-41f3-907d-6a260e269a60/download
   response:
     body:
       string: !!binary |

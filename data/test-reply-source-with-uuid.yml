@@ -9,7 +9,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources
+    uri: http://127.0.0.1:8081/api/v1/sources
   response:
     body: {string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/6c3a6a14-6751-4f5f-bba9-36e93943fc45/add_star\"\
         , \n      \"interaction_count\": 5, \n      \"is_flagged\": false, \n    \
@@ -80,7 +80,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: POST
-    uri: http://localhost:8081/api/v1/sources/6c3a6a14-6751-4f5f-bba9-36e93943fc45/replies
+    uri: http://127.0.0.1:8081/api/v1/sources/6c3a6a14-6751-4f5f-bba9-36e93943fc45/replies
   response:
     body: {string: "{\n  \"filename\": \"6-amendable_oxalate-reply.gpg\", \n  \"message\"\
         : \"Your reply has been stored\", \n  \"uuid\": \"e467868c-1fbb-4b5e-bca2-87944ea83855\"\

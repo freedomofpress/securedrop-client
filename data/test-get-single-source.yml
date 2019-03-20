@@ -9,7 +9,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources
+    uri: http://127.0.0.1:8081/api/v1/sources
   response:
     body: {string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/a2c25dff-cecb-4194-95b8-8a1cae5c86fc/add_star\",
         \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n      \"is_starred\":
@@ -52,7 +52,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources/a2c25dff-cecb-4194-95b8-8a1cae5c86fc
+    uri: http://127.0.0.1:8081/api/v1/sources/a2c25dff-cecb-4194-95b8-8a1cae5c86fc
   response:
     body: {string: "{\n  \"add_star_url\": \"/api/v1/sources/a2c25dff-cecb-4194-95b8-8a1cae5c86fc/add_star\",
         \n  \"interaction_count\": 4, \n  \"is_flagged\": false, \n  \"is_starred\":

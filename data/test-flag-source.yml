@@ -9,7 +9,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources
+    uri: http://127.0.0.1:8081/api/v1/sources
   response:
     body: {string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/bee5c707-de42-4087-886a-1a5cc382467a/add_star\",
         \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n      \"is_starred\":
@@ -53,7 +53,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: POST
-    uri: http://localhost:8081/api/v1/sources/bee5c707-de42-4087-886a-1a5cc382467a/flag
+    uri: http://127.0.0.1:8081/api/v1/sources/bee5c707-de42-4087-886a-1a5cc382467a/flag
   response:
     body: {string: "{\n  \"message\": \"Source flagged for reply\"\n}\n"}
     headers:
@@ -75,7 +75,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources/bee5c707-de42-4087-886a-1a5cc382467a
+    uri: http://127.0.0.1:8081/api/v1/sources/bee5c707-de42-4087-886a-1a5cc382467a
   response:
     body: {string: "{\n  \"add_star_url\": \"/api/v1/sources/bee5c707-de42-4087-886a-1a5cc382467a/add_star\",
         \n  \"interaction_count\": 4, \n  \"is_flagged\": true, \n  \"is_starred\":

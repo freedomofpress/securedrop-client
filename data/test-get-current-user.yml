@@ -9,7 +9,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/user
+    uri: http://127.0.0.1:8081/api/v1/user
   response:
     body: {string: "{\n  \"is_admin\": true, \n  \"last_login\": \"2018-10-22T23:00:06.845751Z\",
         \n  \"username\": \"journalist\", \n  \"uuid\": \"16db39ec-0f92-4299-a15d-f6053b3d52a7\"\n}\n"}

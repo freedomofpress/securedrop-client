@@ -9,7 +9,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources
+    uri: http://127.0.0.1:8081/api/v1/sources
   response:
     body: {string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/d9235b36-b3d4-49f1-b5df-dea96179342c/add_star\",
         \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n      \"is_starred\":
@@ -53,7 +53,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: POST
-    uri: http://localhost:8081/api/v1/sources/d9235b36-b3d4-49f1-b5df-dea96179342c/add_star
+    uri: http://127.0.0.1:8081/api/v1/sources/d9235b36-b3d4-49f1-b5df-dea96179342c/add_star
   response:
     body: {string: "{\n  \"message\": \"Star added\"\n}\n"}
     headers:
@@ -76,7 +76,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: DELETE
-    uri: http://localhost:8081/api/v1/sources/d9235b36-b3d4-49f1-b5df-dea96179342c/remove_star
+    uri: http://127.0.0.1:8081/api/v1/sources/d9235b36-b3d4-49f1-b5df-dea96179342c/remove_star
   response:
     body: {string: "{\n  \"message\": \"Star removed\"\n}\n"}
     headers:
@@ -98,7 +98,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources
+    uri: http://127.0.0.1:8081/api/v1/sources
   response:
     body: {string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/d9235b36-b3d4-49f1-b5df-dea96179342c/add_star\",
         \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n      \"is_starred\":

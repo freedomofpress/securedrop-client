@@ -9,7 +9,7 @@ interactions:
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/sources/not%20there
+    uri: http://127.0.0.1:8081/api/v1/sources/not%20there
   response:
     body: {string: "{\n  \"error\": \"Not Found\", \n  \"message\": \"The requested
         URL was not found on the server.  If you entered the URL manually please check

@@ -4,101 +4,131 @@ interactions:
     headers:
       Accept: [application/json]
       Accept-Encoding: ['gzip, deflate']
-      Authorization: [Token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU0MDI3NjkxOCwiaWF0IjoxNTQwMjQ4MTE4fQ.eyJpZCI6MX0.fygpQy3CxB1ulUWLFz2UdrtcBKHz-fk5gyRxbcSY720]
+      Authorization: [Token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU1Mjk3NjkxNSwiaWF0IjoxNTUyOTQ4MTE1fQ.eyJpZCI6MX0.wFd17YM9k5t7KfMJHBoAcbsW0fATcoDleZbTdv92sto]
       Connection: [keep-alive]
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/replies
+    uri: http://127.0.0.1:8081/api/v1/replies
   response:
-    body: {string: "{\n  \"replies\": [\n    {\n      \"filename\": \"3-die-hard_chancellor-reply.gpg\",
+    body: {string: "{\n  \"replies\": [\n    {\n      \"filename\": \"3-raging_azure-reply.gpg\",
         \n      \"is_deleted_by_source\": false, \n      \"journalist_username\":
-        \"journalist\", \n      \"journalist_uuid\": \"719a8c13-9352-4380-9619-3015030b0e49\",
-        \n      \"reply_url\": \"/api/v1/sources/664259e9-bd0e-41a0-85b2-bd0d618038c5/replies/68603968-b307-4607-80f7-cc7856f90f2f\",
-        \n      \"size\": 1116, \n      \"source_url\": \"/api/v1/sources/664259e9-bd0e-41a0-85b2-bd0d618038c5\",
-        \n      \"uuid\": \"68603968-b307-4607-80f7-cc7856f90f2f\"\n    }, \n    {\n
-        \     \"filename\": \"4-die-hard_chancellor-reply.gpg\", \n      \"is_deleted_by_source\":
+        \"journalist\", \n      \"journalist_uuid\": \"33ae0b48-99fd-4eb5-94b0-d98a999a8438\",
+        \n      \"reply_url\": \"/api/v1/sources/d9eb4d27-b7c8-4599-ba22-daee6d939f17/replies/0403af8d-b948-46ac-bf76-237f51f1b908\",
+        \n      \"size\": 1134, \n      \"source_url\": \"/api/v1/sources/d9eb4d27-b7c8-4599-ba22-daee6d939f17\",
+        \n      \"uuid\": \"0403af8d-b948-46ac-bf76-237f51f1b908\"\n    }, \n    {\n
+        \     \"filename\": \"4-raging_azure-reply.gpg\", \n      \"is_deleted_by_source\":
         false, \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\":
-        \"719a8c13-9352-4380-9619-3015030b0e49\", \n      \"reply_url\": \"/api/v1/sources/664259e9-bd0e-41a0-85b2-bd0d618038c5/replies/dddc31e4-c720-4ca4-bd31-62242d91fe6c\",
-        \n      \"size\": 1116, \n      \"source_url\": \"/api/v1/sources/664259e9-bd0e-41a0-85b2-bd0d618038c5\",
-        \n      \"uuid\": \"dddc31e4-c720-4ca4-bd31-62242d91fe6c\"\n    }, \n    {\n
-        \     \"filename\": \"3-sidereal_eclipse-reply.gpg\", \n      \"is_deleted_by_source\":
+        \"33ae0b48-99fd-4eb5-94b0-d98a999a8438\", \n      \"reply_url\": \"/api/v1/sources/d9eb4d27-b7c8-4599-ba22-daee6d939f17/replies/ac8730b9-7644-434b-8ca5-996805a511c6\",
+        \n      \"size\": 1134, \n      \"source_url\": \"/api/v1/sources/d9eb4d27-b7c8-4599-ba22-daee6d939f17\",
+        \n      \"uuid\": \"ac8730b9-7644-434b-8ca5-996805a511c6\"\n    }, \n    {\n
+        \     \"filename\": \"3-untrammeled_dancing-reply.gpg\", \n      \"is_deleted_by_source\":
         false, \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\":
-        \"719a8c13-9352-4380-9619-3015030b0e49\", \n      \"reply_url\": \"/api/v1/sources/c32cddea-ddbb-4ccc-9d22-67caa9da1b81/replies/19f7dba0-56dd-4124-9b32-07642b28d95e\",
-        \n      \"size\": 1116, \n      \"source_url\": \"/api/v1/sources/c32cddea-ddbb-4ccc-9d22-67caa9da1b81\",
-        \n      \"uuid\": \"19f7dba0-56dd-4124-9b32-07642b28d95e\"\n    }, \n    {\n
-        \     \"filename\": \"4-sidereal_eclipse-reply.gpg\", \n      \"is_deleted_by_source\":
+        \"33ae0b48-99fd-4eb5-94b0-d98a999a8438\", \n      \"reply_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38/replies/dd8d3cde-2506-4fe0-a129-3a81f95dad12\",
+        \n      \"size\": 1134, \n      \"source_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38\",
+        \n      \"uuid\": \"dd8d3cde-2506-4fe0-a129-3a81f95dad12\"\n    }, \n    {\n
+        \     \"filename\": \"4-untrammeled_dancing-reply.gpg\", \n      \"is_deleted_by_source\":
         false, \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\":
-        \"719a8c13-9352-4380-9619-3015030b0e49\", \n      \"reply_url\": \"/api/v1/sources/c32cddea-ddbb-4ccc-9d22-67caa9da1b81/replies/131455ca-6135-49df-a178-4fa50238050a\",
-        \n      \"size\": 1116, \n      \"source_url\": \"/api/v1/sources/c32cddea-ddbb-4ccc-9d22-67caa9da1b81\",
-        \n      \"uuid\": \"131455ca-6135-49df-a178-4fa50238050a\"\n    }\n  ]\n}\n"}
+        \"33ae0b48-99fd-4eb5-94b0-d98a999a8438\", \n      \"reply_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38/replies/849e868d-4826-47d3-b8cc-c9a1848e77c0\",
+        \n      \"size\": 1134, \n      \"source_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38\",
+        \n      \"uuid\": \"849e868d-4826-47d3-b8cc-c9a1848e77c0\"\n    }\n  ]\n}\n"}
     headers:
-      Content-Length: ['1967']
+      Content-Length: ['1959']
       Content-Type: [application/json]
-      Date: ['Mon, 22 Oct 2018 23:04:56 GMT']
-      Server: [Werkzeug/0.14.1 Python/2.7.6]
-      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiVHVlLCAyMyBPY3QgMjAxOCAwMTowNDo1NiBHTVQifX0.Dq_pGA.iIM2KMQyp3YFlgF-KPoheeNv0U4;
-          HttpOnly; Path=/]
-      Vary: [Cookie]
+      Date: ['Mon, 18 Mar 2019 22:28:35 GMT']
+      Server: [Werkzeug/0.14.1 Python/2.7.12]
     status: {code: 200, message: OK}
 - request:
     body: null
     headers:
       Accept: [application/json]
       Accept-Encoding: ['gzip, deflate']
-      Authorization: [Token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU0MDI3NjkxOCwiaWF0IjoxNTQwMjQ4MTE4fQ.eyJpZCI6MX0.fygpQy3CxB1ulUWLFz2UdrtcBKHz-fk5gyRxbcSY720]
+      Authorization: [Token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU1Mjk3NjkxNSwiaWF0IjoxNTUyOTQ4MTE1fQ.eyJpZCI6MX0.wFd17YM9k5t7KfMJHBoAcbsW0fATcoDleZbTdv92sto]
+      Connection: [keep-alive]
+      Content-Type: [application/json]
+      User-Agent: [python-requests/2.20.0]
+    method: GET
+    uri: http://127.0.0.1:8081/api/v1/replies
+  response:
+    body: {string: "{\n  \"replies\": [\n    {\n      \"filename\": \"3-raging_azure-reply.gpg\",
+        \n      \"is_deleted_by_source\": false, \n      \"journalist_username\":
+        \"journalist\", \n      \"journalist_uuid\": \"33ae0b48-99fd-4eb5-94b0-d98a999a8438\",
+        \n      \"reply_url\": \"/api/v1/sources/d9eb4d27-b7c8-4599-ba22-daee6d939f17/replies/0403af8d-b948-46ac-bf76-237f51f1b908\",
+        \n      \"size\": 1134, \n      \"source_url\": \"/api/v1/sources/d9eb4d27-b7c8-4599-ba22-daee6d939f17\",
+        \n      \"uuid\": \"0403af8d-b948-46ac-bf76-237f51f1b908\"\n    }, \n    {\n
+        \     \"filename\": \"4-raging_azure-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\":
+        \"33ae0b48-99fd-4eb5-94b0-d98a999a8438\", \n      \"reply_url\": \"/api/v1/sources/d9eb4d27-b7c8-4599-ba22-daee6d939f17/replies/ac8730b9-7644-434b-8ca5-996805a511c6\",
+        \n      \"size\": 1134, \n      \"source_url\": \"/api/v1/sources/d9eb4d27-b7c8-4599-ba22-daee6d939f17\",
+        \n      \"uuid\": \"ac8730b9-7644-434b-8ca5-996805a511c6\"\n    }, \n    {\n
+        \     \"filename\": \"3-untrammeled_dancing-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\":
+        \"33ae0b48-99fd-4eb5-94b0-d98a999a8438\", \n      \"reply_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38/replies/dd8d3cde-2506-4fe0-a129-3a81f95dad12\",
+        \n      \"size\": 1134, \n      \"source_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38\",
+        \n      \"uuid\": \"dd8d3cde-2506-4fe0-a129-3a81f95dad12\"\n    }, \n    {\n
+        \     \"filename\": \"4-untrammeled_dancing-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\":
+        \"33ae0b48-99fd-4eb5-94b0-d98a999a8438\", \n      \"reply_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38/replies/849e868d-4826-47d3-b8cc-c9a1848e77c0\",
+        \n      \"size\": 1134, \n      \"source_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38\",
+        \n      \"uuid\": \"849e868d-4826-47d3-b8cc-c9a1848e77c0\"\n    }\n  ]\n}\n"}
+    headers:
+      Content-Length: ['1959']
+      Content-Type: [application/json]
+      Date: ['Mon, 18 Mar 2019 22:28:35 GMT']
+      Server: [Werkzeug/0.14.1 Python/2.7.12]
+    status: {code: 200, message: OK}
+- request:
+    body: null
+    headers:
+      Accept: [application/json]
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [Token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU1Mjk3NjkxNSwiaWF0IjoxNTUyOTQ4MTE1fQ.eyJpZCI6MX0.wFd17YM9k5t7KfMJHBoAcbsW0fATcoDleZbTdv92sto]
       Connection: [keep-alive]
       Content-Length: ['0']
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: DELETE
-    uri: http://localhost:8081/api/v1/sources/664259e9-bd0e-41a0-85b2-bd0d618038c5/replies/68603968-b307-4607-80f7-cc7856f90f2f
+    uri: http://127.0.0.1:8081/api/v1/sources/d9eb4d27-b7c8-4599-ba22-daee6d939f17/replies/0403af8d-b948-46ac-bf76-237f51f1b908
   response:
     body: {string: "{\n  \"message\": \"Reply deleted\"\n}\n"}
     headers:
       Content-Length: ['33']
       Content-Type: [application/json]
-      Date: ['Mon, 22 Oct 2018 23:04:56 GMT']
-      Server: [Werkzeug/0.14.1 Python/2.7.6]
-      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiVHVlLCAyMyBPY3QgMjAxOCAwMTowNDo1NiBHTVQifX0.Dq_pGA.iIM2KMQyp3YFlgF-KPoheeNv0U4;
-          HttpOnly; Path=/]
-      Vary: [Cookie]
+      Date: ['Mon, 18 Mar 2019 22:28:35 GMT']
+      Server: [Werkzeug/0.14.1 Python/2.7.12]
     status: {code: 200, message: OK}
 - request:
     body: null
     headers:
       Accept: [application/json]
       Accept-Encoding: ['gzip, deflate']
-      Authorization: [Token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU0MDI3NjkxOCwiaWF0IjoxNTQwMjQ4MTE4fQ.eyJpZCI6MX0.fygpQy3CxB1ulUWLFz2UdrtcBKHz-fk5gyRxbcSY720]
+      Authorization: [Token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU1Mjk3NjkxNSwiaWF0IjoxNTUyOTQ4MTE1fQ.eyJpZCI6MX0.wFd17YM9k5t7KfMJHBoAcbsW0fATcoDleZbTdv92sto]
       Connection: [keep-alive]
       Content-Type: [application/json]
       User-Agent: [python-requests/2.20.0]
     method: GET
-    uri: http://localhost:8081/api/v1/replies
+    uri: http://127.0.0.1:8081/api/v1/replies
   response:
-    body: {string: "{\n  \"replies\": [\n    {\n      \"filename\": \"4-die-hard_chancellor-reply.gpg\",
+    body: {string: "{\n  \"replies\": [\n    {\n      \"filename\": \"4-raging_azure-reply.gpg\",
         \n      \"is_deleted_by_source\": false, \n      \"journalist_username\":
-        \"journalist\", \n      \"journalist_uuid\": \"719a8c13-9352-4380-9619-3015030b0e49\",
-        \n      \"reply_url\": \"/api/v1/sources/664259e9-bd0e-41a0-85b2-bd0d618038c5/replies/dddc31e4-c720-4ca4-bd31-62242d91fe6c\",
-        \n      \"size\": 1116, \n      \"source_url\": \"/api/v1/sources/664259e9-bd0e-41a0-85b2-bd0d618038c5\",
-        \n      \"uuid\": \"dddc31e4-c720-4ca4-bd31-62242d91fe6c\"\n    }, \n    {\n
-        \     \"filename\": \"3-sidereal_eclipse-reply.gpg\", \n      \"is_deleted_by_source\":
+        \"journalist\", \n      \"journalist_uuid\": \"33ae0b48-99fd-4eb5-94b0-d98a999a8438\",
+        \n      \"reply_url\": \"/api/v1/sources/d9eb4d27-b7c8-4599-ba22-daee6d939f17/replies/ac8730b9-7644-434b-8ca5-996805a511c6\",
+        \n      \"size\": 1134, \n      \"source_url\": \"/api/v1/sources/d9eb4d27-b7c8-4599-ba22-daee6d939f17\",
+        \n      \"uuid\": \"ac8730b9-7644-434b-8ca5-996805a511c6\"\n    }, \n    {\n
+        \     \"filename\": \"3-untrammeled_dancing-reply.gpg\", \n      \"is_deleted_by_source\":
         false, \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\":
-        \"719a8c13-9352-4380-9619-3015030b0e49\", \n      \"reply_url\": \"/api/v1/sources/c32cddea-ddbb-4ccc-9d22-67caa9da1b81/replies/19f7dba0-56dd-4124-9b32-07642b28d95e\",
-        \n      \"size\": 1116, \n      \"source_url\": \"/api/v1/sources/c32cddea-ddbb-4ccc-9d22-67caa9da1b81\",
-        \n      \"uuid\": \"19f7dba0-56dd-4124-9b32-07642b28d95e\"\n    }, \n    {\n
-        \     \"filename\": \"4-sidereal_eclipse-reply.gpg\", \n      \"is_deleted_by_source\":
+        \"33ae0b48-99fd-4eb5-94b0-d98a999a8438\", \n      \"reply_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38/replies/dd8d3cde-2506-4fe0-a129-3a81f95dad12\",
+        \n      \"size\": 1134, \n      \"source_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38\",
+        \n      \"uuid\": \"dd8d3cde-2506-4fe0-a129-3a81f95dad12\"\n    }, \n    {\n
+        \     \"filename\": \"4-untrammeled_dancing-reply.gpg\", \n      \"is_deleted_by_source\":
         false, \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\":
-        \"719a8c13-9352-4380-9619-3015030b0e49\", \n      \"reply_url\": \"/api/v1/sources/c32cddea-ddbb-4ccc-9d22-67caa9da1b81/replies/131455ca-6135-49df-a178-4fa50238050a\",
-        \n      \"size\": 1116, \n      \"source_url\": \"/api/v1/sources/c32cddea-ddbb-4ccc-9d22-67caa9da1b81\",
-        \n      \"uuid\": \"131455ca-6135-49df-a178-4fa50238050a\"\n    }\n  ]\n}\n"}
+        \"33ae0b48-99fd-4eb5-94b0-d98a999a8438\", \n      \"reply_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38/replies/849e868d-4826-47d3-b8cc-c9a1848e77c0\",
+        \n      \"size\": 1134, \n      \"source_url\": \"/api/v1/sources/8b8325d9-20a5-4687-8bdf-f0d45408ca38\",
+        \n      \"uuid\": \"849e868d-4826-47d3-b8cc-c9a1848e77c0\"\n    }\n  ]\n}\n"}
     headers:
-      Content-Length: ['1479']
+      Content-Length: ['1478']
       Content-Type: [application/json]
-      Date: ['Mon, 22 Oct 2018 23:04:56 GMT']
-      Server: [Werkzeug/0.14.1 Python/2.7.6]
-      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiVHVlLCAyMyBPY3QgMjAxOCAwMTowNDo1NiBHTVQifX0.Dq_pGA.iIM2KMQyp3YFlgF-KPoheeNv0U4;
-          HttpOnly; Path=/]
-      Vary: [Cookie]
+      Date: ['Mon, 18 Mar 2019 22:28:35 GMT']
+      Server: [Werkzeug/0.14.1 Python/2.7.12]
     status: {code: 200, message: OK}
 version: 1

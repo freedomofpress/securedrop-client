@@ -17,13 +17,16 @@ from sdclientapi.sdlocalobjects import (
 from utils import load_auth, save_auth
 
 
+NUM_REPLIES_PER_SOURCE = 2
+
+
 class TestAPI(unittest.TestCase):
     @vcr.use_cassette("data/test-setup.yml")
     def setUp(self):
         self.totp = pyotp.TOTP("JHCOGO7VCER3EJ4L")
         self.username = "journalist"
         self.password = "correct horse battery staple profanity oil chewy"
-        self.server = "http://localhost:8081/"
+        self.server = "http://127.0.0.1:8081/"
         self.api = API(self.server, self.username, self.password, str(self.totp.now()))
         for i in range(3):
             try:
@@ -45,7 +48,11 @@ class TestAPI(unittest.TestCase):
     @vcr.use_cassette("data/test-get-sources.yml")
     def test_get_sources(self):
         sources = self.api.get_sources()
-        self.assertEqual(len(sources), 2)
+        for source in sources:
+            # Assert expected fields are present
+            assert source.journalist_designation
+            assert source.uuid
+            assert source.last_updated
 
     @vcr.use_cassette("data/test-star-add-remove.yml")
     def test_star_add_remove(self):
@@ -84,11 +91,14 @@ class TestAPI(unittest.TestCase):
         s = self.api.get_sources()[0]
 
         subs = self.api.get_submissions(s)
-        self.assertEqual(len(subs), 2)
+        for submission in subs:
+            assert submission.filename
 
     @vcr.use_cassette("data/test-get-submission.yml")
     def test_get_submission(self):
-        s = self.api.get_sources()[0]
+        # Get a source with submissions
+        source_uuid = self.api.get_all_submissions()[0].source_uuid
+        s = self.api.get_source(Source(uuid=source_uuid))
 
         subs = self.api.get_submissions(s)
         sub = self.api.get_submission(subs[0])
@@ -96,7 +106,9 @@ class TestAPI(unittest.TestCase):
 
     @vcr.use_cassette("data/test-get-submission.yml")
     def test_get_submission_from_string(self):
-        s = self.api.get_sources()[0]
+        # Get a source with submissions
+        source_uuid = self.api.get_all_submissions()[0].source_uuid
+        s = self.api.get_source(Source(uuid=source_uuid))
 
         subs = self.api.get_submissions(s)
         sub = self.api.get_submission_from_string(subs[0].uuid, s.uuid)
@@ -112,7 +124,8 @@ class TestAPI(unittest.TestCase):
     @vcr.use_cassette("data/test-get-all-submissions.yml")
     def test_get_all_submissions(self):
         subs = self.api.get_all_submissions()
-        self.assertEqual(len(subs), 4)
+        for submission in subs:
+            assert submission.filename
 
     @vcr.use_cassette("data/test-flag-source.yml")
     def test_flag_source(self):
@@ -124,29 +137,35 @@ class TestAPI(unittest.TestCase):
 
     @vcr.use_cassette("data/test-delete-source.yml")
     def test_delete_source(self):
+        number_of_sources_before = len(self.api.get_sources())
+
         s = self.api.get_sources()[0]
         self.assertTrue(self.api.delete_source(s))
 
-        # Now there should be one source left
+        # Now there should be one less source
         sources = self.api.get_sources()
-        self.assertEqual(len(sources), 1)
+        self.assertEqual(len(sources), number_of_sources_before - 1)
 
     @vcr.use_cassette("data/test-delete-source.yml")
     def test_delete_source_from_string(self):
+        number_of_sources_before = len(self.api.get_sources())
+
         s = self.api.get_sources()[0]
         self.assertTrue(self.api.delete_source_from_string(s.uuid))
 
-        # Now there should be one source left
+        # Now there should be one less source
         sources = self.api.get_sources()
-        self.assertEqual(len(sources), 1)
+        self.assertEqual(len(sources), number_of_sources_before - 1)
 
     @vcr.use_cassette("data/test-delete-submission.yml")
     def test_delete_submission(self):
+        number_of_submissions_before = len(self.api.get_all_submissions())
+
         subs = self.api.get_all_submissions()
         self.assertTrue(self.api.delete_submission(subs[0]))
         new_subs = self.api.get_all_submissions()
-        # We now should have 3 submissions
-        self.assertEqual(len(new_subs), 3)
+        # We now should have 1 less submission
+        self.assertEqual(len(new_subs), number_of_submissions_before - 1)
 
         # Let us make sure that sub[0] is not there
         for s in new_subs:
@@ -154,14 +173,16 @@ class TestAPI(unittest.TestCase):
 
     @vcr.use_cassette("data/test-delete-submission-from-string.yml")
     def test_delete_submission_from_string(self):
+        number_of_submissions_before = len(self.api.get_all_submissions())
+
         s = self.api.get_sources()[0]
 
         subs = self.api.get_submissions(s)
 
         self.assertTrue(self.api.delete_submission(subs[0]))
         new_subs = self.api.get_all_submissions()
-        # We now should have 3 submissions
-        self.assertEqual(len(new_subs), 3)
+        # We now should have 1 less submission
+        self.assertEqual(len(new_subs), number_of_submissions_before - 1)
 
         # Let us make sure that sub[0] is not there
         for s in new_subs:
@@ -230,7 +251,7 @@ class TestAPI(unittest.TestCase):
     def test_get_replies_from_source(self):
         s = self.api.get_sources()[0]
         replies = self.api.get_replies_from_source(s)
-        self.assertEqual(len(replies), 2)
+        self.assertEqual(len(replies), NUM_REPLIES_PER_SOURCE)
 
     @vcr.use_cassette("data/test-get-reply-from-source.yml")
     def test_get_reply_from_source(self):
@@ -247,8 +268,9 @@ class TestAPI(unittest.TestCase):
 
     @vcr.use_cassette("data/test-get-all-replies.yml")
     def test_get_all_replies(self):
+        num_sources = len(self.api.get_sources())
         replies = self.api.get_all_replies()
-        self.assertEqual(len(replies), 4)
+        self.assertEqual(len(replies), NUM_REPLIES_PER_SOURCE * num_sources)
 
     @vcr.use_cassette("data/test-download-reply.yml")
     def test_download_reply(self):
@@ -269,7 +291,9 @@ class TestAPI(unittest.TestCase):
     def test_delete_reply(self):
         r = self.api.get_all_replies()[0]
 
+        number_of_replies_before = len(self.api.get_all_replies())
+
         self.assertTrue(self.api.delete_reply(r))
 
-        # We deleted one, so there must be 3 replies left
-        self.assertEqual(len(self.api.get_all_replies()), 3)
+        # We deleted one, so there must be 1 less reply now
+        self.assertEqual(len(self.api.get_all_replies()), number_of_replies_before - 1)
