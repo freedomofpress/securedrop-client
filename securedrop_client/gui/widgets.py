@@ -48,7 +48,7 @@ class StatusBar(QStatusBar):
         self.refresh = QPushButton()
         self.refresh.clicked.connect(self.on_refresh_clicked)
         self.refresh.setMaximumSize(30, 30)
-        refresh_pixmap = load_image('refresh.svg')
+        refresh_pixmap = load_image('refresh_offline.svg')
         self.refresh.setIcon(QIcon(refresh_pixmap))
         self.addPermanentWidget(self.refresh)  # widget may not be obscured by temporary messages
 
@@ -82,13 +82,22 @@ class StatusBar(QStatusBar):
         """
         Hide refresh icon.
         """
-        self.refresh.hide()
+        refresh_pixmap = load_image('refresh_offline.svg')
+        self.refresh.setIcon(QIcon(refresh_pixmap))
 
     def show_refresh_icon(self):
         """
         Show refresh icon.
         """
-        self.refresh.show()
+        refresh_pixmap = load_image('refresh.svg')
+        self.refresh.setIcon(QIcon(refresh_pixmap))
+
+    def show_active_refresh(self):
+        """
+        Show active refresh icon.
+        """
+        refresh_pixmap = load_image('refresh_active.svg')
+        self.refresh.setIcon(QIcon(refresh_pixmap))
 
 
 class ToolBar(QWidget):

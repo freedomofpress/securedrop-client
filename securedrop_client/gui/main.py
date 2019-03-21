@@ -119,7 +119,6 @@ class Window(QMainWindow):
         self.login_dialog.setup(self.controller)
         self.login_dialog.reset()
         self.login_dialog.exec()
-        self.status_bar.show_refresh_icon()
 
     def show_login_error(self, error):
         """
@@ -134,7 +133,6 @@ class Window(QMainWindow):
         """
         self.login_dialog.accept()
         self.login_dialog = None
-        self.status_bar.hide_refresh_icon()
 
     def update_error_status(self, error=None):
         """
@@ -163,6 +161,7 @@ class Window(QMainWindow):
         Update the UI to show user logged in with username.
         """
         self.tool_bar.set_logged_in_as(username)
+        self.status_bar.show_refresh_icon()
 
     def logout(self):
         """
