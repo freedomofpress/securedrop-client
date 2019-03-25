@@ -311,14 +311,13 @@ def test_SourceWidget_toggle_star(mocker):
     sw.controller.update_star.assert_called_once_with(mock_source)
 
 
-def test_SourceWidget_delete_source(mocker):
-    mock_source = mocker.MagicMock()
+def test_SourceWidget_delete_source(mocker, session, source):
     mock_delete_source_message_box_object = mocker.MagicMock(DeleteSourceMessageBox)
     mock_controller = mocker.MagicMock()
     mock_delete_source_message = mocker.MagicMock(
         return_value=mock_delete_source_message_box_object)
 
-    sw = SourceWidget(None, mock_source)
+    sw = SourceWidget(None, source['source'])
     sw.controller = mock_controller
 
     mocker.patch(
@@ -330,26 +329,19 @@ def test_SourceWidget_delete_source(mocker):
     mock_delete_source_message_box_object.launch.assert_called_with()
 
 
-def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker):
+def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker, session, source):
+    source = source['source']  # to get the Source object
+    file_ = factory.File(source=source)
+    session.add(file_)
+    message = factory.Message(source=source)
+    session.add(message)
+    session.commit()
+
     mock_message_box_question = mocker.MagicMock(QMessageBox.question)
     mock_message_box_question.return_value = QMessageBox.Cancel
 
-    mock_source = mocker.MagicMock()
-    mock_source.journalist_designation = 'foo bar baz'
-    mock_source.submissions = []
-
-    submission_files = (
-        "1-submission-msg.gpg",
-        "2-submission-msg.gpg",
-        "3-submission-doc.gpg",
-    )
-    for filename in submission_files:
-        submission = mocker.MagicMock()
-        submission.filename = filename
-        mock_source.submissions.append(submission)
-
     mock_controller = mocker.MagicMock()
-    sw = SourceWidget(None, mock_source)
+    sw = SourceWidget(None, source)
     sw.controller = mock_controller
 
     mocker.patch(
@@ -875,33 +867,20 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir):
     assert isinstance(cal[0][0][0], FileWidget)
 
 
-def test_DeleteSourceMessageBox_init(mocker):
+def test_DeleteSourceMessageBox_init(mocker, source):
     mock_controller = mocker.MagicMock()
-    mock_source = mocker.MagicMock()
-    DeleteSourceMessageBox(None, mock_source, mock_controller)
+    DeleteSourceMessageBox(None, source['source'], mock_controller)
 
 
-def test_DeleteSourceMessage_launch_when_user_chooses_cancel(mocker):
+def test_DeleteSourceMessage_launch_when_user_chooses_cancel(mocker, source):
+    source = source['source']  # to get the Source object
+
     mock_message_box_question = mocker.MagicMock(QMessageBox.question)
     mock_message_box_question.return_value = QMessageBox.Cancel
-    mock_source = mocker.MagicMock()
-    mock_source.journalist_designation = 'foo bar baz'
-    mock_source.submissions = []
-
-    submission_files = (
-        "submission_1-msg.gpg",
-        "submission_2-msg.gpg",
-        "submission_3-doc.gpg",
-    )
-    for filename in submission_files:
-        submission = mocker.MagicMock()
-        submission.filename = filename
-        mock_source.submissions.append(submission)
-
     mock_controller = mocker.MagicMock()
-    delete_source_message_box = DeleteSourceMessageBox(
-        None, mock_source, mock_controller
-    )
+
+    delete_source_message_box = DeleteSourceMessageBox(None, source, mock_controller)
+
     mocker.patch(
         "securedrop_client.gui.widgets.QMessageBox.question",
         mock_message_box_question,
@@ -911,43 +890,38 @@ def test_DeleteSourceMessage_launch_when_user_chooses_cancel(mocker):
     mock_controller.delete_source.assert_not_called()
 
 
-def test_DeleteSourceMssageBox_launch_when_user_chooses_yes(mocker):
+def test_DeleteSourceMssageBox_launch_when_user_chooses_yes(mocker, source, session):
+    source = source['source']  # to get the Source object
+    file_ = factory.File(source=source)
+    session.add(file_)
+    message = factory.Message(source=source)
+    session.add(message)
+    message = factory.Message(source=source)
+    session.add(message)
+    session.commit()
+
     mock_message_box_question = mocker.MagicMock(QMessageBox.question)
     mock_message_box_question.return_value = QMessageBox.Yes
-    mock_source = mocker.MagicMock()
-    mock_source.journalist_designation = 'foo bar baz'
-    mock_source.submissions = []
-
-    submission_files = (
-        "submission_1-msg.gpg",
-        "submission_2-msg.gpg",
-        "submission_3-doc.gpg",
-    )
-    for filename in submission_files:
-        submission = mocker.MagicMock()
-        submission.filename = filename
-        mock_source.submissions.append(submission)
-
     mock_controller = mocker.MagicMock()
-    delete_source_message_box = DeleteSourceMessageBox(
-        None, mock_source, mock_controller
-    )
+
+    delete_source_message_box = DeleteSourceMessageBox(None, source, mock_controller)
+
     mocker.patch(
         "securedrop_client.gui.widgets.QMessageBox.question",
         mock_message_box_question,
     )
 
     delete_source_message_box.launch()
-    mock_controller.delete_source.assert_called_once_with(mock_source)
+    mock_controller.delete_source.assert_called_once_with(source)
 
     message = (
         "<big>Deleting the Source account for "
-        "<b>foo bar baz</b> will also "
-        "delete 1 files and 2 messages.</big> "
+        "<b>{designation}</b> will also "
+        "delete {files} files and {messages} messages.</big> "
         "<br> "
         "<small>This Source will no longer be able to correspond "
         "through the log-in tied to this account.</small>"
-    )
+    ).format(designation=source.journalist_designation, files=1, messages=2)
     mock_message_box_question.assert_called_once_with(
         None,
         "",
@@ -957,35 +931,30 @@ def test_DeleteSourceMssageBox_launch_when_user_chooses_yes(mocker):
     )
 
 
-def test_DeleteSourceMessageBox_construct_message(mocker):
+def test_DeleteSourceMessageBox_construct_message(mocker, source, session):
+    source = source['source']  # to get the Source object
+    file_ = factory.File(source=source)
+    session.add(file_)
+    message = factory.Message(source=source)
+    session.add(message)
+    message = factory.Message(source=source)
+    session.add(message)
+    session.commit()
+
     mock_controller = mocker.MagicMock()
-    mock_source = mocker.MagicMock()
-    mock_source.journalist_designation = 'foo bar baz'
-    mock_source.submissions = []
 
-    submission_files = (
-        "submission_1-msg.gpg",
-        "submission_2-msg.gpg",
-        "submission_3-doc.gpg",
-    )
-    for filename in submission_files:
-        submission = mocker.MagicMock()
-        submission.filename = filename
-        mock_source.submissions.append(submission)
+    delete_source_message_box = DeleteSourceMessageBox(None, source, mock_controller)
 
-    delete_source_message_box = DeleteSourceMessageBox(
-        None, mock_source, mock_controller
-    )
-    message = delete_source_message_box._construct_message(mock_source)
+    message = delete_source_message_box._construct_message(source)
 
     expected_message = (
         "<big>Deleting the Source account for "
-        "<b>foo bar baz</b> will also "
+        "<b>{designation}</b> will also "
         "delete {files} files and {messages} messages.</big> "
         "<br> "
         "<small>This Source will no longer be able to correspond "
         "through the log-in tied to this account.</small>"
-    ).format(files=1, messages=2)
+    ).format(designation=source.journalist_designation, files=1, messages=2)
     assert message == expected_message
 
 

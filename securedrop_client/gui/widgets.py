@@ -27,7 +27,7 @@ from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBox
 from typing import List
 from uuid import uuid4
 
-from securedrop_client.db import Source
+from securedrop_client.db import Source, Message, File
 from securedrop_client.logic import Client
 from securedrop_client.resources import load_svg, load_image
 from securedrop_client.storage import get_data
@@ -260,13 +260,13 @@ class DeleteSourceMessageBox:
             logger.debug("Deleting source %s" % (self.source.uuid,))
             self.controller.delete_source(self.source)
 
-    def _construct_message(self, source):
+    def _construct_message(self, source: Source) -> str:
         files = 0
         messages = 0
-        for submission in source.submissions:
-            if submission.filename.endswith("msg.gpg"):
+        for submission in source.collection:
+            if isinstance(submission, Message):
                 messages += 1
-            else:
+            elif isinstance(submission, File):
                 files += 1
 
         message = (
