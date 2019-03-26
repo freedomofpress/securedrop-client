@@ -325,12 +325,14 @@ def mark_message_as_downloaded(uuid, session):
     session.commit()
 
 
-def set_object_decryption_status(obj, session, is_successful: bool):
+def set_object_decryption_status_with_content(obj, session, is_successful: bool, content=None):
     """Mark object as decrypted or not in the database."""
 
     model = type(obj)
     db_object = session.query(model).filter_by(uuid=obj.uuid).one_or_none()
     db_object.is_decrypted = is_successful
+    if content is not None:
+        db_object.content = content
     session.add(db_object)
     session.commit()
 
@@ -371,15 +373,3 @@ def rename_file(data_dir: str, filename: str, new_filename: str):
                   os.path.join(data_dir, new_filename))
     except OSError as e:
         logger.debug('File could not be renamed: {}'.format(e))
-
-
-def get_data(sdc_home: str, filename: str) -> str:
-    filename, _ = os.path.splitext(filename)
-    full_path = os.path.join(sdc_home, 'data', filename)
-    try:
-        with open(full_path) as f:
-            msg = f.read()
-    except FileNotFoundError:
-        logger.debug('File not found: {}'.format(full_path))
-        msg = '<Not Found>'
-    return msg

@@ -780,38 +780,157 @@ def test_ConversationView_update_conversation_position_stay_fixed(mocker, homedi
     cv.scroll.verticalScrollBar().setValue.assert_not_called()
 
 
-def test_ConversationView_add_message(mocker, homedir):
+def test_ConversationView_add_message(mocker, homedir, session, source):
     """
     Adding a message results in a new MessageWidget added to the layout.
     """
-    mocked_source = mocker.MagicMock()
-    mocked_controller = mocker.MagicMock()
+    source = source['source']  # grab the source from the fixture dict for simplicity
 
-    cv = ConversationView(mocked_source, homedir, mocked_controller)
+    mock_message_ready_signal = mocker.MagicMock()
+    mock_message_sync = mocker.MagicMock(message_ready=mock_message_ready_signal)
+    mocked_controller = mocker.MagicMock(session=session,
+                                         message_sync=mock_message_sync)
+
+    content = 'a sea, a bee'
+    message = factory.Message(source=source, content=content)
+    session.add(message)
+    session.commit()
+
+    cv = ConversationView(source, homedir, mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
+    # this is the MessageWidget that __init__() would return
+    mock_msg_widget_res = mocker.MagicMock()
+    # mock the actual MessageWidget so we can inspect the __init__ call
+    mock_msg_widget = mocker.patch('securedrop_client.gui.widgets.MessageWidget',
+                                   return_value=mock_msg_widget_res)
 
-    cv.add_message('mock id', 'hello')
-    assert cv.conversation_layout.addWidget.call_count == 1
+    cv.add_message(message)
 
-    cal = cv.conversation_layout.addWidget.call_args_list
-    assert isinstance(cal[0][0][0], MessageWidget)
+    # check that we built the widget was called with the correct args
+    mock_msg_widget.assert_called_once_with(message.uuid, content, mock_message_ready_signal)
+
+    # check that we added the correct widget to the layout
+    cv.conversation_layout.addWidget.assert_called_once_with(mock_msg_widget_res)
 
 
-def test_ConversationView_add_reply(mocker, homedir):
+def test_ConversationView_add_message_no_content(mocker, homedir, session, source):
     """
-    Adding a reply results in a new ReplyWidget added to the layout.
+    Adding a message results in a new MessageWidget added to the layout. This case specifically
+    checks that if a `Message` has `content = None` that a helpful message is displayed as would
+    be the case if download/decryption never occurred or failed.
     """
-    mocked_source = mocker.MagicMock()
-    mocked_controller = mocker.MagicMock()
+    source = source['source']  # grab the source from the fixture dict for simplicity
 
-    cv = ConversationView(mocked_source, homedir, mocked_controller)
+    mock_message_ready_signal = mocker.MagicMock()
+    mock_message_sync = mocker.MagicMock(message_ready=mock_message_ready_signal)
+    mocked_controller = mocker.MagicMock(session=session,
+                                         message_sync=mock_message_sync)
+
+    message = factory.Message(source=source, is_decrypted=False, content=None)
+    session.add(message)
+    session.commit()
+
+    cv = ConversationView(source, homedir, mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
+    # this is the MessageWidget that __init__() would return
+    mock_msg_widget_res = mocker.MagicMock()
+    # mock the actual MessageWidget so we can inspect the __init__ call
+    mock_msg_widget = mocker.patch('securedrop_client.gui.widgets.MessageWidget',
+                                   return_value=mock_msg_widget_res)
 
-    cv.add_reply('mock id', 'hello')
-    assert cv.conversation_layout.addWidget.call_count == 1
+    cv.add_message(message)
 
-    cal = cv.conversation_layout.addWidget.call_args_list
-    assert isinstance(cal[0][0][0], ReplyWidget)
+    # check that we built the widget was called with the correct args
+    mock_msg_widget.assert_called_once_with(
+        message.uuid, '<Message not yet available>', mock_message_ready_signal)
+
+    # check that we added the correct widget to the layout
+    cv.conversation_layout.addWidget.assert_called_once_with(mock_msg_widget_res)
+
+
+def test_ConversationView_add_reply(mocker, homedir, session, source):
+    """
+    Adding a message results in a new ReplyWidget added to the layout.
+    """
+    source = source['source']  # grab the source from the fixture dict for simplicity
+
+    mock_reply_ready_signal = mocker.MagicMock()
+    mock_reply_succeeded_signal = mocker.MagicMock()
+    mock_reply_failed_signal = mocker.MagicMock()
+    mock_reply_sync = mocker.MagicMock(reply_ready=mock_reply_ready_signal)
+    mocked_controller = mocker.MagicMock(session=session,
+                                         reply_sync=mock_reply_sync,
+                                         reply_succeeded=mock_reply_succeeded_signal,
+                                         reply_failed=mock_reply_failed_signal)
+
+    content = 'a sea, a bee'
+    reply = factory.Reply(source=source, content=content)
+    session.add(reply)
+    session.commit()
+
+    cv = ConversationView(source, homedir, mocked_controller)
+    cv.conversation_layout = mocker.MagicMock()
+    # this is the Reply that __init__() would return
+    mock_reply_widget_res = mocker.MagicMock()
+    # mock the actual MessageWidget so we can inspect the __init__ call
+    mock_reply_widget = mocker.patch('securedrop_client.gui.widgets.ReplyWidget',
+                                     return_value=mock_reply_widget_res)
+
+    cv.add_reply(reply)
+
+    # check that we built the widget was called with the correct args
+    mock_reply_widget.assert_called_once_with(
+        reply.uuid,
+        content,
+        mock_reply_ready_signal,
+        mock_reply_succeeded_signal,
+        mock_reply_failed_signal)
+
+    # check that we added the correct widget to the layout
+    cv.conversation_layout.addWidget.assert_called_once_with(mock_reply_widget_res)
+
+
+def test_ConversationView_add_reply_no_content(mocker, homedir, session, source):
+    """
+    Adding a reply results in a new ReplyWidget added to the layout. This case specifically
+    checks that if a `Reply` has `content = None` that a helpful message is displayed as would
+    be the case if download/decryption never occurred or failed.
+    """
+    source = source['source']  # grab the source from the fixture dict for simplicity
+
+    mock_reply_ready_signal = mocker.MagicMock()
+    mock_reply_succeeded_signal = mocker.MagicMock()
+    mock_reply_failed_signal = mocker.MagicMock()
+    mock_reply_sync = mocker.MagicMock(reply_ready=mock_reply_ready_signal)
+    mocked_controller = mocker.MagicMock(session=session,
+                                         reply_sync=mock_reply_sync,
+                                         reply_succeeded=mock_reply_succeeded_signal,
+                                         reply_failed=mock_reply_failed_signal)
+
+    reply = factory.Reply(source=source, is_decrypted=False, content=None)
+    session.add(reply)
+    session.commit()
+
+    cv = ConversationView(source, homedir, mocked_controller)
+    cv.conversation_layout = mocker.MagicMock()
+    # this is the Reply that __init__() would return
+    mock_reply_widget_res = mocker.MagicMock()
+    # mock the actual MessageWidget so we can inspect the __init__ call
+    mock_reply_widget = mocker.patch('securedrop_client.gui.widgets.ReplyWidget',
+                                     return_value=mock_reply_widget_res)
+
+    cv.add_reply(reply)
+
+    # check that we built the widget was called with the correct args
+    mock_reply_widget.assert_called_once_with(
+        reply.uuid,
+        '<Reply not yet available>',
+        mock_reply_ready_signal,
+        mock_reply_succeeded_signal,
+        mock_reply_failed_signal)
+
+    # check that we added the correct widget to the layout
+    cv.conversation_layout.addWidget.assert_called_once_with(mock_reply_widget_res)
 
 
 def test_ConversationView_add_downloaded_file(mocker, homedir):
@@ -1104,23 +1223,24 @@ def test_ReplyWidget_success_failure_slots(mocker):
     assert mock_logger.debug.called
 
 
-def test_update_conversation_maintains_old_items(mocker, homedir):
+def test_update_conversation_maintains_old_items(mocker, homedir, session):
     """
     Calling update_conversation deletes and adds old items back to layout
     """
     mock_controller = mocker.MagicMock()
-    mock_source = mocker.MagicMock()
-    mock_source.collection = []
-    mock_file = mocker.MagicMock()
-    mock_file.filename = '1-source-doc.gpg'
-    mock_source.collection.append(mock_file)
-    mock_message = mocker.MagicMock()
-    mock_message.filename = '2-source-msg.gpg'
-    mock_source.collection.append(mock_message)
-    mock_reply = mocker.MagicMock()
-    mock_reply.filename = '3-source-reply.gpg'
-    mock_source.collection.append(mock_reply)
-    cv = ConversationView(mock_source, homedir, mock_controller)
+    source = factory.Source()
+    session.add(source)
+    session.flush()
+
+    file_ = factory.File(filename='1-source-doc.gpg', source=source)
+    session.add(file_)
+    message = factory.Message(filename='2-source-msg.gpg', source=source)
+    session.add(message)
+    reply = factory.Reply(filename='3-source-reply.gpg', source=source)
+    session.add(reply)
+    session.commit()
+
+    cv = ConversationView(source, homedir, mock_controller)
     assert cv.conversation_layout.count() == 3
 
     cv.update_conversation(cv.source.collection)
@@ -1128,30 +1248,32 @@ def test_update_conversation_maintains_old_items(mocker, homedir):
     assert cv.conversation_layout.count() == 3
 
 
-def test_update_conversation_adds_new_items(mocker, homedir):
+def test_update_conversation_adds_new_items(mocker, homedir, session):
     """
     Calling update_conversation adds new items to layout
     """
     mock_controller = mocker.MagicMock()
-    mock_source = mocker.MagicMock()
-    mock_source.collection = []
-    mock_file = mocker.MagicMock()
-    mock_file.filename = '1-source-doc.gpg'
-    mock_source.collection.append(mock_file)
-    mock_message = mocker.MagicMock()
-    mock_message.filename = '2-source-msg.gpg'
-    mock_source.collection.append(mock_message)
-    mock_reply = mocker.MagicMock()
-    mock_reply.filename = '3-source-reply.gpg'
-    mock_source.collection.append(mock_reply)
-    cv = ConversationView(mock_source, homedir, mock_controller)
-    mock_new_message = mocker.MagicMock()
-    mock_new_message.filename = '4-source-msg.gpg'
-    mock_source.collection.append(mock_new_message)
-    assert cv.conversation_layout.count() == 3
+    source = factory.Source()
+    session.add(source)
+    session.flush()
+
+    file_ = factory.File(filename='1-source-doc.gpg', source=source)
+    session.add(file_)
+    message = factory.Message(filename='2-source-msg.gpg', source=source)
+    session.add(message)
+    reply = factory.Reply(filename='3-source-reply.gpg', source=source)
+    session.add(reply)
+    session.commit()
+
+    cv = ConversationView(source, homedir, mock_controller)
+    assert cv.conversation_layout.count() == 3  # precondition
+
+    # add the new message and persist
+    new_message = factory.Message(filename='4-source-msg.gpg', source=source)
+    session.add(new_message)
+    session.commit()
 
     cv.update_conversation(cv.source.collection)
-
     assert cv.conversation_layout.count() == 4
 
 
@@ -1161,8 +1283,9 @@ def test_clear_conversation_deletes_items(mocker, homedir):
     """
     mock_controller = mocker.MagicMock()
     mock_source = mocker.MagicMock()
+    message = db.Message(uuid='uuid', content='message', filename='1-foo')
     cv = ConversationView(mock_source, homedir, mock_controller)
-    cv.add_message('mock id', 'hello')
+    cv.add_message(message)
     assert cv.conversation_layout.count() == 1
 
     cv.clear_conversation()

@@ -2,11 +2,10 @@
 Check the core Window UI class works as expected.
 """
 from PyQt5.QtWidgets import QApplication, QHBoxLayout
+from securedrop_client.db import Message
 from securedrop_client.gui.main import Window
 from securedrop_client.resources import load_icon
-from securedrop_client.db import Message
 from uuid import uuid4
-
 
 app = QApplication([])
 
@@ -261,7 +260,7 @@ def test_conversation_pending_message(mocker):
     w.show_conversation_for(mock_source, True)
 
     assert mocked_add_message.call_count == 1
-    assert mocked_add_message.call_args == mocker.call(msg_uuid, "<Message not yet downloaded>")
+    assert mocked_add_message.call_args == mocker.call(message)
 
 
 def test_set_status(mocker):

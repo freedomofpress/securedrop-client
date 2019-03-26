@@ -27,10 +27,9 @@ from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBox
 from typing import List
 from uuid import uuid4
 
-from securedrop_client.db import Source, Message, File
+from securedrop_client.db import Source, Message, File, Reply
 from securedrop_client.logic import Client
 from securedrop_client.resources import load_svg, load_image
-from securedrop_client.storage import get_data
 from securedrop_client.utils import humanize_filesize
 
 logger = logging.getLogger(__name__)
@@ -727,24 +726,11 @@ class ConversationView(QWidget):
         # add new items
         for conversation_item in collection:
             if conversation_item.filename.endswith('msg.gpg'):
-                self.add_item_content_or(self.add_message,
-                                         conversation_item,
-                                         "<Message not yet downloaded>")
+                self.add_message(conversation_item)
             elif conversation_item.filename.endswith('reply.gpg'):
-                self.add_item_content_or(self.add_reply,
-                                         conversation_item,
-                                         "<Reply not yet downloaded>")
+                self.add_reply(conversation_item)
             else:
                 self.add_file(self.source, conversation_item)
-
-    def add_item_content_or(self, adder, item, default):
-        """
-        Private helper function to add correct message to conversation widgets
-        """
-        if item.is_downloaded is False:
-            adder(item.uuid, default)
-        else:
-            adder(item.uuid, get_data(self.sdc_home, item.filename))
 
     def add_file(self, source_db_object, submission_db_object):
         """
@@ -765,21 +751,33 @@ class ConversationView(QWidget):
         if current_val + viewport_height > max_val:
             self.scroll.verticalScrollBar().setValue(max_val)
 
-    def add_message(self, message_id: str, message: str) -> None:
+    def add_message(self, message: Message) -> None:
         """
         Add a message from the source.
         """
-        self.conversation_layout.addWidget(
-            MessageWidget(message_id, message, self.controller.message_sync.message_downloaded))
+        self.controller.session.refresh(message)
+        if message.content is not None:
+            content = message.content
+        else:
+            content = '<Message not yet available>'
 
-    def add_reply(self, message_id: str, reply: str, files=None) -> None:
+        self.conversation_layout.addWidget(
+            MessageWidget(message.uuid, content, self.controller.message_sync.message_ready))
+
+    def add_reply(self, reply: Reply) -> None:
         """
         Add a reply from a journalist.
         """
+        self.controller.session.refresh(reply)
+        if reply.content is not None:
+            content = reply.content
+        else:
+            content = '<Reply not yet available>'
+
         self.conversation_layout.addWidget(
-            ReplyWidget(message_id,
-                        reply,
-                        self.controller.reply_sync.reply_downloaded,
+            ReplyWidget(reply.uuid,
+                        content,
+                        self.controller.reply_sync.reply_ready,
                         self.controller.reply_succeeded,
                         self.controller.reply_failed,
                         ))
