@@ -1,6 +1,17 @@
 Changelog
 =========
 
+0.0.6
+-----
+
+* Fix auth header to user "Token" and not "token" (#56).
+* Parse the new required field `filename` in the response when posting a reply (#54).
+
+0.0.5
+-----
+
+* Allow clients to set UUID of replies via API (#49).
+
 0.0.4
 -----
 
