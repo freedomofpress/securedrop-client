@@ -8,8 +8,8 @@ from securedrop_client import db
 from securedrop_client import logic
 from securedrop_client.gui.widgets import ToolBar, MainView, SourceList, SourceWidget, \
     LoginDialog, SpeechBubble, ConversationWidget, MessageWidget, ReplyWidget, FileWidget, \
-    ConversationView, DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, \
-    SourceConversationWrapper, ReplyBoxWidget
+    ConversationView, DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, StatusBar, \
+    SourceConversationWrapper, ReplyBoxWidget, JournalistMenu
 
 
 app = QApplication([])
@@ -20,7 +20,10 @@ def test_ToolBar_init():
     Ensure the ToolBar instance is correctly set up.
     """
     tb = ToolBar(None)
-    assert "Signed out." in tb.user_state.text()
+    assert not tb.login.isHidden()
+    assert tb.user_icon.isHidden()
+    assert tb.user_state.isHidden()
+    assert tb.user_menu.isHidden()
 
 
 def test_ToolBar_setup(mocker):
@@ -29,7 +32,6 @@ def test_ToolBar_setup(mocker):
     them becoming attributes of self.
     """
     tb = ToolBar(None)
-
     mock_window = mocker.MagicMock()
     mock_controller = mocker.MagicMock()
 
@@ -40,41 +42,40 @@ def test_ToolBar_setup(mocker):
 
 
 def test_ToolBar_set_logged_in_as(mocker):
-    """Given a username, the user_state is updated and login/logout
-    buttons, and refresh buttons, are in the correct state.
+    """
+    When a user is logged in check that buttons and menus are in the correct state.
     """
     tb = ToolBar(None)
-
-    tb.user_state = mocker.MagicMock()
     tb.login = mocker.MagicMock()
-    tb.logout = mocker.MagicMock()
-    tb.refresh = mocker.MagicMock()
+    tb.user_icon = mocker.MagicMock()
+    tb.user_state = mocker.MagicMock()
+    tb.user_menu = mocker.MagicMock()
 
     tb.set_logged_in_as('test')
 
     tb.user_state.setText.assert_called_once_with('test')
-    tb.login.setVisible.assert_called_once_with(False)
-    tb.logout.setVisible.assert_called_once_with(True)
-    tb.refresh.setVisible.assert_called_once_with(True)
+    tb.login.hide.assert_called_once_with()
+    tb.user_icon.show.assert_called_once_with()
+    tb.user_state.show.assert_called_once_with()
+    tb.user_menu.show.assert_called_once_with()
 
 
 def test_ToolBar_set_logged_out(mocker):
     """
-    Ensure the UI reverts to the logged out state.
+    When a user is logged out check that buttons and menus are in the correct state.
     """
     tb = ToolBar(None)
-
-    tb.user_state = mocker.MagicMock()
     tb.login = mocker.MagicMock()
-    tb.logout = mocker.MagicMock()
-    tb.refresh = mocker.MagicMock()
+    tb.user_icon = mocker.MagicMock()
+    tb.user_state = mocker.MagicMock()
+    tb.user_menu = mocker.MagicMock()
 
     tb.set_logged_out()
 
-    tb.user_state.setText.assert_called_once_with('Signed out.')
-    tb.login.setVisible.assert_called_once_with(True)
-    tb.logout.setVisible.assert_called_once_with(False)
-    tb.refresh.setVisible.assert_called_once_with(False)
+    tb.login.show.assert_called_once_with()
+    tb.user_icon.hide.assert_called_once_with()
+    tb.user_state.hide.assert_called_once_with()
+    tb.user_menu.hide.assert_called_once_with()
 
 
 def test_ToolBar_on_login_clicked(mocker):
@@ -97,25 +98,71 @@ def test_ToolBar_on_logout_clicked(mocker):
     tb.controller.logout.assert_called_once_with()
 
 
-def test_ToolBar_on_refresh_clicked(mocker):
+def test_JournalistMenu_on_logout_clicked_action_triggered(mocker):
     """
-    When refresh is clicked, the refresh logic from the controller is stated.
+    When the sign-out option is selected, call on_logout_clicked.
     """
     tb = ToolBar(None)
     tb.controller = mocker.MagicMock()
-    tb.on_refresh_clicked()
-    tb.controller.sync_api.assert_called_once_with()
+    jm = JournalistMenu(tb)
+    jm.actions()[0].trigger()
+    tb.controller.logout.assert_called_once_with()
 
 
-def test_ToolBar_sync_event():
+def test_StatusBar_on_refresh_clicked(mocker):
+    """
+    When refresh is clicked, the refresh logic from the controller is stated.
+    """
+    sb = StatusBar()
+    sb.controller = mocker.MagicMock()
+    sb.on_refresh_clicked()
+    sb.controller.sync_api.assert_called_once_with()
+
+
+def test_StatusBar_sync_event():
     """Toggles refresh button when syncing
     """
-    tb = ToolBar(None)
-    tb._on_sync_event('syncing')
-    assert not tb.refresh.isEnabled()
+    sb = StatusBar()
+    sb._on_sync_event('syncing')
+    assert not sb.refresh.isEnabled()
 
-    tb._on_sync_event('synced')
-    assert tb.refresh.isEnabled()
+    sb._on_sync_event('synced')
+    assert sb.refresh.isEnabled()
+
+
+def test_StatusBar_init(mocker):
+    """
+    Ensure the StatusBar instance is correctly set up.
+    """
+    tb = ToolBar(None)
+    mock_window = mocker.MagicMock()
+    mock_controller = mocker.MagicMock()
+    tb.setup(mock_window, mock_controller)
+
+    sb = StatusBar()
+    sb.setup(mock_controller)
+
+    assert not sb.refresh.isHidden()
+
+
+def test_StatusBar_show_refresh(mocker):
+    """
+    Ensure the StatusBar shows refresh icon.
+    """
+    sb = StatusBar()
+    sb.refresh = mocker.MagicMock()
+    sb.show_refresh_icon()
+    sb.refresh.show.assert_called_once_with()
+
+
+def test_StatusBar_hide_refresh(mocker):
+    """
+    Ensure the StatusBar hides refresh icon.
+    """
+    sb = StatusBar()
+    sb.refresh = mocker.MagicMock()
+    sb.hide_refresh_icon()
+    sb.refresh.hide.assert_called_once_with()
 
 
 def test_MainView_init():

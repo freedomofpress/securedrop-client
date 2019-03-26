@@ -66,6 +66,7 @@ def test_show_login(mocker):
     mock_controller = mocker.MagicMock()
     w = Window('mock')
     w.setup(mock_controller)
+    w.status_bar = mocker.MagicMock()
 
     mock_ld = mocker.patch('securedrop_client.gui.main.LoginDialog')
     w.show_login()
@@ -73,6 +74,7 @@ def test_show_login(mocker):
     mock_ld.assert_called_once_with(w)
     w.login_dialog.reset.assert_called_once_with()
     w.login_dialog.exec.assert_called_once_with()
+    w.status_bar.show_refresh_icon.assert_called_once_with()
 
 
 def test_show_login_error(mocker):
@@ -160,8 +162,10 @@ def test_logout(mocker):
     """
     w = Window('mock')
     w.tool_bar = mocker.MagicMock()
+    w.status_bar = mocker.MagicMock()
     w.logout()
     w.tool_bar.set_logged_out.assert_called_once_with()
+    w.status_bar.hide_refresh_icon.assert_called_once_with()
 
 
 def test_on_source_changed(mocker):
@@ -270,4 +274,4 @@ def test_set_status(mocker):
     w = Window('mock')
     w.status_bar = mocker.MagicMock()
     w.set_status('hello', 100)
-    w.status_bar.showMessage.assert_called_once_with('hello', 100)
+    w.status_bar.show_message.assert_called_once_with('hello', 100)
