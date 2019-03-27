@@ -34,7 +34,7 @@ def Message(**attrs):
     MESSAGE_COUNT += 1
     defaults = dict(
         uuid='source-uuid-{}'.format(MESSAGE_COUNT),
-        filename='{}-reply.gpg'.format(MESSAGE_COUNT),
+        filename='{}-msg.gpg'.format(MESSAGE_COUNT),
         size=123,
         download_url='http://wat.onion/abc',
         is_decrypted=True,
