@@ -634,17 +634,42 @@ def test_find_or_create_user_new(mocker):
     mock_session.commit.assert_called_once_with()
 
 
-def test_find_new_messages(mocker):
-    mock_session = mocker.MagicMock()
-    mock_submission = mocker.MagicMock()
-    mock_submission.is_downloaded = False
-    mock_submissions = [mock_submission]
-    mock_session.query().filter_by().all.return_value = mock_submissions
-    submissions = find_new_messages(mock_session)
-    assert submissions[0].is_downloaded is False
+def test_find_new_messages(mocker, session):
+    source = factory.Source()
+    message_not_downloaded = factory.Message(
+        source=source,
+        is_downloaded=False,
+        is_decrypted=None,
+        content=None)
+    message_decrypt_not_attempted = factory.Message(
+        source=source,
+        is_downloaded=True,
+        is_decrypted=None,
+        content=None)
+    message_decrypt_failed = factory.Message(
+        source=source,
+        is_downloaded=True,
+        is_decrypted=False,
+        content=None)
+    message_decrypt_success = factory.Message(
+        source=source,
+        is_downloaded=True,
+        is_decrypted=True,
+        content='teehee')
+    session.add(source)
+    session.add(message_decrypt_not_attempted)
+    session.add(message_not_downloaded)
+    session.add(message_decrypt_failed)
+    session.add(message_decrypt_success)
+
+    messages = find_new_messages(session)
+    assert len(messages) == 3
+
+    for message in messages:
+        assert message.is_downloaded is False or message.is_decrypted is not True
 
 
-def test_find_new_files(mocker):
+def test_find_new_files(mocker, session):
     mock_session = mocker.MagicMock()
     mock_submission = mocker.MagicMock()
     mock_submission.is_downloaded = False
@@ -654,15 +679,39 @@ def test_find_new_files(mocker):
     assert submissions[0].is_downloaded is False
 
 
-def test_find_new_replies(mocker):
-    mock_session = mocker.MagicMock()
-    mock_reply = mocker.MagicMock()
-    mock_reply.is_downloaded = False
-    mock_replies = [mock_reply]
-    mock_session.query().filter_by() \
-                        .all.return_value = mock_replies
-    replies = find_new_replies(mock_session)
-    assert replies[0].is_downloaded is False
+def test_find_new_replies(mocker, session):
+    source = factory.Source()
+    reply_not_downloaded = factory.Reply(
+        source=source,
+        is_downloaded=False,
+        is_decrypted=None,
+        content=None)
+    reply_decrypt_not_attempted = factory.Reply(
+        source=source,
+        is_downloaded=True,
+        is_decrypted=None,
+        content=None)
+    reply_decrypt_failed = factory.Reply(
+        source=source,
+        is_downloaded=True,
+        is_decrypted=False,
+        content=None)
+    reply_decrypt_success = factory.Reply(
+        source=source,
+        is_downloaded=True,
+        is_decrypted=True,
+        content='teehee')
+    session.add(source)
+    session.add(reply_decrypt_not_attempted)
+    session.add(reply_not_downloaded)
+    session.add(reply_decrypt_failed)
+    session.add(reply_decrypt_success)
+
+    replies = find_new_replies(session)
+    assert len(replies) == 3
+
+    for reply in replies:
+        assert reply.is_downloaded is False or reply.is_decrypted is not True
 
 
 def test_set_object_decryption_status_with_content_null_to_false(mocker, source):

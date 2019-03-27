@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 from dateutil.parser import parse
 import glob
+from sqlalchemy import or_
 import os
 from securedrop_client.db import Source, Message, File, Reply, User
 
@@ -294,7 +295,18 @@ def find_or_create_user(uuid, username, session):
 
 
 def find_new_messages(session):
-    return session.query(Message).filter_by(is_downloaded=False).all()
+    """
+    Find messages to process. Those messages are those where one of the following
+    conditions is true:
+
+    * The message has not yet been downloaded.
+    * The message has not yet had decryption attempted.
+    * Decryption previously failed on a message.
+    """
+    return session.query(Message).filter(
+        or_(Message.is_downloaded == False,
+            Message.is_decrypted == False,
+            Message.is_decrypted == None)).all()  # noqa E711
 
 
 def find_new_files(session):
@@ -302,7 +314,18 @@ def find_new_files(session):
 
 
 def find_new_replies(session):
-    return session.query(Reply).filter_by(is_downloaded=False).all()
+    """
+    Find replies to process. Those replies are those where one of the following
+    conditions is true:
+
+    * The reply has not yet been downloaded.
+    * The reply has not yet had decryption attempted.
+    * Decryption previously failed on a reply.
+    """
+    return session.query(Reply).filter(
+        or_(Reply.is_downloaded == False,
+            Reply.is_decrypted == False,
+            Reply.is_decrypted == None)).all()  # noqa E711
 
 
 def mark_file_as_downloaded(uuid, session):
