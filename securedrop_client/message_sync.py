@@ -47,11 +47,7 @@ class APISyncObject(QObject):
         self.is_qubes = is_qubes
         self.gpg = GpgHelper(home, is_qubes)
 
-    def fetch_the_thing(self, item, msg, download_fn, update_fn):
-        _, filepath = download_fn(item)
-        update_fn(msg.uuid, self.session)
-        logger.info("Stored message or reply at {}".format(msg.filename))
-
+    def decrypt_the_thing(self, filepath, msg):
         with NamedTemporaryFile('w+') as plaintext_file:
             try:
                 self.gpg.decrypt_submission_or_reply(filepath, plaintext_file.name, False)
@@ -62,6 +58,12 @@ class APISyncObject(QObject):
             except CryptoError:
                 storage.set_object_decryption_status_with_content(msg, self.session, False)
                 logger.info("Message or reply failed to decrypt: {}".format(msg.filename))
+
+    def fetch_the_thing(self, item, msg, download_fn, update_fn):
+        _, filepath = download_fn(item)
+        update_fn(msg.uuid, self.session)
+        logger.info("Stored message or reply at {}".format(msg.filename))
+        self.decrypt_the_thing(filepath, msg)
 
 
 class MessageSync(APISyncObject):
