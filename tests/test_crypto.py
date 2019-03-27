@@ -43,11 +43,13 @@ def test_gunzip_logic(homedir, config, mocker):
     expected_output_filename = 'test-doc'
 
     mock_gpg = mocker.patch('subprocess.call', return_value=0)
-    mocker.patch('os.unlink')
+    mock_unlink = mocker.patch('os.unlink')
     dest = gpg.decrypt_submission_or_reply(test_gzip, expected_output_filename, is_doc=True)
 
     assert mock_gpg.call_count == 1
     assert dest == os.path.join(homedir, 'data', expected_output_filename)
+    # We should remove two files in the success scenario: err, filepath
+    assert mock_unlink.call_count == 2
 
 
 def test_subprocess_raises_exception(homedir, config, mocker):
@@ -61,12 +63,14 @@ def test_subprocess_raises_exception(homedir, config, mocker):
     output_filename = 'test-doc'
 
     mock_gpg = mocker.patch('subprocess.call', return_value=1)
-    mocker.patch('os.unlink')
+    mock_unlink = mocker.patch('os.unlink')
 
     with pytest.raises(CryptoError):
         gpg.decrypt_submission_or_reply(test_gzip, output_filename, is_doc=True)
 
     assert mock_gpg.call_count == 1
+    # We should only remove one file in the failure scenario: err
+    assert mock_unlink.call_count == 1
 
 
 def test_import_key(homedir, config, source):
