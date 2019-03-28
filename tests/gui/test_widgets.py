@@ -720,16 +720,15 @@ def test_FileWidget_init_left(mocker):
     Check the FileWidget is configured correctly for align-left.
     """
     mock_controller = mocker.MagicMock()
+    mock_signal = mocker.MagicMock()  # not important for this test
     source = factory.Source()
-    message = db.Message(source=source, uuid='uuid', size=123, filename='1-mah-reply.gpg',
-                         download_url='http://mah-server/mah-reply-url', is_downloaded=True)
+    file_ = factory.File(is_downloaded=True)
 
-    fw = FileWidget(source, message, mock_controller, align='left')
+    fw = FileWidget(source, file_, mock_controller, mock_signal, align='left')
 
-    layout = fw.layout()
-    assert isinstance(layout.takeAt(0), QWidgetItem)
-    assert isinstance(layout.takeAt(0), QWidgetItem)
-    assert isinstance(layout.takeAt(0), QSpacerItem)
+    assert isinstance(fw.layout.takeAt(0), QWidgetItem)
+    assert isinstance(fw.layout.takeAt(0), QWidgetItem)
+    assert isinstance(fw.layout.takeAt(0), QSpacerItem)
     assert fw.controller == mock_controller
 
 
@@ -738,15 +737,14 @@ def test_FileWidget_init_right(mocker):
     Check the FileWidget is configured correctly for align-right.
     """
     mock_controller = mocker.MagicMock()
+    mock_signal = mocker.MagicMock()  # not important for this test
     source = factory.Source()
-    message = db.Message(source=source, uuid='uuid', size=123, filename='1-mah-reply.gpg',
-                         download_url='http://mah-server/mah-reply-url', is_downloaded=True)
+    file_ = factory.File(is_downloaded=True)
 
-    fw = FileWidget(source, message, mock_controller, align='right')
-    layout = fw.layout()
-    assert isinstance(layout.takeAt(0), QSpacerItem)
-    assert isinstance(layout.takeAt(0), QWidgetItem)
-    assert isinstance(layout.takeAt(0), QWidgetItem)
+    fw = FileWidget(source, file_, mock_controller, mock_signal, align='right')
+    assert isinstance(fw.layout.takeAt(0), QSpacerItem)
+    assert isinstance(fw.layout.takeAt(0), QWidgetItem)
+    assert isinstance(fw.layout.takeAt(0), QWidgetItem)
     assert fw.controller == mock_controller
 
 
@@ -755,11 +753,11 @@ def test_FileWidget_mousePressEvent_download(mocker):
     Should fire the expected download event handler in the logic layer.
     """
     mock_controller = mocker.MagicMock()
+    mock_signal = mocker.MagicMock()  # not important for this test
     source = factory.Source()
-    file_ = db.File(source=source, uuid='uuid', size=123, filename='1-mah-reply.gpg',
-                    download_url='http://mah-server/mah-reply-url', is_downloaded=False)
+    file_ = factory.File(is_downloaded=False)
 
-    fw = FileWidget(source, file_, mock_controller)
+    fw = FileWidget(source, file_, mock_controller, mock_signal)
     fw.mouseReleaseEvent(None)
     fw.controller.on_file_download.assert_called_once_with(source, file_)
 
@@ -769,13 +767,68 @@ def test_FileWidget_mousePressEvent_open(mocker):
     Should fire the expected open event handler in the logic layer.
     """
     mock_controller = mocker.MagicMock()
+    mock_signal = mocker.MagicMock()  # not important for this test
     source = factory.Source()
-    file_ = db.File(source=source, uuid='uuid', size=123, filename='1-mah-reply.gpg',
-                    download_url='http://mah-server/mah-reply-url', is_downloaded=True)
+    file_ = factory.File(is_downloaded=True)
 
-    fw = FileWidget(source, file_, mock_controller)
+    fw = FileWidget(source, file_, mock_controller, mock_signal)
     fw.mouseReleaseEvent(None)
     fw.controller.on_file_open.assert_called_once_with(file_)
+
+
+def test_FileWidget_clear_deletes_items(mocker, homedir):
+    """
+    Calling the clear() method on FileWidget should delete the existing items in the layout.
+    """
+    mock_controller = mocker.MagicMock()
+    mock_signal = mocker.MagicMock()  # not important for this test
+    source = factory.Source()
+    file_ = factory.File(is_downloaded=True)
+
+    fw = FileWidget(source, file_, mock_controller, mock_signal)
+    assert fw.layout.count() != 0
+
+    fw.clear()
+
+    assert fw.layout.count() == 0
+
+
+def test_FileWidget_on_file_download_updates_items_when_uuid_matches(mocker, homedir):
+    """
+    The _on_file_download method should clear and update the FileWidget
+    """
+    mock_controller = mocker.MagicMock()
+    mock_signal = mocker.MagicMock()  # not important for this test
+    source = factory.Source()
+    file_ = factory.File(is_downloaded=True)
+
+    fw = FileWidget(source, file_, mock_controller, mock_signal)
+    fw.clear = mocker.MagicMock()
+    fw.update = mocker.MagicMock()
+
+    fw._on_file_download(file_.uuid)
+
+    fw.clear.assert_called_once_with()
+    fw.update.assert_called_once_with()
+
+
+def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(mocker, homedir):
+    """
+    The _on_file_download method should clear and update the FileWidget
+    """
+    mock_controller = mocker.MagicMock()
+    mock_signal = mocker.MagicMock()  # not important for this test
+    source = factory.Source()
+    file_ = factory.File(is_downloaded=True)
+
+    fw = FileWidget(source, file_, mock_controller, mock_signal)
+    fw.clear = mocker.MagicMock()
+    fw.update = mocker.MagicMock()
+
+    fw._on_file_download('not a matching uuid')
+
+    fw.clear.assert_not_called()
+    fw.update.assert_not_called()
 
 
 def test_ConversationView_init(mocker, homedir):

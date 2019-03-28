@@ -109,6 +109,12 @@ class Client(QObject):
     """
     authentication_state = pyqtSignal(bool)
 
+    """
+    This signal indicates that a file has been successfully downloaded by emitting the file's
+    UUID as a string.
+    """
+    file_ready = pyqtSignal(str)
+
     def __init__(self, hostname, gui, session,
                  home: str, proxy: bool = True) -> None:
         """
@@ -639,6 +645,7 @@ class Client(QObject):
                 return  # If we failed we should stop here.
 
             self.set_status('Finished downloading {}'.format(current_object.filename))
+            self.file_ready.emit(file_uuid)
         else:  # The file did not download properly.
             logger.debug('Failed to download file {}'.format(server_filename))
             # Update the UI in some way to indicate a failure state.

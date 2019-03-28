@@ -974,6 +974,7 @@ def test_Client_on_file_downloaded_success(homedir, config, mocker):
     cl = Client('http://localhost', mock_gui, mock_session, homedir)
     cl.update_sources = mocker.MagicMock()
     cl.api_runner = mocker.MagicMock()
+    cl.file_ready = mocker.MagicMock()  # signal when file is downloaded
     test_filename = "1-my-file-location-msg.gpg"
     test_object_uuid = 'uuid-of-downloaded-object'
     cl.call_reset = mocker.MagicMock()
@@ -991,6 +992,9 @@ def test_Client_on_file_downloaded_success(homedir, config, mocker):
     mock_storage.set_object_decryption_status_with_content.assert_called_once_with(
         submission_db_object, mock_session, True)
 
+    # Signal should be emitted with UUID of the successfully downloaded object
+    cl.file_ready.emit.assert_called_once_with(test_object_uuid)
+
 
 def test_Client_on_file_downloaded_api_failure(homedir, config, mocker):
     '''
@@ -999,6 +1003,7 @@ def test_Client_on_file_downloaded_api_failure(homedir, config, mocker):
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, homedir)
+    cl.file_ready = mocker.MagicMock()  # signal when file is downloaded
     cl.update_sources = mocker.MagicMock()
     cl.api_runner = mocker.MagicMock()
     test_filename = "1-my-file-location-msg.gpg"
@@ -1012,6 +1017,7 @@ def test_Client_on_file_downloaded_api_failure(homedir, config, mocker):
     cl.on_file_downloaded(result_data, current_object=submission_db_object)
     cl.set_status.assert_called_once_with(
         "The file download failed. Please try again.")
+    cl.file_ready.emit.assert_not_called()
 
 
 def test_Client_on_file_downloaded_decrypt_failure(homedir, config, mocker):
@@ -1023,6 +1029,7 @@ def test_Client_on_file_downloaded_decrypt_failure(homedir, config, mocker):
     cl = Client('http://localhost', mock_gui, mock_session, homedir)
     cl.update_sources = mocker.MagicMock()
     cl.api_runner = mocker.MagicMock()
+    cl.file_ready = mocker.MagicMock()  # signal when file is downloaded
     test_filename = "1-my-file-location-msg.gpg"
     cl.api_runner.result = ("", test_filename)
     cl.set_status = mocker.MagicMock()
@@ -1041,6 +1048,7 @@ def test_Client_on_file_downloaded_decrypt_failure(homedir, config, mocker):
         "Failed to decrypt file, please try again or talk to your administrator.")
     mock_storage.set_object_decryption_status_with_content.assert_called_once_with(
         submission_db_object, mock_session, False)
+    cl.file_ready.emit.assert_not_called()
 
 
 def test_Client_on_file_download_user_not_signed_in(homedir, config, mocker):

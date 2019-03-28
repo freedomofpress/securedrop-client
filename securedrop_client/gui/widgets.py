@@ -691,7 +691,7 @@ class FileWidget(QWidget):
     """
 
     def __init__(self, source_db_object, submission_db_object,
-                 controller, align="left"):
+                 controller, file_ready_signal, align="left"):
         """
         Given some text, an indication of alignment ('left' or 'right') and
         a reference to the controller, make something to display a file.
@@ -703,29 +703,47 @@ class FileWidget(QWidget):
         self.controller = controller
         self.source = source_db_object
         self.submission = submission_db_object
+        self.file_uuid = self.submission.uuid
+        self.align = align
 
-        layout = QHBoxLayout()
+        self.layout = QHBoxLayout()
+        self.update()
+        self.setLayout(self.layout)
+
+        file_ready_signal.connect(self._on_file_download)
+
+    def update(self):
         icon = QLabel()
         icon.setPixmap(load_image('file.png'))
 
-        if submission_db_object.is_downloaded:
+        if self.submission.is_downloaded:
             description = QLabel("Open")
         else:
             human_filesize = humanize_filesize(self.submission.size)
             description = QLabel("Download ({})".format(human_filesize))
 
-        if align != "left":
+        if self.align != "left":
             # Float right...
-            layout.addStretch(5)
+            self.layout.addStretch(5)
 
-        layout.addWidget(icon)
-        layout.addWidget(description, 5)
+        self.layout.addWidget(icon)
+        self.layout.addWidget(description, 5)
 
-        if align == "left":
+        if self.align == "left":
             # Add space on right hand side...
-            layout.addStretch(5)
+            self.layout.addStretch(5)
 
-        self.setLayout(layout)
+    def clear(self):
+        while self.layout.count():
+            child = self.layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+
+    @pyqtSlot(str)
+    def _on_file_download(self, file_uuid: str) -> None:
+        if file_uuid == self.file_uuid:
+            self.clear()  # delete existing icon and label
+            self.update()  # draw modified widget
 
     def mouseReleaseEvent(self, e):
         """
@@ -799,7 +817,7 @@ class ConversationView(QWidget):
         """
         self.conversation_layout.addWidget(
             FileWidget(source_db_object, submission_db_object,
-                       self.controller))
+                       self.controller, self.controller.file_ready))
 
     def update_conversation_position(self, min_val, max_val):
         """
