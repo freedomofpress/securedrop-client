@@ -93,23 +93,28 @@ class MessageSync(APISyncObject):
                     # Need to set filename on non-Qubes platforms
                     sdk_submission.filename = db_submission.filename
 
-                    if self.api:
+                    if not db_submission.is_downloaded and self.api:
+                        # Download and decrypt
                         self.fetch_the_thing(sdk_submission,
                                              db_submission,
                                              self.api.download_submission,
                                              storage.mark_message_as_downloaded)
+                    elif db_submission.is_downloaded:
+                        # Just decrypt file that is already on disk
+                        self.decrypt_the_thing(db_submission.filename,
+                                               db_submission)
 
-                        if db_submission.content is not None:
-                            content = db_submission.content
-                        else:
-                            content = '<Message not yet available>'
+                    if db_submission.content is not None:
+                        content = db_submission.content
+                    else:
+                        content = '<Message not yet available>'
 
-                        self.message_ready.emit(db_submission.uuid, content)
+                    self.message_ready.emit(db_submission.uuid, content)
                 except Exception:
                     tb = traceback.format_exc()
-                    logger.critical("Exception while downloading submission!\n{}".format(tb))
+                    logger.critical("Exception while processing message!\n{}".format(tb))
 
-            logger.debug('Submissions synced')
+            logger.debug('Messages synced')
 
             if not loop:
                 break
@@ -147,21 +152,26 @@ class ReplySync(APISyncObject):
                     sdk_reply.source_uuid = db_reply.source.uuid
                     # Need to set filename on non-Qubes platforms
 
-                    if self.api:
+                    if not db_reply.is_downloaded and self.api:
+                        # Download and decrypt
                         self.fetch_the_thing(sdk_reply,
                                              db_reply,
                                              self.api.download_reply,
                                              storage.mark_reply_as_downloaded)
+                    elif db_reply.is_downloaded:
+                        # Just decrypt file that is already on disk
+                        self.decrypt_the_thing(db_reply.filename,
+                                               db_reply)
 
-                        if db_reply.content is not None:
-                            content = db_reply.content
-                        else:
-                            content = '<Reply not yet available>'
+                    if db_reply.content is not None:
+                        content = db_reply.content
+                    else:
+                        content = '<Reply not yet available>'
 
-                        self.reply_ready.emit(db_reply.uuid, content)
+                    self.reply_ready.emit(db_reply.uuid, content)
                 except Exception:
                     tb = traceback.format_exc()
-                    logger.critical("Exception while downloading reply!\n{}".format(tb))
+                    logger.critical("Exception while processing reply!\n{}".format(tb))
 
             logger.debug('Replies synced')
 
