@@ -19,8 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 import arrow
 import html
-from PyQt5.QtCore import Qt, pyqtSlot
-from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont
+from PyQt5.QtCore import Qt, pyqtSlot, QSize, QTimer
+from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
     QToolButton, QSizePolicy, QTextEdit, QStatusBar
@@ -29,28 +29,87 @@ from uuid import uuid4
 
 from securedrop_client.db import Source, Message, File
 from securedrop_client.logic import Client
-from securedrop_client.resources import load_svg, load_image
+from securedrop_client.resources import load_svg, load_icon, load_image, load_icon_button
 from securedrop_client.utils import humanize_filesize
 
 logger = logging.getLogger(__name__)
 
 
-class StatusBar(QStatusBar):
+class TopPane(QWidget):
+    """
+    Top pane of the app window.
+    """
+
     def __init__(self):
         super().__init__()
-
         self.setStyleSheet('''
-            QStatusBar { background-color: #fff; }
             QStatusBar::item { border: none; }
-            QPushButton { border: none; }
+            QPushButton { border: none; color: #fff }
+            QStatusBar#activity_status_bar { color: #fff; }
+            QPushButton#error_icon { background-color: #ced3e1; }
+            QStatusBar#error_status_bar { background-color: #ced3e1; }
         ''')
+        palette = QPalette()
+        gradient = QLinearGradient(0, 0, 500, 0)
+        gradient.setColorAt(0, QColor('#1573d8'))
+        gradient.setColorAt(1, QColor('#002c53'))
+        palette.setBrush(QPalette.Background, QBrush(gradient))
+        self.setPalette(palette)
+        self.setAutoFillBackground(True)
+        self.setFixedHeight(42)
 
-        self.refresh = QPushButton()
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        # Create refresh button
+        self.refresh = load_icon_button(normal='refresh.svg', disabled='refresh_offline.svg')
         self.refresh.clicked.connect(self.on_refresh_clicked)
-        self.refresh.setMaximumSize(30, 30)
-        refresh_pixmap = load_image('refresh_offline.svg')
-        self.refresh.setIcon(QIcon(refresh_pixmap))
-        self.addPermanentWidget(self.refresh)  # widget may not be obscured by temporary messages
+        self.refresh.setFixedWidth(42)
+        self.refresh.setEnabled(False)
+
+        # Create activity status bar
+        self.activity_status_bar = QStatusBar()
+        self.activity_status_bar.setObjectName('activity_status_bar')
+
+        # Add error icon
+        self.error_icon = load_icon_button('error_icon.svg')
+        self.error_icon.setObjectName('error_icon')
+        self.error_icon.setFixedSize(42, 42)
+        self.error_icon.hide()
+
+        # Add error status bar
+        self.error_status_bar = QStatusBar()
+        self.error_status_bar.setObjectName('error_status_bar')
+        self.error_status_bar.hide()
+
+        # Add space the size of the status bar to keep the error status bar centered
+        spacer = QWidget()
+        spacer.setObjectName('spacer')
+
+        # Add space ths size of the refresh icon to keep the error status bar centered
+        spacer2 = QWidget()
+        spacer2.setObjectName('spacer')
+        spacer2.setFixedWidth(42)
+
+        # Set height of top pane to 42 pixels
+        self.refresh.setFixedHeight(42)
+        self.activity_status_bar.setFixedHeight(42)
+        self.error_status_bar.setFixedHeight(42)
+        spacer.setFixedHeight(42)
+        spacer2.setFixedHeight(42)
+
+        # Add widgets to layout
+        layout.addWidget(self.refresh, 1)
+        layout.addWidget(self.activity_status_bar, 1)
+        layout.addWidget(self.error_icon, 1)
+        layout.addWidget(self.error_status_bar, 3)
+        layout.addWidget(spacer, 1)
+        layout.addWidget(spacer2)
+
+        # Only show errors for a set duration
+        self.error_status_timer = QTimer()
+        self.error_status_timer.timeout.connect(self._on_error_status_timeout_event)
 
     def setup(self, controller):
         """
@@ -64,40 +123,44 @@ class StatusBar(QStatusBar):
         Called when the refresh button is clicked.
         """
         self.controller.sync_api()
+        self.refresh.setIcon(load_icon('refresh_active.svg')) # temp solution to show icon clicked
+
+    def enable_refresh(self):
+        """
+        Enable the refresh button.
+        """
+        self.refresh.setEnabled(True)
+
+    def disable_refresh(self):
+        """
+        Disable the refresh button.
+        """
+        self.refresh.setEnabled(False)
 
     def _on_sync_event(self, data):
         """
         Called when the refresh call completes
         """
-        self.refresh.setEnabled(data != 'syncing')
+        self.refresh.setIcon(load_icon('refresh.svg')) # temp solution to show icon clicked
 
-    def show_message(self, message, duration=0):
+    def _on_error_status_timeout_event(self):
+        self.error_status_bar.hide()
+
+    def update_activity_status(self, message: str, duration: int):
         """
-        Display a status message to the user. Optionally, supply a duration
+        Display an activity status message to the user. Optionally, supply a duration
         (in milliseconds), the default will continuously show the message.
         """
-        self.showMessage(message, duration)
+        self.activity_status_bar.showMessage(message, duration)
 
-    def hide_refresh_icon(self):
+    def update_error_status(self, message: str, duration: int):
         """
-        Hide refresh icon.
+        Display an activity status message to the user. Optionally, supply a duration
+        (in milliseconds), the default will continuously show the message.
         """
-        refresh_pixmap = load_image('refresh_offline.svg')
-        self.refresh.setIcon(QIcon(refresh_pixmap))
-
-    def show_refresh_icon(self):
-        """
-        Show refresh icon.
-        """
-        refresh_pixmap = load_image('refresh.svg')
-        self.refresh.setIcon(QIcon(refresh_pixmap))
-
-    def show_active_refresh(self):
-        """
-        Show active refresh icon.
-        """
-        refresh_pixmap = load_image('refresh_active.svg')
-        self.refresh.setIcon(QIcon(refresh_pixmap))
+        self.error_status_bar.showMessage(message, duration)
+        self.error_status_timer.start(duration)
+        self.error_status_bar.show()
 
 
 class ToolBar(QWidget):
@@ -111,10 +174,14 @@ class ToolBar(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 10, 20, 10)
 
-        self.setAutoFillBackground(True)
         palette = QPalette()
-        palette.setBrush(QPalette.Background, QBrush(load_image('hexes.svg')))
+        gradient = QLinearGradient(0, 0, 0, 500)
+        gradient.setColorAt(0, QColor('#1573d8'))
+        gradient.setColorAt(1, QColor('#002c53'))
+        palette.setBrush(QPalette.Background, QBrush(gradient))
         self.setPalette(palette)
+        self.setAutoFillBackground(True)
+
         self.user_icon = QLabel()
         self.user_icon.setFont(QFont("Helvetica [Cronyx]", 16, QFont.Bold))
         self.user_icon.hide()
@@ -138,10 +205,6 @@ class ToolBar(QWidget):
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        logo = QLabel()
-        logo.setMinimumSize(200, 200)
-        logo.setPixmap(load_image('logo.png'))
-
         user_layout = QHBoxLayout()
         user_layout.addWidget(self.user_icon, 5, Qt.AlignLeft)
         user_layout.addWidget(self.user_state, 5, Qt.AlignLeft)
@@ -151,7 +214,6 @@ class ToolBar(QWidget):
 
         layout.addLayout(user_layout)
         layout.addWidget(spacer, 5)
-        layout.addWidget(logo, 3, Qt.AlignCenter)
         layout.addStretch()
 
     def setup(self, window, controller):
@@ -224,11 +286,6 @@ class MainView(QWidget):
         self.source_list = SourceList(left_column)
         left_layout.addWidget(self.source_list)
 
-        self.error_status = QLabel('')
-        self.error_status.setObjectName('error_label')
-        left_layout.addWidget(self.error_status)
-        self.error_status.hide()
-
         self.layout.addWidget(left_column, 4)
 
         self.view_layout = QVBoxLayout()
@@ -244,9 +301,6 @@ class MainView(QWidget):
         """
         self.controller = controller
         self.source_list.setup(controller)
-
-    def update_error_status(self, error=None):
-        self.error_status.setText(html.escape(error))
 
     def set_conversation(self, widget):
         """

@@ -415,14 +415,12 @@ class Client(QObject):
         """
         Grab data from the remote SecureDrop API in a non-blocking manner.
         """
-        logger.debug("In sync_api on thread {}".format(
-            self.thread().currentThreadId()))
+        logger.debug("In sync_api on thread {}".format(self.thread().currentThreadId()))
         self.sync_events.emit('syncing')
 
         if self.authenticated():
             logger.debug("You are authenticated, going to make your call")
-            self.call_api(storage.get_remote_data, self.on_synced,
-                          self.on_sync_timeout, self.api)
+            self.call_api(storage.get_remote_data, self.on_synced, self.on_sync_timeout, self.api)
             logger.debug("In sync_api, after call to call_api, on "
                          "thread {}".format(self.thread().currentThreadId()))
 
@@ -557,7 +555,7 @@ class Client(QObject):
         Set a textual status message to be displayed to the user for a certain
         duration.
         """
-        self.gui.set_status(message, duration)
+        self.gui.update_activity_status(message, duration)
 
     def on_file_open(self, file_db_object):
         """
