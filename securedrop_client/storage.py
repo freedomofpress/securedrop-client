@@ -306,7 +306,7 @@ def find_new_messages(session):
     return session.query(Message).filter(
         or_(Message.is_downloaded == False,
             Message.is_decrypted == False,
-            Message.is_decrypted == None)).all()  # noqa E711
+            Message.is_decrypted == None)).all()  # noqa: E711
 
 
 def find_new_files(session):
@@ -325,7 +325,7 @@ def find_new_replies(session):
     return session.query(Reply).filter(
         or_(Reply.is_downloaded == False,
             Reply.is_decrypted == False,
-            Reply.is_decrypted == None)).all()  # noqa E711
+            Reply.is_decrypted == None)).all()  # noqa: E711
 
 
 def mark_file_as_downloaded(uuid, session):
