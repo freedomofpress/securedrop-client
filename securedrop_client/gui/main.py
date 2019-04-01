@@ -205,3 +205,9 @@ class Window(QMainWindow):
         (in milliseconds), the default will continuously show the message.
         """
         self.top_pane.update_error_status(message, duration)
+
+    def clear_error_status(self):
+        """
+        Clear any message currently in the error status bar.
+        """
+        self.top_pane.clear_error_status()

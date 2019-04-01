@@ -19,11 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 import arrow
 import html
-from PyQt5.QtCore import Qt, pyqtSlot, QSize, QTimer
+from PyQt5.QtCore import Qt, pyqtSlot, QTimer
 from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
-    QToolButton, QSizePolicy, QTextEdit, QStatusBar
+    QToolButton, QSizePolicy, QTextEdit, QStatusBar, QGraphicsDropShadowEffect
 from typing import List
 from uuid import uuid4
 
@@ -43,16 +43,25 @@ class TopPane(QWidget):
     def __init__(self):
         super().__init__()
         self.setStyleSheet('''
-            QStatusBar::item { border: none; }
-            QPushButton { border: none; color: #fff }
-            QStatusBar#activity_status_bar { color: #fff; }
-            QPushButton#error_icon { background-color: #ced3e1; }
-            QStatusBar#error_status_bar { background-color: #ced3e1; }
+        QStatusBar::item { border: none; }
+        QPushButton { border: none; color: #fff }
+        QStatusBar#activity_status_bar { color: #fff; }
+        QWidget#error_bar { background-color: #f22b5d }
+        QPushButton#error_icon {
+            background-color: qlineargradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #fff, \
+            stop: 0.2 #efeef7, stop: 1 #dce4ee);
+        }
+        QStatusBar#error_status_bar {
+            color: #f22b5d;
+            font-weight: bold;
+            background-color: qlineargradient( x1: 0, y1: 0, x2: 0, y2: 1, \
+            stop: 0 #fff, stop: 0.2 #efeef7, stop: 1 #dce4ee);
+        }
         ''')
         palette = QPalette()
-        gradient = QLinearGradient(0, 0, 500, 0)
-        gradient.setColorAt(0, QColor('#1573d8'))
-        gradient.setColorAt(1, QColor('#002c53'))
+        gradient = QLinearGradient(0, 0, 900, 0)
+        gradient.setColorAt(0, QColor('#0565d4'))
+        gradient.setColorAt(1, QColor('#002c55'))
         palette.setBrush(QPalette.Background, QBrush(gradient))
         self.setPalette(palette)
         self.setAutoFillBackground(True)
@@ -71,6 +80,13 @@ class TopPane(QWidget):
         # Create activity status bar
         self.activity_status_bar = QStatusBar()
         self.activity_status_bar.setObjectName('activity_status_bar')
+        self.activity_status_bar.setSizeGripEnabled(False)
+
+        # Add vertical error bar
+        self.error_bar = QWidget()
+        self.error_bar.setObjectName('error_bar')
+        self.error_bar.setFixedSize(10, 42)
+        self.error_bar.hide()
 
         # Add error icon
         self.error_icon = load_icon_button('error_icon.svg')
@@ -81,6 +97,7 @@ class TopPane(QWidget):
         # Add error status bar
         self.error_status_bar = QStatusBar()
         self.error_status_bar.setObjectName('error_status_bar')
+        self.error_status_bar.setSizeGripEnabled(False)
         self.error_status_bar.hide()
 
         # Add space the size of the status bar to keep the error status bar centered
@@ -102,6 +119,7 @@ class TopPane(QWidget):
         # Add widgets to layout
         layout.addWidget(self.refresh, 1)
         layout.addWidget(self.activity_status_bar, 1)
+        layout.addWidget(self.error_bar, 1)
         layout.addWidget(self.error_icon, 1)
         layout.addWidget(self.error_status_bar, 3)
         layout.addWidget(spacer, 1)
@@ -123,7 +141,11 @@ class TopPane(QWidget):
         Called when the refresh button is clicked.
         """
         self.controller.sync_api()
-        self.refresh.setIcon(load_icon('refresh_active.svg')) # temp solution to show icon clicked
+        # Using `addPixmap` with the option `QIcon.Active` to set the icon's active state image
+        # doesn't work as expected so this is a temporary solution to show that the icon was
+        # clicked. The icon image is later replaced in _on_sync_event when the refresh call
+        # completes.
+        self.refresh.setIcon(load_icon('refresh_active.svg'))
 
     def enable_refresh(self):
         """
@@ -141,9 +163,11 @@ class TopPane(QWidget):
         """
         Called when the refresh call completes
         """
-        self.refresh.setIcon(load_icon('refresh.svg')) # temp solution to show icon clicked
+        self.refresh.setIcon(load_icon('refresh.svg'))
 
     def _on_error_status_timeout_event(self):
+        self.error_bar.hide()
+        self.error_icon.hide()
         self.error_status_bar.hide()
 
     def update_activity_status(self, message: str, duration: int):
@@ -160,7 +184,15 @@ class TopPane(QWidget):
         """
         self.error_status_bar.showMessage(message, duration)
         self.error_status_timer.start(duration)
+        self.error_bar.show()
+        self.error_icon.show()
         self.error_status_bar.show()
+
+    def clear_error_status(self):
+        """
+        Clear any message currently in the error status bar.
+        """
+        self.error_status_bar.clearMessage()
 
 
 class ToolBar(QWidget):
@@ -173,47 +205,62 @@ class ToolBar(QWidget):
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 10, 20, 10)
-
         palette = QPalette()
-        gradient = QLinearGradient(0, 0, 0, 500)
-        gradient.setColorAt(0, QColor('#1573d8'))
-        gradient.setColorAt(1, QColor('#002c53'))
+        gradient = QLinearGradient(0, 0, 0, 700)
+        gradient.setColorAt(0, QColor('#0093da'))
+        gradient.setColorAt(1, QColor('#0c3e75'))
         palette.setBrush(QPalette.Background, QBrush(gradient))
         self.setPalette(palette)
         self.setAutoFillBackground(True)
+        self.setStyleSheet('''
+        QLabel#user_icon { background-color: #b4fffa; color: #2a319d; padding: 10; border: none; }
+        QLabel#username { color: #b4fffa; padding: 2; }
+        QPushButton#login { color: #2a319d; border: none; background-color: qlineargradient( \
+            x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #b4fffa, stop: 1 #05edfe); }
+        QPushButton#login:pressed { background-color: #85f6fe; }
+        ''')
 
+        # Create a drop shadow effect
+        effect = QGraphicsDropShadowEffect(self)
+        effect.setOffset(0, 1)
+        effect.setBlurRadius(8)
+        effect.setColor(QColor('#aa000000'))
+
+        # Create user icon
         self.user_icon = QLabel()
+        self.user_icon.setObjectName('user_icon')
         self.user_icon.setFont(QFont("Helvetica [Cronyx]", 16, QFont.Bold))
         self.user_icon.hide()
         self.user_state = QLabel()
-        self.user_state.setFont(QFont("Helvetica [Cronyx]", 12, QFont.Bold))
+        self.user_state.setObjectName('username')
+        self.user_state.setFont(QFont("Helvetica [Cronyx]", 14, QFont.Bold))
         self.user_state.hide()
         self.user_menu = JournalistMenuButton(self)
         self.user_menu.hide()
 
+        # Create sign-in button
         self.login = QPushButton(_('SIGN IN'))
+        self.login.setObjectName('login')
         self.login.setFont(QFont("Helvetica [Cronyx]", 10))
         self.login.setMinimumSize(200, 40)
-        button_palette = self.login.palette()
-        button_palette.setColor(QPalette.Button, QColor('#eee'))
-        button_palette.setColor(QPalette.ButtonText, QColor('#000'))
-        self.login.setAutoFillBackground(True)
-        self.login.setPalette(button_palette)
+        self.login.setGraphicsEffect(effect)
         self.login.update()
         self.login.clicked.connect(self.on_login_clicked)
 
+        # Create spacer to push toolbar contents to the top
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        user_layout = QHBoxLayout()
-        user_layout.addWidget(self.user_icon, 5, Qt.AlignLeft)
-        user_layout.addWidget(self.user_state, 5, Qt.AlignLeft)
-        user_layout.addWidget(self.login, 5, Qt.AlignLeft)
-        user_layout.addWidget(self.user_menu, 5, Qt.AlignLeft)
-        user_layout.addStretch()
+        # Set up horizontal user auth layout
+        user_auth_layout = QHBoxLayout()
+        user_auth_layout.addWidget(self.user_icon, 5, Qt.AlignLeft)
+        user_auth_layout.addWidget(self.user_state, 5, Qt.AlignLeft)
+        user_auth_layout.addWidget(self.login, 5, Qt.AlignLeft)
+        user_auth_layout.addWidget(self.user_menu, 5, Qt.AlignLeft)
+        user_auth_layout.addStretch()
 
-        layout.addLayout(user_layout)
-        layout.addWidget(spacer, 5)
+        # Add user auth layout to left sidebar
+        layout.addLayout(user_auth_layout)
         layout.addStretch()
 
     def setup(self, window, controller):
@@ -234,9 +281,6 @@ class ToolBar(QWidget):
         self.login.hide()
 
         self.user_icon.setText(_('jo'))
-        self.user_icon.setStyleSheet('''
-            QLabel { background-color: #045fb4; color: cyan; padding: 10; border: 1px solid gray; }
-        ''')
         self.user_icon.show()
 
         self.user_state.setText(_('{}').format(html.escape(username)))
@@ -276,6 +320,7 @@ class MainView(QWidget):
         super().__init__(parent)
         self.layout = QHBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(0)
         self.setLayout(self.layout)
 
         left_column = QWidget(parent=self)
@@ -291,6 +336,7 @@ class MainView(QWidget):
         self.view_layout = QVBoxLayout()
         self.view_layout.setContentsMargins(0, 0, 0, 0)
         self.view_holder = QWidget()
+        self.view_holder.setStyleSheet('background: #efeef7;')
         self.view_holder.setLayout(self.view_layout)
 
         self.layout.addWidget(self.view_holder, 6)
@@ -322,6 +368,7 @@ class SourceList(QListWidget):
 
     def __init__(self, parent):
         super().__init__(parent)
+        self.setStyleSheet('QListWidget::item:selected { background: #efeef7 }')
 
     def setup(self, controller):
         """
@@ -414,6 +461,11 @@ class SourceWidget(QWidget):
         Set up the child widgets.
         """
         super().__init__(parent)
+
+        self.setStyleSheet('''
+            QWidget#color_bar { background-color: #9211ff; }
+        ''')
+
         self.source = source
         self.name = QLabel()
         self.updated = QLabel()
@@ -422,6 +474,7 @@ class SourceWidget(QWidget):
         self.setLayout(layout)
 
         self.summary = QWidget(self)
+        self.summary.setObjectName('summary')
         self.summary_layout = QHBoxLayout()
         self.summary.setLayout(self.summary_layout)
 
@@ -546,7 +599,7 @@ class LoginDialog(QDialog):
 
         self.error_label = QLabel('')
         self.error_label.setObjectName('error_label')
-        self.error_label.setStyleSheet('color: red')
+        self.error_label.setStyleSheet('color: #f22b5d')
 
         layout.addStretch()
         layout.addWidget(self.title)
@@ -625,7 +678,7 @@ class SpeechBubble(QWidget):
     and journalist.
     """
 
-    css = "padding:8px; min-height:32px; border:1px solid #999; border-radius:18px;"
+    css = "padding:8px; min-height:32px; border:1px solid #999;"
 
     def __init__(self, message_id: str, text: str, update_signal) -> None:
         super().__init__()
@@ -682,7 +735,7 @@ class ConversationWidget(QWidget):
         if align == "left":
             # Add space on right hand side...
             layout.addStretch(5)
-            label.setStyleSheet(label.css + 'border-bottom-left-radius: 0px;')
+            label.setStyleSheet(label.css)
 
         self.setLayout(layout)
 
@@ -697,9 +750,10 @@ class MessageWidget(ConversationWidget):
                          message,
                          update_signal,
                          align="left")
-        self.setStyleSheet("""
-        background-color: #EEE;
-        """)
+        self.setStyleSheet('''
+        background-color: qlineargradient( x1: 0, y1: 0, x2: 0, y2: 1, \
+        stop: 0 #fff, stop: 0.9 #fff, stop: 1 #9211ff);
+        ''')
 
 
 class ReplyWidget(ConversationWidget):
@@ -720,9 +774,10 @@ class ReplyWidget(ConversationWidget):
                          update_signal,
                          align="right")
         self.message_id = message_id
-        self.setStyleSheet("""
-        background-color: #2299EE;
-        """)
+        self.setStyleSheet('''
+        background-color: qlineargradient( x1: 0, y1: 0, x2: 0, y2: 1, \
+        stop: 0 #fff, stop: 0.9 #fff, stop: 1 #05edfe);
+        ''')
         message_succeeded_signal.connect(self._on_reply_success)
         message_failed_signal.connect(self._on_reply_failure)
 
@@ -966,7 +1021,10 @@ class SourceConversationWrapper(QWidget):
         if show:
             new_widget = ReplyBoxWidget(self)
         else:
-            new_widget = QLabel(_('You need to log in to send replies.'))
+            new_widget = ReplyBoxWidget(self)
+            new_widget.text_edit.setText(_('You need to log in to send replies.'))
+            new_widget.text_edit.setEnabled(False)
+            new_widget.send_button.hide()
 
         old_widget = self.layout.takeAt(2)
         if old_widget is not None:
@@ -983,6 +1041,9 @@ class ReplyBoxWidget(QWidget):
 
     def __init__(self, conversation: SourceConversationWrapper) -> None:
         super().__init__()
+
+        self.setStyleSheet('background: #fff;')
+
         self.conversation = conversation
 
         self.text_edit = QTextEdit()

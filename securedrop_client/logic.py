@@ -355,7 +355,7 @@ class Client(QObject):
 
             # Clear the sidebar error status bar if a message was shown
             # to the user indicating they should log in.
-            self.gui.update_error_status("")
+            self.gui.clear_error_status()
 
             self.is_authenticated = True
         else:
@@ -512,7 +512,7 @@ class Client(QObject):
         """
         if isinstance(result, bool) and result:  # result may be an exception.
             self.sync_api()  # Syncing the API also updates the source list UI
-            self.gui.update_error_status("")
+            self.gui.clear_error_status()
         else:
             # Here we need some kind of retry logic.
             logging.info("failed to push change to server")
@@ -528,7 +528,7 @@ class Client(QObject):
             self.on_action_requiring_login()
             return
         else:  # Clear the error status bar
-            self.gui.update_error_status("")
+            self.gui.clear_error_status()
 
         source_sdk_object = sdclientapi.Source(uuid=source_db_object.uuid)
 
@@ -661,7 +661,7 @@ class Client(QObject):
         """Trigger this when delete operation on source is completed."""
         if result:
             self.sync_api()
-            self.gui.update_error_status("")
+            self.gui.clear_error_status()
         else:
             logging.info("failed to delete source at server")
             error = _('Failed to delete source at server')

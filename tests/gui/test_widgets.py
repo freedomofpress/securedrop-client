@@ -8,7 +8,7 @@ from securedrop_client import db
 from securedrop_client import logic
 from securedrop_client.gui.widgets import ToolBar, MainView, SourceList, SourceWidget, \
     LoginDialog, SpeechBubble, ConversationWidget, MessageWidget, ReplyWidget, FileWidget, \
-    ConversationView, DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, StatusBar, \
+    ConversationView, DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, \
     SourceConversationWrapper, ReplyBoxWidget, JournalistMenu
 
 
@@ -109,20 +109,20 @@ def test_JournalistMenu_on_logout_clicked_action_triggered(mocker):
     tb.controller.logout.assert_called_once_with()
 
 
-def test_StatusBar_on_refresh_clicked(mocker):
+def test_TopPane_on_refresh_clicked(mocker):
     """
     When refresh is clicked, the refresh logic from the controller is stated.
     """
-    sb = StatusBar()
+    sb = TopPane()
     sb.controller = mocker.MagicMock()
     sb.on_refresh_clicked()
     sb.controller.sync_api.assert_called_once_with()
 
 
-def test_StatusBar_sync_event():
+def test_TopPane_sync_event():
     """Toggles refresh button when syncing
     """
-    sb = StatusBar()
+    sb = TopPane()
     sb._on_sync_event('syncing')
     assert not sb.refresh.isEnabled()
 
@@ -130,36 +130,36 @@ def test_StatusBar_sync_event():
     assert sb.refresh.isEnabled()
 
 
-def test_StatusBar_init(mocker):
+def test_TopPane_init(mocker):
     """
-    Ensure the StatusBar instance is correctly set up.
+    Ensure the TopPane instance is correctly set up.
     """
     tb = ToolBar(None)
     mock_window = mocker.MagicMock()
     mock_controller = mocker.MagicMock()
     tb.setup(mock_window, mock_controller)
 
-    sb = StatusBar()
+    sb = TopPane()
     sb.setup(mock_controller)
 
     assert not sb.refresh.isHidden()
 
 
-def test_StatusBar_show_refresh(mocker):
+def test_TopPane_show_refresh(mocker):
     """
-    Ensure the StatusBar shows refresh icon.
+    Ensure the TopPane shows refresh icon.
     """
-    sb = StatusBar()
+    sb = TopPane()
     sb.refresh = mocker.MagicMock()
     sb.show_refresh_icon()
     sb.refresh.show.assert_called_once_with()
 
 
-def test_StatusBar_hide_refresh(mocker):
+def test_TopPane_hide_refresh(mocker):
     """
-    Ensure the StatusBar hides refresh icon.
+    Ensure the TopPane hides refresh icon.
     """
-    sb = StatusBar()
+    sb = TopPane()
     sb.refresh = mocker.MagicMock()
     sb.hide_refresh_icon()
     sb.refresh.hide.assert_called_once_with()
