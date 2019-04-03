@@ -976,7 +976,7 @@ def test_ConversationView_add_reply(mocker, homedir, session, source):
     mock_reply_widget = mocker.patch('securedrop_client.gui.widgets.ReplyWidget',
                                      return_value=mock_reply_widget_res)
 
-    cv.add_reply(reply)
+    cv.add_reply(reply.uuid, content)
 
     # check that we built the widget was called with the correct args
     mock_reply_widget.assert_called_once_with(
@@ -1019,7 +1019,7 @@ def test_ConversationView_add_reply_no_content(mocker, homedir, session, source)
     mock_reply_widget = mocker.patch('securedrop_client.gui.widgets.ReplyWidget',
                                      return_value=mock_reply_widget_res)
 
-    cv.add_reply(reply)
+    cv.add_reply(reply.uuid, '<Reply not yet available>')
 
     # check that we built the widget was called with the correct args
     mock_reply_widget.assert_called_once_with(
