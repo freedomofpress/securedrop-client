@@ -661,6 +661,7 @@ def test_find_new_messages(mocker, session):
     session.add(message_not_downloaded)
     session.add(message_decrypt_failed)
     session.add(message_decrypt_success)
+    session.commit()
 
     messages = find_new_messages(session)
     assert len(messages) == 3
@@ -706,6 +707,7 @@ def test_find_new_replies(mocker, session):
     session.add(reply_not_downloaded)
     session.add(reply_decrypt_failed)
     session.add(reply_decrypt_success)
+    session.commit()
 
     replies = find_new_replies(session)
     assert len(replies) == 3
