@@ -27,7 +27,7 @@ from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBox
 from typing import List
 from uuid import uuid4
 
-from securedrop_client.db import Source, Message, File, Reply
+from securedrop_client.db import Source, Message, File
 from securedrop_client.logic import Client
 from securedrop_client.resources import load_svg, load_image
 from securedrop_client.utils import humanize_filesize
@@ -807,7 +807,12 @@ class ConversationView(QWidget):
             if conversation_item.filename.endswith('msg.gpg'):
                 self.add_message(conversation_item)
             elif conversation_item.filename.endswith('reply.gpg'):
-                self.add_reply(conversation_item)
+                self.controller.session.refresh(conversation_item)
+                if conversation_item.content is not None:
+                    content = conversation_item.content
+                else:
+                    content = '<Message not yet available>'
+                self.add_reply(conversation_item.uuid, content)
             else:
                 self.add_file(self.source, conversation_item)
 
@@ -843,18 +848,12 @@ class ConversationView(QWidget):
         self.conversation_layout.addWidget(
             MessageWidget(message.uuid, content, self.controller.message_sync.message_ready))
 
-    def add_reply(self, reply: Reply) -> None:
+    def add_reply(self, uuid: str, content: str) -> None:
         """
         Add a reply from a journalist.
         """
-        self.controller.session.refresh(reply)
-        if reply.content is not None:
-            content = reply.content
-        else:
-            content = '<Reply not yet available>'
-
         self.conversation_layout.addWidget(
-            ReplyWidget(reply.uuid,
+            ReplyWidget(uuid,
                         content,
                         self.controller.reply_sync.reply_ready,
                         self.controller.reply_succeeded,
