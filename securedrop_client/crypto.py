@@ -61,8 +61,6 @@ class GpgHelper:
             cmd.extend(["--decrypt", filepath])
             res = subprocess.call(cmd, stdout=out, stderr=err)
 
-            os.unlink(filepath)  # original file
-
             if res != 0:
                 # The err tempfile was created with delete=False, so needs to
                 # be explicitly cleaned up. We will do that after we've read the file.
@@ -79,6 +77,8 @@ class GpgHelper:
                 # Cleanup err file
                 err.close()
                 os.unlink(err.name)
+
+                os.unlink(filepath)  # success so remove original (encrypted) file
 
                 if is_doc:
                     # Need to split twice as filename is e.g.
