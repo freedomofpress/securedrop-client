@@ -20,8 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from pkg_resources import resource_filename, resource_string
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtSvg import QSvgWidget
-from PyQt5.QtCore import Qt, QDir, QSize
-from PyQt5.QtWidgets import QPushButton
+from PyQt5.QtCore import QDir
 
 # Add the images and CSS directories to the search path.
 QDir.addSearchPath('images', resource_filename(__name__, 'images'))
@@ -37,11 +36,43 @@ def path(name, resource_dir="images/"):
     return resource_filename(__name__, resource_dir + name)
 
 
-def load_icon(name):
+def load_icon(normal: str, disabled: str = None, active=None, selected=None) -> QIcon:
     """
-    Return a QIcon representation of a file in the resources.
+    Add the contents of Scalable Vector Graphics (SVG) files provided for associated icon modes,
+    see https://doc.qt.io/qt-5/qicon.html#Mode-enum.
+
+    Parameters
+    ----------
+    normal: str
+        The name of the SVG file to add to the icon for QIcon.Normal mode.
+    disabled: str or None, optional
+        The name of the SVG file to add to the icon for QIcon.Disabled mode.
+    active: str, optional
+        The name of the SVG file to add to the icon for QIcon.Active mode.
+    selected: str, optional
+        The name of the SVG file to add to the icon for QIcon.Selected mode.
+
+    Returns
+    -------
+    QIcon
+        The icon that displays the contents of the SVG files.
+
     """
-    return QIcon(path(name))
+
+    icon = QIcon()
+
+    icon.addFile(path(normal), mode=QIcon.Normal, state=QIcon.On)
+
+    if disabled:
+        icon.addFile(path(disabled), mode=QIcon.Disabled, state=QIcon.Off)
+
+    if active:
+        icon.addFile(path(active), mode=QIcon.Active, state=QIcon.On)
+
+    if selected:
+        icon.addFile(path(selected), mode=QIcon.Selected, state=QIcon.On)
+
+    return icon
 
 
 def load_svg(name):
@@ -63,32 +94,3 @@ def load_css(name):
     Return the contents of the referenced CSS file in the resources.
     """
     return resource_string(__name__, "css/" + name).decode('utf-8')
-
-
-def load_icon_button(normal: str, disabled=None, active=None, selected=None) -> QPushButton:
-    icon = QIcon()
-
-    pixmap = load_image(normal)
-    scaled = pixmap.scaled(18, 18, Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation)
-    icon.addPixmap(scaled, QIcon.Normal)
-
-    if disabled:
-        pixmap = load_image(disabled)
-        scaled = pixmap.scaled(18, 18, Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation)
-        icon.addPixmap(scaled, QIcon.Disabled)
-
-    if active:
-        pixmap = load_image(active)
-        scaled = pixmap.scaled(18, 18, Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation)
-        icon.addPixmap(scaled, QIcon.Active)
-
-    if selected:
-        pixmap = load_image(selected)
-        scaled = pixmap.scaled(18, 18, Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation)
-        icon.addPixmap(scaled, QIcon.Selected)
-
-    icon_button = QPushButton()
-    icon_button.setIconSize(QSize(18, 18))
-    icon_button.setIcon(icon)
-
-    return icon_button

@@ -25,7 +25,7 @@ from typing import List
 
 from securedrop_client import __version__
 from securedrop_client.db import Source
-from securedrop_client.gui.widgets import ToolBar, MainView, LoginDialog, TopPane, \
+from securedrop_client.gui.widgets import TopPane, LeftPane, MainView, LoginDialog, \
     SourceConversationWrapper
 from securedrop_client.resources import load_icon
 
@@ -73,11 +73,11 @@ class Window(QMainWindow):
         widget_layout.setSpacing(0)
         self.widget.setLayout(widget_layout)
 
-        self.tool_bar = ToolBar(self.widget)
+        self.left_pane = LeftPane()
         self.main_view = MainView(self.widget)
         self.main_view.source_list.itemSelectionChanged.connect(self.on_source_changed)
 
-        widget_layout.addWidget(self.tool_bar, 1)
+        widget_layout.addWidget(self.left_pane, 1)
         widget_layout.addWidget(self.main_view, 8)
 
         central_widget_layout.addWidget(self.widget)
@@ -98,7 +98,7 @@ class Window(QMainWindow):
         views used in the UI.
         """
         self.controller = controller  # Reference the Client logic instance.
-        self.tool_bar.setup(self, controller)
+        self.left_pane.setup(self, controller)
         self.top_pane.setup(controller)
         self.update_activity_status(_('Started SecureDrop Client. Please sign in.'), 20000)
 
@@ -156,14 +156,14 @@ class Window(QMainWindow):
         """
         Update the UI to show user logged in with username.
         """
-        self.tool_bar.set_logged_in_as(username)
+        self.left_pane.set_logged_in_as(username)
         self.top_pane.enable_refresh()
 
     def logout(self):
         """
         Update the UI to show the user is logged out.
         """
-        self.tool_bar.set_logged_out()
+        self.left_pane.set_logged_out()
         self.top_pane.disable_refresh()
 
     def on_source_changed(self):
