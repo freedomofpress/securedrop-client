@@ -27,7 +27,7 @@ from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBox
 from typing import List
 from uuid import uuid4
 
-from securedrop_client.db import Source, Message, File, Reply
+from securedrop_client.db import Source, Message, File
 from securedrop_client.gui import SvgLabel, SvgPushButton
 from securedrop_client.logic import Client
 from securedrop_client.resources import load_svg, load_icon, load_image
@@ -62,7 +62,7 @@ class TopPane(QWidget):
         layout.setSpacing(0)
 
         # Refresh button
-        self.refresh = RefreshWidget()
+        self.refresh = RefreshButton()
         self.refresh.disable()
 
         # Activity status bar
@@ -112,8 +112,63 @@ class TopPane(QWidget):
         self.error_status_bar.clear_message()
 
 
-class RefreshWidget(SvgPushButton):
+class LeftPane(QWidget):
     """
+    Represents the left side pane that contains user authentication actions and information.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+        # Set layout
+        layout = QVBoxLayout(self)
+        self.setLayout(layout)
+
+        # Remove margins and spacing
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(0)
+
+        # Use a background gradient
+        palette = QPalette()
+        gradient = QLinearGradient(0, 0, 0, 700)
+        gradient.setColorAt(0, QColor('#0093da'))
+        gradient.setColorAt(1, QColor('#0c3e75'))
+        palette.setBrush(QPalette.Background, QBrush(gradient))
+        self.setPalette(palette)
+        self.setAutoFillBackground(True)
+
+        # User profile
+        self.user_profile = UserProfile()
+
+        # Hide user profile widget until user logs in
+        self.user_profile.hide()
+
+        # Add widgets to layout
+        layout.addWidget(self.user_profile)
+
+        # Align content to the top of pane
+        layout.addStretch()
+
+    def setup(self, window, controller):
+        self.user_profile.setup(window, controller)
+
+    def set_logged_in_as(self, username):
+        """
+        Update the UI to reflect that the user is logged in as "username".
+        """
+        self.user_profile.set_username(username)
+        self.user_profile.show()
+
+    def set_logged_out(self):
+        """
+        Update the UI to a logged out state.
+        """
+        self.user_profile.hide()
+
+
+class RefreshButton(SvgPushButton):
+    """
+    A button that shows an icon for different refresh states.
     """
 
     css = '''
@@ -151,18 +206,21 @@ class RefreshWidget(SvgPushButton):
 
     def _on_clicked(self):
         self.controller.sync_api()
-        # Set the icon's Qt.Normal state image to an active state image. This is a temporary fix to
-        # show that the icon was clicked. The icon image is later replaced in _on_refresh_complete.
+        # This is a temporary solution for showing the icon as active for the entire duration of a
+        # refresh, rather than for just the duration of a click. The icon image will be replaced
+        # when the controller tells us the refresh has finished. A cleaner solution would be to
+        # store and update our own icon mode so we don't have to reload any images.
         self.setIcon(load_icon(
             normal='refresh_active.svg',
             disabled='refresh_offline.svg'))
 
-    def _on_refresh_complete(self):
-        self.setIcon(load_icon(
-            normal='refresh.svg',
-            disabled='refresh_offline.svg',
-            active='refresh_active.svg',
-            selected='refresh.svg'))
+    def _on_refresh_complete(self, data):
+        if (data == 'synced'):
+            self.setIcon(load_icon(
+                normal='refresh.svg',
+                disabled='refresh_offline.svg',
+                active='refresh_active.svg',
+                selected='refresh.svg'))
 
     def enable(self):
         self.setEnabled(True)
@@ -171,8 +229,41 @@ class RefreshWidget(SvgPushButton):
         self.setEnabled(False)
 
 
+class ActivityStatusBar(QStatusBar):
+    """
+    A status bar for displaying messages about application activity to the user. Messages will be
+    displayed for a given duration or until the message updated with a new message.
+    """
+
+    css = '''
+    #activity_status_bar {
+        color: #fff;
+    }
+    '''
+
+    def __init__(self):
+        super().__init__()
+
+        # Set css id
+        self.setObjectName('activity_status_bar')
+
+        # Set styles
+        self.setStyleSheet(self.css)
+
+        # Remove grip image at bottom right-hand corner
+        self.setSizeGripEnabled(False)
+
+    def update_message(self, message: str, duration: int):
+        """
+        Display a status message to the user.
+        """
+        self.showMessage(message, duration)
+
+
 class ErrorStatusBar(QWidget):
     """
+    A pop-up status bar for displaying messages about application errors to the user. Messages will
+    be displayed for a given duration or until the message is cleared or updated with a new message.
     """
 
     css = '''
@@ -276,89 +367,6 @@ class ErrorStatusBar(QWidget):
         self.status_bar.clearMessage()
 
 
-class ActivityStatusBar(QStatusBar):
-    """
-    """
-
-    css = '''
-    #activity_status_bar {
-        color: #fff;
-    }
-    '''
-
-    def __init__(self):
-        super().__init__()
-
-        # Set css id
-        self.setObjectName('activity_status_bar')
-
-        # Set styles
-        self.setStyleSheet(self.css)
-
-        # Remove grip image at bottom right-hand corner
-        self.setSizeGripEnabled(False)
-
-    def update_message(self, message: str, duration: int):
-        """
-        Display a status message to the user.
-        """
-        self.showMessage(message, duration)
-
-
-class LeftPane(QWidget):
-    """
-    Represents the left side pane that contains user authentication actions and information.
-    """
-
-    def __init__(self):
-        super().__init__()
-
-        # Set layout
-        layout = QVBoxLayout(self)
-        self.setLayout(layout)
-
-        # Remove margins and spacing
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(0)
-
-        # Use a background gradient
-        palette = QPalette()
-        gradient = QLinearGradient(0, 0, 0, 700)
-        gradient.setColorAt(0, QColor('#0093da'))
-        gradient.setColorAt(1, QColor('#0c3e75'))
-        palette.setBrush(QPalette.Background, QBrush(gradient))
-        self.setPalette(palette)
-        self.setAutoFillBackground(True)
-
-        # User profile
-        self.user_profile = UserProfile()
-
-        # Hide user profile widget until user logs in
-        self.user_profile.hide()
-
-        # Add widgets to layout
-        layout.addWidget(self.user_profile)
-
-        # Align content to the top of pane
-        layout.addStretch()
-
-    def setup(self, window, controller):
-        self.user_profile.setup(window, controller)
-
-    def set_logged_in_as(self, username):
-        """
-        Update the UI to reflect that the user is logged in as "username".
-        """
-        self.user_profile.set_username(username)
-        self.user_profile.show()
-
-    def set_logged_out(self):
-        """
-        Update the UI to a logged out state.
-        """
-        self.user_profile.hide()
-
-
 class UserProfile(QWidget):
     """
     A widget that contains user profile information and options.
@@ -439,8 +447,6 @@ class UserButton(SvgPushButton):
     css = '''
     SvgPushButton#user_button {
         border: none;
-        padding-top: 12px;
-        padding-bottom: 12px;
         padding-left: 6px;
         background-color: #0093da;
         font-family: Open Sans;
@@ -459,6 +465,7 @@ class UserButton(SvgPushButton):
         super().__init__('dropdown_arrow.svg', svg_size=QSize())
 
         self.setStyleSheet(self.css)
+        self.setFixedHeight(40)
 
         self.setObjectName('user_button')
 
@@ -533,7 +540,7 @@ class LoginButton(QPushButton):
 
         # Set styles
         self.setStyleSheet(self.css)
-        self.setFixedSize(200, 40)
+        self.setFixedHeight(40)
 
         # Set drop shadow effect
         effect = QGraphicsDropShadowEffect(self)
@@ -1256,9 +1263,11 @@ class SourceConversationWrapper(QWidget):
         self.conversation = ConversationView(self.source, self.sdc_home, self.controller,
                                              parent=self)
         self.source_profile = SourceProfileShortWidget(self.source, self.controller)
+        self.reply_box = ReplyBoxWidget(self)
 
         self.layout.addWidget(self.source_profile, 1)
         self.layout.addWidget(self.conversation, 9)
+        self.layout.addWidget(self.reply_box, 3)
 
         self.controller.authentication_state.connect(self._show_or_hide_replybox)
         self._show_or_hide_replybox(is_authenticated)
@@ -1269,20 +1278,12 @@ class SourceConversationWrapper(QWidget):
         self.controller.send_reply(self.source.uuid, msg_uuid, message)
 
     def _show_or_hide_replybox(self, show: bool) -> None:
-        if show:
-            new_widget = ReplyBoxWidget(self)
-        else:
-            new_widget = ReplyBoxWidget(self)
-            new_widget.text_edit.setText(_('You need to log in to send replies.'))
-            new_widget.text_edit.setEnabled(False)
-            new_widget.send_button.hide()
+        if not show:
+            self.reply_box.disable()
 
         old_widget = self.layout.takeAt(2)
         if old_widget is not None:
             old_widget.widget().deleteLater()
-
-        self.reply_box = new_widget
-        self.layout.addWidget(new_widget, 3)
 
 
 class ReplyBoxWidget(QWidget):
@@ -1321,6 +1322,15 @@ class ReplyBoxWidget(QWidget):
             return
         self.conversation.send_reply(msg)
         self.text_edit.clear()
+
+    def enable(self):
+        self.text_edit.setEnabled(True)
+        self.send_button.show()
+
+    def disable(self):
+        self.text_edit.setText(_('You need to log in to send replies.'))
+        self.text_edit.setEnabled(False)
+        self.send_button.hide()
 
 
 class DeleteSourceAction(QAction):

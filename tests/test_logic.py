@@ -275,7 +275,7 @@ def test_Client_on_authenticate_ok(homedir, config, mocker):
     cl.start_message_thread.assert_called_once_with()
     cl.gui.set_logged_in_as.assert_called_once_with('test')
     # Error status bar should be cleared
-    cl.gui.update_error_status.assert_called_once_with("")
+    cl.gui.clear_error_status.assert_called_once_with()
 
 
 def test_Client_completed_api_call_without_current_object(homedir, config, mocker):
@@ -760,7 +760,7 @@ def test_Client_unstars_a_source_if_starred(homedir, config, mocker):
     cl.call_api.assert_called_once_with(
         cl.api.remove_star, cl.on_update_star_complete,
         cl.on_sidebar_action_timeout, source_sdk_object)
-    mock_gui.update_error_status.assert_called_once_with("")
+    mock_gui.clear_error_status.assert_called_once_with()
 
 
 def test_Client_unstars_a_source_if_unstarred(homedir, config, mocker):
@@ -786,7 +786,7 @@ def test_Client_unstars_a_source_if_unstarred(homedir, config, mocker):
     cl.call_api.assert_called_once_with(
         cl.api.add_star, cl.on_update_star_complete,
         cl.on_sidebar_action_timeout, source_sdk_object)
-    mock_gui.update_error_status.assert_called_once_with("")
+    mock_gui.clear_error_status.assert_called_once_with()
 
 
 def test_Client_update_star_not_logged_in(homedir, config, mocker):
@@ -832,7 +832,7 @@ def test_Client_on_update_star_success(homedir, config, mocker):
     cl.sync_api = mocker.MagicMock()
     cl.on_update_star_complete(result)
     cl.sync_api.assert_called_once_with()
-    mock_gui.update_error_status.assert_called_once_with("")
+    mock_gui.clear_error_status.assert_called_once_with()
 
 
 def test_Client_on_update_star_failed(homedir, config, mocker):
@@ -874,7 +874,7 @@ def test_Client_logout(homedir, config, mocker):
     cl.gui.logout.assert_called_once_with()
 
 
-def test_Client_set_status(homedir, config, mocker):
+def test_Client_set_activity_status(homedir, config, mocker):
     """
     Ensure the GUI set_status API is called.
     Using the `config` fixture to ensure the config is written to disk.
@@ -883,7 +883,7 @@ def test_Client_set_status(homedir, config, mocker):
     mock_session = mocker.MagicMock()
     cl = Client('http://localhost', mock_gui, mock_session, homedir)
     cl.set_status("Hello, World!", 1000)
-    mock_gui.set_status.assert_called_once_with("Hello, World!", 1000)
+    mock_gui.update_activity_status.assert_called_once_with("Hello, World!", 1000)
 
 
 PERMISSIONS_CASES = [
@@ -1162,7 +1162,7 @@ def test_Client_on_delete_source_complete_with_results(homedir, config, mocker):
     cl.sync_api = mocker.MagicMock()
     cl._on_delete_source_complete(True)
     cl.sync_api.assert_called_with()
-    cl.gui.update_error_status.assert_called_with("")
+    cl.gui.clear_error_status.assert_called_with()
 
 
 def test_Client_on_delete_source_complete_without_results(homedir, config, mocker):

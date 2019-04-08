@@ -2,167 +2,372 @@
 Make sure the UI widgets are configured correctly and work as expected.
 """
 from PyQt5.QtWidgets import QWidget, QApplication, QWidgetItem, QSpacerItem, QVBoxLayout, \
-    QMessageBox, QLabel
+    QMessageBox, QLabel, QTextEdit
 from tests import factory
-from securedrop_client import db
-from securedrop_client import logic
-from securedrop_client.gui.widgets import ToolBar, MainView, SourceList, SourceWidget, \
-    LoginDialog, SpeechBubble, ConversationWidget, MessageWidget, ReplyWidget, FileWidget, \
-    ConversationView, DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, \
-    SourceConversationWrapper, ReplyBoxWidget, JournalistMenu
+from securedrop_client import db, logic
+from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, LoginDialog, \
+    SpeechBubble, ConversationWidget, MessageWidget, ReplyWidget, FileWidget, ConversationView, \
+    DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, LeftPane, RefreshButton, \
+    ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
+    ReplyBoxWidget, SourceConversationWrapper
 
 
 app = QApplication([])
-
-
-def test_ToolBar_init():
-    """
-    Ensure the ToolBar instance is correctly set up.
-    """
-    tb = ToolBar(None)
-    assert not tb.login.isHidden()
-    assert tb.user_icon.isHidden()
-    assert tb.user_state.isHidden()
-    assert tb.user_menu.isHidden()
-
-
-def test_ToolBar_setup(mocker):
-    """
-    Calling setup with references to a window and controller object results in
-    them becoming attributes of self.
-    """
-    tb = ToolBar(None)
-    mock_window = mocker.MagicMock()
-    mock_controller = mocker.MagicMock()
-
-    tb.setup(mock_window, mock_controller)
-
-    assert tb.window == mock_window
-    assert tb.controller == mock_controller
-
-
-def test_ToolBar_set_logged_in_as(mocker):
-    """
-    When a user is logged in check that buttons and menus are in the correct state.
-    """
-    tb = ToolBar(None)
-    tb.login = mocker.MagicMock()
-    tb.user_icon = mocker.MagicMock()
-    tb.user_state = mocker.MagicMock()
-    tb.user_menu = mocker.MagicMock()
-
-    tb.set_logged_in_as('test')
-
-    tb.user_state.setText.assert_called_once_with('test')
-    tb.login.hide.assert_called_once_with()
-    tb.user_icon.show.assert_called_once_with()
-    tb.user_state.show.assert_called_once_with()
-    tb.user_menu.show.assert_called_once_with()
-
-
-def test_ToolBar_set_logged_out(mocker):
-    """
-    When a user is logged out check that buttons and menus are in the correct state.
-    """
-    tb = ToolBar(None)
-    tb.login = mocker.MagicMock()
-    tb.user_icon = mocker.MagicMock()
-    tb.user_state = mocker.MagicMock()
-    tb.user_menu = mocker.MagicMock()
-
-    tb.set_logged_out()
-
-    tb.login.show.assert_called_once_with()
-    tb.user_icon.hide.assert_called_once_with()
-    tb.user_state.hide.assert_called_once_with()
-    tb.user_menu.hide.assert_called_once_with()
-
-
-def test_ToolBar_on_login_clicked(mocker):
-    """
-    When login button is clicked, the window activates the login form.
-    """
-    tb = ToolBar(None)
-    tb.window = mocker.MagicMock()
-    tb.on_login_clicked()
-    tb.window.show_login.assert_called_once_with()
-
-
-def test_ToolBar_on_logout_clicked(mocker):
-    """
-    When logout is clicked, the logout logic from the controller is started.
-    """
-    tb = ToolBar(None)
-    tb.controller = mocker.MagicMock()
-    tb.on_logout_clicked()
-    tb.controller.logout.assert_called_once_with()
-
-
-def test_JournalistMenu_on_logout_clicked_action_triggered(mocker):
-    """
-    When the sign-out option is selected, call on_logout_clicked.
-    """
-    tb = ToolBar(None)
-    tb.controller = mocker.MagicMock()
-    jm = JournalistMenu(tb)
-    jm.actions()[0].trigger()
-    tb.controller.logout.assert_called_once_with()
-
-
-def test_TopPane_on_refresh_clicked(mocker):
-    """
-    When refresh is clicked, the refresh logic from the controller is stated.
-    """
-    sb = TopPane()
-    sb.controller = mocker.MagicMock()
-    sb.on_refresh_clicked()
-    sb.controller.sync_api.assert_called_once_with()
-
-
-def test_TopPane_sync_event():
-    """Toggles refresh button when syncing
-    """
-    sb = TopPane()
-    sb._on_sync_event('syncing')
-    assert not sb.refresh.isEnabled()
-
-    sb._on_sync_event('synced')
-    assert sb.refresh.isEnabled()
 
 
 def test_TopPane_init(mocker):
     """
     Ensure the TopPane instance is correctly set up.
     """
-    tb = ToolBar(None)
+    tp = TopPane()
+    assert not tp.refresh.isEnabled()
+
+
+def test_TopPane_setup(mocker):
+    """
+    Calling setup calls setup for RefreshButton.
+    """
+    tp = TopPane()
+    tp.refresh = mocker.MagicMock()
+    mock_controller = mocker.MagicMock()
+
+    tp.setup(mock_controller)
+
+    tp.refresh.setup.assert_called_once_with(mock_controller)
+
+
+def test_TopPane_enable_refresh(mocker):
+    """
+    Calling enable_refresh calls enable on RefreshButton.
+    """
+    tp = TopPane()
+    tp.refresh = mocker.MagicMock()
+
+    tp.enable_refresh()
+
+    tp.refresh.enable.assert_called_once_with()
+
+
+def test_TopPane_disable_refresh(mocker):
+    """
+    Calling disable_refresh calls disable on RefreshButton.
+    """
+    tp = TopPane()
+    tp.refresh = mocker.MagicMock()
+
+    tp.disable_refresh()
+
+    tp.refresh.disable.assert_called_once_with()
+
+
+def test_TopPane_update_activity_status(mocker):
+    """
+    Calling update_activity_status calls update_message on ActivityStatusBar.
+    """
+    tp = TopPane()
+    tp.activity_status_bar = mocker.MagicMock()
+
+    tp.update_activity_status(message='test message', duration=5)
+
+    tp.activity_status_bar.update_message.assert_called_once_with('test message', 5)
+
+
+def test_TopPane_update_error_status(mocker):
+    """
+    Calling update_error_status calls update_message on ErrorStatusBar.
+    """
+    tp = TopPane()
+    tp.error_status_bar = mocker.MagicMock()
+
+    tp.update_error_status(message='test message', duration=5)
+
+    tp.error_status_bar.update_message.assert_called_once_with('test message', 5)
+
+
+def test_TopPane_clear_error_status(mocker):
+    """
+    Calling clear_error_status calls clear_message on RefreshButton.
+    """
+    tp = TopPane()
+    tp.error_status_bar = mocker.MagicMock()
+
+    tp.clear_error_status()
+
+    tp.error_status_bar.clear_message.assert_called_once_with()
+
+
+def test_LeftPane_init(mocker):
+    """
+    Ensure the LeftPane instance is correctly set up.
+    """
+    lp = LeftPane()
+    lp.user_profile = mocker.MagicMock()
+    assert lp.user_profile.isHidden()
+
+
+def test_LeftPane_setup(mocker):
+    """
+    Calling setup calls setup for UserProfile.
+    """
+    lp = LeftPane()
+    lp.user_profile = mocker.MagicMock()
     mock_window = mocker.MagicMock()
     mock_controller = mocker.MagicMock()
-    tb.setup(mock_window, mock_controller)
 
-    sb = TopPane()
-    sb.setup(mock_controller)
+    lp.setup(mock_window, mock_controller)
 
-    assert not sb.refresh.isHidden()
+    lp.user_profile.setup.assert_called_once_with(mock_window, mock_controller)
 
 
-def test_TopPane_show_refresh(mocker):
+def test_LeftPane_set_logged_in_as(mocker):
     """
-    Ensure the TopPane shows refresh icon.
+    When a user is logged in check that buttons and menus are in the correct state.
     """
-    sb = TopPane()
-    sb.refresh = mocker.MagicMock()
-    sb.show_refresh_icon()
-    sb.refresh.show.assert_called_once_with()
+    lp = LeftPane()
+    lp.user_profile = mocker.MagicMock()
+
+    lp.set_logged_in_as('test')
+
+    lp.user_profile.show.assert_called_once_with()
+    lp.user_profile.set_username.assert_called_once_with('test')
 
 
-def test_TopPane_hide_refresh(mocker):
+def test_LeftPane_set_logged_out(mocker):
     """
-    Ensure the TopPane hides refresh icon.
+    When a user is logged out check that buttons and menus are in the correct state.
     """
-    sb = TopPane()
-    sb.refresh = mocker.MagicMock()
-    sb.hide_refresh_icon()
-    sb.refresh.hide.assert_called_once_with()
+    lp = LeftPane()
+    lp.user_profile = mocker.MagicMock()
+
+    lp.set_logged_out()
+
+    lp.user_profile.hide.assert_called_once_with()
+
+
+def test_RefreshButton_setup(mocker):
+    """
+    Calling setup stores reference to controller, which will later be used to update button icon on
+    sync event.
+    """
+    rb = RefreshButton()
+    controller = mocker.MagicMock()
+
+    rb.setup(controller)
+
+    assert rb.controller == controller
+
+
+def test_RefreshButton_on_clicked(mocker):
+    """
+    When refresh button is clicked, sync_api should be called.
+    """
+    rb = RefreshButton()
+    rb.controller = mocker.MagicMock()
+
+    rb._on_clicked()
+
+    rb.controller.sync_api.assert_called_once_with()
+
+
+def test_RefreshButton_on_refresh_complete(mocker):
+    """
+    Make sure we are enabled after a refresh completes.
+    """
+    rb = RefreshButton()
+    rb._on_refresh_complete('synced')
+    assert rb.isEnabled()
+
+
+def test_RefreshButton_enable(mocker):
+    rb = RefreshButton()
+    rb.enable()
+    assert rb.isEnabled()
+
+
+def test_RefreshButton_disable(mocker):
+    rb = RefreshButton()
+    rb.disable()
+    assert not rb.isEnabled()
+
+
+def test_ErrorStatusBar_clear_error_status(mocker):
+    """
+    Calling clear_error_status calls clear_message on RefreshButton.
+    """
+    esb = ErrorStatusBar()
+    esb.status_bar = mocker.MagicMock()
+
+    esb.clear_message()
+
+    esb.status_bar.clearMessage.assert_called_once_with()
+
+
+def test_ErrorStatusBar_update_message(mocker):
+    """
+    Calling update_message updates the message of the QStatusBar and starts the a timer for the
+    given duration.
+    """
+    esb = ErrorStatusBar()
+    esb.status_bar = mocker.MagicMock()
+    esb.status_timer = mocker.MagicMock()
+
+    esb.update_message(message='test message', duration=123)
+
+    esb.status_bar.showMessage.assert_called_once_with('test message', 123)
+    esb.status_timer.start.assert_called_once_with(123)
+
+
+def test_ErrorStatusBar_hide(mocker):
+    esb = ErrorStatusBar()
+    esb.vertical_bar = mocker.MagicMock()
+    esb.label = mocker.MagicMock()
+    esb.status_bar = mocker.MagicMock()
+
+    esb._hide()
+
+    esb.vertical_bar.hide.assert_called_once_with()
+    esb.label.hide.assert_called_once_with()
+    esb.status_bar.hide.assert_called_once_with()
+
+
+def test_ErrorStatusBar_show(mocker):
+    esb = ErrorStatusBar()
+    esb.vertical_bar = mocker.MagicMock()
+    esb.label = mocker.MagicMock()
+    esb.status_bar = mocker.MagicMock()
+
+    esb._show()
+
+    esb.vertical_bar.show.assert_called_once_with()
+    esb.label.show.assert_called_once_with()
+    esb.status_bar.show.assert_called_once_with()
+
+
+def test_ErrorStatusBar_on_status_timeout(mocker):
+    esb = ErrorStatusBar()
+    esb._on_status_timeout()
+    assert esb.isHidden()
+
+
+def test_ActivityStatusBar_update_message(mocker):
+    """
+    Calling update_message updates the message of the QStatusBar.
+    """
+    asb = ActivityStatusBar()
+    asb.update_message(message='test message', duration=123)
+    assert asb.currentMessage() == 'test message'
+
+
+def test_UserProfile_setup(mocker):
+    up = UserProfile()
+    up.user_button = mocker.MagicMock()
+    up.login_button = mocker.MagicMock()
+    window = mocker.MagicMock()
+    controller = mocker.MagicMock()
+
+    up.setup(window, controller)
+
+    up.user_button.setup.assert_called_once_with(controller)
+    up.login_button.setup.assert_called_once_with(window)
+
+
+def test_UserProfile_set_username(mocker):
+    up = UserProfile()
+    up.user_icon = mocker.MagicMock()
+    up.user_button = mocker.MagicMock()
+
+    up.set_username('test_username')
+
+    up.user_icon.setText.assert_called_once_with('jo')  # testing current behavior as placeholder
+    up.user_button.set_username.assert_called_once_with('test_username')
+
+
+def test_UserProfile_show(mocker):
+    up = UserProfile()
+    up.user_icon = mocker.MagicMock()
+    up.user_button = mocker.MagicMock()
+    up.login_button = mocker.MagicMock()
+
+    up.show()
+
+    up.login_button.hide.assert_called_once_with()
+    up.user_icon.show.assert_called_once_with()
+    up.user_button.show.assert_called_once_with()
+
+
+def test_UserProfile_hide(mocker):
+    up = UserProfile()
+    up.user_icon = mocker.MagicMock()
+    up.user_button = mocker.MagicMock()
+    up.login_button = mocker.MagicMock()
+
+    up.hide()
+
+    up.user_icon.hide.assert_called_once_with()
+    up.user_button.hide.assert_called_once_with()
+    up.login_button.show.assert_called_once_with()
+
+
+def test_UserButton_setup(mocker):
+    ub = UserButton()
+    ub.menu = mocker.MagicMock()
+    controller = mocker.MagicMock()
+
+    ub.setup(controller)
+
+    ub.menu.setup.assert_called_once_with(controller)
+
+
+def test_UserButton_set_username():
+    ub = UserButton()
+    ub.set_username('test_username')
+    ub.text() == 'test_username'
+
+
+def test_UserMenu_setup(mocker):
+    um = UserMenu()
+    controller = mocker.MagicMock()
+
+    um.setup(controller)
+
+    assert um.controller == controller
+
+
+def test_UserMenu_on_logout_triggered(mocker):
+    um = UserMenu()
+    um.controller = mocker.MagicMock()
+
+    um._on_logout_triggered()
+
+    um.controller.logout.assert_called_once_with()
+
+
+def test_UserMenu_on_item_selected(mocker):
+    um = UserMenu()
+    um.controller = mocker.MagicMock()
+
+    um.actions()[0].trigger()
+
+    um.controller.logout.assert_called_once_with()
+
+
+def test_LoginButton_init(mocker):
+    lb = LoginButton()
+    assert lb.text() == 'SIGN IN'
+
+
+def test_LoginButton_setup(mocker):
+    lb = LoginButton()
+    window = mocker.MagicMock()
+    lb.setup(window)
+    lb.window = window
+
+
+def test_Loginbutton_on_clicked(mocker):
+    lb = LoginButton()
+    lb.window = mocker.MagicMock()
+    lb._on_clicked()
+    lb.window.show_login.assert_called_once_with()
 
 
 def test_MainView_init():
@@ -187,21 +392,6 @@ def test_MainView_show_conversation(mocker):
 
     mv.view_layout.takeAt.assert_called_once_with(0)
     mv.view_layout.addWidget.assert_called_once_with(mock_widget)
-
-
-def test_MainView_update_error_status(mocker):
-    """
-    Ensure when the update_error_status method is called on the MainView that
-    the error status text is set as expected.
-    """
-    mv = MainView(None)
-    expected_message = "this is the message to be displayed"
-
-    mv.error_status = mocker.MagicMock()
-    mv.error_status.setText = mocker.MagicMock()
-
-    mv.update_error_status(error=expected_message)
-    mv.error_status.setText.assert_called_once_with(expected_message)
 
 
 def test_SourceList_update(mocker):
@@ -1323,6 +1513,32 @@ def test_ReplyWidget_success_failure_slots(mocker):
     assert mock_logger.debug.called
 
 
+def test_ReplyBoxWidget_enable(mocker):
+    mock_conversation = mocker.Mock()
+    rw = ReplyBoxWidget(mock_conversation)
+    rw.text_edit = QTextEdit()
+    rw.send_button = mocker.MagicMock()
+
+    rw.enable()
+
+    assert rw.text_edit.isEnabled()
+    assert rw.text_edit.toPlainText() == ''
+    rw.send_button.show.assert_called_once_with()
+
+
+def test_ReplyBoxWidget_disable(mocker):
+    mock_conversation = mocker.Mock()
+    rw = ReplyBoxWidget(mock_conversation)
+    rw.text_edit = QTextEdit()
+    rw.send_button = mocker.MagicMock()
+
+    rw.disable()
+
+    assert not rw.text_edit.isEnabled()
+    assert rw.text_edit.toPlainText() == 'You need to log in to send replies.'
+    rw.send_button.hide.assert_called_once_with()
+
+
 def test_update_conversation_maintains_old_items(mocker, homedir, session):
     """
     Calling update_conversation deletes and adds old items back to layout
@@ -1416,22 +1632,11 @@ def test_SourceConversationWrapper_set_widgets_via_auth_value(mocker, homedir):
     """
     When the client is authenticated, we should create a ReplyBoxWidget otherwise a warning.
     """
-    mock_source = mocker.Mock(collection=[])
-    mock_controller = mocker.MagicMock()
+    source = mocker.MagicMock()
+    controller = mocker.MagicMock()
+    scw = SourceConversationWrapper(source, 'mock home', controller, True)
+    scw.reply_box = mocker.MagicMock()
 
-    mocker.patch('securedrop_client.gui.widgets.LastUpdatedLabel', return_value=QLabel('now'))
-    cw = SourceConversationWrapper(mock_source, 'mock home', mock_controller, True)
-    mocker.patch.object(cw, 'layout')
-    mock_reply_box = mocker.patch('securedrop_client.gui.widgets.ReplyBoxWidget',
-                                  return_value=QWidget())
-    mock_label = mocker.patch('securedrop_client.gui.widgets.QLabel', return_value=QWidget())
+    scw._show_or_hide_replybox(False)
 
-    cw._show_or_hide_replybox(True)
-    mock_reply_box.assert_called_once_with(cw)
-    assert not mock_label.called
-
-    mock_reply_box.reset_mock()
-
-    cw._show_or_hide_replybox(False)
-    assert not mock_reply_box.called
-    assert mock_label.called
+    scw.reply_box.disable.assert_called_once_with()
