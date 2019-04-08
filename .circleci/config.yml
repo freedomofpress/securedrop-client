@@ -27,11 +27,10 @@ jobs:
             - "/usr/local/lib/python3.5/site-packages"
       - run:
           name: Run linters
-          command: pipenv run make check
+          command: pipenv run make lint mypy
       - run:
           name: Run tests
-          command: |
-            pipenv run python -m unittest discover -v tests/
+          command: pipenv run make test
       - run:
           name: Check for known CVEs
           command: pipenv check
@@ -75,7 +74,7 @@ jobs:
           name: Remove VCR cassettes and run tests against latest API
           command: |
             rm data/*.yml  # Removing VCR cassettes
-            pipenv run python -m unittest discover -v tests/
+            pipenv run make test
 workflows:
   version: 2
   securedrop_ci:
