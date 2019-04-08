@@ -17,7 +17,8 @@ jobs:
           command: |
             set -e
             sudo pip install pipenv
-            pipenv sync --dev
+            pipenv install --dev --skip-lock
+            pipenv run pip freeze
       - save_cache:
           key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
           paths:
@@ -46,7 +47,8 @@ jobs:
           name: Install dependencies
           command: |
             sudo pip install pipenv
-            pipenv install -d
+            pipenv install --dev --skip-lock
+            pipenv run pip freeze
       - run:
           name: Download SecureDrop server code
           command: git clone https://github.com/freedomofpress/securedrop.git
