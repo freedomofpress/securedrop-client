@@ -365,6 +365,7 @@ class ErrorStatusBar(QWidget):
         Clear any message currently in the status bar.
         """
         self.status_bar.clearMessage()
+        self._hide()
 
 
 class UserProfile(QWidget):
