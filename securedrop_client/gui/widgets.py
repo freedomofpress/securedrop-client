@@ -1281,10 +1281,8 @@ class SourceConversationWrapper(QWidget):
     def _show_or_hide_replybox(self, show: bool) -> None:
         if not show:
             self.reply_box.disable()
-
-        old_widget = self.layout.takeAt(2)
-        if old_widget is not None:
-            old_widget.widget().deleteLater()
+        else:
+            self.reply_box.enable()
 
 
 class ReplyBoxWidget(QWidget):
