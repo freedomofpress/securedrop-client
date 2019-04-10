@@ -593,7 +593,7 @@ class MainView(QWidget):
         self.view_layout = QVBoxLayout()
         self.view_layout.setContentsMargins(0, 0, 0, 0)
         self.view_holder = QWidget()
-        self.view_holder.setStyleSheet('background: #efeef7;')
+        self.view_holder.setStyleSheet('background: #fff;')
         self.view_holder.setLayout(self.view_layout)
 
         self.layout.addWidget(self.view_holder, 6)
@@ -1279,10 +1279,17 @@ class SourceConversationWrapper(QWidget):
         self.controller.send_reply(self.source.uuid, msg_uuid, message)
 
     def _show_or_hide_replybox(self, show: bool) -> None:
-        if not show:
-            self.reply_box.disable()
+        if show:
+            new_widget = ReplyBoxWidget(self)
         else:
-            self.reply_box.enable()
+            new_widget = QLabel(_('You need to log in to send replies.'))
+
+        old_widget = self.layout.takeAt(2)
+        if old_widget is not None:
+            old_widget.widget().deleteLater()
+
+        self.reply_box = new_widget
+        self.layout.addWidget(new_widget, 3)
 
 
 class ReplyBoxWidget(QWidget):
@@ -1292,9 +1299,6 @@ class ReplyBoxWidget(QWidget):
 
     def __init__(self, conversation: SourceConversationWrapper) -> None:
         super().__init__()
-
-        self.setStyleSheet('background: #fff;')
-
         self.conversation = conversation
 
         self.text_edit = QTextEdit()
@@ -1321,15 +1325,6 @@ class ReplyBoxWidget(QWidget):
             return
         self.conversation.send_reply(msg)
         self.text_edit.clear()
-
-    def enable(self):
-        self.text_edit.setEnabled(True)
-        self.send_button.show()
-
-    def disable(self):
-        self.text_edit.setText(_('You need to log in to send replies.'))
-        self.text_edit.setEnabled(False)
-        self.send_button.hide()
 
 
 class DeleteSourceAction(QAction):

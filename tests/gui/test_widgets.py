@@ -2,7 +2,7 @@
 Make sure the UI widgets are configured correctly and work as expected.
 """
 from PyQt5.QtWidgets import QWidget, QApplication, QWidgetItem, QSpacerItem, QVBoxLayout, \
-    QMessageBox, QLabel, QTextEdit
+    QMessageBox, QLabel
 from tests import factory
 from securedrop_client import db, logic
 from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, LoginDialog, \
@@ -1513,32 +1513,6 @@ def test_ReplyWidget_success_failure_slots(mocker):
     assert mock_logger.debug.called
 
 
-def test_ReplyBoxWidget_enable(mocker):
-    mock_conversation = mocker.Mock()
-    rw = ReplyBoxWidget(mock_conversation)
-    rw.text_edit = QTextEdit()
-    rw.send_button = mocker.MagicMock()
-
-    rw.enable()
-
-    assert rw.text_edit.isEnabled()
-    assert rw.text_edit.toPlainText() == ''
-    rw.send_button.show.assert_called_once_with()
-
-
-def test_ReplyBoxWidget_disable(mocker):
-    mock_conversation = mocker.Mock()
-    rw = ReplyBoxWidget(mock_conversation)
-    rw.text_edit = QTextEdit()
-    rw.send_button = mocker.MagicMock()
-
-    rw.disable()
-
-    assert not rw.text_edit.isEnabled()
-    assert rw.text_edit.toPlainText() == 'You need to log in to send replies.'
-    rw.send_button.hide.assert_called_once_with()
-
-
 def test_update_conversation_maintains_old_items(mocker, homedir, session):
     """
     Calling update_conversation deletes and adds old items back to layout
@@ -1632,11 +1606,22 @@ def test_SourceConversationWrapper_set_widgets_via_auth_value(mocker, homedir):
     """
     When the client is authenticated, we should create a ReplyBoxWidget otherwise a warning.
     """
-    source = mocker.MagicMock()
-    controller = mocker.MagicMock()
-    scw = SourceConversationWrapper(source, 'mock home', controller, True)
-    scw.reply_box = mocker.MagicMock()
+    mock_source = mocker.Mock(collection=[])
+    mock_controller = mocker.MagicMock()
 
-    scw._show_or_hide_replybox(False)
+    mocker.patch('securedrop_client.gui.widgets.LastUpdatedLabel', return_value=QLabel('now'))
+    cw = SourceConversationWrapper(mock_source, 'mock home', mock_controller, True)
+    mocker.patch.object(cw, 'layout')
+    mock_reply_box = mocker.patch('securedrop_client.gui.widgets.ReplyBoxWidget',
+                                  return_value=QWidget())
+    mock_label = mocker.patch('securedrop_client.gui.widgets.QLabel', return_value=QWidget())
 
-    scw.reply_box.disable.assert_called_once_with()
+    cw._show_or_hide_replybox(True)
+    mock_reply_box.assert_called_once_with(cw)
+    assert not mock_label.called
+
+    mock_reply_box.reset_mock()
+
+    cw._show_or_hide_replybox(False)
+    assert not mock_reply_box.called
+    assert mock_label.called
