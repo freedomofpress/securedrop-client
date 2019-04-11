@@ -171,7 +171,7 @@ class RefreshButton(SvgPushButton):
     A button that shows an icon for different refresh states.
     """
 
-    css = '''
+    CSS = '''
     #refresh_button {
         border: none;
         color: #fff;
@@ -191,7 +191,7 @@ class RefreshButton(SvgPushButton):
         self.setObjectName('refresh_button')
 
         # Set styles
-        self.setStyleSheet(self.css)
+        self.setStyleSheet(self.CSS)
         self.setFixedSize(QSize(42, 42))
 
         # Click event handler
@@ -235,7 +235,7 @@ class ActivityStatusBar(QStatusBar):
     displayed for a given duration or until the message updated with a new message.
     """
 
-    css = '''
+    CSS = '''
     #activity_status_bar {
         color: #fff;
     }
@@ -248,7 +248,7 @@ class ActivityStatusBar(QStatusBar):
         self.setObjectName('activity_status_bar')
 
         # Set styles
-        self.setStyleSheet(self.css)
+        self.setStyleSheet(self.CSS)
 
         # Remove grip image at bottom right-hand corner
         self.setSizeGripEnabled(False)
@@ -266,7 +266,7 @@ class ErrorStatusBar(QWidget):
     be displayed for a given duration or until the message is cleared or updated with a new message.
     """
 
-    css = '''
+    CSS = '''
     #error_vertical_bar {
         background-color: #f22b5d;
     }
@@ -300,7 +300,7 @@ class ErrorStatusBar(QWidget):
         super().__init__()
 
         # Set styles
-        self.setStyleSheet(self.css)
+        self.setStyleSheet(self.CSS)
 
         # Set layout
         layout = QHBoxLayout(self)
@@ -376,7 +376,7 @@ class UserProfile(QWidget):
     button if the user is logged out.
     """
 
-    css = '''
+    CSS = '''
     QLabel#user_icon {
         border: none;
         padding: 10px;
@@ -392,7 +392,7 @@ class UserProfile(QWidget):
         super().__init__()
 
         # Set styles
-        self.setStyleSheet(self.css)
+        self.setStyleSheet(self.CSS)
         self.setFixedWidth(200)
 
         # Set layout
@@ -445,7 +445,7 @@ class UserButton(SvgPushButton):
     This button is responsible for launching the journalist menu on click.
     """
 
-    css = '''
+    CSS = '''
     SvgPushButton#user_button {
         border: none;
         padding-left: 6px;
@@ -465,7 +465,7 @@ class UserButton(SvgPushButton):
     def __init__(self):
         super().__init__('dropdown_arrow.svg', svg_size=QSize())
 
-        self.setStyleSheet(self.css)
+        self.setStyleSheet(self.CSS)
         self.setFixedHeight(40)
 
         self.setObjectName('user_button')
@@ -513,7 +513,7 @@ class LoginButton(QPushButton):
     A button that opens a login dialog when clicked.
     """
 
-    css = '''
+    CSS = '''
     #login {
         border: none;
         background-color: qlineargradient(
@@ -540,7 +540,7 @@ class LoginButton(QPushButton):
         self.setObjectName('login')
 
         # Set styles
-        self.setStyleSheet(self.css)
+        self.setStyleSheet(self.CSS)
         self.setFixedHeight(40)
 
         # Set drop shadow effect
@@ -937,7 +937,7 @@ class SpeechBubble(QWidget):
     and journalist.
     """
 
-    css = "padding:8px; min-height:32px; border:1px solid #999;"
+    CSS = "padding:8px; min-height:32px; border:1px solid #999;"
 
     def __init__(self, message_id: str, text: str, update_signal) -> None:
         super().__init__()
@@ -987,14 +987,14 @@ class ConversationWidget(QWidget):
         if align != "left":
             # Float right...
             layout.addStretch(5)
-            label.setStyleSheet(label.css)
+            label.setStyleSheet(label.CSS)
 
         layout.addWidget(label, 6)
 
         if align == "left":
             # Add space on right hand side...
             layout.addStretch(5)
-            label.setStyleSheet(label.css)
+            label.setStyleSheet(label.CSS)
 
         self.setLayout(layout)
 
