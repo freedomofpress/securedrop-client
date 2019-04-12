@@ -1145,7 +1145,6 @@ class ConversationView(QWidget):
         self.source = source_db_object
         self.sdc_home = sdc_home
         self.controller = controller
-        self.setStyleSheet("background-color: #fff;")
 
         self.container = QWidget()
         self.conversation_layout = QVBoxLayout()
