@@ -25,7 +25,7 @@ from typing import List
 
 from securedrop_client import __version__
 from securedrop_client.db import Source
-from securedrop_client.gui.widgets import ToolBar, MainView, LoginDialog, StatusBar, \
+from securedrop_client.gui.widgets import TopPane, LeftPane, MainView, LoginDialog, \
     SourceConversationWrapper
 from securedrop_client.resources import load_icon
 
@@ -60,22 +60,24 @@ class Window(QMainWindow):
         self.central_widget = QWidget()
         central_widget_layout = QVBoxLayout()
         central_widget_layout.setContentsMargins(0, 0, 0, 0)
+        central_widget_layout.setSpacing(0)
         self.central_widget.setLayout(central_widget_layout)
         self.setCentralWidget(self.central_widget)
 
-        self.status_bar = StatusBar()
-        central_widget_layout.addWidget(self.status_bar)
+        self.top_pane = TopPane()
+        central_widget_layout.addWidget(self.top_pane)
 
         self.widget = QWidget()
         widget_layout = QHBoxLayout()
         widget_layout.setContentsMargins(0, 0, 0, 0)
+        widget_layout.setSpacing(0)
         self.widget.setLayout(widget_layout)
 
-        self.tool_bar = ToolBar(self.widget)
+        self.left_pane = LeftPane()
         self.main_view = MainView(self.widget)
         self.main_view.source_list.itemSelectionChanged.connect(self.on_source_changed)
 
-        widget_layout.addWidget(self.tool_bar, 1)
+        widget_layout.addWidget(self.left_pane, 1)
         widget_layout.addWidget(self.main_view, 8)
 
         central_widget_layout.addWidget(self.widget)
@@ -96,9 +98,9 @@ class Window(QMainWindow):
         views used in the UI.
         """
         self.controller = controller  # Reference the Client logic instance.
-        self.tool_bar.setup(self, controller)
-        self.status_bar.setup(controller)
-        self.set_status(_('Started SecureDrop Client. Please sign in.'), 20000)
+        self.left_pane.setup(self, controller)
+        self.top_pane.setup(controller)
+        self.update_activity_status(_('Started SecureDrop Client. Please sign in.'), 20000)
 
         self.login_dialog = LoginDialog(self)
         self.main_view.setup(self.controller)
@@ -119,7 +121,6 @@ class Window(QMainWindow):
         self.login_dialog.setup(self.controller)
         self.login_dialog.reset()
         self.login_dialog.exec()
-        self.status_bar.show_refresh_icon()
 
     def show_login_error(self, error):
         """
@@ -134,13 +135,6 @@ class Window(QMainWindow):
         """
         self.login_dialog.accept()
         self.login_dialog = None
-        self.status_bar.hide_refresh_icon()
-
-    def update_error_status(self, error=None):
-        """
-        Show an error message on the sidebar.
-        """
-        self.main_view.update_error_status(error)
 
     def show_sources(self, sources: List[Source]):
         """
@@ -154,22 +148,23 @@ class Window(QMainWindow):
         Display a message indicating the data-sync state.
         """
         if updated_on:
-            self.set_status(_('Last refresh: {}').format(updated_on.humanize()))
+            self.update_activity_status(_('Last refresh: {}').format(updated_on.humanize()))
         else:
-            self.set_status(_('Waiting to refresh...'), 5000)
+            self.update_activity_status(_('Waiting to refresh...'), 5000)
 
     def set_logged_in_as(self, username):
         """
         Update the UI to show user logged in with username.
         """
-        self.tool_bar.set_logged_in_as(username)
+        self.left_pane.set_logged_in_as(username)
+        self.top_pane.enable_refresh()
 
     def logout(self):
         """
         Update the UI to show the user is logged out.
         """
-        self.tool_bar.set_logged_out()
-        self.status_bar.hide_refresh_icon()
+        self.left_pane.set_logged_out()
+        self.top_pane.disable_refresh()
 
     def on_source_changed(self):
         """
@@ -197,9 +192,22 @@ class Window(QMainWindow):
 
         self.main_view.set_conversation(conversation_container)
 
-    def set_status(self, message, duration=0):
+    def update_activity_status(self, message: str, duration=0):
         """
-        Display a status message to the user. Optionally, supply a duration
+        Display an activity status message to the user. Optionally, supply a duration
         (in milliseconds), the default will continuously show the message.
         """
-        self.status_bar.show_message(message, duration)
+        self.top_pane.update_activity_status(message, duration)
+
+    def update_error_status(self, message: str, duration=10000):
+        """
+        Display an error status message to the user. Optionally, supply a duration
+        (in milliseconds), the default will continuously show the message.
+        """
+        self.top_pane.update_error_status(message, duration)
+
+    def clear_error_status(self):
+        """
+        Clear any message currently in the error status bar.
+        """
+        self.top_pane.clear_error_status()

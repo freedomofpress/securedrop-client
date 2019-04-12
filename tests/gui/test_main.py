@@ -19,14 +19,14 @@ def test_init(mocker):
     mock_lo().addWidget = mocker.MagicMock()
 
     mocker.patch('securedrop_client.gui.main.load_icon', mock_li)
-    mock_tb = mocker.patch('securedrop_client.gui.main.ToolBar')
+    mock_lp = mocker.patch('securedrop_client.gui.main.LeftPane')
     mock_mv = mocker.patch('securedrop_client.gui.main.MainView')
     mocker.patch('securedrop_client.gui.main.QHBoxLayout', mock_lo)
     mocker.patch('securedrop_client.gui.main.QMainWindow')
 
     w = Window('mock')
     mock_li.assert_called_once_with(w.icon)
-    mock_tb.assert_called_once_with(w.widget)
+    mock_lp.assert_called_once_with()
     mock_mv.assert_called_once_with(w.widget)
     assert mock_lo().addWidget.call_count == 2
 
@@ -66,15 +66,13 @@ def test_show_login(mocker):
     mock_controller = mocker.MagicMock()
     w = Window('mock')
     w.setup(mock_controller)
-    w.status_bar = mocker.MagicMock()
-
     mock_ld = mocker.patch('securedrop_client.gui.main.LoginDialog')
+
     w.show_login()
 
     mock_ld.assert_called_once_with(w)
     w.login_dialog.reset.assert_called_once_with()
     w.login_dialog.exec.assert_called_once_with()
-    w.status_bar.show_refresh_icon.assert_called_once_with()
 
 
 def test_show_login_error(mocker):
@@ -113,16 +111,60 @@ def test_show_sources(mocker):
     w.main_view.source_list.update.assert_called_once_with([1, 2, 3])
 
 
+def test_update_error_status_default(mocker):
+    """
+    Ensure that the error to be shown in the error status bar will be passed to the top pane with a
+    default duration of 10 seconds.
+    """
+    w = Window('mock')
+    w.top_pane = mocker.MagicMock()
+    w.update_error_status(message='test error message')
+    w.top_pane.update_error_status.assert_called_once_with('test error message', 10000)
+
+
 def test_update_error_status(mocker):
     """
-    Ensure that the error to be shown in the error status sidebar will
-    be passed to the left sidebar for display.
+    Ensure that the error to be shown in the error status bar will be passed to the top pane with
+    the duration of seconds provided.
     """
-    error_message = "this is a bad thing!"
     w = Window('mock')
-    w.main_view = mocker.MagicMock()
-    w.update_error_status(error=error_message)
-    w.main_view.update_error_status.assert_called_once_with(error_message)
+    w.top_pane = mocker.MagicMock()
+    w.update_error_status(message='test error message', duration=123)
+    w.top_pane.update_error_status.assert_called_once_with('test error message', 123)
+
+
+def test_update_activity_status_default(mocker):
+    """
+    Ensure that the activity to be shown in the activity status bar will be passed to the top pane
+    with a default duration of 0 seconds, i.e. forever.
+    """
+    w = Window('mock')
+    w.top_pane = mocker.MagicMock()
+    w.update_activity_status(message='test message')
+    w.top_pane.update_activity_status.assert_called_once_with('test message', 0)
+
+
+def test_update_activity_status(mocker):
+    """
+    Ensure that the activity to be shown in the activity status bar will be passed to the top pane
+    with the duration of seconds provided.
+    """
+    w = Window('mock')
+    w.top_pane = mocker.MagicMock()
+    w.update_activity_status(message='test message', duration=123)
+    w.top_pane.update_activity_status.assert_called_once_with('test message', 123)
+
+
+def test_clear_error_status(mocker):
+    """
+    Ensure clear_error_status is called.
+    """
+    w = Window('mock')
+    w.top_pane = mocker.MagicMock()
+
+    w.clear_error_status()
+
+    w.top_pane.clear_error_status.assert_called_once_with()
 
 
 def test_show_sync(mocker):
@@ -130,10 +172,11 @@ def test_show_sync(mocker):
     If there's a value display the result of its "humanize" method.humanize
     """
     w = Window('mock')
-    w.set_status = mocker.MagicMock()
+    w.update_activity_status = mocker.MagicMock()
     updated_on = mocker.MagicMock()
     w.show_sync(updated_on)
-    w.set_status.assert_called_once_with('Last refresh: {}'.format(updated_on.humanize()))
+    w.update_activity_status.assert_called_once_with(
+        'Last refresh: {}'.format(updated_on.humanize()))
 
 
 def test_show_sync_no_sync(mocker):
@@ -141,31 +184,33 @@ def test_show_sync_no_sync(mocker):
     If there's no value to display, default to a "waiting" message.
     """
     w = Window('mock')
-    w.set_status = mocker.MagicMock()
+    w.update_activity_status = mocker.MagicMock()
     w.show_sync(None)
-    w.set_status.assert_called_once_with('Waiting to refresh...', 5000)
+    w.update_activity_status.assert_called_once_with('Waiting to refresh...', 5000)
 
 
 def test_set_logged_in_as(mocker):
     """
-    Given a username, the toolbar is appropriately called to update.
+    Given a username, the left pane is appropriately called to update.
     """
     w = Window('mock')
-    w.tool_bar = mocker.MagicMock()
+    w.left_pane = mocker.MagicMock()
     w.set_logged_in_as('test')
-    w.tool_bar.set_logged_in_as.assert_called_once_with('test')
+    w.left_pane.set_logged_in_as.assert_called_once_with('test')
 
 
 def test_logout(mocker):
     """
-    Ensure the toolbar updates to the logged out state.
+    Ensure the left pane updates to the logged out state.
     """
     w = Window('mock')
-    w.tool_bar = mocker.MagicMock()
-    w.status_bar = mocker.MagicMock()
+    w.left_pane = mocker.MagicMock()
+    w.top_pane = mocker.MagicMock()
+
     w.logout()
-    w.tool_bar.set_logged_out.assert_called_once_with()
-    w.status_bar.hide_refresh_icon.assert_called_once_with()
+
+    w.left_pane.set_logged_out.assert_called_once_with()
+    w.top_pane.disable_refresh.assert_called_once_with()
 
 
 def test_on_source_changed(mocker):
@@ -265,13 +310,3 @@ def test_conversation_pending_message(mocker):
 
     assert mocked_add_message.call_count == 1
     assert mocked_add_message.call_args == mocker.call(message)
-
-
-def test_set_status(mocker):
-    """
-    Ensure the status bar's text is updated.
-    """
-    w = Window('mock')
-    w.status_bar = mocker.MagicMock()
-    w.set_status('hello', 100)
-    w.status_bar.show_message.assert_called_once_with('hello', 100)

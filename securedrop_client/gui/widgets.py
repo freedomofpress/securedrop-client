@@ -19,180 +19,552 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 import arrow
 import html
-from PyQt5.QtCore import Qt, pyqtSlot
-from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont
+from PyQt5.QtCore import Qt, pyqtSlot, QTimer, QSize
+from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
-    QToolButton, QSizePolicy, QTextEdit, QStatusBar
+    QToolButton, QSizePolicy, QTextEdit, QStatusBar, QGraphicsDropShadowEffect
 from typing import List
 from uuid import uuid4
 
 from securedrop_client.db import Source, Message, File
+from securedrop_client.gui import SvgLabel, SvgPushButton
 from securedrop_client.logic import Client
-from securedrop_client.resources import load_svg, load_image
+from securedrop_client.resources import load_svg, load_icon, load_image
 from securedrop_client.utils import humanize_filesize
 
 logger = logging.getLogger(__name__)
 
 
-class StatusBar(QStatusBar):
+class TopPane(QWidget):
+    """
+    Top pane of the app window.
+    """
+
     def __init__(self):
         super().__init__()
 
-        self.setStyleSheet('''
-            QStatusBar { background-color: #fff; }
-            QStatusBar::item { border: none; }
-            QPushButton { border: none; }
-        ''')
+        # Fill the background with a gradient
+        palette = QPalette()
+        gradient = QLinearGradient(0, 0, 900, 0)
+        gradient.setColorAt(0, QColor('#0565d4'))
+        gradient.setColorAt(1, QColor('#002c55'))
+        palette.setBrush(QPalette.Background, QBrush(gradient))
+        self.setPalette(palette)
+        self.setAutoFillBackground(True)
 
-        self.refresh = QPushButton()
-        self.refresh.clicked.connect(self.on_refresh_clicked)
-        self.refresh.setMaximumSize(30, 30)
-        refresh_pixmap = load_image('refresh.svg')
-        self.refresh.setIcon(QIcon(refresh_pixmap))
-        self.addPermanentWidget(self.refresh)  # widget may not be obscured by temporary messages
+        # Set layout
+        layout = QHBoxLayout(self)
+        self.setLayout(layout)
+
+        # Remove margins and spacing
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        # Refresh button
+        self.refresh = RefreshButton()
+        self.refresh.disable()
+
+        # Activity status bar
+        self.activity_status_bar = ActivityStatusBar()
+
+        # Error status bar
+        self.error_status_bar = ErrorStatusBar()
+
+        # Create space the size of the status bar to keep the error status bar centered
+        spacer = QWidget()
+
+        # Create space ths size of the refresh button to keep the error status bar centered
+        spacer2 = QWidget()
+        spacer2.setFixedWidth(42)
+
+        # Set height of top pane to 42 pixels
+        self.setFixedHeight(42)
+        self.refresh.setFixedHeight(42)
+        self.activity_status_bar.setFixedHeight(42)
+        self.error_status_bar.setFixedHeight(42)
+        spacer.setFixedHeight(42)
+        spacer2.setFixedHeight(42)
+
+        # Add widgets to layout
+        layout.addWidget(self.refresh, 1)
+        layout.addWidget(self.activity_status_bar, 1)
+        layout.addWidget(self.error_status_bar, 5)
+        layout.addWidget(spacer, 1)
+        layout.addWidget(spacer2, 1)
+
+    def setup(self, controller):
+        self.refresh.setup(controller)
+
+    def enable_refresh(self):
+        self.refresh.enable()
+
+    def disable_refresh(self):
+        self.refresh.disable()
+
+    def update_activity_status(self, message: str, duration: int):
+        self.activity_status_bar.update_message(message, duration)
+
+    def update_error_status(self, message: str, duration: int):
+        self.error_status_bar.update_message(message, duration)
+
+    def clear_error_status(self):
+        self.error_status_bar.clear_message()
+
+
+class LeftPane(QWidget):
+    """
+    Represents the left side pane that contains user authentication actions and information.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+        # Set layout
+        layout = QVBoxLayout(self)
+        self.setLayout(layout)
+
+        # Remove margins and spacing
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(0)
+
+        # Use a background gradient
+        palette = QPalette()
+        gradient = QLinearGradient(0, 0, 0, 700)
+        gradient.setColorAt(0, QColor('#0093da'))
+        gradient.setColorAt(1, QColor('#0c3e75'))
+        palette.setBrush(QPalette.Background, QBrush(gradient))
+        self.setPalette(palette)
+        self.setAutoFillBackground(True)
+
+        # User profile
+        self.user_profile = UserProfile()
+
+        # Hide user profile widget until user logs in
+        self.user_profile.hide()
+
+        # Add widgets to layout
+        layout.addWidget(self.user_profile)
+
+        # Align content to the top of pane
+        layout.addStretch()
+
+    def setup(self, window, controller):
+        self.user_profile.setup(window, controller)
+
+    def set_logged_in_as(self, username):
+        """
+        Update the UI to reflect that the user is logged in as "username".
+        """
+        self.user_profile.set_username(username)
+        self.user_profile.show()
+
+    def set_logged_out(self):
+        """
+        Update the UI to a logged out state.
+        """
+        self.user_profile.hide()
+
+
+class RefreshButton(SvgPushButton):
+    """
+    A button that shows an icon for different refresh states.
+    """
+
+    CSS = '''
+    #refresh_button {
+        border: none;
+        color: #fff;
+    }
+    '''
+
+    def __init__(self):
+        # Add svg images to button
+        super().__init__(
+            normal='refresh.svg',
+            disabled='refresh_offline.svg',
+            active='refresh_active.svg',
+            selected='refresh.svg',
+            svg_size=QSize(22, 22))
+
+        # Set css id
+        self.setObjectName('refresh_button')
+
+        # Set styles
+        self.setStyleSheet(self.CSS)
+        self.setFixedSize(QSize(42, 42))
+
+        # Click event handler
+        self.clicked.connect(self._on_clicked)
 
     def setup(self, controller):
         """
         Assign a controller object (containing the application logic).
         """
         self.controller = controller
-        self.controller.sync_events.connect(self._on_sync_event)
+        self.controller.sync_events.connect(self._on_refresh_complete)
 
-    def on_refresh_clicked(self):
-        """
-        Called when the refresh button is clicked.
-        """
+    def _on_clicked(self):
         self.controller.sync_api()
+        # This is a temporary solution for showing the icon as active for the entire duration of a
+        # refresh, rather than for just the duration of a click. The icon image will be replaced
+        # when the controller tells us the refresh has finished. A cleaner solution would be to
+        # store and update our own icon mode so we don't have to reload any images.
+        self.setIcon(load_icon(
+            normal='refresh_active.svg',
+            disabled='refresh_offline.svg'))
 
-    def _on_sync_event(self, data):
-        """
-        Called when the refresh call completes
-        """
-        self.refresh.setEnabled(data != 'syncing')
+    def _on_refresh_complete(self, data):
+        if (data == 'synced'):
+            self.setIcon(load_icon(
+                normal='refresh.svg',
+                disabled='refresh_offline.svg',
+                active='refresh_active.svg',
+                selected='refresh.svg'))
 
-    def show_message(self, message, duration=0):
+    def enable(self):
+        self.setEnabled(True)
+
+    def disable(self):
+        self.setEnabled(False)
+
+
+class ActivityStatusBar(QStatusBar):
+    """
+    A status bar for displaying messages about application activity to the user. Messages will be
+    displayed for a given duration or until the message updated with a new message.
+    """
+
+    CSS = '''
+    #activity_status_bar {
+        color: #fff;
+    }
+    '''
+
+    def __init__(self):
+        super().__init__()
+
+        # Set css id
+        self.setObjectName('activity_status_bar')
+
+        # Set styles
+        self.setStyleSheet(self.CSS)
+
+        # Remove grip image at bottom right-hand corner
+        self.setSizeGripEnabled(False)
+
+    def update_message(self, message: str, duration: int):
         """
-        Display a status message to the user. Optionally, supply a duration
-        (in milliseconds), the default will continuously show the message.
+        Display a status message to the user.
         """
         self.showMessage(message, duration)
 
-    def hide_refresh_icon(self):
-        """
-        Hide refresh icon.
-        """
-        self.refresh.hide()
 
-    def show_refresh_icon(self):
-        """
-        Show refresh icon.
-        """
-        self.refresh.show()
-
-
-class ToolBar(QWidget):
+class ErrorStatusBar(QWidget):
     """
-    Represents the tool bar across the top of the user interface.
+    A pop-up status bar for displaying messages about application errors to the user. Messages will
+    be displayed for a given duration or until the message is cleared or updated with a new message.
     """
 
-    def __init__(self, parent: QWidget):
-        super().__init__(parent)
+    CSS = '''
+    #error_vertical_bar {
+        background-color: #f22b5d;
+    }
+    #error_icon {
+        background-color: qlineargradient(
+            x1: 0,
+            y1: 0,
+            x2: 0,
+            y2: 1,
+            stop: 0 #fff,
+            stop: 0.2 #fff,
+            stop: 1 #fff
+        );
+    }
+    #error_status_bar {
+        background-color: qlineargradient(
+            x1: 0,
+            y1: 0,
+            x2: 0,
+            y2: 1,
+            stop: 0 #fff,
+            stop: 0.2 #fff,
+            stop: 1 #fff
+        );
+        font-weight: bold;
+        color: #f22b5d;
+    }
+    '''
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 10, 20, 10)
+    def __init__(self):
+        super().__init__()
 
-        self.setAutoFillBackground(True)
-        palette = QPalette()
-        palette.setBrush(QPalette.Background, QBrush(load_image('hexes.svg')))
-        self.setPalette(palette)
+        # Set styles
+        self.setStyleSheet(self.CSS)
+
+        # Set layout
+        layout = QHBoxLayout(self)
+        self.setLayout(layout)
+
+        # Remove margins and spacing
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        # Error vertical bar
+        self.vertical_bar = QWidget()
+        self.vertical_bar.setObjectName('error_vertical_bar')
+        self.vertical_bar.setFixedWidth(10)
+
+        # Error icon
+        self.label = SvgLabel('error_icon.svg', svg_size=QSize(32, 32))
+        self.label.setObjectName('error_icon')
+        self.label.setFixedWidth(42)
+
+        # Error status bar
+        self.status_bar = QStatusBar()
+        self.status_bar.setObjectName('error_status_bar')
+        self.status_bar.setSizeGripEnabled(False)
+
+        # Add widgets to layout
+        layout.addWidget(self.vertical_bar)
+        layout.addWidget(self.label)
+        layout.addWidget(self.status_bar)
+
+        # Hide until a message needs to be displayed
+        self.vertical_bar.hide()
+        self.label.hide()
+        self.status_bar.hide()
+
+        # Only show errors for a set duration
+        self.status_timer = QTimer()
+        self.status_timer.timeout.connect(self._on_status_timeout)
+
+    def _hide(self):
+        self.vertical_bar.hide()
+        self.label.hide()
+        self.status_bar.hide()
+
+    def _show(self):
+        self.vertical_bar.show()
+        self.label.show()
+        self.status_bar.show()
+
+    def _on_status_timeout(self):
+        self._hide()
+
+    def update_message(self, message: str, duration: int):
+        """
+        Display a status message to the user for a given duration.
+        """
+        self.status_bar.showMessage(message, duration)
+        self.status_timer.start(duration)
+        self._show()
+
+    def clear_message(self):
+        """
+        Clear any message currently in the status bar.
+        """
+        self.status_bar.clearMessage()
+        self._hide()
+
+
+class UserProfile(QWidget):
+    """
+    A widget that contains user profile information and options.
+
+    Displays user profile icon, name, and menu options if the user is logged in. Displays a login
+    button if the user is logged out.
+    """
+
+    CSS = '''
+    QLabel#user_icon {
+        border: none;
+        padding: 10px;
+        background-color: #b4fffa;
+        font-family: Open Sans;
+        font-size: 16px;
+        font-weight: bold;
+        color: #2a319d;
+    }
+    '''
+
+    def __init__(self):
+        super().__init__()
+
+        # Set styles
+        self.setStyleSheet(self.CSS)
+        self.setFixedWidth(200)
+
+        # Set layout
+        layout = QHBoxLayout(self)
+        self.setLayout(layout)
+
+        # Remove margins
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        # Login button
+        self.login_button = LoginButton()
+
+        # User icon
         self.user_icon = QLabel()
-        self.user_icon.setFont(QFont("Helvetica [Cronyx]", 16, QFont.Bold))
-        self.user_icon.hide()
-        self.user_state = QLabel()
-        self.user_state.setFont(QFont("Helvetica [Cronyx]", 12, QFont.Bold))
-        self.user_state.hide()
-        self.user_menu = JournalistMenuButton(self)
-        self.user_menu.hide()
+        self.user_icon.setObjectName('user_icon')
 
-        self.login = QPushButton(_('SIGN IN'))
-        self.login.setFont(QFont("Helvetica [Cronyx]", 10))
-        self.login.setMinimumSize(200, 40)
-        button_palette = self.login.palette()
-        button_palette.setColor(QPalette.Button, QColor('#eee'))
-        button_palette.setColor(QPalette.ButtonText, QColor('#000'))
-        self.login.setAutoFillBackground(True)
-        self.login.setPalette(button_palette)
-        self.login.update()
-        self.login.clicked.connect(self.on_login_clicked)
+        # User button
+        self.user_button = UserButton()
 
-        spacer = QWidget()
-        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # Add widgets to user auth layout
+        layout.addWidget(self.login_button, 1)
+        layout.addWidget(self.user_icon, 1)
+        layout.addWidget(self.user_button, 4)
 
-        logo = QLabel()
-        logo.setMinimumSize(200, 200)
-        logo.setPixmap(load_image('logo.png'))
-
-        user_layout = QHBoxLayout()
-        user_layout.addWidget(self.user_icon, 5, Qt.AlignLeft)
-        user_layout.addWidget(self.user_state, 5, Qt.AlignLeft)
-        user_layout.addWidget(self.login, 5, Qt.AlignLeft)
-        user_layout.addWidget(self.user_menu, 5, Qt.AlignLeft)
-        user_layout.addStretch()
-
-        layout.addLayout(user_layout)
-        layout.addWidget(spacer, 5)
-        layout.addWidget(logo, 3, Qt.AlignCenter)
+        # Align content to the left
         layout.addStretch()
 
     def setup(self, window, controller):
-        """
-        Store a reference to the GUI window object (through which all wider GUI
-        state is controlled).
+        self.user_button.setup(controller)
+        self.login_button.setup(window)
 
-        Assign a controller object (containing the application logic) to this
-        instance of the toolbar.
+    def set_username(self, username):
+        self.user_icon.setText(_('jo'))
+        self.user_button.set_username(username)
+
+    def show(self):
+        self.login_button.hide()
+        self.user_icon.show()
+        self.user_button.show()
+
+    def hide(self):
+        self.user_icon.hide()
+        self.user_button.hide()
+        self.login_button.show()
+
+
+class UserButton(SvgPushButton):
+    """An menu button for the journalist menu
+
+    This button is responsible for launching the journalist menu on click.
+    """
+
+    CSS = '''
+    SvgPushButton#user_button {
+        border: none;
+        padding-left: 6px;
+        background-color: #0093da;
+        font-family: Open Sans;
+        font-size: 14px;
+        font-weight: bold;
+        color: #b4fffa;
+        align: left;
+        text-align: left;
+    }
+    SvgPushButton::menu-indicator {
+        image: none;
+    }
+    '''
+
+    def __init__(self):
+        super().__init__('dropdown_arrow.svg', svg_size=QSize())
+
+        self.setStyleSheet(self.CSS)
+        self.setFixedHeight(40)
+
+        self.setObjectName('user_button')
+
+        self.setLayoutDirection(Qt.RightToLeft)
+
+        self.menu = UserMenu()
+        self.setMenu(self.menu)
+
+    def setup(self, controller):
+        self.menu.setup(controller)
+
+    def set_username(self, username):
+        self.setText(_('{}').format(html.escape(username)))
+
+
+class UserMenu(QMenu):
+    """A menu next to the journalist username.
+
+    A menu that provides login options.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.logout = QAction(_('SIGN OUT'))
+        self.logout.setFont(QFont("OpenSans", 10))
+        self.addAction(self.logout)
+        self.logout.triggered.connect(self._on_logout_triggered)
+
+    def setup(self, controller):
         """
-        self.window = window
+        Store a reference to the controller (containing the application logic).
+        """
         self.controller = controller
 
-    def set_logged_in_as(self, username):
+    def _on_logout_triggered(self):
         """
-        Update the UI to reflect that the user is logged in as "username".
+        Called when the logout button is selected from the menu.
         """
-        self.login.hide()
+        self.controller.logout()
 
-        self.user_icon.setText(_('jo'))
-        self.user_icon.setStyleSheet('''
-            QLabel { background-color: #045fb4; color: cyan; padding: 10; border: 1px solid gray; }
-        ''')
-        self.user_icon.show()
 
-        self.user_state.setText(_('{}').format(html.escape(username)))
-        self.user_state.show()
+class LoginButton(QPushButton):
+    """
+    A button that opens a login dialog when clicked.
+    """
 
-        self.user_menu.show()
+    CSS = '''
+    #login {
+        border: none;
+        background-color: qlineargradient(
+            x1: 0,
+            y1: 0,
+            x2: 0,
+            y2: 1,
+            stop: 0 #b4fffa,
+            stop: 1 #05edfe
+        );
+        font-family: Open Sans;
+        font-size: 14px;
+        color: #2a319d;
+    }
+    #login:pressed {
+        background-color: #85f6fe;
+    }
+    '''
 
-    def set_logged_out(self):
+    def __init__(self):
+        super().__init__(_('SIGN IN'))
+
+        # Set css id
+        self.setObjectName('login')
+
+        # Set styles
+        self.setStyleSheet(self.CSS)
+        self.setFixedHeight(40)
+
+        # Set drop shadow effect
+        effect = QGraphicsDropShadowEffect(self)
+        effect.setOffset(0, 1)
+        effect.setBlurRadius(8)
+        effect.setColor(QColor('#aa000000'))
+        self.setGraphicsEffect(effect)
+        self.update()
+
+        # Set click handler
+        self.clicked.connect(self._on_clicked)
+
+    def setup(self, window):
         """
-        Update the UI to a logged out state.
+        Store a reference to the GUI window object.
         """
-        self.login.show()
-        self.user_icon.hide()
-        self.user_state.hide()
-        self.user_menu.hide()
+        self.window = window
 
-    def on_login_clicked(self):
+    def _on_clicked(self):
         """
         Called when the login button is clicked.
         """
         self.window.show_login()
-
-    def on_logout_clicked(self):
-        """
-        Called when the logout button is clicked.
-        """
-        self.controller.logout()
 
 
 class MainView(QWidget):
@@ -205,6 +577,7 @@ class MainView(QWidget):
         super().__init__(parent)
         self.layout = QHBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(0)
         self.setLayout(self.layout)
 
         left_column = QWidget(parent=self)
@@ -215,16 +588,12 @@ class MainView(QWidget):
         self.source_list = SourceList(left_column)
         left_layout.addWidget(self.source_list)
 
-        self.error_status = QLabel('')
-        self.error_status.setObjectName('error_label')
-        left_layout.addWidget(self.error_status)
-        self.error_status.hide()
-
         self.layout.addWidget(left_column, 4)
 
         self.view_layout = QVBoxLayout()
         self.view_layout.setContentsMargins(0, 0, 0, 0)
         self.view_holder = QWidget()
+        self.view_holder.setStyleSheet('background: #fff;')
         self.view_holder.setLayout(self.view_layout)
 
         self.layout.addWidget(self.view_holder, 6)
@@ -235,9 +604,6 @@ class MainView(QWidget):
         """
         self.controller = controller
         self.source_list.setup(controller)
-
-    def update_error_status(self, error=None):
-        self.error_status.setText(html.escape(error))
 
     def set_conversation(self, widget):
         """
@@ -259,6 +625,7 @@ class SourceList(QListWidget):
 
     def __init__(self, parent):
         super().__init__(parent)
+        self.setStyleSheet('QListWidget::item:selected { background: #efeef7 }')
 
     def setup(self, controller):
         """
@@ -351,14 +718,22 @@ class SourceWidget(QWidget):
         Set up the child widgets.
         """
         super().__init__(parent)
+
+        self.setStyleSheet('''
+            QWidget#color_bar { background-color: #9211ff; }
+        ''')
+
         self.source = source
         self.name = QLabel()
+        self.name.setFont(QFont("Open Sans", 16))
         self.updated = QLabel()
+        self.updated.setFont(QFont("Open Sans", 10))
 
         layout = QVBoxLayout()
         self.setLayout(layout)
 
         self.summary = QWidget(self)
+        self.summary.setObjectName('summary')
         self.summary_layout = QHBoxLayout()
         self.summary.setLayout(self.summary_layout)
 
@@ -483,7 +858,7 @@ class LoginDialog(QDialog):
 
         self.error_label = QLabel('')
         self.error_label.setObjectName('error_label')
-        self.error_label.setStyleSheet('color: red')
+        self.error_label.setStyleSheet('color: #f22b5d')
 
         layout.addStretch()
         layout.addWidget(self.title)
@@ -562,7 +937,7 @@ class SpeechBubble(QWidget):
     and journalist.
     """
 
-    css = "padding:8px; min-height:32px; border:1px solid #999; border-radius:18px;"
+    CSS = "padding:8px; min-height:32px; border:1px solid #999;"
 
     def __init__(self, message_id: str, text: str, update_signal) -> None:
         super().__init__()
@@ -612,14 +987,14 @@ class ConversationWidget(QWidget):
         if align != "left":
             # Float right...
             layout.addStretch(5)
-            label.setStyleSheet(label.css)
+            label.setStyleSheet(label.CSS)
 
         layout.addWidget(label, 6)
 
         if align == "left":
             # Add space on right hand side...
             layout.addStretch(5)
-            label.setStyleSheet(label.css + 'border-bottom-left-radius: 0px;')
+            label.setStyleSheet(label.CSS)
 
         self.setLayout(layout)
 
@@ -634,9 +1009,10 @@ class MessageWidget(ConversationWidget):
                          message,
                          update_signal,
                          align="left")
-        self.setStyleSheet("""
-        background-color: #EEE;
-        """)
+        self.setStyleSheet('''
+        background-color: qlineargradient( x1: 0, y1: 0, x2: 0, y2: 1, \
+        stop: 0 #fff, stop: 0.9 #fff, stop: 1 #9211ff);
+        ''')
 
 
 class ReplyWidget(ConversationWidget):
@@ -657,9 +1033,10 @@ class ReplyWidget(ConversationWidget):
                          update_signal,
                          align="right")
         self.message_id = message_id
-        self.setStyleSheet("""
-        background-color: #2299EE;
-        """)
+        self.setStyleSheet('''
+        background-color: qlineargradient( x1: 0, y1: 0, x2: 0, y2: 1, \
+        stop: 0 #fff, stop: 0.9 #fff, stop: 1 #05edfe);
+        ''')
         message_succeeded_signal.connect(self._on_reply_success)
         message_failed_signal.connect(self._on_reply_failure)
 
@@ -887,9 +1264,11 @@ class SourceConversationWrapper(QWidget):
         self.conversation = ConversationView(self.source, self.sdc_home, self.controller,
                                              parent=self)
         self.source_profile = SourceProfileShortWidget(self.source, self.controller)
+        self.reply_box = ReplyBoxWidget(self)
 
         self.layout.addWidget(self.source_profile, 1)
         self.layout.addWidget(self.conversation, 9)
+        self.layout.addWidget(self.reply_box, 3)
 
         self.controller.authentication_state.connect(self._show_or_hide_replybox)
         self._show_or_hide_replybox(is_authenticated)
@@ -971,43 +1350,6 @@ class DeleteSourceAction(QAction):
             self.messagebox.launch()
 
 
-class JournalistMenu(QMenu):
-    """A menu next to the journalist username.
-
-    A menu that provides login options.
-    """
-
-    def __init__(self, parent):
-        super().__init__()
-        self.logout = QAction(_('SIGN OUT'))
-        self.logout.setFont(QFont("Helvetica [Cronyx]", 10))
-        self.addAction(self.logout)
-        self.logout.triggered.connect(parent.on_logout_clicked)
-
-
-class JournalistMenuButton(QToolButton):
-    """An menu button for the journalist menu
-
-    This button is responsible for launching the journalist menu on click.
-    """
-
-    def __init__(self, parent):
-        super().__init__()
-
-        self.setStyleSheet('''
-            QToolButton::menu-indicator { image: none; }
-            QToolButton { border: none; }
-        ''')
-        arrow = load_image("dropdown_arrow.svg")
-        self.setIcon(QIcon(arrow))
-        self.setMinimumSize(20, 20)
-
-        self.menu = JournalistMenu(parent)
-        self.setMenu(self.menu)
-
-        self.setPopupMode(QToolButton.InstantPopup)
-
-
 class SourceMenu(QMenu):
     """Renders menu having various operations.
 
@@ -1044,8 +1386,7 @@ class SourceMenuButton(QToolButton):
         self.controller = controller
         self.source = source
 
-        ellipsis_icon = load_image("ellipsis.svg")
-        self.setIcon(QIcon(ellipsis_icon))
+        self.setIcon(load_icon("ellipsis.svg"))
 
         self.menu = SourceMenu(self.source, self.controller)
         self.setMenu(self.menu)
