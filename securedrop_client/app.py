@@ -30,7 +30,7 @@ from logging.handlers import TimedRotatingFileHandler
 from securedrop_client import __version__
 from securedrop_client.logic import Client
 from securedrop_client.gui.main import Window
-from securedrop_client.resources import load_icon
+from securedrop_client.resources import load_icon, load_css
 from securedrop_client.db import make_engine
 from securedrop_client.utils import safe_mkdir
 
@@ -162,9 +162,7 @@ def start_app(args, qt_args) -> None:
 
     gui = Window(args.sdc_home)
     app.setWindowIcon(load_icon(gui.icon))
-    # Revert once https://bugreports.qt.io/browse/QTBUG-69204 is fixed
-    # See https://github.com/freedomofpress/securedrop-client/issues/273
-    # app.setStyleSheet(load_css('sdclient.css'))
+    app.setStyleSheet(load_css('sdclient.css'))
 
     engine = make_engine(args.sdc_home)
     Session = sessionmaker(bind=engine)
