@@ -1215,6 +1215,7 @@ class ConversationView(QWidget):
 
     Due to a bug, we cannot set a style sheet for this widget. See
     https://github.com/freedomofpress/securedrop-client/issues/304
+    https://github.com/freedomofpress/securedrop-client/issues/273
     """
 
     def __init__(self, source_db_object: Source, sdc_home: str, controller: Client, parent=None):
