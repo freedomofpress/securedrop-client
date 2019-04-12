@@ -17,7 +17,8 @@ jobs:
           command: |
             set -e
             sudo pip install pipenv
-            pipenv sync --dev
+            pipenv install --dev --skip-lock
+            pipenv run pip freeze
       - save_cache:
           key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
           paths:
@@ -26,11 +27,10 @@ jobs:
             - "/usr/local/lib/python3.5/site-packages"
       - run:
           name: Run linters
-          command: pipenv run make check
+          command: pipenv run make lint mypy
       - run:
           name: Run tests
-          command: |
-            pipenv run python -m unittest discover -v tests/
+          command: pipenv run make test
       - run:
           name: Check for known CVEs
           command: pipenv check
@@ -46,7 +46,8 @@ jobs:
           name: Install dependencies
           command: |
             sudo pip install pipenv
-            pipenv install -d
+            pipenv install --dev --skip-lock
+            pipenv run pip freeze
       - run:
           name: Download SecureDrop server code
           command: git clone https://github.com/freedomofpress/securedrop.git
@@ -73,7 +74,7 @@ jobs:
           name: Remove VCR cassettes and run tests against latest API
           command: |
             rm data/*.yml  # Removing VCR cassettes
-            pipenv run python -m unittest discover -v tests/
+            pipenv run make test
 workflows:
   version: 2
   securedrop_ci:
