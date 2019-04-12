@@ -312,17 +312,17 @@ class ErrorStatusBar(QWidget):
 
         # Error vertical bar
         self.vertical_bar = QWidget()
-        self.vertical_bar.setObjectName('error_vertical_bar')
+        self.vertical_bar.setObjectName('error_vertical_bar')  # Set css id
         self.vertical_bar.setFixedWidth(10)
 
         # Error icon
         self.label = SvgLabel('error_icon.svg', svg_size=QSize(32, 32))
-        self.label.setObjectName('error_icon')
+        self.label.setObjectName('error_icon')  # Set css id
         self.label.setFixedWidth(42)
 
         # Error status bar
         self.status_bar = QStatusBar()
-        self.status_bar.setObjectName('error_status_bar')
+        self.status_bar.setObjectName('error_status_bar')  # Set css id
         self.status_bar.setSizeGripEnabled(False)
 
         # Add widgets to layout
@@ -391,6 +391,9 @@ class UserProfile(QWidget):
     def __init__(self):
         super().__init__()
 
+        # Set css id
+        self.setObjectName('user_profile')
+
         # Set styles
         self.setStyleSheet(self.CSS)
         self.setFixedWidth(200)
@@ -407,7 +410,7 @@ class UserProfile(QWidget):
 
         # User icon
         self.user_icon = QLabel()
-        self.user_icon.setObjectName('user_icon')
+        self.user_icon.setObjectName('user_icon')  # Set css id
 
         # User button
         self.user_button = UserButton()
@@ -465,10 +468,12 @@ class UserButton(SvgPushButton):
     def __init__(self):
         super().__init__('dropdown_arrow.svg', svg_size=QSize())
 
+        # Set css id
+        self.setObjectName('user_button')
+
+        # Set styles
         self.setStyleSheet(self.CSS)
         self.setFixedHeight(40)
-
-        self.setObjectName('user_button')
 
         self.setLayoutDirection(Qt.RightToLeft)
 
@@ -573,8 +578,18 @@ class MainView(QWidget):
     and main context view).
     """
 
+    CSS = '''
+    #view_holder {
+        background-color: #fff;
+    }
+    '''
+
     def __init__(self, parent):
         super().__init__(parent)
+
+        # Set styles
+        self.setStyleSheet(self.CSS)
+
         self.layout = QHBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
@@ -593,7 +608,7 @@ class MainView(QWidget):
         self.view_layout = QVBoxLayout()
         self.view_layout.setContentsMargins(0, 0, 0, 0)
         self.view_holder = QWidget()
-        self.view_holder.setStyleSheet('background: #fff;')
+        self.view_holder.setObjectName('view_holder')  # Set css id
         self.view_holder.setLayout(self.view_layout)
 
         self.layout.addWidget(self.view_holder, 6)
@@ -623,9 +638,20 @@ class SourceList(QListWidget):
     Displays the list of sources.
     """
 
+    CSS = '''
+    QListWidget::item:selected {
+        background: #efeef7;
+    }
+    '''
+
     def __init__(self, parent):
         super().__init__(parent)
-        self.setStyleSheet('QListWidget::item:selected { background: #efeef7 }')
+
+        # Set css id
+        self.setObjectName('source_list')
+
+        # Set styles
+        self.setStyleSheet(self.CSS)
 
     def setup(self, controller):
         """
@@ -713,15 +739,23 @@ class SourceWidget(QWidget):
     Used to display summary information about a source in the list view.
     """
 
+    CSS = '''
+    QWidget#color_bar {
+        background-color: #9211ff;
+    }
+    '''
+
     def __init__(self, parent: QWidget, source: Source):
         """
         Set up the child widgets.
         """
         super().__init__(parent)
 
-        self.setStyleSheet('''
-            QWidget#color_bar { background-color: #9211ff; }
-        ''')
+        # Set css id
+        self.setObjectName('source_widget')
+
+        # Set styles
+        self.setStyleSheet(self.CSS)
 
         self.source = source
         self.name = QLabel()
@@ -808,6 +842,12 @@ class LoginDialog(QDialog):
     A dialog to display the login form.
     """
 
+    CSS = '''
+    #error_label {
+        color: #f22b5d;
+    }
+    '''
+
     MIN_PASSWORD_LEN = 14  # Journalist.MIN_PASSWORD_LEN on server
     MAX_PASSWORD_LEN = 128  # Journalist.MAX_PASSWORD_LEN on server
     MIN_JOURNALIST_USERNAME = 3  # Journalist.MIN_USERNAME_LEN on server
@@ -857,8 +897,8 @@ class LoginDialog(QDialog):
         self.submit.clicked.connect(self.validate)
 
         self.error_label = QLabel('')
-        self.error_label.setObjectName('error_label')
-        self.error_label.setStyleSheet('color: #f22b5d')
+        self.error_label.setObjectName('error_label')  # Set css id
+        self.error_label.setStyleSheet(self.CSS)  # Set styles
 
         layout.addStretch()
         layout.addWidget(self.title)
@@ -937,15 +977,25 @@ class SpeechBubble(QWidget):
     and journalist.
     """
 
-    CSS = "padding:8px; min-height:32px; border:1px solid #999;"
+    CSS = '''
+    #speech_bubble {
+        padding: 8px;
+        min-height:32px;
+        border:1px solid #999;
+    }
+    '''
 
     def __init__(self, message_id: str, text: str, update_signal) -> None:
         super().__init__()
         self.message_id = message_id
 
+        # Set styles
+        self.setStyleSheet(self.CSS)
+
         layout = QVBoxLayout()
         self.setLayout(layout)
         self.message = QLabel(html.escape(text, quote=False))
+        self.message.setObjectName('speech_bubble')
         self.message.setWordWrap(True)
         self.message.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout.addWidget(self.message)
@@ -982,19 +1032,17 @@ class ConversationWidget(QWidget):
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
 
-        label = SpeechBubble(message_id, message, update_signal)
+        self.speech_bubble = SpeechBubble(message_id, message, update_signal)
 
+        # Add padding on left if we want to push the speech bubble to the right
         if align != "left":
-            # Float right...
             layout.addStretch(5)
-            label.setStyleSheet(label.CSS)
 
-        layout.addWidget(label, 6)
+        layout.addWidget(self.speech_bubble, 6)
 
+        # Add padding on right if we want to push the speech bubble to the left
         if align == "left":
-            # Add space on right hand side...
             layout.addStretch(5)
-            label.setStyleSheet(label.CSS)
 
         self.setLayout(layout)
 
@@ -1004,21 +1052,47 @@ class MessageWidget(ConversationWidget):
     Represents an incoming message from the source.
     """
 
+    CSS = '''
+    background-color: qlineargradient(
+        x1: 0,
+        y1: 0,
+        x2: 0,
+        y2: 1,
+        stop: 0 #fff,
+        stop: 0.9 #fff,
+        stop: 1 #9211ff
+    );
+    '''
+
     def __init__(self, message_id: str, message: str, update_signal) -> None:
         super().__init__(message_id,
                          message,
                          update_signal,
                          align="left")
-        self.setStyleSheet('''
-        background-color: qlineargradient( x1: 0, y1: 0, x2: 0, y2: 1, \
-        stop: 0 #fff, stop: 0.9 #fff, stop: 1 #9211ff);
-        ''')
+
+        # Set css id
+        self.setObjectName('message_widget')
+
+        # Set styles
+        self.setStyleSheet(self.CSS)
 
 
 class ReplyWidget(ConversationWidget):
     """
     Represents a reply to a source.
     """
+
+    CSS = '''
+    background-color: qlineargradient(
+        x1: 0,
+        y1: 0,
+        x2: 0,
+        y2: 1,
+        stop: 0 #fff,
+        stop: 0.9 #fff,
+        stop: 1 #05edfe
+    );
+    '''
 
     def __init__(
         self,
@@ -1033,10 +1107,13 @@ class ReplyWidget(ConversationWidget):
                          update_signal,
                          align="right")
         self.message_id = message_id
-        self.setStyleSheet('''
-        background-color: qlineargradient( x1: 0, y1: 0, x2: 0, y2: 1, \
-        stop: 0 #fff, stop: 0.9 #fff, stop: 1 #05edfe);
-        ''')
+
+        # Set css id
+        self.setObjectName('reply_widget')
+
+        # Set styles
+        self.setStyleSheet(self.CSS)
+
         message_succeeded_signal.connect(self._on_reply_success)
         message_failed_signal.connect(self._on_reply_failure)
 
@@ -1057,9 +1134,6 @@ class ReplyWidget(ConversationWidget):
         """
         if message_id == self.message_id:
             logger.debug('Message {} failed'.format(message_id))
-            self.setStyleSheet("""
-            background-color: #FF3E3C;
-            """)
 
 
 class FileWidget(QWidget):
@@ -1138,6 +1212,10 @@ class FileWidget(QWidget):
 class ConversationView(QWidget):
     """
     Renders a conversation.
+
+    Due to a bug, we cannot set a style sheet for this widget. See
+    https://github.com/freedomofpress/securedrop-client/issues/304
+    https://github.com/freedomofpress/securedrop-client/issues/273
     """
 
     def __init__(self, source_db_object: Source, sdc_home: str, controller: Client, parent=None):
@@ -1145,22 +1223,22 @@ class ConversationView(QWidget):
         self.source = source_db_object
         self.sdc_home = sdc_home
         self.controller = controller
-        self.setStyleSheet("background-color: #fff;")
 
         self.container = QWidget()
+        self.container.setObjectName('container')
         self.conversation_layout = QVBoxLayout()
         self.conversation_layout.setContentsMargins(0, 0, 0, 0)
         self.container.setLayout(self.conversation_layout)
         self.container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         self.scroll = QScrollArea()
+        self.scroll.setObjectName('scroll')
         self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll.setWidget(self.container)
         self.scroll.setWidgetResizable(True)
 
-        # Completely unintuitive way to ensure the view remains scrolled to the
-        # bottom.
+        # Completely unintuitive way to ensure the view remains scrolled to the bottom.
         sb = self.scroll.verticalScrollBar()
         sb.rangeChanged.connect(self.update_conversation_position)
 
@@ -1222,20 +1300,21 @@ class ConversationView(QWidget):
         else:
             content = '<Message not yet available>'
 
-        self.conversation_layout.addWidget(
-            MessageWidget(message.uuid, content, self.controller.message_sync.message_ready))
+        self.conversation_layout.addWidget(MessageWidget(
+            message.uuid,
+            content,
+            self.controller.message_sync.message_ready))
 
     def add_reply(self, uuid: str, content: str) -> None:
         """
         Add a reply from a journalist.
         """
-        self.conversation_layout.addWidget(
-            ReplyWidget(uuid,
-                        content,
-                        self.controller.reply_sync.reply_ready,
-                        self.controller.reply_succeeded,
-                        self.controller.reply_failed,
-                        ))
+        self.conversation_layout.addWidget(ReplyWidget(
+            uuid,
+            content,
+            self.controller.reply_sync.reply_ready,
+            self.controller.reply_succeeded,
+            self.controller.reply_failed))
 
 
 class SourceConversationWrapper(QWidget):
