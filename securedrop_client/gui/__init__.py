@@ -20,7 +20,34 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from PyQt5.QtWidgets import QLabel, QHBoxLayout, QPushButton
 from PyQt5.QtCore import QSize
 
-from securedrop_client.resources import load_svg, load_icon
+from securedrop_client.resources import load_svg, load_icon, load_toggle_icon
+
+
+class SvgToggleButton(QPushButton):
+    def __init__(self, on: str, off: str, svg_size=None):
+        super().__init__()
+
+        # Set layout
+        layout = QHBoxLayout(self)
+        self.setLayout(layout)
+
+        # Remove margins and spacing
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        # Add SVG icon and set its size
+        self.icon = load_toggle_icon(on=on, off=off)
+        self.setIcon(self.icon)
+        self.setIconSize(svg_size) if svg_size else self.setIconSize(QSize())
+
+        # Make this a toggle button
+        self.setCheckable(True)
+
+    def enable(self):
+        self.setEnabled(True)
+
+    def disable(self):
+        self.setEnabled(False)
 
 
 class SvgPushButton(QPushButton):
@@ -58,6 +85,12 @@ class SvgPushButton(QPushButton):
         self.icon = load_icon(normal=normal, disabled=disabled, active=active, selected=selected)
         self.setIcon(self.icon)
         self.setIconSize(svg_size) if svg_size else self.setIconSize(QSize())
+
+    def enable(self):
+        self.setEnabled(True)
+
+    def disable(self):
+        self.setEnabled(False)
 
 
 class SvgLabel(QLabel):
