@@ -49,6 +49,10 @@ class SvgToggleButton(QPushButton):
     def disable(self):
         self.setEnabled(False)
 
+    def set_icon(self, on: str, off: str):
+        self.icon = load_toggle_icon(on=on, off=off)
+        self.setIcon(self.icon)
+
 
 class SvgPushButton(QPushButton):
     """

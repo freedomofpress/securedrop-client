@@ -30,8 +30,8 @@ from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBox
     QToolButton, QSizePolicy, QTextEdit, QStatusBar, QGraphicsDropShadowEffect
 
 from securedrop_client.db import Source, Message, File, Reply
-from securedrop_client.gui import SvgLabel, SvgPushButton
-from securedrop_client.logic import Controller
+from securedrop_client.gui import SvgLabel, SvgPushButton, SvgToggleButton
+from securedrop_client.logic import Client
 from securedrop_client.resources import load_svg, load_icon, load_image
 from securedrop_client.utils import humanize_filesize
 
@@ -763,6 +763,9 @@ class SourceWidget(QWidget):
         self.setStyleSheet(self.CSS)
 
         self.source = source
+
+        self.star = StarToggleButton(self.source)
+
         self.name = QLabel()
         self.name.setFont(QFont("Open Sans", 16))
         self.updated = QLabel()
@@ -780,7 +783,6 @@ class SourceWidget(QWidget):
         self.attached.setMaximumSize(16, 16)
 
         self.summary_layout.addWidget(self.name)
-        self.summary_layout.addStretch()
         self.summary_layout.addWidget(self.attached)
 
         layout.addWidget(self.summary)
@@ -791,6 +793,8 @@ class SourceWidget(QWidget):
         self.delete.mouseReleaseEvent = self.delete_source
 
         self.summary_layout.addWidget(self.delete)
+        self.summary_layout.addWidget(self.star)
+
         self.update()
 
     def setup(self, controller):
@@ -798,40 +802,17 @@ class SourceWidget(QWidget):
         Pass through the controller object to this widget.
         """
         self.controller = controller
-
-    def display_star_icon(self):
-        """
-        Show the correct star icon
-        """
-        if getattr(self, 'starred', None):  # Delete icon if it exists.
-            self.summary_layout.removeWidget(self.starred)
-
-        if self.source.is_starred:
-            self.starred = load_svg('star_on.svg')
-        else:
-            self.starred = load_svg('star_off.svg')
-
-        self.summary_layout.addWidget(self.starred)
-        self.starred.setMaximumSize(16, 16)
-        self.starred.mousePressEvent = self.toggle_star
+        self.star.setup(self.controller)
 
     def update(self):
         """
         Updates the displayed values with the current values from self.source.
         """
         self.updated.setText(arrow.get(self.source.last_updated).humanize())
-        self.display_star_icon()
         self.name.setText("<strong>{}</strong>".format(
                           html.escape(self.source.journalist_designation)))
-
         if self.source.document_count == 0:
             self.attached.hide()
-
-    def toggle_star(self, event):
-        """
-        Called when the star is clicked.
-        """
-        self.controller.update_star(self.source)
 
     def delete_source(self, event):
         if self.controller.api is None:
@@ -840,6 +821,80 @@ class SourceWidget(QWidget):
         else:
             messagebox = DeleteSourceMessageBox(self, self.source, self.controller)
             messagebox.launch()
+
+
+class StarToggleButton(SvgToggleButton):
+    """
+    A button that shows whether or not a source is starred
+    """
+
+    css = '''
+    #star_button {
+        border: none;
+    }
+    '''
+
+    def __init__(self, source: Source):
+        # Add svg images to button
+        super().__init__(
+            on='star_on.svg',
+            off='star_off.svg',
+            svg_size=QSize(16, 16))
+
+        # Store source so the button can send updates when its toggle state changes
+        self.source = source
+
+        # Turn 'on' if the source is starred
+        if self.source.is_starred:
+            self.toggle()
+
+        # Set css id
+        self.setObjectName('star_button')
+
+        # Set styles
+        self.setStyleSheet(self.css)
+        self.setFixedSize(QSize(28, 28))
+
+    def setup(self, controller):
+        self.controller = controller
+        self.controller.authentication_state.connect(self._on_authentication_changed)
+        # Also set up connection for current authentication state
+        self._on_authentication_changed(self.controller.is_authenticated)
+
+    def _on_authentication_changed(self, authenticated: bool):
+        """
+        If authenticated, then toggling the button should call `update_star`. Otherwise, pressing
+        the button should show an error message to the user.
+        """
+        if authenticated:
+            self.enable()
+            self.toggled.connect(lambda: self.controller.update_star(self.source))
+        else:
+            self.disable()
+            self.pressed.connect(self.controller.on_action_requiring_login)
+
+    def enable(self):
+        """
+        Override `enable`
+
+        Since we never actually disable the button, we don't have to actually enable it. We just
+        need to make sure the images are back to the normal toggle images.
+        """
+        self.set_icon(on='star_on.svg', off='star_off.svg')
+
+    def disable(self):
+        """
+        Override `disable`
+
+        Instead of disabling the button, we set the images for each toggle state to be the same
+        as the image of the current state. This is so we can display error messages on click. If the
+        button was actually disabled, we wouldn't be able to know whether or not a user clicked the
+        button.
+        """
+        if self.isChecked():
+            self.set_icon(on='star_on.svg', off='star_on.svg')
+        else:
+            self.set_icon(on='star_off.svg', off='star_off.svg')
 
 
 class LoginDialog(QDialog):

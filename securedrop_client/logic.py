@@ -527,6 +527,7 @@ class Controller(QObject):
             self.gui.update_error_status(error)
 
     def update_star(self, source_db_object):
+        logger.debug("in update_star 1")
         """
         Star or unstar. The callback here is the API sync as we first make sure
         that we apply the change to the server, and then update locally.
