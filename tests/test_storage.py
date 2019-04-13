@@ -4,13 +4,16 @@ Tests for storage sync logic.
 import pytest
 import os
 import uuid
-import securedrop_client.db
 from dateutil.parser import parse
+
+from sqlalchemy.orm.exc import NoResultFound
+
+import securedrop_client.db
 from securedrop_client.storage import get_local_sources, get_local_messages, get_local_replies, \
     get_remote_data, update_local_storage, update_sources, update_files, update_replies, \
     find_or_create_user, find_new_messages, find_new_replies, mark_file_as_downloaded, \
     mark_reply_as_downloaded, delete_single_submission_or_reply_on_disk, rename_file, \
-    get_local_files, find_new_files, mark_message_as_downloaded, \
+    get_local_files, find_new_files, mark_message_as_downloaded, source_exists, \
     set_object_decryption_status_with_content
 from securedrop_client import db
 from sdclientapi import Source, Submission, Reply
@@ -850,3 +853,26 @@ def test_rename_file_success(homedir):
     with open(os.path.join(homedir, 'data', trunc_new_filename)) as f:
         out = f.read()
     assert out == contents
+
+
+def test_source_exists_true(homedir, mocker):
+    '''
+    Check that method returns True if a source is return from the query.
+    '''
+    session = mocker.MagicMock()
+    source = make_remote_source()
+    source.uuid = 'test-source-uuid'
+    session.query().filter_by().one.return_value = source
+    assert source_exists(session, 'test-source-uuid')
+
+
+def test_source_exists_false(homedir, mocker):
+    '''
+    Check that method returns False if NoResultFound is thrown when we try to query the source.
+    '''
+    session = mocker.MagicMock()
+    source = mocker.MagicMock()
+    source.uuid = 'test-source-uuid'
+    session.query().filter_by().one.side_effect = NoResultFound()
+
+    assert not source_exists(session, 'test-source-uuid')

@@ -20,10 +20,14 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
-from dateutil.parser import parse
 import glob
-from sqlalchemy import or_
 import os
+from dateutil.parser import parse
+
+from sqlalchemy import or_
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.session import Session
+
 from securedrop_client.db import Source, Message, File, Reply, User
 
 
@@ -396,3 +400,11 @@ def rename_file(data_dir: str, filename: str, new_filename: str):
                   os.path.join(data_dir, new_filename))
     except OSError as e:
         logger.debug('File could not be renamed: {}'.format(e))
+
+
+def source_exists(session: Session, source_uuid: str) -> bool:
+    try:
+        session.query(Source).filter_by(uuid=source_uuid).one()
+        return True
+    except NoResultFound:
+        return False

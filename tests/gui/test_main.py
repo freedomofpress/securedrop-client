@@ -1,11 +1,14 @@
 """
 Check the core Window UI class works as expected.
 """
+from uuid import uuid4
+
 from PyQt5.QtWidgets import QApplication, QHBoxLayout
+
 from securedrop_client.db import Message
 from securedrop_client.gui.main import Window
 from securedrop_client.resources import load_icon
-from uuid import uuid4
+
 
 app = QApplication([])
 
@@ -220,14 +223,27 @@ def test_on_source_changed(mocker):
     """
     w = Window('mock')
     w.main_view = mocker.MagicMock()
-    w.main_view.source_list.currentItem()
-    mock_sw = w.main_view.source_list.itemWidget()
     w.show_conversation_for = mocker.MagicMock()
-    mock_controller = mocker.MagicMock(is_authenticated=True)
-    w.controller = mock_controller
+    w.controller = mocker.MagicMock(is_authenticated=True)
+
     w.on_source_changed()
-    w.show_conversation_for.assert_called_once_with(mock_sw.source,
-                                                    mock_controller.is_authenticated)
+
+    source = w.main_view.source_list.itemWidget().source
+    w.show_conversation_for.assert_called_once_with(source, True)
+
+
+def test_on_source_changed_when_source_no_longer_exists(mocker):
+    """
+    Test that conversation for a source is cleared when the source no longer exists.
+    """
+    w = Window('mock')
+    w.main_view = mocker.MagicMock()
+    w.controller = mocker.MagicMock(is_authenticated=True)
+    mocker.patch('securedrop_client.gui.main.source_exists', return_value=False)
+
+    w.on_source_changed()
+
+    w.main_view.clear_conversation.assert_called_once_with()
 
 
 def test_conversation_for(mocker):
