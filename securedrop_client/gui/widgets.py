@@ -457,7 +457,6 @@ class UserButton(SvgPushButton):
         font-size: 14px;
         font-weight: bold;
         color: #b4fffa;
-        align: left;
         text-align: left;
     }
     SvgPushButton::menu-indicator {
