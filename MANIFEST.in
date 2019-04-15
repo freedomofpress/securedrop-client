@@ -1,9 +1,10 @@
-include securedrop_proxy/*.py
-include requirements.txt
-include README.md
 include LICENSE
-include setup.py
 include Pipfile
 include Pipfile.lock
-include qubes/securedrop.Proxy
+include README.md
+include VERSION
 include config-example.yaml
+include qubes/securedrop.Proxy
+include requirements.txt
+include securedrop_proxy/*.py
+include setup.py
