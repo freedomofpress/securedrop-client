@@ -7,7 +7,7 @@ the project.
 Git clone the project repo, and use the following command to create a new dev
 environment. The second command is to enable the virtual environment.
 
-::
+.. code:: sh
 
     pipenv sync --dev
     pipenv shell
@@ -26,13 +26,13 @@ allow to have real token from the server.
 
 To run all the test cases, use the following command.
 
-::
+.. code:: sh
 
-    $ python -m unittest discover -v tests/
+    make test
 
 To run a single test, use this following command, replace the test case name
 at the end.
 
-::
+.. code:: sh
 
-    $ python -m unittest -v tests.test_api.TestAPI.test_error_unencrypted_reply
+    make test TESTS=tests/test_api.py::TestAPI::test_error_unencrypted_reply
