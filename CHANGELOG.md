@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.0.7
+-----
+
+* Update PyYAML dependency to 5.1
+
 0.0.6
 -----
 
