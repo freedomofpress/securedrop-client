@@ -23,4 +23,14 @@ Additional tests will be added in future.
 To test the code, you will need to run the SecureDrop `make dev` command on the same system. The test suite for
 this project will test against that development container.
 
+### Release
+
+To make a release, you should:
+
+1. Update the version in `setup.py`.
+2. Update the changelog.
+3. Commit the changes, and `git tag`.
+4. Create a PR, push the new tag, and get the PR reviewed and merged into `master`.
+5. Push the new release to the PSF's PyPI [following this documentation](https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives).
+
 ### License: GPLv3+
