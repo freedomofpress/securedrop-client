@@ -17,11 +17,11 @@ environment. The second command is to enable the virtual environment.
 Testing
 ========
 
-The `tests` directory contains the test cases for API. We are using `vcrpy
+The ``tests`` directory contains the test cases for API. We are using `vcrpy
 <http://vcrpy.readthedocs.io/en/latest/>`_ to mock out the test calls.
 
 If you want to run the tests against an actual SecureDrop environment, please
-comment out the `@vcr` decorator of the `setUp` method in the test. This will
+comment out the ``@vcr`` decorator of the ``setUp`` method in the test. This will
 allow to have real token from the server.
 
 To run all the test cases, use the following command.
