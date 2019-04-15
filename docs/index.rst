@@ -7,7 +7,6 @@ SecureDrop SDK Documentation
    :maxdepth: 2
    :caption: Contents:
 
-   install
    development
 
 
