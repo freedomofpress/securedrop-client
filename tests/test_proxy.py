@@ -1,11 +1,11 @@
 import json
-import subprocess
 import vcr
 import unittest
 import uuid
 
 from securedrop_proxy import proxy
 from securedrop_proxy import config
+from securedrop_proxy import version
 
 
 class TestProxyValidConfig(unittest.TestCase):
@@ -24,6 +24,17 @@ class TestProxyValidConfig(unittest.TestCase):
     def on_done(self, res):
         res.headers['X-Origin-Content-Type'] = res.headers['Content-Type']
         res.headers['Content-Type'] = 'application/json'
+
+    def test_version(self):
+        req = proxy.Req()
+        req.method = 'GET'
+        req.path_query = ''
+        req.headers = {'Accept': 'application/json'}
+
+        p = proxy.Proxy()
+        p.proxy()
+
+        self.assertEqual(p.res.version, version.version)
 
     def test_400_if_callback_not_set(self):
         req = proxy.Req()

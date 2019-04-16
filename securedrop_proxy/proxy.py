@@ -4,24 +4,26 @@ import tempfile
 import json
 import werkzeug
 
-class Req:
+import securedrop_proxy.version as version
 
+
+class Req:
     def __init__(self):
-        self.method = ''
-        self.path_query = ''
+        self.method = ""
+        self.path_query = ""
         self.body = None
         self.headers = {}
 
-class Response:
 
+class Response:
     def __init__(self, status):
         self.status = status
         self.body = None
         self.headers = {}
-        self.version = "0.1.2"
+        self.version = version.version
+
 
 class Proxy:
-
     @staticmethod
     def _on_done(res):
         print(json.dumps(res.__dict__))
@@ -63,15 +65,15 @@ class Proxy:
         method = self.req.method
 
         if not self.valid_path(path):
-            self.simple_error(400, 'Path provided in request did not look valid')
-            raise ValueError('Path provided was invalid')
+            self.simple_error(400, "Path provided in request did not look valid")
+            raise ValueError("Path provided was invalid")
 
         try:
             url = furl.furl("{}://{}:{}/{}".format(scheme, host, port, path))
         except Exception as e:
 
-            self.simple_error(500, 'Proxy error while generating URL to request')
-            raise ValueError('Error generating URL from provided values')
+            self.simple_error(500, "Proxy error while generating URL to request")
+            raise ValueError("Error generating URL from provided values")
 
         url.path.normalize()
 
@@ -113,7 +115,7 @@ class Proxy:
 
     def handle_response(self):
 
-        ctype = werkzeug.http.parse_options_header(self._presp.headers['content-type'])
+        ctype = werkzeug.http.parse_options_header(self._presp.headers["content-type"])
 
         if ctype[0] == "application/json":
             self.handle_json_response()
@@ -128,8 +130,8 @@ class Proxy:
 
         try:
             if self.on_save is None:
-                self.simple_error(400, 'Request callback is not set.')
-                raise ValueError('Request callback is not set.')
+                self.simple_error(400, "Request callback is not set.")
+                raise ValueError("Request callback is not set.")
 
             self.prep_request()
             s = requests.Session()
