@@ -15,7 +15,7 @@ def read_conf(conf_path, p):
 
     try:
         fh = open(conf_path, 'r')
-        conf_in = yaml.load(fh)
+        conf_in = yaml.safe_load(fh)
     except yaml.YAMLError:
         p.simple_error(500, 'YAML syntax error while reading configuration file {}'.format(conf_path))
         p.on_done(p.res)
