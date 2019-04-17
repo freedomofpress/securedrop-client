@@ -192,9 +192,6 @@ class Client(QObject):
         # triggered by UI events.
         self.gui.setup(self)
 
-        # If possible, update the UI with available sources.
-        self.update_sources()
-
         # Create a timer to check for sync status every 30 seconds.
         self.sync_timer = QTimer()
         self.sync_timer.timeout.connect(self.update_sync)
