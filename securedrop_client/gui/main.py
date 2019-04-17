@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 from typing import List
 
-from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QDesktopWidget
+from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QDesktopWidget, QApplication
 
 from securedrop_client import __version__
 from securedrop_client.db import Source
@@ -54,8 +54,16 @@ class Window(QMainWindow):
         """
         super().__init__()
         self.sdc_home = sdc_home
-        self.controller = None
 
+    def setup(self, controller):
+        """
+        Create references to the controller logic and instantiate the various
+        views used in the UI.
+        """
+        self.controller = controller  # Reference the Client logic instance.
+        self.show_login()
+
+    def show_main_window(self, username: str) -> None:
         self.setWindowTitle(_("SecureDrop Client {}").format(__version__))
         self.setWindowIcon(load_icon(self.icon))
 
@@ -91,18 +99,11 @@ class Window(QMainWindow):
         self.autosize_window()
         self.show()
 
-    def setup(self, controller):
-        """
-        Create references to the controller logic and instantiate the various
-        views used in the UI.
-        """
-        self.controller = controller  # Reference the Client logic instance.
-        self.left_pane.setup(self, controller)
-        self.top_pane.setup(controller)
-        self.update_activity_status(_('Started SecureDrop Client. Please sign in.'), 20000)
+        self.left_pane.setup(self, self.controller)
+        self.top_pane.setup(self.controller)
+        self.main_view.source_list.setup(self.controller)
 
-        self.login_dialog = LoginDialog(self)
-        self.main_view.setup(self.controller)
+        self.set_logged_in_as(username)
 
     def autosize_window(self):
         """
@@ -117,6 +118,7 @@ class Window(QMainWindow):
         Show the login form.
         """
         self.login_dialog = LoginDialog(self)
+        self.login_dialog.move(QApplication.desktop().screen().rect().center() - self.rect().center())
         self.login_dialog.setup(self.controller)
         self.login_dialog.reset()
         self.login_dialog.exec()
