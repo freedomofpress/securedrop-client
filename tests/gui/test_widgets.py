@@ -394,6 +394,21 @@ def test_MainView_show_conversation(mocker):
     mv.view_layout.addWidget.assert_called_once_with(mock_widget)
 
 
+def test_MainView_clear_conversation(mocker, homedir):
+    """
+    Calling clear_conversation deletes items from layout
+    """
+    mv = MainView(None)
+    mv.view_layout = QVBoxLayout()
+    mv.view_layout.addWidget(QWidget())
+
+    assert mv.view_layout.count() == 1
+
+    mv.clear_conversation()
+
+    assert mv.view_layout.count() == 0
+
+
 def test_SourceList_update(mocker):
     """
     Check the items in the source list are cleared and a new SourceWidget for
@@ -1307,6 +1322,8 @@ def test_DeleteSourceMssageBox_launch_when_user_chooses_yes(mocker, source, sess
     session.add(message)
     message = factory.Message(source=source)
     session.add(message)
+    reply = factory.Reply(source=source)
+    session.add(reply)
     session.commit()
 
     mock_message_box_question = mocker.MagicMock(QMessageBox.question)
@@ -1326,11 +1343,11 @@ def test_DeleteSourceMssageBox_launch_when_user_chooses_yes(mocker, source, sess
     message = (
         "<big>Deleting the Source account for "
         "<b>{designation}</b> will also "
-        "delete {files} files and {messages} messages.</big> "
-        "<br> "
+        "delete {files} files, {replies} replies, and {messages} messages.</big>"
+        " <br> "
         "<small>This Source will no longer be able to correspond "
         "through the log-in tied to this account.</small>"
-    ).format(designation=source.journalist_designation, files=1, messages=2)
+    ).format(designation=source.journalist_designation, files=1, replies=1, messages=2)
     mock_message_box_question.assert_called_once_with(
         None,
         "",
@@ -1348,6 +1365,8 @@ def test_DeleteSourceMessageBox_construct_message(mocker, source, session):
     session.add(message)
     message = factory.Message(source=source)
     session.add(message)
+    reply = factory.Reply(source=source)
+    session.add(reply)
     session.commit()
 
     mock_controller = mocker.MagicMock()
@@ -1359,11 +1378,11 @@ def test_DeleteSourceMessageBox_construct_message(mocker, source, session):
     expected_message = (
         "<big>Deleting the Source account for "
         "<b>{designation}</b> will also "
-        "delete {files} files and {messages} messages.</big> "
-        "<br> "
+        "delete {files} files, {replies} replies, and {messages} messages.</big>"
+        " <br> "
         "<small>This Source will no longer be able to correspond "
         "through the log-in tied to this account.</small>"
-    ).format(designation=source.journalist_designation, files=1, messages=2)
+    ).format(designation=source.journalist_designation, files=1, replies=1, messages=2)
     assert message == expected_message
 
 

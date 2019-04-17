@@ -27,7 +27,7 @@ from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBox
 from typing import List
 from uuid import uuid4
 
-from securedrop_client.db import Source, Message, File
+from securedrop_client.db import Source, Message, File, Reply
 from securedrop_client.gui import SvgLabel, SvgPushButton
 from securedrop_client.logic import Client
 from securedrop_client.resources import load_svg, load_icon, load_image
@@ -631,6 +631,12 @@ class MainView(QWidget):
         self.view_layout.addWidget(widget)
         widget.show()
 
+    def clear_conversation(self):
+        while self.view_layout.count():
+            child = self.view_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+
 
 class SourceList(QListWidget):
     """
@@ -701,12 +707,7 @@ class DeleteSourceMessageBox:
         """
         message = self._construct_message(self.source)
         reply = QMessageBox.question(
-            self.parent,
-            "",
-            _(message),
-            QMessageBox.Cancel | QMessageBox.Yes,
-            QMessageBox.Cancel
-        )
+            self.parent, "", _(message), QMessageBox.Cancel | QMessageBox.Yes, QMessageBox.Cancel)
 
         if reply == QMessageBox.Yes:
             logger.debug("Deleting source %s" % (self.source.uuid,))
@@ -715,16 +716,19 @@ class DeleteSourceMessageBox:
     def _construct_message(self, source: Source) -> str:
         files = 0
         messages = 0
+        replies = 0
         for submission in source.collection:
             if isinstance(submission, Message):
                 messages += 1
+            if isinstance(submission, Reply):
+                replies += 1
             elif isinstance(submission, File):
                 files += 1
 
         message = (
             "<big>Deleting the Source account for",
             "<b>{}</b> will also".format(source.journalist_designation,),
-            "delete {} files and {} messages.</big>".format(files, messages),
+            "delete {} files, {} replies, and {} messages.</big>".format(files, replies, messages),
             "<br>",
             "<small>This Source will no longer be able to correspond",
             "through the log-in tied to this account.</small>",
@@ -1261,7 +1265,6 @@ class ConversationView(QWidget):
             if conversation_item.filename.endswith('msg.gpg'):
                 self.add_message(conversation_item)
             elif conversation_item.filename.endswith('reply.gpg'):
-                self.controller.session.refresh(conversation_item)
                 if conversation_item.content is not None:
                     content = conversation_item.content
                 else:
@@ -1293,7 +1296,6 @@ class ConversationView(QWidget):
         """
         Add a message from the source.
         """
-        self.controller.session.refresh(message)
         if message.content is not None:
             content = message.content
         else:
@@ -1423,7 +1425,6 @@ class DeleteSourceAction(QAction):
     def trigger(self):
         if self.controller.api is None:
             self.controller.on_action_requiring_login()
-            return
         else:
             self.messagebox.launch()
 

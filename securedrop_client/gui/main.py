@@ -20,11 +20,13 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
-from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QDesktopWidget
 from typing import List
+
+from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QDesktopWidget
 
 from securedrop_client import __version__
 from securedrop_client.db import Source
+from securedrop_client.storage import source_exists
 from securedrop_client.gui.widgets import TopPane, LeftPane, MainView, LoginDialog, \
     SourceConversationWrapper
 from securedrop_client.resources import load_icon
@@ -85,9 +87,6 @@ class Window(QMainWindow):
         # Cache a dict of source.uuid -> SourceConversationWrapper
         # We do this to not create/destroy widgets constantly (because it causes UI "flicker")
         self.conversations = {}
-
-        # Tracks which source is shown
-        self.current_source = None
 
         self.autosize_window()
         self.show()
@@ -172,9 +171,13 @@ class Window(QMainWindow):
         """
         source_item = self.main_view.source_list.currentItem()
         source_widget = self.main_view.source_list.itemWidget(source_item)
-        if source_widget:
-            self.current_source = source_widget.source
-            self.show_conversation_for(self.current_source, self.controller.is_authenticated)
+
+        # Show conversation for the currently-selected source if it hasn't been deleted. If the
+        # current source no longer exists, clear the conversation for that source.
+        if source_widget and source_exists(self.controller.session, source_widget.source.uuid):
+            self.show_conversation_for(source_widget.source, self.controller.is_authenticated)
+        else:
+            self.main_view.clear_conversation()
 
     def show_conversation_for(self, source: Source, is_authenticated: bool):
         """

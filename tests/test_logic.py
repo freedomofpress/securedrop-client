@@ -5,6 +5,7 @@ expected.
 import arrow
 import os
 import pytest
+
 from sdclientapi import sdlocalobjects
 from tests import factory
 from securedrop_client import storage, db

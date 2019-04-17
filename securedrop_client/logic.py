@@ -23,12 +23,14 @@ import sdclientapi
 import shutil
 import traceback
 import uuid
+
+from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess
+
 from securedrop_client import storage
 from securedrop_client import db
 from securedrop_client.utils import check_dir_permissions
 from securedrop_client.crypto import GpgHelper, CryptoError
 from securedrop_client.message_sync import MessageSync, ReplySync
-from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess
 
 logger = logging.getLogger(__name__)
 
