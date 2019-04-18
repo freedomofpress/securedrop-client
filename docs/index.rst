@@ -1,21 +1,30 @@
-.. sdconfigapi documentation master file, created by
-   sphinx-quickstart on Thu Aug  2 16:55:50 2018.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. sdconfigapi documentation master file
 
-Welcome to sdconfigapi's documentation!
-=======================================
+SecureDrop SDK Documentation
+============================
+
+
+Developer Quick Start
+---------------------
+
+.. code:: sh
+
+    pip install -U pipenv
+    pipenv sync --dev
+    pipenv shell
+    make test
+
+Table of Contents
+-----------------
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
-   install
    development
 
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`
