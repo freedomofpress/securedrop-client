@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.0.8
+-----
+
+* Revert return type of API.authenticate to bool
+
 0.0.7
 -----
 

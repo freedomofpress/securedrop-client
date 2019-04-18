@@ -73,7 +73,7 @@ class API:
         self.username = username
         self.passphrase = passphrase
         self.totp = totp
-        self.token = None  # type: Optional[str]
+        self.token = None  # type: Optional[Dict[str, str]]
         self.token_expiration = None  # type: Optional[datetime]
         self.req_headers = dict()  # type: Dict[str, str]
         self.proxy = proxy  # type: bool
@@ -119,7 +119,7 @@ class API:
                 return result, result.status_code, result.headers
             return result.json(), result.status_code, result.headers
 
-    def authenticate(self, totp: Optional[str] = None) -> None:
+    def authenticate(self, totp: Optional[str] = None) -> bool:
         """
         Authenticate the user and fetches the token from the server.
 
@@ -146,16 +146,18 @@ class API:
             raise BaseError("Error in parsing JSON")
         if "expiration" not in token_data:
             raise AuthError("Authentication error")
-        self.token = token_data["token"]
+        self.token = token_data
         self.token_expiration = datetime.strptime(
             token_data["expiration"], "%Y-%m-%dT%H:%M:%S.%fZ"
         )
         self.update_auth_header()
 
+        return True
+
     def update_auth_header(self) -> None:
         if self.token is not None:
             self.req_headers = {
-                "Authorization": "Token " + self.token,
+                "Authorization": "Token " + self.token["token"],
                 "Content-Type": "application/json",
                 "Accept": "application/json",
             }
