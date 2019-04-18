@@ -10,8 +10,11 @@ try:
     # Use the operating system's locale.
     current_locale, encoding = locale.getdefaultlocale()
     # Get the language code.
-    language_code = current_locale[:2]
-except (TypeError, ValueError):  # pragma: no cover
+    if current_locale is None:
+        language_code = 'en'
+    else:
+        language_code = current_locale[:2]
+except ValueError:  # pragma: no cover
     language_code = 'en'  # pragma: no cover
 # DEBUG/TRANSLATE: override the language code here (e.g. to Chinese).
 # language_code = 'zh'

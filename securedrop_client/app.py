@@ -68,7 +68,7 @@ def configure_logging(sdc_home: str) -> None:
 
     # define log handlers such as for rotating log files
     handler = TimedRotatingFileHandler(log_file, when='midnight',
-                                       backupCount=5, delay=0,
+                                       backupCount=5, delay=False,
                                        encoding=ENCODING)
     handler.setFormatter(formatter)
     handler.setLevel(logging.DEBUG)

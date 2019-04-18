@@ -3,7 +3,7 @@ SHELL := /bin/bash
 
 .PHONY: mypy
 mypy: ## Run static type checker
-	@mypy securedrop_client
+	@mypy --ignore-missing-imports securedrop_client
 
 .PHONY: clean
 clean:  ## Clean the workspace of generated resources
