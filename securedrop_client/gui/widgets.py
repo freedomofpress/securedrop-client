@@ -899,7 +899,6 @@ class LoginDialog(QDialog):
         self.submit = QPushButton(_('Sign in'))
         self.submit.clicked.connect(self.validate)
 
-
         self.offline_mode = QPushButton(_('Offline mode'))
         self.offline_mode.clicked.connect(self.controller.login_offline_mode)
 

@@ -20,7 +20,6 @@ def test_init(mocker):
     mock_li = mocker.MagicMock(return_value=load_icon('icon.png'))
     mock_lo = mocker.MagicMock(return_value=QHBoxLayout())
     mock_lo().addWidget = mocker.MagicMock()
-
     mocker.patch('securedrop_client.gui.main.load_icon', mock_li)
     mock_lp = mocker.patch('securedrop_client.gui.main.LeftPane')
     mock_mv = mocker.patch('securedrop_client.gui.main.MainView')
@@ -28,9 +27,12 @@ def test_init(mocker):
     mocker.patch('securedrop_client.gui.main.QMainWindow')
 
     w = Window('mock')
+
+    assert w.conversations == {}
+    assert w.sdc_home == 'mock'
     mock_li.assert_called_once_with(w.icon)
     mock_lp.assert_called_once_with()
-    mock_mv.assert_called_once_with(w.widget)
+    mock_mv.assert_called_once_with(w.main_pane)
     assert mock_lo().addWidget.call_count == 2
 
 
@@ -41,8 +43,45 @@ def test_setup(mocker):
     """
     w = Window('mock')
     mock_controller = mocker.MagicMock()
+    w.show_login = mocker.MagicMock()
+    w.top_pane = mocker.MagicMock()
+    w.left_pane = mocker.MagicMock()
+    w.main_view = mocker.MagicMock()
+    w.main_view.source_list = mocker.MagicMock()
+
     w.setup(mock_controller)
+
     assert w.controller == mock_controller
+    w.top_pane.setup.assert_called_once_with(mock_controller)
+    w.left_pane.setup.assert_called_once_with(w, mock_controller)
+    w.main_view.source_list.setup.assert_called_once_with(mock_controller)
+    w.show_login.assert_called_once_with()
+
+
+def test_show_main_window(mocker):
+    w = Window('mock')
+    w.autosize_window = mocker.MagicMock()
+    w.show = mocker.MagicMock()
+    w.set_logged_in_as = mocker.MagicMock()
+
+    w.show_main_window(username='test_username')
+
+    w.autosize_window.assert_called_once_with()
+    w.show.assert_called_once_with()
+    w.set_logged_in_as.assert_called_once_with('test_username')
+
+
+def test_show_main_window_without_username(mocker):
+    w = Window('mock')
+    w.autosize_window = mocker.MagicMock()
+    w.show = mocker.MagicMock()
+    w.set_logged_in_as = mocker.MagicMock()
+
+    w.show_main_window()
+
+    w.autosize_window.assert_called_once_with()
+    w.show.assert_called_once_with()
+    w.set_logged_in_as.called is False
 
 
 def test_autosize_window(mocker):
@@ -66,9 +105,8 @@ def test_show_login(mocker):
     """
     The login dialog is displayed with a clean state.
     """
-    mock_controller = mocker.MagicMock()
     w = Window('mock')
-    w.setup(mock_controller)
+    w.controller = mocker.MagicMock()
     mock_ld = mocker.patch('securedrop_client.gui.main.LoginDialog')
 
     w.show_login()
@@ -82,11 +120,13 @@ def test_show_login_error(mocker):
     """
     Ensures that an error message is displayed in the login dialog.
     """
-    mock_controller = mocker.MagicMock()
     w = Window('mock')
-    w.setup(mock_controller)
+    w.show_login = mocker.MagicMock()
+    w.setup(mocker.MagicMock())
     w.login_dialog = mocker.MagicMock()
+
     w.show_login_error('boom')
+
     w.login_dialog.error.assert_called_once_with('boom')
 
 
@@ -94,12 +134,13 @@ def test_hide_login(mocker):
     """
     Ensure the login dialog is closed and hidden.
     """
-    mock_controller = mocker.MagicMock()
     w = Window('mock')
-    w.setup(mock_controller)
+    w.show_login = mocker.MagicMock()
     ld = mocker.MagicMock()
     w.login_dialog = ld
+
     w.hide_login()
+
     ld.accept.assert_called_once_with()
     assert w.login_dialog is None
 
@@ -198,7 +239,9 @@ def test_set_logged_in_as(mocker):
     """
     w = Window('mock')
     w.left_pane = mocker.MagicMock()
+
     w.set_logged_in_as('test')
+
     w.left_pane.set_logged_in_as.assert_called_once_with('test')
 
 

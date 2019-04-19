@@ -362,6 +362,9 @@ class Client(QObject):
             self.gui.show_login_error(error=error)
 
     def login_offline_mode(self):
+        """
+        Allow user to view in offline mode without authentication.
+        """
         self.gui.hide_login()
         self.sync_api()
         self.gui.show_main_window()
