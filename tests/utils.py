@@ -37,8 +37,6 @@ def internal_sideeffect(*args, **kwargs):
         value = json.loads(value_str)
         del value["one_time_code"]
         python_args["body"] = json.dumps(value, sort_keys=True)
-        # newargs = json.dumps(python_args, sort_keys=True)
-        # arguments = (newargs,)
     except Exception:
         pass  # Means no body in the call
 
@@ -49,8 +47,6 @@ def internal_sideeffect(*args, **kwargs):
         value = python_args["headers"]
         del value["Authorization"]
         python_args["headers"] = json.dumps(value, sort_keys=True)
-        # newargs = json.dumps(python_args, sort_keys=True)
-        # arguments = (newargs,)
     except Exception:
         pass  # Means no Authorization token in the call
 
@@ -68,7 +64,7 @@ def internal_sideeffect(*args, **kwargs):
         for k in dkeys:
             od[k] = value[k]
         python_args["body"] = json.dumps(od)
-    except:
+    except Exception:
         pass
 
     newargs = json.dumps(python_args, sort_keys=True)

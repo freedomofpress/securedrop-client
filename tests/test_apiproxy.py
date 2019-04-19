@@ -235,7 +235,7 @@ class TestAPIProxy(unittest.TestCase):
         tmpdir = tempfile.mkdtemp()
         _, filepath = self.api.download_submission(s, tmpdir)
 
-        # Uncomment the followig part only on QubesOS
+        # Uncomment the following part only on QubesOS
         # for testing against real server.
         # now let us read the downloaded file
         # with open(filepath, "rb") as fobj:
@@ -282,7 +282,7 @@ class TestAPIProxy(unittest.TestCase):
         tmpdir = tempfile.mkdtemp()
         _, filepath = self.api.download_reply(r, tmpdir)
 
-        # Uncomment the followig part only on QubesOS
+        # Uncomment the following part only on QubesOS
         # for testing against real server.
         # now let us read the downloaded file
         # with open(filepath, "rb") as fobj:
