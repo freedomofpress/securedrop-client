@@ -19,13 +19,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 import arrow
 import html
+import sys
+from typing import List
+from uuid import uuid4
+
 from PyQt5.QtCore import Qt, pyqtSlot, QTimer, QSize
 from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
     QToolButton, QSizePolicy, QTextEdit, QStatusBar, QGraphicsDropShadowEffect
-from typing import List
-from uuid import uuid4
 
 from securedrop_client.db import Source, Message, File, Reply
 from securedrop_client.gui import SvgLabel, SvgPushButton
@@ -856,7 +858,15 @@ class LoginDialog(QDialog):
     MIN_JOURNALIST_USERNAME = 3  # Journalist.MIN_USERNAME_LEN on server
 
     def __init__(self, parent):
-        super().__init__(parent)
+        self.parent = parent
+        super().__init__(self.parent)
+
+    def closeEvent(self, event):
+        """
+        Only exit the application when the main window is not visible.
+        """
+        if not self.parent.isVisible():
+            sys.exit(0)
 
     def setup(self, controller):
         self.controller = controller
