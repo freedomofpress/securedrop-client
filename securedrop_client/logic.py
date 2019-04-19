@@ -362,13 +362,13 @@ class Client(QObject):
             self.gui.show_login_error(error=error)
 
     def login_offline_mode(self):
-        # It worked! Sync with the API and update the UI.
         self.gui.hide_login()
         self.sync_api()
         self.gui.show_main_window()
         self.start_message_thread()
         self.start_reply_thread()
         self.is_authenticated = False
+        self.update_sources()
 
     def on_login_timeout(self):
         """
