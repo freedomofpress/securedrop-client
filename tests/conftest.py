@@ -17,7 +17,15 @@ with open(os.path.join(os.path.dirname(__file__), 'files', 'test-key.gpg.pub.asc
 
 
 @pytest.fixture(scope='function')
-def homedir():
+def i18n():
+    '''
+    Set up locale/language/gettext functions. This enables the use of _().
+    '''
+    configure_locale_and_language()
+
+
+@pytest.fixture(scope='function')
+def homedir(i18n):
     '''
     Create a "homedir" for a client.
 
@@ -27,7 +35,6 @@ def homedir():
     '''
 
     tmpdir = tempfile.mkdtemp(prefix='sdc-')
-    configure_locale_and_language()
     os.chmod(tmpdir, 0o0700)
 
     data_dir = os.path.join(tmpdir, 'data')
