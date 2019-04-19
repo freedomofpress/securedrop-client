@@ -250,7 +250,6 @@ def test_Client_login_offline_mode(homedir, config, mocker):
     cl.gui = mocker.MagicMock()
     cl.gui.show_main_window = mocker.MagicMock()
     cl.gui.hide_login = mocker.MagicMock()
-    cl.sync_api = mocker.MagicMock()
     cl.start_message_thread = mocker.MagicMock()
     cl.start_reply_thread = mocker.MagicMock()
     cl.update_sources = mocker.MagicMock()
@@ -261,7 +260,6 @@ def test_Client_login_offline_mode(homedir, config, mocker):
     assert cl.is_authenticated is False
     cl.gui.show_main_window.assert_called_once_with()
     cl.gui.hide_login.assert_called_once_with()
-    cl.sync_api.assert_called_once_with()
     cl.start_message_thread.assert_called_once_with()
     cl.update_sources.assert_called_once_with()
 

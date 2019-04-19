@@ -366,7 +366,6 @@ class Client(QObject):
         Allow user to view in offline mode without authentication.
         """
         self.gui.hide_login()
-        self.sync_api()
         self.gui.show_main_window()
         self.start_message_thread()
         self.start_reply_thread()
