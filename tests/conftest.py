@@ -6,6 +6,7 @@ import pytest
 from configparser import ConfigParser
 from datetime import datetime
 from securedrop_client.config import Config
+from securedrop_client.app import configure_locale_and_language
 from securedrop_client.db import Base, make_engine, Source
 from sqlalchemy.orm import sessionmaker
 from uuid import uuid4
@@ -26,6 +27,7 @@ def homedir():
     '''
 
     tmpdir = tempfile.mkdtemp(prefix='sdc-')
+    configure_locale_and_language()
     os.chmod(tmpdir, 0o0700)
 
     data_dir = os.path.join(tmpdir, 'data')
