@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 from typing import List
+import sys
 
 from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QDesktopWidget, QApplication
 
@@ -63,7 +64,7 @@ class Window(QMainWindow):
         self.controller = controller  # Reference the Client logic instance.
         self.show_login()
 
-    def show_main_window(self, username: str) -> None:
+    def show_main_window(self, username: str=None) -> None:
         self.setWindowTitle(_("SecureDrop Client {}").format(__version__))
         self.setWindowIcon(load_icon(self.icon))
 
@@ -103,7 +104,8 @@ class Window(QMainWindow):
         self.top_pane.setup(self.controller)
         self.main_view.source_list.setup(self.controller)
 
-        self.set_logged_in_as(username)
+        if username:
+            self.set_logged_in_as(username)
 
     def autosize_window(self):
         """
@@ -118,7 +120,8 @@ class Window(QMainWindow):
         Show the login form.
         """
         self.login_dialog = LoginDialog(self)
-        self.login_dialog.move(QApplication.desktop().screen().rect().center() - self.rect().center())
+        self.login_dialog.move(
+            QApplication.desktop().screen().rect().center() - self.rect().center())
         self.login_dialog.setup(self.controller)
         self.login_dialog.reset()
         self.login_dialog.exec()

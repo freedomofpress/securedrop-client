@@ -361,6 +361,15 @@ class Client(QObject):
                       'Please verify your credentials and try again.')
             self.gui.show_login_error(error=error)
 
+    def login_offline_mode(self):
+        # It worked! Sync with the API and update the UI.
+        self.gui.hide_login()
+        self.sync_api()
+        self.gui.show_main_window()
+        self.start_message_thread()
+        self.start_reply_thread()
+        self.is_authenticated = False
+
     def on_login_timeout(self):
         """
         Reset the form and indicate the error.

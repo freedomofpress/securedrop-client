@@ -899,6 +899,10 @@ class LoginDialog(QDialog):
         self.submit = QPushButton(_('Sign in'))
         self.submit.clicked.connect(self.validate)
 
+
+        self.offline_mode = QPushButton(_('Offline mode'))
+        self.offline_mode.clicked.connect(self.controller.login_offline_mode)
+
         self.error_label = QLabel('')
         self.error_label.setObjectName('error_label')  # Set css id
         self.error_label.setStyleSheet(self.CSS)  # Set styles
@@ -913,6 +917,7 @@ class LoginDialog(QDialog):
         layout.addWidget(self.tfa_label)
         layout.addWidget(self.tfa_field)
         layout.addWidget(self.submit)
+        layout.addWidget(self.offline_mode)
         layout.addWidget(self.error_label)
         layout.addStretch()
 
