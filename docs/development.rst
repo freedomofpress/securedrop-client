@@ -37,12 +37,69 @@ To run a single test, use this following command, replace the test case name at 
     make test TESTS=tests/test_api.py::TestAPI::test_error_unencrypted_reply
 
 
-To test against a live development server, you will need to run the SecureDrop developent
-container from the main SecureDrop repository on your host. This can be done via ``make -C securedrop dev``.
+To test against a live development server, you will need to run the SecureDrop
+developent container from the main SecureDrop repository on your host. This
+can be done via ``NUM_SOURCES=5 make -C securedrop dev``.
 
-In this repo, comment out the ``@vcr`` decorator of the ``setUp`` method and which ever tests
-you want to run. If you want to re-run all tests against the API, remove all the ``.yml`` files
-in the ``data`` directory. 
+In this repo, comment out the ``@vcr`` decorator of the ``setUp`` method in
+`test_api.py` and execute which ever tests you want to run. If you want to
+re-run all tests against the API, remove all the ``.yml`` files in the
+``data`` directory. 
+
+
+Gererating test data for `APIProxy`
+-----------------------------------
+
+
+To test or to generate new test data file for the `APIProxy` class in
+`test_apiproxy.py` file, you will have to setup
+`QubesOS <https://qubes-os.org>`_ system.
+
+There should be one VM (let us call it `sd-journalist`), where we can run
+latest securedrop server code from the development branch using
+``NUM_SOURCES=5 make -C securedrop dev`` command. The same VM should also have
+`securedrop-proxy` project installed, either from the source by hand or using
+the latest Debian package from the FPF repository.
+
+Below is an example configuration for proxy `/etc/sd-proxy.yaml`
+
+::
+
+    host: 127.0.0.1
+    scheme: http
+    port: 8081
+    target_vm: sd-svs
+    dev: False
+
+Then we can create our second developent VM called `sd-svs`, in which we can checkout/develop
+the `securedrop-sdk` project. The required configuration file is at `/etc/sd-sdk.conf`
+
+::
+
+    [proxy]
+    name=sd-journalist
+
+We should also add a corresponding entry in `/etc/qubes-rpc/policy/securedrop.Proxy` file
+in **dom0**.
+
+::
+
+    sd-svs sd-journalist allow
+    $anyvm $anyvm deny
+
+
+The above mentioned setup can also be created using `securedrop-workstation` project.
+
+
+Now, delete any related JSON file under `data/` directory, or remove all of
+them, and then execute ``make test TEST=tests/test_apiproxy.py``. This is
+command will generate the new data files, which can be used in CI or any other
+system.
+
+.. note::
+   Remember that file download checks don't read actual file path in the `APIProxy` tests as it
+   requires QubesOS setup. You can manually uncomment those lines to execute them on QubesOS setup.
+
 
 Releasing
 =========
