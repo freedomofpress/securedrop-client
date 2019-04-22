@@ -427,7 +427,7 @@ def test_Client_on_sync_timeout(homedir, config, mocker):
     cl.on_sync_timeout()
     assert cl.api is not None
     mock_gui.update_error_status.\
-        assert_called_once_with(error='The connection to the SecureDrop '
+        assert_called_once_with('The connection to the SecureDrop '
                                 'server timed out. Please try again.')
 
 
