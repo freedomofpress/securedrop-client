@@ -3,6 +3,8 @@ Make sure the UI widgets are configured correctly and work as expected.
 """
 from PyQt5.QtWidgets import QWidget, QApplication, QWidgetItem, QSpacerItem, QVBoxLayout, \
     QMessageBox, QLabel, QMainWindow
+from PyQt5.QtCore import Qt
+
 from tests import factory
 from securedrop_client import db, logic
 from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, LoginDialog, \
@@ -788,6 +790,19 @@ def test_LoginDialog_validate_input_ok(mocker):
     assert ld.setDisabled.call_count == 1
     assert ld.error.call_count == 0
     mock_controller.login.assert_called_once_with('foo', 'nicelongpassword', '123456')
+
+
+def test_LoginDialog_keyPressEvent(mocker):
+    """
+    Ensure we don't hide the login dialog when Esc key is pressed.
+    """
+    ld = LoginDialog(None)
+    event = mocker.MagicMock()
+    event.key = mocker.MagicMock(return_value=Qt.Key_Escape)
+
+    ld.keyPressEvent(event)
+
+    event.ignore.assert_called_once_with()
 
 
 def test_LoginDialog_closeEvent_exits(mocker):
