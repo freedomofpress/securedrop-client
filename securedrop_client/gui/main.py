@@ -22,7 +22,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 from typing import List
 
-from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QDesktopWidget
+from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QDesktopWidget, \
+    QApplication
 
 from securedrop_client import __version__
 from securedrop_client.db import Source
@@ -54,42 +55,37 @@ class Window(QMainWindow):
         """
         super().__init__()
         self.sdc_home = sdc_home
-        self.controller = None
+        # Cache a dict of source.uuid -> SourceConversationWrapper
+        # We do this to not create/destroy widgets constantly (because it causes UI "flicker")
+        self.conversations = {}
 
         self.setWindowTitle(_("SecureDrop Client {}").format(__version__))
         self.setWindowIcon(load_icon(self.icon))
 
+        # Top Pane to display activity and error messages
+        self.top_pane = TopPane()
+
+        # Main Pane to display everything else
+        self.main_pane = QWidget()
+        layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        self.main_pane.setLayout(layout)
+        self.left_pane = LeftPane()
+        self.main_view = MainView(self.main_pane)
+        self.main_view.source_list.itemSelectionChanged.connect(self.on_source_changed)
+        layout.addWidget(self.left_pane, 1)
+        layout.addWidget(self.main_view, 8)
+
+        # Set the main window's central widget to show Top Pane and Main Pane
         self.central_widget = QWidget()
         central_widget_layout = QVBoxLayout()
         central_widget_layout.setContentsMargins(0, 0, 0, 0)
         central_widget_layout.setSpacing(0)
         self.central_widget.setLayout(central_widget_layout)
         self.setCentralWidget(self.central_widget)
-
-        self.top_pane = TopPane()
         central_widget_layout.addWidget(self.top_pane)
-
-        self.widget = QWidget()
-        widget_layout = QHBoxLayout()
-        widget_layout.setContentsMargins(0, 0, 0, 0)
-        widget_layout.setSpacing(0)
-        self.widget.setLayout(widget_layout)
-
-        self.left_pane = LeftPane()
-        self.main_view = MainView(self.widget)
-        self.main_view.source_list.itemSelectionChanged.connect(self.on_source_changed)
-
-        widget_layout.addWidget(self.left_pane, 1)
-        widget_layout.addWidget(self.main_view, 8)
-
-        central_widget_layout.addWidget(self.widget)
-
-        # Cache a dict of source.uuid -> SourceConversationWrapper
-        # We do this to not create/destroy widgets constantly (because it causes UI "flicker")
-        self.conversations = {}
-
-        self.autosize_window()
-        self.show()
+        central_widget_layout.addWidget(self.main_pane)
 
     def setup(self, controller):
         """
@@ -97,12 +93,17 @@ class Window(QMainWindow):
         views used in the UI.
         """
         self.controller = controller  # Reference the Client logic instance.
-        self.left_pane.setup(self, controller)
-        self.top_pane.setup(controller)
-        self.update_activity_status(_('Started SecureDrop Client. Please sign in.'), 20000)
+        self.top_pane.setup(self.controller)
+        self.left_pane.setup(self, self.controller)
+        self.main_view.source_list.setup(self.controller)
+        self.show_login()
 
-        self.login_dialog = LoginDialog(self)
-        self.main_view.setup(self.controller)
+    def show_main_window(self, username: str = None) -> None:
+        self.autosize_window()
+        self.show()
+
+        if username:
+            self.set_logged_in_as(username)
 
     def autosize_window(self):
         """
@@ -117,6 +118,8 @@ class Window(QMainWindow):
         Show the login form.
         """
         self.login_dialog = LoginDialog(self)
+        self.login_dialog.move(
+            QApplication.desktop().screen().rect().center() - self.rect().center())
         self.login_dialog.setup(self.controller)
         self.login_dialog.reset()
         self.login_dialog.exec()

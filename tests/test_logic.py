@@ -79,14 +79,12 @@ def test_Client_setup(homedir, config, mocker):
     Ensure the application is set up with the following default state:
     Using the `config` fixture to ensure the config is written to disk.
     """
-    mock_gui = mocker.MagicMock()
-    mock_session = mocker.MagicMock()
-    cl = Client('http://localhost', mock_gui, mock_session, homedir)
+    cl = Client('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
     cl.update_sources = mocker.MagicMock()
+
     cl.setup()
+
     cl.gui.setup.assert_called_once_with(cl)
-    cl.update_sources.assert_called_once_with()
-    cl.gui.show_login.assert_called_once_with()
 
 
 def test_Client_start_message_thread(homedir, config, mocker):
@@ -242,6 +240,30 @@ def test_Client_login(homedir, config, mocker):
                                         cl.on_login_timeout)
 
 
+def test_Client_login_offline_mode(homedir, config, mocker):
+    """
+    Ensures user is not authenticated when logging in in offline mode and that the correct windows
+    are displayed.
+    """
+    cl = Client('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
+    cl.call_api = mocker.MagicMock()
+    cl.gui = mocker.MagicMock()
+    cl.gui.show_main_window = mocker.MagicMock()
+    cl.gui.hide_login = mocker.MagicMock()
+    cl.start_message_thread = mocker.MagicMock()
+    cl.start_reply_thread = mocker.MagicMock()
+    cl.update_sources = mocker.MagicMock()
+
+    cl.login_offline_mode()
+
+    assert cl.call_api.called is False
+    assert cl.is_authenticated is False
+    cl.gui.show_main_window.assert_called_once_with()
+    cl.gui.hide_login.assert_called_once_with()
+    cl.start_message_thread.assert_called_once_with()
+    cl.update_sources.assert_called_once_with()
+
+
 def test_Client_on_authenticate_failed(homedir, config, mocker):
     """
     If the server responds with a negative to the request to authenticate, make
@@ -271,11 +293,12 @@ def test_Client_on_authenticate_ok(homedir, config, mocker):
     cl.start_message_thread = mocker.MagicMock()
     cl.start_reply_thread = mocker.MagicMock()
     cl.api.username = 'test'
+
     cl.on_authenticate(True)
+
     cl.sync_api.assert_called_once_with()
     cl.start_message_thread.assert_called_once_with()
-    cl.gui.set_logged_in_as.assert_called_once_with('test')
-    # Error status bar should be cleared
+    cl.gui.show_main_window.assert_called_once_with('test')
     cl.gui.clear_error_status.assert_called_once_with()
 
 

@@ -2,7 +2,7 @@
 Make sure the UI widgets are configured correctly and work as expected.
 """
 from PyQt5.QtWidgets import QWidget, QApplication, QWidgetItem, QSpacerItem, QVBoxLayout, \
-    QMessageBox, QLabel
+    QMessageBox, QLabel, QMainWindow
 from tests import factory
 from securedrop_client import db, logic
 from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, LoginDialog, \
@@ -377,6 +377,17 @@ def test_MainView_init():
     mv = MainView(None)
     assert isinstance(mv.source_list, SourceList)
     assert isinstance(mv.view_holder, QWidget)
+
+
+def test_MainView_setup(mocker):
+    mv = MainView(None)
+    mv.source_list = mocker.MagicMock()
+    controller = mocker.MagicMock()
+
+    mv.setup(controller)
+
+    assert mv.controller == controller
+    mv.source_list.setup.assert_called_once_with(controller)
 
 
 def test_MainView_show_conversation(mocker):
@@ -777,6 +788,36 @@ def test_LoginDialog_validate_input_ok(mocker):
     assert ld.setDisabled.call_count == 1
     assert ld.error.call_count == 0
     mock_controller.login.assert_called_once_with('foo', 'nicelongpassword', '123456')
+
+
+def test_LoginDialog_closeEvent_exits(mocker):
+    """
+    If the main window is not visible, then exit the application when the LoginDialog receives a
+    close event.
+    """
+    mw = QMainWindow()
+    ld = LoginDialog(mw)
+    sys_exit_fn = mocker.patch('securedrop_client.gui.widgets.sys.exit')
+    mw.hide()
+
+    ld.closeEvent(event='mock')
+
+    sys_exit_fn.assert_called_once_with(0)
+
+
+def test_LoginDialog_closeEvent_does_not_exit_when_main_window_is_visible(mocker):
+    """
+    If the main window is visible, then to not exit the application when the LoginDialog receives a
+    close event.
+    """
+    mw = QMainWindow()
+    ld = LoginDialog(mw)
+    sys_exit_fn = mocker.patch('securedrop_client.gui.widgets.sys.exit')
+    mw.show()
+
+    ld.closeEvent(event='mock')
+
+    assert sys_exit_fn.called is False
 
 
 def test_SpeechBubble_init(mocker):

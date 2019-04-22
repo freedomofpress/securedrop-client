@@ -192,12 +192,6 @@ class Client(QObject):
         # triggered by UI events.
         self.gui.setup(self)
 
-        # If possible, update the UI with available sources.
-        self.update_sources()
-
-        # Show the login dialog.
-        self.gui.show_login()
-
         # Create a timer to check for sync status every 30 seconds.
         self.sync_timer = QTimer()
         self.sync_timer.timeout.connect(self.update_sync)
@@ -351,7 +345,7 @@ class Client(QObject):
             # It worked! Sync with the API and update the UI.
             self.gui.hide_login()
             self.sync_api()
-            self.gui.set_logged_in_as(self.api.username)
+            self.gui.show_main_window(self.api.username)
             self.start_message_thread()
             self.start_reply_thread()
 
@@ -366,6 +360,17 @@ class Client(QObject):
             error = _('There was a problem signing in. '
                       'Please verify your credentials and try again.')
             self.gui.show_login_error(error=error)
+
+    def login_offline_mode(self):
+        """
+        Allow user to view in offline mode without authentication.
+        """
+        self.gui.hide_login()
+        self.gui.show_main_window()
+        self.start_message_thread()
+        self.start_reply_thread()
+        self.is_authenticated = False
+        self.update_sources()
 
     def on_login_timeout(self):
         """
