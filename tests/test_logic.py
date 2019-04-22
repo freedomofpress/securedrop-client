@@ -273,7 +273,7 @@ def test_Controller_on_authenticate_failed(homedir, config, mocker):
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, mock_session, homedir)
-    result_data = 'false'
+    result_data = Exception('oh no')
     co.on_authenticate(result_data)
     mock_gui.show_login_error.\
         assert_called_once_with(error='There was a problem signing in. Please '
