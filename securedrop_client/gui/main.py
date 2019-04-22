@@ -59,7 +59,7 @@ class Window(QMainWindow):
         # We do this to not create/destroy widgets constantly (because it causes UI "flicker")
         self.conversations = {}
 
-        self.setWindowTitle(_("SecureDrop Client {}").format(__version__))
+        self.setWindowTitle(_("SecureDrop Controller {}").format(__version__))
         self.setWindowIcon(load_icon(self.icon))
 
         # Top Pane to display activity and error messages
@@ -92,7 +92,7 @@ class Window(QMainWindow):
         Create references to the controller logic and instantiate the various
         views used in the UI.
         """
-        self.controller = controller  # Reference the Client logic instance.
+        self.controller = controller  # Reference the Controller logic instance.
         self.top_pane.setup(self.controller)
         self.left_pane.setup(self, self.controller)
         self.main_view.source_list.setup(self.controller)
