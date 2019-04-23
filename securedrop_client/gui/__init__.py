@@ -24,6 +24,20 @@ from securedrop_client.resources import load_svg, load_icon, load_toggle_icon
 
 
 class SvgToggleButton(QPushButton):
+    """
+    A toggle button used to display the contents of Scalable Vector Graphics (SVG) files provided
+    for an on and off state.
+
+    Parameters
+    ----------
+    on: str
+        The name of the SVG file to add to the button for on state.
+    off: str
+        The name of the SVG file to add to the button for off state.
+    svg_size: QSize, optional
+        The display size of the SVG, defaults to filling the entire size of the widget.
+    """
+
     def __init__(self, on: str, off: str, svg_size=None):
         super().__init__()
 
@@ -58,7 +72,6 @@ class SvgPushButton(QPushButton):
     """
     A widget used to display the contents of Scalable Vector Graphics (SVG) files provided for
     associated user action modes, see https://doc.qt.io/qt-5/qicon.html#Mode-enum.
-
 
     Parameters
     ----------

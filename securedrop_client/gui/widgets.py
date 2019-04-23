@@ -857,11 +857,11 @@ class StarToggleButton(SvgToggleButton):
 
     def setup(self, controller):
         self.controller = controller
-        self.controller.authentication_state.connect(self._on_authentication_changed)
+        self.controller.authentication_state.connect(self.on_authentication_changed)
         # Also set up connection for current authentication state
-        self._on_authentication_changed(self.controller.is_authenticated)
+        self.on_authentication_changed(self.controller.is_authenticated)
 
-    def _on_authentication_changed(self, authenticated: bool):
+    def on_authentication_changed(self, authenticated: bool):
         """
         If authenticated, then toggling the button should call `update_star`. Otherwise, pressing
         the button should show an error message to the user.

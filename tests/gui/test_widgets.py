@@ -11,7 +11,7 @@ from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, Lo
     SpeechBubble, ConversationWidget, MessageWidget, ReplyWidget, FileWidget, ConversationView, \
     DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, LeftPane, RefreshButton, \
     ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
-    ReplyBoxWidget, SourceConversationWrapper
+    ReplyBoxWidget, SourceConversationWrapper, StarToggleButton
 
 
 app = QApplication([])
@@ -481,11 +481,13 @@ def test_SourceWidget_setup(mocker):
     """
     mock_controller = mocker.MagicMock()
     mock_source = mocker.MagicMock()
-
     sw = SourceWidget(None, mock_source)
+    sw.star = mocker.MagicMock()
+
     sw.setup(mock_controller)
 
     assert sw.controller == mock_controller
+    sw.star.setup.assert_called_once_with(mock_controller)
 
 
 def test_SourceWidget_html_init(mocker):
@@ -506,44 +508,6 @@ def test_SourceWidget_html_init(mocker):
     sw.name.setText.assert_called_once_with('<strong>foo &lt;b&gt;bar&lt;/b&gt; baz</strong>')
 
 
-def test_SourceWidget_update_starred(mocker):
-    """
-    Ensure the widget displays the expected details from the source.
-    """
-    mock_source = mocker.MagicMock()
-    mock_source.journalist_designation = 'foo bar baz'
-    mock_source.is_starred = True
-
-    sw = SourceWidget(None, mock_source)
-    sw.name = mocker.MagicMock()
-    sw.summary_layout = mocker.MagicMock()
-
-    mock_load = mocker.patch('securedrop_client.gui.widgets.load_svg')
-    sw.update()
-
-    mock_load.assert_called_once_with('star_on.svg')
-    sw.name.setText.assert_called_once_with('<strong>foo bar baz</strong>')
-
-
-def test_SourceWidget_update_unstarred(mocker):
-    """
-    Ensure the widget displays the expected details from the source.
-    """
-    mock_source = mocker.MagicMock()
-    mock_source.journalist_designation = 'foo bar baz'
-    mock_source.is_starred = False
-
-    sw = SourceWidget(None, mock_source)
-    sw.name = mocker.MagicMock()
-    sw.summary_layout = mocker.MagicMock()
-
-    mock_load = mocker.patch('securedrop_client.gui.widgets.load_svg')
-    sw.update()
-
-    mock_load.assert_called_once_with('star_off.svg')
-    sw.name.setText.assert_called_once_with('<strong>foo bar baz</strong>')
-
-
 def test_SourceWidget_update_attachment_icon():
     """
     Attachment icon identicates document count
@@ -558,22 +522,6 @@ def test_SourceWidget_update_attachment_icon():
 
     sw.update()
     assert sw.attached.isHidden()
-
-
-def test_SourceWidget_toggle_star(mocker):
-    """
-    The toggle_star method should call self.controller.update_star
-    """
-    mock_controller = mocker.MagicMock()
-    mock_source = mocker.MagicMock()
-    event = mocker.MagicMock()
-
-    sw = SourceWidget(None, mock_source)
-    sw.controller = mock_controller
-    sw.controller.update_star = mocker.MagicMock()
-
-    sw.toggle_star(event)
-    sw.controller.update_star.assert_called_once_with(mock_source)
 
 
 def test_SourceWidget_delete_source(mocker, session, source):
@@ -615,6 +563,118 @@ def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker, session, so
     )
     sw.delete_source(None)
     sw.controller.delete_source.assert_not_called()
+
+
+def test_StarToggleButton_init_source_starred(mocker):
+    source = mocker.MagicMock()
+    source.is_starred = True
+
+    stb = StarToggleButton(source)
+
+    assert stb.source == source
+    assert stb.isChecked() is True
+
+
+def test_StarToggleButton_init_source_unstarred(mocker):
+    source = mocker.MagicMock()
+    source.is_starred = False
+
+    stb = StarToggleButton(source)
+
+    assert stb.source == source
+    assert stb.isChecked() is False
+
+
+def test_StarToggleButton_setup(mocker):
+    star_toggle_button = StarToggleButton(source=mocker.MagicMock())
+    controller = mocker.MagicMock()
+    controller.authentication_state = mocker.MagicMock()
+    controller.is_authenticated = 'mock'
+    on_authentication_changed_fn = mocker.patch.object(
+        StarToggleButton, 'on_authentication_changed')
+
+    star_toggle_button.setup(controller)
+
+    assert star_toggle_button.controller == controller
+    controller.authentication_state.connect.assert_called_once_with(on_authentication_changed_fn)
+    on_authentication_changed_fn.assert_called_with('mock')
+
+
+def test_StarToggleButton_on_authentication_changed_authenticated(mocker):
+    """
+    If on_authentication_changed is set up correctly, then calling setup and toggle should result in
+    two calls to update_star when the user is authenticated.
+    """
+    source = mocker.MagicMock()
+    stb = StarToggleButton(source=source)
+    controller = mocker.MagicMock()
+    stb.controller = controller
+    stb.enable = mocker.MagicMock()
+
+    stb.on_authentication_changed(authenticated=True)
+    stb.toggle()
+
+    assert stb.enable.called is True
+    stb.controller.update_star.assert_called_once_with(source)
+
+
+def test_StarToggleButton_on_authentication_changed_offline_mode(mocker):
+    source = mocker.MagicMock()
+    stb = StarToggleButton(source=source)
+    controller = mocker.MagicMock()
+    stb.controller = controller
+    stb.disable = mocker.MagicMock()
+
+    stb.on_authentication_changed(authenticated=False)
+    stb.click()
+
+    assert stb.disable.called is True
+    stb.controller.on_action_requiring_login.assert_called_once_with()
+
+
+def test_StarToggleButton_enable(mocker):
+    """
+    Ensure correct star icon images are loaded for the enabled button.
+    """
+    source = mocker.MagicMock()
+    source.is_starred = True
+
+    stb = StarToggleButton(source)
+    stb.set_icon = mocker.MagicMock()
+
+    stb.enable()
+
+    stb.set_icon.assert_called_once_with(on='star_on.svg', off='star_off.svg')
+
+
+def test_StarToggleButton_disable_for_starred_source(mocker):
+    """
+    Ensure correct star icon images are loaded for the disabled button.
+    """
+    source = mocker.MagicMock()
+    source.is_starred = True
+
+    stb = StarToggleButton(source)
+    stb.set_icon = mocker.MagicMock()
+
+    stb.disable()
+
+    stb.set_icon.assert_called_once_with(on='star_on.svg', off='star_on.svg')
+
+
+def test_StarToggleButton_disable_for_unstarred_source(mocker):
+    """
+    Ensure correct star icon images are loaded for the disabled button.
+    """
+    source = mocker.MagicMock()
+    source.is_starred = False
+
+    stb = StarToggleButton(source)
+    stb.set_icon = mocker.MagicMock()
+
+    stb.disable()
+
+    stb.set_icon.assert_called_once_with(on='star_off.svg', off='star_off.svg')
 
 
 def test_LoginDialog_setup(mocker):
