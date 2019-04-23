@@ -1476,7 +1476,7 @@ def test_DeleteSourceAction_trigger(mocker):
 
 def test_DeleteSource_from_source_menu_when_user_is_loggedout(mocker):
     mock_source = mocker.MagicMock()
-    mock_controller = mocker.MagicMock(logic.Client)
+    mock_controller = mocker.MagicMock(logic.Controller)
     mock_controller.api = None
     mock_delete_source_message_box_obj = mocker.MagicMock()
     mock_delete_source_message_box = mocker.MagicMock()
@@ -1495,7 +1495,7 @@ def test_DeleteSource_from_source_menu_when_user_is_loggedout(mocker):
 
 def test_DeleteSource_from_source_widget_when_user_is_loggedout(mocker):
     mock_source = mocker.MagicMock()
-    mock_controller = mocker.MagicMock(logic.Client)
+    mock_controller = mocker.MagicMock(logic.Controller)
     mock_controller.api = None
     mock_event = mocker.MagicMock()
     mock_delete_source_message_box_obj = mocker.MagicMock()

@@ -31,7 +31,7 @@ from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBox
 
 from securedrop_client.db import Source, Message, File, Reply
 from securedrop_client.gui import SvgLabel, SvgPushButton
-from securedrop_client.logic import Client
+from securedrop_client.logic import Controller
 from securedrop_client.resources import load_svg, load_icon, load_image
 from securedrop_client.utils import humanize_filesize
 
@@ -1243,7 +1243,13 @@ class ConversationView(QWidget):
     https://github.com/freedomofpress/securedrop-client/issues/273
     """
 
-    def __init__(self, source_db_object: Source, sdc_home: str, controller: Client, parent=None):
+    def __init__(
+        self,
+        source_db_object: Source,
+        sdc_home: str,
+        controller: Controller,
+        parent=None,
+    ):
         super().__init__(parent)
         self.source = source_db_object
         self.sdc_home = sdc_home
@@ -1350,7 +1356,7 @@ class SourceConversationWrapper(QWidget):
         self,
         source: Source,
         sdc_home: str,
-        controller: Client,
+        controller: Controller,
         is_authenticated: bool,
         parent=None
     ) -> None:

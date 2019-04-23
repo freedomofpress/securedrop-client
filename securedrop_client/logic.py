@@ -1,5 +1,5 @@
 """
-Contains the core logic for the application in the Client class.
+Contains the core logic for the application in the Controller class.
 
 Copyright (C) 2018  The Freedom of the Press Foundation.
 
@@ -42,7 +42,7 @@ class APICallRunner(QObject):
     the state of i_timed_out (a flag used to indicate the call to the API has
     timed out).
 
-    See the call_api method of the Client class for how this is
+    See the call_api method of the Controller class for how this is
     done (hint: you should be using the call_api method and not directly
     using this class).
     """
@@ -84,7 +84,7 @@ class APICallRunner(QObject):
                         "but it had timed out.")  # pragma: no cover
 
 
-class Client(QObject):
+class Controller(QObject):
     """
     Represents the logic for the secure drop client application. In an MVC
     application, this is the controller.
@@ -127,7 +127,7 @@ class Client(QObject):
         check_dir_permissions(home)
         super().__init__()
 
-        # Client is unauthenticated by default
+        # Controller is unauthenticated by default
         self.__is_authenticated = False
 
         # used for finding DB in sync thread
