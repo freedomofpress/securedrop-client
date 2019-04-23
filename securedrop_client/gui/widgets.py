@@ -868,6 +868,14 @@ class LoginDialog(QDialog):
         if not self.parent.isVisible():
             sys.exit(0)
 
+    def keyPressEvent(self, event):
+        """
+        Override default QDialog behavior that closes the dialog window when the Esc key is pressed.
+        Instead, ignore the event.
+        """
+        if event.key() == Qt.Key_Escape:
+            event.ignore()
+
     def setup(self, controller):
         self.controller = controller
         self.setMinimumSize(600, 400)
