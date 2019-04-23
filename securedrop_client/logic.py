@@ -393,7 +393,7 @@ class Controller(QObject):
 
         error = _('The connection to the SecureDrop server timed out. '
                   'Please try again.')
-        self.gui.update_error_status(error=error)
+        self.gui.update_error_status(error)
 
     def on_action_requiring_login(self):
         """
