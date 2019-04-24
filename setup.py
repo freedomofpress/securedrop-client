@@ -5,6 +5,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 version = pkgutil.get_data("securedrop_proxy", "VERSION").decode("utf-8")
+version = version.strip()
 
 setuptools.setup(
     name="securedrop-proxy",
@@ -19,6 +20,9 @@ setuptools.setup(
     python_requires=">=3.5",
     url="https://github.com/freedomofpress/securedrop-proxy",
     packages=setuptools.find_packages(exclude=["docs", "tests"]),
+    package_data={
+            'securedrop_proxy': ['VERSION'],
+    },
     classifiers=(
         "Development Status :: 3 - Alpha",
         "Programming Language :: Python :: 3",
