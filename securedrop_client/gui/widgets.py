@@ -31,7 +31,7 @@ from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBox
 
 from securedrop_client.db import Source, Message, File, Reply
 from securedrop_client.gui import SvgLabel, SvgPushButton, SvgToggleButton
-from securedrop_client.logic import Client
+from securedrop_client.logic import Controller
 from securedrop_client.resources import load_svg, load_icon, load_image
 from securedrop_client.utils import humanize_filesize
 
@@ -835,66 +835,50 @@ class StarToggleButton(SvgToggleButton):
     '''
 
     def __init__(self, source: Source):
-        # Add svg images to button
         super().__init__(
             on='star_on.svg',
             off='star_off.svg',
             svg_size=QSize(16, 16))
 
-        # Store source so the button can send updates when its toggle state changes
         self.source = source
-
-        # Turn 'on' if the source is starred
         if self.source.is_starred:
-            self.toggle()
+            self.setChecked(True)
 
-        # Set css id
         self.setObjectName('star_button')
-
-        # Set styles
         self.setStyleSheet(self.css)
-        self.setFixedSize(QSize(28, 28))
+        self.setFixedSize(QSize(20, 20))
 
     def setup(self, controller):
         self.controller = controller
         self.controller.authentication_state.connect(self.on_authentication_changed)
-        # Also set up connection for current authentication state
         self.on_authentication_changed(self.controller.is_authenticated)
 
     def on_authentication_changed(self, authenticated: bool):
         """
-        If authenticated, then toggling the button should call `update_star`. Otherwise, pressing
-        the button should show an error message to the user.
+        Set up toggle handlers based on whehter or not the user is authenticated.
         """
         if authenticated:
-            self.enable()
-            self.toggled.connect(lambda: self.controller.update_star(self.source))
+            self.toggled.connect(self.on_toggle)
         else:
-            self.disable()
-            self.pressed.connect(self.controller.on_action_requiring_login)
+            self.pressed.connect(self.on_toggle_offline)
 
-    def enable(self):
+    def on_toggle(self):
         """
-        Override `enable`
+        Tell the controller to make an API call to update the source's starred field.
+        """
+        self.controller.update_star(self.source)
 
-        Since we never actually disable the button, we don't have to actually enable it. We just
-        need to make sure the images are back to the normal toggle images.
+    def on_toggle_offline(self):
         """
-        self.set_icon(on='star_on.svg', off='star_off.svg')
-
-    def disable(self):
+        Show error message and prevent toggle by setting checkable to False. Unfortunately,
+        disabling toggle doesn't freeze state, rather it always displays the off state when a user
+        tries to toggle. In order to save on state we update the icon's off state image to display
+        on (hack).
         """
-        Override `disable`
-
-        Instead of disabling the button, we set the images for each toggle state to be the same
-        as the image of the current state. This is so we can display error messages on click. If the
-        button was actually disabled, we wouldn't be able to know whether or not a user clicked the
-        button.
-        """
-        if self.isChecked():
+        self.controller.on_action_requiring_login()
+        self.setCheckable(False)
+        if self.source.is_starred:
             self.set_icon(on='star_on.svg', off='star_on.svg')
-        else:
-            self.set_icon(on='star_off.svg', off='star_off.svg')
 
 
 class LoginDialog(QDialog):

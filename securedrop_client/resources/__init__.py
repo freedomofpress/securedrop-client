@@ -57,10 +57,8 @@ def load_toggle_icon(on: str, off: str) -> QIcon:
 
     icon = QIcon()
 
-    icon.addFile(path(on), mode=QIcon.Normal, state=QIcon.On)
-    icon.addFile(path(off), mode=QIcon.Normal, state=QIcon.Off)
-    icon.addFile(path(off), mode=QIcon.Disabled, state=QIcon.Off)
-    icon.addFile(path(off), mode=QIcon.Disabled, state=QIcon.Off)
+    icon.addFile(path(on), state=QIcon.On)
+    icon.addFile(path(off), state=QIcon.Off)
 
     return icon
 
