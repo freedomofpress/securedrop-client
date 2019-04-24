@@ -33,7 +33,7 @@ from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBox
 from securedrop_client.db import Source, Message, File, Reply
 from securedrop_client.gui import SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.logic import Controller
-from securedrop_client.resources import load_svg, load_icon, load_image
+from securedrop_client.resources import load_icon, load_image
 from securedrop_client.utils import humanize_filesize
 
 logger = logging.getLogger(__name__)
@@ -589,7 +589,6 @@ class MainView(QWidget):
     def __init__(self, parent):
         super().__init__(parent)
 
-        # Set styles
         self.setStyleSheet(self.CSS)
 
         self.layout = QHBoxLayout(self)
@@ -597,15 +596,7 @@ class MainView(QWidget):
         self.layout.setSpacing(0)
         self.setLayout(self.layout)
 
-        left_column = QWidget(parent=self)
-        left_layout = QVBoxLayout()
-        left_layout.setContentsMargins(0, 0, 0, 0)
-        left_column.setLayout(left_layout)
-
-        self.source_list = SourceList(left_column)
-        left_layout.addWidget(self.source_list)
-
-        self.layout.addWidget(left_column, 4)
+        self.source_list = SourceList()
 
         self.view_layout = QVBoxLayout()
         self.view_layout.setContentsMargins(0, 0, 0, 0)
@@ -613,6 +604,7 @@ class MainView(QWidget):
         self.view_holder.setObjectName('view_holder')  # Set css id
         self.view_holder.setLayout(self.view_layout)
 
+        self.layout.addWidget(self.source_list, 4)
         self.layout.addWidget(self.view_holder, 6)
 
     def setup(self, controller):
@@ -647,24 +639,34 @@ class SourceList(QListWidget):
     """
 
     CSS = '''
+    QListWidget {
+        show-decoration-selected: 0;
+    }
     QListWidget::item:selected {
         background: #efeef7;
     }
     '''
 
-    def __init__(self, parent):
-        super().__init__(parent)
+    def __init__(self):
+        super().__init__()
 
         # Set css id
-        self.setObjectName('source_list')
+        self.setObjectName('sourcelist')
 
         # Set styles
         self.setStyleSheet(self.CSS)
+        self.setMinimumWidth(445)
+        self.setMaximumWidth(565)
+
+        # Set layout
+        layout = QVBoxLayout(self)
+        self.setLayout(layout)
+
+        # Remove margins
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
     def setup(self, controller):
-        """
-        Pass through the controller object to this widget.
-        """
         self.controller = controller
 
     def update(self, sources: List[Source]):
@@ -676,7 +678,7 @@ class SourceList(QListWidget):
 
         new_current_maybe = None
         for source in sources:
-            new_source = SourceWidget(self, source)
+            new_source = SourceWidget(source)
             new_source.setup(self.controller)
 
             list_item = QListWidgetItem(self)
@@ -692,52 +694,6 @@ class SourceList(QListWidget):
             self.setCurrentItem(new_current_maybe)
 
 
-class DeleteSourceMessageBox:
-    """Use this to display operation details and confirm user choice."""
-
-    def __init__(self, parent, source, controller):
-        self.parent = parent
-        self.source = source
-        self.controller = controller
-
-    def launch(self):
-        """It will launch the message box.
-
-        The Message box will warns the user regarding the severity of the
-        operation. It will confirm the desire to delete the source. On positive
-        answer, it will delete the record of source both from SecureDrop server
-        and local state.
-        """
-        message = self._construct_message(self.source)
-        reply = QMessageBox.question(
-            self.parent, "", _(message), QMessageBox.Cancel | QMessageBox.Yes, QMessageBox.Cancel)
-
-        if reply == QMessageBox.Yes:
-            logger.debug("Deleting source %s" % (self.source.uuid,))
-            self.controller.delete_source(self.source)
-
-    def _construct_message(self, source: Source) -> str:
-        files = 0
-        messages = 0
-        replies = 0
-        for submission in source.collection:
-            if isinstance(submission, Message):
-                messages += 1
-            if isinstance(submission, Reply):
-                replies += 1
-            elif isinstance(submission, File):
-                files += 1
-
-        message = ("<big>Deleting the Source account for "
-                   "<b>{}</b> will also "
-                   "delete {} files, {} replies, and {} messages.</big>"
-                   " <br> "
-                   "<small>This Source will no longer be able to correspond "
-                   "through the log-in tied to this account.</small>").format(
-                       source.journalist_designation, files, replies, messages)
-        return message
-
-
 class SourceWidget(QWidget):
     """
     Used to display summary information about a source in the list view.
@@ -747,13 +703,24 @@ class SourceWidget(QWidget):
     QWidget#color_bar {
         background-color: #9211ff;
     }
+    QLabel#source_name {
+        font-family: Open Sans;
+        font-size: 16px;
+        font-weight: bold;
+        color: #000;
+    }
+    QLabel#timestamp {
+        font-family: Open Sans;
+        font-size: 12px;
+        color: #000;
+    }
     '''
 
-    def __init__(self, parent: QWidget, source: Source):
-        """
-        Set up the child widgets.
-        """
-        super().__init__(parent)
+    def __init__(self, source: Source):
+        super().__init__()
+
+        # Store source
+        self.source = source
 
         # Set css id
         self.setObjectName('source_widget')
@@ -761,38 +728,69 @@ class SourceWidget(QWidget):
         # Set styles
         self.setStyleSheet(self.CSS)
 
-        self.source = source
-
-        self.star = StarToggleButton(self.source)
-
-        self.name = QLabel()
-        self.name.setFont(QFont("Open Sans", 16))
-        self.updated = QLabel()
-        self.updated.setFont(QFont("Open Sans", 10))
-
-        layout = QVBoxLayout()
+        # Set layout
+        layout = QVBoxLayout(self)
         self.setLayout(layout)
 
-        self.summary = QWidget(self)
+        # Remove margins and spacing
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(0)
+
+        # Set up gutter
+        self.gutter = QWidget()
+        self.gutter.setObjectName('gutter')
+        self.gutter.setFixedWidth(30)
+        gutter_layout = QVBoxLayout(self.gutter)
+        gutter_layout.setContentsMargins(0, 0, 0, 0)
+        gutter_layout.setSpacing(0)
+        self.star = StarToggleButton(self.source)
+        spacer = QWidget()
+        gutter_layout.addWidget(self.star)
+        gutter_layout.addWidget(spacer)
+
+        # Set up summary
+        self.summary = QWidget()
         self.summary.setObjectName('summary')
-        self.summary_layout = QHBoxLayout()
-        self.summary.setLayout(self.summary_layout)
+        summary_layout = QVBoxLayout(self.summary)
+        summary_layout.setContentsMargins(0, 0, 0, 0)
+        summary_layout.setSpacing(0)
+        self.name = QLabel()
+        self.name.setObjectName('source_name')
+        self.preview = QLabel('')
+        self.preview.setObjectName('preview')
+        self.preview.setWordWrap(True)
+        summary_layout.addWidget(self.name)
+        summary_layout.addWidget(self.preview)
 
-        self.attached = load_svg('paperclip.svg')
-        self.attached.setMaximumSize(16, 16)
+        # Set up metadata
+        self.metadata = QWidget()
+        self.metadata.setObjectName('metadata')
+        metadata_layout = QVBoxLayout(self.metadata)
+        metadata_layout.setContentsMargins(0, 0, 0, 0)
+        metadata_layout.setSpacing(0)
+        self.attached = SvgLabel('paperclip.svg', QSize(16, 16))
+        self.attached.setObjectName('paperclip')
+        self.attached.setFixedSize(QSize(20, 20))
+        spacer = QWidget()
+        metadata_layout.addWidget(self.attached, 1, Qt.AlignRight)
+        metadata_layout.addWidget(spacer, 1)
 
-        self.summary_layout.addWidget(self.name)
-        self.summary_layout.addWidget(self.attached)
+        # Set up source row
+        self.source_row = QWidget()
+        source_row_layout = QHBoxLayout(self.source_row)
+        source_row_layout.setContentsMargins(0, 0, 0, 0)
+        source_row_layout.setSpacing(0)
+        source_row_layout.addWidget(self.gutter, 1)
+        source_row_layout.addWidget(self.summary, 1)
+        source_row_layout.addWidget(self.metadata, 1)
 
-        layout.addWidget(self.summary)
-        layout.addWidget(self.updated)
+        # Set up timestamp
+        self.updated = QLabel()
+        self.updated.setObjectName('timestamp')
 
-        self.delete = load_svg('cross.svg')
-        self.delete.setMaximumSize(16, 16)
-        self.delete.mouseReleaseEvent = self.delete_source
-
-        self.summary_layout.addWidget(self.delete)
-        self.summary_layout.addWidget(self.star)
+        # Add widgets to main layout
+        layout.addWidget(self.source_row, 1)
+        layout.addWidget(self.updated, 1, Qt.AlignRight)
 
         self.update()
 
@@ -879,6 +877,54 @@ class StarToggleButton(SvgToggleButton):
         self.setCheckable(False)
         if self.source.is_starred:
             self.set_icon(on='star_on.svg', off='star_on.svg')
+
+
+class DeleteSourceMessageBox:
+    """Use this to display operation details and confirm user choice."""
+
+    def __init__(self, parent, source, controller):
+        self.parent = parent
+        self.source = source
+        self.controller = controller
+
+    def launch(self):
+        """It will launch the message box.
+
+        The Message box will warns the user regarding the severity of the
+        operation. It will confirm the desire to delete the source. On positive
+        answer, it will delete the record of source both from SecureDrop server
+        and local state.
+        """
+        message = self._construct_message(self.source)
+        reply = QMessageBox.question(
+            self.parent, "", _(message), QMessageBox.Cancel | QMessageBox.Yes, QMessageBox.Cancel)
+
+        if reply == QMessageBox.Yes:
+            logger.debug("Deleting source %s" % (self.source.uuid,))
+            self.controller.delete_source(self.source)
+
+    def _construct_message(self, source: Source) -> str:
+        files = 0
+        messages = 0
+        replies = 0
+        for submission in source.collection:
+            if isinstance(submission, Message):
+                messages += 1
+            if isinstance(submission, Reply):
+                replies += 1
+            elif isinstance(submission, File):
+                files += 1
+
+        message = (
+            "<big>Deleting the Source account for",
+            "<b>{}</b> will also".format(source.journalist_designation,),
+            "delete {} files, {} replies, and {} messages.</big>".format(files, replies, messages),
+            "<br>",
+            "<small>This Source will no longer be able to correspond",
+            "through the log-in tied to this account.</small>",
+        )
+        message = ' '.join(message)
+        return message
 
 
 class LoginDialog(QDialog):
