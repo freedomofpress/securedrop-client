@@ -1,5 +1,6 @@
 import json
 import os
+from collections import OrderedDict
 from unittest.mock import MagicMock, patch
 
 from sdclientapi import json_query
@@ -36,8 +37,6 @@ def internal_sideeffect(*args, **kwargs):
         value = json.loads(value_str)
         del value["one_time_code"]
         python_args["body"] = json.dumps(value, sort_keys=True)
-        newargs = json.dumps(python_args, sort_keys=True)
-        arguments = (newargs,)
     except Exception:
         pass  # Means no body in the call
 
@@ -48,12 +47,31 @@ def internal_sideeffect(*args, **kwargs):
         value = python_args["headers"]
         del value["Authorization"]
         python_args["headers"] = json.dumps(value, sort_keys=True)
-        newargs = json.dumps(python_args, sort_keys=True)
-        arguments = (newargs,)
     except Exception:
         pass  # Means no Authorization token in the call
 
+    # Make sure the body is also sorted
+    # This will work incase one_time_code is still missing
+    # and there is a body in the call.
+    try:
+        value_str = python_args["body"]
+        value = json.loads(value_str)
+        dkeys = list(value.keys())
+        dkeys.sort()
+        print("\nDKEYS: ", dkeys)
+        print("\n")
+        od = OrderedDict()
+        for k in dkeys:
+            od[k] = value[k]
+        python_args["body"] = json.dumps(od)
+    except Exception:
+        pass
+
+    newargs = json.dumps(python_args, sort_keys=True)
+    arguments = (newargs,)
+
     key = arguments[0] + "+" + str(CALLNUMBER)
+    print("\nKEY:   {}".format(key))
     answer = RES.get(key, None)
     if not answer:
         # Means it is not in cache.
