@@ -855,7 +855,8 @@ class StarToggleButton(SvgToggleButton):
 
     def on_authentication_changed(self, authenticated: bool):
         """
-        Set up toggle handlers based on whehter or not the user is authenticated.
+        Set up handlers based on whether or not the user is authenticated. Connect to 'pressed'
+        event instead of 'toggled' event when not authenticated because toggling will be disabled.
         """
         if authenticated:
             self.toggled.connect(self.on_toggle)
@@ -870,7 +871,7 @@ class StarToggleButton(SvgToggleButton):
 
     def on_toggle_offline(self):
         """
-        Show error message and prevent toggle by setting checkable to False. Unfortunately,
+        Show error message and disable toggle by setting checkable to False. Unfortunately,
         disabling toggle doesn't freeze state, rather it always displays the off state when a user
         tries to toggle. In order to save on state we update the icon's off state image to display
         on (hack).
