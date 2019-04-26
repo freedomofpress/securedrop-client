@@ -566,7 +566,7 @@ def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker, session, so
 
 
 def test_StarToggleButton_init_source_starred(mocker):
-    source = mocker.MagicMock()
+    source = factory.Source()
     source.is_starred = True
 
     stb = StarToggleButton(source)
@@ -576,9 +576,8 @@ def test_StarToggleButton_init_source_starred(mocker):
 
 
 def test_StarToggleButton_init_source_unstarred(mocker):
-    source = mocker.MagicMock()
+    source = factory.Source()
     source.is_starred = False
-    source.setChecked = mocker.MagicMock()
 
     stb = StarToggleButton(source)
 
