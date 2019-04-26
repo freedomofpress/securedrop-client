@@ -467,7 +467,7 @@ class UserButton(SvgPushButton):
     '''
 
     def __init__(self):
-        super().__init__('dropdown_arrow.svg', svg_size=QSize())
+        super().__init__('dropdown_arrow.svg', svg_size=QSize(9, 6))
 
         # Set css id
         self.setObjectName('user_button')
