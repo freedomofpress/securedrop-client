@@ -676,14 +676,14 @@ class SourceList(QListWidget):
     #sourcelist {
         border: none;
     }
-    QListWidget::item:selected {
-        background: #efeef7;
-    }
     QListView {
         show-decoration-selected: 0;
     }
     QListView::item {
         border-bottom: 1px solid #efeef7;
+    }
+    QListWidget::item:selected {
+        background: #efeef7;
     }
     '''
 
@@ -695,8 +695,8 @@ class SourceList(QListWidget):
 
         # Set styles
         self.setStyleSheet(self.CSS)
-        self.setMinimumWidth(445)
-        self.setMaximumWidth(565)
+        self.setFixedWidth(445)
+        self.setUniformItemSizes(True)
 
         # Set layout
         layout = QVBoxLayout(self)
@@ -744,7 +744,7 @@ class SourceWidget(QWidget):
     """
 
     CSS = '''
-    QLabel#source-name {
+    QLabel#source_name {
         font-family: 'Montserrat';
         font-weight: 500;
         font-size: 13px;
@@ -786,9 +786,8 @@ class SourceWidget(QWidget):
         gutter_layout.setContentsMargins(0, 0, 0, 0)
         gutter_layout.setSpacing(0)
         self.star = StarToggleButton(self.source)
-        spacer = QWidget()
         gutter_layout.addWidget(self.star)
-        gutter_layout.addWidget(spacer)
+        gutter_layout.addStretch()
 
         # Set up summary
         self.summary = QWidget()
@@ -797,9 +796,10 @@ class SourceWidget(QWidget):
         summary_layout.setContentsMargins(0, 0, 0, 0)
         summary_layout.setSpacing(0)
         self.name = QLabel()
-        self.name.setObjectName('source-name')
-        self.preview = QLabel('')
+        self.name.setObjectName('source_name')
+        self.preview = QLabel()
         self.preview.setObjectName('preview')
+        self.preview.setFixedSize(QSize(365, 60))
         self.preview.setWordWrap(True)
         summary_layout.addWidget(self.name)
         summary_layout.addWidget(self.preview)
@@ -807,26 +807,25 @@ class SourceWidget(QWidget):
         # Set up metadata
         self.metadata = QWidget()
         self.metadata.setObjectName('metadata')
+        self.metadata.setMaximumWidth(30)
         metadata_layout = QVBoxLayout(self.metadata)
         metadata_layout.setContentsMargins(0, 0, 0, 0)
         metadata_layout.setSpacing(0)
-        self.attached = SvgLabel('paperclip.svg', QSize(16, 16))
+        self.attached = SvgLabel('paperclip.svg', QSize(14, 16))
         self.attached.setObjectName('paperclip')
-        self.attached.setFixedSize(QSize(20, 20))
-        spacer = QWidget()
-        metadata_layout.addWidget(self.attached, 1, Qt.AlignRight)
-        metadata_layout.addWidget(spacer, 1)
+        metadata_layout.addWidget(self.attached)
+        metadata_layout.addStretch()
 
         # Set up source row
         self.source_row = QWidget()
         source_row_layout = QHBoxLayout(self.source_row)
         source_row_layout.setContentsMargins(0, 0, 0, 0)
         source_row_layout.setSpacing(0)
-        source_row_layout.addWidget(self.gutter, 1)
-        source_row_layout.addWidget(self.summary, 1)
-        source_row_layout.addWidget(self.metadata, 1)
+        source_row_layout.addWidget(self.gutter)
+        source_row_layout.addWidget(self.summary)
+        source_row_layout.addWidget(self.metadata)
 
-        # Set up timestamp
+        # Set up timestamp row
         self.updated = QLabel()
         self.updated.setObjectName('timestamp')
 
@@ -1558,6 +1557,7 @@ class ConversationView(QWidget):
         self.conversation_layout.setSpacing(self.CONVERSATION_SPACING)
         self.container.setLayout(self.conversation_layout)
         self.container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.setMinimumWidth(610)
 
         self.scroll = QScrollArea()
         self.scroll.setObjectName('scroll')
