@@ -36,6 +36,33 @@ def path(name, resource_dir="images/"):
     return resource_filename(__name__, resource_dir + name)
 
 
+def load_toggle_icon(on: str, off: str) -> QIcon:
+    """
+    Add the contents of Scalable Vector Graphics (SVG) files provided for associated icon states,
+    see https://doc.qt.io/qt-5/qicon.html#State-enum.
+
+    Parameters
+    ----------
+    on: str
+        file name to the on-state image
+    off: str
+        file name to the on-state image
+
+    Returns
+    -------
+    QIcon
+        The icon that displays the contents of the SVG files.
+
+    """
+
+    icon = QIcon()
+
+    icon.addFile(path(on), state=QIcon.On)
+    icon.addFile(path(off), state=QIcon.Off)
+
+    return icon
+
+
 def load_icon(normal: str, disabled: str = None, active=None, selected=None) -> QIcon:
     """
     Add the contents of Scalable Vector Graphics (SVG) files provided for associated icon modes,
