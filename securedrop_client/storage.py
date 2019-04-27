@@ -23,46 +23,50 @@ import logging
 import glob
 import os
 from dateutil.parser import parse
+from typing import Any, List, Tuple, Union
 
 from sqlalchemy import or_
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.session import Session
 
 from securedrop_client.db import Source, Message, File, Reply, User
-
+from sdclientapi import API
+from sdclientapi import Source as SDKSource
+from sdclientapi import Submission as SDKSubmission
+from sdclientapi import Reply as SDKReply
 
 logger = logging.getLogger(__name__)
 
 
-def get_local_sources(session):
+def get_local_sources(session: Session) -> List[Source]:
     """
     Return all source objects from the local database.
     """
-    return session.query(Source)
+    return session.query(Source).all()
 
 
-def get_local_messages(session):
+def get_local_messages(session: Session) -> List[Message]:
     """
     Return all submission objects from the local database.
     """
-    return session.query(Message)
+    return session.query(Message).all()
 
 
-def get_local_files(session):
+def get_local_files(session: Session) -> List[File]:
     """
     Return all file (a submitted file) objects from the local database.
     """
-    return session.query(File)
+    return session.query(File).all()
 
 
-def get_local_replies(session):
+def get_local_replies(session: Session) -> List[Reply]:
     """
     Return all reply objects from the local database.
     """
-    return session.query(Reply)
+    return session.query(Reply).all()
 
 
-def get_remote_data(api):
+def get_remote_data(api: API) -> Tuple[List[SDKSource], List[SDKSubmission], List[SDKReply]]:
     """
     Given an authenticated connection to the SecureDrop API, get sources,
     submissions and replies from the remote server and return a tuple
@@ -70,7 +74,7 @@ def get_remote_data(api):
 
     (remote_sources, remote_submissions, remote_replies)
     """
-    remote_submissions = []
+    remote_submissions = []  # type: List[SDKSubmission]
     try:
         remote_sources = api.get_sources()
         for source in remote_sources:
@@ -89,8 +93,9 @@ def get_remote_data(api):
     return (remote_sources, remote_submissions, remote_replies)
 
 
-def update_local_storage(session, remote_sources, remote_submissions,
-                         remote_replies, data_dir):
+def update_local_storage(session: Session, remote_sources: List[SDKSource],
+                         remote_submissions: List[SDKSubmission],
+                         remote_replies: List[SDKReply], data_dir: str) -> None:
     """
     Given a database session and collections of remote sources, submissions and
     replies from the SecureDrop API, ensures the local database is updated
@@ -110,7 +115,8 @@ def update_local_storage(session, remote_sources, remote_submissions,
     update_replies(remote_replies, local_replies, session, data_dir)
 
 
-def update_sources(remote_sources, local_sources, session, data_dir):
+def update_sources(remote_sources: List[SDKSource],
+                   local_sources: List[Source], session: Session, data_dir: str) -> None:
     """
     Given collections of remote sources, the current local sources and a
     session to the local database, ensure the state of the local database
@@ -164,15 +170,22 @@ def update_sources(remote_sources, local_sources, session, data_dir):
     session.commit()
 
 
-def update_files(remote_submissions, local_submissions, session, data_dir):
+def update_files(remote_submissions: List[SDKSubmission], local_submissions: List[File],
+                 session: Session, data_dir: str) -> None:
     __update_submissions(File, remote_submissions, local_submissions, session, data_dir)
 
 
-def update_messages(remote_submissions, local_submissions, session, data_dir):
+def update_messages(remote_submissions: List[SDKSubmission], local_submissions: List[Message],
+                    session: Session, data_dir: str) -> None:
     __update_submissions(Message, remote_submissions, local_submissions, session, data_dir)
 
 
-def __update_submissions(model, remote_submissions, local_submissions, session, data_dir):
+# Type for model should be Union[Type[File], Type[Message]] but
+# it is temporarily Any due to https://github.com/python/typing/issues/266
+def __update_submissions(model: Any,
+                         remote_submissions: List[SDKSubmission],
+                         local_submissions: Union[List[Message], List[File]],
+                         session: Session, data_dir: str) -> None:
     """
     The logic for updating files and messages is effectively the same, so this function is somewhat
     overloaded to allow us to do both in a DRY way.
@@ -223,7 +236,8 @@ def __update_submissions(model, remote_submissions, local_submissions, session, 
     session.commit()
 
 
-def update_replies(remote_replies, local_replies, session, data_dir):
+def update_replies(remote_replies: List[SDKReply], local_replies: List[Reply],
+                   session: Session, data_dir: str) -> None:
     """
     * Existing replies are updated in the local database.
     * New replies have an entry created in the local database.
@@ -273,7 +287,7 @@ def update_replies(remote_replies, local_replies, session, data_dir):
     session.commit()
 
 
-def find_or_create_user(uuid, username, session):
+def find_or_create_user(uuid: str, username: str, session: Session) -> User:
     """
     Returns a user object representing the referenced journalist UUID.
     If the user does not already exist in the data, a new instance is created.
@@ -298,7 +312,7 @@ def find_or_create_user(uuid, username, session):
         return new_user
 
 
-def find_new_messages(session):
+def find_new_messages(session: Session) -> List[Message]:
     """
     Find messages to process. Those messages are those where one of the following
     conditions is true:
@@ -313,11 +327,11 @@ def find_new_messages(session):
             Message.is_decrypted == None)).all()  # noqa: E711
 
 
-def find_new_files(session):
+def find_new_files(session: Session) -> List[File]:
     return session.query(File).filter_by(is_downloaded=False).all()
 
 
-def find_new_replies(session):
+def find_new_replies(session: Session) -> List[Reply]:
     """
     Find replies to process. Those replies are those where one of the following
     conditions is true:
@@ -332,7 +346,7 @@ def find_new_replies(session):
             Reply.is_decrypted == None)).all()  # noqa: E711
 
 
-def mark_file_as_downloaded(uuid, session):
+def mark_file_as_downloaded(uuid: str, session: Session) -> None:
     """
     Mark file as downloaded in the database.
     """
@@ -342,7 +356,7 @@ def mark_file_as_downloaded(uuid, session):
     session.commit()
 
 
-def mark_message_as_downloaded(uuid, session):
+def mark_message_as_downloaded(uuid: str, session: Session) -> None:
     """
     Mark message as downloaded in the database.
     """
@@ -352,7 +366,8 @@ def mark_message_as_downloaded(uuid, session):
     session.commit()
 
 
-def set_object_decryption_status_with_content(obj, session, is_successful: bool, content=None):
+def set_object_decryption_status_with_content(obj: Union[File, Message, Reply], session: Session,
+                                              is_successful: bool, content=None) -> None:
     """Mark object as decrypted or not in the database."""
 
     model = type(obj)
@@ -364,7 +379,7 @@ def set_object_decryption_status_with_content(obj, session, is_successful: bool,
     session.commit()
 
 
-def mark_reply_as_downloaded(uuid, session):
+def mark_reply_as_downloaded(uuid: str, session: Session) -> None:
     """
     Mark reply as downloaded in the database.
     """
@@ -374,7 +389,8 @@ def mark_reply_as_downloaded(uuid, session):
     session.commit()
 
 
-def delete_single_submission_or_reply_on_disk(obj_db, data_dir):
+def delete_single_submission_or_reply_on_disk(obj_db: Union[File, Message, Reply],
+                                              data_dir: str) -> None:
     """
     Delete on disk a single submission or reply.
     """
@@ -392,7 +408,7 @@ def delete_single_submission_or_reply_on_disk(obj_db, data_dir):
             'File {} already deleted, skipping'.format(file_to_delete))
 
 
-def rename_file(data_dir: str, filename: str, new_filename: str):
+def rename_file(data_dir: str, filename: str, new_filename: str) -> None:
     filename, _ = os.path.splitext(filename)
     new_filename, _ = os.path.splitext(new_filename)
     try:
