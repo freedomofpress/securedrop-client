@@ -341,7 +341,7 @@ class Controller(QObject):
         """
         Handles the result of an authentication call against the API.
         """
-        if isinstance(result, bool) and result:
+        if not isinstance(result, Exception):
             # It worked! Sync with the API and update the UI.
             self.gui.hide_login()
             self.sync_api()
