@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 import arrow
+from gettext import gettext as _
 import html
 import sys
 from typing import List
@@ -727,15 +728,13 @@ class DeleteSourceMessageBox:
             elif isinstance(submission, File):
                 files += 1
 
-        message = (
-            "<big>Deleting the Source account for",
-            "<b>{}</b> will also".format(source.journalist_designation,),
-            "delete {} files, {} replies, and {} messages.</big>".format(files, replies, messages),
-            "<br>",
-            "<small>This Source will no longer be able to correspond",
-            "through the log-in tied to this account.</small>",
-        )
-        message = ' '.join(message)
+        message = ("<big>Deleting the Source account for "
+                   "<b>{}</b> will also "
+                   "delete {} files, {} replies, and {} messages.</big>"
+                   " <br> "
+                   "<small>This Source will no longer be able to correspond "
+                   "through the log-in tied to this account.</small>").format(
+                       source.journalist_designation, files, replies, messages)
         return message
 
 

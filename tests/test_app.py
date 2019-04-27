@@ -8,9 +8,15 @@ import sys
 from PyQt5.QtWidgets import QApplication
 from securedrop_client.app import ENCODING, excepthook, configure_logging, \
     start_app, arg_parser, DEFAULT_SDC_HOME, run, configure_signal_handlers, \
-    prevent_second_instance
+    prevent_second_instance, configure_locale_and_language
 
 app = QApplication([])
+
+
+def test_application_sets_en_as_default_language_code(mocker):
+    mocker.patch('locale.getdefaultlocale', return_value=(None, None))
+    language_code = configure_locale_and_language()
+    assert language_code == 'en'
 
 
 def test_excepthook(mocker):

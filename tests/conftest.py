@@ -6,6 +6,7 @@ import pytest
 from configparser import ConfigParser
 from datetime import datetime
 from securedrop_client.config import Config
+from securedrop_client.app import configure_locale_and_language
 from securedrop_client.db import Base, make_engine, Source
 from sqlalchemy.orm import sessionmaker
 from uuid import uuid4
@@ -16,7 +17,15 @@ with open(os.path.join(os.path.dirname(__file__), 'files', 'test-key.gpg.pub.asc
 
 
 @pytest.fixture(scope='function')
-def homedir():
+def i18n():
+    '''
+    Set up locale/language/gettext functions. This enables the use of _().
+    '''
+    configure_locale_and_language()
+
+
+@pytest.fixture(scope='function')
+def homedir(i18n):
     '''
     Create a "homedir" for a client.
 

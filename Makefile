@@ -1,9 +1,13 @@
 DEFAULT_GOAL: help
 SHELL := /bin/bash
 
+.PHONY: mypy
+mypy: ## Run static type checker
+	@mypy --ignore-missing-imports securedrop_client
+
 .PHONY: clean
 clean:  ## Clean the workspace of generated resources
-	@rm -rf build dist *.egg-info .coverage .eggs docs/_build .pytest_cache lib htmlcov .cache && \
+	@rm -rf .mypy_cache build dist *.egg-info .coverage .eggs docs/_build .pytest_cache lib htmlcov .cache && \
 		find . \( -name '*.py[co]' -o -name dropin.cache \) -delete && \
 		find . \( -name '*.bak' -o -name dropin.cache \) -delete && \
 		find . \( -name '*.tgz' -o -name dropin.cache \) -delete && \
@@ -23,7 +27,7 @@ lint: ## Run the linters
 	@flake8 .
 
 .PHONY: check
-check: clean lint test ## Run the full CI test suite
+check: clean lint mypy test ## Run the full CI test suite
 
 # Explaination of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##

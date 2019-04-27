@@ -18,6 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 import os
+import gettext
+import locale
 import platform
 import signal
 import sys
@@ -54,6 +56,27 @@ def excepthook(*exc_args):
     sys.exit(1)
 
 
+def configure_locale_and_language() -> str:
+    # Configure locale and language.
+    # Define where the translation assets are to be found.
+    localedir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'locale'))
+    try:
+        # Use the operating system's locale.
+        current_locale, encoding = locale.getdefaultlocale()
+        # Get the language code.
+        if current_locale is None:
+            language_code = 'en'
+        else:
+            language_code = current_locale[:2]
+    except ValueError:  # pragma: no cover
+        language_code = 'en'  # pragma: no cover
+    # DEBUG/TRANSLATE: override the language code here (e.g. to Chinese).
+    # language_code = 'zh'
+    gettext.translation('securedrop_client', localedir=localedir,
+                        languages=[language_code], fallback=True).install()
+    return language_code
+
+
 def configure_logging(sdc_home: str) -> None:
     """
     All logging related settings are set up by this function.
@@ -68,7 +91,7 @@ def configure_logging(sdc_home: str) -> None:
 
     # define log handlers such as for rotating log files
     handler = TimedRotatingFileHandler(log_file, when='midnight',
-                                       backupCount=5, delay=0,
+                                       backupCount=5, delay=False,
                                        encoding=ENCODING)
     handler.setFormatter(formatter)
     handler.setLevel(logging.DEBUG)
@@ -140,6 +163,7 @@ def start_app(args, qt_args) -> None:
     Create all the top-level assets for the application, set things up and
     run the application. Specific tasks include:
 
+    - set up locale and language.
     - set up logging.
     - create an application object.
     - create a window for the app.
@@ -148,6 +172,7 @@ def start_app(args, qt_args) -> None:
     - configure the client (logic) object.
     - ensure the application is setup in the default safe starting state.
     """
+    configure_locale_and_language()
     init(args.sdc_home)
     configure_logging(args.sdc_home)
     logging.info('Starting SecureDrop Client {}'.format(__version__))

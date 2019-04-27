@@ -1,5 +1,7 @@
 import os
 
+from typing import Any  # noqa: F401
+
 from sqlalchemy import Boolean, Column, create_engine, DateTime, ForeignKey, Integer, String, \
     Text, MetaData, CheckConstraint, text, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
@@ -16,7 +18,7 @@ convention = {
 
 metadata = MetaData(naming_convention=convention)
 
-Base = declarative_base(metadata=metadata)
+Base = declarative_base(metadata=metadata)  # type: Any
 
 
 def make_engine(home: str):

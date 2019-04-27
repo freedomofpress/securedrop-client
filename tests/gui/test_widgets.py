@@ -694,7 +694,7 @@ def test_StarToggleButton_on_toggle_offline_when_checked(mocker):
     set_icon_fn.assert_called_with(on='star_on.svg', off='star_on.svg')
 
 
-def test_LoginDialog_setup(mocker):
+def test_LoginDialog_setup(mocker, i18n):
     """
     The LoginView is correctly initialised.
     """
@@ -728,7 +728,7 @@ def test_LoginDialog_reset(mocker):
     ld.error_label.setText.assert_called_once_with('')
 
 
-def test_LoginDialog_error(mocker):
+def test_LoginDialog_error(mocker, i18n):
     """
     Any error message passed in is assigned as the text for the error label.
     """
