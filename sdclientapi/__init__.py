@@ -73,8 +73,9 @@ class API:
         self.username = username
         self.passphrase = passphrase
         self.totp = totp
-        self.token = None  # type: Optional[Dict[str, str]]
+        self.token = None  # type: Optional[str]
         self.token_expiration = None  # type: Optional[datetime]
+        self.token_journalist_uuid = None  # type: Optional[str]
         self.req_headers = dict()  # type: Dict[str, str]
         self.proxy = proxy  # type: bool
 
@@ -85,7 +86,6 @@ class API:
         body: Optional[str] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Tuple[Any, int, Dict[str, str]]:
-
         if self.proxy:  # We are using the Qubes securedrop-proxy
             if method == "POST":
                 data = {
@@ -146,10 +146,13 @@ class API:
             raise BaseError("Error in parsing JSON")
         if "expiration" not in token_data:
             raise AuthError("Authentication error")
-        self.token = token_data
+
+        self.token = token_data["token"]
         self.token_expiration = datetime.strptime(
             token_data["expiration"], "%Y-%m-%dT%H:%M:%S.%fZ"
         )
+        self.token_journalist_uuid = token_data["journalist_uuid"]
+
         self.update_auth_header()
 
         return True
@@ -157,7 +160,7 @@ class API:
     def update_auth_header(self) -> None:
         if self.token is not None:
             self.req_headers = {
-                "Authorization": "Token " + self.token["token"],
+                "Authorization": "Token " + self.token,
                 "Content-Type": "application/json",
                 "Accept": "application/json",
             }

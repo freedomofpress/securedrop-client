@@ -1,4 +1,4 @@
-import collections
+import datetime
 import os
 import shutil
 import tempfile
@@ -31,8 +31,7 @@ class TestAPI(unittest.TestCase):
         self.api = API(self.server, self.username, self.password, str(self.totp.now()))
         for i in range(3):
             try:
-                result = self.api.authenticate()
-                self.assertTrue(result is True)
+                self.api.authenticate()
             except BaseError:
                 token = load_auth()
                 if token:
@@ -63,10 +62,9 @@ class TestAPI(unittest.TestCase):
             self.api.authenticate()
 
     def test_api_auth(self):
-        self.assertTrue(isinstance(self.api.token, collections.Mapping))
-        self.assertTrue("expiration" in self.api.token)
-        self.assertTrue("journalist_uuid" in self.api.token)
-        self.assertTrue("token" in self.api.token)
+        self.assertTrue(isinstance(self.api.token, str))
+        self.assertTrue(isinstance(self.api.token_expiration, datetime.datetime))
+        self.assertTrue(isinstance(self.api.token_journalist_uuid, str))
 
     @vcr.use_cassette("data/test-get-sources.yml")
     def test_get_sources(self):
