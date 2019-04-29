@@ -470,7 +470,7 @@ def test_Controller_authenticated_yes(homedir, config, mocker):
     mock_session = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, mock_session, homedir)
     co.api = mocker.MagicMock()
-    co.api.token = {'token': 'foo'}
+    co.api.token = 'foo'
     assert co.authenticated() is True
 
 
@@ -483,7 +483,7 @@ def test_Controller_authenticated_no(homedir, config, mocker):
     mock_session = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, mock_session, homedir)
     co.api = mocker.MagicMock()
-    co.api.token = {'token': ''}
+    co.api.token = None
     assert co.authenticated() is False
 
 
@@ -1304,7 +1304,7 @@ def test_Controller_on_reply_complete_success(homedir, mocker):
     co = Controller('http://localhost', mock_gui, mock_session, homedir)
     co.api = mocker.Mock()
     journalist_uuid = 'abc123'
-    co.api.token = {'journalist_uuid': journalist_uuid}
+    co.api.token_journalist_uuid = journalist_uuid
     mock_reply_succeeded = mocker.patch.object(co, 'reply_succeeded')
     mock_reply_failed = mocker.patch.object(co, 'reply_failed')
 
@@ -1331,7 +1331,7 @@ def test_Controller_on_reply_complete_failure(homedir, mocker):
     co = Controller('http://localhost', mock_gui, mock_session, homedir)
     co.api = mocker.Mock()
     journalist_uuid = 'abc123'
-    co.api.token = {'journalist_uuid': journalist_uuid}
+    co.api.token_journalist_uuid = journalist_uuid
     mock_reply_succeeded = mocker.patch.object(co, 'reply_succeeded')
     mock_reply_failed = mocker.patch.object(co, 'reply_failed')
 
@@ -1353,7 +1353,7 @@ def test_Controller_on_reply_timeout(homedir, mocker):
     co = Controller('http://localhost', mock_gui, mock_session, homedir)
     co.api = mocker.Mock()
     journalist_uuid = 'abc123'
-    co.api.token = {'journalist_uuid': journalist_uuid}
+    co.api.token_journalist_uuid = journalist_uuid
     mock_reply_succeeded = mocker.patch.object(co, 'reply_succeeded')
     mock_reply_failed = mocker.patch.object(co, 'reply_failed')
 

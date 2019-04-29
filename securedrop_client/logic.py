@@ -417,7 +417,7 @@ class Controller(QObject):
         Return a boolean indication that the connection to the API is
         authenticated.
         """
-        return bool(self.api and self.api.token['token'])
+        return bool(self.api and self.api.token is not None)
 
     def sync_api(self):
         """
@@ -727,7 +727,7 @@ class Controller(QObject):
             reply_db_object = db.Reply(
                 uuid=result.uuid,
                 source_id=source.id,
-                journalist_id=self.api.token['journalist_uuid'],
+                journalist_id=self.api.token_journalist_uuid,
                 filename=result.filename,
             )
             self.session.add(reply_db_object)
