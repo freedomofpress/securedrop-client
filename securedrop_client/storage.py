@@ -23,7 +23,7 @@ import logging
 import glob
 import os
 from dateutil.parser import parse
-from typing import Any, List, Tuple, Union
+from typing import List, Tuple, Type, Union
 
 from sqlalchemy import or_
 from sqlalchemy.orm.exc import NoResultFound
@@ -180,9 +180,7 @@ def update_messages(remote_submissions: List[SDKSubmission], local_submissions: 
     __update_submissions(Message, remote_submissions, local_submissions, session, data_dir)
 
 
-# Type for model should be Union[Type[File], Type[Message]] but
-# it is temporarily Any due to https://github.com/python/typing/issues/266
-def __update_submissions(model: Any,
+def __update_submissions(model: Union[Type[File], Type[Message]],
                          remote_submissions: List[SDKSubmission],
                          local_submissions: Union[List[Message], List[File]],
                          session: Session, data_dir: str) -> None:
