@@ -1,3 +1,4 @@
+import datetime
 import os
 import pyotp
 import time
@@ -43,7 +44,9 @@ class TestAPIProxy(unittest.TestCase):
             break
 
     def test_api_auth(self):
-        self.assertTrue(self.api.token)
+        self.assertTrue(isinstance(self.api.token, str))
+        self.assertTrue(isinstance(self.api.token_expiration, datetime.datetime))
+        self.assertTrue(isinstance(self.api.token_journalist_uuid, str))
 
     @dastollervey_datasaver
     def test_get_sources(self):
