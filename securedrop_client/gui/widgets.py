@@ -915,7 +915,7 @@ class DeleteSourceMessageBox:
             elif isinstance(submission, File):
                 files += 1
 
-        message = (
+        message_tuple = (
             "<big>Deleting the Source account for",
             "<b>{}</b> will also".format(source.journalist_designation,),
             "delete {} files, {} replies, and {} messages.</big>".format(files, replies, messages),
@@ -923,7 +923,7 @@ class DeleteSourceMessageBox:
             "<small>This Source will no longer be able to correspond",
             "through the log-in tied to this account.</small>",
         )
-        message = ' '.join(message)
+        message = ' '.join(message_tuple)
         return message
 
 
