@@ -1,21 +1,22 @@
+import datetime
 import os
-import pyotp
 import shutil
 import tempfile
 import time
 import unittest
+
+import pyotp
 import vcr
+from utils import load_auth
+from utils import save_auth
 
 from sdclientapi import API
-from sdclientapi.sdlocalobjects import (
-    BaseError,
-    WrongUUIDError,
-    ReplyError,
-    Reply,
-    Source,
-)
-from utils import load_auth, save_auth
-
+from sdclientapi.sdlocalobjects import AuthError
+from sdclientapi.sdlocalobjects import BaseError
+from sdclientapi.sdlocalobjects import Reply
+from sdclientapi.sdlocalobjects import ReplyError
+from sdclientapi.sdlocalobjects import Source
+from sdclientapi.sdlocalobjects import WrongUUIDError
 
 NUM_REPLIES_PER_SOURCE = 2
 
@@ -42,8 +43,28 @@ class TestAPI(unittest.TestCase):
             save_auth(self.api.token)
             break
 
+    @vcr.use_cassette("data/test-baduser.yml")
+    def test_auth_baduser(self):
+        self.api = API(self.server, "no", self.password, str(self.totp.now()))
+        with self.assertRaises(AuthError):
+            self.api.authenticate()
+
+    @vcr.use_cassette("data/test-badpassword.yml")
+    def test_auth_badpassword(self):
+        self.api = API(self.server, self.username, "no", str(self.totp.now()))
+        with self.assertRaises(AuthError):
+            self.api.authenticate()
+
+    @vcr.use_cassette("data/test-badotp.yml")
+    def test_auth_badotp(self):
+        self.api = API(self.server, self.username, self.password, "no")
+        with self.assertRaises(AuthError):
+            self.api.authenticate()
+
     def test_api_auth(self):
-        self.assertTrue(self.api.token)
+        self.assertTrue(isinstance(self.api.token, str))
+        self.assertTrue(isinstance(self.api.token_expiration, datetime.datetime))
+        self.assertTrue(isinstance(self.api.token_journalist_uuid, str))
 
     @vcr.use_cassette("data/test-get-sources.yml")
     def test_get_sources(self):
