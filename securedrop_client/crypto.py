@@ -54,7 +54,8 @@ class GpgHelper:
         config = Config.from_home_dir(self.sdc_home)
         self.journalist_key_fingerprint = config.journalist_key_fingerprint
 
-    def decrypt_submission_or_reply(self, filepath, target_filename, is_doc=False) -> None:
+    def decrypt_submission_or_reply(self, filepath: str, target_filename: str,
+                                    is_doc: bool = False) -> str:
         err = tempfile.NamedTemporaryFile(suffix=".message-error", delete=False)
         with tempfile.NamedTemporaryFile(suffix=".message") as out:
             cmd = self._gpg_cmd_base()
