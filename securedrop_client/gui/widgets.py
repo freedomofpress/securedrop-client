@@ -762,6 +762,13 @@ class SourceWidget(QWidget):
         # Store source
         self.source = source
 
+        # Get preview text
+        last_activity = source.collection[-1]
+        if isinstance(last_activity, File):
+            self.preview_text = last_activity.filename and last_activity.filename
+        else:
+            self.preview_text = last_activity.content and last_activity.content[0:100]
+
         # Set css id
         self.setObjectName('source_widget')
 
@@ -795,7 +802,7 @@ class SourceWidget(QWidget):
         summary_layout.setSpacing(0)
         self.name = QLabel()
         self.name.setObjectName('source_name')
-        self.preview = QLabel()
+        self.preview = QLabel(self.preview_text)
         self.preview.setObjectName('preview')
         self.preview.setFixedSize(QSize(365, 60))
         self.preview.setWordWrap(True)
