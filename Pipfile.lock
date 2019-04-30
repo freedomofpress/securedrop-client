@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "5e4ee285b923438bba06963f2c9688be06be10d29d128584da8e3c18f3c00d5d"
+            "sha256": "23a40e36e845a0e8f46cb8deac7058a926511ca2a7ef2f57558fc5838e17f116"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -101,10 +101,10 @@
         },
         "securedrop-sdk": {
             "hashes": [
-                "sha256:5014b5880429313fc721fff6d4b5c3231019e5f6260cd1a8d0e4216cbe2acf37"
+                "sha256:eca697da2520b568a4600b11c3ab818f5855e0ce13f88495d756a894f142f2a1"
             ],
             "index": "pypi",
-            "version": "==0.0.6"
+            "version": "==0.0.8"
         },
         "six": {
             "hashes": [

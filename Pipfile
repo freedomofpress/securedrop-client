@@ -11,7 +11,7 @@ arrow = "*"
 alembic = "*"
 python-dateutil = "*"
 sip = "*"
-securedrop-sdk = ">=0.0.6"
+securedrop-sdk = ">=0.0.8"
 SQLALchemy = "*"
 
 [dev-packages]
