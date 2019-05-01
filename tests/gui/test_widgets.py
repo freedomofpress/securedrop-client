@@ -392,7 +392,84 @@ def test_MainView_setup(mocker):
     mv.source_list.setup.assert_called_once_with(controller)
 
 
-def test_MainView_show_conversation(mocker):
+def test_MainView_show_sources(mocker):
+    """
+    Ensure the sources list is passed to the source list widget to be updated.
+    """
+    mv = MainView(None)
+    mv.source_list = mocker.MagicMock()
+
+    mv.show_sources([1, 2, 3])
+
+    mv.source_list.update.assert_called_once_with([1, 2, 3])
+
+
+def test_MainView_on_source_changed(mocker):
+    """
+    Ensure set_conversation is called when source changes.
+    """
+    mv = MainView(None)
+    mv.source_list = mocker.MagicMock()
+    mv.set_conversation = mocker.MagicMock()
+    source = factory.Source()
+    mv.set_conversation.get_current_source = mocker.MagicMock(return_value=source)
+    mv.controller = mocker.MagicMock(is_authenticated=True)
+    mocker.patch('securedrop_client.gui.widgets.source_exists', return_value=True)
+    scw = mocker.MagicMock()
+    mocker.patch('securedrop_client.gui.widgets.SourceConversationWrapper', return_value=scw)
+
+    mv.on_source_changed()
+
+    mv.source_list.get_current_source.assert_called_once_with()
+    mv.set_conversation.assert_called_once_with(scw)
+
+
+def test_MainView_on_source_changed_when_source_no_longer_exists(mocker):
+    """
+    Test that conversation for a source is cleared when the source no longer exists.
+    """
+    mv = MainView(None)
+    mv.clear_conversation = mocker.MagicMock()
+    mv.controller = mocker.MagicMock(is_authenticated=True)
+    mocker.patch('securedrop_client.gui.widgets.source_exists', return_value=False)
+
+    mv.on_source_changed()
+
+    mv.clear_conversation.assert_called_once_with()
+
+
+def test_MainView_on_source_changed_updates_conversation_view(mocker, session):
+    """
+    Test that the source collection is displayed in the conversation view.
+    """
+    mv = MainView(None)
+    mv.source_list = mocker.MagicMock()
+    mv.controller = mocker.MagicMock(is_authenticated=True)
+    s = factory.Source()
+    session.add(s)
+    f = factory.File(source=s, filename='0-mock-doc.gpg')
+    session.add(f)
+    m = factory.Message(source=s, filename='0-mock-msg.gpg')
+    session.add(m)
+    r = factory.Reply(source=s, filename='0-mock-reply.gpg')
+    session.add(r)
+    session.commit()
+    mv.source_list.get_current_source = mocker.MagicMock(return_value=s)
+    add_message_fn = mocker.patch(
+        'securedrop_client.gui.widgets.ConversationView.add_message', new=mocker.Mock())
+    add_reply_fn = mocker.patch(
+        'securedrop_client.gui.widgets.ConversationView.add_reply', new=mocker.Mock())
+    add_file_fn = mocker.patch(
+        'securedrop_client.gui.widgets.ConversationView.add_file', new=mocker.Mock())
+
+    mv.on_source_changed()
+
+    assert add_message_fn.call_count == 1
+    assert add_reply_fn.call_count == 1
+    assert add_file_fn.call_count == 1
+
+
+def test_MainView_set_conversation(mocker):
     """
     Ensure the passed-in widget is added to the layout of the main view holder
     (i.e. that area of the screen on the right hand side).
@@ -439,7 +516,7 @@ def test_SourceList_update(mocker):
     mocker.patch('securedrop_client.gui.widgets.SourceWidget', mock_sw)
     mocker.patch('securedrop_client.gui.widgets.QListWidgetItem', mock_lwi)
 
-    sources = ['a', 'b', 'c', ]
+    sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), ]
     sl.update(sources)
 
     sl.clear.assert_called_once_with()

@@ -31,6 +31,7 @@ from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBox
     QToolButton, QSizePolicy, QTextEdit, QStatusBar, QGraphicsDropShadowEffect
 
 from securedrop_client.db import Source, Message, File, Reply
+from securedrop_client.storage import source_exists
 from securedrop_client.gui import SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_icon, load_image
@@ -597,6 +598,7 @@ class MainView(QWidget):
         self.setLayout(self.layout)
 
         self.source_list = SourceList()
+        self.source_list.itemSelectionChanged.connect(self.on_source_changed)
 
         self.view_layout = QVBoxLayout()
         self.view_layout.setContentsMargins(0, 0, 0, 0)
@@ -604,8 +606,8 @@ class MainView(QWidget):
         self.view_holder.setObjectName('view_holder')  # Set css id
         self.view_holder.setLayout(self.view_layout)
 
-        self.layout.addWidget(self.source_list, 4)
-        self.layout.addWidget(self.view_holder, 6)
+        self.layout.addWidget(self.source_list)
+        self.layout.addWidget(self.view_holder)
 
     def setup(self, controller):
         """
@@ -613,6 +615,26 @@ class MainView(QWidget):
         """
         self.controller = controller
         self.source_list.setup(controller)
+
+    def show_sources(self, sources: List[Source]):
+        """
+        Update the left hand sources list in the UI with the passed in list of
+        sources.
+        """
+        self.source_list.update(sources)
+
+    def on_source_changed(self):
+        """
+        Show conversation for the currently-selected source if it hasn't been deleted. If the
+        current source no longer exists, clear the conversation for that source.
+        """
+        source = self.source_list.get_current_source()
+
+        if source:
+            conversation_wrapper = SourceConversationWrapper(source, self.controller)
+            self.set_conversation(conversation_wrapper)
+        else:
+            self.clear_conversation()
 
     def set_conversation(self, widget):
         """
@@ -673,10 +695,11 @@ class SourceList(QListWidget):
         """
         Reset and update the list with the passed in list of sources.
         """
-        current_maybe = self.currentItem() and self.itemWidget(self.currentItem())
+        current_source = self.get_current_source()
+        current_source_id = current_source and current_source.id
+
         self.clear()
 
-        new_current_maybe = None
         for source in sources:
             new_source = SourceWidget(source)
             new_source.setup(self.controller)
@@ -687,11 +710,14 @@ class SourceList(QListWidget):
             self.addItem(list_item)
             self.setItemWidget(list_item, new_source)
 
-            if current_maybe and (source.id == current_maybe.source.id):
-                new_current_maybe = list_item
+            if source.id == current_source_id:
+                self.setCurrentItem(list_item)
 
-        if new_current_maybe:
-            self.setCurrentItem(new_current_maybe)
+    def get_current_source(self):
+        source_item = self.currentItem()
+        source_widget = self.itemWidget(source_item)
+        if source_widget and source_exists(self.controller.session, source_widget.source.uuid):
+            return source_widget.source
 
 
 class SourceWidget(QWidget):

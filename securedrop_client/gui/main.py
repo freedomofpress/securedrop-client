@@ -28,10 +28,8 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QDes
 
 from securedrop_client import __version__
 from securedrop_client.db import Source
-from securedrop_client.storage import source_exists
 from securedrop_client.logic import Controller  # noqa: F401
-from securedrop_client.gui.widgets import TopPane, LeftPane, MainView, LoginDialog, \
-    SourceConversationWrapper
+from securedrop_client.gui.widgets import TopPane, LeftPane, MainView, LoginDialog
 from securedrop_client.resources import load_icon
 
 logger = logging.getLogger(__name__)
@@ -56,9 +54,6 @@ class Window(QMainWindow):
           place for details / message contents / forms.
         """
         super().__init__()
-        # Cache a dict of source.uuid -> SourceConversationWrapper
-        # We do this to not create/destroy widgets constantly (because it causes UI "flicker")
-        self.conversations = {}  # type: Dict
 
         self.setWindowTitle(_("SecureDrop Controller {}").format(__version__))
         self.setWindowIcon(load_icon(self.icon))
@@ -74,7 +69,6 @@ class Window(QMainWindow):
         self.main_pane.setLayout(layout)
         self.left_pane = LeftPane()
         self.main_view = MainView(self.main_pane)
-        self.main_view.source_list.itemSelectionChanged.connect(self.on_source_changed)
         layout.addWidget(self.left_pane, 1)
         layout.addWidget(self.main_view, 8)
 
@@ -96,7 +90,7 @@ class Window(QMainWindow):
         self.controller = controller  # Reference the Controller logic instance.
         self.top_pane.setup(self.controller)
         self.left_pane.setup(self, self.controller)
-        self.main_view.source_list.setup(self.controller)
+        self.main_view.setup(self.controller)
         self.show_login()
 
     def show_main_window(self, username: str = None) -> None:
@@ -144,7 +138,7 @@ class Window(QMainWindow):
         Update the left hand sources list in the UI with the passed in list of
         sources.
         """
-        self.main_view.source_list.update(sources)
+        self.main_view.show_sources(sources)
 
     def show_sync(self, updated_on):
         """
@@ -168,33 +162,6 @@ class Window(QMainWindow):
         """
         self.left_pane.set_logged_out()
         self.top_pane.disable_refresh()
-
-    def on_source_changed(self):
-        """
-        React to when the selected source has changed.
-        """
-        source_item = self.main_view.source_list.currentItem()
-        source_widget = self.main_view.source_list.itemWidget(source_item)
-
-        # Show conversation for the currently-selected source if it hasn't been deleted. If the
-        # current source no longer exists, clear the conversation for that source.
-        if source_widget and source_exists(self.controller.session, source_widget.source.uuid):
-            self.show_conversation_for(source_widget.source)
-        else:
-            self.main_view.clear_conversation()
-
-    def show_conversation_for(self, source: Source):
-        """
-        Show conversation of messages and replies between a source and
-        journalists.
-        """
-        conversation_container = self.conversations.get(source.uuid, None)
-
-        if conversation_container is None:
-            conversation_container = SourceConversationWrapper(source, self.controller)
-            self.conversations[source.uuid] = conversation_container
-
-        self.main_view.set_conversation(conversation_container)
 
     def update_activity_status(self, message: str, duration=0):
         """

@@ -10,10 +10,10 @@ from sqlalchemy.orm.exc import NoResultFound
 
 import securedrop_client.db
 from securedrop_client.storage import get_local_sources, get_local_messages, get_local_replies, \
-    get_remote_data, update_local_storage, update_sources, update_files, update_replies, \
-    find_or_create_user, find_new_messages, find_new_replies, mark_file_as_downloaded, \
-    mark_reply_as_downloaded, delete_single_submission_or_reply_on_disk, rename_file, \
-    get_local_files, find_new_files, mark_message_as_downloaded, source_exists, \
+    get_remote_data, update_local_storage, update_sources, update_files, update_messages, \
+    update_replies, find_or_create_user, find_new_messages, find_new_replies, \
+    mark_file_as_downloaded, mark_reply_as_downloaded, delete_single_submission_or_reply_on_disk, \
+    rename_file, get_local_files, find_new_files, mark_message_as_downloaded, source_exists, \
     set_object_decryption_status_with_content
 from securedrop_client import db
 from sdclientapi import Source, Submission, Reply
@@ -517,6 +517,77 @@ def test_update_files(homedir, mocker):
     # Ensure the record for the local source that is missing from the results
     # of the API is deleted.
     mock_session.delete.assert_called_once_with(local_sub_delete)
+    # Session is committed to database.
+    assert mock_session.commit.call_count == 1
+
+
+def test_update_messages(homedir, mocker):
+    """
+    Check that:
+
+    * Existing messages are updated in the local database.
+    * New messages have an entry in the local database.
+    * Local messages not returned by the remote server are deleted from the
+      local database.
+    * `rename_file` is called if local data files need to be updated with new
+      filenames to match remote. Note: The only reason this should happen is if
+      there is a new journalist_designation that causes remote filenames to be
+      updated.
+    """
+    data_dir = os.path.join(homedir, 'data')
+    mock_session = mocker.MagicMock()
+    # Source object related to the submissions.
+    source = mocker.MagicMock()
+    source.uuid = str(uuid.uuid4())
+    # Some remote message objects from the API, one of which will exist in the
+    # local database, the other will NOT exist in the local database
+    # (this will be added to the database)
+    remote_message_update = make_remote_submission(source.uuid)
+    remote_message_create = make_remote_submission(source.uuid)
+    remote_messages = [remote_message_update, remote_message_create]
+    # Some local reply objects. One already exists in the API results
+    # (this will be updated), one does NOT exist in the API results (this will
+    # be deleted from the local database).
+    local_message_update = mocker.MagicMock()
+    local_message_update.uuid = remote_message_update.uuid
+    local_message_update.filename = "overwrite_this.filename"
+    local_message_delete = mocker.MagicMock()
+    local_message_delete.uuid = str(uuid.uuid4())
+    local_message_delete.filename = "local_message_delete.filename"
+    local_messages = [local_message_update, local_message_delete]
+    # There needs to be a corresponding local_source and local_user
+    local_source = mocker.MagicMock()
+    local_source.uuid = source.uuid
+    local_source.id = 666  # };-)
+    local_user = mocker.MagicMock()
+    local_user.id = 42
+    mock_session.query().filter_by.side_effect = [[local_source, ],
+                                                  [local_user, ],
+                                                  [local_user, ], ]
+    mock_focu = mocker.MagicMock(return_value=local_user)
+    mocker.patch('securedrop_client.storage.find_or_create_user', mock_focu)
+    patch_rename_file = mocker.patch('securedrop_client.storage.rename_file')
+
+    update_messages(remote_messages, local_messages, mock_session, data_dir)
+
+    # Check the expected local message object has been updated with values
+    # from the API.
+    assert local_message_update.filename == remote_message_update.filename
+    assert local_message_update.size == remote_message_update.size
+    # Check that rename_file is called if the local storage filenames need to
+    # be updated
+    assert patch_rename_file.called
+    # Check the expected local source object has been created with values from
+    # the API.
+    assert mock_session.add.call_count == 1
+    new_reply = mock_session.add.call_args_list[0][0][0]
+    assert new_reply.uuid == remote_message_create.uuid
+    assert new_reply.source_id == local_source.id
+    assert new_reply.size == remote_message_create.size
+    assert new_reply.filename == remote_message_create.filename
+    # Ensure the record for the local source that is missing from the results
+    # of the API is deleted.
+    mock_session.delete.assert_called_once_with(local_message_delete)
     # Session is committed to database.
     assert mock_session.commit.call_count == 1
 
