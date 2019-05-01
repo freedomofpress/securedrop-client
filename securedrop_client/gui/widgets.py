@@ -24,7 +24,7 @@ import sys
 from typing import List
 from uuid import uuid4
 
-from PyQt5.QtCore import Qt, pyqtSlot, QTimer, QSize
+from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QTimer, QSize
 from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
@@ -1449,6 +1449,13 @@ class ConversationView(QWidget):
             self.controller.reply_succeeded,
             self.controller.reply_failed))
 
+    def on_reply_sent(self, source_uuid: str, reply_uuid: str, reply_text: str) -> None:
+        """
+        Add the reply text sent from ReplyBoxWidget to the conversation.
+        """
+        if source_uuid == self.source.uuid:
+            self.add_reply(reply_uuid, reply_text)
+
 
 class SourceConversationWrapper(QWidget):
     """
@@ -1458,41 +1465,21 @@ class SourceConversationWrapper(QWidget):
 
     def __init__(self, source: Source, controller: Controller) -> None:
         super().__init__()
-        self.source = source
-        self.controller = controller
 
-        self.layout = QVBoxLayout()
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(self.layout)
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
 
-        self.conversation = ConversationView(self.source, self.controller)
-        self.source_profile = SourceProfileShortWidget(self.source, self.controller)
-        self.reply_box = ReplyBoxWidget(self)
+        self.conversation_title_bar = SourceProfileShortWidget(source, controller)
+        self.conversation_view = ConversationView(source, controller)
+        self.reply_box = ReplyBoxWidget(source, controller)
 
-        self.layout.addWidget(self.source_profile, 1)
-        self.layout.addWidget(self.conversation, 9)
-        self.layout.addWidget(self.reply_box, 3)
+        layout.addWidget(self.conversation_title_bar, 1)
+        layout.addWidget(self.conversation_view, 9)
+        layout.addWidget(self.reply_box, 3)
 
-        self.controller.authentication_state.connect(self._show_or_hide_replybox)
-        self._show_or_hide_replybox(self.controller.is_authenticated)
-
-    def send_reply(self, message: str) -> None:
-        msg_uuid = str(uuid4())
-        self.conversation.add_reply(msg_uuid, message)
-        self.controller.send_reply(self.source.uuid, msg_uuid, message)
-
-    def _show_or_hide_replybox(self, show: bool) -> None:
-        if show:
-            new_widget = ReplyBoxWidget(self)
-        else:
-            new_widget = QLabel(_('You need to log in to send replies.'))
-
-        old_widget = self.layout.takeAt(2)
-        if old_widget is not None:
-            old_widget.widget().deleteLater()
-
-        self.reply_box = new_widget
-        self.layout.addWidget(new_widget, 3)
+        # Connect reply_box to conversation_view
+        self.reply_box.reply_sent.connect(self.conversation_view.on_reply_sent)
 
 
 class ReplyBoxWidget(QWidget):
@@ -1500,9 +1487,17 @@ class ReplyBoxWidget(QWidget):
     A textbox where a journalist can enter a reply.
     """
 
-    def __init__(self, conversation: SourceConversationWrapper) -> None:
+    reply_sent = pyqtSignal(str, str, str)
+
+    def __init__(self, source: Source, controller: Controller) -> None:
         super().__init__()
-        self.conversation = conversation
+
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        self.source = source
+        self.controller = controller
 
         self.text_edit = QTextEdit()
 
@@ -1515,19 +1510,39 @@ class ReplyBoxWidget(QWidget):
         self.send_button.setIcon(button_icon)
         self.send_button.setIconSize(button_pixmap.rect().size())
 
-        layout = QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.text_edit)
+        self.controller.authentication_state.connect(self._on_authentication_changed)
+        self._on_authentication_changed(self.controller.is_authenticated)
 
+        layout.addWidget(self.text_edit)
         layout.addWidget(self.send_button, 0, Qt.AlignRight)
-        self.setLayout(layout)
+
+    def enable(self):
+        self.text_edit.clear()
+        self.text_edit.setEnabled(True)
+        self.send_button.show()
+
+    def disable(self):
+        self.text_edit.setText(_('You need to log in to send replies.'))
+        self.text_edit.setEnabled(False)
+        self.send_button.hide()
 
     def send_reply(self) -> None:
-        msg = self.text_edit.toPlainText().strip()
-        if not msg:
-            return
-        self.conversation.send_reply(msg)
-        self.text_edit.clear()
+        """
+        Send reply and emit a signal so that the gui can be updated immediately, even before the
+        the reply is saved locally. See Issue #294.
+        """
+        reply_text = self.text_edit.toPlainText().strip()
+        if reply_text:
+            reply_uuid = str(uuid4())
+            self.controller.send_reply(self.source.uuid, reply_uuid, reply_text)
+            self.reply_sent.emit(self.source.uuid, reply_uuid, reply_text)
+            self.text_edit.clear()
+
+    def _on_authentication_changed(self, authenticated: bool) -> None:
+        if authenticated:
+            self.enable()
+        else:
+            self.disable()
 
 
 class DeleteSourceAction(QAction):

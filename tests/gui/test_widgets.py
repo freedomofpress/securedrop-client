@@ -2,7 +2,7 @@
 Make sure the UI widgets are configured correctly and work as expected.
 """
 from PyQt5.QtWidgets import QWidget, QApplication, QWidgetItem, QSpacerItem, QVBoxLayout, \
-    QMessageBox, QLabel, QMainWindow
+    QMessageBox, QMainWindow, QTextEdit
 from PyQt5.QtCore import Qt
 
 from tests import factory
@@ -1363,6 +1363,35 @@ def test_ConversationView_add_message_no_content(mocker, session, source):
     cv.conversation_layout.addWidget.assert_called_once_with(mock_msg_widget_res)
 
 
+def test_ConversationView_on_reply_sent(mocker):
+    """
+    The handler for new replies should call add_reply
+    """
+    source = factory.Source()
+    controller = mocker.MagicMock()
+    cv = ConversationView(source, controller)
+    cv.add_reply = mocker.MagicMock()
+
+    cv.on_reply_sent(source.uuid, 'reply_uuid', 'msg')
+
+    cv.add_reply.assert_called_with('reply_uuid', 'msg')
+
+
+def test_ConversationView_on_reply_sent_does_not_add_message_intended_for_different_source(mocker):
+    """
+    The handler for new replies should not call add_reply for a message that was intended for a
+    different source. #sanity-check
+    """
+    source = factory.Source()
+    controller = mocker.MagicMock()
+    cv = ConversationView(source, controller)
+    cv.add_reply = mocker.MagicMock()
+
+    cv.on_reply_sent('different_source_id', 'reply_uuid', 'msg')
+
+    assert not cv.add_reply.called
+
+
 def test_ConversationView_add_reply(mocker, session, source):
     """
     Adding a message results in a new ReplyWidget added to the layout.
@@ -1668,45 +1697,52 @@ def test_DeleteSource_from_source_widget_when_user_is_loggedout(mocker):
         mock_delete_source_message_box_obj.launch.assert_not_called()
 
 
-def test_SourceConversationWrapper_send_reply(mocker):
-    mock_source = mocker.Mock()
-    mock_source.uuid = 'abc123'
-    mock_source.collection = []
-    mock_uuid = '456xyz'
-    mocker.patch('securedrop_client.gui.widgets.uuid4', return_value=mock_uuid)
-    mock_controller = mocker.MagicMock()
-    mocker.patch('securedrop_client.gui.widgets.LastUpdatedLabel', return_value=QLabel('now'))
-
-    cw = SourceConversationWrapper(mock_source, mock_controller)
-    mock_add_reply = mocker.Mock()
-    cw.conversation.add_reply = mock_add_reply
-
-    msg = 'Alles für Alle'
-    cw.send_reply(msg)
-
-    mock_add_reply.assert_called_once_with(mock_uuid, msg)
-    mock_controller.send_reply.assert_called_once_with(mock_source.uuid, mock_uuid, msg)
-
-
 def test_ReplyBoxWidget_send_reply(mocker):
-    mock_conversation = mocker.Mock()
-    rw = ReplyBoxWidget(mock_conversation)
+    """
+    Ensure sending a reply from the reply box emits signal, clears text box, and sends the reply
+    details to the controller.
+    """
+    source = mocker.Mock()
+    source.uuid = 'abc123'
+    source.collection = []
+    reply_uuid = '456xyz'
+    mocker.patch('securedrop_client.gui.widgets.uuid4', return_value=reply_uuid)
+    controller = mocker.MagicMock()
+    mocker.patch('securedrop_client.gui.widgets.SourceProfileShortWidget')
+    mocker.patch('securedrop_client.gui.widgets.QVBoxLayout.addWidget')
+    scw = SourceConversationWrapper(source, controller)
+    on_reply_sent_fn = mocker.MagicMock()
+    scw.conversation_view.on_reply_sent = on_reply_sent_fn
+    scw.reply_box.reply_sent = mocker.MagicMock()
+    scw.reply_box.text_edit = QTextEdit('Alles für Alle')
 
-    # when empty, don't sent message
-    assert not rw.text_edit.toPlainText()  # precondition
-    rw.send_reply()
-    assert not mock_conversation.send_reply.called
+    scw.reply_box.send_reply()
 
-    # when only whitespace, don't sent message
-    rw.text_edit.setText('  \n\n  ')
-    rw.send_reply()
-    assert not mock_conversation.send_reply.called
+    scw.reply_box.reply_sent.emit.assert_called_once_with('abc123', '456xyz', 'Alles für Alle')
+    assert scw.reply_box.text_edit.toPlainText() == ''
+    controller.send_reply.assert_called_once_with('abc123', '456xyz', 'Alles für Alle')
 
-    # send send send send
-    msg = 'nein'
-    rw.text_edit.setText(msg)
-    rw.send_reply()
-    mock_conversation.send_reply.assert_called_once_with(msg)
+
+def test_ReplyBoxWidget_send_reply_does_not_send_empty_string(mocker):
+    """
+    Ensure sending a reply from the reply box does not send empty string.
+    """
+    source = mocker.MagicMock()
+    controller = mocker.MagicMock()
+    rb = ReplyBoxWidget(source, controller)
+    rb.text_edit = QTextEdit()
+    assert not rb.text_edit.toPlainText()
+
+    rb.send_reply()
+
+    assert not controller.send_reply.called
+
+    # Also check that we don't send blank space
+    rb.text_edit.setText('  \n\n  ')
+
+    rb.send_reply()
+
+    assert not controller.send_reply.called
 
 
 def test_ReplyWidget_success_failure_slots(mocker):
@@ -1740,6 +1776,81 @@ def test_ReplyWidget_success_failure_slots(mocker):
     assert not mock_logger.debug.called
     widget._on_reply_failure(msg_id)
     assert mock_logger.debug.called
+
+
+def test_ReplyBoxWidget__on_authentication_changed(mocker, homedir):
+    """
+    When the client is authenticated, enable reply box.
+    """
+    source = mocker.MagicMock()
+    controller = mocker.MagicMock()
+    rb = ReplyBoxWidget(source, controller)
+    rb.enable = mocker.MagicMock()
+
+    rb._on_authentication_changed(True)
+
+    rb.enable.assert_called_once_with()
+
+
+def test_ReplyBoxWidget__on_authentication_changed_offline(mocker, homedir):
+    """
+    When the client goes offline, disable reply box.
+    """
+    source = mocker.MagicMock()
+    controller = mocker.MagicMock()
+    rb = ReplyBoxWidget(source, controller)
+    rb.disable = mocker.MagicMock()
+
+    rb._on_authentication_changed(False)
+
+    rb.disable.assert_called_once_with()
+
+
+def test_ReplyBoxWidget_auth_signals(mocker, homedir):
+    """
+    Ensure we connect to the auth signal and set the intial state on update
+    """
+    source = mocker.Mock(collection=[])
+    connect = mocker.MagicMock()
+    signal = mocker.MagicMock(connect=connect)
+    controller = mocker.MagicMock(authentication_state=signal)
+    controller.is_authenticated = False
+
+    _on_authentication_changed_fn = mocker.patch.object(
+        ReplyBoxWidget, '_on_authentication_changed')
+
+    ReplyBoxWidget(source, controller)
+
+    connect.assert_called_once_with(_on_authentication_changed_fn)
+    _on_authentication_changed_fn.assert_called_with(controller.is_authenticated)
+
+
+def test_ReplyBoxWidget_enable(mocker):
+    source = mocker.MagicMock()
+    controller = mocker.MagicMock()
+    rb = ReplyBoxWidget(source, controller)
+    rb.text_edit = QTextEdit()
+    rb.send_button = mocker.MagicMock()
+
+    rb.enable()
+
+    assert rb.text_edit.isEnabled()
+    assert rb.text_edit.toPlainText() == ''
+    rb.send_button.show.assert_called_once_with()
+
+
+def test_ReplyBoxWidget_disable(mocker):
+    source = mocker.MagicMock()
+    controller = mocker.MagicMock()
+    rb = ReplyBoxWidget(source, controller)
+    rb.text_edit = QTextEdit()
+    rb.send_button = mocker.MagicMock()
+
+    rb.disable()
+
+    assert not rb.text_edit.isEnabled()
+    assert rb.text_edit.toPlainText() == 'You need to log in to send replies.'
+    rb.send_button.hide.assert_called_once_with()
 
 
 def test_update_conversation_maintains_old_items(mocker, session):
@@ -1810,47 +1921,3 @@ def test_clear_conversation_deletes_items(mocker, homedir):
     cv.clear_conversation()
 
     assert cv.conversation_layout.count() == 0
-
-
-def test_SourceConversationWrapper_auth_signals(mocker, homedir):
-    """
-    Ensure we connect to the auth signal and set the intial state on update
-    """
-    mock_source = mocker.Mock(collection=[])
-    mock_connect = mocker.MagicMock()
-    mock_signal = mocker.MagicMock(connect=mock_connect)
-    mock_controller = mocker.MagicMock(authentication_state=mock_signal)
-    mock_controller.is_authenticated = mocker.MagicMock()
-
-    mock_sh = mocker.patch.object(SourceConversationWrapper, '_show_or_hide_replybox')
-    mocker.patch('securedrop_client.gui.widgets.LastUpdatedLabel', return_value=QLabel('now'))
-
-    SourceConversationWrapper(mock_source, mock_controller)
-
-    mock_connect.assert_called_once_with(mock_sh)
-    mock_sh.assert_called_with(mock_controller.is_authenticated)
-
-
-def test_SourceConversationWrapper_set_widgets_via_auth_value(mocker, homedir):
-    """
-    When the client is authenticated, we should create a ReplyBoxWidget otherwise a warning.
-    """
-    mock_source = mocker.Mock(collection=[])
-    mock_controller = mocker.MagicMock()
-
-    mocker.patch('securedrop_client.gui.widgets.LastUpdatedLabel', return_value=QLabel('now'))
-    cw = SourceConversationWrapper(mock_source, mock_controller)
-    mocker.patch.object(cw, 'layout')
-    mock_reply_box = mocker.patch('securedrop_client.gui.widgets.ReplyBoxWidget',
-                                  return_value=QWidget())
-    mock_label = mocker.patch('securedrop_client.gui.widgets.QLabel', return_value=QWidget())
-
-    cw._show_or_hide_replybox(True)
-    mock_reply_box.assert_called_once_with(cw)
-    assert not mock_label.called
-
-    mock_reply_box.reset_mock()
-
-    cw._show_or_hide_replybox(False)
-    assert not mock_reply_box.called
-    assert mock_label.called
