@@ -1,8 +1,12 @@
 import json
 import logging
+from typing import TypeVar, Type
 import os
 
 logger = logging.getLogger(__name__)
+
+# See: https://mypy.readthedocs.io/en/stable/generics.html#generic-methods-and-generic-self
+T = TypeVar('T', bound='Config')
 
 
 class Config:
@@ -13,7 +17,7 @@ class Config:
         self.journalist_key_fingerprint = journalist_key_fingerprint
 
     @classmethod
-    def from_home_dir(cls, sdc_home: str):
+    def from_home_dir(cls: Type[T], sdc_home: str) -> T:
         full_path = os.path.join(sdc_home, cls.CONFIG_NAME)
 
         try:
@@ -23,7 +27,7 @@ class Config:
             logger.warning('Error opening config file at {}: {}'.format(full_path, e))
             json_config = {}
 
-        return Config(
+        return cls(
             journalist_key_fingerprint=json_config.get('journalist_key_fingerprint', None),
         )
 

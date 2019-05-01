@@ -1,9 +1,10 @@
 import os
 
-from typing import Any  # noqa: F401
+from typing import Any, List, Union  # noqa: F401
 
 from sqlalchemy import Boolean, Column, create_engine, DateTime, ForeignKey, Integer, String, \
     Text, MetaData, CheckConstraint, text, UniqueConstraint
+from sqlalchemy.engine import Engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 
@@ -21,7 +22,7 @@ metadata = MetaData(naming_convention=convention)
 Base = declarative_base(metadata=metadata)  # type: Any
 
 
-def make_engine(home: str):
+def make_engine(home: str) -> Engine:
     db_path = os.path.join(home, 'svs.sqlite')
     return create_engine('sqlite:///{}'.format(db_path))
 
@@ -41,14 +42,14 @@ class Source(Base):
     is_starred = Column(Boolean(name='is_starred'), server_default=text("0"))
     last_updated = Column(DateTime)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<Source {}>'.format(self.journalist_designation)
 
     @property
-    def collection(self):
+    def collection(self) -> List:
         """Return the list of submissions and replies for this source, sorted
         in ascending order by the filename/interaction count."""
-        collection = []
+        collection = []  # type: List
         collection.extend(self.messages)
         collection.extend(self.files)
         collection.extend(self.replies)
@@ -98,14 +99,14 @@ class Message(Base):
                           backref=backref("messages", order_by=id,
                                           cascade="delete"))
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         if 'file_counter' in kwargs:
             raise TypeError('Cannot manually set file_counter')
         filename = kwargs['filename']
         kwargs['file_counter'] = int(filename.split('-')[0])
         super().__init__(**kwargs)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<Message {}>'.format(self.filename)
 
 
@@ -142,14 +143,14 @@ class File(Base):
                           backref=backref("files", order_by=id,
                                           cascade="delete"))
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         if 'file_counter' in kwargs:
             raise TypeError('Cannot manually set file_counter')
         filename = kwargs['filename']
         kwargs['file_counter'] = int(filename.split('-')[0])
         super().__init__(**kwargs)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<File {}>'.format(self.filename)
 
 
@@ -195,14 +196,14 @@ class Reply(Base):
         nullable=True,
     )
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         if 'file_counter' in kwargs:
             raise TypeError('Cannot manually set file_counter')
         filename = kwargs['filename']
         kwargs['file_counter'] = int(filename.split('-')[0])
         super().__init__(**kwargs)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<Reply {}>'.format(self.filename)
 
 
@@ -214,8 +215,8 @@ class User(Base):
     uuid = Column(String(36), unique=True, nullable=False)
     username = Column(String(255), nullable=False)
 
-    def __init__(self, username):
+    def __init__(self, username: str) -> None:
         self.username = username
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<Journalist: {}>".format(self.username)

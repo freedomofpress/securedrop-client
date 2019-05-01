@@ -48,7 +48,7 @@ def split_path(path: str) -> list:
     return out
 
 
-def humanize_filesize(filesize):
+def humanize_filesize(filesize: int) -> str:
     """
     Returns a human readable string of a filesize
     (with an input unit of bytes)
