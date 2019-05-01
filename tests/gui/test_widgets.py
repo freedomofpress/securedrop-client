@@ -1370,11 +1370,11 @@ def test_ConversationView_on_reply_sent(mocker):
     source = factory.Source()
     controller = mocker.MagicMock()
     cv = ConversationView(source, controller)
-    cv.add_reply = mocker.MagicMock()
+    cv.add_reply_from_reply_box = mocker.MagicMock()
 
-    cv.on_reply_sent(source.uuid, 'reply_uuid', 'msg')
+    cv.on_reply_sent(source.uuid, 'abc123', 'test message')
 
-    cv.add_reply.assert_called_with('reply_uuid', 'msg')
+    cv.add_reply_from_reply_box.assert_called_with('abc123', 'test message')
 
 
 def test_ConversationView_on_reply_sent_does_not_add_message_intended_for_different_source(mocker):
@@ -1387,14 +1387,39 @@ def test_ConversationView_on_reply_sent_does_not_add_message_intended_for_differ
     cv = ConversationView(source, controller)
     cv.add_reply = mocker.MagicMock()
 
-    cv.on_reply_sent('different_source_id', 'reply_uuid', 'msg')
+    cv.on_reply_sent('different_source_id', 'mock', 'mock')
 
     assert not cv.add_reply.called
 
 
+def test_ConversationView_add_reply_from_reply_box(mocker):
+    """
+    Adding a reply from reply box results in a new ReplyWidget added to the layout.
+    """
+    source = factory.Source()
+    reply_ready = mocker.MagicMock()
+    reply_succeeded = mocker.MagicMock()
+    reply_failed = mocker.MagicMock()
+    controller = mocker.MagicMock(
+        reply_sync=mocker.MagicMock(reply_ready=reply_ready),
+        reply_succeeded=reply_succeeded,
+        reply_failed=reply_failed)
+    cv = ConversationView(source, controller)
+    cv.conversation_layout = mocker.MagicMock()
+    reply_widget_res = mocker.MagicMock()
+    reply_widget = mocker.patch(
+        'securedrop_client.gui.widgets.ReplyWidget', return_value=reply_widget_res)
+
+    cv.add_reply_from_reply_box('abc123', 'test message')
+
+    reply_widget.assert_called_once_with(
+        'abc123', 'test message', reply_ready, reply_succeeded, reply_failed)
+    cv.conversation_layout.addWidget.assert_called_once_with(reply_widget_res)
+
+
 def test_ConversationView_add_reply(mocker, session, source):
     """
-    Adding a message results in a new ReplyWidget added to the layout.
+    Adding a reply from a source results in a new ReplyWidget added to the layout.
     """
     source = source['source']  # grab the source from the fixture dict for simplicity
 
@@ -1420,7 +1445,7 @@ def test_ConversationView_add_reply(mocker, session, source):
     mock_reply_widget = mocker.patch('securedrop_client.gui.widgets.ReplyWidget',
                                      return_value=mock_reply_widget_res)
 
-    cv.add_reply(reply.uuid, content)
+    cv.add_reply(reply)
 
     # check that we built the widget was called with the correct args
     mock_reply_widget.assert_called_once_with(
@@ -1463,7 +1488,7 @@ def test_ConversationView_add_reply_no_content(mocker, session, source):
     mock_reply_widget = mocker.patch('securedrop_client.gui.widgets.ReplyWidget',
                                      return_value=mock_reply_widget_res)
 
-    cv.add_reply(reply.uuid, '<Reply not yet available>')
+    cv.add_reply(reply)
 
     # check that we built the widget was called with the correct args
     mock_reply_widget.assert_called_once_with(

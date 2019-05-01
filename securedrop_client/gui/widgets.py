@@ -1397,11 +1397,7 @@ class ConversationView(QWidget):
             if conversation_item.filename.endswith('msg.gpg'):
                 self.add_message(conversation_item)
             elif conversation_item.filename.endswith('reply.gpg'):
-                if conversation_item.content is not None:
-                    content = conversation_item.content
-                else:
-                    content = '<Message not yet available>'
-                self.add_reply(conversation_item.uuid, content)
+                self.add_reply(conversation_item)
             else:
                 self.add_file(self.source, conversation_item)
 
@@ -1438,9 +1434,25 @@ class ConversationView(QWidget):
             content,
             self.controller.message_sync.message_ready))
 
-    def add_reply(self, uuid: str, content: str) -> None:
+    def add_reply(self, reply: Reply) -> None:
         """
-        Add a reply from a journalist.
+        Add a reply from the source.
+        """
+        if reply.content is not None:
+            content = reply.content
+        else:
+            content = '<Reply not yet available>'
+
+        self.conversation_layout.addWidget(ReplyWidget(
+            reply.uuid,
+            content,
+            self.controller.reply_sync.reply_ready,
+            self.controller.reply_succeeded,
+            self.controller.reply_failed))
+
+    def add_reply_from_reply_box(self, uuid: str, content: str) -> None:
+        """
+        Add a reply from the reply box.
         """
         self.conversation_layout.addWidget(ReplyWidget(
             uuid,
@@ -1454,7 +1466,7 @@ class ConversationView(QWidget):
         Add the reply text sent from ReplyBoxWidget to the conversation.
         """
         if source_uuid == self.source.uuid:
-            self.add_reply(reply_uuid, reply_text)
+            self.add_reply_from_reply_box(reply_uuid, reply_text)
 
 
 class SourceConversationWrapper(QWidget):
@@ -1529,7 +1541,7 @@ class ReplyBoxWidget(QWidget):
     def send_reply(self) -> None:
         """
         Send reply and emit a signal so that the gui can be updated immediately, even before the
-        the reply is saved locally. See Issue #294.
+        the reply is saved locally.
         """
         reply_text = self.text_edit.toPlainText().strip()
         if reply_text:
