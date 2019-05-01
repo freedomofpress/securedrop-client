@@ -1175,7 +1175,7 @@ def test_ConversationView_init(mocker, homedir):
     """
     mocked_source = mocker.MagicMock()
     mocked_controller = mocker.MagicMock()
-    cv = ConversationView(mocked_source, homedir, mocked_controller)
+    cv = ConversationView(mocked_source, mocked_controller)
     assert isinstance(cv.conversation_layout, QVBoxLayout)
 
 
@@ -1188,7 +1188,7 @@ def test_ConversationView_update_conversation_position_follow(mocker, homedir):
     mocked_source = mocker.MagicMock()
     mocked_controller = mocker.MagicMock()
 
-    cv = ConversationView(mocked_source, homedir, mocked_controller)
+    cv = ConversationView(mocked_source, mocked_controller)
 
     cv.scroll.verticalScrollBar().value = mocker.MagicMock(return_value=5900)
     cv.scroll.viewport().height = mocker.MagicMock(return_value=500)
@@ -1207,7 +1207,7 @@ def test_ConversationView_update_conversation_position_stay_fixed(mocker, homedi
     mocked_source = mocker.MagicMock()
     mocked_controller = mocker.MagicMock()
 
-    cv = ConversationView(mocked_source, homedir, mocked_controller)
+    cv = ConversationView(mocked_source, mocked_controller)
 
     cv.scroll.verticalScrollBar().value = mocker.MagicMock(return_value=5500)
     cv.scroll.viewport().height = mocker.MagicMock(return_value=500)
@@ -1218,7 +1218,7 @@ def test_ConversationView_update_conversation_position_stay_fixed(mocker, homedi
     cv.scroll.verticalScrollBar().setValue.assert_not_called()
 
 
-def test_ConversationView_add_message(mocker, homedir, session, source):
+def test_ConversationView_add_message(mocker, session, source):
     """
     Adding a message results in a new MessageWidget added to the layout.
     """
@@ -1234,7 +1234,7 @@ def test_ConversationView_add_message(mocker, homedir, session, source):
     session.add(message)
     session.commit()
 
-    cv = ConversationView(source, homedir, mocked_controller)
+    cv = ConversationView(source, mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
     # this is the MessageWidget that __init__() would return
     mock_msg_widget_res = mocker.MagicMock()
@@ -1251,7 +1251,7 @@ def test_ConversationView_add_message(mocker, homedir, session, source):
     cv.conversation_layout.addWidget.assert_called_once_with(mock_msg_widget_res)
 
 
-def test_ConversationView_add_message_no_content(mocker, homedir, session, source):
+def test_ConversationView_add_message_no_content(mocker, session, source):
     """
     Adding a message results in a new MessageWidget added to the layout. This case specifically
     checks that if a `Message` has `content = None` that a helpful message is displayed as would
@@ -1268,7 +1268,7 @@ def test_ConversationView_add_message_no_content(mocker, homedir, session, sourc
     session.add(message)
     session.commit()
 
-    cv = ConversationView(source, homedir, mocked_controller)
+    cv = ConversationView(source, mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
     # this is the MessageWidget that __init__() would return
     mock_msg_widget_res = mocker.MagicMock()
@@ -1286,7 +1286,7 @@ def test_ConversationView_add_message_no_content(mocker, homedir, session, sourc
     cv.conversation_layout.addWidget.assert_called_once_with(mock_msg_widget_res)
 
 
-def test_ConversationView_add_reply(mocker, homedir, session, source):
+def test_ConversationView_add_reply(mocker, session, source):
     """
     Adding a message results in a new ReplyWidget added to the layout.
     """
@@ -1306,7 +1306,7 @@ def test_ConversationView_add_reply(mocker, homedir, session, source):
     session.add(reply)
     session.commit()
 
-    cv = ConversationView(source, homedir, mocked_controller)
+    cv = ConversationView(source, mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
     # this is the Reply that __init__() would return
     mock_reply_widget_res = mocker.MagicMock()
@@ -1328,7 +1328,7 @@ def test_ConversationView_add_reply(mocker, homedir, session, source):
     cv.conversation_layout.addWidget.assert_called_once_with(mock_reply_widget_res)
 
 
-def test_ConversationView_add_reply_no_content(mocker, homedir, session, source):
+def test_ConversationView_add_reply_no_content(mocker, session, source):
     """
     Adding a reply results in a new ReplyWidget added to the layout. This case specifically
     checks that if a `Reply` has `content = None` that a helpful message is displayed as would
@@ -1349,7 +1349,7 @@ def test_ConversationView_add_reply_no_content(mocker, homedir, session, source)
     session.add(reply)
     session.commit()
 
-    cv = ConversationView(source, homedir, mocked_controller)
+    cv = ConversationView(source, mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
     # this is the Reply that __init__() would return
     mock_reply_widget_res = mocker.MagicMock()
@@ -1379,7 +1379,7 @@ def test_ConversationView_add_downloaded_file(mocker, homedir):
     mocked_source = mocker.MagicMock()
     mocked_controller = mocker.MagicMock()
 
-    cv = ConversationView(mocked_source, homedir, mocked_controller)
+    cv = ConversationView(mocked_source, mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
 
     mock_source = mocker.MagicMock()
@@ -1405,7 +1405,7 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir):
     mocked_source = mocker.MagicMock()
     mocked_controller = mocker.MagicMock()
 
-    cv = ConversationView(mocked_source, homedir, mocked_controller)
+    cv = ConversationView(mocked_source, mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
 
     mock_source = mocker.MagicMock()
@@ -1600,7 +1600,7 @@ def test_SourceConversationWrapper_send_reply(mocker):
     mock_controller = mocker.MagicMock()
     mocker.patch('securedrop_client.gui.widgets.LastUpdatedLabel', return_value=QLabel('now'))
 
-    cw = SourceConversationWrapper(mock_source, 'mock home', mock_controller, True)
+    cw = SourceConversationWrapper(mock_source, mock_controller)
     mock_add_reply = mocker.Mock()
     cw.conversation.add_reply = mock_add_reply
 
@@ -1665,7 +1665,7 @@ def test_ReplyWidget_success_failure_slots(mocker):
     assert mock_logger.debug.called
 
 
-def test_update_conversation_maintains_old_items(mocker, homedir, session):
+def test_update_conversation_maintains_old_items(mocker, session):
     """
     Calling update_conversation deletes and adds old items back to layout
     """
@@ -1682,7 +1682,7 @@ def test_update_conversation_maintains_old_items(mocker, homedir, session):
     session.add(reply)
     session.commit()
 
-    cv = ConversationView(source, homedir, mock_controller)
+    cv = ConversationView(source, mock_controller)
     assert cv.conversation_layout.count() == 3
 
     cv.update_conversation(cv.source.collection)
@@ -1690,7 +1690,7 @@ def test_update_conversation_maintains_old_items(mocker, homedir, session):
     assert cv.conversation_layout.count() == 3
 
 
-def test_update_conversation_adds_new_items(mocker, homedir, session):
+def test_update_conversation_adds_new_items(mocker, session):
     """
     Calling update_conversation adds new items to layout
     """
@@ -1707,7 +1707,7 @@ def test_update_conversation_adds_new_items(mocker, homedir, session):
     session.add(reply)
     session.commit()
 
-    cv = ConversationView(source, homedir, mock_controller)
+    cv = ConversationView(source, mock_controller)
     assert cv.conversation_layout.count() == 3  # precondition
 
     # add the new message and persist
@@ -1726,7 +1726,7 @@ def test_clear_conversation_deletes_items(mocker, homedir):
     mock_controller = mocker.MagicMock()
     mock_source = mocker.MagicMock()
     message = db.Message(uuid='uuid', content='message', filename='1-foo')
-    cv = ConversationView(mock_source, homedir, mock_controller)
+    cv = ConversationView(mock_source, mock_controller)
     cv.add_message(message)
     assert cv.conversation_layout.count() == 1
 
@@ -1743,15 +1743,15 @@ def test_SourceConversationWrapper_auth_signals(mocker, homedir):
     mock_connect = mocker.MagicMock()
     mock_signal = mocker.MagicMock(connect=mock_connect)
     mock_controller = mocker.MagicMock(authentication_state=mock_signal)
-    mock_is_auth = mocker.MagicMock()
+    mock_controller.is_authenticated = mocker.MagicMock()
 
     mock_sh = mocker.patch.object(SourceConversationWrapper, '_show_or_hide_replybox')
     mocker.patch('securedrop_client.gui.widgets.LastUpdatedLabel', return_value=QLabel('now'))
 
-    SourceConversationWrapper(mock_source, 'mock home', mock_controller, mock_is_auth)
+    SourceConversationWrapper(mock_source, mock_controller)
 
     mock_connect.assert_called_once_with(mock_sh)
-    mock_sh.assert_called_with(mock_is_auth)
+    mock_sh.assert_called_with(mock_controller.is_authenticated)
 
 
 def test_SourceConversationWrapper_set_widgets_via_auth_value(mocker, homedir):
@@ -1762,7 +1762,7 @@ def test_SourceConversationWrapper_set_widgets_via_auth_value(mocker, homedir):
     mock_controller = mocker.MagicMock()
 
     mocker.patch('securedrop_client.gui.widgets.LastUpdatedLabel', return_value=QLabel('now'))
-    cw = SourceConversationWrapper(mock_source, 'mock home', mock_controller, True)
+    cw = SourceConversationWrapper(mock_source, mock_controller)
     mocker.patch.object(cw, 'layout')
     mock_reply_box = mocker.patch('securedrop_client.gui.widgets.ReplyBoxWidget',
                                   return_value=QWidget())
