@@ -26,10 +26,9 @@ def test_init(mocker):
     mocker.patch('securedrop_client.gui.main.QHBoxLayout', mock_lo)
     mocker.patch('securedrop_client.gui.main.QMainWindow')
 
-    w = Window('mock')
+    w = Window()
 
     assert w.conversations == {}
-    assert w.sdc_home == 'mock'
     mock_li.assert_called_once_with(w.icon)
     mock_lp.assert_called_once_with()
     mock_mv.assert_called_once_with(w.main_pane)
@@ -41,7 +40,7 @@ def test_setup(mocker):
     Ensure the passed in controller is referenced and the various views are
     instantiated as expected.
     """
-    w = Window('mock')
+    w = Window()
     mock_controller = mocker.MagicMock()
     w.show_login = mocker.MagicMock()
     w.top_pane = mocker.MagicMock()
@@ -59,7 +58,7 @@ def test_setup(mocker):
 
 
 def test_show_main_window(mocker):
-    w = Window('mock')
+    w = Window()
     w.autosize_window = mocker.MagicMock()
     w.show = mocker.MagicMock()
     w.set_logged_in_as = mocker.MagicMock()
@@ -72,7 +71,7 @@ def test_show_main_window(mocker):
 
 
 def test_show_main_window_without_username(mocker):
-    w = Window('mock')
+    w = Window()
     w.autosize_window = mocker.MagicMock()
     w.show = mocker.MagicMock()
     w.set_logged_in_as = mocker.MagicMock()
@@ -88,7 +87,7 @@ def test_autosize_window(mocker):
     """
     Check the autosizing fits to the full screen size.
     """
-    w = Window('mock')
+    w = Window()
     w.resize = mocker.MagicMock()
     mock_screen = mocker.MagicMock()
     mock_screen.width.return_value = 1024
@@ -105,7 +104,7 @@ def test_show_login(mocker):
     """
     The login dialog is displayed with a clean state.
     """
-    w = Window('mock')
+    w = Window()
     w.controller = mocker.MagicMock()
     mock_ld = mocker.patch('securedrop_client.gui.main.LoginDialog')
 
@@ -120,7 +119,7 @@ def test_show_login_error(mocker):
     """
     Ensures that an error message is displayed in the login dialog.
     """
-    w = Window('mock')
+    w = Window()
     w.show_login = mocker.MagicMock()
     w.setup(mocker.MagicMock())
     w.login_dialog = mocker.MagicMock()
@@ -134,7 +133,7 @@ def test_hide_login(mocker):
     """
     Ensure the login dialog is closed and hidden.
     """
-    w = Window('mock')
+    w = Window()
     w.show_login = mocker.MagicMock()
     ld = mocker.MagicMock()
     w.login_dialog = ld
@@ -149,7 +148,7 @@ def test_show_sources(mocker):
     """
     Ensure the sources list is passed to the source list widget to be updated.
     """
-    w = Window('mock')
+    w = Window()
     w.main_view = mocker.MagicMock()
     w.show_sources([1, 2, 3])
     w.main_view.source_list.update.assert_called_once_with([1, 2, 3])
@@ -160,7 +159,7 @@ def test_update_error_status_default(mocker):
     Ensure that the error to be shown in the error status bar will be passed to the top pane with a
     default duration of 10 seconds.
     """
-    w = Window('mock')
+    w = Window()
     w.top_pane = mocker.MagicMock()
     w.update_error_status(message='test error message')
     w.top_pane.update_error_status.assert_called_once_with('test error message', 10000)
@@ -171,7 +170,7 @@ def test_update_error_status(mocker):
     Ensure that the error to be shown in the error status bar will be passed to the top pane with
     the duration of seconds provided.
     """
-    w = Window('mock')
+    w = Window()
     w.top_pane = mocker.MagicMock()
     w.update_error_status(message='test error message', duration=123)
     w.top_pane.update_error_status.assert_called_once_with('test error message', 123)
@@ -182,7 +181,7 @@ def test_update_activity_status_default(mocker):
     Ensure that the activity to be shown in the activity status bar will be passed to the top pane
     with a default duration of 0 seconds, i.e. forever.
     """
-    w = Window('mock')
+    w = Window()
     w.top_pane = mocker.MagicMock()
     w.update_activity_status(message='test message')
     w.top_pane.update_activity_status.assert_called_once_with('test message', 0)
@@ -193,7 +192,7 @@ def test_update_activity_status(mocker):
     Ensure that the activity to be shown in the activity status bar will be passed to the top pane
     with the duration of seconds provided.
     """
-    w = Window('mock')
+    w = Window()
     w.top_pane = mocker.MagicMock()
     w.update_activity_status(message='test message', duration=123)
     w.top_pane.update_activity_status.assert_called_once_with('test message', 123)
@@ -203,7 +202,7 @@ def test_clear_error_status(mocker):
     """
     Ensure clear_error_status is called.
     """
-    w = Window('mock')
+    w = Window()
     w.top_pane = mocker.MagicMock()
 
     w.clear_error_status()
@@ -215,7 +214,7 @@ def test_show_sync(mocker):
     """
     If there's a value display the result of its "humanize" method.humanize
     """
-    w = Window('mock')
+    w = Window()
     w.update_activity_status = mocker.MagicMock()
     updated_on = mocker.MagicMock()
     w.show_sync(updated_on)
@@ -227,7 +226,7 @@ def test_show_sync_no_sync(mocker):
     """
     If there's no value to display, default to a "waiting" message.
     """
-    w = Window('mock')
+    w = Window()
     w.update_activity_status = mocker.MagicMock()
     w.show_sync(None)
     w.update_activity_status.assert_called_once_with('Waiting to refresh...', 5000)
@@ -237,7 +236,7 @@ def test_set_logged_in_as(mocker):
     """
     Given a username, the left pane is appropriately called to update.
     """
-    w = Window('mock')
+    w = Window()
     w.left_pane = mocker.MagicMock()
 
     w.set_logged_in_as('test')
@@ -249,7 +248,7 @@ def test_logout(mocker):
     """
     Ensure the left pane updates to the logged out state.
     """
-    w = Window('mock')
+    w = Window()
     w.left_pane = mocker.MagicMock()
     w.top_pane = mocker.MagicMock()
 
@@ -264,22 +263,22 @@ def test_on_source_changed(mocker):
     Ensure the event handler for when a source is changed calls the
     show_conversation_for method with the expected source object.
     """
-    w = Window('mock')
+    w = Window()
     w.main_view = mocker.MagicMock()
     w.show_conversation_for = mocker.MagicMock()
-    w.controller = mocker.MagicMock(is_authenticated=True)
+    w.controller = mocker.MagicMock()
 
     w.on_source_changed()
 
     source = w.main_view.source_list.itemWidget().source
-    w.show_conversation_for.assert_called_once_with(source, True)
+    w.show_conversation_for.assert_called_once_with(source)
 
 
 def test_on_source_changed_when_source_no_longer_exists(mocker):
     """
     Test that conversation for a source is cleared when the source no longer exists.
     """
-    w = Window('mock')
+    w = Window()
     w.main_view = mocker.MagicMock()
     w.controller = mocker.MagicMock(is_authenticated=True)
     mocker.patch('securedrop_client.gui.main.source_exists', return_value=False)
@@ -293,8 +292,9 @@ def test_conversation_for(mocker):
     """
     Test that the source collection is displayed in the conversation view.
     """
-    w = Window('mock')
+    w = Window()
     w.controller = mocker.MagicMock()
+    w.controller.is_authenticated = True
     w.main_view = mocker.MagicMock()
     mock_source = mocker.MagicMock()
     mock_source.journalistic_designation = 'Testy McTestface'
@@ -313,7 +313,7 @@ def test_conversation_for(mocker):
     mocked_add_file = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_file',
                                    new=mocker.Mock())
 
-    w.show_conversation_for(mock_source, is_authenticated=True)
+    w.show_conversation_for(mock_source)
 
     assert mocked_add_message.call_count > 0
     assert mocked_add_reply.call_count > 0
@@ -335,7 +335,8 @@ def test_conversation_for(mocker):
                                    new=mocker.Mock())
 
     # checking with is_authenticated=False just to ensure this doesn't break either
-    w.show_conversation_for(mock_source, is_authenticated=False)
+    w.controller.is_authenticated = False
+    w.show_conversation_for(mock_source)
 
     # because the conversation was cached, we don't call these functions again
     assert mocked_add_message.call_count == 0
@@ -348,8 +349,9 @@ def test_conversation_pending_message(mocker):
     Test that a conversation with a message that's not yet downloaded
     shows the right placeholder text
     """
-    w = Window('mock')
+    w = Window()
     w.controller = mocker.MagicMock()
+    w.controller.is_authenticated = True
     w.main_view = mocker.MagicMock()
     w._add_item_content_or = mocker.MagicMock()
     mock_source = mocker.MagicMock()
@@ -365,7 +367,7 @@ def test_conversation_pending_message(mocker):
     mocker.patch('securedrop_client.gui.main.QHBoxLayout')
     mocker.patch('securedrop_client.gui.main.QWidget')
 
-    w.show_conversation_for(mock_source, True)
+    w.show_conversation_for(mock_source)
 
     assert mocked_add_message.call_count == 1
     assert mocked_add_message.call_args == mocker.call(message)

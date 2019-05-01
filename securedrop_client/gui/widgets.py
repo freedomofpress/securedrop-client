@@ -1328,16 +1328,9 @@ class ConversationView(QWidget):
     https://github.com/freedomofpress/securedrop-client/issues/273
     """
 
-    def __init__(
-        self,
-        source_db_object: Source,
-        sdc_home: str,
-        controller: Controller,
-        parent=None,
-    ):
-        super().__init__(parent)
+    def __init__(self, source_db_object: Source, controller: Controller):
+        super().__init__()
         self.source = source_db_object
-        self.sdc_home = sdc_home
         self.controller = controller
 
         self.container = QWidget()
@@ -1437,25 +1430,16 @@ class SourceConversationWrapper(QWidget):
     per-source resources.
     """
 
-    def __init__(
-        self,
-        source: Source,
-        sdc_home: str,
-        controller: Controller,
-        is_authenticated: bool,
-        parent=None
-    ) -> None:
-        super().__init__(parent)
+    def __init__(self, source: Source, controller: Controller) -> None:
+        super().__init__()
         self.source = source
         self.controller = controller
-        self.sdc_home = sdc_home
 
         self.layout = QVBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
 
-        self.conversation = ConversationView(self.source, self.sdc_home, self.controller,
-                                             parent=self)
+        self.conversation = ConversationView(self.source, self.controller)
         self.source_profile = SourceProfileShortWidget(self.source, self.controller)
         self.reply_box = ReplyBoxWidget(self)
 
@@ -1464,7 +1448,7 @@ class SourceConversationWrapper(QWidget):
         self.layout.addWidget(self.reply_box, 3)
 
         self.controller.authentication_state.connect(self._show_or_hide_replybox)
-        self._show_or_hide_replybox(is_authenticated)
+        self._show_or_hide_replybox(self.controller.is_authenticated)
 
     def send_reply(self, message: str) -> None:
         msg_uuid = str(uuid4())
