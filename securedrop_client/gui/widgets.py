@@ -1436,7 +1436,7 @@ class ConversationView(QWidget):
 
     def add_reply(self, reply: Reply) -> None:
         """
-        Add a reply from the source.
+        Add a reply from a journalist to the source.
         """
         if reply.content is not None:
             content = reply.content
