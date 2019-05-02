@@ -24,13 +24,14 @@ import sys
 from typing import List
 from uuid import uuid4
 
-from PyQt5.QtCore import Qt, pyqtSlot, QTimer, QSize
+from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QTimer, QSize
 from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
     QToolButton, QSizePolicy, QTextEdit, QStatusBar, QGraphicsDropShadowEffect
 
 from securedrop_client.db import Source, Message, File, Reply
+from securedrop_client.storage import source_exists
 from securedrop_client.gui import SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_icon, load_image
@@ -597,6 +598,7 @@ class MainView(QWidget):
         self.setLayout(self.layout)
 
         self.source_list = SourceList()
+        self.source_list.itemSelectionChanged.connect(self.on_source_changed)
 
         self.view_layout = QVBoxLayout()
         self.view_layout.setContentsMargins(0, 0, 0, 0)
@@ -604,8 +606,8 @@ class MainView(QWidget):
         self.view_holder.setObjectName('view_holder')  # Set css id
         self.view_holder.setLayout(self.view_layout)
 
-        self.layout.addWidget(self.source_list, 4)
-        self.layout.addWidget(self.view_holder, 6)
+        self.layout.addWidget(self.source_list)
+        self.layout.addWidget(self.view_holder)
 
     def setup(self, controller):
         """
@@ -613,6 +615,26 @@ class MainView(QWidget):
         """
         self.controller = controller
         self.source_list.setup(controller)
+
+    def show_sources(self, sources: List[Source]):
+        """
+        Update the left hand sources list in the UI with the passed in list of
+        sources.
+        """
+        self.source_list.update(sources)
+
+    def on_source_changed(self):
+        """
+        Show conversation for the currently-selected source if it hasn't been deleted. If the
+        current source no longer exists, clear the conversation for that source.
+        """
+        source = self.source_list.get_current_source()
+
+        if source:
+            conversation_wrapper = SourceConversationWrapper(source, self.controller)
+            self.set_conversation(conversation_wrapper)
+        else:
+            self.clear_conversation()
 
     def set_conversation(self, widget):
         """
@@ -673,10 +695,11 @@ class SourceList(QListWidget):
         """
         Reset and update the list with the passed in list of sources.
         """
-        current_maybe = self.currentItem() and self.itemWidget(self.currentItem())
+        current_source = self.get_current_source()
+        current_source_id = current_source and current_source.id
+
         self.clear()
 
-        new_current_maybe = None
         for source in sources:
             new_source = SourceWidget(source)
             new_source.setup(self.controller)
@@ -687,11 +710,14 @@ class SourceList(QListWidget):
             self.addItem(list_item)
             self.setItemWidget(list_item, new_source)
 
-            if current_maybe and (source.id == current_maybe.source.id):
-                new_current_maybe = list_item
+            if source.id == current_source_id:
+                self.setCurrentItem(list_item)
 
-        if new_current_maybe:
-            self.setCurrentItem(new_current_maybe)
+    def get_current_source(self):
+        source_item = self.currentItem()
+        source_widget = self.itemWidget(source_item)
+        if source_widget and source_exists(self.controller.session, source_widget.source.uuid):
+            return source_widget.source
 
 
 class SourceWidget(QWidget):
@@ -1371,11 +1397,7 @@ class ConversationView(QWidget):
             if conversation_item.filename.endswith('msg.gpg'):
                 self.add_message(conversation_item)
             elif conversation_item.filename.endswith('reply.gpg'):
-                if conversation_item.content is not None:
-                    content = conversation_item.content
-                else:
-                    content = '<Message not yet available>'
-                self.add_reply(conversation_item.uuid, content)
+                self.add_reply(conversation_item)
             else:
                 self.add_file(self.source, conversation_item)
 
@@ -1412,9 +1434,25 @@ class ConversationView(QWidget):
             content,
             self.controller.message_sync.message_ready))
 
-    def add_reply(self, uuid: str, content: str) -> None:
+    def add_reply(self, reply: Reply) -> None:
         """
-        Add a reply from a journalist.
+        Add a reply from a journalist to the source.
+        """
+        if reply.content is not None:
+            content = reply.content
+        else:
+            content = '<Reply not yet available>'
+
+        self.conversation_layout.addWidget(ReplyWidget(
+            reply.uuid,
+            content,
+            self.controller.reply_sync.reply_ready,
+            self.controller.reply_succeeded,
+            self.controller.reply_failed))
+
+    def add_reply_from_reply_box(self, uuid: str, content: str) -> None:
+        """
+        Add a reply from the reply box.
         """
         self.conversation_layout.addWidget(ReplyWidget(
             uuid,
@@ -1422,6 +1460,13 @@ class ConversationView(QWidget):
             self.controller.reply_sync.reply_ready,
             self.controller.reply_succeeded,
             self.controller.reply_failed))
+
+    def on_reply_sent(self, source_uuid: str, reply_uuid: str, reply_text: str) -> None:
+        """
+        Add the reply text sent from ReplyBoxWidget to the conversation.
+        """
+        if source_uuid == self.source.uuid:
+            self.add_reply_from_reply_box(reply_uuid, reply_text)
 
 
 class SourceConversationWrapper(QWidget):
@@ -1432,41 +1477,21 @@ class SourceConversationWrapper(QWidget):
 
     def __init__(self, source: Source, controller: Controller) -> None:
         super().__init__()
-        self.source = source
-        self.controller = controller
 
-        self.layout = QVBoxLayout()
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(self.layout)
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
 
-        self.conversation = ConversationView(self.source, self.controller)
-        self.source_profile = SourceProfileShortWidget(self.source, self.controller)
-        self.reply_box = ReplyBoxWidget(self)
+        self.conversation_title_bar = SourceProfileShortWidget(source, controller)
+        self.conversation_view = ConversationView(source, controller)
+        self.reply_box = ReplyBoxWidget(source, controller)
 
-        self.layout.addWidget(self.source_profile, 1)
-        self.layout.addWidget(self.conversation, 9)
-        self.layout.addWidget(self.reply_box, 3)
+        layout.addWidget(self.conversation_title_bar, 1)
+        layout.addWidget(self.conversation_view, 9)
+        layout.addWidget(self.reply_box, 3)
 
-        self.controller.authentication_state.connect(self._show_or_hide_replybox)
-        self._show_or_hide_replybox(self.controller.is_authenticated)
-
-    def send_reply(self, message: str) -> None:
-        msg_uuid = str(uuid4())
-        self.conversation.add_reply(msg_uuid, message)
-        self.controller.send_reply(self.source.uuid, msg_uuid, message)
-
-    def _show_or_hide_replybox(self, show: bool) -> None:
-        if show:
-            new_widget = ReplyBoxWidget(self)
-        else:
-            new_widget = QLabel(_('You need to log in to send replies.'))
-
-        old_widget = self.layout.takeAt(2)
-        if old_widget is not None:
-            old_widget.widget().deleteLater()
-
-        self.reply_box = new_widget
-        self.layout.addWidget(new_widget, 3)
+        # Connect reply_box to conversation_view
+        self.reply_box.reply_sent.connect(self.conversation_view.on_reply_sent)
 
 
 class ReplyBoxWidget(QWidget):
@@ -1474,9 +1499,17 @@ class ReplyBoxWidget(QWidget):
     A textbox where a journalist can enter a reply.
     """
 
-    def __init__(self, conversation: SourceConversationWrapper) -> None:
+    reply_sent = pyqtSignal(str, str, str)
+
+    def __init__(self, source: Source, controller: Controller) -> None:
         super().__init__()
-        self.conversation = conversation
+
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        self.source = source
+        self.controller = controller
 
         self.text_edit = QTextEdit()
 
@@ -1489,19 +1522,39 @@ class ReplyBoxWidget(QWidget):
         self.send_button.setIcon(button_icon)
         self.send_button.setIconSize(button_pixmap.rect().size())
 
-        layout = QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.text_edit)
+        self.controller.authentication_state.connect(self._on_authentication_changed)
+        self._on_authentication_changed(self.controller.is_authenticated)
 
+        layout.addWidget(self.text_edit)
         layout.addWidget(self.send_button, 0, Qt.AlignRight)
-        self.setLayout(layout)
+
+    def enable(self):
+        self.text_edit.clear()
+        self.text_edit.setEnabled(True)
+        self.send_button.show()
+
+    def disable(self):
+        self.text_edit.setText(_('You need to log in to send replies.'))
+        self.text_edit.setEnabled(False)
+        self.send_button.hide()
 
     def send_reply(self) -> None:
-        msg = self.text_edit.toPlainText().strip()
-        if not msg:
-            return
-        self.conversation.send_reply(msg)
-        self.text_edit.clear()
+        """
+        Send reply and emit a signal so that the gui can be updated immediately, even before the
+        the reply is saved locally.
+        """
+        reply_text = self.text_edit.toPlainText().strip()
+        if reply_text:
+            reply_uuid = str(uuid4())
+            self.controller.send_reply(self.source.uuid, reply_uuid, reply_text)
+            self.reply_sent.emit(self.source.uuid, reply_uuid, reply_text)
+            self.text_edit.clear()
+
+    def _on_authentication_changed(self, authenticated: bool) -> None:
+        if authenticated:
+            self.enable()
+        else:
+            self.disable()
 
 
 class DeleteSourceAction(QAction):

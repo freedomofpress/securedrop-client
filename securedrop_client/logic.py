@@ -455,13 +455,6 @@ class Controller(QObject):
                                          remote_submissions,
                                          remote_replies, self.data_dir)
 
-            # clean up locally cached conversation views
-            remote_source_uuids = [s.uuid for s in remote_sources]
-            cached_sources = list(self.gui.conversations.keys())
-            for cached_source in cached_sources:
-                if cached_source not in remote_source_uuids:
-                    self.gui.conversations.pop(cached_source, None)
-
             # Set last sync flag.
             with open(self.sync_flag, 'w') as f:
                 f.write(arrow.now().format())
@@ -477,7 +470,6 @@ class Controller(QObject):
                     except CryptoError:
                         logger.warning('Failed to import key for source {}'.format(source.uuid))
 
-            self.update_conversation_views()
         else:
             # How to handle a failure? Exceptions are already logged. Perhaps
             # a message in the UI?
@@ -500,16 +492,6 @@ class Controller(QObject):
             sources.sort(key=lambda x: x.last_updated, reverse=True)
         self.gui.show_sources(sources)
         self.update_sync()
-
-    def update_conversation_views(self):
-        """
-        Updates the conversation view to reflect progress
-        of the download and decryption of messages and replies.
-        """
-        for conversation_wrapper in self.gui.conversations.values():
-            conv = conversation_wrapper.conversation
-            self.session.refresh(conv.source)
-            conv.update_conversation(conv.source.collection)
 
     def on_update_star_complete(self, result):
         """

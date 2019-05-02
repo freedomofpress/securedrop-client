@@ -1,11 +1,8 @@
 """
 Check the core Window UI class works as expected.
 """
-from uuid import uuid4
-
 from PyQt5.QtWidgets import QApplication, QHBoxLayout
 
-from securedrop_client.db import Message
 from securedrop_client.gui.main import Window
 from securedrop_client.resources import load_icon
 
@@ -28,7 +25,6 @@ def test_init(mocker):
 
     w = Window()
 
-    assert w.conversations == {}
     mock_li.assert_called_once_with(w.icon)
     mock_lp.assert_called_once_with()
     mock_mv.assert_called_once_with(w.main_pane)
@@ -46,14 +42,13 @@ def test_setup(mocker):
     w.top_pane = mocker.MagicMock()
     w.left_pane = mocker.MagicMock()
     w.main_view = mocker.MagicMock()
-    w.main_view.source_list = mocker.MagicMock()
 
     w.setup(mock_controller)
 
     assert w.controller == mock_controller
     w.top_pane.setup.assert_called_once_with(mock_controller)
     w.left_pane.setup.assert_called_once_with(w, mock_controller)
-    w.main_view.source_list.setup.assert_called_once_with(mock_controller)
+    w.main_view.setup.assert_called_once_with(mock_controller)
     w.show_login.assert_called_once_with()
 
 
@@ -146,12 +141,12 @@ def test_hide_login(mocker):
 
 def test_show_sources(mocker):
     """
-    Ensure the sources list is passed to the source list widget to be updated.
+    Ensure the sources list is passed to the main view to be updated.
     """
     w = Window()
     w.main_view = mocker.MagicMock()
     w.show_sources([1, 2, 3])
-    w.main_view.source_list.update.assert_called_once_with([1, 2, 3])
+    w.main_view.show_sources.assert_called_once_with([1, 2, 3])
 
 
 def test_update_error_status_default(mocker):
@@ -256,118 +251,3 @@ def test_logout(mocker):
 
     w.left_pane.set_logged_out.assert_called_once_with()
     w.top_pane.disable_refresh.assert_called_once_with()
-
-
-def test_on_source_changed(mocker):
-    """
-    Ensure the event handler for when a source is changed calls the
-    show_conversation_for method with the expected source object.
-    """
-    w = Window()
-    w.main_view = mocker.MagicMock()
-    w.show_conversation_for = mocker.MagicMock()
-    w.controller = mocker.MagicMock()
-
-    w.on_source_changed()
-
-    source = w.main_view.source_list.itemWidget().source
-    w.show_conversation_for.assert_called_once_with(source)
-
-
-def test_on_source_changed_when_source_no_longer_exists(mocker):
-    """
-    Test that conversation for a source is cleared when the source no longer exists.
-    """
-    w = Window()
-    w.main_view = mocker.MagicMock()
-    w.controller = mocker.MagicMock(is_authenticated=True)
-    mocker.patch('securedrop_client.gui.main.source_exists', return_value=False)
-
-    w.on_source_changed()
-
-    w.main_view.clear_conversation.assert_called_once_with()
-
-
-def test_conversation_for(mocker):
-    """
-    Test that the source collection is displayed in the conversation view.
-    """
-    w = Window()
-    w.controller = mocker.MagicMock()
-    w.controller.is_authenticated = True
-    w.main_view = mocker.MagicMock()
-    mock_source = mocker.MagicMock()
-    mock_source.journalistic_designation = 'Testy McTestface'
-    mock_file = mocker.MagicMock()
-    mock_file.filename = '1-my-source-doc.gpg'
-    mock_message = mocker.MagicMock()
-    mock_message.filename = '2-my-source-msg.gpg'
-    mock_reply = mocker.MagicMock()
-    mock_reply.filename = '3-my-source-reply.gpg'
-    mock_source.collection = [mock_file, mock_message, mock_reply]
-
-    mocked_add_message = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_message',
-                                      new=mocker.Mock())
-    mocked_add_reply = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_reply',
-                                    new=mocker.Mock())
-    mocked_add_file = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_file',
-                                   new=mocker.Mock())
-
-    w.show_conversation_for(mock_source)
-
-    assert mocked_add_message.call_count > 0
-    assert mocked_add_reply.call_count > 0
-    assert mocked_add_file.call_count > 0
-
-    # check that showing the conversation a second time doesn't break anything
-
-    # stop the old mockers
-    mocked_add_message.stop()
-    mocked_add_reply.stop()
-    mocked_add_file.stop()
-
-    # use new mocks to check the count again
-    mocked_add_message = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_message',
-                                      new=mocker.Mock())
-    mocked_add_reply = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_reply',
-                                    new=mocker.Mock())
-    mocked_add_file = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_file',
-                                   new=mocker.Mock())
-
-    # checking with is_authenticated=False just to ensure this doesn't break either
-    w.controller.is_authenticated = False
-    w.show_conversation_for(mock_source)
-
-    # because the conversation was cached, we don't call these functions again
-    assert mocked_add_message.call_count == 0
-    assert mocked_add_reply.call_count == 0
-    assert mocked_add_file.call_count == 0
-
-
-def test_conversation_pending_message(mocker):
-    """
-    Test that a conversation with a message that's not yet downloaded
-    shows the right placeholder text
-    """
-    w = Window()
-    w.controller = mocker.MagicMock()
-    w.controller.is_authenticated = True
-    w.main_view = mocker.MagicMock()
-    w._add_item_content_or = mocker.MagicMock()
-    mock_source = mocker.MagicMock()
-    mock_source.journalistic_designation = 'Testy McTestface'
-
-    msg_uuid = str(uuid4())
-    message = Message(source=mock_source, uuid=msg_uuid, size=123, filename="1-test.msg.gpg",
-                      download_url='http://test/test', is_downloaded=False)
-
-    mock_source.collection = [message]
-
-    mocked_add_message = mocker.patch('securedrop_client.gui.widgets.ConversationView.add_message')
-    mocker.patch('securedrop_client.gui.main.QHBoxLayout')
-    mocker.patch('securedrop_client.gui.main.QWidget')
-
-    w.show_conversation_for(mock_source)
-
-    assert mocked_add_message.call_count == 1
-    assert mocked_add_message.call_args == mocker.call(message)

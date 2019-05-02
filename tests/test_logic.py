@@ -528,31 +528,6 @@ def test_Controller_sync_api(homedir, config, mocker):
                                         co.on_sync_timeout, co.api)
 
 
-def test_Controller_on_synced_remove_stale_sources(homedir, config, mocker):
-    """
-    On an API sync, if a source no longer exists, remove it from the GUI.
-    Using the `config` fixture to ensure the config is written to disk.
-    """
-    mock_source_id = 'abc123'
-    mock_conv_wrapper = 'mock'
-
-    gui = mocker.Mock()
-    gui.conversations = {mock_source_id: mock_conv_wrapper}
-
-    mock_session = mocker.MagicMock()
-    co = Controller('http://localhost', gui, mock_session, homedir)
-
-    mock_source = mocker.Mock()
-    mock_source.uuid = mock_source_id
-
-    # not that the first item does *not* have the mock_source
-    api_res = ([], mocker.MagicMock(), mocker.MagicMock())
-    co.on_synced(api_res)
-
-    # check that the uuid is not longer in the dict
-    assert mock_source_id not in gui.conversations
-
-
 def test_Controller_last_sync_with_file(homedir, config, mocker):
     """
     The flag indicating the time of the last sync with the API is stored in a
@@ -728,33 +703,6 @@ def test_Controller_update_sources(homedir, config, mocker):
     co.update_sources()
     mock_storage.get_local_sources.assert_called_once_with(mock_session)
     mock_gui.show_sources.assert_called_once_with(source_list)
-
-
-def test_Controller_update_conversation_views(homedir, config, mocker):
-    """
-    Ensure the UI displays the latest version of the messages/replies that
-    have been downloaded/decrypted in the current conversation view.
-    Using the `config` fixture to ensure the config is written to disk.
-    """
-    mock_gui = mocker.Mock()
-    mock_conversation_wrapper = mocker.Mock()
-    mock_conversation = mocker.MagicMock()
-    mock_conversation_wrapper.conversation = mock_conversation
-    mock_update_conversation = mocker.MagicMock()
-    mock_conversation.update_conversation = mock_update_conversation
-    mock_gui.conversations = {'foo': mock_conversation_wrapper}
-    mock_session = mocker.MagicMock()
-
-    # Since we use the set-like behavior of self.session
-    # to check if the source is still persistent, let's mock that here
-    mock_session.__contains__ = mocker.Mock()
-    mock_session.__contains__.return_value = True
-
-    mock_session.refresh = mocker.MagicMock()
-    co = Controller('http://localhost', mock_gui, mock_session, homedir)
-    co.update_conversation_views()
-    assert mock_session.refresh.called
-    assert mock_update_conversation.called
 
 
 def test_Controller_unstars_a_source_if_starred(homedir, config, mocker):
