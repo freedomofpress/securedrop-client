@@ -38,7 +38,7 @@ class SvgToggleButton(QPushButton):
         The display size of the SVG, defaults to filling the entire size of the widget.
     """
 
-    def __init__(self, on: str, off: str, svg_size: str=None):
+    def __init__(self, on: str, off: str, svg_size: str = None):
         super().__init__()
 
         # Set layout
@@ -87,7 +87,8 @@ class SvgPushButton(QPushButton):
         The display size of the SVG, defaults to filling the entire size of the widget.
     """
 
-    def __init__(self, normal: str, disabled: str=None, active: str=None, selected: str=None, svg_size:str=None) -> None:
+    def __init__(self, normal: str, disabled: str = None, active: str = None,
+                 selected: str = None, svg_size: str = None) -> None:
         super().__init__()
 
         # Set layout
@@ -122,7 +123,7 @@ class SvgLabel(QLabel):
         The display size of the SVG, defaults to filling the entire size of the widget.
     """
 
-    def __init__(self, filename: str, svg_size: str=None) -> None:
+    def __init__(self, filename: str, svg_size: str = None) -> None:
         super().__init__()
 
         # Remove margins and spacing

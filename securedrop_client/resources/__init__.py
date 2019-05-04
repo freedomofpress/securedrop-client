@@ -63,7 +63,7 @@ def load_toggle_icon(on: str, off: str) -> QIcon:
     return icon
 
 
-def load_icon(normal: str, disabled: str=None, active: str=None, selected: str=None) -> QIcon:
+def load_icon(normal: str, disabled: str = None, active: str = None, selected: str = None) -> QIcon:
     """
     Add the contents of Scalable Vector Graphics (SVG) files provided for associated icon modes,
     see https://doc.qt.io/qt-5/qicon.html#Mode-enum.
