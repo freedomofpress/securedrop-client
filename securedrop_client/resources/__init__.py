@@ -27,7 +27,7 @@ QDir.addSearchPath('images', resource_filename(__name__, 'images'))
 QDir.addSearchPath('css', resource_filename(__name__, 'css'))
 
 
-def path(name, resource_dir="images/"):
+def path(name: str, resource_dir: str = "images/") -> str:
     """
     Return the filename for the referenced image.
 
@@ -63,7 +63,7 @@ def load_toggle_icon(on: str, off: str) -> QIcon:
     return icon
 
 
-def load_icon(normal: str, disabled: str = None, active=None, selected=None) -> QIcon:
+def load_icon(normal: str, disabled: str = None, active: str = None, selected: str = None) -> QIcon:
     """
     Add the contents of Scalable Vector Graphics (SVG) files provided for associated icon modes,
     see https://doc.qt.io/qt-5/qicon.html#Mode-enum.
@@ -102,21 +102,21 @@ def load_icon(normal: str, disabled: str = None, active=None, selected=None) -> 
     return icon
 
 
-def load_svg(name):
+def load_svg(name: str) -> QSvgWidget:
     """
     Return a QSvgWidget representation of a file in the resources.
     """
     return QSvgWidget(path(name))
 
 
-def load_image(name):
+def load_image(name: str) -> QPixmap:
     """
     Return a QPixmap representation of a file in the resources.
     """
     return QPixmap(path(name))
 
 
-def load_css(name):
+def load_css(name: str) -> str:
     """
     Return the contents of the referenced CSS file in the resources.
     """
