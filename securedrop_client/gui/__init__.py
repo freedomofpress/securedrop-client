@@ -38,7 +38,7 @@ class SvgToggleButton(QPushButton):
         The display size of the SVG, defaults to filling the entire size of the widget.
     """
 
-    def __init__(self, on: str, off: str, svg_size=None):
+    def __init__(self, on: str, off: str, svg_size: str=None):
         super().__init__()
 
         # Set layout
@@ -57,13 +57,13 @@ class SvgToggleButton(QPushButton):
         # Make this a toggle button
         self.setCheckable(True)
 
-    def enable(self):
+    def enable(self) -> None:
         self.setEnabled(True)
 
-    def disable(self):
+    def disable(self) -> None:
         self.setEnabled(False)
 
-    def set_icon(self, on: str, off: str):
+    def set_icon(self, on: str, off: str) -> None:
         self.icon = load_toggle_icon(on=on, off=off)
         self.setIcon(self.icon)
 
@@ -87,7 +87,7 @@ class SvgPushButton(QPushButton):
         The display size of the SVG, defaults to filling the entire size of the widget.
     """
 
-    def __init__(self, normal: str, disabled=None, active=None, selected=None, svg_size=None):
+    def __init__(self, normal: str, disabled: str=None, active: str=None, selected: str=None, svg_size:str=None) -> None:
         super().__init__()
 
         # Set layout
@@ -103,10 +103,10 @@ class SvgPushButton(QPushButton):
         self.setIcon(self.icon)
         self.setIconSize(svg_size) if svg_size else self.setIconSize(QSize())
 
-    def enable(self):
+    def enable(self) -> None:
         self.setEnabled(True)
 
-    def disable(self):
+    def disable(self) -> None:
         self.setEnabled(False)
 
 
@@ -122,7 +122,7 @@ class SvgLabel(QLabel):
         The display size of the SVG, defaults to filling the entire size of the widget.
     """
 
-    def __init__(self, filename: str, svg_size=None):
+    def __init__(self, filename: str, svg_size: str=None) -> None:
         super().__init__()
 
         # Remove margins and spacing
