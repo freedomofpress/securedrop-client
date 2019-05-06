@@ -636,7 +636,7 @@ class MainView(QWidget):
         else:
             self.clear_conversation()
 
-    def set_conversation(self, widget: any) -> None:
+    def set_conversation(self, widget: QWidget) -> None:
         """
         Update the view holder to contain the referenced widget.
         """
@@ -1277,8 +1277,8 @@ class FileWidget(QWidget):
     Represents a file.
     """
 
-    def __init__(self, source_db_object: any, submission_db_object: any,
-                 controller: Controller, file_ready_signal: any, align="left") -> None:
+    def __init__(self, source_db_object: Source, submission_db_object: any,
+                 controller: Controller, file_ready_signal: any, align: str = "left") -> None:
         """
         Given some text, an indication of alignment ('left' or 'right') and
         a reference to the controller, make something to display a file.
@@ -1401,7 +1401,7 @@ class ConversationView(QWidget):
             else:
                 self.add_file(self.source, conversation_item)
 
-    def add_file(self, source_db_object: any, submission_db_object: any) -> None:
+    def add_file(self, source_db_object: Source, submission_db_object: any) -> None:
         """
         Add a file from the source.
         """
@@ -1634,7 +1634,7 @@ class TitleLabel(QLabel):
 class LastUpdatedLabel(QLabel):
     """Time the conversation was last updated."""
 
-    def __init__(self, last_updated: any) -> None:
+    def __init__(self, last_updated: str) -> None:
         html_text = _('<h3>{}</h3>').format(arrow.get(last_updated).humanize())
         super().__init__(html_text)
 
