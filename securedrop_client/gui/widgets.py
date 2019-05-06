@@ -32,7 +32,7 @@ from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBox
 
 from securedrop_client.db import Source, Message, File, Reply
 from securedrop_client.storage import source_exists
-from securedrop_client.gui import SvgLabel, SvgPushButton, SvgToggleButton
+from securedrop_client.gui import SvgLabel, SvgPushButton, SvgToggleButton, main
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_icon, load_image
 from securedrop_client.utils import humanize_filesize
@@ -45,7 +45,7 @@ class TopPane(QWidget):
     Top pane of the app window.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         # Fill the background with a gradient
@@ -97,22 +97,22 @@ class TopPane(QWidget):
         layout.addWidget(spacer, 1)
         layout.addWidget(spacer2, 1)
 
-    def setup(self, controller):
+    def setup(self, controller: Controller) -> None:
         self.refresh.setup(controller)
 
-    def enable_refresh(self):
+    def enable_refresh(self) -> None:
         self.refresh.enable()
 
-    def disable_refresh(self):
+    def disable_refresh(self) -> None:
         self.refresh.disable()
 
-    def update_activity_status(self, message: str, duration: int):
+    def update_activity_status(self, message: str, duration: int) -> None:
         self.activity_status_bar.update_message(message, duration)
 
-    def update_error_status(self, message: str, duration: int):
+    def update_error_status(self, message: str, duration: int) -> None:
         self.error_status_bar.update_message(message, duration)
 
-    def clear_error_status(self):
+    def clear_error_status(self) -> None:
         self.error_status_bar.clear_message()
 
 
@@ -121,7 +121,7 @@ class LeftPane(QWidget):
     Represents the left side pane that contains user authentication actions and information.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         # Set layout
@@ -153,17 +153,17 @@ class LeftPane(QWidget):
         # Align content to the top of pane
         layout.addStretch()
 
-    def setup(self, window, controller):
+    def setup(self, window: 'main.Window', controller: Controller) -> None:
         self.user_profile.setup(window, controller)
 
-    def set_logged_in_as(self, username):
+    def set_logged_in_as(self, username: str) -> None:
         """
         Update the UI to reflect that the user is logged in as "username".
         """
         self.user_profile.set_username(username)
         self.user_profile.show()
 
-    def set_logged_out(self):
+    def set_logged_out(self) -> None:
         """
         Update the UI to a logged out state.
         """
@@ -182,7 +182,7 @@ class RefreshButton(SvgPushButton):
     }
     '''
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Add svg images to button
         super().__init__(
             normal='refresh.svg',
@@ -201,14 +201,14 @@ class RefreshButton(SvgPushButton):
         # Click event handler
         self.clicked.connect(self._on_clicked)
 
-    def setup(self, controller):
+    def setup(self, controller: Controller) -> None:
         """
         Assign a controller object (containing the application logic).
         """
         self.controller = controller
         self.controller.sync_events.connect(self._on_refresh_complete)
 
-    def _on_clicked(self):
+    def _on_clicked(self) -> None:
         self.controller.sync_api()
         # This is a temporary solution for showing the icon as active for the entire duration of a
         # refresh, rather than for just the duration of a click. The icon image will be replaced
@@ -218,7 +218,7 @@ class RefreshButton(SvgPushButton):
             normal='refresh_active.svg',
             disabled='refresh_offline.svg'))
 
-    def _on_refresh_complete(self, data):
+    def _on_refresh_complete(self, data: str) -> None:
         if (data == 'synced'):
             self.setIcon(load_icon(
                 normal='refresh.svg',
@@ -226,10 +226,10 @@ class RefreshButton(SvgPushButton):
                 active='refresh_active.svg',
                 selected='refresh.svg'))
 
-    def enable(self):
+    def enable(self) -> None:
         self.setEnabled(True)
 
-    def disable(self):
+    def disable(self) -> None:
         self.setEnabled(False)
 
 
@@ -245,7 +245,7 @@ class ActivityStatusBar(QStatusBar):
     }
     '''
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         # Set css id
@@ -257,7 +257,7 @@ class ActivityStatusBar(QStatusBar):
         # Remove grip image at bottom right-hand corner
         self.setSizeGripEnabled(False)
 
-    def update_message(self, message: str, duration: int):
+    def update_message(self, message: str, duration: int) -> None:
         """
         Display a status message to the user.
         """
@@ -300,7 +300,7 @@ class ErrorStatusBar(QWidget):
     }
     '''
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         # Set styles
@@ -343,20 +343,20 @@ class ErrorStatusBar(QWidget):
         self.status_timer = QTimer()
         self.status_timer.timeout.connect(self._on_status_timeout)
 
-    def _hide(self):
+    def _hide(self) -> None:
         self.vertical_bar.hide()
         self.label.hide()
         self.status_bar.hide()
 
-    def _show(self):
+    def _show(self) -> None:
         self.vertical_bar.show()
         self.label.show()
         self.status_bar.show()
 
-    def _on_status_timeout(self):
+    def _on_status_timeout(self) -> None:
         self._hide()
 
-    def update_message(self, message: str, duration: int):
+    def update_message(self, message: str, duration: int) -> None:
         """
         Display a status message to the user for a given duration.
         """
@@ -364,7 +364,7 @@ class ErrorStatusBar(QWidget):
         self.status_timer.start(duration)
         self._show()
 
-    def clear_message(self):
+    def clear_message(self) -> None:
         """
         Clear any message currently in the status bar.
         """
@@ -392,7 +392,7 @@ class UserProfile(QWidget):
     }
     '''
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         # Set css id
@@ -427,20 +427,20 @@ class UserProfile(QWidget):
         # Align content to the left
         layout.addStretch()
 
-    def setup(self, window, controller):
+    def setup(self, window: 'main.Window', controller: Controller) -> None:
         self.user_button.setup(controller)
         self.login_button.setup(window)
 
-    def set_username(self, username):
+    def set_username(self, username: str) -> None:
         self.user_icon.setText(_('jo'))
         self.user_button.set_username(username)
 
-    def show(self):
+    def show(self) -> None:
         self.login_button.hide()
         self.user_icon.show()
         self.user_button.show()
 
-    def hide(self):
+    def hide(self) -> None:
         self.user_icon.hide()
         self.user_button.hide()
         self.login_button.show()
@@ -468,7 +468,7 @@ class UserButton(SvgPushButton):
     }
     '''
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__('dropdown_arrow.svg', svg_size=QSize(9, 6))
 
         # Set css id
@@ -483,10 +483,10 @@ class UserButton(SvgPushButton):
         self.menu = UserMenu()
         self.setMenu(self.menu)
 
-    def setup(self, controller):
+    def setup(self, controller: Controller) -> None:
         self.menu.setup(controller)
 
-    def set_username(self, username):
+    def set_username(self, username: str) -> None:
         self.setText(_('{}').format(html.escape(username)))
 
 
@@ -496,20 +496,20 @@ class UserMenu(QMenu):
     A menu that provides login options.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.logout = QAction(_('SIGN OUT'))
         self.logout.setFont(QFont("OpenSans", 10))
         self.addAction(self.logout)
         self.logout.triggered.connect(self._on_logout_triggered)
 
-    def setup(self, controller):
+    def setup(self, controller: Controller) -> None:
         """
         Store a reference to the controller (containing the application logic).
         """
         self.controller = controller
 
-    def _on_logout_triggered(self):
+    def _on_logout_triggered(self) -> None:
         """
         Called when the logout button is selected from the menu.
         """
@@ -541,7 +541,7 @@ class LoginButton(QPushButton):
     }
     '''
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(_('SIGN IN'))
 
         # Set css id
@@ -562,13 +562,13 @@ class LoginButton(QPushButton):
         # Set click handler
         self.clicked.connect(self._on_clicked)
 
-    def setup(self, window):
+    def setup(self, window: 'main.Window') -> None:
         """
         Store a reference to the GUI window object.
         """
         self.window = window
 
-    def _on_clicked(self):
+    def _on_clicked(self) -> None:
         """
         Called when the login button is clicked.
         """
@@ -587,7 +587,7 @@ class MainView(QWidget):
     }
     '''
 
-    def __init__(self, parent):
+    def __init__(self, parent: any) -> None:
         super().__init__(parent)
 
         self.setStyleSheet(self.CSS)
@@ -609,21 +609,21 @@ class MainView(QWidget):
         self.layout.addWidget(self.source_list)
         self.layout.addWidget(self.view_holder)
 
-    def setup(self, controller):
+    def setup(self, controller: Controller) -> None:
         """
         Pass through the controller object to this widget.
         """
         self.controller = controller
         self.source_list.setup(controller)
 
-    def show_sources(self, sources: List[Source]):
+    def show_sources(self, sources: List[Source]) -> None:
         """
         Update the left hand sources list in the UI with the passed in list of
         sources.
         """
         self.source_list.update(sources)
 
-    def on_source_changed(self):
+    def on_source_changed(self) -> None:
         """
         Show conversation for the currently-selected source if it hasn't been deleted. If the
         current source no longer exists, clear the conversation for that source.
@@ -636,7 +636,7 @@ class MainView(QWidget):
         else:
             self.clear_conversation()
 
-    def set_conversation(self, widget):
+    def set_conversation(self, widget: any) -> None:
         """
         Update the view holder to contain the referenced widget.
         """
@@ -648,7 +648,7 @@ class MainView(QWidget):
         self.view_layout.addWidget(widget)
         widget.show()
 
-    def clear_conversation(self):
+    def clear_conversation(self) -> None:
         while self.view_layout.count():
             child = self.view_layout.takeAt(0)
             if child.widget():
@@ -669,7 +669,7 @@ class SourceList(QListWidget):
     }
     '''
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         # Set css id
@@ -688,10 +688,10 @@ class SourceList(QListWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-    def setup(self, controller):
+    def setup(self, controller: Controller) -> None:
         self.controller = controller
 
-    def update(self, sources: List[Source]):
+    def update(self, sources: List[Source]) -> None:
         """
         Reset and update the list with the passed in list of sources.
         """
@@ -713,7 +713,7 @@ class SourceList(QListWidget):
             if source.id == current_source_id:
                 self.setCurrentItem(list_item)
 
-    def get_current_source(self):
+    def get_current_source(self) -> Source:
         source_item = self.currentItem()
         source_widget = self.itemWidget(source_item)
         if source_widget and source_exists(self.controller.session, source_widget.source.uuid):
@@ -742,7 +742,7 @@ class SourceWidget(QWidget):
     }
     '''
 
-    def __init__(self, source: Source):
+    def __init__(self, source: Source) -> None:
         super().__init__()
 
         # Store source
@@ -820,14 +820,14 @@ class SourceWidget(QWidget):
 
         self.update()
 
-    def setup(self, controller):
+    def setup(self, controller: Controller) -> None:
         """
         Pass through the controller object to this widget.
         """
         self.controller = controller
         self.star.setup(self.controller)
 
-    def update(self):
+    def update(self) -> None:
         """
         Updates the displayed values with the current values from self.source.
         """
@@ -837,7 +837,7 @@ class SourceWidget(QWidget):
         if self.source.document_count == 0:
             self.attached.hide()
 
-    def delete_source(self, event):
+    def delete_source(self, event: any) -> None:
         if self.controller.api is None:
             self.controller.on_action_requiring_login()
             return
@@ -857,7 +857,7 @@ class StarToggleButton(SvgToggleButton):
     }
     '''
 
-    def __init__(self, source: Source):
+    def __init__(self, source: Source) -> None:
         super().__init__(
             on='star_on.svg',
             off='star_off.svg',
@@ -871,12 +871,12 @@ class StarToggleButton(SvgToggleButton):
         self.setStyleSheet(self.css)
         self.setFixedSize(QSize(20, 20))
 
-    def setup(self, controller):
+    def setup(self, controller: Controller) -> None:
         self.controller = controller
         self.controller.authentication_state.connect(self.on_authentication_changed)
         self.on_authentication_changed(self.controller.is_authenticated)
 
-    def on_authentication_changed(self, authenticated: bool):
+    def on_authentication_changed(self, authenticated: bool) -> None:
         """
         Set up handlers based on whether or not the user is authenticated. Connect to 'pressed'
         event instead of 'toggled' event when not authenticated because toggling will be disabled.
@@ -886,13 +886,13 @@ class StarToggleButton(SvgToggleButton):
         else:
             self.pressed.connect(self.on_toggle_offline)
 
-    def on_toggle(self):
+    def on_toggle(self) -> None:
         """
         Tell the controller to make an API call to update the source's starred field.
         """
         self.controller.update_star(self.source)
 
-    def on_toggle_offline(self):
+    def on_toggle_offline(self) -> None:
         """
         Show error message and disable toggle by setting checkable to False. Unfortunately,
         disabling toggle doesn't freeze state, rather it always displays the off state when a user
@@ -908,12 +908,12 @@ class StarToggleButton(SvgToggleButton):
 class DeleteSourceMessageBox:
     """Use this to display operation details and confirm user choice."""
 
-    def __init__(self, parent, source, controller):
+    def __init__(self, parent: any, source: Source, controller: Controller) -> None:
         self.parent = parent
         self.source = source
         self.controller = controller
 
-    def launch(self):
+    def launch(self) -> None:
         """It will launch the message box.
 
         The Message box will warns the user regarding the severity of the
@@ -968,18 +968,18 @@ class LoginDialog(QDialog):
     MAX_PASSWORD_LEN = 128  # Journalist.MAX_PASSWORD_LEN on server
     MIN_JOURNALIST_USERNAME = 3  # Journalist.MIN_USERNAME_LEN on server
 
-    def __init__(self, parent):
+    def __init__(self, parent: any) -> None:
         self.parent = parent
         super().__init__(self.parent)
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: any) -> None:
         """
         Only exit the application when the main window is not visible.
         """
         if not self.parent.isVisible():
             sys.exit(0)
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event: any) -> None:
         """
         Override default QDialog behavior that closes the dialog window when the Esc key is pressed.
         Instead, ignore the event.
@@ -987,7 +987,7 @@ class LoginDialog(QDialog):
         if event.key() == Qt.Key_Escape:
             event.ignore()
 
-    def setup(self, controller):
+    def setup(self, controller: Controller) -> None:
         self.controller = controller
         self.setMinimumSize(600, 400)
         self.setWindowTitle(_('Sign in to SecureDrop'))
@@ -1049,7 +1049,7 @@ class LoginDialog(QDialog):
         layout.addWidget(self.error_label)
         layout.addStretch()
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Resets the login form to the default state.
         """
@@ -1060,14 +1060,14 @@ class LoginDialog(QDialog):
         self.setDisabled(False)
         self.error_label.setText('')
 
-    def error(self, message):
+    def error(self, message: str) -> None:
         """
         Ensures the passed in message is displayed as an error message.
         """
         self.setDisabled(False)
         self.error_label.setText(html.escape(message))
 
-    def validate(self):
+    def validate(self) -> None:
         """
         Validate the user input -- we expect values for:
 
@@ -1121,7 +1121,7 @@ class SpeechBubble(QWidget):
     }
     '''
 
-    def __init__(self, message_id: str, text: str, update_signal) -> None:
+    def __init__(self, message_id: str, text: str, update_signal: any) -> None:
         super().__init__()
         self.message_id = message_id
 
@@ -1157,7 +1157,7 @@ class ConversationWidget(QWidget):
     def __init__(self,
                  message_id: str,
                  message: str,
-                 update_signal,
+                 update_signal: any,
                  align: str) -> None:
         """
         Initialise with the message to display and some notion of which side
@@ -1200,7 +1200,7 @@ class MessageWidget(ConversationWidget):
     );
     '''
 
-    def __init__(self, message_id: str, message: str, update_signal) -> None:
+    def __init__(self, message_id: str, message: str, update_signal: any) -> None:
         super().__init__(message_id,
                          message,
                          update_signal,
@@ -1234,9 +1234,9 @@ class ReplyWidget(ConversationWidget):
         self,
         message_id: str,
         message: str,
-        update_signal,
-        message_succeeded_signal,
-        message_failed_signal,
+        update_signal: any,
+        message_succeeded_signal: any,
+        message_failed_signal: any,
     ) -> None:
         super().__init__(message_id,
                          message,
@@ -1277,8 +1277,8 @@ class FileWidget(QWidget):
     Represents a file.
     """
 
-    def __init__(self, source_db_object, submission_db_object,
-                 controller, file_ready_signal, align="left"):
+    def __init__(self, source_db_object: any, submission_db_object: any,
+                 controller: Controller, file_ready_signal: any, align="left") -> None:
         """
         Given some text, an indication of alignment ('left' or 'right') and
         a reference to the controller, make something to display a file.
@@ -1299,7 +1299,7 @@ class FileWidget(QWidget):
 
         file_ready_signal.connect(self._on_file_download)
 
-    def update(self):
+    def update(self) -> None:
         icon = QLabel()
         icon.setPixmap(load_image('file.png'))
 
@@ -1320,7 +1320,7 @@ class FileWidget(QWidget):
             # Add space on right hand side...
             self.layout.addStretch(5)
 
-    def clear(self):
+    def clear(self) -> None:
         while self.layout.count():
             child = self.layout.takeAt(0)
             if child.widget():
@@ -1332,7 +1332,7 @@ class FileWidget(QWidget):
             self.clear()  # delete existing icon and label
             self.update()  # draw modified widget
 
-    def mouseReleaseEvent(self, e):
+    def mouseReleaseEvent(self, e: any) -> None:
         """
         Handle a completed click via the program logic. The download state
         of the file distinguishes which function in the logic layer to call.
@@ -1354,7 +1354,7 @@ class ConversationView(QWidget):
     https://github.com/freedomofpress/securedrop-client/issues/273
     """
 
-    def __init__(self, source_db_object: Source, controller: Controller):
+    def __init__(self, source_db_object: Source, controller: Controller) -> None:
         super().__init__()
         self.source = source_db_object
         self.controller = controller
@@ -1383,7 +1383,7 @@ class ConversationView(QWidget):
         self.setLayout(main_layout)
         self.update_conversation(self.source.collection)
 
-    def clear_conversation(self):
+    def clear_conversation(self) -> None:
         while self.conversation_layout.count():
             child = self.conversation_layout.takeAt(0)
             if child.widget():
@@ -1401,7 +1401,7 @@ class ConversationView(QWidget):
             else:
                 self.add_file(self.source, conversation_item)
 
-    def add_file(self, source_db_object, submission_db_object):
+    def add_file(self, source_db_object: any, submission_db_object: any) -> None:
         """
         Add a file from the source.
         """
@@ -1409,7 +1409,7 @@ class ConversationView(QWidget):
             FileWidget(source_db_object, submission_db_object,
                        self.controller, self.controller.file_ready))
 
-    def update_conversation_position(self, min_val, max_val):
+    def update_conversation_position(self, min_val: int, max_val: int) -> None:
         """
         Handler called when a new item is added to the conversation. Ensures
         it's scrolled to the bottom and thus visible.
@@ -1528,12 +1528,12 @@ class ReplyBoxWidget(QWidget):
         layout.addWidget(self.text_edit)
         layout.addWidget(self.send_button, 0, Qt.AlignRight)
 
-    def enable(self):
+    def enable(self) -> None:
         self.text_edit.clear()
         self.text_edit.setEnabled(True)
         self.send_button.show()
 
-    def disable(self):
+    def disable(self) -> None:
         self.text_edit.setText(_('You need to log in to send replies.'))
         self.text_edit.setEnabled(False)
         self.send_button.hide()
@@ -1560,7 +1560,7 @@ class ReplyBoxWidget(QWidget):
 class DeleteSourceAction(QAction):
     """Use this action to delete the source record."""
 
-    def __init__(self, source, parent, controller):
+    def __init__(self, source: Source, parent: any, controller: Controller) -> None:
         self.source = source
         self.controller = controller
         self.text = _("Delete source account")
@@ -1572,7 +1572,7 @@ class DeleteSourceAction(QAction):
         )
         self.triggered.connect(self.trigger)
 
-    def trigger(self):
+    def trigger(self) -> None:
         if self.controller.api is None:
             self.controller.on_action_requiring_login()
         else:
@@ -1589,7 +1589,7 @@ class SourceMenu(QMenu):
     Note: At present this only supports "delete" operation.
     """
 
-    def __init__(self, source, controller):
+    def __init__(self, source: Source, controller: Controller) -> None:
         super().__init__()
         self.source = source
         self.controller = controller
@@ -1610,7 +1610,7 @@ class SourceMenuButton(QToolButton):
     This button is responsible for launching the source menu on click.
     """
 
-    def __init__(self, source, controller):
+    def __init__(self, source: Source, controller: Controller) -> None:
         super().__init__()
         self.controller = controller
         self.source = source
@@ -1626,7 +1626,7 @@ class SourceMenuButton(QToolButton):
 class TitleLabel(QLabel):
     """The title for a conversation."""
 
-    def __init__(self, text):
+    def __init__(self, text: str) -> None:
         html_text = _('<h1>{}</h1>').format(text)
         super().__init__(html_text)
 
@@ -1634,7 +1634,7 @@ class TitleLabel(QLabel):
 class LastUpdatedLabel(QLabel):
     """Time the conversation was last updated."""
 
-    def __init__(self, last_updated):
+    def __init__(self, last_updated: any) -> None:
         html_text = _('<h3>{}</h3>').format(arrow.get(last_updated).humanize())
         super().__init__(html_text)
 
@@ -1647,7 +1647,7 @@ class SourceProfileShortWidget(QWidget):
     2. A menu to perform various operations on Source.
     """
 
-    def __init__(self, source, controller):
+    def __init__(self, source: Source, controller: Controller) -> None:
         super().__init__()
         self.source = source
         self.controller = controller
