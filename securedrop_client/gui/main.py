@@ -43,7 +43,7 @@ class Window(QMainWindow):
 
     icon = 'icon.png'
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Create the default start state. The window contains a root widget into
         which is placed:
@@ -82,7 +82,7 @@ class Window(QMainWindow):
         central_widget_layout.addWidget(self.top_pane)
         central_widget_layout.addWidget(self.main_pane)
 
-    def setup(self, controller):
+    def setup(self, controller: Controller) -> None:
         """
         Create references to the controller logic and instantiate the various
         views used in the UI.
@@ -100,7 +100,7 @@ class Window(QMainWindow):
         if username:
             self.set_logged_in_as(username)
 
-    def autosize_window(self):
+    def autosize_window(self) -> None:
         """
         Ensure the application window takes up 100% of the available screen
         (i.e. the whole of the virtualised desktop in Qubes dom)
@@ -108,7 +108,7 @@ class Window(QMainWindow):
         screen = QDesktopWidget().screenGeometry()
         self.resize(screen.width(), screen.height())
 
-    def show_login(self):
+    def show_login(self) -> None:
         """
         Show the login form.
         """
@@ -119,28 +119,28 @@ class Window(QMainWindow):
         self.login_dialog.reset()
         self.login_dialog.exec()
 
-    def show_login_error(self, error):
+    def show_login_error(self, error: str) -> None:
         """
         Display an error in the login dialog.
         """
         if self.login_dialog and error:
             self.login_dialog.error(error)
 
-    def hide_login(self):
+    def hide_login(self) -> None:
         """
         Kill the login dialog.
         """
         self.login_dialog.accept()
         self.login_dialog = None
 
-    def show_sources(self, sources: List[Source]):
+    def show_sources(self, sources: List[Source]) -> None:
         """
         Update the left hand sources list in the UI with the passed in list of
         sources.
         """
         self.main_view.show_sources(sources)
 
-    def show_sync(self, updated_on):
+    def show_sync(self, updated_on: bool) -> None:
         """
         Display a message indicating the data-sync state.
         """
@@ -149,35 +149,35 @@ class Window(QMainWindow):
         else:
             self.update_activity_status(_('Waiting to refresh...'), 5000)
 
-    def set_logged_in_as(self, username):
+    def set_logged_in_as(self, username: str) -> None:
         """
         Update the UI to show user logged in with username.
         """
         self.left_pane.set_logged_in_as(username)
         self.top_pane.enable_refresh()
 
-    def logout(self):
+    def logout(self) -> None:
         """
         Update the UI to show the user is logged out.
         """
         self.left_pane.set_logged_out()
         self.top_pane.disable_refresh()
 
-    def update_activity_status(self, message: str, duration=0):
+    def update_activity_status(self, message: str, duration: int = 0) -> None:
         """
         Display an activity status message to the user. Optionally, supply a duration
         (in milliseconds), the default will continuously show the message.
         """
         self.top_pane.update_activity_status(message, duration)
 
-    def update_error_status(self, message: str, duration=10000):
+    def update_error_status(self, message: str, duration: int = 10000) -> None:
         """
         Display an error status message to the user. Optionally, supply a duration
         (in milliseconds), the default will continuously show the message.
         """
         self.top_pane.update_error_status(message, duration)
 
-    def clear_error_status(self):
+    def clear_error_status(self) -> None:
         """
         Clear any message currently in the error status bar.
         """
