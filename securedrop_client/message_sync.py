@@ -22,12 +22,15 @@ import time
 import logging
 import traceback
 import sdclientapi.sdlocalobjects as sdkobjects
+from sdclientapi import API
+from typing import Callable, Union
 
 from PyQt5.QtCore import QObject, pyqtSignal
 from securedrop_client import storage
 from securedrop_client.crypto import GpgHelper, CryptoError
-from securedrop_client.db import make_engine
+from securedrop_client.db import make_engine, File, Message, Reply
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm.session import Session  # noqa: F401
 from tempfile import NamedTemporaryFile
 
 
@@ -36,18 +39,18 @@ logger = logging.getLogger(__name__)
 
 class APISyncObject(QObject):
 
-    def __init__(self, api, home, is_qubes):
+    def __init__(self, api: API, home: str, is_qubes: bool) -> None:
         super().__init__()
 
         engine = make_engine(home)
-        Session = sessionmaker(bind=engine)
-        self.session = Session()  # Reference to the SqlAlchemy session.
+        current_session = sessionmaker(bind=engine)
+        self.session = current_session()  # type: Session
         self.api = api
         self.home = home
         self.is_qubes = is_qubes
         self.gpg = GpgHelper(home, is_qubes)
 
-    def decrypt_the_thing(self, filepath, msg):
+    def decrypt_the_thing(self, filepath: str, msg: Union[File, Message, Reply]) -> None:
         with NamedTemporaryFile('w+') as plaintext_file:
             try:
                 self.gpg.decrypt_submission_or_reply(filepath, plaintext_file.name, False)
@@ -59,7 +62,8 @@ class APISyncObject(QObject):
                 storage.set_object_decryption_status_with_content(msg, self.session, False)
                 logger.info("Message or reply failed to decrypt: {}".format(msg.filename))
 
-    def fetch_the_thing(self, item, msg, download_fn, update_fn):
+    def fetch_the_thing(self, item: Union[File, Message, Reply], msg: Union[File, Message, Reply],
+                        download_fn: Callable, update_fn: Callable) -> None:
         _, filepath = download_fn(item)
         update_fn(msg.uuid, self.session)
         logger.info("Stored message or reply at {}".format(msg.filename))
@@ -77,10 +81,10 @@ class MessageSync(APISyncObject):
     """
     message_ready = pyqtSignal([str, str])
 
-    def __init__(self, api, home, is_qubes):
+    def __init__(self, api: API, home: str, is_qubes: bool):
         super().__init__(api, home, is_qubes)
 
-    def run(self, loop=True):
+    def run(self, loop: bool = True) -> None:
         while True:
             submissions = storage.find_new_messages(self.session)
 
@@ -133,10 +137,10 @@ class ReplySync(APISyncObject):
     """
     reply_ready = pyqtSignal([str, str])
 
-    def __init__(self, api, home, is_qubes):
+    def __init__(self, api: API, home: str, is_qubes: bool):
         super().__init__(api, home, is_qubes)
 
-    def run(self, loop=True):
+    def run(self, loop: bool = True) -> None:
         while True:
             replies = storage.find_new_replies(self.session)
 
