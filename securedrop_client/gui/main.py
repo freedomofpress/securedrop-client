@@ -25,6 +25,7 @@ from typing import Dict, List, Optional  # noqa: F401
 
 from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QDesktopWidget, \
     QApplication
+from arrow import Arrow
 
 from securedrop_client import __version__
 from securedrop_client.db import Source
@@ -112,7 +113,7 @@ class Window(QMainWindow):
         """
         Show the login form.
         """
-        self.login_dialog = LoginDialog(self)
+        self.login_dialog = LoginDialog(self) # type: Optional[LoginDialog]
         self.login_dialog.move(
             QApplication.desktop().screen().rect().center() - self.rect().center())
         self.login_dialog.setup(self.controller)
@@ -130,7 +131,7 @@ class Window(QMainWindow):
         """
         Kill the login dialog.
         """
-        self.login_dialog.accept()
+        self.login_dialog.accept()  # type: ignore
         self.login_dialog = None
 
     def show_sources(self, sources: List[Source]) -> None:
@@ -140,7 +141,7 @@ class Window(QMainWindow):
         """
         self.main_view.show_sources(sources)
 
-    def show_sync(self, updated_on: bool) -> None:
+    def show_sync(self, updated_on: Arrow) -> None:
         """
         Display a message indicating the data-sync state.
         """

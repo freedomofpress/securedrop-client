@@ -21,7 +21,7 @@ import arrow
 from gettext import gettext as _
 import html
 import sys
-from typing import List
+from typing import List, Any, Optional
 from uuid import uuid4
 
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QTimer, QSize
@@ -587,7 +587,7 @@ class MainView(QWidget):
     }
     '''
 
-    def __init__(self, parent: any) -> None:
+    def __init__(self, parent: Any) -> None:
         super().__init__(parent)
 
         self.setStyleSheet(self.CSS)
@@ -713,11 +713,13 @@ class SourceList(QListWidget):
             if source.id == current_source_id:
                 self.setCurrentItem(list_item)
 
-    def get_current_source(self) -> Source:
+    def get_current_source(self) -> Optional[Source]:
         source_item = self.currentItem()
         source_widget = self.itemWidget(source_item)
         if source_widget and source_exists(self.controller.session, source_widget.source.uuid):
             return source_widget.source
+
+        return None # mypy complains about no return without this
 
 
 class SourceWidget(QWidget):
@@ -837,7 +839,7 @@ class SourceWidget(QWidget):
         if self.source.document_count == 0:
             self.attached.hide()
 
-    def delete_source(self, event: any) -> None:
+    def delete_source(self, event: Any) -> None:
         if self.controller.api is None:
             self.controller.on_action_requiring_login()
             return
@@ -908,7 +910,7 @@ class StarToggleButton(SvgToggleButton):
 class DeleteSourceMessageBox:
     """Use this to display operation details and confirm user choice."""
 
-    def __init__(self, parent: any, source: Source, controller: Controller) -> None:
+    def __init__(self, parent: Any, source: Source, controller: Controller) -> None:
         self.parent = parent
         self.source = source
         self.controller = controller
@@ -968,18 +970,18 @@ class LoginDialog(QDialog):
     MAX_PASSWORD_LEN = 128  # Journalist.MAX_PASSWORD_LEN on server
     MIN_JOURNALIST_USERNAME = 3  # Journalist.MIN_USERNAME_LEN on server
 
-    def __init__(self, parent: any) -> None:
+    def __init__(self, parent: Any) -> None:
         self.parent = parent
         super().__init__(self.parent)
 
-    def closeEvent(self, event: any) -> None:
+    def closeEvent(self, event: Any) -> None:
         """
         Only exit the application when the main window is not visible.
         """
         if not self.parent.isVisible():
             sys.exit(0)
 
-    def keyPressEvent(self, event: any) -> None:
+    def keyPressEvent(self, event: Any) -> None:
         """
         Override default QDialog behavior that closes the dialog window when the Esc key is pressed.
         Instead, ignore the event.
@@ -1121,7 +1123,7 @@ class SpeechBubble(QWidget):
     }
     '''
 
-    def __init__(self, message_id: str, text: str, update_signal: any) -> None:
+    def __init__(self, message_id: str, text: str, update_signal: Any) -> None:
         super().__init__()
         self.message_id = message_id
 
@@ -1157,7 +1159,7 @@ class ConversationWidget(QWidget):
     def __init__(self,
                  message_id: str,
                  message: str,
-                 update_signal: any,
+                 update_signal: Any,
                  align: str) -> None:
         """
         Initialise with the message to display and some notion of which side
@@ -1200,7 +1202,7 @@ class MessageWidget(ConversationWidget):
     );
     '''
 
-    def __init__(self, message_id: str, message: str, update_signal: any) -> None:
+    def __init__(self, message_id: str, message: str, update_signal: Any) -> None:
         super().__init__(message_id,
                          message,
                          update_signal,
@@ -1234,9 +1236,9 @@ class ReplyWidget(ConversationWidget):
         self,
         message_id: str,
         message: str,
-        update_signal: any,
-        message_succeeded_signal: any,
-        message_failed_signal: any,
+        update_signal: Any,
+        message_succeeded_signal: Any,
+        message_failed_signal: Any,
     ) -> None:
         super().__init__(message_id,
                          message,
@@ -1277,8 +1279,8 @@ class FileWidget(QWidget):
     Represents a file.
     """
 
-    def __init__(self, source_db_object: Source, submission_db_object: any,
-                 controller: Controller, file_ready_signal: any, align: str = "left") -> None:
+    def __init__(self, source_db_object: Source, submission_db_object: Any,
+                 controller: Controller, file_ready_signal: Any, align: str = "left") -> None:
         """
         Given some text, an indication of alignment ('left' or 'right') and
         a reference to the controller, make something to display a file.
@@ -1332,7 +1334,7 @@ class FileWidget(QWidget):
             self.clear()  # delete existing icon and label
             self.update()  # draw modified widget
 
-    def mouseReleaseEvent(self, e: any) -> None:
+    def mouseReleaseEvent(self, e: Any) -> None:
         """
         Handle a completed click via the program logic. The download state
         of the file distinguishes which function in the logic layer to call.
@@ -1401,7 +1403,7 @@ class ConversationView(QWidget):
             else:
                 self.add_file(self.source, conversation_item)
 
-    def add_file(self, source_db_object: Source, submission_db_object: any) -> None:
+    def add_file(self, source_db_object: Source, submission_db_object: Any) -> None:
         """
         Add a file from the source.
         """
@@ -1560,7 +1562,7 @@ class ReplyBoxWidget(QWidget):
 class DeleteSourceAction(QAction):
     """Use this action to delete the source record."""
 
-    def __init__(self, source: Source, parent: any, controller: Controller) -> None:
+    def __init__(self, source: Source, parent: Any, controller: Controller) -> None:
         self.source = source
         self.controller = controller
         self.text = _("Delete source account")
