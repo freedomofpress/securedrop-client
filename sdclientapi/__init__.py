@@ -86,37 +86,51 @@ class API:
         headers: Optional[Dict[str, str]] = None,
     ) -> Tuple[Any, int, Dict[str, str]]:
         if self.proxy:  # We are using the Qubes securedrop-proxy
-            if method == "POST":
-                data = {
-                    "method": method,
-                    "path_query": path_query,
-                    "body": body,
-                }  # type: Dict[str, Any]
-                if headers is not None and headers:
-                    data["headers"] = headers
-            elif method == "GET" or method == "DELETE":
-                data = {"method": method, "path_query": path_query, "headers": headers}
-
-            data_str = json.dumps(data, sort_keys=True)
-            result = json.loads(json_query(self.proxy_vm_name, data_str))
-            return json.loads(result["body"]), result["status"], result["headers"]
-
+            func = self._send_rpc_json_request
         else:  # We are not using the Qubes securedrop-proxy
-            if method == "POST":
-                result = requests.post(
-                    urljoin(self.server, path_query), headers=headers, data=body
-                )
-            elif method == "GET":
-                result = requests.get(urljoin(self.server, path_query), headers=headers)
-            elif method == "DELETE":
-                result = requests.delete(
-                    urljoin(self.server, path_query), headers=headers
-                )
+            func = self._send_http_json_request
 
-            # Because when we download a file there is no JSON in the body
-            if path_query.find("/download") != -1:
-                return result, result.status_code, result.headers
-            return result.json(), result.status_code, result.headers
+        return func(method, path_query, body, headers)
+
+    def _send_http_json_request(
+        self,
+        method: str,
+        path_query: str,
+        body: Optional[str] = None,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Tuple[Any, int, Dict[str, str]]:
+        url = urljoin(self.server, path_query)
+        kwargs = {"headers": headers}  # type: Dict[str, Any]
+
+        if method == "POST":
+            kwargs["data"] = body
+
+        result = requests.request(method, url, **kwargs)
+
+        # Because when we download a file there is no JSON in the body
+        if path_query.endswith("/download"):
+            return result, result.status_code, dict(result.headers)
+
+        return result.json(), result.status_code, dict(result.headers)
+
+    def _send_rpc_json_request(
+        self,
+        method: str,
+        path_query: str,
+        body: Optional[str] = None,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Tuple[Any, int, Dict[str, str]]:
+        data = {"method": method, "path_query": path_query}  # type: Dict[str, Any]
+
+        if method == "POST":
+            data["body"] = body
+
+        if headers is not None and headers:
+            data["headers"] = headers
+
+        data_str = json.dumps(data, sort_keys=True)
+        result = json.loads(json_query(self.proxy_vm_name, data_str))
+        return json.loads(result["body"]), result["status"], result["headers"]
 
     def authenticate(self, totp: Optional[str] = None) -> bool:
         """
