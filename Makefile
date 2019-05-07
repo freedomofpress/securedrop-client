@@ -5,7 +5,7 @@ SHELL := /bin/bash
 mypy: ## Run static type checker
 	@mypy --ignore-missing-imports securedrop_client
 	@# Add files that are 100% typed to the below call (eventually just the below line will run so that code without static type hints will fail CI)
-	@mypy --ignore-missing-imports --disallow-incomplete-defs --disallow-untyped-defs securedrop_client/db.py securedrop_client/crypto.py securedrop_client/config.py securedrop_client/gui/__init__.py securedrop_client/resources/__init__.py
+	@mypy --ignore-missing-imports --disallow-incomplete-defs --disallow-untyped-defs securedrop_client/db.py securedrop_client/crypto.py securedrop_client/config.py securedrop_client/gui/__init__.py securedrop_client/resources/__init__.py securedrop_client/storage.py securedrop_client/message_sync.py
 
 .PHONY: clean
 clean:  ## Clean the workspace of generated resources

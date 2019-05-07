@@ -365,7 +365,7 @@ def mark_message_as_downloaded(uuid: str, session: Session) -> None:
 
 
 def set_object_decryption_status_with_content(obj: Union[File, Message, Reply], session: Session,
-                                              is_successful: bool, content=None) -> None:
+                                              is_successful: bool, content: str = None) -> None:
     """Mark object as decrypted or not in the database."""
 
     model = type(obj)
