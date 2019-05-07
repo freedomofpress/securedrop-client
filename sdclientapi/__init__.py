@@ -17,25 +17,16 @@ from .sdlocalobjects import (
     Submission,
 )
 
-proxyvmname = "sd-proxy"
+DEFAULT_PROXY_VM_NAME = "sd-proxy"
 
 
-def json_query(data: str) -> str:
+def json_query(proxy_vm_name: str, data: str) -> str:
     """
     Takes a json based query and passes to the network proxy.
     Returns the JSON output from the proxy.
     """
-    global proxyvmname
-    config = configparser.ConfigParser()
-    try:
-        if os.path.exists("/etc/sd-sdk.conf"):
-            config.read("/etc/sd-sdk.conf")
-            proxyvmname = config["proxy"]["name"]
-    except Exception:
-        pass  # We already have a default name
-
     p = Popen(
-        ["/usr/lib/qubes/qrexec-client-vm", proxyvmname, "securedrop.Proxy"],
+        ["/usr/lib/qubes/qrexec-client-vm", proxy_vm_name, "securedrop.Proxy"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -68,7 +59,6 @@ class API:
         """
         Primary API class, this is the only thing which will make network call.
         """
-
         self.server = address
         self.username = username
         self.passphrase = passphrase
@@ -78,6 +68,15 @@ class API:
         self.token_journalist_uuid = None  # type: Optional[str]
         self.req_headers = dict()  # type: Dict[str, str]
         self.proxy = proxy  # type: bool
+
+        self.proxy_vm_name = DEFAULT_PROXY_VM_NAME
+        config = configparser.ConfigParser()
+        try:
+            if os.path.exists("/etc/sd-sdk.conf"):
+                config.read("/etc/sd-sdk.conf")
+                self.proxy_vm_name = config["proxy"]["name"]
+        except Exception:
+            pass  # We already have a default name
 
     def _send_json_request(
         self,
@@ -99,7 +98,7 @@ class API:
                 data = {"method": method, "path_query": path_query, "headers": headers}
 
             data_str = json.dumps(data, sort_keys=True)
-            result = json.loads(json_query(data_str))
+            result = json.loads(json_query(self.proxy_vm_name, data_str))
             return json.loads(result["body"]), result["status"], result["headers"]
 
         else:  # We are not using the Qubes securedrop-proxy
@@ -511,7 +510,7 @@ class API:
 
             else:
                 filepath = os.path.join(
-                    "/home/user/QubesIncoming/", proxyvmname, data["filename"]
+                    "/home/user/QubesIncoming/", self.proxy_vm_name, data["filename"]
                 )
             # Return the tuple of sha256sum, filepath
             # Returning empty string instead of sha256sum due to this
@@ -742,7 +741,7 @@ class API:
 
             else:
                 filepath = os.path.join(
-                    "/home/user/QubesIncoming/", proxyvmname, data["filename"]
+                    "/home/user/QubesIncoming/", self.proxy_vm_name, data["filename"]
                 )
             # Return the tuple of sha256sum, filepath
             # Returning empty string instead of sha256sum due to this

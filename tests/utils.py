@@ -30,7 +30,7 @@ def internal_sideeffect(*args, **kwargs):
     arguments = tuple(args)
     # Now remove the one time code
     # As it will be a different value every time.
-    python_args = json.loads(args[0])
+    python_args = json.loads(args[1])
 
     try:
         value_str = python_args["body"]
