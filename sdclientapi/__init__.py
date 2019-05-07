@@ -3,7 +3,8 @@ import json
 import os
 import requests
 from datetime import datetime
-from subprocess import PIPE, Popen
+from requests.exceptions import ConnectTimeout, ReadTimeout
+from subprocess import PIPE, Popen, TimeoutExpired
 from typing import List, Tuple, Dict, Optional, Any
 from urllib.parse import urljoin
 
@@ -18,9 +19,20 @@ from .sdlocalobjects import (
 )
 
 DEFAULT_PROXY_VM_NAME = "sd-proxy"
+DEFAULT_REQUEST_TIMEOUT = 20  # 20 seconds
+DEFAULT_DOWNLOAD_TIMEOUT = 60 * 60  # 60 minutes
 
 
-def json_query(proxy_vm_name: str, data: str) -> str:
+class RequestTimeoutError(Exception):
+    """
+    Error raisted if a request times out.
+    """
+
+    def __init__(self) -> None:
+        super().__init__("The request timed out.")
+
+
+def json_query(proxy_vm_name: str, data: str, timeout: Optional[int] = None) -> str:
     """
     Takes a json based query and passes to the network proxy.
     Returns the JSON output from the proxy.
@@ -32,9 +44,18 @@ def json_query(proxy_vm_name: str, data: str) -> str:
         stderr=PIPE,
     )
     p.stdin.write(data.encode("utf-8"))
-    stdout, _ = p.communicate()  # type: (bytes, bytes)
-    output = stdout.decode("utf-8")
-    return output.strip()
+
+    try:
+        stdout, _ = p.communicate(timeout=timeout)  # type: (bytes, bytes)
+    except TimeoutExpired:
+        try:
+            p.terminate()
+        except Exception:
+            pass
+        raise RequestTimeoutError
+    else:
+        output = stdout.decode("utf-8")
+        return output.strip()
 
 
 class API:
@@ -45,6 +66,9 @@ class API:
     :param username: Journalist username
     :param passphrase: Journalist passphrase
     :param totp: Current TOTP value
+    :param proxy: Whether the API class should use the RPC proxy
+    :param default_request_timeout: Default timeout for a request (non-download) in seconds
+    :param default_download_timeout: Default timeout for a request (download only) in seconds
     :returns: An object of API class.
     """
 
@@ -55,6 +79,8 @@ class API:
         passphrase: str,
         totp: str,
         proxy: bool = False,
+        default_request_timeout: Optional[int] = None,
+        default_download_timeout: Optional[int] = None,
     ) -> None:
         """
         Primary API class, this is the only thing which will make network call.
@@ -68,6 +94,12 @@ class API:
         self.token_journalist_uuid = None  # type: Optional[str]
         self.req_headers = dict()  # type: Dict[str, str]
         self.proxy = proxy  # type: bool
+        self.default_request_timeout = (
+            default_request_timeout or DEFAULT_REQUEST_TIMEOUT
+        )
+        self.default_download_timeout = (
+            default_download_timeout or DEFAULT_DOWNLOAD_TIMEOUT
+        )
 
         self.proxy_vm_name = DEFAULT_PROXY_VM_NAME
         config = configparser.ConfigParser()
@@ -84,13 +116,14 @@ class API:
         path_query: str,
         body: Optional[str] = None,
         headers: Optional[Dict[str, str]] = None,
+        timeout: Optional[int] = None,
     ) -> Tuple[Any, int, Dict[str, str]]:
         if self.proxy:  # We are using the Qubes securedrop-proxy
             func = self._send_rpc_json_request
         else:  # We are not using the Qubes securedrop-proxy
             func = self._send_http_json_request
 
-        return func(method, path_query, body, headers)
+        return func(method, path_query, body, headers, timeout)
 
     def _send_http_json_request(
         self,
@@ -98,14 +131,21 @@ class API:
         path_query: str,
         body: Optional[str] = None,
         headers: Optional[Dict[str, str]] = None,
+        timeout: Optional[int] = None,
     ) -> Tuple[Any, int, Dict[str, str]]:
         url = urljoin(self.server, path_query)
         kwargs = {"headers": headers}  # type: Dict[str, Any]
 
+        if timeout:
+            kwargs["timeout"] = timeout
+
         if method == "POST":
             kwargs["data"] = body
 
-        result = requests.request(method, url, **kwargs)
+        try:
+            result = requests.request(method, url, **kwargs)
+        except (ConnectTimeout, ReadTimeout):
+            raise RequestTimeoutError
 
         # Because when we download a file there is no JSON in the body
         if path_query.endswith("/download"):
@@ -119,6 +159,7 @@ class API:
         path_query: str,
         body: Optional[str] = None,
         headers: Optional[Dict[str, str]] = None,
+        timeout: Optional[int] = None,
     ) -> Tuple[Any, int, Dict[str, str]]:
         data = {"method": method, "path_query": path_query}  # type: Dict[str, Any]
 
@@ -128,8 +169,8 @@ class API:
         if headers is not None and headers:
             data["headers"] = headers
 
-        data_str = json.dumps(data, sort_keys=True)
-        result = json.loads(json_query(self.proxy_vm_name, data_str))
+        data_str = json.dumps(data)
+        result = json.loads(json_query(self.proxy_vm_name, data_str, timeout))
         return json.loads(result["body"]), result["status"], result["headers"]
 
     def authenticate(self, totp: Optional[str] = None) -> bool:
@@ -153,10 +194,11 @@ class API:
 
         try:
             token_data, status_code, headers = self._send_json_request(
-                method, path_query, body=body
+                method, path_query, body=body, timeout=self.default_request_timeout
             )
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
+
         if "expiration" not in token_data:
             raise AuthError("Authentication error")
 
@@ -189,7 +231,10 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.req_headers
+                method,
+                path_query,
+                headers=self.req_headers,
+                timeout=self.default_request_timeout,
             )
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
@@ -218,7 +263,10 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.req_headers
+                method,
+                path_query,
+                headers=self.req_headers,
+                timeout=self.default_request_timeout,
             )
 
             if status_code == 404:
@@ -256,7 +304,10 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.req_headers
+                method,
+                path_query,
+                headers=self.req_headers,
+                timeout=self.default_request_timeout,
             )
 
             if status_code == 404:
@@ -298,7 +349,10 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.req_headers
+                method,
+                path_query,
+                headers=self.req_headers,
+                timeout=self.default_request_timeout,
             )
             if status_code == 404:
                 raise WrongUUIDError("Missing source {}".format(source.uuid))
@@ -321,7 +375,10 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.req_headers
+                method,
+                path_query,
+                headers=self.req_headers,
+                timeout=self.default_request_timeout,
             )
             if status_code == 404:
                 raise WrongUUIDError("Missing source {}".format(source.uuid))
@@ -345,7 +402,10 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.req_headers
+                method,
+                path_query,
+                headers=self.req_headers,
+                timeout=self.default_request_timeout,
             )
 
             if status_code == 404:
@@ -380,7 +440,10 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.req_headers
+                method,
+                path_query,
+                headers=self.req_headers,
+                timeout=self.default_request_timeout,
             )
 
             if status_code == 404:
@@ -417,7 +480,10 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.req_headers
+                method,
+                path_query,
+                headers=self.req_headers,
+                timeout=self.default_request_timeout,
             )
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
@@ -451,7 +517,10 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.req_headers
+                method,
+                path_query,
+                headers=self.req_headers,
+                timeout=self.default_request_timeout,
             )
 
             if status_code == 404:
@@ -481,7 +550,7 @@ class API:
         return self.delete_submission(s)
 
     def download_submission(
-        self, submission: Submission, path: str = ""
+        self, submission: Submission, path: str = "", timeout: Optional[int] = None
     ) -> Tuple[str, str]:
         """
         Returns a tuple of sha256sum and file path for a given Submission object. This method
@@ -503,7 +572,10 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.req_headers
+                method,
+                path_query,
+                headers=self.req_headers,
+                timeout=timeout or self.default_download_timeout,
             )
 
             if status_code == 404:
@@ -546,7 +618,10 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.req_headers
+                method,
+                path_query,
+                headers=self.req_headers,
+                timeout=self.default_request_timeout,
             )
 
             if status_code == 404:
@@ -577,7 +652,10 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.req_headers
+                method,
+                path_query,
+                headers=self.req_headers,
+                timeout=self.default_request_timeout,
             )
 
         except json.decoder.JSONDecodeError:
@@ -608,7 +686,11 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, body=json.dumps(reply), headers=self.req_headers
+                method,
+                path_query,
+                body=json.dumps(reply),
+                headers=self.req_headers,
+                timeout=self.default_request_timeout,
             )
 
             if status_code == 400:
@@ -637,7 +719,10 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.req_headers
+                method,
+                path_query,
+                headers=self.req_headers,
+                timeout=self.default_request_timeout,
             )
 
             if status_code == 404:
@@ -669,7 +754,10 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.req_headers
+                method,
+                path_query,
+                headers=self.req_headers,
+                timeout=self.default_request_timeout,
             )
 
             if status_code == 404:
@@ -696,7 +784,10 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.req_headers
+                method,
+                path_query,
+                headers=self.req_headers,
+                timeout=self.default_request_timeout,
             )
 
         except json.decoder.JSONDecodeError:
@@ -734,7 +825,10 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.req_headers
+                method,
+                path_query,
+                headers=self.req_headers,
+                timeout=self.default_request_timeout,
             )
 
             if status_code == 404:
@@ -783,7 +877,10 @@ class API:
 
         try:
             data, status_code, headers = self._send_json_request(
-                method, path_query, headers=self.req_headers
+                method,
+                path_query,
+                headers=self.req_headers,
+                timeout=self.default_request_timeout,
             )
 
             if status_code == 404:

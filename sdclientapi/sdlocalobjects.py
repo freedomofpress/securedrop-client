@@ -1,7 +1,7 @@
 import typing
 
 if typing.TYPE_CHECKING:
-    from typing import Dict
+    from typing import Dict  # noqa: F401
 
 
 class BaseError(Exception):
