@@ -661,9 +661,6 @@ class SourceList(QListWidget):
     """
 
     CSS = '''
-    QListWidget {
-        show-decoration-selected: 0;
-    }
     QListWidget::item:selected {
         background: #efeef7;
     }
