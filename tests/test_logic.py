@@ -6,7 +6,7 @@ import arrow
 import os
 import pytest
 
-from sdclientapi import sdlocalobjects
+from sdclientapi import sdlocalobjects, RequestTimeoutError
 from tests import factory
 from securedrop_client import storage, db
 from securedrop_client.crypto import CryptoError
@@ -37,10 +37,10 @@ def test_APICallRunner_call_api(mocker):
     mock_api_call.__name__ = 'my_function'
     mock_current_object = mocker.MagicMock()
     cr = APICallRunner(mock_api_call, mock_current_object, 'foo', bar='baz')
-    cr.call_finished = mocker.MagicMock()
+    cr.call_succeeded = mocker.MagicMock()
     cr.call_api()
     assert cr.result == 'foo'
-    cr.call_finished.emit.assert_called_once_with()
+    cr.call_succeeded.emit.assert_called_once_with()
 
 
 def test_APICallRunner_with_exception(mocker):
@@ -52,11 +52,11 @@ def test_APICallRunner_with_exception(mocker):
     mock_api_call.__name__ = 'my_function'
     mock_current_object = mocker.MagicMock()
     cr = APICallRunner(mock_api_call, mock_current_object, 'foo', bar='baz')
-    cr.call_finished = mocker.MagicMock()
+    cr.call_failed = mocker.MagicMock()
     mocker.patch('securedrop_client.logic.QTimer')
     cr.call_api()
     assert cr.result == ex
-    cr.call_finished.emit.assert_called_once_with()
+    cr.call_failed.emit.assert_called_once_with()
 
 
 def test_Controller_init(homedir, config, mocker):
@@ -171,56 +171,21 @@ def test_Controller_call_api(homedir, config, mocker):
     mocker.patch('securedrop_client.logic.APICallRunner')
     mocker.patch('securedrop_client.logic.QTimer')
     mock_api_call = mocker.MagicMock()
-    mock_callback = mocker.MagicMock()
-    mock_timeout = mocker.MagicMock()
+    mock_success_callback = mocker.MagicMock()
+    mock_failure_callback = mocker.MagicMock()
 
-    co.call_api(mock_api_call, mock_callback, mock_timeout, 'foo', bar='baz')
+    co.call_api(mock_api_call, mock_success_callback, mock_failure_callback, 'foo', bar='baz')
 
     assert len(co.api_threads) == 1
     thread_info = co.api_threads[list(co.api_threads.keys())[0]]
     thread = thread_info['thread']
     runner = thread_info['runner']
-    timer = thread_info['timer']
     thread.started.connect.assert_called_once_with(runner.call_api)
     thread.start.assert_called_once_with()
     runner.moveToThread.assert_called_once_with(thread)
-    timer.timeout.connect.call_count == 1
-    runner.call_finished.connect.call_count == 1
-
-
-def test_Controller_clean_thread_no_thread(homedir, config, mocker):
-    """
-    The client will ignore an attempt to reset an API call if there's no such
-    call "in flight".
-    Using the `config` fixture to ensure the config is written to disk.
-    """
-    mock_gui = mocker.MagicMock()
-    mock_session = mocker.MagicMock()
-    co = Controller('http://localhost', mock_gui, mock_session, homedir)
-    co.finish_api_call = mocker.MagicMock()
-    co.api_threads = {'a': 'b'}
-    co.clean_thread('foo')
-    assert len(co.api_threads) == 1
-
-
-def test_Controller_clean_thread(homedir, config, mocker):
-    """
-    Cleaning up an existing thread disconnects the timer and removes it from
-    the api_threads collection.
-    Using the `config` fixture to ensure the config is written to disk.
-    """
-    mock_gui = mocker.MagicMock()
-    mock_session = mocker.MagicMock()
-    co = Controller('http://localhost', mock_gui, mock_session, homedir)
-    mock_timer = mocker.MagicMock()
-    co.api_threads = {
-        'foo': {
-            'timer': mock_timer,
-        }
-    }
-    co.clean_thread('foo')
-    assert mock_timer.disconnect.call_count == 1
-    assert 'foo' not in co.api_threads
+    runner.call_succeeded.connect.call_count == 1
+    runner.call_failed.connect.call_count == 1
+    runner.call_timed_out.connect.call_count == 1
 
 
 def test_Controller_login(homedir, config, mocker):
@@ -236,8 +201,8 @@ def test_Controller_login(homedir, config, mocker):
     mock_api = mocker.patch('securedrop_client.logic.sdclientapi.API')
     co.login('username', 'password', '123456')
     co.call_api.assert_called_once_with(mock_api().authenticate,
-                                        co.on_authenticate,
-                                        co.on_login_timeout)
+                                        co.on_authenticate_success,
+                                        co.on_authenticate_failure)
 
 
 def test_Controller_login_offline_mode(homedir, config, mocker):
@@ -264,7 +229,7 @@ def test_Controller_login_offline_mode(homedir, config, mocker):
     co.update_sources.assert_called_once_with()
 
 
-def test_Controller_on_authenticate_failed(homedir, config, mocker):
+def test_Controller_on_authenticate_failure(homedir, config, mocker):
     """
     If the server responds with a negative to the request to authenticate, make
     sure the user knows.
@@ -274,13 +239,13 @@ def test_Controller_on_authenticate_failed(homedir, config, mocker):
     mock_session = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, mock_session, homedir)
     result_data = Exception('oh no')
-    co.on_authenticate(result_data)
+    co.on_authenticate_failure(result_data)
     mock_gui.show_login_error.\
         assert_called_once_with(error='There was a problem signing in. Please '
                                 'verify your credentials and try again.')
 
 
-def test_Controller_on_authenticate_ok(homedir, config, mocker):
+def test_Controller_on_authenticate_success(homedir, config, mocker):
     """
     Ensure the client syncs when the user successfully logs in.
     Using the `config` fixture to ensure the config is written to disk.
@@ -294,7 +259,7 @@ def test_Controller_on_authenticate_ok(homedir, config, mocker):
     co.start_reply_thread = mocker.MagicMock()
     co.api.username = 'test'
 
-    co.on_authenticate(True)
+    co.on_authenticate_success(True)
 
     co.sync_api.assert_called_once_with()
     co.start_message_thread.assert_called_once_with()
@@ -315,20 +280,15 @@ def test_Controller_completed_api_call_without_current_object(homedir, config, m
     mock_runner = mocker.MagicMock()
     mock_runner.result = 'result'
     mock_runner.current_object = None
-    mock_timer = mocker.MagicMock()
     co.api_threads = {
         'thread_uuid': {
             'thread': mock_thread,
             'runner': mock_runner,
-            'timer': mock_timer,
         }
     }
-    co.clean_thread = mocker.MagicMock()
     mock_user_callback = mocker.MagicMock()
     co.completed_api_call('thread_uuid', mock_user_callback)
-    co.clean_thread.assert_called_once_with('thread_uuid')
     mock_user_callback.assert_called_once_with('result')
-    mock_timer.stop.assert_called_once_with()
 
 
 def test_Controller_completed_api_call_with_current_object(homedir, config, mocker):
@@ -344,107 +304,20 @@ def test_Controller_completed_api_call_with_current_object(homedir, config, mock
     mock_runner = mocker.MagicMock()
     mock_runner.result = 'result'
     mock_runner.current_object = 'current_object'
-    mock_timer = mocker.MagicMock()
     co.api_threads = {
         'thread_uuid': {
             'thread': mock_thread,
             'runner': mock_runner,
-            'timer': mock_timer,
         }
     }
-    co.clean_thread = mocker.MagicMock()
     mock_user_callback = mocker.MagicMock()
+
+    mock_arg_spec = mocker.MagicMock(args=['foo', 'current_object'])
+    mocker.patch('securedrop_client.logic.inspect.getfullargspec', return_value=mock_arg_spec)
+
     co.completed_api_call('thread_uuid', mock_user_callback)
-    co.clean_thread.assert_called_once_with('thread_uuid')
     mock_user_callback.assert_called_once_with('result',
                                                current_object='current_object')
-    mock_timer.stop.assert_called_once_with()
-
-
-def test_Controller_timeout_cleanup_without_current_object(homedir, config, mocker):
-    """
-    Ensure that cleanup is performed if an API call times out.
-    Using the `config` fixture to ensure the config is written to disk.
-    """
-    mock_gui = mocker.MagicMock()
-    mock_session = mocker.MagicMock()
-    co = Controller('http://localhost', mock_gui, mock_session, homedir)
-    mock_thread = mocker.MagicMock()
-    mock_runner = mocker.MagicMock()
-    mock_runner.current_object = None
-    mock_timer = mocker.MagicMock()
-    co.api_threads = {
-        'thread_uuid': {
-            'thread': mock_thread,
-            'runner': mock_runner,
-            'timer': mock_timer,
-        }
-    }
-    co.clean_thread = mocker.MagicMock()
-    mock_user_callback = mocker.MagicMock()
-    co.timeout_cleanup('thread_uuid', mock_user_callback)
-    assert mock_runner.i_timed_out is True
-    co.clean_thread.assert_called_once_with('thread_uuid')
-    mock_user_callback.assert_called_once_with()
-
-
-def test_Controller_timeout_cleanup_with_current_object(homedir, config, mocker):
-    """
-    Ensure that cleanup is performed if an API call times out.
-    Using the `config` fixture to ensure the config is written to disk.
-    """
-    mock_gui = mocker.MagicMock()
-    mock_session = mocker.MagicMock()
-    co = Controller('http://localhost', mock_gui, mock_session, homedir)
-    mock_thread = mocker.MagicMock()
-    mock_runner = mocker.MagicMock()
-    mock_runner.current_object = 'current_object'
-    mock_timer = mocker.MagicMock()
-    co.api_threads = {
-        'thread_uuid': {
-            'thread': mock_thread,
-            'runner': mock_runner,
-            'timer': mock_timer,
-        }
-    }
-    co.clean_thread = mocker.MagicMock()
-    mock_user_callback = mocker.MagicMock()
-    co.timeout_cleanup('thread_uuid', mock_user_callback)
-    assert mock_runner.i_timed_out is True
-    co.clean_thread.assert_called_once_with('thread_uuid')
-    mock_user_callback.assert_called_once_with(current_object='current_object')
-
-
-def test_Controller_on_sync_timeout(homedir, config, mocker):
-    """
-    Display error message in status bar if sync times out.
-    Using the `config` fixture to ensure the config is written to disk.
-    """
-    mock_gui = mocker.MagicMock()
-    mock_session = mocker.MagicMock()
-    co = Controller('http://localhost', mock_gui, mock_session, homedir)
-    co.api = "this is populated"
-    co.on_sync_timeout()
-    assert co.api is not None
-    mock_gui.update_error_status.\
-        assert_called_once_with('The connection to the SecureDrop '
-                                'server timed out. Please try again.')
-
-
-def test_Controller_on_login_timeout(homedir, config, mocker):
-    """
-    Reset the form if the API call times out.
-    Using the `config` fixture to ensure the config is written to disk.
-    """
-    mock_gui = mocker.MagicMock()
-    mock_session = mocker.MagicMock()
-    co = Controller('http://localhost', mock_gui, mock_session, homedir)
-    co.call_reset = mocker.MagicMock()
-    co.on_login_timeout()
-    assert co.api is None
-    mock_gui.show_login_error.\
-        assert_called_once_with(error='The connection to the SecureDrop '
-                                'server timed out. Please try again.')
 
 
 def test_Controller_on_action_requiring_login(homedir, config, mocker):
@@ -524,8 +397,10 @@ def test_Controller_sync_api(homedir, config, mocker):
     co.authenticated = mocker.MagicMock(return_value=True)
     co.call_api = mocker.MagicMock()
     co.sync_api()
-    co.call_api.assert_called_once_with(storage.get_remote_data, co.on_synced,
-                                        co.on_sync_timeout, co.api)
+    co.call_api.assert_called_once_with(storage.get_remote_data,
+                                        co.on_sync_success,
+                                        co.on_sync_failure,
+                                        co.api)
 
 
 def test_Controller_last_sync_with_file(homedir, config, mocker):
@@ -557,7 +432,7 @@ def test_Controller_last_sync_no_file(homedir, config, mocker):
     assert co.last_sync() is None
 
 
-def test_Controller_on_synced_no_result(homedir, config, mocker):
+def test_Controller_on_sync_failure(homedir, config, mocker):
     """
     If there's no result to syncing, then don't attempt to update local storage
     and perhaps implement some as-yet-undefined UI update.
@@ -569,12 +444,12 @@ def test_Controller_on_synced_no_result(homedir, config, mocker):
     co.update_sources = mocker.MagicMock()
     result_data = Exception('Boom')  # Not the expected tuple.
     mock_storage = mocker.patch('securedrop_client.logic.storage')
-    co.on_synced(result_data)
+    co.on_sync_failure(result_data)
     assert mock_storage.update_local_storage.call_count == 0
     co.update_sources.assert_called_once_with()
 
 
-def test_Controller_on_synced_with_result(homedir, config, mocker):
+def test_Controller_on_sync_success(homedir, config, mocker):
     """
     If there's a result to syncing, then update local storage.
     Using the `config` fixture to ensure the config is written to disk.
@@ -603,7 +478,7 @@ def test_Controller_on_synced_with_result(homedir, config, mocker):
 
     co.call_reset = mocker.MagicMock()
     mock_storage = mocker.patch('securedrop_client.logic.storage')
-    co.on_synced(result_data)
+    co.on_sync_success(result_data)
     mock_storage.update_local_storage. \
         assert_called_once_with(mock_session, mock_sources, "submissions",
                                 "replies",
@@ -612,7 +487,7 @@ def test_Controller_on_synced_with_result(homedir, config, mocker):
     co.update_sources.assert_called_once_with()
 
 
-def test_Controller_on_synced_with_non_pgp_key(homedir, config, mocker):
+def test_Controller_on_sync_success_with_non_pgp_key(homedir, config, mocker):
     """
     If there's a result to syncing, then update local storage.
     This is it to check that we can gracefully handle missing keys.
@@ -634,7 +509,7 @@ def test_Controller_on_synced_with_non_pgp_key(homedir, config, mocker):
 
     co.call_reset = mocker.MagicMock()
     mock_storage = mocker.patch('securedrop_client.logic.storage')
-    co.on_synced(result_data)
+    co.on_sync_success(result_data)
     mock_storage.update_local_storage. \
         assert_called_once_with(mock_session, mock_sources, "submissions",
                                 "replies",
@@ -642,7 +517,7 @@ def test_Controller_on_synced_with_non_pgp_key(homedir, config, mocker):
     co.update_sources.assert_called_once_with()
 
 
-def test_Controller_on_synced_with_key_import_fail(homedir, config, mocker):
+def test_Controller_on_sync_success_with_key_import_fail(homedir, config, mocker):
     """
     If there's a result to syncing, then update local storage.
     This is it to check that we can gracefully handle an import failure.
@@ -666,7 +541,7 @@ def test_Controller_on_synced_with_key_import_fail(homedir, config, mocker):
     co.call_reset = mocker.MagicMock()
     mock_storage = mocker.patch('securedrop_client.logic.storage')
     mocker.patch.object(co.gpg, 'import_key', side_effect=CryptoError)
-    co.on_synced(result_data)
+    co.on_sync_success(result_data)
     mock_storage.update_local_storage. \
         assert_called_once_with(mock_session, mock_sources, "submissions",
                                 "replies",
@@ -721,8 +596,8 @@ def test_Controller_unstars_a_source_if_starred(homedir, config, mocker):
     co.call_api = mocker.MagicMock()
     co.api = mocker.MagicMock()
     co.api.remove_star = mocker.MagicMock()
-    co.on_update_star_complete = mocker.MagicMock()
-    co.on_sidebar_action_timeout = mocker.MagicMock()
+    co.on_update_star_success = mocker.MagicMock()
+    co.on_update_star_failure = mocker.MagicMock()
 
     source_sdk_object = mocker.MagicMock()
     mock_source = mocker.patch('sdclientapi.Source')
@@ -730,8 +605,11 @@ def test_Controller_unstars_a_source_if_starred(homedir, config, mocker):
     co.update_star(source_db_object)
 
     co.call_api.assert_called_once_with(
-        co.api.remove_star, co.on_update_star_complete,
-        co.on_sidebar_action_timeout, source_sdk_object)
+        co.api.remove_star,
+        co.on_update_star_success,
+        co.on_update_star_failure,
+        source_sdk_object,
+    )
     mock_gui.clear_error_status.assert_called_once_with()
 
 
@@ -743,21 +621,28 @@ def test_Controller_unstars_a_source_if_unstarred(homedir, config, mocker):
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, mock_session, homedir)
+
     source_db_object = mocker.MagicMock()
     source_db_object.uuid = mocker.MagicMock()
     source_db_object.is_starred = False
+
     co.call_api = mocker.MagicMock()
     co.api = mocker.MagicMock()
     co.api.add_star = mocker.MagicMock()
-    co.on_update_star_complete = mocker.MagicMock()
-    co.on_sidebar_action_timeout = mocker.MagicMock()
+    co.on_update_star_success = mocker.MagicMock()
+    co.on_update_star_failure = mocker.MagicMock()
+
     source_sdk_object = mocker.MagicMock()
     mock_source = mocker.patch('sdclientapi.Source')
     mock_source.return_value = source_sdk_object
     co.update_star(source_db_object)
+
     co.call_api.assert_called_once_with(
-        co.api.add_star, co.on_update_star_complete,
-        co.on_sidebar_action_timeout, source_sdk_object)
+        co.api.add_star,
+        co.on_update_star_success,
+        co.on_update_star_failure,
+        source_sdk_object,
+    )
     mock_gui.clear_error_status.assert_called_once_with()
 
 
@@ -777,19 +662,6 @@ def test_Controller_update_star_not_logged_in(homedir, config, mocker):
     co.on_action_requiring_login.assert_called_with()
 
 
-def test_Controller_sidebar_action_timeout(homedir, config, mocker):
-    """
-    Show on error status sidebar that a timeout occurred.
-    Using the `config` fixture to ensure the config is written to disk.
-    """
-    mock_gui = mocker.MagicMock()
-    mock_session = mocker.MagicMock()
-    co = Controller('http://localhost', mock_gui, mock_session, homedir)
-    co.on_sidebar_action_timeout()
-    mock_gui.update_error_status.assert_called_once_with(
-        'The connection to the SecureDrop server timed out. Please try again.')
-
-
 def test_Controller_on_update_star_success(homedir, config, mocker):
     """
     If the starring occurs successfully, then a sync should occur to update
@@ -802,7 +674,7 @@ def test_Controller_on_update_star_success(homedir, config, mocker):
     result = True
     co.call_reset = mocker.MagicMock()
     co.sync_api = mocker.MagicMock()
-    co.on_update_star_complete(result)
+    co.on_update_star_success(result)
     co.sync_api.assert_called_once_with()
     mock_gui.clear_error_status.assert_called_once_with()
 
@@ -819,10 +691,9 @@ def test_Controller_on_update_star_failed(homedir, config, mocker):
     result = Exception('boom')
     co.call_reset = mocker.MagicMock()
     co.sync_api = mocker.MagicMock()
-    co.on_update_star_complete(result)
+    co.on_update_star_failure(result)
     co.sync_api.assert_not_called()
-    mock_gui.update_error_status.assert_called_once_with(
-        'Failed to apply change.')
+    mock_gui.update_error_status.assert_called_once_with('Failed to update star.')
 
 
 def test_Controller_logout(homedir, config, mocker):
@@ -922,19 +793,26 @@ def test_Controller_on_file_download_Submission(homedir, config, mocker):
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, mock_session, homedir)
+    co.call_api = mocker.MagicMock()
+    co.api = mocker.MagicMock()
+
     source = factory.Source()
     file_ = db.File(source=source, uuid='uuid', size=1234, filename='1-myfile.doc.gpg',
                     download_url='http://myserver/myfile', is_downloaded=False)
-    co.call_api = mocker.MagicMock()
-    co.api = mocker.MagicMock()
+
     submission_sdk_object = mocker.MagicMock()
     mock_submission = mocker.patch('sdclientapi.Submission')
     mock_submission.return_value = submission_sdk_object
+
     co.on_file_download(source, file_)
     co.call_api.assert_called_once_with(
-        co.api.download_submission, co.on_file_downloaded,
-        co.on_download_timeout, submission_sdk_object,
-        co.data_dir, current_object=file_)
+        co.api.download_submission,
+        co.on_file_download_success,
+        co.on_file_download_failure,
+        submission_sdk_object,
+        co.data_dir,
+        current_object=file_,
+    )
 
 
 def test_Controller_on_file_downloaded_success(homedir, config, mocker):
@@ -947,6 +825,7 @@ def test_Controller_on_file_downloaded_success(homedir, config, mocker):
     co.update_sources = mocker.MagicMock()
     co.api_runner = mocker.MagicMock()
     co.file_ready = mocker.MagicMock()  # signal when file is downloaded
+
     test_filename = "1-my-file-location-msg.gpg"
     test_object_uuid = 'uuid-of-downloaded-object'
     co.call_reset = mocker.MagicMock()
@@ -957,7 +836,9 @@ def test_Controller_on_file_downloaded_success(homedir, config, mocker):
     mock_storage = mocker.patch('securedrop_client.logic.storage')
     mock_gpg = mocker.patch.object(co.gpg, 'decrypt_submission_or_reply', return_value='filepath')
     mocker.patch('shutil.move')
-    co.on_file_downloaded(result_data, current_object=submission_db_object)
+
+    co.on_file_download_success(result_data, current_object=submission_db_object)
+
     mock_gpg.call_count == 1
     mock_storage.mark_file_as_downloaded.assert_called_once_with(
         test_object_uuid, mock_session)
@@ -978,6 +859,7 @@ def test_Controller_on_file_downloaded_api_failure(homedir, config, mocker):
     co.file_ready = mocker.MagicMock()  # signal when file is downloaded
     co.update_sources = mocker.MagicMock()
     co.api_runner = mocker.MagicMock()
+
     test_filename = "1-my-file-location-msg.gpg"
     co.api_runner.result = ("", test_filename)
     co.call_reset = mocker.MagicMock()
@@ -986,9 +868,10 @@ def test_Controller_on_file_downloaded_api_failure(homedir, config, mocker):
     submission_db_object = mocker.MagicMock()
     submission_db_object.uuid = 'myuuid'
     submission_db_object.filename = 'filename'
-    co.on_file_downloaded(result_data, current_object=submission_db_object)
-    co.set_status.assert_called_once_with(
-        "The file download failed. Please try again.")
+
+    co.on_file_download_failure(result_data, current_object=submission_db_object)
+
+    co.set_status.assert_called_once_with("The file download failed. Please try again.")
     co.file_ready.emit.assert_not_called()
 
 
@@ -999,12 +882,15 @@ def test_Controller_on_file_downloaded_decrypt_failure(homedir, config, mocker):
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, mock_session, homedir)
+
     co.update_sources = mocker.MagicMock()
     co.api_runner = mocker.MagicMock()
     co.file_ready = mocker.MagicMock()  # signal when file is downloaded
+
     test_filename = "1-my-file-location-msg.gpg"
     co.api_runner.result = ("", test_filename)
     co.set_status = mocker.MagicMock()
+
     result_data = ('this-is-a-sha256-sum', test_filename)
     submission_db_object = mocker.MagicMock()
     submission_db_object.uuid = 'myuuid'
@@ -1014,7 +900,7 @@ def test_Controller_on_file_downloaded_decrypt_failure(homedir, config, mocker):
     mock_storage = mocker.patch('securedrop_client.logic.storage')
     mocker.patch('shutil.move')
 
-    co.on_file_downloaded(result_data, current_object=submission_db_object)
+    co.on_file_download_success(result_data, current_object=submission_db_object)
     mock_gpg.call_count == 1
     co.set_status.assert_called_once_with(
         "Failed to decrypt file, please try again or talk to your administrator.")
@@ -1044,25 +930,6 @@ def test_Controller_on_file_download_user_not_signed_in(homedir, config, mocker)
     co.on_action_requiring_login.assert_called_once_with()
 
 
-def test_Controller_on_download_timeout(homedir, config, mocker):
-    '''
-    Using the `config` fixture to ensure the config is written to disk.
-    '''
-    mock_gui = mocker.MagicMock()
-    mock_session = mocker.MagicMock()
-    co = Controller('http://localhost', mock_gui, mock_session, homedir)
-    co.update_sources = mocker.MagicMock()
-    co.api_runner = mocker.MagicMock()
-    current_object = mocker.MagicMock()
-    test_filename = "1-my-file-location-msg.gpg"
-    co.api_runner.result = ("", test_filename)
-    co.call_reset = mocker.MagicMock()
-    co.set_status = mocker.MagicMock()
-    co.on_download_timeout(current_object)
-    co.set_status.assert_called_once_with(
-        "The connection to the SecureDrop server timed out. Please try again.")
-
-
 def test_Controller_on_file_download_Reply(homedir, config, mocker):
     """
     If the handler is passed a reply, check the download_reply
@@ -1086,10 +953,11 @@ def test_Controller_on_file_download_Reply(homedir, config, mocker):
     mock_reply.return_value = reply_sdk_object
     co.on_file_download(source, reply)
     co.call_api.assert_called_once_with(co.api.download_reply,
-                                        co.on_file_downloaded,
-                                        co.on_download_timeout,
+                                        co.on_file_download_success,
+                                        co.on_file_download_failure,
                                         reply_sdk_object,
-                                        co.data_dir, current_object=reply)
+                                        co.data_dir,
+                                        current_object=reply)
 
 
 def test_Controller_on_file_open(homedir, config, mocker):
@@ -1112,19 +980,7 @@ def test_Controller_on_file_open(homedir, config, mocker):
     mock_subprocess.start.call_count == 1
 
 
-def test_Controller_on_delete_action_timeout(homedir, config, mocker):
-    '''
-    Using the `config` fixture to ensure the config is written to disk.
-    '''
-    mock_gui = mocker.MagicMock()
-    mock_session = mocker.MagicMock()
-    co = Controller('http://localhost', mock_gui, mock_session, homedir)
-    co._on_delete_action_timeout()
-    message = 'The connection to SecureDrop timed out. Please try again.'
-    co.gui.update_error_status.assert_called_with(message)
-
-
-def test_Controller_on_delete_source_complete_with_results(homedir, config, mocker):
+def test_Controller_on_delete_source_success(homedir, config, mocker):
     '''
     Using the `config` fixture to ensure the config is written to disk.
     '''
@@ -1132,19 +988,20 @@ def test_Controller_on_delete_source_complete_with_results(homedir, config, mock
     mock_session = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, mock_session, homedir)
     co.sync_api = mocker.MagicMock()
-    co._on_delete_source_complete(True)
+    co.on_delete_source_success(True)
     co.sync_api.assert_called_with()
     co.gui.clear_error_status.assert_called_with()
 
 
-def test_Controller_on_delete_source_complete_without_results(homedir, config, mocker):
+def test_Controller_on_delete_source_failure(homedir, config, mocker):
     '''
     Using the `config` fixture to ensure the config is written to disk.
     '''
     mock_gui = mocker.MagicMock()
     mock_session = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, mock_session, homedir)
-    co._on_delete_source_complete(False)
+    co.sync_api = mocker.MagicMock()
+    co.on_delete_source_failure(Exception())
     co.gui.update_error_status.assert_called_with('Failed to delete source at server')
 
 
@@ -1161,8 +1018,8 @@ def test_Controller_delete_source(homedir, config, mocker):
     co.delete_source(mock_source)
     co.call_api.assert_called_with(
         co.api.delete_source,
-        co._on_delete_source_complete,
-        co._on_delete_action_timeout,
+        co.on_delete_source_success,
+        co.on_delete_source_failure,
         mock_source
     )
 
@@ -1196,8 +1053,8 @@ def test_Controller_send_reply_success(homedir, mocker):
     # ensure api is called
     co.call_api.assert_called_once_with(
         co.api.reply_source,
-        co._on_reply_complete,
-        co._on_reply_timeout,
+        co.on_reply_success,
+        co.on_reply_failure,
         mock_sdk_source,
         encrypted_reply,
         msg_uuid,
@@ -1241,7 +1098,7 @@ def test_Controller_send_reply_gpg_error(homedir, mocker):
     assert mock_source_init.called  # to prevent stale mocks
 
 
-def test_Controller_on_reply_complete_success(homedir, mocker):
+def test_Controller_on_reply_success(homedir, mocker):
     '''
     Check that when the result is a success, the client emits the correct signal.
     '''
@@ -1261,7 +1118,7 @@ def test_Controller_on_reply_complete_success(homedir, mocker):
     source_uuid = 'foo111'
     msg_uuid = 'bar222'
     current_object = (source_uuid, msg_uuid)
-    co._on_reply_complete(reply, current_object)
+    co.on_reply_success(reply, current_object)
     co.session.commit.assert_called_once_with()
     mock_reply_succeeded.emit.assert_called_once_with(msg_uuid)
     assert not mock_reply_failed.emit.called
@@ -1269,7 +1126,7 @@ def test_Controller_on_reply_complete_success(homedir, mocker):
     assert mock_reply_init.called  # to prevent stale mocks
 
 
-def test_Controller_on_reply_complete_failure(homedir, mocker):
+def test_Controller_on_reply_failure(homedir, mocker):
     '''
     Check that when the result is a failure, the client emits the correct signal.
     '''
@@ -1286,29 +1143,7 @@ def test_Controller_on_reply_complete_failure(homedir, mocker):
     source_uuid = 'foo111'
     msg_uuid = 'bar222'
     current_object = (source_uuid, msg_uuid)
-    co._on_reply_complete(Exception, current_object)
-    mock_reply_failed.emit.assert_called_once_with(msg_uuid)
-    assert not mock_reply_succeeded.emit.called
-
-
-def test_Controller_on_reply_timeout(homedir, mocker):
-    '''
-    Check that when the reply timesout, the correct signal is emitted.
-    '''
-    mock_gui = mocker.MagicMock()
-    mock_session = mocker.MagicMock()
-
-    co = Controller('http://localhost', mock_gui, mock_session, homedir)
-    co.api = mocker.Mock()
-    journalist_uuid = 'abc123'
-    co.api.token_journalist_uuid = journalist_uuid
-    mock_reply_succeeded = mocker.patch.object(co, 'reply_succeeded')
-    mock_reply_failed = mocker.patch.object(co, 'reply_failed')
-
-    source_uuid = 'foo111'
-    msg_uuid = 'bar222'
-    current_object = (source_uuid, msg_uuid)
-    co._on_reply_timeout(current_object)
+    co.on_reply_failure(Exception, current_object)
     mock_reply_failed.emit.assert_called_once_with(msg_uuid)
     assert not mock_reply_succeeded.emit.called
 
@@ -1348,3 +1183,35 @@ def test_Controller_is_authenticated_property(homedir, mocker):
     co.is_authenticated = False
     mock_signal.emit.assert_called_once_with(False)
     assert co.is_authenticated is False
+
+
+def test_APICallRunner_api_call_timeout(mocker):
+    """
+    Ensure that if a RequestTimeoutError is raised, both the failure and timeout signals are
+    emitted.
+    """
+    mock_api = mocker.MagicMock()
+    mock_api.fake_request = mocker.MagicMock(side_effect=RequestTimeoutError())
+
+    runner = APICallRunner(mock_api.fake_request)
+
+    mock_failure_signal = mocker.patch.object(runner, 'call_failed')
+    mock_timeout_signal = mocker.patch.object(runner, 'call_timed_out')
+
+    runner.call_api()
+
+    mock_api.fake_request.assert_called_once_with()
+    mock_failure_signal.emit.assert_called_once_with()
+    mock_timeout_signal.emit.assert_called_once_with()
+
+
+def test_Controller_api_call_timeout(homedir, config, mocker):
+    '''
+    Using the `config` fixture to ensure the config is written to disk.
+    '''
+    mock_gui = mocker.MagicMock()
+    mock_session = mocker.MagicMock()
+    co = Controller('http://localhost', mock_gui, mock_session, homedir)
+    co.on_api_timeout()
+    mock_gui.update_error_status.assert_called_once_with(
+        'The connection to the SecureDrop server timed out. Please try again.')
