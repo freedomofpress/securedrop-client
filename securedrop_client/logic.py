@@ -17,6 +17,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import arrow
+import inspect
 import logging
 import os
 import sdclientapi
@@ -248,15 +249,9 @@ class Controller(QObject):
             runner = thread_info['runner']
             result_data = runner.result
 
-            # The callback may or may not have an associated current_object
-            if runner.current_object:
-                current_object = runner.current_object
-            else:
-                current_object = None
-
-            self.clean_thread(thread_id)
-            if current_object:
-                user_callback(result_data, current_object=current_object)
+            arg_spec = inspect.getfullargspec(user_callback)
+            if 'current_object' in arg_spec.args:
+                user_callback(result_data, current_object=runner.current_object)
             else:
                 user_callback(result_data)
 
