@@ -26,6 +26,7 @@ import traceback
 import uuid
 
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess
+from sdclientapi import RequestTimeoutError
 from typing import Dict, Tuple  # noqa: F401
 
 from securedrop_client import storage
@@ -39,15 +40,16 @@ logger = logging.getLogger(__name__)
 
 class APICallRunner(QObject):
     """
-    Used to call the SecureDrop API in a non-blocking manner. Will emit a
-    call_finished signal when a result becomes known.
+    Used to call the SecureDrop API in a non-blocking manner.
 
     See the call_api method of the Controller class for how this is
     done (hint: you should be using the call_api method and not directly
     using this class).
     """
 
-    call_finished = pyqtSignal()  # Indicates there is a result.
+    call_succeeded = pyqtSignal()
+    call_failed = pyqtSignal()
+    call_timed_out = pyqtSignal()
 
     def __init__(self, api_call, current_object=None, *args, **kwargs):
         """
@@ -71,10 +73,14 @@ class APICallRunner(QObject):
         try:
             self.result = self.api_call(*self.args, **self.kwargs)
         except Exception as ex:
+            if isinstance(ex, RequestTimeoutError):
+                self.call_timed_out.emit()
+
             logger.error(ex)
             self.result = ex
-
-        self.call_finished.emit()
+            self.call_failed.emit()
+        else:
+            self.call_succeeded.emit()
 
 
 class Controller(QObject):
@@ -195,7 +201,12 @@ class Controller(QObject):
         self.sync_update.timeout.connect(self.sync_api)
         self.sync_update.start(1000 * 60 * 5)  # every 5 minutes.
 
-    def call_api(self, function, callback, *args, current_object=None,
+    def call_api(self,
+                 api_call_func,
+                 success_callback,
+                 failure_callback,
+                 *args,
+                 current_object=None,
                  **kwargs):
         """
         Calls the function in a non-blocking manner. Upon completion calls the
@@ -206,15 +217,18 @@ class Controller(QObject):
         new_thread_id = str(uuid.uuid4())  # Uniquely id the new thread.
 
         new_api_thread = QThread(self.gui)
-        new_api_runner = APICallRunner(function, current_object, *args,
+        new_api_runner = APICallRunner(api_call_func, current_object, *args,
                                        **kwargs)
         new_api_runner.moveToThread(new_api_thread)
 
         # handle completed call: copy response data, reset the
         # client, give the user-provided callback the response
         # data
-        new_api_runner.call_finished.connect(
-            lambda: self.completed_api_call(new_thread_id, callback))
+        new_api_runner.call_succeeded.connect(
+            lambda: self.completed_api_call(new_thread_id, success_callback))
+        new_api_runner.call_failed.connect(
+            lambda: self.completed_api_call(new_thread_id, failure_callback))
+        new_api_runner.call_timed_out.connect(self.on_api_timeout)
 
         # when the thread starts, we want to run `call_api` on `api_runner`
         new_api_thread.started.connect(new_api_runner.call_api)
@@ -228,14 +242,9 @@ class Controller(QObject):
         # Start the thread and related activity.
         new_api_thread.start()
 
-    def clean_thread(self, thread_id):
-        """
-        Clean up the identified thread's state after an API call.
-        """
-        try:
-            del self.api_threads[thread_id]
-        except KeyError:
-            pass
+    def on_api_timeout(self) -> None:
+        self.gui.update_error_status(_('The connection to the SecureDrop server timed out. '
+                                       'Please try again.'))
 
     def completed_api_call(self, thread_id, user_callback):
         """
@@ -244,16 +253,15 @@ class Controller(QObject):
         handle these potential states.
         """
         logger.info("Completed API call. Cleaning up and running callback.")
-        if thread_id in self.api_threads:
-            thread_info = self.api_threads[thread_id]
-            runner = thread_info['runner']
-            result_data = runner.result
+        thread_info = self.api_threads.pop(thread_id)
+        runner = thread_info['runner']
+        result_data = runner.result
 
-            arg_spec = inspect.getfullargspec(user_callback)
-            if 'current_object' in arg_spec.args:
-                user_callback(result_data, current_object=runner.current_object)
-            else:
-                user_callback(result_data)
+        arg_spec = inspect.getfullargspec(user_callback)
+        if 'current_object' in arg_spec.args:
+            user_callback(result_data, current_object=runner.current_object)
+        else:
+            user_callback(result_data)
 
     def start_message_thread(self):
         """
@@ -288,31 +296,32 @@ class Controller(QObject):
         """
         self.api = sdclientapi.API(self.hostname, username,
                                    password, totp, self.proxy)
-        self.call_api(self.api.authenticate, self.on_authenticate)
+        self.call_api(self.api.authenticate,
+                      self.on_authenticate_success,
+                      self.on_authenticate_failure)
 
-    def on_authenticate(self, result):
+    def on_authenticate_success(self, result):
         """
-        Handles the result of an authentication call against the API.
+        Handles a successful authentication call against the API.
         """
-        if not isinstance(result, Exception):
-            # It worked! Sync with the API and update the UI.
-            self.gui.hide_login()
-            self.sync_api()
-            self.gui.show_main_window(self.api.username)
-            self.start_message_thread()
-            self.start_reply_thread()
+        self.gui.hide_login()
+        self.sync_api()
+        self.gui.show_main_window(self.api.username)
+        self.start_message_thread()
+        self.start_reply_thread()
 
-            # Clear the sidebar error status bar if a message was shown
-            # to the user indicating they should log in.
-            self.gui.clear_error_status()
+        # Clear the sidebar error status bar if a message was shown
+        # to the user indicating they should log in.
+        self.gui.clear_error_status()
 
-            self.is_authenticated = True
-        else:
-            # Failed to authenticate. Reset state with failure message.
-            self.api = None
-            error = _('There was a problem signing in. '
-                      'Please verify your credentials and try again.')
-            self.gui.show_login_error(error=error)
+        self.is_authenticated = True
+
+    def on_authenticate_failure(self, result: Exception) -> None:
+        # Failed to authenticate. Reset state with failure message.
+        self.api = None
+        error = _('There was a problem signing in. '
+                  'Please verify your credentials and try again.')
+        self.gui.show_login_error(error=error)
 
     def login_offline_mode(self):
         """
@@ -348,7 +357,10 @@ class Controller(QObject):
 
         if self.authenticated():
             logger.debug("You are authenticated, going to make your call")
-            self.call_api(storage.get_remote_data, self.on_synced, self.api)
+            self.call_api(storage.get_remote_data,
+                          self.on_sync_success,
+                          self.on_sync_failure,
+                          self.api)
             logger.debug("In sync_api, after call to call_api, on "
                          "thread {}".format(self.thread().currentThreadId()))
 
@@ -362,39 +374,40 @@ class Controller(QObject):
         except Exception:
             return None
 
-    def on_synced(self, result):
+    def on_sync_success(self, result) -> None:
         """
-        Called when syncronisation of data via the API is complete.
+        Called when syncronisation of data via the API succeeds
         """
-        self.sync_events.emit('synced')
-        if isinstance(result, tuple):
-            remote_sources, remote_submissions, remote_replies = \
-                result
+        remote_sources, remote_submissions, remote_replies = result
 
-            storage.update_local_storage(self.session, remote_sources,
-                                         remote_submissions,
-                                         remote_replies, self.data_dir)
+        storage.update_local_storage(self.session,
+                                     remote_sources,
+                                     remote_submissions,
+                                     remote_replies,
+                                     self.data_dir)
 
-            # Set last sync flag.
-            with open(self.sync_flag, 'w') as f:
-                f.write(arrow.now().format())
+        # Set last sync flag.
+        with open(self.sync_flag, 'w') as f:
+            f.write(arrow.now().format())
 
-            # import keys into keyring
-            for source in remote_sources:
-                if source.key and source.key.get('type', None) == 'PGP':
-                    pub_key = source.key.get('public', None)
-                    if not pub_key:
-                        continue
-                    try:
-                        self.gpg.import_key(source.uuid, pub_key)
-                    except CryptoError:
-                        logger.warning('Failed to import key for source {}'.format(source.uuid))
+        # import keys into keyring
+        for source in remote_sources:
+            if source.key and source.key.get('type', None) == 'PGP':
+                pub_key = source.key.get('public', None)
+                if not pub_key:
+                    continue
+                try:
+                    self.gpg.import_key(source.uuid, pub_key)
+                except CryptoError:
+                    logger.warning('Failed to import key for source {}'.format(source.uuid))
 
-        else:
-            # How to handle a failure? Exceptions are already logged. Perhaps
-            # a message in the UI?
-            pass
+        self.update_sources()
 
+    def on_sync_failure(self, result: Exception) -> None:
+        """
+        Called when syncronisation of data via the API fails.
+        """
+        pass
         self.update_sources()
 
     def update_sync(self):
@@ -413,21 +426,20 @@ class Controller(QObject):
         self.gui.show_sources(sources)
         self.update_sync()
 
-    def on_update_star_complete(self, result):
+    def on_update_star_success(self, result) -> None:
         """
-        After we star or unstar a source, we should sync the API
-        such that the local database is updated.
+        After we star a source, we should sync the API such that the local database is updated.
+        """
+        self.sync_api()  # Syncing the API also updates the source list UI
+        self.gui.clear_error_status()
 
-        TODO: Improve the push to server sync logic.
+    def on_update_star_failure(self, result: Exception) -> None:
         """
-        if isinstance(result, bool) and result:  # result may be an exception.
-            self.sync_api()  # Syncing the API also updates the source list UI
-            self.gui.clear_error_status()
-        else:
-            # Here we need some kind of retry logic.
-            logging.info("failed to push change to server")
-            error = _('Failed to apply change.')
-            self.gui.update_error_status(error)
+        After we unstar a source, we should sync the API such that the local database is updated.
+        """
+        logging.info("failed to push change to server")
+        error = _('Failed to update star.')
+        self.gui.update_error_status(error)
 
     def update_star(self, source_db_object):
         """
@@ -443,10 +455,14 @@ class Controller(QObject):
         source_sdk_object = sdclientapi.Source(uuid=source_db_object.uuid)
 
         if source_db_object.is_starred:
-            self.call_api(self.api.remove_star, self.on_update_star_complete,
+            self.call_api(self.api.remove_star,
+                          self.on_update_star_success,
+                          self.on_update_star_failure,
                           source_sdk_object)
         else:
-            self.call_api(self.api.add_star, self.on_update_star_complete,
+            self.call_api(self.api.add_star,
+                          self.on_update_star_success,
+                          self.on_update_star_failure,
                           source_sdk_object)
 
     def logout(self):
@@ -514,59 +530,69 @@ class Controller(QObject):
             sdk_object.source_uuid = source_db_object.uuid
 
         self.set_status(_('Downloading {}'.format(sdk_object.filename)))
-        self.call_api(func, self.on_file_downloaded, sdk_object, self.data_dir,
+        self.call_api(func,
+                      self.on_file_download_success,
+                      self.on_file_download_failure,
+                      sdk_object,
+                      self.data_dir,
                       current_object=message)
 
-    def on_file_downloaded(self, result, current_object):
+    def on_file_download_success(self, result, current_object):
         """
-        Called when a file has downloaded. Cause a refresh to the conversation
-        view to display the contents of the new file.
+        Called when a file has downloaded. Cause a refresh to the conversation view to display the
+        contents of the new file.
         """
         file_uuid = current_object.uuid
         server_filename = current_object.filename
-        if isinstance(result, tuple):  # The file properly downloaded.
-            _, filename = result
-            # The filename contains the location where the file has been
-            # stored. On non-Qubes OSes, this will be the data directory.
-            # On Qubes OS, this will a ~/QubesIncoming directory. In case
-            # we are on Qubes, we should move the file to the data directory
-            # and name it the same as the server (e.g. spotless-tater-msg.gpg).
-            filepath_in_datadir = os.path.join(self.data_dir, server_filename)
-            shutil.move(filename, filepath_in_datadir)
-            storage.mark_file_as_downloaded(file_uuid, self.session)
+        _, filename = result
+        # The filename contains the location where the file has been
+        # stored. On non-Qubes OSes, this will be the data directory.
+        # On Qubes OS, this will a ~/QubesIncoming directory. In case
+        # we are on Qubes, we should move the file to the data directory
+        # and name it the same as the server (e.g. spotless-tater-msg.gpg).
+        filepath_in_datadir = os.path.join(self.data_dir, server_filename)
+        shutil.move(filename, filepath_in_datadir)
+        storage.mark_file_as_downloaded(file_uuid, self.session)
 
-            try:
-                # Attempt to decrypt the file.
-                self.gpg.decrypt_submission_or_reply(
-                    filepath_in_datadir, server_filename, is_doc=True)
-                storage.set_object_decryption_status_with_content(
-                    current_object, self.session, True)
-            except CryptoError as e:
-                logger.debug('Failed to decrypt file {}: {}'.format(server_filename, e))
-                storage.set_object_decryption_status_with_content(
-                    current_object, self.session, False)
-                self.set_status("Failed to decrypt file, "
-                                "please try again or talk to your administrator.")
-                # TODO: We should save the downloaded content, and just
-                # try to decrypt again if there was a failure.
-                return  # If we failed we should stop here.
+        try:
+            # Attempt to decrypt the file.
+            self.gpg.decrypt_submission_or_reply(
+                filepath_in_datadir, server_filename, is_doc=True)
+            storage.set_object_decryption_status_with_content(
+                current_object, self.session, True)
+        except CryptoError as e:
+            logger.debug('Failed to decrypt file {}: {}'.format(server_filename, e))
+            storage.set_object_decryption_status_with_content(
+                current_object, self.session, False)
+            self.set_status("Failed to decrypt file, "
+                            "please try again or talk to your administrator.")
+            # TODO: We should save the downloaded content, and just
+            # try to decrypt again if there was a failure.
+            return  # If we failed we should stop here.
 
-            self.set_status('Finished downloading {}'.format(current_object.filename))
-            self.file_ready.emit(file_uuid)
-        else:  # The file did not download properly.
-            logger.debug('Failed to download file {}'.format(server_filename))
-            # Update the UI in some way to indicate a failure state.
-            self.set_status("The file download failed. Please try again.")
+        self.set_status('Finished downloading {}'.format(current_object.filename))
+        self.file_ready.emit(file_uuid)
 
-    def _on_delete_source_complete(self, result):
-        """Trigger this when delete operation on source is completed."""
-        if result:
-            self.sync_api()
-            self.gui.clear_error_status()
-        else:
-            logging.info("failed to delete source at server")
-            error = _('Failed to delete source at server')
-            self.gui.update_error_status(error)
+    def on_file_download_failure(self, result, current_object):
+        """
+        Called when a file fails to download.
+        """
+        server_filename = current_object.filename
+        logger.debug('Failed to download file {}'.format(server_filename))
+        # Update the UI in some way to indicate a failure state.
+        self.set_status("The file download failed. Please try again.")
+
+    def on_delete_source_success(self, result) -> None:
+        """
+        Handler for when a source deletion succeeds.
+        """
+        self.sync_api()
+        self.gui.clear_error_status()
+
+    def on_delete_source_failure(self, result: Exception) -> None:
+        logging.info("failed to delete source at server")
+        error = _('Failed to delete source at server')
+        self.gui.update_error_status(error)
 
     def delete_source(self, source):
         """Performs a delete operation on source record.
@@ -578,7 +604,8 @@ class Controller(QObject):
         """
         self.call_api(
             self.api.delete_source,
-            self._on_delete_source_complete,
+            self.on_delete_source_success,
+            self.on_delete_source_failure,
             source
         )
 
@@ -596,28 +623,32 @@ class Controller(QObject):
             if self.api:
                 self.call_api(
                     self.api.reply_source,
-                    self._on_reply_complete,
+                    self.on_reply_success,
+                    self.on_reply_failure,
                     sdk_source,
                     encrypted_reply,
                     msg_uuid,
                     current_object=(source_uuid, msg_uuid),
                 )
-            else:
-                logger.error('not logged in - not implemented!')  # pragma: no cover
-                self.reply_failed.emit(msg_uuid)  # pragma: no cover
+            else:  # pragma: no cover
+                logger.error('not logged in - not implemented!')
+                self.reply_failed.emit(msg_uuid)
 
-    def _on_reply_complete(self, result, current_object: Tuple[str, str]) -> None:
+    def on_reply_success(self, result, current_object: Tuple[str, str]) -> None:
         source_uuid, reply_uuid = current_object
         source = self.session.query(db.Source).filter_by(uuid=source_uuid).one()
-        if isinstance(result, sdclientapi.Reply):
-            reply_db_object = db.Reply(
-                uuid=result.uuid,
-                source_id=source.id,
-                journalist_id=self.api.token_journalist_uuid,
-                filename=result.filename,
-            )
-            self.session.add(reply_db_object)
-            self.session.commit()
-            self.reply_succeeded.emit(reply_uuid)
-        else:
-            self.reply_failed.emit(reply_uuid)
+
+        reply_db_object = db.Reply(
+            uuid=result.uuid,
+            source_id=source.id,
+            journalist_id=self.api.token_journalist_uuid,
+            filename=result.filename,
+        )
+        self.session.add(reply_db_object)
+        self.session.commit()
+
+        self.reply_succeeded.emit(reply_uuid)
+
+    def on_reply_failure(self, result, current_object: Tuple[str, str]) -> None:
+        source_uuid, reply_uuid = current_object
+        self.reply_failed.emit(reply_uuid)
