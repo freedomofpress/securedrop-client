@@ -122,8 +122,17 @@ class GpgHelper:
 
     def _import(self, key_data: str, is_private: bool = False) -> set:
         '''Wrapper for `gpg --import-keys`'''
-        cmd = self._gpg_cmd_base()
-        if is_private:
+        if self.is_qubes:
+            # Qubes has a separate RPC service for gpg key imports
+            cmd = ['qubes-gpg-import-key']
+        else:
+            cmd = self._gpg_cmd_base()
+            cmd.extend(['--import-options', 'import-show',
+                        '--with-colons', '--import'])
+
+        if is_private and self.is_qubes:
+            raise NotImplementedError
+        elif is_private:
             cmd.append('--allow-secret-key-import')
 
         with tempfile.NamedTemporaryFile('w+') as temp_key, \
@@ -131,9 +140,7 @@ class GpgHelper:
                 tempfile.NamedTemporaryFile('w+') as stderr:
             temp_key.write(key_data)
             temp_key.seek(0)
-            cmd.extend(['--import-options', 'import-show',
-                        '--with-colons', '--import',
-                        temp_key.name])
+            cmd.extend([temp_key.name])
 
             try:
                 subprocess.check_call(cmd, stdout=stdout, stderr=stderr)
