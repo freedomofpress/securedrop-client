@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.0.9
+-----
+
+* Create a timeout exception to catch all possible timeouts from `requests` / Qubes RPC
+* Remove mutable global state for the proxy VM name
+
 0.0.8
 -----
 
