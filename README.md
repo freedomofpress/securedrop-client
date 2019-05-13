@@ -19,7 +19,7 @@ pipenv shell
 make test
 ```
 
-This project uses `pipenv <https://docs.pipenv.org>`_ to manage all dependencies.
+This project uses [pipenv](https://docs.pipenv.org) to manage all dependencies.
 This is a Python 3 project. When using ``pipenv`` locally, ensure you used the ``--keep-outdated``
 flag to prevent dependencies from being unnecessarily upgraded during normal development.
 
@@ -27,8 +27,7 @@ We cover all the API calls supported by the SecureDrop Journalist Interface API.
 
 ## Testing
 
-The tests are located in the `tests` directory. This project uses [vcrpy]
-(http://vcrpy.readthedocs.io/en/latest/) to record and then reply the API calls so that
+The tests are located in the `tests` directory. This project uses [vcrpy](http://vcrpy.readthedocs.io/en/latest/) to record and then reply the API calls so that
 developers will have repeatable results so that they may work offline. `vcrpy` stores YAML
 recordings of the API calls in the `data` directory. 
 
@@ -57,7 +56,7 @@ re-run all tests against the API, remove all the `.yml` files in the
 
 To test or to generate new test data file for the `APIProxy` class in
 `test_apiproxy.py` file, you will have to setup
-`QubesOS <https://qubes-os.org>`_ system.
+[QubesOS](https://qubes-os.org) system.
 
 There should be one VM (let us call it `sd-journalist`), where we can run
 latest securedrop server code from the development branch using
@@ -110,7 +109,7 @@ To make a release, you should:
 4. Create a PR and get the PR reviewed and merged into ``master``.
 5. ``git tag`` and push the new tag.
 6. Checkout the new tag locally.
-7. Push the new release source tarball to the PSF's PyPI `following this documentation <https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives>`_.
+7. Push the new release source tarball to the PSF's PyPI [following this documentation](https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives).
 
 8. If you want to publish the new SDK release to the FPF PyPI mirror, Hop over to the the `securedrop-debian-packaging` repo and follow the [build-a-package](https://github.com/freedomofpress/securedrop-debian-packaging/blob/master/README.md#build-a-package) instructions to push the package up to our PyPI mirror: https://pypi.org/simple
 
