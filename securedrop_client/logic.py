@@ -25,6 +25,7 @@ import shutil
 import traceback
 import uuid
 
+from gettext import gettext as _
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess
 from sdclientapi import RequestTimeoutError
 from typing import Dict, Tuple  # noqa: F401
