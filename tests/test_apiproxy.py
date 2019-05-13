@@ -1,12 +1,15 @@
 import datetime
 import os
 import pyotp
+import pytest
 import time
 import shutil
 import tempfile
 import unittest
 
-from sdclientapi import API
+from subprocess import TimeoutExpired
+
+from sdclientapi import API, RequestTimeoutError
 from sdclientapi.sdlocalobjects import (
     BaseError,
     WrongUUIDError,
@@ -304,3 +307,18 @@ class TestAPIProxy(unittest.TestCase):
 
         # We deleted one, so there must be 1 less reply now
         self.assertEqual(len(self.api.get_all_replies()), number_of_replies_before - 1)
+
+
+def test_request_timeout(mocker):
+    class MockedPopen:
+        def __init__(self, *nargs, **kwargs) -> None:
+            self.stdin = mocker.MagicMock()
+
+        def communicate(self, *nargs, **kwargs) -> None:
+            raise TimeoutExpired(["mock"], 123)
+
+    api = API("mock", "mock", "mock", "mock", proxy=True)
+    mocker.patch("sdclientapi.Popen", MockedPopen)
+
+    with pytest.raises(RequestTimeoutError):
+        api.authenticate()

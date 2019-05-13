@@ -1,5 +1,6 @@
 import datetime
 import os
+import pytest
 import shutil
 import tempfile
 import time
@@ -7,10 +8,11 @@ import unittest
 
 import pyotp
 import vcr
+from requests.exceptions import ConnectTimeout, ReadTimeout
 from utils import load_auth
 from utils import save_auth
 
-from sdclientapi import API
+from sdclientapi import API, RequestTimeoutError
 from sdclientapi.sdlocalobjects import AuthError
 from sdclientapi.sdlocalobjects import BaseError
 from sdclientapi.sdlocalobjects import Reply
@@ -318,3 +320,17 @@ class TestAPI(unittest.TestCase):
 
         # We deleted one, so there must be 1 less reply now
         self.assertEqual(len(self.api.get_all_replies()), number_of_replies_before - 1)
+
+
+def test_request_connect_timeout(mocker):
+    api = API("mock", "mock", "mock", "mock", proxy=False)
+    mocker.patch("sdclientapi.requests.request", side_effect=ConnectTimeout)
+    with pytest.raises(RequestTimeoutError):
+        api.authenticate()
+
+
+def test_request_read_timeout(mocker):
+    api = API("mock", "mock", "mock", "mock", proxy=False)
+    mocker.patch("sdclientapi.requests.request", side_effect=ReadTimeout)
+    with pytest.raises(RequestTimeoutError):
+        api.authenticate()
