@@ -107,3 +107,13 @@ alembic revision --autogenerate -m "describe your revision here"
 This project aims to have at most one migration per release. There may be cases where this is not feasible,
 but developers should merge their migration into the latest migration that has been generated since the last
 release. The above mentioned autogenerate command will not do this for you.
+
+
+## Qubes Debugging
+
+Using a version of this application installed from a deb package in Qubes,
+you can debug issues by looking at the log file in
+`~/.securedrop_client/logs/client.log`.
+
+You can also add additional log lines in the running code in
+`/opt/venvs/securedrop-client/lib/python3.5/site-packages/securedrop_client/`.
