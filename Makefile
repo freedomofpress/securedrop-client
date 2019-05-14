@@ -36,7 +36,7 @@ test: ## Run the application tests
 
 .PHONY: lint
 lint: ## Run the linters
-	@flake8 .
+	@flake8 securedrop_client tests
 
 .PHONY: safety
 safety: ## Runs `safety check` to check python dependencies for vulnerabilities
