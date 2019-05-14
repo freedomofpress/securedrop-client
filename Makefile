@@ -38,6 +38,24 @@ test: ## Run the application tests
 lint: ## Run the linters
 	@flake8 .
 
+.PHONY: safety
+safety: ## Runs `safety check` to check python dependencies for vulnerabilities
+	pip install --upgrade safety && \
+		for req_file in `find . -type f -name '*requirements.txt'`; do \
+			echo "Checking file $$req_file" \
+			&& safety check --full-report -r $$req_file \
+			&& echo -e '\n' \
+			|| exit 1; \
+		done
+
+# Bandit is a static code analysis tool to detect security vulnerabilities in Python applications
+# https://wiki.openstack.org/wiki/Security/Projects/Bandit
+.PHONY: bandit
+bandit: ## Run bandit with medium level excluding test-related folders
+	pip install --upgrade pip && \
+        pip install --upgrade bandit!=1.6.0 && \
+	bandit --recursive . --exclude tests,sdc
+
 .PHONY: check
 check: clean lint mypy test ## Run the full CI test suite
 

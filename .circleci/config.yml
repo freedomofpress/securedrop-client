@@ -18,11 +18,14 @@ jobs:
 
       - run:
           name: Check Python dependencies for known vulnerabilities
-          command: pipenv check
+          command: |
+            set -e
+            source sdc/bin/activate
+            make safety
 
       - run:
           name: Run static analysis on source code to find security issues
           command: |
             set -e
-            pipenv install --keep-outdated --ignore-pipfile --dev bandit
-            pipenv run bandit --recursive . -ll
+            source sdc/bin/activate
+            make bandit
