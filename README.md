@@ -24,8 +24,9 @@ Features to be added include:
 Set up a Python 3 virtual environment and set up dependencies:
 
 ```
-pipenv sync --dev
-pipenv shell
+virtualenv --python=python3.5 .venv
+source .venv/bin/activate
+pip install --require-hashes -r dev-requirements.txt
 ```
 
 Please install system libraries for PyQt rather than using PyPI-managed libraries- this makes packaging possible later. On Debian, `apt install python3-pyqt5 python3-pyqt5.qtsvg` will install what you need.
@@ -40,13 +41,20 @@ make the `xvfb-run` command available): `apt install xvfb`.
 
 brew install pyenv
 # follow step 3 onwards of https://github.com/pyenv/pyenv#basic-github-checkout
-pyenv install 3.5.0
+pyenv install 3.5.3
 
 brew install pip
-pip install pipenv
-pipenv sync --dev
-pipenv shell
+pip install virtualenv
+virtualenv --python=python3.5.3 .venv
+source .venv/bin/activate
+pip install --require-hashes -r dev-requirements.txt
 ```
+
+## Updating dependencies
+
+To add or update a dependency, modify either `dev-requirements.in` and `requirements.in` and then run `make update-pip-dependencies`. This will generate `dev-requirements.txt` and `requirements.txt`.
+
+**IMPORTANT:** Do not modify `build-requirements.txt` during normal development. We use a pip mirror for our build process and the hashes in that file point to wheels on our mirror.
 
 ## Run the client
 
@@ -61,7 +69,6 @@ If you want to persist data across restarts, you will need to run the client wit
 ```
 ./run.sh --sdc-home /path/to/my/dir/
 ```
-
 
 ## Debugging
 

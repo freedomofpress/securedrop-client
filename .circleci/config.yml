@@ -12,20 +12,22 @@ jobs:
           name: Install requirements and run tests
           command: |
             set -e
-            pipenv sync --dev
+            virtualenv .venv
+            source .venv/bin/activate
+            pip install --require-hashes -r dev-requirements.txt
             export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
-            pipenv run make check --keep-going
+            make check --keep-going
 
       - run:
           name: Check Python dependencies for known vulnerabilities
           command: |
             set -e
-            source sdc/bin/activate
+            source .venv/bin/activate
             make safety
 
       - run:
           name: Run static analysis on source code to find security issues
           command: |
             set -e
-            source sdc/bin/activate
+            source .venv/bin/activate
             make bandit
