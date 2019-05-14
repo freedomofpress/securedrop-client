@@ -39,9 +39,7 @@ logger = logging.getLogger(__name__)
 class APICallRunner(QObject):
     """
     Used to call the SecureDrop API in a non-blocking manner. Will emit a
-    call_finished signal when a result becomes known. The caller should manage
-    the state of i_timed_out (a flag used to indicate the call to the API has
-    timed out).
+    call_finished signal when a result becomes known.
 
     See the call_api method of the Controller class for how this is
     done (hint: you should be using the call_api method and not directly
@@ -62,7 +60,6 @@ class APICallRunner(QObject):
         self.args = args
         self.kwargs = kwargs
         self.result = None
-        self.i_timed_out = False
 
     def call_api(self):
         """
@@ -76,13 +73,7 @@ class APICallRunner(QObject):
             logger.error(ex)
             self.result = ex
 
-        # by the time we end up here, who knows how long it's taken
-        # we may not want to emit this, if there's nothing to catch it
-        if self.i_timed_out is False:
-            self.call_finished.emit()
-        else:
-            logger.info("Thread returned from API call, "
-                        "but it had timed out.")  # pragma: no cover
+        self.call_finished.emit()
 
 
 class Controller(QObject):
@@ -203,7 +194,7 @@ class Controller(QObject):
         self.sync_update.timeout.connect(self.sync_api)
         self.sync_update.start(1000 * 60 * 5)  # every 5 minutes.
 
-    def call_api(self, function, callback, timeout, *args, current_object=None,
+    def call_api(self, function, callback, *args, current_object=None,
                  **kwargs):
         """
         Calls the function in a non-blocking manner. Upon completion calls the
@@ -212,9 +203,6 @@ class Controller(QObject):
         the function to be called.
         """
         new_thread_id = str(uuid.uuid4())  # Uniquely id the new thread.
-        new_timer = QTimer()
-        new_timer.setSingleShot(True)
-        new_timer.start(20000)
 
         new_api_thread = QThread(self.gui)
         new_api_runner = APICallRunner(function, current_object, *args,
@@ -227,11 +215,6 @@ class Controller(QObject):
         new_api_runner.call_finished.connect(
             lambda: self.completed_api_call(new_thread_id, callback))
 
-        # we've started a timer. when that hits zero, call our
-        # timeout function
-        new_timer.timeout.connect(
-            lambda: self.timeout_cleanup(new_thread_id, timeout))
-
         # when the thread starts, we want to run `call_api` on `api_runner`
         new_api_thread.started.connect(new_api_runner.call_api)
 
@@ -239,7 +222,6 @@ class Controller(QObject):
         self.api_threads[new_thread_id] = {
             'thread': new_api_thread,
             'runner': new_api_runner,
-            'timer': new_timer,
         }
 
         # Start the thread and related activity.
@@ -249,10 +231,10 @@ class Controller(QObject):
         """
         Clean up the identified thread's state after an API call.
         """
-        if thread_id in self.api_threads:
-            timer = self.api_threads[thread_id]['timer']
-            timer.disconnect()
-            del(self.api_threads[thread_id])
+        try:
+            del self.api_threads[thread_id]
+        except KeyError:
+            pass
 
     def completed_api_call(self, thread_id, user_callback):
         """
@@ -264,8 +246,6 @@ class Controller(QObject):
         if thread_id in self.api_threads:
             thread_info = self.api_threads[thread_id]
             runner = thread_info['runner']
-            timer = thread_info['timer']
-            timer.stop()
             result_data = runner.result
 
             # The callback may or may not have an associated current_object
@@ -306,28 +286,6 @@ class Controller(QObject):
         else:  # Already running from last login
             self.reply_sync.api = self.api
 
-    def timeout_cleanup(self, thread_id, user_callback):
-        """
-        Clean up after the referenced thread has timed-out by setting some
-        flags and calling the passed user_callback.
-        """
-        logger.info("API call timed out. Cleaning up and running "
-                    "timeout callback.")
-        if thread_id in self.api_threads:
-            runner = self.api_threads[thread_id]['runner']
-            runner.i_timed_out = True
-
-            if runner.current_object:
-                current_object = runner.current_object
-            else:
-                current_object = None
-
-            self.clean_thread(thread_id)
-            if current_object:
-                user_callback(current_object=current_object)
-            else:
-                user_callback()
-
     def login(self, username, password, totp):
         """
         Given a username, password and time based one-time-passcode (TOTP),
@@ -335,8 +293,7 @@ class Controller(QObject):
         """
         self.api = sdclientapi.API(self.hostname, username,
                                    password, totp, self.proxy)
-        self.call_api(self.api.authenticate, self.on_authenticate,
-                      self.on_login_timeout)
+        self.call_api(self.api.authenticate, self.on_authenticate)
 
     def on_authenticate(self, result):
         """
@@ -373,43 +330,11 @@ class Controller(QObject):
         self.is_authenticated = False
         self.update_sources()
 
-    def on_login_timeout(self):
-        """
-        Reset the form and indicate the error.
-        """
-
-        self.api = None
-        error = _('The connection to the SecureDrop server timed out. '
-                  'Please try again.')
-        self.gui.show_login_error(error=error)
-
-    def on_sync_timeout(self):
-        """
-        Indicate that a sync failed.
-
-        TODO: We don't really want to alert in the error bar _every time_
-        this happens. Instead, we should do something like: alert if there
-        have been many timeouts in a row.
-        """
-
-        error = _('The connection to the SecureDrop server timed out. '
-                  'Please try again.')
-        self.gui.update_error_status(error)
-
     def on_action_requiring_login(self):
         """
         Indicate that a user needs to login to perform the specified action.
         """
         error = _('You must sign in to perform this action.')
-        self.gui.update_error_status(error)
-
-    def on_sidebar_action_timeout(self):
-        """
-        Indicate that a timeout occurred for an action occuring in the left
-        sidebar.
-        """
-        error = _('The connection to the SecureDrop server timed out. '
-                  'Please try again.')
         self.gui.update_error_status(error)
 
     def authenticated(self):
@@ -428,7 +353,7 @@ class Controller(QObject):
 
         if self.authenticated():
             logger.debug("You are authenticated, going to make your call")
-            self.call_api(storage.get_remote_data, self.on_synced, self.on_sync_timeout, self.api)
+            self.call_api(storage.get_remote_data, self.on_synced, self.api)
             logger.debug("In sync_api, after call to call_api, on "
                          "thread {}".format(self.thread().currentThreadId()))
 
@@ -524,10 +449,10 @@ class Controller(QObject):
 
         if source_db_object.is_starred:
             self.call_api(self.api.remove_star, self.on_update_star_complete,
-                          self.on_sidebar_action_timeout, source_sdk_object)
+                          source_sdk_object)
         else:
             self.call_api(self.api.add_star, self.on_update_star_complete,
-                          self.on_sidebar_action_timeout, source_sdk_object)
+                          source_sdk_object)
 
     def logout(self):
         """
@@ -594,8 +519,7 @@ class Controller(QObject):
             sdk_object.source_uuid = source_db_object.uuid
 
         self.set_status(_('Downloading {}'.format(sdk_object.filename)))
-        self.call_api(func, self.on_file_downloaded,
-                      self.on_download_timeout, sdk_object, self.data_dir,
+        self.call_api(func, self.on_file_downloaded, sdk_object, self.data_dir,
                       current_object=message)
 
     def on_file_downloaded(self, result, current_object):
@@ -639,14 +563,6 @@ class Controller(QObject):
             # Update the UI in some way to indicate a failure state.
             self.set_status("The file download failed. Please try again.")
 
-    def on_download_timeout(self, current_object):
-        """
-        Called when downloading a file has timed out.
-        """
-        # Update the status bar to indicate a failure state.
-        self.set_status("The connection to the SecureDrop server timed out. "
-                        "Please try again.")
-
     def _on_delete_source_complete(self, result):
         """Trigger this when delete operation on source is completed."""
         if result:
@@ -656,11 +572,6 @@ class Controller(QObject):
             logging.info("failed to delete source at server")
             error = _('Failed to delete source at server')
             self.gui.update_error_status(error)
-
-    def _on_delete_action_timeout(self):
-        """Trigger this when delete operation on source of is timeout."""
-        error = _('The connection to SecureDrop timed out. Please try again.')
-        self.gui.update_error_status(error)
 
     def delete_source(self, source):
         """Performs a delete operation on source record.
@@ -673,7 +584,6 @@ class Controller(QObject):
         self.call_api(
             self.api.delete_source,
             self._on_delete_source_complete,
-            self._on_delete_action_timeout,
             source
         )
 
@@ -692,7 +602,6 @@ class Controller(QObject):
                 self.call_api(
                     self.api.reply_source,
                     self._on_reply_complete,
-                    self._on_reply_timeout,
                     sdk_source,
                     encrypted_reply,
                     msg_uuid,
@@ -717,7 +626,3 @@ class Controller(QObject):
             self.reply_succeeded.emit(reply_uuid)
         else:
             self.reply_failed.emit(reply_uuid)
-
-    def _on_reply_timeout(self, current_object: Tuple[str, str]) -> None:
-        _, reply_uuid = current_object
-        self.reply_failed.emit(reply_uuid)
