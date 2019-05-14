@@ -115,11 +115,11 @@ To make a release, you should:
 
 # Contributing
 
-Please read [CONTRIBUTING.md](https://github.com/freedomofpress/securedrop-sdk/CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
+Please read [CONTRIBUTING.md](https://github.com/freedomofpress/securedrop-sdk/blob/master/CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
 
 # Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/freedomofpress/secureddrop-sdk/tags). 
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/freedomofpress/securedrop-sdk/tags). 
 
 # License
 
