@@ -28,13 +28,14 @@ import uuid
 from gettext import gettext as _
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess
 from sdclientapi import RequestTimeoutError
-from typing import Dict, Tuple  # noqa: F401
+from typing import Dict, Tuple, Union  # noqa: F401
 
 from securedrop_client import storage
 from securedrop_client import db
-from securedrop_client.utils import check_dir_permissions
 from securedrop_client.crypto import GpgHelper, CryptoError
 from securedrop_client.message_sync import MessageSync, ReplySync
+from securedrop_client.queue import ApiJobQueue, DownloadSubmissionJob
+from securedrop_client.utils import check_dir_permissions
 
 logger = logging.getLogger(__name__)
 
@@ -144,6 +145,10 @@ class Controller(QObject):
 
         # Reference to the API for secure drop proxy.
         self.api = None  # type: sdclientapi.API
+
+        # Queue that handles running API job
+        self.api_job_queue = ApiJobQueue(self.api)
+
         # Contains active threads calling the API.
         self.api_threads = {}  # type: Dict[str, Dict]
 
@@ -310,6 +315,7 @@ class Controller(QObject):
         self.gui.show_main_window(self.api.username)
         self.start_message_thread()
         self.start_reply_thread()
+        self.api_job_queue.start_queues()
 
         # Clear the sidebar error status bar if a message was shown
         # to the user indicating they should log in.
@@ -508,35 +514,48 @@ class Controller(QObject):
             # Non Qubes OS. Just log the event for now.
             logger.info('Opening file "{}".'.format(submission_filepath))
 
-    def on_file_download(self, source_db_object, message):
+    def on_reply_download(self, source_db_object: db.Source, reply: db.Reply) -> None:
         """
-        Download the file associated with the associated message (which may
-        be a Submission or Reply).
+        Download the file associated with the Reply.
         """
         if not self.api:  # Then we should tell the user they need to login.
             self.on_action_requiring_login()
             return
 
-        if isinstance(message, db.File) or isinstance(message, db.Message):
-            # Handle submissions.
-            func = self.api.download_submission
-            sdk_object = sdclientapi.Submission(uuid=message.uuid)
-            sdk_object.filename = message.filename
-            sdk_object.source_uuid = source_db_object.uuid
-        elif isinstance(message, db.Reply):
-            # Handle journalist's replies.
-            func = self.api.download_reply
-            sdk_object = sdclientapi.Reply(uuid=message.uuid)
-            sdk_object.filename = message.filename
-            sdk_object.source_uuid = source_db_object.uuid
+        func = self.api.download_reply
+        sdk_object = sdclientapi.Reply(uuid=message.uuid)
+        sdk_object.filename = message.filename
+        sdk_object.source_uuid = source_db_object.uuid
 
         self.set_status(_('Downloading {}'.format(sdk_object.filename)))
-        self.call_api(func,
+
+        self.call_api(self.api.download_reply,
                       self.on_file_download_success,
                       self.on_file_download_failure,
                       sdk_object,
                       self.data_dir,
                       current_object=message)
+
+    def on_submission_download(
+        self,
+        source_db_object: db.Source,
+        submission: Union[db.File, db.Message],
+    ) -> None:
+        """
+        Download the file associated with the Submission (which may be a File or Message).
+        """
+        if not self.api:  # Then we should tell the user they need to login.
+            self.on_action_requiring_login()
+            return
+
+        func = self.api.download_submission
+        sdk_object = sdclientapi.Submission(uuid=submission.uuid)
+        sdk_object.filename = submission.filename
+        sdk_object.source_uuid = source_db_object.uuid
+
+        job = DownloadSubmissionJob(sdk_object, self.data_dir, submission)
+        self.api_job_queue.enqueue(job)
+        self.set_status
 
     def on_file_download_success(self, result, current_object):
         """

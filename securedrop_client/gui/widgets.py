@@ -1339,7 +1339,7 @@ class FileWidget(QWidget):
             self.controller.on_file_open(self.submission)
         else:
             # Download the file.
-            self.controller.on_file_download(self.source, self.submission)
+            self.controller.on_submission_download(self.source, self.submission)
 
 
 class ConversationView(QWidget):
