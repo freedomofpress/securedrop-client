@@ -62,7 +62,7 @@ class TopPane(QWidget):
         self.setLayout(layout)
 
         # Remove margins and spacing
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(10, 0, 0, 0)
         layout.setSpacing(0)
 
         # Refresh button
@@ -189,14 +189,14 @@ class RefreshButton(SvgPushButton):
             disabled='refresh_offline.svg',
             active='refresh_active.svg',
             selected='refresh.svg',
-            svg_size=QSize(22, 22))
+            svg_size=QSize(18, 18))
 
         # Set css id
         self.setObjectName('refresh_button')
 
         # Set styles
         self.setStyleSheet(self.CSS)
-        self.setFixedSize(QSize(42, 42))
+        self.setFixedSize(QSize(22, 22))
 
         # Click event handler
         self.clicked.connect(self._on_clicked)

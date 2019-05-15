@@ -214,7 +214,7 @@ def test_show_sync(mocker):
     updated_on = mocker.MagicMock()
     w.show_sync(updated_on)
     w.update_activity_status.assert_called_once_with(
-        'Last refresh: {}'.format(updated_on.humanize()))
+        'Last Refresh: {}'.format(updated_on.humanize()))
 
 
 def test_show_sync_no_sync(mocker):
