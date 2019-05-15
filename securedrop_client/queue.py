@@ -64,20 +64,21 @@ class RunnableQueue(QObject):
         self.queue = Queue()  # type: Queue[ApiJob]
 
         self.halt_signal = halt_signal
-        halt_signal.connect(self.stop)
+        # halt_signal.connect(self.stop)
 
     def stop(self) -> None:
         self.run = False
 
     def __call__(self, loop: bool = True) -> None:
         while self.run:
+            logger.debug('in runnable queue')
             job = self.queue.get(block=True)  # type: ApiJob
 
             try:
                 job._do_call_api(self.api_client)
             except RequestTimeoutError:
                 self.run = False
-                self.halt_signal.emit()  # notify other threads of failure
+                #self.halt_signal.emit()  # notify other threads of failure
                 return
 
             if not loop:
@@ -90,15 +91,16 @@ class ApiJobQueue(QObject):
     Signal used to notify different job threads that they should halt. This is pub/sub like signal
     in that any threat may trigger it, and all threads listen to it.
     '''
-    halt_signal = pyqtSignal()
+    # halt_signal = pyqtSignal()
 
     def __init__(self, api_client: API, parent: Optional[QObject] = None) -> None:
         super().__init__(parent)
         self.api_client = api_client
-        self.main_queue = RunnableQueue(self.api_client, self.halt_signal)
-        self.download_queue = RunnableQueue(self.api_client, self.halt_signal)
+        self.main_queue = RunnableQueue(self.api_client, None)  # self.halt_signal)
+        self.download_queue = RunnableQueue(self.api_client, None)  # self.halt_signal)
 
     def start_queues(self) -> None:
+        logger.debug('starting queues!')
         # ensure the queues are set to run (for previously stopped threads)
         self.main_queue.run = True
         self.download_queue.run = True
@@ -109,8 +111,11 @@ class ApiJobQueue(QObject):
         self.main_queue.moveToThread(main_thread)
         self.download_queue.moveToThread(download_thread)
 
-        main_thread.run()
-        download_thread.run()
+        logger.debug('trying to start main thread')
+        main_thread.start()
+        logger.debug('started main thread')
+        download_thread.start()
+        logger.debug('now started download thread')
 
     def enqueue(self, job: ApiJob) -> None:
         if isinstance(job, DownloadSubmissionJob):
