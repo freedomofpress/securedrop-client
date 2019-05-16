@@ -55,7 +55,7 @@ class Window(QMainWindow):
         """
         super().__init__()
 
-        self.setWindowTitle(_("SecureDrop Controller {}").format(__version__))
+        self.setWindowTitle(_("SecureDrop Client {}").format(__version__))
         self.setWindowIcon(load_icon(self.icon))
 
         # Top Pane to display activity and error messages
