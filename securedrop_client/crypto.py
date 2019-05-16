@@ -158,9 +158,14 @@ class GpgHelper:
             cmd.extend(['--encrypt',
                         '-r', source.fingerprint,
                         '-r', self.journalist_key_fingerprint,
-                        '--armor',
-                        '-o-',  # write to stdout
-                        content.name])
+                        '--armor'])
+            if not self.is_qubes:
+                # In Qubes, the ciphertext will go to stdout.
+                # In addition the option below cannot be passed
+                # through the gpg client wrapper.
+                cmd.extend(['-o-'])  # write to stdout
+            cmd.extend([content.name])
+
             try:
                 subprocess.check_call(cmd, stdout=stdout, stderr=stderr)
             except subprocess.CalledProcessError as e:
