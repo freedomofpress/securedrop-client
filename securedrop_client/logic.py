@@ -395,10 +395,11 @@ class Controller(QObject):
         for source in remote_sources:
             if source.key and source.key.get('type', None) == 'PGP':
                 pub_key = source.key.get('public', None)
-                if not pub_key:
+                fingerprint = source.key.get('fingerprint', None)
+                if not pub_key or not fingerprint:
                     continue
                 try:
-                    self.gpg.import_key(source.uuid, pub_key)
+                    self.gpg.import_key(source.uuid, pub_key, fingerprint)
                 except CryptoError:
                     logger.warning('Failed to import key for source {}'.format(source.uuid))
 

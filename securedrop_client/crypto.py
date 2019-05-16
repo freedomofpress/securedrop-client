@@ -109,31 +109,30 @@ class GpgHelper:
         cmd.extend(['--trust-model', 'always'])
         return cmd
 
-    def import_key(self, source_uuid: UUID, key_data: str) -> None:
+    def import_key(self, source_uuid: UUID, key_data: str, fingerprint: str) -> None:
         local_source = self.session.query(Source).filter_by(uuid=source_uuid).one()
 
-        fingerprints = self._import(key_data)
-        if len(fingerprints) != 1:
-            raise RuntimeError('Expected exactly one fingerprint.')
+        self._import(key_data)
 
-        local_source.fingerprint = fingerprints.pop()
+        local_source.fingerprint = fingerprint
         self.session.add(local_source)
         self.session.commit()
 
-    def _import(self, key_data: str, is_private: bool = False) -> set:
+    def _import(self, key_data: str) -> None:
         '''Wrapper for `gpg --import-keys`'''
-        cmd = self._gpg_cmd_base()
-        if is_private:
-            cmd.append('--allow-secret-key-import')
 
         with tempfile.NamedTemporaryFile('w+') as temp_key, \
                 tempfile.NamedTemporaryFile('w+') as stdout, \
                 tempfile.NamedTemporaryFile('w+') as stderr:
             temp_key.write(key_data)
             temp_key.seek(0)
-            cmd.extend(['--import-options', 'import-show',
-                        '--with-colons', '--import',
-                        temp_key.name])
+            if self.is_qubes:  # pragma: no cover
+                cmd = ['qubes-gpg-import-key', temp_key.name]
+            else:
+                cmd = self._gpg_cmd_base()
+                cmd.extend(['--import-options', 'import-show',
+                            '--with-colons', '--import',
+                            temp_key.name])
 
             try:
                 subprocess.check_call(cmd, stdout=stdout, stderr=stderr)
@@ -141,24 +140,6 @@ class GpgHelper:
                 stderr.seek(0)
                 logger.error('Could not import key: {}\n{}'.format(e, stderr.read()))
                 raise CryptoError('Could not import key.')
-
-            stdout.seek(0)
-            # this is to ensure we only read the fingerprint attached to the public key
-            # and not a subkey
-            reading_pub = False
-            key_fingerprints = set()
-            for line in stdout:
-                if line.startswith('pub'):
-                    reading_pub = True
-                    continue
-                if not line.startswith('fpr'):
-                    continue
-                if not reading_pub:
-                    continue
-                key_fingerprints.add(line.split(':')[9])
-                reading_pub = False
-
-            return key_fingerprints
 
     def encrypt_to_source(self, source_uuid: str, data: str) -> str:
         '''
