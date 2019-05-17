@@ -1,9 +1,8 @@
+include build-requirements.txt
 include requirements.txt
 include README.md
 include LICENSE
 include setup.py
-include Pipfile
-include Pipfile.lock
 include files/alembic.ini
 include files/client.ini
 include files/securedrop-client
