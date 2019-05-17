@@ -661,9 +661,6 @@ class SourceList(QListWidget):
     """
 
     CSS = '''
-    QListWidget {
-        show-decoration-selected: 0;
-    }
     QListWidget::item:selected {
         background: #efeef7;
     }
@@ -1011,7 +1008,7 @@ class LoginDialog(QDialog):
         self.title.setTextFormat(Qt.RichText)
 
         self.instructions = QLabel(_('You may read all documents and messages '
-                                     'shown here, without signing in. To '
+                                     'offline, without signing in. To '
                                      'correspond with a Source or to check '
                                      'the server for updates, you must sign '
                                      'in.'))
