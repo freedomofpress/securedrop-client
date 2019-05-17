@@ -22,7 +22,7 @@ be poked at and demonstrated.
 
 #### install requirements
 
-To try the proxy script, first use `pipenv` to create an environment
+To try the proxy script, first use `venv` to create an environment
 and install requirements. In the root of the project directory, run
 
 ```

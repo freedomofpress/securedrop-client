@@ -1,6 +1,4 @@
 include LICENSE
-include Pipfile
-include Pipfile.lock
 include README.md
 include VERSION
 include config-example.yaml
