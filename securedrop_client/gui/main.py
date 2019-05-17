@@ -83,6 +83,9 @@ class Window(QMainWindow):
         central_widget_layout.addWidget(self.top_pane)
         central_widget_layout.addWidget(self.main_pane)
 
+        # Initialize login dialog
+        self.login_dialog = None  # type: Optional[LoginDialog]
+
     def setup(self, controller: Controller) -> None:
         """
         Create references to the controller logic and instantiate the various
@@ -113,7 +116,7 @@ class Window(QMainWindow):
         """
         Show the login form.
         """
-        self.login_dialog = LoginDialog(self) # type: Optional[LoginDialog]
+        self.login_dialog = LoginDialog(self)  # type: Optional[LoginDialog]
         self.login_dialog.move(
             QApplication.desktop().screen().rect().center() - self.rect().center())
         self.login_dialog.setup(self.controller)

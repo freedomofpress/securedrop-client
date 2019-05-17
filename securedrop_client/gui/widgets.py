@@ -21,10 +21,10 @@ import arrow
 from gettext import gettext as _
 import html
 import sys
-from typing import List, Any, Optional
+from typing import List, Optional, Callable
 from uuid import uuid4
 
-from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QTimer, QSize
+from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QTimer, QSize, QEvent, QObject
 from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
@@ -587,7 +587,7 @@ class MainView(QWidget):
     }
     '''
 
-    def __init__(self, parent: Any) -> None:
+    def __init__(self, parent: QObject) -> None:
         super().__init__(parent)
 
         self.setStyleSheet(self.CSS)
@@ -716,7 +716,7 @@ class SourceList(QListWidget):
         if source_widget and source_exists(self.controller.session, source_widget.source.uuid):
             return source_widget.source
 
-        return None # mypy complains about no return without this
+        return None  # mypy complains about no return without this
 
 
 class SourceWidget(QWidget):
@@ -836,7 +836,7 @@ class SourceWidget(QWidget):
         if self.source.document_count == 0:
             self.attached.hide()
 
-    def delete_source(self, event: Any) -> None:
+    def delete_source(self, event: QEvent) -> None:
         if self.controller.api is None:
             self.controller.on_action_requiring_login()
             return
@@ -907,7 +907,7 @@ class StarToggleButton(SvgToggleButton):
 class DeleteSourceMessageBox:
     """Use this to display operation details and confirm user choice."""
 
-    def __init__(self, parent: Any, source: Source, controller: Controller) -> None:
+    def __init__(self, parent: QObject, source: Source, controller: Controller) -> None:
         self.parent = parent
         self.source = source
         self.controller = controller
@@ -967,18 +967,18 @@ class LoginDialog(QDialog):
     MAX_PASSWORD_LEN = 128  # Journalist.MAX_PASSWORD_LEN on server
     MIN_JOURNALIST_USERNAME = 3  # Journalist.MIN_USERNAME_LEN on server
 
-    def __init__(self, parent: Any) -> None:
+    def __init__(self, parent: QObject) -> None:
         self.parent = parent
         super().__init__(self.parent)
 
-    def closeEvent(self, event: Any) -> None:
+    def closeEvent(self, event: QEvent) -> None:
         """
         Only exit the application when the main window is not visible.
         """
         if not self.parent.isVisible():
             sys.exit(0)
 
-    def keyPressEvent(self, event: Any) -> None:
+    def keyPressEvent(self, event: QEvent) -> None:
         """
         Override default QDialog behavior that closes the dialog window when the Esc key is pressed.
         Instead, ignore the event.
@@ -1120,7 +1120,7 @@ class SpeechBubble(QWidget):
     }
     '''
 
-    def __init__(self, message_id: str, text: str, update_signal: Any) -> None:
+    def __init__(self, message_id: str, text: str, update_signal: Callable) -> None:
         super().__init__()
         self.message_id = message_id
 
@@ -1156,7 +1156,7 @@ class ConversationWidget(QWidget):
     def __init__(self,
                  message_id: str,
                  message: str,
-                 update_signal: Any,
+                 update_signal: Callable,
                  align: str) -> None:
         """
         Initialise with the message to display and some notion of which side
@@ -1199,7 +1199,7 @@ class MessageWidget(ConversationWidget):
     );
     '''
 
-    def __init__(self, message_id: str, message: str, update_signal: Any) -> None:
+    def __init__(self, message_id: str, message: str, update_signal: Callable) -> None:
         super().__init__(message_id,
                          message,
                          update_signal,
@@ -1233,9 +1233,9 @@ class ReplyWidget(ConversationWidget):
         self,
         message_id: str,
         message: str,
-        update_signal: Any,
-        message_succeeded_signal: Any,
-        message_failed_signal: Any,
+        update_signal: Callable,
+        message_succeeded_signal: Callable,
+        message_failed_signal: Callable,
     ) -> None:
         super().__init__(message_id,
                          message,
@@ -1276,8 +1276,9 @@ class FileWidget(QWidget):
     Represents a file.
     """
 
-    def __init__(self, source_db_object: Source, submission_db_object: Any,
-                 controller: Controller, file_ready_signal: Any, align: str = "left") -> None:
+    def __init__(self, source_db_object: Source, submission_db_object: File,
+                 controller: Controller, file_ready_signal: Callable,
+                 align: str = "left") -> None:
         """
         Given some text, an indication of alignment ('left' or 'right') and
         a reference to the controller, make something to display a file.
@@ -1331,7 +1332,7 @@ class FileWidget(QWidget):
             self.clear()  # delete existing icon and label
             self.update()  # draw modified widget
 
-    def mouseReleaseEvent(self, e: Any) -> None:
+    def mouseReleaseEvent(self, e: QEvent) -> None:
         """
         Handle a completed click via the program logic. The download state
         of the file distinguishes which function in the logic layer to call.
@@ -1400,7 +1401,7 @@ class ConversationView(QWidget):
             else:
                 self.add_file(self.source, conversation_item)
 
-    def add_file(self, source_db_object: Source, submission_db_object: Any) -> None:
+    def add_file(self, source_db_object: Source, submission_db_object: File) -> None:
         """
         Add a file from the source.
         """
@@ -1559,7 +1560,7 @@ class ReplyBoxWidget(QWidget):
 class DeleteSourceAction(QAction):
     """Use this action to delete the source record."""
 
-    def __init__(self, source: Source, parent: Any, controller: Controller) -> None:
+    def __init__(self, source: Source, parent: QObject, controller: Controller) -> None:
         self.source = source
         self.controller = controller
         self.text = _("Delete source account")
