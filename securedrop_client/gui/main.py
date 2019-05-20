@@ -145,7 +145,7 @@ class Window(QMainWindow):
         Display a message indicating the data-sync state.
         """
         if updated_on:
-            self.update_activity_status(_('Last refresh: {}').format(updated_on.humanize()))
+            self.update_activity_status(_('Last Refresh: {}').format(updated_on.humanize()))
         else:
             self.update_activity_status(_('Waiting to refresh...'), 5000)
 

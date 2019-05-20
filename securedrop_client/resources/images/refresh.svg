@@ -1,17 +1,1 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="16px" height="16px" viewBox="0 0 16 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <!-- Generator: Sketch 52.3 (67297) - http://www.bohemiancoding.com/sketch -->
-    <title>Group 3</title>
-    <desc>Created with Sketch.</desc>
-    <defs>
-        <polygon id="path-1" points="0 0.0001 15.99 0.0001 15.99 16 0 16"></polygon>
-    </defs>
-    <g id="Spex" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <g id="ICONZZZ" transform="translate(-145.000000, -103.000000)" fill="white">
-            <g id="Group-3" transform="translate(145.000000, 103.000000)" fill="white">
-                <g id="Clip-2"></g>
-                <path d="M13.6404,2.3501 C12.1904,0.9001 10.2004,0.0001 7.9904,0.0001 C3.5704,0.0001 -0.0006,3.5801 -0.0006,8.0001 C-0.0006,12.4201 3.5704,16.0001 7.9904,16.0001 C11.7204,16.0001 14.8294,13.4501 15.7204,10.0001 L13.6404,10.0001 C12.8204,12.3301 10.6004,14.0001 7.9904,14.0001 C4.6804,14.0001 1.9904,11.3091 1.9904,8.0001 C1.9904,4.6901 4.6804,2.0001 7.9904,2.0001 C9.6504,2.0001 11.1294,2.6901 12.2094,3.7801 L8.9904,7.0001 L15.9904,7.0001 L15.9904,0.0001 L13.6404,2.3501 Z" id="Fill-1" fill="white" mask="url(#mask-2)"></path>
-            </g>
-        </g>
-    </g>
-</svg>
+<svg width="16" height="15" viewBox="0 0 16 15" xmlns="http://www.w3.org/2000/svg"><title> Refresh</title><desc> Created with Sketch.</desc><defs><polygon points="0 0 15.1 0 15.1 15 0 15"/></defs><g fill="none"><g transform="translate(-14 -14)translate(0 2)translate(14 12)"><mask fill="white"></mask><path d="M6.9 13C3.8 12.6 1.6 9.8 2 6.7 2.4 3.7 5.3 1.6 8.4 2 9.5 2.1 10.4 2.6 11.2 3.2L9 5.1 15.1 6.5 14.8 0.2 12.7 1.9C11.6 0.9 10.3 0.3 8.7 0.1 4.5-0.5 0.7 2.4 0.1 6.5 -0.5 10.6 2.4 14.4 6.6 14.9 9.5 15.3 12.2 14.1 13.8 11.9L12.3 10.7C11.1 12.4 9 13.3 6.9 13" mask="url(#mask-2)" fill="#FFF"/></g></g></svg>
