@@ -376,6 +376,7 @@ def test_MainView_init():
     """
     Ensure the MainView instance is correctly set up.
     """
+    mock_session_maker = mocker.MagicMock()
     mv = MainView(None)
     assert isinstance(mv.source_list, SourceList)
     assert isinstance(mv.view_holder, QWidget)
