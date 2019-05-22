@@ -7,8 +7,7 @@ from configparser import ConfigParser
 from datetime import datetime
 from securedrop_client.config import Config
 from securedrop_client.app import configure_locale_and_language
-from securedrop_client.db import Base, make_engine, Source
-from sqlalchemy.orm import sessionmaker
+from securedrop_client.db import Base, make_session_maker, Source
 from uuid import uuid4
 
 
@@ -82,13 +81,16 @@ def _alembic_config(homedir):
 
 
 @pytest.fixture(scope='function')
-def session(homedir):
-    engine = make_engine(homedir)
-    Base.metadata.create_all(bind=engine, checkfirst=False)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    yield session
-    session.close()
+def session_maker(homedir):
+    return make_session_maker(homedir)
+
+
+@pytest.fixture(scope='function')
+def session(session_maker):
+    sess = session_maker()
+    Base.metadata.create_all(bind=sess.get_bind(), checkfirst=False)
+    yield sess
+    sess.close()
 
 
 @pytest.fixture(scope='function')
