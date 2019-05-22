@@ -9,10 +9,9 @@ from alembic.config import Config as AlembicConfig
 from alembic.script import ScriptDirectory
 from os import path
 from sqlalchemy import text
-from sqlalchemy.orm import sessionmaker
 
 from . import conftest
-from securedrop_client.db import make_engine, Base, convention
+from securedrop_client.db import make_session_maker, Base, convention
 
 MIGRATION_PATH = path.join(path.dirname(__file__), '..', 'alembic', 'versions')
 
@@ -98,25 +97,24 @@ def test_alembic_head_matches_db_models(tmpdir):
     '''
     models_homedir = str(tmpdir.mkdir('models'))
     subprocess.check_call(['sqlite3', os.path.join(models_homedir, 'svs.sqlite'), '.databases'])
-    engine = make_engine(models_homedir)
-    Base.metadata.create_all(bind=engine, checkfirst=False)
+
+    session_maker = make_session_maker(models_homedir)
+    session = session_maker()
+    Base.metadata.create_all(bind=session.get_bind(), checkfirst=False)
     assert Base.metadata.naming_convention == convention
-    session = sessionmaker(engine)()
     models_schema = get_schema(session)
-    Base.metadata.drop_all(bind=engine)
+    Base.metadata.drop_all(bind=session.get_bind())
     session.close()
-    engine.dispose()
 
     alembic_homedir = str(tmpdir.mkdir('alembic'))
     subprocess.check_call(['sqlite3', os.path.join(alembic_homedir, 'svs.sqlite'), '.databases'])
-    engine = make_engine(alembic_homedir)
-    session = sessionmaker(engine)()
+    session_maker = make_session_maker(alembic_homedir)
+    session = session_maker()
     alembic_config = conftest._alembic_config(alembic_homedir)
     upgrade(alembic_config, 'head')
     alembic_schema = get_schema(session)
-    Base.metadata.drop_all(bind=engine)
+    Base.metadata.drop_all(bind=session.get_bind())
     session.close()
-    engine.dispose()
 
     # The initial migration creates the table 'alembic_version', but this is
     # not present in the schema created by `Base.metadata.create_all()`.
@@ -160,13 +158,13 @@ def test_schema_unchanged_after_up_then_downgrade(alembic_config,
         # get the database to some base state.
         pass
 
-    session = sessionmaker(make_engine(str(tmpdir.mkdir('original'))))()
+    session = make_session_maker(str(tmpdir.mkdir('original')))()
     original_schema = get_schema(session)
 
     upgrade(alembic_config, '+1')
     downgrade(alembic_config, '-1')
 
-    session = sessionmaker(make_engine(str(tmpdir.mkdir('reverted'))))()
+    session = make_session_maker(str(tmpdir.mkdir('reverted')))()
     reverted_schema = get_schema(session)
 
     # The initial migration is a degenerate case because it creates the table
