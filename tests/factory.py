@@ -8,6 +8,20 @@ SOURCE_COUNT = 0
 MESSAGE_COUNT = 0
 FILE_COUNT = 0
 REPLY_COUNT = 0
+USER_COUNT = 0
+
+
+def User(**attrs):
+    global USER_COUNT
+    USER_COUNT += 1
+    defaults = dict(
+        uuid='user-uuid-{}'.format(USER_COUNT),
+        username='test-user-id-{}'.format(USER_COUNT),
+    )
+
+    defaults.update(attrs)
+
+    return db.User(**defaults)
 
 
 def Source(**attrs):
