@@ -533,6 +533,7 @@ def test_Controller_on_sync_success_with_key_import_fail(homedir, config, mocker
     mock_source.key = {
         'type': 'PGP',
         'public': PUB_KEY,
+        'fingerprint': 'ABCDEFGHIJKLMAO'
     }
 
     mock_sources = [mock_source]

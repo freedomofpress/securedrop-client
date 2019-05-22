@@ -79,7 +79,7 @@ def test_import_key(homedir, config, source):
     Using the `config` fixture to ensure the config is written to disk.
     '''
     helper = GpgHelper(homedir, is_qubes=False)
-    helper.import_key(source['uuid'], source['public_key'])
+    helper.import_key(source['uuid'], source['public_key'], source['fingerprint'])
 
 
 def test_import_key_gpg_call_fail(homedir, config, mocker):
@@ -99,21 +99,6 @@ def test_import_key_gpg_call_fail(homedir, config, mocker):
     assert mock_call.called
 
 
-def test_import_key_multiple_fingerprints(homedir, source, config, mocker):
-    '''
-    Check that an error is raised if multiple fingerpints are found on key import.
-    Using the `config` fixture to ensure the config is written to disk.
-    '''
-    helper = GpgHelper(homedir, is_qubes=False)
-    mock_import = mocker.patch.object(helper, '_import', returnvalue={'a', 'b'})
-
-    with pytest.raises(RuntimeError, match='Expected exactly one fingerprint\\.'):
-        helper.import_key(source['uuid'], source['public_key'])
-
-    # ensure the mock was used
-    assert mock_import.called
-
-
 def test_encrypt(homedir, source, config, mocker):
     '''
     Check that calling `encrypt` encrypts the message.
@@ -123,7 +108,7 @@ def test_encrypt(homedir, source, config, mocker):
 
     # first we have to ensure the pubkeys are available
     helper._import(PUB_KEY)
-    helper._import(JOURNO_KEY, is_private=True)
+    helper._import(JOURNO_KEY)
 
     plaintext = 'bueller?'
     cyphertext = helper.encrypt_to_source(source['uuid'], plaintext)
@@ -158,7 +143,6 @@ def test_encrypt_fail(homedir, source, config, mocker):
 
     # first we have to ensure the pubkeys are available
     helper._import(PUB_KEY)
-    helper._import(JOURNO_KEY, is_private=True)
 
     plaintext = 'bueller?'
 
