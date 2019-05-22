@@ -1277,18 +1277,13 @@ class FileWidget(QWidget):
     def __init__(self, source_db_object, submission_db_object,
                  controller, file_ready_signal, align="left"):
         """
-        Given some text, an indication of alignment ('left' or 'right') and
-        a reference to the controller, make something to display a file.
-
-        Align is set to left by default because currently SecureDrop can only
-        accept files from sources to journalists.
+        Given some text and a reference to the controller, make something to display a file.
         """
         super().__init__()
         self.controller = controller
         self.source = source_db_object
         self.submission = submission_db_object
         self.file_uuid = self.submission.uuid
-        self.align = align
 
         self.layout = QHBoxLayout()
         self.update()
@@ -1296,7 +1291,7 @@ class FileWidget(QWidget):
 
         file_ready_signal.connect(self._on_file_download)
 
-    def update(self):
+    def update(self) -> None:
         icon = QLabel()
         icon.setPixmap(load_image('file.png'))
 
@@ -1306,18 +1301,11 @@ class FileWidget(QWidget):
             human_filesize = humanize_filesize(self.submission.size)
             description = QLabel("Download ({})".format(human_filesize))
 
-        if self.align != "left":
-            # Float right...
-            self.layout.addStretch(5)
-
         self.layout.addWidget(icon)
         self.layout.addWidget(description, 5)
+        self.layout.addStretch(5)
 
-        if self.align == "left":
-            # Add space on right hand side...
-            self.layout.addStretch(5)
-
-    def clear(self):
+    def clear(self) -> None:
         while self.layout.count():
             child = self.layout.takeAt(0)
             if child.widget():

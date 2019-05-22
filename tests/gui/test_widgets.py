@@ -1139,27 +1139,11 @@ def test_FileWidget_init_left(mocker):
     source = factory.Source()
     file_ = factory.File(is_downloaded=True)
 
-    fw = FileWidget(source, file_, mock_controller, mock_signal, align='left')
+    fw = FileWidget(source, file_, mock_controller, mock_signal)
 
     assert isinstance(fw.layout.takeAt(0), QWidgetItem)
     assert isinstance(fw.layout.takeAt(0), QWidgetItem)
     assert isinstance(fw.layout.takeAt(0), QSpacerItem)
-    assert fw.controller == mock_controller
-
-
-def test_FileWidget_init_right(mocker):
-    """
-    Check the FileWidget is configured correctly for align-right.
-    """
-    mock_controller = mocker.MagicMock()
-    mock_signal = mocker.MagicMock()  # not important for this test
-    source = factory.Source()
-    file_ = factory.File(is_downloaded=True)
-
-    fw = FileWidget(source, file_, mock_controller, mock_signal, align='right')
-    assert isinstance(fw.layout.takeAt(0), QSpacerItem)
-    assert isinstance(fw.layout.takeAt(0), QWidgetItem)
-    assert isinstance(fw.layout.takeAt(0), QWidgetItem)
     assert fw.controller == mock_controller
 
 
