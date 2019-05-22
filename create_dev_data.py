@@ -3,10 +3,11 @@ import json
 import os
 import sys
 from securedrop_client.config import Config
-from securedrop_client.db import Base, make_engine
+from securedrop_client.db import Base, make_session_maker
 
 sdc_home = sys.argv[1]
-Base.metadata.create_all(make_engine(sdc_home))
+session = make_session_maker(sdc_home)()
+Base.metadata.create_all(bind=session.get_bind())
 
 with open(os.path.join(sdc_home, Config.CONFIG_NAME), 'w') as f:
     f.write(json.dumps({

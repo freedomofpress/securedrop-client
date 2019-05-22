@@ -29,6 +29,7 @@ from gettext import gettext as _
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess
 from sdclientapi import RequestTimeoutError
 from typing import Dict, Tuple  # noqa: F401
+from sqlalchemy.orm.session import sessionmaker
 
 from securedrop_client import storage
 from securedrop_client import db
@@ -117,7 +118,7 @@ class Controller(QObject):
     """
     file_ready = pyqtSignal(str)
 
-    def __init__(self, hostname, gui, session,
+    def __init__(self, hostname: str, gui, session_maker: sessionmaker,
                  home: str, proxy: bool = True) -> None:
         """
         The hostname, gui and session objects are used to coordinate with the
@@ -144,26 +145,28 @@ class Controller(QObject):
 
         # Reference to the API for secure drop proxy.
         self.api = None  # type: sdclientapi.API
+
+        # Reference to the SqlAlchemy `sessionmaker` and `session`
+        self.session_maker = session_maker
+        self.session = session_maker()
+
         # Contains active threads calling the API.
         self.api_threads = {}  # type: Dict[str, Dict]
 
-        # Reference to the SqlAlchemy session.
-        self.session = session
+        self.gpg = GpgHelper(home, self.session_maker, proxy)
 
         # thread responsible for fetching messages
         self.message_thread = None
-        self.message_sync = MessageSync(self.api, self.home, self.proxy)
+        self.message_sync = MessageSync(self.api, self.gpg, self.session_maker)
 
         # thread responsible for fetching replies
         self.reply_thread = None
-        self.reply_sync = ReplySync(self.api, self.home, self.proxy)
+        self.reply_sync = ReplySync(self.api, self.gpg, self.session_maker)
 
         self.sync_flag = os.path.join(home, 'sync_flag')
 
         # File data.
         self.data_dir = os.path.join(self.home, 'data')
-
-        self.gpg = GpgHelper(home, proxy)
 
     @property
     def is_authenticated(self) -> bool:

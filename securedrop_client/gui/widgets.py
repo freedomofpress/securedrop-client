@@ -18,17 +18,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 import arrow
-from gettext import gettext as _
 import html
 import sys
+
+from gettext import gettext as _
 from typing import List
 from uuid import uuid4
-
-from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QTimer, QSize
+from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QTimer, QSize, pyqtBoundSignal, QObject
 from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
     QToolButton, QSizePolicy, QTextEdit, QStatusBar, QGraphicsDropShadowEffect
+from sqlalchemy.orm import scoped_session
 
 from securedrop_client.db import Source, Message, File, Reply
 from securedrop_client.storage import source_exists
@@ -587,8 +588,9 @@ class MainView(QWidget):
     }
     '''
 
-    def __init__(self, parent):
+    def __init__(self, session_maker: scoped_session, parent: QObject):
         super().__init__(parent)
+        self.session_maker = session_maker
 
         self.setStyleSheet(self.CSS)
 
@@ -631,7 +633,11 @@ class MainView(QWidget):
         source = self.source_list.get_current_source()
 
         if source:
-            conversation_wrapper = SourceConversationWrapper(source, self.controller)
+            conversation_wrapper = SourceConversationWrapper(
+                self.session_maker,
+                source,
+                self.controller,
+            )
             self.set_conversation(conversation_wrapper)
         else:
             self.clear_conversation()
@@ -1274,31 +1280,46 @@ class FileWidget(QWidget):
     Represents a file.
     """
 
-    def __init__(self, source_db_object, submission_db_object,
-                 controller, file_ready_signal, align="left"):
+    def __init__(
+        self,
+        session_maker: scoped_session,
+        file_uuid: str,
+        controller: Controller,
+        file_ready_signal: pyqtBoundSignal,
+    ) -> None:
         """
         Given some text and a reference to the controller, make something to display a file.
         """
         super().__init__()
+        self.session_maker = session_maker
         self.controller = controller
-        self.source = source_db_object
-        self.submission = submission_db_object
-        self.file_uuid = self.submission.uuid
+        self.file_uuid = file_uuid
+        self.file_is_downloaded = False  # default to `False`, value updated in `update()`
 
         self.layout = QHBoxLayout()
         self.update()
         self.setLayout(self.layout)
 
-        file_ready_signal.connect(self._on_file_download)
+        file_ready_signal.connect(self._on_file_download, type=Qt.QueuedConnection)
 
     def update(self) -> None:
         icon = QLabel()
         icon.setPixmap(load_image('file.png'))
 
-        if self.submission.is_downloaded:
+        session = self.session_maker()
+
+        # we have to query to get the object we want
+        file_ = session.query(File).filter_by(uuid=self.file_uuid).one()
+        # and then force a refresh because SQLAlchemy might have a copy of this object
+        # in this thread already that isn't up to date
+        session.refresh(file_)
+
+        self.file_is_downloaded = file_.is_downloaded
+
+        if self.file_is_downloaded:
             description = QLabel("Open")
         else:
-            human_filesize = humanize_filesize(self.submission.size)
+            human_filesize = humanize_filesize(file_.size)
             description = QLabel("Download ({})".format(human_filesize))
 
         self.layout.addWidget(icon)
@@ -1322,12 +1343,12 @@ class FileWidget(QWidget):
         Handle a completed click via the program logic. The download state
         of the file distinguishes which function in the logic layer to call.
         """
-        if self.submission.is_downloaded:
+        if self.file_is_downloaded:
             # Open the already downloaded file.
-            self.controller.on_file_open(self.submission)
+            self.controller.on_file_open(self.file_uuid)
         else:
             # Download the file.
-            self.controller.on_file_download(self.source, self.submission)
+            self.controller.on_submission_download(File, self.file_uuid)
 
 
 class ConversationView(QWidget):
@@ -1339,8 +1360,14 @@ class ConversationView(QWidget):
     https://github.com/freedomofpress/securedrop-client/issues/273
     """
 
-    def __init__(self, source_db_object: Source, controller: Controller):
+    def __init__(
+        self,
+        session_maker: scoped_session,
+        source_db_object: Source,
+        controller: Controller,
+    ):
         super().__init__()
+        self.session_maker = session_maker
         self.source = source_db_object
         self.controller = controller
 
@@ -1391,8 +1418,13 @@ class ConversationView(QWidget):
         Add a file from the source.
         """
         self.conversation_layout.addWidget(
-            FileWidget(source_db_object, submission_db_object,
-                       self.controller, self.controller.file_ready))
+            FileWidget(
+                self.session_maker,
+                submission_db_object.uuid,
+                self.controller,
+                self.controller.file_ready,
+            ),
+        )
 
     def update_conversation_position(self, min_val, max_val):
         """
@@ -1460,15 +1492,19 @@ class SourceConversationWrapper(QWidget):
     per-source resources.
     """
 
-    def __init__(self, source: Source, controller: Controller) -> None:
+    def __init__(
+        self,
+        session_maker: scoped_session,
+        source: Source,
+        controller: Controller,
+    ) -> None:
         super().__init__()
-
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
         self.conversation_title_bar = SourceProfileShortWidget(source, controller)
-        self.conversation_view = ConversationView(source, controller)
+        self.conversation_view = ConversationView(session_maker, source, controller)
         self.reply_box = ReplyBoxWidget(source, controller)
 
         layout.addWidget(self.conversation_title_bar, 1)
