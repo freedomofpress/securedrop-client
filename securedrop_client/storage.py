@@ -303,7 +303,7 @@ def find_or_create_user(uuid: str, username: str, session: Session) -> User:
         return user
     else:
         # User does not exist in the local database.
-        new_user = User(username)
+        new_user = User(username=username)
         new_user.uuid = uuid
         session.add(new_user)
         session.commit()

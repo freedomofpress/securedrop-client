@@ -5,7 +5,7 @@ from securedrop_client.db import Reply, File, Message, User
 
 
 def test_string_representation_of_user():
-    user = User('hehe')
+    user = User(username='hehe')
     user.__repr__()
 
 
@@ -29,7 +29,7 @@ def test_string_representation_of_file():
 
 
 def test_string_representation_of_reply():
-    user = User('hehe')
+    user = User(username='hehe')
     source = factory.Source()
     reply = Reply(source=source, journalist=user, filename="1-reply.gpg",
                   size=1234, uuid='test')
@@ -43,7 +43,7 @@ def test_source_collection():
                  download_url='http://test/test')
     message = Message(source=source, uuid="test", size=123, filename="3-test.doc.gpg",
                       download_url='http://test/test')
-    user = User('hehe')
+    user = User(username='hehe')
     reply = Reply(source=source, journalist=user, filename="1-reply.gpg",
                   size=1234, uuid='test')
     source.files = [file_]

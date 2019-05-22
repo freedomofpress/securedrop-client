@@ -425,7 +425,7 @@ def test_update_sources_deletes_files_associated_with_the_source(
     msg_submission = db.File(
         source=local_source, uuid="test", size=123, filename=msg_server_filename,
         download_url='http://test/test')
-    user = db.User('hehe')
+    user = db.User(username='hehe')
     reply = db.Reply(
         source=local_source, journalist=user, filename=reply_server_filename,
         size=1234, uuid='test')

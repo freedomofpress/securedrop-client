@@ -216,8 +216,5 @@ class User(Base):
     uuid = Column(String(36), unique=True, nullable=False)
     username = Column(String(255), nullable=False)
 
-    def __init__(self, username: str) -> None:
-        self.username = username
-
     def __repr__(self) -> str:
         return "<Journalist: {}>".format(self.username)
