@@ -3,9 +3,10 @@ Testing for the ApiJobQueue and related classes.
 '''
 import pytest
 
+from queue import Queue
 from sdclientapi import AuthError, RequestTimeoutError
 
-from securedrop_client.queue import ApiInaccessibleError, ApiJob
+from securedrop_client.queue import ApiInaccessibleError, ApiJob, RunnableQueue
 
 
 def test_ApiInaccessibleError_init():
@@ -37,12 +38,13 @@ def dummy_job_factory(mocker, return_value):
 
         def __init__(self, *nargs, **kwargs):
             super().__init__(*nargs, **kwargs)
+            self.return_value = return_value
 
         def call_api(self, api_client, session):
-            if isinstance(return_value, Exception):
-                raise return_value
+            if isinstance(self.return_value, Exception):
+                raise self.return_value
             else:
-                return return_value
+                return self.return_value
 
     return DummyApiJob
 
@@ -117,3 +119,86 @@ def test_ApiJob_other_error(mocker):
 
     assert not api_job.success_signal.emit.called
     api_job.failure_signal.emit.assert_called_once_with(return_value)
+
+
+def test_RunnableQueue_init(mocker):
+    mock_api_client = mocker.MagicMock()
+    mock_session_maker = mocker.MagicMock()
+
+    queue = RunnableQueue(mock_api_client, mock_session_maker)
+    assert queue.api_client == mock_api_client
+    assert queue.session_maker == mock_session_maker
+    assert isinstance(queue.queue, Queue)
+    assert queue.queue.empty()
+    assert queue.last_job is None
+
+
+def test_RunnableQueue_happy_path(mocker):
+    '''
+    Add one job to the queue, run it.
+    '''
+    mock_process_events = mocker.patch('securedrop_client.queue.QApplication.processEvents')
+    mock_api_client = mocker.MagicMock()
+    mock_session = mocker.MagicMock()
+    mock_session_maker = mocker.MagicMock(return_value=mock_session)
+    return_value = 'foo'
+
+    dummy_job_cls = dummy_job_factory(mocker, return_value)
+
+    queue = RunnableQueue(mock_api_client, mock_session_maker)
+    queue.queue.put_nowait(dummy_job_cls())
+
+    queue._process(exit_loop=True)
+
+    # this needs to be called at the end of the loop
+    assert mock_process_events.called
+
+    assert queue.last_job is None
+    assert queue.queue.empty()
+
+
+def test_RunnableQueue_job_timeout(mocker):
+    '''
+    Add two jobs to the queue. The first times out, and then gets "cached" for the next pass
+    through the loop.
+    '''
+    mock_process_events = mocker.patch('securedrop_client.queue.QApplication.processEvents')
+    mock_api_client = mocker.MagicMock()
+    mock_session = mocker.MagicMock()
+    mock_session_maker = mocker.MagicMock(return_value=mock_session)
+
+    return_value = RequestTimeoutError()
+    dummy_job_cls = dummy_job_factory(mocker, return_value)
+    job1 = dummy_job_cls()
+    job2 = dummy_job_cls()
+
+    queue = RunnableQueue(mock_api_client, mock_session_maker)
+    queue.queue.put_nowait(job1)
+    queue.queue.put_nowait(job2)
+
+    # attempt to process job1 knowing that it times out
+    queue._process(exit_loop=True)
+
+    # check that job1 is "cached" and a job is in the queue
+    assert queue.last_job is job1
+    assert queue.queue.qsize() == 1
+
+    # update job1 to not raise an error so it can be processed
+    job1.return_value = 'foo'
+
+    # attempt to process the job1 again
+    queue._process(exit_loop=True)
+
+    # check that job has not been cached again
+    assert queue.last_job is None
+    assert queue.queue.qsize() == 1
+
+    # attempt to process job2 knowing that it times out
+    queue._process(exit_loop=True)
+
+    # check that job2 was cached and that the queue is empty
+    assert queue.last_job is job2
+    assert queue.queue.empty()
+
+    # ensure we don't have stale mocks
+    assert mock_process_events.called

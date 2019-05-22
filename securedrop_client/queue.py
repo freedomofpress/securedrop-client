@@ -178,9 +178,9 @@ class RunnableQueue(QObject):
 
     @pyqtSlot()
     def process(self) -> None:  # pragma: nocover
-        self.__process(False)
+        self._process(False)
 
-    def __process(self, exit_loop: bool) -> None:
+    def _process(self, exit_loop: bool) -> None:
         session = self.session_maker()
         while True:
             # retry the "cached" job if it exists, otherwise get the next job
