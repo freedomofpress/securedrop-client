@@ -4,9 +4,13 @@ from typing import Any, List, Union  # noqa: F401
 
 from sqlalchemy import Boolean, Column, create_engine, DateTime, ForeignKey, Integer, String, \
     Text, MetaData, CheckConstraint, text, UniqueConstraint
+from sqlalchemy.engine import Engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, scoped_session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 
+
+Session = sessionmaker()
 
 convention = {
     "ix": 'ix_%(column_0_label)s',
@@ -21,11 +25,9 @@ metadata = MetaData(naming_convention=convention)
 Base = declarative_base(metadata=metadata)  # type: Any
 
 
-def make_session_maker(home: str) -> scoped_session:
+def make_engine(home: str) -> Engine:
     db_path = os.path.join(home, 'svs.sqlite')
-    engine = create_engine('sqlite:///{}'.format(db_path))
-    maker = sessionmaker(bind=engine)
-    return scoped_session(maker)
+    return create_engine('sqlite:///{}'.format(db_path))
 
 
 class Source(Base):
@@ -96,9 +98,8 @@ class Message(Base):
     )
 
     source_id = Column(Integer, ForeignKey('sources.id'), nullable=False)
-    source = relationship("Source",
-                          backref=backref("messages", order_by=id,
-                                          cascade="delete"))
+    source = relationship(
+        "Source", backref=backref("messages", order_by=id, lazy='subquery', cascade="delete"))
 
     def __init__(self, **kwargs: Any) -> None:
         if 'file_counter' in kwargs:
@@ -140,9 +141,8 @@ class File(Base):
     is_read = Column(Boolean(name='is_read'), nullable=False, server_default=text("0"))
 
     source_id = Column(Integer, ForeignKey('sources.id'), nullable=False)
-    source = relationship("Source",
-                          backref=backref("files", order_by=id,
-                                          cascade="delete"))
+    source = relationship(
+        "Source", backref=backref("files", order_by=id, lazy='subquery', cascade="delete"))
 
     def __init__(self, **kwargs: Any) -> None:
         if 'file_counter' in kwargs:
@@ -165,13 +165,12 @@ class Reply(Base):
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
     source_id = Column(Integer, ForeignKey('sources.id'), nullable=False)
-    source = relationship("Source",
-                          backref=backref("replies", order_by=id,
-                                          cascade="delete"))
+    source = relationship(
+        "Source", backref=backref("replies", order_by=id, lazy='subquery', cascade="delete"))
 
     journalist_id = Column(Integer, ForeignKey('users.id'))
     journalist = relationship(
-        "User", backref=backref('replies', order_by=id))
+        "User", backref=backref('replies', order_by=id, lazy='subquery'))
 
     filename = Column(String(255), nullable=False)
     file_counter = Column(Integer, nullable=False)

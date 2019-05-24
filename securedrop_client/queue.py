@@ -9,13 +9,11 @@ from PyQt5.QtCore import QObject, QThread, pyqtSlot, pyqtSignal
 from PyQt5.QtWidgets import QApplication
 from queue import Queue
 from sdclientapi import API, RequestTimeoutError, AuthError
-from sqlalchemy.orm import scoped_session
-from sqlalchemy.orm.session import Session
 from typing import Any, Union, Optional, Type, Tuple
 
 from securedrop_client import storage
 from securedrop_client.crypto import GpgHelper, CryptoError
-from securedrop_client.db import File, Message
+from securedrop_client.db import Session, File, Message
 
 
 logger = logging.getLogger(__name__)
@@ -169,10 +167,9 @@ class DownloadSubmissionJob(ApiJob):
 
 class RunnableQueue(QObject):
 
-    def __init__(self, api_client: API, session_maker: scoped_session) -> None:
+    def __init__(self, api_client: API) -> None:
         super().__init__()
         self.api_client = api_client
-        self.session_maker = session_maker
         self.queue = Queue()  # type: Queue[ApiJob]
         self.last_job = None  # type: Optional[ApiJob]
 
@@ -181,7 +178,7 @@ class RunnableQueue(QObject):
         self._process(False)
 
     def _process(self, exit_loop: bool) -> None:
-        session = self.session_maker()
+        session = Session()
         while True:
             # retry the "cached" job if it exists, otherwise get the next job
             if self.last_job is not None:
@@ -205,15 +202,15 @@ class RunnableQueue(QObject):
 
 class ApiJobQueue(QObject):
 
-    def __init__(self, api_client: API, session_maker: scoped_session) -> None:
+    def __init__(self, api_client: API) -> None:
         super().__init__(None)
         self.api_client = api_client
 
         self.main_thread = QThread()
         self.download_thread = QThread()
 
-        self.main_queue = RunnableQueue(self.api_client, session_maker)
-        self.download_queue = RunnableQueue(self.api_client, session_maker)
+        self.main_queue = RunnableQueue(self.api_client)
+        self.download_queue = RunnableQueue(self.api_client)
 
         self.main_queue.moveToThread(self.main_thread)
         self.download_queue.moveToThread(self.download_thread)
