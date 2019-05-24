@@ -31,7 +31,6 @@ from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBox
     QToolButton, QSizePolicy, QTextEdit, QStatusBar, QGraphicsDropShadowEffect
 
 from securedrop_client.db import Source, Message, File, Reply
-from securedrop_client.storage import source_exists
 from securedrop_client.gui import SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_icon, load_image
@@ -713,7 +712,7 @@ class SourceList(QListWidget):
     def get_current_source(self):
         source_item = self.currentItem()
         source_widget = self.itemWidget(source_item)
-        if source_widget and source_exists(self.controller.session, source_widget.source.uuid):
+        if source_widget:
             return source_widget.source
 
 
@@ -1250,23 +1249,23 @@ class ReplyWidget(ConversationWidget):
         message_succeeded_signal.connect(self._on_reply_success)
         message_failed_signal.connect(self._on_reply_failure)
 
-    @pyqtSlot(str)
-    def _on_reply_success(self, message_id: str) -> None:
+    @pyqtSlot(str, str)
+    def _on_reply_success(self, message_id: str, source_uuid: str) -> None:
         """
         Conditionally update this ReplyWidget's state if and only if the message_id of the emitted
         signal matches the message_id of this widget.
         """
         if message_id == self.message_id:
-            logger.debug('Message {} succeeded'.format(message_id))
+            logger.debug('Reply {} succeeded'.format(message_id))
 
-    @pyqtSlot(str)
-    def _on_reply_failure(self, message_id: str) -> None:
+    @pyqtSlot(str, str)
+    def _on_reply_failure(self, message_id: str, source_uuid: str) -> None:
         """
         Conditionally update this ReplyWidget's state if and only if the message_id of the emitted
         signal matches the message_id of this widget.
         """
         if message_id == self.message_id:
-            logger.debug('Message {} failed'.format(message_id))
+            logger.debug('Reply {} failed'.format(message_id))
 
 
 class FileWidget(QWidget):
@@ -1276,7 +1275,7 @@ class FileWidget(QWidget):
 
     def __init__(
         self,
-        file_uuid: str,
+        file: File,
         controller: Controller,
         file_ready_signal: pyqtBoundSignal,
     ) -> None:
@@ -1285,7 +1284,7 @@ class FileWidget(QWidget):
         """
         super().__init__()
         self.controller = controller
-        self.file = self.controller.get_file(file_uuid)
+        self.file = file
 
         self.layout = QHBoxLayout()
         self.update()
@@ -1316,10 +1315,7 @@ class FileWidget(QWidget):
     @pyqtSlot(str)
     def _on_file_downloaded(self, file_uuid: str) -> None:
         if file_uuid == self.file.uuid:
-            # update state
-            self.file = self.controller.get_file(self.file.uuid)
-
-            # update gui
+            self.file.is_downloaded = True
             self.clear()  # delete existing icon and label
             self.update()  # draw modified widget
 
@@ -1328,12 +1324,9 @@ class FileWidget(QWidget):
         Handle a completed click via the program logic. The download state
         of the file distinguishes which function in the logic layer to call.
         """
-        # update state
-        self.file = self.controller.get_file(self.file.uuid)
-
         if self.file.is_downloaded:
             # Open the already downloaded file.
-            self.controller.on_file_open(self.file.uuid)
+            self.controller.on_file_open(self.file)
         else:
             # Download the file.
             self.controller.on_submission_download(File, self.file.uuid)
@@ -1348,11 +1341,7 @@ class ConversationView(QWidget):
     https://github.com/freedomofpress/securedrop-client/issues/273
     """
 
-    def __init__(
-        self,
-        source_db_object: Source,
-        controller: Controller,
-    ):
+    def __init__(self, source_db_object: Source, controller: Controller):
         super().__init__()
         self.source = source_db_object
         self.controller = controller
@@ -1379,6 +1368,10 @@ class ConversationView(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.addWidget(self.scroll)
         self.setLayout(main_layout)
+
+        self.controller.reply_succeeded.connect(self.on_reply_succeeded)
+        self.controller.reply_failed.connect(self.on_reply_failed)
+
         self.update_conversation(self.source.collection)
 
     def clear_conversation(self):
@@ -1405,7 +1398,7 @@ class ConversationView(QWidget):
         """
         self.conversation_layout.addWidget(
             FileWidget(
-                submission_db_object.uuid,
+                submission_db_object,
                 self.controller,
                 self.controller.file_ready,
             ),
@@ -1470,6 +1463,14 @@ class ConversationView(QWidget):
         if source_uuid == self.source.uuid:
             self.add_reply_from_reply_box(reply_uuid, reply_text)
 
+    def on_reply_succeeded(self, reply_uuid: str, source_uuid: str) -> None:
+        if source_uuid == self.source.uuid:
+            pass
+
+    def on_reply_failed(self, reply_uuid: str, source_uuid: str) -> None:
+        if source_uuid == self.source.uuid:
+            pass
+
 
 class SourceConversationWrapper(QWidget):
     """
@@ -1477,11 +1478,7 @@ class SourceConversationWrapper(QWidget):
     per-source resources.
     """
 
-    def __init__(
-        self,
-        source: Source,
-        controller: Controller,
-    ) -> None:
+    def __init__(self, source: Source, controller: Controller) -> None:
         super().__init__()
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)

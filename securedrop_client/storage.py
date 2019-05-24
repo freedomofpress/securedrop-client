@@ -26,10 +26,10 @@ from dateutil.parser import parse
 from typing import List, Tuple, Type, Union
 
 from sqlalchemy import or_
+from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.orm.session import Session
 
-from securedrop_client.db import Source, Message, File, Reply, User
+from securedrop_client.db import Session, Source, Message, File, Reply, User
 from sdclientapi import API
 from sdclientapi import Source as SDKSource
 from sdclientapi import Submission as SDKSubmission
@@ -38,32 +38,49 @@ from sdclientapi import Reply as SDKReply
 logger = logging.getLogger(__name__)
 
 
-def get_local_sources(session: Session) -> List[Source]:
+def get_local_sources(session: scoped_session) -> List[Source]:
     """
     Return all source objects from the local database.
     """
     return session.query(Source).all()
 
 
-def get_local_messages(session: Session) -> List[Message]:
+def get_local_messages(session: scoped_session) -> List[Message]:
     """
     Return all submission objects from the local database.
     """
     return session.query(Message).all()
 
 
-def get_local_files(session: Session) -> List[File]:
+def get_local_files(session: scoped_session) -> List[File]:
     """
     Return all file (a submitted file) objects from the local database.
     """
     return session.query(File).all()
 
 
-def get_local_replies(session: Session) -> List[Reply]:
+def get_local_replies(session: scoped_session) -> List[Reply]:
     """
     Return all reply objects from the local database.
     """
     return session.query(Reply).all()
+
+
+def get_local_source(session: scoped_session, uuid: str) -> Source:
+    return session.query(Source).filter_by(uuid=uuid).one_or_none()
+
+
+def add_reply(reply_uuid, source_uuid, journalist_uuid, filename):
+    session = Session()
+    source = session.query(Source).filter_by(uuid=source_uuid).one_or_none()
+    reply = Reply(
+        uuid=reply_uuid,
+        source_id=source.id,
+        journalist_id=journalist_uuid,
+        filename=filename)
+    session.add(reply)
+    session.commit()
+    session.close()
 
 
 def get_remote_data(api: API) -> Tuple[List[SDKSource], List[SDKSubmission], List[SDKReply]]:
@@ -93,7 +110,7 @@ def get_remote_data(api: API) -> Tuple[List[SDKSource], List[SDKSubmission], Lis
     return (remote_sources, remote_submissions, remote_replies)
 
 
-def update_local_storage(session: Session, remote_sources: List[SDKSource],
+def update_local_storage(remote_sources: List[SDKSource],
                          remote_submissions: List[SDKSubmission],
                          remote_replies: List[SDKReply], data_dir: str) -> None:
     """
@@ -101,6 +118,9 @@ def update_local_storage(session: Session, remote_sources: List[SDKSource],
     replies from the SecureDrop API, ensures the local database is updated
     with this data.
     """
+
+    session = Session()
+
     local_sources = get_local_sources(session)
     local_files = get_local_files(session)
     local_messages = get_local_messages(session)
@@ -114,9 +134,10 @@ def update_local_storage(session: Session, remote_sources: List[SDKSource],
     update_messages(remote_messages, local_messages, session, data_dir)
     update_replies(remote_replies, local_replies, session, data_dir)
 
+    session.close()
 
 def update_sources(remote_sources: List[SDKSource],
-                   local_sources: List[Source], session: Session, data_dir: str) -> None:
+                   local_sources: List[Source], session: scoped_session, data_dir: str) -> None:
     """
     Given collections of remote sources, the current local sources and a
     session to the local database, ensure the state of the local database
@@ -171,19 +192,19 @@ def update_sources(remote_sources: List[SDKSource],
 
 
 def update_files(remote_submissions: List[SDKSubmission], local_submissions: List[File],
-                 session: Session, data_dir: str) -> None:
+                 session: scoped_session, data_dir: str) -> None:
     __update_submissions(File, remote_submissions, local_submissions, session, data_dir)
 
 
 def update_messages(remote_submissions: List[SDKSubmission], local_submissions: List[Message],
-                    session: Session, data_dir: str) -> None:
+                    session: scoped_session, data_dir: str) -> None:
     __update_submissions(Message, remote_submissions, local_submissions, session, data_dir)
 
 
 def __update_submissions(model: Union[Type[File], Type[Message]],
                          remote_submissions: List[SDKSubmission],
                          local_submissions: Union[List[Message], List[File]],
-                         session: Session, data_dir: str) -> None:
+                         session: scoped_session, data_dir: str) -> None:
     """
     The logic for updating files and messages is effectively the same, so this function is somewhat
     overloaded to allow us to do both in a DRY way.
@@ -235,7 +256,7 @@ def __update_submissions(model: Union[Type[File], Type[Message]],
 
 
 def update_replies(remote_replies: List[SDKReply], local_replies: List[Reply],
-                   session: Session, data_dir: str) -> None:
+                   session: scoped_session, data_dir: str) -> None:
     """
     * Existing replies are updated in the local database.
     * New replies have an entry created in the local database.
@@ -285,7 +306,7 @@ def update_replies(remote_replies: List[SDKReply], local_replies: List[Reply],
     session.commit()
 
 
-def find_or_create_user(uuid: str, username: str, session: Session) -> User:
+def find_or_create_user(uuid: str, username: str, session: scoped_session) -> User:
     """
     Returns a user object representing the referenced journalist UUID.
     If the user does not already exist in the data, a new instance is created.
@@ -310,7 +331,7 @@ def find_or_create_user(uuid: str, username: str, session: Session) -> User:
         return new_user
 
 
-def find_new_messages(session: Session) -> List[Message]:
+def find_new_messages(session: scoped_session) -> List[Message]:
     """
     Find messages to process. Those messages are those where one of the following
     conditions is true:
@@ -325,11 +346,11 @@ def find_new_messages(session: Session) -> List[Message]:
             Message.is_decrypted == None)).all()  # noqa: E711
 
 
-def find_new_files(session: Session) -> List[File]:
+def find_new_files(session: scoped_session) -> List[File]:
     return session.query(File).filter_by(is_downloaded=False).all()
 
 
-def find_new_replies(session: Session) -> List[Reply]:
+def find_new_replies(session: scoped_session) -> List[Reply]:
     """
     Find replies to process. Those replies are those where one of the following
     conditions is true:
@@ -344,7 +365,7 @@ def find_new_replies(session: Session) -> List[Reply]:
             Reply.is_decrypted == None)).all()  # noqa: E711
 
 
-def mark_file_as_downloaded(uuid: str, session: Session) -> None:
+def mark_file_as_downloaded(uuid: str, session: scoped_session) -> None:
     """
     Mark file as downloaded in the database.
     """
@@ -354,7 +375,7 @@ def mark_file_as_downloaded(uuid: str, session: Session) -> None:
     session.commit()
 
 
-def mark_message_as_downloaded(uuid: str, session: Session) -> None:
+def mark_message_as_downloaded(uuid: str, session: scoped_session) -> None:
     """
     Mark message as downloaded in the database.
     """
@@ -364,7 +385,7 @@ def mark_message_as_downloaded(uuid: str, session: Session) -> None:
     session.commit()
 
 
-def set_object_decryption_status_with_content(obj: Union[File, Message, Reply], session: Session,
+def set_object_decryption_status_with_content(obj: Union[File, Message, Reply], session: scoped_session,
                                               is_successful: bool, content: str = None) -> None:
     """Mark object as decrypted or not in the database."""
 
@@ -377,7 +398,7 @@ def set_object_decryption_status_with_content(obj: Union[File, Message, Reply], 
     session.commit()
 
 
-def mark_reply_as_downloaded(uuid: str, session: Session) -> None:
+def mark_reply_as_downloaded(uuid: str, session: scoped_session) -> None:
     """
     Mark reply as downloaded in the database.
     """
@@ -414,15 +435,3 @@ def rename_file(data_dir: str, filename: str, new_filename: str) -> None:
                   os.path.join(data_dir, new_filename))
     except OSError as e:
         logger.debug('File could not be renamed: {}'.format(e))
-
-
-def source_exists(session: Session, source_uuid: str) -> bool:
-    try:
-        session.query(Source).filter_by(uuid=source_uuid).one()
-        return True
-    except NoResultFound:
-        return False
-
-
-def get_file(session: Session, file_uuid: str) -> File:
-    return session.query(File).filter_by(uuid=file_uuid).one()

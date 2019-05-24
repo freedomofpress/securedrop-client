@@ -26,8 +26,8 @@ import uuid
 
 from gettext import gettext as _
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess, Qt
+from PyQt5.QtWidgets import QMainWindow
 from sdclientapi import RequestTimeoutError
-from sqlalchemy.orm.session import sessionmaker
 from typing import Dict, Tuple, Union, Any, Type  # noqa: F401
 
 from securedrop_client import storage
@@ -97,13 +97,13 @@ class Controller(QObject):
     Signal that notifies that a reply was accepted by the server. Emits the reply's UUID as a
     string.
     """
-    reply_succeeded = pyqtSignal(str)
+    reply_succeeded = pyqtSignal(str, str)
 
     """
     Signal that notifies that a reply failed to be accepted by the server. Emits the reply's UUID
     as a string.
     """
-    reply_failed = pyqtSignal(str)
+    reply_failed = pyqtSignal(str, str)
 
     """
     A signal that emits a signal when the authentication state changes.
@@ -118,12 +118,11 @@ class Controller(QObject):
     """
     file_ready = pyqtSignal(str)
 
-    def __init__(self, hostname: str, gui, session_maker: sessionmaker,
-                 home: str, proxy: bool = True) -> None:
+    def __init__(self, hostname: str, gui: QMainWindow, home: str, proxy: bool = True) -> None:
         """
-        The hostname, gui and session objects are used to coordinate with the
-        various other layers of the application: the location of the SecureDrop
-        proxy, the user interface and SqlAlchemy local storage respectively.
+        The controller is used to coordinate with the various other layers of the application: the
+        location of the SecureDrop proxy, the user interface and SqlAlchemy local storage,
+        respectively.
         """
         check_dir_permissions(home)
         super().__init__()
@@ -146,25 +145,21 @@ class Controller(QObject):
         # Reference to the API for secure drop proxy.
         self.api = None  # type: sdclientapi.API
 
-        # Reference to the SqlAlchemy `sessionmaker` and `session`
-        self.session_maker = session_maker
-        self.session = session_maker()
-
         # Queue that handles running API job
-        self.api_job_queue = ApiJobQueue(self.api, self.session_maker)
+        self.api_job_queue = ApiJobQueue(self.api)
 
         # Contains active threads calling the API.
         self.api_threads = {}  # type: Dict[str, Dict]
 
-        self.gpg = GpgHelper(home, self.session_maker, proxy)
+        self.gpg = GpgHelper(home, proxy)
 
         # thread responsible for fetching messages
         self.message_thread = None
-        self.message_sync = MessageSync(self.api, self.gpg, self.session_maker)
+        self.message_sync = MessageSync(self.api, self.gpg)
 
         # thread responsible for fetching replies
         self.reply_thread = None
-        self.reply_sync = ReplySync(self.api, self.gpg, self.session_maker)
+        self.reply_sync = ReplySync(self.api, self.gpg)
 
         self.sync_flag = os.path.join(home, 'sync_flag')
 
@@ -390,8 +385,7 @@ class Controller(QObject):
         """
         remote_sources, remote_submissions, remote_replies = result
 
-        storage.update_local_storage(self.session,
-                                     remote_sources,
+        storage.update_local_storage(remote_sources,
                                      remote_submissions,
                                      remote_replies,
                                      self.data_dir)
@@ -432,7 +426,9 @@ class Controller(QObject):
         """
         Display the updated list of sources with those found in local storage.
         """
-        sources = list(storage.get_local_sources(self.session))
+        session = db.Session()
+        sources = list(storage.get_local_sources(session))
+        session.close()
         if sources:
             sources.sort(key=lambda x: x.last_updated, reverse=True)
         self.gui.show_sources(sources)
@@ -495,14 +491,13 @@ class Controller(QObject):
         """
         self.gui.update_activity_status(message, duration)
 
-    def on_file_open(self, file_uuid: str) -> None:
+    def on_file_open(self, file: db.File) -> None:
         """
         Open the already downloaded file associated with the message (which is a `File`).
         """
         # Once downloaded, submissions are stored in the data directory
         # with the same filename as the server, except with the .gz.gpg
         # stripped off.
-        file = self.get_file(file_uuid)
         fn_no_ext, _ = os.path.splitext(os.path.splitext(file.filename)[0])
         submission_filepath = os.path.join(self.data_dir, fn_no_ext)
 
@@ -605,24 +600,9 @@ class Controller(QObject):
 
     def on_reply_success(self, result, current_object: Tuple[str, str]) -> None:
         source_uuid, reply_uuid = current_object
-        source = self.session.query(db.Source).filter_by(uuid=source_uuid).one()
-
-        reply_db_object = db.Reply(
-            uuid=result.uuid,
-            source_id=source.id,
-            journalist_id=self.api.token_journalist_uuid,
-            filename=result.filename,
-        )
-        self.session.add(reply_db_object)
-        self.session.commit()
-
-        self.reply_succeeded.emit(reply_uuid)
+        storage.add_reply(reply_uuid, source_uuid, self.api.token_journalist_uuid, result.filename)
+        self.reply_succeeded.emit(reply_uuid, source_uuid)
 
     def on_reply_failure(self, result, current_object: Tuple[str, str]) -> None:
         source_uuid, reply_uuid = current_object
-        self.reply_failed.emit(reply_uuid)
-
-    def get_file(self, file_uuid: str) -> db.File:
-        file = storage.get_file(self.session, file_uuid)
-        self.session.refresh(file)
-        return file
+        self.reply_failed.emit(reply_uuid, source_uuid)
