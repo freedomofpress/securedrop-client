@@ -494,7 +494,7 @@ class Controller(QObject):
         """
         self.gui.update_activity_status(message, duration)
 
-    def on_file_open(self, file_db_object):
+    def on_file_open(self, file_uuid: str) -> None:
         """
         Open the already downloaded file associated with the message (which is a `File`).
         """
