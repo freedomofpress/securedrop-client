@@ -28,9 +28,7 @@ from typing import Callable, Union
 from PyQt5.QtCore import QObject, pyqtSignal
 from securedrop_client import storage
 from securedrop_client.crypto import GpgHelper, CryptoError
-from securedrop_client.db import File, Message, Reply
-from sqlalchemy.orm import scoped_session
-from sqlalchemy.orm.session import Session
+from securedrop_client.db import Session, File, Message, Reply
 from tempfile import NamedTemporaryFile
 
 
@@ -43,12 +41,10 @@ class APISyncObject(QObject):
         self,
         api: API,
         gpg: GpgHelper,
-        session_maker: scoped_session,
     ) -> None:
         super().__init__()
         self.api = api
         self.gpg = gpg
-        self.session_maker = session_maker
 
     def decrypt_the_thing(
         self,
@@ -93,7 +89,7 @@ class MessageSync(APISyncObject):
     message_ready = pyqtSignal([str, str])
 
     def run(self, loop: bool = True) -> None:
-        session = self.session_maker()
+        session = Session()
         while True:
             submissions = storage.find_new_messages(session)
 
@@ -149,7 +145,7 @@ class ReplySync(APISyncObject):
     reply_ready = pyqtSignal([str, str])
 
     def run(self, loop: bool = True) -> None:
-        session = self.session_maker()
+        session = Session()
         while True:
             replies = storage.find_new_replies(session)
 

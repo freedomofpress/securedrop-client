@@ -25,14 +25,16 @@ import signal
 import sys
 import socket
 from argparse import ArgumentParser
+
 from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5.QtCore import Qt, QTimer
 from logging.handlers import TimedRotatingFileHandler
+
 from securedrop_client import __version__
 from securedrop_client.logic import Controller
 from securedrop_client.gui.main import Window
 from securedrop_client.resources import load_icon, load_css
-from securedrop_client.db import make_session_maker
+from securedrop_client.db import Session, make_engine
 from securedrop_client.utils import safe_mkdir
 
 DEFAULT_SDC_HOME = '~/.securedrop_client'
@@ -184,15 +186,15 @@ def start_app(args, qt_args) -> None:
 
     prevent_second_instance(app, args.sdc_home)
 
-    session_maker = make_session_maker(args.sdc_home)
-
     gui = Window()
 
     app.setWindowIcon(load_icon(gui.icon))
     app.setStyleSheet(load_css('sdclient.css'))
 
-    controller = Controller("http://localhost:8081/", gui, session_maker,
-                            args.sdc_home, not args.no_proxy)
+    engine = make_engine(args.sdc_home)
+    Session.configure(bind=engine)
+
+    controller = Controller("http://localhost:8081/", gui, args.sdc_home, not args.no_proxy)
     controller.setup()
 
     configure_signal_handlers(app)
