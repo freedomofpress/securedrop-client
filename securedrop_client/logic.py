@@ -501,8 +501,8 @@ class Controller(QObject):
         # Once downloaded, submissions are stored in the data directory
         # with the same filename as the server, except with the .gz.gpg
         # stripped off.
-        server_filename = file_db_object.filename
-        fn_no_ext, _ = os.path.splitext(os.path.splitext(server_filename)[0])
+        file = self.get_file(file_uuid)
+        fn_no_ext, _ = os.path.splitext(os.path.splitext(file.filename)[0])
         submission_filepath = os.path.join(self.data_dir, fn_no_ext)
 
         if self.proxy:
@@ -641,3 +641,8 @@ class Controller(QObject):
     def on_reply_failure(self, result, current_object: Tuple[str, str]) -> None:
         source_uuid, reply_uuid = current_object
         self.reply_failed.emit(reply_uuid)
+
+    def get_file(self, file_uuid: str) -> db.File:
+        file = storage.get_file(self.session, file_uuid)
+        self.session.refresh(file)
+        return file

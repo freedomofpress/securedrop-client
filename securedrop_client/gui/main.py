@@ -25,7 +25,6 @@ from gettext import gettext as _
 from typing import Dict, List, Optional  # noqa: F401
 from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QDesktopWidget, \
     QApplication
-from sqlalchemy.orm import scoped_session
 
 from securedrop_client import __version__
 from securedrop_client.db import Source
@@ -44,7 +43,7 @@ class Window(QMainWindow):
 
     icon = 'icon.png'
 
-    def __init__(self, session_maker: scoped_session) -> None:
+    def __init__(self) -> None:
         """
         Create the default start state. The window contains a root widget into
         which is placed:
@@ -69,7 +68,7 @@ class Window(QMainWindow):
         layout.setSpacing(0)
         self.main_pane.setLayout(layout)
         self.left_pane = LeftPane()
-        self.main_view = MainView(session_maker, self.main_pane)
+        self.main_view = MainView(self.main_pane)
         layout.addWidget(self.left_pane, 1)
         layout.addWidget(self.main_view, 8)
 

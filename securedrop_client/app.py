@@ -186,7 +186,7 @@ def start_app(args, qt_args) -> None:
 
     session_maker = make_session_maker(args.sdc_home)
 
-    gui = Window(session_maker)
+    gui = Window()
 
     app.setWindowIcon(load_icon(gui.icon))
     app.setStyleSheet(load_css('sdclient.css'))
