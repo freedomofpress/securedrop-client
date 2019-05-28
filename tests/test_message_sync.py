@@ -66,6 +66,53 @@ def test_MessageSync_run_success(mocker, session, source, session_maker, homedir
     assert message.is_decrypted is True
 
 
+def test_MessageSync_run_decrypt_only(mocker, session, source, session_maker, homedir):
+    """
+    Test when a message successfully downloads and decrypts.
+    Using the `homedir` fixture to get a GPG keyring.
+    """
+    message = factory.Message(source=source['source'],
+                              is_downloaded=True,
+                              is_decrypted=False,
+                              content=None)
+    session.add(message)
+    session.commit()
+
+    expected_content = 'foo'
+
+    # don't create the signal
+    mocker.patch('securedrop_client.message_sync.pyqtSignal')
+
+    def mock_decrypt_submission_or_reply(filepath, plaintext_filename, is_doc):
+        with open(plaintext_filename, 'w') as f:
+            f.write(expected_content)
+
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    mocker.patch.object(
+        gpg,
+        'decrypt_submission_or_reply',
+        side_effect=mock_decrypt_submission_or_reply,
+    )
+
+    api = mocker.MagicMock(session=session)
+    ms = MessageSync(api, gpg, session_maker)
+    ms.api.download_submission = mocker.MagicMock(return_value=(1234, "/home/user/downloads/foo"))
+    mock_fetch = mocker.patch.object(ms, 'fetch_the_thing')
+
+    mock_message_ready = mocker.patch.object(ms, 'message_ready')
+
+    # check that it runs without raising exceptions
+    ms.run(False)
+
+    mock_message_ready.emit.assert_called_once_with(message.uuid, expected_content)
+
+    session.refresh(message)
+    assert message.content == expected_content
+    assert message.is_downloaded is True
+    assert message.is_decrypted is True
+    assert not mock_fetch.called
+
+
 def test_MessageSync_run_decryption_error(mocker, session, source, session_maker, homedir):
     """
     Test when a message successfully downloads, but does not successfully decrypt.
@@ -200,6 +247,53 @@ def test_ReplySync_run_success(mocker, session, source, session_maker, homedir):
     assert reply.content == expected_content
     assert reply.is_downloaded is True
     assert reply.is_decrypted is True
+
+
+def test_ReplySync_run_decrypt_only(mocker, session, source, session_maker, homedir):
+    """
+    Test when a message successfully downloads and decrypts.
+    Using the `homedir` fixture to get a GPG keyring.
+    """
+    reply = factory.Reply(source=source['source'],
+                          is_downloaded=True,
+                          is_decrypted=False,
+                          content=None)
+    session.add(reply)
+    session.commit()
+
+    expected_content = 'foo'
+
+    # don't create the signal
+    mocker.patch('securedrop_client.message_sync.pyqtSignal')
+
+    def mock_decrypt_submission_or_reply(filepath, plaintext_filename, is_doc):
+        with open(plaintext_filename, 'w') as f:
+            f.write(expected_content)
+
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    mocker.patch.object(
+        gpg,
+        'decrypt_submission_or_reply',
+        side_effect=mock_decrypt_submission_or_reply,
+    )
+
+    api = mocker.MagicMock(session=session)
+    rs = ReplySync(api, gpg, session_maker)
+    rs.api.download_submission = mocker.MagicMock(return_value=(1234, "/home/user/downloads/foo"))
+    mock_fetch = mocker.patch.object(rs, 'fetch_the_thing')
+
+    mock_message_ready = mocker.patch.object(rs, 'reply_ready')
+
+    # check that it runs without raising exceptions
+    rs.run(False)
+
+    mock_message_ready.emit.assert_called_once_with(reply.uuid, expected_content)
+
+    session.refresh(reply)
+    assert reply.content == expected_content
+    assert reply.is_downloaded is True
+    assert reply.is_decrypted is True
+    assert not mock_fetch.called
 
 
 def test_ReplySync_run_decryption_error(mocker, session, source, session_maker, homedir):

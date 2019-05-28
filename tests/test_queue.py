@@ -11,9 +11,9 @@ from sdclientapi import AuthError, RequestTimeoutError
 from typing import Tuple
 
 from securedrop_client import db
-from securedrop_client.crypto import GpgHelper
+from securedrop_client.crypto import GpgHelper, CryptoError
 from securedrop_client.queue import ApiInaccessibleError, ApiJob, RunnableQueue, \
-    DownloadSubmissionJob
+    DownloadSubmissionJob, ApiJobQueue
 
 
 def test_ApiInaccessibleError_init():
@@ -219,6 +219,7 @@ def test_DownloadSubmissionJob_happy_path_no_etag(mocker, homedir, session, sess
     session.commit()
 
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    mock_decrypt = mocker.patch.object(gpg, 'decrypt_submission_or_reply')
 
     def fake_download(sdk_obj: sdclientapi.Submission) -> Tuple[str, str]:
         '''
@@ -239,7 +240,6 @@ def test_DownloadSubmissionJob_happy_path_no_etag(mocker, homedir, session, sess
         gpg,
     )
 
-    mock_decrypt = mocker.patch.object(job, '_decrypt_file')
     mock_logger = mocker.patch('securedrop_client.queue.logger')
 
     job.call_api(api_client, session)
@@ -259,6 +259,7 @@ def test_DownloadSubmissionJob_happy_path_sha256_etag(mocker, homedir, session, 
     session.commit()
 
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    mock_decrypt = mocker.patch.object(gpg, 'decrypt_submission_or_reply')
 
     def fake_download(sdk_obj: sdclientapi.Submission) -> Tuple[str, str]:
         '''
@@ -281,8 +282,6 @@ def test_DownloadSubmissionJob_happy_path_sha256_etag(mocker, homedir, session, 
         homedir,
         gpg,
     )
-
-    mock_decrypt = mocker.patch.object(job, '_decrypt_file')
 
     job.call_api(api_client, session)
 
@@ -354,7 +353,7 @@ def test_DownloadSubmissionJob_happy_path_unknown_etag(mocker, homedir, session,
         gpg,
     )
 
-    mock_decrypt = mocker.patch.object(job, '_decrypt_file')
+    mock_decrypt = mocker.patch('securedrop_client.crypto.GpgHelper.decrypt_submission_or_reply')
     mock_logger = mocker.patch('securedrop_client.queue.logger')
 
     job.call_api(api_client, session)
@@ -364,3 +363,94 @@ def test_DownloadSubmissionJob_happy_path_unknown_etag(mocker, homedir, session,
 
     # ensure mocks aren't stale
     assert mock_decrypt.called
+
+
+def test_DownloadSubmissionJob_decryption_error(mocker, homedir, session, session_maker):
+    source = factory.Source()
+    file_ = factory.File(source=source)
+    session.add(source)
+    session.add(file_)
+    session.commit()
+
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    mock_decrypt = mocker.patch.object(gpg, 'decrypt_submission_or_reply',
+                                       side_effect=CryptoError)
+
+    def fake_download(sdk_obj: sdclientapi.Submission) -> Tuple[str, str]:
+        '''
+        :return: (etag, path_to_dl)
+        '''
+        full_path = os.path.join(homedir, 'somepath')
+        with open(full_path, 'wb') as f:
+            f.write(b'wat')
+
+        # sha256 of b'wat'
+        return ('sha256:f00a787f7492a95e165b470702f4fe9373583fbdc025b2c8bdf0262cc48fcff4',
+                full_path)
+
+    api_client = mocker.MagicMock()
+    api_client.download_submission = fake_download
+
+    job = DownloadSubmissionJob(
+        db.File,
+        file_.uuid,
+        homedir,
+        gpg,
+    )
+
+    mock_logger = mocker.patch('securedrop_client.queue.logger')
+
+    with pytest.raises(CryptoError):
+        job.call_api(api_client, session)
+
+    log_msg = mock_logger.debug.call_args_list[0][0][0]
+    assert log_msg.startswith('Failed to decrypt file')
+
+    # ensure mocks aren't stale
+    assert mock_decrypt.called
+
+
+def test_ApiJobQueue_enqueue(mocker):
+    mock_client = mocker.MagicMock()
+    mock_session_maker = mocker.MagicMock()
+
+    job_queue = ApiJobQueue(mock_client, mock_session_maker)
+    mock_download_queue = mocker.patch.object(job_queue, 'download_queue')
+    mock_main_queue = mocker.patch.object(job_queue, 'main_queue')
+
+    dl_job = DownloadSubmissionJob(db.File, 'mock', 'mock', 'mock')
+    job_queue.enqueue(dl_job)
+
+    mock_download_queue.queue.put_nowait.assert_called_once_with(dl_job)
+    assert not mock_main_queue.queue.put_nowait.called
+
+    # reset for next test
+    mock_download_queue.reset_mock()
+    mock_main_queue.reset_mock()
+
+    dummy_job = dummy_job_factory(mocker, 'mock')()
+    job_queue.enqueue(dummy_job)
+
+    mock_main_queue.queue.put_nowait.assert_called_once_with(dummy_job)
+    assert not mock_download_queue.queue.put_nowait.called
+
+
+def test_ApiJobQueue_start_queues(mocker):
+    mock_api = mocker.MagicMock()
+    mock_client = mocker.MagicMock()
+    mock_session_maker = mocker.MagicMock()
+
+    job_queue = ApiJobQueue(mock_client, mock_session_maker)
+
+    mock_main_queue = mocker.patch.object(job_queue, 'main_queue')
+    mock_download_queue = mocker.patch.object(job_queue, 'download_queue')
+    mock_main_thread = mocker.patch.object(job_queue, 'main_thread')
+    mock_download_thread = mocker.patch.object(job_queue, 'download_thread')
+
+    job_queue.start_queues(mock_api)
+
+    assert mock_main_queue.api_client == mock_api
+    assert mock_download_queue.api_client == mock_api
+
+    mock_main_thread.start.assert_called_once_with()
+    mock_download_thread.start.assert_called_once_with()
