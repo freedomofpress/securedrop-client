@@ -21,20 +21,21 @@ import inspect
 import logging
 import os
 import sdclientapi
-import shutil
 import traceback
 import uuid
 
 from gettext import gettext as _
-from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess
+from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess, Qt
 from sdclientapi import RequestTimeoutError
-from typing import Dict, Tuple  # noqa: F401
+from sqlalchemy.orm.session import sessionmaker
+from typing import Dict, Tuple, Union, Any, Type  # noqa: F401
 
 from securedrop_client import storage
 from securedrop_client import db
-from securedrop_client.utils import check_dir_permissions
 from securedrop_client.crypto import GpgHelper, CryptoError
 from securedrop_client.message_sync import MessageSync, ReplySync
+from securedrop_client.queue import ApiJobQueue, DownloadSubmissionJob
+from securedrop_client.utils import check_dir_permissions
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +118,7 @@ class Controller(QObject):
     """
     file_ready = pyqtSignal(str)
 
-    def __init__(self, hostname, gui, session,
+    def __init__(self, hostname: str, gui, session_maker: sessionmaker,
                  home: str, proxy: bool = True) -> None:
         """
         The hostname, gui and session objects are used to coordinate with the
@@ -144,26 +145,31 @@ class Controller(QObject):
 
         # Reference to the API for secure drop proxy.
         self.api = None  # type: sdclientapi.API
+
+        # Reference to the SqlAlchemy `sessionmaker` and `session`
+        self.session_maker = session_maker
+        self.session = session_maker()
+
+        # Queue that handles running API job
+        self.api_job_queue = ApiJobQueue(self.api, self.session_maker)
+
         # Contains active threads calling the API.
         self.api_threads = {}  # type: Dict[str, Dict]
 
-        # Reference to the SqlAlchemy session.
-        self.session = session
+        self.gpg = GpgHelper(home, self.session_maker, proxy)
 
         # thread responsible for fetching messages
         self.message_thread = None
-        self.message_sync = MessageSync(self.api, self.home, self.proxy)
+        self.message_sync = MessageSync(self.api, self.gpg, self.session_maker)
 
         # thread responsible for fetching replies
         self.reply_thread = None
-        self.reply_sync = ReplySync(self.api, self.home, self.proxy)
+        self.reply_sync = ReplySync(self.api, self.gpg, self.session_maker)
 
         self.sync_flag = os.path.join(home, 'sync_flag')
 
         # File data.
         self.data_dir = os.path.join(self.home, 'data')
-
-        self.gpg = GpgHelper(home, proxy)
 
     @property
     def is_authenticated(self) -> bool:
@@ -308,8 +314,11 @@ class Controller(QObject):
         self.gui.hide_login()
         self.sync_api()
         self.gui.show_main_window(self.api.username)
+
         self.start_message_thread()
         self.start_reply_thread()
+
+        self.api_job_queue.start_queues(self.api)
 
         # Clear the sidebar error status bar if a message was shown
         # to the user indicating they should log in.
@@ -485,15 +494,15 @@ class Controller(QObject):
         """
         self.gui.update_activity_status(message, duration)
 
-    def on_file_open(self, file_db_object):
+    def on_file_open(self, file_uuid: str) -> None:
         """
         Open the already downloaded file associated with the message (which is a `File`).
         """
         # Once downloaded, submissions are stored in the data directory
         # with the same filename as the server, except with the .gz.gpg
         # stripped off.
-        server_filename = file_db_object.filename
-        fn_no_ext, _ = os.path.splitext(os.path.splitext(server_filename)[0])
+        file = self.get_file(file_uuid)
+        fn_no_ext, _ = os.path.splitext(os.path.splitext(file.filename)[0])
         submission_filepath = os.path.join(self.data_dir, fn_no_ext)
 
         if self.proxy:
@@ -509,79 +518,36 @@ class Controller(QObject):
             # Non Qubes OS. Just log the event for now.
             logger.info('Opening file "{}".'.format(submission_filepath))
 
-    def on_file_download(self, source_db_object, message):
+    def on_submission_download(
+        self,
+        submission_type: Union[Type[db.File], Type[db.Message]],
+        submission_uuid: str,
+    ) -> None:
         """
-        Download the file associated with the associated message (which may
-        be a Submission or Reply).
+        Download the file associated with the Submission (which may be a File or Message).
         """
-        if not self.api:  # Then we should tell the user they need to login.
-            self.on_action_requiring_login()
-            return
+        job = DownloadSubmissionJob(
+            submission_type,
+            submission_uuid,
+            self.data_dir,
+            self.gpg,
+        )
+        job.success_signal.connect(self.on_file_download_success, type=Qt.QueuedConnection)
+        job.failure_signal.connect(self.on_file_download_failure, type=Qt.QueuedConnection)
 
-        if isinstance(message, db.File) or isinstance(message, db.Message):
-            # Handle submissions.
-            func = self.api.download_submission
-            sdk_object = sdclientapi.Submission(uuid=message.uuid)
-            sdk_object.filename = message.filename
-            sdk_object.source_uuid = source_db_object.uuid
-        elif isinstance(message, db.Reply):
-            # Handle journalist's replies.
-            func = self.api.download_reply
-            sdk_object = sdclientapi.Reply(uuid=message.uuid)
-            sdk_object.filename = message.filename
-            sdk_object.source_uuid = source_db_object.uuid
+        self.api_job_queue.enqueue(job)
+        self.set_status(_('Downloading file'))
 
-        self.set_status(_('Downloading {}'.format(sdk_object.filename)))
-        self.call_api(func,
-                      self.on_file_download_success,
-                      self.on_file_download_failure,
-                      sdk_object,
-                      self.data_dir,
-                      current_object=message)
-
-    def on_file_download_success(self, result, current_object):
+    def on_file_download_success(self, result: Any) -> None:
         """
-        Called when a file has downloaded. Cause a refresh to the conversation view to display the
-        contents of the new file.
+        Called when a file has downloaded.
         """
-        file_uuid = current_object.uuid
-        server_filename = current_object.filename
-        _, filename = result
-        # The filename contains the location where the file has been
-        # stored. On non-Qubes OSes, this will be the data directory.
-        # On Qubes OS, this will a ~/QubesIncoming directory. In case
-        # we are on Qubes, we should move the file to the data directory
-        # and name it the same as the server (e.g. spotless-tater-msg.gpg).
-        filepath_in_datadir = os.path.join(self.data_dir, server_filename)
-        shutil.move(filename, filepath_in_datadir)
-        storage.mark_file_as_downloaded(file_uuid, self.session)
+        self.file_ready.emit(result)
 
-        try:
-            # Attempt to decrypt the file.
-            self.gpg.decrypt_submission_or_reply(
-                filepath_in_datadir, server_filename, is_doc=True)
-            storage.set_object_decryption_status_with_content(
-                current_object, self.session, True)
-        except CryptoError as e:
-            logger.debug('Failed to decrypt file {}: {}'.format(server_filename, e))
-            storage.set_object_decryption_status_with_content(
-                current_object, self.session, False)
-            self.set_status("Failed to decrypt file, "
-                            "please try again or talk to your administrator.")
-            # TODO: We should save the downloaded content, and just
-            # try to decrypt again if there was a failure.
-            return  # If we failed we should stop here.
-
-        self.set_status('Finished downloading {}'.format(current_object.filename))
-        self.file_ready.emit(file_uuid)
-
-    def on_file_download_failure(self, result, current_object):
+    def on_file_download_failure(self, exception: Exception) -> None:
         """
         Called when a file fails to download.
         """
-        server_filename = current_object.filename
-        logger.debug('Failed to download file {}'.format(server_filename))
-        # Update the UI in some way to indicate a failure state.
         self.set_status("The file download failed. Please try again.")
 
     def on_delete_source_success(self, result) -> None:
@@ -654,3 +620,8 @@ class Controller(QObject):
     def on_reply_failure(self, result, current_object: Tuple[str, str]) -> None:
         source_uuid, reply_uuid = current_object
         self.reply_failed.emit(reply_uuid)
+
+    def get_file(self, file_uuid: str) -> db.File:
+        file = storage.get_file(self.session, file_uuid)
+        self.session.refresh(file)
+        return file

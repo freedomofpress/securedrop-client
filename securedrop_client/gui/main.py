@@ -20,9 +20,9 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
+
 from gettext import gettext as _
 from typing import Dict, List, Optional  # noqa: F401
-
 from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QDesktopWidget, \
     QApplication
 
@@ -43,7 +43,7 @@ class Window(QMainWindow):
 
     icon = 'icon.png'
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Create the default start state. The window contains a root widget into
         which is placed:

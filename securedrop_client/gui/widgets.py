@@ -18,13 +18,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 import arrow
-from gettext import gettext as _
 import html
 import sys
+
+from gettext import gettext as _
 from typing import List
 from uuid import uuid4
-
-from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QTimer, QSize
+from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QTimer, QSize, pyqtBoundSignal, QObject
 from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
@@ -587,7 +587,7 @@ class MainView(QWidget):
     }
     '''
 
-    def __init__(self, parent):
+    def __init__(self, parent: QObject):
         super().__init__(parent)
 
         self.setStyleSheet(self.CSS)
@@ -1274,58 +1274,52 @@ class FileWidget(QWidget):
     Represents a file.
     """
 
-    def __init__(self, source_db_object, submission_db_object,
-                 controller, file_ready_signal, align="left"):
+    def __init__(
+        self,
+        file_uuid: str,
+        controller: Controller,
+        file_ready_signal: pyqtBoundSignal,
+    ) -> None:
         """
-        Given some text, an indication of alignment ('left' or 'right') and
-        a reference to the controller, make something to display a file.
-
-        Align is set to left by default because currently SecureDrop can only
-        accept files from sources to journalists.
+        Given some text and a reference to the controller, make something to display a file.
         """
         super().__init__()
         self.controller = controller
-        self.source = source_db_object
-        self.submission = submission_db_object
-        self.file_uuid = self.submission.uuid
-        self.align = align
+        self.file = self.controller.get_file(file_uuid)
 
         self.layout = QHBoxLayout()
         self.update()
         self.setLayout(self.layout)
 
-        file_ready_signal.connect(self._on_file_download)
+        file_ready_signal.connect(self._on_file_downloaded, type=Qt.QueuedConnection)
 
-    def update(self):
+    def update(self) -> None:
         icon = QLabel()
         icon.setPixmap(load_image('file.png'))
 
-        if self.submission.is_downloaded:
+        if self.file.is_downloaded:
             description = QLabel("Open")
         else:
-            human_filesize = humanize_filesize(self.submission.size)
+            human_filesize = humanize_filesize(self.file.size)
             description = QLabel("Download ({})".format(human_filesize))
-
-        if self.align != "left":
-            # Float right...
-            self.layout.addStretch(5)
 
         self.layout.addWidget(icon)
         self.layout.addWidget(description, 5)
+        self.layout.addStretch(5)
 
-        if self.align == "left":
-            # Add space on right hand side...
-            self.layout.addStretch(5)
-
-    def clear(self):
+    def clear(self) -> None:
         while self.layout.count():
             child = self.layout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
 
     @pyqtSlot(str)
-    def _on_file_download(self, file_uuid: str) -> None:
-        if file_uuid == self.file_uuid:
+    def _on_file_downloaded(self, file_uuid: str) -> None:
+        if file_uuid == self.file.uuid:
+            # update state
+            self.file = self.controller.get_file(self.file.uuid)
+
+            # update gui
             self.clear()  # delete existing icon and label
             self.update()  # draw modified widget
 
@@ -1334,12 +1328,15 @@ class FileWidget(QWidget):
         Handle a completed click via the program logic. The download state
         of the file distinguishes which function in the logic layer to call.
         """
-        if self.submission.is_downloaded:
+        # update state
+        self.file = self.controller.get_file(self.file.uuid)
+
+        if self.file.is_downloaded:
             # Open the already downloaded file.
-            self.controller.on_file_open(self.submission)
+            self.controller.on_file_open(self.file.uuid)
         else:
             # Download the file.
-            self.controller.on_file_download(self.source, self.submission)
+            self.controller.on_submission_download(File, self.file.uuid)
 
 
 class ConversationView(QWidget):
@@ -1351,7 +1348,11 @@ class ConversationView(QWidget):
     https://github.com/freedomofpress/securedrop-client/issues/273
     """
 
-    def __init__(self, source_db_object: Source, controller: Controller):
+    def __init__(
+        self,
+        source_db_object: Source,
+        controller: Controller,
+    ):
         super().__init__()
         self.source = source_db_object
         self.controller = controller
@@ -1403,8 +1404,12 @@ class ConversationView(QWidget):
         Add a file from the source.
         """
         self.conversation_layout.addWidget(
-            FileWidget(source_db_object, submission_db_object,
-                       self.controller, self.controller.file_ready))
+            FileWidget(
+                submission_db_object.uuid,
+                self.controller,
+                self.controller.file_ready,
+            ),
+        )
 
     def update_conversation_position(self, min_val, max_val):
         """
@@ -1472,9 +1477,12 @@ class SourceConversationWrapper(QWidget):
     per-source resources.
     """
 
-    def __init__(self, source: Source, controller: Controller) -> None:
+    def __init__(
+        self,
+        source: Source,
+        controller: Controller,
+    ) -> None:
         super().__init__()
-
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)

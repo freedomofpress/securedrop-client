@@ -303,7 +303,7 @@ def find_or_create_user(uuid: str, username: str, session: Session) -> User:
         return user
     else:
         # User does not exist in the local database.
-        new_user = User(username)
+        new_user = User(username=username)
         new_user.uuid = uuid
         session.add(new_user)
         session.commit()
@@ -422,3 +422,7 @@ def source_exists(session: Session, source_uuid: str) -> bool:
         return True
     except NoResultFound:
         return False
+
+
+def get_file(session: Session, file_uuid: str) -> File:
+    return session.query(File).filter_by(uuid=file_uuid).one()

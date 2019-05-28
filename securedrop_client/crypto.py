@@ -22,11 +22,11 @@ import shutil
 import subprocess
 import tempfile
 
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import scoped_session
 from uuid import UUID
 
 from securedrop_client.config import Config
-from securedrop_client.db import make_engine, Source
+from securedrop_client.db import Source
 from securedrop_client.utils import safe_mkdir
 
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ class CryptoError(Exception):
 
 class GpgHelper:
 
-    def __init__(self, sdc_home: str, is_qubes: bool) -> None:
+    def __init__(self, sdc_home: str, session_maker: scoped_session, is_qubes: bool) -> None:
         '''
         :param sdc_home: Home directory for the SecureDrop client
         :param is_qubes: Whether the client is running in Qubes or not
@@ -47,9 +47,7 @@ class GpgHelper:
         safe_mkdir(os.path.join(sdc_home), "gpg")
         self.sdc_home = sdc_home
         self.is_qubes = is_qubes
-        engine = make_engine(sdc_home)
-        Session = sessionmaker(bind=engine)
-        self.session = Session()
+        self.session_maker = session_maker
 
         config = Config.from_home_dir(self.sdc_home)
         self.journalist_key_fingerprint = config.journalist_key_fingerprint
@@ -110,13 +108,14 @@ class GpgHelper:
         return cmd
 
     def import_key(self, source_uuid: UUID, key_data: str, fingerprint: str) -> None:
-        local_source = self.session.query(Source).filter_by(uuid=source_uuid).one()
+        session = self.session_maker()
+        local_source = session.query(Source).filter_by(uuid=source_uuid).one()
 
         self._import(key_data)
 
         local_source.fingerprint = fingerprint
-        self.session.add(local_source)
-        self.session.commit()
+        session.add(local_source)
+        session.commit()
 
     def _import(self, key_data: str) -> None:
         '''Wrapper for `gpg --import-keys`'''
@@ -145,7 +144,8 @@ class GpgHelper:
         '''
         :param data: A string of data to encrypt to a source.
         '''
-        source = self.session.query(Source).filter_by(uuid=source_uuid).one()
+        session = self.session_maker()
+        source = session.query(Source).filter_by(uuid=source_uuid).one()
         cmd = self._gpg_cmd_base()
 
         with tempfile.NamedTemporaryFile('w+') as content, \

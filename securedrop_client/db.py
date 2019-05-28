@@ -4,9 +4,8 @@ from typing import Any, List, Union  # noqa: F401
 
 from sqlalchemy import Boolean, Column, create_engine, DateTime, ForeignKey, Integer, String, \
     Text, MetaData, CheckConstraint, text, UniqueConstraint
-from sqlalchemy.engine import Engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship, backref, scoped_session, sessionmaker
 
 
 convention = {
@@ -22,9 +21,11 @@ metadata = MetaData(naming_convention=convention)
 Base = declarative_base(metadata=metadata)  # type: Any
 
 
-def make_engine(home: str) -> Engine:
+def make_session_maker(home: str) -> scoped_session:
     db_path = os.path.join(home, 'svs.sqlite')
-    return create_engine('sqlite:///{}'.format(db_path))
+    engine = create_engine('sqlite:///{}'.format(db_path))
+    maker = sessionmaker(bind=engine)
+    return scoped_session(maker)
 
 
 class Source(Base):
@@ -214,9 +215,6 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
     username = Column(String(255), nullable=False)
-
-    def __init__(self, username: str) -> None:
-        self.username = username
 
     def __repr__(self) -> str:
         return "<Journalist: {}>".format(self.username)

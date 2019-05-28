@@ -36,8 +36,9 @@ def test_setup(mocker):
     Ensure the passed in controller is referenced and the various views are
     instantiated as expected.
     """
-    w = Window()
     mock_controller = mocker.MagicMock()
+
+    w = Window()
     w.show_login = mocker.MagicMock()
     w.top_pane = mocker.MagicMock()
     w.left_pane = mocker.MagicMock()
