@@ -518,27 +518,6 @@ class Controller(QObject):
             # Non Qubes OS. Just log the event for now.
             logger.info('Opening file "{}".'.format(submission_filepath))
 
-    def on_reply_download(self, source_db_object: db.Source, reply: db.Reply) -> None:
-        """
-        Download the file associated with the Reply.
-        """
-        if not self.api:  # Then we should tell the user they need to login.
-            self.on_action_requiring_login()
-            return
-
-        sdk_object = sdclientapi.Reply(uuid=reply.uuid)
-        sdk_object.filename = reply.filename
-        sdk_object.source_uuid = source_db_object.uuid
-
-        self.set_status(_('Downloading {}'.format(sdk_object.filename)))
-
-        self.call_api(self.api.download_reply,
-                      self.on_file_download_success,
-                      self.on_file_download_failure,
-                      sdk_object,
-                      self.data_dir,
-                      current_object=reply)
-
     def on_submission_download(
         self,
         submission_type: Union[Type[db.File], Type[db.Message]],
