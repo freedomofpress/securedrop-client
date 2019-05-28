@@ -23,9 +23,9 @@ def test_string_representation_of_message():
 
 def test_string_representation_of_file():
     source = factory.Source()
-    file_ = File(source=source, uuid="test", size=123, filename="1-test.docx",
-                 download_url='http://test/test')
-    file_.__repr__()
+    file = File(source=source, uuid="test", size=123, filename="1-test.docx",
+                download_url='http://test/test')
+    file.__repr__()
 
 
 def test_string_representation_of_reply():
@@ -39,20 +39,20 @@ def test_string_representation_of_reply():
 def test_source_collection():
     # Create some test submissions and replies
     source = factory.Source()
-    file_ = File(source=source, uuid="test", size=123, filename="2-test.doc.gpg",
-                 download_url='http://test/test')
+    file = File(source=source, uuid="test", size=123, filename="2-test.doc.gpg",
+                download_url='http://test/test')
     message = Message(source=source, uuid="test", size=123, filename="3-test.doc.gpg",
                       download_url='http://test/test')
     user = User(username='hehe')
     reply = Reply(source=source, journalist=user, filename="1-reply.gpg",
                   size=1234, uuid='test')
-    source.files = [file_]
+    source.files = [file]
     source.messages = [message]
     source.replies = [reply]
 
     # Now these items should be in the source collection in the proper order
     assert source.collection[0] == reply
-    assert source.collection[1] == file_
+    assert source.collection[1] == file
     assert source.collection[2] == message
 
 

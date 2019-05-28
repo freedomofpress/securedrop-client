@@ -111,7 +111,6 @@ def test_start_app(homedir, mocker):
     """
     Ensure the expected things are configured and the application is started.
     """
-    mock_session_maker = mocker.MagicMock()
     mock_args = mocker.MagicMock()
     mock_qt_args = mocker.MagicMock()
     mock_args.sdc_home = str(homedir)
@@ -123,14 +122,11 @@ def test_start_app(homedir, mocker):
     mock_controller = mocker.patch('securedrop_client.app.Controller')
     mocker.patch('securedrop_client.app.prevent_second_instance')
     mocker.patch('securedrop_client.app.sys')
-    mocker.patch('securedrop_client.app.make_session_maker', return_value=mock_session_maker)
 
     start_app(mock_args, mock_qt_args)
     mock_app.assert_called_once_with(mock_qt_args)
     mock_win.assert_called_once_with()
-    mock_controller.assert_called_once_with('http://localhost:8081/',
-                                            mock_win(), mock_session_maker,
-                                            homedir, False)
+    mock_controller.assert_called_once_with('http://localhost:8081/', mock_win(), homedir, False)
 
 
 PERMISSIONS_CASES = [
@@ -170,7 +166,6 @@ PERMISSIONS_CASES = [
 def test_create_app_dir_permissions(tmpdir, mocker):
 
     for idx, case in enumerate(PERMISSIONS_CASES):
-        mock_session_maker = mocker.MagicMock()
         mock_args = mocker.MagicMock()
         mock_qt_args = mocker.MagicMock()
 
@@ -192,7 +187,6 @@ def test_create_app_dir_permissions(tmpdir, mocker):
         mocker.patch('securedrop_client.app.Controller')
         mocker.patch('securedrop_client.app.sys')
         mocker.patch('securedrop_client.app.prevent_second_instance')
-        mocker.patch('securedrop_client.app.make_session_maker', return_value=mock_session_maker)
 
         def func():
             start_app(mock_args, mock_qt_args)
@@ -245,7 +239,7 @@ def test_signal_interception(mocker, homedir):
     mocker.patch('securedrop_client.app.QApplication')
     mocker.patch('securedrop_client.app.prevent_second_instance')
     mocker.patch('sys.exit')
-    mocker.patch('securedrop_client.db.make_session_maker')
+    mocker.patch('securedrop_client.db.make_engine')
     mocker.patch('securedrop_client.app.init')
     mocker.patch('securedrop_client.logic.Controller.setup')
     mocker.patch('securedrop_client.logic.GpgHelper')

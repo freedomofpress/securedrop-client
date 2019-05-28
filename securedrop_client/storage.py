@@ -27,7 +27,6 @@ from typing import List, Tuple, Type, Union
 
 from sqlalchemy import or_
 from sqlalchemy.orm import scoped_session
-from sqlalchemy.orm.exc import NoResultFound
 
 from securedrop_client.db import Session, Source, Message, File, Reply, User
 from sdclientapi import API
@@ -136,8 +135,11 @@ def update_local_storage(remote_sources: List[SDKSource],
 
     session.close()
 
+
 def update_sources(remote_sources: List[SDKSource],
-                   local_sources: List[Source], session: scoped_session, data_dir: str) -> None:
+                   local_sources: List[Source],
+                   session: scoped_session,
+                   data_dir: str) -> None:
     """
     Given collections of remote sources, the current local sources and a
     session to the local database, ensure the state of the local database
@@ -385,8 +387,10 @@ def mark_message_as_downloaded(uuid: str, session: scoped_session) -> None:
     session.commit()
 
 
-def set_object_decryption_status_with_content(obj: Union[File, Message, Reply], session: scoped_session,
-                                              is_successful: bool, content: str = None) -> None:
+def set_object_decryption_status_with_content(obj: Union[File, Message, Reply],
+                                              session: scoped_session,
+                                              is_successful: bool,
+                                              content: str = None) -> None:
     """Mark object as decrypted or not in the database."""
 
     model = type(obj)

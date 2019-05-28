@@ -13,12 +13,12 @@ with open(os.path.join(os.path.dirname(__file__), 'files', 'securedrop.gpg.asc')
     JOURNO_KEY = f.read()
 
 
-def test_message_logic(homedir, config, mocker, session_maker):
+def test_message_logic(homedir, config, mocker):
     """
     Ensure that messages are handled.
     Using the `config` fixture to ensure the config is written to disk.
     """
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    gpg = GpgHelper(homedir, is_qubes=False)
 
     test_msg = 'tests/files/test-msg.gpg'
     expected_output_filename = 'test-msg'
@@ -32,12 +32,12 @@ def test_message_logic(homedir, config, mocker, session_maker):
     assert dest == os.path.join(homedir, 'data', expected_output_filename)
 
 
-def test_gunzip_logic(homedir, config, mocker, session_maker):
+def test_gunzip_logic(homedir, config, mocker):
     """
     Ensure that gzipped documents/files are handled
     Using the `config` fixture to ensure the config is written to disk.
     """
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    gpg = GpgHelper(homedir, is_qubes=False)
 
     test_gzip = 'tests/files/test-doc.gz.gpg'
     expected_output_filename = 'test-doc'
@@ -52,12 +52,12 @@ def test_gunzip_logic(homedir, config, mocker, session_maker):
     assert mock_unlink.call_count == 2
 
 
-def test_subprocess_raises_exception(homedir, config, mocker, session_maker):
+def test_subprocess_raises_exception(homedir, config, mocker):
     """
     Ensure that failed GPG commands raise an exception.
     Using the `config` fixture to ensure the config is written to disk.
     """
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    gpg = GpgHelper(homedir, is_qubes=False)
 
     test_gzip = 'tests/files/test-doc.gz.gpg'
     output_filename = 'test-doc'
@@ -73,21 +73,21 @@ def test_subprocess_raises_exception(homedir, config, mocker, session_maker):
     assert mock_unlink.call_count == 1
 
 
-def test_import_key(homedir, config, source, session_maker):
+def test_import_key(homedir, config, source):
     '''
     Check the happy path that we can import a single PGP key.
     Using the `config` fixture to ensure the config is written to disk.
     '''
-    helper = GpgHelper(homedir, session_maker, is_qubes=False)
+    helper = GpgHelper(homedir, is_qubes=False)
     helper.import_key(source['uuid'], source['public_key'], source['fingerprint'])
 
 
-def test_import_key_gpg_call_fail(homedir, config, mocker, session_maker):
+def test_import_key_gpg_call_fail(homedir, config, mocker):
     '''
     Check that a `CryptoError` is raised if calling `gpg` fails.
     Using the `config` fixture to ensure the config is written to disk.
     '''
-    helper = GpgHelper(homedir, session_maker, is_qubes=False)
+    helper = GpgHelper(homedir, is_qubes=False)
     err = CalledProcessError(cmd=['foo'], returncode=1)
     mock_call = mocker.patch('securedrop_client.crypto.subprocess.check_call',
                              side_effect=err)
@@ -99,12 +99,12 @@ def test_import_key_gpg_call_fail(homedir, config, mocker, session_maker):
     assert mock_call.called
 
 
-def test_encrypt(homedir, source, config, mocker, session_maker):
+def test_encrypt(homedir, source, config, mocker):
     '''
     Check that calling `encrypt` encrypts the message.
     Using the `config` fixture to ensure the config is written to disk.
     '''
-    helper = GpgHelper(homedir, session_maker, is_qubes=False)
+    helper = GpgHelper(homedir, is_qubes=False)
 
     # first we have to ensure the pubkeys are available
     helper._import(PUB_KEY)
@@ -134,12 +134,12 @@ def test_encrypt(homedir, source, config, mocker, session_maker):
     assert decrypted == plaintext
 
 
-def test_encrypt_fail(homedir, source, config, mocker, session_maker):
+def test_encrypt_fail(homedir, source, config, mocker):
     '''
     Check that a `CryptoError` is raised if the call to `gpg` fails.
     Using the `config` fixture to ensure the config is written to disk.
     '''
-    helper = GpgHelper(homedir, session_maker, is_qubes=False)
+    helper = GpgHelper(homedir, is_qubes=False)
 
     # first we have to ensure the pubkeys are available
     helper._import(PUB_KEY)

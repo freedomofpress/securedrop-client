@@ -2,13 +2,14 @@ import json
 import os
 import tempfile
 import pytest
+from uuid import uuid4
 
 from configparser import ConfigParser
 from datetime import datetime
+
 from securedrop_client.config import Config
 from securedrop_client.app import configure_locale_and_language
-from securedrop_client.db import Base, make_session_maker, Source
-from uuid import uuid4
+from securedrop_client.db import Base, Session, Source, make_engine
 
 
 with open(os.path.join(os.path.dirname(__file__), 'files', 'test-key.gpg.pub.asc')) as f:
@@ -81,16 +82,17 @@ def _alembic_config(homedir):
 
 
 @pytest.fixture(scope='function')
-def session_maker(homedir):
-    return make_session_maker(homedir)
-
-
-@pytest.fixture(scope='function')
-def session(session_maker):
-    sess = session_maker()
-    Base.metadata.create_all(bind=sess.get_bind(), checkfirst=False)
-    yield sess
-    sess.close()
+def session(homedir):
+    """
+    This fixture recreates the test db every time it is used
+    """
+    engine = make_engine(homedir)
+    Session.configure(bind=engine)
+    Base.metadata.create_all(bind=engine, checkfirst=False)
+    session = Session()
+    yield session
+    # teardown
+    session.close()
 
 
 @pytest.fixture(scope='function')
