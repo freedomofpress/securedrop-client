@@ -412,6 +412,7 @@ class Controller(QObject):
                 except CryptoError:
                     logger.warning('Failed to import key for source {}'.format(source.uuid))
 
+        self.sync_events.emit('synced')
         self.update_sources()
 
     def on_sync_failure(self, result: Exception) -> None:
