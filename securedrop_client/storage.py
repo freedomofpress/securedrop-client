@@ -423,5 +423,6 @@ def source_exists(session: Session, source_uuid: str) -> bool:
     except NoResultFound:
         return False
 
+
 def get_file(session: Session, file_uuid: str) -> File:
     return session.query(File).filter_by(uuid=file_uuid).one()

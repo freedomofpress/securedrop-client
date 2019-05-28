@@ -22,13 +22,12 @@ def test_init(mocker):
     mock_mv = mocker.patch('securedrop_client.gui.main.MainView')
     mocker.patch('securedrop_client.gui.main.QHBoxLayout', mock_lo)
     mocker.patch('securedrop_client.gui.main.QMainWindow')
-    mock_session_maker = mocker.MagicMock()
 
-    w = Window(mock_session_maker)
+    w = Window()
 
     mock_li.assert_called_once_with(w.icon)
     mock_lp.assert_called_once_with()
-    mock_mv.assert_called_once_with(mock_session_maker, w.main_pane)
+    mock_mv.assert_called_once_with(w.main_pane)
     assert mock_lo().addWidget.call_count == 2
 
 
@@ -37,10 +36,9 @@ def test_setup(mocker):
     Ensure the passed in controller is referenced and the various views are
     instantiated as expected.
     """
-    mock_session_maker = mocker.MagicMock()
     mock_controller = mocker.MagicMock()
 
-    w = Window(mock_session_maker)
+    w = Window()
     w.show_login = mocker.MagicMock()
     w.top_pane = mocker.MagicMock()
     w.left_pane = mocker.MagicMock()
@@ -56,8 +54,7 @@ def test_setup(mocker):
 
 
 def test_show_main_window(mocker):
-    mock_session_maker = mocker.MagicMock()
-    w = Window(mock_session_maker)
+    w = Window()
     w.autosize_window = mocker.MagicMock()
     w.show = mocker.MagicMock()
     w.set_logged_in_as = mocker.MagicMock()
@@ -70,8 +67,7 @@ def test_show_main_window(mocker):
 
 
 def test_show_main_window_without_username(mocker):
-    mock_session_maker = mocker.MagicMock()
-    w = Window(mock_session_maker)
+    w = Window()
     w.autosize_window = mocker.MagicMock()
     w.show = mocker.MagicMock()
     w.set_logged_in_as = mocker.MagicMock()
@@ -87,8 +83,7 @@ def test_autosize_window(mocker):
     """
     Check the autosizing fits to the full screen size.
     """
-    mock_session_maker = mocker.MagicMock()
-    w = Window(mock_session_maker)
+    w = Window()
     w.resize = mocker.MagicMock()
     mock_screen = mocker.MagicMock()
     mock_screen.width.return_value = 1024
@@ -105,8 +100,7 @@ def test_show_login(mocker):
     """
     The login dialog is displayed with a clean state.
     """
-    mock_session_maker = mocker.MagicMock()
-    w = Window(mock_session_maker)
+    w = Window()
     w.controller = mocker.MagicMock()
     mock_ld = mocker.patch('securedrop_client.gui.main.LoginDialog')
 
@@ -121,8 +115,7 @@ def test_show_login_error(mocker):
     """
     Ensures that an error message is displayed in the login dialog.
     """
-    mock_session_maker = mocker.MagicMock()
-    w = Window(mock_session_maker)
+    w = Window()
     w.show_login = mocker.MagicMock()
     w.setup(mocker.MagicMock())
     w.login_dialog = mocker.MagicMock()
@@ -136,8 +129,7 @@ def test_hide_login(mocker):
     """
     Ensure the login dialog is closed and hidden.
     """
-    mock_session_maker = mocker.MagicMock()
-    w = Window(mock_session_maker)
+    w = Window()
     w.show_login = mocker.MagicMock()
     ld = mocker.MagicMock()
     w.login_dialog = ld
@@ -152,8 +144,7 @@ def test_show_sources(mocker):
     """
     Ensure the sources list is passed to the main view to be updated.
     """
-    mock_session_maker = mocker.MagicMock()
-    w = Window(mock_session_maker)
+    w = Window()
     w.main_view = mocker.MagicMock()
     w.show_sources([1, 2, 3])
     w.main_view.show_sources.assert_called_once_with([1, 2, 3])
@@ -164,8 +155,7 @@ def test_update_error_status_default(mocker):
     Ensure that the error to be shown in the error status bar will be passed to the top pane with a
     default duration of 10 seconds.
     """
-    mock_session_maker = mocker.MagicMock()
-    w = Window(mock_session_maker)
+    w = Window()
     w.top_pane = mocker.MagicMock()
     w.update_error_status(message='test error message')
     w.top_pane.update_error_status.assert_called_once_with('test error message', 10000)
@@ -176,8 +166,7 @@ def test_update_error_status(mocker):
     Ensure that the error to be shown in the error status bar will be passed to the top pane with
     the duration of seconds provided.
     """
-    mock_session_maker = mocker.MagicMock()
-    w = Window(mock_session_maker)
+    w = Window()
     w.top_pane = mocker.MagicMock()
     w.update_error_status(message='test error message', duration=123)
     w.top_pane.update_error_status.assert_called_once_with('test error message', 123)
@@ -188,8 +177,7 @@ def test_update_activity_status_default(mocker):
     Ensure that the activity to be shown in the activity status bar will be passed to the top pane
     with a default duration of 0 seconds, i.e. forever.
     """
-    mock_session_maker = mocker.MagicMock()
-    w = Window(mock_session_maker)
+    w = Window()
     w.top_pane = mocker.MagicMock()
     w.update_activity_status(message='test message')
     w.top_pane.update_activity_status.assert_called_once_with('test message', 0)
@@ -200,8 +188,7 @@ def test_update_activity_status(mocker):
     Ensure that the activity to be shown in the activity status bar will be passed to the top pane
     with the duration of seconds provided.
     """
-    mock_session_maker = mocker.MagicMock()
-    w = Window(mock_session_maker)
+    w = Window()
     w.top_pane = mocker.MagicMock()
     w.update_activity_status(message='test message', duration=123)
     w.top_pane.update_activity_status.assert_called_once_with('test message', 123)
@@ -211,8 +198,7 @@ def test_clear_error_status(mocker):
     """
     Ensure clear_error_status is called.
     """
-    mock_session_maker = mocker.MagicMock()
-    w = Window(mock_session_maker)
+    w = Window()
     w.top_pane = mocker.MagicMock()
 
     w.clear_error_status()
@@ -224,8 +210,7 @@ def test_show_sync(mocker):
     """
     If there's a value display the result of its "humanize" method.humanize
     """
-    mock_session_maker = mocker.MagicMock()
-    w = Window(mock_session_maker)
+    w = Window()
     w.update_activity_status = mocker.MagicMock()
     updated_on = mocker.MagicMock()
     w.show_sync(updated_on)
@@ -237,8 +222,7 @@ def test_show_sync_no_sync(mocker):
     """
     If there's no value to display, default to a "waiting" message.
     """
-    mock_session_maker = mocker.MagicMock()
-    w = Window(mock_session_maker)
+    w = Window()
     w.update_activity_status = mocker.MagicMock()
     w.show_sync(None)
     w.update_activity_status.assert_called_once_with('Waiting to refresh...', 5000)
@@ -248,8 +232,7 @@ def test_set_logged_in_as(mocker):
     """
     Given a username, the left pane is appropriately called to update.
     """
-    mock_session_maker = mocker.MagicMock()
-    w = Window(mock_session_maker)
+    w = Window()
     w.left_pane = mocker.MagicMock()
 
     w.set_logged_in_as('test')
@@ -261,8 +244,7 @@ def test_logout(mocker):
     """
     Ensure the left pane updates to the logged out state.
     """
-    mock_session_maker = mocker.MagicMock()
-    w = Window(mock_session_maker)
+    w = Window()
     w.left_pane = mocker.MagicMock()
     w.top_pane = mocker.MagicMock()
 

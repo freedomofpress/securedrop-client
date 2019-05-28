@@ -8,7 +8,7 @@ import pytest
 import sdclientapi
 
 from PyQt5.QtCore import Qt
-from sdclientapi import sdlocalobjects, RequestTimeoutError
+from sdclientapi import RequestTimeoutError
 from tests import factory
 
 from securedrop_client import storage, db
@@ -912,7 +912,7 @@ def test_Controller_on_file_downloaded_api_failure(homedir, config, mocker, sess
     mock_file_ready.emit.assert_not_called()
 
 
-def test_Controller_on_file_open(homedir, config, mocker, session_maker):
+def test_Controller_on_file_open(homedir, config, mocker, session, session_maker, source):
     """
     If running on Qubes, a new QProcess with the expected command and args
     should be started.
@@ -921,12 +921,15 @@ def test_Controller_on_file_open(homedir, config, mocker, session_maker):
     mock_gui = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     co.proxy = True
-    mock_submission = mocker.MagicMock()
-    mock_submission.filename = '1-test.pdf'
+
+    submission = factory.File(source=source['source'])
+    session.add(submission)
+    session.commit()
+
     mock_subprocess = mocker.MagicMock()
     mock_process = mocker.MagicMock(return_value=mock_subprocess)
     mocker.patch('securedrop_client.logic.QProcess', mock_process)
-    co.on_file_open(mock_submission)
+    co.on_file_open(submission.uuid)
     mock_process.assert_called_once_with(co)
     mock_subprocess.start.call_count == 1
 

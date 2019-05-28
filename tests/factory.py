@@ -83,7 +83,7 @@ def File(**attrs):
     FILE_COUNT += 1
     defaults = dict(
         uuid='source-uuid-{}'.format(FILE_COUNT),
-        filename='{}-reply.gpg'.format(FILE_COUNT),
+        filename='{}-doc.gz.gpg'.format(FILE_COUNT),
         size=123,
         download_url='http://wat.onion/abc',
         is_decrypted=True,
