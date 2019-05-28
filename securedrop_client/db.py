@@ -6,8 +6,7 @@ from sqlalchemy import Boolean, Column, create_engine, DateTime, ForeignKey, Int
     Text, MetaData, CheckConstraint, text, UniqueConstraint
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, backref, scoped_session, sessionmaker
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import relationship, backref, sessionmaker
 
 
 Session = sessionmaker()

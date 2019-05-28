@@ -6,14 +6,12 @@ import os
 import uuid
 from dateutil.parser import parse
 
-from sqlalchemy.orm.exc import NoResultFound
-
 import securedrop_client.db
 from securedrop_client.storage import get_local_sources, get_local_messages, get_local_replies, \
     get_remote_data, update_local_storage, update_sources, update_files, update_messages, \
-    update_replies, find_or_create_user, find_new_messages, find_new_replies, \
+    update_replies, find_or_create_user, find_new_messages, find_new_replies, add_reply, \
     mark_file_as_downloaded, mark_reply_as_downloaded, delete_single_submission_or_reply_on_disk, \
-    rename_file, get_local_files, find_new_files, mark_message_as_downloaded, source_exists, \
+    rename_file, get_local_files, find_new_files, mark_message_as_downloaded, \
     set_object_decryption_status_with_content
 from securedrop_client import db
 from sdclientapi import Source, Submission, Reply
@@ -128,7 +126,7 @@ def test_get_remote_data(mocker):
     assert replies == [reply, ]
 
 
-def test_update_local_storage(homedir, mocker):
+def test_update_local_storage(homedir, mocker, session):
     """
     Assuming no errors getting data, check the expected functions to update
     the state of the local database are called with the necessary data.
@@ -138,25 +136,29 @@ def test_update_local_storage(homedir, mocker):
     remote_file = mocker.Mock(filename='2-foo.gpg')
     remote_submissions = [remote_message, remote_file]
     remote_reply = mocker.MagicMock()
-    # Some local source, submission and reply objects from the local database.
-    mock_session = mocker.MagicMock()
-    local_source = mocker.MagicMock()
-    local_file = mocker.MagicMock()
-    local_message = mocker.MagicMock()
-    local_reply = mocker.MagicMock()
-    mock_session.query().all = mocker.Mock()
-    mock_session.query().all.side_effect = [
-        [local_source], [local_file], [local_message], [local_reply]]
+    # Store local source, submission and reply objects
+    local_source = factory.Source()
+    local_file = factory.File(source=local_source)
+    local_message = factory.Message(source=local_source)
+    local_reply = factory.Reply(source=local_source)
+    session.add(local_source)
+    session.add(local_file)
+    session.add(local_message)
+    session.add(local_reply)
+    session.commit()
+    # Patch Session because expected parameters includes a session object
+    mocker.patch('securedrop_client.storage.Session', return_value=session)
     src_fn = mocker.patch('securedrop_client.storage.update_sources')
     rpl_fn = mocker.patch('securedrop_client.storage.update_replies')
     file_fn = mocker.patch('securedrop_client.storage.update_files')
     msg_fn = mocker.patch('securedrop_client.storage.update_messages')
 
-    update_local_storage(mock_session, [remote_source], remote_submissions, [remote_reply], homedir)
-    src_fn.assert_called_once_with([remote_source], [local_source], mock_session, homedir)
-    rpl_fn.assert_called_once_with([remote_reply], [local_reply], mock_session, homedir)
-    file_fn.assert_called_once_with([remote_file], [local_file], mock_session, homedir)
-    msg_fn.assert_called_once_with([remote_message], [local_message], mock_session, homedir)
+    update_local_storage([remote_source], remote_submissions, [remote_reply], homedir)
+
+    src_fn.assert_called_once_with([remote_source], [local_source], session, homedir)
+    rpl_fn.assert_called_once_with([remote_reply], [local_reply], session, homedir)
+    file_fn.assert_called_once_with([remote_file], [local_file], session, homedir)
+    msg_fn.assert_called_once_with([remote_message], [local_message], session, homedir)
 
 
 def test_update_sources(homedir, mocker):
@@ -925,26 +927,3 @@ def test_rename_file_success(homedir):
     with open(os.path.join(homedir, 'data', trunc_new_filename)) as f:
         out = f.read()
     assert out == contents
-
-
-def test_source_exists_true(homedir, mocker):
-    '''
-    Check that method returns True if a source is return from the query.
-    '''
-    session = mocker.MagicMock()
-    source = make_remote_source()
-    source.uuid = 'test-source-uuid'
-    session.query().filter_by().one.return_value = source
-    assert source_exists(session, 'test-source-uuid')
-
-
-def test_source_exists_false(homedir, mocker):
-    '''
-    Check that method returns False if NoResultFound is thrown when we try to query the source.
-    '''
-    session = mocker.MagicMock()
-    source = mocker.MagicMock()
-    source.uuid = 'test-source-uuid'
-    session.query().filter_by().one.side_effect = NoResultFound()
-
-    assert not source_exists(session, 'test-source-uuid')

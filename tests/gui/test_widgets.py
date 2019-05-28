@@ -415,7 +415,6 @@ def test_MainView_on_source_changed(mocker):
     source = factory.Source()
     mv.set_conversation.get_current_source = mocker.MagicMock(return_value=source)
     mv.controller = mocker.MagicMock(is_authenticated=True)
-    mocker.patch('securedrop_client.gui.widgets.source_exists', return_value=True)
     scw = mocker.MagicMock()
     mocker.patch('securedrop_client.gui.widgets.SourceConversationWrapper', return_value=scw)
 
@@ -432,7 +431,6 @@ def test_MainView_on_source_changed_when_source_no_longer_exists(mocker):
     mv = MainView(None)
     mv.clear_conversation = mocker.MagicMock()
     mv.controller = mocker.MagicMock(is_authenticated=True)
-    mocker.patch('securedrop_client.gui.widgets.source_exists', return_value=False)
 
     mv.on_source_changed()
 
@@ -622,8 +620,8 @@ def test_SourceWidget_delete_source(mocker, session, source):
 
 def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker, session, source):
     source = source['source']  # to get the Source object
-    file_ = factory.File(source=source)
-    session.add(file_)
+    file = factory.File(source=source)
+    session.add(file)
     message = factory.Message(source=source)
     session.add(message)
     session.commit()
@@ -1137,9 +1135,8 @@ def test_FileWidget_init_left(mocker):
     """
     mock_controller = mocker.MagicMock()
     mock_signal = mocker.MagicMock()  # not important for this test
-    mock_uuid = 'mock'
-
-    fw = FileWidget(mock_uuid, mock_controller, mock_signal)
+    file = factory.File()
+    fw = FileWidget(file, mock_controller, mock_signal)
 
     assert isinstance(fw.layout.takeAt(0), QWidgetItem)
     assert isinstance(fw.layout.takeAt(0), QWidgetItem)
@@ -1153,23 +1150,16 @@ def test_FileWidget_mousePressEvent_download(mocker, session, source):
     """
     mock_signal = mocker.MagicMock()  # not important for this test
 
-    file_ = factory.File(source=source['source'],
-                         is_downloaded=False,
-                         is_decrypted=None)
-    session.add(file_)
+    file = factory.File(source=source['source'], is_downloaded=False, is_decrypted=None)
+    session.add(file)
     session.commit()
 
-    mock_get_file = mocker.MagicMock(return_value=file_)
-    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+    mock_controller = mocker.MagicMock()
 
-    fw = FileWidget(file_.uuid, mock_controller, mock_signal)
-    mock_get_file.assert_called_once_with(file_.uuid)
-    mock_get_file.reset_mock()
+    fw = FileWidget(file, mock_controller, mock_signal)
 
     fw.mouseReleaseEvent(None)
-    mock_get_file.assert_called_once_with(file_.uuid)
-    mock_controller.on_submission_download.assert_called_once_with(
-        db.File, file_.uuid)
+    mock_controller.on_submission_download.assert_called_once_with(db.File, file.uuid)
 
 
 def test_FileWidget_mousePressEvent_open(mocker, session, source):
@@ -1178,16 +1168,15 @@ def test_FileWidget_mousePressEvent_open(mocker, session, source):
     """
     mock_signal = mocker.MagicMock()  # not important for this test
 
-    file_ = factory.File(source=source['source'], is_downloaded=True)
-    session.add(file_)
+    file = factory.File(source=source['source'], is_downloaded=True)
+    session.add(file)
     session.commit()
 
-    mock_get_file = mocker.MagicMock(return_value=file_)
-    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+    mock_controller = mocker.MagicMock()
 
-    fw = FileWidget(file_.uuid, mock_controller, mock_signal)
+    fw = FileWidget(file, mock_controller, mock_signal)
     fw.mouseReleaseEvent(None)
-    fw.controller.on_file_open.assert_called_once_with(file_.uuid)
+    fw.controller.on_file_open.assert_called_once_with(file)
 
 
 def test_FileWidget_clear_deletes_items(mocker, session, source):
@@ -1196,14 +1185,13 @@ def test_FileWidget_clear_deletes_items(mocker, session, source):
     """
     mock_signal = mocker.MagicMock()  # not important for this test
 
-    file_ = factory.File(source=source['source'], is_downloaded=True)
-    session.add(file_)
+    file = factory.File(source=source['source'], is_downloaded=True)
+    session.add(file)
     session.commit()
 
-    mock_get_file = mocker.MagicMock(return_value=file_)
-    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+    mock_controller = mocker.MagicMock()
 
-    fw = FileWidget(file_.uuid, mock_controller, mock_signal)
+    fw = FileWidget(file, mock_controller, mock_signal)
     assert fw.layout.count() != 0
 
     fw.clear()
@@ -1217,18 +1205,18 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_matches(mocker, sou
     """
     mock_signal = mocker.MagicMock()  # not important for this test
 
-    file_ = factory.File(source=source['source'], is_downloaded=True)
-    session.add(file_)
+    file = factory.File(source=source['source'], is_downloaded=True)
+    session.add(file)
     session.commit()
 
-    mock_get_file = mocker.MagicMock(return_value=file_)
+    mock_get_file = mocker.MagicMock(return_value=file)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
-    fw = FileWidget(file_.uuid, mock_controller, mock_signal)
+    fw = FileWidget(file, mock_controller, mock_signal)
     fw.clear = mocker.MagicMock()
     fw.update = mocker.MagicMock()
 
-    fw._on_file_downloaded(file_.uuid)
+    fw._on_file_downloaded(file.uuid)
 
     fw.clear.assert_called_once_with()
     fw.update.assert_called_once_with()
@@ -1242,14 +1230,14 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(
     """
     mock_signal = mocker.MagicMock()  # not important for this test
 
-    file_ = factory.File(source=source['source'], is_downloaded=True)
-    session.add(file_)
+    file = factory.File(source=source['source'], is_downloaded=True)
+    session.add(file)
     session.commit()
 
-    mock_get_file = mocker.MagicMock(return_value=file_)
+    mock_get_file = mocker.MagicMock(return_value=file)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
-    fw = FileWidget(file_.uuid, mock_controller, mock_signal)
+    fw = FileWidget(file, mock_controller, mock_signal)
     fw.clear = mocker.MagicMock()
     fw.update = mocker.MagicMock()
 
@@ -1546,14 +1534,11 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, sessi
     Adding a file results in a new FileWidget added to the layout with the
     proper QLabel.
     """
-    file_ = factory.File(source=source['source'],
-                         is_downloaded=False,
-                         is_decrypted=None,
-                         size=123)
-    session.add(file_)
+    file = factory.File(source=source['source'], is_downloaded=False, is_decrypted=None, size=123)
+    session.add(file)
     session.commit()
 
-    mock_get_file = mocker.MagicMock(return_value=file_)
+    mock_get_file = mocker.MagicMock(return_value=file)
     mocked_controller = mocker.MagicMock(get_file=mock_get_file)
 
     cv = ConversationView(source['source'], mocked_controller)
@@ -1563,7 +1548,7 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, sessi
     mocker.patch('securedrop_client.gui.widgets.QHBoxLayout.addWidget')
     mocker.patch('securedrop_client.gui.widgets.FileWidget.setLayout')
 
-    cv.add_file(source['source'], file_)
+    cv.add_file(source['source'], file)
     mock_label.assert_called_with("Download (123 bytes)")
     assert cv.conversation_layout.addWidget.call_count == 1
 
@@ -1596,8 +1581,8 @@ def test_DeleteSourceMessage_launch_when_user_chooses_cancel(mocker, source):
 
 def test_DeleteSourceMssageBox_launch_when_user_chooses_yes(mocker, source, session):
     source = source['source']  # to get the Source object
-    file_ = factory.File(source=source)
-    session.add(file_)
+    file = factory.File(source=source)
+    session.add(file)
     message = factory.Message(source=source)
     session.add(message)
     message = factory.Message(source=source)
@@ -1639,8 +1624,8 @@ def test_DeleteSourceMssageBox_launch_when_user_chooses_yes(mocker, source, sess
 
 def test_DeleteSourceMessageBox_construct_message(mocker, source, session):
     source = source['source']  # to get the Source object
-    file_ = factory.File(source=source)
-    session.add(file_)
+    file = factory.File(source=source)
+    session.add(file)
     message = factory.Message(source=source)
     session.add(message)
     message = factory.Message(source=source)
@@ -1805,17 +1790,17 @@ def test_ReplyWidget_success_failure_slots(mocker):
 
     # check the success slog
     mock_logger = mocker.patch('securedrop_client.gui.widgets.logger')
-    widget._on_reply_success(msg_id + "x")
+    widget._on_reply_success('mock', msg_id + "x")
     assert not mock_logger.debug.called
-    widget._on_reply_success(msg_id)
+    widget._on_reply_success('mock', msg_id)
     assert mock_logger.debug.called
     mock_logger.reset_mock()
 
     # check the failure slot
     mock_logger = mocker.patch('securedrop_client.gui.widgets.logger')
-    widget._on_reply_failure(msg_id + "x")
+    widget._on_reply_failure('mock', msg_id + "x")
     assert not mock_logger.debug.called
-    widget._on_reply_failure(msg_id)
+    widget._on_reply_failure('mock', msg_id)
     assert mock_logger.debug.called
 
 
@@ -1903,8 +1888,8 @@ def test_update_conversation_maintains_old_items(mocker, session):
     session.add(source)
     session.flush()
 
-    file_ = factory.File(filename='1-source-doc.gpg', source=source)
-    session.add(file_)
+    file = factory.File(filename='1-source-doc.gpg', source=source)
+    session.add(file)
     message = factory.Message(filename='2-source-msg.gpg', source=source)
     session.add(message)
     reply = factory.Reply(filename='3-source-reply.gpg', source=source)
@@ -1928,8 +1913,8 @@ def test_update_conversation_adds_new_items(mocker, session):
     session.add(source)
     session.flush()
 
-    file_ = factory.File(filename='1-source-doc.gpg', source=source)
-    session.add(file_)
+    file = factory.File(filename='1-source-doc.gpg', source=source)
+    session.add(file)
     message = factory.Message(filename='2-source-msg.gpg', source=source)
     session.add(message)
     reply = factory.Reply(filename='3-source-reply.gpg', source=source)
