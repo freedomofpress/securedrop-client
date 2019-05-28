@@ -11,7 +11,7 @@ from os import path
 from sqlalchemy import text
 
 from . import conftest
-from securedrop_client.db import make_session_maker, Base, convention
+from securedrop_client.db import Base, Session, convention
 
 MIGRATION_PATH = path.join(path.dirname(__file__), '..', 'alembic', 'versions')
 
@@ -98,8 +98,7 @@ def test_alembic_head_matches_db_models(tmpdir):
     models_homedir = str(tmpdir.mkdir('models'))
     subprocess.check_call(['sqlite3', os.path.join(models_homedir, 'svs.sqlite'), '.databases'])
 
-    session_maker = make_session_maker(models_homedir)
-    session = session_maker()
+    session = Session(models_homedir)
     Base.metadata.create_all(bind=session.get_bind(), checkfirst=False)
     assert Base.metadata.naming_convention == convention
     models_schema = get_schema(session)
@@ -108,8 +107,7 @@ def test_alembic_head_matches_db_models(tmpdir):
 
     alembic_homedir = str(tmpdir.mkdir('alembic'))
     subprocess.check_call(['sqlite3', os.path.join(alembic_homedir, 'svs.sqlite'), '.databases'])
-    session_maker = make_session_maker(alembic_homedir)
-    session = session_maker()
+    session = Session(alembic_homedir)
     alembic_config = conftest._alembic_config(alembic_homedir)
     upgrade(alembic_config, 'head')
     alembic_schema = get_schema(session)
@@ -158,13 +156,13 @@ def test_schema_unchanged_after_up_then_downgrade(alembic_config,
         # get the database to some base state.
         pass
 
-    session = make_session_maker(str(tmpdir.mkdir('original')))()
+    session = Session(str(tmpdir.mkdir('original')))()
     original_schema = get_schema(session)
 
     upgrade(alembic_config, '+1')
     downgrade(alembic_config, '-1')
 
-    session = make_session_maker(str(tmpdir.mkdir('reverted')))()
+    session = Session(str(tmpdir.mkdir('reverted')))()
     reverted_schema = get_schema(session)
 
     # The initial migration is a degenerate case because it creates the table

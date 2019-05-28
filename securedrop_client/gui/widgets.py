@@ -1250,7 +1250,7 @@ class ReplyWidget(ConversationWidget):
         message_failed_signal.connect(self._on_reply_failure)
 
     @pyqtSlot(str, str)
-    def _on_reply_success(self, message_id: str, source_uuid: str) -> None:
+    def _on_reply_success(self, source_uuid: str, message_id: str) -> None:
         """
         Conditionally update this ReplyWidget's state if and only if the message_id of the emitted
         signal matches the message_id of this widget.
@@ -1259,7 +1259,7 @@ class ReplyWidget(ConversationWidget):
             logger.debug('Reply {} succeeded'.format(message_id))
 
     @pyqtSlot(str, str)
-    def _on_reply_failure(self, message_id: str, source_uuid: str) -> None:
+    def _on_reply_failure(self, source_uuid: str, message_id: str) -> None:
         """
         Conditionally update this ReplyWidget's state if and only if the message_id of the emitted
         signal matches the message_id of this widget.
@@ -1463,11 +1463,11 @@ class ConversationView(QWidget):
         if source_uuid == self.source.uuid:
             self.add_reply_from_reply_box(reply_uuid, reply_text)
 
-    def on_reply_succeeded(self, reply_uuid: str, source_uuid: str) -> None:
+    def on_reply_succeeded(self, source_uuid: str, reply_uuid: str) -> None:
         if source_uuid == self.source.uuid:
             pass
 
-    def on_reply_failed(self, reply_uuid: str, source_uuid: str) -> None:
+    def on_reply_failed(self, source_uuid: str, reply_uuid: str) -> None:
         if source_uuid == self.source.uuid:
             pass
 

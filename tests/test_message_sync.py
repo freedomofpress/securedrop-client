@@ -6,7 +6,7 @@ from securedrop_client.message_sync import MessageSync, ReplySync
 from tests import factory
 
 
-def test_MessageSync_init(mocker, session_maker):
+def test_MessageSync_init(mocker):
     """
     Ensure things are set up as expected
     """
@@ -14,14 +14,13 @@ def test_MessageSync_init(mocker, session_maker):
     mock_api = mocker.MagicMock()
     mock_gpg = mocker.MagicMock()
 
-    ms = MessageSync(mock_api, mock_gpg, session_maker)
+    ms = MessageSync(mock_api, mock_gpg)
 
     assert ms.api == mock_api
     assert ms.gpg == mock_gpg
-    assert ms.session_maker == session_maker
 
 
-def test_MessageSync_run_success(mocker, session, source, session_maker, homedir):
+def test_MessageSync_run_success(mocker, session, source, homedir):
     """
     Test when a message successfully downloads and decrypts.
     Using the `homedir` fixture to get a GPG keyring.
@@ -42,7 +41,7 @@ def test_MessageSync_run_success(mocker, session, source, session_maker, homedir
         with open(plaintext_filename, 'w') as f:
             f.write(expected_content)
 
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    gpg = GpgHelper(homedir, is_qubes=False)
     mocker.patch.object(
         gpg,
         'decrypt_submission_or_reply',
@@ -50,7 +49,7 @@ def test_MessageSync_run_success(mocker, session, source, session_maker, homedir
     )
 
     api = mocker.MagicMock(session=session)
-    ms = MessageSync(api, gpg, session_maker)
+    ms = MessageSync(api, gpg)
     ms.api.download_submission = mocker.MagicMock(return_value=(1234, "/home/user/downloads/foo"))
 
     mock_message_ready = mocker.patch.object(ms, 'message_ready')
@@ -66,7 +65,7 @@ def test_MessageSync_run_success(mocker, session, source, session_maker, homedir
     assert message.is_decrypted is True
 
 
-def test_MessageSync_run_decrypt_only(mocker, session, source, session_maker, homedir):
+def test_MessageSync_run_decrypt_only(mocker, session, source, homedir):
     """
     Test when a message successfully downloads and decrypts.
     Using the `homedir` fixture to get a GPG keyring.
@@ -87,7 +86,7 @@ def test_MessageSync_run_decrypt_only(mocker, session, source, session_maker, ho
         with open(plaintext_filename, 'w') as f:
             f.write(expected_content)
 
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    gpg = GpgHelper(homedir, is_qubes=False)
     mocker.patch.object(
         gpg,
         'decrypt_submission_or_reply',
@@ -95,7 +94,7 @@ def test_MessageSync_run_decrypt_only(mocker, session, source, session_maker, ho
     )
 
     api = mocker.MagicMock(session=session)
-    ms = MessageSync(api, gpg, session_maker)
+    ms = MessageSync(api, gpg)
     ms.api.download_submission = mocker.MagicMock(return_value=(1234, "/home/user/downloads/foo"))
     mock_fetch = mocker.patch.object(ms, 'fetch_the_thing')
 
@@ -113,7 +112,7 @@ def test_MessageSync_run_decrypt_only(mocker, session, source, session_maker, ho
     assert not mock_fetch.called
 
 
-def test_MessageSync_run_decryption_error(mocker, session, source, session_maker, homedir):
+def test_MessageSync_run_decryption_error(mocker, session, source, homedir):
     """
     Test when a message successfully downloads, but does not successfully decrypt.
     Using the `homedir` fixture to get a GPG keyring.
@@ -130,9 +129,9 @@ def test_MessageSync_run_decryption_error(mocker, session, source, session_maker
 
     api = mocker.MagicMock(session=session)
 
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    gpg = GpgHelper(homedir, is_qubes=False)
 
-    ms = MessageSync(api, gpg, session_maker)
+    ms = MessageSync(api, gpg)
     mocker.patch.object(ms.gpg, 'decrypt_submission_or_reply', side_effect=CryptoError)
 
     ms.api.download_submission = mocker.MagicMock(return_value=(1234, "/home/user/downloads/foo"))
@@ -148,7 +147,7 @@ def test_MessageSync_run_decryption_error(mocker, session, source, session_maker
     assert message.is_decrypted is False
 
 
-def test_MessageSync_exception(homedir, config, mocker, source, session, session_maker):
+def test_MessageSync_exception(homedir, config, mocker, source, session):
     """
     Makes sure that if an exception is raised in the download thread, the code which catches it is
     actually run.
@@ -165,8 +164,8 @@ def test_MessageSync_exception(homedir, config, mocker, source, session, session
                                 mocker.MagicMock(side_effect=Exception()))
 
     api = mocker.MagicMock()
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
-    ms = MessageSync(api, gpg, session_maker)
+    gpg = GpgHelper(homedir, is_qubes=False)
+    ms = MessageSync(api, gpg)
 
     # check that it runs without raising exceptions
     ms.run(False)
@@ -175,21 +174,21 @@ def test_MessageSync_exception(homedir, config, mocker, source, session, session
     assert mock_message.called
 
 
-def test_MessageSync_run_failure(mocker, source, session, session_maker, homedir):
+def test_MessageSync_run_failure(mocker, source, session, homedir):
     message = factory.Message(source=source['source'])
     session.add(message)
     session.commit()
 
     api = mocker.MagicMock()
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
-    ms = MessageSync(api, gpg, session_maker)
+    gpg = GpgHelper(homedir, is_qubes=False)
+    ms = MessageSync(api, gpg)
     ms.api.download_submission = mocker.MagicMock(return_value=(1234, "/home/user/downloads/foo"))
 
     # check that it runs without raising exceptions
     ms.run(False)
 
 
-def test_ReplySync_init(mocker, session_maker):
+def test_ReplySync_init(mocker):
     """
     Ensure things are set up as expected
     """
@@ -197,14 +196,13 @@ def test_ReplySync_init(mocker, session_maker):
     mock_api = mocker.MagicMock()
     mock_gpg = mocker.MagicMock()
 
-    rs = ReplySync(mock_api, mock_gpg, session_maker)
+    rs = ReplySync(mock_api, mock_gpg)
 
     assert rs.api == mock_api
     assert rs.gpg == mock_gpg
-    assert rs.session_maker == session_maker
 
 
-def test_ReplySync_run_success(mocker, session, source, session_maker, homedir):
+def test_ReplySync_run_success(mocker, session, source, homedir):
     """
     Test when a reply successfully downloads and decrypts.
     Using the `homedir` fixture to get a GPG keyring.
@@ -225,7 +223,7 @@ def test_ReplySync_run_success(mocker, session, source, session_maker, homedir):
         with open(plaintext_filename, 'w') as f:
             f.write(expected_content)
 
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    gpg = GpgHelper(homedir, is_qubes=False)
     mocker.patch.object(
         gpg,
         'decrypt_submission_or_reply',
@@ -233,7 +231,7 @@ def test_ReplySync_run_success(mocker, session, source, session_maker, homedir):
     )
 
     api = mocker.MagicMock(session=session)
-    rs = ReplySync(api, gpg, session_maker)
+    rs = ReplySync(api, gpg)
     rs.api.download_reply = mocker.MagicMock(return_value=(1234, "/home/user/downloads/foo"))
 
     mock_reply_ready = mocker.patch.object(rs, 'reply_ready')
@@ -249,7 +247,7 @@ def test_ReplySync_run_success(mocker, session, source, session_maker, homedir):
     assert reply.is_decrypted is True
 
 
-def test_ReplySync_run_decrypt_only(mocker, session, source, session_maker, homedir):
+def test_ReplySync_run_decrypt_only(mocker, session, source, homedir):
     """
     Test when a message successfully downloads and decrypts.
     Using the `homedir` fixture to get a GPG keyring.
@@ -270,7 +268,7 @@ def test_ReplySync_run_decrypt_only(mocker, session, source, session_maker, home
         with open(plaintext_filename, 'w') as f:
             f.write(expected_content)
 
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    gpg = GpgHelper(homedir, is_qubes=False)
     mocker.patch.object(
         gpg,
         'decrypt_submission_or_reply',
@@ -278,7 +276,7 @@ def test_ReplySync_run_decrypt_only(mocker, session, source, session_maker, home
     )
 
     api = mocker.MagicMock(session=session)
-    rs = ReplySync(api, gpg, session_maker)
+    rs = ReplySync(api, gpg)
     rs.api.download_submission = mocker.MagicMock(return_value=(1234, "/home/user/downloads/foo"))
     mock_fetch = mocker.patch.object(rs, 'fetch_the_thing')
 
@@ -296,7 +294,7 @@ def test_ReplySync_run_decrypt_only(mocker, session, source, session_maker, home
     assert not mock_fetch.called
 
 
-def test_ReplySync_run_decryption_error(mocker, session, source, session_maker, homedir):
+def test_ReplySync_run_decryption_error(mocker, session, source, homedir):
     """
     Test when a reply successfully downloads, but does not successfully decrypt.
     Using the `homedir` fixture to get a GPG keyring.
@@ -313,9 +311,9 @@ def test_ReplySync_run_decryption_error(mocker, session, source, session_maker, 
 
     api = mocker.MagicMock(session=session)
 
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    gpg = GpgHelper(homedir, is_qubes=False)
 
-    rs = ReplySync(api, gpg, session_maker)
+    rs = ReplySync(api, gpg)
     mocker.patch.object(rs.gpg, 'decrypt_submission_or_reply', side_effect=CryptoError)
 
     rs.api.download_reply = mocker.MagicMock(return_value=(1234, "/home/user/downloads/foo"))
@@ -331,7 +329,7 @@ def test_ReplySync_run_decryption_error(mocker, session, source, session_maker, 
     assert reply.is_decrypted is False
 
 
-def test_ReplySync_exception(homedir, config, mocker, source, session, session_maker):
+def test_ReplySync_exception(homedir, config, mocker, source, session):
     """
     Makes sure that if an exception is raised in the download thread, the code which catches it is
     actually run.
@@ -348,8 +346,8 @@ def test_ReplySync_exception(homedir, config, mocker, source, session, session_m
                               mocker.MagicMock(side_effect=Exception()))
 
     api = mocker.MagicMock()
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
-    rs = ReplySync(api, gpg, session_maker)
+    gpg = GpgHelper(homedir, is_qubes=False)
+    rs = ReplySync(api, gpg)
 
     # check that it runs without raising exceptions
     rs.run(False)
@@ -358,14 +356,14 @@ def test_ReplySync_exception(homedir, config, mocker, source, session, session_m
     assert mock_reply.called
 
 
-def test_ReplySync_run_failure(mocker, source, session, session_maker, homedir):
+def test_ReplySync_run_failure(mocker, source, session, homedir):
     reply = factory.Reply(source=source['source'])
     session.add(reply)
     session.commit()
 
     api = mocker.MagicMock()
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
-    rs = ReplySync(api, gpg, session_maker)
+    gpg = GpgHelper(homedir, is_qubes=False)
+    rs = ReplySync(api, gpg)
     rs.api.download_reply = mocker.MagicMock(return_value=(1234, "/home/user/downloads/foo"))
 
     # check that it runs without raising exceptions

@@ -601,7 +601,7 @@ class Controller(QObject):
     def on_reply_success(self, result, current_object: Tuple[str, str]) -> None:
         source_uuid, reply_uuid = current_object
         storage.add_reply(reply_uuid, source_uuid, self.api.token_journalist_uuid, result.filename)
-        self.reply_succeeded.emit(reply_uuid, source_uuid)
+        self.reply_succeeded.emit(source_uuid, reply_uuid)
 
     def on_reply_failure(self, result, current_object: Tuple[str, str]) -> None:
         source_uuid, reply_uuid = current_object

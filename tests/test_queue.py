@@ -130,11 +130,9 @@ def test_ApiJob_other_error(mocker):
 
 def test_RunnableQueue_init(mocker):
     mock_api_client = mocker.MagicMock()
-    mock_session_maker = mocker.MagicMock()
 
-    queue = RunnableQueue(mock_api_client, mock_session_maker)
+    queue = RunnableQueue(mock_api_client)
     assert queue.api_client == mock_api_client
-    assert queue.session_maker == mock_session_maker
     assert isinstance(queue.queue, Queue)
     assert queue.queue.empty()
     assert queue.last_job is None
@@ -146,13 +144,11 @@ def test_RunnableQueue_happy_path(mocker):
     '''
     mock_process_events = mocker.patch('securedrop_client.queue.QApplication.processEvents')
     mock_api_client = mocker.MagicMock()
-    mock_session = mocker.MagicMock()
-    mock_session_maker = mocker.MagicMock(return_value=mock_session)
     return_value = 'foo'
 
     dummy_job_cls = dummy_job_factory(mocker, return_value)
 
-    queue = RunnableQueue(mock_api_client, mock_session_maker)
+    queue = RunnableQueue(mock_api_client)
     queue.queue.put_nowait(dummy_job_cls())
 
     queue._process(exit_loop=True)
@@ -171,15 +167,13 @@ def test_RunnableQueue_job_timeout(mocker):
     '''
     mock_process_events = mocker.patch('securedrop_client.queue.QApplication.processEvents')
     mock_api_client = mocker.MagicMock()
-    mock_session = mocker.MagicMock()
-    mock_session_maker = mocker.MagicMock(return_value=mock_session)
 
     return_value = RequestTimeoutError()
     dummy_job_cls = dummy_job_factory(mocker, return_value)
     job1 = dummy_job_cls()
     job2 = dummy_job_cls()
 
-    queue = RunnableQueue(mock_api_client, mock_session_maker)
+    queue = RunnableQueue(mock_api_client)
     queue.queue.put_nowait(job1)
     queue.queue.put_nowait(job2)
 
@@ -211,14 +205,14 @@ def test_RunnableQueue_job_timeout(mocker):
     assert mock_process_events.called
 
 
-def test_DownloadSubmissionJob_happy_path_no_etag(mocker, homedir, session, session_maker):
+def test_DownloadSubmissionJob_happy_path_no_etag(mocker, homedir, session):
     source = factory.Source()
-    file_ = factory.File(source=source)
+    file = factory.File(source=source)
     session.add(source)
-    session.add(file_)
+    session.add(file)
     session.commit()
 
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    gpg = GpgHelper(homedir, is_qubes=False)
     mock_decrypt = mocker.patch.object(gpg, 'decrypt_submission_or_reply')
 
     def fake_download(sdk_obj: sdclientapi.Submission) -> Tuple[str, str]:
@@ -235,7 +229,7 @@ def test_DownloadSubmissionJob_happy_path_no_etag(mocker, homedir, session, sess
 
     job = DownloadSubmissionJob(
         db.File,
-        file_.uuid,
+        file.uuid,
         homedir,
         gpg,
     )
@@ -251,14 +245,14 @@ def test_DownloadSubmissionJob_happy_path_no_etag(mocker, homedir, session, sess
     assert mock_decrypt.called
 
 
-def test_DownloadSubmissionJob_happy_path_sha256_etag(mocker, homedir, session, session_maker):
+def test_DownloadSubmissionJob_happy_path_sha256_etag(mocker, homedir, session):
     source = factory.Source()
-    file_ = factory.File(source=source)
+    file = factory.File(source=source)
     session.add(source)
-    session.add(file_)
+    session.add(file)
     session.commit()
 
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    gpg = GpgHelper(homedir, is_qubes=False)
     mock_decrypt = mocker.patch.object(gpg, 'decrypt_submission_or_reply')
 
     def fake_download(sdk_obj: sdclientapi.Submission) -> Tuple[str, str]:
@@ -278,7 +272,7 @@ def test_DownloadSubmissionJob_happy_path_sha256_etag(mocker, homedir, session, 
 
     job = DownloadSubmissionJob(
         db.File,
-        file_.uuid,
+        file.uuid,
         homedir,
         gpg,
     )
@@ -289,14 +283,14 @@ def test_DownloadSubmissionJob_happy_path_sha256_etag(mocker, homedir, session, 
     assert mock_decrypt.called
 
 
-def test_DownloadSubmissionJob_bad_sha256_etag(mocker, homedir, session, session_maker):
+def test_DownloadSubmissionJob_bad_sha256_etag(mocker, homedir, session):
     source = factory.Source()
-    file_ = factory.File(source=source)
+    file = factory.File(source=source)
     session.add(source)
-    session.add(file_)
+    session.add(file)
     session.commit()
 
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    gpg = GpgHelper(homedir, is_qubes=False)
 
     def fake_download(sdk_obj: sdclientapi.Submission) -> Tuple[str, str]:
         '''
@@ -314,7 +308,7 @@ def test_DownloadSubmissionJob_bad_sha256_etag(mocker, homedir, session, session
 
     job = DownloadSubmissionJob(
         db.File,
-        file_.uuid,
+        file.uuid,
         homedir,
         gpg,
     )
@@ -324,14 +318,14 @@ def test_DownloadSubmissionJob_bad_sha256_etag(mocker, homedir, session, session
         job.call_api(api_client, session)
 
 
-def test_DownloadSubmissionJob_happy_path_unknown_etag(mocker, homedir, session, session_maker):
+def test_DownloadSubmissionJob_happy_path_unknown_etag(mocker, homedir, session):
     source = factory.Source()
-    file_ = factory.File(source=source)
+    file = factory.File(source=source)
     session.add(source)
-    session.add(file_)
+    session.add(file)
     session.commit()
 
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    gpg = GpgHelper(homedir, is_qubes=False)
 
     def fake_download(sdk_obj: sdclientapi.Submission) -> Tuple[str, str]:
         '''
@@ -348,7 +342,7 @@ def test_DownloadSubmissionJob_happy_path_unknown_etag(mocker, homedir, session,
 
     job = DownloadSubmissionJob(
         db.File,
-        file_.uuid,
+        file.uuid,
         homedir,
         gpg,
     )
@@ -365,14 +359,14 @@ def test_DownloadSubmissionJob_happy_path_unknown_etag(mocker, homedir, session,
     assert mock_decrypt.called
 
 
-def test_DownloadSubmissionJob_decryption_error(mocker, homedir, session, session_maker):
+def test_DownloadSubmissionJob_decryption_error(mocker, homedir, session):
     source = factory.Source()
-    file_ = factory.File(source=source)
+    file = factory.File(source=source)
     session.add(source)
-    session.add(file_)
+    session.add(file)
     session.commit()
 
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    gpg = GpgHelper(homedir, is_qubes=False)
     mock_decrypt = mocker.patch.object(gpg, 'decrypt_submission_or_reply',
                                        side_effect=CryptoError)
 
@@ -393,7 +387,7 @@ def test_DownloadSubmissionJob_decryption_error(mocker, homedir, session, sessio
 
     job = DownloadSubmissionJob(
         db.File,
-        file_.uuid,
+        file.uuid,
         homedir,
         gpg,
     )
@@ -412,9 +406,8 @@ def test_DownloadSubmissionJob_decryption_error(mocker, homedir, session, sessio
 
 def test_ApiJobQueue_enqueue(mocker):
     mock_client = mocker.MagicMock()
-    mock_session_maker = mocker.MagicMock()
 
-    job_queue = ApiJobQueue(mock_client, mock_session_maker)
+    job_queue = ApiJobQueue(mock_client)
     mock_download_queue = mocker.patch.object(job_queue, 'download_queue')
     mock_main_queue = mocker.patch.object(job_queue, 'main_queue')
 
@@ -438,9 +431,8 @@ def test_ApiJobQueue_enqueue(mocker):
 def test_ApiJobQueue_start_queues(mocker):
     mock_api = mocker.MagicMock()
     mock_client = mocker.MagicMock()
-    mock_session_maker = mocker.MagicMock()
 
-    job_queue = ApiJobQueue(mock_client, mock_session_maker)
+    job_queue = ApiJobQueue(mock_client)
 
     mock_main_queue = mocker.patch.object(job_queue, 'main_queue')
     mock_download_queue = mocker.patch.object(job_queue, 'download_queue')
