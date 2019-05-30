@@ -36,10 +36,33 @@ test: ## Run the application tests
 
 .PHONY: lint
 lint: ## Run the linters
-	@flake8 .
+	@flake8 securedrop_client tests
+
+.PHONY: safety
+safety: ## Runs `safety check` to check python dependencies for vulnerabilities
+	pip install --upgrade safety && \
+		for req_file in `find . -type f -name '*requirements.txt'`; do \
+			echo "Checking file $$req_file" \
+			&& safety check --full-report -r $$req_file \
+			&& echo -e '\n' \
+			|| exit 1; \
+		done
+
+# Bandit is a static code analysis tool to detect security vulnerabilities in Python applications
+# https://wiki.openstack.org/wiki/Security/Projects/Bandit
+.PHONY: bandit
+bandit: ## Run bandit with medium level excluding test-related folders
+	pip install --upgrade pip && \
+        pip install --upgrade bandit!=1.6.0 && \
+	bandit -ll --recursive . --exclude tests,.venv
 
 .PHONY: check
 check: clean lint mypy test ## Run the full CI test suite
+
+.PHONY: update-pip-requirements
+update-pip-requirements: ## Updates all Python requirements files via pip-compile.
+	pip-compile --generate-hashes --output-file dev-requirements.txt requirements.in dev-requirements.in
+	pip-compile --generate-hashes --output-file requirements.txt requirements.in
 
 # Explaination of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##
