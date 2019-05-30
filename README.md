@@ -22,10 +22,20 @@ be poked at and demonstrated.
 
 #### install requirements
 
-To try the proxy script, first use `pipenv` to create an environment
+To try the proxy script, first use `venv` to create an environment
 and install requirements. In the root of the project directory, run
 
-    pipenv install
+```
+virtualenv .venv
+source .venv/bin/activate
+pip install --require-hashes -r dev-requirements.txt
+```
+
+#### Update dependencies
+
+To add or update a dependency, modify either `dev-requirements.in` and `requirements.in` and then run `make update-pip-dependencies`. This will generate `dev-requirements.txt` and `requirements.txt`.
+
+**IMPORTANT:** Do not modify `build-requirements.txt` during normal development. We use a pip mirror for our build process and the hashes in that file point to wheels on our mirror.
 
 #### configuration
 
@@ -90,7 +100,7 @@ this documentation, we assume the client is running in
 
 Edit `qubes/securedrop.Proxy` to reflect the path to `entrypoint.sh`
 in this repo. Also edit the directory to this repo code in `entrypoint.sh`.
-Next, run `make install`, which will move `securedrop.Proxy`
+Next, run `sudo cp qubes/securedrop.Proxy /etc/qubes-rpc/securedrop.Proxy`, which will move `securedrop.Proxy`
 (the qubes-rpc "server path definition" file) into place in
 `/etc/qubes-rpc/`.
 
