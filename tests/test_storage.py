@@ -161,13 +161,16 @@ def test_update_local_storage(homedir, mocker):
 
 def test_add_reply(mocker, SessionFactory, homedir):
     # check that reply is to the DB
-    mocker.patch('securedrop_client.db.Session', return_value=SessionFactory)
+    session = SessionFactory()
+
     mock_id = str(uuid.uuid4())
     source = factory.Source()
+    session.add(source)
+    session.commit()
 
     add_reply(mock_id, source.uuid, mock_id, '1-spotted-potato-msg.gpg')
 
-    replies = SessionFactory().query(db.Reply).all()
+    replies = session.query(db.Reply).all()
     assert len(replies) == 1
 
 

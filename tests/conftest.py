@@ -85,7 +85,8 @@ def _alembic_config(homedir):
 @pytest.fixture(scope='function')
 def SessionFactory(homedir):
     engine = make_engine(homedir)
-    Session = sessionmaker(bind=engine)
+    Session.configure(bind=engine)
+    Base.metadata.create_all(bind=Session().get_bind(), checkfirst=False)
     return Session
 
 
