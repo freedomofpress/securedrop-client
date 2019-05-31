@@ -4,6 +4,7 @@ Make sure the UI widgets are configured correctly and work as expected.
 from PyQt5.QtWidgets import QWidget, QApplication, QWidgetItem, QSpacerItem, QVBoxLayout, \
     QMessageBox, QMainWindow, QTextEdit
 from PyQt5.QtCore import Qt
+from sqlalchemy.orm import scoped_session, sessionmaker
 
 from tests import factory
 from securedrop_client import db, logic
@@ -1945,6 +1946,55 @@ def test_update_conversation_adds_new_items(mocker, session):
 
     cv.update_conversation(cv.source.collection)
     assert cv.conversation_layout.count() == 4
+
+
+def test_update_conversation_content_updates(mocker, session):
+    """
+    Subsequent calls to update_conversation update the content of the conversation_item
+    if it has changed.
+    """
+    mock_controller = mocker.MagicMock()
+    # The controller's session must be a legitimate sqlalchemy session for this test
+    mock_controller.session = session
+    source = factory.Source()
+    session.add(source)
+    session.flush()
+
+    message = factory.Message(filename='2-source-msg.gpg', source=source, content=None)
+    session.add(message)
+    session.commit()
+
+    cv = ConversationView(source, mock_controller)
+
+    cv.conversation_layout.addWidget = mocker.MagicMock()
+    # this is the MessageWidget that __init__() would return
+    mock_msg_widget_res = mocker.MagicMock()
+    # mock MessageWidget so we can inspect the __init__ call to see what content
+    # is in the widget.
+    mock_msg_widget = mocker.patch('securedrop_client.gui.widgets.MessageWidget',
+                                   return_value=mock_msg_widget_res)
+
+    # First call of update_conversation: with null content
+    cv.update_conversation(cv.source.collection)
+
+    # Since the content was None, we should have created the widget
+    # with the default message (which is the second call_arg).
+    assert mock_msg_widget.call_args[0][1] == '<Message not yet available>'
+
+    # Meanwhile, in another session, we add content to the database for that same message.
+    engine = session.get_bind()
+    second_session = scoped_session(sessionmaker(bind=engine))
+    message = second_session.query(db.Message).one()
+    expected_content = 'now there is content here!'
+    message.content = expected_content
+    second_session.add(message)
+    second_session.commit()
+
+    # Second call of update_conversation
+    cv.update_conversation(cv.source.collection)
+
+    # Check that the widget was updated with the expected content.
+    assert mock_msg_widget.call_args[0][1] == expected_content
 
 
 def test_clear_conversation_deletes_items(mocker, homedir):
