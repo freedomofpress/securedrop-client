@@ -11,7 +11,7 @@ from sqlalchemy.orm.exc import NoResultFound
 import securedrop_client.db
 from securedrop_client.storage import get_local_sources, get_local_messages, get_local_replies, \
     get_remote_data, update_local_storage, update_sources, update_files, update_messages, \
-    update_replies, find_or_create_user, find_new_messages, find_new_replies, \
+    update_replies, find_or_create_user, find_new_messages, find_new_replies, add_reply, \
     mark_file_as_downloaded, mark_reply_as_downloaded, delete_single_submission_or_reply_on_disk, \
     rename_file, get_local_files, find_new_files, mark_message_as_downloaded, \
     set_object_decryption_status_with_content
@@ -157,6 +157,18 @@ def test_update_local_storage(homedir, mocker):
     rpl_fn.assert_called_once_with([remote_reply], [local_reply], mock_session, homedir)
     file_fn.assert_called_once_with([remote_file], [local_file], mock_session, homedir)
     msg_fn.assert_called_once_with([remote_message], [local_message], mock_session, homedir)
+
+
+def test_add_reply(mocker, SessionFactory, homedir):
+    # check that reply is to the DB
+    mocker.patch('securedrop_client.db.Session', return_value=SessionFactory)
+    mock_id = str(uuid.uuid4())
+    source = factory.Source()
+
+    add_reply(mock_id, source.uuid, mock_id, '1-spotted-potato-msg.gpg')
+
+    replies = SessionFactory().query(db.Reply).all()
+    assert len(replies) == 1
 
 
 def test_update_sources(homedir, mocker):

@@ -1061,13 +1061,11 @@ def test_Controller_on_reply_success(homedir, mocker, session):
     mock_reply_failed = mocker.patch.object(co, 'reply_failed')
 
     current_object = (source.uuid, msg.uuid)
+    add_reply_fn = mocker.patch('securedrop_client.logic.storage.add_reply')
     co.on_reply_success(reply, current_object)
-    mock_reply_succeeded.emit.assert_called_once_with(msg.uuid)
+    mock_reply_succeeded.emit.assert_called_once_with(source.uuid, msg.uuid)
     assert not mock_reply_failed.emit.called
-
-    # check that this was writtent to the DB
-    replies = session.query(db.Reply).all()
-    assert len(replies) == 1
+    assert add_reply_fn.call_count == 1
 
 
 def test_Controller_on_reply_failure(homedir, mocker):
