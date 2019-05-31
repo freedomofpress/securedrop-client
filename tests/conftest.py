@@ -82,6 +82,13 @@ def _alembic_config(homedir):
 
 
 @pytest.fixture(scope='function')
+def SessionFactory(homedir):
+    engine = make_engine(homedir)
+    Session = sessionmaker(bind=engine)
+    return Session
+
+
+@pytest.fixture(scope='function')
 def session(homedir):
     """
     This fixture recreates the test db every time it is used

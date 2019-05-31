@@ -161,6 +161,18 @@ def test_update_local_storage(homedir, mocker, session):
     msg_fn.assert_called_once_with([remote_message], [local_message], session, homedir)
 
 
+def test_add_reply(mocker, SessionFactory, homedir):
+    # check that reply is to the DB
+    mocker.patch('securedrop_client.db.Session', return_value=SessionFactory)
+    mock_id = str(uuid.uuid4())
+    source = factory.Source()
+
+    add_reply(mock_id, source.uuid, mock_id, '1-spotted-potato-msg.gpg')
+
+    replies = SessionFactory().query(db.Reply).all()
+    assert len(replies) == 1
+
+
 def test_update_sources(homedir, mocker):
     """
     Check that:
