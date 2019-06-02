@@ -34,7 +34,7 @@ from securedrop_client import __version__
 from securedrop_client.logic import Controller
 from securedrop_client.gui.main import Window
 from securedrop_client.resources import load_icon, load_css
-from securedrop_client.db import Session, make_engine
+from securedrop_client.db import SessionFactory, make_engine
 from securedrop_client.utils import safe_mkdir
 
 DEFAULT_SDC_HOME = '~/.securedrop_client'
@@ -192,7 +192,7 @@ def start_app(args, qt_args) -> None:
     app.setStyleSheet(load_css('sdclient.css'))
 
     engine = make_engine(args.sdc_home)
-    Session.configure(bind=engine)
+    SessionFactory.configure(bind=engine)
 
     controller = Controller("http://localhost:8081/", gui, args.sdc_home, not args.no_proxy)
     controller.setup()

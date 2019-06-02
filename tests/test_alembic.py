@@ -12,7 +12,7 @@ from os import path
 from sqlalchemy import text
 
 from . import conftest
-from securedrop_client.db import Base, Session, convention, make_engine
+from securedrop_client.db import Base, SessionFactory, convention, make_engine
 
 MIGRATION_PATH = path.join(path.dirname(__file__), '..', 'alembic', 'versions')
 
@@ -99,12 +99,12 @@ def test_alembic_head_matches_db_models(tmpdir):
     models_homedir = str(tmpdir.mkdir('models'))
     subprocess.check_call(['sqlite3', os.path.join(models_homedir, 'svs.sqlite'), '.databases'])
     engine = make_engine(models_homedir)
-    Session.configure(bind=engine)
+    SessionFactory.configure(bind=engine)
     Base.metadata.create_all(bind=engine, checkfirst=False)
     # Base.metadata.create_all(bind=session.get_bind(), checkfirst=False)
     assert Base.metadata.naming_convention == convention
 
-    session = Session()
+    session = SessionFactory()
     models_schema = get_schema(session)
     Base.metadata.drop_all(bind=engine)
     session.close()
@@ -112,13 +112,13 @@ def test_alembic_head_matches_db_models(tmpdir):
     alembic_homedir = str(tmpdir.mkdir('alembic'))
     subprocess.check_call(['sqlite3', os.path.join(alembic_homedir, 'svs.sqlite'), '.databases'])
     engine = make_engine(alembic_homedir)
-    Session.configure(bind=engine)
+    SessionFactory.configure(bind=engine)
     Base.metadata.create_all(bind=engine, checkfirst=False)
 
     alembic_config = conftest._alembic_config(alembic_homedir)
     upgrade(alembic_config, 'head')
 
-    session = Session()
+    session = SessionFactory()
     alembic_schema = get_schema(session)
     Base.metadata.drop_all(bind=engine)
     session.close()
@@ -166,8 +166,8 @@ def test_schema_unchanged_after_up_then_downgrade(alembic_config,
         pass
 
     engine = make_engine(str(tmpdir.mkdir('original')))
-    Session.configure(bind=engine)
-    session = Session()
+    SessionFactory.configure(bind=engine)
+    session = SessionFactory()
 
     original_schema = get_schema(session)
 
@@ -175,8 +175,8 @@ def test_schema_unchanged_after_up_then_downgrade(alembic_config,
     downgrade(alembic_config, '-1')
 
     engine = make_engine(str(tmpdir.mkdir('reverted')))
-    Session.configure(bind=engine)
-    session = Session()
+    SessionFactory.configure(bind=engine)
+    session = SessionFactory()
 
     reverted_schema = get_schema(session)
 

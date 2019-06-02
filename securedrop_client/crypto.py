@@ -25,7 +25,7 @@ import tempfile
 from uuid import UUID
 
 from securedrop_client.config import Config
-from securedrop_client.db import Session, Source
+from securedrop_client.db import SessionFactory, Source
 from securedrop_client.utils import safe_mkdir
 
 logger = logging.getLogger(__name__)
@@ -106,7 +106,7 @@ class GpgHelper:
         return cmd
 
     def import_key(self, source_uuid: UUID, key_data: str, fingerprint: str) -> None:
-        session = Session()
+        session = SessionFactory()
         local_source = session.query(Source).filter_by(uuid=source_uuid).one()
 
         self._import(key_data)
@@ -114,6 +114,7 @@ class GpgHelper:
         local_source.fingerprint = fingerprint
         session.add(local_source)
         session.commit()
+        session.close()
 
     def _import(self, key_data: str) -> None:
         '''Wrapper for `gpg --import-keys`'''
@@ -142,8 +143,9 @@ class GpgHelper:
         '''
         :param data: A string of data to encrypt to a source.
         '''
-        session = Session()
+        session = SessionFactory()
         source = session.query(Source).filter_by(uuid=source_uuid).one()
+        session.close()
         cmd = self._gpg_cmd_base()
 
         with tempfile.NamedTemporaryFile('w+') as content, \

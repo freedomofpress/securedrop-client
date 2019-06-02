@@ -4,13 +4,13 @@ import os
 import sys
 
 from securedrop_client.config import Config
-from securedrop_client.db import Base, Session, make_engine
+from securedrop_client.db import Base, SessionFactory, make_engine
 
 
 sdc_home = sys.argv[1]
 
 engine = make_engine(sdc_home)
-session = Session(bind=engine)
+session = SessionFactory(bind=engine)
 Base.metadata.create_all(bind=session.get_bind())
 
 with open(os.path.join(sdc_home, Config.CONFIG_NAME), 'w') as f:

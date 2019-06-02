@@ -13,7 +13,7 @@ from typing import Any, Union, Optional, Type, Tuple
 
 from securedrop_client import storage
 from securedrop_client.crypto import GpgHelper, CryptoError
-from securedrop_client.db import Session, File, Message
+from securedrop_client.db import File, Message, SessionFactory
 
 
 logger = logging.getLogger(__name__)
@@ -43,12 +43,12 @@ class ApiJob(QObject):
     def __init__(self) -> None:
         super().__init__(None)  # `None` because the QOjbect has no parent
 
-    def _do_call_api(self, api_client: API, session: Session) -> None:
+    def _do_call_api(self, api_client: API) -> None:
         if not api_client:
             raise ApiInaccessibleError()
 
         try:
-            result = self.call_api(api_client, session)
+            result = self.call_api(api_client)
         except AuthError as e:
             raise ApiInaccessibleError() from e
         except RequestTimeoutError:
@@ -61,7 +61,7 @@ class ApiJob(QObject):
         else:
             self.success_signal.emit(result)
 
-    def call_api(self, api_client: API, session: Session) -> Any:
+    def call_api(self, api_client: API) -> Any:
         '''
         Method for making the actual API call and handling the result.
 
@@ -89,16 +89,18 @@ class DownloadSubmissionJob(ApiJob):
         self.submission_uuid = submission_uuid
         self.gpg = gpg
 
-    def call_api(self, api_client: API, session: Session) -> Any:
-        db_object = session.query(self.submission_type) \
-            .filter_by(uuid=self.submission_uuid).one()
+    def call_api(self, api_client: API) -> Any:
+        session = SessionFactory()
+        db_object = session.query(self.submission_type).filter_by(uuid=self.submission_uuid).one()
 
         etag, download_path = self._make_call(db_object, api_client)
 
         if not self._check_file_integrity(etag, download_path):
             raise RuntimeError('Downloaded file had an invalid checksum.')
 
-        self._decrypt_file(session, db_object, download_path)
+        self._decrypt_file(db_object, download_path)
+
+        session.close()
 
         return db_object.uuid
 
@@ -140,7 +142,6 @@ class DownloadSubmissionJob(ApiJob):
 
     def _decrypt_file(
         self,
-        session: Session,
         db_object: Union[File, Message],
         file_path: str,
     ) -> None:
@@ -153,16 +154,16 @@ class DownloadSubmissionJob(ApiJob):
         # server (e.g. spotless-tater-msg.gpg).
         filepath_in_datadir = os.path.join(self.data_dir, server_filename)
         shutil.move(file_path, filepath_in_datadir)
-        storage.mark_file_as_downloaded(file_uuid, session)
+        storage.mark_file_as_downloaded(file_uuid)
 
         try:
             self.gpg.decrypt_submission_or_reply(filepath_in_datadir, server_filename, is_doc=True)
         except CryptoError as e:
             logger.debug('Failed to decrypt file {}: {}'.format(server_filename, e))
-            storage.set_object_decryption_status_with_content(db_object, session, False)
+            storage.set_object_decryption_status_with_content(db_object, False)
             raise e
 
-        storage.set_object_decryption_status_with_content(db_object, session, True)
+        storage.set_object_decryption_status_with_content(db_object, True)
 
 
 class RunnableQueue(QObject):
@@ -178,7 +179,6 @@ class RunnableQueue(QObject):
         self._process(False)
 
     def _process(self, exit_loop: bool) -> None:
-        session = Session()
         while True:
             # retry the "cached" job if it exists, otherwise get the next job
             if self.last_job is not None:
@@ -188,7 +188,7 @@ class RunnableQueue(QObject):
                 job = self.queue.get(block=True)
 
             try:
-                job._do_call_api(self.api_client, session)
+                job._do_call_api(self.api_client)
             except RequestTimeoutError:
                 self.last_job = job  # "cache" the last job since we can't re-queue it
                 return

@@ -201,7 +201,7 @@ class Controller(QObject):
         # Automagically sync with the API every 5 minutes.
         self.sync_update = QTimer()
         self.sync_update.timeout.connect(self.sync_api)
-        self.sync_update.start(1000 * 60 * 5)  # every 5 minutes.
+        self.sync_update.start(1000 * 10 * 1)  # every 5 minutes.
 
     def call_api(self,
                  api_call_func,
@@ -426,9 +426,7 @@ class Controller(QObject):
         """
         Display the updated list of sources with those found in local storage.
         """
-        session = db.Session()
-        sources = list(storage.get_local_sources(session))
-        session.close()
+        sources = list(storage.get_local_sources())
         if sources:
             sources.sort(key=lambda x: x.last_updated, reverse=True)
         self.gui.show_sources(sources)

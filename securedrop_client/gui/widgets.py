@@ -1382,7 +1382,6 @@ class ConversationView(QWidget):
         self.clear_conversation()
         # add new items
         for conversation_item in collection:
-            self.controller.session.refresh(conversation_item)
             if conversation_item.filename.endswith('msg.gpg'):
                 self.add_message(conversation_item)
             elif conversation_item.filename.endswith('reply.gpg'):

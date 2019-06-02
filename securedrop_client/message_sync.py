@@ -28,7 +28,7 @@ from typing import Callable, Union
 from PyQt5.QtCore import QObject, pyqtSignal
 from securedrop_client import storage
 from securedrop_client.crypto import GpgHelper, CryptoError
-from securedrop_client.db import Session, File, Message, Reply
+from securedrop_client.db import File, Message, Reply, SessionFactory
 from tempfile import NamedTemporaryFile
 
 
@@ -48,7 +48,6 @@ class APISyncObject(QObject):
 
     def decrypt_the_thing(
         self,
-        session: Session,
         filepath: str,
         msg: Union[File, Message, Reply],
     ) -> None:
@@ -57,24 +56,23 @@ class APISyncObject(QObject):
                 self.gpg.decrypt_submission_or_reply(filepath, plaintext_file.name, False)
                 plaintext_file.seek(0)
                 content = plaintext_file.read()
-                storage.set_object_decryption_status_with_content(msg, session, True, content)
+                storage.set_object_decryption_status_with_content(msg, True, content)
                 logger.info("Message or reply decrypted: {}".format(msg.filename))
             except CryptoError:
-                storage.set_object_decryption_status_with_content(msg, session, False)
+                storage.set_object_decryption_status_with_content(msg, False)
                 logger.info("Message or reply failed to decrypt: {}".format(msg.filename))
 
     def fetch_the_thing(
         self,
-        session: Session,
         item: Union[File, Message, Reply],
         msg: Union[File, Message, Reply],
         download_fn: Callable,
         update_fn: Callable,
     ) -> None:
         _, filepath = download_fn(item)
-        update_fn(msg.uuid, session)
+        update_fn(msg.uuid)
         logger.info("Stored message or reply at {}".format(msg.filename))
-        self.decrypt_the_thing(session, filepath, msg)
+        self.decrypt_the_thing(filepath, msg)
 
 
 class MessageSync(APISyncObject):
@@ -89,10 +87,11 @@ class MessageSync(APISyncObject):
     message_ready = pyqtSignal([str, str])
 
     def run(self, loop: bool = True) -> None:
-        session = Session()
-        while True:
-            submissions = storage.find_new_messages(session)
 
+        while True:
+            session = SessionFactory()
+            submissions = storage.find_new_messages()
+            session.close()
             for db_submission in submissions:
                 try:
                     sdk_submission = sdkobjects.Submission(
@@ -104,15 +103,13 @@ class MessageSync(APISyncObject):
 
                     if not db_submission.is_downloaded and self.api:
                         # Download and decrypt
-                        self.fetch_the_thing(session,
-                                             sdk_submission,
+                        self.fetch_the_thing(sdk_submission,
                                              db_submission,
                                              self.api.download_submission,
                                              storage.mark_message_as_downloaded)
                     elif db_submission.is_downloaded:
                         # Just decrypt file that is already on disk
-                        self.decrypt_the_thing(session,
-                                               db_submission.filename,
+                        self.decrypt_the_thing(db_submission.filename,
                                                db_submission)
 
                     if db_submission.content is not None:
@@ -145,10 +142,10 @@ class ReplySync(APISyncObject):
     reply_ready = pyqtSignal([str, str])
 
     def run(self, loop: bool = True) -> None:
-        session = Session()
         while True:
-            replies = storage.find_new_replies(session)
-
+            session = SessionFactory()
+            replies = storage.find_new_replies()
+            session.close()
             for db_reply in replies:
                 try:
                     # the API wants API objects. here in the client,
@@ -163,15 +160,13 @@ class ReplySync(APISyncObject):
 
                     if not db_reply.is_downloaded and self.api:
                         # Download and decrypt
-                        self.fetch_the_thing(session,
-                                             sdk_reply,
+                        self.fetch_the_thing(sdk_reply,
                                              db_reply,
                                              self.api.download_reply,
                                              storage.mark_reply_as_downloaded)
                     elif db_reply.is_downloaded:
                         # Just decrypt file that is already on disk
-                        self.decrypt_the_thing(session,
-                                               db_reply.filename,
+                        self.decrypt_the_thing(db_reply.filename,
                                                db_reply)
 
                     if db_reply.content is not None:

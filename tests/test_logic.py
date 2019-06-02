@@ -609,7 +609,7 @@ def test_Controller_update_sources(homedir, config, mocker, session):
     store.
     Using the `config` fixture to ensure the config is written to disk.
     """
-    mocker.patch('securedrop_client.logic.db.Session', return_value=session)
+    mocker.patch('securedrop_client.logic.db.SessionFactory', return_value=session)
     mock_gui = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, homedir)
     mock_storage = mocker.patch('securedrop_client.logic.storage')

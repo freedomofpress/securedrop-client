@@ -9,7 +9,7 @@ from datetime import datetime
 
 from securedrop_client.config import Config
 from securedrop_client.app import configure_locale_and_language
-from securedrop_client.db import Base, Session, Source, make_engine
+from securedrop_client.db import Base, SessionFactory, Source, make_engine
 
 
 with open(os.path.join(os.path.dirname(__file__), 'files', 'test-key.gpg.pub.asc')) as f:
@@ -82,21 +82,14 @@ def _alembic_config(homedir):
 
 
 @pytest.fixture(scope='function')
-def SessionFactory(homedir):
-    engine = make_engine(homedir)
-    Session = sessionmaker(bind=engine)
-    return Session
-
-
-@pytest.fixture(scope='function')
 def session(homedir):
     """
     This fixture recreates the test db every time it is used
     """
     engine = make_engine(homedir)
-    Session.configure(bind=engine)
+    SessionFactory.configure(bind=engine)
     Base.metadata.create_all(bind=engine, checkfirst=False)
-    session = Session()
+    session = SessionFactory()
     yield session
     # teardown
     session.close()
