@@ -13,7 +13,7 @@ from typing import Any, Union, Optional, Type, Tuple
 
 from securedrop_client import storage
 from securedrop_client.crypto import GpgHelper, CryptoError
-from securedrop_client.db import File, Message, SessionFactory
+from securedrop_client.db import File, Message, session_scope
 
 
 logger = logging.getLogger(__name__)
@@ -90,19 +90,18 @@ class DownloadSubmissionJob(ApiJob):
         self.gpg = gpg
 
     def call_api(self, api_client: API) -> Any:
-        session = SessionFactory()
-        db_object = session.query(self.submission_type).filter_by(uuid=self.submission_uuid).one()
+        with session_scope() as session:
+            db_object = session.query(self.submission_type).filter_by(uuid=self.submission_uuid).one()
+            session.close()
 
-        etag, download_path = self._make_call(db_object, api_client)
+            etag, download_path = self._make_call(db_object, api_client)
 
-        if not self._check_file_integrity(etag, download_path):
-            raise RuntimeError('Downloaded file had an invalid checksum.')
+            if not self._check_file_integrity(etag, download_path):
+                raise RuntimeError('Downloaded file had an invalid checksum.')
 
-        self._decrypt_file(db_object, download_path)
+            self._decrypt_file(db_object, download_path)
 
-        session.close()
-
-        return db_object.uuid
+            return db_object.uuid
 
     def _make_call(self, db_object: Union[File, Message], api_client: API) -> Tuple[str, str]:
         sdk_obj = sdclientapi.Submission(uuid=db_object.uuid)

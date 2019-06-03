@@ -11,6 +11,23 @@ from sqlalchemy.orm import relationship, backref, sessionmaker
 
 SessionFactory = sessionmaker()
 
+from contextlib import contextmanager
+
+@contextmanager
+def session_scope():
+    """Provide a transactional scope around a series of operations."""
+    session = SessionFactory()
+    try:
+        yield session
+        session.commit()
+        print('committed changes')
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+        print('closed session')
+
 convention = {
     "ix": 'ix_%(column_0_label)s',
     "uq": "uq_%(table_name)s_%(column_0_name)s",

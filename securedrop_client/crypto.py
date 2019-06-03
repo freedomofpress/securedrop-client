@@ -25,7 +25,7 @@ import tempfile
 from uuid import UUID
 
 from securedrop_client.config import Config
-from securedrop_client.db import SessionFactory, Source
+from securedrop_client.db import Source, session_scope
 from securedrop_client.utils import safe_mkdir
 
 logger = logging.getLogger(__name__)
@@ -106,15 +106,14 @@ class GpgHelper:
         return cmd
 
     def import_key(self, source_uuid: UUID, key_data: str, fingerprint: str) -> None:
-        session = SessionFactory()
-        local_source = session.query(Source).filter_by(uuid=source_uuid).one()
+        with session_scope() as session:
+            local_source = session.query(Source).filter_by(uuid=source_uuid).one()
 
-        self._import(key_data)
+            self._import(key_data)
 
-        local_source.fingerprint = fingerprint
-        session.add(local_source)
-        session.commit()
-        session.close()
+            local_source.fingerprint = fingerprint
+            session.add(local_source)
+            session.close()
 
     def _import(self, key_data: str) -> None:
         '''Wrapper for `gpg --import-keys`'''
@@ -143,36 +142,36 @@ class GpgHelper:
         '''
         :param data: A string of data to encrypt to a source.
         '''
-        session = SessionFactory()
-        source = session.query(Source).filter_by(uuid=source_uuid).one()
-        session.close()
-        cmd = self._gpg_cmd_base()
+        with session_scope() as session:
+            source = session.query(Source).filter_by(uuid=source_uuid).one()
+            session.close()
+            cmd = self._gpg_cmd_base()
 
-        with tempfile.NamedTemporaryFile('w+') as content, \
-                tempfile.NamedTemporaryFile('w+') as stdout, \
-                tempfile.NamedTemporaryFile('w+') as stderr:
+            with tempfile.NamedTemporaryFile('w+') as content, \
+                    tempfile.NamedTemporaryFile('w+') as stdout, \
+                    tempfile.NamedTemporaryFile('w+') as stderr:
 
-            content.write(data)
-            content.seek(0)
+                content.write(data)
+                content.seek(0)
 
-            cmd.extend(['--encrypt',
-                        '-r', source.fingerprint,
-                        '-r', self.journalist_key_fingerprint,
-                        '--armor'])
-            if not self.is_qubes:
-                # In Qubes, the ciphertext will go to stdout.
-                # In addition the option below cannot be passed
-                # through the gpg client wrapper.
-                cmd.extend(['-o-'])  # write to stdout
-            cmd.extend([content.name])
+                cmd.extend(['--encrypt',
+                            '-r', source.fingerprint,
+                            '-r', self.journalist_key_fingerprint,
+                            '--armor'])
+                if not self.is_qubes:
+                    # In Qubes, the ciphertext will go to stdout.
+                    # In addition the option below cannot be passed
+                    # through the gpg client wrapper.
+                    cmd.extend(['-o-'])  # write to stdout
+                cmd.extend([content.name])
 
-            try:
-                subprocess.check_call(cmd, stdout=stdout, stderr=stderr)
-            except subprocess.CalledProcessError as e:
-                stderr.seek(0)
-                logger.error(
-                    'Could not encrypt to source {}: {}\n{}'.format(source_uuid, e, stderr.read()))
-                raise CryptoError('Could not encrypt to source: {}.'.format(source_uuid))
+                try:
+                    subprocess.check_call(cmd, stdout=stdout, stderr=stderr)
+                except subprocess.CalledProcessError as e:
+                    stderr.seek(0)
+                    logger.error(
+                        'Could not encrypt to source {}: {}\n{}'.format(source_uuid, e, stderr.read()))
+                    raise CryptoError('Could not encrypt to source: {}.'.format(source_uuid))
 
-            stdout.seek(0)
-            return stdout.read()
+                stdout.seek(0)
+                return stdout.read()

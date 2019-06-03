@@ -427,8 +427,8 @@ class Controller(QObject):
         Display the updated list of sources with those found in local storage.
         """
         sources = list(storage.get_local_sources())
-        if sources:
-            sources.sort(key=lambda x: x.last_updated, reverse=True)
+        # if sources:
+        #     sources.sort(key=lambda x: x.last_updated, reverse=True)
         self.gui.show_sources(sources)
         self.update_sync()
 
@@ -579,7 +579,7 @@ class Controller(QObject):
         except Exception:
             tb = traceback.format_exc()
             logger.error('Failed to encrypt to source {}:\n'.format(source_uuid, tb))
-            self.reply_failed.emit(msg_uuid)
+            self.reply_failed.emit(source_uuid, msg_uuid)
         else:
             # Guard against calling the API if we're not logged in
             if self.api:
@@ -594,7 +594,7 @@ class Controller(QObject):
                 )
             else:  # pragma: no cover
                 logger.error('not logged in - not implemented!')
-                self.reply_failed.emit(msg_uuid)
+                self.reply_failed.emit(source_uuid, msg_uuid)
 
     def on_reply_success(self, result, current_object: Tuple[str, str]) -> None:
         source_uuid, reply_uuid = current_object

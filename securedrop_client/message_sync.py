@@ -21,16 +21,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import time
 import logging
 import traceback
-import sdclientapi.sdlocalobjects as sdkobjects
-from sdclientapi import API
+from tempfile import NamedTemporaryFile
 from typing import Callable, Union
 
 from PyQt5.QtCore import QObject, pyqtSignal
+
+import sdclientapi.sdlocalobjects as sdkobjects
+from sdclientapi import API
 from securedrop_client import storage
 from securedrop_client.crypto import GpgHelper, CryptoError
-from securedrop_client.db import File, Message, Reply, SessionFactory
-from tempfile import NamedTemporaryFile
-
+from securedrop_client.db import File, Message, Reply, session_scope
 
 logger = logging.getLogger(__name__)
 
@@ -89,9 +89,7 @@ class MessageSync(APISyncObject):
     def run(self, loop: bool = True) -> None:
 
         while True:
-            session = SessionFactory()
             submissions = storage.find_new_messages()
-            session.close()
             for db_submission in submissions:
                 try:
                     sdk_submission = sdkobjects.Submission(
@@ -100,6 +98,8 @@ class MessageSync(APISyncObject):
                     sdk_submission.source_uuid = db_submission.source.uuid
                     # Need to set filename on non-Qubes platforms
                     sdk_submission.filename = db_submission.filename
+
+                    print('running message sync')
 
                     if not db_submission.is_downloaded and self.api:
                         # Download and decrypt
@@ -142,46 +142,49 @@ class ReplySync(APISyncObject):
     reply_ready = pyqtSignal([str, str])
 
     def run(self, loop: bool = True) -> None:
+        replies = []
         while True:
-            session = SessionFactory()
-            replies = storage.find_new_replies()
-            session.close()
-            for db_reply in replies:
-                try:
-                    # the API wants API objects. here in the client,
-                    # we have client objects. let's take care of that
-                    # here
-                    sdk_reply = sdkobjects.Reply(
-                        uuid=db_reply.uuid,
-                        filename=db_reply.filename,
-                    )
-                    sdk_reply.source_uuid = db_reply.source.uuid
-                    # Need to set filename on non-Qubes platforms
+            with session_scope() as session:
+                replies = storage.find_new_replies()
+                for db_reply in replies:
+                    try:
+                        # the API wants API objects. here in the client,
+                        # we have client objects. let's take care of that
+                        # here
+                        sdk_reply = sdkobjects.Reply(
+                            uuid=db_reply.uuid,
+                            filename=db_reply.filename,
+                        )
+                        session.flush()
+                        sdk_reply.source_uuid = db_reply.source_uuid
+                        # Need to set filename on non-Qubes platforms
 
-                    if not db_reply.is_downloaded and self.api:
-                        # Download and decrypt
-                        self.fetch_the_thing(sdk_reply,
-                                             db_reply,
-                                             self.api.download_reply,
-                                             storage.mark_reply_as_downloaded)
-                    elif db_reply.is_downloaded:
-                        # Just decrypt file that is already on disk
-                        self.decrypt_the_thing(db_reply.filename,
-                                               db_reply)
+                        if not db_reply.is_downloaded and self.api:
+                            # Download and decrypt
+                            self.fetch_the_thing(sdk_reply,
+                                                 db_reply,
+                                                 self.api.download_reply,
+                                                 storage.mark_reply_as_downloaded)
+                        elif db_reply.is_downloaded:
+                            # Just decrypt file that is already on disk
+                            self.decrypt_the_thing(db_reply.filename,
+                                                   db_reply)
 
-                    if db_reply.content is not None:
-                        content = db_reply.content
-                    else:
-                        content = '<Reply not yet available>'
+                        if db_reply.content is not None:
+                            content = db_reply.content
+                        else:
+                            content = '<Reply not yet available>'
 
-                    self.reply_ready.emit(db_reply.uuid, content)
-                except Exception:
-                    tb = traceback.format_exc()
-                    logger.critical("Exception while processing reply!\n{}".format(tb))
+                        self.reply_ready.emit(db_reply.uuid, content)
+                    except Exception:
+                        tb = traceback.format_exc()
+                        logger.critical("Exception while processing reply!\n{}".format(tb))
 
-            logger.debug('Replies synced')
+                logger.debug('Replies synced')
 
-            if not loop:
-                break
-            else:
-                time.sleep(5)  # pragma: no cover
+                if not loop:
+                    break
+                else:
+                    time.sleep(5)  # pragma: no cover
+
+                session.close()
