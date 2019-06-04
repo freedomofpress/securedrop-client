@@ -3,6 +3,7 @@ changes forcing an update of all test code.
 """
 from datetime import datetime
 from securedrop_client import db
+from securedrop_client.api_jobs.base import ApiJob
 
 SOURCE_COUNT = 0
 MESSAGE_COUNT = 0
@@ -93,3 +94,24 @@ def File(**attrs):
     defaults.update(attrs)
 
     return db.File(**defaults)
+
+
+def dummy_job_factory(mocker, return_value):
+    '''
+    Factory that creates dummy `ApiJob`s to DRY up test code.
+    '''
+    class DummyApiJob(ApiJob):
+        success_signal = mocker.MagicMock()
+        failure_signal = mocker.MagicMock()
+
+        def __init__(self, *nargs, **kwargs):
+            super().__init__(*nargs, **kwargs)
+            self.return_value = return_value
+
+        def call_api(self, api_client, session):
+            if isinstance(self.return_value, Exception):
+                raise self.return_value
+            else:
+                return self.return_value
+
+    return DummyApiJob
