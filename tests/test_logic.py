@@ -975,89 +975,48 @@ def test_Controller_delete_source(homedir, config, mocker, session_maker):
     )
 
 
-def test_Controller_send_reply_success(homedir, mocker, session_maker):
+def test_Controller_send_reply_success(homedir, config, mocker, session_maker, session):
     '''
-    Check that the "happy path" of encrypting a message and sending it to the sever behaves as
-    expected.
+    Check that a SendReplyJob is submitted to the queue when send_reply is called.
     '''
     mock_gui = mocker.MagicMock()
-
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
 
-    co.call_api = mocker.Mock()
-    co.api = mocker.Mock()
-    encrypted_reply = 's3kr1t m3ss1dg3'
-    mock_encrypt = mocker.patch.object(co.gpg, 'encrypt_to_source', return_value=encrypted_reply)
-    source_uuid = 'abc123'
+    mock_success_signal = mocker.MagicMock()
+    mock_failure_signal = mocker.MagicMock()
+    mock_job = mocker.MagicMock(success_signal=mock_success_signal,
+                                failure_signal=mock_failure_signal)
+    mock_job_cls = mocker.patch(
+        "securedrop_client.logic.SendReplyJob", return_value=mock_job)
+    mock_queue = mocker.patch.object(co, 'api_job_queue')
+
+    source = factory.Source()
+    session.add(source)
+    session.commit()
+
     msg_uuid = 'xyz456'
     msg = 'wat'
-    mock_sdk_source = mocker.Mock()
-    mock_source_init = mocker.patch('securedrop_client.logic.sdclientapi.Source',
-                                    return_value=mock_sdk_source)
 
-    co.send_reply(source_uuid, msg_uuid, msg)
+    co.send_reply(source.uuid, msg_uuid, msg)
 
-    # ensure message is encrypted
-    mock_encrypt.assert_called_once_with(source_uuid, msg)
-
-    # ensure api is called
-    co.call_api.assert_called_once_with(
-        co.api.reply_source,
-        co.on_reply_success,
-        co.on_reply_failure,
-        mock_sdk_source,
-        encrypted_reply,
+    mock_job_cls.assert_called_once_with(
+        source.uuid,
         msg_uuid,
-        current_object=(source_uuid, msg_uuid),
+        msg,
+        co.gpg,
     )
 
-    assert mock_source_init.called  # to prevent stale mocks
-
-
-def test_Controller_send_reply_gpg_error(homedir, mocker, session_maker):
-    '''
-    Check that if gpg fails when sending a message, we alert the UI and do *not* call the API.
-    '''
-    mock_gui = mocker.MagicMock()
-
-    co = Controller('http://localhost', mock_gui, session_maker, homedir)
-
-    co.call_api = mocker.Mock()
-    co.api = mocker.Mock()
-    mock_encrypt = mocker.patch.object(co.gpg, 'encrypt_to_source', side_effect=Exception)
-    source_uuid = 'abc123'
-    msg_uuid = 'xyz456'
-    msg = 'wat'
-    mock_sdk_source = mocker.Mock()
-    mock_source_init = mocker.patch('securedrop_client.logic.sdclientapi.Source',
-                                    return_value=mock_sdk_source)
-    mock_reply_failed = mocker.patch.object(co, 'reply_failed')
-
-    co.send_reply(source_uuid, msg_uuid, msg)
-
-    # ensure there is an attempt to encrypt the message
-    mock_encrypt.assert_called_once_with(source_uuid, msg)
-
-    # ensure we emit a failure on gpg errors
-    mock_reply_failed.emit.assert_called_once_with(msg_uuid)
-
-    # ensure api not is called after a gpg error
-    assert not co.call_api.called
-
-    assert mock_source_init.called  # to prevent stale mocks
+    mock_queue.enqueue.assert_called_once_with(mock_job)
+    mock_success_signal.connect.assert_called_once_with(
+        co.on_reply_success, type=Qt.QueuedConnection)
+    mock_failure_signal.connect.assert_called_once_with(
+        co.on_reply_failure, type=Qt.QueuedConnection)
 
 
 def test_Controller_on_reply_success(homedir, mocker, session_maker, session):
     '''
-    Check that when the result is a success, the client emits the correct signal.
+    Check that when the method is called, the client emits the correct signal.
     '''
-    user = factory.User()
-    source = factory.Source()
-    msg = factory.Message(source=source)
-    session.add(user)
-    session.add(source)
-    session.add(msg)
-    session.commit()
 
     mock_gui = mocker.MagicMock()
 
@@ -1066,38 +1025,30 @@ def test_Controller_on_reply_success(homedir, mocker, session_maker, session):
 
     reply = sdclientapi.Reply(uuid='wat', filename='1-lol')
 
-    co.api.token_journalist_uuid = user.uuid
     mock_reply_succeeded = mocker.patch.object(co, 'reply_succeeded')
     mock_reply_failed = mocker.patch.object(co, 'reply_failed')
 
-    current_object = (source.uuid, msg.uuid)
-    co.on_reply_success(reply, current_object)
-    mock_reply_succeeded.emit.assert_called_once_with(msg.uuid)
+    co.on_reply_success(reply.uuid)
+    mock_reply_succeeded.emit.assert_called_once_with(reply.uuid)
     assert not mock_reply_failed.emit.called
-
-    # check that this was writtent to the DB
-    replies = session.query(db.Reply).all()
-    assert len(replies) == 1
 
 
 def test_Controller_on_reply_failure(homedir, mocker, session_maker):
     '''
-    Check that when the result is a failure, the client emits the correct signal.
+    Check that when the method is called, the client emits the correct signal.
     '''
     mock_gui = mocker.MagicMock()
 
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     co.api = mocker.Mock()
-    journalist_uuid = 'abc123'
-    co.api.token_journalist_uuid = journalist_uuid
+
+    reply = sdclientapi.Reply(uuid='wat', filename='1-lol')
+
     mock_reply_succeeded = mocker.patch.object(co, 'reply_succeeded')
     mock_reply_failed = mocker.patch.object(co, 'reply_failed')
 
-    source_uuid = 'foo111'
-    msg_uuid = 'bar222'
-    current_object = (source_uuid, msg_uuid)
-    co.on_reply_failure(Exception, current_object)
-    mock_reply_failed.emit.assert_called_once_with(msg_uuid)
+    co.on_reply_failure(reply.uuid)
+    mock_reply_failed.emit.assert_called_once_with(reply.uuid)
     assert not mock_reply_succeeded.emit.called
 
 
