@@ -56,7 +56,7 @@ class ApiJob(QObject):
         Method for making the actual API call and handling the result.
 
         This MUST resturn a value if the API call and other tasks were successful and MUST raise
-        an exception if and only iff the tasks failed. Presence of a raise exception indicates a
+        an exception if and only if the tasks failed. Presence of a raise exception indicates a
         failure.
         '''
         raise NotImplementedError

@@ -21,7 +21,6 @@ import inspect
 import logging
 import os
 import sdclientapi
-import traceback
 import uuid
 
 from gettext import gettext as _
@@ -32,9 +31,11 @@ from typing import Dict, Tuple, Union, Any, Type  # noqa: F401
 
 from securedrop_client import storage
 from securedrop_client import db
+from securedrop_client.api_jobs.downloads import DownloadSubmissionJob
+from securedrop_client.api_jobs.uploads import SendReplyJob
 from securedrop_client.crypto import GpgHelper, CryptoError
 from securedrop_client.message_sync import MessageSync, ReplySync
-from securedrop_client.queue import ApiJobQueue, DownloadSubmissionJob
+from securedrop_client.queue import ApiJobQueue
 from securedrop_client.utils import check_dir_permissions
 
 logger = logging.getLogger(__name__)
@@ -578,48 +579,25 @@ class Controller(QObject):
             source
         )
 
-    def send_reply(self, source_uuid: str, msg_uuid: str, message: str) -> None:
-        sdk_source = sdclientapi.Source(uuid=source_uuid)
-
-        try:
-            encrypted_reply = self.gpg.encrypt_to_source(source_uuid, message)
-        except Exception:
-            tb = traceback.format_exc()
-            logger.error('Failed to encrypt to source {}:\n'.format(source_uuid, tb))
-            self.reply_failed.emit(msg_uuid)
-        else:
-            # Guard against calling the API if we're not logged in
-            if self.api:
-                self.call_api(
-                    self.api.reply_source,
-                    self.on_reply_success,
-                    self.on_reply_failure,
-                    sdk_source,
-                    encrypted_reply,
-                    msg_uuid,
-                    current_object=(source_uuid, msg_uuid),
-                )
-            else:  # pragma: no cover
-                logger.error('not logged in - not implemented!')
-                self.reply_failed.emit(msg_uuid)
-
-    def on_reply_success(self, result, current_object: Tuple[str, str]) -> None:
-        source_uuid, reply_uuid = current_object
-        source = self.session.query(db.Source).filter_by(uuid=source_uuid).one()
-
-        reply_db_object = db.Reply(
-            uuid=result.uuid,
-            source_id=source.id,
-            journalist_id=self.api.token_journalist_uuid,
-            filename=result.filename,
+    def send_reply(self, source_uuid: str, reply_uuid: str, message: str) -> None:
+        """
+        Send a reply to a source.
+        """
+        job = SendReplyJob(
+            source_uuid,
+            reply_uuid,
+            message,
+            self.gpg,
         )
-        self.session.add(reply_db_object)
-        self.session.commit()
+        job.success_signal.connect(self.on_reply_success, type=Qt.QueuedConnection)
+        job.failure_signal.connect(self.on_reply_failure, type=Qt.QueuedConnection)
 
+        self.api_job_queue.enqueue(job)
+
+    def on_reply_success(self, reply_uuid: str) -> None:
         self.reply_succeeded.emit(reply_uuid)
 
-    def on_reply_failure(self, result, current_object: Tuple[str, str]) -> None:
-        source_uuid, reply_uuid = current_object
+    def on_reply_failure(self, reply_uuid: str) -> None:
         self.reply_failed.emit(reply_uuid)
 
     def get_file(self, file_uuid: str) -> db.File:

@@ -18,7 +18,8 @@ mypy: ## Run static type checker
 		securedrop_client/queue.py \
     	securedrop_client/api_jobs/__init__.py \
     	securedrop_client/api_jobs/base.py \
-    	securedrop_client/api_jobs/downloads.py
+    	securedrop_client/api_jobs/downloads.py \
+		securedrop_client/api_jobs/uploads.py
 
 .PHONY: clean
 clean:  ## Clean the workspace of generated resources
