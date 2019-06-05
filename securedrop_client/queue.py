@@ -9,6 +9,7 @@ from typing import Optional  # noqa: F401
 
 from securedrop_client.api_jobs.base import ApiJob
 from securedrop_client.api_jobs.downloads import DownloadSubmissionJob
+from securedrop_client.api_jobs.sync import SyncJob
 
 
 logger = logging.getLogger(__name__)
