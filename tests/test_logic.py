@@ -721,11 +721,14 @@ def test_Controller_logout(homedir, config, mocker, session_maker):
     mock_gui = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     co.api = mocker.MagicMock()
+    co.api_job_queue = mocker.MagicMock()
+    co.api_job_queue.logout = mocker.MagicMock()
     co.reply_sync = mocker.MagicMock()
     co.reply_sync.api = mocker.MagicMock()
     co.logout()
     assert co.api is None
     assert co.reply_sync.api is None
+    co.api_job_queue.logout.assert_called_once_with()
     co.gui.logout.assert_called_once_with()
 
 
@@ -802,6 +805,7 @@ def test_Controller_on_file_download_Submission(homedir, config, session, mocker
     """
     mock_gui = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
+    co.api = 'this has a value'
 
     mock_success_signal = mocker.MagicMock()
     mock_failure_signal = mocker.MagicMock()
@@ -830,6 +834,35 @@ def test_Controller_on_file_download_Submission(homedir, config, session, mocker
         co.on_file_download_success, type=Qt.QueuedConnection)
     mock_failure_signal.connect.assert_called_once_with(
         co.on_file_download_failure, type=Qt.QueuedConnection)
+
+
+def test_Controller_on_file_download_Submission_no_auth(homedir, config, session,
+                                                        mocker, session_maker):
+    """If the controller is not authenticated, do not enqueue a download job"""
+    mock_gui = mocker.MagicMock()
+    co = Controller('http://localhost', mock_gui, session_maker, homedir)
+    co.api = None
+
+    mock_success_signal = mocker.MagicMock()
+    mock_failure_signal = mocker.MagicMock()
+    mock_job = mocker.MagicMock(success_signal=mock_success_signal,
+                                failure_signal=mock_failure_signal)
+    mock_job_cls = mocker.patch(
+        "securedrop_client.logic.FileDownloadJob", return_value=mock_job)
+    mock_queue = mocker.patch.object(co, 'api_job_queue')
+
+    source = factory.Source()
+    file_ = factory.File(is_downloaded=None, is_decrypted=None, source=source)
+    session.add(source)
+    session.add(file_)
+    session.commit()
+
+    co.on_submission_download(db.File, file_.uuid)
+
+    assert not mock_job_cls.called
+    assert not mock_queue.enqueue.called
+    assert not mock_success_signal.connect.called
+    assert not mock_failure_signal.connect.called
 
 
 def test_Controller_on_file_downloaded_success(homedir, config, mocker, session_maker):
