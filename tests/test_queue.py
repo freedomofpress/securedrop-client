@@ -5,7 +5,7 @@ from queue import Queue
 from sdclientapi import RequestTimeoutError
 
 from securedrop_client import db
-from securedrop_client.api_jobs.downloads import DownloadSubmissionJob
+from securedrop_client.api_jobs.downloads import FileDownloadJob
 from securedrop_client.queue import RunnableQueue, ApiJobQueue
 from tests import factory
 
@@ -101,7 +101,7 @@ def test_ApiJobQueue_enqueue(mocker):
     mock_download_queue = mocker.patch.object(job_queue, 'download_queue')
     mock_main_queue = mocker.patch.object(job_queue, 'main_queue')
 
-    dl_job = DownloadSubmissionJob(db.File, 'mock', 'mock', 'mock')
+    dl_job = FileDownloadJob(db.File, 'mock', 'mock', 'mock')
     job_queue.enqueue(dl_job)
 
     mock_download_queue.queue.put_nowait.assert_called_once_with(dl_job)

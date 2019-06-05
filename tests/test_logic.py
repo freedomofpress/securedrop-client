@@ -853,7 +853,7 @@ def test_Controller_on_file_download_Submission(homedir, config, session, mocker
     mock_job = mocker.MagicMock(success_signal=mock_success_signal,
                                 failure_signal=mock_failure_signal)
     mock_job_cls = mocker.patch(
-        "securedrop_client.logic.DownloadSubmissionJob", return_value=mock_job)
+        "securedrop_client.logic.FileDownloadJob", return_value=mock_job)
     mock_queue = mocker.patch.object(co, 'api_job_queue')
 
     source = factory.Source()

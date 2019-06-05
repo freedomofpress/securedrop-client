@@ -4,12 +4,12 @@ import sdclientapi
 from typing import Tuple
 
 from securedrop_client import db
-from securedrop_client.api_jobs.downloads import DownloadSubmissionJob
+from securedrop_client.api_jobs.downloads import FileDownloadJob
 from securedrop_client.crypto import GpgHelper, CryptoError
 from tests import factory
 
 
-def test_DownloadSubmissionJob_happy_path_no_etag(mocker, homedir, session, session_maker):
+def test_FileDownloadJob_happy_path_no_etag(mocker, homedir, session, session_maker):
     source = factory.Source()
     file_ = factory.File(source=source)
     session.add(source)
@@ -31,7 +31,7 @@ def test_DownloadSubmissionJob_happy_path_no_etag(mocker, homedir, session, sess
     api_client = mocker.MagicMock()
     api_client.download_submission = fake_download
 
-    job = DownloadSubmissionJob(
+    job = FileDownloadJob(
         db.File,
         file_.uuid,
         homedir,
@@ -49,7 +49,7 @@ def test_DownloadSubmissionJob_happy_path_no_etag(mocker, homedir, session, sess
     assert mock_decrypt.called
 
 
-def test_DownloadSubmissionJob_happy_path_sha256_etag(mocker, homedir, session, session_maker):
+def test_FileDownloadJob_happy_path_sha256_etag(mocker, homedir, session, session_maker):
     source = factory.Source()
     file_ = factory.File(source=source)
     session.add(source)
@@ -74,7 +74,7 @@ def test_DownloadSubmissionJob_happy_path_sha256_etag(mocker, homedir, session, 
     api_client = mocker.MagicMock()
     api_client.download_submission = fake_download
 
-    job = DownloadSubmissionJob(
+    job = FileDownloadJob(
         db.File,
         file_.uuid,
         homedir,
@@ -87,7 +87,7 @@ def test_DownloadSubmissionJob_happy_path_sha256_etag(mocker, homedir, session, 
     assert mock_decrypt.called
 
 
-def test_DownloadSubmissionJob_bad_sha256_etag(mocker, homedir, session, session_maker):
+def test_FileDownloadJob_bad_sha256_etag(mocker, homedir, session, session_maker):
     source = factory.Source()
     file_ = factory.File(source=source)
     session.add(source)
@@ -110,7 +110,7 @@ def test_DownloadSubmissionJob_bad_sha256_etag(mocker, homedir, session, session
     api_client = mocker.MagicMock()
     api_client.download_submission = fake_download
 
-    job = DownloadSubmissionJob(
+    job = FileDownloadJob(
         db.File,
         file_.uuid,
         homedir,
@@ -122,7 +122,7 @@ def test_DownloadSubmissionJob_bad_sha256_etag(mocker, homedir, session, session
         job.call_api(api_client, session)
 
 
-def test_DownloadSubmissionJob_happy_path_unknown_etag(mocker, homedir, session, session_maker):
+def test_FileDownloadJob_happy_path_unknown_etag(mocker, homedir, session, session_maker):
     source = factory.Source()
     file_ = factory.File(source=source)
     session.add(source)
@@ -144,7 +144,7 @@ def test_DownloadSubmissionJob_happy_path_unknown_etag(mocker, homedir, session,
     api_client = mocker.MagicMock()
     api_client.download_submission = fake_download
 
-    job = DownloadSubmissionJob(
+    job = FileDownloadJob(
         db.File,
         file_.uuid,
         homedir,
@@ -163,7 +163,7 @@ def test_DownloadSubmissionJob_happy_path_unknown_etag(mocker, homedir, session,
     assert mock_decrypt.called
 
 
-def test_DownloadSubmissionJob_decryption_error(mocker, homedir, session, session_maker):
+def test_FileDownloadJob_decryption_error(mocker, homedir, session, session_maker):
     source = factory.Source()
     file_ = factory.File(source=source)
     session.add(source)
@@ -189,7 +189,7 @@ def test_DownloadSubmissionJob_decryption_error(mocker, homedir, session, sessio
     api_client = mocker.MagicMock()
     api_client.download_submission = fake_download
 
-    job = DownloadSubmissionJob(
+    job = FileDownloadJob(
         db.File,
         file_.uuid,
         homedir,

@@ -34,8 +34,8 @@ from securedrop_client import db
 from securedrop_client.api_jobs.downloads import DownloadSubmissionJob
 from securedrop_client.api_jobs.uploads import SendReplyJob
 from securedrop_client.crypto import GpgHelper, CryptoError
-# from securedrop_client.message_sync import MessageSync, ReplySync
-from securedrop_client.queue import ApiJobQueue, DownloadSubmissionJob, SyncJob
+from securedrop_client.message_sync import MessageSync, ReplySync
+from securedrop_client.queue import ApiJobQueue, FileDownloadJob
 from securedrop_client.utils import check_dir_permissions
 
 logger = logging.getLogger(__name__)
@@ -118,6 +118,12 @@ class Controller(QObject):
     UUID as a string.
     """
     file_ready = pyqtSignal(str)
+
+    """
+    This signal indicates that a file has been successfully downloaded by emitting the file's
+    UUID as a string.
+    """
+    message_ready = pyqtSignal([str, str])
 
     def __init__(self, hostname: str, gui, session_maker: sessionmaker,
                  home: str, proxy: bool = True) -> None:
@@ -399,8 +405,25 @@ class Controller(QObject):
         with open(self.sync_flag, 'w') as f:
             f.write(arrow.now().format())
 
-        self.sync_events.emit('synced')
+        # import keys into keyring
+        for source in remote_sources:
+            if source.key and source.key.get('type', None) == 'PGP':
+                pub_key = source.key.get('public', None)
+                fingerprint = source.key.get('fingerprint', None)
+                if not pub_key or not fingerprint:
+                    continue
+                try:
+                    self.gpg.import_key(source.uuid, pub_key, fingerprint)
+                except CryptoError:
+                    logger.warning('Failed to import key for source {}'.format(source.uuid))
+
+        # Update sources
         self.update_sources()
+
+        # Download new messages
+        self.download_new_messages()
+
+        self.sync_events.emit('synced')
 
     def on_sync_failure(self, result: Exception) -> None:
         """
@@ -481,6 +504,29 @@ class Controller(QObject):
         """
         self.gui.update_activity_status(message, duration)
 
+    def download_new_messages(self) -> None:
+        messages = storage.find_new_messages(self.session)
+        for message in messages:
+            job = MessageDownloadJob(Type[db.Message], message.uuid, self.data_dir, self.gpg)
+            job.success_signal.connect(self.on_message_download_success, type=Qt.QueuedConnection)
+            job.failure_signal.connect(self.on_message_download_failure, type=Qt.QueuedConnection)
+
+            self.api_job_queue.enqueue(job)
+            self.set_status(_('Downloading message'))
+
+    def on_message_download_success(self, uuid: str) -> None:
+        """
+        Called when a message has downloaded.
+        """
+        message = storage.get_message(uuid)
+        self.message_ready.emit(message.uuid, message.content)
+
+    def on_message_download_failure(self, exception: Exception) -> None:
+        """
+        Called when a message fails to download.
+        """
+        self.set_status("The message download failed. Please try again.")
+
     def on_file_open(self, file_uuid: str) -> None:
         """
         Open the already downloaded file associated with the message (which is a `File`).
@@ -513,7 +559,7 @@ class Controller(QObject):
         """
         Download the file associated with the Submission (which may be a File or Message).
         """
-        job = DownloadSubmissionJob(
+        job = FileDownloadJob(
             submission_type,
             submission_uuid,
             self.data_dir,

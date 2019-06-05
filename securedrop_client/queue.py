@@ -8,8 +8,7 @@ from sqlalchemy.orm import scoped_session
 from typing import Optional  # noqa: F401
 
 from securedrop_client.api_jobs.base import ApiJob
-from securedrop_client.api_jobs.downloads import DownloadSubmissionJob
-from securedrop_client.api_jobs.sync import SyncJob
+from securedrop_client.api_jobs.downloads import FileDownloadJob
 
 
 logger = logging.getLogger(__name__)
@@ -77,7 +76,7 @@ class ApiJobQueue(QObject):
         self.download_thread.start()
 
     def enqueue(self, job: ApiJob) -> None:
-        if isinstance(job, DownloadSubmissionJob):
+        if isinstance(job, FileDownloadJob):
             self.download_queue.queue.put_nowait(job)
         else:
             self.main_queue.queue.put_nowait(job)

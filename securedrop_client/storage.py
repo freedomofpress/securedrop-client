@@ -429,3 +429,7 @@ def source_exists(session: Session, source_uuid: str) -> bool:
 
 def get_file(session: Session, file_uuid: str) -> File:
     return session.query(File).filter_by(uuid=file_uuid).one()
+
+
+def get_message(session: Session, uuid: str) -> Message:
+    return session.query(Message).filter_by(uuid=uuid).one()
