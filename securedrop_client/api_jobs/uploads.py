@@ -48,10 +48,12 @@ class SendReplyJob(ApiJob):
             source_id=source.id,
             journalist_id=api_client.token_journalist_uuid,
             filename=sdk_reply.filename,
+            content=self.message,
+            is_downloaded=True,
+            is_decrypted=True
         )
         session.add(reply_db_object)
         session.commit()
-
         return reply_db_object.uuid
 
     def _make_call(self, encrypted_reply: str, api_client: API) -> sdclientapi.Reply:

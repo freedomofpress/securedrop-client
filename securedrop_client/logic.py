@@ -595,9 +595,11 @@ class Controller(QObject):
         self.api_job_queue.enqueue(job)
 
     def on_reply_success(self, reply_uuid: str) -> None:
+        logger.debug('Reply send success: {}'.format(reply_uuid))
         self.reply_succeeded.emit(reply_uuid)
 
     def on_reply_failure(self, reply_uuid: str) -> None:
+        logger.debug('Reply send failure: {}'.format(reply_uuid))
         self.reply_failed.emit(reply_uuid)
 
     def get_file(self, file_uuid: str) -> db.File:
