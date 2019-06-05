@@ -41,6 +41,9 @@ class ApiJob(QObject):
             result = self.call_api(api_client, session)
         except AuthError as e:
             raise ApiInaccessibleError() from e
+        except ApiInaccessibleError as e:
+            # Do not let ApiInaccessibleError emit the regular failure signal, raise now
+            raise ApiInaccessibleError() from e
         except RequestTimeoutError:
             logger.debug('Job {} timed out'.format(self))
             raise

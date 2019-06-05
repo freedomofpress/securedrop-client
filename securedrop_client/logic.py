@@ -301,13 +301,14 @@ class Controller(QObject):
         """
         Handles a successful authentication call against the API.
         """
+        logger.info('{} successfully logged in'.format(self.api.username))
         self.gui.hide_login()
         self.sync_api()
         self.gui.show_main_window(self.api.username)
 
         self.start_reply_thread()
 
-        self.api_job_queue.start_queues(self.api)
+        self.api_job_queue.login(self.api)
 
         # Clear the sidebar error status bar if a message was shown
         # to the user indicating they should log in.
@@ -476,6 +477,7 @@ class Controller(QObject):
         """
         self.api = None
         self.reply_sync.api = None
+        self.api_job_queue.logout()
         self.gui.logout()
         self.is_authenticated = False
 
@@ -543,17 +545,20 @@ class Controller(QObject):
         """
         Download the file associated with the Submission (which may be a File or Message).
         """
-        job = FileDownloadJob(
-            submission_type,
-            submission_uuid,
-            self.data_dir,
-            self.gpg,
-        )
-        job.success_signal.connect(self.on_file_download_success, type=Qt.QueuedConnection)
-        job.failure_signal.connect(self.on_file_download_failure, type=Qt.QueuedConnection)
+        if self.api:
+            job = FileDownloadJob(
+                submission_type,
+                submission_uuid,
+                self.data_dir,
+                self.gpg,
+            )
+            job.success_signal.connect(self.on_file_download_success, type=Qt.QueuedConnection)
+            job.failure_signal.connect(self.on_file_download_failure, type=Qt.QueuedConnection)
 
-        self.api_job_queue.enqueue(job)
-        self.set_status(_('Downloading file'))
+            self.api_job_queue.enqueue(job)
+            self.set_status(_('Downloading file'))
+        else:
+            self.on_action_requiring_login()
 
     def on_file_download_success(self, result: Any) -> None:
         """
