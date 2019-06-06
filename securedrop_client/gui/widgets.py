@@ -1435,7 +1435,7 @@ class ConversationView(QWidget):
         self.conversation_layout.addWidget(MessageWidget(
             message.uuid,
             content,
-            self.controller.message_sync.message_ready))
+            self.controller.message_ready))
 
     def add_reply(self, reply: Reply) -> None:
         """

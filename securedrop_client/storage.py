@@ -93,14 +93,17 @@ def get_remote_data(api: API) -> Tuple[List[SDKSource], List[SDKSubmission], Lis
     return (remote_sources, remote_submissions, remote_replies)
 
 
-def update_local_storage(session: Session, remote_sources: List[SDKSource],
+def update_local_storage(session: Session,
+                         remote_sources: List[SDKSource],
                          remote_submissions: List[SDKSubmission],
-                         remote_replies: List[SDKReply], data_dir: str) -> None:
+                         remote_replies: List[SDKReply],
+                         data_dir: str) -> None:
     """
     Given a database session and collections of remote sources, submissions and
     replies from the SecureDrop API, ensures the local database is updated
     with this data.
     """
+
     local_sources = get_local_sources(session)
     local_files = get_local_files(session)
     local_messages = get_local_messages(session)
@@ -424,5 +427,9 @@ def source_exists(session: Session, source_uuid: str) -> bool:
         return False
 
 
-def get_file(session: Session, file_uuid: str) -> File:
-    return session.query(File).filter_by(uuid=file_uuid).one()
+def get_file(session: Session, uuid: str) -> File:
+    return session.query(File).filter_by(uuid=uuid).one()
+
+
+def get_message(session: Session, uuid: str) -> Message:
+    return session.query(Message).filter_by(uuid=uuid).one()

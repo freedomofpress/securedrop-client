@@ -4,21 +4,70 @@ import logging
 import os
 import sdclientapi
 import shutil
+from tempfile import NamedTemporaryFile
+from typing import Any, Union, Type, Tuple
 
 from sdclientapi import API
 from sqlalchemy.orm.session import Session
-from typing import Any, Union, Type, Tuple
 
-from securedrop_client import storage
 from securedrop_client.api_jobs.base import ApiJob
 from securedrop_client.crypto import GpgHelper, CryptoError
-from securedrop_client.db import File, Message
-
+from securedrop_client.db import File, Message, Reply
+from securedrop_client.storage import mark_message_as_downloaded, mark_file_as_downloaded, \
+    set_object_decryption_status_with_content
 
 logger = logging.getLogger(__name__)
 
 
-class DownloadSubmissionJob(ApiJob):
+class MessageDownloadJob(ApiJob):
+
+    def __init__(self, uuid: str, download_dir: str, gpg: GpgHelper) -> None:
+        super().__init__()
+        self.uuid = uuid
+        self.download_dir = download_dir
+        self.gpg = gpg
+        self.type = Message
+
+    def call_api(self, api_client: API, session: Session) -> Any:
+        # Download
+        db_object = session.query(self.type).filter_by(uuid=self.uuid).one()
+        if not db_object.is_downloaded:
+            _, filepath = self._make_call(db_object, api_client)
+            mark_message_as_downloaded(db_object.uuid, session)
+        else:
+            filepath = os.path.join(self.download_dir, db_object.filename)
+
+        # Decrypt
+        self._decrypt_file(session, db_object, filepath)
+
+        return db_object.uuid
+
+    def _make_call(self, db_object: Message, api_client: API) -> Tuple[str, str]:
+        sdk_obj = sdclientapi.Submission(uuid=db_object.uuid)
+        sdk_obj.filename = db_object.filename
+        sdk_obj.source_uuid = db_object.source.uuid
+
+        return api_client.download_submission(sdk_obj)
+
+    def _decrypt_file(
+        self,
+        session: Session,
+        encrypted_file: Union[File, Message, Reply],
+        filepath: str,
+    ) -> None:
+        with NamedTemporaryFile('w+') as plaintext_file:
+            try:
+                self.gpg.decrypt_submission_or_reply(filepath, plaintext_file.name, False)
+                plaintext_file.seek(0)
+                content = plaintext_file.read()
+                set_object_decryption_status_with_content(encrypted_file, session, True, content)
+                logger.info("File decrypted: {}".format(encrypted_file.filename))
+            except CryptoError:
+                set_object_decryption_status_with_content(encrypted_file, session, False)
+                logger.info("Failed to decrypt file: {}".format(encrypted_file.filename))
+
+
+class FileDownloadJob(ApiJob):
 
     CHUNK_SIZE = 4096
 
@@ -99,13 +148,13 @@ class DownloadSubmissionJob(ApiJob):
         # server (e.g. spotless-tater-msg.gpg).
         filepath_in_datadir = os.path.join(self.data_dir, server_filename)
         shutil.move(file_path, filepath_in_datadir)
-        storage.mark_file_as_downloaded(file_uuid, session)
+        mark_file_as_downloaded(file_uuid, session)
 
         try:
             self.gpg.decrypt_submission_or_reply(filepath_in_datadir, server_filename, is_doc=True)
         except CryptoError as e:
             logger.debug('Failed to decrypt file {}: {}'.format(server_filename, e))
-            storage.set_object_decryption_status_with_content(db_object, session, False)
+            set_object_decryption_status_with_content(db_object, session, False)
             raise e
 
-        storage.set_object_decryption_status_with_content(db_object, session, True)
+        set_object_decryption_status_with_content(db_object, session, True)

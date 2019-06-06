@@ -1,5 +1,5 @@
 """
-Contains the MessageSync class, which runs in the background and loads new
+Contains the ReplySync class, which runs in the background and loads new
  messages from the SecureDrop server.
 
 Copyright (C) 2018  The Freedom of the Press Foundation.
@@ -79,62 +79,6 @@ class APISyncObject(QObject):
         update_fn(msg.uuid, session)
         logger.info("Stored message or reply at {}".format(msg.filename))
         self.decrypt_the_thing(session, filepath, msg)
-
-
-class MessageSync(APISyncObject):
-    """
-    Runs in the background, finding messages to download and downloading them.
-    """
-
-    """
-    Signal emitted notifying that a message is ready to be displayed. The signal is a tuple of
-    (str, str) containing the message's UUID and the content of the message.
-    """
-    message_ready = pyqtSignal([str, str])
-
-    def run(self, loop: bool = True) -> None:
-        session = self.session_maker()
-        while True:
-            submissions = storage.find_new_messages(session)
-
-            for db_submission in submissions:
-                try:
-                    sdk_submission = sdkobjects.Submission(
-                        uuid=db_submission.uuid
-                    )
-                    sdk_submission.source_uuid = db_submission.source.uuid
-                    # Need to set filename on non-Qubes platforms
-                    sdk_submission.filename = db_submission.filename
-
-                    if not db_submission.is_downloaded and self.api:
-                        # Download and decrypt
-                        self.fetch_the_thing(session,
-                                             sdk_submission,
-                                             db_submission,
-                                             self.api.download_submission,
-                                             storage.mark_message_as_downloaded)
-                    elif db_submission.is_downloaded:
-                        # Just decrypt file that is already on disk
-                        self.decrypt_the_thing(session,
-                                               db_submission.filename,
-                                               db_submission)
-
-                    if db_submission.content is not None:
-                        content = db_submission.content
-                    else:
-                        content = '<Message not yet available>'
-
-                    self.message_ready.emit(db_submission.uuid, content)
-                except Exception:
-                    tb = traceback.format_exc()
-                    logger.critical("Exception while processing message!\n{}".format(tb))
-
-            logger.debug('Messages synced')
-
-            if not loop:
-                break
-            else:
-                time.sleep(5)  # pragma: no cover
 
 
 class ReplySync(APISyncObject):

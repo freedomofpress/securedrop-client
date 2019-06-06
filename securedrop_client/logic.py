@@ -22,19 +22,19 @@ import logging
 import os
 import sdclientapi
 import uuid
+from typing import Dict, Tuple, Union, Any, Type  # noqa: F401
 
 from gettext import gettext as _
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess, Qt
 from sdclientapi import RequestTimeoutError
 from sqlalchemy.orm.session import sessionmaker
-from typing import Dict, Tuple, Union, Any, Type  # noqa: F401
 
 from securedrop_client import storage
 from securedrop_client import db
-from securedrop_client.api_jobs.downloads import DownloadSubmissionJob
+from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob
 from securedrop_client.api_jobs.uploads import SendReplyJob
 from securedrop_client.crypto import GpgHelper, CryptoError
-from securedrop_client.message_sync import MessageSync, ReplySync
+from securedrop_client.message_sync import ReplySync
 from securedrop_client.queue import ApiJobQueue
 from securedrop_client.utils import check_dir_permissions
 
@@ -119,6 +119,12 @@ class Controller(QObject):
     """
     file_ready = pyqtSignal(str)
 
+    """
+    This signal indicates that a file has been successfully downloaded by emitting the file's
+    UUID as a string.
+    """
+    message_ready = pyqtSignal([str, str])
+
     def __init__(self, hostname: str, gui, session_maker: sessionmaker,
                  home: str, proxy: bool = True) -> None:
         """
@@ -158,10 +164,6 @@ class Controller(QObject):
         self.api_threads = {}  # type: Dict[str, Dict]
 
         self.gpg = GpgHelper(home, self.session_maker, proxy)
-
-        # thread responsible for fetching messages
-        self.message_thread = None
-        self.message_sync = MessageSync(self.api, self.gpg, self.session_maker)
 
         # thread responsible for fetching replies
         self.reply_thread = None
@@ -271,19 +273,6 @@ class Controller(QObject):
         else:
             user_callback(result_data)
 
-    def start_message_thread(self):
-        """
-        Starts the message-fetching thread in the background.
-        """
-        if not self.message_thread:
-            self.message_sync.api = self.api
-            self.message_thread = QThread()
-            self.message_sync.moveToThread(self.message_thread)
-            self.message_thread.started.connect(self.message_sync.run)
-            self.message_thread.start()
-        else:  # Already running from last login
-            self.message_sync.api = self.api
-
     def start_reply_thread(self):
         """
         Starts the reply-fetching thread in the background.
@@ -316,7 +305,6 @@ class Controller(QObject):
         self.sync_api()
         self.gui.show_main_window(self.api.username)
 
-        self.start_message_thread()
         self.start_reply_thread()
 
         self.api_job_queue.start_queues(self.api)
@@ -340,7 +328,6 @@ class Controller(QObject):
         """
         self.gui.hide_login()
         self.gui.show_main_window()
-        self.start_message_thread()
         self.start_reply_thread()
         self.is_authenticated = False
         self.update_sources()
@@ -389,19 +376,19 @@ class Controller(QObject):
         """
         Called when syncronisation of data via the API succeeds
         """
+        # Update db with new metadata
         remote_sources, remote_submissions, remote_replies = result
-
         storage.update_local_storage(self.session,
                                      remote_sources,
                                      remote_submissions,
                                      remote_replies,
                                      self.data_dir)
 
-        # Set last sync flag.
+        # Set last sync flag
         with open(self.sync_flag, 'w') as f:
             f.write(arrow.now().format())
 
-        # import keys into keyring
+        # Import keys into keyring
         for source in remote_sources:
             if source.key and source.key.get('type', None) == 'PGP':
                 pub_key = source.key.get('public', None)
@@ -413,15 +400,19 @@ class Controller(QObject):
                 except CryptoError:
                     logger.warning('Failed to import key for source {}'.format(source.uuid))
 
-        self.sync_events.emit('synced')
+        # Update sources
         self.update_sources()
+
+        # Download new messages
+        self.download_new_messages()
+
+        self.sync_events.emit('synced')
 
     def on_sync_failure(self, result: Exception) -> None:
         """
         Called when syncronisation of data via the API fails.
         """
-        pass
-        self.update_sources()
+        logger.debug('Sync failed: "{}".'.format(result))
 
     def update_sync(self):
         """
@@ -484,7 +475,6 @@ class Controller(QObject):
         state.
         """
         self.api = None
-        self.message_sync.api = None
         self.reply_sync.api = None
         self.gui.logout()
         self.is_authenticated = False
@@ -495,6 +485,31 @@ class Controller(QObject):
         duration.
         """
         self.gui.update_activity_status(message, duration)
+
+    def download_new_messages(self) -> None:
+        messages = storage.find_new_messages(self.session)
+
+        if len(messages) > 0:
+            self.set_status(_('Downloading new messages'))
+
+        for message in messages:
+            job = MessageDownloadJob(message.uuid, self.data_dir, self.gpg)
+            job.success_signal.connect(self.on_message_download_success, type=Qt.QueuedConnection)
+            job.failure_signal.connect(self.on_message_download_failure, type=Qt.QueuedConnection)
+            self.api_job_queue.enqueue(job)
+
+    def on_message_download_success(self, uuid: str) -> None:
+        """
+        Called when a message has downloaded.
+        """
+        message = storage.get_message(self.session, uuid)
+        self.message_ready.emit(message.uuid, message.content)
+
+    def on_message_download_failure(self, exception: Exception) -> None:
+        """
+        Called when a message fails to download.
+        """
+        self.set_status("The message download failed.")
 
     def on_file_open(self, file_uuid: str) -> None:
         """
@@ -528,7 +543,7 @@ class Controller(QObject):
         """
         Download the file associated with the Submission (which may be a File or Message).
         """
-        job = DownloadSubmissionJob(
+        job = FileDownloadJob(
             submission_type,
             submission_uuid,
             self.data_dir,
