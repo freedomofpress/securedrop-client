@@ -488,13 +488,16 @@ class Controller(QObject):
 
     def download_new_messages(self) -> None:
         messages = storage.find_new_messages(self.session)
+
+        if len(messages) > 0:
+            self.set_status(_('Downloading new messages'))
+
         for message in messages:
             job = MessageDownloadJob(message.uuid, self.data_dir, self.gpg)
             job.success_signal.connect(self.on_message_download_success, type=Qt.QueuedConnection)
             job.failure_signal.connect(self.on_message_download_failure, type=Qt.QueuedConnection)
 
             self.api_job_queue.enqueue(job)
-        self.set_status(_('Downloading new messages'))
 
     def on_message_download_success(self, uuid: str) -> None:
         """
