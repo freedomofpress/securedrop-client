@@ -98,24 +98,24 @@ def test_ApiJobQueue_enqueue(mocker):
     mock_session_maker = mocker.MagicMock()
 
     job_queue = ApiJobQueue(mock_client, mock_session_maker)
-    mock_download_queue = mocker.patch.object(job_queue, 'download_queue')
+    mock_download_file_queue = mocker.patch.object(job_queue, 'download_file_queue')
     mock_main_queue = mocker.patch.object(job_queue, 'main_queue')
 
     dl_job = FileDownloadJob(db.File, 'mock', 'mock', 'mock')
     job_queue.enqueue(dl_job)
 
-    mock_download_queue.queue.put_nowait.assert_called_once_with(dl_job)
+    mock_download_file_queue.queue.put_nowait.assert_called_once_with(dl_job)
     assert not mock_main_queue.queue.put_nowait.called
 
     # reset for next test
-    mock_download_queue.reset_mock()
+    mock_download_file_queue.reset_mock()
     mock_main_queue.reset_mock()
 
     dummy_job = factory.dummy_job_factory(mocker, 'mock')()
     job_queue.enqueue(dummy_job)
 
     mock_main_queue.queue.put_nowait.assert_called_once_with(dummy_job)
-    assert not mock_download_queue.queue.put_nowait.called
+    assert not mock_download_file_queue.queue.put_nowait.called
 
 
 def test_ApiJobQueue_start_queues(mocker):
@@ -126,14 +126,14 @@ def test_ApiJobQueue_start_queues(mocker):
     job_queue = ApiJobQueue(mock_client, mock_session_maker)
 
     mock_main_queue = mocker.patch.object(job_queue, 'main_queue')
-    mock_download_queue = mocker.patch.object(job_queue, 'download_queue')
+    mock_download_file_queue = mocker.patch.object(job_queue, 'download_file_queue')
     mock_main_thread = mocker.patch.object(job_queue, 'main_thread')
-    mock_download_thread = mocker.patch.object(job_queue, 'download_thread')
+    mock_download_file_thread = mocker.patch.object(job_queue, 'download_file_thread')
 
     job_queue.start_queues(mock_api)
 
     assert mock_main_queue.api_client == mock_api
-    assert mock_download_queue.api_client == mock_api
+    assert mock_download_file_queue.api_client == mock_api
 
     mock_main_thread.start.assert_called_once_with()
-    mock_download_thread.start.assert_called_once_with()
+    mock_download_file_thread.start.assert_called_once_with()

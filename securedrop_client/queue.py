@@ -8,7 +8,7 @@ from sqlalchemy.orm import scoped_session
 from typing import Optional  # noqa: F401
 
 from securedrop_client.api_jobs.base import ApiJob
-from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob
+from securedrop_client.api_jobs.downloads import FileDownloadJob
 
 
 logger = logging.getLogger(__name__)
@@ -57,26 +57,26 @@ class ApiJobQueue(QObject):
         self.api_client = api_client
 
         self.main_thread = QThread()
-        self.download_thread = QThread()
+        self.download_file_thread = QThread()
 
         self.main_queue = RunnableQueue(self.api_client, session_maker)
-        self.download_queue = RunnableQueue(self.api_client, session_maker)
+        self.download_file_queue = RunnableQueue(self.api_client, session_maker)
 
         self.main_queue.moveToThread(self.main_thread)
-        self.download_queue.moveToThread(self.download_thread)
+        self.download_file_queue.moveToThread(self.download_file_thread)
 
         self.main_thread.started.connect(self.main_queue.process)
-        self.download_thread.started.connect(self.download_queue.process)
+        self.download_file_thread.started.connect(self.download_file_queue.process)
 
     def start_queues(self, api_client: API) -> None:
         self.main_queue.api_client = api_client
-        self.download_queue.api_client = api_client
+        self.download_file_queue.api_client = api_client
 
         self.main_thread.start()
-        self.download_thread.start()
+        self.download_file_thread.start()
 
     def enqueue(self, job: ApiJob) -> None:
         if isinstance(job, FileDownloadJob):
-            self.download_queue.queue.put_nowait(job)
+            self.download_file_queue.queue.put_nowait(job)
         else:
             self.main_queue.queue.put_nowait(job)

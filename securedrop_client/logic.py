@@ -22,20 +22,20 @@ import logging
 import os
 import sdclientapi
 import uuid
+from typing import Dict, Tuple, Union, Any, Type  # noqa: F401
 
 from gettext import gettext as _
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess, Qt
 from sdclientapi import RequestTimeoutError
 from sqlalchemy.orm.session import sessionmaker
-from typing import Dict, Tuple, Union, Any, Type  # noqa: F401
 
 from securedrop_client import storage
 from securedrop_client import db
-from securedrop_client.api_jobs.downloads import DownloadSubmissionJob
+from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob
 from securedrop_client.api_jobs.uploads import SendReplyJob
 from securedrop_client.crypto import GpgHelper, CryptoError
 from securedrop_client.message_sync import ReplySync
-from securedrop_client.queue import ApiJobQueue, FileDownloadJob, MessageDownloadJob
+from securedrop_client.queue import ApiJobQueue
 from securedrop_client.utils import check_dir_permissions
 
 logger = logging.getLogger(__name__)

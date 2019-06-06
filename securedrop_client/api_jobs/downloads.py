@@ -21,8 +21,6 @@ logger = logging.getLogger(__name__)
 
 class MessageDownloadJob(ApiJob):
 
-    CHUNK_SIZE = 4096
-
     def __init__(self, uuid: str, download_dir: str, gpg: GpgHelper) -> None:
         super().__init__()
         self.download_dir = download_dir
