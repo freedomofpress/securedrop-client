@@ -622,7 +622,6 @@ class MainView(QWidget):
         sources.
         """
         self.source_list.update(sources)
-        self.on_source_changed()
 
     def on_source_changed(self):
         """
@@ -1119,7 +1118,7 @@ class SpeechBubble(QWidget):
     }
     '''
 
-    def __init__(self, message_id: str, text: str) -> None:
+    def __init__(self, message_id: str, text: str, update_signal) -> None:
         super().__init__()
         self.message_id = message_id
 
@@ -1134,6 +1133,18 @@ class SpeechBubble(QWidget):
         self.message.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout.addWidget(self.message)
 
+        update_signal.connect(self._update_text)
+
+    @pyqtSlot(str, str)
+    def _update_text(self, message_id: str, text: str) -> None:
+        """
+        Conditionally update this SpeechBubble's text if and only if the message_id of the emitted
+        signal matches the message_id of this speech bubble.
+        """
+
+        if message_id == self.message_id:
+            self.message.setText(html.escape(text, quote=False))
+
 
 class ConversationWidget(QWidget):
     """
@@ -1143,6 +1154,7 @@ class ConversationWidget(QWidget):
     def __init__(self,
                  message_id: str,
                  message: str,
+                 update_signal,
                  align: str) -> None:
         """
         Initialise with the message to display and some notion of which side
@@ -1153,7 +1165,7 @@ class ConversationWidget(QWidget):
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self.speech_bubble = SpeechBubble(message_id, message)
+        self.speech_bubble = SpeechBubble(message_id, message, update_signal)
 
         # Add padding on left if we want to push the speech bubble to the right
         if align != "left":
@@ -1185,8 +1197,11 @@ class MessageWidget(ConversationWidget):
     );
     '''
 
-    def __init__(self, message_id: str, message: str) -> None:
-        super().__init__(message_id, message, align="left")
+    def __init__(self, message_id: str, message: str, update_signal) -> None:
+        super().__init__(message_id,
+                         message,
+                         update_signal,
+                         align="left")
 
         # Set css id
         self.setObjectName('message_widget')
@@ -1216,10 +1231,14 @@ class ReplyWidget(ConversationWidget):
         self,
         message_id: str,
         message: str,
+        update_signal,
         message_succeeded_signal,
         message_failed_signal,
     ) -> None:
-        super().__init__(message_id, message, align="right")
+        super().__init__(message_id,
+                         message,
+                         update_signal,
+                         align="right")
         self.message_id = message_id
 
         # Set css id
@@ -1362,18 +1381,11 @@ class ConversationView(QWidget):
         self.setLayout(main_layout)
         self.update_conversation(self.source.collection)
 
-        self.controller.sync_events.connect(self.on_sync_event, type=Qt.QueuedConnection)
-
     def clear_conversation(self):
         while self.conversation_layout.count():
             child = self.conversation_layout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
-
-    def on_sync_event(self, data):
-        if (data == 'synced'):
-            self.controller.session.refresh(self.source)
-            self.update_conversation(self.source.collection)
 
     def update_conversation(self, collection: list) -> None:
         # clear all old items
@@ -1420,7 +1432,10 @@ class ConversationView(QWidget):
         else:
             content = '<Message not yet available>'
 
-        self.conversation_layout.addWidget(MessageWidget(message.uuid, content))
+        self.conversation_layout.addWidget(MessageWidget(
+            message.uuid,
+            content,
+            self.controller.message_ready))
 
     def add_reply(self, reply: Reply) -> None:
         """
@@ -1434,6 +1449,7 @@ class ConversationView(QWidget):
         self.conversation_layout.addWidget(ReplyWidget(
             reply.uuid,
             content,
+            self.controller.reply_sync.reply_ready,
             self.controller.reply_succeeded,
             self.controller.reply_failed))
 
@@ -1444,6 +1460,7 @@ class ConversationView(QWidget):
         self.conversation_layout.addWidget(ReplyWidget(
             uuid,
             content,
+            self.controller.reply_sync.reply_ready,
             self.controller.reply_succeeded,
             self.controller.reply_failed))
 

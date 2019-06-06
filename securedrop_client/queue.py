@@ -8,7 +8,7 @@ from sqlalchemy.orm import scoped_session
 from typing import Optional  # noqa: F401
 
 from securedrop_client.api_jobs.base import ApiJob
-from securedrop_client.api_jobs.downloads import FileDownloadJob
+from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob
 
 
 logger = logging.getLogger(__name__)

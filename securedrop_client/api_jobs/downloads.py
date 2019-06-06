@@ -4,17 +4,17 @@ import logging
 import os
 import sdclientapi
 import shutil
+from tempfile import NamedTemporaryFile
+from typing import Any, Union, Type, Tuple
 
 from sdclientapi import API
 from sqlalchemy.orm.session import Session
-from typing import Any, Union, Type, Tuple
 
-from securedrop_client.storage import mark_message_as_downloaded, mark_file_as_downloaded, \
-    set_object_decryption_status_with_content
 from securedrop_client.api_jobs.base import ApiJob
 from securedrop_client.crypto import GpgHelper, CryptoError
 from securedrop_client.db import File, Message, Reply
-
+from securedrop_client.storage import mark_message_as_downloaded, mark_file_as_downloaded, \
+    set_object_decryption_status_with_content
 
 logger = logging.getLogger(__name__)
 

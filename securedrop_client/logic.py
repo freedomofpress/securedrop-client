@@ -34,8 +34,8 @@ from securedrop_client import db
 from securedrop_client.api_jobs.downloads import DownloadSubmissionJob
 from securedrop_client.api_jobs.uploads import SendReplyJob
 from securedrop_client.crypto import GpgHelper, CryptoError
-from securedrop_client.message_sync import MessageSync, ReplySync
-from securedrop_client.queue import ApiJobQueue, FileDownloadJob
+from securedrop_client.message_sync import ReplySync
+from securedrop_client.queue import ApiJobQueue, FileDownloadJob, MessageDownloadJob
 from securedrop_client.utils import check_dir_permissions
 
 logger = logging.getLogger(__name__)
@@ -165,13 +165,9 @@ class Controller(QObject):
 
         self.gpg = GpgHelper(home, self.session_maker, proxy)
 
-        # thread responsible for fetching messages
-        # self.message_thread = None
-        # self.message_sync = MessageSync(self.api, self.gpg, self.session_maker)
-
-        # # thread responsible for fetching replies
-        # self.reply_thread = None
-        # self.reply_sync = ReplySync(self.api, self.gpg, self.session_maker)
+        # thread responsible for fetching replies
+        self.reply_thread = None
+        self.reply_sync = ReplySync(self.api, self.gpg, self.session_maker)
 
         self.sync_flag = os.path.join(home, 'sync_flag')
 
@@ -277,31 +273,18 @@ class Controller(QObject):
         else:
             user_callback(result_data)
 
-    # def start_message_thread(self):
-    #     """
-    #     Starts the message-fetching thread in the background.
-    #     """
-    #     if not self.message_thread:
-    #         self.message_sync.api = self.api
-    #         self.message_thread = QThread()
-    #         self.message_sync.moveToThread(self.message_thread)
-    #         self.message_thread.started.connect(self.message_sync.run)
-    #         self.message_thread.start()
-    #     else:  # Already running from last login
-    #         self.message_sync.api = self.api
-
-    # def start_reply_thread(self):
-    #     """
-    #     Starts the reply-fetching thread in the background.
-    #     """
-    #     if not self.reply_thread:
-    #         self.reply_sync.api = self.api
-    #         self.reply_thread = QThread()
-    #         self.reply_sync.moveToThread(self.reply_thread)
-    #         self.reply_thread.started.connect(self.reply_sync.run)
-    #         self.reply_thread.start()
-    #     else:  # Already running from last login
-    #         self.reply_sync.api = self.api
+    def start_reply_thread(self):
+        """
+        Starts the reply-fetching thread in the background.
+        """
+        if not self.reply_thread:
+            self.reply_sync.api = self.api
+            self.reply_thread = QThread()
+            self.reply_sync.moveToThread(self.reply_thread)
+            self.reply_thread.started.connect(self.reply_sync.run)
+            self.reply_thread.start()
+        else:  # Already running from last login
+            self.reply_sync.api = self.api
 
     def login(self, username, password, totp):
         """
@@ -322,8 +305,7 @@ class Controller(QObject):
         self.sync_api()
         self.gui.show_main_window(self.api.username)
 
-        # self.start_message_thread()
-        # self.start_reply_thread()
+        self.start_reply_thread()
 
         self.api_job_queue.start_queues(self.api)
 
@@ -346,8 +328,7 @@ class Controller(QObject):
         """
         self.gui.hide_login()
         self.gui.show_main_window()
-        # self.start_message_thread()
-        # self.start_reply_thread()
+        self.start_reply_thread()
         self.is_authenticated = False
         self.update_sources()
 
@@ -381,12 +362,6 @@ class Controller(QObject):
             logger.debug("In sync_api, after call to call_api, on "
                          "thread {}".format(self.thread().currentThreadId()))
 
-            job = SyncJob(self.gpg, self.data_dir)
-            job.success_signal.connect(self.on_sync_success, type=Qt.QueuedConnection)
-            job.failure_signal.connect(self.on_sync_failure, type=Qt.QueuedConnection)
-
-            self.api_job_queue.enqueue(job)
-
     def last_sync(self):
         """
         Returns the time of last synchronisation with the remote SD server.
@@ -401,11 +376,19 @@ class Controller(QObject):
         """
         Called when syncronisation of data via the API succeeds
         """
-        # Set last sync flag.
+        # Update db with new metadata
+        remote_sources, remote_submissions, remote_replies = result
+        storage.update_local_storage(self.session,
+                                     remote_sources,
+                                     remote_submissions,
+                                     remote_replies,
+                                     self.data_dir)
+
+        # Set last sync flag
         with open(self.sync_flag, 'w') as f:
             f.write(arrow.now().format())
 
-        # import keys into keyring
+        # Import keys into keyring
         for source in remote_sources:
             if source.key and source.key.get('type', None) == 'PGP':
                 pub_key = source.key.get('public', None)
@@ -492,8 +475,7 @@ class Controller(QObject):
         state.
         """
         self.api = None
-        # self.message_sync.api = None
-        # self.reply_sync.api = None
+        self.reply_sync.api = None
         self.gui.logout()
         self.is_authenticated = False
 
@@ -507,18 +489,18 @@ class Controller(QObject):
     def download_new_messages(self) -> None:
         messages = storage.find_new_messages(self.session)
         for message in messages:
-            job = MessageDownloadJob(Type[db.Message], message.uuid, self.data_dir, self.gpg)
+            job = MessageDownloadJob(message.uuid, self.data_dir, self.gpg)
             job.success_signal.connect(self.on_message_download_success, type=Qt.QueuedConnection)
             job.failure_signal.connect(self.on_message_download_failure, type=Qt.QueuedConnection)
 
             self.api_job_queue.enqueue(job)
-            self.set_status(_('Downloading message'))
+        self.set_status(_('Downloading new messages'))
 
     def on_message_download_success(self, uuid: str) -> None:
         """
         Called when a message has downloaded.
         """
-        message = storage.get_message(uuid)
+        message = storage.get_message(self.session, uuid)
         self.message_ready.emit(message.uuid, message.content)
 
     def on_message_download_failure(self, exception: Exception) -> None:
