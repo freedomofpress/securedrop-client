@@ -33,8 +33,11 @@ class MessageDownloadJob(ApiJob):
     def call_api(self, api_client: API, session: Session) -> Any:
         # Download
         db_object = session.query(self.type).filter_by(uuid=self.uuid).one()
-        _, filepath = self._make_call(db_object, api_client)
-        mark_message_as_downloaded(db_object.uuid, session)
+        if not db_object.is_downloaded:
+            _, filepath = self._make_call(db_object, api_client)
+            mark_message_as_downloaded(db_object.uuid, session)
+        else:
+            filepath = os.path.join(self.download_dir, db_object.filename)
 
         # Decrypt
         self._decrypt_file(session, db_object, filepath)
