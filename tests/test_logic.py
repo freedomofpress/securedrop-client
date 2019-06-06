@@ -90,45 +90,6 @@ def test_Controller_setup(homedir, config, mocker, session_maker):
     co.gui.setup.assert_called_once_with(co)
 
 
-def test_Controller_start_message_thread(homedir, config, mocker, session_maker):
-    """
-    When starting message-fetching thread, make sure we do a few things.
-    Using the `config` fixture to ensure the config is written to disk.
-    """
-    mock_gui = mocker.MagicMock()
-
-    co = Controller('http://localhost', mock_gui, session_maker, homedir)
-
-    mock_qthread = mocker.patch('securedrop_client.logic.QThread')
-    mocker.patch('securedrop_client.logic.MessageSync')
-    co.message_sync = mocker.MagicMock()
-
-    co.start_message_thread()
-
-    co.message_sync.moveToThread.assert_called_once_with(mock_qthread())
-    co.message_thread.started.connect.assert_called_once_with(co.message_sync.run)
-    co.message_thread.start.assert_called_once_with()
-
-
-def test_Controller_start_message_thread_if_already_running(homedir, config, mocker, session_maker):
-    """
-    Ensure that when starting the message thread, we don't start another thread
-    if it's already running. Instead, we just authenticate the existing thread.
-    Using the `config` fixture to ensure the config is written to disk.
-    """
-    mock_gui = mocker.MagicMock()
-
-    co = Controller('http://localhost', mock_gui, session_maker, homedir)
-    co.api = 'api object'
-    co.message_sync = mocker.MagicMock()
-    co.message_thread = mocker.MagicMock()
-    co.message_thread.api = None
-
-    co.start_message_thread()
-
-    co.message_thread.start.assert_not_called()
-
-
 def test_Controller_start_reply_thread(homedir, config, mocker, session_maker):
     """
     When starting reply-fetching thread, make sure we do a few things.
@@ -229,7 +190,6 @@ def test_Controller_login_offline_mode(homedir, config, mocker):
     co.gui = mocker.MagicMock()
     co.gui.show_main_window = mocker.MagicMock()
     co.gui.hide_login = mocker.MagicMock()
-    co.start_message_thread = mocker.MagicMock()
     co.start_reply_thread = mocker.MagicMock()
     co.update_sources = mocker.MagicMock()
 
@@ -239,7 +199,6 @@ def test_Controller_login_offline_mode(homedir, config, mocker):
     assert co.is_authenticated is False
     co.gui.show_main_window.assert_called_once_with()
     co.gui.hide_login.assert_called_once_with()
-    co.start_message_thread.assert_called_once_with()
     co.update_sources.assert_called_once_with()
 
 
@@ -272,14 +231,12 @@ def test_Controller_on_authenticate_success(homedir, config, mocker, session_mak
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     co.sync_api = mocker.MagicMock()
     co.api = mocker.MagicMock()
-    co.start_message_thread = mocker.MagicMock()
     co.start_reply_thread = mocker.MagicMock()
     co.api.username = 'test'
 
     co.on_authenticate_success(True)
 
     co.sync_api.assert_called_once_with()
-    co.start_message_thread.assert_called_once_with()
     co.gui.show_main_window.assert_called_once_with('test')
     co.gui.clear_error_status.assert_called_once_with()
 
@@ -488,17 +445,18 @@ def test_Controller_on_sync_failure(homedir, config, mocker, session_maker):
     Using the `config` fixture to ensure the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
+    debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
 
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
 
-    co.update_sources = mocker.MagicMock()
     result_data = Exception('Boom')  # Not the expected tuple.
     mock_storage = mocker.patch('securedrop_client.logic.storage')
 
     co.on_sync_failure(result_data)
 
     assert mock_storage.update_local_storage.call_count == 0
-    co.update_sources.assert_called_once_with()
+    msg = 'Sync failed: "{}".'.format(result_data)
+    debug_logger.assert_called_once_with(msg)
 
 
 def test_Controller_on_sync_success(homedir, config, mocker):
@@ -763,13 +721,10 @@ def test_Controller_logout(homedir, config, mocker, session_maker):
     mock_gui = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     co.api = mocker.MagicMock()
-    co.message_sync = mocker.MagicMock()
     co.reply_sync = mocker.MagicMock()
-    co.message_sync.api = mocker.MagicMock()
     co.reply_sync.api = mocker.MagicMock()
     co.logout()
     assert co.api is None
-    assert co.message_sync.api is None
     assert co.reply_sync.api is None
     co.gui.logout.assert_called_once_with()
 

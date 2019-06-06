@@ -412,7 +412,7 @@ class Controller(QObject):
         """
         Called when syncronisation of data via the API fails.
         """
-        logger.info('Sync failed: "{}".'.format(result))
+        logger.debug('Sync failed: "{}".'.format(result))
 
     def update_sync(self):
         """

@@ -1315,9 +1315,7 @@ def test_ConversationView_add_message(mocker, session, source):
     source = source['source']  # grab the source from the fixture dict for simplicity
 
     mock_message_ready_signal = mocker.MagicMock()
-    mock_message_sync = mocker.MagicMock(message_ready=mock_message_ready_signal)
-    mocked_controller = mocker.MagicMock(session=session,
-                                         message_sync=mock_message_sync)
+    mocked_controller = mocker.MagicMock(session=session, message_ready=mock_message_ready_signal)
 
     content = 'a sea, a bee'
     message = factory.Message(source=source, content=content)
@@ -1350,9 +1348,7 @@ def test_ConversationView_add_message_no_content(mocker, session, source):
     source = source['source']  # grab the source from the fixture dict for simplicity
 
     mock_message_ready_signal = mocker.MagicMock()
-    mock_message_sync = mocker.MagicMock(message_ready=mock_message_ready_signal)
-    mocked_controller = mocker.MagicMock(session=session,
-                                         message_sync=mock_message_sync)
+    mocked_controller = mocker.MagicMock(session=session, message_ready=mock_message_ready_signal)
 
     message = factory.Message(source=source, is_decrypted=False, content=None)
     session.add(message)
