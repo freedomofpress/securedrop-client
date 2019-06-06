@@ -895,3 +895,29 @@ class API:
             return True
         # We should never reach here
         return False
+
+    def logout(self) -> bool:
+        """
+        Logsout the current user
+        """
+        path_query = "api/v1/logout"
+        method = "POST"
+
+        try:
+            data, status_code, headers = self._send_json_request(
+                method,
+                path_query,
+                headers=self.req_headers,
+                timeout=self.default_request_timeout,
+            )
+
+        except json.decoder.JSONDecodeError:
+            raise BaseError("Error in parsing JSON")
+
+        if "error" in data:
+            raise AuthError(data["error"])
+
+        if "message" in data and data["message"] == "Your token has been revoked.":
+            return True
+        else:
+            return False
