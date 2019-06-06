@@ -889,6 +889,83 @@ def test_Controller_on_file_open(homedir, config, mocker, session, session_maker
     mock_subprocess.start.call_count == 1
 
 
+def test_Controller_download_new_messages_with_new_message(mocker, session, session_maker, homedir):
+    """
+    Test that `download_new_messages` enqueues a job, connects to the right slots, and sets a
+    usre-facing status message when a new message is found.
+    """
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    message = factory.Message(source=factory.Source())
+    mocker.patch('securedrop_client.storage.find_new_messages', return_value=[message])
+    success_signal = mocker.MagicMock()
+    failure_signal = mocker.MagicMock()
+    job = mocker.MagicMock(success_signal=success_signal, failure_signal=failure_signal)
+    mocker.patch("securedrop_client.logic.MessageDownloadJob", return_value=job)
+    api_job_queue = mocker.patch.object(co, 'api_job_queue')
+    set_status = mocker.patch.object(co, 'set_status')
+
+    co.download_new_messages()
+
+    api_job_queue.enqueue.assert_called_once_with(job)
+    success_signal.connect.assert_called_once_with(
+        co.on_message_download_success, type=Qt.QueuedConnection)
+    failure_signal.connect.assert_called_once_with(
+        co.on_message_download_failure, type=Qt.QueuedConnection)
+    set_status.assert_called_once_with("Downloading new messages")
+
+
+def test_Controller_download_new_messages_without_messages(mocker, session, session_maker, homedir):
+    """
+    Test that `download_new_messages` does not enqueue any jobs or connect to slots or set a
+    user-facing status message when there are no new messages found.
+    """
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    mocker.patch('securedrop_client.storage.find_new_messages', return_value=[])
+    success_signal = mocker.MagicMock()
+    failure_signal = mocker.MagicMock()
+    job = mocker.MagicMock(success_signal=success_signal, failure_signal=failure_signal)
+    mocker.patch("securedrop_client.logic.MessageDownloadJob", return_value=job)
+    api_job_queue = mocker.patch.object(co, 'api_job_queue')
+    set_status = mocker.patch.object(co, 'set_status')
+
+    co.download_new_messages()
+
+    api_job_queue.enqueue.assert_not_called()
+    success_signal.connect.assert_not_called()
+    failure_signal.connect.assert_not_called()
+    set_status.assert_not_called()
+
+
+def test_Controller_on_message_downloaded_success(mocker, homedir, session_maker):
+    """
+    Check that a successful download emits proper signal.
+    """
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    message_ready = mocker.patch.object(co, 'message_ready')
+    message = factory.Message(source=factory.Source())
+    mocker.patch('securedrop_client.storage.get_message', return_value=message)
+
+    co.on_message_download_success(message.uuid)
+
+    message_ready.emit.assert_called_once_with(message.uuid, message.content)
+
+
+def test_Controller_on_message_downloaded_failure(mocker, homedir, session_maker):
+    """
+    Check that a failed download informs the user.
+    """
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    set_status = mocker.patch.object(co, 'set_status')
+    message_ready = mocker.patch.object(co, 'message_ready')
+    message = factory.Message(source=factory.Source())
+    mocker.patch('securedrop_client.storage.get_message', return_value=message)
+
+    co.on_message_download_failure(message.uuid)
+
+    set_status.assert_called_once_with("The message download failed.")
+    message_ready.emit.assert_not_called()
+
+
 def test_Controller_on_delete_source_success(homedir, config, mocker, session_maker):
     '''
     Using the `config` fixture to ensure the config is written to disk.

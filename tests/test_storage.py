@@ -14,7 +14,7 @@ from securedrop_client.storage import get_local_sources, get_local_messages, get
     update_replies, find_or_create_user, find_new_messages, find_new_replies, \
     mark_file_as_downloaded, mark_reply_as_downloaded, delete_single_submission_or_reply_on_disk, \
     rename_file, get_local_files, find_new_files, mark_message_as_downloaded, source_exists, \
-    set_object_decryption_status_with_content
+    set_object_decryption_status_with_content, get_file, get_message
 from securedrop_client import db
 from sdclientapi import Source, Submission, Reply
 
@@ -948,3 +948,25 @@ def test_source_exists_false(homedir, mocker):
     session.query().filter_by().one.side_effect = NoResultFound()
 
     assert not source_exists(session, 'test-source-uuid')
+
+
+def test_get_file(mocker, session):
+    source = factory.Source()
+    file = factory.File(source=source)
+    session.add(source)
+    session.add(file)
+
+    result = get_file(session, file.uuid)
+
+    assert result == file
+
+
+def test_get_message(mocker, session):
+    source = factory.Source()
+    message = factory.Message(source=source)
+    session.add(source)
+    session.add(message)
+
+    result = get_message(session, message.uuid)
+
+    assert result == message

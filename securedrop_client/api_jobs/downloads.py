@@ -23,10 +23,10 @@ class MessageDownloadJob(ApiJob):
 
     def __init__(self, uuid: str, download_dir: str, gpg: GpgHelper) -> None:
         super().__init__()
-        self.download_dir = download_dir
-        self.type = Message
         self.uuid = uuid
+        self.download_dir = download_dir
         self.gpg = gpg
+        self.type = Message
 
     def call_api(self, api_client: API, session: Session) -> Any:
         # Download

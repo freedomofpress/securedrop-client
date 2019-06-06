@@ -496,7 +496,6 @@ class Controller(QObject):
             job = MessageDownloadJob(message.uuid, self.data_dir, self.gpg)
             job.success_signal.connect(self.on_message_download_success, type=Qt.QueuedConnection)
             job.failure_signal.connect(self.on_message_download_failure, type=Qt.QueuedConnection)
-
             self.api_job_queue.enqueue(job)
 
     def on_message_download_success(self, uuid: str) -> None:
@@ -510,7 +509,7 @@ class Controller(QObject):
         """
         Called when a message fails to download.
         """
-        self.set_status("The message download failed. Please try again.")
+        self.set_status("The message download failed.")
 
     def on_file_open(self, file_uuid: str) -> None:
         """
