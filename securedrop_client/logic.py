@@ -543,12 +543,7 @@ class Controller(QObject):
         """
         Download the file associated with the Submission (which may be a File or Message).
         """
-        job = FileDownloadJob(
-            submission_type,
-            submission_uuid,
-            self.data_dir,
-            self.gpg,
-        )
+        job = FileDownloadJob(submission_uuid, self.data_dir, self.gpg)
         job.success_signal.connect(self.on_file_download_success, type=Qt.QueuedConnection)
         job.failure_signal.connect(self.on_file_download_failure, type=Qt.QueuedConnection)
 
