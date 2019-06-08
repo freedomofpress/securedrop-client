@@ -1458,7 +1458,7 @@ class ConversationView(QWidget):
         self.conversation_layout.addWidget(ReplyWidget(
             reply.uuid,
             content,
-            self.controller.reply_sync.reply_ready,
+            self.controller.reply_ready,
             self.controller.reply_succeeded,
             self.controller.reply_failed))
 
@@ -1469,7 +1469,7 @@ class ConversationView(QWidget):
         self.conversation_layout.addWidget(ReplyWidget(
             uuid,
             content,
-            self.controller.reply_sync.reply_ready,
+            self.controller.reply_ready,
             self.controller.reply_succeeded,
             self.controller.reply_failed))
 

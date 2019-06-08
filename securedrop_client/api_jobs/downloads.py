@@ -3,16 +3,18 @@ import hashlib
 import logging
 import os
 import shutil
+
 from tempfile import NamedTemporaryFile
 from typing import Any, Union, Tuple
 
 from sdclientapi import API, BaseError
+from sdclientapi import Reply as SdkReply
 from sdclientapi import Submission as SdkSubmission
 from sqlalchemy.orm.session import Session
 
 from securedrop_client.api_jobs.base import ApiJob
 from securedrop_client.crypto import GpgHelper, CryptoError
-from securedrop_client.db import File, Message
+from securedrop_client.db import File, Message, Reply
 from securedrop_client.storage import mark_as_decrypted, mark_as_downloaded, \
     set_message_or_reply_content
 
@@ -70,7 +72,10 @@ class DownloadJob(ApiJob):
         self._decrypt(os.path.join(self.data_dir, db_object.filename), db_object, session)
         return db_object.uuid
 
-    def _download(self, api: API, db_object: Union[File, Message], session: Session) -> None:
+    def _download(self,
+                  api: API,
+                  db_object: Union[File, Message, Reply],
+                  session: Session) -> None:
         '''
         Download the encrypted file. Check file integrity and move it to the data directory before
         marking it as downloaded.
@@ -90,7 +95,10 @@ class DownloadJob(ApiJob):
             logger.debug("Failed to download file: {}".format(db_object.filename))
             raise e
 
-    def _decrypt(self, filepath: str, db_object: Union[File, Message], session: Session) -> None:
+    def _decrypt(self,
+                 filepath: str,
+                 db_object: Union[File, Message, Reply],
+                 session: Session) -> None:
         '''
         Decrypt the file located at the given filepath and mark it as decrypted.
         '''
@@ -130,6 +138,48 @@ class DownloadJob(ApiJob):
 
         calculated_checksum = binascii.hexlify(hasher.digest()).decode('utf-8')
         return calculated_checksum == checksum
+
+
+class ReplyDownloadJob(DownloadJob):
+    '''
+    Download and decrypt a reply from a source.
+    '''
+
+    def __init__(self, uuid: str, data_dir: str, gpg: GpgHelper) -> None:
+        super().__init__(data_dir)
+        self.uuid = uuid
+        self.gpg = gpg
+
+    def get_db_object(self, session: Session) -> Reply:
+        '''
+        Override DownloadJob.
+        '''
+        return session.query(Reply).filter_by(uuid=self.uuid).one()
+
+    def call_download_api(self, api: API, db_object: Reply) -> Tuple[str, str]:
+        '''
+        Override DownloadJob.
+        '''
+        sdk_object = SdkReply(uuid=db_object.uuid, filename=db_object.filename)
+        sdk_object.source_uuid = db_object.source.uuid
+        return api.download_reply(sdk_object)
+
+    def call_decrypt(self, filepath: str, session: Session = None) -> None:
+        '''
+        Override DownloadJob.
+
+        Decrypt the file located at the given filepath and store its plaintext content in the local
+        database.
+
+        The file containing the plaintext should be deleted once the content is stored in the db.
+        '''
+        with NamedTemporaryFile('w+') as plaintext_file:
+            self.gpg.decrypt_submission_or_reply(filepath, plaintext_file.name, is_doc=False)
+            set_message_or_reply_content(
+                model_type=Reply,
+                uuid=self.uuid,
+                session=session,
+                content=plaintext_file.read())
 
 
 class MessageDownloadJob(DownloadJob):

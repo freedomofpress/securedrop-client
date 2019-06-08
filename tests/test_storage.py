@@ -6,6 +6,7 @@ import os
 import uuid
 from dateutil.parser import parse
 
+from sdclientapi import Source, Submission, Reply
 from sqlalchemy.orm.exc import NoResultFound
 
 import securedrop_client.db
@@ -14,10 +15,9 @@ from securedrop_client.storage import get_local_sources, get_local_messages, get
     update_replies, find_or_create_user, find_new_messages, find_new_replies, \
     delete_single_submission_or_reply_on_disk, rename_file, get_local_files, find_new_files, \
     source_exists, set_message_or_reply_content, mark_as_downloaded, mark_as_decrypted, get_file, \
-    get_message
-from securedrop_client import db
-from sdclientapi import Source, Submission, Reply
+    get_message, get_reply
 
+from securedrop_client import db
 from tests import factory
 
 
@@ -955,3 +955,14 @@ def test_get_message(mocker, session):
     result = get_message(session, message.uuid)
 
     assert result == message
+
+
+def test_get_reply(mocker, session):
+    source = factory.Source()
+    reply = factory.Reply(source=source)
+    session.add(source)
+    session.add(reply)
+
+    result = get_reply(session, reply.uuid)
+
+    assert result == reply

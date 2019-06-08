@@ -5,12 +5,13 @@ from typing import Tuple
 from sdclientapi import BaseError
 from sdclientapi import Submission as SdkSubmission
 
-from securedrop_client.api_jobs.downloads import DownloadJob, FileDownloadJob, MessageDownloadJob
+from securedrop_client.api_jobs.downloads import DownloadJob, FileDownloadJob, MessageDownloadJob, \
+    ReplyDownloadJob
 from securedrop_client.crypto import GpgHelper, CryptoError
 from tests import factory
 
 
-def test_MessageDownloadJob_raises_NotImplemetedError(mocker):
+def test_DownloadJob_raises_NotImplemetedError(mocker):
     job = DownloadJob('mock')
 
     with pytest.raises(NotImplementedError):
@@ -23,7 +24,101 @@ def test_MessageDownloadJob_raises_NotImplemetedError(mocker):
         job.get_db_object(None)
 
 
-def test_MessageDownloadJob_happy_path(mocker, homedir, session, session_maker):
+def test_ReplyDownloadJob_no_download_or_decrypt(mocker, homedir, session, session_maker):
+    """
+    Test that an already-downloaded reply successfully decrypts.
+    """
+    reply_is_decrypted_false = factory.Reply(
+        source=factory.Source(), is_downloaded=True, is_decrypted=False, content=None)
+    reply_is_decrypted_none = factory.Reply(
+        source=factory.Source(), is_downloaded=True, is_decrypted=None, content=None)
+    session.add(reply_is_decrypted_false)
+    session.add(reply_is_decrypted_none)
+    session.commit()
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    job_1 = ReplyDownloadJob(reply_is_decrypted_false.uuid, homedir, gpg)
+    job_2 = ReplyDownloadJob(reply_is_decrypted_none.uuid, homedir, gpg)
+    mocker.patch.object(job_1.gpg, 'decrypt_submission_or_reply')
+    mocker.patch.object(job_2.gpg, 'decrypt_submission_or_reply')
+    api_client = mocker.MagicMock()
+    path = os.path.join(homedir, 'data')
+    api_client.download_submission = mocker.MagicMock(return_value=('', path))
+
+    job_1.call_api(api_client, session)
+    job_2.call_api(api_client, session)
+
+    assert reply_is_decrypted_false.content is not None
+    assert reply_is_decrypted_false.is_downloaded is True
+    assert reply_is_decrypted_false.is_decrypted is True
+    assert reply_is_decrypted_none.content is not None
+    assert reply_is_decrypted_none.is_downloaded is True
+    assert reply_is_decrypted_none.is_decrypted is True
+
+
+def test_ReplyDownloadJob_message_already_decrypted(mocker, homedir, session, session_maker):
+    """
+    Test that call_api just returns uuid if already decrypted.
+    """
+    reply = factory.Reply(source=factory.Source(), is_downloaded=True, is_decrypted=True)
+    session.add(reply)
+    session.commit()
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    job = ReplyDownloadJob(reply.uuid, homedir, gpg)
+    decrypt_fn = mocker.patch.object(job.gpg, 'decrypt_submission_or_reply')
+    api_client = mocker.MagicMock()
+    download_fn = mocker.patch.object(api_client, 'download_reply')
+
+    return_uuid = job.call_api(api_client, session)
+
+    assert reply.uuid == return_uuid
+    decrypt_fn.assert_not_called()
+    download_fn.assert_not_called()
+
+
+def test_ReplyDownloadJob_message_already_downloaded(mocker, homedir, session, session_maker):
+    """
+    Test that call_api just decrypts and returns uuid if already downloaded.
+    """
+    reply = factory.Reply(source=factory.Source(), is_downloaded=True, is_decrypted=None)
+    session.add(reply)
+    session.commit()
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    job = ReplyDownloadJob(reply.uuid, homedir, gpg)
+    mocker.patch.object(job.gpg, 'decrypt_submission_or_reply')
+    api_client = mocker.MagicMock()
+    download_fn = mocker.patch.object(api_client, 'download_reply')
+
+    return_uuid = job.call_api(api_client, session)
+
+    assert reply.uuid == return_uuid
+    assert reply.is_decrypted is True
+    download_fn.assert_not_called()
+
+
+def test_ReplyDownloadJob_happiest_path(mocker, homedir, session, session_maker):
+    """
+    Test when a reply successfully downloads and decrypts. Use the `homedir` fixture to get a GPG
+    keyring.
+    """
+    reply = factory.Reply(
+        source=factory.Source(), is_downloaded=False, is_decrypted=None, content=None)
+    session.add(reply)
+    session.commit()
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    job = ReplyDownloadJob(reply.uuid, homedir, gpg)
+    mocker.patch.object(job.gpg, 'decrypt_submission_or_reply')
+    api_client = mocker.MagicMock()
+    data_dir = os.path.join(homedir, 'data')
+    api_client.download_reply = mocker.MagicMock(return_value=('', data_dir))
+
+    job.call_api(api_client, session)
+
+    assert reply.content is not None
+    assert reply.is_downloaded is True
+    assert reply.is_decrypted is True
+
+
+def test_MessageDownloadJob_no_download_or_decrypt(mocker, homedir, session, session_maker):
     """
     Test that an already-downloaded message successfully decrypts. Use the `homedir` fixture to get
     a GPG keyring.

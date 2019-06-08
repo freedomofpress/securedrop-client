@@ -435,3 +435,7 @@ def get_file(session: Session, uuid: str) -> File:
 
 def get_message(session: Session, uuid: str) -> Message:
     return session.query(Message).filter_by(uuid=uuid).one()
+
+
+def get_reply(session: Session, uuid: str) -> Reply:
+    return session.query(Reply).filter_by(uuid=uuid).one()

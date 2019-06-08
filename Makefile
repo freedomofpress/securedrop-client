@@ -14,7 +14,6 @@ mypy: ## Run static type checker
 		securedrop_client/gui/__init__.py \
 		securedrop_client/resources/__init__.py \
 		securedrop_client/storage.py \
-		securedrop_client/message_sync.py \
 		securedrop_client/queue.py \
     	securedrop_client/api_jobs/__init__.py \
     	securedrop_client/api_jobs/base.py \
