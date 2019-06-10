@@ -322,7 +322,7 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(len(self.api.get_all_replies()), number_of_replies_before - 1)
 
     @vcr.use_cassette("data/test-logout.yml")
-    def test_logout(self):
+    def test_zlogout(self):
         r = self.api.logout()
         self.assertTrue(r)
 
