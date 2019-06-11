@@ -94,6 +94,88 @@ def test_RunnableQueue_job_timeout(mocker):
     assert mock_process_events.called
 
 
+def test_RunnableQueue_job_ApiInaccessibleError(mocker):
+    '''
+    Add two jobs to the queue, the first of which will cause an ApiInaccessibleError.
+    Ensure that the queue continues processing jobs and the second job is attempted.
+    (this is behavior until we have a signal that pauses job execution when
+    ApiInaccessibleError occurs, see #379).
+    '''
+
+    mock_process_events = mocker.patch('securedrop_client.queue.QApplication.processEvents')
+    mock_api_client = mocker.MagicMock()
+    mock_session = mocker.MagicMock()
+    mock_session_maker = mocker.MagicMock(return_value=mock_session)
+
+    return_value = ApiInaccessibleError()
+    dummy_job_cls = factory.dummy_job_factory(mocker, return_value)
+    job1 = dummy_job_cls()
+    job2 = dummy_job_cls()
+
+    queue = RunnableQueue(mock_api_client, mock_session_maker)
+    queue.queue.put_nowait(job1)
+    queue.queue.put_nowait(job2)
+
+    # attempt to process job1 knowing that we'll have an auth error, which should be handled.
+    queue._process(exit_loop=True)
+
+    # check that one more job is in the queue
+    assert queue.queue.qsize() == 1
+
+    # update job2 to not raise an error so it can be processed
+    job2.return_value = 'job will process this!'
+
+    # run next job in the queue to process job2
+    queue._process(exit_loop=True)
+
+    # check that all jobs are gone
+    assert queue.queue.empty()
+
+    # ensure we don't have stale mocks
+    assert mock_process_events.called
+
+
+def test_RunnableQueue_job_generic_exception(mocker):
+    '''
+    Add two jobs to the queue, the first of which will cause a generic exception.
+    Ensure that the queue continues processing jobs and the second job is attempted.
+    '''
+
+    mock_process_events = mocker.patch('securedrop_client.queue.QApplication.processEvents')
+    mock_api_client = mocker.MagicMock()
+    mock_session = mocker.MagicMock()
+    mock_session_maker = mocker.MagicMock(return_value=mock_session)
+
+    return_value = Exception()
+    dummy_job_cls = factory.dummy_job_factory(mocker, return_value)
+    job1 = dummy_job_cls()
+    job2 = dummy_job_cls()
+
+    queue = RunnableQueue(mock_api_client, mock_session_maker)
+    queue.queue.put_nowait(job1)
+    queue.queue.put_nowait(job2)
+
+    # Attempt to process job1 knowing that we'll have a generic exception, which should be handled.
+    # Note: generic exceptions get handled in _do_call_api in case you're wondering why this doesn't
+    # raise an exception.
+    queue._process(exit_loop=True)
+
+    # check that one more job is in the queue
+    assert queue.queue.qsize() == 1
+
+    # update job2 to not raise an error so it can be processed
+    job2.return_value = 'job will process this!'
+
+    # run next job in the queue to process job2
+    queue._process(exit_loop=True)
+
+    # check that all jobs are gone
+    assert queue.queue.empty()
+
+    # ensure we don't have stale mocks
+    assert mock_process_events.called
+
+
 def test_RunnableQueue_does_not_run_jobs_when_not_authed(mocker):
     '''
     Add a job to the queue, ensure we don't run it when not authenticated.
