@@ -308,6 +308,11 @@ class TestAPIProxy(unittest.TestCase):
         # We deleted one, so there must be 1 less reply now
         self.assertEqual(len(self.api.get_all_replies()), number_of_replies_before - 1)
 
+    @dastollervey_datasaver
+    def test_logout(self):
+        r = self.api.logout()
+        self.assertTrue(r)
+
 
 def test_request_timeout(mocker):
     class MockedPopen:

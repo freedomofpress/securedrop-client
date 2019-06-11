@@ -1,0 +1,22 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: [application/json]
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [Token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU1OTg1NjEzNiwiaWF0IjoxNTU5ODI3MzM2fQ.eyJpZCI6MX0.UlITSFSmIoMtloqyUzMJ0KplL_x5l8I_zJL-ROMpSIM]
+      Connection: [keep-alive]
+      Content-Length: ['0']
+      Content-Type: [application/json]
+      User-Agent: [python-requests/2.20.0]
+    method: POST
+    uri: http://127.0.0.1:8081/api/v1/logout
+  response:
+    body: {string: "{\n  \"message\": \"Your token has been revoked.\"\n}\n"}
+    headers:
+      Content-Length: ['48']
+      Content-Type: [application/json]
+      Date: ['Thu, 06 Jun 2019 13:22:16 GMT']
+      Server: [Werkzeug/0.14.1 Python/2.7.12]
+    status: {code: 200, message: OK}
+version: 1

@@ -321,6 +321,11 @@ class TestAPI(unittest.TestCase):
         # We deleted one, so there must be 1 less reply now
         self.assertEqual(len(self.api.get_all_replies()), number_of_replies_before - 1)
 
+    @vcr.use_cassette("data/test-logout.yml")
+    def test_zlogout(self):
+        r = self.api.logout()
+        self.assertTrue(r)
+
 
 def test_request_connect_timeout(mocker):
     api = API("mock", "mock", "mock", "mock", proxy=False)
