@@ -93,6 +93,12 @@ class ApiJobQueue(QObject):
             self.download_file_thread.start()
 
     def enqueue(self, job: ApiJob) -> None:
+        # Additional defense in depth to prevent jobs being added to the queue when not
+        # logged in.
+        if not self.main_queue.api_client or not self.download_file_queue.api_client:
+            logger.info('Not adding job, we are not logged in')
+            return
+
         # First check the queues are started in case they died for some reason.
         self.start_queues()
 
