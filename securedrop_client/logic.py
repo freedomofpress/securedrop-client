@@ -472,9 +472,12 @@ class Controller(QObject):
 
     def logout(self):
         """
-        Reset the API object and force the UI to update into a logged out
-        state.
+        Call logout function in the API, reset the API object, and force the UI
+        to update into a logged out state.
         """
+        self.call_api(self.api.logout,
+                      self.on_logout_success,
+                      self.on_logout_failure)
         self.api = None
         self.reply_sync.api = None
         self.api_job_queue.logout()
@@ -626,3 +629,9 @@ class Controller(QObject):
         file = storage.get_file(self.session, file_uuid)
         self.session.refresh(file)
         return file
+
+    def on_logout_success(self, result) -> None:
+        logging.info('Client logout successful')
+
+    def on_logout_failure(self, result: Exception) -> None:
+        logging.info('Client logout failure')
