@@ -211,6 +211,8 @@ def test_ApiJobQueue_enqueue(mocker):
     job_queue = ApiJobQueue(mock_client, mock_session_maker)
     mock_download_file_queue = mocker.patch.object(job_queue, 'download_file_queue')
     mock_main_queue = mocker.patch.object(job_queue, 'main_queue')
+    job_queue.main_queue.api_client = 'has a value'
+    job_queue.download_file_queue.api_client = 'has a value'
     mock_start_queues = mocker.patch.object(job_queue, 'start_queues')
 
     dl_job = FileDownloadJob(db.File, 'mock', 'mock', 'mock')
@@ -229,6 +231,25 @@ def test_ApiJobQueue_enqueue(mocker):
     mock_main_queue.queue.put_nowait.assert_called_once_with(dummy_job)
     assert not mock_download_file_queue.queue.put_nowait.called
     assert mock_start_queues.called
+
+
+def test_ApiJobQueue_enqueue_no_auth(mocker):
+    mock_client = mocker.MagicMock()
+    mock_session_maker = mocker.MagicMock()
+
+    job_queue = ApiJobQueue(mock_client, mock_session_maker)
+    mock_download_file_queue = mocker.patch.object(job_queue, 'download_file_queue')
+    mock_main_queue = mocker.patch.object(job_queue, 'main_queue')
+    job_queue.main_queue.api_client = None
+    job_queue.download_file_queue.api_client = None
+    mock_start_queues = mocker.patch.object(job_queue, 'start_queues')
+
+    dummy_job = factory.dummy_job_factory(mocker, 'mock')()
+    job_queue.enqueue(dummy_job)
+
+    assert not mock_main_queue.queue.put_nowait.called
+    assert not mock_download_file_queue.queue.put_nowait.called
+    assert not mock_start_queues.called
 
 
 def test_ApiJobQueue_login_if_queues_not_running(mocker):
