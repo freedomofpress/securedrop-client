@@ -199,6 +199,8 @@ class TestAPIProxy(unittest.TestCase):
         user = self.api.get_current_user()
         self.assertTrue(user["is_admin"])
         self.assertEqual(user["username"], "journalist")
+        self.assertTrue("first_name" in user)
+        self.assertTrue("last_name" in user)
 
     @dastollervey_datasaver
     def test_error_unencrypted_reply(self):
