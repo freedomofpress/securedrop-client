@@ -99,7 +99,7 @@ def File(**attrs):
     return db.File(**defaults)
 
 
-def dummy_job_factory(mocker, return_value):
+def dummy_job_factory(mocker, return_value, **kwargs):
     '''
     Factory that creates dummy `ApiJob`s to DRY up test code.
     '''
