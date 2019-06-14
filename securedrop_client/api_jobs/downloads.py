@@ -169,8 +169,6 @@ class FileDownloadJob(ApiJob):
                 uuid=file_uuid,
                 is_decrypted=True,
                 session=session)
-            # Now that the file is decrypted, delete the encrypted file.
-            # os.remove(filepath_in_datadir)
         except CryptoError as e:
             logger.debug('Failed to decrypt file {}: {}'.format(server_filename, e))
             set_decryption_status_with_content(
