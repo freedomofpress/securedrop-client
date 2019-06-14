@@ -866,7 +866,6 @@ def test_Controller_on_file_download_Submission(homedir, config, session, mocker
     co.on_submission_download(db.File, file_.uuid)
 
     mock_job_cls.assert_called_once_with(
-        db.File,
         file_.uuid,
         co.data_dir,
         co.gpg,

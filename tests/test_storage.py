@@ -13,7 +13,8 @@ from securedrop_client.storage import get_local_sources, get_local_messages, get
     get_remote_data, update_local_storage, update_sources, update_files, update_messages, \
     update_replies, find_or_create_user, find_new_messages, find_new_replies, \
     delete_single_submission_or_reply_on_disk, rename_file, get_local_files, find_new_files, \
-    source_exists, set_decryption_status_with_content, mark_as_downloaded, get_file, get_message
+    source_exists, set_message_or_reply_content, mark_as_downloaded, mark_as_decrypted, get_file, \
+    get_message
 from securedrop_client import db
 from sdclientapi import Source, Submission, Reply
 
@@ -790,30 +791,24 @@ def test_find_new_replies(mocker, session):
         assert reply.is_downloaded is False or reply.is_decrypted is not True
 
 
-def test_set_file_decryption_status_with_content_null_to_false(mocker, source):
-    session = mocker.MagicMock()
+def test_set_file_decryption_status_with_content_null_to_false(mocker, session):
     file = factory.File(source=factory.Source(), is_decrypted=None)
-    session.query().filter_by().one_or_none.return_value = file
+    session.add(file)
+    session.commit()
 
-    set_decryption_status_with_content(type(file), file.uuid, False, session)
+    mark_as_decrypted(type(file), file.uuid, session, False)
 
     assert file.is_decrypted is False
 
-    session.add.assert_called_once_with(file)
-    session.commit.assert_called_once_with()
 
+def test_set_file_decryption_status_with_content_false_to_true(mocker, session):
+    file = factory.File(source=factory.Source(), is_downloaded=True, is_decrypted=False)
+    session.add(file)
+    session.commit()
 
-def test_set_file_decryption_status_with_content_false_to_true(mocker):
-    session = mocker.MagicMock()
-    file = factory.File(source=factory.Source(), is_decrypted=False)
-    session.query().filter_by().one_or_none.return_value = file
-
-    set_decryption_status_with_content(type(file), file.uuid, True, session)
+    mark_as_decrypted(type(file), file.uuid, session)
 
     assert file.is_decrypted is True
-
-    session.add.assert_called_once_with(file)
-    session.commit.assert_called_once_with()
 
 
 def test_set_message_decryption_status_with_content_with_content(session, source):
@@ -828,7 +823,8 @@ def test_set_message_decryption_status_with_content_with_content(session, source
     session.add(message)
     session.commit()
 
-    set_decryption_status_with_content(type(message), message.uuid, True, session, 'mock_content')
+    set_message_or_reply_content(type(message), message.uuid, 'mock_content', session)
+    mark_as_decrypted(type(message), message.uuid, session)
 
     # requery to ensure new object
     message = session.query(db.Message).get(message.id)
