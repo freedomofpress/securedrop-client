@@ -19,33 +19,49 @@ logger = logging.getLogger(__name__)
 
 
 class MessageDownloadJob(ApiJob):
-
-    def __init__(self, uuid: str, download_dir: str, gpg: GpgHelper) -> None:
+    '''
+    Download and decrypt a message from a source.
+    '''
+    def __init__(self, uuid: str, data_dir: str, gpg: GpgHelper) -> None:
         super().__init__()
         self.uuid = uuid
-        self.download_dir = download_dir
+        self.data_dir = data_dir
         self.gpg = gpg
-        self.type = Message
+        self.db_model_type = Message
 
     def call_api(self, api_client: API, session: Session) -> Any:
-        # Download
-        db_object = session.query(self.type).filter_by(uuid=self.uuid).one()
-        if not db_object.is_downloaded:
-            _, filepath = self._make_call(db_object, api_client)
-            mark_as_downloaded(type(db_object), db_object.uuid, session)
-        else:
-            filepath = os.path.join(self.download_dir, db_object.filename)
+        '''
+        Download and decrypt.
+        '''
+        db_object = session.query(self.db_model_type).filter_by(uuid=self.uuid).one()
 
-        # Decrypt
-        self._decrypt_file(session, db_object, filepath)
+        if db_object.is_decrypted:
+            return db_object.uuid
 
+        if db_object.is_downloaded:
+            self._decrypt_file(session, db_object, os.path.join(self.data_dir, db_object.filename))
+            return db_object.uuid
+
+        self._download(api_client, db_object, session)
+        self._decrypt_file(session, db_object, os.path.join(self.data_dir, db_object.filename))
         return db_object.uuid
+
+    def _download(self, api: API, db_object: File, session: Session):
+        '''
+        Download the file. Check file integrity and move it to the data directory before marking it
+        as downloaded.
+
+        Note: On Qubes OS, files are downloaded to ~/QubesIncoming.
+        '''
+        etag, download_path = self._make_call(db_object, api)
+
+        shutil.move(download_path, os.path.join(self.data_dir, db_object.filename))
+        mark_as_downloaded(type(db_object), db_object.uuid, session)
 
     def _make_call(self, db_object: Message, api_client: API) -> Tuple[str, str]:
         sdk_obj = sdclientapi.Submission(uuid=db_object.uuid)
         sdk_obj.filename = db_object.filename
         sdk_obj.source_uuid = db_object.source.uuid
-
         return api_client.download_submission(sdk_obj)
 
     def _decrypt_file(
@@ -55,27 +71,38 @@ class MessageDownloadJob(ApiJob):
         filepath: str,
     ) -> None:
         '''
-        Decrypt, save status, and save content if decrypting a message or reply.
+        Decrypt file and store its plaintext content.
+
+        If the plaintext content is a message or a reply, store it in the local database, otherwise
+        store the document in the filesystem.
         '''
-        with NamedTemporaryFile('w+') as plaintext_file:
-            try:
-                self.gpg.decrypt_submission_or_reply(filepath, plaintext_file.name, is_doc=False)
-                plaintext_file.seek(0)
-                content = plaintext_file.read()
-                set_decryption_status_with_content(
-                    model_type=type(db_object),
-                    uuid=db_object.uuid,
-                    is_decrypted=True,
-                    session=session,
-                    content=content)
-                logger.info("File decrypted: {}".format(plaintext_file.name))
-            except CryptoError:
-                set_decryption_status_with_content(
-                    model_type=type(db_object),
-                    uuid=db_object.uuid,
-                    is_decrypted=False,
-                    session=session)
-                logger.info("Failed to decrypt file: {}".format(plaintext_file.name))
+        try:
+            # Store plaintext in a temporary file that will be deleted when the file closes. It's
+            # needed just long enough to store the plaintext in the local db.
+            plaintextfile = NamedTemporaryFile('w+')
+
+            self.gpg.decrypt_submission_or_reply(
+                filepath,
+                plaintextfile.name,
+                is_doc=False)
+
+            plaintext = open(plaintextfile.name).read()
+            set_decryption_status_with_content(
+                model_type=type(db_object),
+                uuid=db_object.uuid,
+                is_decrypted=True,
+                session=session,
+                content=plaintext)
+
+            logger.info("File decrypted: {}".format(db_object.filename))
+        except CryptoError:
+            set_decryption_status_with_content(
+                model_type=type(db_object),
+                uuid=db_object.uuid,
+                is_decrypted=False,
+                session=session)
+
+            logger.info("Failed to decrypt file: {}".format(db_object.filename))
 
 
 class FileDownloadJob(ApiJob):
@@ -96,23 +123,43 @@ class FileDownloadJob(ApiJob):
         self.gpg = gpg
 
     def call_api(self, api_client: API, session: Session) -> Any:
-        db_object = session.query(self.submission_type) \
-            .filter_by(uuid=self.submission_uuid).one()
+        '''
+        Download and decrypt.
+        '''
+        db_object = session.query(self.submission_type).filter_by(uuid=self.submission_uuid).one()
 
+        if db_object.is_decrypted:
+            return db_object.uuid
+
+        if db_object.is_downloaded:
+            self._decrypt_file(session, db_object, os.path.join(self.data_dir, db_object.filename))
+            return db_object.uuid
+
+        self._download(api_client, db_object, session)
+        self._decrypt_file(session, db_object, os.path.join(self.data_dir, db_object.filename))
+        return db_object.uuid
+
+    def _download(self, api_client: API, db_object: File, session: Session):
+        '''
+        Download the file. Check file integrity and move it to the data directory before marking it
+        as downloaded.
+
+        Note: On Qubes OS, files are downloaded to ~/QubesIncoming.
+        '''
         etag, download_path = self._make_call(db_object, api_client)
 
         if not self._check_file_integrity(etag, download_path):
             raise RuntimeError('Downloaded file had an invalid checksum.')
 
-        self._decrypt_file(session, db_object, download_path)
+        data_path = os.path.join(self.data_dir, db_object.filename)
+        shutil.move(download_path, data_path)
 
-        return db_object.uuid
+        mark_as_downloaded(type(db_object), db_object.uuid, session)
 
     def _make_call(self, db_object: Union[File, Message], api_client: API) -> Tuple[str, str]:
         sdk_obj = sdclientapi.Submission(uuid=db_object.uuid)
         sdk_obj.filename = db_object.filename
         sdk_obj.source_uuid = db_object.source.uuid
-
         return api_client.download_submission(sdk_obj)
 
     @classmethod
@@ -147,33 +194,38 @@ class FileDownloadJob(ApiJob):
     def _decrypt_file(
         self,
         session: Session,
-        db_object: Union[File, Message],
-        file_path: str,
+        db_object: Union[File, Message, Reply],
+        filepath: str,
     ) -> None:
-        file_uuid = db_object.uuid
-        server_filename = db_object.filename
-
-        # The filename contains the location where the file has been stored. On non-Qubes OSes, this
-        # will be the data directory. On Qubes OS, this will a ~/QubesIncoming directory. In case we
-        # are on Qubes, we should move the file to the data directory and name it the same as the
-        # server (e.g. spotless-tater-msg.gpg).
-        filepath_in_datadir = os.path.join(self.data_dir, server_filename)
-        shutil.move(file_path, filepath_in_datadir)
-        mark_as_downloaded(type(db_object), db_object.uuid, session)
-
+        '''
+        If a File: decrypt and save plaintext to a file on the filesystem.
+        If a Message or Reply: decrypt and save plaintext to local database.
+        '''
         try:
-            self.gpg.decrypt_submission_or_reply(filepath_in_datadir, server_filename, is_doc=True)
-            # The file is stored on the filesystem so no need to set content in the database.
+            # Store plaintext in a file named after the downloaded file name, but without the
+            # extensions, e.g. 1-impractical_thing-doc.gz.gpg -> 1-impractical_thing-doc
+            fn_no_ext, _ = os.path.splitext(os.path.splitext(os.path.basename(filepath))[0])
+            plaintext_filepath = os.path.join(self.data_dir, fn_no_ext)
+
+            self.gpg.decrypt_submission_or_reply(
+                filepath,
+                plaintext_filepath,
+                is_doc=True)
+
             set_decryption_status_with_content(
                 model_type=type(db_object),
-                uuid=file_uuid,
+                uuid=db_object.uuid,
                 is_decrypted=True,
                 session=session)
+
+            logger.info("File decrypted: {}".format(db_object.filename))
         except CryptoError as e:
-            logger.debug('Failed to decrypt file {}: {}'.format(server_filename, e))
             set_decryption_status_with_content(
                 model_type=type(db_object),
-                uuid=file_uuid,
+                uuid=db_object.uuid,
                 is_decrypted=False,
                 session=session)
+
+            logger.info("Failed to decrypt file: {}".format(db_object.filename))
+
             raise e
