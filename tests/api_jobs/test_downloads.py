@@ -27,7 +27,7 @@ def test_MessageDownloadJob_happy_path(mocker, homedir, session, session_maker):
     mocker.patch.object(job_1.gpg, 'decrypt_submission_or_reply')
     mocker.patch.object(job_2.gpg, 'decrypt_submission_or_reply')
     api_client = mocker.MagicMock()
-    path = os.path.join(homedir, 'mock')
+    path = os.path.join(homedir, 'data')
     api_client.download_submission = mocker.MagicMock(return_value=('', path))
 
     job_1.call_api(api_client, session)
@@ -39,6 +39,46 @@ def test_MessageDownloadJob_happy_path(mocker, homedir, session, session_maker):
     assert message_is_decrypted_none.content is not None
     assert message_is_decrypted_none.is_downloaded is True
     assert message_is_decrypted_none.is_decrypted is True
+
+
+def test_MessageDownloadJob_message_already_decrypted(mocker, homedir, session, session_maker):
+    """
+    Test that call_api just returns uuid if already decrypted.
+    """
+    message = factory.Message(source=factory.Source(), is_downloaded=True, is_decrypted=True)
+    session.add(message)
+    session.commit()
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    job = MessageDownloadJob(message.uuid, homedir, gpg)
+    decrypt_fn = mocker.patch.object(job.gpg, 'decrypt_submission_or_reply')
+    api_client = mocker.MagicMock()
+    download_fn = mocker.patch.object(api_client, 'download_submission')
+
+    return_uuid = job.call_api(api_client, session)
+
+    assert message.uuid == return_uuid
+    decrypt_fn.assert_not_called()
+    download_fn.assert_not_called()
+
+
+def test_MessageDownloadJob_message_already_downloaded(mocker, homedir, session, session_maker):
+    """
+    Test that call_api just decrypts and returns uuid if already downloaded.
+    """
+    message = factory.Message(source=factory.Source(), is_downloaded=True, is_decrypted=None)
+    session.add(message)
+    session.commit()
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    job = MessageDownloadJob(message.uuid, homedir, gpg)
+    mocker.patch.object(job.gpg, 'decrypt_submission_or_reply')
+    api_client = mocker.MagicMock()
+    download_fn = mocker.patch.object(api_client, 'download_submission')
+
+    return_uuid = job.call_api(api_client, session)
+
+    assert message.uuid == return_uuid
+    assert message.is_decrypted is True
+    download_fn.assert_not_called()
 
 
 def test_MessageDownloadJob_happiest_path(mocker, homedir, session, session_maker):
@@ -54,8 +94,8 @@ def test_MessageDownloadJob_happiest_path(mocker, homedir, session, session_make
     job = MessageDownloadJob(message.uuid, homedir, gpg)
     mocker.patch.object(job.gpg, 'decrypt_submission_or_reply')
     api_client = mocker.MagicMock()
-    path = os.path.join(homedir, 'mock')
-    api_client.download_submission = mocker.MagicMock(return_value=('', path))
+    data_dir = os.path.join(homedir, 'data')
+    api_client.download_submission = mocker.MagicMock(return_value=('', data_dir))
 
     job.call_api(api_client, session)
 
@@ -78,7 +118,7 @@ def test_MessageDownloadJob_with_crypto_error(mocker, homedir, session, session_
     mocker.patch.object(job.gpg, 'decrypt_submission_or_reply', side_effect=CryptoError)
     api_client = mocker.MagicMock()
     api_client = mocker.MagicMock()
-    path = os.path.join(homedir, 'mock')
+    path = os.path.join(homedir, 'data')
     api_client.download_submission = mocker.MagicMock(return_value=('', path))
 
     job.call_api(api_client, session)
@@ -88,9 +128,49 @@ def test_MessageDownloadJob_with_crypto_error(mocker, homedir, session, session_
     assert message.is_decrypted is False
 
 
+def test_FileDownloadJob_message_already_decrypted(mocker, homedir, session, session_maker):
+    """
+    Test that call_api just returns uuid if already decrypted.
+    """
+    file = factory.File(source=factory.Source(), is_downloaded=True, is_decrypted=True)
+    session.add(file)
+    session.commit()
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    job = FileDownloadJob(db.File, file.uuid, homedir, gpg)
+    decrypt_fn = mocker.patch.object(job.gpg, 'decrypt_submission_or_reply')
+    api_client = mocker.MagicMock()
+    download_fn = mocker.patch.object(api_client, 'download_submission')
+
+    return_uuid = job.call_api(api_client, session)
+
+    assert file.uuid == return_uuid
+    decrypt_fn.assert_not_called()
+    download_fn.assert_not_called()
+
+
+def test_FileDownloadJob_message_already_downloaded(mocker, homedir, session, session_maker):
+    """
+    Test that call_api just decrypts and returns uuid if already downloaded.
+    """
+    file = factory.File(source=factory.Source(), is_downloaded=True, is_decrypted=False)
+    session.add(file)
+    session.commit()
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    job = FileDownloadJob(db.File, file.uuid, homedir, gpg)
+    mocker.patch.object(job.gpg, 'decrypt_submission_or_reply')
+    api_client = mocker.MagicMock()
+    download_fn = mocker.patch.object(api_client, 'download_submission')
+
+    return_uuid = job.call_api(api_client, session)
+
+    assert file.uuid == return_uuid
+    assert file.is_decrypted is True
+    download_fn.assert_not_called()
+
+
 def test_FileDownloadJob_happy_path_no_etag(mocker, homedir, session, session_maker):
     source = factory.Source()
-    file_ = factory.File(source=source)
+    file_ = factory.File(source=source, is_downloaded=False, is_decrypted=None)
     session.add(source)
     session.add(file_)
     session.commit()
@@ -102,7 +182,7 @@ def test_FileDownloadJob_happy_path_no_etag(mocker, homedir, session, session_ma
         '''
         :return: (etag, path_to_dl)
         '''
-        full_path = os.path.join(homedir, 'somepath')
+        full_path = os.path.join(homedir, 'data', 'mock')
         with open(full_path, 'wb') as f:
             f.write(b'')
         return ('', full_path)
@@ -113,7 +193,7 @@ def test_FileDownloadJob_happy_path_no_etag(mocker, homedir, session, session_ma
     job = FileDownloadJob(
         db.File,
         file_.uuid,
-        homedir,
+        os.path.join(homedir, 'data'),
         gpg,
     )
 
@@ -130,7 +210,7 @@ def test_FileDownloadJob_happy_path_no_etag(mocker, homedir, session, session_ma
 
 def test_FileDownloadJob_happy_path_sha256_etag(mocker, homedir, session, session_maker):
     source = factory.Source()
-    file_ = factory.File(source=source)
+    file_ = factory.File(source=source, is_downloaded=None, is_decrypted=None)
     session.add(source)
     session.add(file_)
     session.commit()
@@ -142,7 +222,7 @@ def test_FileDownloadJob_happy_path_sha256_etag(mocker, homedir, session, sessio
         '''
         :return: (etag, path_to_dl)
         '''
-        full_path = os.path.join(homedir, 'somepath')
+        full_path = os.path.join(homedir, 'data', 'mock')
         with open(full_path, 'wb') as f:
             f.write(b'wat')
 
@@ -156,7 +236,7 @@ def test_FileDownloadJob_happy_path_sha256_etag(mocker, homedir, session, sessio
     job = FileDownloadJob(
         db.File,
         file_.uuid,
-        homedir,
+        os.path.join(homedir, 'data'),
         gpg,
     )
 
@@ -168,7 +248,7 @@ def test_FileDownloadJob_happy_path_sha256_etag(mocker, homedir, session, sessio
 
 def test_FileDownloadJob_bad_sha256_etag(mocker, homedir, session, session_maker):
     source = factory.Source()
-    file_ = factory.File(source=source)
+    file_ = factory.File(source=source, is_downloaded=None, is_decrypted=None)
     session.add(source)
     session.add(file_)
     session.commit()
@@ -179,7 +259,7 @@ def test_FileDownloadJob_bad_sha256_etag(mocker, homedir, session, session_maker
         '''
         :return: (etag, path_to_dl)
         '''
-        full_path = os.path.join(homedir, 'somepath')
+        full_path = os.path.join(homedir, 'data', 'mock')
         with open(full_path, 'wb') as f:
             f.write(b'')
 
@@ -192,7 +272,7 @@ def test_FileDownloadJob_bad_sha256_etag(mocker, homedir, session, session_maker
     job = FileDownloadJob(
         db.File,
         file_.uuid,
-        homedir,
+        os.path.join(homedir, 'data'),
         gpg,
     )
 
@@ -203,7 +283,7 @@ def test_FileDownloadJob_bad_sha256_etag(mocker, homedir, session, session_maker
 
 def test_FileDownloadJob_happy_path_unknown_etag(mocker, homedir, session, session_maker):
     source = factory.Source()
-    file_ = factory.File(source=source)
+    file_ = factory.File(source=source, is_downloaded=None, is_decrypted=None)
     session.add(source)
     session.add(file_)
     session.commit()
@@ -214,7 +294,7 @@ def test_FileDownloadJob_happy_path_unknown_etag(mocker, homedir, session, sessi
         '''
         :return: (etag, path_to_dl)
         '''
-        full_path = os.path.join(homedir, 'somepath')
+        full_path = os.path.join(homedir, 'data', 'mock')
         with open(full_path, 'wb') as f:
             f.write(b'')
         return ('UNKNOWN:abc123',
@@ -226,7 +306,7 @@ def test_FileDownloadJob_happy_path_unknown_etag(mocker, homedir, session, sessi
     job = FileDownloadJob(
         db.File,
         file_.uuid,
-        homedir,
+        os.path.join(homedir, 'data'),
         gpg,
     )
 
@@ -244,7 +324,7 @@ def test_FileDownloadJob_happy_path_unknown_etag(mocker, homedir, session, sessi
 
 def test_FileDownloadJob_decryption_error(mocker, homedir, session, session_maker):
     source = factory.Source()
-    file_ = factory.File(source=source)
+    file_ = factory.File(source=source, is_downloaded=None, is_decrypted=None)
     session.add(source)
     session.add(file_)
     session.commit()
@@ -257,7 +337,7 @@ def test_FileDownloadJob_decryption_error(mocker, homedir, session, session_make
         '''
         :return: (etag, path_to_dl)
         '''
-        full_path = os.path.join(homedir, 'somepath')
+        full_path = os.path.join(homedir, 'data', 'mock')
         with open(full_path, 'wb') as f:
             f.write(b'wat')
 
@@ -271,7 +351,7 @@ def test_FileDownloadJob_decryption_error(mocker, homedir, session, session_make
     job = FileDownloadJob(
         db.File,
         file_.uuid,
-        homedir,
+        os.path.join(homedir, 'data'),
         gpg,
     )
 

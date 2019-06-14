@@ -46,7 +46,7 @@ class MessageDownloadJob(ApiJob):
         self._decrypt_file(session, db_object, os.path.join(self.data_dir, db_object.filename))
         return db_object.uuid
 
-    def _download(self, api: API, db_object: File, session: Session):
+    def _download(self, api: API, db_object: Message, session: Session) -> None:
         '''
         Download the file. Check file integrity and move it to the data directory before marking it
         as downloaded.
@@ -139,7 +139,7 @@ class FileDownloadJob(ApiJob):
         self._decrypt_file(session, db_object, os.path.join(self.data_dir, db_object.filename))
         return db_object.uuid
 
-    def _download(self, api_client: API, db_object: File, session: Session):
+    def _download(self, api_client: API, db_object: File, session: Session) -> None:
         '''
         Download the file. Check file integrity and move it to the data directory before marking it
         as downloaded.
@@ -218,7 +218,7 @@ class FileDownloadJob(ApiJob):
                 is_decrypted=True,
                 session=session)
 
-            logger.info("File decrypted: {}".format(db_object.filename))
+            logger.debug("File decrypted: {}".format(db_object.filename))
         except CryptoError as e:
             set_decryption_status_with_content(
                 model_type=type(db_object),
@@ -226,6 +226,6 @@ class FileDownloadJob(ApiJob):
                 is_decrypted=False,
                 session=session)
 
-            logger.info("Failed to decrypt file: {}".format(db_object.filename))
+            logger.debug("Failed to decrypt file: {}".format(db_object.filename))
 
             raise e

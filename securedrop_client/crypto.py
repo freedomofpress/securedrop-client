@@ -55,7 +55,7 @@ class GpgHelper:
     def decrypt_submission_or_reply(self,
                                     filepath: str,
                                     plaintext_filepath: str,
-                                    is_doc: bool = False) -> None:
+                                    is_doc: bool = False) -> str:
         err = tempfile.NamedTemporaryFile(suffix=".message-error", delete=False)
         with tempfile.NamedTemporaryFile(suffix=".message") as out:
             cmd = self._gpg_cmd_base()
@@ -88,6 +88,8 @@ class GpgHelper:
                     shutil.copyfileobj(infile, outfile)
             else:
                 shutil.copy(out.name, plaintext_filepath)
+
+            return plaintext_filepath  # This return is just used by tests and should be removed
 
     def _gpg_cmd_base(self) -> list:
         if self.is_qubes:  # pragma: no cover
