@@ -712,10 +712,11 @@ def test_Controller_on_update_star_failed(homedir, config, mocker, session_maker
     mock_gui.update_error_status.assert_called_once_with('Failed to update star.')
 
 
-def test_Controller_logout(homedir, config, mocker, session_maker):
+def test_Controller_logout_success(homedir, config, mocker, session_maker):
     """
-    The API is reset to None and the UI is set to logged out state.
-    The message and reply threads should also have the
+    Ensure the API is called on logout and if the API call succeeds,
+    the API object is reset to None and the UI is set to logged out state.
+    The message and reply threads should also have been reset.
     Using the `config` fixture to ensure the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
@@ -723,13 +724,54 @@ def test_Controller_logout(homedir, config, mocker, session_maker):
     co.api = mocker.MagicMock()
     co.api_job_queue = mocker.MagicMock()
     co.api_job_queue.logout = mocker.MagicMock()
+    co.call_api = mocker.MagicMock()
     co.reply_sync = mocker.MagicMock()
     co.reply_sync.api = mocker.MagicMock()
+    info_logger = mocker.patch('securedrop_client.logic.logging.info')
+    logout_method = co.api.logout
     co.logout()
+    co.call_api.assert_called_with(
+        logout_method,
+        co.on_logout_success,
+        co.on_logout_failure)
+    co.on_logout_success(True)
     assert co.api is None
     assert co.reply_sync.api is None
     co.api_job_queue.logout.assert_called_once_with()
     co.gui.logout.assert_called_once_with()
+    msg = 'Client logout successful'
+    info_logger.assert_called_once_with(msg)
+
+
+def test_Controller_logout_failure(homedir, config, mocker, session_maker):
+    """
+    Ensure the API is called on logout and if the API call fails,
+    the API object is reset to None and the UI is set to logged out state.
+    The message and reply threads should also have been reset.
+    Using the `config` fixture to ensure the config is written to disk.
+    """
+    mock_gui = mocker.MagicMock()
+    co = Controller('http://localhost', mock_gui, session_maker, homedir)
+    co.api = mocker.MagicMock()
+    co.api_job_queue = mocker.MagicMock()
+    co.api_job_queue.logout = mocker.MagicMock()
+    co.call_api = mocker.MagicMock()
+    co.reply_sync = mocker.MagicMock()
+    co.reply_sync.api = mocker.MagicMock()
+    info_logger = mocker.patch('securedrop_client.logic.logging.info')
+    logout_method = co.api.logout
+    co.logout()
+    co.call_api.assert_called_with(
+        logout_method,
+        co.on_logout_success,
+        co.on_logout_failure)
+    co.on_logout_failure(Exception())
+    assert co.api is None
+    assert co.reply_sync.api is None
+    co.api_job_queue.logout.assert_called_once_with()
+    co.gui.logout.assert_called_once_with()
+    msg = 'Client logout failure'
+    info_logger.assert_called_once_with(msg)
 
 
 def test_Controller_set_activity_status(homedir, config, mocker, session_maker):
