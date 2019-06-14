@@ -347,46 +347,36 @@ def find_new_replies(session: Session) -> List[Reply]:
             Reply.is_decrypted == None)).all()  # noqa: E711
 
 
-def mark_file_as_downloaded(uuid: str, session: Session) -> None:
+def mark_as_downloaded(
+    model_type: Union[Type[File], Type[Message], Type[Reply]],
+    uuid: str,
+    session: Session
+) -> None:
     """
-    Mark file as downloaded in the database.
+    Mark object as downloaded in the database.
     """
-    file_db_object = session.query(File).filter_by(uuid=uuid).one()
-    file_db_object.is_downloaded = True
-    session.add(file_db_object)
+    db_obj = session.query(model_type).filter_by(uuid=uuid).one()
+    db_obj.is_downloaded = True
+    session.add(db_obj)
     session.commit()
 
 
-def mark_message_as_downloaded(uuid: str, session: Session) -> None:
+def set_decryption_status_with_content(
+    model_type: Union[Type[File], Type[Message], Type[Reply]],
+    uuid: str,
+    is_decrypted: bool,
+    session: Session,
+    content: str = None
+) -> None:
     """
-    Mark message as downloaded in the database.
+    Mark whether or not the object is decrypted. If it's not decrypted, do not set content. If the
+    object is a File, do not set content (filesystem storage is used instead).
     """
-    message_db_object = session.query(Message).filter_by(uuid=uuid).one()
-    message_db_object.is_downloaded = True
-    session.add(message_db_object)
-    session.commit()
-
-
-def set_object_decryption_status_with_content(obj: Union[File, Message, Reply], session: Session,
-                                              is_successful: bool, content: str = None) -> None:
-    """Mark object as decrypted or not in the database."""
-
-    model = type(obj)
-    db_object = session.query(model).filter_by(uuid=obj.uuid).one_or_none()
-    db_object.is_decrypted = is_successful
+    db_obj = session.query(model_type).filter_by(uuid=uuid).one_or_none()
+    db_obj.is_decrypted = is_decrypted
     if content is not None:
-        db_object.content = content
-    session.add(db_object)
-    session.commit()
-
-
-def mark_reply_as_downloaded(uuid: str, session: Session) -> None:
-    """
-    Mark reply as downloaded in the database.
-    """
-    reply_db_object = session.query(Reply).filter_by(uuid=uuid).one()
-    reply_db_object.is_downloaded = True
-    session.add(reply_db_object)
+        db_obj.content = content
+    session.add(db_obj)
     session.commit()
 
 

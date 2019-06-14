@@ -13,8 +13,7 @@ from sqlalchemy.orm.session import Session
 from securedrop_client.api_jobs.base import ApiJob
 from securedrop_client.crypto import GpgHelper, CryptoError
 from securedrop_client.db import File, Message, Reply
-from securedrop_client.storage import mark_message_as_downloaded, mark_file_as_downloaded, \
-    set_object_decryption_status_with_content
+from securedrop_client.storage import mark_as_downloaded, set_decryption_status_with_content
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +32,7 @@ class MessageDownloadJob(ApiJob):
         db_object = session.query(self.type).filter_by(uuid=self.uuid).one()
         if not db_object.is_downloaded:
             _, filepath = self._make_call(db_object, api_client)
-            mark_message_as_downloaded(db_object.uuid, session)
+            mark_as_downloaded(type(db_object), db_object.uuid, session)
         else:
             filepath = os.path.join(self.download_dir, db_object.filename)
 
@@ -52,19 +51,31 @@ class MessageDownloadJob(ApiJob):
     def _decrypt_file(
         self,
         session: Session,
-        encrypted_file: Union[File, Message, Reply],
+        db_object: Union[File, Message, Reply],
         filepath: str,
     ) -> None:
+        '''
+        Decrypt, save status, and save content if decrypting a message or reply.
+        '''
         with NamedTemporaryFile('w+') as plaintext_file:
             try:
-                self.gpg.decrypt_submission_or_reply(filepath, plaintext_file.name, False)
+                self.gpg.decrypt_submission_or_reply(filepath, plaintext_file.name, is_doc=False)
                 plaintext_file.seek(0)
                 content = plaintext_file.read()
-                set_object_decryption_status_with_content(encrypted_file, session, True, content)
-                logger.info("File decrypted: {}".format(encrypted_file.filename))
+                set_decryption_status_with_content(
+                    model_type=type(db_object),
+                    uuid=db_object.uuid,
+                    is_decrypted=True,
+                    session=session,
+                    content=content)
+                logger.info("File decrypted: {}".format(plaintext_file.name))
             except CryptoError:
-                set_object_decryption_status_with_content(encrypted_file, session, False)
-                logger.info("Failed to decrypt file: {}".format(encrypted_file.filename))
+                set_decryption_status_with_content(
+                    model_type=type(db_object),
+                    uuid=db_object.uuid,
+                    is_decrypted=False,
+                    session=session)
+                logger.info("Failed to decrypt file: {}".format(plaintext_file.name))
 
 
 class FileDownloadJob(ApiJob):
@@ -148,13 +159,23 @@ class FileDownloadJob(ApiJob):
         # server (e.g. spotless-tater-msg.gpg).
         filepath_in_datadir = os.path.join(self.data_dir, server_filename)
         shutil.move(file_path, filepath_in_datadir)
-        mark_file_as_downloaded(file_uuid, session)
+        mark_as_downloaded(type(db_object), db_object.uuid, session)
 
         try:
             self.gpg.decrypt_submission_or_reply(filepath_in_datadir, server_filename, is_doc=True)
+            # The file is stored on the filesystem so no need to set content in the database.
+            set_decryption_status_with_content(
+                model_type=type(db_object),
+                uuid=file_uuid,
+                is_decrypted=True,
+                session=session)
+            # Now that the file is decrypted, delete the encrypted file.
+            # os.remove(filepath_in_datadir)
         except CryptoError as e:
             logger.debug('Failed to decrypt file {}: {}'.format(server_filename, e))
-            set_object_decryption_status_with_content(db_object, session, False)
+            set_decryption_status_with_content(
+                model_type=type(db_object),
+                uuid=file_uuid,
+                is_decrypted=False,
+                session=session)
             raise e
-
-        set_object_decryption_status_with_content(db_object, session, True)

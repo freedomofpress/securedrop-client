@@ -12,9 +12,8 @@ import securedrop_client.db
 from securedrop_client.storage import get_local_sources, get_local_messages, get_local_replies, \
     get_remote_data, update_local_storage, update_sources, update_files, update_messages, \
     update_replies, find_or_create_user, find_new_messages, find_new_replies, \
-    mark_file_as_downloaded, mark_reply_as_downloaded, delete_single_submission_or_reply_on_disk, \
-    rename_file, get_local_files, find_new_files, mark_message_as_downloaded, source_exists, \
-    set_object_decryption_status_with_content, get_file, get_message
+    delete_single_submission_or_reply_on_disk, rename_file, get_local_files, find_new_files, \
+    source_exists, set_decryption_status_with_content, mark_as_downloaded, get_file, get_message
 from securedrop_client import db
 from sdclientapi import Source, Submission, Reply
 
@@ -791,90 +790,80 @@ def test_find_new_replies(mocker, session):
         assert reply.is_downloaded is False or reply.is_decrypted is not True
 
 
-def test_set_object_decryption_status_with_content_null_to_false(mocker, source):
-    mock_session = mocker.MagicMock()
-    mock_file = mocker.MagicMock()
-    mock_file.is_decrypted is None
-    mock_session.query().filter_by().one_or_none.return_value = mock_file
+def test_set_file_decryption_status_with_content_null_to_false(mocker, source):
+    session = mocker.MagicMock()
+    file = factory.File(source=factory.Source(), is_decrypted=None)
+    session.query().filter_by().one_or_none.return_value = file
 
-    decryption_status = False
-    set_object_decryption_status_with_content(mock_file, mock_session, decryption_status)
+    set_decryption_status_with_content(type(file), file.uuid, False, session)
 
-    assert mock_file.is_decrypted is False
+    assert file.is_decrypted is False
 
-    mock_session.add.assert_called_once_with(mock_file)
-    mock_session.commit.assert_called_once_with()
+    session.add.assert_called_once_with(file)
+    session.commit.assert_called_once_with()
 
 
-def test_set_object_decryption_status_with_content_false_to_true(mocker):
-    mock_session = mocker.MagicMock()
-    mock_file = mocker.MagicMock()
-    mock_file.is_decrypted is False
-    mock_session.query().filter_by().one_or_none.return_value = mock_file
+def test_set_file_decryption_status_with_content_false_to_true(mocker):
+    session = mocker.MagicMock()
+    file = factory.File(source=factory.Source(), is_decrypted=False)
+    session.query().filter_by().one_or_none.return_value = file
 
-    decryption_status = True
-    set_object_decryption_status_with_content(mock_file, mock_session, decryption_status)
+    set_decryption_status_with_content(type(file), file.uuid, True, session)
 
-    assert mock_file.is_decrypted is True
+    assert file.is_decrypted is True
 
-    mock_session.add.assert_called_once_with(mock_file)
-    mock_session.commit.assert_called_once_with()
+    session.add.assert_called_once_with(file)
+    session.commit.assert_called_once_with()
 
 
-def test_set_object_decryption_status_with_content_with_content(session, source):
+def test_set_message_decryption_status_with_content_with_content(session, source):
     '''
     It should be possible to set the decryption status of an object in the database to `True`.
     Additionally, if `content` is passed in, the `content` column of the DB should take that
     value. This is to ensure that we have a way to decrypt something without violating the
     condition: if is_decrypted then content is not none.
     '''
-    message = factory.Message(source=source['source'],
-                              is_downloaded=True,
-                              is_decrypted=None,
-                              content=None)
+    message = factory.Message(
+        source=source['source'], is_downloaded=True, is_decrypted=None, content=None)
     session.add(message)
     session.commit()
 
-    content = 'test'
-    set_object_decryption_status_with_content(message, session, True, content)
+    set_decryption_status_with_content(type(message), message.uuid, True, session, 'mock_content')
 
     # requery to ensure new object
     message = session.query(db.Message).get(message.id)
     assert message.is_decrypted is True
-    assert message.content == content
+    assert message.content == 'mock_content'
 
 
 def test_mark_file_as_downloaded(mocker):
-    mock_session = mocker.MagicMock()
-    mock_submission = mocker.MagicMock()
-    mock_submission.is_downloaded is False
-    mock_session.query().filter_by().one.return_value = mock_submission
-    mark_file_as_downloaded('test-filename', mock_session)
-    assert mock_submission.is_downloaded is True
-    mock_session.add.assert_called_once_with(mock_submission)
-    mock_session.commit.assert_called_once_with()
+    session = mocker.MagicMock()
+    file = factory.File(source=factory.Source(), is_downloaded=False)
+    session.query().filter_by().one.return_value = file
+    mark_as_downloaded(type(file), 'mock_uuid', session)
+    assert file.is_downloaded is True
+    session.add.assert_called_once_with(file)
+    session.commit.assert_called_once_with()
 
 
 def test_mark_message_as_downloaded(mocker):
-    mock_session = mocker.MagicMock()
-    mock_submission = mocker.MagicMock()
-    mock_submission.is_downloaded is False
-    mock_session.query().filter_by().one.return_value = mock_submission
-    mark_message_as_downloaded('test-messagename', mock_session)
-    assert mock_submission.is_downloaded is True
-    mock_session.add.assert_called_once_with(mock_submission)
-    mock_session.commit.assert_called_once_with()
+    session = mocker.MagicMock()
+    message = factory.Message(source=factory.Source(), is_downloaded=False)
+    session.query().filter_by().one.return_value = message
+    mark_as_downloaded(type(message), 'mock_uuid', session)
+    assert message.is_downloaded is True
+    session.add.assert_called_once_with(message)
+    session.commit.assert_called_once_with()
 
 
 def test_mark_reply_as_downloaded(mocker):
-    mock_session = mocker.MagicMock()
-    mock_reply = mocker.MagicMock()
-    mock_reply.is_downloaded is False
-    mock_session.query().filter_by().one.return_value = mock_reply
-    mark_reply_as_downloaded('test-filename', mock_session)
-    assert mock_reply.is_downloaded is True
-    mock_session.add.assert_called_once_with(mock_reply)
-    mock_session.commit.assert_called_once_with()
+    session = mocker.MagicMock()
+    reply = factory.Reply(source=factory.Source(), is_downloaded=False)
+    session.query().filter_by().one.return_value = reply
+    mark_as_downloaded(type(reply), 'mock_uuid', session)
+    assert reply.is_downloaded is True
+    session.add.assert_called_once_with(reply)
+    session.commit.assert_called_once_with()
 
 
 def test_delete_single_submission_or_reply_race_guard(homedir, mocker):
