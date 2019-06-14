@@ -61,10 +61,20 @@ class APISyncObject(QObject):
                 self.gpg.decrypt_submission_or_reply(filepath, plaintext_file.name, False)
                 plaintext_file.seek(0)
                 content = plaintext_file.read()
-                storage.set_object_decryption_status_with_content(msg, session, True, content)
+                storage.set_decryption_status_with_content(
+                    model_type=type(msg),
+                    uuid=msg.uuid,
+                    is_decrypted=True,
+                    session=session,
+                    content=content)
+
                 logger.info("Message or reply decrypted: {}".format(msg.filename))
             except CryptoError:
-                storage.set_object_decryption_status_with_content(msg, session, False)
+                storage.set_decryption_status_with_content(
+                    model_type=type(msg),
+                    uuid=msg.uuid,
+                    is_decrypted=False,
+                    session=session)
                 logger.info("Message or reply failed to decrypt: {}".format(msg.filename))
 
     def fetch_the_thing(
@@ -76,7 +86,7 @@ class APISyncObject(QObject):
         update_fn: Callable,
     ) -> None:
         _, filepath = download_fn(item)
-        update_fn(msg.uuid, session)
+        update_fn(model_type=type(msg), uuid=msg.uuid, session=session)
         logger.info("Stored message or reply at {}".format(msg.filename))
         self.decrypt_the_thing(session, filepath, msg)
 
@@ -115,7 +125,7 @@ class ReplySync(APISyncObject):
                                              sdk_reply,
                                              db_reply,
                                              self.api.download_reply,
-                                             storage.mark_reply_as_downloaded)
+                                             storage.mark_as_downloaded)
                     elif db_reply.is_downloaded:
                         # Just decrypt file that is already on disk
                         self.decrypt_the_thing(session,
