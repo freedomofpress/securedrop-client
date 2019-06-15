@@ -52,7 +52,9 @@ class GpgHelper:
         config = Config.from_home_dir(self.sdc_home)
         self.journalist_key_fingerprint = config.journalist_key_fingerprint
 
-    def decrypt_submission_or_reply(self, filepath: str, target_filename: str,
+    def decrypt_submission_or_reply(self,
+                                    filepath: str,
+                                    plaintext_filepath: str,
                                     is_doc: bool = False) -> str:
         err = tempfile.NamedTemporaryFile(suffix=".message-error", delete=False)
         with tempfile.NamedTemporaryFile(suffix=".message") as out:
@@ -72,31 +74,22 @@ class GpgHelper:
                 os.unlink(err.name)
 
                 raise CryptoError(msg)
+
+            # Delete err file
+            err.close()
+            os.unlink(err.name)
+
+            # Delete encrypted file now that it's been successfully decrypted
+            os.unlink(filepath)
+
+            # Store the plaintext in the file located at the specified plaintext_filepath
+            if is_doc:
+                with gzip.open(out.name, 'rb') as infile, open(plaintext_filepath, 'wb') as outfile:
+                    shutil.copyfileobj(infile, outfile)
             else:
-                # Cleanup err file
-                err.close()
-                os.unlink(err.name)
+                shutil.copy(out.name, plaintext_filepath)
 
-                os.unlink(filepath)  # success so remove original (encrypted) file
-
-                if is_doc:
-                    # Need to split twice as filename is e.g.
-                    # 1-impractical_thing-doc.gz.gpg
-                    fn_no_ext, _ = os.path.splitext(
-                        os.path.splitext(os.path.basename(filepath))[0])
-                    dest = os.path.join(self.sdc_home, "data", fn_no_ext)
-
-                    # Docs are gzipped, so gunzip the file
-                    with gzip.open(out.name, 'rb') as infile, \
-                            open(dest, 'wb') as outfile:
-                        shutil.copyfileobj(infile, outfile)
-                else:
-                    fn_no_ext, _ = os.path.splitext(target_filename)
-                    dest = os.path.join(self.sdc_home, "data", fn_no_ext)
-                    shutil.copy(out.name, dest)
-                logger.info("Downloaded and decrypted: {}".format(dest))
-
-                return dest
+            return plaintext_filepath  # This return is just used by tests and should be removed
 
     def _gpg_cmd_base(self) -> list:
         if self.is_qubes:  # pragma: no cover

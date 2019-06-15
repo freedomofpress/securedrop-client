@@ -21,15 +21,15 @@ def test_message_logic(homedir, config, mocker, session_maker):
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
 
     test_msg = 'tests/files/test-msg.gpg'
-    expected_output_filename = 'test-msg'
+    expected_output_filepath = os.path.join(homedir, 'data', 'test-msg')
 
     mock_gpg = mocker.patch('subprocess.call', return_value=0)
     mocker.patch('os.unlink')
 
-    dest = gpg.decrypt_submission_or_reply(test_msg, expected_output_filename, is_doc=False)
+    dest = gpg.decrypt_submission_or_reply(test_msg, expected_output_filepath, is_doc=False)
 
     assert mock_gpg.call_count == 1
-    assert dest == os.path.join(homedir, 'data', expected_output_filename)
+    assert dest == expected_output_filepath
 
 
 def test_gunzip_logic(homedir, config, mocker, session_maker):
@@ -40,14 +40,14 @@ def test_gunzip_logic(homedir, config, mocker, session_maker):
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
 
     test_gzip = 'tests/files/test-doc.gz.gpg'
-    expected_output_filename = 'test-doc'
+    expected_output_filepath = os.path.join(homedir, 'data', 'mock-doc')
 
     mock_gpg = mocker.patch('subprocess.call', return_value=0)
     mock_unlink = mocker.patch('os.unlink')
-    dest = gpg.decrypt_submission_or_reply(test_gzip, expected_output_filename, is_doc=True)
+    dest = gpg.decrypt_submission_or_reply(test_gzip, expected_output_filepath, is_doc=True)
 
     assert mock_gpg.call_count == 1
-    assert dest == os.path.join(homedir, 'data', expected_output_filename)
+    assert dest == expected_output_filepath
     # We should remove two files in the success scenario: err, filepath
     assert mock_unlink.call_count == 2
 
