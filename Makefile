@@ -57,7 +57,7 @@ safety: ## Runs `safety check` to check python dependencies for vulnerabilities
 .PHONY: bandit
 bandit: ## Run bandit with medium level excluding test-related folders
 	pip install --upgrade pip && \
-        pip install --upgrade bandit!=1.6.0 && \
+        pip install --upgrade bandit==1.5.1 && \
 	bandit -ll --recursive . --exclude tests,.venv
 
 .PHONY: check
