@@ -44,6 +44,15 @@ the updated dependency to our pip mirror (you can request this in the PR).
 
 3. Once the pip mirror is updated, you should checkout the [securedrop-debian-packaging repo](https://github.com/freedomofpress/securedrop-debian-packaging) and run `make requirements`. Commit the `build-requirements.txt` that results and add it to your PR.
 
+## Making a Release
+
+**Note:** These are the release guidelines for pre-production alpha releases. Production release tags must be signed with the SecureDrop release key.
+
+ 1. Update versions: `./update_version.sh $new_version_number`.
+2. Commit the changes with commit message `securedrop-proxy $new_version_number` and make a PR.
+3. You should confirm via a manual debian package build and manual testing in Qubes that there are no regressions (this is limited pre-release QA).
+4. Once your PR is approved, you can add a tag and push: `git tag $new_version_number`.
+
 #### configuration
 
 The proxy script must be run with the path to its configuration file
