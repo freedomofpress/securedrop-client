@@ -570,41 +570,38 @@ class API:
             if os.path.exists(path) and not os.path.isdir(path):
                 raise BaseError("Please provide a vaild directory to save.")
 
-        try:
-            data, status_code, headers = self._send_json_request(
-                method,
-                path_query,
-                headers=self.req_headers,
-                timeout=timeout or self.default_download_timeout,
+        data, status_code, headers = self._send_json_request(
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=timeout or self.default_download_timeout,
+        )
+
+        if status_code == 404:
+            raise WrongUUIDError("Missing submission {}".format(submission.uuid))
+
+        # Get the headers
+        headers = headers
+
+        if not self.proxy:
+            # This is where we will save our downloaded file
+            filepath = os.path.join(path, submission.filename)
+            with open(filepath, "wb") as fobj:
+                for chunk in data.iter_content(
+                    chunk_size=1024
+                ):  # Getting 1024 in each chunk
+                    if chunk:
+                        fobj.write(chunk)
+
+        else:
+            filepath = os.path.join(
+                "/home/user/QubesIncoming/", self.proxy_vm_name, data["filename"]
             )
-
-            if status_code == 404:
-                raise WrongUUIDError("Missing submission {}".format(submission.uuid))
-
-            # Get the headers
-            headers = headers
-
-            if not self.proxy:
-                # This is where we will save our downloaded file
-                filepath = os.path.join(path, submission.filename)
-                with open(filepath, "wb") as fobj:
-                    for chunk in data.iter_content(
-                        chunk_size=1024
-                    ):  # Getting 1024 in each chunk
-                        if chunk:
-                            fobj.write(chunk)
-
-            else:
-                filepath = os.path.join(
-                    "/home/user/QubesIncoming/", self.proxy_vm_name, data["filename"]
-                )
-            # Return the tuple of sha256sum, filepath
-            # Returning empty string instead of sha256sum due to this
-            # SecureDrop server bug:
-            # https://github.com/freedomofpress/securedrop/issues/3877
-            return "", filepath
-        except Exception as err:
-            raise BaseError(err)
+        # Return the tuple of sha256sum, filepath
+        # Returning empty string instead of sha256sum due to this
+        # SecureDrop server bug:
+        # https://github.com/freedomofpress/securedrop/issues/3877
+        return "", filepath
 
     def flag_source(self, source: Source) -> bool:
         """
@@ -823,41 +820,38 @@ class API:
             if os.path.exists(path) and not os.path.isdir(path):
                 raise BaseError("Please provide a valid directory to save.")
 
-        try:
-            data, status_code, headers = self._send_json_request(
-                method,
-                path_query,
-                headers=self.req_headers,
-                timeout=self.default_request_timeout,
+        data, status_code, headers = self._send_json_request(
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
+        )
+
+        if status_code == 404:
+            raise WrongUUIDError("Missing reply {}".format(reply.uuid))
+
+        # Get the headers
+        headers = headers
+
+        if not self.proxy:
+            # This is where we will save our downloaded file
+            filepath = os.path.join(path, reply.filename)
+            with open(filepath, "wb") as fobj:
+                for chunk in data.iter_content(
+                    chunk_size=1024
+                ):  # Getting 1024 in each chunk
+                    if chunk:
+                        fobj.write(chunk)
+
+        else:
+            filepath = os.path.join(
+                "/home/user/QubesIncoming/", self.proxy_vm_name, data["filename"]
             )
-
-            if status_code == 404:
-                raise WrongUUIDError("Missing reply {}".format(reply.uuid))
-
-            # Get the headers
-            headers = headers
-
-            if not self.proxy:
-                # This is where we will save our downloaded file
-                filepath = os.path.join(path, reply.filename)
-                with open(filepath, "wb") as fobj:
-                    for chunk in data.iter_content(
-                        chunk_size=1024
-                    ):  # Getting 1024 in each chunk
-                        if chunk:
-                            fobj.write(chunk)
-
-            else:
-                filepath = os.path.join(
-                    "/home/user/QubesIncoming/", self.proxy_vm_name, data["filename"]
-                )
-            # Return the tuple of sha256sum, filepath
-            # Returning empty string instead of sha256sum due to this
-            # SecureDrop server bug:
-            # https://github.com/freedomofpress/securedrop/issues/3877
-            return "", filepath
-        except Exception as err:
-            raise BaseError(err)
+        # Return the tuple of sha256sum, filepath
+        # Returning empty string instead of sha256sum due to this
+        # SecureDrop server bug:
+        # https://github.com/freedomofpress/securedrop/issues/3877
+        return "", filepath
 
     def delete_reply(self, reply: Reply) -> bool:
         """

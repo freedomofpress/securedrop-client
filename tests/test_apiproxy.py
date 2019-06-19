@@ -16,6 +16,7 @@ from sdclientapi.sdlocalobjects import (
     ReplyError,
     Reply,
     Source,
+    Submission,
 )
 from utils import load_auth, save_auth, dastollervey_datasaver
 
@@ -329,3 +330,33 @@ def test_request_timeout(mocker):
 
     with pytest.raises(RequestTimeoutError):
         api.authenticate()
+
+
+def test_download_reply_timeout(mocker):
+    class MockedPopen:
+        def __init__(self, *nargs, **kwargs) -> None:
+            self.stdin = mocker.MagicMock()
+
+        def communicate(self, *nargs, **kwargs) -> None:
+            raise TimeoutExpired(["mock"], 123)
+
+    api = API("mock", "mock", "mock", "mock", proxy=True)
+    mocker.patch("sdclientapi.Popen", MockedPopen)
+    with pytest.raises(RequestTimeoutError):
+        r = Reply(uuid="humanproblem", filename="secret.txt")
+        api.download_reply(r)
+
+
+def test_download_submission_timeout(mocker):
+    class MockedPopen:
+        def __init__(self, *nargs, **kwargs) -> None:
+            self.stdin = mocker.MagicMock()
+
+        def communicate(self, *nargs, **kwargs) -> None:
+            raise TimeoutExpired(["mock"], 123)
+
+    api = API("mock", "mock", "mock", "mock", proxy=True)
+    mocker.patch("sdclientapi.Popen", MockedPopen)
+    with pytest.raises(RequestTimeoutError):
+        s = Submission(uuid="climateproblem")
+        api.download_submission(s)
