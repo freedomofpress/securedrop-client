@@ -18,6 +18,7 @@ from sdclientapi.sdlocalobjects import BaseError
 from sdclientapi.sdlocalobjects import Reply
 from sdclientapi.sdlocalobjects import ReplyError
 from sdclientapi.sdlocalobjects import Source
+from sdclientapi.sdlocalobjects import Submission
 from sdclientapi.sdlocalobjects import WrongUUIDError
 
 NUM_REPLIES_PER_SOURCE = 2
@@ -341,3 +342,19 @@ def test_request_read_timeout(mocker):
     mocker.patch("sdclientapi.requests.request", side_effect=ReadTimeout)
     with pytest.raises(RequestTimeoutError):
         api.authenticate()
+
+
+def test_download_reply_timeout(mocker):
+    api = API("mock", "mock", "mock", "mock", proxy=False)
+    mocker.patch("sdclientapi.requests.request", side_effect=RequestTimeoutError)
+    with pytest.raises(RequestTimeoutError):
+        r = Reply(uuid="humanproblem", filename="secret.txt")
+        api.download_reply(r)
+
+
+def test_download_submission_timeout(mocker):
+    api = API("mock", "mock", "mock", "mock", proxy=False)
+    mocker.patch("sdclientapi.requests.request", side_effect=RequestTimeoutError)
+    with pytest.raises(RequestTimeoutError):
+        s = Submission(uuid="climateproblem")
+        api.download_submission(s)
