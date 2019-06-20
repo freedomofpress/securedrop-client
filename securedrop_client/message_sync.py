@@ -54,27 +54,29 @@ class APISyncObject(QObject):
         self,
         session: Session,
         filepath: str,
-        msg: Union[File, Message, Reply],
+        msg: Reply,
     ) -> None:
         with NamedTemporaryFile('w+') as plaintext_file:
             try:
                 self.gpg.decrypt_submission_or_reply(filepath, plaintext_file.name, False)
                 plaintext_file.seek(0)
                 content = plaintext_file.read()
-                storage.set_decryption_status_with_content(
+                storage.set_message_or_reply_content(
                     model_type=type(msg),
                     uuid=msg.uuid,
-                    is_decrypted=True,
-                    session=session,
-                    content=content)
-
+                    content=content,
+                    session=session)
+                storage.mark_as_decrypted(
+                    model_type=type(msg),
+                    uuid=msg.uuid,
+                    session=session)
                 logger.info("Message or reply decrypted: {}".format(msg.filename))
             except CryptoError:
-                storage.set_decryption_status_with_content(
+                storage.mark_as_decrypted(
                     model_type=type(msg),
                     uuid=msg.uuid,
-                    is_decrypted=False,
-                    session=session)
+                    session=session,
+                    is_decrypted=False)
                 logger.info("Message or reply failed to decrypt: {}".format(msg.filename))
 
     def fetch_the_thing(

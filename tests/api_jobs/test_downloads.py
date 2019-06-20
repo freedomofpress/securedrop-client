@@ -1,12 +1,26 @@
 import os
 import pytest
-import sdclientapi
 from typing import Tuple
 
-from securedrop_client import db
-from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob
+from sdclientapi import BaseError
+from sdclientapi import Submission as SdkSubmission
+
+from securedrop_client.api_jobs.downloads import DownloadJob, FileDownloadJob, MessageDownloadJob
 from securedrop_client.crypto import GpgHelper, CryptoError
 from tests import factory
+
+
+def test_MessageDownloadJob_raises_NotImplemetedError(mocker):
+    job = DownloadJob('mock')
+
+    with pytest.raises(NotImplementedError):
+        job.call_download_api(None, None)
+
+    with pytest.raises(NotImplementedError):
+        job.call_decrypt(None, None)
+
+    with pytest.raises(NotImplementedError):
+        job.get_db_object(None)
 
 
 def test_MessageDownloadJob_happy_path(mocker, homedir, session, session_maker):
@@ -104,6 +118,30 @@ def test_MessageDownloadJob_happiest_path(mocker, homedir, session, session_make
     assert message.is_decrypted is True
 
 
+def test_MessageDownloadJob_with_base_error(mocker, homedir, session, session_maker):
+    """
+    Test when a message does not successfully download.
+    """
+    message = factory.Message(
+        source=factory.Source(), is_downloaded=False, is_decrypted=None, content=None)
+    session.add(message)
+    session.commit()
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    job = MessageDownloadJob(message.uuid, homedir, gpg)
+    api_client = mocker.MagicMock()
+    api_client = mocker.MagicMock()
+    mocker.patch.object(api_client, 'download_submission', side_effect=BaseError)
+    decrypt_fn = mocker.patch.object(job.gpg, 'decrypt_submission_or_reply')
+
+    with pytest.raises(BaseError):
+        job.call_api(api_client, session)
+
+    assert message.content is None
+    assert message.is_downloaded is False
+    assert message.is_decrypted is None
+    decrypt_fn.assert_not_called()
+
+
 def test_MessageDownloadJob_with_crypto_error(mocker, homedir, session, session_maker):
     """
     Test when a message successfully downloads, but does not successfully decrypt. Use the `homedir`
@@ -121,7 +159,8 @@ def test_MessageDownloadJob_with_crypto_error(mocker, homedir, session, session_
     path = os.path.join(homedir, 'data')
     api_client.download_submission = mocker.MagicMock(return_value=('', path))
 
-    job.call_api(api_client, session)
+    with pytest.raises(CryptoError):
+        job.call_api(api_client, session)
 
     assert message.content is None
     assert message.is_downloaded is True
@@ -136,7 +175,7 @@ def test_FileDownloadJob_message_already_decrypted(mocker, homedir, session, ses
     session.add(file)
     session.commit()
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
-    job = FileDownloadJob(db.File, file.uuid, homedir, gpg)
+    job = FileDownloadJob(file.uuid, homedir, gpg)
     decrypt_fn = mocker.patch.object(job.gpg, 'decrypt_submission_or_reply')
     api_client = mocker.MagicMock()
     download_fn = mocker.patch.object(api_client, 'download_submission')
@@ -156,7 +195,7 @@ def test_FileDownloadJob_message_already_downloaded(mocker, homedir, session, se
     session.add(file)
     session.commit()
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
-    job = FileDownloadJob(db.File, file.uuid, homedir, gpg)
+    job = FileDownloadJob(file.uuid, os.path.join(homedir, 'data'), gpg)
     mocker.patch.object(job.gpg, 'decrypt_submission_or_reply')
     api_client = mocker.MagicMock()
     download_fn = mocker.patch.object(api_client, 'download_submission')
@@ -178,7 +217,7 @@ def test_FileDownloadJob_happy_path_no_etag(mocker, homedir, session, session_ma
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
     mock_decrypt = mocker.patch.object(gpg, 'decrypt_submission_or_reply')
 
-    def fake_download(sdk_obj: sdclientapi.Submission) -> Tuple[str, str]:
+    def fake_download(sdk_obj: SdkSubmission) -> Tuple[str, str]:
         '''
         :return: (etag, path_to_dl)
         '''
@@ -191,7 +230,6 @@ def test_FileDownloadJob_happy_path_no_etag(mocker, homedir, session, session_ma
     api_client.download_submission = fake_download
 
     job = FileDownloadJob(
-        db.File,
         file_.uuid,
         os.path.join(homedir, 'data'),
         gpg,
@@ -218,7 +256,7 @@ def test_FileDownloadJob_happy_path_sha256_etag(mocker, homedir, session, sessio
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
     mock_decrypt = mocker.patch.object(gpg, 'decrypt_submission_or_reply')
 
-    def fake_download(sdk_obj: sdclientapi.Submission) -> Tuple[str, str]:
+    def fake_download(sdk_obj: SdkSubmission) -> Tuple[str, str]:
         '''
         :return: (etag, path_to_dl)
         '''
@@ -234,7 +272,6 @@ def test_FileDownloadJob_happy_path_sha256_etag(mocker, homedir, session, sessio
     api_client.download_submission = fake_download
 
     job = FileDownloadJob(
-        db.File,
         file_.uuid,
         os.path.join(homedir, 'data'),
         gpg,
@@ -255,7 +292,7 @@ def test_FileDownloadJob_bad_sha256_etag(mocker, homedir, session, session_maker
 
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
 
-    def fake_download(sdk_obj: sdclientapi.Submission) -> Tuple[str, str]:
+    def fake_download(sdk_obj: SdkSubmission) -> Tuple[str, str]:
         '''
         :return: (etag, path_to_dl)
         '''
@@ -270,7 +307,6 @@ def test_FileDownloadJob_bad_sha256_etag(mocker, homedir, session, session_maker
     api_client.download_submission = fake_download
 
     job = FileDownloadJob(
-        db.File,
         file_.uuid,
         os.path.join(homedir, 'data'),
         gpg,
@@ -290,7 +326,7 @@ def test_FileDownloadJob_happy_path_unknown_etag(mocker, homedir, session, sessi
 
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
 
-    def fake_download(sdk_obj: sdclientapi.Submission) -> Tuple[str, str]:
+    def fake_download(sdk_obj: SdkSubmission) -> Tuple[str, str]:
         '''
         :return: (etag, path_to_dl)
         '''
@@ -304,7 +340,6 @@ def test_FileDownloadJob_happy_path_unknown_etag(mocker, homedir, session, sessi
     api_client.download_submission = fake_download
 
     job = FileDownloadJob(
-        db.File,
         file_.uuid,
         os.path.join(homedir, 'data'),
         gpg,
@@ -333,7 +368,7 @@ def test_FileDownloadJob_decryption_error(mocker, homedir, session, session_make
     mock_decrypt = mocker.patch.object(gpg, 'decrypt_submission_or_reply',
                                        side_effect=CryptoError)
 
-    def fake_download(sdk_obj: sdclientapi.Submission) -> Tuple[str, str]:
+    def fake_download(sdk_obj: SdkSubmission) -> Tuple[str, str]:
         '''
         :return: (etag, path_to_dl)
         '''
@@ -349,7 +384,6 @@ def test_FileDownloadJob_decryption_error(mocker, homedir, session, session_make
     api_client.download_submission = fake_download
 
     job = FileDownloadJob(
-        db.File,
         file_.uuid,
         os.path.join(homedir, 'data'),
         gpg,

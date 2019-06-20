@@ -80,8 +80,6 @@ class Message(Base):
         Boolean(name='is_decrypted'),
         CheckConstraint('CASE WHEN is_downloaded = 0 THEN is_decrypted IS NULL ELSE 1 END',
                         name='messages_compare_is_downloaded_vs_is_decrypted'),
-        CheckConstraint('CASE WHEN is_decrypted = 0 THEN content IS NULL ELSE 1 END',
-                        name='messages_compare_is_decrypted_vs_content'),
         nullable=True,
     )
 
@@ -192,8 +190,6 @@ class Reply(Base):
         Boolean(name='is_decrypted'),
         CheckConstraint('CASE WHEN is_downloaded = 0 THEN is_decrypted IS NULL ELSE 1 END',
                         name='replies_compare_is_downloaded_vs_is_decrypted'),
-        CheckConstraint('CASE WHEN is_decrypted = 0 THEN content IS NULL ELSE 1 END',
-                        name='replies_compare_is_decrypted_vs_content'),
         nullable=True,
     )
 

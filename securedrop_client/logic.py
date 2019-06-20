@@ -550,7 +550,6 @@ class Controller(QObject):
         """
         if self.api:
             job = FileDownloadJob(
-                submission_type,
                 submission_uuid,
                 self.data_dir,
                 self.gpg,

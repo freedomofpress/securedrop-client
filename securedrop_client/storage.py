@@ -361,21 +361,33 @@ def mark_as_downloaded(
     session.commit()
 
 
-def set_decryption_status_with_content(
+def mark_as_decrypted(
     model_type: Union[Type[File], Type[Message], Type[Reply]],
     uuid: str,
-    is_decrypted: bool,
     session: Session,
-    content: str = None
+    is_decrypted: bool = True
+) -> None:
+    """
+    Mark object as downloaded in the database.
+    """
+    db_obj = session.query(model_type).filter_by(uuid=uuid).one()
+    db_obj.is_decrypted = is_decrypted
+    session.add(db_obj)
+    session.commit()
+
+
+def set_message_or_reply_content(
+    model_type: Union[Type[Message], Type[Reply]],
+    uuid: str,
+    content: str,
+    session: Session
 ) -> None:
     """
     Mark whether or not the object is decrypted. If it's not decrypted, do not set content. If the
     object is a File, do not set content (filesystem storage is used instead).
     """
     db_obj = session.query(model_type).filter_by(uuid=uuid).one_or_none()
-    db_obj.is_decrypted = is_decrypted
-    if content is not None:
-        db_obj.content = content
+    db_obj.content = content
     session.add(db_obj)
     session.commit()
 
