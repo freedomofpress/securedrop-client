@@ -470,6 +470,55 @@ def test_MainView_on_source_changed_updates_conversation_view(mocker, session):
     assert add_file_fn.call_count == 1
 
 
+def test_MainView_on_source_changed_SourceConversationWrapper_is_preserved(mocker, session):
+    """
+    SourceConversationWrapper contains ReplyBoxWidget - this tests that we do not recreate
+    SourceConversationWrapper when we click away from a given source. We should create it the
+    first time, and then it should persist.
+    """
+    mv = MainView(None)
+    mv.source_list = mocker.MagicMock()
+    mv.set_conversation = mocker.MagicMock()
+    mv.controller = mocker.MagicMock(is_authenticated=True)
+    source = factory.Source()
+    source2 = factory.Source()
+    session.add(source)
+    session.add(source2)
+    session.commit()
+
+    source_conversation_init = mocker.patch(
+        'securedrop_client.gui.widgets.SourceConversationWrapper.__init__', return_value=None)
+
+    # We expect on the first call, SourceConversationWrapper.__init__ should be called.
+    mv.source_list.get_current_source = mocker.MagicMock(return_value=source)
+    mv.on_source_changed()
+    assert mv.set_conversation.call_count == 1
+    assert source_conversation_init.call_count == 1
+
+    # Reset mock call counts for next call of on_source_changed.
+    source_conversation_init.reset_mock()
+    mv.set_conversation.reset_mock()
+
+    # Now click on another source (source2). Since this is the first time we have clicked
+    # on source2, we expect on the first call, SourceConversationWrapper.__init__ should be
+    # called.
+    mv.source_list.get_current_source = mocker.MagicMock(return_value=source2)
+    mv.on_source_changed()
+    assert mv.set_conversation.call_count == 1
+    assert source_conversation_init.call_count == 1
+
+    # Reset mock call counts for next call of on_source_changed.
+    source_conversation_init.reset_mock()
+    mv.set_conversation.reset_mock()
+
+    # But if we click back (call on_source_changed again) to the source,
+    # its SourceConversationWrapper should _not_ be recreated.
+    mv.source_list.get_current_source = mocker.MagicMock(return_value=source)
+    mv.on_source_changed()
+    assert mv.set_conversation.call_count == 1
+    assert source_conversation_init.call_count == 0
+
+
 def test_MainView_set_conversation(mocker):
     """
     Ensure the passed-in widget is added to the layout of the main view holder

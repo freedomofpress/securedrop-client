@@ -22,7 +22,7 @@ import html
 import sys
 
 from gettext import gettext as _
-from typing import List
+from typing import Dict, List  # noqa: F401
 from uuid import uuid4
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QTimer, QSize, pyqtBoundSignal, QObject
 from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient
@@ -609,6 +609,8 @@ class MainView(QWidget):
         self.layout.addWidget(self.source_list)
         self.layout.addWidget(self.view_holder)
 
+        self.source_conversations = {}  # type: Dict[Source, SourceConversationWrapper]
+
     def setup(self, controller):
         """
         Pass through the controller object to this widget.
@@ -631,7 +633,14 @@ class MainView(QWidget):
         source = self.source_list.get_current_source()
 
         if source:
-            conversation_wrapper = SourceConversationWrapper(source, self.controller)
+            # Try to get the SourceConversationWrapper from the persistent dict,
+            # else we create it.
+            try:
+                conversation_wrapper = self.source_conversations[source]
+            except KeyError:
+                conversation_wrapper = SourceConversationWrapper(source, self.controller)
+                self.source_conversations[source] = conversation_wrapper
+
             self.set_conversation(conversation_wrapper)
         else:
             self.clear_conversation()
