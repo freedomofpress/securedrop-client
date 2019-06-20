@@ -553,13 +553,14 @@ class API:
         self, submission: Submission, path: str = "", timeout: Optional[int] = None
     ) -> Tuple[str, str]:
         """
-        Returns a tuple of sha256sum and file path for a given Submission object. This method
-        also requires a directory path in where it will save the submission file.
+        Returns a tuple of etag (format is algorithm:checksum) and file path for
+        a given Submission object. This method also requires a directory path
+        in where it will save the submission file.
 
         :param submission: Submission object
         :param path: Local directory path to save the submission
 
-        :returns: Tuple of sha256sum and path of the saved submission.
+        :returns: Tuple of etag and path of the saved submission.
         """
         path_query = "api/v1/sources/{}/submissions/{}/download".format(
             submission.source_uuid, submission.uuid
@@ -597,11 +598,8 @@ class API:
             filepath = os.path.join(
                 "/home/user/QubesIncoming/", self.proxy_vm_name, data["filename"]
             )
-        # Return the tuple of sha256sum, filepath
-        # Returning empty string instead of sha256sum due to this
-        # SecureDrop server bug:
-        # https://github.com/freedomofpress/securedrop/issues/3877
-        return "", filepath
+
+        return headers['Etag'].strip('\"'), filepath
 
     def flag_source(self, source: Source) -> bool:
         """
@@ -802,13 +800,14 @@ class API:
 
     def download_reply(self, reply: Reply, path: str = "") -> Tuple[str, str]:
         """
-        Returns a tuple of sha256sum and file path for a given Reply object. This method
-        also requires a directory path in where it will save the reply file.
+        Returns a tuple of etag (format is algorithm:checksum) and file path for
+        a given Reply object. This method also requires a directory path
+        in where it will save the reply file.
 
         :param reply: Reply object
         :param path: Local directory path to save the reply
 
-        :returns: Tuple of sha256sum and path of the saved Reply.
+        :returns: Tuple of etag and path of the saved Reply.
         """
         path_query = "api/v1/sources/{}/replies/{}/download".format(
             reply.source_uuid, reply.uuid
@@ -847,11 +846,8 @@ class API:
             filepath = os.path.join(
                 "/home/user/QubesIncoming/", self.proxy_vm_name, data["filename"]
             )
-        # Return the tuple of sha256sum, filepath
-        # Returning empty string instead of sha256sum due to this
-        # SecureDrop server bug:
-        # https://github.com/freedomofpress/securedrop/issues/3877
-        return "", filepath
+
+        return headers['Etag'].strip('\"'), filepath
 
     def delete_reply(self, reply: Reply) -> bool:
         """

@@ -1,4 +1,5 @@
 import datetime
+import hashlib
 import os
 import pytest
 import shutil
@@ -259,14 +260,19 @@ class TestAPI(unittest.TestCase):
 
         # We need a temporary directory to download
         tmpdir = tempfile.mkdtemp()
-        _, filepath = self.api.download_submission(s, tmpdir)
+        etag, filepath = self.api.download_submission(s, tmpdir)
 
         # now let us read the downloaded file
         with open(filepath, "rb") as fobj:
-            fobj.read()
+            content = fobj.read()
+
+        # Verify the ETag contains the algorithm and the hash is correct
+        hasher = hashlib.sha256()
+        hasher.update(content)
+
+        assert etag == "sha256:{}".format(hasher.hexdigest())
 
         # Now the submission should have is_read as True.
-
         s = self.api.get_submission(s)
         self.assertTrue(s.is_read)
 
@@ -304,11 +310,17 @@ class TestAPI(unittest.TestCase):
 
         # We need a temporary directory to download
         tmpdir = tempfile.mkdtemp()
-        _, filepath = self.api.download_reply(r, tmpdir)
+        etag, filepath = self.api.download_reply(r, tmpdir)
 
         # now let us read the downloaded file
         with open(filepath, "rb") as fobj:
-            fobj.read()
+            content = fobj.read()
+
+        # Verify the ETag contains the algorithm and the hash is correct
+        hasher = hashlib.sha256()
+        hasher.update(content)
+
+        assert etag == "sha256:{}".format(hasher.hexdigest())
 
         # Let us remove the temporary directory
         shutil.rmtree(tmpdir)
