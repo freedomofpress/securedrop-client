@@ -103,14 +103,13 @@ system.
 
 To make a release, you should:
 
-1. Create a branch named "release-[VERSION]"
+1. Create a branch named `release/$new_version_number`
 2. Update `CHANGELOG.md` and `setup.py`
 3. Commit the changes.
 4. Create a PR and get the PR reviewed and merged into ``master``.
-5. ``git tag`` and push the new tag.
+5. ``git tag $new_version_number`` and push the new tag.
 6. Checkout the new tag locally.
 7. Push the new release source tarball to the PSF's PyPI [following this documentation](https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives).
-
 8. If you want to publish the new SDK release to the FPF PyPI mirror, Hop over to the the `securedrop-debian-packaging` repo and follow the [build-a-package](https://github.com/freedomofpress/securedrop-debian-packaging/blob/master/README.md#build-a-package) instructions to push the package up to our PyPI mirror: https://pypi.org/simple
 
 # Contributing
