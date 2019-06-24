@@ -1,6 +1,18 @@
 Changelog
 =========
 
+0.0.11
+------
+
+* Expose ETags in submission and reply downloads (#96).
+* Update tests and test data for first and last name (#92).
+* Bug fix: Ensure RequestTimeoutError is raised for submission and reply downloads (#95).
+
+0.0.10
+------
+
+* Support logout endpoint (#88).
+
 0.0.9
 -----
 
