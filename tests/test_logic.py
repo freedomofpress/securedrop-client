@@ -90,46 +90,6 @@ def test_Controller_setup(homedir, config, mocker, session_maker):
     co.gui.setup.assert_called_once_with(co)
 
 
-def test_Controller_start_reply_thread(homedir, config, mocker, session_maker):
-    """
-    When starting reply-fetching thread, make sure we do a few things.
-    Using the `config` fixture to ensure the config is written to disk.
-    """
-    mock_gui = mocker.MagicMock()
-
-    co = Controller('http://localhost', mock_gui, session_maker, homedir)
-
-    mock_qthread = mocker.patch('securedrop_client.logic.QThread')
-    mocker.patch('securedrop_client.logic.ReplySync')
-    co.reply_sync = mocker.MagicMock()
-
-    co.start_reply_thread()
-
-    co.reply_sync.moveToThread.assert_called_once_with(mock_qthread())
-    co.reply_thread.started.connect.assert_called_once_with(co.reply_sync.run)
-    co.reply_thread.start.assert_called_once_with()
-
-
-def test_Controller_start_reply_thread_if_already_running(homedir, config, mocker, session_maker):
-    """
-    Ensure that when starting the reply thread, we don't start another thread
-    if it's already running. Instead, we just authenticate the existing thread.
-    Using the `config` fixture to ensure the config is written to disk.
-    """
-    mock_gui = mocker.MagicMock()
-
-    co = Controller('http://localhost', mock_gui, session_maker, homedir)
-
-    co.api = 'api object'
-    co.reply_sync = mocker.MagicMock()
-    co.reply_thread = mocker.MagicMock()
-    co.reply_thread.api = None
-
-    co.start_reply_thread()
-
-    co.reply_thread.start.assert_not_called()
-
-
 def test_Controller_call_api(homedir, config, mocker, session_maker):
     """
     A new thread and APICallRunner is created / setup.
@@ -190,7 +150,6 @@ def test_Controller_login_offline_mode(homedir, config, mocker):
     co.gui = mocker.MagicMock()
     co.gui.show_main_window = mocker.MagicMock()
     co.gui.hide_login = mocker.MagicMock()
-    co.start_reply_thread = mocker.MagicMock()
     co.update_sources = mocker.MagicMock()
 
     co.login_offline_mode()
@@ -231,7 +190,6 @@ def test_Controller_on_authenticate_success(homedir, config, mocker, session_mak
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     co.sync_api = mocker.MagicMock()
     co.api = mocker.MagicMock()
-    co.start_reply_thread = mocker.MagicMock()
     co.api.username = 'test'
 
     co.on_authenticate_success(True)
@@ -725,8 +683,6 @@ def test_Controller_logout_success(homedir, config, mocker, session_maker):
     co.api_job_queue = mocker.MagicMock()
     co.api_job_queue.logout = mocker.MagicMock()
     co.call_api = mocker.MagicMock()
-    co.reply_sync = mocker.MagicMock()
-    co.reply_sync.api = mocker.MagicMock()
     info_logger = mocker.patch('securedrop_client.logic.logging.info')
     logout_method = co.api.logout
     co.logout()
@@ -736,7 +692,6 @@ def test_Controller_logout_success(homedir, config, mocker, session_maker):
         co.on_logout_failure)
     co.on_logout_success(True)
     assert co.api is None
-    assert co.reply_sync.api is None
     co.api_job_queue.logout.assert_called_once_with()
     co.gui.logout.assert_called_once_with()
     msg = 'Client logout successful'
@@ -756,18 +711,17 @@ def test_Controller_logout_failure(homedir, config, mocker, session_maker):
     co.api_job_queue = mocker.MagicMock()
     co.api_job_queue.logout = mocker.MagicMock()
     co.call_api = mocker.MagicMock()
-    co.reply_sync = mocker.MagicMock()
-    co.reply_sync.api = mocker.MagicMock()
     info_logger = mocker.patch('securedrop_client.logic.logging.info')
     logout_method = co.api.logout
+
     co.logout()
+
     co.call_api.assert_called_with(
         logout_method,
         co.on_logout_success,
         co.on_logout_failure)
     co.on_logout_failure(Exception())
     assert co.api is None
-    assert co.reply_sync.api is None
     co.api_job_queue.logout.assert_called_once_with()
     co.gui.logout.assert_called_once_with()
     msg = 'Client logout failure'
@@ -963,6 +917,81 @@ def test_Controller_on_file_open(homedir, config, mocker, session, session_maker
     mock_subprocess.start.call_count == 1
 
 
+def test_Controller_download_new_replies_with_new_reply(mocker, session, session_maker, homedir):
+    """
+    Test that `download_new_replies` enqueues a job, connects to the right slots, and sets a
+    user-facing status message when a new reply is found.
+    """
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    reply = factory.Reply(source=factory.Source())
+    mocker.patch('securedrop_client.storage.find_new_replies', return_value=[reply])
+    success_signal = mocker.MagicMock()
+    failure_signal = mocker.MagicMock()
+    job = mocker.MagicMock(success_signal=success_signal, failure_signal=failure_signal)
+    mocker.patch("securedrop_client.logic.ReplyDownloadJob", return_value=job)
+    api_job_queue = mocker.patch.object(co, 'api_job_queue')
+
+    co.download_new_replies()
+
+    api_job_queue.enqueue.assert_called_once_with(job)
+    success_signal.connect.assert_called_once_with(
+        co.on_reply_download_success, type=Qt.QueuedConnection)
+    failure_signal.connect.assert_called_once_with(
+        co.on_reply_download_failure, type=Qt.QueuedConnection)
+
+
+def test_Controller_download_new_replies_without_replies(mocker, session, session_maker, homedir):
+    """
+    Test that `download_new_replies` does not enqueue any jobs or connect to slots or set a
+    user-facing status message when there are no new replies found.
+    """
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    mocker.patch('securedrop_client.storage.find_new_replies', return_value=[])
+    success_signal = mocker.MagicMock()
+    failure_signal = mocker.MagicMock()
+    job = mocker.MagicMock(success_signal=success_signal, failure_signal=failure_signal)
+    mocker.patch("securedrop_client.logic.ReplyDownloadJob", return_value=job)
+    api_job_queue = mocker.patch.object(co, 'api_job_queue')
+    set_status = mocker.patch.object(co, 'set_status')
+
+    co.download_new_replies()
+
+    api_job_queue.enqueue.assert_not_called()
+    success_signal.connect.assert_not_called()
+    failure_signal.connect.assert_not_called()
+    set_status.assert_not_called()
+
+
+def test_Controller_on_reply_downloaded_success(mocker, homedir, session_maker):
+    """
+    Check that a successful download emits proper signal.
+    """
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    reply_ready = mocker.patch.object(co, 'reply_ready')
+    reply = factory.Message(source=factory.Source())
+    mocker.patch('securedrop_client.storage.get_reply', return_value=reply)
+
+    co.on_reply_download_success(reply.uuid)
+
+    reply_ready.emit.assert_called_once_with(reply.uuid, reply.content)
+
+
+def test_Controller_on_reply_downloaded_failure(mocker, homedir, session_maker):
+    """
+    Check that a failed download informs the user.
+    """
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    reply_ready = mocker.patch.object(co, 'reply_ready')
+    reply = factory.Reply(source=factory.Source())
+    mocker.patch('securedrop_client.storage.get_reply', return_value=reply)
+    debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
+
+    co.on_reply_download_failure('mock_exception')
+
+    debug_logger.assert_called_once_with('Failed to download reply: mock_exception')
+    reply_ready.emit.assert_not_called()
+
+
 def test_Controller_download_new_messages_with_new_message(mocker, session, session_maker, homedir):
     """
     Test that `download_new_messages` enqueues a job, connects to the right slots, and sets a
@@ -1029,14 +1058,14 @@ def test_Controller_on_message_downloaded_failure(mocker, homedir, session_maker
     Check that a failed download informs the user.
     """
     co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
-    set_status = mocker.patch.object(co, 'set_status')
     message_ready = mocker.patch.object(co, 'message_ready')
     message = factory.Message(source=factory.Source())
     mocker.patch('securedrop_client.storage.get_message', return_value=message)
+    debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
 
-    co.on_message_download_failure(message.uuid)
+    co.on_message_download_failure('mock_exception')
 
-    set_status.assert_called_once_with("The message download failed.")
+    debug_logger.assert_called_once_with('Failed to download message: mock_exception')
     message_ready.emit.assert_not_called()
 
 

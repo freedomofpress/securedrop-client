@@ -1459,9 +1459,7 @@ def test_ConversationView_add_reply_from_reply_box(mocker):
     reply_succeeded = mocker.MagicMock()
     reply_failed = mocker.MagicMock()
     controller = mocker.MagicMock(
-        reply_sync=mocker.MagicMock(reply_ready=reply_ready),
-        reply_succeeded=reply_succeeded,
-        reply_failed=reply_failed)
+        reply_ready=reply_ready, reply_succeeded=reply_succeeded, reply_failed=reply_failed)
     cv = ConversationView(source, controller)
     cv.conversation_layout = mocker.MagicMock()
     reply_widget_res = mocker.MagicMock()
@@ -1484,9 +1482,8 @@ def test_ConversationView_add_reply(mocker, session, source):
     mock_reply_ready_signal = mocker.MagicMock()
     mock_reply_succeeded_signal = mocker.MagicMock()
     mock_reply_failed_signal = mocker.MagicMock()
-    mock_reply_sync = mocker.MagicMock(reply_ready=mock_reply_ready_signal)
     mocked_controller = mocker.MagicMock(session=session,
-                                         reply_sync=mock_reply_sync,
+                                         reply_ready=mock_reply_ready_signal,
                                          reply_succeeded=mock_reply_succeeded_signal,
                                          reply_failed=mock_reply_failed_signal)
 
@@ -1528,9 +1525,8 @@ def test_ConversationView_add_reply_no_content(mocker, session, source):
     mock_reply_ready_signal = mocker.MagicMock()
     mock_reply_succeeded_signal = mocker.MagicMock()
     mock_reply_failed_signal = mocker.MagicMock()
-    mock_reply_sync = mocker.MagicMock(reply_ready=mock_reply_ready_signal)
     mocked_controller = mocker.MagicMock(session=session,
-                                         reply_sync=mock_reply_sync,
+                                         reply_ready=mock_reply_ready_signal,
                                          reply_succeeded=mock_reply_succeeded_signal,
                                          reply_failed=mock_reply_failed_signal)
 

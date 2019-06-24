@@ -31,10 +31,10 @@ from sqlalchemy.orm.session import sessionmaker
 
 from securedrop_client import storage
 from securedrop_client import db
-from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob
+from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob, \
+    ReplyDownloadJob
 from securedrop_client.api_jobs.uploads import SendReplyJob
 from securedrop_client.crypto import GpgHelper, CryptoError
-from securedrop_client.message_sync import ReplySync
 from securedrop_client.queue import ApiJobQueue
 from securedrop_client.utils import check_dir_permissions
 
@@ -120,10 +120,16 @@ class Controller(QObject):
     file_ready = pyqtSignal(str)
 
     """
-    This signal indicates that a file has been successfully downloaded by emitting the file's
+    This signal indicates that a message has been successfully downloaded by emitting the message's
     UUID as a string.
     """
     message_ready = pyqtSignal([str, str])
+
+    """
+    This signal indicates that a reply has been successfully downloaded by emitting the reply's
+    UUID as a string.
+    """
+    reply_ready = pyqtSignal([str, str])
 
     def __init__(self, hostname: str, gui, session_maker: sessionmaker,
                  home: str, proxy: bool = True) -> None:
@@ -164,10 +170,6 @@ class Controller(QObject):
         self.api_threads = {}  # type: Dict[str, Dict]
 
         self.gpg = GpgHelper(home, self.session_maker, proxy)
-
-        # thread responsible for fetching replies
-        self.reply_thread = None
-        self.reply_sync = ReplySync(self.api, self.gpg, self.session_maker)
 
         self.sync_flag = os.path.join(home, 'sync_flag')
 
@@ -273,19 +275,6 @@ class Controller(QObject):
         else:
             user_callback(result_data)
 
-    def start_reply_thread(self):
-        """
-        Starts the reply-fetching thread in the background.
-        """
-        if not self.reply_thread:
-            self.reply_sync.api = self.api
-            self.reply_thread = QThread()
-            self.reply_sync.moveToThread(self.reply_thread)
-            self.reply_thread.started.connect(self.reply_sync.run)
-            self.reply_thread.start()
-        else:  # Already running from last login
-            self.reply_sync.api = self.api
-
     def login(self, username, password, totp):
         """
         Given a username, password and time based one-time-passcode (TOTP),
@@ -305,9 +294,6 @@ class Controller(QObject):
         self.gui.hide_login()
         self.sync_api()
         self.gui.show_main_window(self.api.username)
-
-        self.start_reply_thread()
-
         self.api_job_queue.login(self.api)
 
         # Clear the sidebar error status bar if a message was shown
@@ -329,7 +315,6 @@ class Controller(QObject):
         """
         self.gui.hide_login()
         self.gui.show_main_window()
-        self.start_reply_thread()
         self.is_authenticated = False
         self.update_sources()
 
@@ -401,12 +386,9 @@ class Controller(QObject):
                 except CryptoError:
                     logger.warning('Failed to import key for source {}'.format(source.uuid))
 
-        # Update sources
         self.update_sources()
-
-        # Download new messages
         self.download_new_messages()
-
+        self.download_new_replies()
         self.sync_events.emit('synced')
 
     def on_sync_failure(self, result: Exception) -> None:
@@ -479,7 +461,6 @@ class Controller(QObject):
                       self.on_logout_success,
                       self.on_logout_failure)
         self.api = None
-        self.reply_sync.api = None
         self.api_job_queue.logout()
         self.gui.logout()
         self.is_authenticated = False
@@ -514,7 +495,28 @@ class Controller(QObject):
         """
         Called when a message fails to download.
         """
-        self.set_status("The message download failed.")
+        logger.debug('Failed to download message: {}'.format(exception))
+
+    def download_new_replies(self) -> None:
+        replies = storage.find_new_replies(self.session)
+        for reply in replies:
+            job = ReplyDownloadJob(reply.uuid, self.data_dir, self.gpg)
+            job.success_signal.connect(self.on_reply_download_success, type=Qt.QueuedConnection)
+            job.failure_signal.connect(self.on_reply_download_failure, type=Qt.QueuedConnection)
+            self.api_job_queue.enqueue(job)
+
+    def on_reply_download_success(self, uuid: str) -> None:
+        """
+        Called when a reply has downloaded.
+        """
+        reply = storage.get_reply(self.session, uuid)
+        self.reply_ready.emit(reply.uuid, reply.content)
+
+    def on_reply_download_failure(self, exception: Exception) -> None:
+        """
+        Called when a reply fails to download.
+        """
+        logger.debug('Failed to download reply: {}'.format(exception))
 
     def on_file_open(self, file_uuid: str) -> None:
         """
@@ -572,7 +574,7 @@ class Controller(QObject):
         """
         Called when a file fails to download.
         """
-        self.set_status("The file download failed. Please try again.")
+        self.set_status(_('The file download failed. Please try again.'))
 
     def on_delete_source_success(self, result) -> None:
         """
@@ -621,6 +623,7 @@ class Controller(QObject):
         self.reply_succeeded.emit(reply_uuid)
 
     def on_reply_failure(self, reply_uuid: str) -> None:
+        self.set_status(_('Reply failed to send'))
         logger.debug('Reply send failure: {}'.format(reply_uuid))
         self.reply_failed.emit(reply_uuid)
 
