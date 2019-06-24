@@ -14,7 +14,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+along with this program.  If not, see <fhttp://www.gnu.org/licenses/>.
 """
 import arrow
 import inspect
@@ -33,7 +33,7 @@ from securedrop_client import storage
 from securedrop_client import db
 from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob, \
     ReplyDownloadJob
-from securedrop_client.api_jobs.uploads import SendReplyJob
+from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobException
 from securedrop_client.crypto import GpgHelper, CryptoError
 from securedrop_client.queue import ApiJobQueue
 from securedrop_client.utils import check_dir_permissions
@@ -619,13 +619,12 @@ class Controller(QObject):
         self.api_job_queue.enqueue(job)
 
     def on_reply_success(self, reply_uuid: str) -> None:
-        logger.debug('Reply send success: {}'.format(reply_uuid))
+        logger.debug('{} sent successfully'.format(reply_uuid))
         self.reply_succeeded.emit(reply_uuid)
 
-    def on_reply_failure(self, reply_uuid: str) -> None:
-        self.set_status(_('Reply failed to send'))
-        logger.debug('Reply send failure: {}'.format(reply_uuid))
-        self.reply_failed.emit(reply_uuid)
+    def on_reply_failure(self, exception: SendReplyJobException) -> None:
+        logger.debug('{} failed to send'.format(exception.reply_uuid))
+        self.reply_failed.emit(exception.reply_uuid)
 
     def get_file(self, file_uuid: str) -> db.File:
         file = storage.get_file(self.session, file_uuid)

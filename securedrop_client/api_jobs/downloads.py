@@ -57,6 +57,8 @@ class DownloadJob(ApiJob):
 
     def call_api(self, api_client: API, session: Session) -> Any:
         '''
+        Override ApiJob.
+
         Download and decrypt the file associated with the database object.
         '''
         db_object = self.get_db_object(session)

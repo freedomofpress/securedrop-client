@@ -224,7 +224,6 @@ def test_MessageDownloadJob_with_base_error(mocker, homedir, session, session_ma
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
     job = MessageDownloadJob(message.uuid, homedir, gpg)
     api_client = mocker.MagicMock()
-    api_client = mocker.MagicMock()
     mocker.patch.object(api_client, 'download_submission', side_effect=BaseError)
     decrypt_fn = mocker.patch.object(job.gpg, 'decrypt_submission_or_reply')
 
@@ -460,8 +459,7 @@ def test_FileDownloadJob_decryption_error(mocker, homedir, session, session_make
     session.commit()
 
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
-    mock_decrypt = mocker.patch.object(gpg, 'decrypt_submission_or_reply',
-                                       side_effect=CryptoError)
+    mock_decrypt = mocker.patch.object(gpg, 'decrypt_submission_or_reply', side_effect=CryptoError)
 
     def fake_download(sdk_obj: SdkSubmission) -> Tuple[str, str]:
         '''

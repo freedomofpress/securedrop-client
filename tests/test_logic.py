@@ -5,7 +5,6 @@ expected.
 import arrow
 import os
 import pytest
-import sdclientapi
 
 from PyQt5.QtCore import Qt
 from sdclientapi import RequestTimeoutError
@@ -14,6 +13,7 @@ from tests import factory
 from securedrop_client import storage, db
 from securedrop_client.crypto import CryptoError
 from securedrop_client.logic import APICallRunner, Controller
+from securedrop_client.api_jobs.uploads import SendReplyJobException
 
 with open(os.path.join(os.path.dirname(__file__), 'files', 'test-key.gpg.pub.asc')) as f:
     PUB_KEY = f.read()
@@ -1152,39 +1152,34 @@ def test_Controller_on_reply_success(homedir, mocker, session_maker, session):
     '''
     Check that when the method is called, the client emits the correct signal.
     '''
-
-    mock_gui = mocker.MagicMock()
-
-    co = Controller('http://localhost', mock_gui, session_maker, homedir)
-    co.api = mocker.Mock()
-
-    reply = sdclientapi.Reply(uuid='wat', filename='1-lol')
-
-    mock_reply_succeeded = mocker.patch.object(co, 'reply_succeeded')
-    mock_reply_failed = mocker.patch.object(co, 'reply_failed')
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    reply_succeeded = mocker.patch.object(co, 'reply_succeeded')
+    reply_failed = mocker.patch.object(co, 'reply_failed')
+    reply = factory.Reply(source=factory.Source())
+    debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
 
     co.on_reply_success(reply.uuid)
-    mock_reply_succeeded.emit.assert_called_once_with(reply.uuid)
-    assert not mock_reply_failed.emit.called
+
+    debug_logger.assert_called_once_with('{} sent successfully'.format(reply.uuid))
+    reply_succeeded.emit.assert_called_once_with(reply.uuid)
+    reply_failed.emit.assert_not_called()
 
 
 def test_Controller_on_reply_failure(homedir, mocker, session_maker):
     '''
     Check that when the method is called, the client emits the correct signal.
     '''
-    mock_gui = mocker.MagicMock()
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    reply_succeeded = mocker.patch.object(co, 'reply_succeeded')
+    reply_failed = mocker.patch.object(co, 'reply_failed')
+    debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
 
-    co = Controller('http://localhost', mock_gui, session_maker, homedir)
-    co.api = mocker.Mock()
+    exception = SendReplyJobException('mock_error_message', 'mock_reply_uuid')
+    co.on_reply_failure(exception)
 
-    reply = sdclientapi.Reply(uuid='wat', filename='1-lol')
-
-    mock_reply_succeeded = mocker.patch.object(co, 'reply_succeeded')
-    mock_reply_failed = mocker.patch.object(co, 'reply_failed')
-
-    co.on_reply_failure(reply.uuid)
-    mock_reply_failed.emit.assert_called_once_with(reply.uuid)
-    assert not mock_reply_succeeded.emit.called
+    debug_logger.assert_called_once_with('{} failed to send'.format('mock_reply_uuid'))
+    reply_failed.emit.assert_called_once_with('mock_reply_uuid')
+    reply_succeeded.emit.assert_not_called()
 
 
 def test_Controller_is_authenticated_property(homedir, mocker, session_maker):

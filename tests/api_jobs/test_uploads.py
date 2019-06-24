@@ -2,7 +2,7 @@ import pytest
 import sdclientapi
 
 from securedrop_client import db
-from securedrop_client.api_jobs.uploads import SendReplyJob
+from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobException
 from securedrop_client.crypto import GpgHelper, CryptoError
 from tests import factory
 
@@ -54,7 +54,9 @@ def test_send_reply_success(homedir, mocker, session, session_maker):
 
 def test_send_reply_failure_gpg_error(homedir, mocker, session, session_maker):
     '''
-    Check that if gpg fails when sending a message, we do not call the API.
+    Check that if gpg fails when sending a message, we do not call the API, and ensure that
+    SendReplyJobException is raised when there is a CryptoError so we can handle it in
+    ApiJob._do_call_api.
     '''
     source = factory.Source()
     session.add(source)
@@ -84,8 +86,7 @@ def test_send_reply_failure_gpg_error(homedir, mocker, session, session_maker):
         gpg,
     )
 
-    # Ensure that the CryptoError is raised so we can handle it in ApiJob._do_call_api
-    with pytest.raises(CryptoError):
+    with pytest.raises(SendReplyJobException):
         job.call_api(api_client, session)
 
     # Ensure we attempted to encrypt the message
@@ -94,4 +95,26 @@ def test_send_reply_failure_gpg_error(homedir, mocker, session, session_maker):
 
     # Ensure reply did not get added to db
     replies = session.query(db.Reply).filter_by(uuid=msg_uuid).all()
+    assert len(replies) == 0
+
+
+def test_send_reply_failure_unknown_error(homedir, mocker, session, session_maker):
+    '''
+    Check that if the reply_source api call fails when sending a message that SendReplyJobException
+    is raised and the reply is not added to the local database.
+    '''
+    source = factory.Source()
+    session.add(source)
+    session.commit()
+    api_client = mocker.MagicMock()
+    mocker.patch.object(api_client, 'reply_source', side_effect=Exception)
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    encrypt_fn = mocker.patch.object(gpg, 'encrypt_to_source')
+    job = SendReplyJob(source.uuid, 'mock_reply_uuid', 'mock_message', gpg)
+
+    with pytest.raises(Exception):
+        job.call_api(api_client, session)
+
+    encrypt_fn.assert_called_once_with(source.uuid, 'mock_message')
+    replies = session.query(db.Reply).filter_by(uuid='mock_reply_uuid').all()
     assert len(replies) == 0
