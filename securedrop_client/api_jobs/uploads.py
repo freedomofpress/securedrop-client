@@ -24,12 +24,12 @@ class SendReplyJob(ApiJob):
         Override ApiJob.
 
         Encrypt the reply and send it to the server. If the call is successful, add it to the local
-        database. Otherwise raise a SendReplyJobException.
+        database and return the reply uuid string. Otherwise raise a SendReplyJobException so that
+        we can return the reply uuid.
         '''
         try:
             encrypted_reply = self.gpg.encrypt_to_source(self.source_uuid, self.message)
             sdk_reply = self._make_call(encrypted_reply, api_client)
-            # Now that the call was successful, add the reply to the database locally.
             source = session.query(Source).filter_by(uuid=self.source_uuid).one()
             reply_db_object = Reply(
                 uuid=self.reply_uuid,
@@ -44,9 +44,13 @@ class SendReplyJob(ApiJob):
             session.commit()
             return reply_db_object.uuid
         except CryptoError as ce:
-            raise SendReplyJobException(str(ce), self.reply_uuid)
+            error_message = "Failed to encrypt reply for source {uuid} due to {exception}".format(
+                uuid=self.source_uuid, exception=repr(ce))
+            raise SendReplyJobException(error_message, self.reply_uuid)
         except Exception as e:
-            raise SendReplyJobException(str(e), self.reply_uuid)
+            error_message = "Failed to send reply for source {uuid} due to {exception}".format(
+                uuid=self.source_uuid, exception=repr(e))
+            raise SendReplyJobException(error_message, self.reply_uuid)
 
     def _make_call(self, encrypted_reply: str, api_client: API) -> sdclientapi.Reply:
         sdk_source = sdclientapi.Source(uuid=self.source_uuid)
