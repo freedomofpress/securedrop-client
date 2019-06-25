@@ -119,6 +119,16 @@ class File(Base):
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
     filename = Column(String(255), nullable=False)
+
+    # Files from the SecureDrop journalist API are gzipped, then
+    # encrypted with GPG. The gzip header contains the original
+    # filename, which makes it easier for the client to open the file
+    # with the right application. We'll record that filename here
+    # after we've downloaded, decrypted and extracted the file.
+    # If the header does not contain the filename for some reason,
+    # this should be the same as filename.
+    original_filename = Column(String(255), nullable=False, server_default="")
+
     file_counter = Column(Integer, nullable=False)
     size = Column(Integer, nullable=False)
     download_url = Column(String(255), nullable=False)

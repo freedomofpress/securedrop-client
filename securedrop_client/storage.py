@@ -365,13 +365,21 @@ def mark_as_decrypted(
     model_type: Union[Type[File], Type[Message], Type[Reply]],
     uuid: str,
     session: Session,
-    is_decrypted: bool = True
+    is_decrypted: bool = True,
+    original_filename: str = None
 ) -> None:
     """
     Mark object as downloaded in the database.
     """
     db_obj = session.query(model_type).filter_by(uuid=uuid).one()
     db_obj.is_decrypted = is_decrypted
+
+    if model_type == File:
+        if original_filename:
+            db_obj.original_filename = original_filename
+        else:
+            db_obj.original_filename = db_obj.filename
+
     session.add(db_obj)
     session.commit()
 
@@ -397,18 +405,26 @@ def delete_single_submission_or_reply_on_disk(obj_db: Union[File, Message, Reply
     """
     Delete on disk a single submission or reply.
     """
-    filename_without_extensions = obj_db.filename.split('.')[0]
-    files_to_delete = os.path.join(
-        data_dir,
-        '{}*'.format(filename_without_extensions))
-    logging.info('Deleting all {} files'.format(filename_without_extensions))
-
+    files_to_delete = []
     try:
-        for file_to_delete in glob.glob(files_to_delete):
+        if obj_db.original_filename:
+            files_to_delete.append(os.path.join(data_dir, obj_db.original_filename))
+    except AttributeError:
+        # only files have it
+        pass
+
+    filename_without_extensions = obj_db.filename.split('.')[0]
+    file_glob_pattern = os.path.join(
+        data_dir,
+        '{}*'.format(filename_without_extensions)
+    )
+    files_to_delete.extend(glob.glob(file_glob_pattern))
+
+    for file_to_delete in files_to_delete:
+        try:
             os.remove(file_to_delete)
-    except FileNotFoundError:
-        logging.info(
-            'File {} already deleted, skipping'.format(file_to_delete))
+        except FileNotFoundError:
+            logging.info('File %s already deleted, skipping', file_to_delete)
 
 
 def rename_file(data_dir: str, filename: str, new_filename: str) -> None:

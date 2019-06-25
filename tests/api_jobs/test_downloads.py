@@ -11,7 +11,15 @@ from securedrop_client.crypto import GpgHelper, CryptoError
 from tests import factory
 
 
-def test_DownloadJob_raises_NotImplemetedError(mocker):
+def patch_decrypt(mocker, homedir, gpghelper, filename):
+    mock_decrypt = mocker.patch.object(gpghelper, 'decrypt_submission_or_reply')
+    fn_no_ext, _ = os.path.splitext(os.path.splitext(os.path.basename(filename))[0])
+    plaintext_filepath = os.path.join(homedir, 'data', fn_no_ext)
+    mock_decrypt.return_value = (plaintext_filepath, plaintext_filepath)
+    return mock_decrypt
+
+
+def test_MessageDownloadJob_raises_NotImplementedError(mocker):
     job = DownloadJob('mock')
 
     with pytest.raises(NotImplementedError):
@@ -265,18 +273,18 @@ def test_FileDownloadJob_message_already_decrypted(mocker, homedir, session, ses
     """
     Test that call_api just returns uuid if already decrypted.
     """
-    file = factory.File(source=factory.Source(), is_downloaded=True, is_decrypted=True)
-    session.add(file)
+    file_ = factory.File(source=factory.Source(), is_downloaded=True, is_decrypted=True)
+    session.add(file_)
     session.commit()
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
-    job = FileDownloadJob(file.uuid, homedir, gpg)
+    job = FileDownloadJob(file_.uuid, homedir, gpg)
     decrypt_fn = mocker.patch.object(job.gpg, 'decrypt_submission_or_reply')
     api_client = mocker.MagicMock()
     download_fn = mocker.patch.object(api_client, 'download_submission')
 
     return_uuid = job.call_api(api_client, session)
 
-    assert file.uuid == return_uuid
+    assert file_.uuid == return_uuid
     decrypt_fn.assert_not_called()
     download_fn.assert_not_called()
 
@@ -285,19 +293,19 @@ def test_FileDownloadJob_message_already_downloaded(mocker, homedir, session, se
     """
     Test that call_api just decrypts and returns uuid if already downloaded.
     """
-    file = factory.File(source=factory.Source(), is_downloaded=True, is_decrypted=False)
-    session.add(file)
+    file_ = factory.File(source=factory.Source(), is_downloaded=True, is_decrypted=False)
+    session.add(file_)
     session.commit()
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
-    job = FileDownloadJob(file.uuid, os.path.join(homedir, 'data'), gpg)
-    mocker.patch.object(job.gpg, 'decrypt_submission_or_reply')
+    job = FileDownloadJob(file_.uuid, os.path.join(homedir, 'data'), gpg)
+    patch_decrypt(mocker, homedir, gpg, file_.filename)
     api_client = mocker.MagicMock()
     download_fn = mocker.patch.object(api_client, 'download_submission')
 
     return_uuid = job.call_api(api_client, session)
 
-    assert file.uuid == return_uuid
-    assert file.is_decrypted is True
+    assert file_.uuid == return_uuid
+    assert file_.is_decrypted is True
     download_fn.assert_not_called()
 
 
@@ -309,7 +317,7 @@ def test_FileDownloadJob_happy_path_no_etag(mocker, homedir, session, session_ma
     session.commit()
 
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
-    mock_decrypt = mocker.patch.object(gpg, 'decrypt_submission_or_reply')
+    mock_decrypt = patch_decrypt(mocker, homedir, gpg, file_.filename)
 
     def fake_download(sdk_obj: SdkSubmission) -> Tuple[str, str]:
         '''
@@ -348,7 +356,7 @@ def test_FileDownloadJob_happy_path_sha256_etag(mocker, homedir, session, sessio
     session.commit()
 
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
-    mock_decrypt = mocker.patch.object(gpg, 'decrypt_submission_or_reply')
+    mock_decrypt = patch_decrypt(mocker, homedir, gpg, file_.filename)
 
     def fake_download(sdk_obj: SdkSubmission) -> Tuple[str, str]:
         '''
@@ -439,7 +447,7 @@ def test_FileDownloadJob_happy_path_unknown_etag(mocker, homedir, session, sessi
         gpg,
     )
 
-    mock_decrypt = mocker.patch('securedrop_client.crypto.GpgHelper.decrypt_submission_or_reply')
+    mock_decrypt = patch_decrypt(mocker, homedir, gpg, file_.filename)
     mock_logger = mocker.patch('securedrop_client.api_jobs.downloads.logger')
 
     job.call_api(api_client, session)

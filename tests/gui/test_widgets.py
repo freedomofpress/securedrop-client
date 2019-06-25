@@ -1217,13 +1217,19 @@ def test_ReplyWidget_init(mocker):
     assert mock_failure_connected.called
 
 
-def test_FileWidget_init_left(mocker):
+def test_FileWidget_init_left(mocker, source, session):
     """
     Check the FileWidget is configured correctly for align-left.
     """
-    mock_controller = mocker.MagicMock()
     mock_signal = mocker.MagicMock()  # not important for this test
     mock_uuid = 'mock'
+
+    file_ = factory.File(source=source['source'])
+    session.add(file_)
+    session.commit()
+
+    mock_get_file = mocker.MagicMock(return_value=file_)
+    mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
     fw = FileWidget(mock_uuid, mock_controller, mock_signal)
 
@@ -1593,26 +1599,28 @@ def test_ConversationView_add_reply_no_content(mocker, session, source):
     cv.conversation_layout.addWidget.assert_called_once_with(mock_reply_widget_res)
 
 
-def test_ConversationView_add_downloaded_file(mocker, homedir):
+def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
     """
     Adding a file results in a new FileWidget added to the layout with the
     proper QLabel.
     """
-    mocked_source = mocker.MagicMock()
-    mocked_controller = mocker.MagicMock()
+    file_ = factory.File(source=source['source'])
+    session.add(file_)
+    session.commit()
 
-    cv = ConversationView(mocked_source, mocked_controller)
+    mock_get_file = mocker.MagicMock(return_value=file_)
+    mocked_controller = mocker.MagicMock(get_file=mock_get_file)
+
+    cv = ConversationView(source['source'], mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
 
-    mock_source = mocker.MagicMock()
-    mock_file = mocker.MagicMock()
-    mock_file.is_downloaded = True
     mock_label = mocker.patch('securedrop_client.gui.widgets.QLabel')
     mocker.patch('securedrop_client.gui.widgets.QHBoxLayout.addWidget')
     mocker.patch('securedrop_client.gui.widgets.FileWidget.setLayout')
 
-    cv.add_file(mock_source, mock_file)
-    mock_label.assert_called_with("Open")
+    cv.add_file(source['source'], file_)
+
+    mock_label.assert_called_with(file_.original_filename)
     assert cv.conversation_layout.addWidget.call_count == 1
 
     cal = cv.conversation_layout.addWidget.call_args_list
@@ -1976,7 +1984,6 @@ def test_update_conversation_maintains_old_items(mocker, session):
     """
     Calling update_conversation deletes and adds old items back to layout
     """
-    mock_controller = mocker.MagicMock()
     source = factory.Source()
     session.add(source)
     session.flush()
@@ -1988,6 +1995,9 @@ def test_update_conversation_maintains_old_items(mocker, session):
     reply = factory.Reply(filename='3-source-reply.gpg', source=source)
     session.add(reply)
     session.commit()
+
+    mock_get_file = mocker.MagicMock(return_value=file_)
+    mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
     cv = ConversationView(source, mock_controller)
     assert cv.conversation_layout.count() == 3
@@ -2001,7 +2011,6 @@ def test_update_conversation_adds_new_items(mocker, session):
     """
     Calling update_conversation adds new items to layout
     """
-    mock_controller = mocker.MagicMock()
     source = factory.Source()
     session.add(source)
     session.flush()
@@ -2013,6 +2022,9 @@ def test_update_conversation_adds_new_items(mocker, session):
     reply = factory.Reply(filename='3-source-reply.gpg', source=source)
     session.add(reply)
     session.commit()
+
+    mock_get_file = mocker.MagicMock(return_value=file_)
+    mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
     cv = ConversationView(source, mock_controller)
     assert cv.conversation_layout.count() == 3  # precondition

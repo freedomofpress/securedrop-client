@@ -1,10 +1,11 @@
 import os
+import struct
 import subprocess
+import tempfile
+
 import pytest
 
-from subprocess import CalledProcessError
-
-from securedrop_client.crypto import GpgHelper, CryptoError
+from securedrop_client.crypto import GpgHelper, CryptoError, read_gzip_header_filename
 
 with open(os.path.join(os.path.dirname(__file__), 'files', 'test-key.gpg.pub.asc')) as f:
     PUB_KEY = f.read()
@@ -26,7 +27,7 @@ def test_message_logic(homedir, config, mocker, session_maker):
     mock_gpg = mocker.patch('subprocess.call', return_value=0)
     mocker.patch('os.unlink')
 
-    dest = gpg.decrypt_submission_or_reply(test_msg, expected_output_filepath, is_doc=False)
+    dest, _ = gpg.decrypt_submission_or_reply(test_msg, expected_output_filepath, is_doc=False)
 
     assert mock_gpg.call_count == 1
     assert dest == expected_output_filepath
@@ -39,17 +40,48 @@ def test_gunzip_logic(homedir, config, mocker, session_maker):
     """
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
 
+    gpg._import(PUB_KEY)
+    gpg._import(JOURNO_KEY)
+
     test_gzip = 'tests/files/test-doc.gz.gpg'
-    expected_output_filepath = os.path.join(homedir, 'data', 'mock-doc')
+    expected_output_filepath = 'tests/files/test-doc'
 
-    mock_gpg = mocker.patch('subprocess.call', return_value=0)
+    # mock_gpg = mocker.patch('subprocess.call', return_value=0)
     mock_unlink = mocker.patch('os.unlink')
-    dest = gpg.decrypt_submission_or_reply(test_gzip, expected_output_filepath, is_doc=True)
+    dest, _ = gpg.decrypt_submission_or_reply(test_gzip, expected_output_filepath, is_doc=True)
 
-    assert mock_gpg.call_count == 1
     assert dest == expected_output_filepath
+
     # We should remove two files in the success scenario: err, filepath
     assert mock_unlink.call_count == 2
+    mock_unlink.stop()
+    os.remove(expected_output_filepath)
+
+
+def test_read_gzip_header_filename_with_bad_file(homedir):
+    with tempfile.NamedTemporaryFile() as tf:
+        tf.write(b'test')
+        tf.seek(0)
+        with pytest.raises(OSError, match=r"Not a gzipped file"):
+            read_gzip_header_filename(tf.name)
+
+
+def test_read_gzip_header_filename_with_bad_compression_method(homedir):
+    # 9 is a bad method
+    header = struct.pack('<BBBBIxxHBBcccc', 31, 139, 9, 12, 0, 2, 1, 1, b"a", b"b", b"c", b"\0")
+    with tempfile.NamedTemporaryFile() as tf:
+        tf.write(header)
+        tf.seek(0)
+        with pytest.raises(OSError, match=r"Unknown compression method"):
+            read_gzip_header_filename(tf.name)
+
+
+def test_read_gzip_header_filename(homedir):
+    header = struct.pack('<BBBBIxxHBBcccc', 31, 139, 8, 12, 0, 2, 1, 1, b"a", b"b", b"c", b"\0")
+    with tempfile.NamedTemporaryFile() as tf:
+        tf.write(header)
+        tf.seek(0)
+        assert 'abc' == read_gzip_header_filename(tf.name)
 
 
 def test_subprocess_raises_exception(homedir, config, mocker, session_maker):
@@ -88,7 +120,7 @@ def test_import_key_gpg_call_fail(homedir, config, mocker, session_maker):
     Using the `config` fixture to ensure the config is written to disk.
     '''
     helper = GpgHelper(homedir, session_maker, is_qubes=False)
-    err = CalledProcessError(cmd=['foo'], returncode=1)
+    err = subprocess.CalledProcessError(cmd=['foo'], returncode=1)
     mock_call = mocker.patch('securedrop_client.crypto.subprocess.check_call',
                              side_effect=err)
 
@@ -146,7 +178,7 @@ def test_encrypt_fail(homedir, source, config, mocker, session_maker):
 
     plaintext = 'bueller?'
 
-    err = CalledProcessError(cmd=['foo'], returncode=1)
+    err = subprocess.CalledProcessError(cmd=['foo'], returncode=1)
     mock_gpg = mocker.patch('securedrop_client.crypto.subprocess.check_call',
                             side_effect=err)
 

@@ -41,7 +41,7 @@ class DownloadJob(ApiJob):
         '''
         raise NotImplementedError
 
-    def call_decrypt(self, filepath: str, session: Session = None) -> None:
+    def call_decrypt(self, filepath: str, session: Session = None) -> str:
         '''
         Method for decrypting the file and storing the plaintext result.
 
@@ -105,8 +105,10 @@ class DownloadJob(ApiJob):
         Decrypt the file located at the given filepath and mark it as decrypted.
         '''
         try:
-            self.call_decrypt(filepath, session)
-            mark_as_decrypted(type(db_object), db_object.uuid, session)
+            original_filename = self.call_decrypt(filepath, session)
+            mark_as_decrypted(
+                type(db_object), db_object.uuid, session, original_filename=original_filename
+            )
             logger.info("File decrypted: {}".format(os.path.basename(filepath)))
         except CryptoError as e:
             mark_as_decrypted(type(db_object), db_object.uuid, session, is_decrypted=False)
@@ -209,7 +211,7 @@ class MessageDownloadJob(DownloadJob):
         sdk_object.filename = db_object.filename
         return api.download_submission(sdk_object)
 
-    def call_decrypt(self, filepath: str, session: Session = None) -> None:
+    def call_decrypt(self, filepath: str, session: Session = None) -> str:
         '''
         Override DownloadJob.
 
@@ -225,6 +227,7 @@ class MessageDownloadJob(DownloadJob):
                 uuid=self.uuid,
                 session=session,
                 content=plaintext_file.read())
+        return ""
 
 
 class FileDownloadJob(DownloadJob):
@@ -252,7 +255,7 @@ class FileDownloadJob(DownloadJob):
         sdk_object.filename = db_object.filename
         return api.download_submission(sdk_object)
 
-    def call_decrypt(self, filepath: str, session: Session = None) -> None:
+    def call_decrypt(self, filepath: str, session: Session = None) -> str:
         '''
         Override DownloadJob.
 
@@ -264,4 +267,7 @@ class FileDownloadJob(DownloadJob):
         '''
         fn_no_ext, _ = os.path.splitext(os.path.splitext(os.path.basename(filepath))[0])
         plaintext_filepath = os.path.join(self.data_dir, fn_no_ext)
-        self.gpg.decrypt_submission_or_reply(filepath, plaintext_filepath, is_doc=True)
+        plaintext_path, original_filename = self.gpg.decrypt_submission_or_reply(
+            filepath, plaintext_filepath, is_doc=True
+        )
+        return original_filename
