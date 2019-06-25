@@ -33,9 +33,25 @@ pip install --require-hashes -r dev-requirements.txt
 
 #### Update dependencies
 
-To add or update a dependency, modify either `dev-requirements.in` and `requirements.in` and then run `make update-pip-dependencies`. This will generate `dev-requirements.txt` and `requirements.txt`.
+If you're adding or updating a dependency, you need to:
 
-**IMPORTANT:** Do not modify `build-requirements.txt` during normal development. We use a pip mirror for our build process and the hashes in that file point to wheels on our mirror.
+1. Modify either `dev-requirements.in` and `requirements.in` (depending on whether it is prod or dev only) and then run `make update-pip-dependencies`. This will generate `dev-requirements.txt` and `requirements.txt`.
+
+2. For building a debian package from this project, we use the requirements in
+`build-requirements.txt` which uses our pip mirror, i.e. the hashes in that file point to
+wheels on our pip mirror. A maintainer will need to add
+the updated dependency to our pip mirror (you can request this in the PR).
+
+3. Once the pip mirror is updated, you should checkout the [securedrop-debian-packaging repo](https://github.com/freedomofpress/securedrop-debian-packaging) and run `make requirements`. Commit the `build-requirements.txt` that results and add it to your PR.
+
+## Making a Release
+
+**Note:** These are the release guidelines for pre-production alpha releases. Production release tags must be signed with the SecureDrop release key.
+
+ 1. Update versions: `./update_version.sh $new_version_number`.
+2. Commit the changes with commit message `securedrop-proxy $new_version_number` and make a PR.
+3. You should confirm via a manual debian package build and manual testing in Qubes that there are no regressions (this is limited pre-release QA).
+4. Once your PR is approved, you can add a tag and push: `git tag $new_version_number`.
 
 #### configuration
 
