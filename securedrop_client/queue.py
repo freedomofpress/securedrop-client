@@ -7,7 +7,7 @@ from sdclientapi import API, RequestTimeoutError
 from sqlalchemy.orm import scoped_session
 from typing import Optional  # noqa: F401
 
-from securedrop_client.api_jobs.base import ApiJob, ApiInaccessibleError
+from securedrop_client.api_jobs.base import ApiJob, ApiInaccessibleError, DEFAULT_NUM_ATTEMPTS
 from securedrop_client.api_jobs.downloads import FileDownloadJob
 
 
@@ -40,6 +40,8 @@ class RunnableQueue(QObject):
             try:
                 job._do_call_api(self.api_client, session)
             except RequestTimeoutError:
+                # Reset number of remaining attempts for this job to the default
+                job.remaining_attempts = DEFAULT_NUM_ATTEMPTS
                 self.last_job = job  # "cache" the last job since we can't re-queue it
             except ApiInaccessibleError:
                 # This is a guard against #397, we should pause the queue execution when this

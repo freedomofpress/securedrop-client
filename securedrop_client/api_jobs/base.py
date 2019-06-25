@@ -8,6 +8,8 @@ from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_NUM_ATTEMPTS = 5
+
 
 class ApiInaccessibleError(Exception):
 
@@ -30,7 +32,7 @@ class ApiJob(QObject):
     '''
     failure_signal = pyqtSignal(Exception)
 
-    def __init__(self, remaining_attempts: int = 5) -> None:
+    def __init__(self, remaining_attempts: int = DEFAULT_NUM_ATTEMPTS) -> None:
         super().__init__(None)  # `None` because the QOjbect has no parent
         self.remaining_attempts = remaining_attempts
 

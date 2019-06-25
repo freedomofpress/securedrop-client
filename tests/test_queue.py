@@ -58,7 +58,9 @@ def test_RunnableQueue_job_timeout(mocker):
     mock_session_maker = mocker.MagicMock(return_value=mock_session)
 
     return_value = RequestTimeoutError()
-    dummy_job_cls = factory.dummy_job_factory(mocker, return_value)
+    times_to_try = 5
+    dummy_job_cls = factory.dummy_job_factory(mocker, return_value,
+                                              remaining_attempts=times_to_try)
     job1 = dummy_job_cls()
     job2 = dummy_job_cls()
 
@@ -89,6 +91,9 @@ def test_RunnableQueue_job_timeout(mocker):
     # check that job2 was cached and that the queue is empty
     assert queue.last_job is job2
     assert queue.queue.empty()
+
+    # check that job2 still has 5 (the default) remaining attempts
+    assert queue.last_job.remaining_attempts == times_to_try
 
     # ensure we don't have stale mocks
     assert mock_process_events.called
