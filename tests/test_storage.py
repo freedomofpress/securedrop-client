@@ -321,6 +321,7 @@ def test_update_submissions_deletes_files_associated_with_the_submission(
     local_submission = mocker.MagicMock()
     local_submission.uuid = 'test-uuid'
     local_submission.filename = server_filename
+    local_submission.original_filename = "localsub.txt"
     abs_server_filename = add_test_file_to_temp_dir(
         homedir, server_filename)
     abs_local_filename = add_test_file_to_temp_dir(
@@ -366,6 +367,7 @@ def test_update_replies_deletes_files_associated_with_the_reply(
     local_reply = mocker.MagicMock()
     local_reply.uuid = 'test-uuid'
     local_reply.filename = server_filename
+    local_reply.original_filename = ""
     abs_server_filename = add_test_file_to_temp_dir(
         homedir, server_filename)
     abs_local_filename = add_test_file_to_temp_dir(
@@ -487,9 +489,11 @@ def test_update_files(homedir, mocker):
     local_sub_update = mocker.MagicMock()
     local_sub_update.uuid = remote_sub_update.uuid
     local_sub_update.filename = "overwrite_this.filename"
+    local_sub_update.original_filename = "overwrite_this.filename.txt"
     local_sub_delete = mocker.MagicMock()
     local_sub_delete.uuid = str(uuid.uuid4())
     local_sub_delete.filename = "local_sub_delete.filename"
+    local_sub_delete.original_filename = "local_sub_delete.filename.txt"
     local_submissions = [local_sub_update, local_sub_delete]
     # There needs to be a corresponding local_source.
     local_source = mocker.MagicMock()
@@ -552,9 +556,11 @@ def test_update_messages(homedir, mocker):
     local_message_update = mocker.MagicMock()
     local_message_update.uuid = remote_message_update.uuid
     local_message_update.filename = "overwrite_this.filename"
+    local_message_update.original_filename = ""
     local_message_delete = mocker.MagicMock()
     local_message_delete.uuid = str(uuid.uuid4())
     local_message_delete.filename = "local_message_delete.filename"
+    local_message_delete.original_filename = ""
     local_messages = [local_message_update, local_message_delete]
     # There needs to be a corresponding local_source and local_user
     local_source = mocker.MagicMock()
@@ -624,10 +630,12 @@ def test_update_replies(homedir, mocker):
     local_reply_update = mocker.MagicMock()
     local_reply_update.uuid = remote_reply_update.uuid
     local_reply_update.filename = "overwrite_this.filename"
+    local_reply_update.original_filename = ""
     local_reply_update.journalist_uuid = str(uuid.uuid4())
     local_reply_delete = mocker.MagicMock()
     local_reply_delete.uuid = str(uuid.uuid4())
     local_reply_delete.filename = "local_reply_delete.filename"
+    local_reply_delete.original_filename = ""
     local_reply_delete.journalist_uuid = str(uuid.uuid4())
     local_replies = [local_reply_update, local_reply_delete]
     # There needs to be a corresponding local_source and local_user
@@ -871,6 +879,7 @@ def test_delete_single_submission_or_reply_race_guard(homedir, mocker):
 
     test_obj = mocker.MagicMock()
     test_obj.filename = '1-dissolved-steak-msg.gpg'
+    test_obj.original_filename = 'gelatinous-death.txt'
     add_test_file_to_temp_dir(homedir, test_obj.filename)
 
     mock_remove = mocker.patch('os.remove', side_effect=FileNotFoundError)

@@ -19,8 +19,10 @@ import gzip
 import logging
 import os
 import shutil
+import struct
 import subprocess
 import tempfile
+from typing import Tuple
 
 from sqlalchemy.orm import scoped_session
 from uuid import UUID
@@ -37,8 +39,39 @@ class CryptoError(Exception):
     pass
 
 
-class GpgHelper:
+def read_gzip_header_filename(filename: str) -> str:
+    """
+    Extract the original filename from the header of a gzipped file.
 
+    Adapted from Python's gzip._GzipReader._read_gzip_header.
+    """
+    original_filename = ""
+    with open(filename, "rb") as f:
+        magic = f.read(2)
+        if magic != b"\037\213":
+            raise OSError("Not a gzipped file (%r)" % magic)
+
+        (method, flag, mtime) = struct.unpack("<BBIxx", f.read(8))
+        if method != 8:
+            raise OSError("Unknown compression method")
+
+        if flag & 4:  # gzip.FEXTRA
+            extra_len, = struct.unpack("<H", f.read(2))
+            f.read(extra_len)
+
+        if flag & 8:  # gzip.FNAME
+            fb = b""
+            while True:
+                s = f.read(1)
+                if not s or s == b"\000":
+                    break
+                fb += s
+            original_filename = str(fb, "utf-8")
+
+    return original_filename
+
+
+class GpgHelper:
     def __init__(self, sdc_home: str, session_maker: scoped_session, is_qubes: bool) -> None:
         '''
         :param sdc_home: Home directory for the SecureDrop client
@@ -55,7 +88,10 @@ class GpgHelper:
     def decrypt_submission_or_reply(self,
                                     filepath: str,
                                     plaintext_filepath: str,
-                                    is_doc: bool = False) -> str:
+                                    is_doc: bool = False) -> Tuple[str, str]:
+
+        original_filename, _ = os.path.splitext(os.path.splitext(os.path.basename(filepath))[0])
+
         err = tempfile.NamedTemporaryFile(suffix=".message-error", delete=False)
         with tempfile.NamedTemporaryFile(suffix=".message") as out:
             cmd = self._gpg_cmd_base()
@@ -84,12 +120,13 @@ class GpgHelper:
 
             # Store the plaintext in the file located at the specified plaintext_filepath
             if is_doc:
+                original_filename = read_gzip_header_filename(out.name)
                 with gzip.open(out.name, 'rb') as infile, open(plaintext_filepath, 'wb') as outfile:
                     shutil.copyfileobj(infile, outfile)
             else:
                 shutil.copy(out.name, plaintext_filepath)
 
-            return plaintext_filepath  # This return is just used by tests and should be removed
+        return plaintext_filepath, original_filename
 
     def _gpg_cmd_base(self) -> list:
         if self.is_qubes:  # pragma: no cover

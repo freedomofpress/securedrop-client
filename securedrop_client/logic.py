@@ -550,11 +550,15 @@ class Controller(QObject):
         file = self.get_file(file_uuid)
         fn_no_ext, _ = os.path.splitext(os.path.splitext(file.filename)[0])
         submission_filepath = os.path.join(self.data_dir, fn_no_ext)
+        original_filepath = os.path.join(self.data_dir, file.original_filename)
 
+        if os.path.exists(original_filepath):
+            os.remove(original_filepath)
+        os.link(submission_filepath, original_filepath)
         if self.proxy:
             # Running on Qubes.
             command = "qvm-open-in-vm"
-            args = ['$dispvm:sd-svs-disp', submission_filepath]
+            args = ['$dispvm:sd-svs-disp', original_filepath]
 
             # QProcess (Qt) or Python's subprocess? Who cares? They do the
             # same thing. :-)
@@ -562,7 +566,7 @@ class Controller(QObject):
             process.start(command, args)
         else:  # pragma: no cover
             # Non Qubes OS. Just log the event for now.
-            logger.info('Opening file "{}".'.format(submission_filepath))
+            logger.info('Opening file "{}".'.format(original_filepath))
 
     def on_submission_download(
         self,

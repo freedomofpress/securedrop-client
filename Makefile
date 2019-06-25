@@ -15,9 +15,9 @@ mypy: ## Run static type checker
 		securedrop_client/resources/__init__.py \
 		securedrop_client/storage.py \
 		securedrop_client/queue.py \
-    	securedrop_client/api_jobs/__init__.py \
-    	securedrop_client/api_jobs/base.py \
-    	securedrop_client/api_jobs/downloads.py \
+		securedrop_client/api_jobs/__init__.py \
+		securedrop_client/api_jobs/base.py \
+		securedrop_client/api_jobs/downloads.py \
 		securedrop_client/api_jobs/uploads.py
 
 .PHONY: clean
@@ -56,8 +56,8 @@ safety: ## Runs `safety check` to check python dependencies for vulnerabilities
 .PHONY: bandit
 bandit: ## Run bandit with medium level excluding test-related folders
 	pip install --upgrade pip && \
-        pip install --upgrade bandit && \
-	bandit -ll --recursive . --exclude ./tests,./.venv
+		pip install --upgrade bandit==1.5.1 && \
+	bandit -ll --recursive . --exclude tests,.venv
 
 .PHONY: check
 check: clean lint mypy test ## Run the full CI test suite

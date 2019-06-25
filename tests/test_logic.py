@@ -879,9 +879,40 @@ def test_Controller_on_file_open(homedir, config, mocker, session, session_maker
     mock_subprocess = mocker.MagicMock()
     mock_process = mocker.MagicMock(return_value=mock_subprocess)
     mocker.patch('securedrop_client.logic.QProcess', mock_process)
+    mock_link = mocker.patch('os.link')
     co.on_file_open(submission.uuid)
     mock_process.assert_called_once_with(co)
-    mock_subprocess.start.call_count == 1
+    assert mock_subprocess.start.call_count == 1
+    assert mock_link.call_count == 1
+
+
+def test_Controller_on_file_open_existing_link_problem(
+        homedir, config, mocker, session, session_maker, source, caplog
+):
+    """
+    Test that open works if the link to the original filename exists.
+    """
+    mock_gui = mocker.MagicMock()
+    co = Controller('http://localhost', mock_gui, session_maker, homedir)
+    co.proxy = True
+
+    submission = factory.File(source=source['source'])
+    session.add(submission)
+    session.commit()
+
+    mock_subprocess = mocker.MagicMock()
+    mock_process = mocker.MagicMock(return_value=mock_subprocess)
+    mock_exists = mocker.patch('os.path.exists', return_value=True)
+    mock_link = mocker.patch('os.link')
+    mocker.patch('securedrop_client.logic.QProcess', mock_process)
+    mock_remove = mocker.patch('os.remove')
+
+    co.on_file_open(submission.uuid)
+    mock_process.assert_called_once_with(co)
+    assert mock_subprocess.start.call_count == 1
+    assert mock_exists.call_count == 1
+    assert mock_link.call_count == 1
+    assert mock_remove.call_count == 1
 
 
 def test_Controller_download_new_replies_with_new_reply(mocker, session, session_maker, homedir):
