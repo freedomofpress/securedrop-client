@@ -965,6 +965,9 @@ class LoginDialog(QDialog):
     """
 
     CSS = '''
+    #login_form QLabel {
+        color: #fff;
+    }
     #error_label {
         color: #f22b5d;
     }
@@ -977,6 +980,78 @@ class LoginDialog(QDialog):
     def __init__(self, parent):
         self.parent = parent
         super().__init__(self.parent)
+
+        # Set css id
+        self.setObjectName('login_dialog')
+
+        # Set styles
+        self.setStyleSheet(self.CSS)
+
+        # Set layout
+        layout = QHBoxLayout(self)
+        self.setLayout(layout)
+
+        # Set margins and spacing
+        layout.setContentsMargins(80, 200, 80, 0)
+        layout.setSpacing(0)
+
+        # Set background
+        self.setAutoFillBackground(True)
+        palette = QPalette()
+        palette.setBrush(QPalette.Background, QBrush(load_image('login_bg.svg')))
+        self.setPalette(palette)
+        self.setFixedSize(QSize(596, 671))  # Set to size provided in the login_bg.svg file
+        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        # Create form widget
+        form = QWidget()
+
+        form.setObjectName('login_form')
+
+        form_layout = QVBoxLayout()
+        form.setLayout(form_layout)
+
+        form_layout.setContentsMargins(0, 0, 0, 0)
+        form_layout.setSpacing(8)
+
+        self.username_label = QLabel(_('Username'))
+        self.username_field = QLineEdit()
+
+        self.password_label = QLabel(_('Password'))
+        self.password_field = QLineEdit()
+        self.password_field.setEchoMode(QLineEdit.Password)
+
+        self.tfa_label = QLabel(_('Two-Factor Number'))
+        self.tfa_field = QLineEdit()
+
+        buttons = QWidget()
+        buttons_layout = QHBoxLayout()
+        buttons.setLayout(buttons_layout)
+        buttons_layout.setContentsMargins(0, 0, 0, 0)
+        self.submit = QPushButton(_('Sign in'))
+        self.submit.clicked.connect(self.validate)
+        self.offline_mode = QPushButton(_('Offline mode'))
+        buttons_layout.addWidget(self.offline_mode)
+        buttons_layout.addStretch()
+        buttons_layout.addWidget(self.submit)
+
+        self.error_label = QLabel('')
+        self.error_label.setObjectName('error_label')  # Set css id
+        self.error_label.setStyleSheet(self.CSS)  # Set styles
+
+        form_layout.addStretch()
+        form_layout.addWidget(self.username_label)
+        form_layout.addWidget(self.username_field)
+        form_layout.addWidget(self.password_label)
+        form_layout.addWidget(self.password_field)
+        form_layout.addWidget(self.tfa_label)
+        form_layout.addWidget(self.tfa_field)
+        form_layout.addWidget(buttons)
+        form_layout.addWidget(self.error_label)
+        form_layout.addStretch()
+
+        # Add form widget
+        layout.addWidget(form)
 
     def closeEvent(self, event):
         """
@@ -995,65 +1070,7 @@ class LoginDialog(QDialog):
 
     def setup(self, controller):
         self.controller = controller
-        self.setMinimumSize(600, 400)
-        self.setWindowTitle(_('Sign in to SecureDrop'))
-
-        main_layout = QHBoxLayout()
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.addStretch()
-        self.setLayout(main_layout)
-
-        form = QWidget()
-        layout = QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        form.setLayout(layout)
-
-        main_layout.addWidget(form)
-        main_layout.addStretch()
-
-        self.title = QLabel(_('<h1>Sign in</h1>'))
-        self.title.setTextFormat(Qt.RichText)
-
-        self.instructions = QLabel(_('You may read all documents and messages '
-                                     'offline, without signing in. To '
-                                     'correspond with a Source or to check '
-                                     'the server for updates, you must sign '
-                                     'in.'))
-        self.instructions.setWordWrap(True)
-
-        self.username_label = QLabel(_('Username'))
-        self.username_field = QLineEdit()
-
-        self.password_label = QLabel(_('Password'))
-        self.password_field = QLineEdit()
-        self.password_field.setEchoMode(QLineEdit.Password)
-
-        self.tfa_label = QLabel(_('Two-Factor Number'))
-        self.tfa_field = QLineEdit()
-
-        self.submit = QPushButton(_('Sign in'))
-        self.submit.clicked.connect(self.validate)
-
-        self.offline_mode = QPushButton(_('Offline mode'))
         self.offline_mode.clicked.connect(self.controller.login_offline_mode)
-
-        self.error_label = QLabel('')
-        self.error_label.setObjectName('error_label')  # Set css id
-        self.error_label.setStyleSheet(self.CSS)  # Set styles
-
-        layout.addStretch()
-        layout.addWidget(self.title)
-        layout.addWidget(self.instructions)
-        layout.addWidget(self.username_label)
-        layout.addWidget(self.username_field)
-        layout.addWidget(self.password_label)
-        layout.addWidget(self.password_field)
-        layout.addWidget(self.tfa_label)
-        layout.addWidget(self.tfa_field)
-        layout.addWidget(self.submit)
-        layout.addWidget(self.offline_mode)
-        layout.addWidget(self.error_label)
-        layout.addStretch()
 
     def reset(self):
         """
