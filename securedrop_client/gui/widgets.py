@@ -716,8 +716,7 @@ class SourceList(QListWidget):
         self.clear()
 
         for source in sources:
-            new_source = SourceWidget(source)
-            new_source.setup(self.controller)
+            new_source = SourceWidget(source, self.controller)
 
             list_item = QListWidgetItem(self)
             list_item.setSizeHint(new_source.sizeHint())
@@ -756,18 +755,15 @@ class SourceWidget(QWidget):
     }
     '''
 
-    def __init__(self, source: Source):
+    def __init__(self, source: Source, controller: Controller):
         super().__init__()
 
         # Store source
         self.source = source
 
-        # Get preview text
-        last_activity = source.collection[-1]
-        if isinstance(last_activity, File):
-            self.preview_text = last_activity.filename and last_activity.filename
-        else:
-            self.preview_text = last_activity.content and last_activity.content[0:100]
+        # Connect controller sync signal in order to update preview text
+        self.controller = controller
+        self.controller.sync_events.connect(self.on_synced)
 
         # Set css id
         self.setObjectName('source_widget')
@@ -793,6 +789,7 @@ class SourceWidget(QWidget):
         self.star = StarToggleButton(self.source)
         gutter_layout.addWidget(self.star)
         gutter_layout.addStretch()
+        self.star.setup(self.controller)
 
         # Set up summary
         self.summary = QWidget()
@@ -802,7 +799,7 @@ class SourceWidget(QWidget):
         summary_layout.setSpacing(0)
         self.name = QLabel()
         self.name.setObjectName('source_name')
-        self.preview = QLabel(self.preview_text)
+        self.preview = QLabel('')
         self.preview.setObjectName('preview')
         self.preview.setFixedSize(QSize(365, 60))
         self.preview.setWordWrap(True)
@@ -840,13 +837,6 @@ class SourceWidget(QWidget):
 
         self.update()
 
-    def setup(self, controller):
-        """
-        Pass through the controller object to this widget.
-        """
-        self.controller = controller
-        self.star.setup(self.controller)
-
     def update(self):
         """
         Updates the displayed values with the current values from self.source.
@@ -856,6 +846,17 @@ class SourceWidget(QWidget):
                           html.escape(self.source.journalist_designation)))
         if self.source.document_count == 0:
             self.attached.hide()
+
+    def on_synced(self, data: str):
+        """
+        Get preview text from last activity and display it in the preview section.
+        """
+        if (data == 'synced'):
+            last_activity = self.source.collection[-1]
+            if isinstance(last_activity, File):
+                self.preview.setText('— file only —')
+            else:
+                self.preview.setText(last_activity.content and last_activity.content[0:100])
 
     def delete_source(self, event):
         if self.controller.api is None:
