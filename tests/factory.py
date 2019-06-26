@@ -2,6 +2,9 @@
 changes forcing an update of all test code.
 """
 from datetime import datetime
+from itertools import cycle
+from typing import List
+
 from securedrop_client import db
 from securedrop_client.api_jobs.base import ApiJob
 
@@ -96,7 +99,7 @@ def File(**attrs):
     return db.File(**defaults)
 
 
-def dummy_job_factory(mocker, return_value):
+def dummy_job_factory(mocker, return_value, **kwargs):
     '''
     Factory that creates dummy `ApiJob`s to DRY up test code.
     '''
@@ -106,12 +109,16 @@ def dummy_job_factory(mocker, return_value):
 
         def __init__(self, *nargs, **kwargs):
             super().__init__(*nargs, **kwargs)
-            self.return_value = return_value
+            if isinstance(return_value, List):
+                self.return_value = iter(return_value)
+            else:
+                self.return_value = cycle([return_value])
 
         def call_api(self, api_client, session):
-            if isinstance(self.return_value, Exception):
-                raise self.return_value
+            return_value = next(self.return_value)
+            if isinstance(return_value, Exception):
+                raise return_value
             else:
-                return self.return_value
+                return return_value
 
     return DummyApiJob

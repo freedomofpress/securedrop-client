@@ -8,6 +8,8 @@ from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_NUM_ATTEMPTS = 5
+
 
 class ApiInaccessibleError(Exception):
 
@@ -30,29 +32,35 @@ class ApiJob(QObject):
     '''
     failure_signal = pyqtSignal(Exception)
 
-    def __init__(self) -> None:
+    def __init__(self, remaining_attempts: int = DEFAULT_NUM_ATTEMPTS) -> None:
         super().__init__(None)  # `None` because the QOjbect has no parent
+        self.remaining_attempts = remaining_attempts
 
     def _do_call_api(self, api_client: API, session: Session) -> None:
         if not api_client:
             raise ApiInaccessibleError()
 
-        try:
-            result = self.call_api(api_client, session)
-        except AuthError as e:
-            raise ApiInaccessibleError() from e
-        except ApiInaccessibleError as e:
-            # Do not let ApiInaccessibleError emit the regular failure signal, raise now
-            raise ApiInaccessibleError() from e
-        except RequestTimeoutError:
-            logger.debug('Job {} timed out'.format(self))
-            raise
-        except Exception as e:
-            logger.error('Job {} raised an exception: {}: {}'
-                         .format(self, type(e).__name__, e))
-            self.failure_signal.emit(e)
-        else:
-            self.success_signal.emit(result)
+        while self.remaining_attempts >= 1:
+            try:
+                self.remaining_attempts -= 1
+                result = self.call_api(api_client, session)
+            except AuthError as e:
+                raise ApiInaccessibleError() from e
+            except ApiInaccessibleError as e:
+                # Do not let ApiInaccessibleError emit the regular failure signal, raise now
+                raise ApiInaccessibleError() from e
+            except RequestTimeoutError:
+                logger.debug('Job {} timed out'.format(self))
+                if self.remaining_attempts == 0:
+                    raise
+            except Exception as e:
+                logger.error('Job {} raised an exception: {}: {}'
+                             .format(self, type(e).__name__, e))
+                self.failure_signal.emit(e)
+                break
+            else:
+                self.success_signal.emit(result)
+                break
 
     def call_api(self, api_client: API, session: Session) -> Any:
         '''
