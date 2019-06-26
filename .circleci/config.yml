@@ -13,6 +13,7 @@ jobs:
             git clone https://github.com/freedomofpress/securedrop-debian-packaging.git
             cd securedrop-debian-packaging
             make install-deps && make fetch-wheels
+            PKG_DIR=~/project make requirements
 
       - run:
           name: Tag and make source tarball
