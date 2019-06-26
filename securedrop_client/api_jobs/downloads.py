@@ -5,7 +5,7 @@ import os
 import shutil
 
 from tempfile import NamedTemporaryFile
-from typing import Any, Union, Tuple
+from typing import Any, Union, Tuple, Type
 
 from sdclientapi import API, BaseError
 from sdclientapi import Reply as SdkReply
@@ -21,6 +21,14 @@ from securedrop_client.storage import mark_as_decrypted, mark_as_downloaded, \
 logger = logging.getLogger(__name__)
 
 
+class DownloadChecksumMismatchException(Exception):
+    def __init__(self, message: str,
+                 object_type: Union[Type[Reply], Type[Message], Type[File]], uuid: str):
+        super().__init__(message)
+        self.object_type = object_type
+        self.uuid = uuid
+
+
 class DownloadJob(ApiJob):
     '''
     Download and decrypt a file that contains either a message, reply, or file submission.
@@ -32,7 +40,8 @@ class DownloadJob(ApiJob):
         super().__init__()
         self.data_dir = data_dir
 
-    def call_download_api(self, api: API, db_object: Union[File, Message]) -> Tuple[str, str]:
+    def call_download_api(self, api: API,
+                          db_object: Union[File, Message, Reply]) -> Tuple[str, str]:
         '''
         Method for making the actual API call to downlod the file and handling the result.
 
@@ -88,7 +97,12 @@ class DownloadJob(ApiJob):
             etag, download_path = self.call_download_api(api, db_object)
 
             if not self._check_file_integrity(etag, download_path):
-                raise RuntimeError('Downloaded file had an invalid checksum.')
+                exception = DownloadChecksumMismatchException(
+                    'Downloaded file had an invalid checksum.',
+                    type(db_object),
+                    db_object.uuid
+                    )
+                raise exception
 
             shutil.move(download_path, os.path.join(self.data_dir, db_object.filename))
             mark_as_downloaded(type(db_object), db_object.uuid, session)

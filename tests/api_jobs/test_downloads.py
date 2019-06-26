@@ -6,7 +6,7 @@ from sdclientapi import BaseError
 from sdclientapi import Submission as SdkSubmission
 
 from securedrop_client.api_jobs.downloads import DownloadJob, FileDownloadJob, MessageDownloadJob, \
-    ReplyDownloadJob
+    ReplyDownloadJob, DownloadChecksumMismatchException
 from securedrop_client.crypto import GpgHelper, CryptoError
 from tests import factory
 
@@ -406,8 +406,7 @@ def test_FileDownloadJob_bad_sha256_etag(mocker, homedir, session, session_maker
         gpg,
     )
 
-    # we currently don't handle errors in the checksum
-    with pytest.raises(RuntimeError):
+    with pytest.raises(DownloadChecksumMismatchException):
         job.call_api(api_client, session)
 
 
