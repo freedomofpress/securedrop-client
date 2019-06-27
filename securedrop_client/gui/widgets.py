@@ -959,6 +959,90 @@ class DeleteSourceMessageBox:
         return message
 
 
+class LoginOfflineLink(QLabel):
+    """
+    A button that logs the user in in offline mode.
+    """
+
+    clicked = pyqtSignal()
+
+    CSS = '''
+    #offline_mode {
+        border: none;
+        color: #fff;
+        text-decoration: underline;
+    }
+    '''
+
+    def __init__(self):
+        # Add svg images to button
+        super().__init__()
+
+        # Set css id
+        self.setObjectName('offline_mode')
+
+        # Set styles
+        self.setStyleSheet(self.CSS)
+        self.setFixedSize(QSize(120, 22))
+
+        self.setText(_('USE OFFLINE'))
+
+    def mouseReleaseEvent(self, event):
+        self.clicked.emit()
+
+
+class SignInButton(QPushButton):
+    """
+    A button that logs user into application when clicked.
+    """
+
+    CSS = '''
+    #login {
+        border: none;
+        background-color: qlineargradient(
+            x1: 0,
+            y1: 0,
+            x2: 0,
+            y2: 1,
+            stop: 0 #b4fffa,
+            stop: 1 #05edfe
+        );
+        font-family: Open Sans;
+        font-size: 14px;
+        font-weight: bold;
+        color: #2a319d;
+    }
+    #login:pressed {
+        background-color: #85f6fe;
+    }
+    '''
+
+    def __init__(self):
+        super().__init__(_('SIGN IN'))
+
+        # Set css id
+        self.setObjectName('login')
+
+        # Set styles
+        self.setStyleSheet(self.CSS)
+        self.setFixedHeight(40)
+        self.setFixedWidth(140)
+
+        # Set drop shadow effect
+        effect = QGraphicsDropShadowEffect(self)
+        effect.setOffset(0, 1)
+        effect.setBlurRadius(8)
+        effect.setColor(QColor('#aa000000'))
+        self.setGraphicsEffect(effect)
+        self.update()
+
+    def setup(self, window):
+        """
+        Store a reference to the GUI window object.
+        """
+        self.window = window
+
+
 class LoginDialog(QDialog):
     """
     A dialog to display the login form.
@@ -967,8 +1051,14 @@ class LoginDialog(QDialog):
     CSS = '''
     #login_form QLabel {
         color: #fff;
+        font-weight: bold;
     }
-    #error_label {
+    #login_form QLineEdit {
+        border-radius: 0px;
+        height: 30px;
+        margin: 0px 0px 10px 0px;
+    }
+    #error_label QLabel {
         color: #f22b5d;
     }
     '''
@@ -992,7 +1082,7 @@ class LoginDialog(QDialog):
         self.setLayout(layout)
 
         # Set margins and spacing
-        layout.setContentsMargins(80, 200, 80, 0)
+        layout.setContentsMargins(80, 240, 80, 0)
         layout.setSpacing(0)
 
         # Set background
@@ -1002,6 +1092,10 @@ class LoginDialog(QDialog):
         self.setPalette(palette)
         self.setFixedSize(QSize(596, 671))  # Set to size provided in the login_bg.svg file
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        # Create error bar
+        self.error_label = QLabel('')
+        self.error_label.setObjectName('error_label')
 
         # Create form widget
         form = QWidget()
@@ -1028,17 +1122,19 @@ class LoginDialog(QDialog):
         buttons_layout = QHBoxLayout()
         buttons.setLayout(buttons_layout)
         buttons_layout.setContentsMargins(0, 20, 0, 0)
-        self.submit = QPushButton(_('SIGN IN'))
+        self.submit = SignInButton()
         self.submit.clicked.connect(self.validate)
-        self.offline_mode = QPushButton(_('USE OFFLINE'))
+        self.offline_mode = LoginOfflineLink()
         buttons_layout.addWidget(self.offline_mode)
         buttons_layout.addStretch()
         buttons_layout.addWidget(self.submit)
 
-        self.error_label = QLabel('')
-        self.error_label.setObjectName('error_label')  # Set css id
-        self.error_label.setStyleSheet(self.CSS)  # Set styles
+        application_version = QWidget()
+        application_version_layout = QHBoxLayout()
+        application_version.setLayout(application_version_layout)
 
+        form_layout.addStretch()
+        form_layout.addWidget(self.error_label)
         form_layout.addStretch()
         form_layout.addWidget(self.username_label)
         form_layout.addWidget(self.username_field)
@@ -1047,7 +1143,7 @@ class LoginDialog(QDialog):
         form_layout.addWidget(self.tfa_label)
         form_layout.addWidget(self.tfa_field)
         form_layout.addWidget(buttons)
-        form_layout.addWidget(self.error_label)
+        form_layout.addWidget(application_version)
         form_layout.addStretch()
 
         # Add form widget
