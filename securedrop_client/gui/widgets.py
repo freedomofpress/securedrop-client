@@ -993,7 +993,7 @@ class LoginOfflineLink(QLabel):
 
 class SignInButton(QPushButton):
     """
-    A button that logs user into application when clicked.
+    A button that logs the user into application when clicked.
     """
 
     CSS = '''
@@ -1035,12 +1035,6 @@ class SignInButton(QPushButton):
         effect.setColor(QColor('#aa000000'))
         self.setGraphicsEffect(effect)
         self.update()
-
-    def setup(self, window):
-        """
-        Store a reference to the GUI window object.
-        """
-        self.window = window
 
 
 class LoginDialog(QDialog):
