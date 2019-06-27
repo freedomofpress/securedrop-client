@@ -1044,7 +1044,7 @@ class LoginErrorBar(QWidget):
 
     CSS = '''
     QWidget {
-        background-color: #f22b5d;
+        background-color: #ce0083;
     }
     #error_icon {
         color: #fff;
