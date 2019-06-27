@@ -559,70 +559,6 @@ def test_Controller_update_sources(homedir, config, mocker):
     mock_gui.show_sources.assert_called_once_with(source_list)
 
 
-def test_Controller_unstars_a_source_if_starred(homedir, config, mocker, session_maker):
-    """
-    Ensure that the client unstars a source if it is starred.
-    Using the `config` fixture to ensure the config is written to disk.
-    """
-    mock_gui = mocker.MagicMock()
-    co = Controller('http://localhost', mock_gui, session_maker, homedir)
-
-    source_db_object = mocker.MagicMock()
-    source_db_object.uuid = mocker.MagicMock()
-    source_db_object.is_starred = True
-
-    co.call_api = mocker.MagicMock()
-    co.api = mocker.MagicMock()
-    co.api.remove_star = mocker.MagicMock()
-    co.on_update_star_success = mocker.MagicMock()
-    co.on_update_star_failure = mocker.MagicMock()
-
-    source_sdk_object = mocker.MagicMock()
-    mock_source = mocker.patch('sdclientapi.Source')
-    mock_source.return_value = source_sdk_object
-    co.update_star(source_db_object)
-
-    co.call_api.assert_called_once_with(
-        co.api.remove_star,
-        co.on_update_star_success,
-        co.on_update_star_failure,
-        source_sdk_object,
-    )
-    mock_gui.clear_error_status.assert_called_once_with()
-
-
-def test_Controller_unstars_a_source_if_unstarred(homedir, config, mocker, session_maker):
-    """
-    Ensure that the client stars a source if it is unstarred.
-    Using the `config` fixture to ensure the config is written to disk.
-    """
-    mock_gui = mocker.MagicMock()
-    co = Controller('http://localhost', mock_gui, session_maker, homedir)
-
-    source_db_object = mocker.MagicMock()
-    source_db_object.uuid = mocker.MagicMock()
-    source_db_object.is_starred = False
-
-    co.call_api = mocker.MagicMock()
-    co.api = mocker.MagicMock()
-    co.api.add_star = mocker.MagicMock()
-    co.on_update_star_success = mocker.MagicMock()
-    co.on_update_star_failure = mocker.MagicMock()
-
-    source_sdk_object = mocker.MagicMock()
-    mock_source = mocker.patch('sdclientapi.Source')
-    mock_source.return_value = source_sdk_object
-    co.update_star(source_db_object)
-
-    co.call_api.assert_called_once_with(
-        co.api.add_star,
-        co.on_update_star_success,
-        co.on_update_star_failure,
-        source_sdk_object,
-    )
-    mock_gui.clear_error_status.assert_called_once_with()
-
-
 def test_Controller_update_star_not_logged_in(homedir, config, mocker, session_maker):
     """
     Ensure that starring/unstarring a source when not logged in calls
@@ -1247,3 +1183,38 @@ def test_Controller_api_call_timeout(homedir, config, mocker, session_maker):
     co.on_api_timeout()
     mock_gui.update_error_status.assert_called_once_with(
         'The connection to the SecureDrop server timed out. Please try again.')
+
+
+def test_Controller_call_update_star_success(homedir, config, mocker, session_maker, session):
+    '''
+    Check that a UpdateStar is submitted to the queue when update_star is called.
+    '''
+    mock_gui = mocker.MagicMock()
+    co = Controller('http://localhost', mock_gui, session_maker, homedir)
+    co.call_api = mocker.MagicMock()
+    co.api = mocker.MagicMock()
+
+    mock_success_signal = mocker.MagicMock()
+    mock_failure_signal = mocker.MagicMock()
+    mock_job = mocker.MagicMock(success_signal=mock_success_signal,
+                                failure_signal=mock_failure_signal)
+    mock_job_cls = mocker.patch(
+        "securedrop_client.logic.UpdateStarJob", return_value=mock_job)
+    mock_queue = mocker.patch.object(co, 'api_job_queue')
+
+    source = factory.Source()
+    session.add(source)
+    session.commit()
+
+    co.update_star(source)
+
+    mock_job_cls.assert_called_once_with(
+        source.uuid,
+        source.is_starred
+    )
+
+    mock_queue.enqueue.assert_called_once_with(mock_job)
+    mock_success_signal.connect.assert_called_once_with(
+        co.on_update_star_success, type=Qt.QueuedConnection)
+    mock_failure_signal.connect.assert_called_once_with(
+        co.on_update_star_failure, type=Qt.QueuedConnection)

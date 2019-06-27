@@ -34,6 +34,7 @@ from securedrop_client import db
 from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob, \
     ReplyDownloadJob
 from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobException
+from securedrop_client.api_jobs.updatestar import UpdateStarJob, UpdateStarJobException
 from securedrop_client.crypto import GpgHelper, CryptoError
 from securedrop_client.queue import ApiJobQueue
 from securedrop_client.utils import check_dir_permissions
@@ -420,7 +421,7 @@ class Controller(QObject):
         self.sync_api()  # Syncing the API also updates the source list UI
         self.gui.clear_error_status()
 
-    def on_update_star_failure(self, result: Exception) -> None:
+    def on_update_star_failure(self, result: UpdateStarJobException) -> None:
         """
         After we unstar a source, we should sync the API such that the local database is updated.
         """
@@ -439,18 +440,14 @@ class Controller(QObject):
         else:  # Clear the error status bar
             self.gui.clear_error_status()
 
-        source_sdk_object = sdclientapi.Source(uuid=source_db_object.uuid)
+        job = UpdateStarJob(
+                source_db_object.uuid,
+                source_db_object.is_starred
+        )
+        job.success_signal.connect(self.on_update_star_success, type=Qt.QueuedConnection)
+        job.failure_signal.connect(self.on_update_star_failure, type=Qt.QueuedConnection)
 
-        if source_db_object.is_starred:
-            self.call_api(self.api.remove_star,
-                          self.on_update_star_success,
-                          self.on_update_star_failure,
-                          source_sdk_object)
-        else:
-            self.call_api(self.api.add_star,
-                          self.on_update_star_success,
-                          self.on_update_star_failure,
-                          source_sdk_object)
+        self.api_job_queue.enqueue(job)
 
     def logout(self):
         """
