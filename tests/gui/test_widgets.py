@@ -12,7 +12,7 @@ from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, Lo
     SpeechBubble, ConversationWidget, MessageWidget, ReplyWidget, FileWidget, ConversationView, \
     DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, LeftPane, RefreshButton, \
     ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
-    ReplyBoxWidget, SourceConversationWrapper, StarToggleButton, LoginOfflineLink
+    ReplyBoxWidget, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, LoginErrorBar
 
 
 app = QApplication([])
@@ -847,7 +847,7 @@ def test_LoginDialog_reset(mocker):
     ld.password_field = mocker.MagicMock()
     ld.tfa_field = mocker.MagicMock()
     ld.setDisabled = mocker.MagicMock()
-    ld.error_label = mocker.MagicMock()
+    ld.error_bar = mocker.MagicMock()
 
     ld.reset()
 
@@ -855,7 +855,7 @@ def test_LoginDialog_reset(mocker):
     ld.password_field.setText.assert_called_once_with('')
     ld.tfa_field.setText.assert_called_once_with('')
     ld.setDisabled.assert_called_once_with(False)
-    ld.error_label.setText.assert_called_once_with('')
+    ld.error_bar.clear_message.assert_called_once_with()
 
 
 def test_LoginDialog_error(mocker, i18n):
@@ -865,9 +865,9 @@ def test_LoginDialog_error(mocker, i18n):
     mock_controller = mocker.MagicMock()
     ld = LoginDialog(None)
     ld.setup(mock_controller)
-    ld.error_label = mocker.MagicMock()
+    ld.error_bar = mocker.MagicMock()
     ld.error('foo')
-    ld.error_label.setText.assert_called_once_with('foo')
+    ld.error_bar.set_message.assert_called_once_with('foo')
 
 
 def test_LoginDialog_validate_no_input(mocker):
@@ -1025,6 +1025,28 @@ def test_LoginDialog_closeEvent_exits(mocker):
     ld.closeEvent(event='mock')
 
     sys_exit_fn.assert_called_once_with(0)
+
+
+def test_LoginErrorBar_set_message(mocker):
+    error_bar = LoginErrorBar()
+    error_bar.error_status_bar = mocker.MagicMock()
+    mocker.patch.object(error_bar, 'show')
+
+    error_bar.set_message('mock error')
+
+    error_bar.error_status_bar.setText.assert_called_with('mock error')
+    error_bar.show.assert_called_with()
+
+
+def test_LoginErrorBar_clear_message(mocker):
+    error_bar = LoginErrorBar()
+    error_bar.error_status_bar = mocker.MagicMock()
+    mocker.patch.object(error_bar, 'hide')
+
+    error_bar.clear_message()
+
+    error_bar.error_status_bar.setText.assert_called_with('')
+    error_bar.hide.assert_called_with()
 
 
 def test_LoginOfflineLink(mocker):
