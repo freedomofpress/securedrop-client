@@ -827,9 +827,12 @@ def test_LoginDialog_setup(mocker, i18n):
     """
     mock_controller = mocker.MagicMock()
     ld = LoginDialog(None)
+    ld.offline_mode = mocker.MagicMock()
+
     ld.setup(mock_controller)
+
     assert ld.controller == mock_controller
-    assert ld.title.text() == '<h1>Sign in</h1>'
+    ld.offline_mode.clicked.connect.assert_called_once_with(ld.controller.login_offline_mode)
 
 
 def test_LoginDialog_reset(mocker):
