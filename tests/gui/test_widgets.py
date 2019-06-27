@@ -12,7 +12,7 @@ from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, Lo
     SpeechBubble, ConversationWidget, MessageWidget, ReplyWidget, FileWidget, ConversationView, \
     DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, LeftPane, RefreshButton, \
     ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
-    ReplyBoxWidget, SourceConversationWrapper, StarToggleButton
+    ReplyBoxWidget, SourceConversationWrapper, StarToggleButton, LoginOfflineLink
 
 
 app = QApplication([])
@@ -1025,6 +1025,18 @@ def test_LoginDialog_closeEvent_exits(mocker):
     ld.closeEvent(event='mock')
 
     sys_exit_fn.assert_called_once_with(0)
+
+
+def test_LoginOfflineLink(mocker):
+    """
+    Assert that the clicked signal is emitted on mouse release event.
+    """
+    offline_link = LoginOfflineLink()
+    offline_link.clicked = mocker.MagicMock()
+
+    offline_link.mouseReleaseEvent(None)
+
+    offline_link.clicked.emit.assert_called_with()
 
 
 def test_LoginDialog_closeEvent_does_not_exit_when_main_window_is_visible(mocker):
