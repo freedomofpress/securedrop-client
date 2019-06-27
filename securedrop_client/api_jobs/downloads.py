@@ -168,7 +168,7 @@ class ReplyDownloadJob(DownloadJob):
         sdk_object.source_uuid = db_object.source.uuid
         return api.download_reply(sdk_object)
 
-    def call_decrypt(self, filepath: str, session: Session = None) -> None:
+    def call_decrypt(self, filepath: str, session: Session = None) -> str:
         '''
         Override DownloadJob.
 
@@ -184,6 +184,7 @@ class ReplyDownloadJob(DownloadJob):
                 uuid=self.uuid,
                 session=session,
                 content=plaintext_file.read())
+        return ""
 
 
 class MessageDownloadJob(DownloadJob):

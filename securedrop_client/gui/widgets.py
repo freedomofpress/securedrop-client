@@ -1478,7 +1478,7 @@ class FileWidget(QWidget):
         icon.setPixmap(load_image('file.png'))
 
         if self.file.is_downloaded:
-            description = QLabel(self.file.original_filename or self.file.filename)
+            description = QLabel(html.escape(self.file.original_filename or self.file.filename))
         else:
             human_filesize = humanize_filesize(self.file.size)
             description = QLabel("Download ({})".format(human_filesize))
