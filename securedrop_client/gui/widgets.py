@@ -1037,6 +1037,74 @@ class SignInButton(QPushButton):
         self.update()
 
 
+class LoginErrorBar(QWidget):
+    """
+    A bar widget for displaying messages about login errors to the user.
+    """
+
+    CSS = '''
+    QWidget {
+        background-color: #f22b5d;
+    }
+    #error_icon {
+        color: #fff;
+    }
+    #error_status_bar {
+        font-weight: bold;
+        color: #fff;
+    }
+    '''
+
+    def __init__(self):
+        super().__init__()
+
+        self.setObjectName('error_bar')
+
+        # Set styles
+        self.setStyleSheet(self.CSS)
+
+        # Set layout
+        layout = QHBoxLayout(self)
+        self.setLayout(layout)
+
+        # Remove margins and spacing
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        # Set size policy
+        retain_space = self.sizePolicy()
+        retain_space.setRetainSizeWhenHidden(True)
+        self.setSizePolicy(retain_space)
+
+        # Error icon
+        self.error_icon = SvgLabel('error_icon_white.svg', svg_size=QSize(18, 18))
+        self.error_icon.setObjectName('error_icon')
+        self.error_icon.setFixedWidth(42)
+
+        # Error status bar
+        self.error_status_bar = QLabel()
+        self.error_status_bar.setObjectName('error_status_bar')
+        self.setFixedHeight(42)
+
+        # Create space ths size of the error icon to keep the error message centered
+        spacer1 = QWidget()
+        spacer2 = QWidget()
+
+        # Add widgets to layout
+        layout.addWidget(spacer1)
+        layout.addWidget(self.error_icon)
+        layout.addWidget(self.error_status_bar)
+        layout.addWidget(spacer2)
+
+    def set_message(self, message):
+        self.show()
+        self.error_status_bar.setText(message)
+
+    def clear_message(self):
+        self.error_status_bar.setText('')
+        self.hide()
+
+
 class LoginDialog(QDialog):
     """
     A dialog to display the login form.
@@ -1051,9 +1119,6 @@ class LoginDialog(QDialog):
         border-radius: 0px;
         height: 30px;
         margin: 0px 0px 10px 0px;
-    }
-    #error_label QLabel {
-        color: #f22b5d;
     }
     '''
 
@@ -1072,11 +1137,11 @@ class LoginDialog(QDialog):
         self.setStyleSheet(self.CSS)
 
         # Set layout
-        layout = QHBoxLayout(self)
+        layout = QVBoxLayout(self)
         self.setLayout(layout)
 
         # Set margins and spacing
-        layout.setContentsMargins(80, 240, 80, 0)
+        layout.setContentsMargins(0, 274, 0, 20)
         layout.setSpacing(0)
 
         # Set background
@@ -1088,8 +1153,7 @@ class LoginDialog(QDialog):
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         # Create error bar
-        self.error_label = QLabel('')
-        self.error_label.setObjectName('error_label')
+        self.error_bar = LoginErrorBar()
 
         # Create form widget
         form = QWidget()
@@ -1099,7 +1163,7 @@ class LoginDialog(QDialog):
         form_layout = QVBoxLayout()
         form.setLayout(form_layout)
 
-        form_layout.setContentsMargins(0, 0, 0, 0)
+        form_layout.setContentsMargins(80, 0, 80, 0)
         form_layout.setSpacing(8)
 
         self.username_label = QLabel(_('Username'))
@@ -1123,13 +1187,6 @@ class LoginDialog(QDialog):
         buttons_layout.addStretch()
         buttons_layout.addWidget(self.submit)
 
-        application_version = QWidget()
-        application_version_layout = QHBoxLayout()
-        application_version.setLayout(application_version_layout)
-
-        form_layout.addStretch()
-        form_layout.addWidget(self.error_label)
-        form_layout.addStretch()
         form_layout.addWidget(self.username_label)
         form_layout.addWidget(self.username_field)
         form_layout.addWidget(self.password_label)
@@ -1137,11 +1194,18 @@ class LoginDialog(QDialog):
         form_layout.addWidget(self.tfa_label)
         form_layout.addWidget(self.tfa_field)
         form_layout.addWidget(buttons)
-        form_layout.addWidget(application_version)
-        form_layout.addStretch()
 
-        # Add form widget
+        # Create widget to display application name and version
+        application_version = QWidget()
+        application_version_layout = QHBoxLayout()
+        application_version.setLayout(application_version_layout)
+
+        # Add widgets
+        layout.addWidget(self.error_bar)
+        layout.addStretch()
         layout.addWidget(form)
+        layout.addStretch()
+        layout.addWidget(application_version)
 
     def closeEvent(self, event):
         """
@@ -1171,14 +1235,14 @@ class LoginDialog(QDialog):
         self.password_field.setText('')
         self.tfa_field.setText('')
         self.setDisabled(False)
-        self.error_label.setText('')
+        self.error_bar.clear_message()
 
     def error(self, message):
         """
         Ensures the passed in message is displayed as an error message.
         """
         self.setDisabled(False)
-        self.error_label.setText(html.escape(message))
+        self.error_bar.set_message(html.escape(message))
 
     def validate(self):
         """
