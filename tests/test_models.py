@@ -4,9 +4,45 @@ from tests import factory
 from securedrop_client.db import Reply, File, Message, User
 
 
-def test_string_representation_of_user():
-    user = User(username='hehe')
-    user.__repr__()
+def test_user_fullname():
+    user1 = User(username='username_mock', firstname='firstname_mock', lastname='lastname_mock')
+    user2 = User(username='username_mock', firstname='firstname_mock')
+    user3 = User(username='username_mock', lastname='lastname_mock')
+    user4 = User(username='username_mock')
+    assert user1.fullname == 'firstname_mock lastname_mock'
+    assert user2.fullname == 'firstname_mock'
+    assert user3.fullname == 'lastname_mock'
+    assert user4.fullname == ''
+
+    user1.__repr__()
+
+
+def test_user_initials():
+    # initials should be first char of firstname followed by first char of last name
+    user1 = User(username='username_mock', firstname='firstname_mock', lastname='lastname_mock')
+    user2 = User(username='username_mock', firstname='firstname_mock', lastname='l')
+    user3 = User(username='username_mock', firstname='f', lastname='lastname_mock')
+    user4 = User(username='username_mock', firstname='f', lastname='l')
+    assert user1.initials == 'fl'
+    assert user2.initials == 'fl'
+    assert user3.initials == 'fl'
+    assert user4.initials == 'fl'
+
+    # initials should be first two chars of username
+    user5 = User(username='username_mock')
+    user6 = User(username='username_mock', firstname='f')
+    user7 = User(username='username_mock', lastname='l')
+    assert user5.initials == 'us'
+    assert user6.initials == 'us'
+    assert user7.initials == 'us'
+
+    # initials should be first two chars of firstname or lastname
+    user8 = User(username='username_mock', firstname='firstname_mock')
+    user9 = User(username='username_mock', lastname='lastname_mock')
+    assert user8.initials == 'fi'
+    assert user9.initials == 'la'
+
+    user1.__repr__()
 
 
 def test_string_representation_of_source():

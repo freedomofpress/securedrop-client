@@ -221,6 +221,30 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
     username = Column(String(255), nullable=False)
+    firstname = Column(String(64))
+    lastname = Column(String(64))
 
     def __repr__(self) -> str:
-        return "<Journalist: {}>".format(self.username)
+        return "<Journalist {}: {}>".format(self.uuid, self.username)
+
+    @property
+    def fullname(self) -> str:
+        if self.firstname and self.lastname:
+            return self.firstname + ' ' + self.lastname
+        elif self.firstname:
+            return self.firstname
+        elif self.lastname:
+            return self.lastname
+        else:
+            return ''
+
+    @property
+    def initials(self) -> str:
+        if self.firstname and self.lastname:
+            return self.firstname[0].lower() + self.lastname[0].lower()
+        elif self.firstname and len(self.firstname) >= 2:
+            return self.firstname[0:2].lower()
+        elif self.lastname and len(self.lastname) >= 2:
+            return self.lastname[0:2].lower()
+        else:
+            return self.username[0:2].lower()  # username must be at least 3 characters
