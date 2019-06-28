@@ -281,8 +281,7 @@ class Controller(QObject):
         Given a username, password and time based one-time-passcode (TOTP),
         create a new instance representing the SecureDrop api and authenticate.
         """
-        self.api = sdclientapi.API(self.hostname, username,
-                                   password, totp, self.proxy)
+        self.api = sdclientapi.API(self.hostname, username, password, totp, self.proxy)
         self.call_api(self.api.authenticate,
                       self.on_authenticate_success,
                       self.on_authenticate_failure)
@@ -294,7 +293,9 @@ class Controller(QObject):
         logger.info('{} successfully logged in'.format(self.api.username))
         self.gui.hide_login()
         self.sync_api()
-        self.gui.show_main_window(self.api.username)
+        self.call_api(self.api.get_current_user,
+                      self.on_get_current_user_success,
+                      self.on_get_current_user_failure)
         self.api_job_queue.login(self.api)
 
         # Clear the sidebar error status bar if a message was shown
@@ -309,6 +310,19 @@ class Controller(QObject):
         error = _('There was a problem signing in. '
                   'Please verify your credentials and try again.')
         self.gui.show_login_error(error=error)
+
+    def on_get_current_user_success(self, result) -> None:
+        user = storage.update_and_get_user(
+            result['uuid'],
+            result['username'],
+            result['first_name'],
+            result['last_name'],
+            self.session)
+        self.gui.show_main_window(user.username)
+
+    def on_get_current_user_failure(self, result: Exception) -> None:
+        self.api = None
+        self.gui.show_login_error(error=_('Could not find your account.'))
 
     def login_offline_mode(self):
         """

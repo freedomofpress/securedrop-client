@@ -256,8 +256,7 @@ def update_replies(remote_replies: List[SDKReply], local_replies: List[Reply],
             if (local_reply.filename != reply.filename):
                 rename_file(data_dir, local_reply.filename, reply.filename)
             # Update an existing record.
-            user = find_or_create_user(reply.journalist_uuid,
-                                       reply.journalist_username, session)
+            user = find_or_create_user(reply.journalist_uuid, reply.journalist_username, session)
             local_reply.journalist_id = user.id
             local_reply.filename = reply.filename
             local_reply.size = reply.size
@@ -268,8 +267,10 @@ def update_replies(remote_replies: List[SDKReply], local_replies: List[Reply],
             # A new reply to be added to the database.
             source_uuid = reply.source_uuid
             source = session.query(Source).filter_by(uuid=source_uuid)[0]
-            user = find_or_create_user(reply.journalist_uuid,
-                                       reply.journalist_username, session)
+            user = find_or_create_user(
+                reply.journalist_uuid,
+                reply.journalist_username,
+                session)
             nr = Reply(uuid=reply.uuid,
                        journalist_id=user.id,
                        source_id=source.id,
@@ -288,29 +289,49 @@ def update_replies(remote_replies: List[SDKReply], local_replies: List[Reply],
     session.commit()
 
 
-def find_or_create_user(uuid: str, username: str, session: Session) -> User:
+def find_or_create_user(uuid: str,
+                        username: str,
+                        session: Session) -> User:
     """
     Returns a user object representing the referenced journalist UUID.
     If the user does not already exist in the data, a new instance is created.
-    If the user exists but the username has changed, the username is updated.
+    If the user exists but user fields have changed, the db is updated.
     """
     user = session.query(User).filter_by(uuid=uuid).one_or_none()
-    if user and user.username == username:
-        # User exists in the local database and the username is unchanged.
-        return user
-    elif user and user.username != username:
-        # User exists in the local database but the username is changed.
-        user.username = username
-        session.add(user)
-        session.commit()
-        return user
-    else:
-        # User does not exist in the local database.
+
+    if not user:
         new_user = User(username=username)
         new_user.uuid = uuid
         session.add(new_user)
         session.commit()
         return new_user
+
+    if user.username != username:
+        user.username = username
+        session.commit()
+
+    return user
+
+
+def update_and_get_user(uuid: str,
+                        username: str,
+                        firstname: str,
+                        lastname: str,
+                        session: Session) -> User:
+    """
+    Returns a user object representing the referenced journalist UUID.
+    If user fields have changed, the db is updated.
+    """
+    user = find_or_create_user(uuid, username, session)
+
+    if user.firstname != firstname:
+        user.firstname = firstname
+        session.commit()
+    if user.lastname != lastname:
+        user.lastname = lastname
+        session.commit()
+
+    return user
 
 
 def find_new_messages(session: Session) -> List[Message]:
