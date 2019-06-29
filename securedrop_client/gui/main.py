@@ -27,7 +27,7 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QDes
     QApplication
 
 from securedrop_client import __version__
-from securedrop_client.db import Source
+from securedrop_client.db import Source, User
 from securedrop_client.logic import Controller  # noqa: F401
 from securedrop_client.gui.widgets import TopPane, LeftPane, MainView, LoginDialog
 from securedrop_client.resources import load_icon
@@ -93,12 +93,15 @@ class Window(QMainWindow):
         self.main_view.setup(self.controller)
         self.show_login()
 
-    def show_main_window(self, username: str = None) -> None:
+    def show_main_window(self, db_user: User = None) -> None:
+        """
+        Show main application window.
+        """
         self.autosize_window()
         self.show()
 
-        if username:
-            self.set_logged_in_as(username)
+        if db_user:
+            self.set_logged_in_as(db_user)
 
     def autosize_window(self):
         """
@@ -149,11 +152,11 @@ class Window(QMainWindow):
         else:
             self.update_activity_status(_('Waiting to refresh...'), 5000)
 
-    def set_logged_in_as(self, username):
+    def set_logged_in_as(self, db_user: User):
         """
         Update the UI to show user logged in with username.
         """
-        self.left_pane.set_logged_in_as(username)
+        self.left_pane.set_logged_in_as(db_user)
         self.top_pane.enable_refresh()
 
     def logout(self):
