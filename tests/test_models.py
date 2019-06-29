@@ -12,7 +12,7 @@ def test_user_fullname():
     assert user1.fullname == 'firstname_mock lastname_mock'
     assert user2.fullname == 'firstname_mock'
     assert user3.fullname == 'lastname_mock'
-    assert user4.fullname == ''
+    assert user4.fullname == 'username_mock'
 
     user1.__repr__()
 

@@ -236,7 +236,7 @@ class User(Base):
         elif self.lastname:
             return self.lastname
         else:
-            return ''
+            return self.username
 
     @property
     def initials(self) -> str:
