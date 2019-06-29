@@ -187,20 +187,52 @@ def test_Controller_on_authenticate_success(homedir, config, mocker, session_mak
     """
     mock_gui = mocker.MagicMock()
     mock_api_job_queue = mocker.patch("securedrop_client.logic.ApiJobQueue")
-
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     co.sync_api = mocker.MagicMock()
     co.api = mocker.MagicMock()
-    co.api.username = 'test'
+    co.call_api = mocker.MagicMock()
+    login = mocker.patch.object(co.api_job_queue, 'login')
+    current_user_api_result = {
+        'uuid': 'mock_uuid',
+        'username': 'mock_username',
+        'first_name': 'mock_firstname',
+        'last_name': 'mock_lastname'}
+    co.api.get_current_user = mocker.MagicMock(return_value=(current_user_api_result))
 
     co.on_authenticate_success(True)
 
     co.sync_api.assert_called_once_with()
-    co.gui.show_main_window.assert_called_once_with('test')
     co.gui.clear_error_status.assert_called_once_with()
-
-    # ensure mocks are used
     assert mock_api_job_queue.called
+    login.assert_called_with(co.api)
+
+
+def test_Controller_on_get_current_user_success(mocker, session_maker, homedir):
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    co.api = mocker.MagicMock()
+    co.call_api = mocker.MagicMock()
+    user = factory.User(uuid='mock_uuid', username='mock_username')
+    storage = mocker.patch('securedrop_client.logic.storage')
+    storage.update_and_get_user = mocker.MagicMock(return_value=user)
+    current_user_api_result = {
+        'uuid': 'mock_uuid',
+        'username': 'mock_username',
+        'first_name': 'mock_firstname',
+        'last_name': 'mock_lastname'}
+
+    co.on_get_current_user_success(current_user_api_result)
+
+    co.gui.show_main_window.assert_called_with('mock_username')
+
+
+def test_Controller_on_get_current_user_failure(homedir, mocker, session_maker):
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    result = Exception('oh no')
+
+    co.on_get_current_user_failure(result)
+
+    co.gui.show_login_error.assert_called_once_with(error='Could not find your account.')
+    assert co.api is None
 
 
 def test_Controller_completed_api_call_without_current_object(

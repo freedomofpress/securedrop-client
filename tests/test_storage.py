@@ -15,7 +15,7 @@ from securedrop_client.storage import get_local_sources, get_local_messages, get
     update_replies, find_or_create_user, find_new_messages, find_new_replies, \
     delete_single_submission_or_reply_on_disk, rename_file, get_local_files, find_new_files, \
     source_exists, set_message_or_reply_content, mark_as_downloaded, mark_as_decrypted, get_file, \
-    get_message, get_reply
+    get_message, get_reply, update_and_get_user
 
 from securedrop_client import db
 from tests import factory
@@ -690,19 +690,17 @@ def test_find_or_create_user_existing_uuid(mocker):
                                mock_session) == mock_user
 
 
-def test_find_or_create_user_existing_username(mocker):
+def test_find_or_create_user_update_username(mocker, session):
     """
-    Return an existing user object with the referenced username.
+    Return an existing user object with the updated username.
     """
-    mock_session = mocker.MagicMock()
-    mock_user = mocker.MagicMock()
-    mock_user.username = 'foobar'
-    mock_session.query().filter_by().one_or_none.return_value = mock_user
-    assert find_or_create_user('uuid', 'testymctestface',
-                               mock_session) == mock_user
-    assert mock_user.username == 'testymctestface'
-    mock_session.add.assert_called_once_with(mock_user)
-    mock_session.commit.assert_called_once_with()
+    user = factory.User(uuid='mock_uuid', username='mock_old_username')
+    session.add(user)
+
+    actual_user = find_or_create_user('mock_uuid', 'mock_username', session)
+
+    assert actual_user == user
+    assert actual_user.username == 'mock_username'
 
 
 def test_find_or_create_user_new(mocker):
@@ -715,6 +713,33 @@ def test_find_or_create_user_new(mocker):
     assert new_user.username == 'unknown'
     mock_session.add.assert_called_once_with(new_user)
     mock_session.commit.assert_called_once_with()
+
+
+def test_update_and_get_user(mocker, session):
+    """
+    Return an existing user object with the updated username.
+    """
+    user = factory.User(
+        uuid='mock_uuid',
+        username='mock_username',  # username is needed for find_or_create_user
+        firstname='mock_old_firstname',
+        lastname='mock_old_lastname')
+    session.add(user)
+    find_or_create_user_fn = mocker.patch(
+        'securedrop_client.storage.find_or_create_user', return_value=user)
+
+    actual_user = update_and_get_user(
+        uuid='mock_uuid',
+        username='mock_username',
+        firstname='mock_firstname',
+        lastname='mock_lastname',
+        session=session)
+
+    find_or_create_user_fn.assert_called_with('mock_uuid', 'mock_username', session)
+    assert actual_user == user
+    assert actual_user.username == 'mock_username'
+    assert actual_user.firstname == 'mock_firstname'
+    assert actual_user.lastname == 'mock_lastname'
 
 
 def test_find_new_messages(mocker, session):
