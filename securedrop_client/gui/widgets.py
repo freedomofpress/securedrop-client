@@ -433,7 +433,7 @@ class UserProfile(QWidget):
 
     def set_user(self, db_user: User):
         self.user_icon.setText(_(db_user.initials))
-        self.user_button.set_username(db_user.username)
+        self.user_button.set_username(db_user.fullname)
 
     def show(self):
         self.login_button.hide()
