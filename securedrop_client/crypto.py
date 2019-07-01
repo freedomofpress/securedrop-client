@@ -22,7 +22,6 @@ import shutil
 import struct
 import subprocess
 import tempfile
-from typing import Tuple
 
 from sqlalchemy.orm import scoped_session
 from uuid import UUID
@@ -39,6 +38,11 @@ class CryptoError(Exception):
     pass
 
 
+GZIP_FILE_IDENTIFICATION = b"\037\213"
+GZIP_FLAG_EXTRA_FIELDS = 4  # gzip.FEXTRA
+GZIP_FLAG_FILENAME = 8  # gzip.FNAME
+
+
 def read_gzip_header_filename(filename: str) -> str:
     """
     Extract the original filename from the header of a gzipped file.
@@ -47,19 +51,19 @@ def read_gzip_header_filename(filename: str) -> str:
     """
     original_filename = ""
     with open(filename, "rb") as f:
-        magic = f.read(2)
-        if magic != b"\037\213":
-            raise OSError("Not a gzipped file (%r)" % magic)
+        gzip_header_identification = f.read(2)
+        if gzip_header_identification != GZIP_FILE_IDENTIFICATION:
+            raise OSError("Not a gzipped file (%r)" % gzip_header_identification)
 
-        (method, flag, mtime) = struct.unpack("<BBIxx", f.read(8))
-        if method != 8:
+        (gzip_header_compression_method, gzip_header_flags, _) = struct.unpack("<BBIxx", f.read(8))
+        if gzip_header_compression_method != 8:
             raise OSError("Unknown compression method")
 
-        if flag & 4:  # gzip.FEXTRA
+        if gzip_header_flags & GZIP_FLAG_EXTRA_FIELDS:
             extra_len, = struct.unpack("<H", f.read(2))
             f.read(extra_len)
 
-        if flag & 8:  # gzip.FNAME
+        if gzip_header_flags & GZIP_FLAG_FILENAME:
             fb = b""
             while True:
                 s = f.read(1)
@@ -88,7 +92,7 @@ class GpgHelper:
     def decrypt_submission_or_reply(self,
                                     filepath: str,
                                     plaintext_filepath: str,
-                                    is_doc: bool = False) -> Tuple[str, str]:
+                                    is_doc: bool = False) -> str:
 
         original_filename, _ = os.path.splitext(os.path.splitext(os.path.basename(filepath))[0])
 
@@ -126,7 +130,7 @@ class GpgHelper:
             else:
                 shutil.copy(out.name, plaintext_filepath)
 
-        return plaintext_filepath, original_filename
+        return original_filename
 
     def _gpg_cmd_base(self) -> list:
         if self.is_qubes:  # pragma: no cover
