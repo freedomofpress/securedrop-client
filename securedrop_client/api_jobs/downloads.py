@@ -45,6 +45,8 @@ class DownloadJob(ApiJob):
         '''
         Method for decrypting the file and storing the plaintext result.
 
+        Returns the original filename.
+
         This MUST raise an exception if and only if the decryption fails.
         '''
         raise NotImplementedError
@@ -176,6 +178,8 @@ class ReplyDownloadJob(DownloadJob):
         database.
 
         The file containing the plaintext should be deleted once the content is stored in the db.
+
+        The return value is an empty string; replies have no original filename.
         '''
         with NamedTemporaryFile('w+') as plaintext_file:
             self.gpg.decrypt_submission_or_reply(filepath, plaintext_file.name, is_doc=False)
@@ -220,6 +224,8 @@ class MessageDownloadJob(DownloadJob):
         database.
 
         The file containing the plaintext should be deleted once the content is stored in the db.
+
+        The return value is an empty string; messages have no original filename.
         '''
         with NamedTemporaryFile('w+') as plaintext_file:
             self.gpg.decrypt_submission_or_reply(filepath, plaintext_file.name, is_doc=False)
@@ -268,7 +274,7 @@ class FileDownloadJob(DownloadJob):
         '''
         fn_no_ext, _ = os.path.splitext(os.path.splitext(os.path.basename(filepath))[0])
         plaintext_filepath = os.path.join(self.data_dir, fn_no_ext)
-        plaintext_path, original_filename = self.gpg.decrypt_submission_or_reply(
+        original_filename = self.gpg.decrypt_submission_or_reply(
             filepath, plaintext_filepath, is_doc=True
         )
         return original_filename

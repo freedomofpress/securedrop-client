@@ -14,8 +14,7 @@ from tests import factory
 def patch_decrypt(mocker, homedir, gpghelper, filename):
     mock_decrypt = mocker.patch.object(gpghelper, 'decrypt_submission_or_reply')
     fn_no_ext, _ = os.path.splitext(os.path.splitext(os.path.basename(filename))[0])
-    plaintext_filepath = os.path.join(homedir, 'data', fn_no_ext)
-    mock_decrypt.return_value = (plaintext_filepath, plaintext_filepath)
+    mock_decrypt.return_value = fn_no_ext
     return mock_decrypt
 
 
