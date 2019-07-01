@@ -32,7 +32,7 @@ from sqlalchemy.orm.session import sessionmaker
 from securedrop_client import storage
 from securedrop_client import db
 from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob, \
-    ReplyDownloadJob
+    ReplyDownloadJob, DownloadChecksumMismatchException
 from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobException
 from securedrop_client.crypto import GpgHelper, CryptoError
 from securedrop_client.queue import ApiJobQueue
@@ -472,6 +472,27 @@ class Controller(QObject):
         """
         self.gui.update_activity_status(message, duration)
 
+    def _submit_download_job(self,
+                             object_type: Union[Type[db.Reply], Type[db.Message], Type[db.File]],
+                             uuid: str) -> None:
+
+        if object_type == db.Reply:
+            job = ReplyDownloadJob(
+                uuid, self.data_dir, self.gpg
+                )  # type: Union[ReplyDownloadJob, MessageDownloadJob, FileDownloadJob]
+            job.success_signal.connect(self.on_reply_download_success, type=Qt.QueuedConnection)
+            job.failure_signal.connect(self.on_reply_download_failure, type=Qt.QueuedConnection)
+        elif object_type == db.Message:
+            job = MessageDownloadJob(uuid, self.data_dir, self.gpg)
+            job.success_signal.connect(self.on_message_download_success, type=Qt.QueuedConnection)
+            job.failure_signal.connect(self.on_message_download_failure, type=Qt.QueuedConnection)
+        elif object_type == db.File:
+            job = FileDownloadJob(uuid, self.data_dir, self.gpg)
+            job.success_signal.connect(self.on_file_download_success, type=Qt.QueuedConnection)
+            job.failure_signal.connect(self.on_file_download_failure, type=Qt.QueuedConnection)
+
+        self.api_job_queue.enqueue(job)
+
     def download_new_messages(self) -> None:
         messages = storage.find_new_messages(self.session)
 
@@ -479,10 +500,7 @@ class Controller(QObject):
             self.set_status(_('Downloading new messages'))
 
         for message in messages:
-            job = MessageDownloadJob(message.uuid, self.data_dir, self.gpg)
-            job.success_signal.connect(self.on_message_download_success, type=Qt.QueuedConnection)
-            job.failure_signal.connect(self.on_message_download_failure, type=Qt.QueuedConnection)
-            self.api_job_queue.enqueue(job)
+            self._submit_download_job(type(message), message.uuid)
 
     def on_message_download_success(self, uuid: str) -> None:
         """
@@ -497,13 +515,15 @@ class Controller(QObject):
         """
         logger.debug('Failed to download message: {}'.format(exception))
 
+        # Keep resubmitting the job if the download is corrupted.
+        if isinstance(exception, DownloadChecksumMismatchException):
+            logger.debug('Failure due to checksum mismatch, retrying {}'.format(exception.uuid))
+            self._submit_download_job(exception.object_type, exception.uuid)
+
     def download_new_replies(self) -> None:
         replies = storage.find_new_replies(self.session)
         for reply in replies:
-            job = ReplyDownloadJob(reply.uuid, self.data_dir, self.gpg)
-            job.success_signal.connect(self.on_reply_download_success, type=Qt.QueuedConnection)
-            job.failure_signal.connect(self.on_reply_download_failure, type=Qt.QueuedConnection)
-            self.api_job_queue.enqueue(job)
+            self._submit_download_job(type(reply), reply.uuid)
 
     def on_reply_download_success(self, uuid: str) -> None:
         """
@@ -517,6 +537,11 @@ class Controller(QObject):
         Called when a reply fails to download.
         """
         logger.debug('Failed to download reply: {}'.format(exception))
+
+        # Keep resubmitting the job if the download is corrupted.
+        if isinstance(exception, DownloadChecksumMismatchException):
+            logger.debug('Failure due to checksum mismatch, retrying {}'.format(exception.uuid))
+            self._submit_download_job(exception.object_type, exception.uuid)
 
     def on_file_open(self, file_uuid: str) -> None:
         """
@@ -551,15 +576,7 @@ class Controller(QObject):
         Download the file associated with the Submission (which may be a File or Message).
         """
         if self.api:
-            job = FileDownloadJob(
-                submission_uuid,
-                self.data_dir,
-                self.gpg,
-            )
-            job.success_signal.connect(self.on_file_download_success, type=Qt.QueuedConnection)
-            job.failure_signal.connect(self.on_file_download_failure, type=Qt.QueuedConnection)
-
-            self.api_job_queue.enqueue(job)
+            self._submit_download_job(submission_type, submission_uuid)
             self.set_status(_('Downloading file'))
         else:
             self.on_action_requiring_login()
@@ -574,7 +591,14 @@ class Controller(QObject):
         """
         Called when a file fails to download.
         """
-        self.set_status(_('The file download failed. Please try again.'))
+        logger.debug('Failed to download file: {}'.format(exception))
+
+        # Keep resubmitting the job if the download is corrupted.
+        if isinstance(exception, DownloadChecksumMismatchException):
+            logger.debug('Failure due to checksum mismatch, retrying {}'.format(exception.uuid))
+            self._submit_download_job(exception.object_type, exception.uuid)
+        else:
+            self.set_status(_('The file download failed. Please try again.'))
 
     def on_delete_source_success(self, result) -> None:
         """

@@ -13,6 +13,7 @@ from tests import factory
 from securedrop_client import storage, db
 from securedrop_client.crypto import CryptoError
 from securedrop_client.logic import APICallRunner, Controller
+from securedrop_client.api_jobs.downloads import DownloadChecksumMismatchException
 from securedrop_client.api_jobs.uploads import SendReplyJobException
 
 with open(os.path.join(os.path.dirname(__file__), 'files', 'test-key.gpg.pub.asc')) as f:
@@ -895,6 +896,36 @@ def test_Controller_on_file_downloaded_api_failure(homedir, config, mocker, sess
     mock_file_ready.emit.assert_not_called()
 
 
+def test_Controller_on_file_downloaded_checksum_failure(homedir, config, mocker, session_maker):
+    '''
+    Check that a failed download due to checksum resubmits the job and informs the user.
+    '''
+
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+
+    file_ = factory.File(is_downloaded=None, is_decrypted=None, source=factory.Source())
+
+    mock_set_status = mocker.patch.object(co, 'set_status')
+    mock_file_ready = mocker.patch.object(co, 'file_ready')
+
+    debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
+    co._submit_download_job = mocker.MagicMock()
+
+    co.on_file_download_failure(DownloadChecksumMismatchException('bang!',
+                                type(file_), file_.uuid))
+
+    mock_file_ready.emit.assert_not_called()
+
+    # Job should get resubmitted and we should log this is happening
+    co._submit_download_job.call_count == 1
+    debug_logger.call_args_list[0][0][0] == \
+        'Failure due to checksum mismatch, retrying {}'.format(file_.uuid)
+
+    # No status will be set if it's a file corruption issue, the file just gets
+    # re-downloaded.
+    mock_set_status.assert_not_called()
+
+
 def test_Controller_on_file_open(homedir, config, mocker, session, session_maker, source):
     """
     If running on Qubes, a new QProcess with the expected command and args
@@ -985,11 +1016,38 @@ def test_Controller_on_reply_downloaded_failure(mocker, homedir, session_maker):
     reply = factory.Reply(source=factory.Source())
     mocker.patch('securedrop_client.storage.get_reply', return_value=reply)
     debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
+    co._submit_download_job = mocker.MagicMock()
 
     co.on_reply_download_failure('mock_exception')
 
     debug_logger.assert_called_once_with('Failed to download reply: mock_exception')
     reply_ready.emit.assert_not_called()
+
+    # Job should not get automatically resubmitted if the failure was generic
+    co._submit_download_job.assert_not_called()
+
+
+def test_Controller_on_reply_downloaded_checksum_failure(mocker, homedir, session_maker):
+    """
+    Check that a failed download due to checksum resubmits the job and informs the user.
+    """
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    reply_ready = mocker.patch.object(co, 'reply_ready')
+    reply = factory.Reply(source=factory.Source())
+    mocker.patch('securedrop_client.storage.get_reply', return_value=reply)
+    debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
+    co._submit_download_job = mocker.MagicMock()
+
+    co.on_reply_download_failure(DownloadChecksumMismatchException('bang!',
+                                 type(reply), reply.uuid))
+
+    debug_logger.call_args_list[0][0][0] == 'Failed to download reply: bang!'
+    reply_ready.emit.assert_not_called()
+
+    # Job should get resubmitted and we should log this is happening
+    co._submit_download_job.call_count == 1
+    debug_logger.call_args_list[1][0][0] == \
+        'Failure due to checksum mismatch, retrying {}'.format(reply.uuid)
 
 
 def test_Controller_download_new_messages_with_new_message(mocker, session, session_maker, homedir):
@@ -1061,12 +1119,39 @@ def test_Controller_on_message_downloaded_failure(mocker, homedir, session_maker
     message_ready = mocker.patch.object(co, 'message_ready')
     message = factory.Message(source=factory.Source())
     mocker.patch('securedrop_client.storage.get_message', return_value=message)
+    co._submit_download_job = mocker.MagicMock()
     debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
 
     co.on_message_download_failure('mock_exception')
 
     debug_logger.assert_called_once_with('Failed to download message: mock_exception')
     message_ready.emit.assert_not_called()
+
+    # Job should not get automatically resubmitted if the failure was generic
+    co._submit_download_job.assert_not_called()
+
+
+def test_Controller_on_message_downloaded_checksum_failure(mocker, homedir, session_maker):
+    """
+    Check that a failed download due to checksum resubmits the job and informs the user.
+    """
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    message_ready = mocker.patch.object(co, 'message_ready')
+    message = factory.Message(source=factory.Source())
+    mocker.patch('securedrop_client.storage.get_message', return_value=message)
+    co._submit_download_job = mocker.MagicMock()
+    debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
+
+    co.on_message_download_failure(DownloadChecksumMismatchException('bang!',
+                                   type(message), message.uuid))
+
+    debug_logger.call_args_list[0][0][0] == 'Failed to download message: bang!'
+    message_ready.emit.assert_not_called()
+
+    # Job should get resubmitted and we should log this is happening
+    co._submit_download_job.call_count == 1
+    debug_logger.call_args_list[1][0][0] == \
+        'Failure due to checksum mismatch, retrying {}'.format(message.uuid)
 
 
 def test_Controller_on_delete_source_success(homedir, config, mocker, session_maker):
