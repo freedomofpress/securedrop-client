@@ -207,21 +207,51 @@ def test_Controller_on_authenticate_success(homedir, config, mocker, session_mak
     login.assert_called_with(co.api)
 
 
-def test_Controller_on_get_current_user_success(mocker, session_maker, homedir):
+def test_Controller_on_get_current_user_success(mocker, session_maker, session, homedir):
     co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
     co.api = mocker.MagicMock()
     co.call_api = mocker.MagicMock()
     user = factory.User(uuid='mock_uuid', username='mock_username')
+    session.add(user)
+    session.commit()
+    current_user_api_result = {
+        'uuid': 'mock_uuid',
+        'username': 'mock_username',
+        'first_name': 'firstname_mock',
+        'last_name': 'lastname_mock'}
+
+    co.on_get_current_user_success(current_user_api_result)
+
+    user = session.query(db.User).filter_by(uuid='mock_uuid').one_or_none()
+    assert user.firstname == 'firstname_mock'
+    assert user.lastname == 'lastname_mock'
+    assert user.fullname == 'firstname_mock lastname_mock'
+    assert user.initials == 'fl'
+    co.gui.show_main_window.assert_called_with('mock_username')
+
+
+def test_Controller_on_get_current_user_success_no_name(mocker, session_maker, session, homedir):
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    co.api = mocker.MagicMock()
+    co.call_api = mocker.MagicMock()
+    user = factory.User(uuid='mock_uuid', username='mock_username')
+    session.add(user)
+    session.commit()
     storage = mocker.patch('securedrop_client.logic.storage')
     storage.update_and_get_user = mocker.MagicMock(return_value=user)
     current_user_api_result = {
         'uuid': 'mock_uuid',
         'username': 'mock_username',
-        'first_name': 'mock_firstname',
-        'last_name': 'mock_lastname'}
+        'first_name': None,
+        'last_name': None}
 
     co.on_get_current_user_success(current_user_api_result)
 
+    user = session.query(db.User).filter_by(uuid='mock_uuid').one_or_none()
+    assert user.firstname is None
+    assert user.lastname is None
+    assert user.fullname == 'mock_username'
+    assert user.initials == 'mo'
     co.gui.show_main_window.assert_called_with('mock_username')
 
 
