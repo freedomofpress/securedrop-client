@@ -26,7 +26,6 @@ def test_RunnableQueue_happy_path(mocker):
     '''
     Add one job to the queue, run it.
     '''
-    mock_process_events = mocker.patch('securedrop_client.queue.QApplication.processEvents')
     mock_api_client = mocker.MagicMock()
     mock_session = mocker.MagicMock()
     mock_session_maker = mocker.MagicMock(return_value=mock_session)
@@ -39,9 +38,6 @@ def test_RunnableQueue_happy_path(mocker):
 
     queue._process(exit_loop=True)
 
-    # this needs to be called at the end of the loop
-    assert mock_process_events.called
-
     assert queue.last_job is None
     assert queue.queue.empty()
 
@@ -51,7 +47,6 @@ def test_RunnableQueue_job_timeout(mocker):
     Add two jobs to the queue. The first times out, and then gets "cached" for the next pass
     through the loop.
     '''
-    mock_process_events = mocker.patch('securedrop_client.queue.QApplication.processEvents')
     mock_api_client = mocker.MagicMock()
     mock_session = mocker.MagicMock()
     mock_session_maker = mocker.MagicMock(return_value=mock_session)
@@ -94,9 +89,6 @@ def test_RunnableQueue_job_timeout(mocker):
     # check that job2 still has 5 (the default) remaining attempts
     assert queue.last_job.remaining_attempts == times_to_try
 
-    # ensure we don't have stale mocks
-    assert mock_process_events.called
-
 
 def test_RunnableQueue_job_ApiInaccessibleError(mocker):
     '''
@@ -106,7 +98,6 @@ def test_RunnableQueue_job_ApiInaccessibleError(mocker):
     ApiInaccessibleError occurs, see #379).
     '''
 
-    mock_process_events = mocker.patch('securedrop_client.queue.QApplication.processEvents')
     mock_api_client = mocker.MagicMock()
     mock_session = mocker.MagicMock()
     mock_session_maker = mocker.MagicMock(return_value=mock_session)
@@ -135,9 +126,6 @@ def test_RunnableQueue_job_ApiInaccessibleError(mocker):
     # check that all jobs are gone
     assert queue.queue.empty()
 
-    # ensure we don't have stale mocks
-    assert mock_process_events.called
-
 
 def test_RunnableQueue_job_generic_exception(mocker):
     '''
@@ -145,7 +133,6 @@ def test_RunnableQueue_job_generic_exception(mocker):
     Ensure that the queue continues processing jobs and the second job is attempted.
     '''
 
-    mock_process_events = mocker.patch('securedrop_client.queue.QApplication.processEvents')
     mock_api_client = mocker.MagicMock()
     mock_session = mocker.MagicMock()
     mock_session_maker = mocker.MagicMock(return_value=mock_session)
@@ -176,16 +163,11 @@ def test_RunnableQueue_job_generic_exception(mocker):
     # check that all jobs are gone
     assert queue.queue.empty()
 
-    # ensure we don't have stale mocks
-    assert mock_process_events.called
-
 
 def test_RunnableQueue_does_not_run_jobs_when_not_authed(mocker):
     '''
     Add a job to the queue, ensure we don't run it when not authenticated.
     '''
-    mock_process_events = mocker.patch('securedrop_client.queue.QApplication.processEvents')
-
     mock_api_client = mocker.MagicMock()
     mock_session = mocker.MagicMock()
     mock_session_maker = mocker.MagicMock(return_value=mock_session)
@@ -204,8 +186,6 @@ def test_RunnableQueue_does_not_run_jobs_when_not_authed(mocker):
 
     # assert we logged an error message
     assert "Client is not authenticated" in mock_logger.error.call_args[0][0]
-
-    assert mock_process_events.called
 
 
 def test_ApiJobQueue_enqueue(mocker):
