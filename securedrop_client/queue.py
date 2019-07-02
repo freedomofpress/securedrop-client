@@ -1,7 +1,6 @@
 import logging
 
 from PyQt5.QtCore import QObject, QThread, pyqtSlot
-from PyQt5.QtWidgets import QApplication
 from queue import Queue
 from sdclientapi import API, RequestTimeoutError
 from sqlalchemy.orm import scoped_session
@@ -48,9 +47,6 @@ class RunnableQueue(QObject):
                 # happens in the future and flag the situation to the user (see ticket #379).
                 logger.error('Client is not authenticated, skipping job...')
             finally:
-                # process events to allow this thread to handle incoming signals
-                QApplication.processEvents()
-
                 session.close()
 
             if exit_loop:
