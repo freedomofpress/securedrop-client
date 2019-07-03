@@ -1293,8 +1293,16 @@ class SpeechBubble(QWidget):
     CSS = '''
     #speech_bubble {
         padding: 8px;
-        min-height:32px;
-        border:1px solid #999;
+        min-height: 32px;
+        border: 1px solid #999;
+        border-bottom: 0;
+    }
+    #color_bar {
+        padding: 0px;
+        background-color: #102781;
+        min-height: 5px;
+        max-height: 5px;
+        border: 0px;
     }
     '''
 
@@ -1306,12 +1314,20 @@ class SpeechBubble(QWidget):
         self.setStyleSheet(self.CSS)
 
         layout = QVBoxLayout()
-        self.setLayout(layout)
         self.message = QLabel(html.escape(text, quote=False))
         self.message.setObjectName('speech_bubble')
         self.message.setWordWrap(True)
         self.message.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout.addWidget(self.message)
+        layout.insertStretch(0)
+
+        self.color_bar = QWidget()
+        self.color_bar.setObjectName('color_bar')
+        self.color_bar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        layout.addWidget(self.color_bar)
+        layout.setSpacing(0)
+
+        self.setLayout(layout)
 
         update_signal.connect(self._update_text)
 
@@ -1366,15 +1382,7 @@ class MessageWidget(ConversationWidget):
     """
 
     CSS = '''
-    background-color: qlineargradient(
-        x1: 0,
-        y1: 0,
-        x2: 0,
-        y2: 1,
-        stop: 0 #fff,
-        stop: 0.9 #fff,
-        stop: 1 #9211ff
-    );
+    background-color: #ffffff;
     '''
 
     def __init__(self, message_id: str, message: str, update_signal) -> None:
@@ -1396,15 +1404,15 @@ class ReplyWidget(ConversationWidget):
     """
 
     CSS = '''
-    background-color: qlineargradient(
-        x1: 0,
-        y1: 0,
-        x2: 0,
-        y2: 1,
-        stop: 0 #fff,
-        stop: 0.9 #fff,
-        stop: 1 #05edfe
-    );
+    background-color: #ffffff;
+    '''
+
+    CSS_COLOR_BAR_REPLY_FAIL = '''
+    background-color: #ff3366;
+    '''
+
+    CSS_COLOR_BAR_REPLY = '''
+    background-color: #0065db;
     '''
 
     def __init__(
@@ -1426,6 +1434,7 @@ class ReplyWidget(ConversationWidget):
 
         # Set styles
         self.setStyleSheet(self.CSS)
+        self.speech_bubble.color_bar.setStyleSheet(self.CSS_COLOR_BAR_REPLY)
 
         message_succeeded_signal.connect(self._on_reply_success)
         message_failed_signal.connect(self._on_reply_failure)
@@ -1447,6 +1456,7 @@ class ReplyWidget(ConversationWidget):
         """
         if message_id == self.message_id:
             logger.debug('Message {} failed'.format(message_id))
+            self.speech_bubble.color_bar.setStyleSheet(self.CSS_COLOR_BAR_REPLY_FAIL)
 
 
 class FileWidget(QWidget):
