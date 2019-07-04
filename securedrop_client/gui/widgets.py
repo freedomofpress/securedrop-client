@@ -30,7 +30,7 @@ from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBox
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
     QToolButton, QSizePolicy, QTextEdit, QStatusBar, QGraphicsDropShadowEffect
 
-from securedrop_client.db import Source, Message, File, Reply
+from securedrop_client.db import Source, Message, File, Reply, User
 from securedrop_client.storage import source_exists
 from securedrop_client.gui import SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.logic import Controller
@@ -156,11 +156,11 @@ class LeftPane(QWidget):
     def setup(self, window, controller):
         self.user_profile.setup(window, controller)
 
-    def set_logged_in_as(self, username):
+    def set_logged_in_as(self, db_user: User):
         """
         Update the UI to reflect that the user is logged in as "username".
         """
-        self.user_profile.set_username(username)
+        self.user_profile.set_user(db_user)
         self.user_profile.show()
 
     def set_logged_out(self):
@@ -431,9 +431,9 @@ class UserProfile(QWidget):
         self.user_button.setup(controller)
         self.login_button.setup(window)
 
-    def set_username(self, username):
-        self.user_icon.setText(_('jo'))
-        self.user_button.set_username(username)
+    def set_user(self, db_user: User):
+        self.user_icon.setText(_(db_user.initials))
+        self.user_button.set_username(db_user.fullname)
 
     def show(self):
         self.login_button.hide()

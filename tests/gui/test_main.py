@@ -58,12 +58,13 @@ def test_show_main_window(mocker):
     w.autosize_window = mocker.MagicMock()
     w.show = mocker.MagicMock()
     w.set_logged_in_as = mocker.MagicMock()
+    user = mocker.MagicMock()
 
-    w.show_main_window(username='test_username')
+    w.show_main_window(db_user=user)
 
     w.autosize_window.assert_called_once_with()
     w.show.assert_called_once_with()
-    w.set_logged_in_as.assert_called_once_with('test_username')
+    w.set_logged_in_as.assert_called_once_with(user)
 
 
 def test_show_main_window_without_username(mocker):

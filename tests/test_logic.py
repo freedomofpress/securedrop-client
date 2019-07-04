@@ -227,7 +227,7 @@ def test_Controller_on_get_current_user_success(mocker, session_maker, session, 
     assert user.lastname == 'lastname_mock'
     assert user.fullname == 'firstname_mock lastname_mock'
     assert user.initials == 'fl'
-    co.gui.show_main_window.assert_called_with('mock_username')
+    co.gui.show_main_window.assert_called_with(user)
 
 
 def test_Controller_on_get_current_user_success_no_name(mocker, session_maker, session, homedir):
@@ -252,7 +252,7 @@ def test_Controller_on_get_current_user_success_no_name(mocker, session_maker, s
     assert user.lastname is None
     assert user.fullname == 'mock_username'
     assert user.initials == 'mo'
-    co.gui.show_main_window.assert_called_with('mock_username')
+    co.gui.show_main_window.assert_called_with(user)
 
 
 def test_Controller_on_get_current_user_failure(homedir, mocker, session_maker):

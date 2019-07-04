@@ -128,11 +128,12 @@ def test_LeftPane_set_logged_in_as(mocker):
     """
     lp = LeftPane()
     lp.user_profile = mocker.MagicMock()
+    user = mocker.MagicMock()
 
-    lp.set_logged_in_as('test')
+    lp.set_logged_in_as(user)
 
     lp.user_profile.show.assert_called_once_with()
-    lp.user_profile.set_username.assert_called_once_with('test')
+    lp.user_profile.set_user.assert_called_once_with(user)
 
 
 def test_LeftPane_set_logged_out(mocker):
@@ -274,15 +275,16 @@ def test_UserProfile_setup(mocker):
     up.login_button.setup.assert_called_once_with(window)
 
 
-def test_UserProfile_set_username(mocker):
+def test_UserProfile_set_user(mocker):
     up = UserProfile()
     up.user_icon = mocker.MagicMock()
     up.user_button = mocker.MagicMock()
+    user = factory.User(firstname='firstname_mock', lastname='lastname_mock')
 
-    up.set_username('test_username')
+    up.set_user(user)
 
-    up.user_icon.setText.assert_called_once_with('jo')  # testing current behavior as placeholder
-    up.user_button.set_username.assert_called_once_with('test_username')
+    up.user_icon.setText.assert_called_with('fl')
+    up.user_button.set_username.assert_called_with('firstname_mock lastname_mock')
 
 
 def test_UserProfile_show(mocker):

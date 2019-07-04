@@ -318,7 +318,7 @@ class Controller(QObject):
             result['first_name'],
             result['last_name'],
             self.session)
-        self.gui.show_main_window(user.username)
+        self.gui.show_main_window(user)
 
     def on_get_current_user_failure(self, result: Exception) -> None:
         self.api = None
