@@ -128,7 +128,7 @@ release. The above mentioned autogenerate command will not do this for you.
 **Note:** These are the release guidelines for pre-production alpha releases. Production release tags must
 be signed with the SecureDrop release key.
 
-1. Update versions: `./update_version.sh $new_version_number`.
+1. Update versions: `./update_version.sh $new_version_number` and add a new entry in the changelog.
 2. Commit the changes with commit message `securedrop-client $new_version_number` and make a PR.
 3. You should confirm via a manual debian package build and manual testing in Qubes that there are no regressions (this is limited pre-release QA).
 4. Once your PR is approved, you can add a tag and push: `git tag $new_version_number`.
