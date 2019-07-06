@@ -1538,6 +1538,8 @@ class ConversationView(QWidget):
     https://github.com/freedomofpress/securedrop-client/issues/273
     """
 
+    CONVERSATION_SPACING = 28
+
     def __init__(
         self,
         source_db_object: Source,
@@ -1551,6 +1553,7 @@ class ConversationView(QWidget):
         self.container.setObjectName('container')
         self.conversation_layout = QVBoxLayout()
         self.conversation_layout.setContentsMargins(0, 0, 0, 0)
+        self.conversation_layout.setSpacing(self.CONVERSATION_SPACING)
         self.container.setLayout(self.conversation_layout)
         self.container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
