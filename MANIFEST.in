@@ -1,6 +1,7 @@
 include LICENSE
 include README.md
 include securedrop_proxy/VERSION
+include changelog.md
 include config-example.yaml
 include qubes/securedrop.Proxy
 include build-requirements.txt
