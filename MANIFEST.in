@@ -2,6 +2,7 @@ include build-requirements.txt
 include requirements.txt
 include README.md
 include LICENSE
+include changelog.md
 include setup.py
 include files/alembic.ini
 include files/client.ini
@@ -10,6 +11,6 @@ include files/securedrop-client.desktop
 
 recursive-include alembic *
 recursive-include securedrop_client *
-	
+
 recursive-exclude alembic *.pyc
 recursive-exclude securedrop_client *.pyc
