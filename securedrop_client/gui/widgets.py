@@ -1294,6 +1294,7 @@ class SpeechBubble(QWidget):
     #speech_bubble {
         padding: 8px;
         min-height: 32px;
+        min-width: 556px;
         border: 1px solid #999;
         border-bottom: 0;
     }
@@ -1301,7 +1302,6 @@ class SpeechBubble(QWidget):
         padding: 0px;
         background-color: #102781;
         min-height: 5px;
-        max-height: 5px;
         border: 0px;
     }
     '''
@@ -1314,20 +1314,18 @@ class SpeechBubble(QWidget):
         self.setStyleSheet(self.CSS)
 
         layout = QVBoxLayout()
+        layout.setSpacing(0)
+        self.setLayout(layout)
         self.message = QLabel(html.escape(text, quote=False))
         self.message.setObjectName('speech_bubble')
         self.message.setWordWrap(True)
-        self.message.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.message.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
         layout.addWidget(self.message)
-        layout.insertStretch(0)
 
         self.color_bar = QWidget()
         self.color_bar.setObjectName('color_bar')
-        self.color_bar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.color_bar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
         layout.addWidget(self.color_bar)
-        layout.setSpacing(0)
-
-        self.setLayout(layout)
 
         update_signal.connect(self._update_text)
 
