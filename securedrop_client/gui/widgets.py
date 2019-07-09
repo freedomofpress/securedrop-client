@@ -637,6 +637,9 @@ class MainView(QWidget):
             # else we create it.
             try:
                 conversation_wrapper = self.source_conversations[source]
+
+                # Redraw the conversation view such that new messages, replies, files appear.
+                conversation_wrapper.conversation_view.update_conversation(source.collection)
             except KeyError:
                 conversation_wrapper = SourceConversationWrapper(source, self.controller)
                 self.source_conversations[source] = conversation_wrapper
