@@ -83,7 +83,8 @@ help: ## Print this message and exit.
 		| column -s ':' -t
 
 .PHONY: pyre-analyze
-pyre-analyze: ## use pyre to perform taint analysis
+pyre-analyze: ## Generate/copy stubs and use pyre to perform taint analysis
+	stubgen -o typeshed/ securedrop_client/*.py
 	cp typeshed/*.pyi ${VIRTUAL_ENV}/lib/pyre_check/typeshed/third_party/3/
 	cp typeshed/securedrop_client/*.pyi ${VIRTUAL_ENV}/lib/pyre_check/typeshed/third_party/3/
 	pyre analyze
