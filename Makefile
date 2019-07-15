@@ -81,3 +81,9 @@ help: ## Print this message and exit.
 	@awk 'BEGIN {FS = ":.*?## "} /^[0-9a-zA-Z_-]+:.*?## / {printf "\033[36m%s\033[0m : %s\n", $$1, $$2}' $(MAKEFILE_LIST) \
 		| sort \
 		| column -s ':' -t
+
+.PHONY: pyre-analyze
+pyre-analyze: ## use pyre to perform taint analysis
+	cp typeshed/*.pyi ${VIRTUAL_ENV}/lib/pyre_check/typeshed/third_party/3/
+	cp typeshed/securedrop_client/*.pyi ${VIRTUAL_ENV}/lib/pyre_check/typeshed/third_party/3/
+	pyre analyze

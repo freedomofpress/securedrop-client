@@ -61,6 +61,7 @@ jobs:
             set -e
             source .venv/bin/activate
             make bandit
+            make pyre-analyze
 
 workflows:
   version: 2

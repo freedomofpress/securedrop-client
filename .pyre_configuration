@@ -1,0 +1,7 @@
+{
+  "binary": "/home/m/.virtualenvs/sdclient/bin/pyre.bin",
+  "source_directories": [
+    "securedrop_client"
+  ],
+  "taint_models_path": "stubs/taint"
+}

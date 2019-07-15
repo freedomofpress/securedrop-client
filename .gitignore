@@ -109,3 +109,9 @@ venv.bak/
 *.swp
 
 *.gpg
+
+# pyre
+.pyre/
+
+# generated method stubs
+typeshed/securedrop_client/*.pyi
