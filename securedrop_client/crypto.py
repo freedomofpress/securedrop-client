@@ -181,11 +181,13 @@ class GpgHelper:
         session = self.session_maker()
         source = session.query(Source).filter_by(uuid=source_uuid).one()
 
+        # do not attempt to encrypt if the source key is missing
         if source.fingerprint is None:
             raise CryptoError(
-                'Could not encrypt reply due to missing fingerprint for source: {}.'.format(
+                'Could not encrypt reply due to missing fingerprint for source: {}'.format(
                     source_uuid))
 
+        # do not attempt to encrypt if the journalist key is missing
         if self.journalist_key_fingerprint is None:
             raise CryptoError('Could not encrypt reply due to missing fingerprint for journalist')
 
