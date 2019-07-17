@@ -44,13 +44,13 @@ class SendReplyJob(ApiJob):
             session.commit()
             return reply_db_object.uuid
         except CryptoError as ce:
-            error_message = "Failed to encrypt reply for source {uuid} due to {exception}".format(
-                uuid=self.source_uuid, exception=repr(ce))
-            raise SendReplyJobException(error_message, self.reply_uuid)
+            message = "Failed to encrypt reply for source {id} due to CryptoError: {error}".format(
+                id=self.source_uuid, error=ce)
+            raise SendReplyJobException(message, self.reply_uuid)
         except Exception as e:
-            error_message = "Failed to send reply for source {uuid} due to {exception}".format(
-                uuid=self.source_uuid, exception=repr(e))
-            raise SendReplyJobException(error_message, self.reply_uuid)
+            message = "Failed to send reply for source {id} due to Exception: {error}".format(
+                id=self.source_uuid, error=e)
+            raise SendReplyJobException(message, self.reply_uuid)
 
     def _make_call(self, encrypted_reply: str, api_client: API) -> sdclientapi.Reply:
         sdk_source = sdclientapi.Source(uuid=self.source_uuid)
