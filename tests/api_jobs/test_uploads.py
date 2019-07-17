@@ -100,7 +100,7 @@ def test_send_reply_failure_gpg_error(homedir, mocker, session, session_maker):
 
 def test_send_reply_failure_unknown_error(homedir, mocker, session, session_maker):
     '''
-    Check that if the reply_source api call fails when sending a message that SendReplyJobException
+    Check that if the SendReplyJob api call fails when sending a message that SendReplyJobException
     is raised and the reply is not added to the local database.
     '''
     source = factory.Source()
@@ -114,6 +114,34 @@ def test_send_reply_failure_unknown_error(homedir, mocker, session, session_make
 
     with pytest.raises(Exception):
         job.call_api(api_client, session)
+
+    encrypt_fn.assert_called_once_with(source.uuid, 'mock_message')
+    replies = session.query(db.Reply).filter_by(uuid='mock_reply_uuid').all()
+    assert len(replies) == 0
+
+
+def test_send_reply_failure_when_repr_is_none(homedir, mocker, session, session_maker):
+    '''
+    Check that the SendReplyJob api call does not result in a TypeError when the Exception returns
+    None for __repr__ (regression test).
+    '''
+    class MockException(Exception):
+        def __repr__(self):
+            return None
+
+    source = factory.Source(uuid='mock_reply_uuid')
+    session.add(source)
+    session.commit()
+    api_client = mocker.MagicMock()
+    mocker.patch.object(api_client, 'reply_source', side_effect=MockException('mock'))
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    encrypt_fn = mocker.patch.object(gpg, 'encrypt_to_source')
+    job = SendReplyJob(source.uuid, 'mock_reply_uuid', 'mock_message', gpg)
+
+    try:
+        job.call_api(api_client, session)
+    except SendReplyJobException as e:
+        assert str(e) == 'Failed to send reply for source mock_reply_uuid due to Exception: mock'
 
     encrypt_fn.assert_called_once_with(source.uuid, 'mock_message')
     replies = session.query(db.Reply).filter_by(uuid='mock_reply_uuid').all()
