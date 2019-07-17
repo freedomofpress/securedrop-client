@@ -180,6 +180,15 @@ class GpgHelper:
         '''
         session = self.session_maker()
         source = session.query(Source).filter_by(uuid=source_uuid).one()
+
+        if source.fingerprint is None:
+            raise CryptoError(
+                'Could not encrypt reply due to missing fingerprint for source: {}.'.format(
+                    source_uuid))
+
+        if self.journalist_key_fingerprint is None:
+            raise CryptoError('Could not encrypt reply due to missing fingerprint for journalist')
+
         cmd = self._gpg_cmd_base()
 
         with tempfile.NamedTemporaryFile('w+') as content, \
