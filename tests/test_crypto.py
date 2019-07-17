@@ -6,6 +6,7 @@ import tempfile
 import pytest
 
 from securedrop_client.crypto import GpgHelper, CryptoError, read_gzip_header_filename
+from securedrop_client.db import Source
 
 with open(os.path.join(os.path.dirname(__file__), 'files', 'test-key.gpg.pub.asc')) as f:
     PUB_KEY = f.read()
@@ -191,3 +192,33 @@ def test_encrypt_fail(homedir, source, config, mocker, session_maker):
 
     # check mock called to prevent "dead code"
     assert mock_gpg.called
+
+
+def test_encrypt_fail_if_source_fingerprint_missing(homedir, source, config, mocker, session_maker):
+    '''
+    Check that a `CryptoError` is raised before making a call to `gpg` if source fingerprint is
+    missing.
+    '''
+    helper = GpgHelper(homedir, session_maker, is_qubes=False)
+    session = helper.session_maker()
+    db_source = session.query(Source).filter_by(uuid=source['uuid']).one()
+    db_source.fingerprint = None
+    session.commit()
+
+    with pytest.raises(CryptoError,
+                       match=r'Could not encrypt reply due to missing fingerprint for source: {}'.
+                       format(source['uuid'])):
+        helper.encrypt_to_source(source['uuid'], 'mock')
+
+
+def test_encrypt_fail_if_journo_fingerprint_missing(homedir, source, config, mocker, session_maker):
+    '''
+    Check that a `CryptoError` is raised before making a call to `gpg` if source fingerprint is
+    missing.
+    '''
+    helper = GpgHelper(homedir, session_maker, is_qubes=False)
+    helper.journalist_key_fingerprint = None
+
+    with pytest.raises(CryptoError,
+                       match=r'Could not encrypt reply due to missing fingerprint for journalist'):
+        helper.encrypt_to_source(source['uuid'], 'mock')
