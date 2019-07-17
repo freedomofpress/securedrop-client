@@ -36,7 +36,7 @@ jobs:
     steps:
       - checkout
 
-      - run: sudo apt-get install -y sqlite3
+      - run: sudo apt-get install -y sqlite3 libqt5x11extras5
 
       - run:
           name: Install requirements and run tests
