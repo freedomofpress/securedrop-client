@@ -4,6 +4,9 @@ Tests for the resources sub-module.
 import securedrop_client.resources
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtSvg import QSvgWidget
+from PyQt5.QtWidgets import QApplication
+
+app = QApplication([])
 
 
 def test_path(mocker):
