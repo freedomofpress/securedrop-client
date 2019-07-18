@@ -36,6 +36,12 @@ class ApiJob(QObject):
         super().__init__(None)  # `None` because the QOjbect has no parent
         self.remaining_attempts = remaining_attempts
 
+    def __lt__(self):
+        '''
+        ApiJobs MUST be sortable.
+        '''
+        raise NotImplementedError
+
     def _do_call_api(self, api_client: API, session: Session) -> None:
         if not api_client:
             raise ApiInaccessibleError()

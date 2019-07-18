@@ -170,6 +170,9 @@ class ReplyDownloadJob(DownloadJob):
         self.uuid = uuid
         self.gpg = gpg
 
+    def __lt__(self, other):
+        return self.uuid < other.uuid
+
     def get_db_object(self, session: Session) -> Reply:
         '''
         Override DownloadJob.
@@ -214,6 +217,9 @@ class MessageDownloadJob(DownloadJob):
         super().__init__(data_dir)
         self.uuid = uuid
         self.gpg = gpg
+
+    def __lt__(self, other):
+        return self.uuid < other.uuid
 
     def get_db_object(self, session: Session) -> Message:
         '''
