@@ -1,16 +1,32 @@
 import logging
 
 from PyQt5.QtCore import QObject, QThread, pyqtSlot
-from queue import Queue
+from queue import PriorityQueue
 from sdclientapi import API, RequestTimeoutError
 from sqlalchemy.orm import scoped_session
 from typing import Optional  # noqa: F401
 
 from securedrop_client.api_jobs.base import ApiJob, ApiInaccessibleError, DEFAULT_NUM_ATTEMPTS
-from securedrop_client.api_jobs.downloads import FileDownloadJob
+from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob, ReplyDownloadJob
+from securedrop_client.api_jobs.uploads import SendReplyJob
+from securedrop_client.api_jobs.updatestar import UpdateStarJob
 
 
 logger = logging.getLogger(__name__)
+
+# These are the priorities for processing jobs.
+# Lower numbers corresponds to a higher priority.
+JOB_PRIORITIES = {
+    # LogoutJob: 1,  # Not yet implemented
+    # MetadataSyncJob: 2,  # Not yet implemented
+    FileDownloadJob: 3,  # File downloads processed in separate queue
+    MessageDownloadJob: 3,
+    ReplyDownloadJob: 3,
+    # DeletionJob: 4,  # Not yet implemented
+    SendReplyJob: 5,
+    UpdateStarJob: 6,
+    # FlagJob: 6,  # Not yet implemented
+}
 
 
 class RunnableQueue(QObject):
@@ -19,7 +35,7 @@ class RunnableQueue(QObject):
         super().__init__()
         self.api_client = api_client
         self.session_maker = session_maker
-        self.queue = Queue()  # type: Queue[ApiJob]
+        self.queue = PriorityQueue()  # type: PriorityQueue[ApiJob]
         self.last_job = None  # type: Optional[ApiJob]
 
     @pyqtSlot()
@@ -34,7 +50,7 @@ class RunnableQueue(QObject):
                 job = self.last_job
                 self.last_job = None
             else:
-                job = self.queue.get(block=True)
+                priority, job = self.queue.get(block=True)
 
             try:
                 job._do_call_api(self.api_client, session)
@@ -100,9 +116,12 @@ class ApiJobQueue(QObject):
         # First check the queues are started in case they died for some reason.
         self.start_queues()
 
+        # Get job priority
+        priority = JOB_PRIORITIES[type(job)]
+
         if isinstance(job, FileDownloadJob):
             logger.debug('Adding job to download queue')
-            self.download_file_queue.queue.put_nowait(job)
+            self.download_file_queue.queue.put_nowait((priority, job))
         else:
             logger.debug('Adding job to main queue')
-            self.main_queue.queue.put_nowait(job)
+            self.main_queue.queue.put_nowait((priority, job))
