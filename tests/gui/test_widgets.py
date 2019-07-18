@@ -489,7 +489,8 @@ def test_MainView_on_source_changed_SourceConversationWrapper_is_preserved(mocke
     session.commit()
 
     source_conversation_init = mocker.patch(
-        'securedrop_client.gui.widgets.SourceConversationWrapper.__init__', return_value=None)
+        'securedrop_client.gui.widgets.SourceConversationWrapper.__init__',
+        return_value=None)
 
     # We expect on the first call, SourceConversationWrapper.__init__ should be called.
     mv.source_list.get_current_source = mocker.MagicMock(return_value=source)
@@ -516,8 +517,16 @@ def test_MainView_on_source_changed_SourceConversationWrapper_is_preserved(mocke
     # But if we click back (call on_source_changed again) to the source,
     # its SourceConversationWrapper should _not_ be recreated.
     mv.source_list.get_current_source = mocker.MagicMock(return_value=source)
+    conversation_wrapper = mv.source_conversations[source]
+    conversation_wrapper.conversation_view = mocker.MagicMock()
+    conversation_wrapper.conversation_view.update_conversation = mocker.MagicMock()
+
     mv.on_source_changed()
+
     assert mv.set_conversation.call_count == 1
+
+    # Conversation should be redrawn even for existing source (bug #467).
+    assert conversation_wrapper.conversation_view.update_conversation.call_count == 1
     assert source_conversation_init.call_count == 0
 
 
