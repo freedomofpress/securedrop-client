@@ -122,8 +122,9 @@ def test_send_reply_failure_unknown_error(homedir, mocker, session, session_make
 
 def test_send_reply_failure_when_repr_is_none(homedir, mocker, session, session_maker):
     '''
-    Check that the SendReplyJob api call does not result in a TypeError when the Exception returns
-    None for __repr__ (regression test).
+    Check that the SendReplyJob api call results in a SendReplyJobException and nothing else, e.g.
+    no TypeError, when an api call results in an exception that returns None for __repr__
+    (regression test).
     '''
     class MockException(Exception):
         def __repr__(self):
@@ -138,10 +139,10 @@ def test_send_reply_failure_when_repr_is_none(homedir, mocker, session, session_
     encrypt_fn = mocker.patch.object(gpg, 'encrypt_to_source')
     job = SendReplyJob(source.uuid, 'mock_reply_uuid', 'mock_message', gpg)
 
-    try:
+    with pytest.raises(
+            SendReplyJobException,
+            match=r'Failed to send reply for source mock_reply_uuid due to Exception: mock'):
         job.call_api(api_client, session)
-    except SendReplyJobException as e:
-        assert str(e) == 'Failed to send reply for source mock_reply_uuid due to Exception: mock'
 
     encrypt_fn.assert_called_once_with(source.uuid, 'mock_message')
     replies = session.query(db.Reply).filter_by(uuid='mock_reply_uuid').all()
