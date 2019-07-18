@@ -204,11 +204,14 @@ def test_encrypt_fail_if_source_fingerprint_missing(homedir, source, config, moc
     db_source = session.query(Source).filter_by(uuid=source['uuid']).one()
     db_source.fingerprint = None
     session.commit()
+    check_call_fn = mocker.patch('securedrop_client.crypto.subprocess.check_call')
 
     with pytest.raises(CryptoError,
                        match=r'Could not encrypt reply due to missing fingerprint for source: {}'.
                        format(source['uuid'])):
         helper.encrypt_to_source(source['uuid'], 'mock')
+
+    check_call_fn.assert_not_called()
 
 
 def test_encrypt_fail_if_journo_fingerprint_missing(homedir, source, config, mocker, session_maker):
@@ -218,7 +221,10 @@ def test_encrypt_fail_if_journo_fingerprint_missing(homedir, source, config, moc
     '''
     helper = GpgHelper(homedir, session_maker, is_qubes=False)
     helper.journalist_key_fingerprint = None
+    check_call_fn = mocker.patch('securedrop_client.crypto.subprocess.check_call')
 
     with pytest.raises(CryptoError,
                        match=r'Could not encrypt reply due to missing fingerprint for journalist'):
         helper.encrypt_to_source(source['uuid'], 'mock')
+
+    check_call_fn.assert_not_called()
