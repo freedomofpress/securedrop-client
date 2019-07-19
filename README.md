@@ -98,7 +98,6 @@ After you run the server container, the journalist interface API will be running
 
 To ensure that file decryption works, please import [this test private key](https://raw.githubusercontent.com/freedomofpress/securedrop/0a901362b84a5378fba80e9cd0ffe4542bdcd598/securedrop/tests/files/test_journalist_key.sec) into your GnuPG keyring. Submissions in the SecureDrop server dev environment can be decrypted with this test key.
 
-
 ## Run the tests and checks
 
 To run everything, run:
@@ -106,6 +105,35 @@ To run everything, run:
 ```bash
 make check
 ```
+
+## Comparison of developer environments
+
+### Developer environment on non-Qubes
+
+* Ran by `run.sh`
+* Uses temporary configuration directories by default
+* Requests/responses to the Journalist API are sent directly via HTTP (and Tor is not used)
+* Does not use `split-gpg`
+
+### Developer environment on Qubes
+
+* Ran by directly invoking the client `python -m securedrop_client`.
+* Requires that `make all` in the `securedrop-workstation` repository has completed successfully
+* Uses `~/.securedrop_client` as its configuration directory
+* Requests/responses proxied via the `securedrop-proxy` RPC service (and Tor is used)
+* `split-gpg` is used with the key configured in the `sd-gpg` AppVM
+
+### Packaged code on Qubes
+
+* Requires that `make all` in the `securedrop-workstation` repository has completed successfully
+* Uses `~/.securedrop_client` as its configuration directory
+* Requests/responses proxied via the `securedrop-proxy` RPC service (and Tor is used)
+* `split-gpg` is used with the key configured in the `sd-gpg` AppVM
+* Using a version of this application installed from a deb package in Qubes,
+you can debug issues by looking at the log file in
+`~/.securedrop_client/logs/client.log`
+* You can also add additional log lines in the running code in
+`/opt/venvs/securedrop-client/lib/python3.5/site-packages/securedrop_client/`
 
 ## Generate and run database migrations
 
@@ -122,7 +150,6 @@ This project aims to have at most one migration per release. There may be cases 
 but developers should merge their migration into the latest migration that has been generated since the last
 release. The above mentioned autogenerate command will not do this for you.
 
-
 ## Making a Release
 
 **Note:** These are the release guidelines for pre-production alpha releases. Production release tags must
@@ -132,12 +159,3 @@ be signed with the SecureDrop release key.
 2. Commit the changes with commit message `securedrop-client $new_version_number` and make a PR.
 3. You should confirm via a manual debian package build and manual testing in Qubes that there are no regressions (this is limited pre-release QA).
 4. Once your PR is approved, you can add a tag and push: `git tag $new_version_number`.
-
-## Qubes Debugging
-
-Using a version of this application installed from a deb package in Qubes,
-you can debug issues by looking at the log file in
-`~/.securedrop_client/logs/client.log`.
-
-You can also add additional log lines in the running code in
-`/opt/venvs/securedrop-client/lib/python3.5/site-packages/securedrop_client/`.
