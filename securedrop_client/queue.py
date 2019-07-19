@@ -1,3 +1,4 @@
+import itertools
 import logging
 
 from PyQt5.QtCore import QObject, QThread, pyqtSlot
@@ -7,7 +8,8 @@ from sqlalchemy.orm import scoped_session
 from typing import Optional  # noqa: F401
 
 from securedrop_client.api_jobs.base import ApiJob, ApiInaccessibleError, DEFAULT_NUM_ATTEMPTS
-from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob, ReplyDownloadJob
+from securedrop_client.api_jobs.downloads import (FileDownloadJob, MessageDownloadJob,
+                                                  ReplyDownloadJob)
 from securedrop_client.api_jobs.uploads import SendReplyJob
 from securedrop_client.api_jobs.updatestar import UpdateStarJob
 
@@ -37,6 +39,26 @@ class RunnableQueue(QObject):
         self.session_maker = session_maker
         self.queue = PriorityQueue()  # type: PriorityQueue[ApiJob]
         self.last_job = None  # type: Optional[ApiJob]
+
+        # One of the challenges of using Python's PriorityQueue is that
+        # for objects (jobs) with equal priorities, they are not retrieved
+        # in FIFO order due to the fact PriorityQueue is implemented using
+        # heapq which does not have sort stability. In order to ensure sort
+        # stability, we need to add a counter to ensure that objects with equal
+        # priorities are retrived in FIFO order.
+        # See also: https://bugs.python.org/issue17794
+        self.counter = itertools.count()
+
+    def add_job(self, priority: int, job: ApiJob) -> None:
+        """
+        Increment the queue's internal counter, assign a counter to the
+        queue to track its position in the queue, and submit the job with its
+        priority to the queue.
+        """
+
+        current_counter = next(self.counter)
+        job.counter = current_counter
+        self.queue.put_nowait((priority, job))
 
     @pyqtSlot()
     def process(self) -> None:  # pragma: nocover
@@ -121,7 +143,7 @@ class ApiJobQueue(QObject):
 
         if isinstance(job, FileDownloadJob):
             logger.debug('Adding job to download queue')
-            self.download_file_queue.queue.put_nowait((priority, job))
+            self.download_file_queue.add_job(priority, job)
         else:
             logger.debug('Adding job to main queue')
-            self.main_queue.queue.put_nowait((priority, job))
+            self.main_queue.add_job(priority, job)
