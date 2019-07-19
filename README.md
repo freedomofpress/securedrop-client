@@ -117,8 +117,9 @@ make check
 
 ### Developer environment on Qubes
 
-* Ran by directly invoking the client `python -m securedrop_client`.
+* Ran by directly invoking the client `python -m securedrop_client` in the `sd-svs` AppVM
 * Requires that `make all` in the `securedrop-workstation` repository has completed successfully
+* For convienient access to network in order to clone the repository and push branches, you'll need to add a NetVM (`sys-firewall`)
 * Uses `~/.securedrop_client` as its configuration directory
 * Requests/responses proxied via the `securedrop-proxy` RPC service (and Tor is used)
 * `split-gpg` is used with the key configured in the `sd-gpg` AppVM
@@ -129,6 +130,7 @@ make check
 * Uses `~/.securedrop_client` as its configuration directory
 * Requests/responses proxied via the `securedrop-proxy` RPC service (and Tor is used)
 * `split-gpg` is used with the key configured in the `sd-gpg` AppVM
+* To run the client from the packaged code in Qubes, see the [documentation here](https://github.com/freedomofpress/securedrop-workstation/#using-the-securedrop-client)
 * Using a version of this application installed from a deb package in Qubes,
 you can debug issues by looking at the log file in
 `~/.securedrop_client/logs/client.log`
