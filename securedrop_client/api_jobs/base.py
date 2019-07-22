@@ -3,12 +3,14 @@ import logging
 from PyQt5.QtCore import QObject, pyqtSignal
 from sdclientapi import API, RequestTimeoutError, AuthError
 from sqlalchemy.orm.session import Session
-from typing import Any, Optional
+from typing import Any, Optional, TypeVar
 
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_NUM_ATTEMPTS = 5
+
+ApiJobType = TypeVar('ApiJobType', bound='ApiJob')
 
 
 class ApiInaccessibleError(Exception):
@@ -37,7 +39,7 @@ class ApiJob(QObject):
         self.remaining_attempts = remaining_attempts
         self.counter = None  # type: Optional[int]
 
-    def __lt__(self, other):
+    def __lt__(self, other: ApiJobType) -> bool:
         '''
         Python's PriorityQueue requires that ApiJobs are sortable as it
         retrieves the next job using sorted(list(entries))[0].
@@ -45,6 +47,9 @@ class ApiJob(QObject):
         For ApiJobs that have equal priority, we need to use the counter key
         to break ties to ensure that objects are retrieved in FIFO order.
         '''
+        if self.counter is None or other.counter is None:
+            raise ValueError('cannot compare jobs without counters!')
+
         return self.counter < other.counter
 
     def _do_call_api(self, api_client: API, session: Session) -> None:

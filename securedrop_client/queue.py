@@ -5,7 +5,7 @@ from PyQt5.QtCore import QObject, QThread, pyqtSlot
 from queue import PriorityQueue
 from sdclientapi import API, RequestTimeoutError
 from sqlalchemy.orm import scoped_session
-from typing import Optional  # noqa: F401
+from typing import Optional, Tuple  # noqa: F401
 
 from securedrop_client.api_jobs.base import ApiJob, ApiInaccessibleError, DEFAULT_NUM_ATTEMPTS
 from securedrop_client.api_jobs.downloads import (FileDownloadJob, MessageDownloadJob,
@@ -37,7 +37,7 @@ class RunnableQueue(QObject):
         super().__init__()
         self.api_client = api_client
         self.session_maker = session_maker
-        self.queue = PriorityQueue()  # type: PriorityQueue[ApiJob]
+        self.queue = PriorityQueue()  # type: PriorityQueue[Tuple[int, ApiJob]]
 
         # One of the challenges of using Python's PriorityQueue is that
         # for objects (jobs) with equal priorities, they are not retrieved
