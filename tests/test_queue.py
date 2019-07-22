@@ -87,6 +87,67 @@ def test_RunnableQueue_job_timeout(mocker):
     assert job2.remaining_attempts == times_to_try
 
 
+def test_RunnableQueue_high_priority_jobs_run_first_and_in_fifo_order(mocker):
+    mock_api_client = mocker.MagicMock()
+    mock_session = mocker.MagicMock()
+    mock_session_maker = mocker.MagicMock(return_value=mock_session)
+
+    return_value = 'wat'
+    dummy_job_cls = factory.dummy_job_factory(mocker, return_value)
+    job1 = dummy_job_cls()
+    job2 = dummy_job_cls()
+    job3 = dummy_job_cls()
+    job4 = dummy_job_cls()
+
+    queue = RunnableQueue(mock_api_client, mock_session_maker)
+    high_priority = 1
+    low_priority = 2
+    queue.add_job(high_priority, job1)
+    queue.add_job(low_priority, job2)
+    queue.add_job(high_priority, job3)
+    queue.add_job(low_priority, job4)
+
+    # Expected order of execution is job1 -> job3 -> job2 -> job4
+    assert queue.queue.get(block=True) == (high_priority, job1)
+    assert queue.queue.get(block=True) == (high_priority, job3)
+    assert queue.queue.get(block=True) == (low_priority, job2)
+    assert queue.queue.get(block=True) == (low_priority, job4)
+
+
+def test_RunnableQueue_resubmitted_jobs(mocker):
+    """Jobs that fail due to timeout are resubmitted without modifying the job
+    counter. In this test we verify the order of job execution in
+    this scenario."""
+    mock_api_client = mocker.MagicMock()
+    mock_session = mocker.MagicMock()
+    mock_session_maker = mocker.MagicMock(return_value=mock_session)
+
+    return_value = 'wat'
+    dummy_job_cls = factory.dummy_job_factory(mocker, return_value)
+    job1 = dummy_job_cls()
+    job2 = dummy_job_cls()
+    job3 = dummy_job_cls()
+    job4 = dummy_job_cls()
+
+    queue = RunnableQueue(mock_api_client, mock_session_maker)
+    high_priority = 1
+    low_priority = 2
+    queue.add_job(high_priority, job1)
+    queue.add_job(low_priority, job2)
+    queue.add_job(high_priority, job3)
+    queue.add_job(low_priority, job4)
+
+    # Expected order of execution is job1 -> job3 -> job2 -> job4
+    assert queue.queue.get(block=True) == (high_priority, job1)
+
+    # Now resubmit job1 via put_nowait. It should execute prior to job2-4.
+    queue.queue.put_nowait((high_priority, job1))
+    assert queue.queue.get(block=True) == (high_priority, job1)
+    assert queue.queue.get(block=True) == (high_priority, job3)
+    assert queue.queue.get(block=True) == (low_priority, job2)
+    assert queue.queue.get(block=True) == (low_priority, job4)
+
+
 def test_RunnableQueue_job_ApiInaccessibleError(mocker):
     '''
     Add two jobs to the queue, the first of which will cause an ApiInaccessibleError.
