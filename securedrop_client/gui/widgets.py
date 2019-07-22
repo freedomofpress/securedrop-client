@@ -32,7 +32,7 @@ from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBox
 
 from securedrop_client.db import Source, Message, File, Reply, User
 from securedrop_client.storage import source_exists
-from securedrop_client.gui import SvgLabel, SvgPushButton, SvgToggleButton
+from securedrop_client.gui import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_icon, load_image
 from securedrop_client.utils import humanize_filesize
@@ -1319,7 +1319,7 @@ class SpeechBubble(QWidget):
         layout = QVBoxLayout()
         layout.setSpacing(0)
         self.setLayout(layout)
-        self.message = QLabel(html.escape(text, quote=False))
+        self.message = SecureQLabel(text)
         self.message.setObjectName('speech_bubble')
         self.message.setWordWrap(True)
         self.message.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
@@ -1340,7 +1340,7 @@ class SpeechBubble(QWidget):
         """
 
         if message_id == self.message_id:
-            self.message.setText(html.escape(text, quote=False))
+            self.message.setText(text)
 
 
 class ConversationWidget(QWidget):
@@ -1489,10 +1489,10 @@ class FileWidget(QWidget):
         icon.setPixmap(load_image('file.png'))
 
         if self.file.is_downloaded:
-            description = QLabel(html.escape(self.file.original_filename or self.file.filename))
+            description = SecureQLabel(self.file.original_filename or self.file.filename)
         else:
             human_filesize = humanize_filesize(self.file.size)
-            description = QLabel("Download ({})".format(human_filesize))
+            description = SecureQLabel("Download ({})".format(human_filesize))
 
         self.layout.addWidget(icon)
         self.layout.addWidget(description, 5)

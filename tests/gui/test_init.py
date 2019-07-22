@@ -2,10 +2,12 @@
 Tests for the gui helper functions in __init__.py
 """
 
+import html
+
 from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QApplication
 
-from securedrop_client.gui import SvgPushButton, SvgLabel, SvgToggleButton
+from securedrop_client.gui import SecureQLabel, SvgPushButton, SvgLabel, SvgToggleButton
 
 app = QApplication([])
 
@@ -128,3 +130,18 @@ def test_SvgLabel_init(mocker):
     load_svg_fn.assert_called_once_with('mock')
     sl.svg.setFixedSize.assert_called_once_with(svg_size)
     assert sl.svg == svg
+
+
+def test_SecureQLabel_init():
+    label_text = '<script>alert("hi!");</script>'
+    sl = SecureQLabel(label_text)
+    assert sl.text() == html.escape(label_text)
+
+
+def test_SecureQLabel_setText():
+    sl = SecureQLabel("hello")
+    assert sl.text() == "hello"
+
+    label_text = '<script>alert("hi!");</script>'
+    sl.setText(label_text)
+    assert sl.text() == html.escape(label_text)
