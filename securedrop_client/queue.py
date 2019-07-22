@@ -16,20 +16,6 @@ from securedrop_client.api_jobs.updatestar import UpdateStarJob
 
 logger = logging.getLogger(__name__)
 
-# These are the priorities for processing jobs.
-# Lower numbers corresponds to a higher priority.
-JOB_PRIORITIES = {
-    # LogoutJob: 1,  # Not yet implemented
-    # MetadataSyncJob: 2,  # Not yet implemented
-    FileDownloadJob: 3,  # File downloads processed in separate queue
-    MessageDownloadJob: 3,
-    ReplyDownloadJob: 3,
-    # DeletionJob: 4,  # Not yet implemented
-    SendReplyJob: 5,
-    UpdateStarJob: 6,
-    # FlagJob: 6,  # Not yet implemented
-}
-
 
 class RunnableQueue(QObject):
 
@@ -90,6 +76,19 @@ class RunnableQueue(QObject):
 
 
 class ApiJobQueue(QObject):
+    # These are the priorities for processing jobs.
+    # Lower numbers corresponds to a higher priority.
+    JOB_PRIORITIES = {
+        # LogoutJob: 1,  # Not yet implemented
+        # MetadataSyncJob: 2,  # Not yet implemented
+        FileDownloadJob: 3,  # File downloads processed in separate queue
+        MessageDownloadJob: 3,
+        ReplyDownloadJob: 3,
+        # DeletionJob: 4,  # Not yet implemented
+        SendReplyJob: 5,
+        UpdateStarJob: 6,
+        # FlagJob: 6,  # Not yet implemented
+    }
 
     def __init__(self, api_client: API, session_maker: scoped_session) -> None:
         super().__init__(None)
@@ -136,8 +135,7 @@ class ApiJobQueue(QObject):
         # First check the queues are started in case they died for some reason.
         self.start_queues()
 
-        # Get job priority
-        priority = JOB_PRIORITIES[type(job)]
+        priority = self.JOB_PRIORITIES[type(job)]
 
         if isinstance(job, FileDownloadJob):
             logger.debug('Adding job to download queue')
