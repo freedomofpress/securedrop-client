@@ -17,8 +17,12 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from PyQt5.QtWidgets import QLabel, QHBoxLayout, QPushButton
-from PyQt5.QtCore import QSize
+import html
+
+from typing import Union
+
+from PyQt5.QtWidgets import QLabel, QHBoxLayout, QPushButton, QWidget
+from PyQt5.QtCore import QSize, Qt
 
 from securedrop_client.resources import load_svg, load_icon, load_toggle_icon
 
@@ -87,8 +91,14 @@ class SvgPushButton(QPushButton):
         The display size of the SVG, defaults to filling the entire size of the widget.
     """
 
-    def __init__(self, normal: str, disabled: str = None, active: str = None,
-                 selected: str = None, svg_size: str = None) -> None:
+    def __init__(
+        self,
+        normal: str,
+        disabled: str = None,
+        active: str = None,
+        selected: str = None,
+        svg_size: str = None,
+    ) -> None:
         super().__init__()
 
         # Set layout
@@ -136,3 +146,17 @@ class SvgLabel(QLabel):
         self.svg = load_svg(filename)
         self.svg.setFixedSize(svg_size) if svg_size else self.svg.setFixedSize(QSize())
         layout.addWidget(self.svg)
+
+
+class SecureQLabel(QLabel):
+    def __init__(
+        self,
+        text: str = "",
+        parent: QWidget = None,
+        flags: Union[Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags(),
+    ):
+        super().__init__(parent, flags)
+        self.setText(text)
+
+    def setText(self, text: str) -> None:
+        super().setText(html.escape(text))

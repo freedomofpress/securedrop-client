@@ -1,6 +1,8 @@
 """
 Make sure the UI widgets are configured correctly and work as expected.
 """
+import html
+
 from PyQt5.QtWidgets import QWidget, QApplication, QWidgetItem, QSpacerItem, QVBoxLayout, \
     QMessageBox, QMainWindow, QTextEdit
 from PyQt5.QtCore import Qt
@@ -1092,7 +1094,7 @@ def test_SpeechBubble_init(mocker):
     Check the speech bubble is configured correctly (there's a label containing
     the passed in text).
     """
-    mock_label = mocker.patch('securedrop_client.gui.widgets.QLabel')
+    mock_label = mocker.patch('securedrop_client.gui.widgets.SecureQLabel')
     mocker.patch('securedrop_client.gui.widgets.QVBoxLayout')
     mocker.patch('securedrop_client.gui.widgets.SpeechBubble.setLayout')
     mock_signal = mocker.Mock()
@@ -1129,25 +1131,19 @@ def test_SpeechBubble_html_init(mocker):
     Check the speech bubble is configured correctly (there's a label containing
     the passed in text, with HTML escaped properly).
     """
-    mock_label = mocker.patch('securedrop_client.gui.widgets.QLabel')
-    mocker.patch('securedrop_client.gui.widgets.QVBoxLayout')
-    mocker.patch('securedrop_client.gui.widgets.SpeechBubble.setLayout')
     mock_signal = mocker.MagicMock()
 
-    SpeechBubble('mock id', '<b>hello</b>', mock_signal)
-    mock_label.assert_called_once_with('&lt;b&gt;hello&lt;/b&gt;')
+    bubble = SpeechBubble('mock id', '<b>hello</b>', mock_signal)
+    assert bubble.message.text() == html.escape('<b>hello</b>')
 
 
 def test_SpeechBubble_with_apostrophe_in_text(mocker):
     """Check Speech Bubble is displaying text with apostrophe correctly."""
-    mock_label = mocker.patch('securedrop_client.gui.widgets.QLabel')
-    mocker.patch('securedrop_client.gui.widgets.QVBoxLayout')
-    mocker.patch('securedrop_client.gui.widgets.SpeechBubble.setLayout')
     mock_signal = mocker.MagicMock()
 
     message = "I'm sure, you are reading my message."
-    SpeechBubble('mock id', message, mock_signal)
-    mock_label.assert_called_once_with(message)
+    bubble = SpeechBubble('mock id', message, mock_signal)
+    assert bubble.message.text() == html.escape(message)
 
 
 def test_ConversationWidget_init_left(mocker):
@@ -1616,6 +1612,7 @@ def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
     proper QLabel.
     """
     file_ = factory.File(source=source['source'])
+    file_.is_downloaded = True
     session.add(file_)
     session.commit()
 
@@ -1625,7 +1622,7 @@ def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
     cv = ConversationView(source['source'], mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
 
-    mock_label = mocker.patch('securedrop_client.gui.widgets.QLabel')
+    mock_label = mocker.patch('securedrop_client.gui.widgets.SecureQLabel')
     mocker.patch('securedrop_client.gui.widgets.QHBoxLayout.addWidget')
     mocker.patch('securedrop_client.gui.widgets.FileWidget.setLayout')
 
@@ -1656,7 +1653,7 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, sessi
     cv = ConversationView(source['source'], mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
 
-    mock_label = mocker.patch('securedrop_client.gui.widgets.QLabel')
+    mock_label = mocker.patch('securedrop_client.gui.widgets.SecureQLabel')
     mocker.patch('securedrop_client.gui.widgets.QHBoxLayout.addWidget')
     mocker.patch('securedrop_client.gui.widgets.FileWidget.setLayout')
 
