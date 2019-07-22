@@ -38,7 +38,6 @@ class RunnableQueue(QObject):
         self.api_client = api_client
         self.session_maker = session_maker
         self.queue = PriorityQueue()  # type: PriorityQueue[ApiJob]
-        self.last_job = None  # type: Optional[ApiJob]
 
         # One of the challenges of using Python's PriorityQueue is that
         # for objects (jobs) with equal priorities, they are not retrieved
@@ -52,7 +51,7 @@ class RunnableQueue(QObject):
     def add_job(self, priority: int, job: ApiJob) -> None:
         """
         Increment the queue's internal counter, assign a counter to the
-        queue to track its position in the queue, and submit the job with its
+        job to track its position in the queue, and submit the job with its
         priority to the queue.
         """
 
@@ -67,19 +66,18 @@ class RunnableQueue(QObject):
     def _process(self, exit_loop: bool) -> None:
         while True:
             session = self.session_maker()
-            # retry the "cached" job if it exists, otherwise get the next job
-            if self.last_job is not None:
-                job = self.last_job
-                self.last_job = None
-            else:
-                priority, job = self.queue.get(block=True)
+            priority, job = self.queue.get(block=True)
 
             try:
                 job._do_call_api(self.api_client, session)
             except RequestTimeoutError:
                 # Reset number of remaining attempts for this job to the default
                 job.remaining_attempts = DEFAULT_NUM_ATTEMPTS
-                self.last_job = job  # "cache" the last job since we can't re-queue it
+
+                # Resubmit job without modifying counter to ensure jobs with equal
+                # priorities are processed in the order that they were submitted
+                # _by the user_ to the queue.
+                self.queue.put_nowait((priority, job))
             except ApiInaccessibleError:
                 # This is a guard against #397, we should pause the queue execution when this
                 # happens in the future and flag the situation to the user (see ticket #379).
