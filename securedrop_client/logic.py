@@ -133,7 +133,7 @@ class Controller(QObject):
     reply_ready = pyqtSignal([str, str])
 
     def __init__(self, hostname: str, gui, session_maker: sessionmaker,
-                 home: str, proxy: bool = True) -> None:
+                 home: str, proxy: bool = True, qubes: bool = True) -> None:
         """
         The hostname, gui and session objects are used to coordinate with the
         various other layers of the application: the location of the SecureDrop
@@ -150,6 +150,10 @@ class Controller(QObject):
 
         # boolean flag for whether or not the client is operating behind a proxy
         self.proxy = proxy
+
+        # boolean flag for whether the client is running within Qubes
+        # (regardless of proxy state, to support local dev in an AppVM)
+        self.qubes = qubes
 
         # Location of the SecureDrop server.
         self.hostname = hostname
@@ -569,7 +573,7 @@ class Controller(QObject):
         if os.path.exists(original_filepath):
             os.remove(original_filepath)
         os.link(submission_filepath, original_filepath)
-        if self.proxy:
+        if self.proxy or self.qubes:
             # Running on Qubes.
             command = "qvm-open-in-vm"
             args = ['$dispvm:sd-svs-disp', original_filepath]

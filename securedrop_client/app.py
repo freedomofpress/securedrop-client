@@ -132,6 +132,9 @@ def arg_parser() -> ArgumentParser:
     parser.add_argument(
         '--no-proxy', action='store_true',
         help='Use proxy AppVM name to connect to server.')
+    parser.add_argument(
+        '--no-qubes', action='store_true',
+        help='Disable opening submissions in DispVMs')
     return parser
 
 
@@ -195,7 +198,7 @@ def start_app(args, qt_args) -> None:
     app.setStyleSheet(load_css('sdclient.css'))
 
     controller = Controller("http://localhost:8081/", gui, session_maker,
-                            args.sdc_home, not args.no_proxy)
+                            args.sdc_home, not args.no_proxy, not args.no_qubes)
     controller.setup()
 
     configure_signal_handlers(app)
