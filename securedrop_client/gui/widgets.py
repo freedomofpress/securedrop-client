@@ -851,7 +851,7 @@ class SourceWidget(QWidget):
             self.controller.on_action_requiring_login()
             return
         else:
-            messagebox = DeleteSourceMessageBox(self, self.source, self.controller)
+            messagebox = DeleteSourceMessageBox(self.source, self.controller)
             messagebox.launch()
 
 
@@ -917,8 +917,7 @@ class StarToggleButton(SvgToggleButton):
 class DeleteSourceMessageBox:
     """Use this to display operation details and confirm user choice."""
 
-    def __init__(self, parent, source, controller):
-        self.parent = parent
+    def __init__(self, source, controller):
         self.source = source
         self.controller = controller
 
@@ -932,7 +931,7 @@ class DeleteSourceMessageBox:
         """
         message = self._construct_message(self.source)
         reply = QMessageBox.question(
-            self.parent, "", _(message), QMessageBox.Cancel | QMessageBox.Yes, QMessageBox.Cancel)
+            None, "", _(message), QMessageBox.Cancel | QMessageBox.Yes, QMessageBox.Cancel)
 
         if reply == QMessageBox.Yes:
             logger.debug("Deleting source %s" % (self.source.uuid,))
@@ -1767,9 +1766,7 @@ class DeleteSourceAction(QAction):
 
         super().__init__(self.text, parent)
 
-        self.messagebox = DeleteSourceMessageBox(
-            parent, self.source, self.controller
-        )
+        self.messagebox = DeleteSourceMessageBox(self.source, self.controller)
         self.triggered.connect(self.trigger)
 
     def trigger(self):
