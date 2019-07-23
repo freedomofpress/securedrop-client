@@ -39,6 +39,24 @@ gpg --homedir "$GPG_HOME" --allow-secret-key-import --import tests/files/secured
 # create the database and config for local testing
 ./create_dev_data.py "$SDC_HOME" &
 
-exec python -m securedrop_client --sdc-home "$SDC_HOME" --no-proxy $@ &
+# check whether current env is qubes
+is_qubes="$(printenv | grep ^QUBES_)"
+if [[ -n "$is_qubes" ]]; then
+    echo "Detected QubesOS, enabling DispVMs for submission handling..."
+    qubes_flag=""
+
+    # Ensure we have mime handlers for open-in-dvm
+    local_apps_dir="$HOME/.local/share/applications"
+    mkdir -p "$local_apps_dir"
+    cp files/open-in-dvm.desktop "$local_apps_dir"
+
+    # Ensure desktop files are read from local dir
+    export XDG_CONFIG_HOME="$PWD/files"
+else
+    echo "Current OS is *not* Qubes, disabling DispVM support..."
+    qubes_flag="--no-qubes"
+fi
+
+exec python -m securedrop_client --sdc-home "$SDC_HOME" --no-proxy "$qubes_flag" $@ &
 
 wait
