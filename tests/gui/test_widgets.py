@@ -1667,7 +1667,7 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, sessi
 
 def test_DeleteSourceMessageBox_init(mocker, source):
     mock_controller = mocker.MagicMock()
-    DeleteSourceMessageBox(None, source['source'], mock_controller)
+    DeleteSourceMessageBox(source['source'], mock_controller)
 
 
 def test_DeleteSourceMessage_launch_when_user_chooses_cancel(mocker, source):
@@ -1677,7 +1677,7 @@ def test_DeleteSourceMessage_launch_when_user_chooses_cancel(mocker, source):
     mock_message_box_question.return_value = QMessageBox.Cancel
     mock_controller = mocker.MagicMock()
 
-    delete_source_message_box = DeleteSourceMessageBox(None, source, mock_controller)
+    delete_source_message_box = DeleteSourceMessageBox(source, mock_controller)
 
     mocker.patch(
         "securedrop_client.gui.widgets.QMessageBox.question",
@@ -1704,7 +1704,7 @@ def test_DeleteSourceMssageBox_launch_when_user_chooses_yes(mocker, source, sess
     mock_message_box_question.return_value = QMessageBox.Yes
     mock_controller = mocker.MagicMock()
 
-    delete_source_message_box = DeleteSourceMessageBox(None, source, mock_controller)
+    delete_source_message_box = DeleteSourceMessageBox(source, mock_controller)
 
     mocker.patch(
         "securedrop_client.gui.widgets.QMessageBox.question",
@@ -1745,7 +1745,7 @@ def test_DeleteSourceMessageBox_construct_message(mocker, source, session):
 
     mock_controller = mocker.MagicMock()
 
-    delete_source_message_box = DeleteSourceMessageBox(None, source, mock_controller)
+    delete_source_message_box = DeleteSourceMessageBox(source, mock_controller)
 
     message = delete_source_message_box._construct_message(source)
 

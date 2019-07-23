@@ -23,8 +23,7 @@ import logging
 
 from gettext import gettext as _
 from typing import Dict, List, Optional  # noqa: F401
-from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QDesktopWidget, \
-    QApplication
+from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QDesktopWidget
 
 from securedrop_client import __version__
 from securedrop_client.db import Source, User
@@ -116,8 +115,14 @@ class Window(QMainWindow):
         Show the login form.
         """
         self.login_dialog = LoginDialog(self)
-        self.login_dialog.move(
-            QApplication.desktop().screen().rect().center() - self.rect().center())
+
+        # Always display the login dialog centered in the screen.
+        screen_size = QDesktopWidget().screenGeometry()
+        login_dialog_size = self.login_dialog.geometry()
+        x_center = (screen_size.width() - login_dialog_size.width()) / 2
+        y_center = (screen_size.height() - login_dialog_size.height()) / 2
+        self.login_dialog.move(x_center, y_center)
+
         self.login_dialog.setup(self.controller)
         self.login_dialog.reset()
         self.login_dialog.exec()
