@@ -168,7 +168,7 @@ class SDExport(object):
             target_path = os.path.join(self.mountpoint, self.target_dirname)
             subprocess.check_call(["mkdir", target_path])
             export_data = os.path.join(
-                self.tmpdir, self.submission_dirname, "export_data/"
+                self.tmpdir, "export_data/"
             )
             subprocess.check_call(["cp", "-r", export_data, target_path])
             self.popup_message("Files exported successfully to disk.")
