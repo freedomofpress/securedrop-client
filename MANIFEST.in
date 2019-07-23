@@ -6,6 +6,8 @@ include changelog.md
 include setup.py
 include files/alembic.ini
 include files/client.ini
+include files/mimeapps.list
+include files/open-in-dvm.desktop
 include files/securedrop-client
 include files/securedrop-client.desktop
 
