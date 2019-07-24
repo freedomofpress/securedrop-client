@@ -1363,6 +1363,21 @@ def test_ConversationView_init(mocker, homedir):
     assert isinstance(cv.conversation_layout, QVBoxLayout)
 
 
+def test_ConversationView_refresh_conversation(mocker, homedir):
+    """
+    Ensure that the session refreshes whenever there is a new reply in case there are previously
+    failed replies.
+    """
+    source = factory.Source()
+    cv = ConversationView(source, mocker.MagicMock())
+    mocker.patch.object(cv, 'update_conversation')
+
+    cv.refresh_conversation()
+
+    cv.controller.session.refresh.assert_called_with(source)
+    cv.update_conversation.assert_called_once_with(source.collection)
+
+
 def test_ConversationView_update_conversation_position_follow(mocker, homedir):
     """
     Check the signal handler sets the correct value for the scrollbar to be
