@@ -57,6 +57,6 @@ else
     qubes_flag="--no-qubes"
 fi
 
-exec python -m securedrop_client --sdc-home "$SDC_HOME" --no-proxy "$qubes_flag" $@ &
-
 wait
+
+exec python -m securedrop_client --sdc-home "$SDC_HOME" --no-proxy "$qubes_flag" $@
