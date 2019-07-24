@@ -2,6 +2,7 @@ from unittest import mock
 
 import os
 import pytest
+import subprocess
 import tempfile
 
 from securedrop_export import export 
@@ -9,14 +10,10 @@ from securedrop_export import export
 SAMPLE_OUTPUT_NO_PRINTER = b"network beh\nnetwork https\nnetwork ipp\nnetwork ipps\nnetwork http\nnetwork\nnetwork ipp14\nnetwork lpd"  # noqa
 SAMPLE_OUTPUT_BOTHER_PRINTER = b"network beh\nnetwork https\nnetwork ipp\nnetwork ipps\nnetwork http\nnetwork\nnetwork ipp14\ndirect usb://Brother/HL-L2320D%20series?serial=A00000A000000\nnetwork lpd"  # noqa
 
-
-# This below stanza is only necessary because the export code is not
-# structured as a module. If a Python module were created called
-# `export`, we could simply do `import export`
-# path_to_script = os.path.join(
-#    os.path.dirname(os.path.abspath(__file__)), "send-to-usb"
-# )
-# securedropexport = imp.load_source("send-to-usb", path_to_script)
+SAMPLE_OUTPUT_NO_USB="Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub"  # noqa
+SAMPLE_OUTPUT_USB="Bus 001 Device 002: ID 0781:5575 SanDisk Corp.\nBus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub"  # noqa
+SAMPLE_OUTPUT_USB_ERROR=""
+SAMPLE_OUTPUT_USB_ERROR2="h\ne\nl\nl\no"
 
 
 def test_exit_gracefully_no_exception(capsys):
@@ -169,3 +166,72 @@ def test_is_open_office_file(capsys, open_office_paths):
 def test_is_not_open_office_file(capsys, open_office_paths):
     submission = export.SDExport("")
     assert not submission.is_open_office_file(open_office_paths)
+
+
+@mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_NO_USB)
+def test_usb_precheck_connected(mocked_call, capsys):
+    submission = export.SDExport("testfile")
+    expected_message = "USB_NOT_CONNECTED"
+    mocked_exit = mock.patch("export.exit_gracefully", return_value=0)
+    with pytest.raises(SystemExit) as sysexit:
+        result = submission.check_usb_connected()
+        mocked_exit.assert_called_once_with(expected_message)
+
+    assert sysexit.value.code == 0
+    captured = capsys.readouterr()
+    assert captured.err == "{}\n".format(expected_message)
+
+
+@mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_USB)
+def test_usb_precheck_disconnected(mocked_call, capsys):
+    submission = export.SDExport("testfile")
+    expected_message = "USB_CONNECTED"
+    mocked_exit = mock.patch("export.exit_gracefully", return_value=0)
+    with pytest.raises(SystemExit) as sysexit:
+        result = submission.check_usb_connected()
+        mocked_exit.assert_called_once_with(expected_message)
+
+    assert sysexit.value.code == 0
+    captured = capsys.readouterr()
+    assert captured.err == "{}\n".format(expected_message)
+
+
+@mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_USB_ERROR)
+def test_usb_precheck_error(mocked_call, capsys):
+    submission = export.SDExport("testfile")
+    expected_message = "ERROR_USB_CHECK"
+    mocked_exit = mock.patch("export.exit_gracefully", return_value=0)
+    with pytest.raises(SystemExit) as sysexit:
+        result = submission.check_usb_connected()
+        mocked_exit.assert_called_once_with(expected_message)
+
+    assert sysexit.value.code == 0
+    captured = capsys.readouterr()
+    assert captured.err == "{}\n".format(expected_message)
+
+
+@mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_USB_ERROR2)
+def test_usb_precheck_error_2(mocked_call, capsys):
+    submission = export.SDExport("testfile")
+    expected_message = "ERROR_USB_CHECK"
+    mocked_exit = mock.patch("export.exit_gracefully", return_value=0)
+    with pytest.raises(SystemExit) as sysexit:
+        result = submission.check_usb_connected()
+        mocked_exit.assert_called_once_with(expected_message)
+
+    assert sysexit.value.code == 0
+    captured = capsys.readouterr()
+    assert captured.err == "{}\n".format(expected_message)
+
+
+@mock.patch("subprocess.check_call")
+def test_luks_precheck_encrypted(mocked_call, capsys):
+    submission = export.SDExport("testfile")
+    expected_message = "USB_ENCRYPTED"
+    with pytest.raises(SystemExit) as sysexit:
+        result = submission.check_luks_volume()
+        mocked_exit.assert_called_once_with(expected_message)
+    assert sysexit.value.code == 0
+    captured = capsys.readouterr()
+    assert captured.err == "{}\n".format(expected_message)
+

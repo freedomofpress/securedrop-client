@@ -18,7 +18,7 @@ MOUNTPOINT = "/media/usb"
 ENCRYPTED_DEVICE = "encrypted_volume"
 BRLASER_DRIVER = "/usr/share/cups/drv/brlaser.drv"
 BRLASER_PPD = "/usr/share/cups/model/br7030.ppd"
-
+PCI_BUS_ID = "002:"
 
 class Metadata(object):
     """
@@ -26,7 +26,13 @@ class Metadata(object):
     """
 
     METADATA_FILE = "metadata.json"
-    SUPPORTED_EXPORT_METHODS = ["disk", "printer", "printer-test"]
+    SUPPORTED_EXPORT_METHODS = [
+      "usb-test", # general preflight check
+      "disk",
+      "disk-test", # disk preflight test
+      "printer",
+      "printer-test" # print test page
+    ]
     SUPPORTED_ENCRYPTION_METHODS = ["luks"]
 
     def __init__(self, archive_path):
@@ -117,6 +123,41 @@ class SDExport(object):
             print (e)
             msg = "Error opening export bundle: "
             self.exit_gracefully(msg, e=e)
+
+
+    def check_usb_connected(self):
+        # Rely on the output of lsusb on the bus assigned to. We might need to make this variable configurable
+        # In the future and extracted from config.json
+        p = subprocess.check_output(["lsusb", "-s", PCI_BUS_ID])
+        # Empty string means a likely wrong PCI_BUS_ID
+        if p == "":
+            msg = "ERROR_USB_CHECK"
+            self.exit_gracefully(msg)
+        n_usb = len(p.rstrip().split("\n"))
+        # If there is one device, it is the root hub.
+        if n_usb == 1:
+            msg = "USB_NOT_CONNECTED"
+            self.exit_gracefully(msg)
+        # If there are two devices, it's the root hub and another device (presumably for export)
+        elif n_usb == 2:
+            msg = "USB_CONNECTED"
+            self.exit_gracefully(msg)
+        # Else the result is unexpected
+        else:
+            msg = "ERROR_USB_CHECK"
+            self.exit_gracefully(msg)
+
+
+    def check_luks_volume(self):
+        try:
+            # cryptsetup isLuks returns 0 if the device is a luks volume
+            # subprocess with throw if the device is not luks (rc !=0)
+            p = subprocess.check_call(["sudo", "cryptsetup", "isLuks", DEVICE])
+            msg = "USB_ENCRYPTED"
+            self.exit_gracefully(msg)
+        except subprocess.CalledProcessError as e:
+            msg = "USB_NO_SUPPORTED_ENCRYPTION"
+            self.exit_gracefully(msg)
 
 
     def unlock_luks_volume(self, encryption_key):

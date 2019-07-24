@@ -14,11 +14,15 @@ def __main__(submission):
          submission.exit_gracefully(msg, e=e)
 
     if submission.archive_metadata.is_valid():
-        if submission.archive_metadata.export_method == "disk":
+        if submission.archive_metadata.export_method == "usb-test":
+            submission.check_usb_connected()
+        elif submission.archive_metadata.export_method == "disk":
             # exports all documents in the archive to luks-encrypted volume
             submission.unlock_luks_volume(submission.archive_metadata.encryption_key)
             submission.mount_volume()
             submission.copy_submission()
+        elif submission.archive_metadata.export_method == "disk-test":
+            submission.check_luks_volume()
         elif submission.archive_metadata.export_method == "printer":
             # prints all documents in the archive
             printer_uri = submission.get_printer_uri()
