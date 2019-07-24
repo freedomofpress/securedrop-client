@@ -164,15 +164,15 @@ def test_ApiJob_comparison(mocker):
     return_value = 'wat'
     api_job_cls = dummy_job_factory(mocker, return_value)
     api_job_1 = api_job_cls()
-    api_job_1.counter = 1
+    api_job_1.order_number = 1
 
     api_job_2 = api_job_cls()
-    api_job_2.counter = 2
+    api_job_2.order_number = 2
 
     assert api_job_1 < api_job_2
 
 
-def test_ApiJob_counters_unset(mocker):
+def test_ApiJob_order_number_unset(mocker):
     return_value = 'wat'
     api_job_cls = dummy_job_factory(mocker, return_value)
     api_job_1 = api_job_cls()

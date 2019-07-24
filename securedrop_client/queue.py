@@ -32,17 +32,17 @@ class RunnableQueue(QObject):
         # stability, we need to add a counter to ensure that objects with equal
         # priorities are retrived in FIFO order.
         # See also: https://bugs.python.org/issue17794
-        self.counter = itertools.count()
+        self.order_number = itertools.count()
 
     def add_job(self, priority: int, job: ApiJob) -> None:
         """
-        Increment the queue's internal counter, assign a counter to the
-        job to track its position in the queue, and submit the job with its
-        priority to the queue.
+        Increment the queue's internal counter/order_number, assign an
+        order_number to the job to track its position in the queue,
+        and submit the job with its priority to the queue.
         """
 
-        current_counter = next(self.counter)
-        job.counter = current_counter
+        current_order_number = next(self.order_number)
+        job.order_number = current_order_number
         self.queue.put_nowait((priority, job))
 
     @pyqtSlot()
@@ -79,15 +79,15 @@ class ApiJobQueue(QObject):
     # These are the priorities for processing jobs.
     # Lower numbers corresponds to a higher priority.
     JOB_PRIORITIES = {
-        # LogoutJob: 1,  # Not yet implemented
-        # MetadataSyncJob: 2,  # Not yet implemented
-        FileDownloadJob: 3,  # File downloads processed in separate queue
-        MessageDownloadJob: 3,
-        ReplyDownloadJob: 3,
-        # DeletionJob: 4,  # Not yet implemented
-        SendReplyJob: 5,
-        UpdateStarJob: 6,
-        # FlagJob: 6,  # Not yet implemented
+        # LogoutJob: 11,  # Not yet implemented
+        # MetadataSyncJob: 12,  # Not yet implemented
+        FileDownloadJob: 13,  # File downloads processed in separate queue
+        MessageDownloadJob: 13,
+        ReplyDownloadJob: 13,
+        # DeletionJob: 14,  # Not yet implemented
+        SendReplyJob: 15,
+        UpdateStarJob: 16,
+        # FlagJob: 16,  # Not yet implemented
     }
 
     def __init__(self, api_client: API, session_maker: scoped_session) -> None:

@@ -116,7 +116,7 @@ def test_RunnableQueue_high_priority_jobs_run_first_and_in_fifo_order(mocker):
 
 def test_RunnableQueue_resubmitted_jobs(mocker):
     """Jobs that fail due to timeout are resubmitted without modifying the job
-    counter. In this test we verify the order of job execution in
+    order_number. In this test we verify the order of job execution in
     this scenario."""
     mock_api_client = mocker.MagicMock()
     mock_session = mocker.MagicMock()

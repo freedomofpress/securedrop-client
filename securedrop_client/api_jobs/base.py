@@ -37,20 +37,20 @@ class ApiJob(QObject):
     def __init__(self, remaining_attempts: int = DEFAULT_NUM_ATTEMPTS) -> None:
         super().__init__(None)  # `None` because the QOjbect has no parent
         self.remaining_attempts = remaining_attempts
-        self.counter = None  # type: Optional[int]
+        self.order_number = None  # type: Optional[int]
 
     def __lt__(self, other: ApiJobType) -> bool:
         '''
         Python's PriorityQueue requires that ApiJobs are sortable as it
         retrieves the next job using sorted(list(entries))[0].
 
-        For ApiJobs that have equal priority, we need to use the counter key
+        For ApiJobs that have equal priority, we need to use the order_number key
         to break ties to ensure that objects are retrieved in FIFO order.
         '''
-        if self.counter is None or other.counter is None:
-            raise ValueError('cannot compare jobs without counters!')
+        if self.order_number is None or other.order_number is None:
+            raise ValueError('cannot compare jobs without order_number!')
 
-        return self.counter < other.counter
+        return self.order_number < other.order_number
 
     def _do_call_api(self, api_client: API, session: Session) -> None:
         if not api_client:
