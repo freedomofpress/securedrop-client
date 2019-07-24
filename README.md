@@ -113,9 +113,20 @@ make check
 * Ran by `run.sh`
 * Uses temporary configuration directories by default
 * Requests/responses to the Journalist API are sent directly via HTTP (and Tor is not used)
+* Does not support opening submissions
 * Does not use `split-gpg`
 
-### Developer environment on Qubes
+### Developer environment on Qubes (no-proxy)
+
+* Ran by `run.sh`
+* Requires `qvm-tags sd-dev add sd-client` to be run in `dom0` (subsitute your dev VM for `sd-dev`)
+* Uses temporary configuration directories by default
+* Requests/responses to the Journalist API are sent directly via HTTP (and Tor is not used)
+* Submissions will be opened in DispVMs
+* Does not use `split-gpg`
+
+
+### Developer environment on Qubes (with proxy)
 
 * Ran by directly invoking the client `python -m securedrop_client` in the `sd-svs` AppVM
 * Requires that `make all` in the `securedrop-workstation` repository has completed successfully
