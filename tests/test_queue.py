@@ -5,7 +5,7 @@ from queue import Queue
 from sdclientapi import RequestTimeoutError
 
 from securedrop_client.api_jobs.downloads import FileDownloadJob
-from securedrop_client.api_jobs.base import ApiInaccessibleError
+from securedrop_client.api_jobs.base import ApiInaccessibleError, PauseQueueJob
 from securedrop_client.queue import RunnableQueue, ApiJobQueue
 from tests import factory
 
@@ -58,6 +58,7 @@ def test_RunnableQueue_job_timeout(mocker):
     job2 = dummy_job_cls()
 
     queue = RunnableQueue(mock_api_client, mock_session_maker)
+    queue.pause = mocker.MagicMock()
     job_priority = 1
     queue.add_job(job_priority, job1)
     queue.add_job(job_priority, job2)
@@ -85,6 +86,20 @@ def test_RunnableQueue_job_timeout(mocker):
 
     # check that job2 still has 5 (the default) remaining attempts
     assert job2.remaining_attempts == times_to_try
+
+    queue.pause.emit.assert_called_with()
+
+
+def test_RunnableQueue_process_PauseQueueJob(mocker):
+    api_client = mocker.MagicMock()
+    session_maker = mocker.MagicMock(return_value=mocker.MagicMock())
+    pause_job = PauseQueueJob()
+
+    queue = RunnableQueue(api_client, session_maker)
+
+    queue.add_job(11, pause_job)
+    queue._process(exit_loop=True)
+    assert queue.queue.empty()
 
 
 def test_RunnableQueue_high_priority_jobs_run_first_and_in_fifo_order(mocker):
@@ -284,6 +299,43 @@ def test_ApiJobQueue_enqueue(mocker):
     mock_main_queue_add_job.assert_called_once_with(job_priority, dummy_job)
     assert not mock_download_file_add_job.called
     assert mock_start_queues.called
+
+
+def test_ApiJobQueue_enqueue_PauseQueueJob(mocker):
+    job_queue = ApiJobQueue(mocker.MagicMock(), mocker.MagicMock())
+    job_queue.main_queue = mocker.MagicMock()
+    job_queue.download_file_queue = mocker.MagicMock()
+    job_queue.main_queue.api_client = 'has a value'
+    job_queue.download_file_queue.api_client = 'has a value'
+    mocker.patch.object(job_queue, 'start_queues')
+    pause_job = PauseQueueJob()
+
+    job_queue.enqueue(pause_job)
+
+    job_queue.main_queue.add_job.assert_called_once_with(11, pause_job)
+    job_queue.download_file_queue.add_job.assert_called_once_with(11, pause_job)
+
+
+def test_ApiJobQueue_pause_queues(mocker):
+    job_queue = ApiJobQueue(mocker.MagicMock(), mocker.MagicMock())
+    mocker.patch.object(job_queue, 'enqueue')
+    pause_job = PauseQueueJob()
+    mocker.patch('securedrop_client.queue.PauseQueueJob', return_value=pause_job)
+
+    job_queue.pause_queues()
+
+    job_queue.enqueue.assert_called_once_with(pause_job)
+
+
+def test_ApiJobQueue_resume_queues(mocker):
+    job_queue = ApiJobQueue(mocker.MagicMock(), mocker.MagicMock())
+    job_queue.main_queue = mocker.MagicMock()
+    job_queue.download_file_queue = mocker.MagicMock()
+
+    job_queue.resume_queues()
+
+    job_queue.main_queue.process.assert_called_with()
+    job_queue.download_file_queue.process.assert_called_with()
 
 
 def test_ApiJobQueue_enqueue_no_auth(mocker):
