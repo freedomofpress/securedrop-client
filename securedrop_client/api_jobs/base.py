@@ -22,6 +22,12 @@ class ApiInaccessibleError(Exception):
         super().__init__(message)
 
 
+class PauseQueueJob(QObject):
+    def __init__(self):
+        super().__init__()
+        self.order_number = 1
+
+
 class ApiJob(QObject):
 
     '''

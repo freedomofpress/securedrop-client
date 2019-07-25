@@ -7,7 +7,8 @@ from sdclientapi import API, RequestTimeoutError
 from sqlalchemy.orm import scoped_session
 from typing import Optional, Tuple  # noqa: F401
 
-from securedrop_client.api_jobs.base import ApiJob, ApiInaccessibleError, DEFAULT_NUM_ATTEMPTS
+from securedrop_client.api_jobs.base import ApiJob, ApiInaccessibleError, DEFAULT_NUM_ATTEMPTS, \
+    PauseQueueJob
 from securedrop_client.api_jobs.downloads import (FileDownloadJob, MessageDownloadJob,
                                                   ReplyDownloadJob)
 from securedrop_client.api_jobs.uploads import SendReplyJob
@@ -47,12 +48,13 @@ class RunnableQueue(QObject):
 
     @pyqtSlot()
     def process(self) -> None:  # pragma: nocover
-        self._process(False)
-
-    def _process(self, exit_loop: bool) -> None:
         while True:
             session = self.session_maker()
             priority, job = self.queue.get(block=True)
+
+            if job is PauseQueueJob:
+                logger.info('Paused queue')
+                return
 
             try:
                 job._do_call_api(self.api_client, session)
@@ -64,6 +66,7 @@ class RunnableQueue(QObject):
                 # priorities are processed in the order that they were submitted
                 # _by the user_ to the queue.
                 self.queue.put_nowait((priority, job))
+                self.pause()
             except ApiInaccessibleError:
                 # This is a guard against #397, we should pause the queue execution when this
                 # happens in the future and flag the situation to the user (see ticket #379).
@@ -71,14 +74,18 @@ class RunnableQueue(QObject):
             finally:
                 session.close()
 
-            if exit_loop:
-                return
+    def pause(self):
+        self.queue.enqueue(PauseQueueJob())
+
+    def resume(self):
+        self.process()
 
 
 class ApiJobQueue(QObject):
     # These are the priorities for processing jobs.
     # Lower numbers corresponds to a higher priority.
     JOB_PRIORITIES = {
+        PauseQueueJob: 11,
         # LogoutJob: 11,  # Not yet implemented
         # MetadataSyncJob: 12,  # Not yet implemented
         FileDownloadJob: 13,  # File downloads processed in separate queue
@@ -129,6 +136,10 @@ class ApiJobQueue(QObject):
         if not self.download_file_thread.isRunning():
             logger.debug('Starting download thread')
             self.download_file_thread.start()
+
+    def resume_queues(self) -> None:
+        self.download_file_queue.resume()
+        self.main_queue.resume()
 
     def enqueue(self, job: ApiJob) -> None:
         # Additional defense in depth to prevent jobs being added to the queue when not
