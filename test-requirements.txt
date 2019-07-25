@@ -49,10 +49,9 @@ py==1.8.0 \
     --hash=sha256:64f65755aee5b381cea27766a3a147c3f15b9b6b9ac88676de66ba2ae36793fa \
     --hash=sha256:dc639b046a6e2cff5bbe40194ad65936d6ba360b52b3c3fe1d08a82dd50b5e53 \
     # via pytest
-pyparsing==2.4.1 \
-    --hash=sha256:530d8bf8cc93a34019d08142593cf4d78a05c890da8cf87ffa3120af53772238 \
-    --hash=sha256:f78e99616b6f1a4745c0580e170251ef1bbafc0d0513e270c4bd281bf29d2800 \
-    # via packaging
+pyparsing==2.4.1.1 \
+    --hash=sha256:43c5486cefefa536c9aab528881c992328f020eefe4f6d06332449c365218580 \
+    --hash=sha256:d6c5ffe9d0305b9b977f7a642d36b9370954d1da7ada4c62393382cbadad4265
 pytest==4.6.4 \
     --hash=sha256:6aa9bc2f6f6504d7949e9df2a756739ca06e58ffda19b5e53c725f7b03fb4aae \
     --hash=sha256:b77ae6f2d1a760760902a7676887b665c086f71e3461c64ed2a312afcedc00d6
