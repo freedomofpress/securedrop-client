@@ -132,7 +132,7 @@ def test_get_good_printer_uri(mocked_call):
 @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_NO_PRINTER)
 def test_get_bad_printer_uri(mocked_call, capsys):
     submission = export.SDExport("testfile")
-    expected_message = "USB Printer not found"
+    expected_message = "ERROR_PRINTER_NOT_FOUND"
     mocked_exit = mock.patch("export.exit_gracefully", return_value=0)
 
     with pytest.raises(SystemExit) as sysexit:

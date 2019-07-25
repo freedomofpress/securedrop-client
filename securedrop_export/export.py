@@ -98,7 +98,6 @@ class SDExport(object):
             sys.stderr.write("\n")
         # exit with 0 return code otherwise the os will attempt to open
         # the file with another application
-        self.popup_message("Export error: {}".format(msg))
         sys.exit(0)
 
 
@@ -172,7 +171,7 @@ class SDExport(object):
             p.communicate(input=str.encode(encryption_key, "utf-8"))
             rc = p.returncode
             if rc != 0:
-                msg = "Bad passphrase or luks error."
+                msg = "USB_BAD_PASSPHRASE"
                 self.exit_gracefully(msg)
 
 
@@ -199,7 +198,7 @@ class SDExport(object):
         except subprocess.CalledProcessError as e:
             # clean up
             subprocess.check_call(["sudo", "cryptsetup", "luksClose", self.encrypted_device])
-            msg = "An error occurred while mounting disk: "
+            msg = "ERROR_USB_MOUNT"
             self.exit_gracefully(msg, e=e)
 
 
@@ -214,7 +213,7 @@ class SDExport(object):
             subprocess.check_call(["cp", "-r", export_data, target_path])
             self.popup_message("Files exported successfully to disk.")
         except (subprocess.CalledProcessError, OSError) as e:
-            msg = "Error writing to disk:"
+            msg = "ERROR_USB_WRITE"
             self.exit_gracefully(msg, e=e)
         finally:
             # Finally, we sync the filesystem, unmount the drive and lock the
@@ -254,7 +253,7 @@ class SDExport(object):
         try:
             output = subprocess.check_output(["sudo", "lpinfo", "-v"])
         except subprocess.CalledProcessError as e:
-            msg = "Error retrieving printer uri."
+            msg = "ERROR_PRINTER_URI"
             self.exit_gracefully(msg, e=e)
 
         # fetch the usb printer uri
@@ -265,12 +264,12 @@ class SDExport(object):
         # verify that the printer is supported, else exit
         if printer_uri == "":
             # No usb printer is connected
-            self.exit_gracefully("USB Printer not found")
+            self.exit_gracefully("ERROR_PRINTER_NOT_FOUND")
         elif "Brother" in printer_uri:
             return printer_uri
         else:
             # printer url is a make that is unsupported
-            self.exit_gracefully("USB Printer not supported")
+            self.exit_gracefully("ERROR_PRINTER_NOT_SUPPORTED")
 
 
     def install_printer_ppd(self, uri):
@@ -281,7 +280,7 @@ class SDExport(object):
                     ["sudo", "ppdc", self.brlaser_driver, "-d", "/usr/share/cups/model/"]
                 )
             except subprocess.CalledProcessError as e:
-                msg = "Error installing ppd file for printer {}.".format(uri)
+                msg = "ERROR_PRINTER_DRIVER_INSTALL"
                 self.exit_gracefully(msg, e=e)
             return self.brlaser_ppd
         # Here, we could support ppd drivers for other makes or models in the future
@@ -309,9 +308,7 @@ class SDExport(object):
                 ["sudo", "lpadmin", "-p", self.printer_name, "-u", "allow:user"]
             )
         except subprocess.CalledProcessError as e:
-            msg = "Error setting up printer {} at {} using {}.".format(
-                self.printer_name, printer_uri, printer_ppd
-            )
+            msg = "ERROR_PRINTER_INSTALL"
             self.exit_gracefully(msg, e=e)
 
 
@@ -354,9 +351,7 @@ class SDExport(object):
 
             subprocess.check_call(["xpp", "-P", self.printer_name, file_to_print])
         except subprocess.CalledProcessError as e:
-            msg = "Error printing file {} with printer {}.".format(
-                file_to_print, self.printer_name
-            )
+            msg = "ERROR_PRINT"
             self.exit_gracefully(msg, e=e)
 
 ## class ends here

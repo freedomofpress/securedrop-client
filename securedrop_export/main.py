@@ -10,7 +10,7 @@ def __main__(submission):
     try: 
         submission.archive_metadata = export.Metadata(submission.tmpdir)
     except Exception as e:
-         msg = "Error parsing metadata: "
+         msg = "ERROR_METADATA_PARSING"
          submission.exit_gracefully(msg, e=e)
 
     if submission.archive_metadata.is_valid():
@@ -36,6 +36,6 @@ def __main__(submission):
             submission.setup_printer(printer_uri, printer_ppd)
             submission.print_test_page()
     else:
-        submission.exit_gracefully("Archive metadata is invalid")
+        submission.exit_gracefully("ERROR_ARCHIVE_METADATA")
 
 
