@@ -763,7 +763,10 @@ class SourceWidget(QWidget):
 
         # Connect controller sync signal in order to update preview text
         self.controller = controller
-        self.controller.sync_events.connect(self.on_synced)
+        # self.controller.sync_events.connect(self.on_synced)
+        self.controller.reply_succeeded.connect(self.on_synced)
+        self.controller.message_ready.connect(self.on_synced)
+        self.controller.file_ready.connect(self.on_synced)
 
         # Set css id
         self.setObjectName('source_widget')
@@ -851,12 +854,14 @@ class SourceWidget(QWidget):
         """
         Get preview text from last activity and display it in the preview section.
         """
-        if (data == 'synced'):
+        self.controller.session.refresh(self.source)
+        if (self.source.collection[-1].uuid == data):
             last_activity = self.source.collection[-1]
             if isinstance(last_activity, File):
                 self.preview.setText('— file only —')
             else:
                 self.preview.setText(last_activity.content and last_activity.content[0:100])
+        self.update()
 
     def delete_source(self, event):
         if self.controller.api is None:
