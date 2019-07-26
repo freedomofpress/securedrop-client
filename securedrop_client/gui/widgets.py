@@ -585,6 +585,13 @@ class MainView(QWidget):
         border: none;
         background-color: #efeef7;
     }
+    QLabel#no-source {
+        font-family: Montserrat-Regular;
+        font-size: 35px;
+        color: #a5b3e9;
+        padding: 100px;
+        qproperty-alignment: AlignLeft;
+    }
     '''
 
     def __init__(self, parent: QObject):
@@ -602,9 +609,16 @@ class MainView(QWidget):
 
         self.view_layout = QVBoxLayout()
         self.view_layout.setContentsMargins(0, 0, 0, 0)
+        self.view_layout.setSpacing(0)
         self.view_holder = QWidget()
         self.view_holder.setObjectName('view_holder')  # Set css id
+        self.view_holder.setMinimumWidth(610)
+        self.view_holder.setMinimumHeight(600)
         self.view_holder.setLayout(self.view_layout)
+
+        self.empty_conversation_view = EmptyConversationView()
+
+        self.view_layout.addWidget(self.empty_conversation_view)
 
         self.layout.addWidget(self.source_list)
         self.layout.addWidget(self.view_holder)
@@ -623,6 +637,13 @@ class MainView(QWidget):
         Update the left hand sources list in the UI with the passed in list of
         sources.
         """
+        if len(sources) == 0:
+            self.empty_conversation_view.show_no_sources_message()
+            self.empty_conversation_view.show()
+        else:
+            self.empty_conversation_view.show_no_source_selected_message()
+            self.empty_conversation_view.show()
+
         self.source_list.update(sources)
 
     def on_source_changed(self):
@@ -654,9 +675,10 @@ class MainView(QWidget):
         """
         old_widget = self.view_layout.takeAt(0)
 
-        if old_widget:
+        if old_widget and old_widget.widget():
             old_widget.widget().hide()
 
+        self.empty_conversation_view.hide()
         self.view_layout.addWidget(widget)
         widget.show()
 
@@ -665,6 +687,66 @@ class MainView(QWidget):
             child = self.view_layout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
+
+
+class EmptyConversationView(QWidget):
+
+    CSS = '''
+    #content {
+        font-family: Orbitron;
+        font-size: 35px;
+        color: #a5b3e9;
+        qproperty-alignment: AlignLeft;
+    }
+    '''
+
+    def __init__(self):
+        super().__init__()
+
+        self.setObjectName('view')
+
+        # Set styles
+        self.setStyleSheet(self.CSS)
+        font = QFont("Orbitron", 35, 1)
+        self.setFont(font)
+
+        # Set layout
+        layout = QHBoxLayout(self)
+        self.setLayout(layout)
+
+        # Remove margins
+        layout.setContentsMargins(0, 100, 0, 0)
+        layout.setSpacing(0)
+
+        self.content = QLabel(self)
+        self.content.setObjectName('content')
+        self.content.setWordWrap(True)
+
+        # Set font of content
+        self.content.setFont(font)
+
+        content_layout = QVBoxLayout()
+        self.content.setLayout(content_layout)
+        content_layout.addStretch(1)
+        content_layout.addWidget(self.content, 8)
+        content_layout.addStretch(1)
+
+        layout.addStretch(1)
+        layout.addWidget(self.content, 5)
+        layout.addStretch(1)
+
+    def show_no_sources_message(self):
+        self.content.setText(
+            'Nothing to see just yet!\n\n'
+            'Source submissions will be listed to the left, once downloaded and decrypted.\n\n'
+            'This is where you will read messages, reply to sources, and work with files.\n\n')
+
+    def show_no_source_selected_message(self):
+        self.content.setText(
+            'Select a source from the list, to:\n\n'
+            '• Read a conversation\n'
+            '• View or retrieve files\n'
+            '• Send a response\n')
 
 
 class SourceList(QListWidget):
