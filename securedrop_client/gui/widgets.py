@@ -577,7 +577,7 @@ class MainView(QWidget):
 
     CSS = '''
     #view_holder {
-        background-color: #fff;
+        background-color: #efeef7;
     }
     '''
 
@@ -669,6 +669,13 @@ class SourceList(QListWidget):
     CSS = '''
     QListWidget::item:selected {
         background: #efeef7;
+        border: none;
+    }
+    QListView {
+        show-decoration-selected: 0;
+    }
+    QListView::item {
+        border-bottom: 1px solid #efeef7;
     }
     '''
 
@@ -1285,7 +1292,6 @@ class SpeechBubble(QWidget):
         padding: 8px;
         min-height: 32px;
         min-width: 556px;
-        border: 1px solid #999;
         border-bottom: 0;
     }
     #color_bar {
