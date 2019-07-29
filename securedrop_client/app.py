@@ -184,7 +184,6 @@ def start_app(args, qt_args) -> None:
 
     load_font('Montserrat')
     load_font('Source_Sans_Pro')
-    load_font('Orbitron')
 
     prevent_second_instance(app, args.sdc_home)
 
