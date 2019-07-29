@@ -669,7 +669,6 @@ class SourceList(QListWidget):
     CSS = '''
     QListWidget::item:selected {
         background: #efeef7;
-        border: none;
     }
     QListView {
         show-decoration-selected: 0;
@@ -1534,6 +1533,16 @@ class ConversationView(QWidget):
 
     CONVERSATION_SPACING = 28
 
+    CSS = '''
+    #container {
+        background: #efeef7;
+    }
+    #scroll {
+        background: #efeef7;
+        border: none;
+    }
+    '''
+
     def __init__(
         self,
         source_db_object: Source,
@@ -1542,6 +1551,9 @@ class ConversationView(QWidget):
         super().__init__()
         self.source = source_db_object
         self.controller = controller
+
+        # Set styles
+        self.setStyleSheet(self.CSS)
 
         self.container = QWidget()
         self.container.setObjectName('container')
