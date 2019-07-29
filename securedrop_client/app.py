@@ -31,7 +31,7 @@ from logging.handlers import TimedRotatingFileHandler
 from securedrop_client import __version__
 from securedrop_client.logic import Controller
 from securedrop_client.gui.main import Window
-from securedrop_client.resources import load_icon, load_css
+from securedrop_client.resources import load_icon, load_css, load_font
 from securedrop_client.db import make_session_maker
 from securedrop_client.utils import safe_mkdir
 
@@ -181,6 +181,9 @@ def start_app(args, qt_args) -> None:
     app.setDesktopFileName('org.freedomofthepress.securedrop.client')
     app.setApplicationVersion(__version__)
     app.setAttribute(Qt.AA_UseHighDpiPixmaps)
+
+    load_font('Montserrat')
+    load_font('Source_Sans_Pro')
 
     prevent_second_instance(app, args.sdc_home)
 
