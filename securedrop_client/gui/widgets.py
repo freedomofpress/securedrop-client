@@ -93,7 +93,7 @@ class TopPane(QWidget):
         # Add widgets to layout
         layout.addWidget(self.refresh, 1)
         layout.addWidget(self.activity_status_bar, 1)
-        layout.addWidget(self.error_status_bar, 5)
+        layout.addWidget(self.error_status_bar, 1)
         layout.addWidget(spacer, 1)
         layout.addWidget(spacer2, 1)
 
@@ -189,14 +189,14 @@ class RefreshButton(SvgPushButton):
             disabled='refresh_offline.svg',
             active='refresh_active.svg',
             selected='refresh.svg',
-            svg_size=QSize(18, 18))
+            svg_size=QSize(16, 16))
 
         # Set css id
         self.setObjectName('refresh_button')
 
         # Set styles
         self.setStyleSheet(self.CSS)
-        self.setFixedSize(QSize(22, 22))
+        self.setFixedSize(QSize(20, 20))
 
         # Click event handler
         self.clicked.connect(self._on_clicked)
@@ -241,7 +241,9 @@ class ActivityStatusBar(QStatusBar):
 
     CSS = '''
     #activity_status_bar {
-        color: #fff;
+        font-family: Source Sans Pro SemiBold;
+        font-size: 12px;
+        color: #d3d8ea;
     }
     '''
 
@@ -295,8 +297,9 @@ class ErrorStatusBar(QWidget):
             stop: 0.2 #fff,
             stop: 1 #fff
         );
-        font-weight: bold;
-        color: #f22b5d;
+        font-family: Source Sans Pro Regular;
+        font-size: 13px;
+        color: #0c3e75;
     }
     '''
 
@@ -320,7 +323,7 @@ class ErrorStatusBar(QWidget):
         self.vertical_bar.setFixedWidth(10)
 
         # Error icon
-        self.label = SvgLabel('error_icon.svg', svg_size=QSize(32, 32))
+        self.label = SvgLabel('error_icon.svg', svg_size=QSize(20, 20))
         self.label.setObjectName('error_icon')  # Set css id
         self.label.setFixedWidth(42)
 
@@ -385,9 +388,8 @@ class UserProfile(QWidget):
         border: none;
         padding: 10px;
         background-color: #b4fffa;
-        font-family: Open Sans;
+        font-family: Source Sans Pro;
         font-size: 16px;
-        font-weight: bold;
         color: #2a319d;
     }
     '''
@@ -457,9 +459,8 @@ class UserButton(SvgPushButton):
         border: none;
         padding-left: 6px;
         background-color: #0093da;
-        font-family: Open Sans;
+        font-family: Source Sans Pro;
         font-size: 14px;
-        font-weight: bold;
         color: #b4fffa;
         text-align: left;
     }
@@ -524,15 +525,8 @@ class LoginButton(QPushButton):
     CSS = '''
     #login {
         border: none;
-        background-color: qlineargradient(
-            x1: 0,
-            y1: 0,
-            x2: 0,
-            y2: 1,
-            stop: 0 #b4fffa,
-            stop: 1 #05edfe
-        );
-        font-family: Open Sans;
+        background-color: #05edfe;
+        font-family: Montserrat SemiBold;
         font-size: 14px;
         color: #2a319d;
     }
@@ -739,14 +733,13 @@ class SourceWidget(QWidget):
         background-color: #9211ff;
     }
     QLabel#source_name {
-        font-family: Open Sans;
-        font-size: 16px;
-        font-weight: bold;
+        font-family: Montserrat Medium;
+        font-size: 13px;
         color: #000;
     }
     QLabel#timestamp {
-        font-family: Open Sans;
-        font-size: 12px;
+        font-family: Montserrat Medium;
+        font-size: 13px;
         color: #000;
     }
     '''
@@ -1001,17 +994,9 @@ class SignInButton(QPushButton):
     CSS = '''
     #login {
         border: none;
-        background-color: qlineargradient(
-            x1: 0,
-            y1: 0,
-            x2: 0,
-            y2: 1,
-            stop: 0 #b4fffa,
-            stop: 1 #05edfe
-        );
-        font-family: Open Sans;
+        background-color: #05edfe;
+        font-family: Montserrat SemiBold;
         font-size: 14px;
-        font-weight: bold;
         color: #2a319d;
     }
     #login:pressed {
@@ -1052,7 +1037,8 @@ class LoginErrorBar(QWidget):
         color: #fff;
     }
     #error_status_bar {
-        font-weight: bold;
+        font-family: Source Sans Pro Regular;
+        font-size: 14px;
         color: #fff;
     }
     '''
@@ -1115,7 +1101,7 @@ class LoginDialog(QDialog):
     CSS = '''
     #login_form QLabel {
         color: #fff;
-        font-weight: bold;
+        font-family: Montserrat Medium;
     }
     #login_form QLineEdit {
         border-radius: 0px;
@@ -1171,7 +1157,7 @@ class LoginDialog(QDialog):
         self.username_label = QLabel(_('Username'))
         self.username_field = QLineEdit()
 
-        self.password_label = QLabel(_('Passphase'))
+        self.password_label = QLabel(_('Passphrase'))
         self.password_field = QLineEdit()
         self.password_field.setEchoMode(QLineEdit.Password)
 
@@ -1294,6 +1280,8 @@ class SpeechBubble(QWidget):
 
     CSS = '''
     #speech_bubble {
+        font-family: Source Sans Pro Regular;
+        font-size: 15px;
         padding: 8px;
         min-height: 32px;
         min-width: 556px;
@@ -1705,10 +1693,24 @@ class ReplyBoxWidget(QWidget):
     A textbox where a journalist can enter a reply.
     """
 
+    CSS = '''
+    #replybox {
+        font-family: Montserrat Regular;
+        font-size: 18px;
+        color: #9c9dbb;
+    }
+    '''
+
     reply_sent = pyqtSignal(str, str, str)
 
     def __init__(self, source: Source, controller: Controller) -> None:
         super().__init__()
+
+        # Set css id
+        self.setObjectName('replybox')
+
+        # Set styles
+        self.setStyleSheet(self.CSS)
 
         layout = QVBoxLayout()
         self.setLayout(layout)
@@ -1830,17 +1832,43 @@ class SourceMenuButton(QToolButton):
 class TitleLabel(QLabel):
     """The title for a conversation."""
 
+    CSS = '''
+    #conversation-title-source-name {
+        font-family: Montserrat Regular;
+        font-size: 24px;
+        color: #2a319d;
+    }
+    '''
+
     def __init__(self, text):
-        html_text = _('<h1>{}</h1>').format(text)
-        super().__init__(html_text)
+        super().__init__(_(text))
+
+        # Set css id
+        self.setObjectName('conversation-title-source-name')
+
+        # Set styles
+        self.setStyleSheet(self.CSS)
 
 
 class LastUpdatedLabel(QLabel):
     """Time the conversation was last updated."""
 
+    CSS = '''
+    #conversation-title-date {
+        font-family: Montserrat ExtraLight;
+        font-size: 24px;
+        color: #2a319d;
+    }
+    '''
+
     def __init__(self, last_updated):
-        html_text = _('<h3>{}</h3>').format(arrow.get(last_updated).humanize())
-        super().__init__(html_text)
+        super().__init__(_(_('{}').format(arrow.get(last_updated).humanize())))
+
+        # Set css id
+        self.setObjectName('conversation-title-date')
+
+        # Set styles
+        self.setStyleSheet(self.CSS)
 
 
 class SourceProfileShortWidget(QWidget):
