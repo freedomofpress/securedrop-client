@@ -577,7 +577,7 @@ class MainView(QWidget):
 
     CSS = '''
     #view_holder {
-        background-color: #fff;
+        background-color: #efeef7;
     }
     '''
 
@@ -669,6 +669,12 @@ class SourceList(QListWidget):
     CSS = '''
     QListWidget::item:selected {
         background: #efeef7;
+    }
+    QListView {
+        show-decoration-selected: 0;
+    }
+    QListView::item {
+        border-bottom: 1px solid #efeef7;
     }
     '''
 
@@ -1282,10 +1288,9 @@ class SpeechBubble(QWidget):
     #speech_bubble {
         font-family: Source Sans Pro Regular;
         font-size: 15px;
-        padding: 8px;
+        padding: 20px;
         min-height: 32px;
         min-width: 556px;
-        border: 1px solid #999;
         border-bottom: 0;
     }
     #color_bar {
@@ -1528,6 +1533,16 @@ class ConversationView(QWidget):
 
     CONVERSATION_SPACING = 28
 
+    CSS = '''
+    #container {
+        background: #efeef7;
+    }
+    #scroll {
+        background: #efeef7;
+        border: none;
+    }
+    '''
+
     def __init__(
         self,
         source_db_object: Source,
@@ -1536,6 +1551,9 @@ class ConversationView(QWidget):
         super().__init__()
         self.source = source_db_object
         self.controller = controller
+
+        # Set styles
+        self.setStyleSheet(self.CSS)
 
         self.container = QWidget()
         self.container.setObjectName('container')
