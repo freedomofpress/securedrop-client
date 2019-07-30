@@ -108,23 +108,26 @@ make check
 
 ## Comparison of developer environments
 
+For end-to-end client testing on Qubes, make sure you either run the packaged client or run the unpackaged client with proxy turned on.
+
 ### Developer environment on non-Qubes
 
 * Ran by `run.sh`
 * Uses temporary configuration directories by default
-* Requests/responses to the Journalist API are sent directly via HTTP (and Tor is not used)
+* Works with SecureDrop running in a local docker container, see [SecureDrop docs](https://docs.securedrop.org/en/latest/development/setup_development.html) for setup instructions
+* Tor is not used
 * Does not support opening submissions
-* Does not use `split-gpg`
+* Does not use `split-gpg`, instead uses a development gpg private key inside a gpg keychain stored in the temporary configuration directories
 
 ### Developer environment on Qubes (no-proxy)
 
 * Ran by `run.sh`
-* Requires `qvm-tags sd-dev add sd-client` to be run in `dom0` (subsitute your dev VM for `sd-dev`)
+* Requires `qvm-tags sd-dev add sd-client` to be run in `dom0` (substitute your dev VM for `sd-dev`)
 * Uses temporary configuration directories by default
-* Requests/responses to the Journalist API are sent directly via HTTP (and Tor is not used)
+* Works with SecureDrop running in a local docker container, see [SecureDrop docs](https://docs.securedrop.org/en/latest/development/setup_development.html) for setup instructions, including post-installation steps for allowing docker to be run as a non-root user, which is a requirement on Qubes
+* Tor is not used
 * Submissions will be opened in DispVMs
-* Does not use `split-gpg`
-
+* Does not use `split-gpg`, instead uses a development gpg private key inside a gpg keychain stored in the temporary configuration directories
 
 ### Developer environment on Qubes (with proxy)
 
