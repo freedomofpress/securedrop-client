@@ -10,6 +10,7 @@ include files/mimeapps.list
 include files/open-in-dvm.desktop
 include files/securedrop-client
 include files/securedrop-client.desktop
+include files/sd-svs-qubes-gpg-domain.sh
 
 recursive-include alembic *
 recursive-include securedrop_client *
