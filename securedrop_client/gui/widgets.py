@@ -1038,7 +1038,7 @@ class LoginErrorBar(QWidget):
     }
     #error_status_bar {
         font-family: Source Sans Pro Regular;
-        font-size: 12px;
+        font-size: 14px;
         color: #fff;
     }
     '''
