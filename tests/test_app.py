@@ -130,7 +130,7 @@ def test_start_app(homedir, mocker):
     mock_win.assert_called_once_with()
     mock_controller.assert_called_once_with('http://localhost:8081/',
                                             mock_win(), mock_session_maker,
-                                            homedir, False)
+                                            homedir, False, False)
 
 
 PERMISSIONS_CASES = [
