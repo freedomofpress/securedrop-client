@@ -1288,7 +1288,7 @@ class SpeechBubble(QWidget):
     #speech_bubble {
         font-family: Source Sans Pro Regular;
         font-size: 15px;
-        padding: 8px;
+        padding: 20px;
         min-height: 32px;
         min-width: 556px;
         border-bottom: 0;
