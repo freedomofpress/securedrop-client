@@ -1157,7 +1157,7 @@ class LoginDialog(QDialog):
         self.username_label = QLabel(_('Username'))
         self.username_field = QLineEdit()
 
-        self.password_label = QLabel(_('Passphase'))
+        self.password_label = QLabel(_('Passphrase'))
         self.password_field = QLineEdit()
         self.password_field.setEchoMode(QLineEdit.Password)
 
