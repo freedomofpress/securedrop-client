@@ -1293,7 +1293,7 @@ class SpeechBubble(QWidget):
     """
 
     CSS = '''
-    #speech-bubble {
+    #speech_bubble {
         font-family: 'Source Sans Pro';
         font-weight: 400;
         font-size: 15px;
@@ -1303,7 +1303,7 @@ class SpeechBubble(QWidget):
         border-bottom: 0;
         background-color: #fff;
     }
-    #color-bar {
+    #color_bar {
         padding: 0px;
         background-color: #102781;
         min-height: 5px;
@@ -1322,13 +1322,13 @@ class SpeechBubble(QWidget):
         layout.setSpacing(0)
         self.setLayout(layout)
         self.message = SecureQLabel(text)
-        self.message.setObjectName('speech-bubble')
+        self.message.setObjectName('speech_bubble')
         self.message.setWordWrap(True)
         self.message.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
         layout.addWidget(self.message)
 
         self.color_bar = QWidget()
-        self.color_bar.setObjectName('color-bar')
+        self.color_bar.setObjectName('color_bar')
         self.color_bar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
         layout.addWidget(self.color_bar)
 
@@ -1417,9 +1417,6 @@ class ReplyWidget(ConversationWidget):
                          update_signal,
                          align="right")
         self.message_id = message_id
-
-        # Set css id
-        self.setObjectName('reply-widget')
 
         # Set styles
         self.speech_bubble.color_bar.setStyleSheet(self.CSS_COLOR_BAR_REPLY)
