@@ -40,7 +40,8 @@ gpg --homedir "$GPG_HOME" --allow-secret-key-import --import tests/files/secured
 ./create_dev_data.py "$SDC_HOME" &
 
 # check whether current env is qubes
-is_qubes="$(printenv | grep ^QUBES_)"
+is_qubes="$(printenv | grep ^QUBES_)" || true
+
 if [[ -n "$is_qubes" ]]; then
     echo "Detected QubesOS, enabling DispVMs for submission handling..."
     qubes_flag=""
