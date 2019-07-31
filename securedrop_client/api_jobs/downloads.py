@@ -1,6 +1,7 @@
 import binascii
 import hashlib
 import logging
+import math
 import os
 import shutil
 
@@ -39,6 +40,24 @@ class DownloadJob(ApiJob):
     def __init__(self, data_dir: str) -> None:
         super().__init__()
         self.data_dir = data_dir
+
+    def _get_realistic_timeout(self, size_in_bytes: int) -> int:
+        """
+        Returns a realistic timeout in seconds for a file, message, or reply based on its size.
+
+        Note that:
+        * the size of the file provided by server is in bytes (the server computes it using
+        os.stat.ST_SIZE)
+        * A reasonable time to download a 1 MB file download time according to OnionPerf was
+        ~7.5s:
+        https://metrics.torproject.org/torperf.html?start=2019-05-02&end=2019-07-31&server=onion&filesize=1mb
+
+        This simply scales the timeouts per file, so that a small file times out much faster than a
+        large file, which is given a long time to complete.
+        """
+
+        SCALING_FACTOR_FILE_DL_TIME_SECS_PER_MB = 7.5
+        return math.ceil(size_in_bytes * SCALING_FACTOR_FILE_DL_TIME_SECS_PER_MB)
 
     def call_download_api(self, api: API,
                           db_object: Union[File, Message, Reply]) -> Tuple[str, str]:
@@ -228,7 +247,8 @@ class MessageDownloadJob(DownloadJob):
         sdk_object = SdkSubmission(uuid=db_object.uuid)
         sdk_object.source_uuid = db_object.source.uuid
         sdk_object.filename = db_object.filename
-        return api.download_submission(sdk_object)
+        return api.download_submission(sdk_object,
+                                       timeout=self._get_realistic_timeout(db_object.size))
 
     def call_decrypt(self, filepath: str, session: Session = None) -> str:
         '''
@@ -274,7 +294,8 @@ class FileDownloadJob(DownloadJob):
         sdk_object = SdkSubmission(uuid=db_object.uuid)
         sdk_object.source_uuid = db_object.source.uuid
         sdk_object.filename = db_object.filename
-        return api.download_submission(sdk_object)
+        return api.download_submission(sdk_object,
+                                       timeout=self._get_realistic_timeout(db_object.size))
 
     def call_decrypt(self, filepath: str, session: Session = None) -> str:
         '''
