@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.0.9
+
+  * Use Montserrat and Source Sans Pro (#493)
+  * Same BG for scrollarea, conversation view, selected source (#494,#496)
+  * Supports opening submissions in DispVMs from Qubes dev env (#490)
+  * Center all popup windows (#487)
+  * Use priority queue for job processing (#486)
+  * Use SecureQLabel (#485)
+  * Extract and display original document filenames (#452)
+  * Save in-progress replies via persisting SourceConversationWrapper (#431)
+
 ## 0.0.8
 
   * Update SDK to 0.0.10, urllib to 1.24.3, and SQLAlchemy to 1.3.3 (#424)
