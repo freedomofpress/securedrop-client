@@ -118,10 +118,9 @@ class SDExport(object):
         try:
             with tarfile.open(self.archive) as tar:
                 tar.extractall(self.tmpdir)
-        except Exception as e:
-            print (e)
-            msg = "Error opening export bundle: "
-            self.exit_gracefully(msg, e=e)
+        except Exception:
+            msg = "ERROR_EXTRACTION"
+            self.exit_gracefully(msg)
 
 
     def check_usb_connected(self):
@@ -154,7 +153,7 @@ class SDExport(object):
             p = subprocess.check_call(["sudo", "cryptsetup", "isLuks", DEVICE])
             msg = "USB_ENCRYPTED"
             self.exit_gracefully(msg)
-        except subprocess.CalledProcessError as e:
+        except subprocess.CalledProcessError:
             msg = "USB_NO_SUPPORTED_ENCRYPTION"
             self.exit_gracefully(msg)
 
@@ -195,11 +194,11 @@ class SDExport(object):
                     "-R", "user:user", self.mountpoint,
                 ]
             )
-        except subprocess.CalledProcessError as e:
+        except subprocess.CalledProcessError:
             # clean up
             subprocess.check_call(["sudo", "cryptsetup", "luksClose", self.encrypted_device])
             msg = "ERROR_USB_MOUNT"
-            self.exit_gracefully(msg, e=e)
+            self.exit_gracefully(msg)
 
 
     def copy_submission(self):
@@ -212,9 +211,9 @@ class SDExport(object):
             )
             subprocess.check_call(["cp", "-r", export_data, target_path])
             self.popup_message("Files exported successfully to disk.")
-        except (subprocess.CalledProcessError, OSError) as e:
+        except (subprocess.CalledProcessError, OSError):
             msg = "ERROR_USB_WRITE"
-            self.exit_gracefully(msg, e=e)
+            self.exit_gracefully(msg)
         finally:
             # Finally, we sync the filesystem, unmount the drive and lock the
             # luks volume, and exit 0
@@ -238,12 +237,12 @@ class SDExport(object):
                     return True
                 else:
                     time.sleep(5)
-            except subprocess.CalledProcessError as e:
-                msg = "Error while retrieving print status"
-                self.exit_gracefully(msg, e=e)
-            except TimeoutException as e:
-                msg = "Timeout when getting printer information"
-                self.exit_gracefully(msg, e=e)
+            except subprocess.CalledProcessError:
+                msg = "ERROR_PRINT"
+                self.exit_gracefully(msg)
+            except TimeoutException:
+                msg = "ERROR_PRINT"
+                self.exit_gracefully(msg)
         return True
 
 
@@ -254,7 +253,7 @@ class SDExport(object):
             output = subprocess.check_output(["sudo", "lpinfo", "-v"])
         except subprocess.CalledProcessError as e:
             msg = "ERROR_PRINTER_URI"
-            self.exit_gracefully(msg, e=e)
+            self.exit_gracefully(msg)
 
         # fetch the usb printer uri
         for line in output.split():
@@ -279,9 +278,9 @@ class SDExport(object):
                 subprocess.check_call(
                     ["sudo", "ppdc", self.brlaser_driver, "-d", "/usr/share/cups/model/"]
                 )
-            except subprocess.CalledProcessError as e:
+            except subprocess.CalledProcessError:
                 msg = "ERROR_PRINTER_DRIVER_INSTALL"
-                self.exit_gracefully(msg, e=e)
+                self.exit_gracefully(msg)
             return self.brlaser_ppd
         # Here, we could support ppd drivers for other makes or models in the future
 
@@ -307,9 +306,9 @@ class SDExport(object):
             subprocess.check_call(
                 ["sudo", "lpadmin", "-p", self.printer_name, "-u", "allow:user"]
             )
-        except subprocess.CalledProcessError as e:
+        except subprocess.CalledProcessError:
             msg = "ERROR_PRINTER_INSTALL"
-            self.exit_gracefully(msg, e=e)
+            self.exit_gracefully(msg)
 
 
     def print_test_page(self):
@@ -350,9 +349,9 @@ class SDExport(object):
                 file_to_print = converted_path
 
             subprocess.check_call(["xpp", "-P", self.printer_name, file_to_print])
-        except subprocess.CalledProcessError as e:
+        except subprocess.CalledProcessError:
             msg = "ERROR_PRINT"
-            self.exit_gracefully(msg, e=e)
+            self.exit_gracefully(msg)
 
 ## class ends here
 class TimeoutException(Exception):

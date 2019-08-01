@@ -11,7 +11,7 @@ def start():
     try:
         # Halt immediately if target file is absent
         if not os.path.exists(my_sub.archive):
-            msg = "File does not exist"
+            msg = "ERROR_FILE_NOT_FOUND"
             my_sub.exit_gracefully(msg)
         main.__main__(my_sub)
         # Delete extracted achive from tempfile
@@ -19,5 +19,5 @@ def start():
     except Exception as e:
         # exit with 0 return code otherwise the os will attempt to open
         # the file with another application
-        msg = "Unhandled exception:"
-        my_sub.exit_gracefully(msg, e=e)
+        msg = "ERROR_GENERIC"
+        my_sub.exit_gracefully(msg)
