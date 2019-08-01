@@ -498,3 +498,34 @@ def test_FileDownloadJob_decryption_error(mocker, homedir, session, session_make
 
     # ensure mocks aren't stale
     assert mock_decrypt.called
+
+
+def test_timeout_length_of_file_downloads(mocker, homedir, session, session_maker):
+    """
+    Ensure that files downloads have timeouts scaled by the size of the file.
+    """
+    source = factory.Source()
+    small_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=1)
+    large_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=100)
+    session.add(source)
+    session.add(small_file)
+    session.add(large_file)
+    session.commit()
+
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+
+    small_job = FileDownloadJob(
+        small_file.uuid,
+        os.path.join(homedir, 'data'),
+        gpg,
+    )
+    large_job = FileDownloadJob(
+        small_file.uuid,
+        os.path.join(homedir, 'data'),
+        gpg,
+    )
+
+    small_file_timeout = small_job._get_realistic_timeout(small_file.size)
+    large_file_timeout = large_job._get_realistic_timeout(large_file.size)
+
+    assert small_file_timeout < large_file_timeout
