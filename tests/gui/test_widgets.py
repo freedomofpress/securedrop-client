@@ -14,7 +14,8 @@ from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, Lo
     SpeechBubble, ConversationWidget, MessageWidget, ReplyWidget, FileWidget, ConversationView, \
     DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, LeftPane, RefreshButton, \
     ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
-    ReplyBoxWidget, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, LoginErrorBar
+    ReplyBoxWidget, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, LoginErrorBar, \
+    EmptyConversationView
 
 
 app = QApplication([])
@@ -397,16 +398,34 @@ def test_MainView_setup(mocker):
     mv.source_list.setup.assert_called_once_with(controller)
 
 
-def test_MainView_show_sources(mocker):
+def test_MainView_show_sources_with_none_selected(mocker):
     """
     Ensure the sources list is passed to the source list widget to be updated.
     """
     mv = MainView(None)
     mv.source_list = mocker.MagicMock()
+    mv.empty_conversation_view = mocker.MagicMock()
 
     mv.show_sources([1, 2, 3])
 
     mv.source_list.update.assert_called_once_with([1, 2, 3])
+    mv.empty_conversation_view.show_no_source_selected_message.assert_called_once_with()
+    mv.empty_conversation_view.show.assert_called_once_with()
+
+
+def test_MainView_show_sources_with_no_sources_at_all(mocker):
+    """
+    Ensure the sources list is passed to the source list widget to be updated.
+    """
+    mv = MainView(None)
+    mv.source_list = mocker.MagicMock()
+    mv.empty_conversation_view = mocker.MagicMock()
+
+    mv.show_sources([])
+
+    mv.source_list.update.assert_called_once_with([])
+    mv.empty_conversation_view.show_no_sources_message.assert_called_once_with()
+    mv.empty_conversation_view.show.assert_called_once_with()
 
 
 def test_MainView_on_source_changed(mocker):
@@ -560,6 +579,31 @@ def test_MainView_clear_conversation(mocker, homedir):
     mv.clear_conversation()
 
     assert mv.view_layout.count() == 0
+
+
+def test_EmptyConversationView_show_no_sources_message(mocker):
+    ecv = EmptyConversationView()
+    ecv.content = mocker.MagicMock()
+
+    ecv.show_no_sources_message()
+
+    ecv.content.setText.assert_called_once_with(
+        'Nothing to see just yet!\n\n'
+        'Source submissions will be listed to the left, once downloaded and decrypted.\n\n'
+        'This is where you will read messages, reply to sources, and work with files.\n\n')
+
+
+def test_EmptyConversationView_show_no_source_selected_message(mocker):
+    ecv = EmptyConversationView()
+    ecv.content = mocker.MagicMock()
+
+    ecv.show_no_source_selected_message()
+
+    ecv.content.setText.assert_called_once_with(
+        'Select a source from the list, to:\n\n'
+        '• Read a conversation\n'
+        '• View or retrieve files\n'
+        '• Send a response\n')
 
 
 def test_SourceList_update(mocker):
