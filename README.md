@@ -87,7 +87,7 @@ import pdb; pdb.set_trace()
 ```
 Then you can use [`pdb` commands](https://docs.python.org/3/library/pdb.html#debugger-commands) as normal.
 
-Logs can be found in the `{sdc-home}/logs`. If you are debugging version of this application installed from a deb package in Qubes, you can debug issues by looking at the log file in `~/.securedrop_client/logs/client.log`. You can also add additional log lines in the running code in
+Logs can be found in the `{sdc-home}/logs`. If you are debugging a version of this application installed from a deb package in Qubes, you can debug issues by looking at the log file in `~/.securedrop_client/logs/client.log`. You can also add additional log lines in the running code in
 `/opt/venvs/securedrop-client/lib/python3.5/site-packages/securedrop_client/`.
 
 ## Running against a test server
@@ -124,7 +124,7 @@ We support running the [developer environment on a non-Qubes OS](#developer-envi
 
 ### Developer environment
 
-* Ran by `run.sh` inside a virtual env on the `sd-dev` AppVM
+* Run by `run.sh` inside a virtual env in the `sd-dev` AppVM
 * Requires `qvm-tags sd-dev add sd-client` to be run in `dom0` (substitute your dev VM for `sd-dev`)
 * Works with SecureDrop running in a local docker container, see [SecureDrop docs](https://docs.securedrop.org/en/latest/development/setup_development.html) for setup instructions, including post-installation steps for allowing docker to be run as a non-root user, which is a requirement on Qubes
 * Uses a temporary directory as its configuration directory, instead of ` ~/.securedrop_client`
@@ -134,7 +134,7 @@ We support running the [developer environment on a non-Qubes OS](#developer-envi
 
 ### Developer environment on a non-Qubes OS
 
-* Ran by `run.sh` inside a virtual env
+* Run by `run.sh` inside a virtual env on a non-Qubes OS
 * Works with SecureDrop running in a local docker container, see [SecureDrop docs](https://docs.securedrop.org/en/latest/development/setup_development.html) for setup instructions
 * Uses a temporary directory as its configuration directory, instead of ` ~/.securedrop_client`
 * Uses a development gpg private key inside a gpg keychain stored in the temporary configuration directory
@@ -143,7 +143,7 @@ We support running the [developer environment on a non-Qubes OS](#developer-envi
 
 ### Staging environment
 
-* Ran by directly invoking the client `python -m securedrop_client` on the `sd-svs` AppVM
+* Run by directly invoking the client `python -m securedrop_client` on the `sd-svs` AppVM
 * Requires that `make all` in the `securedrop-workstation` repository has completed successfully
 * Uses `~/.securedrop_client` as its configuration directory
 * Uses the gpg key in the `sd-gpg` AppVM configured during `make all`
@@ -152,7 +152,7 @@ We support running the [developer environment on a non-Qubes OS](#developer-envi
 
 ### Production environment
 
-* Ran by executing `securedrop-client` in the `sd-svs` AppVM (see [workstation documentation here](https://github.com/freedomofpress/securedrop-workstation/#using-the-securedrop-client))
+* Run by executing `securedrop-client` in the `sd-svs` AppVM (see [workstation documentation here](https://github.com/freedomofpress/securedrop-workstation/#using-the-securedrop-client))
 * Requires that `make all` in the `securedrop-workstation` repository has completed successfully
 * Uses `~/.securedrop_client` as its configuration directory
 * Uses the gpg key in the `sd-gpg` AppVM configured during `make all`
