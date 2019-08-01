@@ -18,7 +18,6 @@ MOUNTPOINT = "/media/usb"
 ENCRYPTED_DEVICE = "encrypted_volume"
 BRLASER_DRIVER = "/usr/share/cups/drv/brlaser.drv"
 BRLASER_PPD = "/usr/share/cups/model/br7030.ppd"
-PCI_BUS_ID = "002:"
 
 class Metadata(object):
     """
@@ -37,12 +36,14 @@ class Metadata(object):
 
     def __init__(self, archive_path):
         self.metadata_path = os.path.join(archive_path, self.METADATA_FILE)
+
         try:
             with open(self.metadata_path) as f:
                 json_config = json.loads(f.read())
                 self.export_method = json_config.get("device", None)
                 self.encryption_method = json_config.get("encryption_method", None)
                 self.encryption_key = json_config.get("encryption_key", None)
+
         except Exception as e:
             raise
 
@@ -58,7 +59,7 @@ class Metadata(object):
 
 class SDExport(object):
 
-    def __init__(self, archive):
+    def __init__(self, archive, config_path):
         self.device = DEVICE
         self.mountpoint = MOUNTPOINT
         self.encrypted_device = ENCRYPTED_DEVICE
@@ -68,13 +69,20 @@ class SDExport(object):
 
         self.brlaser_driver = BRLASER_DRIVER
         self.brlaser_ppd = BRLASER_PPD
-        
+
         self.archive = archive
-        self.submission_dirname = os.path.basename(self.archive).split(".")[0] 
+        self.submission_dirname = os.path.basename(self.archive).split(".")[0]
         self.target_dirname = "sd-export-{}".format(
             datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         )
         self.tmpdir = tempfile.mkdtemp()
+
+        try:
+            with open(config_path) as f:
+                json_config = json.loads(f.read())
+                self.pci_bus_id = int(json_config.get("pci_bus_id", 2))
+        except Exception as e:
+            self.exit_gracefully("ERROR_CONFIG")
 
 
     def exit_gracefully(self, msg, e=False):
@@ -124,10 +132,8 @@ class SDExport(object):
 
 
     def check_usb_connected(self):
-        # Rely on the output of lsusb on the bus assigned to. We might need to make this variable configurable
-        # In the future and extracted from config.json
-        p = subprocess.check_output(["lsusb", "-s", PCI_BUS_ID])
-        # Empty string means a likely wrong PCI_BUS_ID
+        p = subprocess.check_output(["lsusb", "-s", self.pci_bus_id])
+        # Empty string means a likely wrong pci_bus_id
         if p == "":
             msg = "ERROR_USB_CHECK"
             self.exit_gracefully(msg)
@@ -189,8 +195,8 @@ class SDExport(object):
             )
             subprocess.check_call(
                 [
-                    "sudo", 
-                    "chown", 
+                    "sudo",
+                    "chown",
                     "-R", "user:user", self.mountpoint,
                 ]
             )

@@ -5,9 +5,10 @@ import sys
 from securedrop_export import export
 from securedrop_export import main
 
+CONFIG_PATH = "/etc/sd-export-config.json"
 
 def start():
-    my_sub = export.SDExport(sys.argv[1])
+    my_sub = export.SDExport(sys.argv[1], CONFIG_PATH)
     try:
         # Halt immediately if target file is absent
         if not os.path.exists(my_sub.archive):

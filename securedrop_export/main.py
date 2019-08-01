@@ -1,17 +1,12 @@
-import os
-import shutil
-import sys
-
-from securedrop_export import export 
+from securedrop_export import export
 
 def __main__(submission):
     submission.extract_tarball()
 
-    try: 
+    try:
         submission.archive_metadata = export.Metadata(submission.tmpdir)
     except Exception as e:
-         msg = "ERROR_METADATA_PARSING"
-         submission.exit_gracefully(msg, e=e)
+         submission.exit_gracefully("ERROR_METADATA_PARSING")
 
     if submission.archive_metadata.is_valid():
         if submission.archive_metadata.export_method == "usb-test":
@@ -37,5 +32,3 @@ def __main__(submission):
             submission.print_test_page()
     else:
         submission.exit_gracefully("ERROR_ARCHIVE_METADATA")
-
-
