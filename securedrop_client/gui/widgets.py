@@ -577,6 +577,7 @@ class MainView(QWidget):
 
     CSS = '''
     #view_holder {
+        border: none;
         background-color: #efeef7;
     }
     '''
@@ -667,6 +668,9 @@ class SourceList(QListWidget):
     """
 
     CSS = '''
+    #sourcelist {
+        border: none;
+    }
     QListWidget::item:selected {
         background: #efeef7;
     }
@@ -1716,6 +1720,12 @@ class ReplyBoxWidget(QWidget):
         font-family: Montserrat Regular;
         font-size: 18px;
         color: #9c9dbb;
+    }
+    QTextEdit {
+        border: none;
+    }
+    QPushButton {
+        border: none;
     }
     '''
 
