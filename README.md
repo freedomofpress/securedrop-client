@@ -87,6 +87,9 @@ import pdb; pdb.set_trace()
 ```
 Then you can use [`pdb` commands](https://docs.python.org/3/library/pdb.html#debugger-commands) as normal.
 
+Logs can be found in the `{sdc-home}/logs`. If you are debugging a version of this application installed from a deb package in Qubes, you can debug issues by looking at the log file in `~/.securedrop_client/logs/client.log`. You can also add additional log lines in the running code in
+`/opt/venvs/securedrop-client/lib/python3.5/site-packages/securedrop_client/`.
+
 ## Running against a test server
 
 In order to login, or take other actions involving network access, you will need to use the SecureDrop server dev container.
@@ -106,50 +109,54 @@ To run everything, run:
 make check
 ```
 
-## Comparison of developer environments
+## Environments
 
-For end-to-end client testing on Qubes, make sure you either run the packaged client or run the unpackaged client with proxy turned on.
+The quickest way to get started with running the client is to use the [developer environment](#developer-environment) that [runs against a test server running in a local docker container](#running-against-a-test-server). This differs from a staging or production environment where the client receives and sends requests over Tor. Things are a lot snappier in the developer environment and can sometimes lead to a much different user experience, which is why it is important to do end-to-end testing in Qubes using the [staging environment](#staging-environment), especially if you are modifying code paths involving how we handle server requests and responses.
 
-### Developer environment on non-Qubes
+For reproducing production bugs or running demos, we recommend using the [Production Environment](#production-envrionment) that will allow you to test a nightly build of the client.
 
-* Ran by `run.sh`
-* Uses temporary configuration directories by default
-* Works with SecureDrop running in a local docker container, see [SecureDrop docs](https://docs.securedrop.org/en/latest/development/setup_development.html) for setup instructions
-* Tor is not used
-* Does not support opening submissions
-* Does not use `split-gpg`, instead uses a development gpg private key inside a gpg keychain stored in the temporary configuration directories
+We support running the [developer environment on a non-Qubes OS](#developer-environment-on-a-non-qubes-os) for developer convenience. If this is your preferred environment, keep in mind that you, or a PR reviewer, will need to run tests in Qubes if you modify code paths involving any of the following:
 
-### Developer environment on Qubes (no-proxy)
+* cryptography
+* opening of files in VMs
+* network (via the RPC service) traffic
+* fine tuning of the graphical user interface
 
-* Ran by `run.sh`
+### Developer environment
+
+* Run by `run.sh` inside a virtual env in the `sd-dev` AppVM
 * Requires `qvm-tags sd-dev add sd-client` to be run in `dom0` (substitute your dev VM for `sd-dev`)
-* Uses temporary configuration directories by default
 * Works with SecureDrop running in a local docker container, see [SecureDrop docs](https://docs.securedrop.org/en/latest/development/setup_development.html) for setup instructions, including post-installation steps for allowing docker to be run as a non-root user, which is a requirement on Qubes
-* Tor is not used
+* Uses a temporary directory as its configuration directory, instead of ` ~/.securedrop_client`
+* Uses a development gpg private key inside a gpg keychain stored in the temporary configuration directory
 * Submissions will be opened in DispVMs
-* Does not use `split-gpg`, instead uses a development gpg private key inside a gpg keychain stored in the temporary configuration directories
+* Tor is not used
 
-### Developer environment on Qubes (with proxy)
+### Developer environment on a non-Qubes OS
 
-* Ran by directly invoking the client `python -m securedrop_client` in the `sd-svs` AppVM
+* Run by `run.sh` inside a virtual env on a non-Qubes OS
+* Works with SecureDrop running in a local docker container, see [SecureDrop docs](https://docs.securedrop.org/en/latest/development/setup_development.html) for setup instructions
+* Uses a temporary directory as its configuration directory, instead of ` ~/.securedrop_client`
+* Uses a development gpg private key inside a gpg keychain stored in the temporary configuration directory
+* Does not support opening submissions
+* Tor is not used
+
+### Staging environment
+
+* Run by directly invoking the client `python -m securedrop_client` on the `sd-svs` AppVM
 * Requires that `make all` in the `securedrop-workstation` repository has completed successfully
+* Uses `~/.securedrop_client` as its configuration directory
+* Uses the gpg key in the `sd-gpg` AppVM configured during `make all`
+* Tor is used: Requests/responses proxied via the `securedrop-proxy` RPC service
 * For convienient access to network in order to clone the repository and push branches, you'll need to add a NetVM (`sys-firewall`)
-* Uses `~/.securedrop_client` as its configuration directory
-* Requests/responses proxied via the `securedrop-proxy` RPC service (and Tor is used)
-* `split-gpg` is used with the key configured in the `sd-gpg` AppVM
 
-### Packaged code on Qubes
+### Production environment
 
+* Run by executing `securedrop-client` in the `sd-svs` AppVM (see [workstation documentation here](https://github.com/freedomofpress/securedrop-workstation/#using-the-securedrop-client))
 * Requires that `make all` in the `securedrop-workstation` repository has completed successfully
 * Uses `~/.securedrop_client` as its configuration directory
-* Requests/responses proxied via the `securedrop-proxy` RPC service (and Tor is used)
-* `split-gpg` is used with the key configured in the `sd-gpg` AppVM
-* To run the client from the packaged code in Qubes, see the [documentation here](https://github.com/freedomofpress/securedrop-workstation/#using-the-securedrop-client)
-* Using a version of this application installed from a deb package in Qubes,
-you can debug issues by looking at the log file in
-`~/.securedrop_client/logs/client.log`
-* You can also add additional log lines in the running code in
-`/opt/venvs/securedrop-client/lib/python3.5/site-packages/securedrop_client/`
+* Uses the gpg key in the `sd-gpg` AppVM configured during `make all`
+* Tor is used: Requests/responses proxied via the `securedrop-proxy` RPC service
 
 ## Generate and run database migrations
 
