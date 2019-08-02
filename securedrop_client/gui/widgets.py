@@ -673,14 +673,10 @@ class SourceList(QListWidget):
     """
 
     CSS = '''
-    #sourcelist {
-        border: none;
-    }
     QListView {
+        border: none;
         show-decoration-selected: 0;
-    }
-    QListView::item {
-        border-bottom: 1px solid #9b9b9b;
+        border-right: 3px solid #514d6e;
     }
     QListView::item:selected {
         background: #efeef7;
@@ -704,7 +700,7 @@ class SourceList(QListWidget):
 
         # Remove margins
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
+        layout.setSpacing(0)
 
     def setup(self, controller):
         self.controller = controller
@@ -744,6 +740,9 @@ class SourceWidget(QWidget):
     """
 
     CSS = '''
+    QWidget#source_widget {
+        border-bottom: 1px solid #9b9b9b;
+    }
     QLabel#preview {
         font-family: 'Source Sans Pro';
         font-weight: 400;
@@ -770,9 +769,6 @@ class SourceWidget(QWidget):
         # Store source
         self.source = source
 
-        # Set css id
-        self.setObjectName('source_widget')
-
         # Set styles
         self.setStyleSheet(self.CSS)
 
@@ -781,7 +777,7 @@ class SourceWidget(QWidget):
         self.setLayout(layout)
 
         # Remove margins and spacing
-        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setContentsMargins(10, 0, 10, 0)
         layout.setSpacing(0)
 
         # Set up gutter
@@ -808,7 +804,7 @@ class SourceWidget(QWidget):
         self.preview.setFixedSize(QSize(365, 40))
         self.preview.setWordWrap(True)
         summary_layout.addWidget(self.name)
-        summary_layout.addWidget(self.preview)
+        summary_layout.addWidget(self.preview, 1)
 
         # Set up metadata
         self.metadata = QWidget()
@@ -835,9 +831,16 @@ class SourceWidget(QWidget):
         self.updated = QLabel()
         self.updated.setObjectName('timestamp')
 
+        self.source_widget = QWidget()
+        self.source_widget.setObjectName('source_widget')
+        source_widget_layout = QVBoxLayout(self.source_widget)
+        source_widget_layout.setContentsMargins(0, 10, 10, 10)
+        source_widget_layout.setSpacing(0)
+        source_widget_layout.addWidget(self.source_row, 1)
+        source_widget_layout.addWidget(self.updated, 1, Qt.AlignRight)
+
         # Add widgets to main layout
-        layout.addWidget(self.source_row, 1)
-        layout.addWidget(self.updated, 1, Qt.AlignRight)
+        layout.addWidget(self.source_widget)
 
         self.update()
 
