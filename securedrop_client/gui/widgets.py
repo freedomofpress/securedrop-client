@@ -726,7 +726,6 @@ class EmptyConversationView(QWidget):
         self.content.setFont(font)
 
         content_layout = QVBoxLayout()
-        self.content.setLayout(content_layout)
         content_layout.addStretch(1)
         content_layout.addWidget(self.content, 8)
         content_layout.addStretch(1)
