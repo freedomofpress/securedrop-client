@@ -620,7 +620,7 @@ def test_SourceWidget_setup(mocker):
     The setup method adds the controller as an attribute on the SourceWidget.
     """
     mock_controller = mocker.MagicMock()
-    mock_source = mocker.MagicMock()
+    mock_source = mocker.MagicMock(journalist_designation='mock')
     sw = SourceWidget(mock_source)
     sw.star = mocker.MagicMock()
 
@@ -645,7 +645,7 @@ def test_SourceWidget_html_init(mocker):
     mocker.patch('securedrop_client.gui.SvgLabel')
     sw.update()
 
-    sw.name.setText.assert_called_once_with('<strong>foo &lt;b&gt;bar&lt;/b&gt; baz</strong>')
+    sw.name.setText.assert_called_once_with('foo <b>bar</b> baz')
 
 
 def test_SourceWidget_update_attachment_icon():
@@ -1826,7 +1826,7 @@ def test_DeleteSource_from_source_menu_when_user_is_loggedout(mocker):
 
 
 def test_DeleteSource_from_source_widget_when_user_is_loggedout(mocker):
-    mock_source = mocker.MagicMock()
+    mock_source = mocker.MagicMock(journalist_designation='mock')
     mock_controller = mocker.MagicMock(logic.Controller)
     mock_controller.api = None
     mock_event = mocker.MagicMock()
