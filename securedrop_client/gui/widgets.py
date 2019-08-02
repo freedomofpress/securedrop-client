@@ -676,7 +676,7 @@ class SourceList(QListWidget):
     QListView {
         border: none;
         show-decoration-selected: 0;
-        border-right: 3px solid #514d6e;
+        border-right: 3px solid #efeef7;
     }
     QListView::item:selected {
         background: #efeef7;
