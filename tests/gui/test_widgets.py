@@ -1101,9 +1101,12 @@ def test_SpeechBubble_init(mocker):
     mock_connect = mocker.Mock()
     mock_signal.connect = mock_connect
 
-    SpeechBubble('mock id', 'hello', mock_signal)
+    sb = SpeechBubble('mock id', 'hello', mock_signal)
+    ss = sb.styleSheet()
+
     mock_label.assert_called_once_with('hello')
     assert mock_connect.called
+    assert 'background-color' in ss
 
 
 def test_SpeechBubble_update_text(mocker):
@@ -1186,10 +1189,8 @@ def test_MessageWidget_init(mocker):
     mock_connected = mocker.Mock()
     mock_signal.connect = mock_connected
 
-    mw = MessageWidget('mock id', 'hello', mock_signal)
-    ss = mw.styleSheet()
+    MessageWidget('mock id', 'hello', mock_signal)
 
-    assert 'background-color' in ss
     assert mock_connected.called
 
 
@@ -1209,16 +1210,14 @@ def test_ReplyWidget_init(mocker):
     mock_failure_connected = mocker.Mock()
     mock_failure_signal.connect = mock_failure_connected
 
-    rw = ReplyWidget(
+    ReplyWidget(
         'mock id',
         'hello',
         mock_update_signal,
         mock_success_signal,
         mock_failure_signal,
     )
-    ss = rw.styleSheet()
 
-    assert 'background-color' in ss
     assert mock_update_connected.called
     assert mock_success_connected.called
     assert mock_failure_connected.called

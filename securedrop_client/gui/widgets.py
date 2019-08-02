@@ -241,7 +241,8 @@ class ActivityStatusBar(QStatusBar):
 
     CSS = '''
     #activity_status_bar {
-        font-family: Source Sans Pro SemiBold;
+        font-family: 'Source Sans Pro';
+        font-weight: 600;
         font-size: 12px;
         color: #d3d8ea;
     }
@@ -274,7 +275,7 @@ class ErrorStatusBar(QWidget):
 
     CSS = '''
     #error_vertical_bar {
-        background-color: #f22b5d;
+        background-color: #ff3366;
     }
     #error_icon {
         background-color: qlineargradient(
@@ -297,8 +298,9 @@ class ErrorStatusBar(QWidget):
             stop: 0.2 #fff,
             stop: 1 #fff
         );
-        font-family: Source Sans Pro Regular;
-        font-size: 13px;
+        font-family: 'Source Sans Pro';
+        font-weight: 400;
+        font-size: 14px;
         color: #0c3e75;
     }
     '''
@@ -387,10 +389,11 @@ class UserProfile(QWidget):
     QLabel#user_icon {
         border: none;
         padding: 10px;
-        background-color: #b4fffa;
-        font-family: Source Sans Pro;
-        font-size: 16px;
-        color: #2a319d;
+        background-color: #9211ff;
+        font-family: 'Source Sans Pro';
+        font-weight: 600;
+        font-size: 15px;
+        color: #fff;
     }
     '''
 
@@ -459,9 +462,10 @@ class UserButton(SvgPushButton):
         border: none;
         padding-left: 6px;
         background-color: #0093da;
-        font-family: Source Sans Pro;
-        font-size: 14px;
-        color: #b4fffa;
+        font-family: 'Source Sans Pro';
+        font-weight: 700;
+        font-size: 12px;
+        color: #fff;
         text-align: left;
     }
     SvgPushButton::menu-indicator {
@@ -526,7 +530,8 @@ class LoginButton(QPushButton):
     #login {
         border: none;
         background-color: #05edfe;
-        font-family: Montserrat SemiBold;
+        font-family: 'Montserrat';
+        font-weight: 600;
         font-size: 14px;
         color: #2a319d;
     }
@@ -739,18 +744,17 @@ class SourceWidget(QWidget):
     """
 
     CSS = '''
-    QWidget#color_bar {
-        background-color: #9211ff;
-    }
-    QLabel#source_name {
-        font-family: Montserrat Medium;
+    QLabel#source-name {
+        font-family: 'Montserrat';
+        font-weight: 500;
         font-size: 13px;
-        color: #000;
+        color: #383838;
     }
     QLabel#timestamp {
-        font-family: Montserrat Medium;
+        font-family: 'Montserrat';
+        font-weight: 500;
         font-size: 13px;
-        color: #000;
+        color: #383838;
     }
     '''
 
@@ -793,7 +797,7 @@ class SourceWidget(QWidget):
         summary_layout.setContentsMargins(0, 0, 0, 0)
         summary_layout.setSpacing(0)
         self.name = QLabel()
-        self.name.setObjectName('source_name')
+        self.name.setObjectName('source-name')
         self.preview = QLabel('')
         self.preview.setObjectName('preview')
         self.preview.setWordWrap(True)
@@ -1005,7 +1009,8 @@ class SignInButton(QPushButton):
     #login {
         border: none;
         background-color: #05edfe;
-        font-family: Montserrat SemiBold;
+        font-family: 'Montserrat';
+        font-weight: 600;
         font-size: 14px;
         color: #2a319d;
     }
@@ -1047,8 +1052,9 @@ class LoginErrorBar(QWidget):
         color: #fff;
     }
     #error_status_bar {
-        font-family: Source Sans Pro Regular;
-        font-size: 14px;
+        font-family: 'Montserrat';
+        font-weight: 500;
+        font-size: 12px;
         color: #fff;
     }
     '''
@@ -1111,7 +1117,9 @@ class LoginDialog(QDialog):
     CSS = '''
     #login_form QLabel {
         color: #fff;
-        font-family: Montserrat Medium;
+        font-family: 'Montserrat';
+        font-weight: 500;
+        font-size: 13px;
     }
     #login_form QLineEdit {
         border-radius: 0px;
@@ -1290,12 +1298,14 @@ class SpeechBubble(QWidget):
 
     CSS = '''
     #speech_bubble {
-        font-family: Source Sans Pro Regular;
+        font-family: 'Source Sans Pro';
+        font-weight: 400;
         font-size: 15px;
         padding: 20px;
         min-height: 32px;
         min-width: 556px;
         border-bottom: 0;
+        background-color: #fff;
     }
     #color_bar {
         padding: 0px;
@@ -1378,31 +1388,17 @@ class MessageWidget(ConversationWidget):
     Represents an incoming message from the source.
     """
 
-    CSS = '''
-    background-color: #ffffff;
-    '''
-
     def __init__(self, message_id: str, message: str, update_signal) -> None:
         super().__init__(message_id,
                          message,
                          update_signal,
                          align="left")
 
-        # Set css id
-        self.setObjectName('message_widget')
-
-        # Set styles
-        self.setStyleSheet(self.CSS)
-
 
 class ReplyWidget(ConversationWidget):
     """
     Represents a reply to a source.
     """
-
-    CSS = '''
-    background-color: #ffffff;
-    '''
 
     CSS_COLOR_BAR_REPLY_FAIL = '''
     background-color: #ff3366;
@@ -1426,11 +1422,7 @@ class ReplyWidget(ConversationWidget):
                          align="right")
         self.message_id = message_id
 
-        # Set css id
-        self.setObjectName('reply_widget')
-
         # Set styles
-        self.setStyleSheet(self.CSS)
         self.speech_bubble.color_bar.setStyleSheet(self.CSS_COLOR_BAR_REPLY)
 
         message_succeeded_signal.connect(self._on_reply_success)
@@ -1717,7 +1709,8 @@ class ReplyBoxWidget(QWidget):
 
     CSS = '''
     #replybox {
-        font-family: Montserrat Regular;
+        font-family: 'Montserrat';
+        font-weight: 400;
         font-size: 18px;
         color: #9c9dbb;
     }
@@ -1862,7 +1855,8 @@ class TitleLabel(QLabel):
 
     CSS = '''
     #conversation-title-source-name {
-        font-family: Montserrat Regular;
+        font-family: 'Montserrat';
+        font-weight: 400;
         font-size: 24px;
         color: #2a319d;
     }
@@ -1883,7 +1877,8 @@ class LastUpdatedLabel(QLabel):
 
     CSS = '''
     #conversation-title-date {
-        font-family: Montserrat ExtraLight;
+        font-family: 'Montserrat';
+        font-weight: 200;
         font-size: 24px;
         color: #2a319d;
     }
