@@ -80,7 +80,9 @@ class SDExport(object):
         try:
             with open(config_path) as f:
                 json_config = json.loads(f.read())
-                self.pci_bus_id = int(json_config.get("pci_bus_id", 2))
+                self.pci_bus_id = json_config.get("pci_bus_id", None)
+                if self.pci_bus_id is None:
+                  raise
         except Exception:
             self.exit_gracefully("ERROR_CONFIG")
 
@@ -132,12 +134,15 @@ class SDExport(object):
             self.exit_gracefully(msg)
 
     def check_usb_connected(self):
-        p = subprocess.check_output(["lsusb", "-s", self.pci_bus_id])
-        # Empty string means a likely wrong pci_bus_id
-        if p == "":
-            msg = "ERROR_USB_CHECK"
+
+        # If the USB is not attached via qvm-usb attach, lsusb will return empty string and a
+        # return code of 1
+        try:
+          p = subprocess.check_output(["lsusb", "-s", "{}:".format(self.pci_bus_id)])
+        except subprocess.CalledProcessError:
+            msg = "ERROR_USB_CONFIGURATION"
             self.exit_gracefully(msg)
-        n_usb = len(p.rstrip().split("\n"))
+        n_usb = len(p.decode("utf-8").rstrip().split("\n"))
         # If there is one device, it is the root hub.
         if n_usb == 1:
             msg = "USB_NOT_CONNECTED"

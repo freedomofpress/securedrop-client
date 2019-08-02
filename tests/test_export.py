@@ -2,6 +2,7 @@ from unittest import mock
 
 import os
 import pytest
+import subprocess
 import tempfile
 
 from securedrop_export import export
@@ -9,10 +10,10 @@ from securedrop_export import export
 SAMPLE_OUTPUT_NO_PRINTER = b"network beh\nnetwork https\nnetwork ipp\nnetwork ipps\nnetwork http\nnetwork\nnetwork ipp14\nnetwork lpd"  # noqa
 SAMPLE_OUTPUT_BOTHER_PRINTER = b"network beh\nnetwork https\nnetwork ipp\nnetwork ipps\nnetwork http\nnetwork\nnetwork ipp14\ndirect usb://Brother/HL-L2320D%20series?serial=A00000A000000\nnetwork lpd"  # noqa
 
-SAMPLE_OUTPUT_NO_USB = "Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub"  # noqa
-SAMPLE_OUTPUT_USB = "Bus 001 Device 002: ID 0781:5575 SanDisk Corp.\nBus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub"  # noqa
-SAMPLE_OUTPUT_USB_ERROR = ""
-SAMPLE_OUTPUT_USB_ERROR2 = "h\ne\nl\nl\no"
+SAMPLE_OUTPUT_NO_USB = b"Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub"  # noqa
+SAMPLE_OUTPUT_USB = b"Bus 001 Device 002: ID 0781:5575 SanDisk Corp.\nBus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub"  # noqa
+SAMPLE_OUTPUT_USB_ERROR = b""
+SAMPLE_OUTPUT_USB_ERROR2 = b"h\ne\nl\nl\no"
 TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config.json")
 BAD_TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config-bad.json")
 ANOTHER_BAD_TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config-bad-2.json")
@@ -46,7 +47,7 @@ def test_bad_sd_export_config_invalid_value(capsys):
 
 def test_good_sd_export_config(capsys):
     submission = export.SDExport("", TEST_CONFIG)
-    assert submission.pci_bus_id == 2
+    assert submission.pci_bus_id == "2"
 
 
 def test_exit_gracefully_no_exception(capsys):
@@ -230,7 +231,7 @@ def test_usb_precheck_disconnected(mocked_call, capsys):
     assert captured.err == "{}\n".format(expected_message)
 
 
-@mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_USB_ERROR)
+@mock.patch("subprocess.check_output", return_code=1)
 def test_usb_precheck_error(mocked_call, capsys):
     submission = export.SDExport("testfile", TEST_CONFIG)
     expected_message = "ERROR_USB_CHECK"
