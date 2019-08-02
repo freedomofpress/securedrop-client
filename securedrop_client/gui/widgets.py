@@ -682,7 +682,7 @@ class SourceList(QListWidget):
     QListView::item {
         border-bottom: 1px solid #efeef7;
     }
-    QListWidget::item:selected {
+    QListView::item:selected {
         background: #efeef7;
     }
     '''
@@ -704,7 +704,7 @@ class SourceList(QListWidget):
 
         # Remove margins
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        layout.setSpacing(4)
 
     def setup(self, controller):
         self.controller = controller
@@ -744,6 +744,12 @@ class SourceWidget(QWidget):
     """
 
     CSS = '''
+    QLabel#preview {
+        font-family: 'Source Sans Pro';
+        font-weight: 400;
+        font-size: 13px;
+        color: #383838;
+    }
     QLabel#source_name {
         font-family: 'Montserrat';
         font-weight: 500;
@@ -799,7 +805,7 @@ class SourceWidget(QWidget):
         self.name.setObjectName('source_name')
         self.preview = QLabel()
         self.preview.setObjectName('preview')
-        self.preview.setFixedSize(QSize(365, 60))
+        self.preview.setFixedSize(QSize(365, 40))
         self.preview.setWordWrap(True)
         summary_layout.addWidget(self.name)
         summary_layout.addWidget(self.preview)
@@ -847,8 +853,7 @@ class SourceWidget(QWidget):
         Updates the displayed values with the current values from self.source.
         """
         self.updated.setText(arrow.get(self.source.last_updated).humanize())
-        self.name.setText("<strong>{}</strong>".format(
-                          html.escape(self.source.journalist_designation)))
+        self.name.setText(self.source.journalist_designation)
         if self.source.document_count == 0:
             self.attached.hide()
 
