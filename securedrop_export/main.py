@@ -1,12 +1,13 @@
 from securedrop_export import export
 
+
 def __main__(submission):
     submission.extract_tarball()
 
     try:
         submission.archive_metadata = export.Metadata(submission.tmpdir)
-    except Exception as e:
-         submission.exit_gracefully("ERROR_METADATA_PARSING")
+    except Exception:
+        submission.exit_gracefully("ERROR_METADATA_PARSING")
 
     if submission.archive_metadata.is_valid():
         if submission.archive_metadata.export_method == "usb-test":

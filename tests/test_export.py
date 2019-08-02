@@ -2,7 +2,6 @@ from unittest import mock
 
 import os
 import pytest
-import subprocess
 import tempfile
 
 from securedrop_export import export
@@ -10,10 +9,10 @@ from securedrop_export import export
 SAMPLE_OUTPUT_NO_PRINTER = b"network beh\nnetwork https\nnetwork ipp\nnetwork ipps\nnetwork http\nnetwork\nnetwork ipp14\nnetwork lpd"  # noqa
 SAMPLE_OUTPUT_BOTHER_PRINTER = b"network beh\nnetwork https\nnetwork ipp\nnetwork ipps\nnetwork http\nnetwork\nnetwork ipp14\ndirect usb://Brother/HL-L2320D%20series?serial=A00000A000000\nnetwork lpd"  # noqa
 
-SAMPLE_OUTPUT_NO_USB="Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub"  # noqa
-SAMPLE_OUTPUT_USB="Bus 001 Device 002: ID 0781:5575 SanDisk Corp.\nBus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub"  # noqa
-SAMPLE_OUTPUT_USB_ERROR=""
-SAMPLE_OUTPUT_USB_ERROR2="h\ne\nl\nl\no"
+SAMPLE_OUTPUT_NO_USB = "Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub"  # noqa
+SAMPLE_OUTPUT_USB = "Bus 001 Device 002: ID 0781:5575 SanDisk Corp.\nBus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub"  # noqa
+SAMPLE_OUTPUT_USB_ERROR = ""
+SAMPLE_OUTPUT_USB_ERROR2 = "h\ne\nl\nl\no"
 TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config.json")
 BAD_TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config-bad.json")
 ANOTHER_BAD_TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config-bad-2.json")
@@ -263,6 +262,8 @@ def test_usb_precheck_error_2(mocked_call, capsys):
 def test_luks_precheck_encrypted(mocked_call, capsys):
     submission = export.SDExport("testfile", TEST_CONFIG)
     expected_message = "USB_ENCRYPTED"
+    mocked_exit = mock.patch("export.exit_gracefully", return_value=0)
+
     with pytest.raises(SystemExit) as sysexit:
         result = submission.check_luks_volume()
         mocked_exit.assert_called_once_with(expected_message)
