@@ -159,4 +159,4 @@ class SecureQLabel(QLabel):
         self.setText(text)
 
     def setText(self, text: str) -> None:
-        super().setText(html.escape(text))
+        super().setText(html.escape(text, quote=False))
