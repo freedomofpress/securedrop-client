@@ -135,7 +135,7 @@ def test_SvgLabel_init(mocker):
 def test_SecureQLabel_init():
     label_text = '<script>alert("hi!");</script>'
     sl = SecureQLabel(label_text)
-    assert sl.text() == html.escape(label_text)
+    assert sl.text() == html.escape(label_text, quote=False)
 
 
 def test_SecureQLabel_setText():
@@ -144,4 +144,9 @@ def test_SecureQLabel_setText():
 
     label_text = '<script>alert("hi!");</script>'
     sl.setText(label_text)
-    assert sl.text() == html.escape(label_text)
+    assert sl.text() == html.escape(label_text, quote=False)
+
+
+def test_SecureQLabel_quotes_not_escaped_for_readability():
+    sl = SecureQLabel("'hello'")
+    assert sl.text() == "'hello'"
