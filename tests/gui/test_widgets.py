@@ -1190,7 +1190,7 @@ def test_SpeechBubble_with_apostrophe_in_text(mocker):
 
     message = "I'm sure, you are reading my message."
     bubble = SpeechBubble('mock id', message, mock_signal)
-    assert bubble.message.text() == html.escape(message)
+    assert bubble.message.text() == html.escape(message, quote=False)
 
 
 def test_ConversationWidget_init_left(mocker):
