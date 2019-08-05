@@ -129,17 +129,23 @@ class LeftPane(QWidget):
         self.setLayout(layout)
 
         # Remove margins and spacing
-        layout.setContentsMargins(15, 15, 15, 15)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
+        layout.setAlignment(Qt.AlignBottom)
+        self.setFixedWidth(198)
+        self.setMinimumHeight(558)
 
-        # Use a background gradient
+        # Set background image
+        logo = QWidget()
+        logo_layout = QVBoxLayout()
+        logo_layout.addWidget(logo)
         palette = QPalette()
-        gradient = QLinearGradient(0, 0, 0, 700)
-        gradient.setColorAt(0, QColor('#0093da'))
-        gradient.setColorAt(1, QColor('#0c3e75'))
-        palette.setBrush(QPalette.Background, QBrush(gradient))
-        self.setPalette(palette)
-        self.setAutoFillBackground(True)
+        palette.setBrush(QPalette.Background, QBrush(load_image('left_pane.svg')))
+        logo.setPalette(palette)
+        logo.setAutoFillBackground(True)
+        logo.setMaximumHeight(884)
+        logo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        logo_layout.setAlignment(Qt.AlignBottom)
 
         # User profile
         self.user_profile = UserProfile()
@@ -149,9 +155,7 @@ class LeftPane(QWidget):
 
         # Add widgets to layout
         layout.addWidget(self.user_profile)
-
-        # Align content to the top of pane
-        layout.addStretch()
+        layout.addWidget(logo)
 
     def setup(self, window, controller):
         self.user_profile.setup(window, controller)
@@ -377,7 +381,7 @@ class ErrorStatusBar(QWidget):
         self._hide()
 
 
-class UserProfile(QWidget):
+class UserProfile(QLabel):
     """
     A widget that contains user profile information and options.
 
@@ -386,6 +390,9 @@ class UserProfile(QWidget):
     """
 
     CSS = '''
+    QLabel#user_profile {
+        padding: 15px;
+    }
     QLabel#user_icon {
         border: none;
         background-color: #9211ff;
@@ -406,6 +413,14 @@ class UserProfile(QWidget):
 
         # Set styles
         self.setStyleSheet(self.CSS)
+
+        # Set background
+        palette = QPalette()
+        palette.setBrush(QPalette.Background, QBrush(QColor('#0096DC')))
+        self.setPalette(palette)
+        self.setAutoFillBackground(True)
+        self.setMinimumHeight(20)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
         # Set layout
         layout = QHBoxLayout(self)
@@ -435,8 +450,9 @@ class UserProfile(QWidget):
         layout.addWidget(self.user_icon, 1)
         layout.addWidget(self.user_button, 4)
 
-        # Align content to the left
+        # Align content to the top left
         layout.addStretch()
+        layout.setAlignment(Qt.AlignTop)
 
     def setup(self, window, controller):
         self.user_button.setup(controller)
@@ -610,6 +626,7 @@ class MainView(QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
         self.setLayout(self.layout)
+        self.setMinimumHeight(558)
 
         self.source_list = SourceList()
         self.source_list.itemSelectionChanged.connect(self.on_source_changed)
@@ -620,7 +637,6 @@ class MainView(QWidget):
         self.view_holder = QWidget()
         self.view_holder.setObjectName('view_holder')  # Set css id
         self.view_holder.setMinimumWidth(610)
-        self.view_holder.setMinimumHeight(600)
         self.view_holder.setLayout(self.view_layout)
 
         self.empty_conversation_view = EmptyConversationView()
