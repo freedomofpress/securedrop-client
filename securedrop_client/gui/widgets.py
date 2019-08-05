@@ -129,7 +129,7 @@ class LeftPane(QWidget):
         self.setLayout(layout)
 
         # Remove margins and spacing
-        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setContentsMargins(15, 15, 15, 15)
         layout.setSpacing(0)
 
         # Use a background gradient
@@ -388,8 +388,9 @@ class UserProfile(QWidget):
     CSS = '''
     QLabel#user_icon {
         border: none;
-        padding: 10px;
         background-color: #9211ff;
+        padding-left: 3px;
+        padding-bottom: 4px;
         font-family: 'Source Sans Pro';
         font-weight: 600;
         font-size: 15px;
@@ -405,7 +406,6 @@ class UserProfile(QWidget):
 
         # Set styles
         self.setStyleSheet(self.CSS)
-        self.setFixedWidth(200)
 
         # Set layout
         layout = QHBoxLayout(self)
@@ -413,6 +413,7 @@ class UserProfile(QWidget):
 
         # Remove margins
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
         # Login button
         self.login_button = LoginButton()
@@ -420,6 +421,11 @@ class UserProfile(QWidget):
         # User icon
         self.user_icon = QLabel()
         self.user_icon.setObjectName('user_icon')  # Set css id
+        self.user_icon.setFixedSize(QSize(30, 30))
+        self.user_icon.setAlignment(Qt.AlignCenter)
+        self.user_icon_font = QFont()
+        self.user_icon_font.setLetterSpacing(QFont.AbsoluteSpacing, 0.58)
+        self.user_icon.setFont(self.user_icon_font)
 
         # User button
         self.user_button = UserButton()
@@ -458,10 +464,11 @@ class UserButton(SvgPushButton):
     """
 
     CSS = '''
+    SvgPushButton:focus {
+        outline: none;
+    }
     SvgPushButton#user_button {
         border: none;
-        padding-left: 6px;
-        background-color: #0093da;
         font-family: 'Source Sans Pro';
         font-weight: 700;
         font-size: 12px;
@@ -481,7 +488,7 @@ class UserButton(SvgPushButton):
 
         # Set styles
         self.setStyleSheet(self.CSS)
-        self.setFixedHeight(40)
+        self.setFixedHeight(30)
 
         self.setLayoutDirection(Qt.RightToLeft)
 
