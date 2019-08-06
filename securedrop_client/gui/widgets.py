@@ -367,10 +367,12 @@ class ErrorStatusBar(QWidget):
 
     def update_message(self, message: str, duration: int):
         """
-        Display a status message to the user for a given duration.
+        Display a status message to the user for a given duration. If the duration is zero,
+        continuously show message.
         """
         self.status_bar.showMessage(message, duration)
-        self.status_timer.start(duration)
+        if duration != 0:
+            self.status_timer.start(duration)
         self._show()
 
     def clear_message(self):

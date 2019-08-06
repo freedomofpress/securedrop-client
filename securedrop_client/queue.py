@@ -178,6 +178,7 @@ class ApiJobQueue(QObject):
             logger.debug('Adding pause job to both queues')
             self.main_queue.add_job(priority, job)
             self.download_file_queue.add_job(priority, job)
+            self.paused.emit()
         elif isinstance(job, FileDownloadJob):
             logger.debug('Adding job to download queue')
             self.download_file_queue.add_job(priority, job)

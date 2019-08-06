@@ -1352,6 +1352,14 @@ def test_APICallRunner_api_call_timeout(mocker):
     mock_timeout_signal.emit.assert_called_once_with()
 
 
+def test_Controller_on_queue_paused(homedir, config, mocker, session_maker):
+    mock_gui = mocker.MagicMock()
+    co = Controller('http://localhost', mock_gui, session_maker, homedir)
+    co.on_queue_paused()
+    mock_gui.update_error_status.assert_called_once_with(
+        'The SecureDrop server cannot be reached.', duration=0)
+
+
 def test_Controller_api_call_timeout(homedir, config, mocker, session_maker):
     '''
     Using the `config` fixture to ensure the config is written to disk.
