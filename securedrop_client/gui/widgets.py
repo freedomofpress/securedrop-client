@@ -903,7 +903,7 @@ class SourceWidget(QWidget):
         self.name.setObjectName('source_name')
         self.preview = QLabel()
         self.preview.setObjectName('preview')
-        self.preview.setFixedSize(QSize(318, 40))
+        self.preview.setFixedSize(QSize(312, 60))
         self.preview.setWordWrap(True)
         summary_layout.addWidget(self.name)
         summary_layout.addWidget(self.preview)
