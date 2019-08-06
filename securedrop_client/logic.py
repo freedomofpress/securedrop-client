@@ -33,6 +33,7 @@ from securedrop_client import storage
 from securedrop_client import db
 from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob, \
     ReplyDownloadJob, DownloadChecksumMismatchException
+from securedrop_client.api_jobs.base import PauseQueueJob
 from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobException
 from securedrop_client.api_jobs.updatestar import UpdateStarJob, UpdateStarJobException
 from securedrop_client.crypto import GpgHelper, CryptoError
@@ -170,6 +171,7 @@ class Controller(QObject):
 
         # Queue that handles running API job
         self.api_job_queue = ApiJobQueue(self.api, self.session_maker)
+        self.api_job_queue.paused.connect(self.on_queue_paused)
 
         # Contains active threads calling the API.
         self.api_threads = {}  # type: Dict[str, Dict]
@@ -258,6 +260,9 @@ class Controller(QObject):
 
         # Start the thread and related activity.
         new_api_thread.start()
+
+    def on_queue_paused(self) -> None:
+        self.gui.update_error_status(_('The SecureDrop server cannot be reached.'), duration=0)
 
     def on_api_timeout(self) -> None:
         self.gui.update_error_status(_('The connection to the SecureDrop server timed out. '
@@ -438,6 +443,7 @@ class Controller(QObject):
         """
         self.sync_api()  # Syncing the API also updates the source list UI
         self.gui.clear_error_status()
+        self.api_job_queue.enqueue(PauseQueueJob())
 
     def on_update_star_failure(self, result: UpdateStarJobException) -> None:
         """
@@ -479,6 +485,7 @@ class Controller(QObject):
         self.api_job_queue.logout()
         self.gui.logout()
         self.is_authenticated = False
+
 
     def set_status(self, message, duration=5000):
         """

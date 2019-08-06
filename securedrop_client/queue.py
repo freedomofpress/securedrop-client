@@ -1,7 +1,7 @@
 import itertools
 import logging
 
-from PyQt5.QtCore import QObject, QThread, pyqtSlot
+from PyQt5.QtCore import QObject, QThread, pyqtSlot, pyqtSignal
 from queue import PriorityQueue
 from sdclientapi import API, RequestTimeoutError
 from sqlalchemy.orm import scoped_session
@@ -52,7 +52,7 @@ class RunnableQueue(QObject):
             session = self.session_maker()
             priority, job = self.queue.get(block=True)
 
-            if job is PauseQueueJob:
+            if isinstance(job, PauseQueueJob):
                 logger.info('Paused queue')
                 return
 
@@ -85,8 +85,8 @@ class ApiJobQueue(QObject):
     # These are the priorities for processing jobs.
     # Lower numbers corresponds to a higher priority.
     JOB_PRIORITIES = {
+        # TokenInvalidationJob: 10,  # Not yet implemented
         PauseQueueJob: 11,
-        # LogoutJob: 11,  # Not yet implemented
         # MetadataSyncJob: 12,  # Not yet implemented
         FileDownloadJob: 13,  # File downloads processed in separate queue
         MessageDownloadJob: 13,
@@ -96,6 +96,11 @@ class ApiJobQueue(QObject):
         UpdateStarJob: 16,
         # FlagJob: 16,  # Not yet implemented
     }
+
+    '''
+    Signal that is emitted if a queue is paused
+    '''
+    paused = pyqtSignal()
 
     def __init__(self, api_client: API, session_maker: scoped_session) -> None:
         super().__init__(None)
@@ -153,7 +158,11 @@ class ApiJobQueue(QObject):
 
         priority = self.JOB_PRIORITIES[type(job)]
 
-        if isinstance(job, FileDownloadJob):
+        if isinstance(job, PauseQueueJob):
+            self.main_queue.add_job(priority, job)
+            self.download_file_queue.add_job(priority, job)
+            self.paused.emit()
+        elif isinstance(job, FileDownloadJob):
             logger.debug('Adding job to download queue')
             self.download_file_queue.add_job(priority, job)
         else:
