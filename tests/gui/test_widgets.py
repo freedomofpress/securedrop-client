@@ -700,12 +700,12 @@ def test_SourceWidget_update_attachment_icon():
     sw = SourceWidget(source)
 
     sw.update()
-    assert not sw.attached.isHidden()
+    assert not sw.paperclip.isHidden()
 
     source.document_count = 0
 
     sw.update()
-    assert sw.attached.isHidden()
+    assert sw.paperclip.isHidden()
 
 
 def test_SourceWidget_delete_source(mocker, session, source):
