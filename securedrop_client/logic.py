@@ -262,7 +262,10 @@ class Controller(QObject):
         new_api_thread.start()
 
     def on_queue_paused(self) -> None:
-        self.gui.update_error_status(_('The SecureDrop server cannot be reached.'), duration=0)
+        self.gui.update_error_status(
+            _('The SecureDrop server cannot be reached.'),
+            duration=0,
+            retry=True)
 
     def on_api_timeout(self) -> None:
         self.gui.update_error_status(_('The connection to the SecureDrop server timed out. '

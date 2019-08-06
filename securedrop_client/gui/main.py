@@ -178,12 +178,12 @@ class Window(QMainWindow):
         """
         self.top_pane.update_activity_status(message, duration)
 
-    def update_error_status(self, message: str, duration=10000):
+    def update_error_status(self, message: str, duration=10000, retry=False) -> None:
         """
         Display an error status message to the user. Optionally, supply a duration
         (in milliseconds), the default will continuously show the message.
         """
-        self.top_pane.update_error_status(message, duration)
+        self.top_pane.update_error_status(message, duration, retry)
 
     def clear_error_status(self):
         """
