@@ -842,6 +842,7 @@ class SourceWidget(QWidget):
         font-size: 13px;
         color: #383838;
     }
+
     '''
 
     def __init__(self, source: Source):
@@ -854,7 +855,7 @@ class SourceWidget(QWidget):
         self.setStyleSheet(self.CSS)
 
         # Set layout
-        layout = QVBoxLayout(self)
+        layout = QHBoxLayout(self)
         self.setLayout(layout)
 
         # Remove margins and spacing
@@ -864,7 +865,7 @@ class SourceWidget(QWidget):
         # Set up gutter
         self.gutter = QWidget()
         self.gutter.setObjectName('gutter')
-        self.gutter.setFixedWidth(30)
+        self.gutter.setFixedWidth(40)
         gutter_layout = QVBoxLayout(self.gutter)
         gutter_layout.setContentsMargins(0, 0, 0, 0)
         gutter_layout.setSpacing(0)
@@ -882,43 +883,36 @@ class SourceWidget(QWidget):
         self.name.setObjectName('source_name')
         self.preview = QLabel()
         self.preview.setObjectName('preview')
-        self.preview.setFixedSize(QSize(365, 40))
+        self.preview.setFixedSize(QSize(320, 40))
         self.preview.setWordWrap(True)
         summary_layout.addWidget(self.name)
-        summary_layout.addWidget(self.preview, 1)
+        summary_layout.addWidget(self.preview)
 
         # Set up metadata
         self.metadata = QWidget()
         self.metadata.setObjectName('metadata')
-        self.metadata.setMaximumWidth(30)
+        self.metadata.setMaximumWidth(60)
         metadata_layout = QVBoxLayout(self.metadata)
         metadata_layout.setContentsMargins(0, 0, 0, 0)
         metadata_layout.setSpacing(0)
-        self.attached = SvgLabel('paperclip.svg', QSize(14, 16))
-        self.attached.setObjectName('paperclip')
-        metadata_layout.addWidget(self.attached)
+        self.paperclip = SvgLabel('paperclip.svg', QSize(14, 16))  # keep svg aspect ratio 448:512
+        self.paperclip.setObjectName('paperclip')
+        self.paperclip.setFixedSize(QSize(14, 16))
+        self.timestamp = QLabel()
+        self.timestamp.setObjectName('timestamp')
+        metadata_layout.addWidget(self.paperclip, 0, Qt.AlignRight)
+        metadata_layout.addWidget(self.timestamp, 0, Qt.AlignRight)
         metadata_layout.addStretch()
 
-        # Set up source row
-        self.source_row = QWidget()
-        source_row_layout = QHBoxLayout(self.source_row)
-        source_row_layout.setContentsMargins(0, 0, 0, 0)
-        source_row_layout.setSpacing(0)
-        source_row_layout.addWidget(self.gutter)
-        source_row_layout.addWidget(self.summary)
-        source_row_layout.addWidget(self.metadata)
-
-        # Set up timestamp row
-        self.updated = QLabel()
-        self.updated.setObjectName('timestamp')
-
+        # Set up a source_widget
         self.source_widget = QWidget()
         self.source_widget.setObjectName('source_widget')
-        source_widget_layout = QVBoxLayout(self.source_widget)
-        source_widget_layout.setContentsMargins(0, 10, 10, 10)
+        source_widget_layout = QHBoxLayout(self.source_widget)
+        source_widget_layout.setContentsMargins(0, 10, 0, 10)
         source_widget_layout.setSpacing(0)
-        source_widget_layout.addWidget(self.source_row, 1)
-        source_widget_layout.addWidget(self.updated, 1, Qt.AlignRight)
+        source_widget_layout.addWidget(self.gutter)
+        source_widget_layout.addWidget(self.summary)
+        source_widget_layout.addWidget(self.metadata)
 
         # Add widgets to main layout
         layout.addWidget(self.source_widget)
@@ -936,10 +930,10 @@ class SourceWidget(QWidget):
         """
         Updates the displayed values with the current values from self.source.
         """
-        self.updated.setText(arrow.get(self.source.last_updated).humanize())
+        self.timestamp.setText(arrow.get(self.source.last_updated).format('DD MMM'))
         self.name.setText(self.source.journalist_designation)
         if self.source.document_count == 0:
-            self.attached.hide()
+            self.paperclip.hide()
 
     def delete_source(self, event):
         if self.controller.api is None:
