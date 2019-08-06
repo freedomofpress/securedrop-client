@@ -886,7 +886,6 @@ class SourceWidget(QWidget):
         font-size: 13px;
         color: #383838;
     }
-
     '''
 
     def __init__(self, source: Source):
@@ -927,7 +926,7 @@ class SourceWidget(QWidget):
         self.name.setObjectName('source_name')
         self.preview = QLabel()
         self.preview.setObjectName('preview')
-        self.preview.setFixedSize(QSize(320, 40))
+        self.preview.setFixedSize(QSize(318, 40))
         self.preview.setWordWrap(True)
         summary_layout.addWidget(self.name)
         summary_layout.addWidget(self.preview)
@@ -939,9 +938,9 @@ class SourceWidget(QWidget):
         metadata_layout = QVBoxLayout(self.metadata)
         metadata_layout.setContentsMargins(0, 0, 0, 0)
         metadata_layout.setSpacing(0)
-        self.paperclip = SvgLabel('paperclip.svg', QSize(14, 16))  # keep svg aspect ratio 448:512
+        self.paperclip = SvgLabel('paperclip.svg', QSize(18, 18))  # Set to size provided in the svg
         self.paperclip.setObjectName('paperclip')
-        self.paperclip.setFixedSize(QSize(14, 16))
+        self.paperclip.setFixedSize(QSize(22, 22))
         self.timestamp = QLabel()
         self.timestamp.setObjectName('timestamp')
         metadata_layout.addWidget(self.paperclip, 0, Qt.AlignRight)
