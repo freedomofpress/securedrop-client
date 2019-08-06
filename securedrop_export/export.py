@@ -285,7 +285,7 @@ class SDExport(object):
                     ]
                 )
             except subprocess.CalledProcessError:
-                msg = "ERROR_PRINTER_DRIVER_INSTALL"
+                msg = "ERROR_PRINTER_DRIVER_UNAVAILBLE"
                 self.exit_gracefully(msg)
             return self.brlaser_ppd
         # Here, we could support ppd drivers for other makes or models in the future
