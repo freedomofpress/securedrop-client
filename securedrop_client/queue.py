@@ -159,6 +159,7 @@ class ApiJobQueue(QObject):
 
     def resume_queues(self) -> None:
         logger.info("Resuming queues")
+        self.start_queues()
         self.main_queue.process()
         self.download_file_queue.process()
 

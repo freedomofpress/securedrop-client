@@ -99,6 +99,7 @@ class TopPane(QWidget):
 
     def setup(self, controller):
         self.refresh.setup(controller)
+        self.error_status_bar.setup(controller)
 
     def enable_refresh(self):
         self.refresh.enable()
@@ -381,6 +382,15 @@ class ErrorStatusBar(QWidget):
 
     def _on_status_timeout(self):
         self._hide()
+
+    def setup(self, controller):
+        self.controller = controller
+        self.retry_button.clicked.connect(self._on_retry_clicked)
+
+    def _on_retry_clicked(self) -> None:
+        self.clear_message()
+        self._hide()
+        self.controller.resume_queues()
 
     def update_message(self, message: str, duration: int, retry: bool) -> None:
         """

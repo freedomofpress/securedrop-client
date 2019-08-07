@@ -331,9 +331,11 @@ def test_ApiJobQueue_resume_queues(mocker):
     job_queue = ApiJobQueue(mocker.MagicMock(), mocker.MagicMock())
     job_queue.main_queue = mocker.MagicMock()
     job_queue.download_file_queue = mocker.MagicMock()
+    job_queue.start_queues = mocker.MagicMock()
 
     job_queue.resume_queues()
 
+    job_queue.start_queues.assert_called_once_with()
     job_queue.main_queue.process.assert_called_with()
     job_queue.download_file_queue.process.assert_called_with()
 

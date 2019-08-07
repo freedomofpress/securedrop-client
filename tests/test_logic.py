@@ -1332,6 +1332,13 @@ def test_Controller_is_authenticated_property(homedir, mocker, session_maker):
     assert co.is_authenticated is False
 
 
+def test_Controller_resume_queues(homedir, mocker, session_maker):
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    co.api_job_queue = mocker.MagicMock()
+    co.resume_queues()
+    co.api_job_queue.resume_queues.assert_called_once_with()
+
+
 def test_APICallRunner_api_call_timeout(mocker):
     """
     Ensure that if a RequestTimeoutError is raised, both the failure and timeout signals are
@@ -1357,7 +1364,7 @@ def test_Controller_on_queue_paused(homedir, config, mocker, session_maker):
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     co.on_queue_paused()
     mock_gui.update_error_status.assert_called_once_with(
-        'The SecureDrop server cannot be reached.', duration=0)
+        'The SecureDrop server cannot be reached.', duration=0, retry=True)
 
 
 def test_Controller_api_call_timeout(homedir, config, mocker, session_maker):
