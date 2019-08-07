@@ -143,8 +143,7 @@ class ApiJobQueue(QObject):
             self.download_file_thread.start()
 
     def resume_queues(self) -> None:
-        self.download_file_queue.resume()
-        self.main_queue.resume()
+        self.start_queues()
 
     def enqueue(self, job: ApiJob) -> None:
         # Additional defense in depth to prevent jobs being added to the queue when not
