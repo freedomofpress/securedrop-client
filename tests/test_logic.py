@@ -1375,7 +1375,7 @@ def test_Controller_api_call_timeout(homedir, config, mocker, session_maker):
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     co.on_api_timeout()
     mock_gui.update_error_status.assert_called_once_with(
-        'The connection to the SecureDrop server timed out. Please try again.')
+        'The SecureDrop server cannot be reached.', duration=0, retry=True)
 
 
 def test_Controller_call_update_star_success(homedir, config, mocker, session_maker, session):

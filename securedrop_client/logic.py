@@ -272,8 +272,10 @@ class Controller(QObject):
         self.api_job_queue.resume_queues()
 
     def on_api_timeout(self) -> None:
-        self.gui.update_error_status(_('The connection to the SecureDrop server timed out. '
-                                       'Please try again.'))
+        self.gui.update_error_status(
+            _('The SecureDrop server cannot be reached.'),
+            duration=0,
+            retry=True)
 
     def completed_api_call(self, thread_id, user_callback):
         """
