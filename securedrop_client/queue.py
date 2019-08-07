@@ -159,6 +159,9 @@ class ApiJobQueue(QObject):
 
     def resume_queues(self) -> None:
         logger.info("Resuming queues")
+        # Reconnect the queues to the processing loop and resume processing
+        self.main_thread.started.connect(self.main_queue.process)
+        self.download_file_thread.started.connect(self.download_file_queue.process)
         self.start_queues()
         self.main_queue.process()
         self.download_file_queue.process()
@@ -179,6 +182,10 @@ class ApiJobQueue(QObject):
             logger.debug('Adding pause job to both queues')
             self.main_queue.add_job(priority, job)
             self.download_file_queue.add_job(priority, job)
+            # Disconnect queues from processing loop in case threads restart while paused
+            self.main_thread.started.disconnect()
+            self.download_file_thread.started.disconnect()
+            # Tell the gui that the queues are now paused
             self.paused.emit()
         elif isinstance(job, FileDownloadJob):
             logger.debug('Adding job to download queue')
