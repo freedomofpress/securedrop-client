@@ -202,7 +202,6 @@ def test_Controller_on_authenticate_success(homedir, config, mocker, session_mak
     co.on_authenticate_success(True)
 
     co.sync_api.assert_called_once_with()
-    co.gui.clear_error_status.assert_called_once_with()
     assert mock_api_job_queue.called
     login.assert_called_with(co.api)
 
@@ -650,7 +649,6 @@ def test_Controller_on_update_star_success(homedir, config, mocker, session_make
     co.sync_api = mocker.MagicMock()
     co.on_update_star_success(result)
     co.sync_api.assert_called_once_with()
-    mock_gui.clear_error_status.assert_called_once_with()
 
 
 def test_Controller_on_update_star_failed(homedir, config, mocker, session_maker):
@@ -1192,7 +1190,6 @@ def test_Controller_on_delete_source_success(homedir, config, mocker, session_ma
     co.sync_api = mocker.MagicMock()
     co.on_delete_source_success(True)
     co.sync_api.assert_called_with()
-    co.gui.clear_error_status.assert_called_with()
 
 
 def test_Controller_on_delete_source_failure(homedir, config, mocker, session_maker):
