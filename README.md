@@ -24,7 +24,7 @@ Features to be added include:
 Set up a Python 3 virtual environment and set up dependencies:
 
 ```
-virtualenv --python=python3.5 .venv
+virtualenv --python=python3.7 .venv
 source .venv/bin/activate
 pip install --require-hashes -r dev-requirements.txt
 ```
@@ -41,11 +41,13 @@ make the `xvfb-run` command available): `apt install xvfb`.
 
 brew install pyenv
 # follow step 3 onwards of https://github.com/pyenv/pyenv#basic-github-checkout
-pyenv install 3.5.3
+# install and select the latest version of python 3.7.x
+pyenv install 3.7
+pyenv local 3.7.x
 
 brew install pip
 pip install virtualenv
-virtualenv --python=python3.5.3 .venv
+virtualenv --python=python3.7 .venv
 source .venv/bin/activate
 pip install --require-hashes -r dev-requirements.txt
 ```
@@ -88,7 +90,7 @@ import pdb; pdb.set_trace()
 Then you can use [`pdb` commands](https://docs.python.org/3/library/pdb.html#debugger-commands) as normal.
 
 Logs can be found in the `{sdc-home}/logs`. If you are debugging a version of this application installed from a deb package in Qubes, you can debug issues by looking at the log file in `~/.securedrop_client/logs/client.log`. You can also add additional log lines in the running code in
-`/opt/venvs/securedrop-client/lib/python3.5/site-packages/securedrop_client/`.
+`/opt/venvs/securedrop-client/lib/python3.7/site-packages/securedrop_client/`.
 
 ## Running against a test server
 
