@@ -248,7 +248,6 @@ class Controller(QObject):
             lambda: self.completed_api_call(new_thread_id, success_callback))
         new_api_runner.call_failed.connect(
             lambda: self.completed_api_call(new_thread_id, failure_callback))
-        new_api_runner.call_timed_out.connect(self.on_api_timeout)
 
         # when the thread starts, we want to run `call_api` on `api_runner`
         new_api_thread.started.connect(new_api_runner.call_api)
@@ -270,9 +269,6 @@ class Controller(QObject):
 
     def resume_queues(self) -> None:
         self.api_job_queue.resume_queues()
-
-    def on_api_timeout(self) -> None:
-        logger.debug('Metadata sync failed due to timeout')
 
     def completed_api_call(self, thread_id, user_callback):
         """

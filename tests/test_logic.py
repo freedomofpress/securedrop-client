@@ -1361,21 +1361,6 @@ def test_Controller_on_queue_paused(homedir, config, mocker, session_maker):
         'The SecureDrop server cannot be reached.', duration=0, retry=True)
 
 
-def test_Controller_api_call_timeout(homedir, config, mocker, session_maker):
-    '''
-    Using the `config` fixture to ensure the config is written to disk.
-    '''
-    debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
-    storage = mocker.patch('securedrop_client.logic.storage')
-    mock_gui = mocker.MagicMock()
-    co = Controller('http://localhost', mock_gui, session_maker, homedir)
-
-    co.on_api_timeout()
-
-    assert storage.update_local_storage.call_count == 0
-    debug_logger.assert_called_once_with('Metadata failed due to timeout')
-
-
 def test_Controller_call_update_star_success(homedir, config, mocker, session_maker, session):
     '''
     Check that a UpdateStar is submitted to the queue when update_star is called.
