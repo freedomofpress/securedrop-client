@@ -272,10 +272,7 @@ class Controller(QObject):
         self.api_job_queue.resume_queues()
 
     def on_api_timeout(self) -> None:
-        self.gui.update_error_status(
-            _('The SecureDrop server cannot be reached.'),
-            duration=0,
-            retry=True)
+        logger.debug('Metadata sync failed due to timeout')
 
     def completed_api_call(self, thread_id, user_callback):
         """
@@ -424,7 +421,10 @@ class Controller(QObject):
         """
         Called when syncronisation of data via the API fails.
         """
-        logger.debug('Sync failed: "{}".'.format(result))
+        self.gui.update_error_status(
+            _('The SecureDrop server cannot be reached.'),
+            duration=0,
+            retry=True)
 
     def update_sync(self):
         """

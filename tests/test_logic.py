@@ -464,19 +464,16 @@ def test_Controller_on_sync_failure(homedir, config, mocker, session_maker):
     and perhaps implement some as-yet-undefined UI update.
     Using the `config` fixture to ensure the config is written to disk.
     """
-    mock_gui = mocker.MagicMock()
-    debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
-
-    co = Controller('http://localhost', mock_gui, session_maker, homedir)
-
-    result_data = Exception('Boom')  # Not the expected tuple.
+    gui = mocker.MagicMock()
+    co = Controller('http://localhost', gui, session_maker, homedir)
+    exception = Exception('mock')  # Not the expected tuple.
     mock_storage = mocker.patch('securedrop_client.logic.storage')
 
-    co.on_sync_failure(result_data)
+    co.on_sync_failure(exception)
 
     assert mock_storage.update_local_storage.call_count == 0
-    msg = 'Sync failed: "{}".'.format(result_data)
-    debug_logger.assert_called_once_with(msg)
+    gui.update_error_status.assert_called_once_with(
+        'The SecureDrop server cannot be reached.', duration=0, retry=True)
 
 
 def test_Controller_on_sync_success(homedir, config, mocker):
@@ -1368,11 +1365,15 @@ def test_Controller_api_call_timeout(homedir, config, mocker, session_maker):
     '''
     Using the `config` fixture to ensure the config is written to disk.
     '''
+    debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
+    storage = mocker.patch('securedrop_client.logic.storage')
     mock_gui = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
+
     co.on_api_timeout()
-    mock_gui.update_error_status.assert_called_once_with(
-        'The SecureDrop server cannot be reached.', duration=0, retry=True)
+
+    assert storage.update_local_storage.call_count == 0
+    debug_logger.assert_called_once_with('Metadata failed due to timeout')
 
 
 def test_Controller_call_update_star_success(homedir, config, mocker, session_maker, session):
