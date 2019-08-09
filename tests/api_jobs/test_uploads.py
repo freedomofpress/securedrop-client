@@ -2,7 +2,7 @@ import pytest
 import sdclientapi
 
 from securedrop_client import db
-from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobException
+from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobError
 from securedrop_client.crypto import GpgHelper, CryptoError
 from tests import factory
 
@@ -55,7 +55,7 @@ def test_send_reply_success(homedir, mocker, session, session_maker):
 def test_send_reply_failure_gpg_error(homedir, mocker, session, session_maker):
     '''
     Check that if gpg fails when sending a message, we do not call the API, and ensure that
-    SendReplyJobException is raised when there is a CryptoError so we can handle it in
+    SendReplyJobError is raised when there is a CryptoError so we can handle it in
     ApiJob._do_call_api.
     '''
     source = factory.Source()
@@ -86,7 +86,7 @@ def test_send_reply_failure_gpg_error(homedir, mocker, session, session_maker):
         gpg,
     )
 
-    with pytest.raises(SendReplyJobException):
+    with pytest.raises(SendReplyJobError):
         job.call_api(api_client, session)
 
     # Ensure we attempted to encrypt the message
@@ -100,7 +100,7 @@ def test_send_reply_failure_gpg_error(homedir, mocker, session, session_maker):
 
 def test_send_reply_failure_unknown_error(homedir, mocker, session, session_maker):
     '''
-    Check that if the SendReplyJob api call fails when sending a message that SendReplyJobException
+    Check that if the SendReplyJob api call fails when sending a message that SendReplyJobError
     is raised and the reply is not added to the local database.
     '''
     source = factory.Source()
@@ -122,7 +122,7 @@ def test_send_reply_failure_unknown_error(homedir, mocker, session, session_make
 
 def test_send_reply_failure_when_repr_is_none(homedir, mocker, session, session_maker):
     '''
-    Check that the SendReplyJob api call results in a SendReplyJobException and nothing else, e.g.
+    Check that the SendReplyJob api call results in a SendReplyJobError and nothing else, e.g.
     no TypeError, when an api call results in an exception that returns None for __repr__
     (regression test).
     '''
@@ -140,7 +140,7 @@ def test_send_reply_failure_when_repr_is_none(homedir, mocker, session, session_
     job = SendReplyJob(source.uuid, 'mock_reply_uuid', 'mock_message', gpg)
 
     with pytest.raises(
-            SendReplyJobException,
+            SendReplyJobError,
             match=r'Failed to send reply for source mock_reply_uuid due to Exception: mock'):
         job.call_api(api_client, session)
 
