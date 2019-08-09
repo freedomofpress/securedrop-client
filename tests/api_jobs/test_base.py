@@ -80,7 +80,7 @@ def test_ApiJob_timeout_error(mocker):
         api_job._do_call_api(mock_api_client, mock_session)
 
     assert not api_job.success_signal.emit.called
-    assert not api_job.failure_signal.emit.called
+    assert api_job.failure_signal.emit.called
 
 
 def test_ApiJob_other_error(mocker):
@@ -91,7 +91,8 @@ def test_ApiJob_other_error(mocker):
     mock_api_client = mocker.MagicMock()
     mock_session = mocker.MagicMock()
 
-    api_job._do_call_api(mock_api_client, mock_session)
+    with pytest.raises(Exception):
+        api_job._do_call_api(mock_api_client, mock_session)
 
     assert not api_job.success_signal.emit.called
     api_job.failure_signal.emit.assert_called_once_with(return_value)
@@ -157,7 +158,7 @@ def test_ApiJob_retry_timeout(mocker):
     assert api_job.remaining_attempts == 0
 
     assert not api_job.success_signal.emit.called
-    assert not api_job.failure_signal.emit.called
+    assert api_job.failure_signal.emit.called
 
 
 def test_ApiJob_comparison(mocker):
