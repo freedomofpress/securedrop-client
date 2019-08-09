@@ -2,7 +2,8 @@ import pytest
 import sdclientapi
 
 from securedrop_client import db
-from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobError
+from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobError, \
+    SendReplyJobTimeoutError
 from securedrop_client.crypto import GpgHelper, CryptoError
 from tests import factory
 
@@ -113,6 +114,28 @@ def test_send_reply_failure_unknown_error(homedir, mocker, session, session_make
     job = SendReplyJob(source.uuid, 'mock_reply_uuid', 'mock_message', gpg)
 
     with pytest.raises(Exception):
+        job.call_api(api_client, session)
+
+    encrypt_fn.assert_called_once_with(source.uuid, 'mock_message')
+    replies = session.query(db.Reply).filter_by(uuid='mock_reply_uuid').all()
+    assert len(replies) == 0
+
+
+def test_send_reply_failure_timeout_error(homedir, mocker, session, session_maker):
+    '''
+    Check that if the SendReplyJob api call fails because of a RequestTimeoutError that a
+    SendReplyJobTimeoutError is raised.
+    '''
+    source = factory.Source()
+    session.add(source)
+    session.commit()
+    api_client = mocker.MagicMock()
+    mocker.patch.object(api_client, 'reply_source', side_effect=sdclientapi.RequestTimeoutError)
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    encrypt_fn = mocker.patch.object(gpg, 'encrypt_to_source')
+    job = SendReplyJob(source.uuid, 'mock_reply_uuid', 'mock_message', gpg)
+
+    with pytest.raises(SendReplyJobTimeoutError):
         job.call_api(api_client, session)
 
     encrypt_fn.assert_called_once_with(source.uuid, 'mock_message')
