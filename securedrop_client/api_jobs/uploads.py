@@ -1,11 +1,11 @@
 import logging
 import sdclientapi
 
-from sdclientapi import API
+from sdclientapi import API, RequestTimeoutError
 from sqlalchemy.orm.session import Session
 
 from securedrop_client.api_jobs.base import ApiJob
-from securedrop_client.crypto import GpgHelper, CryptoError
+from securedrop_client.crypto import GpgHelper
 from securedrop_client.db import Reply, Source
 
 logger = logging.getLogger(__name__)
@@ -43,21 +43,27 @@ class SendReplyJob(ApiJob):
             session.add(reply_db_object)
             session.commit()
             return reply_db_object.uuid
-        except CryptoError as ce:
-            message = "Failed to encrypt reply for source {id} due to CryptoError: {error}".format(
-                id=self.source_uuid, error=ce)
-            raise SendReplyJobException(message, self.reply_uuid)
+        except RequestTimeoutError as e:
+            message = "Failed to send reply for source {id} due to Exception: {error}".format(
+                id=self.source_uuid, error=e)
+            raise SendReplyJobTimeoutError(message, self.reply_uuid)
         except Exception as e:
             message = "Failed to send reply for source {id} due to Exception: {error}".format(
                 id=self.source_uuid, error=e)
-            raise SendReplyJobException(message, self.reply_uuid)
+            raise SendReplyJobError(message, self.reply_uuid)
 
     def _make_call(self, encrypted_reply: str, api_client: API) -> sdclientapi.Reply:
         sdk_source = sdclientapi.Source(uuid=self.source_uuid)
         return api_client.reply_source(sdk_source, encrypted_reply, self.reply_uuid)
 
 
-class SendReplyJobException(Exception):
+class SendReplyJobError(Exception):
+    def __init__(self, message: str, reply_uuid: str):
+        super().__init__(message)
+        self.reply_uuid = reply_uuid
+
+
+class SendReplyJobTimeoutError(Exception):
     def __init__(self, message: str, reply_uuid: str):
         super().__init__(message)
         self.reply_uuid = reply_uuid

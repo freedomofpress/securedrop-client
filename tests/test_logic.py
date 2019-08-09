@@ -14,7 +14,7 @@ from securedrop_client import storage, db
 from securedrop_client.crypto import CryptoError
 from securedrop_client.logic import APICallRunner, Controller
 from securedrop_client.api_jobs.downloads import DownloadChecksumMismatchException
-from securedrop_client.api_jobs.uploads import SendReplyJobException
+from securedrop_client.api_jobs.uploads import SendReplyJobError
 
 with open(os.path.join(os.path.dirname(__file__), 'files', 'test-key.gpg.pub.asc')) as f:
     PUB_KEY = f.read()
@@ -1288,7 +1288,7 @@ def test_Controller_on_reply_failure(homedir, mocker, session_maker):
     reply_failed = mocker.patch.object(co, 'reply_failed')
     debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
 
-    exception = SendReplyJobException('mock_error_message', 'mock_reply_uuid')
+    exception = SendReplyJobError('mock_error_message', 'mock_reply_uuid')
     co.on_reply_failure(exception)
 
     debug_logger.assert_called_once_with('{} failed to send'.format('mock_reply_uuid'))

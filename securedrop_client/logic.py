@@ -33,7 +33,8 @@ from securedrop_client import storage
 from securedrop_client import db
 from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob, \
     ReplyDownloadJob, DownloadChecksumMismatchException
-from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobException
+from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobError, \
+    SendReplyJobTimeoutError
 from securedrop_client.api_jobs.updatestar import UpdateStarJob, UpdateStarJobException
 from securedrop_client.crypto import GpgHelper, CryptoError
 from securedrop_client.queue import ApiJobQueue
@@ -665,7 +666,10 @@ class Controller(QObject):
         logger.debug('{} sent successfully'.format(reply_uuid))
         self.reply_succeeded.emit(reply_uuid)
 
-    def on_reply_failure(self, exception: SendReplyJobException) -> None:
+    def on_reply_failure(
+        self,
+        exception: Union[SendReplyJobError, SendReplyJobTimeoutError]
+    ) -> None:
         logger.debug('{} failed to send'.format(exception.reply_uuid))
         self.reply_failed.emit(exception.reply_uuid)
 
