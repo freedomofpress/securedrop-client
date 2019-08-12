@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_NUM_ATTEMPTS = 5
 
-ApiJobType = TypeVar('ApiJobType', bound='ApiJob')
+QueueJobType = TypeVar('QueueJobType', bound='QueueJob')
 
 
 class ApiInaccessibleError(Exception):
@@ -21,13 +21,31 @@ class ApiInaccessibleError(Exception):
         super().__init__(message)
 
 
-class PauseQueueJob(QObject):
+class QueueJob(QObject):
     def __init__(self) -> None:
         super().__init__()
-        self.order_number = None
+        self.order_number = None  # type: Optional[int]
+
+    def __lt__(self, other: QueueJobType) -> bool:
+        '''
+        Python's PriorityQueue requires that QueueJobs are sortable as it
+        retrieves the next job using sorted(list(entries))[0].
+
+        For QueueJobs that have equal priority, we need to use the order_number key
+        to break ties to ensure that objects are retrieved in FIFO order.
+        '''
+        if self.order_number is None or other.order_number is None:
+            raise ValueError('cannot compare jobs without order_number!')
+
+        return self.order_number < other.order_number
 
 
-class ApiJob(QObject):
+class PauseQueueJob(QueueJob):
+    def __init__(self) -> None:
+        super().__init__()
+
+
+class ApiJob(QueueJob):
 
     '''
     Signal that is emitted after an job finishes successfully.
@@ -40,22 +58,8 @@ class ApiJob(QObject):
     failure_signal = pyqtSignal(Exception)
 
     def __init__(self, remaining_attempts: int = DEFAULT_NUM_ATTEMPTS) -> None:
-        super().__init__(None)  # `None` because the QOjbect has no parent
+        super().__init__()
         self.remaining_attempts = remaining_attempts
-        self.order_number = None  # type: Optional[int]
-
-    def __lt__(self, other: ApiJobType) -> bool:
-        '''
-        Python's PriorityQueue requires that ApiJobs are sortable as it
-        retrieves the next job using sorted(list(entries))[0].
-
-        For ApiJobs that have equal priority, we need to use the order_number key
-        to break ties to ensure that objects are retrieved in FIFO order.
-        '''
-        if self.order_number is None or other.order_number is None:
-            raise ValueError('cannot compare jobs without order_number!')
-
-        return self.order_number < other.order_number
 
     def _do_call_api(self, api_client: API, session: Session) -> None:
         if not api_client:
