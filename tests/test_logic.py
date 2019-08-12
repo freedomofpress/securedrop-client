@@ -1354,11 +1354,27 @@ def test_APICallRunner_api_call_timeout(mocker):
 
 
 def test_Controller_on_queue_paused(homedir, config, mocker, session_maker):
+    '''
+    Check that a paused queue is communicated to the user via the error status bar with retry option
+    '''
     mock_gui = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
+    co.api = 'mock'
     co.on_queue_paused()
     mock_gui.update_error_status.assert_called_once_with(
         'The SecureDrop server cannot be reached.', duration=0, retry=True)
+
+
+def test_Controller_on_queue_paused_when_logged_out(homedir, config, mocker, session_maker):
+    '''
+    Check that a paused queue is communicated to the user via the error status bar. There should not
+    be a retry option displayed to the user
+    '''
+    mock_gui = mocker.MagicMock()
+    co = Controller('http://localhost', mock_gui, session_maker, homedir)
+    co.api = None
+    co.on_queue_paused()
+    mock_gui.update_error_status.assert_called_once_with('The SecureDrop server cannot be reached.')
 
 
 def test_Controller_call_update_star_success(homedir, config, mocker, session_maker, session):

@@ -26,27 +26,27 @@ class RunnableQueue(QObject):
     pause = pyqtSignal()
 
     def __init__(self, api_client: API, session_maker: scoped_session) -> None:
+        '''
+        One of the challenges of using Python's PriorityQueue is that
+        for objects (jobs) with equal priorities, they are not retrieved
+        in FIFO order due to the fact PriorityQueue is implemented using
+        heapq which does not have sort stability. In order to ensure sort
+        stability, we need to add a counter to ensure that objects with equal
+        priorities are retrived in FIFO order.
+        See also: https://bugs.python.org/issue17794
+        '''
         super().__init__()
         self.api_client = api_client
         self.session_maker = session_maker
         self.queue = PriorityQueue()  # type: PriorityQueue[Tuple[int, ApiJob]]
-
-        # One of the challenges of using Python's PriorityQueue is that
-        # for objects (jobs) with equal priorities, they are not retrieved
-        # in FIFO order due to the fact PriorityQueue is implemented using
-        # heapq which does not have sort stability. In order to ensure sort
-        # stability, we need to add a counter to ensure that objects with equal
-        # priorities are retrived in FIFO order.
-        # See also: https://bugs.python.org/issue17794
         self.order_number = itertools.count()
 
     def add_job(self, priority: int, job: ApiJob) -> None:
-        """
+        '''
         Increment the queue's internal counter/order_number, assign an
         order_number to the job to track its position in the queue,
         and submit the job with its priority to the queue.
-        """
-
+        '''
         current_order_number = next(self.order_number)
         job.order_number = current_order_number
         self.queue.put_nowait((priority, job))
@@ -152,16 +152,20 @@ class ApiJobQueue(QObject):
 
     def resume_queues(self) -> None:
         logger.info("Resuming queues")
-        # Reconnect the queues to the processing loop and resume processing
-        self.main_thread.started.connect(self.main_queue.process)
-        self.download_file_thread.started.connect(self.download_file_queue.process)
         self.start_queues()
         self.main_queue.process()
         self.download_file_queue.process()
 
     def enqueue(self, job: ApiJob) -> None:
-        # Additional defense in depth to prevent jobs being added to the queue when not
-        # logged in.
+        priority = self.JOB_PRIORITIES[type(job)]
+
+        if isinstance(job, PauseQueueJob):
+            self.main_queue.add_job(priority, job)
+            self.download_file_queue.add_job(priority, job)
+            self.paused.emit()
+            return
+
+        # Prevent api jobs being added to the queue when not logged in.
         if not self.main_queue.api_client or not self.download_file_queue.api_client:
             logger.info('Not adding job, we are not logged in')
             return
@@ -169,18 +173,7 @@ class ApiJobQueue(QObject):
         # First check the queues are started in case they died for some reason.
         self.start_queues()
 
-        priority = self.JOB_PRIORITIES[type(job)]
-
-        if isinstance(job, PauseQueueJob):
-            logger.debug('Adding pause job to both queues')
-            self.main_queue.add_job(priority, job)
-            self.download_file_queue.add_job(priority, job)
-            # Disconnect queues from processing loop in case threads restart while paused
-            self.main_thread.started.disconnect()
-            self.download_file_thread.started.disconnect()
-            # Tell the gui that the queues are now paused
-            self.paused.emit()
-        elif isinstance(job, FileDownloadJob):
+        if isinstance(job, FileDownloadJob):
             logger.debug('Adding job to download queue')
             self.download_file_queue.add_job(priority, job)
         else:

@@ -309,6 +309,7 @@ def test_ApiJobQueue_enqueue_no_auth(mocker):
     mock_start_queues = mocker.patch.object(job_queue, 'start_queues')
 
     dummy_job = factory.dummy_job_factory(mocker, 'mock')()
+    job_queue.JOB_PRIORITIES = {type(dummy_job): 1}
     job_queue.enqueue(dummy_job)
 
     assert not mock_download_file_add_job.called

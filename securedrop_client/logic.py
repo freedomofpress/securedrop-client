@@ -262,10 +262,13 @@ class Controller(QObject):
         new_api_thread.start()
 
     def on_queue_paused(self) -> None:
-        self.gui.update_error_status(
-            _('The SecureDrop server cannot be reached.'),
-            duration=0,
-            retry=True)
+        if self.api is None:
+            self.gui.update_error_status(_('The SecureDrop server cannot be reached.'))
+        else:
+            self.gui.update_error_status(
+                _('The SecureDrop server cannot be reached.'),
+                duration=0,
+                retry=True)
 
     def resume_queues(self) -> None:
         self.api_job_queue.resume_queues()
