@@ -52,42 +52,35 @@ class RunnableQueue(QObject):
         self.queue.put_nowait((priority, job))
 
     @pyqtSlot()
-    def process(self) -> None:  # pragma: nocover
-        self._process(False)
+    def process(self) -> None:
+        '''
+        Process the next job in the queue.
 
-    def _process(self, exit_loop: bool) -> None:
+        If the job is a PauseQueueJob, return from the processing loop so that no more jobs are
+        processed until the queue resumes.
+
+        If the job raises RequestTimeoutError or ApiInaccessibleError, then:
+        (1) Emit the pause signal so that a PauseQueueJob is enqueued
+        (2) Put the job back into the queue in the order in which it was submitted by the user
+
+        Note: Generic exceptions are handled in _do_call_api.
+        '''
         while True:
-            session = self.session_maker()
             priority, job = self.queue.get(block=True)
 
-            # Exit the processing loop to pause the queue
             if isinstance(job, PauseQueueJob):
                 logger.info('Paused queue')
                 return
 
             try:
+                session = self.session_maker()
                 job._do_call_api(self.api_client, session)
-            except RequestTimeoutError:
-                # Tell ApiJobQueue to pause
+            except (RequestTimeoutError, ApiInaccessibleError):
                 self.pause.emit()
-
-                # Reset number of remaining attempts for this job and resubmit it without modifying
-                # counter to ensure jobs with equal priorities are processed in the order that they
-                # were submitted _by the user_ to the queue.
                 job.remaining_attempts = DEFAULT_NUM_ATTEMPTS
                 self.queue.put_nowait((priority, job))
-            except ApiInaccessibleError:
-                # This is a guard against #397, we should re-enqueue the job and pause queue
-                # processing when this happens in the future and flag the situation to the user
-                # (see ticket #379).
-                logger.error('Client is not authenticated, skipping job...')
-            except Exception as e:
-                logger.error('Job {} raised  exception: {}: {}'.format(job, type(e).__name__, e))
             finally:
                 session.close()
-
-            if exit_loop:
-                return
 
 
 class ApiJobQueue(QObject):

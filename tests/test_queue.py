@@ -35,8 +35,8 @@ def test_RunnableQueue_happy_path(mocker):
     queue = RunnableQueue(mock_api_client, mock_session_maker)
     job_priority = 1
     queue.add_job(job_priority, dummy_job_cls())
-
-    queue._process(exit_loop=True)
+    queue.add_job(2, PauseQueueJob())  # Pause queue so our test exits the processing loop
+    queue.process()
 
     assert queue.queue.empty()
 
@@ -46,59 +46,40 @@ def test_RunnableQueue_job_timeout(mocker):
     Add two jobs to the queue. The first times out, and then gets resubmitted for the next pass
     through the loop.
     '''
-    mock_api_client = mocker.MagicMock()
-    mock_session = mocker.MagicMock()
-    mock_session_maker = mocker.MagicMock(return_value=mock_session)
-
-    return_value = RequestTimeoutError()
-    times_to_try = 5
-    dummy_job_cls = factory.dummy_job_factory(mocker, return_value,
-                                              remaining_attempts=times_to_try)
-    job1 = dummy_job_cls()
-    job2 = dummy_job_cls()
-
-    queue = RunnableQueue(mock_api_client, mock_session_maker)
+    queue = RunnableQueue(mocker.MagicMock(), mocker.MagicMock())
     queue.pause = mocker.MagicMock()
-    job_priority = 1
-    queue.add_job(job_priority, job1)
-    queue.add_job(job_priority, job2)
+
+    # RequestTimeoutError will cause the queue to pause, use our fake pause method instead
+    def fake_pause() -> None:
+        queue.add_job(0, PauseQueueJob())
+    queue.pause.emit = fake_pause
+
+    # Add two jobs that timeout during processing to the queue
+    job_cls = factory.dummy_job_factory(mocker, RequestTimeoutError(), remaining_attempts=5)
+    job1 = job_cls()
+    job2 = job_cls()
+    queue.add_job(1, job1)
+    queue.add_job(1, job2)
 
     # attempt to process job1 knowing that it times out
-    queue._process(exit_loop=True)
+    queue.process()
+    assert queue.queue.qsize() == 2  # queue contains: job1, job2
 
-    # there should be two jobs in the queue
-    assert queue.queue.qsize() == 2
-
-    # update job1 to not raise an error so it can be processed
-    job1.return_value = 'foo'
-
-    # attempt to process the job1 again
-    queue._process(exit_loop=True)
-
-    # now there should just be one job: job1 was processed successfully
-    assert queue.queue.qsize() == 1
-
-    # attempt to process job2 knowing that it times out
-    queue._process(exit_loop=True)
-
-    # check that job2 was resubmitted
-    assert queue.queue.qsize() == 1
-
-    # check that job2 still has 5 (the default) remaining attempts
-    assert job2.remaining_attempts == times_to_try
-
-    queue.pause.emit.assert_called_with()
+    # now process after making it so job1 no longer times out
+    job1.return_value = 'mock'
+    queue.process()
+    assert queue.queue.qsize() == 1  # queue contains: job2
+    assert queue.queue.get(block=True) == (1, job2)
 
 
 def test_RunnableQueue_process_PauseQueueJob(mocker):
     api_client = mocker.MagicMock()
     session_maker = mocker.MagicMock(return_value=mocker.MagicMock())
-    pause_job = PauseQueueJob()
-
     queue = RunnableQueue(api_client, session_maker)
 
-    queue.add_job(11, pause_job)
-    queue._process(exit_loop=True)
+    queue.add_job(11, PauseQueueJob())
+    queue.process()
+
     assert queue.queue.empty()
 
 
@@ -165,76 +146,51 @@ def test_RunnableQueue_resubmitted_jobs(mocker):
 
 def test_RunnableQueue_job_ApiInaccessibleError(mocker):
     '''
-    Add two jobs to the queue, the first of which will cause an ApiInaccessibleError.
-    Ensure that the queue continues processing jobs and the second job is attempted.
-    (this is behavior until we have a signal that pauses job execution when
-    ApiInaccessibleError occurs, see #379).
+    Add two jobs to the queue. The first runs into an auth error, and then gets resubmitted for the
+    next pass through the loop.
     '''
+    queue = RunnableQueue(mocker.MagicMock(), mocker.MagicMock())
+    queue.pause = mocker.MagicMock()
 
-    mock_api_client = mocker.MagicMock()
-    mock_session = mocker.MagicMock()
-    mock_session_maker = mocker.MagicMock(return_value=mock_session)
+    # ApiInaccessibleError will cause the queue to pause, use our fake pause method instead
+    def fake_pause() -> None:
+        queue.add_job(0, PauseQueueJob())
+    queue.pause.emit = fake_pause
 
-    return_value = ApiInaccessibleError()
-    dummy_job_cls = factory.dummy_job_factory(mocker, return_value)
-    job_priority = 2
+    # Add two jobs that timeout during processing to the queues
+    job_cls = factory.dummy_job_factory(mocker, ApiInaccessibleError())
+    job1 = job_cls()
+    job2 = job_cls()
+    queue.add_job(1, job1)
+    queue.add_job(1, job2)
 
-    job1 = dummy_job_cls()
-    job2 = dummy_job_cls()
+    # attempt to process job1 knowing that it times out
+    queue.process()
+    assert queue.queue.qsize() == 2  # queue contains: job1, job2
 
-    queue = RunnableQueue(mock_api_client, mock_session_maker)
-    queue.add_job(job_priority, job1)
-    queue.add_job(job_priority, job2)
-
-    # attempt to process job1 knowing that we'll have an auth error, which should be handled.
-    queue._process(exit_loop=True)
-
-    # check that one more job is in the queue
-    assert queue.queue.qsize() == 1
-
-    # update job2 to not raise an error so it can be processed
-    job2.return_value = 'job will process this!'
-
-    # run next job in the queue to process job2
-    queue._process(exit_loop=True)
-
-    # check that all jobs are gone
-    assert queue.queue.empty()
+    # now process after making it so job1 no longer times out
+    job1.return_value = 'mock'
+    queue.process()
+    assert queue.queue.qsize() == 1  # queue contains: job2
+    assert queue.queue.get(block=True) == (1, job2)
 
 
 def test_RunnableQueue_job_generic_exception(mocker):
     '''
-    Add two jobs to the queue, the first of which will cause a generic exception.
-    Ensure that the queue continues processing jobs and the second job is attempted.
+    Add two jobs to the queue, the first of which will cause a generic exception, which is handled
+    in _do_call_api. Ensure that the queue continues processing jobs after dropping a job that
+    runs into a generic exception.
     '''
+    job1_cls = factory.dummy_job_factory(mocker, Exception())  # processing skips job
+    job2_cls = factory.dummy_job_factory(mocker, 'mock')
+    job1 = job1_cls()
+    job2 = job2_cls()
+    queue = RunnableQueue(mocker.MagicMock(), mocker.MagicMock())
+    queue.add_job(2, job1)
+    queue.add_job(2, job2)
+    queue.add_job(3, PauseQueueJob())  # Pause queue so our test exits the processing loop
 
-    mock_api_client = mocker.MagicMock()
-    mock_session = mocker.MagicMock()
-    mock_session_maker = mocker.MagicMock(return_value=mock_session)
-
-    return_value = Exception()
-    dummy_job_cls = factory.dummy_job_factory(mocker, return_value)
-    job1 = dummy_job_cls()
-    job2 = dummy_job_cls()
-
-    queue = RunnableQueue(mock_api_client, mock_session_maker)
-    job_priority = 2
-    queue.add_job(job_priority, job1)
-    queue.add_job(job_priority, job2)
-
-    # Attempt to process job1 knowing that we'll have a generic exception, which should be handled.
-    # Note: generic exceptions get handled in _do_call_api in case you're wondering why this doesn't
-    # raise an exception.
-    queue._process(exit_loop=True)
-
-    # check that one more job is in the queue
-    assert queue.queue.qsize() == 1
-
-    # update job2 to not raise an error so it can be processed
-    job2.return_value = 'job will process this!'
-
-    # run next job in the queue to process job2
-    queue._process(exit_loop=True)
+    queue.process()
 
     # check that all jobs are gone
     assert queue.queue.empty()
@@ -244,24 +200,23 @@ def test_RunnableQueue_does_not_run_jobs_when_not_authed(mocker):
     '''
     Add a job to the queue, ensure we don't run it when not authenticated.
     '''
-    mock_api_client = mocker.MagicMock()
-    mock_session = mocker.MagicMock()
-    mock_session_maker = mocker.MagicMock(return_value=mock_session)
+    queue = RunnableQueue(mocker.MagicMock(), mocker.MagicMock())
+    queue.pause = mocker.MagicMock()
+    mock_logger = mocker.patch('securedrop_client.api_jobs.base.logger')
 
-    return_value = ApiInaccessibleError()
-    dummy_job_cls = factory.dummy_job_factory(mocker, return_value)
-    job = dummy_job_cls()
-    job_priority = 2
+    # ApiInaccessibleError will cause the queue to pause, use our fake pause method instead
+    def fake_pause() -> None:
+        queue.add_job(0, PauseQueueJob())
+    queue.pause.emit = fake_pause
 
-    queue = RunnableQueue(mock_api_client, mock_session_maker)
-    queue.add_job(job_priority, job)
+    # Add two jobs that timeout during processing to the queues
+    job_cls = factory.dummy_job_factory(mocker, ApiInaccessibleError())
+    job = job_cls()
+    queue.add_job(1, job)
 
-    mock_logger = mocker.patch('securedrop_client.queue.logger')
-
-    # attempt to process job
-    queue._process(exit_loop=True)
-
-    # assert we logged an error message
+    # attempt to process job1 knowing that it times out
+    queue.process()
+    assert queue.queue.qsize() == 1  # queue contains: job1
     assert "Client is not authenticated" in mock_logger.error.call_args[0][0]
 
 
