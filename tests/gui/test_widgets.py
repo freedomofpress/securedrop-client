@@ -3,15 +3,14 @@ Make sure the UI widgets are configured correctly and work as expected.
 """
 import html
 
-from PyQt5.QtWidgets import QWidget, QApplication, QWidgetItem, QSpacerItem, QVBoxLayout, \
-    QMessageBox, QMainWindow, QTextEdit
+from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QMessageBox, QMainWindow, QTextEdit
 from PyQt5.QtCore import Qt
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from tests import factory
 from securedrop_client import db, logic
 from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, LoginDialog, \
-    SpeechBubble, ConversationWidget, MessageWidget, ReplyWidget, FileWidget, ConversationView, \
+    SpeechBubble, MessageWidget, ReplyWidget, FileWidget, ConversationView, \
     DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, LeftPane, RefreshButton, \
     ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
     ReplyBoxWidget, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, LoginErrorBar, \
@@ -1193,38 +1192,6 @@ def test_SpeechBubble_with_apostrophe_in_text(mocker):
     assert bubble.message.text() == html.escape(message, quote=False)
 
 
-def test_ConversationWidget_init_left(mocker):
-    """
-    Check the ConversationWidget is configured correctly for align-left.
-    """
-    mock_signal = mocker.Mock()
-    mock_connect = mocker.Mock()
-    mock_signal.connect = mock_connect
-
-    cw = ConversationWidget('mock id', 'hello', mock_signal, align='left')
-    layout = cw.layout()
-
-    assert isinstance(layout.takeAt(0), QWidgetItem)
-    assert isinstance(layout.takeAt(0), QSpacerItem)
-    assert mock_connect.called
-
-
-def test_ConversationWidget_init_right(mocker):
-    """
-    Check the ConversationWidget is configured correctly for align-left.
-    """
-    mock_signal = mocker.Mock()
-    mock_connect = mocker.Mock()
-    mock_signal.connect = mock_connect
-
-    cw = ConversationWidget('mock id', 'hello', mock_signal, align='right')
-    layout = cw.layout()
-
-    assert isinstance(layout.takeAt(0), QSpacerItem)
-    assert isinstance(layout.takeAt(0), QWidgetItem)
-    assert mock_connect.called
-
-
 def test_MessageWidget_init(mocker):
     """
     Check the CSS is set as expected.
@@ -1506,7 +1473,7 @@ def test_ConversationView_add_message(mocker, session, source):
     mock_msg_widget.assert_called_once_with(message.uuid, content, mock_message_ready_signal)
 
     # check that we added the correct widget to the layout
-    cv.conversation_layout.addWidget.assert_called_once_with(mock_msg_widget_res)
+    cv.conversation_layout.addWidget.assert_called_once_with(mock_msg_widget_res, 1, Qt.AlignLeft)
 
 
 def test_ConversationView_add_message_no_content(mocker, session, source):
@@ -1539,7 +1506,7 @@ def test_ConversationView_add_message_no_content(mocker, session, source):
         message.uuid, '<Message not yet available>', mock_message_ready_signal)
 
     # check that we added the correct widget to the layout
-    cv.conversation_layout.addWidget.assert_called_once_with(mock_msg_widget_res)
+    cv.conversation_layout.addWidget.assert_called_once_with(mock_msg_widget_res, 1, Qt.AlignLeft)
 
 
 def test_ConversationView_on_reply_sent(mocker):
@@ -1591,7 +1558,7 @@ def test_ConversationView_add_reply_from_reply_box(mocker):
 
     reply_widget.assert_called_once_with(
         'abc123', 'test message', reply_ready, reply_succeeded, reply_failed)
-    cv.conversation_layout.addWidget.assert_called_once_with(reply_widget_res)
+    cv.conversation_layout.addWidget.assert_called_once_with(reply_widget_res, 1, Qt.AlignRight)
 
 
 def test_ConversationView_add_reply(mocker, session, source):
@@ -1616,10 +1583,10 @@ def test_ConversationView_add_reply(mocker, session, source):
     cv = ConversationView(source, mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
     # this is the Reply that __init__() would return
-    mock_reply_widget_res = mocker.MagicMock()
+    reply_widget_res = mocker.MagicMock()
     # mock the actual MessageWidget so we can inspect the __init__ call
     mock_reply_widget = mocker.patch('securedrop_client.gui.widgets.ReplyWidget',
-                                     return_value=mock_reply_widget_res)
+                                     return_value=reply_widget_res)
 
     cv.add_reply(reply)
 
@@ -1632,7 +1599,7 @@ def test_ConversationView_add_reply(mocker, session, source):
         mock_reply_failed_signal)
 
     # check that we added the correct widget to the layout
-    cv.conversation_layout.addWidget.assert_called_once_with(mock_reply_widget_res)
+    cv.conversation_layout.addWidget.assert_called_once_with(reply_widget_res, 1, Qt.AlignRight)
 
 
 def test_ConversationView_add_reply_no_content(mocker, session, source):
@@ -1658,10 +1625,10 @@ def test_ConversationView_add_reply_no_content(mocker, session, source):
     cv = ConversationView(source, mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
     # this is the Reply that __init__() would return
-    mock_reply_widget_res = mocker.MagicMock()
+    reply_widget_res = mocker.MagicMock()
     # mock the actual MessageWidget so we can inspect the __init__ call
     mock_reply_widget = mocker.patch('securedrop_client.gui.widgets.ReplyWidget',
-                                     return_value=mock_reply_widget_res)
+                                     return_value=reply_widget_res)
 
     cv.add_reply(reply)
 
@@ -1674,7 +1641,7 @@ def test_ConversationView_add_reply_no_content(mocker, session, source):
         mock_reply_failed_signal)
 
     # check that we added the correct widget to the layout
-    cv.conversation_layout.addWidget.assert_called_once_with(mock_reply_widget_res)
+    cv.conversation_layout.addWidget.assert_called_once_with(reply_widget_res, 1, Qt.AlignRight)
 
 
 def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
@@ -1711,10 +1678,7 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, sessi
     Adding a file results in a new FileWidget added to the layout with the
     proper QLabel.
     """
-    file = factory.File(source=source['source'],
-                         is_downloaded=False,
-                         is_decrypted=None,
-                         size=123)
+    file = factory.File(source=source['source'], is_downloaded=False, is_decrypted=None, size=123)
     session.add(file)
     session.commit()
 
