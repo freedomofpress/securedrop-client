@@ -1474,53 +1474,16 @@ class SpeechBubble(QWidget):
             self.message.setText(text)
 
 
-class ConversationWidget(QWidget):
-    """
-    Draws a message onto the screen.
-    """
-
-    def __init__(self,
-                 message_id: str,
-                 message: str,
-                 update_signal,
-                 align: str) -> None:
-        """
-        Initialise with the message to display and some notion of which side
-        of the conversation ("left" or "right" [anything else]) to which the
-        widget should belong.
-        """
-        super().__init__()
-        layout = QHBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-
-        self.speech_bubble = SpeechBubble(message_id, message, update_signal)
-
-        # Add padding on left if we want to push the speech bubble to the right
-        if align != "left":
-            layout.addStretch(5)
-
-        layout.addWidget(self.speech_bubble, 6)
-
-        # Add padding on right if we want to push the speech bubble to the left
-        if align == "left":
-            layout.addStretch(5)
-
-        self.setLayout(layout)
-
-
-class MessageWidget(ConversationWidget):
+class MessageWidget(SpeechBubble):
     """
     Represents an incoming message from the source.
     """
 
     def __init__(self, message_id: str, message: str, update_signal) -> None:
-        super().__init__(message_id,
-                         message,
-                         update_signal,
-                         align="left")
+        super().__init__(message_id, message, update_signal)
 
 
-class ReplyWidget(ConversationWidget):
+class ReplyWidget(SpeechBubble):
     """
     Represents a reply to a source.
     """
@@ -1541,14 +1504,11 @@ class ReplyWidget(ConversationWidget):
         message_succeeded_signal,
         message_failed_signal,
     ) -> None:
-        super().__init__(message_id,
-                         message,
-                         update_signal,
-                         align="right")
+        super().__init__(message_id, message, update_signal)
         self.message_id = message_id
 
         # Set styles
-        self.speech_bubble.color_bar.setStyleSheet(self.CSS_COLOR_BAR_REPLY)
+        self.color_bar.setStyleSheet(self.CSS_COLOR_BAR_REPLY)
 
         message_succeeded_signal.connect(self._on_reply_success)
         message_failed_signal.connect(self._on_reply_failure)
@@ -1570,7 +1530,7 @@ class ReplyWidget(ConversationWidget):
         """
         if message_id == self.message_id:
             logger.debug('Message {} failed'.format(message_id))
-            self.speech_bubble.color_bar.setStyleSheet(self.CSS_COLOR_BAR_REPLY_FAIL)
+            self.color_bar.setStyleSheet(self.CSS_COLOR_BAR_REPLY_FAIL)
 
 
 class FileWidget(QWidget):
@@ -1795,17 +1755,12 @@ class ConversationView(QWidget):
             else:
                 self.add_file(conversation_item)
 
-    def add_file(self, submission_db_object):
+    def add_file(self, file: File):
         """
         Add a file from the source.
         """
-        self.conversation_layout.addWidget(
-            FileWidget(
-                submission_db_object.uuid,
-                self.controller,
-                self.controller.file_ready,
-            ),
-        )
+        conversation_item = FileWidget(file.uuid, self.controller, self.controller.file_ready)
+        self.conversation_layout.addWidget(conversation_item, 1, Qt.AlignLeft)
 
     def update_conversation_position(self, min_val, max_val):
         """
@@ -1827,10 +1782,8 @@ class ConversationView(QWidget):
         else:
             content = '<Message not yet available>'
 
-        self.conversation_layout.addWidget(MessageWidget(
-            message.uuid,
-            content,
-            self.controller.message_ready))
+        conversation_item = MessageWidget(message.uuid, content, self.controller.message_ready)
+        self.conversation_layout.addWidget(conversation_item, 1, Qt.AlignLeft)
 
     def add_reply(self, reply: Reply) -> None:
         """
@@ -1841,23 +1794,25 @@ class ConversationView(QWidget):
         else:
             content = '<Reply not yet available>'
 
-        self.conversation_layout.addWidget(ReplyWidget(
+        conversation_item = ReplyWidget(
             reply.uuid,
             content,
             self.controller.reply_ready,
             self.controller.reply_succeeded,
-            self.controller.reply_failed))
+            self.controller.reply_failed)
+        self.conversation_layout.addWidget(conversation_item, 1, Qt.AlignRight)
 
     def add_reply_from_reply_box(self, uuid: str, content: str) -> None:
         """
         Add a reply from the reply box.
         """
-        self.conversation_layout.addWidget(ReplyWidget(
+        conversation_item = ReplyWidget(
             uuid,
             content,
             self.controller.reply_ready,
             self.controller.reply_succeeded,
-            self.controller.reply_failed))
+            self.controller.reply_failed)
+        self.conversation_layout.addWidget(conversation_item, 1, Qt.AlignRight)
 
     def on_reply_sent(self, source_uuid: str, reply_uuid: str, reply_text: str) -> None:
         """
