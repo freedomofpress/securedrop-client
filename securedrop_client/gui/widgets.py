@@ -28,7 +28,7 @@ from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QTimer, QSize, pyqtBoundSigna
 from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
-    QToolButton, QSizePolicy, QTextEdit, QStatusBar, QGraphicsDropShadowEffect
+    QToolButton, QSizePolicy, QTextEdit, QStatusBar, QGraphicsDropShadowEffect, QFrame
 
 from securedrop_client.db import Source, Message, File, Reply, User
 from securedrop_client.storage import source_exists
@@ -606,7 +606,7 @@ class MainView(QWidget):
     CSS = '''
     #view_holder {
         border: none;
-        background-color: #efeef7;
+        background-color: #f3f5f9;
     }
     QLabel#no-source {
         font-family: Montserrat-Regular;
@@ -716,7 +716,8 @@ class EmptyConversationView(QWidget):
 
     CSS = '''
     #content {
-        font-family: Orbitron;
+        font-family: Montserrat;
+        font-weight: 400;
         font-size: 35px;
         color: #a5b3e9;
         qproperty-alignment: AlignLeft;
@@ -730,23 +731,18 @@ class EmptyConversationView(QWidget):
 
         # Set styles
         self.setStyleSheet(self.CSS)
-        font = QFont("Orbitron", 35, 1)
-        self.setFont(font)
 
         # Set layout
         layout = QHBoxLayout(self)
         self.setLayout(layout)
 
-        # Remove margins
+        # Set margins and spacing
         layout.setContentsMargins(0, 100, 0, 0)
         layout.setSpacing(0)
 
         self.content = QLabel(self)
         self.content.setObjectName('content')
         self.content.setWordWrap(True)
-
-        # Set font of content
-        self.content.setFont(font)
 
         content_layout = QVBoxLayout()
         content_layout.addStretch(1)
@@ -780,10 +776,10 @@ class SourceList(QListWidget):
     QListView {
         border: none;
         show-decoration-selected: 0;
-        border-right: 3px solid #efeef7;
+        border-right: 3px solid #f3f5f9;
     }
     QListView::item:selected {
-        background: #efeef7;
+        background: #f3f5f9;
     }
     '''
 
@@ -1428,7 +1424,7 @@ class SpeechBubble(QWidget):
         font-size: 15px;
         padding: 20px;
         min-height: 32px;
-        min-width: 556px;
+        width: 556px;
         border-bottom: 0;
         background-color: #fff;
     }
@@ -1436,6 +1432,7 @@ class SpeechBubble(QWidget):
         padding: 0px;
         background-color: #102781;
         min-height: 5px;
+        width: 556px;
         border: 0px;
     }
     '''
@@ -1446,10 +1443,16 @@ class SpeechBubble(QWidget):
 
         # Set styles
         self.setStyleSheet(self.CSS)
+        self.setFixedWidth(556)
 
+        # Set layout
         layout = QVBoxLayout()
-        layout.setSpacing(0)
         self.setLayout(layout)
+
+        # Set margins and spacing
+        layout.setContentsMargins(0, 10, 0, 10)
+        layout.setSpacing(0)
+
         self.message = SecureQLabel(text)
         self.message.setObjectName('speech_bubble')
         self.message.setWordWrap(True)
@@ -1539,34 +1542,53 @@ class FileWidget(QWidget):
     """
 
     CSS = '''
+    QWidget#file_widget {
+        width: 556px;
+    }
     QPushButton:focus {
         outline: none;
     }
-    QPushButton {
+    QPushButton#export_print {
         border: none;
         font-family: 'Source Sans Pro';
-        font-weight: 700;
+        font-weight: 500;
         font-size: 13px;
-        color: #0075f7;
+        color: #0065db;
         text-align: left;
+        width: 137px;
+    }
+    QPushButton#download_button {
+        border: none;
+        font-family: 'Source Sans Pro';
+        font-weight: 600;
+        font-size: 13px;
+        color: #2a319d;
+        text-align: left;
+        width: 137px;
     }
     QLabel#file-name {
         font-family: 'Source Sans Pro';
-        font-weight: 300;
-        font-size: 13px;
+        font-weight: 700;
+        font-size: 14px;
         color: #2a319d;
     }
     QLabel#no-file-name {
         font-family: 'Source Sans Pro';
         font-weight: 300;
         font-size: 13px;
-        color: #a5b3e9
+        color: #a5b3e9;
     }
     QLabel#file-size {
+        min-width: 48px;
         font-family: 'Source Sans Pro';
         font-weight: 400;
         font-size: 14px;
         color: #2a319d;
+    }
+    QWidget#horizontal_line {
+        background-color: rgba(211, 216, 234, 0.45);
+        min-height: 2px;
+        margin: 0px 8px 0px 8px;
     }
     '''
 
@@ -1580,40 +1602,59 @@ class FileWidget(QWidget):
         Given some text and a reference to the controller, make something to display a file.
         """
         super().__init__()
+
         self.controller = controller
         self.file = self.controller.get_file(file_uuid)
 
+        # Set styles
+        self.setObjectName('file_widget')
         self.setStyleSheet(self.CSS)
+        self.setFixedWidth(556)
         file_description_font = QFont()
         file_description_font.setLetterSpacing(QFont.AbsoluteSpacing, 2)
+        file_buttons_font = QFont()
+        file_buttons_font.setLetterSpacing(QFont.AbsoluteSpacing, 1.6)
 
+        # Set layout
         layout = QHBoxLayout()
         self.setLayout(layout)
+
+        # Set margins and spacing
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
         file_options = QWidget()
         file_options.setFixedWidth(140)
         file_options_layout = QHBoxLayout()
         file_options.setLayout(file_options_layout)
-        self.download_button = QPushButton(_('DOWNLOAD'))
+        self.download_button = QPushButton(_(' DOWNLOAD'))
+        self.download_button.setObjectName('download_button')
         self.download_button.setIcon(load_icon('download_file.svg'))
-        self.download_button.setFont(file_description_font)
+        self.download_button.setFont(file_buttons_font)
         self.export_button = QPushButton(_('EXPORT'))
-        self.export_button.setFont(file_description_font)
+        self.export_button.setObjectName('export_print')
+        self.export_button.setFont(file_buttons_font)
         self.print_button = QPushButton(_('PRINT'))
-        self.print_button.setFont(file_description_font)
+        self.print_button.setObjectName('export_print')
+        self.print_button.setFont(file_buttons_font)
         file_options_layout.addWidget(self.download_button)
         file_options_layout.addWidget(self.export_button)
         file_options_layout.addWidget(self.print_button)
 
         self.file_name = SecureQLabel(self.file.original_filename)
         self.file_name.setObjectName('file-name')
-        self.file_name.setFont(file_description_font)
         self.no_file_name = QLabel('ENCRYPTED FILE ON SERVER')
         self.no_file_name.setObjectName('no-file-name')
         self.no_file_name.setFont(file_description_font)
 
+        horizontal_line = QWidget()
+        horizontal_line.setObjectName('horizontal_line')
+        horizontal_line.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
         self.file_size = QLabel(humanize_filesize(self.file.size))
         self.file_size.setObjectName('file-size')
+        self.file_size.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        self.file_size.setAlignment(Qt.AlignRight)
 
         if self.file.is_downloaded:
             self.download_button.hide()
@@ -1631,6 +1672,7 @@ class FileWidget(QWidget):
         layout.addWidget(file_options)
         layout.addWidget(self.file_name)
         layout.addWidget(self.no_file_name)
+        layout.addWidget(horizontal_line)
         layout.addWidget(self.file_size)
 
         file_ready_signal.connect(self._on_file_downloaded, type=Qt.QueuedConnection)
@@ -1677,10 +1719,10 @@ class ConversationView(QWidget):
 
     CSS = '''
     #container {
-        background: #efeef7;
+        background: #f3f5f9;
     }
     #scroll {
-        background: #efeef7;
+        background: #f3f5f9;
         border: none;
     }
     '''
@@ -1696,6 +1738,7 @@ class ConversationView(QWidget):
 
         # Set styles
         self.setStyleSheet(self.CSS)
+        self.setMinimumWidth(610)
 
         # Set layout
         main_layout = QVBoxLayout()
@@ -1708,11 +1751,10 @@ class ConversationView(QWidget):
         self.container = QWidget()
         self.container.setObjectName('container')
         self.conversation_layout = QVBoxLayout()
-        self.conversation_layout.setContentsMargins(0, 0, 0, 0)
-        self.conversation_layout.setSpacing(0)
         self.container.setLayout(self.conversation_layout)
+        self.conversation_layout.setContentsMargins(40, 0, 40, 0)
+        self.conversation_layout.setSpacing(0)
         self.container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.setMinimumWidth(610)
 
         self.scroll = QScrollArea()
         self.scroll.setObjectName('scroll')
