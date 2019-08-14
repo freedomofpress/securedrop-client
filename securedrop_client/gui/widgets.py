@@ -1595,7 +1595,7 @@ class FileWidget(QWidget):
         file_options_layout = QHBoxLayout()
         file_options.setLayout(file_options_layout)
         self.download_button = QPushButton(_('DOWNLOAD'))
-        self.download_button.setIcon(load_icon('file.svg'))
+        self.download_button.setIcon(load_icon('download_file.svg'))
         self.download_button.setFont(file_description_font)
         self.export_button = QPushButton(_('EXPORT'))
         self.export_button.setFont(file_description_font)
