@@ -1263,30 +1263,52 @@ def test_ReplyWidget_init(mocker):
     )
 
     assert mock_update_connected.called
-    assert mock_success_connected.called
+    assert mock_success_connected.calledd
     assert mock_failure_connected.called
 
 
-def test_FileWidget_init_left(mocker, source, session):
+def test_FileWidget_init_file_not_downloaded(mocker, source, session):
     """
-    Check the FileWidget is configured correctly for align-left.
+    Check the FileWidget is configured correctly when the file is not downloaded.
     """
-    mock_signal = mocker.MagicMock()  # not important for this test
-    mock_uuid = 'mock'
-
-    file_ = factory.File(source=source['source'])
-    session.add(file_)
+    file = factory.File(source=source['source'], is_downloaded=False, is_decrypted=None)
+    session.add(file)
     session.commit()
 
-    mock_get_file = mocker.MagicMock(return_value=file_)
-    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+    get_file = mocker.MagicMock(return_value=file)
+    controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(mock_uuid, mock_controller, mock_signal)
+    fw = FileWidget('mock', controller, mocker.MagicMock())
 
-    assert isinstance(fw.layout.takeAt(0), QWidgetItem)
-    assert isinstance(fw.layout.takeAt(0), QWidgetItem)
-    assert isinstance(fw.layout.takeAt(0), QSpacerItem)
-    assert fw.controller == mock_controller
+    assert fw.controller == controller
+    assert fw.file.is_downloaded is False
+    assert not fw.download_button.isHidden()
+    assert not fw.no_file_name.isHidden()
+    assert fw.export_button.isHidden()
+    assert fw.print_button.isHidden()
+    assert fw.file_name.isHidden()
+
+
+def test_FileWidget_init_file_downloaded(mocker, source, session):
+    """
+    Check the FileWidget is configured correctly when the file is downloaded.
+    """
+    file = factory.File(source=source['source'], is_downloaded=True)
+    session.add(file)
+    session.commit()
+
+    get_file = mocker.MagicMock(return_value=file)
+    controller = mocker.MagicMock(get_file=get_file)
+
+    fw = FileWidget('mock', controller, mocker.MagicMock())
+
+    assert fw.controller == controller
+    assert fw.file.is_downloaded is True
+    assert fw.download_button.isHidden()
+    assert fw.no_file_name.isHidden()
+    assert not fw.export_button.isHidden()
+    assert not fw.print_button.isHidden()
+    assert not fw.file_name.isHidden()
 
 
 def test_FileWidget_mousePressEvent_download(mocker, session, source):
@@ -1332,48 +1354,41 @@ def test_FileWidget_mousePressEvent_open(mocker, session, source):
     fw.controller.on_file_open.assert_called_once_with(file_.uuid)
 
 
-def test_FileWidget_clear_deletes_items(mocker, session, source):
+def test_FileWidget_update(mocker, session, source):
     """
-    Calling the clear() method on FileWidget should delete the existing items in the layout.
+    The update method should show/hide widgets if file is downloaded
     """
-    mock_signal = mocker.MagicMock()  # not important for this test
-
-    file_ = factory.File(source=source['source'], is_downloaded=True)
-    session.add(file_)
+    file = factory.File(source=source['source'], is_downloaded=True)
+    session.add(file)
     session.commit()
+    get_file = mocker.MagicMock(return_value=file)
+    controller = mocker.MagicMock(get_file=get_file)
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock())
 
-    mock_get_file = mocker.MagicMock(return_value=file_)
-    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+    fw.update()
 
-    fw = FileWidget(file_.uuid, mock_controller, mock_signal)
-    assert fw.layout.count() != 0
-
-    fw.clear()
-
-    assert fw.layout.count() == 0
+    assert fw.download_button.isHidden()
 
 
 def test_FileWidget_on_file_download_updates_items_when_uuid_matches(mocker, source, session):
     """
-    The _on_file_download method should clear and update the FileWidget
+    The _on_file_download method should update the FileWidget
     """
-    mock_signal = mocker.MagicMock()  # not important for this test
-
-    file_ = factory.File(source=source['source'], is_downloaded=True)
-    session.add(file_)
+    file = factory.File(source=source['source'], is_downloaded=True)
+    session.add(file)
     session.commit()
 
-    mock_get_file = mocker.MagicMock(return_value=file_)
-    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+    get_file = mocker.MagicMock(return_value=file)
+    controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file_.uuid, mock_controller, mock_signal)
-    fw.clear = mocker.MagicMock()
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock())
     fw.update = mocker.MagicMock()
+    fw.download_button = mocker.MagicMock()
 
-    fw._on_file_downloaded(file_.uuid)
+    fw._on_file_downloaded(file.uuid)
 
-    fw.clear.assert_called_once_with()
     fw.update.assert_called_once_with()
+    assert fw.download_button.isHidden()
 
 
 def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(
@@ -1382,16 +1397,14 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(
     """
     The _on_file_download method should clear and update the FileWidget
     """
-    mock_signal = mocker.MagicMock()  # not important for this test
-
-    file_ = factory.File(source=source['source'], is_downloaded=True)
-    session.add(file_)
+    file = factory.File(source=source['source'], is_downloaded=True)
+    session.add(file)
     session.commit()
 
-    mock_get_file = mocker.MagicMock(return_value=file_)
-    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+    get_file = mocker.MagicMock(return_value=file)
+    controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file_.uuid, mock_controller, mock_signal)
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock())
     fw.clear = mocker.MagicMock()
     fw.update = mocker.MagicMock()
 
@@ -1711,12 +1724,10 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, sessi
     cv = ConversationView(source['source'], mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
 
-    mock_label = mocker.patch('securedrop_client.gui.widgets.SecureQLabel')
     mocker.patch('securedrop_client.gui.widgets.QHBoxLayout.addWidget')
     mocker.patch('securedrop_client.gui.widgets.FileWidget.setLayout')
 
     cv.add_file(source['source'], file_)
-    mock_label.assert_called_with("Download (123 bytes)")
     assert cv.conversation_layout.addWidget.call_count == 1
 
     cal = cv.conversation_layout.addWidget.call_args_list
