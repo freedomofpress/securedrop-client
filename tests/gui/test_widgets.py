@@ -1682,12 +1682,12 @@ def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
     Adding a file results in a new FileWidget added to the layout with the
     proper QLabel.
     """
-    file_ = factory.File(source=source['source'])
-    file_.is_downloaded = True
-    session.add(file_)
+    file = factory.File(source=source['source'])
+    file.is_downloaded = True
+    session.add(file)
     session.commit()
 
-    mock_get_file = mocker.MagicMock(return_value=file_)
+    mock_get_file = mocker.MagicMock(return_value=file)
     mocked_controller = mocker.MagicMock(get_file=mock_get_file)
 
     cv = ConversationView(source['source'], mocked_controller)
@@ -1697,9 +1697,9 @@ def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
     mocker.patch('securedrop_client.gui.widgets.QHBoxLayout.addWidget')
     mocker.patch('securedrop_client.gui.widgets.FileWidget.setLayout')
 
-    cv.add_file(source['source'], file_)
+    cv.add_file(file)
 
-    mock_label.assert_called_with(file_.original_filename)
+    mock_label.assert_called_with(file.original_filename)
     assert cv.conversation_layout.addWidget.call_count == 1
 
     cal = cv.conversation_layout.addWidget.call_args_list
@@ -1711,14 +1711,14 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, sessi
     Adding a file results in a new FileWidget added to the layout with the
     proper QLabel.
     """
-    file_ = factory.File(source=source['source'],
+    file = factory.File(source=source['source'],
                          is_downloaded=False,
                          is_decrypted=None,
                          size=123)
-    session.add(file_)
+    session.add(file)
     session.commit()
 
-    mock_get_file = mocker.MagicMock(return_value=file_)
+    mock_get_file = mocker.MagicMock(return_value=file)
     mocked_controller = mocker.MagicMock(get_file=mock_get_file)
 
     cv = ConversationView(source['source'], mocked_controller)
@@ -1727,7 +1727,7 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, sessi
     mocker.patch('securedrop_client.gui.widgets.QHBoxLayout.addWidget')
     mocker.patch('securedrop_client.gui.widgets.FileWidget.setLayout')
 
-    cv.add_file(source['source'], file_)
+    cv.add_file(file)
     assert cv.conversation_layout.addWidget.call_count == 1
 
     cal = cv.conversation_layout.addWidget.call_args_list
