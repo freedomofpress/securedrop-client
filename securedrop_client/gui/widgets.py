@@ -1578,6 +1578,38 @@ class FileWidget(QWidget):
     Represents a file.
     """
 
+    CSS = '''
+    QPushButton:focus {
+        outline: none;
+    }
+    QPushButton {
+        border: none;
+        font-family: 'Source Sans Pro';
+        font-weight: 700;
+        font-size: 13px;
+        color: #0075f7;
+        text-align: left;
+    }
+    QLabel#file-name {
+        font-family: 'Source Sans Pro';
+        font-weight: 300;
+        font-size: 13px;
+        color: #2a319d;
+    }
+    QLabel#no-file-name {
+        font-family: 'Source Sans Pro';
+        font-weight: 300;
+        font-size: 13px;
+        color: #a5b3e9
+    }
+    QLabel#file-size {
+        font-family: 'Source Sans Pro';
+        font-weight: 400;
+        font-size: 14px;
+        color: #2a319d;
+    }
+    '''
+
     def __init__(
         self,
         file_uuid: str,
@@ -1591,41 +1623,72 @@ class FileWidget(QWidget):
         self.controller = controller
         self.file = self.controller.get_file(file_uuid)
 
-        self.layout = QHBoxLayout()
-        self.update()
-        self.setLayout(self.layout)
+        self.setStyleSheet(self.CSS)
+        file_description_font = QFont()
+        file_description_font.setLetterSpacing(QFont.AbsoluteSpacing, 2)
+
+        layout = QHBoxLayout()
+        self.setLayout(layout)
+
+        file_options = QWidget()
+        file_options.setFixedWidth(140)
+        file_options_layout = QHBoxLayout()
+        file_options.setLayout(file_options_layout)
+        self.download_button = QPushButton(_('DOWNLOAD'))
+        self.download_button.setIcon(load_icon('file.svg'))
+        self.download_button.setFont(file_description_font)
+        self.export_button = QPushButton(_('EXPORT'))
+        self.export_button.setFont(file_description_font)
+        self.print_button = QPushButton(_('PRINT'))
+        self.print_button.setFont(file_description_font)
+        file_options_layout.addWidget(self.download_button)
+        file_options_layout.addWidget(self.export_button)
+        file_options_layout.addWidget(self.print_button)
+
+        self.file_name = SecureQLabel(self.file.original_filename)
+        self.file_name.setObjectName('file-name')
+        self.file_name.setFont(file_description_font)
+        self.no_file_name = QLabel('ENCRYPTED FILE ON SERVER')
+        self.no_file_name.setObjectName('no-file-name')
+        self.no_file_name.setFont(file_description_font)
+
+        self.file_size = QLabel(humanize_filesize(self.file.size))
+        self.file_size.setObjectName('file-size')
+
+        if self.file.is_downloaded:
+            self.download_button.hide()
+            self.no_file_name.hide()
+            self.export_button.show()
+            self.print_button.show()
+            self.file_name.show()
+        else:
+            self.export_button.hide()
+            self.print_button.hide()
+            self.file_name.hide()
+            self.download_button.show()
+            self.no_file_name.show()
+
+        layout.addWidget(file_options)
+        layout.addWidget(self.file_name)
+        layout.addWidget(self.no_file_name)
+        layout.addWidget(self.file_size)
 
         file_ready_signal.connect(self._on_file_downloaded, type=Qt.QueuedConnection)
 
     def update(self) -> None:
-        icon = QLabel()
-        icon.setPixmap(load_image('file.png'))
-
         if self.file.is_downloaded:
-            description = SecureQLabel(self.file.original_filename or self.file.filename)
-        else:
-            human_filesize = humanize_filesize(self.file.size)
-            description = SecureQLabel("Download ({})".format(human_filesize))
-
-        self.layout.addWidget(icon)
-        self.layout.addWidget(description, 5)
-        self.layout.addStretch(5)
-
-    def clear(self) -> None:
-        while self.layout.count():
-            child = self.layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
+            self.download_button.hide()
+            self.no_file_name.hide()
+            self.export_button.show()
+            self.print_button.show()
+            self.file_name.show()
 
     @pyqtSlot(str)
     def _on_file_downloaded(self, file_uuid: str) -> None:
         if file_uuid == self.file.uuid:
             # update state
             self.file = self.controller.get_file(self.file.uuid)
-
-            # update gui
-            self.clear()  # delete existing icon and label
-            self.update()  # draw modified widget
+            self.update()
 
     def mouseReleaseEvent(self, e):
         """
@@ -1652,8 +1715,6 @@ class ConversationView(QWidget):
     https://github.com/freedomofpress/securedrop-client/issues/273
     """
 
-    CONVERSATION_SPACING = 28
-
     CSS = '''
     #container {
         background: #efeef7;
@@ -1676,11 +1737,19 @@ class ConversationView(QWidget):
         # Set styles
         self.setStyleSheet(self.CSS)
 
+        # Set layout
+        main_layout = QVBoxLayout()
+        self.setLayout(main_layout)
+
+        # Remove margins and spacing
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
         self.container = QWidget()
         self.container.setObjectName('container')
         self.conversation_layout = QVBoxLayout()
         self.conversation_layout.setContentsMargins(0, 0, 0, 0)
-        self.conversation_layout.setSpacing(self.CONVERSATION_SPACING)
+        self.conversation_layout.setSpacing(0)
         self.container.setLayout(self.conversation_layout)
         self.container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.setMinimumWidth(610)
@@ -1696,10 +1765,8 @@ class ConversationView(QWidget):
         sb = self.scroll.verticalScrollBar()
         sb.rangeChanged.connect(self.update_conversation_position)
 
-        main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.addWidget(self.scroll)
-        self.setLayout(main_layout)
+
         self.update_conversation(self.source.collection)
 
         # Refresh the session to update any replies that failed from a network timeout
