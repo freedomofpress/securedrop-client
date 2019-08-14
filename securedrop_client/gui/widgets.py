@@ -1793,9 +1793,9 @@ class ConversationView(QWidget):
             elif conversation_item.filename.endswith('reply.gpg'):
                 self.add_reply(conversation_item)
             else:
-                self.add_file(self.source, conversation_item)
+                self.add_file(conversation_item)
 
-    def add_file(self, source_db_object, submission_db_object):
+    def add_file(self, submission_db_object):
         """
         Add a file from the source.
         """
