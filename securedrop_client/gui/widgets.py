@@ -1623,10 +1623,10 @@ class FileWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        file_options = QWidget()
-        file_options.setFixedWidth(140)
+        self.file_options = QWidget()
+        self.file_options.setFixedWidth(140)
         file_options_layout = QHBoxLayout()
-        file_options.setLayout(file_options_layout)
+        self.file_options.setLayout(file_options_layout)
         self.download_button = QPushButton(_(' DOWNLOAD'))
         self.download_button.setObjectName('download_button')
         self.download_button.setIcon(load_icon('download_file.svg'))
@@ -1637,6 +1637,7 @@ class FileWidget(QWidget):
         self.print_button = QPushButton(_('PRINT'))
         self.print_button.setObjectName('export_print')
         self.print_button.setFont(file_buttons_font)
+
         file_options_layout.addWidget(self.download_button)
         file_options_layout.addWidget(self.export_button)
         file_options_layout.addWidget(self.print_button)
@@ -1659,9 +1660,16 @@ class FileWidget(QWidget):
         if self.file.is_downloaded:
             self.download_button.hide()
             self.no_file_name.hide()
-            self.export_button.show()
-            self.print_button.show()
+            self.export_button.hide()  # Show once print is supported on the workstation client
+            self.print_button.hide()  # Show once print is supported on the workstation client
             self.file_name.show()
+
+            # Delete this block of code once print & export are supported on the workstation client
+            self.file_options.hide()
+            do_not_retain_space = QSizePolicy()
+            do_not_retain_space.setRetainSizeWhenHidden(False)
+            self.file_options.setSizePolicy(do_not_retain_space)
+
         else:
             self.export_button.hide()
             self.print_button.hide()
@@ -1669,7 +1677,7 @@ class FileWidget(QWidget):
             self.download_button.show()
             self.no_file_name.show()
 
-        layout.addWidget(file_options)
+        layout.addWidget(self.file_options)
         layout.addWidget(self.file_name)
         layout.addWidget(self.no_file_name)
         layout.addWidget(horizontal_line)
@@ -1681,9 +1689,15 @@ class FileWidget(QWidget):
         if self.file.is_downloaded:
             self.download_button.hide()
             self.no_file_name.hide()
-            self.export_button.show()
-            self.print_button.show()
+            self.export_button.hide()  # Show once export is supported on the workstation client
+            self.print_button.hide()  # Show once print is supported on the workstation client
             self.file_name.show()
+
+            # Delete this block of code once print & export are supported on the workstation client
+            self.file_options.hide()
+            do_not_retain_space = QSizePolicy()
+            do_not_retain_space.setRetainSizeWhenHidden(False)
+            self.file_options.setSizePolicy(do_not_retain_space)
 
     @pyqtSlot(str)
     def _on_file_downloaded(self, file_uuid: str) -> None:
