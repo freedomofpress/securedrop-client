@@ -1711,10 +1711,6 @@ class FileWidget(QWidget):
 class ConversationView(QWidget):
     """
     Renders a conversation.
-
-    Due to a bug, we cannot set a style sheet for this widget. See
-    https://github.com/freedomofpress/securedrop-client/issues/304
-    https://github.com/freedomofpress/securedrop-client/issues/273
     """
 
     CSS = '''
