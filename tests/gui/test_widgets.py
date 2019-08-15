@@ -1273,8 +1273,8 @@ def test_FileWidget_init_file_downloaded(mocker, source, session):
     assert fw.file.is_downloaded is True
     assert fw.download_button.isHidden()
     assert fw.no_file_name.isHidden()
-    assert not fw.export_button.isHidden()
-    assert not fw.print_button.isHidden()
+    assert fw.export_button.isHidden()  # Show once export is supported on the workstation client
+    assert fw.print_button.isHidden()  # Show once export is supported on the workstation client
     assert not fw.file_name.isHidden()
 
 
