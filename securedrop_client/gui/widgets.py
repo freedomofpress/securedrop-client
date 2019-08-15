@@ -1419,20 +1419,24 @@ class SpeechBubble(QWidget):
 
     CSS = '''
     #speech_bubble {
+        min-width: 540px;
+        max-width: 540px;
+        background-color: #fff;
+        padding: 16px;
+    }
+    #message {
+        min-width: 540px;
+        max-width: 540px;
         font-family: 'Source Sans Pro';
         font-weight: 400;
         font-size: 15px;
-        padding: 20px;
-        min-height: 32px;
-        width: 556px;
-        border-bottom: 0;
         background-color: #fff;
+        padding: 16px;
     }
     #color_bar {
-        padding: 0px;
-        background-color: #102781;
         min-height: 5px;
-        width: 556px;
+        max-height: 5px;
+        background-color: #102781;
         border: 0px;
     }
     '''
@@ -1442,28 +1446,33 @@ class SpeechBubble(QWidget):
         self.message_id = message_id
 
         # Set styles
+        self.setObjectName('speech_bubble')
         self.setStyleSheet(self.CSS)
-        self.setFixedWidth(556)
 
         # Set layout
         layout = QVBoxLayout()
         self.setLayout(layout)
 
         # Set margins and spacing
-        layout.setContentsMargins(0, 10, 0, 10)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
+        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
+        # Message box
         self.message = SecureQLabel(text)
-        self.message.setObjectName('speech_bubble')
+        self.message.setObjectName('message')
         self.message.setWordWrap(True)
-        self.message.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
-        layout.addWidget(self.message)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
+        # Color bar
         self.color_bar = QWidget()
         self.color_bar.setObjectName('color_bar')
-        self.color_bar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        # Add widgets to layout
+        layout.addWidget(self.message)
         layout.addWidget(self.color_bar)
 
+        # Connect signals to slots
         update_signal.connect(self._update_text)
 
     @pyqtSlot(str, str)
@@ -1472,7 +1481,6 @@ class SpeechBubble(QWidget):
         Conditionally update this SpeechBubble's text if and only if the message_id of the emitted
         signal matches the message_id of this speech bubble.
         """
-
         if message_id == self.message_id:
             self.message.setText(text)
 
@@ -1542,8 +1550,9 @@ class FileWidget(QWidget):
     """
 
     CSS = '''
-    QWidget#file_widget {
-        width: 556px;
+    #file_widget {
+        min-width: 556px;
+        max-width: 556px;
     }
     QPushButton:focus {
         outline: none;
@@ -1580,6 +1589,7 @@ class FileWidget(QWidget):
     }
     QLabel#file-size {
         min-width: 48px;
+        max-width: 48px;
         font-family: 'Source Sans Pro';
         font-weight: 400;
         font-size: 14px;
@@ -1588,6 +1598,7 @@ class FileWidget(QWidget):
     QWidget#horizontal_line {
         background-color: rgba(211, 216, 234, 0.45);
         min-height: 2px;
+        max-height: 2px;
         margin: 0px 8px 0px 8px;
     }
     '''
@@ -1609,7 +1620,6 @@ class FileWidget(QWidget):
         # Set styles
         self.setObjectName('file_widget')
         self.setStyleSheet(self.CSS)
-        self.setFixedWidth(556)
         file_description_font = QFont()
         file_description_font.setLetterSpacing(QFont.AbsoluteSpacing, 2)
         file_buttons_font = QFont()
@@ -1622,9 +1632,10 @@ class FileWidget(QWidget):
         # Set margins and spacing
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
+        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
+        # File options: download, export, print
         self.file_options = QWidget()
-        self.file_options.setFixedWidth(140)
         file_options_layout = QHBoxLayout()
         self.file_options.setLayout(file_options_layout)
         self.download_button = QPushButton(_(' DOWNLOAD'))
@@ -1637,26 +1648,28 @@ class FileWidget(QWidget):
         self.print_button = QPushButton(_('PRINT'))
         self.print_button.setObjectName('export_print')
         self.print_button.setFont(file_buttons_font)
-
         file_options_layout.addWidget(self.download_button)
         file_options_layout.addWidget(self.export_button)
         file_options_layout.addWidget(self.print_button)
 
+        # File name or default string
         self.file_name = SecureQLabel(self.file.original_filename)
         self.file_name.setObjectName('file-name')
         self.no_file_name = QLabel('ENCRYPTED FILE ON SERVER')
         self.no_file_name.setObjectName('no-file-name')
         self.no_file_name.setFont(file_description_font)
 
+        # Line between file name and file size
         horizontal_line = QWidget()
         horizontal_line.setObjectName('horizontal_line')
-        horizontal_line.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
+        # File size (b, kb, or MB)
         self.file_size = QLabel(humanize_filesize(self.file.size))
         self.file_size.setObjectName('file-size')
-        self.file_size.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.file_size.setAlignment(Qt.AlignRight)
+        self.file_size.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
 
+        # Decide what to show or hide based on whether or not the file's been downloaded
         if self.file.is_downloaded:
             self.download_button.hide()
             self.no_file_name.hide()
@@ -1677,34 +1690,32 @@ class FileWidget(QWidget):
             self.download_button.show()
             self.no_file_name.show()
 
+        # Add widgets
         layout.addWidget(self.file_options)
         layout.addWidget(self.file_name)
         layout.addWidget(self.no_file_name)
         layout.addWidget(horizontal_line)
         layout.addWidget(self.file_size)
 
+        # Connect signals to slots
         file_ready_signal.connect(self._on_file_downloaded, type=Qt.QueuedConnection)
-
-    def update(self) -> None:
-        if self.file.is_downloaded:
-            self.download_button.hide()
-            self.no_file_name.hide()
-            self.export_button.hide()  # Show once export is supported on the workstation client
-            self.print_button.hide()  # Show once print is supported on the workstation client
-            self.file_name.show()
-
-            # Delete this block of code once print & export are supported on the workstation client
-            self.file_options.hide()
-            do_not_retain_space = QSizePolicy()
-            do_not_retain_space.setRetainSizeWhenHidden(False)
-            self.file_options.setSizePolicy(do_not_retain_space)
 
     @pyqtSlot(str)
     def _on_file_downloaded(self, file_uuid: str) -> None:
         if file_uuid == self.file.uuid:
-            # update state
             self.file = self.controller.get_file(self.file.uuid)
-            self.update()
+            if self.file.is_downloaded:
+                self.download_button.hide()
+                self.no_file_name.hide()
+                self.export_button.hide()  # Show once export is supported on the workstation client
+                self.print_button.hide()  # Show once print is supported on the workstation client
+                self.file_name.show()
+
+                # Delete this block of code once print & export are supported on the workstation client
+                self.file_options.hide()
+                do_not_retain_space = QSizePolicy()
+                do_not_retain_space.setRetainSizeWhenHidden(False)
+                self.file_options.setSizePolicy(do_not_retain_space)
 
     def mouseReleaseEvent(self, e):
         """
@@ -1732,23 +1743,18 @@ class ConversationView(QWidget):
         background: #f3f5f9;
     }
     #scroll {
+        border: 0;
         background: #f3f5f9;
-        border: none;
     }
     '''
 
-    def __init__(
-        self,
-        source_db_object: Source,
-        controller: Controller,
-    ):
+    def __init__(self, source_db_object: Source, controller: Controller):
         super().__init__()
         self.source = source_db_object
         self.controller = controller
 
         # Set styles
         self.setStyleSheet(self.CSS)
-        self.setMinimumWidth(610)
 
         # Set layout
         main_layout = QVBoxLayout()
@@ -1763,7 +1769,7 @@ class ConversationView(QWidget):
         self.conversation_layout = QVBoxLayout()
         self.container.setLayout(self.conversation_layout)
         self.conversation_layout.setContentsMargins(40, 0, 40, 0)
-        self.conversation_layout.setSpacing(0)
+        self.conversation_layout.setSpacing(28)
         self.container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         self.scroll = QScrollArea()
@@ -1812,7 +1818,7 @@ class ConversationView(QWidget):
         Add a file from the source.
         """
         conversation_item = FileWidget(file.uuid, self.controller, self.controller.file_ready)
-        self.conversation_layout.addWidget(conversation_item, 1, Qt.AlignLeft)
+        self.conversation_layout.addWidget(conversation_item, alignment=Qt.AlignLeft)
 
     def update_conversation_position(self, min_val, max_val):
         """
@@ -1835,7 +1841,7 @@ class ConversationView(QWidget):
             content = '<Message not yet available>'
 
         conversation_item = MessageWidget(message.uuid, content, self.controller.message_ready)
-        self.conversation_layout.addWidget(conversation_item, 1, Qt.AlignLeft)
+        self.conversation_layout.addWidget(conversation_item, alignment=Qt.AlignLeft)
 
     def add_reply(self, reply: Reply) -> None:
         """
@@ -1852,7 +1858,7 @@ class ConversationView(QWidget):
             self.controller.reply_ready,
             self.controller.reply_succeeded,
             self.controller.reply_failed)
-        self.conversation_layout.addWidget(conversation_item, 1, Qt.AlignRight)
+        self.conversation_layout.addWidget(conversation_item, alignment=Qt.AlignRight)
 
     def add_reply_from_reply_box(self, uuid: str, content: str) -> None:
         """
@@ -1864,7 +1870,7 @@ class ConversationView(QWidget):
             self.controller.reply_ready,
             self.controller.reply_succeeded,
             self.controller.reply_failed)
-        self.conversation_layout.addWidget(conversation_item, 1, Qt.AlignRight)
+        self.conversation_layout.addWidget(conversation_item, alignment=Qt.AlignRight)
 
     def on_reply_sent(self, source_uuid: str, reply_uuid: str, reply_text: str) -> None:
         """
