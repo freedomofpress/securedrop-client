@@ -1335,6 +1335,8 @@ def test_FileWidget_update(mocker, session, source):
     fw.update()
 
     assert fw.download_button.isHidden()
+    assert fw.no_file_name.isHidden()
+    assert not fw.file_name.isHidden()
 
 
 def test_FileWidget_on_file_download_updates_items_when_uuid_matches(mocker, source, session):
@@ -1350,12 +1352,12 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_matches(mocker, sou
 
     fw = FileWidget(file.uuid, controller, mocker.MagicMock())
     fw.update = mocker.MagicMock()
-    fw.download_button = mocker.MagicMock()
 
     fw._on_file_downloaded(file.uuid)
 
-    fw.update.assert_called_once_with()
     assert fw.download_button.isHidden()
+    assert fw.no_file_name.isHidden()
+    assert not fw.file_name.isHidden()
 
 
 def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(
@@ -1378,7 +1380,6 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(
     fw._on_file_downloaded('not a matching uuid')
 
     fw.clear.assert_not_called()
-    fw.update.assert_not_called()
 
 
 def test_ConversationView_init(mocker, homedir):
@@ -1473,7 +1474,8 @@ def test_ConversationView_add_message(mocker, session, source):
     mock_msg_widget.assert_called_once_with(message.uuid, content, mock_message_ready_signal)
 
     # check that we added the correct widget to the layout
-    cv.conversation_layout.addWidget.assert_called_once_with(mock_msg_widget_res, 1, Qt.AlignLeft)
+    cv.conversation_layout.addWidget.assert_called_once_with(
+        mock_msg_widget_res, alignment=Qt.AlignLeft)
 
 
 def test_ConversationView_add_message_no_content(mocker, session, source):
@@ -1506,7 +1508,8 @@ def test_ConversationView_add_message_no_content(mocker, session, source):
         message.uuid, '<Message not yet available>', mock_message_ready_signal)
 
     # check that we added the correct widget to the layout
-    cv.conversation_layout.addWidget.assert_called_once_with(mock_msg_widget_res, 1, Qt.AlignLeft)
+    cv.conversation_layout.addWidget.assert_called_once_with(
+        mock_msg_widget_res, alignment=Qt.AlignLeft)
 
 
 def test_ConversationView_on_reply_sent(mocker):
@@ -1558,7 +1561,8 @@ def test_ConversationView_add_reply_from_reply_box(mocker):
 
     reply_widget.assert_called_once_with(
         'abc123', 'test message', reply_ready, reply_succeeded, reply_failed)
-    cv.conversation_layout.addWidget.assert_called_once_with(reply_widget_res, 1, Qt.AlignRight)
+    cv.conversation_layout.addWidget.assert_called_once_with(
+        reply_widget_res, alignment=Qt.AlignRight)
 
 
 def test_ConversationView_add_reply(mocker, session, source):
@@ -1599,7 +1603,8 @@ def test_ConversationView_add_reply(mocker, session, source):
         mock_reply_failed_signal)
 
     # check that we added the correct widget to the layout
-    cv.conversation_layout.addWidget.assert_called_once_with(reply_widget_res, 1, Qt.AlignRight)
+    cv.conversation_layout.addWidget.assert_called_once_with(
+        reply_widget_res, alignment=Qt.AlignRight)
 
 
 def test_ConversationView_add_reply_no_content(mocker, session, source):
@@ -1641,7 +1646,8 @@ def test_ConversationView_add_reply_no_content(mocker, session, source):
         mock_reply_failed_signal)
 
     # check that we added the correct widget to the layout
-    cv.conversation_layout.addWidget.assert_called_once_with(reply_widget_res, 1, Qt.AlignRight)
+    cv.conversation_layout.addWidget.assert_called_once_with(
+        reply_widget_res, alignment=Qt.AlignRight)
 
 
 def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
