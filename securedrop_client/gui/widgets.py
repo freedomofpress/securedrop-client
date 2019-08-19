@@ -1441,6 +1441,8 @@ class SpeechBubble(QWidget):
     }
     '''
 
+    TOP_MARGIN = 28
+
     def __init__(self, message_id: str, text: str, update_signal) -> None:
         super().__init__()
         self.message_id = message_id
@@ -1454,7 +1456,7 @@ class SpeechBubble(QWidget):
         self.setLayout(layout)
 
         # Set margins and spacing
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(0, self.TOP_MARGIN, 0, 0)
         layout.setSpacing(0)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
@@ -1603,6 +1605,10 @@ class FileWidget(QWidget):
     }
     '''
 
+    TOP_MARGIN = 10
+    FILE_FONT_SPACING = 2
+    FILE_OPTOINS_FONT_SPACING = 1.6
+
     def __init__(
         self,
         file_uuid: str,
@@ -1621,16 +1627,16 @@ class FileWidget(QWidget):
         self.setObjectName('file_widget')
         self.setStyleSheet(self.CSS)
         file_description_font = QFont()
-        file_description_font.setLetterSpacing(QFont.AbsoluteSpacing, 2)
+        file_description_font.setLetterSpacing(QFont.AbsoluteSpacing, self.FILE_FONT_SPACING)
         file_buttons_font = QFont()
-        file_buttons_font.setLetterSpacing(QFont.AbsoluteSpacing, 1.6)
+        file_buttons_font.setLetterSpacing(QFont.AbsoluteSpacing, self.FILE_OPTOINS_FONT_SPACING)
 
         # Set layout
         layout = QHBoxLayout()
         self.setLayout(layout)
 
         # Set margins and spacing
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(0, self.TOP_MARGIN, 0, 0)
         layout.setSpacing(0)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
@@ -1711,7 +1717,7 @@ class FileWidget(QWidget):
                 self.print_button.hide()  # Show once print is supported on the workstation client
                 self.file_name.show()
 
-                # Delete this block of code once print & export are supported on the workstation client
+                # Delete this block of code once print & export are supported on workstation client
                 self.file_options.hide()
                 do_not_retain_space = QSizePolicy()
                 do_not_retain_space.setRetainSizeWhenHidden(False)
@@ -1748,6 +1754,8 @@ class ConversationView(QWidget):
     }
     '''
 
+    SIDE_MARGIN = 40
+
     def __init__(self, source_db_object: Source, controller: Controller):
         super().__init__()
         self.source = source_db_object
@@ -1768,8 +1776,8 @@ class ConversationView(QWidget):
         self.container.setObjectName('container')
         self.conversation_layout = QVBoxLayout()
         self.container.setLayout(self.conversation_layout)
-        self.conversation_layout.setContentsMargins(40, 0, 40, 0)
-        self.conversation_layout.setSpacing(28)
+        self.conversation_layout.setContentsMargins(self.SIDE_MARGIN, 0, self.SIDE_MARGIN, 0)
+        self.conversation_layout.setSpacing(0)
         self.container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         self.scroll = QScrollArea()
