@@ -1553,8 +1553,9 @@ class FileWidget(QWidget):
 
     CSS = '''
     #file_widget {
-        min-width: 556px;
-        max-width: 556px;
+        min-width: 540px;
+        max-width: 540px;
+        padding: 16px;
     }
     QPushButton:focus {
         outline: none;
