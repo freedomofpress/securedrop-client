@@ -108,7 +108,7 @@ On `dom0`, create the file `/etc/qubes-rpc/policy/securedrop.Proxy`
 with the contents:
 
     securedrop-client securedrop-proxy allow
-    $anyvm $anyvm deny
+    @anyvm @anyvm deny
 
 (replacing the VM names with the correct source and destination names
 for your environment)
