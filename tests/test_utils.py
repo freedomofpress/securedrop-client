@@ -10,7 +10,7 @@ def test_safe_makedirs_non_absolute(homedir):
 
 
 def test_humanize_file_size_bytes():
-    expected_humanized_filesize = "123 bytes"
+    expected_humanized_filesize = "123B"
     actual_humanized_filesize = humanize_filesize(123)
     assert expected_humanized_filesize == actual_humanized_filesize
 

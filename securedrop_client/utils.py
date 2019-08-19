@@ -54,7 +54,7 @@ def humanize_filesize(filesize: int) -> str:
     (with an input unit of bytes)
     """
     if filesize < 1024:
-        return '{} bytes'.format(str(filesize))
+        return '{}B'.format(str(filesize))
     elif filesize < 1024 * 1024:
         return '{}KB'.format(math.floor(filesize / 1024))
     else:

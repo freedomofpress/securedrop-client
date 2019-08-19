@@ -1577,19 +1577,19 @@ class FileWidget(QWidget):
         text-align: left;
         width: 137px;
     }
-    QLabel#file-name {
+    QLabel#file_name {
         font-family: 'Source Sans Pro';
         font-weight: 700;
         font-size: 14px;
         color: #2a319d;
     }
-    QLabel#no-file-name {
+    QLabel#no_file_name {
         font-family: 'Source Sans Pro';
         font-weight: 300;
         font-size: 13px;
         color: #a5b3e9;
     }
-    QLabel#file-size {
+    QLabel#file_size {
         min-width: 48px;
         max-width: 48px;
         font-family: 'Source Sans Pro';
@@ -1643,6 +1643,8 @@ class FileWidget(QWidget):
         # File options: download, export, print
         self.file_options = QWidget()
         file_options_layout = QHBoxLayout()
+        file_options_layout.setContentsMargins(0, 0, 0, 0)
+        file_options_layout.setSpacing(0)
         self.file_options.setLayout(file_options_layout)
         self.download_button = QPushButton(_(' DOWNLOAD'))
         self.download_button.setObjectName('download_button')
@@ -1660,9 +1662,9 @@ class FileWidget(QWidget):
 
         # File name or default string
         self.file_name = SecureQLabel(self.file.original_filename)
-        self.file_name.setObjectName('file-name')
+        self.file_name.setObjectName('file_name')
         self.no_file_name = QLabel('ENCRYPTED FILE ON SERVER')
-        self.no_file_name.setObjectName('no-file-name')
+        self.no_file_name.setObjectName('no_file_name')
         self.no_file_name.setFont(file_description_font)
 
         # Line between file name and file size
@@ -1671,7 +1673,7 @@ class FileWidget(QWidget):
 
         # File size (b, kb, or MB)
         self.file_size = QLabel(humanize_filesize(self.file.size))
-        self.file_size.setObjectName('file-size')
+        self.file_size.setObjectName('file_size')
         self.file_size.setAlignment(Qt.AlignRight)
         self.file_size.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
 
