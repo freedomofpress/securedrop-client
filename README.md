@@ -110,8 +110,8 @@ with the contents:
     securedrop-client securedrop-proxy allow
     @anyvm @anyvm deny
 
-(replacing the VM names with the correct source and destination names
-for your environment)
+Replace the VM names in the first line above with the correct source and
+destination names for your environment. The second line should appear as is.
 
 Also in `dom0`, edit `/etc/qubes-rpc/policy/qubes.Filecopy`, to add
 near the top:
