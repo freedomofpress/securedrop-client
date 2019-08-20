@@ -1687,6 +1687,7 @@ class FileWidget(QWidget):
         # File name or default string
         self.file_name = SecureQLabel(self.file.original_filename)
         self.file_name.setObjectName('file_name')
+        self.file_name.installEventFilter(self)
         self.no_file_name = SecureQLabel('ENCRYPTED FILE ON SERVER')
         self.no_file_name.setObjectName('no_file_name')
         self.no_file_name.setFont(file_description_font)
