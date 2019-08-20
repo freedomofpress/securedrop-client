@@ -636,7 +636,7 @@ class MainView(QWidget):
         self.view_layout.setSpacing(0)
         self.view_holder = QWidget()
         self.view_holder.setObjectName('view_holder')  # Set css id
-        self.view_holder.setMinimumWidth(610)
+        self.view_holder.setMinimumWidth(667)
         self.view_holder.setLayout(self.view_layout)
 
         self.empty_conversation_view = EmptyConversationView()
@@ -1442,6 +1442,7 @@ class SpeechBubble(QWidget):
     '''
 
     TOP_MARGIN = 28
+    BOTTOM_MARGIN = 10
 
     def __init__(self, message_id: str, text: str, update_signal) -> None:
         super().__init__()
@@ -1456,7 +1457,7 @@ class SpeechBubble(QWidget):
         self.setLayout(layout)
 
         # Set margins and spacing
-        layout.setContentsMargins(0, self.TOP_MARGIN, 0, 0)
+        layout.setContentsMargins(0, self.TOP_MARGIN, 0, self.BOTTOM_MARGIN)
         layout.setSpacing(0)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
@@ -1557,8 +1558,11 @@ class FileWidget(QWidget):
         max-width: 540px;
         padding: 16px;
     }
-    QPushButton:focus {
-        outline: none;
+    #file_options {
+        min-width: 137px;
+    }
+    QPushButton:hover {
+        background: #e3e5e9;
     }
     QPushButton#export_print {
         border: none;
@@ -1566,8 +1570,6 @@ class FileWidget(QWidget):
         font-weight: 500;
         font-size: 13px;
         color: #0065db;
-        text-align: left;
-        width: 137px;
     }
     QPushButton#download_button {
         border: none;
@@ -1575,16 +1577,17 @@ class FileWidget(QWidget):
         font-weight: 600;
         font-size: 13px;
         color: #2a319d;
-        text-align: left;
-        width: 137px;
     }
     QLabel#file_name {
+        min-width: 129px;
+        padding-right: 8px;
         font-family: 'Source Sans Pro';
         font-weight: 700;
         font-size: 14px;
         color: #2a319d;
     }
     QLabel#no_file_name {
+        padding-right: 8px;
         font-family: 'Source Sans Pro';
         font-weight: 300;
         font-size: 13px;
@@ -1599,16 +1602,17 @@ class FileWidget(QWidget):
         color: #2a319d;
     }
     QWidget#horizontal_line {
-        background-color: rgba(211, 216, 234, 0.45);
         min-height: 2px;
         max-height: 2px;
-        margin: 0px 8px 0px 8px;
+        background-color: rgba(211, 216, 234, 0.45);
+        padding-left: 8px;
+        padding-right: 8px;
     }
     '''
 
-    TOP_MARGIN = 10
+    VERTICAL_MARGIN = 10
     FILE_FONT_SPACING = 2
-    FILE_OPTOINS_FONT_SPACING = 1.6
+    FILE_OPTIONS_FONT_SPACING = 1.6
 
     def __init__(
         self,
@@ -1630,25 +1634,28 @@ class FileWidget(QWidget):
         file_description_font = QFont()
         file_description_font.setLetterSpacing(QFont.AbsoluteSpacing, self.FILE_FONT_SPACING)
         file_buttons_font = QFont()
-        file_buttons_font.setLetterSpacing(QFont.AbsoluteSpacing, self.FILE_OPTOINS_FONT_SPACING)
+        file_buttons_font.setLetterSpacing(QFont.AbsoluteSpacing, self.FILE_OPTIONS_FONT_SPACING)
 
         # Set layout
         layout = QHBoxLayout()
         self.setLayout(layout)
 
         # Set margins and spacing
-        layout.setContentsMargins(0, self.TOP_MARGIN, 0, 0)
+        layout.setContentsMargins(0, self.VERTICAL_MARGIN, 0, self.VERTICAL_MARGIN)
         layout.setSpacing(0)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         # File options: download, export, print
         self.file_options = QWidget()
+        self.file_options.setObjectName('file_options')
         file_options_layout = QHBoxLayout()
+        self.file_options.setLayout(file_options_layout)
         file_options_layout.setContentsMargins(0, 0, 0, 0)
         file_options_layout.setSpacing(0)
-        self.file_options.setLayout(file_options_layout)
+        file_options_layout.setAlignment(Qt.AlignLeft)
         self.download_button = QPushButton(_(' DOWNLOAD'))
         self.download_button.setObjectName('download_button')
+        self.download_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.download_button.setIcon(load_icon('download_file.svg'))
         self.download_button.setFont(file_buttons_font)
         self.export_button = QPushButton(_('EXPORT'))
@@ -1664,19 +1671,19 @@ class FileWidget(QWidget):
         # File name or default string
         self.file_name = SecureQLabel(self.file.original_filename)
         self.file_name.setObjectName('file_name')
-        self.no_file_name = QLabel('ENCRYPTED FILE ON SERVER')
+        self.no_file_name = SecureQLabel('ENCRYPTED FILE ON SERVER')
         self.no_file_name.setObjectName('no_file_name')
         self.no_file_name.setFont(file_description_font)
 
         # Line between file name and file size
         horizontal_line = QWidget()
         horizontal_line.setObjectName('horizontal_line')
+        horizontal_line.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
-        # File size (b, kb, or MB)
-        self.file_size = QLabel(humanize_filesize(self.file.size))
+        # File size
+        self.file_size = SecureQLabel(humanize_filesize(self.file.size))
         self.file_size.setObjectName('file_size')
         self.file_size.setAlignment(Qt.AlignRight)
-        self.file_size.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
 
         # Decide what to show or hide based on whether or not the file's been downloaded
         if self.file.is_downloaded:
@@ -1714,6 +1721,7 @@ class FileWidget(QWidget):
         if file_uuid == self.file.uuid:
             self.file = self.controller.get_file(self.file.uuid)
             if self.file.is_downloaded:
+                self.file_name.setText(self.file.original_filename)
                 self.download_button.hide()
                 self.no_file_name.hide()
                 self.export_button.hide()  # Show once export is supported on the workstation client
@@ -2076,6 +2084,7 @@ class TitleLabel(QLabel):
         font-weight: 400;
         font-size: 24px;
         color: #2a319d;
+        padding-left: 40px;
     }
     '''
 
@@ -2126,6 +2135,9 @@ class SourceProfileShortWidget(QWidget):
 
         self.layout = QHBoxLayout()
         self.setLayout(self.layout)
+
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(0)
 
         self.title = TitleLabel(self.source.journalist_designation)
         self.updated = LastUpdatedLabel(self.source.last_updated)
