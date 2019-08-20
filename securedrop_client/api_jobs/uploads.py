@@ -63,7 +63,11 @@ class SendReplyJobError(Exception):
         self.reply_uuid = reply_uuid
 
 
-class SendReplyJobTimeoutError(Exception):
-    def __init__(self, message: str, reply_uuid: str):
-        super().__init__(message)
+class SendReplyJobTimeoutError(RequestTimeoutError):
+    def __init__(self, message: str, reply_uuid: str) -> None:
+        super().__init__()
         self.reply_uuid = reply_uuid
+        self.message = message
+
+    def __str__(self) -> str:
+        return self.message

@@ -10,7 +10,7 @@ from typing import Optional, Tuple  # noqa: F401
 from securedrop_client.api_jobs.base import ApiJob, ApiInaccessibleError, DEFAULT_NUM_ATTEMPTS
 from securedrop_client.api_jobs.downloads import (FileDownloadJob, MessageDownloadJob,
                                                   ReplyDownloadJob)
-from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobTimeoutError
+from securedrop_client.api_jobs.uploads import SendReplyJob
 from securedrop_client.api_jobs.updatestar import UpdateStarJob
 
 
@@ -56,7 +56,7 @@ class RunnableQueue(QObject):
 
             try:
                 job._do_call_api(self.api_client, session)
-            except (RequestTimeoutError, SendReplyJobTimeoutError):
+            except RequestTimeoutError:
                 logger.debug('Job {} timed out'.format(job))
 
                 # Reset number of remaining attempts for this job to the default and
@@ -71,7 +71,6 @@ class RunnableQueue(QObject):
                 # (see ticket #379).
                 logger.error('Client is not authenticated, skipping job...')
             except Exception as e:
-                # we should re-enqueue the job and pause queue processing
                 logger.error('Job {} raised  exception: {}: {}'.format(job, type(e).__name__, e))
             finally:
                 session.close()

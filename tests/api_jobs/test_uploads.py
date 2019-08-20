@@ -8,6 +8,11 @@ from securedrop_client.crypto import GpgHelper, CryptoError
 from tests import factory
 
 
+def test_SendReplyJobTimeoutError():
+    error = SendReplyJobTimeoutError('mock_message', 'mock_reply_id')
+    assert str(error) == 'mock_message'
+
+
 def test_send_reply_success(homedir, mocker, session, session_maker):
     '''
     Check that the "happy path" of encrypting a message and sending it to the
