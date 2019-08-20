@@ -604,7 +604,11 @@ class MainView(QWidget):
     """
 
     CSS = '''
+    #main_view {
+        min-height: 558;
+    }
     #view_holder {
+        min-width: 667;
         border: none;
         background-color: #f3f5f9;
     }
@@ -620,32 +624,38 @@ class MainView(QWidget):
     def __init__(self, parent: QObject):
         super().__init__(parent)
 
+        # Set id and styles
+        self.setObjectName('main_view')
         self.setStyleSheet(self.CSS)
 
+        # Set layout
         self.layout = QHBoxLayout(self)
+        self.setLayout(self.layout)
+
+        # Set margins and spacing
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
-        self.setLayout(self.layout)
-        self.setMinimumHeight(558)
 
+        # Create SourceList widget
         self.source_list = SourceList()
         self.source_list.itemSelectionChanged.connect(self.on_source_changed)
 
+        # Create widgets
+        self.view_holder = QWidget()
+        self.view_holder.setObjectName('view_holder')
         self.view_layout = QVBoxLayout()
+        self.view_holder.setLayout(self.view_layout)
         self.view_layout.setContentsMargins(0, 0, 0, 0)
         self.view_layout.setSpacing(0)
-        self.view_holder = QWidget()
-        self.view_holder.setObjectName('view_holder')  # Set css id
-        self.view_holder.setMinimumWidth(667)
-        self.view_holder.setLayout(self.view_layout)
-
         self.empty_conversation_view = EmptyConversationView()
-
         self.view_layout.addWidget(self.empty_conversation_view)
 
+        # Add widgets to layout
         self.layout.addWidget(self.source_list)
         self.layout.addWidget(self.view_holder)
 
+        # Note: We should not delete SourceConversationWrapper when its source is unselected. This
+        # is a temporary solution to keep copies of our objects since we do delete them.
         self.source_conversations = {}  # type: Dict[Source, SourceConversationWrapper]
 
     def setup(self, controller):
@@ -727,9 +737,8 @@ class EmptyConversationView(QWidget):
     def __init__(self):
         super().__init__()
 
+        # Set id and styles
         self.setObjectName('view')
-
-        # Set styles
         self.setStyleSheet(self.CSS)
 
         # Set layout
@@ -740,15 +749,16 @@ class EmptyConversationView(QWidget):
         layout.setContentsMargins(0, 100, 0, 0)
         layout.setSpacing(0)
 
+        # Create widgets
         self.content = QLabel(self)
         self.content.setObjectName('content')
         self.content.setWordWrap(True)
-
         content_layout = QVBoxLayout()
         content_layout.addStretch(1)
         content_layout.addWidget(self.content, 8)
         content_layout.addStretch(1)
 
+        # Add widgets
         layout.addStretch(1)
         layout.addWidget(self.content, 5)
         layout.addStretch(1)
@@ -786,10 +796,8 @@ class SourceList(QListWidget):
     def __init__(self):
         super().__init__()
 
-        # Set css id
+        # Set id and styles
         self.setObjectName('sourcelist')
-
-        # Set styles
         self.setStyleSheet(self.CSS)
         self.setFixedWidth(445)
         self.setUniformItemSizes(True)
@@ -797,10 +805,6 @@ class SourceList(QListWidget):
         # Set layout
         layout = QVBoxLayout(self)
         self.setLayout(layout)
-
-        # Remove margins
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
 
     def setup(self, controller):
         self.controller = controller
@@ -864,6 +868,13 @@ class SourceWidget(QWidget):
     QWidget#source_widget {
         border-bottom: 1px solid #9b9b9b;
     }
+    QWidget#gutter {
+        min-width: 40px;
+        max-width: 40px;
+    }
+    QWidget#metadata {
+        max-width: 60px;
+    }
     QLabel#preview {
         font-family: 'Source Sans Pro';
         font-weight: 400;
@@ -884,6 +895,11 @@ class SourceWidget(QWidget):
     }
     '''
 
+    SIDE_MARGIN = 10
+    SOURCE_WIDGET_VERTICAL_MARGIN = 10
+    PREVIEW_WIDTH = 312
+    PREVIEW_HEIGHT = 60
+
     def __init__(self, source: Source):
         super().__init__()
 
@@ -898,13 +914,12 @@ class SourceWidget(QWidget):
         self.setLayout(layout)
 
         # Remove margins and spacing
-        layout.setContentsMargins(10, 0, 10, 0)
+        layout.setContentsMargins(self.SIDE_MARGIN, 0, self.SIDE_MARGIN, 0)
         layout.setSpacing(0)
 
         # Set up gutter
         self.gutter = QWidget()
         self.gutter.setObjectName('gutter')
-        self.gutter.setFixedWidth(40)
         gutter_layout = QVBoxLayout(self.gutter)
         gutter_layout.setContentsMargins(0, 0, 0, 0)
         gutter_layout.setSpacing(0)
@@ -922,7 +937,7 @@ class SourceWidget(QWidget):
         self.name.setObjectName('source_name')
         self.preview = QLabel()
         self.preview.setObjectName('preview')
-        self.preview.setFixedSize(QSize(312, 60))
+        self.preview.setFixedSize(QSize(self.PREVIEW_WIDTH, self.PREVIEW_HEIGHT))
         self.preview.setWordWrap(True)
         summary_layout.addWidget(self.name)
         summary_layout.addWidget(self.preview)
@@ -930,7 +945,6 @@ class SourceWidget(QWidget):
         # Set up metadata
         self.metadata = QWidget()
         self.metadata.setObjectName('metadata')
-        self.metadata.setMaximumWidth(60)
         metadata_layout = QVBoxLayout(self.metadata)
         metadata_layout.setContentsMargins(0, 0, 0, 0)
         metadata_layout.setSpacing(0)
@@ -947,7 +961,8 @@ class SourceWidget(QWidget):
         self.source_widget = QWidget()
         self.source_widget.setObjectName('source_widget')
         source_widget_layout = QHBoxLayout(self.source_widget)
-        source_widget_layout.setContentsMargins(0, 10, 0, 10)
+        source_widget_layout.setContentsMargins(
+            0, self.SOURCE_WIDGET_VERTICAL_MARGIN, 0, self.SOURCE_WIDGET_VERTICAL_MARGIN)
         source_widget_layout.setSpacing(0)
         source_widget_layout.addWidget(self.gutter)
         source_widget_layout.addWidget(self.summary)
@@ -1561,9 +1576,6 @@ class FileWidget(QWidget):
     #file_options {
         min-width: 137px;
     }
-    QPushButton:hover {
-        background: #e3e5e9;
-    }
     QPushButton#export_print {
         border: none;
         font-family: 'Source Sans Pro';
@@ -1765,10 +1777,12 @@ class ConversationView(QWidget):
     }
     '''
 
-    SIDE_MARGIN = 40
+    MARGIN_LEFT = 38
+    MARGIN_RIGHT = 20
 
     def __init__(self, source_db_object: Source, controller: Controller):
         super().__init__()
+
         self.source = source_db_object
         self.controller = controller
 
@@ -1779,7 +1793,7 @@ class ConversationView(QWidget):
         main_layout = QVBoxLayout()
         self.setLayout(main_layout)
 
-        # Remove margins and spacing
+        # Set margins and spacing
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
@@ -1787,13 +1801,12 @@ class ConversationView(QWidget):
         self.container.setObjectName('container')
         self.conversation_layout = QVBoxLayout()
         self.container.setLayout(self.conversation_layout)
-        self.conversation_layout.setContentsMargins(self.SIDE_MARGIN, 0, self.SIDE_MARGIN, 0)
+        self.conversation_layout.setContentsMargins(self.MARGIN_LEFT, 0, self.MARGIN_RIGHT, 0)
         self.conversation_layout.setSpacing(0)
         self.container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         self.scroll = QScrollArea()
         self.scroll.setObjectName('scroll')
-        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll.setWidget(self.container)
         self.scroll.setWidgetResizable(True)
@@ -1911,17 +1924,24 @@ class SourceConversationWrapper(QWidget):
         controller: Controller,
     ) -> None:
         super().__init__()
+
+        # Set layout
         layout = QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
+        # Set margins and spacing
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        # Create widgets
         self.conversation_title_bar = SourceProfileShortWidget(source, controller)
         self.conversation_view = ConversationView(source, controller)
         self.reply_box = ReplyBoxWidget(source, controller)
 
-        layout.addWidget(self.conversation_title_bar, 1)
-        layout.addWidget(self.conversation_view, 9)
-        layout.addWidget(self.reply_box, 3)
+        # Add widgets
+        layout.addWidget(self.conversation_title_bar)
+        layout.addWidget(self.conversation_view)
+        layout.addWidget(self.reply_box)
 
         # Connect reply_box to conversation_view
         self.reply_box.reply_sent.connect(self.conversation_view.on_reply_sent)
@@ -1934,6 +1954,8 @@ class ReplyBoxWidget(QWidget):
 
     CSS = '''
     #replybox {
+        min-height: 173px;
+        max-height: 173px;
         font-family: 'Montserrat';
         font-weight: 400;
         font-size: 18px;
@@ -1952,35 +1974,45 @@ class ReplyBoxWidget(QWidget):
     def __init__(self, source: Source, controller: Controller) -> None:
         super().__init__()
 
+        self.source = source
+        self.controller = controller
+
         # Set css id
         self.setObjectName('replybox')
 
         # Set styles
         self.setStyleSheet(self.CSS)
 
+        # Set layout
         layout = QVBoxLayout()
         self.setLayout(layout)
+
+        # Set margins
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self.source = source
-        self.controller = controller
-
+        # Create widgets
         self.text_edit = QTextEdit()
 
         self.send_button = QPushButton()
         self.send_button.clicked.connect(self.send_reply)
         self.send_button.setMaximumSize(40, 40)
-
         button_pixmap = load_image('send.png')
         button_icon = QIcon(button_pixmap)
         self.send_button.setIcon(button_icon)
         self.send_button.setIconSize(button_pixmap.rect().size())
 
-        self.controller.authentication_state.connect(self._on_authentication_changed)
-        self._on_authentication_changed(self.controller.is_authenticated)
-
+        # Add widgets
         layout.addWidget(self.text_edit)
-        layout.addWidget(self.send_button, 0, Qt.AlignRight)
+        layout.addWidget(self.send_button, alignment=Qt.AlignRight)
+
+        # Determine whether or not this widget should be enabled
+        if self.controller.is_authenticated:
+            self.enable()
+        else:
+            self.disable()
+
+        # Connect signals to slots
+        self.controller.authentication_state.connect(self._on_authentication_changed)
 
     def enable(self):
         self.text_edit.clear()
@@ -2084,7 +2116,7 @@ class TitleLabel(QLabel):
         font-weight: 400;
         font-size: 24px;
         color: #2a319d;
-        padding-left: 40px;
+        padding-left: 4px;
     }
     '''
 
@@ -2128,6 +2160,10 @@ class SourceProfileShortWidget(QWidget):
     2. A menu to perform various operations on Source.
     """
 
+    MARGIN_LEFT = 38
+    MARGIN_RIGHT = 20
+    VERTICAL_MARGIN = 20
+
     def __init__(self, source, controller):
         super().__init__()
         self.source = source
@@ -2136,13 +2172,14 @@ class SourceProfileShortWidget(QWidget):
         self.layout = QHBoxLayout()
         self.setLayout(self.layout)
 
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setSpacing(0)
+        self.layout.setContentsMargins(
+            self.MARGIN_LEFT, self.VERTICAL_MARGIN, self.MARGIN_RIGHT, self.VERTICAL_MARGIN)
 
         self.title = TitleLabel(self.source.journalist_designation)
         self.updated = LastUpdatedLabel(self.source.last_updated)
         self.menu = SourceMenuButton(self.source, self.controller)
 
-        self.layout.addWidget(self.title, 10, Qt.AlignLeft)
-        self.layout.addWidget(self.updated, 1, Qt.AlignRight)
-        self.layout.addWidget(self.menu, 1, Qt.AlignRight)
+        self.layout.addWidget(self.title, alignment=Qt.AlignLeft)
+        self.layout.addStretch()
+        self.layout.addWidget(self.updated, alignment=Qt.AlignRight)
+        self.layout.addWidget(self.menu, alignment=Qt.AlignRight)
