@@ -1871,6 +1871,26 @@ def test_DeleteSource_from_source_widget_when_user_is_loggedout(mocker):
         mock_delete_source_message_box_obj.launch.assert_not_called()
 
 
+def test_ReplyBoxWidget_init(mocker):
+    """
+    Ensure reply box set up properly.
+    """
+    rb = ReplyBoxWidget(mocker.MagicMock(), mocker.MagicMock())
+    assert rb.text_edit.isEnabled()
+    assert not rb.send_button.isHidden()
+
+
+def test_ReplyBoxWidget_init_no_auth(mocker):
+    """
+    Ensure reply box set up properly.
+    """
+    controller = mocker.MagicMock()
+    controller.is_authenticated = False
+    rb = ReplyBoxWidget(mocker.MagicMock(), controller)
+    assert not rb.text_edit.isEnabled()
+    assert rb.send_button.isHidden()
+
+
 def test_ReplyBoxWidget_send_reply(mocker):
     """
     Ensure sending a reply from the reply box emits signal, clears text box, and sends the reply
@@ -1996,7 +2016,6 @@ def test_ReplyBoxWidget_auth_signals(mocker, homedir):
     ReplyBoxWidget(source, controller)
 
     connect.assert_called_once_with(_on_authentication_changed_fn)
-    _on_authentication_changed_fn.assert_called_with(controller.is_authenticated)
 
 
 def test_ReplyBoxWidget_enable(mocker):
