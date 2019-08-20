@@ -4,7 +4,7 @@ Make sure the UI widgets are configured correctly and work as expected.
 import html
 
 from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QMessageBox, QMainWindow, QTextEdit
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QEvent
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from tests import factory
@@ -1278,9 +1278,34 @@ def test_FileWidget_init_file_downloaded(mocker, source, session):
     assert not fw.file_name.isHidden()
 
 
-def test_FileWidget_mousePressEvent_download(mocker, session, source):
+def test_FileWidget_event_handler(mocker, session, source):
     """
-    Should fire the expected download event handler in the logic layer.
+    Left click on filename should trigger an open.
+    """
+    mock_signal = mocker.MagicMock()  # not important for this test
+
+    file_ = factory.File(source=source['source'],
+                         is_downloaded=False,
+                         is_decrypted=None)
+    session.add(file_)
+    session.commit()
+
+    mock_get_file = mocker.MagicMock(return_value=file_)
+    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+    test_event = QEvent(QEvent.MouseButtonPress)
+    test_event.button = mocker.MagicMock(return_value=Qt.LeftButton)
+
+    fw = FileWidget(file_.uuid, mock_controller, mock_signal)
+    fw._on_left_click = mocker.MagicMock()
+
+    fw.eventFilter(fw, test_event)
+    fw._on_left_click.call_count == 1
+
+
+def test_FileWidget_on_left_click_download(mocker, session, source):
+    """
+    Left click on download when file is not downloaded should trigger
+    a download.
     """
     mock_signal = mocker.MagicMock()  # not important for this test
 
@@ -1297,15 +1322,15 @@ def test_FileWidget_mousePressEvent_download(mocker, session, source):
     mock_get_file.assert_called_once_with(file_.uuid)
     mock_get_file.reset_mock()
 
-    fw.mouseReleaseEvent(None)
+    fw._on_left_click()
     mock_get_file.assert_called_once_with(file_.uuid)
     mock_controller.on_submission_download.assert_called_once_with(
         db.File, file_.uuid)
 
 
-def test_FileWidget_mousePressEvent_open(mocker, session, source):
+def test_FileWidget_on_left_click_open(mocker, session, source):
     """
-    Should fire the expected open event handler in the logic layer.
+    Left click on open when file is downloaded should trigger an open.
     """
     mock_signal = mocker.MagicMock()  # not important for this test
 
@@ -1317,7 +1342,7 @@ def test_FileWidget_mousePressEvent_open(mocker, session, source):
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
     fw = FileWidget(file_.uuid, mock_controller, mock_signal)
-    fw.mouseReleaseEvent(None)
+    fw._on_left_click()
     fw.controller.on_file_open.assert_called_once_with(file_.uuid)
 
 
