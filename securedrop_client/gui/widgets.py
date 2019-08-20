@@ -24,7 +24,7 @@ import sys
 from gettext import gettext as _
 from typing import Dict, List  # noqa: F401
 from uuid import uuid4
-from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QTimer, QSize, pyqtBoundSignal, QObject
+from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QEvent, QTimer, QSize, pyqtBoundSignal, QObject
 from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
@@ -1668,6 +1668,10 @@ class FileWidget(QWidget):
         file_options_layout.addWidget(self.export_button)
         file_options_layout.addWidget(self.print_button)
 
+        self.download_button.installEventFilter(self)
+        # self.export_button.installEventFilter(self)
+        # self.print_button.installEventFilter(self)
+
         # File name or default string
         self.file_name = SecureQLabel(self.file.original_filename)
         self.file_name.setObjectName('file_name')
@@ -1716,6 +1720,12 @@ class FileWidget(QWidget):
         # Connect signals to slots
         file_ready_signal.connect(self._on_file_downloaded, type=Qt.QueuedConnection)
 
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.MouseButtonPress:
+            if event.button() == Qt.LeftButton:
+                self._on_left_click()
+        return QObject.event(obj, event)
+
     @pyqtSlot(str)
     def _on_file_downloaded(self, file_uuid: str) -> None:
         if file_uuid == self.file.uuid:
@@ -1734,7 +1744,7 @@ class FileWidget(QWidget):
                 do_not_retain_space.setRetainSizeWhenHidden(False)
                 self.file_options.setSizePolicy(do_not_retain_space)
 
-    def mouseReleaseEvent(self, e):
+    def _on_left_click(self):
         """
         Handle a completed click via the program logic. The download state
         of the file distinguishes which function in the logic layer to call.
