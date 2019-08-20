@@ -1672,7 +1672,7 @@ def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
 
     cv.add_file(file)
 
-    mock_label.assert_called_with(file.original_filename)
+    mock_label.assert_called_with('123B')  # default factory filesize
     assert cv.conversation_layout.addWidget.call_count == 1
 
     cal = cv.conversation_layout.addWidget.call_args_list
