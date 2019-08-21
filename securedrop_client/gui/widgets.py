@@ -2088,13 +2088,8 @@ class SourceMenu(QMenu):
         super().__init__()
         self.source = source
         self.controller = controller
-        actions = (
-            DeleteSourceAction(
-                self.source,
-                self,
-                self.controller
-            ),
-        )
+
+        actions = (DeleteSourceAction(self.source, self, self.controller),)
         for action in actions:
             self.addAction(action)
 
@@ -2105,12 +2100,27 @@ class SourceMenuButton(QToolButton):
     This button is responsible for launching the source menu on click.
     """
 
+    CSS = '''
+    #ellipsis_button {
+        border: none;
+        margin: 5px 0px 0px 0px;
+        padding-left: 8px;
+    }
+    QToolButton::menu-indicator {
+        image: none;
+    }
+    '''
+
     def __init__(self, source, controller):
         super().__init__()
         self.controller = controller
         self.source = source
 
+        self.setObjectName('ellipsis_button')
+        self.setStyleSheet(self.CSS)
+
         self.setIcon(load_icon("ellipsis.svg"))
+        self.setIconSize(QSize(22, 4))  # Set to the size of the svg viewBox
 
         self.menu = SourceMenu(self.source, self.controller)
         self.setMenu(self.menu)
@@ -2171,26 +2181,51 @@ class SourceProfileShortWidget(QWidget):
     2. A menu to perform various operations on Source.
     """
 
-    MARGIN_LEFT = 38
-    MARGIN_RIGHT = 20
-    VERTICAL_MARGIN = 20
+    CSS = '''
+    QWidget#horizontal_line {
+        min-height: 2px;
+        max-height: 2px;
+        background-color: rgba(42, 49, 157, 0.15);
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+    '''
+
+    MARGIN_LEFT = 25
+    MARGIN_RIGHT = 17
+    VERTICAL_MARGIN = 14
 
     def __init__(self, source, controller):
         super().__init__()
+
         self.source = source
         self.controller = controller
 
-        self.layout = QHBoxLayout()
-        self.setLayout(self.layout)
+        # Set styles
+        self.setStyleSheet(self.CSS)
 
-        self.layout.setContentsMargins(
+        # Set layout
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+        # Create header
+        header = QWidget()
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(
             self.MARGIN_LEFT, self.VERTICAL_MARGIN, self.MARGIN_RIGHT, self.VERTICAL_MARGIN)
+        title = TitleLabel(self.source.journalist_designation)
+        updated = LastUpdatedLabel(self.source.last_updated)
+        menu = SourceMenuButton(self.source, self.controller)
+        header_layout.addWidget(title, alignment=Qt.AlignLeft)
+        header_layout.addStretch()
+        header_layout.addWidget(updated, alignment=Qt.AlignRight)
+        header_layout.addWidget(menu, alignment=Qt.AlignRight)
 
-        self.title = TitleLabel(self.source.journalist_designation)
-        self.updated = LastUpdatedLabel(self.source.last_updated)
-        self.menu = SourceMenuButton(self.source, self.controller)
+        # Create horizontal line
+        horizontal_line = QWidget()
+        horizontal_line.setObjectName('horizontal_line')
+        horizontal_line.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
-        self.layout.addWidget(self.title, alignment=Qt.AlignLeft)
-        self.layout.addStretch()
-        self.layout.addWidget(self.updated, alignment=Qt.AlignRight)
-        self.layout.addWidget(self.menu, alignment=Qt.AlignRight)
+        # Add widgets
+        layout.addWidget(header)
+        layout.addWidget(horizontal_line)
