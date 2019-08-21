@@ -91,11 +91,11 @@ class TopPane(QWidget):
         spacer2.setFixedHeight(42)
 
         # Add widgets to layout
-        layout.addWidget(self.refresh, 1)
-        layout.addWidget(self.activity_status_bar, 1)
-        layout.addWidget(self.error_status_bar, 1)
-        layout.addWidget(spacer, 1)
-        layout.addWidget(spacer2, 1)
+        layout.addWidget(self.refresh)
+        layout.addWidget(self.activity_status_bar)
+        layout.addWidget(self.error_status_bar)
+        layout.addWidget(spacer)
+        layout.addWidget(spacer2)
 
     def setup(self, controller):
         self.refresh.setup(controller)
@@ -984,7 +984,7 @@ class SourceWidget(QWidget):
         """
         Updates the displayed values with the current values from self.source.
         """
-        self.timestamp.setText(arrow.get(self.source.last_updated).format('DD MMM'))
+        self.timestamp.setText(_(arrow.get(self.source.last_updated).format('DD MMM')))
         self.name.setText(self.source.journalist_designation)
         if self.source.document_count == 0:
             self.paperclip.hide()
@@ -1786,6 +1786,18 @@ class ConversationView(QWidget):
         border: 0;
         background: #f3f5f9;
     }
+    SecureQLabel#last_activity_label {
+        font-family: 'Source Sans Pro';
+        font-weight: 400;
+        font-size: 13px;
+        color: #9c9dbb;
+    }
+    SecureQLabel#last_activity {
+        font-family: 'Source Sans Pro';
+        font-weight: 700;
+        font-size: 13px;
+        color: #2a319d;
+    }
     '''
 
     MARGIN_LEFT = 38
@@ -1855,6 +1867,18 @@ class ConversationView(QWidget):
                 self.add_reply(conversation_item)
             else:
                 self.add_file(conversation_item)
+
+        activity = QWidget()
+        activity_layout = QHBoxLayout(activity)
+        last_activity_label = SecureQLabel('Last action for this source')
+        last_activity_label.setObjectName('last_activity_label')
+        last_activity = SecureQLabel(
+            _(arrow.get(self.source.last_updated).format('DD MMM YYYY  HH:MM')))
+        last_activity.setObjectName('last_activity')
+        activity_layout.addWidget(last_activity_label, alignment=Qt.AlignRight)
+        activity_layout.addWidget(last_activity, alignment=Qt.AlignRight)
+        self.conversation_layout.addWidget(activity, alignment=Qt.AlignRight)
+
 
     def add_file(self, file: File):
         """
@@ -2154,7 +2178,7 @@ class LastUpdatedLabel(QLabel):
     '''
 
     def __init__(self, last_updated):
-        super().__init__(_(_('{}').format(arrow.get(last_updated).humanize())))
+        super().__init__(_(arrow.get(last_updated).format('DD MMM')))
 
         # Set css id
         self.setObjectName('conversation-title-date')
