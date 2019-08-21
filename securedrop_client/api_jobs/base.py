@@ -70,15 +70,12 @@ class ApiJob(QueueJob):
                 self.remaining_attempts -= 1
                 result = self.call_api(api_client, session)
             except (AuthError, ApiInaccessibleError) as e:
-                logger.error('Client is not authenticated')
                 raise ApiInaccessibleError() from e
             except RequestTimeoutError as e:
                 if self.remaining_attempts == 0:
                     self.failure_signal.emit(e)
                     raise
             except Exception as e:
-                logger.error('Job {} raised an exception: {}: {}'.format(self, type(e).__name__, e))
-                logger.error('Skipping job')
                 self.failure_signal.emit(e)
                 raise
             else:

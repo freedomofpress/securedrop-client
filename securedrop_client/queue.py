@@ -69,16 +69,21 @@ class RunnableQueue(QObject):
             priority, job = self.queue.get(block=True)
 
             if isinstance(job, PauseQueueJob):
-                logger.info('Paused queue')
+                logger.debug('Paused queue')
                 return
 
             try:
                 session = self.session_maker()
                 job._do_call_api(self.api_client, session)
-            except (RequestTimeoutError, ApiInaccessibleError):
+            except (RequestTimeoutError, ApiInaccessibleError) as e:
+                logger.debug('Job {} raised an exception: {}: {}'.format(self, type(e).__name__, e))
+                logger.debug('Pausing queue')
                 self.pause.emit()
                 job.remaining_attempts = DEFAULT_NUM_ATTEMPTS
                 self.queue.put_nowait((priority, job))
+            except Exception as e:
+                logger.error('Job {} raised an exception: {}: {}'.format(self, type(e).__name__, e))
+                logger.error('Skipping job')
             finally:
                 session.close()
 

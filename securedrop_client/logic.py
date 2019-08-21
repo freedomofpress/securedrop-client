@@ -35,7 +35,6 @@ from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloa
     ReplyDownloadJob, DownloadChecksumMismatchException
 from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobError, \
     SendReplyJobTimeoutError
-from securedrop_client.api_jobs.base import PauseQueueJob
 from securedrop_client.api_jobs.updatestar import UpdateStarJob, UpdateStarJobException
 from securedrop_client.crypto import GpgHelper, CryptoError
 from securedrop_client.queue import ApiJobQueue
