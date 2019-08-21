@@ -1879,7 +1879,6 @@ class ConversationView(QWidget):
         activity_layout.addWidget(last_activity, alignment=Qt.AlignRight)
         self.conversation_layout.addWidget(activity, alignment=Qt.AlignRight)
 
-
     def add_file(self, file: File):
         """
         Add a file from the source.

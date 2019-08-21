@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 
-import time
 from gettext import gettext as _
 from typing import Dict, List, Optional  # noqa: F401
 from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QDesktopWidget
@@ -81,8 +80,6 @@ class Window(QMainWindow):
         self.setCentralWidget(self.central_widget)
         central_widget_layout.addWidget(self.top_pane)
         central_widget_layout.addWidget(self.main_pane)
-
-        self.timezone = time.tzname[time.daylight]
 
     def setup(self, controller):
         """
@@ -156,8 +153,7 @@ class Window(QMainWindow):
         Display a message indicating the data-sync state.
         """
         if updated_on:
-            self.update_activity_status(
-                _('Last Refresh: {} {}').format(updated_on.format('HH:mm'), self.timezone))
+            self.update_activity_status(_('Last Refresh: {}').format(updated_on))
         else:
             self.update_activity_status(_('Waiting to refresh...'), 5000)
 

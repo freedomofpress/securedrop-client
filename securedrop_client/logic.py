@@ -21,6 +21,7 @@ import inspect
 import logging
 import os
 import sdclientapi
+import time
 import uuid
 from typing import Dict, Tuple, Union, Any, Type  # noqa: F401
 
@@ -373,7 +374,11 @@ class Controller(QObject):
         """
         try:
             with open(self.sync_flag) as f:
-                return arrow.get(f.read())
+                timestamp = arrow.get(f.read())
+                timezone = time.tzname[time.daylight]
+                # timestamp.tzname()
+                # TODO: Convert UTC timestamp to local timezone
+                return '{} {}'.format(timestamp.format('HH:mm'), timezone)
         except Exception:
             return None
 
@@ -391,7 +396,7 @@ class Controller(QObject):
 
         # Set last sync flag
         with open(self.sync_flag, 'w') as f:
-            f.write(arrow.now().format())
+            f.write(arrow.utcnow().format())
 
         # Import keys into keyring
         for source in remote_sources:
