@@ -25,7 +25,7 @@ DEFAULT_DOWNLOAD_TIMEOUT = 60 * 60  # 60 minutes
 
 class RequestTimeoutError(Exception):
     """
-    Error raisted if a request times out.
+    Error raised if a request times out.
     """
 
     def __init__(self) -> None:
@@ -34,7 +34,7 @@ class RequestTimeoutError(Exception):
 
 def json_query(proxy_vm_name: str, data: str, timeout: Optional[int] = None) -> str:
     """
-    Takes a json based query and passes to the network proxy.
+    Takes a JSON based query and passes it to the network proxy.
     Returns the JSON output from the proxy.
     """
     p = Popen(
@@ -60,7 +60,7 @@ def json_query(proxy_vm_name: str, data: str, timeout: Optional[int] = None) -> 
 
 class API:
     """
-    This is class to do all the network calls to the SecureDrop API server.
+    This class handles all network calls to the SecureDrop API server.
 
     :param address: Server URL (http://localhost:8081/)
     :param username: Journalist username
@@ -175,7 +175,7 @@ class API:
 
     def authenticate(self, totp: Optional[str] = None) -> bool:
         """
-        Authenticate the user and fetches the token from the server.
+        Authenticates the user and fetches the token from the server.
 
         :returns: True if authentication is successful, raise AuthError otherwise.
         """
@@ -255,7 +255,7 @@ class API:
         """
         This will return a single Source based on UUID.
 
-        :param source: Source object containing only source's uuid value.
+        :param source: Source object containing only source's UUID value.
         :returns: Source object fetched from server for the given UUID value.
         """
         path_query = "api/v1/sources/{}".format(source.uuid)
@@ -293,10 +293,10 @@ class API:
 
     def delete_source(self, source: Source) -> bool:
         """
-        This method will delete the source and collection. If the uuid
+        This method will delete the source and collection. If the UUID
         is not found in the server, it will raise WrongUUIDError.
 
-        :param source: Source object containing only source's uuid value.
+        :param source: Source object containing only source's UUID value.
         :returns: True if successful, raises Errors in case of wrong values.
         """
         path_query = "api/v1/sources/{}".format(source.uuid)
@@ -327,7 +327,7 @@ class API:
 
     def delete_source_from_string(self, uuid: str) -> bool:
         """
-        This method will delete the source and collection. If the uuid
+        This method will delete the source and collection. If the UUID
         is not found in the server, it will raise WrongUUIDError.
 
         :param uuid: Source UUID as string.
@@ -539,7 +539,7 @@ class API:
 
     def delete_submission_from_string(self, uuid: str, source_uuid: str) -> bool:
         """
-        Deletes a given Submission based on uuids from the server.
+        Deletes a given Submission based on UUIDs from the server.
 
         :param uuid: UUID of the Submission object.
         :param source_uuid: UUID of the source.
@@ -554,8 +554,8 @@ class API:
     ) -> Tuple[str, str]:
         """
         Returns a tuple of etag (format is algorithm:checksum) and file path for
-        a given Submission object. This method also requires a directory path
-        in where it will save the submission file.
+        a given Submission object. This method requires a directory path
+        at which to save the submission file.
 
         :param submission: Submission object
         :param path: Local directory path to save the submission
@@ -569,7 +569,7 @@ class API:
 
         if path:
             if os.path.exists(path) and not os.path.isdir(path):
-                raise BaseError("Please provide a vaild directory to save.")
+                raise BaseError("Please provide a valid directory to save.")
 
         data, status_code, headers = self._send_json_request(
             method,
@@ -668,7 +668,7 @@ class API:
         This method is used to reply to a given source. The message should be preencrypted with the
         source's GPG public key.
 
-        :param source: Source object we want to reply.
+        :param source: Source object to whom we want to reply.
         :param msg: Encrypted message with Source's GPG public key.
         :param reply_uuid: The UUID that will be used to identify the reply on the server.
         """
@@ -706,7 +706,7 @@ class API:
         """
         This will return a list of replies associated with a source.
 
-        :param source: Source object containing only source's uuid value.
+        :param source: Source object containing only source's UUID value.
         :returns: List of Reply objects.
         """
         path_query = "api/v1/sources/{}/replies".format(source.uuid)
@@ -801,8 +801,8 @@ class API:
     def download_reply(self, reply: Reply, path: str = "") -> Tuple[str, str]:
         """
         Returns a tuple of etag (format is algorithm:checksum) and file path for
-        a given Reply object. This method also requires a directory path
-        in where it will save the reply file.
+        a given Reply object. This method requires a directory path
+        at which to save the reply file.
 
         :param reply: Reply object
         :param path: Local directory path to save the reply
@@ -888,7 +888,7 @@ class API:
 
     def logout(self) -> bool:
         """
-        Logsout the current user
+        Logs the current user out.
         """
         path_query = "api/v1/logout"
         method = "POST"
