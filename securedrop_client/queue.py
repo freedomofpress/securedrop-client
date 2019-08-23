@@ -19,6 +19,23 @@ logger = logging.getLogger(__name__)
 
 
 class RunnableQueue(QObject):
+    '''
+    RunnableQueue maintains a priority queue and processes jobs in that queue. It continuously
+    processes the next job in the queue, which is ordered by highest priority. Priority is based on
+    job type. If multiple jobs of the same type are added to the queue then they are retrieved
+    in FIFO order.
+
+    If a RequestTimeoutError or ApiInaccessibleError is encountered while processing a job, the
+    job will be added back to the queue and a pause signal will be emitted. However the processing
+    loop will not stop until a PauseQueueJob is retrieved. Once this happens,all processing stops.
+    New jobs can still be added, but the processing function will need to be called again in order
+    to resume.
+
+    Any other exception encountered while processing a job is unexpected, so the queue will drop the
+    job and continue on to processing the next job. The job itself is responsible for emiting the
+    success and failure signals, so when an unexpected error occurs, it should emit the failure
+    signal so that the Controller can respond accordingly.
+    '''
 
     '''
     Signal that is emitted BEFORE a queue is paused
@@ -26,26 +43,18 @@ class RunnableQueue(QObject):
     pause = pyqtSignal()
 
     def __init__(self, api_client: API, session_maker: scoped_session) -> None:
-        '''
-        One of the challenges of using Python's PriorityQueue is that
-        for objects (jobs) with equal priorities, they are not retrieved
-        in FIFO order due to the fact PriorityQueue is implemented using
-        heapq which does not have sort stability. In order to ensure sort
-        stability, we need to add a counter to ensure that objects with equal
-        priorities are retrived in FIFO order.
-        See also: https://bugs.python.org/issue17794
-        '''
         super().__init__()
         self.api_client = api_client
         self.session_maker = session_maker
         self.queue = PriorityQueue()  # type: PriorityQueue[Tuple[int, ApiJob]]
+        # `order_number` ensures jobs with equal priority are retrived in FIFO order. This is needed
+        # because PriorityQueue is implemented using heapq which does not have sort stability. For
+        # more info, see : https://bugs.python.org/issue17794
         self.order_number = itertools.count()
 
     def add_job(self, priority: int, job: ApiJob) -> None:
         '''
-        Increment the queue's internal counter/order_number, assign an
-        order_number to the job to track its position in the queue,
-        and submit the job with its priority to the queue.
+        Add the job with its priority to the queue after assigning it the next order_number.
         '''
         current_order_number = next(self.order_number)
         job.order_number = current_order_number
