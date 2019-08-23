@@ -27,9 +27,9 @@ class RunnableQueue(QObject):
 
     If a RequestTimeoutError or ApiInaccessibleError is encountered while processing a job, the
     job will be added back to the queue and a pause signal will be emitted. However the processing
-    loop will not stop until a PauseQueueJob is retrieved. Once this happens,all processing stops.
+    loop will not stop until a PauseQueueJob is retrieved. Once this happens, all processing stops.
     New jobs can still be added, but the processing function will need to be called again in order
-    to resume.
+    to resume. The processing loop is resumed when the resume signal is emitted.
 
     Any other exception encountered while processing a job is unexpected, so the queue will drop the
     job and continue on to processing the next job. The job itself is responsible for emiting the
@@ -42,6 +42,11 @@ class RunnableQueue(QObject):
     '''
     pause = pyqtSignal()
 
+    '''
+    Signal that is emitted to resume processing jobs
+    '''
+    resume = pyqtSignal()
+
     def __init__(self, api_client: API, session_maker: scoped_session) -> None:
         super().__init__()
         self.api_client = api_client
@@ -51,6 +56,9 @@ class RunnableQueue(QObject):
         # because PriorityQueue is implemented using heapq which does not have sort stability. For
         # more info, see : https://bugs.python.org/issue17794
         self.order_number = itertools.count()
+
+        # Rsume signals to resume processing
+        self.resume.connect(self.process)
 
     def add_job(self, priority: int, job: ApiJob) -> None:
         '''
@@ -167,8 +175,8 @@ class ApiJobQueue(QObject):
     def resume_queues(self) -> None:
         logger.info("Resuming queues")
         self.start_queues()
-        self.main_queue.process()
-        self.download_file_queue.process()
+        self.main_queue.resume.emit()
+        self.download_file_queue.resume.emit()
 
     def enqueue(self, job: ApiJob) -> None:
         priority = self.JOB_PRIORITIES[type(job)]

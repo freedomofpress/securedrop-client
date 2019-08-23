@@ -13,12 +13,15 @@ from tests import factory
 def test_RunnableQueue_init(mocker):
     mock_api_client = mocker.MagicMock()
     mock_session_maker = mocker.MagicMock()
+    mocker.patch('securedrop_client.queue.RunnableQueue.resume', return_value=mocker.MagicMock())
 
     queue = RunnableQueue(mock_api_client, mock_session_maker)
+
     assert queue.api_client == mock_api_client
     assert queue.session_maker == mock_session_maker
     assert isinstance(queue.queue, Queue)
     assert queue.queue.empty()
+    queue.resume.connect.assert_called_once_with(queue.process)
 
 
 def test_RunnableQueue_happy_path(mocker):
@@ -280,17 +283,17 @@ def test_ApiJobQueue_pause_queues(mocker):
     job_queue.enqueue.assert_called_once_with(pause_job)
 
 
-def test_ApiJobQueue_resume_queues(mocker):
+def test_ApiJobQueue_resume_queues_emits_resume_signal(mocker):
     job_queue = ApiJobQueue(mocker.MagicMock(), mocker.MagicMock())
-    job_queue.main_queue = mocker.MagicMock()
-    job_queue.download_file_queue = mocker.MagicMock()
+    mocker.patch.object(job_queue.main_queue, 'resume')
+    mocker.patch.object(job_queue.download_file_queue, 'resume')
     job_queue.start_queues = mocker.MagicMock()
 
     job_queue.resume_queues()
 
     job_queue.start_queues.assert_called_once_with()
-    job_queue.main_queue.process.assert_called_with()
-    job_queue.download_file_queue.process.assert_called_with()
+    job_queue.main_queue.resume.emit.assert_called_once_with()
+    job_queue.download_file_queue.resume.emit.assert_called_once_with()
 
 
 def test_ApiJobQueue_enqueue_no_auth(mocker):
