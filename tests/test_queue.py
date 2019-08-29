@@ -34,11 +34,11 @@ def test_RunnableQueue_happy_path(mocker):
     return_value = 'foo'
 
     dummy_job_cls = factory.dummy_job_factory(mocker, return_value)
-
     queue = RunnableQueue(mock_api_client, mock_session_maker)
-    job_priority = 1
-    queue.add_job(job_priority, dummy_job_cls())
-    queue.add_job(2, PauseQueueJob())  # Pause queue so our test exits the processing loop
+    queue.JOB_PRIORITIES = {dummy_job_cls: 1, PauseQueueJob: 2}
+
+    queue.add_job(dummy_job_cls())
+    queue.add_job(PauseQueueJob())  # Pause queue so our test exits the processing loop
     queue.process()
 
     assert queue.queue.empty()
@@ -51,18 +51,19 @@ def test_RunnableQueue_job_timeout(mocker):
     '''
     queue = RunnableQueue(mocker.MagicMock(), mocker.MagicMock())
     queue.pause = mocker.MagicMock()
-
-    # RequestTimeoutError will cause the queue to pause, use our fake pause method instead
-    def fake_pause() -> None:
-        queue.add_job(0, PauseQueueJob())
-    queue.pause.emit = fake_pause
-
-    # Add two jobs that timeout during processing to the queue
     job_cls = factory.dummy_job_factory(mocker, RequestTimeoutError(), remaining_attempts=5)
     job1 = job_cls()
     job2 = job_cls()
-    queue.add_job(1, job1)
-    queue.add_job(1, job2)
+    queue.JOB_PRIORITIES = {PauseQueueJob: 0, job_cls: 1}
+
+    # RequestTimeoutError will cause the queue to pause, use our fake pause method instead
+    def fake_pause() -> None:
+        queue.add_job(PauseQueueJob())
+    queue.pause.emit = fake_pause
+
+    # Add two jobs that timeout during processing to the queue
+    queue.add_job(job1)
+    queue.add_job(job2)
 
     # attempt to process job1 knowing that it times out
     queue.process()
@@ -79,8 +80,9 @@ def test_RunnableQueue_process_PauseQueueJob(mocker):
     api_client = mocker.MagicMock()
     session_maker = mocker.MagicMock(return_value=mocker.MagicMock())
     queue = RunnableQueue(api_client, session_maker)
+    queue.JOB_PRIORITIES = {PauseQueueJob: 11}
 
-    queue.add_job(11, PauseQueueJob())
+    queue.add_job(PauseQueueJob())
     queue.process()
 
     assert queue.queue.empty()
@@ -92,25 +94,27 @@ def test_RunnableQueue_high_priority_jobs_run_first_and_in_fifo_order(mocker):
     mock_session_maker = mocker.MagicMock(return_value=mock_session)
 
     return_value = 'wat'
-    dummy_job_cls = factory.dummy_job_factory(mocker, return_value)
-    job1 = dummy_job_cls()
-    job2 = dummy_job_cls()
-    job3 = dummy_job_cls()
-    job4 = dummy_job_cls()
 
+    job_cls_high_priority = factory.dummy_job_factory(mocker, return_value)
+    job_cls_low_priority = factory.dummy_job_factory(mocker, return_value)
     queue = RunnableQueue(mock_api_client, mock_session_maker)
-    high_priority = 1
-    low_priority = 2
-    queue.add_job(high_priority, job1)
-    queue.add_job(low_priority, job2)
-    queue.add_job(high_priority, job3)
-    queue.add_job(low_priority, job4)
+    queue.JOB_PRIORITIES = {job_cls_high_priority: 1, job_cls_low_priority: 2}
+
+    job1 = job_cls_high_priority()
+    job2 = job_cls_low_priority()
+    job3 = job_cls_high_priority()
+    job4 = job_cls_low_priority()
+
+    queue.add_job(job1)
+    queue.add_job(job2)
+    queue.add_job(job3)
+    queue.add_job(job4)
 
     # Expected order of execution is job1 -> job3 -> job2 -> job4
-    assert queue.queue.get(block=True) == (high_priority, job1)
-    assert queue.queue.get(block=True) == (high_priority, job3)
-    assert queue.queue.get(block=True) == (low_priority, job2)
-    assert queue.queue.get(block=True) == (low_priority, job4)
+    assert queue.queue.get(block=True) == (1, job1)
+    assert queue.queue.get(block=True) == (1, job3)
+    assert queue.queue.get(block=True) == (2, job2)
+    assert queue.queue.get(block=True) == (2, job4)
 
 
 def test_RunnableQueue_resubmitted_jobs(mocker):
@@ -121,30 +125,30 @@ def test_RunnableQueue_resubmitted_jobs(mocker):
     mock_session = mocker.MagicMock()
     mock_session_maker = mocker.MagicMock(return_value=mock_session)
 
-    return_value = 'wat'
-    dummy_job_cls = factory.dummy_job_factory(mocker, return_value)
-    job1 = dummy_job_cls()
-    job2 = dummy_job_cls()
-    job3 = dummy_job_cls()
-    job4 = dummy_job_cls()
-
+    job_cls_high_priority = factory.dummy_job_factory(mocker, 'mock')
+    job_cls_low_priority = factory.dummy_job_factory(mocker, 'mock')
     queue = RunnableQueue(mock_api_client, mock_session_maker)
-    high_priority = 1
-    low_priority = 2
-    queue.add_job(high_priority, job1)
-    queue.add_job(low_priority, job2)
-    queue.add_job(high_priority, job3)
-    queue.add_job(low_priority, job4)
+    queue.JOB_PRIORITIES = {job_cls_high_priority: 1, job_cls_low_priority: 2}
+
+    job1 = job_cls_high_priority()
+    job2 = job_cls_low_priority()
+    job3 = job_cls_high_priority()
+    job4 = job_cls_low_priority()
+
+    queue.add_job(job1)
+    queue.add_job(job2)
+    queue.add_job(job3)
+    queue.add_job(job4)
 
     # Expected order of execution is job1 -> job3 -> job2 -> job4
-    assert queue.queue.get(block=True) == (high_priority, job1)
+    assert queue.queue.get(block=True) == (1, job1)
 
     # Now resubmit job1 via put_nowait. It should execute prior to job2-4.
-    queue.queue.put_nowait((high_priority, job1))
-    assert queue.queue.get(block=True) == (high_priority, job1)
-    assert queue.queue.get(block=True) == (high_priority, job3)
-    assert queue.queue.get(block=True) == (low_priority, job2)
-    assert queue.queue.get(block=True) == (low_priority, job4)
+    queue.re_add_job(job1)
+    assert queue.queue.get(block=True) == (1, job1)
+    assert queue.queue.get(block=True) == (1, job3)
+    assert queue.queue.get(block=True) == (2, job2)
+    assert queue.queue.get(block=True) == (2, job4)
 
 
 def test_RunnableQueue_job_ApiInaccessibleError(mocker):
@@ -154,18 +158,19 @@ def test_RunnableQueue_job_ApiInaccessibleError(mocker):
     '''
     queue = RunnableQueue(mocker.MagicMock(), mocker.MagicMock())
     queue.pause = mocker.MagicMock()
+    job_cls = factory.dummy_job_factory(mocker, ApiInaccessibleError())
+    queue.JOB_PRIORITIES = {PauseQueueJob: 0, job_cls: 1}
 
     # ApiInaccessibleError will cause the queue to pause, use our fake pause method instead
     def fake_pause() -> None:
-        queue.add_job(0, PauseQueueJob())
+        queue.add_job(PauseQueueJob())
     queue.pause.emit = fake_pause
 
     # Add two jobs that timeout during processing to the queues
-    job_cls = factory.dummy_job_factory(mocker, ApiInaccessibleError())
     job1 = job_cls()
     job2 = job_cls()
-    queue.add_job(1, job1)
-    queue.add_job(1, job2)
+    queue.add_job(job1)
+    queue.add_job(job2)
 
     # attempt to process job1 knowing that it times out
     queue.process()
@@ -189,9 +194,11 @@ def test_RunnableQueue_job_generic_exception(mocker):
     job1 = job1_cls()
     job2 = job2_cls()
     queue = RunnableQueue(mocker.MagicMock(), mocker.MagicMock())
-    queue.add_job(2, job1)
-    queue.add_job(2, job2)
-    queue.add_job(3, PauseQueueJob())  # Pause queue so our test exits the processing loop
+    queue.JOB_PRIORITIES = {PauseQueueJob: 3, job1_cls: 2, job2_cls: 2}
+
+    queue.add_job(job1)
+    queue.add_job(job2)
+    queue.add_job(PauseQueueJob())  # Pause queue so our test exits the processing loop
 
     queue.process()
 
@@ -205,16 +212,17 @@ def test_RunnableQueue_does_not_run_jobs_when_not_authed(mocker):
     '''
     queue = RunnableQueue(mocker.MagicMock(), mocker.MagicMock())
     queue.pause = mocker.MagicMock()
+    job_cls = factory.dummy_job_factory(mocker, ApiInaccessibleError())
+    queue.JOB_PRIORITIES = {PauseQueueJob: 0, job_cls: 1}
 
     # ApiInaccessibleError will cause the queue to pause, use our fake pause method instead
     def fake_pause() -> None:
-        queue.add_job(0, PauseQueueJob())
+        queue.add_job(PauseQueueJob())
     queue.pause.emit = fake_pause
 
-    # Add two jobs that timeout during processing to the queues
-    job_cls = factory.dummy_job_factory(mocker, ApiInaccessibleError())
+    # Add a job that results in an ApiInaccessibleError to the queue
     job = job_cls()
-    queue.add_job(1, job)
+    queue.add_job(job)
 
     # attempt to process job1 knowing that it times out
     queue.process()
@@ -241,7 +249,7 @@ def test_ApiJobQueue_enqueue(mocker):
     dl_job = FileDownloadJob('mock', 'mock', 'mock')
     job_queue.enqueue(dl_job)
 
-    mock_download_file_add_job.assert_called_once_with(job_priority, dl_job)
+    mock_download_file_add_job.assert_called_once_with(dl_job)
     assert not mock_main_queue_add_job.called
 
     # reset for next test
@@ -252,35 +260,20 @@ def test_ApiJobQueue_enqueue(mocker):
 
     job_queue.enqueue(dummy_job)
 
-    mock_main_queue_add_job.assert_called_once_with(job_priority, dummy_job)
+    mock_main_queue_add_job.assert_called_once_with(dummy_job)
     assert not mock_download_file_add_job.called
     assert mock_start_queues.called
 
 
-def test_ApiJobQueue_enqueue_PauseQueueJob(mocker):
-    job_queue = ApiJobQueue(mocker.MagicMock(), mocker.MagicMock())
-    job_queue.main_queue = mocker.MagicMock()
-    job_queue.download_file_queue = mocker.MagicMock()
-    job_queue.main_queue.api_client = 'has a value'
-    job_queue.download_file_queue.api_client = 'has a value'
-    mocker.patch.object(job_queue, 'start_queues')
-    pause_job = PauseQueueJob()
-
-    job_queue.enqueue(pause_job)
-
-    job_queue.main_queue.add_job.assert_called_once_with(11, pause_job)
-    job_queue.download_file_queue.add_job.assert_called_once_with(11, pause_job)
-
-
 def test_ApiJobQueue_pause_queues(mocker):
     job_queue = ApiJobQueue(mocker.MagicMock(), mocker.MagicMock())
-    mocker.patch.object(job_queue, 'enqueue')
+    mocker.patch.object(job_queue, 'paused')
     pause_job = PauseQueueJob()
     mocker.patch('securedrop_client.queue.PauseQueueJob', return_value=pause_job)
 
-    job_queue.pause_queues()
+    job_queue.on_queue_paused()
 
-    job_queue.enqueue.assert_called_once_with(pause_job)
+    job_queue.paused.emit()
 
 
 def test_ApiJobQueue_resume_queues_emits_resume_signal(mocker):

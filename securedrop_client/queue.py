@@ -37,10 +37,24 @@ class RunnableQueue(QObject):
     signal so that the Controller can respond accordingly.
     '''
 
+    # These are the priorities for processing jobs. Lower numbers corresponds to a higher priority.
+    JOB_PRIORITIES = {
+        # TokenInvalidationJob: 10,  # Not yet implemented
+        PauseQueueJob: 11,
+        # MetadataSyncJob: 12,  # Not yet implemented
+        FileDownloadJob: 13,  # File downloads processed in separate queue
+        MessageDownloadJob: 13,
+        ReplyDownloadJob: 13,
+        # DeletionJob: 14,  # Not yet implemented
+        SendReplyJob: 15,
+        UpdateStarJob: 16,
+        # FlagJob: 16,  # Not yet implemented
+    }
+
     '''
-    Signal that is emitted BEFORE a queue is paused
+    Signal that is emitted when processing stops
     '''
-    pause = pyqtSignal()
+    paused = pyqtSignal()
 
     '''
     Signal that is emitted to resume processing jobs
@@ -60,12 +74,22 @@ class RunnableQueue(QObject):
         # Rsume signals to resume processing
         self.resume.connect(self.process)
 
-    def add_job(self, priority: int, job: ApiJob) -> None:
+    def add_job(self, job: ApiJob) -> None:
         '''
         Add the job with its priority to the queue after assigning it the next order_number.
         '''
         current_order_number = next(self.order_number)
         job.order_number = current_order_number
+        priority = self.JOB_PRIORITIES[type(job)]
+        self.queue.put_nowait((priority, job))
+
+    def re_add_job(self, job: ApiJob) -> None:
+        '''
+        Reset the job's remaining attempts and put it back into the queue in the order in which it
+        was submitted by the user (do not assign it the next order_number).
+        '''
+        job.remaining_attempts = DEFAULT_NUM_ATTEMPTS
+        priority = self.JOB_PRIORITIES[type(job)]
         self.queue.put_nowait((priority, job))
 
     @pyqtSlot()
@@ -73,12 +97,12 @@ class RunnableQueue(QObject):
         '''
         Process the next job in the queue.
 
-        If the job is a PauseQueueJob, return from the processing loop so that no more jobs are
-        processed until the queue resumes.
+        If the job is a PauseQueueJob, emit the paused signal and return from the processing loop so
+        that no more jobs are processed until the queue resumes.
 
         If the job raises RequestTimeoutError or ApiInaccessibleError, then:
-        (1) Emit the pause signal so that a PauseQueueJob is enqueued
-        (2) Put the job back into the queue in the order in which it was submitted by the user
+        (1) Add a PauseQueuejob to the queue
+        (2) Add the job back to the queue so that it can be reprocessed once the queue is resumed.
 
         Note: Generic exceptions are handled in _do_call_api.
         '''
@@ -87,6 +111,7 @@ class RunnableQueue(QObject):
 
             if isinstance(job, PauseQueueJob):
                 logger.debug('Paused queue')
+                self.paused.emit()
                 return
 
             try:
@@ -94,10 +119,8 @@ class RunnableQueue(QObject):
                 job._do_call_api(self.api_client, session)
             except (RequestTimeoutError, ApiInaccessibleError) as e:
                 logger.debug('Job {} raised an exception: {}: {}'.format(self, type(e).__name__, e))
-                logger.debug('Pausing queue')
-                self.pause.emit()
-                job.remaining_attempts = DEFAULT_NUM_ATTEMPTS
-                self.queue.put_nowait((priority, job))
+                self.add_job(PauseQueueJob())
+                self.re_add_job(job)
             except Exception as e:
                 logger.error('Job {} raised an exception: {}: {}'.format(self, type(e).__name__, e))
                 logger.error('Skipping job')
@@ -106,23 +129,8 @@ class RunnableQueue(QObject):
 
 
 class ApiJobQueue(QObject):
-    # These are the priorities for processing jobs.
-    # Lower numbers corresponds to a higher priority.
-    JOB_PRIORITIES = {
-        # TokenInvalidationJob: 10,  # Not yet implemented
-        PauseQueueJob: 11,
-        # MetadataSyncJob: 12,  # Not yet implemented
-        FileDownloadJob: 13,  # File downloads processed in separate queue
-        MessageDownloadJob: 13,
-        ReplyDownloadJob: 13,
-        # DeletionJob: 14,  # Not yet implemented
-        SendReplyJob: 15,
-        UpdateStarJob: 16,
-        # FlagJob: 16,  # Not yet implemented
-    }
-
     '''
-    Signal that is emitted AFTER a queue is paused
+    Signal that is emitted after a queue is paused
     '''
     paused = pyqtSignal()
 
@@ -142,8 +150,8 @@ class ApiJobQueue(QObject):
         self.main_thread.started.connect(self.main_queue.process)
         self.download_file_thread.started.connect(self.download_file_queue.process)
 
-        self.main_queue.pause.connect(self.pause_queues)
-        self.download_file_queue.pause.connect(self.pause_queues)
+        self.main_queue.paused.connect(self.on_queue_paused)
+        self.download_file_queue.paused.connect(self.on_queue_paused)
 
     def logout(self) -> None:
         self.main_queue.api_client = None
@@ -169,8 +177,8 @@ class ApiJobQueue(QObject):
             logger.debug('Starting download thread')
             self.download_file_thread.start()
 
-    def pause_queues(self) -> None:
-        self.enqueue(PauseQueueJob())
+    def on_queue_paused(self) -> None:
+        self.paused.emit()
 
     def resume_queues(self) -> None:
         logger.info("Resuming queues")
@@ -179,14 +187,6 @@ class ApiJobQueue(QObject):
         self.download_file_queue.resume.emit()
 
     def enqueue(self, job: ApiJob) -> None:
-        priority = self.JOB_PRIORITIES[type(job)]
-
-        if isinstance(job, PauseQueueJob):
-            self.main_queue.add_job(priority, job)
-            self.download_file_queue.add_job(priority, job)
-            self.paused.emit()
-            return
-
         # Prevent api jobs being added to the queue when not logged in.
         if not self.main_queue.api_client or not self.download_file_queue.api_client:
             logger.info('Not adding job, we are not logged in')
@@ -197,7 +197,7 @@ class ApiJobQueue(QObject):
 
         if isinstance(job, FileDownloadJob):
             logger.debug('Adding job to download queue')
-            self.download_file_queue.add_job(priority, job)
+            self.download_file_queue.add_job(job)
         else:
             logger.debug('Adding job to main queue')
-            self.main_queue.add_job(priority, job)
+            self.main_queue.add_job(job)
