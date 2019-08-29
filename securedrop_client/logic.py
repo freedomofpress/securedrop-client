@@ -665,6 +665,7 @@ class Controller(QObject):
     def on_reply_success(self, reply_uuid: str) -> None:
         logger.debug('{} sent successfully'.format(reply_uuid))
         self.reply_succeeded.emit(reply_uuid)
+        self.sync_api()
 
     def on_reply_failure(
         self,

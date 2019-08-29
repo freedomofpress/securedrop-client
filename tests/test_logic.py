@@ -1261,6 +1261,7 @@ def test_Controller_on_reply_success(homedir, mocker, session_maker, session):
     Check that when the method is called, the client emits the correct signal.
     '''
     co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    mocker.patch.object(co, 'sync_api')
     reply_succeeded = mocker.patch.object(co, 'reply_succeeded')
     reply_failed = mocker.patch.object(co, 'reply_failed')
     reply = factory.Reply(source=factory.Source())
@@ -1268,9 +1269,10 @@ def test_Controller_on_reply_success(homedir, mocker, session_maker, session):
 
     co.on_reply_success(reply.uuid)
 
-    debug_logger.assert_called_once_with('{} sent successfully'.format(reply.uuid))
+    assert debug_logger.call_args_list[0][0][0] == '{} sent successfully'.format(reply.uuid)
     reply_succeeded.emit.assert_called_once_with(reply.uuid)
     reply_failed.emit.assert_not_called()
+    co.sync_api.assert_called_once_with()
 
 
 def test_Controller_on_reply_failure(homedir, mocker, session_maker):
