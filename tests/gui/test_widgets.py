@@ -9,12 +9,13 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 
 from tests import factory
 from securedrop_client import db, logic
+from securedrop_client.export import ExportError, ExportStatus
 from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, LoginDialog, \
     SpeechBubble, MessageWidget, ReplyWidget, FileWidget, ConversationView, \
     DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, LeftPane, RefreshButton, \
     ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
     ReplyBoxWidget, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, LoginErrorBar, \
-    EmptyConversationView
+    EmptyConversationView, ExportDialog
 
 
 app = QApplication([])
@@ -1284,7 +1285,7 @@ def test_FileWidget_init_file_downloaded(mocker, source, session):
     assert fw.file.is_downloaded is True
     assert fw.download_button.isHidden()
     assert fw.no_file_name.isHidden()
-    assert fw.export_button.isHidden()  # Show once export is supported on the workstation client
+    assert not fw.export_button.isHidden()
     assert fw.print_button.isHidden()  # Show once export is supported on the workstation client
     assert not fw.file_name.isHidden()
 
@@ -1416,6 +1417,155 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(
     fw._on_file_downloaded('not a matching uuid')
 
     fw.clear.assert_not_called()
+
+
+def test_FileWidget__on_export_clicked(mocker, session, source):
+    """
+    Ensure preflight checks start when the EXPORT button is clicked and that password is requested
+    """
+    file = factory.File(source=source['source'], is_downloaded=True)
+    session.add(file)
+    session.commit()
+
+    get_file = mocker.MagicMock(return_value=file)
+    controller = mocker.MagicMock(get_file=get_file)
+
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock())
+    fw.update = mocker.MagicMock()
+    _request_pass = mocker.patch('securedrop_client.gui.widgets.ExportDialog._request_passphrase')
+    mocker.patch('securedrop_client.gui.widgets.QDialog.exec')
+    controller.run_export_preflight_checks = mocker.MagicMock()
+
+    fw._on_export_clicked()
+
+    controller.run_export_preflight_checks.assert_called_once_with()
+    _request_pass.assert_called_once_with()
+
+
+def test_ExportDialog__export(mocker):
+    """
+    Ensure export runs preflight checks and requests password.
+    """
+    controller = mocker.MagicMock()
+    export_dialog = ExportDialog(controller, 'mock_uuid')
+    export_dialog._request_passphrase = mocker.MagicMock()
+
+    export_dialog._export()
+
+    controller.run_export_preflight_checks.assert_called_with()
+    export_dialog._request_passphrase.assert_called_with()
+
+
+def test_ExportDialog__export_updates_on_ExportError(mocker):
+    """
+    Ensure export runs update and does not ask for password when preflight checks error.
+    """
+    controller = mocker.MagicMock()
+    controller.run_export_preflight_checks = mocker.MagicMock(side_effect=ExportError('mock'))
+    export_dialog = ExportDialog(controller, 'mock_uuid')
+    export_dialog._request_passphrase = mocker.MagicMock()
+    export_dialog._update = mocker.MagicMock()
+
+    export_dialog._export()
+
+    export_dialog._request_passphrase.assert_not_called()
+    export_dialog._update.assert_called_once_with('mock')
+
+
+def test_ExportDialog__request_to_insert_usb_device(mocker):
+    """Ensure that the correct widgets are visible or hidden."""
+    export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid')
+
+    export_dialog._request_to_insert_usb_device()
+
+    assert export_dialog.passphrase_form.isHidden()
+    assert not export_dialog.insert_usb_form.isHidden()
+    assert export_dialog.usb_error_message.isHidden()
+
+
+def test_ExportDialog__request_to_insert_usb_device_after_encryption_error(mocker):
+    """Ensure that the correct widgets are visible or hidden."""
+    export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid')
+
+    export_dialog._request_to_insert_usb_device(encryption_not_supported=True)
+
+    assert export_dialog.passphrase_form.isHidden()
+    assert not export_dialog.insert_usb_form.isHidden()
+    assert not export_dialog.usb_error_message.isHidden()
+
+
+def test_ExportDialog__request_passphrase(mocker):
+    """Ensure that the correct widgets are visible or hidden."""
+    export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid')
+
+    export_dialog._request_passphrase()
+
+    assert not export_dialog.passphrase_form.isHidden()
+    assert export_dialog.insert_usb_form.isHidden()
+    assert export_dialog.passphrase_error_message.isHidden()
+
+
+def test_ExportDialog__request_passphrase_more_than_once(mocker):
+    """Ensure that the correct widgets are visible or hidden."""
+    export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid')
+
+    export_dialog._request_passphrase(bad_passphrase=True)
+
+    assert not export_dialog.passphrase_form.isHidden()
+    assert export_dialog.insert_usb_form.isHidden()
+    assert not export_dialog.passphrase_error_message.isHidden()
+
+
+def test_ExportDialog__on_unlock_disk_clicked(mocker):
+    """
+    Ensure export of file begins once the passphrase is retrieved from the uesr.
+    """
+    controller = mocker.MagicMock()
+    controller.export_file_to_usb_drive = mocker.MagicMock()
+    export_dialog = ExportDialog(controller, 'mock_uuid')
+    export_dialog._update = mocker.MagicMock()
+    export_dialog.passphrase_field.text = mocker.MagicMock(return_value='mock_passphrase')
+
+    export_dialog._on_unlock_disk_clicked()
+
+    controller.export_file_to_usb_drive.assert_called_once_with('mock_uuid', 'mock_passphrase')
+    export_dialog._update.assert_not_called()
+
+
+def test_ExportDialog__on_unlock_disk_clicked_asks_for_passphrase_again_on_error(mocker):
+    """
+    Ensure user is asked for passphrase when there is a bad passphrase error.
+    """
+    controller = mocker.MagicMock()
+    bad_password_export_error = ExportError(ExportStatus.BAD_PASSPHRASE.value)
+    controller.export_file_to_usb_drive = mocker.MagicMock(side_effect=bad_password_export_error)
+    export_dialog = ExportDialog(controller, 'mock_uuid')
+    export_dialog._request_passphrase = mocker.MagicMock()
+    export_dialog.passphrase_field.text = mocker.MagicMock(return_value='mock_passphrase')
+
+    export_dialog._on_unlock_disk_clicked()
+
+    export_dialog._request_passphrase.assert_called_with(True)
+
+
+def test_ExportDialog__update_after_USB_NOT_CONNECTED(mocker):
+    """
+    Ensure USB_NOT_CONNECTED results in asking the user connect their USB device.
+    """
+    export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid')
+    export_dialog._request_to_insert_usb_device = mocker.MagicMock()
+    export_dialog._update(ExportStatus.USB_NOT_CONNECTED.value)
+    export_dialog._request_to_insert_usb_device.assert_called_once_with()
+
+
+def test_ExportDialog__update_after_DISK_ENCRYPTION_NOT_SUPPORTED_ERROR(mocker):
+    """
+    Ensure USB_NOT_CONNECTED results in asking the user connect their USB device.
+    """
+    export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid')
+    export_dialog._request_to_insert_usb_device = mocker.MagicMock()
+    export_dialog._update(ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value)
+    export_dialog._request_to_insert_usb_device.assert_called_once_with(True)
 
 
 def test_ConversationView_init(mocker, homedir):
