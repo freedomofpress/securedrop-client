@@ -1864,13 +1864,6 @@ class ConversationView(QWidget):
 
         self.update_conversation(self.source.collection)
 
-        # Refresh the session to update any replies that failed from a network timeout
-        self.controller.reply_succeeded.connect(self.refresh_conversation)
-
-    def refresh_conversation(self):
-        self.controller.session.refresh(self.source)
-        self.update_conversation(self.source.collection)
-
     def clear_conversation(self):
         while self.conversation_layout.count():
             child = self.conversation_layout.takeAt(0)
