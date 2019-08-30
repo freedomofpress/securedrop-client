@@ -312,6 +312,7 @@ class Controller(QObject):
         self.api_job_queue.login(self.api)
 
         self.is_authenticated = True
+        self.resume_queues()
 
     def on_authenticate_failure(self, result: Exception) -> None:
         # Failed to authenticate. Reset state with failure message.

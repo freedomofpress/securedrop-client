@@ -191,6 +191,7 @@ def test_Controller_on_authenticate_success(homedir, config, mocker, session_mak
     co.sync_api = mocker.MagicMock()
     co.api = mocker.MagicMock()
     co.call_api = mocker.MagicMock()
+    co.resume_queues = mocker.MagicMock()
     login = mocker.patch.object(co.api_job_queue, 'login')
     current_user_api_result = {
         'uuid': 'mock_uuid',
@@ -204,6 +205,7 @@ def test_Controller_on_authenticate_success(homedir, config, mocker, session_mak
     co.sync_api.assert_called_once_with()
     assert mock_api_job_queue.called
     login.assert_called_with(co.api)
+    co.resume_queues.assert_called_once_with()
 
 
 def test_Controller_on_get_current_user_success(mocker, session_maker, session, homedir):
