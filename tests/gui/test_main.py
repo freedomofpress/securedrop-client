@@ -154,12 +154,12 @@ def test_show_sources(mocker):
 def test_update_error_status_default(mocker):
     """
     Ensure that the error to be shown in the error status bar will be passed to the top pane with a
-    default duration of 10 seconds.
+    default duration of 10 seconds and no retry link.
     """
     w = Window()
     w.top_pane = mocker.MagicMock()
     w.update_error_status(message='test error message')
-    w.top_pane.update_error_status.assert_called_once_with('test error message', 10000)
+    w.top_pane.update_error_status.assert_called_once_with('test error message', 10000, False)
 
 
 def test_update_error_status(mocker):
@@ -170,7 +170,7 @@ def test_update_error_status(mocker):
     w = Window()
     w.top_pane = mocker.MagicMock()
     w.update_error_status(message='test error message', duration=123)
-    w.top_pane.update_error_status.assert_called_once_with('test error message', 123)
+    w.top_pane.update_error_status.assert_called_once_with('test error message', 123, False)
 
 
 def test_update_activity_status_default(mocker):

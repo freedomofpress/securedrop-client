@@ -1,13 +1,14 @@
 import itertools
 import logging
 
-from PyQt5.QtCore import QObject, QThread, pyqtSlot
+from PyQt5.QtCore import QObject, QThread, pyqtSlot, pyqtSignal
 from queue import PriorityQueue
 from sdclientapi import API, RequestTimeoutError
 from sqlalchemy.orm import scoped_session
 from typing import Optional, Tuple  # noqa: F401
 
-from securedrop_client.api_jobs.base import ApiJob, ApiInaccessibleError, DEFAULT_NUM_ATTEMPTS
+from securedrop_client.api_jobs.base import ApiJob, ApiInaccessibleError, DEFAULT_NUM_ATTEMPTS, \
+    PauseQueueJob
 from securedrop_client.api_jobs.downloads import (FileDownloadJob, MessageDownloadJob,
                                                   ReplyDownloadJob)
 from securedrop_client.api_jobs.uploads import SendReplyJob
@@ -18,72 +19,28 @@ logger = logging.getLogger(__name__)
 
 
 class RunnableQueue(QObject):
+    '''
+    RunnableQueue maintains a priority queue and processes jobs in that queue. It continuously
+    processes the next job in the queue, which is ordered by highest priority. Priority is based on
+    job type. If multiple jobs of the same type are added to the queue then they are retrieved
+    in FIFO order.
 
-    def __init__(self, api_client: API, session_maker: scoped_session) -> None:
-        super().__init__()
-        self.api_client = api_client
-        self.session_maker = session_maker
-        self.queue = PriorityQueue()  # type: PriorityQueue[Tuple[int, ApiJob]]
+    If a RequestTimeoutError or ApiInaccessibleError is encountered while processing a job, the
+    job will be added back to the queue and a pause signal will be emitted. However the processing
+    loop will not stop until a PauseQueueJob is retrieved. Once this happens, all processing stops.
+    New jobs can still be added, but the processing function will need to be called again in order
+    to resume. The processing loop is resumed when the resume signal is emitted.
 
-        # One of the challenges of using Python's PriorityQueue is that
-        # for objects (jobs) with equal priorities, they are not retrieved
-        # in FIFO order due to the fact PriorityQueue is implemented using
-        # heapq which does not have sort stability. In order to ensure sort
-        # stability, we need to add a counter to ensure that objects with equal
-        # priorities are retrived in FIFO order.
-        # See also: https://bugs.python.org/issue17794
-        self.order_number = itertools.count()
+    Any other exception encountered while processing a job is unexpected, so the queue will drop the
+    job and continue on to processing the next job. The job itself is responsible for emiting the
+    success and failure signals, so when an unexpected error occurs, it should emit the failure
+    signal so that the Controller can respond accordingly.
+    '''
 
-    def add_job(self, priority: int, job: ApiJob) -> None:
-        """
-        Increment the queue's internal counter/order_number, assign an
-        order_number to the job to track its position in the queue,
-        and submit the job with its priority to the queue.
-        """
-
-        current_order_number = next(self.order_number)
-        job.order_number = current_order_number
-        self.queue.put_nowait((priority, job))
-
-    @pyqtSlot()
-    def process(self) -> None:  # pragma: nocover
-        self._process(False)
-
-    def _process(self, exit_loop: bool) -> None:
-        while True:
-            session = self.session_maker()
-            priority, job = self.queue.get(block=True)
-
-            try:
-                job._do_call_api(self.api_client, session)
-            except RequestTimeoutError:
-                logger.debug('Job {} timed out'.format(job))
-
-                # Reset number of remaining attempts for this job to the default and
-                # resubmit job without modifying counter to ensure jobs with equal
-                # priorities are processed in the order that they were submitted
-                # _by the user_ to the queue.
-                job.remaining_attempts = DEFAULT_NUM_ATTEMPTS
-                self.queue.put_nowait((priority, job))
-            except ApiInaccessibleError:
-                # This is a guard against #397, we should re-enqueue the job and pause queue
-                # processing when this happens in the future and flag the situation to the user
-                # (see ticket #379).
-                logger.error('Client is not authenticated, skipping job...')
-            except Exception as e:
-                logger.error('Job {} raised  exception: {}: {}'.format(job, type(e).__name__, e))
-            finally:
-                session.close()
-
-            if exit_loop:
-                return
-
-
-class ApiJobQueue(QObject):
-    # These are the priorities for processing jobs.
-    # Lower numbers corresponds to a higher priority.
+    # These are the priorities for processing jobs. Lower numbers corresponds to a higher priority.
     JOB_PRIORITIES = {
-        # LogoutJob: 11,  # Not yet implemented
+        # TokenInvalidationJob: 10,  # Not yet implemented
+        PauseQueueJob: 11,
         # MetadataSyncJob: 12,  # Not yet implemented
         FileDownloadJob: 13,  # File downloads processed in separate queue
         MessageDownloadJob: 13,
@@ -93,6 +50,89 @@ class ApiJobQueue(QObject):
         UpdateStarJob: 16,
         # FlagJob: 16,  # Not yet implemented
     }
+
+    '''
+    Signal that is emitted when processing stops
+    '''
+    paused = pyqtSignal()
+
+    '''
+    Signal that is emitted to resume processing jobs
+    '''
+    resume = pyqtSignal()
+
+    def __init__(self, api_client: API, session_maker: scoped_session) -> None:
+        super().__init__()
+        self.api_client = api_client
+        self.session_maker = session_maker
+        self.queue = PriorityQueue()  # type: PriorityQueue[Tuple[int, ApiJob]]
+        # `order_number` ensures jobs with equal priority are retrived in FIFO order. This is needed
+        # because PriorityQueue is implemented using heapq which does not have sort stability. For
+        # more info, see : https://bugs.python.org/issue17794
+        self.order_number = itertools.count()
+
+        # Rsume signals to resume processing
+        self.resume.connect(self.process)
+
+    def add_job(self, job: ApiJob) -> None:
+        '''
+        Add the job with its priority to the queue after assigning it the next order_number.
+        '''
+        current_order_number = next(self.order_number)
+        job.order_number = current_order_number
+        priority = self.JOB_PRIORITIES[type(job)]
+        self.queue.put_nowait((priority, job))
+
+    def re_add_job(self, job: ApiJob) -> None:
+        '''
+        Reset the job's remaining attempts and put it back into the queue in the order in which it
+        was submitted by the user (do not assign it the next order_number).
+        '''
+        job.remaining_attempts = DEFAULT_NUM_ATTEMPTS
+        priority = self.JOB_PRIORITIES[type(job)]
+        self.queue.put_nowait((priority, job))
+
+    @pyqtSlot()
+    def process(self) -> None:
+        '''
+        Process the next job in the queue.
+
+        If the job is a PauseQueueJob, emit the paused signal and return from the processing loop so
+        that no more jobs are processed until the queue resumes.
+
+        If the job raises RequestTimeoutError or ApiInaccessibleError, then:
+        (1) Add a PauseQueuejob to the queue
+        (2) Add the job back to the queue so that it can be reprocessed once the queue is resumed.
+
+        Note: Generic exceptions are handled in _do_call_api.
+        '''
+        while True:
+            priority, job = self.queue.get(block=True)
+
+            if isinstance(job, PauseQueueJob):
+                logger.debug('Paused queue')
+                self.paused.emit()
+                return
+
+            try:
+                session = self.session_maker()
+                job._do_call_api(self.api_client, session)
+            except (RequestTimeoutError, ApiInaccessibleError) as e:
+                logger.debug('Job {} raised an exception: {}: {}'.format(self, type(e).__name__, e))
+                self.add_job(PauseQueueJob())
+                self.re_add_job(job)
+            except Exception as e:
+                logger.error('Job {} raised an exception: {}: {}'.format(self, type(e).__name__, e))
+                logger.error('Skipping job')
+            finally:
+                session.close()
+
+
+class ApiJobQueue(QObject):
+    '''
+    Signal that is emitted after a queue is paused
+    '''
+    paused = pyqtSignal()
 
     def __init__(self, api_client: API, session_maker: scoped_session) -> None:
         super().__init__(None)
@@ -109,6 +149,9 @@ class ApiJobQueue(QObject):
 
         self.main_thread.started.connect(self.main_queue.process)
         self.download_file_thread.started.connect(self.download_file_queue.process)
+
+        self.main_queue.paused.connect(self.on_queue_paused)
+        self.download_file_queue.paused.connect(self.on_queue_paused)
 
     def logout(self) -> None:
         self.main_queue.api_client = None
@@ -134,9 +177,17 @@ class ApiJobQueue(QObject):
             logger.debug('Starting download thread')
             self.download_file_thread.start()
 
+    def on_queue_paused(self) -> None:
+        self.paused.emit()
+
+    def resume_queues(self) -> None:
+        logger.info("Resuming queues")
+        self.start_queues()
+        self.main_queue.resume.emit()
+        self.download_file_queue.resume.emit()
+
     def enqueue(self, job: ApiJob) -> None:
-        # Additional defense in depth to prevent jobs being added to the queue when not
-        # logged in.
+        # Prevent api jobs being added to the queue when not logged in.
         if not self.main_queue.api_client or not self.download_file_queue.api_client:
             logger.info('Not adding job, we are not logged in')
             return
@@ -144,11 +195,9 @@ class ApiJobQueue(QObject):
         # First check the queues are started in case they died for some reason.
         self.start_queues()
 
-        priority = self.JOB_PRIORITIES[type(job)]
-
         if isinstance(job, FileDownloadJob):
             logger.debug('Adding job to download queue')
-            self.download_file_queue.add_job(priority, job)
+            self.download_file_queue.add_job(job)
         else:
             logger.debug('Adding job to main queue')
-            self.main_queue.add_job(priority, job)
+            self.main_queue.add_job(job)

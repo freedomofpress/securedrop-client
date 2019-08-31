@@ -84,9 +84,9 @@ def test_TopPane_update_error_status(mocker):
     tp = TopPane()
     tp.error_status_bar = mocker.MagicMock()
 
-    tp.update_error_status(message='test message', duration=5)
+    tp.update_error_status(message='test message', duration=5, retry=True)
 
-    tp.error_status_bar.update_message.assert_called_once_with('test message', 5)
+    tp.error_status_bar.update_message.assert_called_once_with('test message', 5, True)
 
 
 def test_TopPane_clear_error_status(mocker):
@@ -217,7 +217,7 @@ def test_ErrorStatusBar_update_message(mocker):
     esb.status_bar = mocker.MagicMock()
     esb.status_timer = mocker.MagicMock()
 
-    esb.update_message(message='test message', duration=123)
+    esb.update_message(message='test message', duration=123, retry=True)
 
     esb.status_bar.showMessage.assert_called_once_with('test message', 123)
     esb.status_timer.start.assert_called_once_with(123)
@@ -253,6 +253,17 @@ def test_ErrorStatusBar_on_status_timeout(mocker):
     esb = ErrorStatusBar()
     esb._on_status_timeout()
     assert esb.isHidden()
+
+
+def test_ErrorStatusBar_on_retry_clicked(mocker):
+    controller = mocker.MagicMock()
+    esb = ErrorStatusBar()
+    esb.setup(controller)
+
+    esb._on_retry_clicked()
+
+    assert esb.isHidden()
+    controller.resume_queues.assert_called_once_with()
 
 
 def test_ActivityStatusBar_update_message(mocker):
@@ -1415,21 +1426,6 @@ def test_ConversationView_init(mocker, homedir):
     mocked_controller = mocker.MagicMock()
     cv = ConversationView(mocked_source, mocked_controller)
     assert isinstance(cv.conversation_layout, QVBoxLayout)
-
-
-def test_ConversationView_refresh_conversation(mocker, homedir):
-    """
-    Ensure that the session refreshes whenever there is a new reply in case there are previously
-    failed replies.
-    """
-    source = factory.Source()
-    cv = ConversationView(source, mocker.MagicMock())
-    mocker.patch.object(cv, 'update_conversation')
-
-    cv.refresh_conversation()
-
-    cv.controller.session.refresh.assert_called_with(source)
-    cv.update_conversation.assert_called_once_with(source.collection)
 
 
 def test_ConversationView_update_conversation_position_follow(mocker, homedir):

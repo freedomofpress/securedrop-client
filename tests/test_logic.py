@@ -191,6 +191,7 @@ def test_Controller_on_authenticate_success(homedir, config, mocker, session_mak
     co.sync_api = mocker.MagicMock()
     co.api = mocker.MagicMock()
     co.call_api = mocker.MagicMock()
+    co.resume_queues = mocker.MagicMock()
     login = mocker.patch.object(co.api_job_queue, 'login')
     current_user_api_result = {
         'uuid': 'mock_uuid',
@@ -202,9 +203,9 @@ def test_Controller_on_authenticate_success(homedir, config, mocker, session_mak
     co.on_authenticate_success(True)
 
     co.sync_api.assert_called_once_with()
-    co.gui.clear_error_status.assert_called_once_with()
     assert mock_api_job_queue.called
     login.assert_called_with(co.api)
+    co.resume_queues.assert_called_once_with()
 
 
 def test_Controller_on_get_current_user_success(mocker, session_maker, session, homedir):
@@ -465,19 +466,16 @@ def test_Controller_on_sync_failure(homedir, config, mocker, session_maker):
     and perhaps implement some as-yet-undefined UI update.
     Using the `config` fixture to ensure the config is written to disk.
     """
-    mock_gui = mocker.MagicMock()
-    debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
-
-    co = Controller('http://localhost', mock_gui, session_maker, homedir)
-
-    result_data = Exception('Boom')  # Not the expected tuple.
+    gui = mocker.MagicMock()
+    co = Controller('http://localhost', gui, session_maker, homedir)
+    exception = Exception('mock')  # Not the expected tuple.
     mock_storage = mocker.patch('securedrop_client.logic.storage')
 
-    co.on_sync_failure(result_data)
+    co.on_sync_failure(exception)
 
     assert mock_storage.update_local_storage.call_count == 0
-    msg = 'Sync failed: "{}".'.format(result_data)
-    debug_logger.assert_called_once_with(msg)
+    gui.update_error_status.assert_called_once_with(
+        'The SecureDrop server cannot be reached.', duration=0, retry=True)
 
 
 def test_Controller_on_sync_success(homedir, config, mocker):
@@ -650,7 +648,6 @@ def test_Controller_on_update_star_success(homedir, config, mocker, session_make
     co.sync_api = mocker.MagicMock()
     co.on_update_star_success(result)
     co.sync_api.assert_called_once_with()
-    mock_gui.clear_error_status.assert_called_once_with()
 
 
 def test_Controller_on_update_star_failed(homedir, config, mocker, session_maker):
@@ -1192,7 +1189,6 @@ def test_Controller_on_delete_source_success(homedir, config, mocker, session_ma
     co.sync_api = mocker.MagicMock()
     co.on_delete_source_success(True)
     co.sync_api.assert_called_with()
-    co.gui.clear_error_status.assert_called_with()
 
 
 def test_Controller_on_delete_source_failure(homedir, config, mocker, session_maker):
@@ -1267,6 +1263,7 @@ def test_Controller_on_reply_success(homedir, mocker, session_maker, session):
     Check that when the method is called, the client emits the correct signal.
     '''
     co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    mocker.patch.object(co, 'sync_api')
     reply_succeeded = mocker.patch.object(co, 'reply_succeeded')
     reply_failed = mocker.patch.object(co, 'reply_failed')
     reply = factory.Reply(source=factory.Source())
@@ -1274,9 +1271,10 @@ def test_Controller_on_reply_success(homedir, mocker, session_maker, session):
 
     co.on_reply_success(reply.uuid)
 
-    debug_logger.assert_called_once_with('{} sent successfully'.format(reply.uuid))
+    assert debug_logger.call_args_list[0][0][0] == '{} sent successfully'.format(reply.uuid)
     reply_succeeded.emit.assert_called_once_with(reply.uuid)
     reply_failed.emit.assert_not_called()
+    co.sync_api.assert_called_once_with()
 
 
 def test_Controller_on_reply_failure(homedir, mocker, session_maker):
@@ -1332,6 +1330,13 @@ def test_Controller_is_authenticated_property(homedir, mocker, session_maker):
     assert co.is_authenticated is False
 
 
+def test_Controller_resume_queues(homedir, mocker, session_maker):
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    co.api_job_queue = mocker.MagicMock()
+    co.resume_queues()
+    co.api_job_queue.resume_queues.assert_called_once_with()
+
+
 def test_APICallRunner_api_call_timeout(mocker):
     """
     Ensure that if a RequestTimeoutError is raised, both the failure and timeout signals are
@@ -1352,15 +1357,28 @@ def test_APICallRunner_api_call_timeout(mocker):
     mock_timeout_signal.emit.assert_called_once_with()
 
 
-def test_Controller_api_call_timeout(homedir, config, mocker, session_maker):
+def test_Controller_on_queue_paused(homedir, config, mocker, session_maker):
     '''
-    Using the `config` fixture to ensure the config is written to disk.
+    Check that a paused queue is communicated to the user via the error status bar with retry option
     '''
     mock_gui = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
-    co.on_api_timeout()
+    co.api = 'mock'
+    co.on_queue_paused()
     mock_gui.update_error_status.assert_called_once_with(
-        'The connection to the SecureDrop server timed out. Please try again.')
+        'The SecureDrop server cannot be reached.', duration=0, retry=True)
+
+
+def test_Controller_on_queue_paused_when_logged_out(homedir, config, mocker, session_maker):
+    '''
+    Check that a paused queue is communicated to the user via the error status bar. There should not
+    be a retry option displayed to the user
+    '''
+    mock_gui = mocker.MagicMock()
+    co = Controller('http://localhost', mock_gui, session_maker, homedir)
+    co.api = None
+    co.on_queue_paused()
+    mock_gui.update_error_status.assert_called_once_with('The SecureDrop server cannot be reached.')
 
 
 def test_Controller_call_update_star_success(homedir, config, mocker, session_maker, session):

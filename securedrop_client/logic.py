@@ -171,6 +171,7 @@ class Controller(QObject):
 
         # Queue that handles running API job
         self.api_job_queue = ApiJobQueue(self.api, self.session_maker)
+        self.api_job_queue.paused.connect(self.on_queue_paused)
 
         # Contains active threads calling the API.
         self.api_threads = {}  # type: Dict[str, Dict]
@@ -246,7 +247,6 @@ class Controller(QObject):
             lambda: self.completed_api_call(new_thread_id, success_callback))
         new_api_runner.call_failed.connect(
             lambda: self.completed_api_call(new_thread_id, failure_callback))
-        new_api_runner.call_timed_out.connect(self.on_api_timeout)
 
         # when the thread starts, we want to run `call_api` on `api_runner`
         new_api_thread.started.connect(new_api_runner.call_api)
@@ -260,9 +260,17 @@ class Controller(QObject):
         # Start the thread and related activity.
         new_api_thread.start()
 
-    def on_api_timeout(self) -> None:
-        self.gui.update_error_status(_('The connection to the SecureDrop server timed out. '
-                                       'Please try again.'))
+    def on_queue_paused(self) -> None:
+        if self.api is None:
+            self.gui.update_error_status(_('The SecureDrop server cannot be reached.'))
+        else:
+            self.gui.update_error_status(
+                _('The SecureDrop server cannot be reached.'),
+                duration=0,
+                retry=True)
+
+    def resume_queues(self) -> None:
+        self.api_job_queue.resume_queues()
 
     def completed_api_call(self, thread_id, user_callback):
         """
@@ -303,11 +311,8 @@ class Controller(QObject):
                       self.on_get_current_user_failure)
         self.api_job_queue.login(self.api)
 
-        # Clear the sidebar error status bar if a message was shown
-        # to the user indicating they should log in.
-        self.gui.clear_error_status()
-
         self.is_authenticated = True
+        self.resume_queues()
 
     def on_authenticate_failure(self, result: Exception) -> None:
         # Failed to authenticate. Reset state with failure message.
@@ -415,7 +420,10 @@ class Controller(QObject):
         """
         Called when syncronisation of data via the API fails.
         """
-        logger.debug('Sync failed: "{}".'.format(result))
+        self.gui.update_error_status(
+            _('The SecureDrop server cannot be reached.'),
+            duration=0,
+            retry=True)
 
     def update_sync(self):
         """
@@ -438,7 +446,6 @@ class Controller(QObject):
         After we star a source, we should sync the API such that the local database is updated.
         """
         self.sync_api()  # Syncing the API also updates the source list UI
-        self.gui.clear_error_status()
 
     def on_update_star_failure(self, result: UpdateStarJobException) -> None:
         """
@@ -456,13 +463,8 @@ class Controller(QObject):
         if not self.api:  # Then we should tell the user they need to login.
             self.on_action_requiring_login()
             return
-        else:  # Clear the error status bar
-            self.gui.clear_error_status()
 
-        job = UpdateStarJob(
-                source_db_object.uuid,
-                source_db_object.is_starred
-        )
+        job = UpdateStarJob(source_db_object.uuid, source_db_object.is_starred)
         job.success_signal.connect(self.on_update_star_success, type=Qt.QueuedConnection)
         job.failure_signal.connect(self.on_update_star_failure, type=Qt.QueuedConnection)
 
@@ -625,7 +627,6 @@ class Controller(QObject):
         Handler for when a source deletion succeeds.
         """
         self.sync_api()
-        self.gui.clear_error_status()
 
     def on_delete_source_failure(self, result: Exception) -> None:
         logging.info("failed to delete source at server")
@@ -665,6 +666,7 @@ class Controller(QObject):
     def on_reply_success(self, reply_uuid: str) -> None:
         logger.debug('{} sent successfully'.format(reply_uuid))
         self.reply_succeeded.emit(reply_uuid)
+        self.sync_api()
 
     def on_reply_failure(
         self,
