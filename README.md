@@ -54,43 +54,50 @@ Example archive metadata (`metadata.json`):
 
 ### Devices
 
-For all 5 devices described below, there are three generic errors that apply:
+For all device types (described in detail below), the following standard error types can be returned:
 
-`ERROR_FILE_NOT_FOUND`: No file has been specified or the path is incorrect
-`ERROR_EXTRACTION`: Error while extracting the archive
-`ERROR_METADATA_PARSING`: The metadata.json file cannot be correctly parsed
-`ERROR_ARCHIVE_METADATA`: The metadata failed the check
-`ERROR_GENERIC`: An uncaught (unexpected) error somewhere in the script. These should not happen unless the code improperly handles errors
+- `ERROR_FILE_NOT_FOUND`: No file has been specified or the path is incorrect
+- `ERROR_EXTRACTION`: Error while extracting the archive
+- `ERROR_METADATA_PARSING`: The metadata.json file cannot be correctly parsed
+- `ERROR_ARCHIVE_METADATA`: The metadata failed the check
+- `ERROR_USB_CONFIGURATION`: There is no USB controller attached to the VM, the dom0 configuration (in `config.json`) or USB device identifier is is misconfigured
+- `ERROR_GENERIC`: An uncaught (unexpected) error somewhere in the script. These should not happen unless the code improperly handles errors
 
-The list of devices are as follows:
+The supported device types for export are as follows, including the possible errors specific to that device type:
 
 1. `usb-test` : Preflight check that probes for USB connected devices, that returns:
-`USB_CONNECTED` if a USB device is attached to the dedicated slot
-`USB_NOT_CONNECTED` if no USB is attached
-`USB_CHECK_ERROR` if an error occurred during pre-flight
+  - `USB_CONNECTED` if a USB device is attached to the dedicated slot
+  - `USB_NOT_CONNECTED` if no USB is attached
+  - `USB_CHECK_ERROR` if an error occurred during pre-flight
+
 
 2. `disk-test`: Preflight check that checks for LUKS-encrypted volume that returns:
-`USB_ENCRYPTED` if a LUKS volume is attached to sd-export
-`USB_ENCRYPTION_NOT_SUPPORTED` if a LUKS volume is not attached or there was any other error
-`USB_DISK_ERROR`
+  - `USB_ENCRYPTED` if a LUKS volume is attached to sd-export
+  - `USB_ENCRYPTION_NOT_SUPPORTED` if a LUKS volume is not attached or there was any other error
+  - `USB_DISK_ERROR`
+
 
 3. `printer-test`: prints a test page that returns:
-`ERROR_PRINTER_NOT_FOUND` if no printer is connected
-`ERROR_PRINTER_NOT_SUPPORTED` if the printer is not currently supported by the export script
-`ERROR_PRINTER_DRIVER_UNAVAILABLE` if the printer driver is not available
-`ERROR_PRINTER_INSTALL` If there is an error installing the printer
-`ERROR_PRINT` if there is an error printing
+  - `ERROR_PRINTER_NOT_FOUND` if no printer is connected
+  - `ERROR_PRINTER_NOT_SUPPORTED` if the printer is not currently supported by the export script
+  - `ERROR_PRINTER_DRIVER_UNAVAILABLE` if the printer driver is not available
+  - `ERROR_PRINTER_INSTALL` If there is an error installing the printer
+  - `ERROR_PRINT` if there is an error printing
+
 
 4. `printer`: sends files to printer that returns:
-`ERROR_PRINTER_NOT_FOUND` if no printer is connected
-`ERROR_PRINTER_NOT_SUPPORTED` if the printer is not currently supported by the export script
-`ERROR_PRINTER_DRIVER_UNAVAILABLE` if the printer driver is not available
-`ERROR_PRINTER_INSTALL` If there is an error installing the printer
-`ERROR_PRINT` if there is an error printing
+  - `ERROR_PRINTER_NOT_FOUND` if no printer is connected
+  - `ERROR_PRINTER_NOT_SUPPORTED` if the printer is not currently supported by the export script
+  - `ERROR_PRINTER_DRIVER_UNAVAILABLE` if the printer driver is not available
+  - `ERROR_PRINTER_INSTALL` If there is an error installing the printer
+  - `ERROR_PRINT` if there is an error printing
 
-5. `disk`: sends files to disk:
-All files in `export_data` will be sent to disk
-`encryption_method` and `encryption_passphrase` specify the device encryption settings
+
+5. `disk`: sends files to disk that returns:
+  - `USB_BAD_PASSPHRASE` if the luks decryption failed (likely due to bad passphrase)
+  - `ERROR_USB_MOUNT` if there was an error mounting the volume (after unlocking the luks volume)
+  - `ERROR_USB_WRITE` if there was an error writing to disk (e.g., no space left on device)
+
 
 ### Export Folder Structure
 
@@ -113,4 +120,3 @@ Example folder structure of USB export drive:
 │   │   └── file-to-export-1.doc
 └── snug seek
 ```
-
