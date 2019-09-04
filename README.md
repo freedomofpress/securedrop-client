@@ -7,15 +7,17 @@ Code for exporting and printing files from the SecureDrop Qubes Workstation.
 
 ## Export Archive Format
 
-Export archive format is defined as a gzipped tar archive whose extension ends with .sd-export.
+Export archive format is defined as a gzipped tar archive whose extension ends with `.sd-export`.
 
 ### Archive Contents
 
 Once extracted, the archive will contain two elements:
 
-`metadata.json` : file containing export metadata, a file containing information about the archive and the export operation
+`metadata.json`
+: file containing export metadata, a file containing information about the archive and the export operation
 
-`export_data`: folder containing the raw files to export
+`export_data`
+: folder containing the raw files to export
 
 Example archive structure:
 
@@ -32,15 +34,16 @@ Example archive structure:
 ### Archive Metadata
 
 Metadata contains three possible keys which may contain several possible values:
-`device`
-`device` specifies the method used for export, and can be either a device or a preflight check. See the Devices section below for possible values. It is a required key.
 
-`encryption_method`:
-`encryption_method` is used exclusively when exporting to USB storage. It is an optional key. Possible values are:
+`device`
+: specifies the method used for export, and can be either a device or a preflight check. See the Devices section below for possible values. It is a required key.
+
+`encryption_method`
+: used exclusively when exporting to USB storage. It is an optional key. Possible values are:
 luks
 
 `encryption_passphrase`
-`encryption_passphrase` is used exclusively when exporting to USB storage. It is an optional key. It contains an arbitrary string that contains the disk encryption passphrase of the device.
+: used exclusively when exporting to USB storage. It is an optional key. It contains an arbitrary string that contains the disk encryption passphrase of the device.
 
 
 Example archive metadata (`metadata.json`):
@@ -66,38 +69,33 @@ For all device types (described in detail below), the following standard error t
 The supported device types for export are as follows, including the possible errors specific to that device type:
 
 1. `usb-test` : Preflight check that probes for USB connected devices, that returns:
-  - `USB_CONNECTED` if a USB device is attached to the dedicated slot
-  - `USB_NOT_CONNECTED` if no USB is attached
-  - `USB_CHECK_ERROR` if an error occurred during pre-flight
-
+    - `USB_CONNECTED` if a USB device is attached to the dedicated slot
+    - `USB_NOT_CONNECTED` if no USB is attached
+    - `USB_CHECK_ERROR` if an error occurred during pre-flight
 
 2. `disk-test`: Preflight check that checks for LUKS-encrypted volume that returns:
-  - `USB_ENCRYPTED` if a LUKS volume is attached to sd-export
-  - `USB_ENCRYPTION_NOT_SUPPORTED` if a LUKS volume is not attached or there was any other error
-  - `USB_DISK_ERROR`
-
+    - `USB_ENCRYPTED` if a LUKS volume is attached to sd-export
+    - `USB_ENCRYPTION_NOT_SUPPORTED` if a LUKS volume is not attached or there was any other error
+    - `USB_DISK_ERROR`
 
 3. `printer-test`: prints a test page that returns:
-  - `ERROR_PRINTER_NOT_FOUND` if no printer is connected
-  - `ERROR_PRINTER_NOT_SUPPORTED` if the printer is not currently supported by the export script
-  - `ERROR_PRINTER_DRIVER_UNAVAILABLE` if the printer driver is not available
-  - `ERROR_PRINTER_INSTALL` If there is an error installing the printer
-  - `ERROR_PRINT` if there is an error printing
-
+    - `ERROR_PRINTER_NOT_FOUND` if no printer is connected
+    - `ERROR_PRINTER_NOT_SUPPORTED` if the printer is not currently supported by the export script
+    - `ERROR_PRINTER_DRIVER_UNAVAILABLE` if the printer driver is not available
+    - `ERROR_PRINTER_INSTALL` If there is an error installing the printer
+    - `ERROR_PRINT` if there is an error printing
 
 4. `printer`: sends files to printer that returns:
-  - `ERROR_PRINTER_NOT_FOUND` if no printer is connected
-  - `ERROR_PRINTER_NOT_SUPPORTED` if the printer is not currently supported by the export script
-  - `ERROR_PRINTER_DRIVER_UNAVAILABLE` if the printer driver is not available
-  - `ERROR_PRINTER_INSTALL` If there is an error installing the printer
-  - `ERROR_PRINT` if there is an error printing
-
+    - `ERROR_PRINTER_NOT_FOUND` if no printer is connected
+    - `ERROR_PRINTER_NOT_SUPPORTED` if the printer is not currently supported by the export script
+    - `ERROR_PRINTER_DRIVER_UNAVAILABLE` if the printer driver is not available
+    - `ERROR_PRINTER_INSTALL` If there is an error installing the printer
+    - `ERROR_PRINT` if there is an error printing
 
 5. `disk`: sends files to disk that returns:
-  - `USB_BAD_PASSPHRASE` if the luks decryption failed (likely due to bad passphrase)
-  - `ERROR_USB_MOUNT` if there was an error mounting the volume (after unlocking the luks volume)
-  - `ERROR_USB_WRITE` if there was an error writing to disk (e.g., no space left on device)
-
+    - `USB_BAD_PASSPHRASE` if the luks decryption failed (likely due to bad passphrase)
+    - `ERROR_USB_MOUNT` if there was an error mounting the volume (after unlocking the luks volume)
+    - `ERROR_USB_WRITE` if there was an error writing to disk (e.g., no space left on device)
 
 ### Export Folder Structure
 
