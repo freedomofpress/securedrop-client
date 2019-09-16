@@ -1859,6 +1859,10 @@ class ExportDialog(QDialog):
         layout = QVBoxLayout(self)
         self.setLayout(layout)
 
+        # Starting export message
+        self.starting_export_message = SecureQLabel(_('Preparing export...'))
+        self.starting_export_message.setWordWrap(True)
+
         # Widget to show error messages that occur during an export
         self.generic_error = QWidget()
         self.generic_error.setObjectName('gener_error')
@@ -1921,6 +1925,7 @@ class ExportDialog(QDialog):
         passphrase_form_layout.addWidget(buttons, alignment=Qt.AlignRight)
         self.passphrase_error_message.hide()
 
+        layout.addWidget(self.starting_export_message)
         layout.addWidget(self.generic_error)
         layout.addWidget(self.insert_usb_form)
         layout.addWidget(self.passphrase_form)
@@ -1935,7 +1940,6 @@ class ExportDialog(QDialog):
         unlock_disk_button.clicked.connect(self._on_unlock_disk_clicked)
 
         self._export()
-
 
     def _export(self):
         try:
@@ -1958,28 +1962,11 @@ class ExportDialog(QDialog):
     @pyqtSlot()
     def _on_retry_export_button_clicked(self):
         try:
+            self.starting_export_message.hide()
             self.controller.run_export_preflight_checks()
             self._request_passphrase()
         except ExportError as e:
             self._update(e.status)
-
-    def _request_to_insert_usb_device(self, encryption_not_supported: bool = False):
-        self.passphrase_form.hide()
-        self.insert_usb_form.show()
-
-        if encryption_not_supported:
-            self.usb_error_message.show()
-        else:
-            self.usb_error_message.hide()
-
-    def _request_passphrase(self, bad_passphrase: bool = False):
-        self.passphrase_form.show()
-        self.insert_usb_form.hide()
-
-        if bad_passphrase:
-            self.passphrase_error_message.show()
-        else:
-            self.passphrase_error_message.hide()
 
     @pyqtSlot()
     def _on_unlock_disk_clicked(self):
@@ -1989,6 +1976,26 @@ class ExportDialog(QDialog):
             self.close()
         except ExportError as e:
             self._update(e.status)
+
+    def _request_to_insert_usb_device(self, encryption_not_supported: bool = False):
+        self.starting_export_message.hide()
+        self.passphrase_form.hide()
+        self.insert_usb_form.show()
+
+        if encryption_not_supported:
+            self.usb_error_message.show()
+        else:
+            self.usb_error_message.hide()
+
+    def _request_passphrase(self, bad_passphrase: bool = False):
+        self.starting_export_message.hide()
+        self.passphrase_form.show()
+        self.insert_usb_form.hide()
+
+        if bad_passphrase:
+            self.passphrase_error_message.show()
+        else:
+            self.passphrase_error_message.hide()
 
     def _update(self, status):
         if status == ExportStatus.USB_NOT_CONNECTED.value:
