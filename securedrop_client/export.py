@@ -86,8 +86,12 @@ class Export:
                 the return code from `check_output` is not 0.
         '''
         try:
-            command = '{} {} {}'.format(cls.QVM_OP, cls.QVM_VM, archive_path)
-            output = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
+            # There are already talks of switching to a QVM-RPC implementation for unlocking devices
+            # and exporting files, so it's important to remember to shell-escape what we pass to our
+            # check_output call, even if for the time being we're not passing user input.
+            output = subprocess.check_output(
+                [quote(cls.QVM_OP), quote(cls.QVM_VM), quote(archive_path)],
+                stderr=subprocess.STDOUT)
             return output.decode('utf-8').strip()
         except subprocess.CalledProcessError as e:
             logger.error(e)
@@ -197,8 +201,7 @@ class Export:
         logger.debug('Exporting to disk...')
 
         metadata = self.DISK_METADATA.copy()
-        metadata[self.DISK_ENCRYPTION_KEY_NAME] = quote(passphrase)
-
+        metadata[self.DISK_ENCRYPTION_KEY_NAME] = passphrase
         archive_path = self._create_archive(archive_dir, self.DISK_FN, metadata, filepaths)
 
         status = self._export_archive(archive_path)
