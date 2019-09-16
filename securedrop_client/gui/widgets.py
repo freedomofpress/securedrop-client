@@ -1886,9 +1886,9 @@ class ExportDialog(QDialog):
         buttons_layout = QHBoxLayout()
         buttons.setLayout(buttons_layout)
         usb_cancel_button = QPushButton(_('CANCEL'))
-        export_button = QPushButton(_('EXPORT'))
+        retry_export_button = QPushButton(_('CONTINUE'))
         buttons_layout.addWidget(usb_cancel_button)
-        buttons_layout.addWidget(export_button)
+        buttons_layout.addWidget(retry_export_button)
         usb_form_layout.addWidget(self.usb_error_message)
         usb_form_layout.addWidget(usb_instructions)
         usb_form_layout.addWidget(buttons, alignment=Qt.AlignRight)
@@ -1931,13 +1931,32 @@ class ExportDialog(QDialog):
 
         usb_cancel_button.clicked.connect(self.close)
         passphrase_cancel_button.clicked.connect(self.close)
-        export_button.clicked.connect(self._export)
+        retry_export_button.clicked.connect(self._on_retry_export_button_clicked)
         unlock_disk_button.clicked.connect(self._on_unlock_disk_clicked)
 
         self._export()
 
-    @pyqtSlot()
+
     def _export(self):
+        try:
+            self.controller.run_export_preflight_checks()
+            self._request_passphrase()
+        except ExportError as e:
+            # The first time we see a CALLED_PROCESS_ERROR, tell the user to insert the USB device
+            # in case the issue is that the Export VM cannot start due to a USB device being
+            # unavailable for attachment. According to the Qubes docs:
+            #
+            #   "If the device is unavailable (physically missing or sourceVM not started), booting
+            #    the targetVM fails."
+            #
+            # For information, see https://www.qubes-os.org/doc/device-handling
+            if e.status == ExportStatus.CALLED_PROCESS_ERROR.value:
+                self._request_to_insert_usb_device()
+            else:
+                self._update(e.status)
+
+    @pyqtSlot()
+    def _on_retry_export_button_clicked(self):
         try:
             self.controller.run_export_preflight_checks()
             self._request_passphrase()
