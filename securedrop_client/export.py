@@ -87,8 +87,10 @@ class Export:
         '''
         try:
             # There are already talks of switching to a QVM-RPC implementation for unlocking devices
-            # and exporting files, so it's important to remember to shell-escape what we pass to our
-            # check_output call, even if for the time being we're not passing user input.
+            # and exporting files, so it's important to remember to shell-escape what we pass to the
+            # shell, even if for the time being we're already protected against shell injection via
+            # Python's implementation of subprocess, see
+            # https://docs.python.org/3/library/subprocess.html#security-considerations
             output = subprocess.check_output(
                 [quote(cls.QVM_OP), quote(cls.QVM_VM), quote(archive_path)],
                 stderr=subprocess.STDOUT)

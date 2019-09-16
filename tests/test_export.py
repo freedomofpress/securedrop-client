@@ -102,28 +102,6 @@ def test__run_disk_export_raises_ExportError_if_not_empty_string(mocker):
         export._run_disk_export('mock_archive_dir', ['mock_filepath'], 'mock_passphrase')
 
 
-def test__run_disk_export_with_evil_passphrase(mocker):
-    '''
-    Ensure passphrase is shell-escaped.
-    '''
-    export = Export(is_qubes=False)
-    export._create_archive = mocker.MagicMock(return_value='mock_archive_path')
-    export._export_archive = mocker.MagicMock(return_value='')
-
-    evil_passphrase = 'somefile; rm -rf ~'
-    export._run_disk_export('mock_archive_dir', ['mock_filepath'], evil_passphrase)
-
-    export._create_archive.assert_called_once_with(
-        'mock_archive_dir',
-        'archive.sd-export',
-        {
-            'encryption_key': "'somefile; rm -rf ~'",
-            'device': 'disk',
-            'encryption_method': 'luks'
-        },
-        ['mock_filepath'])
-
-
 def test__run_disk_test(mocker):
     '''
     Ensure _export_archive and _create_archive are called with the expected parameters,
@@ -246,3 +224,16 @@ def test__export_archive_does_not_raise_ExportError_when_CalledProcessError(mock
 
     with pytest.raises(ExportError, match='CALLED_PROCESS_ERROR'):
         export._export_archive('mock.sd-export')
+
+
+def test__export_archive_with_evil_command(mocker):
+    '''
+    Ensure shell command is shell-escaped.
+    '''
+    export = Export(is_qubes=False)
+    check_output = mocker.patch('subprocess.check_output', return_value=b'')
+
+    export._export_archive('somefile; rm -rf ~')
+
+    check_output.assert_called_once_with(
+        ['qvm-open-in-vm', 'sd-export-usb', "'somefile; rm -rf ~'"], stderr=-2)
