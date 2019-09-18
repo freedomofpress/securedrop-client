@@ -1785,11 +1785,6 @@ class FileWidget(QWidget):
         Called when the export button is clicked.
         """
         dialog = ExportDialog(self.controller, self.file.uuid)
-        frame_rect = self.frameGeometry()
-        dialog_rect = dialog.geometry()
-        x_center = (frame_rect.width() - dialog_rect.width()) / 2
-        y_center = (frame_rect.height() - dialog_rect.height()) / 2
-        dialog.move(x_center, y_center)
         dialog.exec()
 
     def _on_left_click(self):
