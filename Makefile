@@ -60,7 +60,7 @@ bandit: ## Run bandit with medium level excluding test-related folders
 	bandit -ll --recursive . --exclude ./tests,./.venv
 
 .PHONY: check
-check: clean lint mypy test ## Run the full CI test suite
+check: clean bandit lint mypy test ## Run the full CI test suite
 
 .PHONY: update-pip-requirements
 update-pip-requirements: ## Updates all Python requirements files via pip-compile.
