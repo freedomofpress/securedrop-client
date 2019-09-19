@@ -21,6 +21,7 @@ import inspect
 import logging
 import os
 import sdclientapi
+import subprocess
 import uuid
 from typing import Dict, Tuple, Union, Any, Type  # noqa: F401
 
@@ -593,12 +594,16 @@ class Controller(QObject):
             logger.info('Opening file "{}".'.format(original_filepath))
 
     def run_export_preflight_checks(self):
-        self.export.run_preflight_checks()
+        #self.export.run_preflight_checks()
+        subprocess.check_output(['sleep', '1'])
+        logger.debug('boopity boop')
 
     def export_file_to_usb_drive(self, file_uuid: str, passphrase: str) -> None:
         file = self.get_file(file_uuid)
         filepath = os.path.join(self.data_dir, file.original_filename)
-        self.export.send_file_to_usb_device([filepath], passphrase)
+        subprocess.check_output(['sleep', '1'])
+        logger.debug('gogogogo')
+        #self.export.send_file_to_usb_device([filepath], passphrase)
 
     def on_submission_download(
         self,
