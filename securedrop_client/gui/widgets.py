@@ -26,7 +26,7 @@ from typing import Dict, List  # noqa: F401
 from uuid import uuid4
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QEvent, QTimer, QSize, pyqtBoundSignal, QObject
 from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient
-from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
+from PyQt5.QtWidgets import QApplication, QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
     QToolButton, QSizePolicy, QTextEdit, QStatusBar, QGraphicsDropShadowEffect
 
@@ -1787,9 +1787,10 @@ class FileWidget(QWidget):
         dialog = ExportDialog(self.controller, self.file.uuid)
         dialog.setModal(True)  # it don't matter
         dialog.show()
+        QApplication.processEvents()
         # self.controller.export_signal.emit(True)
         self.controller.run_export_preflight_checks()
-        dialog.exec()
+        # dialog.exec()
 
     def _on_left_click(self):
         """
