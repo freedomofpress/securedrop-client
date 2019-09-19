@@ -595,7 +595,7 @@ class Controller(QObject):
 
     def run_export_preflight_checks(self):
         #self.export.run_preflight_checks()
-        subprocess.check_output(['sleep', '1'])
+        subprocess.check_output(['sleep', '5'])
         logger.debug('boopity boop')
 
     def export_file_to_usb_drive(self, file_uuid: str, passphrase: str) -> None:

@@ -1785,6 +1785,10 @@ class FileWidget(QWidget):
         Called when the export button is clicked.
         """
         dialog = ExportDialog(self.controller, self.file.uuid)
+        dialog.setModal(True)  # it don't matter
+        dialog.show()
+        # self.controller.export_signal.emit(True)
+        self.controller.run_export_preflight_checks()
         dialog.exec()
 
     def _on_left_click(self):
@@ -1933,7 +1937,7 @@ class ExportDialog(QDialog):
         retry_export_button.clicked.connect(self._on_retry_export_button_clicked)
         unlock_disk_button.clicked.connect(self._on_unlock_disk_clicked)
 
-        self._export()
+        # self._export()
 
     def _export(self):
         try:
