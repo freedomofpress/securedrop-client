@@ -43,9 +43,6 @@ class Export:
     securedrop-export repository.
     '''
 
-    QVM_OP = 'qvm-open-in-vm'
-    QVM_VM = 'sd-export-usb'
-
     METADATA_FN = 'metadata.json'
 
     USB_TEST_FN = 'usb-test.sd-export'
@@ -66,8 +63,8 @@ class Export:
     DISK_ENCRYPTION_KEY_NAME = 'encryption_key'
     DISK_EXPORT_DIR = 'export_data'
 
-    def __init__(self, is_qubes: bool) -> None:
-        self.is_qubes = is_qubes
+    def __init__(self) -> None:
+        pass
 
     def _export_archive(cls, archive_path: str) -> str:
         '''
@@ -92,7 +89,12 @@ class Export:
             # Python's implementation of subprocess, see
             # https://docs.python.org/3/library/subprocess.html#security-considerations
             output = subprocess.check_output(
-                [quote(cls.QVM_OP), quote(cls.QVM_VM), quote(archive_path)],
+                [
+                    quote('qvm-open-in-vm'),
+                    quote('sd-export-usb'),
+                    quote(archive_path),
+                    '--view-only'
+                ],
                 stderr=subprocess.STDOUT)
             return output.decode('utf-8').strip()
         except subprocess.CalledProcessError as e:
@@ -165,8 +167,6 @@ class Export:
         Raises:
             ExportError: Raised if the usb-test does not return a USB_CONNECTED status.
         '''
-        logger.debug('Running usb-test...')
-
         archive_path = self._create_archive(archive_dir, self.USB_TEST_FN, self.USB_TEST_METADATA)
         status = self._export_archive(archive_path)
         if status != ExportStatus.USB_CONNECTED.value:
@@ -182,8 +182,6 @@ class Export:
         Raises:
             ExportError: Raised if the usb-test does not return a DISK_ENCRYPTED status.
         '''
-        logger.debug('Running disk-test...')
-
         archive_path = self._create_archive(archive_dir, self.DISK_TEST_FN, self.DISK_TEST_METADATA)
 
         status = self._export_archive(archive_path)
@@ -200,8 +198,6 @@ class Export:
         Raises:
             ExportError: Raised if the usb-test does not return a DISK_ENCRYPTED status.
         '''
-        logger.debug('Exporting to disk...')
-
         metadata = self.DISK_METADATA.copy()
         metadata[self.DISK_ENCRYPTION_KEY_NAME] = passphrase
         archive_path = self._create_archive(archive_dir, self.DISK_FN, metadata, filepaths)
@@ -210,15 +206,10 @@ class Export:
         if status:
             raise ExportError(status)
 
-        logger.debug('Export successful')
-
     def run_preflight_checks(self) -> None:
         '''
         Run preflight checks to verify that the usb device is connected and luks-encrypted.
         '''
-        if not self.is_qubes:
-            return
-
         with TemporaryDirectory() as temp_dir:
             self._run_usb_test(temp_dir)
             self._run_disk_test(temp_dir)
@@ -231,8 +222,5 @@ class Export:
             filepath: The path of file to export.
             passphrase: The passphrase to unlock the luks-encrypted usb disk drive.
         '''
-        if not self.is_qubes:
-            return
-
         with TemporaryDirectory() as temp_dir:
             self._run_disk_export(temp_dir, filepaths, passphrase)

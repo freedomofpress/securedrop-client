@@ -1883,7 +1883,7 @@ class ExportDialog(QDialog):
         usb_form_layout = QVBoxLayout()
         self.insert_usb_form.setLayout(usb_form_layout)
         self.usb_error_message = SecureQLabel(_(
-            'Either the drive is not encrypted with VeraCrypt, or there is something else wrong'
+            'Either the drive is not luks-encrypted, or there is something else wrong'
             'with it. Please try another drive, or see your administrator for help.'))
         self.usb_error_message.setWordWrap(True)
         usb_instructions = SecureQLabel(_(
@@ -1928,11 +1928,18 @@ class ExportDialog(QDialog):
         passphrase_form_layout.addWidget(buttons, alignment=Qt.AlignRight)
         self.passphrase_error_message.hide()
 
+        # Starting export message
+        self.exporting_message = SecureQLabel(_('Exporting...'))
+        self.exporting_message.setWordWrap(True)
+
         layout.addWidget(self.starting_export_message)
+        layout.addWidget(self.exporting_message)
         layout.addWidget(self.generic_error)
         layout.addWidget(self.insert_usb_form)
         layout.addWidget(self.passphrase_form)
 
+        self.starting_export_message.show()
+        self.exporting_message.hide()
         self.generic_error.hide()
         self.insert_usb_form.hide()
         self.passphrase_form.hide()
@@ -1972,6 +1979,9 @@ class ExportDialog(QDialog):
     @pyqtSlot()
     def _on_unlock_disk_clicked(self):
         try:
+            self.passphrase_form.hide()
+            self.exporting_message.show()
+            QApplication.processEvents()
             passphrase = self.passphrase_field.text()
             self.controller.export_file_to_usb_drive(self.file_uuid, passphrase)
             self.close()
@@ -1990,6 +2000,7 @@ class ExportDialog(QDialog):
 
     def _request_passphrase(self, bad_passphrase: bool = False):
         self.starting_export_message.hide()
+        self.exporting_message.hide()
         self.passphrase_form.show()
         self.insert_usb_form.hide()
 

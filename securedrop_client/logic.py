@@ -179,7 +179,7 @@ class Controller(QObject):
 
         self.gpg = GpgHelper(home, self.session_maker, proxy)
 
-        self.export = Export(self.qubes)
+        self.export = Export()
 
         self.sync_flag = os.path.join(home, 'sync_flag')
 
@@ -593,12 +593,28 @@ class Controller(QObject):
             logger.info('Opening file "{}".'.format(original_filepath))
 
     def run_export_preflight_checks(self):
+        '''
+        Run preflight checks to make sure the Export VM is configured correctly and
+        '''
+        logger.debug('Running export preflight checks')
+
+        if not self.qubes:
+            return
+
         self.export.run_preflight_checks()
 
     def export_file_to_usb_drive(self, file_uuid: str, passphrase: str) -> None:
         file = self.get_file(file_uuid)
+
+        logger.debug('Exporting {}'.format(file.original_filename))
+
+        if not self.qubes:
+            return
+
         filepath = os.path.join(self.data_dir, file.original_filename)
         self.export.send_file_to_usb_device([filepath], passphrase)
+
+        logger.debug('Export successful')
 
     def on_submission_download(
         self,
