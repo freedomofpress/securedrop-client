@@ -1442,7 +1442,7 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
     _request_pass.assert_called_once_with()
 
 
-def test_ExportDialog__export(mocker):
+def test_ExportDialog_export(mocker):
     """
     Ensure happy path runs preflight checks and requests passphrase.
     """
@@ -1450,13 +1450,13 @@ def test_ExportDialog__export(mocker):
     export_dialog = ExportDialog(controller, 'mock_uuid')
     export_dialog._request_passphrase = mocker.MagicMock()
 
-    export_dialog._export()
+    export_dialog.export()
 
     controller.run_export_preflight_checks.assert_called_with()
     export_dialog._request_passphrase.assert_called_with()
 
 
-def test_ExportDialog__export_request_to_insert_usb_device_on_CALLED_PROCESS_ERROR(mocker):
+def test_ExportDialog_export_request_to_insert_usb_device_on_CALLED_PROCESS_ERROR(mocker):
     """
     Ensure request to insert USB device on CALLED_PROCESS_ERROR.
     """
@@ -1468,14 +1468,14 @@ def test_ExportDialog__export_request_to_insert_usb_device_on_CALLED_PROCESS_ERR
     export_dialog._request_to_insert_usb_device = mocker.MagicMock()
     export_dialog._update = mocker.MagicMock()
 
-    export_dialog._export()
+    export_dialog.export()
 
     export_dialog._request_passphrase.assert_not_called()
     export_dialog._request_to_insert_usb_device.assert_called_once_with()
     export_dialog._update.assert_not_called()
 
 
-def test_ExportDialog__export_request_to_insert_usb_device_on_USB_NOT_CONNECTED(mocker):
+def test_ExportDialog_export_request_to_insert_usb_device_on_USB_NOT_CONNECTED(mocker):
     """
     Ensure request to insert USB device on USB_NOT_CONNECTED.
     """
@@ -1486,13 +1486,13 @@ def test_ExportDialog__export_request_to_insert_usb_device_on_USB_NOT_CONNECTED(
     export_dialog._request_passphrase = mocker.MagicMock()
     export_dialog._update = mocker.MagicMock()
 
-    export_dialog._export()
+    export_dialog.export()
 
     export_dialog._request_passphrase.assert_not_called()
     export_dialog._update.assert_called_once_with('USB_NOT_CONNECTED')
 
 
-def test_ExportDialog__export_updates_on_ExportError(mocker):
+def test_ExportDialog_export_updates_on_ExportError(mocker):
     """
     Ensure update is run for ExportError that is not USB_NOT_CONNECTED or CALLED_PROCESS_ERROR.
     """
@@ -1502,7 +1502,7 @@ def test_ExportDialog__export_updates_on_ExportError(mocker):
     export_dialog._request_passphrase = mocker.MagicMock()
     export_dialog._update = mocker.MagicMock()
 
-    export_dialog._export()
+    export_dialog.export()
 
     export_dialog._request_passphrase.assert_not_called()
     export_dialog._update.assert_called_once_with('mock')
@@ -1670,6 +1670,23 @@ def test_ExportDialog__update_after_DISK_ENCRYPTION_NOT_SUPPORTED_ERROR(mocker):
     export_dialog._request_to_insert_usb_device = mocker.MagicMock()
     export_dialog._update(ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value)
     export_dialog._request_to_insert_usb_device.assert_called_once_with(True)
+
+
+def test_ExportDialog__update_after_CALLED_PROCESS_ERROR_ERROR(mocker):
+    """
+    Ensure CALLED_PROCESS_ERROR shows generic 'contant admin' error with correct
+    error status code.
+    """
+    export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid')
+    export_dialog._request_to_insert_usb_device = mocker.MagicMock()
+    export_dialog._request_passphrase = mocker.MagicMock()
+
+    export_dialog._update(ExportStatus.CALLED_PROCESS_ERROR.value)
+
+    assert not export_dialog.generic_error.isHidden()
+    assert export_dialog.error_status_code.text() == 'CALLED_PROCESS_ERROR'
+    export_dialog._request_to_insert_usb_device.assert_not_called()
+    export_dialog._request_passphrase.assert_not_called()
 
 
 def test_ConversationView_init(mocker, homedir):

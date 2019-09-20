@@ -28,7 +28,7 @@ from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QEvent, QTimer, QSize, pyqtBo
 from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
-    QToolButton, QSizePolicy, QTextEdit, QStatusBar, QGraphicsDropShadowEffect
+    QToolButton, QSizePolicy, QTextEdit, QStatusBar, QGraphicsDropShadowEffect, QApplication
 
 from securedrop_client.db import Source, Message, File, Reply, User
 from securedrop_client.storage import source_exists
@@ -1785,6 +1785,15 @@ class FileWidget(QWidget):
         Called when the export button is clicked.
         """
         dialog = ExportDialog(self.controller, self.file.uuid)
+        # The underlying function of the `export` method makes a blocking call that can potentially
+        # take a long time to run (if the Export VM is not already running and needs to start, this
+        # can take 15 or more seconds). Calling `QApplication.processEvents` ensures that the `show`
+        # event is processed before the blocking call so that the user can see the dialog with a
+        # message to wait before the blocking call. We also call `exec` afterwards in order to give
+        # control to the dialog for the rest of the export process.
+        dialog.show()
+        QApplication.processEvents()
+        dialog.export()
         dialog.exec()
 
     def _on_left_click(self):
@@ -1933,9 +1942,7 @@ class ExportDialog(QDialog):
         retry_export_button.clicked.connect(self._on_retry_export_button_clicked)
         unlock_disk_button.clicked.connect(self._on_unlock_disk_clicked)
 
-        self._export()
-
-    def _export(self):
+    def export(self):
         try:
             self.controller.run_export_preflight_checks()
             self._request_passphrase()
