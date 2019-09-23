@@ -164,31 +164,14 @@ class SDExport(object):
             self.exit_gracefully(msg)
 
     def check_usb_connected(self):
-
         # If the USB is not attached via qvm-usb attach, lsusb will return empty string and a
         # return code of 1
         logging.info('Performing usb preflight')
         try:
-            p = subprocess.check_output(["lsusb", "-s", "{}:".format(self.pci_bus_id)])
-            logging.info("lsusb -s {} : {}".format(self.pci_bus_id, p.decode("utf-8")))
+            subprocess.check_output(["lsblk", "-p", "-o", "KNAME", DEVICE])
+            self.exit_gracefully("USB_CONNECTED")
         except subprocess.CalledProcessError:
-            msg = "ERROR_USB_CONFIGURATION"
-            self.exit_gracefully(msg)
-        n_usb = len(p.decode("utf-8").rstrip().split("\n"))
-        # If there is one device, it is the root hub.
-        if n_usb == 1:
-            logging.info('usb preflight - no external devices connected')
-            msg = "USB_NOT_CONNECTED"
-            self.exit_gracefully(msg)
-        # If there are two devices, it's the root hub and another device (presumably for export)
-        elif n_usb == 2:
-            logging.info('usb preflight - external device connected')
-            msg = "USB_CONNECTED"
-            self.exit_gracefully(msg)
-        # Else the result is unexpected
-        else:
-            msg = "ERROR_USB_CHECK"
-            self.exit_gracefully(msg)
+            self.exit_gracefully("USB_NOT_CONNECTED")
 
     def check_luks_volume(self):
         logging.info('Checking if volume is luks-encrypted')
