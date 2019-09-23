@@ -37,6 +37,7 @@ from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobError, 
     SendReplyJobTimeoutError
 from securedrop_client.api_jobs.updatestar import UpdateStarJob, UpdateStarJobException
 from securedrop_client.crypto import GpgHelper, CryptoError
+from securedrop_client.export import Export
 from securedrop_client.queue import ApiJobQueue
 from securedrop_client.utils import check_dir_permissions
 
@@ -177,6 +178,8 @@ class Controller(QObject):
         self.api_threads = {}  # type: Dict[str, Dict]
 
         self.gpg = GpgHelper(home, self.session_maker, proxy)
+
+        self.export = Export()
 
         self.sync_flag = os.path.join(home, 'sync_flag')
 
@@ -588,6 +591,30 @@ class Controller(QObject):
         else:  # pragma: no cover
             # Non Qubes OS. Just log the event for now.
             logger.info('Opening file "{}".'.format(original_filepath))
+
+    def run_export_preflight_checks(self):
+        '''
+        Run preflight checks to make sure the Export VM is configured correctly and
+        '''
+        logger.debug('Running export preflight checks')
+
+        if not self.qubes:
+            return
+
+        self.export.run_preflight_checks()
+
+    def export_file_to_usb_drive(self, file_uuid: str, passphrase: str) -> None:
+        file = self.get_file(file_uuid)
+
+        logger.debug('Exporting {}'.format(file.original_filename))
+
+        if not self.qubes:
+            return
+
+        filepath = os.path.join(self.data_dir, file.original_filename)
+        self.export.send_file_to_usb_device([filepath], passphrase)
+
+        logger.debug('Export successful')
 
     def on_submission_download(
         self,

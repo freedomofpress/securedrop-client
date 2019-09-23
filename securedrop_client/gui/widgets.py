@@ -28,10 +28,11 @@ from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QEvent, QTimer, QSize, pyqtBo
 from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
-    QToolButton, QSizePolicy, QTextEdit, QStatusBar, QGraphicsDropShadowEffect
+    QToolButton, QSizePolicy, QTextEdit, QStatusBar, QGraphicsDropShadowEffect, QApplication
 
 from securedrop_client.db import Source, Message, File, Reply, User
 from securedrop_client.storage import source_exists
+from securedrop_client.export import ExportStatus, ExportError
 from securedrop_client.gui import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_icon, load_image
@@ -1715,7 +1716,7 @@ class FileWidget(QWidget):
         file_options_layout.addWidget(self.print_button)
 
         self.download_button.installEventFilter(self)
-        # self.export_button.installEventFilter(self)
+        self.export_button.clicked.connect(self._on_export_clicked)
         # self.print_button.installEventFilter(self)
 
         # File name or default string
@@ -1740,16 +1741,9 @@ class FileWidget(QWidget):
         if self.file.is_downloaded:
             self.download_button.hide()
             self.no_file_name.hide()
-            self.export_button.hide()  # Show once print is supported on the workstation client
+            self.export_button.show()
             self.print_button.hide()  # Show once print is supported on the workstation client
             self.file_name.show()
-
-            # Delete this block of code once print & export are supported on the workstation client
-            self.file_options.hide()
-            do_not_retain_space = QSizePolicy()
-            do_not_retain_space.setRetainSizeWhenHidden(False)
-            self.file_options.setSizePolicy(do_not_retain_space)
-
         else:
             self.export_button.hide()
             self.print_button.hide()
@@ -1781,15 +1775,26 @@ class FileWidget(QWidget):
                 self.file_name.setText(self.file.original_filename)
                 self.download_button.hide()
                 self.no_file_name.hide()
-                self.export_button.hide()  # Show once export is supported on the workstation client
+                self.export_button.show()
                 self.print_button.hide()  # Show once print is supported on the workstation client
                 self.file_name.show()
 
-                # Delete this block of code once print & export are supported on workstation client
-                self.file_options.hide()
-                do_not_retain_space = QSizePolicy()
-                do_not_retain_space.setRetainSizeWhenHidden(False)
-                self.file_options.setSizePolicy(do_not_retain_space)
+    @pyqtSlot()
+    def _on_export_clicked(self):
+        """
+        Called when the export button is clicked.
+        """
+        dialog = ExportDialog(self.controller, self.file.uuid)
+        # The underlying function of the `export` method makes a blocking call that can potentially
+        # take a long time to run (if the Export VM is not already running and needs to start, this
+        # can take 15 or more seconds). Calling `QApplication.processEvents` ensures that the `show`
+        # event is processed before the blocking call so that the user can see the dialog with a
+        # message to wait before the blocking call. We also call `exec` afterwards in order to give
+        # control to the dialog for the rest of the export process.
+        dialog.show()
+        QApplication.processEvents()
+        dialog.export()
+        dialog.exec()
 
     def _on_left_click(self):
         """
@@ -1805,6 +1810,217 @@ class FileWidget(QWidget):
         else:
             # Download the file.
             self.controller.on_submission_download(File, self.file.uuid)
+
+
+class ExportDialog(QDialog):
+
+    CSS = '''
+    #export_dialog {
+        min-width: 830;
+        min-height: 330;
+        border: 1px solid #2a319d;
+    }
+    '''
+
+    CSS_FOR_DIALOG_WITH_ERROR = '''
+    #export_dialog {
+        min-width: 830;
+        min-height: 430;
+        border: 1px solid #2a319d;
+    }
+    '''
+
+    CSS = '''
+    #export_dialog {
+        min-width: 400;
+        max-width: 400;
+        min-height: 200;
+        max-height: 200;
+    }
+    #passphrase_label {
+        font-family: 'Montserrat';
+        font-weight: 500;
+        font-size: 13px;
+    }
+    #passphrase_form QLineEdit {
+        border-radius: 0px;
+        min-height: 30px;
+        margin: 0px 0px 10px 0px;
+    }
+    '''
+
+    def __init__(self, controller, file_uuid):
+        super().__init__()
+
+        self.controller = controller
+        self.file_uuid = file_uuid
+
+        self.setObjectName('export_dialog')
+        self.setStyleSheet(self.CSS)
+        self.setWindowFlags(Qt.Popup)
+
+        layout = QVBoxLayout(self)
+        self.setLayout(layout)
+
+        # Starting export message
+        self.starting_export_message = SecureQLabel(_('Preparing export...'))
+        self.starting_export_message.setWordWrap(True)
+
+        # Widget to show error messages that occur during an export
+        self.generic_error = QWidget()
+        self.generic_error.setObjectName('gener_error')
+        generic_error_layout = QHBoxLayout()
+        self.generic_error.setLayout(generic_error_layout)
+        self.error_status_code = SecureQLabel()
+        generic_error_message = SecureQLabel(_('See your administrator for help.'))
+        generic_error_message.setWordWrap(True)
+        generic_error_layout.addWidget(self.error_status_code)
+        generic_error_layout.addWidget(generic_error_message)
+
+        # Insert USB Device Form
+        self.insert_usb_form = QWidget()
+        self.insert_usb_form.setObjectName('insert_usb_form')
+        usb_form_layout = QVBoxLayout()
+        self.insert_usb_form.setLayout(usb_form_layout)
+        self.usb_error_message = SecureQLabel(_(
+            'Either the drive is not luks-encrypted, or there is something else wrong'
+            'with it. Please try another drive, or see your administrator for help.'))
+        self.usb_error_message.setWordWrap(True)
+        usb_instructions = SecureQLabel(_(
+            'Please insert your encrypted drive into one of the USB ports marked EXTERNAL.'))
+        usb_instructions.setWordWrap(True)
+        buttons = QWidget()
+        buttons_layout = QHBoxLayout()
+        buttons.setLayout(buttons_layout)
+        usb_cancel_button = QPushButton(_('CANCEL'))
+        retry_export_button = QPushButton(_('CONTINUE'))
+        buttons_layout.addWidget(usb_cancel_button)
+        buttons_layout.addWidget(retry_export_button)
+        usb_form_layout.addWidget(self.usb_error_message)
+        usb_form_layout.addWidget(usb_instructions)
+        usb_form_layout.addWidget(buttons, alignment=Qt.AlignRight)
+
+        # Passphrase Form
+        self.passphrase_form = QWidget()
+        self.passphrase_form.setObjectName('passphrase_form')
+        passphrase_form_layout = QVBoxLayout()
+        self.passphrase_form.setLayout(passphrase_form_layout)
+        self.passphrase_error_message = SecureQLabel(_(
+            'The passphrase provided did not work. Please try again.'))
+        self.passphrase_error_message.setWordWrap(True)
+        passphrase_instructions = SecureQLabel(_('Enter password for safe USB drive.'))
+        passphrase_instructions.setWordWrap(True)
+        passphrase_label = SecureQLabel(_('Passphrase'))
+        passphrase_label.setObjectName('passphrase_label')
+        self.passphrase_field = QLineEdit()
+        self.passphrase_field.setEchoMode(QLineEdit.Password)
+        buttons = QWidget()
+        buttons_layout = QHBoxLayout()
+        buttons.setLayout(buttons_layout)
+        passphrase_cancel_button = QPushButton(_('CANCEL'))
+        unlock_disk_button = QPushButton(_('SUBMIT'))
+        buttons_layout.addWidget(passphrase_cancel_button)
+        buttons_layout.addWidget(unlock_disk_button)
+        passphrase_form_layout.addWidget(self.passphrase_error_message)
+        passphrase_form_layout.addWidget(passphrase_instructions)
+        passphrase_form_layout.addWidget(passphrase_label)
+        passphrase_form_layout.addWidget(self.passphrase_field)
+        passphrase_form_layout.addWidget(buttons, alignment=Qt.AlignRight)
+        self.passphrase_error_message.hide()
+
+        # Starting export message
+        self.exporting_message = SecureQLabel(_('Exporting...'))
+        self.exporting_message.setWordWrap(True)
+
+        layout.addWidget(self.starting_export_message)
+        layout.addWidget(self.exporting_message)
+        layout.addWidget(self.generic_error)
+        layout.addWidget(self.insert_usb_form)
+        layout.addWidget(self.passphrase_form)
+
+        self.starting_export_message.show()
+        self.exporting_message.hide()
+        self.generic_error.hide()
+        self.insert_usb_form.hide()
+        self.passphrase_form.hide()
+
+        usb_cancel_button.clicked.connect(self.close)
+        passphrase_cancel_button.clicked.connect(self.close)
+        retry_export_button.clicked.connect(self._on_retry_export_button_clicked)
+        unlock_disk_button.clicked.connect(self._on_unlock_disk_clicked)
+
+    def export(self):
+        try:
+            self.controller.run_export_preflight_checks()
+            self._request_passphrase()
+        except ExportError as e:
+            # The first time we see a CALLED_PROCESS_ERROR, tell the user to insert the USB device
+            # in case the issue is that the Export VM cannot start due to a USB device being
+            # unavailable for attachment. According to the Qubes docs:
+            #
+            #   "If the device is unavailable (physically missing or sourceVM not started), booting
+            #    the targetVM fails."
+            #
+            # For information, see https://www.qubes-os.org/doc/device-handling
+            if e.status == ExportStatus.CALLED_PROCESS_ERROR.value:
+                self._request_to_insert_usb_device()
+            else:
+                self._update(e.status)
+
+    @pyqtSlot()
+    def _on_retry_export_button_clicked(self):
+        try:
+            self.starting_export_message.hide()
+            self.controller.run_export_preflight_checks()
+            self._request_passphrase()
+        except ExportError as e:
+            self._update(e.status)
+
+    @pyqtSlot()
+    def _on_unlock_disk_clicked(self):
+        try:
+            self.passphrase_form.hide()
+            self.exporting_message.show()
+            QApplication.processEvents()
+            passphrase = self.passphrase_field.text()
+            self.controller.export_file_to_usb_drive(self.file_uuid, passphrase)
+            self.close()
+        except ExportError as e:
+            self._update(e.status)
+
+    def _request_to_insert_usb_device(self, encryption_not_supported: bool = False):
+        self.starting_export_message.hide()
+        self.passphrase_form.hide()
+        self.insert_usb_form.show()
+
+        if encryption_not_supported:
+            self.usb_error_message.show()
+        else:
+            self.usb_error_message.hide()
+
+    def _request_passphrase(self, bad_passphrase: bool = False):
+        self.starting_export_message.hide()
+        self.exporting_message.hide()
+        self.passphrase_form.show()
+        self.insert_usb_form.hide()
+
+        if bad_passphrase:
+            self.passphrase_error_message.show()
+        else:
+            self.passphrase_error_message.hide()
+
+    def _update(self, status):
+        if status == ExportStatus.USB_NOT_CONNECTED.value:
+            self._request_to_insert_usb_device()
+        elif status == ExportStatus.BAD_PASSPHRASE.value:
+            self._request_passphrase(True)
+        elif status == ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value:
+            self._request_to_insert_usb_device(True)
+        else:
+            self.error_status_code.setText(_(status))
+            self.generic_error.show()
+            self.passphrase_form.hide()
+            self.insert_usb_form.hide()
 
 
 class ConversationView(QWidget):
