@@ -1672,7 +1672,7 @@ def test_ExportDialog__update_after_DISK_ENCRYPTION_NOT_SUPPORTED_ERROR(mocker):
     export_dialog._request_to_insert_usb_device.assert_called_once_with(True)
 
 
-def test_ExportDialog__update_after_CALLED_PROCESS_ERROR_ERROR(mocker):
+def test_ExportDialog__update_after_CALLED_PROCESS_ERROR(mocker):
     """
     Ensure CALLED_PROCESS_ERROR shows generic 'contant admin' error with correct
     error status code.
@@ -1683,6 +1683,9 @@ def test_ExportDialog__update_after_CALLED_PROCESS_ERROR_ERROR(mocker):
 
     export_dialog._update(ExportStatus.CALLED_PROCESS_ERROR.value)
 
+    assert export_dialog.starting_export_message.isHidden()
+    assert export_dialog.passphrase_form.isHidden()
+    assert export_dialog.insert_usb_form.isHidden()
     assert not export_dialog.generic_error.isHidden()
     assert export_dialog.error_status_code.text() == 'CALLED_PROCESS_ERROR'
     export_dialog._request_to_insert_usb_device.assert_not_called()
