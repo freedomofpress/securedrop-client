@@ -2019,6 +2019,7 @@ class ExportDialog(QDialog):
         else:
             self.error_status_code.setText(_(status))
             self.generic_error.show()
+            self.starting_export_message.hide()
             self.passphrase_form.hide()
             self.insert_usb_form.hide()
 
