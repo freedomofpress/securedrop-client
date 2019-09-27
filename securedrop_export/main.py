@@ -4,6 +4,7 @@ from securedrop_export import export
 
 logger = logging.getLogger(__name__)
 
+
 def __main__(submission):
     submission.extract_tarball()
 

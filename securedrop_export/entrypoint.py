@@ -11,6 +11,7 @@ from securedrop_export import main
 CONFIG_PATH = "/etc/sd-export-config.json"
 DEFAULT_HOME = os.path.join(os.path.expanduser("~"), ".securedrop_export")
 
+
 def configure_logging():
     """
     All logging related settings are set up by this function.
@@ -35,12 +36,13 @@ def configure_logging():
     log.setLevel(logging.DEBUG)
     log.addHandler(handler)
 
+
 def start():
     try:
         configure_logging()
     except Exception:
         msg = "ERROR_LOGGING"
-        my_sub.exit_gracefully(msg)
+        export.SDExport.exit_gracefully(msg)
 
     logging.info('Starting SecureDrop Export {}'.format(__version__))
     my_sub = export.SDExport(sys.argv[1], CONFIG_PATH)

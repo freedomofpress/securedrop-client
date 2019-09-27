@@ -2,7 +2,7 @@ from unittest import mock
 
 import os
 import pytest
-import subprocess
+import subprocess  # noqa: F401
 import tempfile
 
 from securedrop_export import export
@@ -23,7 +23,7 @@ def test_bad_sd_export_config_invalid_json(capsys):
 
     expected_message = "ERROR_CONFIG"
     with pytest.raises(SystemExit) as sysexit:
-        submission = export.SDExport("", BAD_TEST_CONFIG)
+        export.SDExport("", BAD_TEST_CONFIG)
     # A graceful exit means a return code of 0
     assert sysexit.value.code == 0
 
@@ -36,7 +36,7 @@ def test_bad_sd_export_config_invalid_value(capsys):
 
     expected_message = "ERROR_CONFIG"
     with pytest.raises(SystemExit) as sysexit:
-        submission = export.SDExport("", ANOTHER_BAD_TEST_CONFIG)
+        export.SDExport("", ANOTHER_BAD_TEST_CONFIG)
     # A graceful exit means a return code of 0
     assert sysexit.value.code == 0
 
@@ -71,8 +71,9 @@ def test_exit_gracefully_exception(capsys):
     test_msg = 'test'
 
     with pytest.raises(SystemExit) as sysexit:
-        submission.exit_gracefully(test_msg,
-                                         e=Exception('BANG!'))
+        submission.exit_gracefully(
+            test_msg, e=Exception('BANG!')
+        )
 
     # A graceful exit means a return code of 0
     assert sysexit.value.code == 0
@@ -83,7 +84,7 @@ def test_exit_gracefully_exception(capsys):
 
 
 def test_empty_config(capsys):
-    submission = export.SDExport("testfile", TEST_CONFIG)
+    export.SDExport("testfile", TEST_CONFIG)
     temp_folder = tempfile.mkdtemp()
     metadata = os.path.join(temp_folder, export.Metadata.METADATA_FILE)
     with open(metadata, "w") as f:
@@ -93,7 +94,7 @@ def test_empty_config(capsys):
 
 
 def test_valid_printer_test_config(capsys):
-    submission = export.SDExport("testfile", TEST_CONFIG)
+    export.SDExport("testfile", TEST_CONFIG)
     temp_folder = tempfile.mkdtemp()
     metadata = os.path.join(temp_folder, export.Metadata.METADATA_FILE)
     with open(metadata, "w") as f:
@@ -105,7 +106,7 @@ def test_valid_printer_test_config(capsys):
 
 
 def test_valid_printer_config(capsys):
-    submission = export.SDExport("", TEST_CONFIG)
+    export.SDExport("", TEST_CONFIG)
     temp_folder = tempfile.mkdtemp()
     metadata = os.path.join(temp_folder, export.Metadata.METADATA_FILE)
     with open(metadata, "w") as f:
@@ -117,7 +118,7 @@ def test_valid_printer_config(capsys):
 
 
 def test_invalid_encryption_config(capsys):
-    submission = export.SDExport("testfile", TEST_CONFIG)
+    export.SDExport("testfile", TEST_CONFIG)
 
     temp_folder = tempfile.mkdtemp()
     metadata = os.path.join(temp_folder, export.Metadata.METADATA_FILE)
@@ -132,7 +133,7 @@ def test_invalid_encryption_config(capsys):
 
 
 def test_valid_encryption_config(capsys):
-    submission = export.SDExport("testfile", TEST_CONFIG)
+    export.SDExport("testfile", TEST_CONFIG)
     temp_folder = tempfile.mkdtemp()
     metadata = os.path.join(temp_folder, export.Metadata.METADATA_FILE)
     with open(metadata, "w") as f:
@@ -209,7 +210,7 @@ def test_usb_precheck_connected(mocked_call, capsys):
     expected_message = "USB_NOT_CONNECTED"
     mocked_exit = mock.patch("export.exit_gracefully", return_value=0)
     with pytest.raises(SystemExit) as sysexit:
-        result = submission.check_usb_connected()
+        submission.check_usb_connected()
         mocked_exit.assert_called_once_with(expected_message)
 
     assert sysexit.value.code == 0
@@ -223,7 +224,7 @@ def test_usb_precheck_disconnected(mocked_call, capsys):
     expected_message = "USB_CONNECTED"
     mocked_exit = mock.patch("export.exit_gracefully", return_value=0)
     with pytest.raises(SystemExit) as sysexit:
-        result = submission.check_usb_connected()
+        submission.check_usb_connected()
         mocked_exit.assert_called_once_with(expected_message)
 
     assert sysexit.value.code == 0
@@ -237,7 +238,7 @@ def test_usb_precheck_error(mocked_call, capsys):
     expected_message = "ERROR_USB_CHECK"
     mocked_exit = mock.patch("export.exit_gracefully", return_value=0)
     with pytest.raises(SystemExit) as sysexit:
-        result = submission.check_usb_connected()
+        submission.check_usb_connected()
         mocked_exit.assert_called_once_with(expected_message)
 
     assert sysexit.value.code == 0
@@ -251,7 +252,7 @@ def test_usb_precheck_error_2(mocked_call, capsys):
     expected_message = "ERROR_USB_CHECK"
     mocked_exit = mock.patch("export.exit_gracefully", return_value=0)
     with pytest.raises(SystemExit) as sysexit:
-        result = submission.check_usb_connected()
+        submission.check_usb_connected()
         mocked_exit.assert_called_once_with(expected_message)
 
     assert sysexit.value.code == 0
@@ -266,7 +267,7 @@ def test_luks_precheck_encrypted(mocked_call, capsys):
     mocked_exit = mock.patch("export.exit_gracefully", return_value=0)
 
     with pytest.raises(SystemExit) as sysexit:
-        result = submission.check_luks_volume()
+        submission.check_luks_volume()
         mocked_exit.assert_called_once_with(expected_message)
     assert sysexit.value.code == 0
     captured = capsys.readouterr()

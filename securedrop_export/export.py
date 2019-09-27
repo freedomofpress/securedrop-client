@@ -22,6 +22,7 @@ BRLASER_PPD = "/usr/share/cups/model/br7030.ppd"
 
 logger = logging.getLogger(__name__)
 
+
 class Metadata(object):
     """
     Object to parse, validate and store json metadata from the sd-export archive.
@@ -46,8 +47,14 @@ class Metadata(object):
                 json_config = json.loads(f.read())
                 self.export_method = json_config.get("device", None)
                 self.encryption_method = json_config.get("encryption_method", None)
-                self.encryption_key = json_config.get("encryption_key", None)
-                logging.info('Exporting to device {} with encryption_method {}'.format(self.export_method, self.encryption_method))
+                self.encryption_key = json_config.get(
+                    "encryption_key", None
+                )
+                logging.info(
+                    'Exporting to device {} with encryption_method {}'.format(
+                        self.export_method, self.encryption_method
+                    )
+                )
 
         except Exception:
             logging.error('Metadata parsing failure')
@@ -56,12 +63,20 @@ class Metadata(object):
     def is_valid(self):
         logging.info('Validating metadata contents')
         if self.export_method not in self.SUPPORTED_EXPORT_METHODS:
-            logging.error('Archive metadata: Export method {} is not supported'.format(self.export_method))
+            logging.error(
+                'Archive metadata: Export method {} is not supported'.format(
+                    self.export_method
+                )
+            )
             return False
 
         if self.export_method == "disk":
             if self.encryption_method not in self.SUPPORTED_ENCRYPTION_METHODS:
-                logging.error('Archive metadata: Encryption method {} is not supported'.format(self.encryption_method))
+                logging.error(
+                    'Archive metadata: Encryption method {} is not supported'.format(
+                        self.encryption_method
+                    )
+                )
                 return False
         return True
 
@@ -180,7 +195,7 @@ class SDExport(object):
         try:
             # cryptsetup isLuks returns 0 if the device is a luks volume
             # subprocess with throw if the device is not luks (rc !=0)
-            p = subprocess.check_call(["sudo", "cryptsetup", "isLuks", DEVICE])
+            subprocess.check_call(["sudo", "cryptsetup", "isLuks", DEVICE])
             msg = "USB_ENCRYPTED"
             self.exit_gracefully(msg)
         except subprocess.CalledProcessError:
@@ -195,13 +210,13 @@ class SDExport(object):
                 ["sudo", "cryptsetup", "luksOpen", self.device, self.encrypted_device],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stderr=subprocess.PIPE
             )
             logging.info('Passing key')
             p.communicate(input=str.encode(encryption_key, "utf-8"))
             rc = p.returncode
             if rc != 0:
-                logging.error('Bad phassphrase for {}',format(self.encrypted_device))
+                logging.error('Bad phassphrase for {}'.format(self.encrypted_device))
                 msg = "USB_BAD_PASSPHRASE"
                 self.exit_gracefully(msg)
 
@@ -388,10 +403,10 @@ class SDExport(object):
 
     def print_file(self, file_to_print):
         try:
-            # if the file to print is an (open)office document, we need to call unoconf to convert
-            # the file to pdf as printer drivers do not immediately support this format out of the box
+            # If the file to print is an (open)office document, we need to call unoconf to
+            # convert the file to pdf as printer drivers do not support this format
             if self.is_open_office_file(file_to_print):
-                logging.info('Converting Office document to pdf for printing'.format(self.printer_name))
+                logging.info('Converting Office document to pdf'.format(self.printer_name))
                 folder = os.path.dirname(file_to_print)
                 converted_filename = file_to_print + ".pdf"
                 converted_path = os.path.join(folder, converted_filename)
@@ -405,7 +420,7 @@ class SDExport(object):
             self.exit_gracefully(msg)
 
 
-## class ends here
+# class ends here
 class TimeoutException(Exception):
     pass
 
