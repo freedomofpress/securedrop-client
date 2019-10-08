@@ -925,31 +925,32 @@ def test_Controller_on_file_downloaded_checksum_failure(homedir, config, mocker,
 
 def test_Controller_on_file_open(homedir, config, mocker, session, session_maker, source):
     """
-    If running on Qubes, a new QProcess with the expected command and args
-    should be started.
+    If running on Qubes, a new QProcess with the expected command and args should be started.
     Using the `config` fixture to ensure the config is written to disk.
     """
-    mock_gui = mocker.MagicMock()
-    co = Controller('http://localhost', mock_gui, session_maker, homedir)
-    co.proxy = True
-
-    submission = factory.File(source=source['source'])
-    session.add(submission)
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    co.qubes = True
+    file = factory.File(source=source['source'])
+    session.add(file)
     session.commit()
-
+    mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
+    mocker.patch('os.path.exists', return_value=True)
+    mocker.patch('os.remove')
     mock_subprocess = mocker.MagicMock()
     mock_process = mocker.MagicMock(return_value=mock_subprocess)
     mocker.patch('securedrop_client.logic.QProcess', mock_process)
     mock_link = mocker.patch('os.link')
-    co.on_file_open(submission.uuid)
+
+    co.on_file_open(file.uuid)
+
+    co.get_file.assert_called_once_with(file.uuid)
     mock_process.assert_called_once_with(co)
     assert mock_subprocess.start.call_count == 1
     assert mock_link.call_count == 1
 
 
 def test_Controller_on_file_open_existing_link_problem(
-        homedir, config, mocker, session, session_maker, source, caplog
-):
+        homedir, config, mocker, session, session_maker, source, caplog):
     """
     Test that open works if the link to the original filename exists.
     """
@@ -974,6 +975,20 @@ def test_Controller_on_file_open_existing_link_problem(
     assert mock_exists.call_count == 1
     assert mock_link.call_count == 1
     assert mock_remove.call_count == 1
+
+
+def test_Controller_on_file_open_file_missing(mocker, homedir, session_maker):
+    """
+    When file does not exist, test that we log and send status update to user.
+    """
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    mocker.patch('securedrop_client.logic.Controller.get_file')
+    mocker.patch('os.path.exists', return_value=False)
+
+    co.on_file_open('mock_uuid')
+
+    msg = 'Export failed. File no longer exists in the data directory.'
+    co.gui.update_error_status.assert_called_once_with(msg)
 
 
 def test_Controller_download_new_replies_with_new_reply(mocker, session, session_maker, homedir):
@@ -1450,11 +1465,28 @@ def test_Controller_export_file_to_usb_drive(homedir, mocker, session):
     session.add(file)
     session.commit()
     mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
+    mocker.patch('os.path.exists', return_value=True)
 
     co.export_file_to_usb_drive(file.uuid, 'mock passphrase')
 
     # Signal to begin the USB export should be emitted
     co.export.begin_usb_export.emit.call_count == 1
+
+
+def test_Controller_export_file_to_usb_drive_failed_file_missing(homedir, mocker, session):
+    debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
+    co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
+    co.export = mocker.MagicMock()
+    file = factory.File(source=factory.Source(), original_filename='mock_filename')
+    session.add(file)
+    session.commit()
+    mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
+
+    co.export_file_to_usb_drive(file.uuid, 'mock passphrase')
+
+    debug_logger.call_args_list[0][0][0] == 'Exporting {}'.format(file.original_filename)
+    failure_message = 'Export failed. File no longer exists in the data directory'
+    debug_logger.call_args_list[1][0][0] == failure_message
 
 
 def test_Controller_export_file_to_usb_drive_not_qubes(homedir, mocker, session):

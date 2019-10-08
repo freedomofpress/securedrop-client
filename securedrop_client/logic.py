@@ -23,7 +23,7 @@ import os
 import sdclientapi
 import threading
 import uuid
-from typing import Dict, Tuple, Union, Any, Type  # noqa: F401
+from typing import Dict, Tuple, Union, Any, List, Type  # noqa: F401
 
 from gettext import gettext as _
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess, Qt
@@ -181,6 +181,7 @@ class Controller(QObject):
         self.gpg = GpgHelper(home, self.session_maker, proxy)
 
         self.export = Export()
+        self.export.export_usb_call_success.connect(self.on_export_usb_call_success)
 
         self.sync_flag = os.path.join(home, 'sync_flag')
 
@@ -574,32 +575,40 @@ class Controller(QObject):
             self._submit_download_job(exception.object_type, exception.uuid)
 
     def on_file_open(self, file_uuid: str) -> None:
-        """
-        Open the already downloaded file associated with the message (which is a `File`).
-        """
-        # Once downloaded, submissions are stored in the data directory
-        # with the same filename as the server, except with the .gz.gpg
-        # stripped off.
+        '''
+        Open the file specified by file_uuid.
+
+        Once a file is downloaded, it exists in the data directory with the same filename as the
+        server, except with the .gz.gpg stripped off. In order for the Display VM to know which
+        application to open the file in, we create a hard link to this file with the original file
+        name, including its extension.
+
+        If the file is missing, update the db so that is_downloaded is set to False.
+        '''
         file = self.get_file(file_uuid)
-        fn_no_ext, _ = os.path.splitext(os.path.splitext(file.filename)[0])
-        submission_filepath = os.path.join(self.data_dir, fn_no_ext)
-        original_filepath = os.path.join(self.data_dir, file.original_filename)
+        logger.info('Opening file "{}".'.format(file.original_filename))
 
-        if os.path.exists(original_filepath):
-            os.remove(original_filepath)
-        os.link(submission_filepath, original_filepath)
-        if self.proxy or self.qubes:
-            # Running on Qubes.
-            command = "qvm-open-in-vm"
-            args = ['@dispvm:sd-svs-disp', original_filepath]
+        fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
+        filepath = os.path.join(self.data_dir, fn_no_ext)
+        if not os.path.exists(filepath):
+            msg = _('Could not export {}. File does not exist.'.format(file.original_filename))
+            storage.mark_as_not_downloaded(file_uuid)
+            self.sync_api()
+            logger.debug(msg)
+            self.gui.update_error_status(msg)
+            return
 
-            # QProcess (Qt) or Python's subprocess? Who cares? They do the
-            # same thing. :-)
-            process = QProcess(self)
-            process.start(command, args)
-        else:  # pragma: no cover
-            # Non Qubes OS. Just log the event for now.
-            logger.info('Opening file "{}".'.format(original_filepath))
+        path_to_file_with_original_name = os.path.join(self.data_dir, file.original_filename)
+        if not os.path.exists(path_to_file_with_original_name):
+            os.link(filepath, path_to_file_with_original_name)
+
+        if not self.qubes:
+            return
+
+        command = "qvm-open-in-vm"
+        args = ['$dispvm:sd-svs-disp', path_to_file_with_original_name]
+        process = QProcess(self)
+        process.start(command, args)
 
     def run_export_preflight_checks(self):
         '''
@@ -614,17 +623,46 @@ class Controller(QObject):
         self.export.begin_preflight_check.emit()
 
     def export_file_to_usb_drive(self, file_uuid: str, passphrase: str) -> None:
-        file = self.get_file(file_uuid)
+        '''
+        Send the file specified by file_uuid to the Export VM with the user-provided passphrase for
+        unlocking the attached transfer device.
 
-        logger.debug('Exporting {} from thread {}'.format(
-            file.original_filename, threading.current_thread().ident))
+        Once a file is downloaded, it exists in the data directory with the same filename as the
+        server, except with the .gz.gpg stripped off. In order for the user to know which
+        application to open the file in, we export the file with a different name: the original
+        filename which includes the file extesion.
+
+        If the file is missing, update the db so that is_downloaded is set to False.
+        '''
+        file = self.get_file(file_uuid)
+        logger.info('Exporting file {}'.format(file.original_filename))
+
+        fn_no_ext, _ = os.path.splitext(os.path.splitext(file.filename)[0])
+        filepath = os.path.join(self.data_dir, fn_no_ext)
+        if not os.path.exists(filepath):
+            msg = _('Could not export {}. File does not exist.'.format(file.original_filename))
+            storage.mark_as_not_downloaded(file_uuid)
+            self.sync_api()
+            logger.debug(msg)
+            self.gui.update_error_status(msg)
+            return
+
+        path_to_file_with_original_name = os.path.join(self.data_dir, file.original_filename)
+        if not os.path.exists(path_to_file_with_original_name):
+            os.link(filepath, path_to_file_with_original_name)
 
         if not self.qubes:
             return
 
-        filepath = os.path.join(self.data_dir, file.original_filename)
+        self.export.begin_usb_export.emit([path_to_file_with_original_name], passphrase)
 
-        self.export.begin_usb_export.emit([filepath], passphrase)
+    def on_export_usb_call_success(self, filepaths: List[str]):
+        '''
+        Clean export files that are hard links to the file on disk.
+        '''
+        for filepath in filepaths:
+            if os.path.exists(filepath):
+                os.remove(filepath)
 
     def on_submission_download(
         self,

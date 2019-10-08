@@ -366,6 +366,17 @@ def find_new_replies(session: Session) -> List[Reply]:
             Reply.is_decrypted == None)).all()  # noqa: E711
 
 
+def mark_as_not_downloaded(uuid: str, session: Session) -> None:
+    """
+    Mark File as not downloaded in the database.
+    """
+    db_obj = session.query(File).filter_by(uuid=uuid).one()
+    db_obj.is_downloaded = False
+    db_obj.is_decrypted = None
+    session.add(db_obj)
+    session.commit()
+
+
 def mark_as_downloaded(
     model_type: Union[Type[File], Type[Message], Type[Reply]],
     uuid: str,
