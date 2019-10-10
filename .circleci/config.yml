@@ -1,6 +1,35 @@
+---
+common-steps:
+  - &run_tests
+    run:
+      name: Install requirements and run tests
+      command: |
+        set -e
+        virtualenv .venv
+        source .venv/bin/activate
+        pip install --require-hashes -r dev-requirements.txt
+        export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
+        make check --keep-going
+
+  - &check_python_dependencies_for_vulns
+    run:
+      name: Check Python dependencies for known vulnerabilities
+      command: |
+        set -e
+        source .venv/bin/activate
+        make safety
+
+  - &run_static_analysis
+    run:
+      name: Run static analysis on source code to find security issues
+      command: |
+        set -e
+        source .venv/bin/activate
+        make bandit
+
 version: 2
 jobs:
-  build:
+  build-stretch:
     docker:
       - image: circleci/python:3.5-stretch
     steps:
@@ -30,41 +59,30 @@ jobs:
             export PKG_PATH=~/project/dist/securedrop-client-$PKG_VERSION.tar.gz
             make securedrop-client
 
-  test:
+  test-stretch:
     docker:
-      - image: circleci/python:3.5
+      - image: circleci/python:3.5-stretch
     steps:
       - checkout
-
       - run: sudo apt-get install -y sqlite3 libqt5x11extras5
+      - *run_tests
+      - *check_python_dependencies_for_vulns
+      - *run_static_analysis
 
-      - run:
-          name: Install requirements and run tests
-          command: |
-            set -e
-            virtualenv .venv
-            source .venv/bin/activate
-            pip install --require-hashes -r dev-requirements.txt
-            export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
-            make check --keep-going
-
-      - run:
-          name: Check Python dependencies for known vulnerabilities
-          command: |
-            set -e
-            source .venv/bin/activate
-            make safety
-
-      - run:
-          name: Run static analysis on source code to find security issues
-          command: |
-            set -e
-            source .venv/bin/activate
-            make bandit
+  test-buster:
+    docker:
+      - image: circleci/python:3.7-buster
+    steps:
+      - checkout
+      - run: sudo apt-get install -y sqlite3 libqt5x11extras5
+      - *run_tests
+      - *check_python_dependencies_for_vulns
+      - *run_static_analysis
 
 workflows:
   version: 2
   securedrop_client_ci:
     jobs:
-      - test
-      - build
+      - test-stretch
+      - build-stretch
+      - test-buster
