@@ -3,6 +3,9 @@ import logging
 import os
 import subprocess
 import tarfile
+import threading
+
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, QObject, Qt
 
 from enum import Enum
 from io import BytesIO
@@ -34,7 +37,7 @@ class ExportStatus(Enum):
     UNEXPECTED_RETURN_STATUS = 'UNEXPECTED_RETURN_STATUS'
 
 
-class Export:
+class Export(QObject):
     '''
     This class sends files over to the Export VM so that they can be copied to a luks-encrypted USB
     disk drive or printed by a USB-connected printer.
@@ -63,8 +66,21 @@ class Export:
     DISK_ENCRYPTION_KEY_NAME = 'encryption_key'
     DISK_EXPORT_DIR = 'export_data'
 
+    # Set up signals for communication with the GUI thread
+    preflight_check_call_failure = pyqtSignal(object)
+    preflight_check_call_success = pyqtSignal(str)
+    begin_usb_export = pyqtSignal(list, str)
+    begin_preflight_check = pyqtSignal()
+    export_usb_call_failure = pyqtSignal(object)
+    export_usb_call_success = pyqtSignal(list)
+
     def __init__(self) -> None:
-        pass
+        super().__init__()
+
+        self.begin_preflight_check.connect(self.run_preflight_checks,
+                                           type=Qt.QueuedConnection)
+        self.begin_usb_export.connect(self.send_file_to_usb_device,
+                                      type=Qt.QueuedConnection)
 
     def _export_archive(cls, archive_path: str) -> str:
         '''
@@ -206,14 +222,24 @@ class Export:
         if status:
             raise ExportError(status)
 
+    @pyqtSlot()
     def run_preflight_checks(self) -> None:
         '''
         Run preflight checks to verify that the usb device is connected and luks-encrypted.
         '''
         with TemporaryDirectory() as temp_dir:
-            self._run_usb_test(temp_dir)
-            self._run_disk_test(temp_dir)
+            try:
+                logger.debug('beginning preflight checks in thread {}'.format(
+                    threading.current_thread().ident))
+                self._run_usb_test(temp_dir)
+                self._run_disk_test(temp_dir)
+                logger.debug('completed preflight checks: success')
+                self.preflight_check_call_success.emit('success')
+            except ExportError as e:
+                logger.debug('completed preflight checks: failure')
+                self.preflight_check_call_failure.emit(e.status)
 
+    @pyqtSlot(list, str)
     def send_file_to_usb_device(self, filepaths: List[str], passphrase: str) -> None:
         '''
         Export the file to the luks-encrypted usb disk drive attached to the Export VM.
@@ -223,4 +249,11 @@ class Export:
             passphrase: The passphrase to unlock the luks-encrypted usb disk drive.
         '''
         with TemporaryDirectory() as temp_dir:
-            self._run_disk_export(temp_dir, filepaths, passphrase)
+            try:
+                logger.debug('beginning export from thread {}'.format(
+                    threading.current_thread().ident))
+                self._run_disk_export(temp_dir, filepaths, passphrase)
+                logger.debug('Export successful')
+                self.export_usb_call_success.emit(filepaths)
+            except ExportError as e:
+                self.export_usb_call_failure.emit(e.status)

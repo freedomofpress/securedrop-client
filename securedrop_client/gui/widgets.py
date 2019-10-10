@@ -32,7 +32,7 @@ from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBox
 
 from securedrop_client.db import Source, Message, File, Reply, User
 from securedrop_client.storage import source_exists
-from securedrop_client.export import ExportStatus, ExportError
+from securedrop_client.export import ExportStatus
 from securedrop_client.gui import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_icon, load_image
@@ -1949,44 +1949,33 @@ class ExportDialog(QDialog):
         retry_export_button.clicked.connect(self._on_retry_export_button_clicked)
         unlock_disk_button.clicked.connect(self._on_unlock_disk_clicked)
 
+        self.controller.export.preflight_check_call_failure.connect(
+            self._update_preflight, type=Qt.QueuedConnection)
+        self.controller.export.preflight_check_call_success.connect(
+            self._request_passphrase, type=Qt.QueuedConnection)
+        self.controller.export.export_usb_call_failure.connect(
+            self._update_usb_export, type=Qt.QueuedConnection)
+        self.controller.export.export_usb_call_success.connect(
+            self._on_export_success, type=Qt.QueuedConnection)
+
     def export(self):
-        try:
-            self.controller.run_export_preflight_checks()
-            self._request_passphrase()
-        except ExportError as e:
-            # The first time we see a CALLED_PROCESS_ERROR, tell the user to insert the USB device
-            # in case the issue is that the Export VM cannot start due to a USB device being
-            # unavailable for attachment. According to the Qubes docs:
-            #
-            #   "If the device is unavailable (physically missing or sourceVM not started), booting
-            #    the targetVM fails."
-            #
-            # For information, see https://www.qubes-os.org/doc/device-handling
-            if e.status == ExportStatus.CALLED_PROCESS_ERROR.value:
-                self._request_to_insert_usb_device()
-            else:
-                self._update(e.status)
+        self.controller.run_export_preflight_checks()
 
     @pyqtSlot()
     def _on_retry_export_button_clicked(self):
-        try:
-            self.starting_export_message.hide()
-            self.controller.run_export_preflight_checks()
-            self._request_passphrase()
-        except ExportError as e:
-            self._update(e.status)
+        self.starting_export_message.hide()
+        self.controller.run_export_preflight_checks()
 
     @pyqtSlot()
     def _on_unlock_disk_clicked(self):
-        try:
-            self.passphrase_form.hide()
-            self.exporting_message.show()
-            QApplication.processEvents()
-            passphrase = self.passphrase_field.text()
-            self.controller.export_file_to_usb_drive(self.file_uuid, passphrase)
-            self.close()
-        except ExportError as e:
-            self._update(e.status)
+        self.passphrase_form.hide()
+        self.exporting_message.show()
+        passphrase = self.passphrase_field.text()
+        self.controller.export_file_to_usb_drive(self.file_uuid, passphrase)
+
+    @pyqtSlot()
+    def _on_export_success(self):
+        self.close()
 
     def _request_to_insert_usb_device(self, encryption_not_supported: bool = False):
         self.starting_export_message.hide()
@@ -1998,7 +1987,9 @@ class ExportDialog(QDialog):
         else:
             self.usb_error_message.hide()
 
+    @pyqtSlot()
     def _request_passphrase(self, bad_passphrase: bool = False):
+        logger.debug('requesting passphrase... ')
         self.starting_export_message.hide()
         self.exporting_message.hide()
         self.passphrase_form.show()
@@ -2010,6 +2001,7 @@ class ExportDialog(QDialog):
             self.passphrase_error_message.hide()
 
     def _update(self, status):
+        logger.debug('updating status... ')
         if status == ExportStatus.USB_NOT_CONNECTED.value:
             self._request_to_insert_usb_device()
         elif status == ExportStatus.BAD_PASSPHRASE.value:
@@ -2022,6 +2014,25 @@ class ExportDialog(QDialog):
             self.starting_export_message.hide()
             self.passphrase_form.hide()
             self.insert_usb_form.hide()
+
+    @pyqtSlot(object)
+    def _update_preflight(self, status):
+        # The first time we see a CALLED_PROCESS_ERROR, tell the user to insert the USB device
+        # in case the issue is that the Export VM cannot start due to a USB device being
+        # unavailable for attachment. According to the Qubes docs:
+        #
+        #   "If the device is unavailable (physically missing or sourceVM not started), booting
+        #    the targetVM fails."
+        #
+        # For information, see https://www.qubes-os.org/doc/device-handling
+        if status == ExportStatus.CALLED_PROCESS_ERROR.value:
+            self._request_to_insert_usb_device()
+        else:
+            self._update(status)
+
+    @pyqtSlot(object)
+    def _update_usb_export(self, status):
+        self._update(status)
 
 
 class ConversationView(QWidget):
