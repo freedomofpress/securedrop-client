@@ -1,10 +1,23 @@
 version: 2
 jobs:
-  build:
+  lint:
     docker:
-      - image: circleci/python:3.5-stretch
+      - image: circleci/python:3.5
     steps:
       - checkout
+      - run:
+          name: Install test requirements and run lint
+          command: |
+            virtualenv .venv
+            source .venv/bin/activate
+            pip install --require-hashes -r test-requirements.txt
+            make lint
+      - run:
+          name: Check Python dependencies for CVEs
+          command: |
+            set -e
+            source .venv/bin/activate
+            make safety
 
   test:
     docker:
@@ -22,14 +35,10 @@ jobs:
             source .venv/bin/activate
             pip install --require-hashes -r test-requirements.txt
             make test
-      - run:
-          name: Check Python dependencies for CVEs
-          command: |
-            set -e
-            source .venv/bin/activate
-            make safety
 workflows:
   version: 2
   securedrop_export_ci:
     jobs:
+      - lint
       - test
+

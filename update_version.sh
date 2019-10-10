@@ -21,6 +21,8 @@ fi
 if [[ "$OSTYPE" == "darwin"* ]]; then
     # The empty '' after sed -i is required on macOS to indicate no backup file should be saved.
     sed -i '' "s@$(echo "${OLD_VERSION}" | sed 's/\./\\./g')@$NEW_VERSION@g" securedrop_export/VERSION
+    sed -i '' "s@$(echo "${OLD_VERSION}" | sed 's/\./\\./g')@$NEW_VERSION@g" securedrop_export/__init__.py
 else
     sed -i "s@$(echo "${OLD_VERSION}" | sed 's/\./\\./g')@$NEW_VERSION@g" securedrop_export/VERSION
+    sed -i "s@$(echo "${OLD_VERSION}" | sed 's/\./\\./g')@$NEW_VERSION@g" securedrop_export/__init__.py
 fi

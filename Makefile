@@ -16,6 +16,10 @@ update-pip-requirements: ## Updates all Python requirements files via pip-compil
 test:
 	pytest -v tests/
 
+.PHONY: lint
+lint:
+	flake8 securedrop_export/ tests/
+
 # Explaination of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##
 # 2. Use sed-like syntax to remove the make targets
