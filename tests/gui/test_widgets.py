@@ -1607,6 +1607,7 @@ def test_ExportDialog__request_passphrase(mocker):
     assert not export_dialog.passphrase_form.isHidden()
     assert export_dialog.insert_usb_form.isHidden()
     assert export_dialog.passphrase_error_message.isHidden()
+    assert not export_dialog.passphrase_instructions.isHidden()
 
 
 def test_ExportDialog__request_passphrase_more_than_once(mocker):
@@ -1618,6 +1619,7 @@ def test_ExportDialog__request_passphrase_more_than_once(mocker):
     assert not export_dialog.passphrase_form.isHidden()
     assert export_dialog.insert_usb_form.isHidden()
     assert not export_dialog.passphrase_error_message.isHidden()
+    assert export_dialog.passphrase_instructions.isHidden()
 
 
 def test_ExportDialog__on_unlock_disk_clicked(mocker):
