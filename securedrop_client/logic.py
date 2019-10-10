@@ -21,6 +21,7 @@ import inspect
 import logging
 import os
 import sdclientapi
+import threading
 import uuid
 from typing import Dict, Tuple, Union, Any, Type  # noqa: F401
 
@@ -222,6 +223,14 @@ class Controller(QObject):
         self.sync_update = QTimer()
         self.sync_update.timeout.connect(self.sync_api)
         self.sync_update.start(1000 * 60 * 5)  # every 5 minutes.
+
+        # Run export object in a separate thread context (a reference to the
+        # thread is kept on self such that it does not get garbage collected
+        # after this method returns) - we want to keep our export thread around for
+        # later processing.
+        self.export_thread = QThread()
+        self.export.moveToThread(self.export_thread)
+        self.export_thread.start()
 
     def call_api(self,
                  api_call_func,
@@ -594,27 +603,28 @@ class Controller(QObject):
 
     def run_export_preflight_checks(self):
         '''
-        Run preflight checks to make sure the Export VM is configured correctly and
+        Run preflight checks to make sure the Export VM is configured correctly
         '''
-        logger.debug('Running export preflight checks')
+        logger.debug('Calling export preflight checks from thread {}'.format(
+            threading.current_thread().ident))
 
         if not self.qubes:
             return
 
-        self.export.run_preflight_checks()
+        self.export.begin_preflight_check.emit()
 
     def export_file_to_usb_drive(self, file_uuid: str, passphrase: str) -> None:
         file = self.get_file(file_uuid)
 
-        logger.debug('Exporting {}'.format(file.original_filename))
+        logger.debug('Exporting {} from thread {}'.format(
+            file.original_filename, threading.current_thread().ident))
 
         if not self.qubes:
             return
 
         filepath = os.path.join(self.data_dir, file.original_filename)
-        self.export.send_file_to_usb_device([filepath], passphrase)
 
-        logger.debug('Export successful')
+        self.export.begin_usb_export.emit([filepath], passphrase)
 
     def on_submission_download(
         self,
