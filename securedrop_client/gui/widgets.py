@@ -1908,8 +1908,8 @@ class ExportDialog(QDialog):
         self.passphrase_error_message = SecureQLabel(_(
             'The passphrase provided did not work. Please try again.'))
         self.passphrase_error_message.setWordWrap(True)
-        passphrase_instructions = SecureQLabel(_('Enter password for safe USB drive.'))
-        passphrase_instructions.setWordWrap(True)
+        self.passphrase_instructions = SecureQLabel(_('Enter password for safe USB drive.'))
+        self.passphrase_instructions.setWordWrap(True)
         passphrase_label = SecureQLabel(_('Passphrase'))
         passphrase_label.setObjectName('passphrase_label')
         self.passphrase_field = QLineEdit()
@@ -1922,7 +1922,7 @@ class ExportDialog(QDialog):
         buttons_layout.addWidget(passphrase_cancel_button)
         buttons_layout.addWidget(unlock_disk_button)
         passphrase_form_layout.addWidget(self.passphrase_error_message)
-        passphrase_form_layout.addWidget(passphrase_instructions)
+        passphrase_form_layout.addWidget(self.passphrase_instructions)
         passphrase_form_layout.addWidget(passphrase_label)
         passphrase_form_layout.addWidget(self.passphrase_field)
         passphrase_form_layout.addWidget(buttons, alignment=Qt.AlignRight)
@@ -2001,13 +2001,15 @@ class ExportDialog(QDialog):
     def _request_passphrase(self, bad_passphrase: bool = False):
         self.starting_export_message.hide()
         self.exporting_message.hide()
-        self.passphrase_form.show()
         self.insert_usb_form.hide()
+        self.passphrase_form.show()
 
         if bad_passphrase:
+            self.passphrase_instructions.hide()
             self.passphrase_error_message.show()
         else:
             self.passphrase_error_message.hide()
+            self.passphrase_instructions.show()
 
     def _update(self, status):
         if status == ExportStatus.USB_NOT_CONNECTED.value:
