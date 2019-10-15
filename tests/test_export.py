@@ -9,28 +9,53 @@ from securedrop_client.export import Export, ExportError
 def test_send_file_to_usb_device(mocker):
     '''
     Ensure TemporaryDirectory is used when creating and sending the archive containing the export
-    file.
+    file and that the success signal is emitted.
     '''
     mock_temp_dir = mocker.MagicMock()
     mock_temp_dir.__enter__ = mocker.MagicMock(return_value='mock_temp_dir')
     mocker.patch('securedrop_client.export.TemporaryDirectory', return_value=mock_temp_dir)
     export = Export()
+    export.export_usb_call_success = mocker.MagicMock()
+    export.export_usb_call_success.emit = mocker.MagicMock()
     _run_disk_export = mocker.patch.object(export, '_run_disk_export')
 
     export.send_file_to_usb_device(['mock_filepath'], 'mock passphrase')
 
     _run_disk_export.assert_called_once_with('mock_temp_dir', ['mock_filepath'], 'mock passphrase')
+    export.export_usb_call_success.emit.assert_called_once_with(['mock_filepath'])
 
 
-def test_run_preflight_checks(mocker):
+def test_send_file_to_usb_device_error(mocker):
     '''
-    Ensure TemporaryDirectory is used when creating and sending the archives during the preflight
-    checks.
+    Ensure TemporaryDirectory is used when creating and sending the archive containing the export
+    file and that the failure signal is emitted.
     '''
     mock_temp_dir = mocker.MagicMock()
     mock_temp_dir.__enter__ = mocker.MagicMock(return_value='mock_temp_dir')
     mocker.patch('securedrop_client.export.TemporaryDirectory', return_value=mock_temp_dir)
     export = Export()
+    export.export_usb_call_failure = mocker.MagicMock()
+    export.export_usb_call_failure.emit = mocker.MagicMock()
+    error = ExportError('bang')
+    _run_disk_export = mocker.patch.object(export, '_run_disk_export', side_effect=error)
+
+    export.send_file_to_usb_device(['mock_filepath'], 'mock passphrase')
+
+    _run_disk_export.assert_called_once_with('mock_temp_dir', ['mock_filepath'], 'mock passphrase')
+    export.export_usb_call_failure.emit.assert_called_once_with(error.status)
+
+
+def test_run_preflight_checks(mocker):
+    '''
+    Ensure TemporaryDirectory is used when creating and sending the archives during the preflight
+    checks and that the success signal is emitted by Export.
+    '''
+    mock_temp_dir = mocker.MagicMock()
+    mock_temp_dir.__enter__ = mocker.MagicMock(return_value='mock_temp_dir')
+    mocker.patch('securedrop_client.export.TemporaryDirectory', return_value=mock_temp_dir)
+    export = Export()
+    export.preflight_check_call_success = mocker.MagicMock()
+    export.preflight_check_call_success.emit = mocker.MagicMock()
     _run_usb_export = mocker.patch.object(export, '_run_usb_test')
     _run_disk_export = mocker.patch.object(export, '_run_disk_test')
 
@@ -38,6 +63,29 @@ def test_run_preflight_checks(mocker):
 
     _run_usb_export.assert_called_once_with('mock_temp_dir')
     _run_disk_export.assert_called_once_with('mock_temp_dir')
+    export.preflight_check_call_success.emit.assert_called_once_with('success')
+
+
+def test_run_preflight_checks_error(mocker):
+    '''
+    Ensure TemporaryDirectory is used when creating and sending the archives during the preflight
+    checks and that the failure signal is emitted by Export.
+    '''
+    mock_temp_dir = mocker.MagicMock()
+    mock_temp_dir.__enter__ = mocker.MagicMock(return_value='mock_temp_dir')
+    mocker.patch('securedrop_client.export.TemporaryDirectory', return_value=mock_temp_dir)
+    export = Export()
+    export.preflight_check_call_failure = mocker.MagicMock()
+    export.preflight_check_call_failure.emit = mocker.MagicMock()
+    error = ExportError('bang!')
+    _run_usb_export = mocker.patch.object(export, '_run_usb_test')
+    _run_disk_export = mocker.patch.object(export, '_run_disk_test', side_effect=error)
+
+    export.run_preflight_checks()
+
+    _run_usb_export.assert_called_once_with('mock_temp_dir')
+    _run_disk_export.assert_called_once_with('mock_temp_dir')
+    export.preflight_check_call_failure.emit.assert_called_once_with(error.status)
 
 
 def test__run_disk_export(mocker):

@@ -83,7 +83,9 @@ def test_Controller_setup(homedir, config, mocker, session_maker):
     Ensure the application is set up with the following default state:
     Using the `config` fixture to ensure the config is written to disk.
     """
+    mocker.patch('securedrop_client.logic.QThread')
     co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    co.export.moveToThread = mocker.MagicMock()
     co.update_sources = mocker.MagicMock()
 
     co.setup()
@@ -1417,32 +1419,33 @@ def test_Controller_call_update_star_success(homedir, config, mocker, session_ma
 
 
 def test_Controller_run_export_preflight_checks(homedir, mocker):
-    debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
     co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
     co.export = mocker.MagicMock()
+    co.export.begin_preflight_check = mocker.MagicMock()
+    co.export.begin_preflight_check.emit = mocker.MagicMock()
 
     co.run_export_preflight_checks()
 
-    co.export.run_preflight_checks.assert_called_once_with()
-    debug_logger.assert_called_once_with('Running export preflight checks')
+    co.export.begin_usb_export.emit.call_count == 1
 
 
 def test_Controller_run_export_preflight_checks_not_qubes(homedir, mocker):
-    debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
     co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
     co.qubes = False
     co.export = mocker.MagicMock()
+    co.export.begin_preflight_check = mocker.MagicMock()
+    co.export.begin_preflight_check.emit = mocker.MagicMock()
 
     co.run_export_preflight_checks()
 
-    co.export.run_preflight_checks.assert_not_called()
-    debug_logger.assert_called_once_with('Running export preflight checks')
+    co.export.begin_usb_export.emit.call_count == 0
 
 
 def test_Controller_export_file_to_usb_drive(homedir, mocker, session):
-    debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
     co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
     co.export = mocker.MagicMock()
+    co.export.begin_usb_export = mocker.MagicMock()
+    co.export.begin_usb_export.emit = mocker.MagicMock()
     file = factory.File(source=factory.Source(), original_filename='mock_filename')
     session.add(file)
     session.commit()
@@ -1450,17 +1453,16 @@ def test_Controller_export_file_to_usb_drive(homedir, mocker, session):
 
     co.export_file_to_usb_drive(file.uuid, 'mock passphrase')
 
-    co.export.send_file_to_usb_device.assert_called_once_with(
-        [os.path.join(co.data_dir, 'mock_filename')], 'mock passphrase')
-    debug_logger.call_args_list[0][0][0] == 'Exporting {}'.format(file.original_filename)
-    debug_logger.call_args_list[1][0][0] == 'Export successful'
+    # Signal to begin the USB export should be emitted
+    co.export.begin_usb_export.emit.call_count == 1
 
 
 def test_Controller_export_file_to_usb_drive_not_qubes(homedir, mocker, session):
-    debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
     co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
     co.qubes = False
     co.export = mocker.MagicMock()
+    co.export.begin_usb_export = mocker.MagicMock()
+    co.export.begin_usb_export.emit = mocker.MagicMock()
     file = factory.File(source=factory.Source(), original_filename='mock_filename')
     session.add(file)
     session.commit()
@@ -1469,4 +1471,4 @@ def test_Controller_export_file_to_usb_drive_not_qubes(homedir, mocker, session)
     co.export_file_to_usb_drive(file.uuid, 'mock passphrase')
 
     co.export.send_file_to_usb_device.assert_not_called()
-    debug_logger.call_args_list[0][0][0] == 'Exporting {}'.format(file.original_filename)
+    co.export.begin_usb_export.emit.call_count == 0
