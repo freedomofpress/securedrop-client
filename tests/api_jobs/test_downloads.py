@@ -505,27 +505,41 @@ def test_timeout_length_of_file_downloads(mocker, homedir, session, session_make
     Ensure that files downloads have timeouts scaled by the size of the file.
     """
     source = factory.Source()
-    small_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=1)
-    large_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=100)
+    one_byte_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=1)
+    one_KiB_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=1024)
+    fifty_KiB_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=51200)
+    half_MiB_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=524288)
+    one_MiB_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=1049000)
+    five_MiB_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=5243000)
     session.add(source)
-    session.add(small_file)
-    session.add(large_file)
+    session.add(one_byte_file)
+    session.add(one_KiB_file)
+    session.add(fifty_KiB_file)
+    session.add(half_MiB_file)
+    session.add(one_MiB_file)
+    session.add(five_MiB_file)
     session.commit()
 
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    one_byte_file_job = FileDownloadJob(one_byte_file.uuid, os.path.join(homedir, 'data'), gpg)
+    one_KiB_file_job = FileDownloadJob(one_KiB_file.uuid, os.path.join(homedir, 'data'), gpg)
+    fifty_KiB_file_job = FileDownloadJob(fifty_KiB_file.uuid, os.path.join(homedir, 'data'), gpg)
+    half_MiB_file_job = FileDownloadJob(half_MiB_file.uuid, os.path.join(homedir, 'data'), gpg)
+    one_MiB_file_job = FileDownloadJob(one_MiB_file.uuid, os.path.join(homedir, 'data'), gpg)
+    five_MiB_file_job = FileDownloadJob(five_MiB_file.uuid, os.path.join(homedir, 'data'), gpg)
 
-    small_job = FileDownloadJob(
-        small_file.uuid,
-        os.path.join(homedir, 'data'),
-        gpg,
-    )
-    large_job = FileDownloadJob(
-        small_file.uuid,
-        os.path.join(homedir, 'data'),
-        gpg,
-    )
+    one_byte_file_timeout = one_byte_file_job._get_realistic_timeout(one_byte_file.size)
+    one_KiB_file_timeout = one_KiB_file_job._get_realistic_timeout(one_KiB_file.size)
+    fifty_KiB_file_timeout = fifty_KiB_file_job._get_realistic_timeout(fifty_KiB_file.size)
+    half_MiB_file_timeout = half_MiB_file_job._get_realistic_timeout(half_MiB_file.size)
+    one_MiB_file_timeout = one_MiB_file_job._get_realistic_timeout(one_MiB_file.size)
+    five_MiB_file_timeout = five_MiB_file_job._get_realistic_timeout(five_MiB_file.size)
 
-    small_file_timeout = small_job._get_realistic_timeout(small_file.size)
-    large_file_timeout = large_job._get_realistic_timeout(large_file.size)
-
-    assert small_file_timeout < large_file_timeout
+    # ceil(file_size / 10000 bytes/sec) is expected for file sizes less than 1MiB
+    # ceil(file_size / 100000 bytes/sec) is expected for file sizes greater than or equal to 1MiB
+    assert one_byte_file_timeout == 1
+    assert one_KiB_file_timeout == 1
+    assert fifty_KiB_file_timeout == 6
+    assert half_MiB_file_timeout == 53
+    assert one_MiB_file_timeout == 11
+    assert five_MiB_file_timeout == 53
