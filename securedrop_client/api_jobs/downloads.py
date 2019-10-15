@@ -24,7 +24,8 @@ logger = logging.getLogger(__name__)
 
 class DownloadChecksumMismatchException(Exception):
     def __init__(self, message: str,
-                 object_type: Union[Type[Reply], Type[Message], Type[File]], uuid: str):
+                 object_type: Union[Type[Reply], Type[Message], Type[File]],
+                 uuid: str):
         super().__init__(message)
         self.object_type = object_type
         self.uuid = uuid
@@ -42,22 +43,38 @@ class DownloadJob(ApiJob):
         self.data_dir = data_dir
 
     def _get_realistic_timeout(self, size_in_bytes: int) -> int:
-        """
-        Returns a realistic timeout in seconds for a file, message, or reply based on its size.
+        '''
+        Return a realistic timeout in seconds for a file, message, or reply based on its size.
+
+        This simply scales the timeouts per file so that in general it increases as the file size
+        increases.
 
         Note that:
-        * the size of the file provided by server is in bytes (the server computes it using
-        os.stat.ST_SIZE)
-        * A reasonable time to download a 1 MB file download time according to OnionPerf was
-        ~7.5s:
-        https://metrics.torproject.org/torperf.html?start=2019-05-02&end=2019-07-31&server=onion&filesize=1mb
 
-        This simply scales the timeouts per file, so that a small file times out much faster than a
-        large file, which is given a long time to complete.
-        """
+        * The size of the file provided by server is in bytes (the server computes it using
+          os.stat.ST_SIZE).
 
-        SCALING_FACTOR_FILE_DL_TIME_SECS_PER_MB = 7.5
-        return math.ceil(size_in_bytes * SCALING_FACTOR_FILE_DL_TIME_SECS_PER_MB)
+        * The following times are reasonable estimations for how long it should take to fetch a
+          file over Tor according to Tor metrics given a recent three month period in 2019:
+
+          50 KiB  (51200 bytes)   =  4   seconds  (  12800 bytes/second)
+          1  MiB  (1049000 bytes) =  7.5 seconds  (~139867 bytes/second)
+
+          For more information, see:
+          https://metrics.torproject.org/torperf.html?start=2019-05-02&end=2019-07-31&server=onion
+
+        * As you might expect, this method returns timeouts that are larger than the expected
+          download time, which is why the rates below are slower than what you see above with the
+          Tor metrics.
+        '''
+        SMALL_FILE_DOWNLOAD_TIMEOUT_BYTES_PER_SECOND = 10000.0
+        DOWNLOAD_TIMEOUT_BYTES_PER_SECOND = 100000.0
+        ONE_MIBIBYTE = 1049000
+
+        if size_in_bytes < ONE_MIBIBYTE:
+            return math.ceil(size_in_bytes / SMALL_FILE_DOWNLOAD_TIMEOUT_BYTES_PER_SECOND)
+
+        return math.ceil(size_in_bytes / DOWNLOAD_TIMEOUT_BYTES_PER_SECOND)
 
     def call_download_api(self, api: API,
                           db_object: Union[File, Message, Reply]) -> Tuple[str, str]:
