@@ -1858,6 +1858,7 @@ class ExportDialog(QDialog):
         self.setObjectName('export_dialog')
         self.setStyleSheet(self.CSS)
         self.setWindowFlags(Qt.Popup)
+        self.setWindowModality(Qt.WindowModal)
 
         layout = QVBoxLayout(self)
         self.setLayout(layout)
