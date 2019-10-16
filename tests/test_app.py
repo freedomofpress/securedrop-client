@@ -39,7 +39,6 @@ def test_configure_logging(homedir, mocker):
     expected (rotating logs) manner.
     """
     mock_log_conf = mocker.patch('securedrop_client.app.TimedRotatingFileHandler')
-    mocker.patch('securedrop_client.app.os.path.exists', return_value=False)
     mock_logging = mocker.patch('securedrop_client.app.logging')
     mock_log_file = os.path.join(homedir, 'logs', 'client.log')
     configure_logging(homedir)
@@ -120,6 +119,8 @@ def test_start_app(homedir, mocker):
     mocker.patch('securedrop_client.app.configure_logging')
     mock_app = mocker.patch('securedrop_client.app.QApplication')
     mock_win = mocker.patch('securedrop_client.app.Window')
+    mocker.patch('securedrop_client.resources.path',
+                 return_value=mock_args.sdc_home + 'dummy.jpg')
     mock_controller = mocker.patch('securedrop_client.app.Controller')
     mocker.patch('securedrop_client.app.prevent_second_instance')
     mocker.patch('securedrop_client.app.sys')
@@ -172,12 +173,12 @@ def test_create_app_dir_permissions(tmpdir, mocker):
     for idx, case in enumerate(PERMISSIONS_CASES):
         mock_session_maker = mocker.MagicMock()
         mock_args = mocker.MagicMock()
+        sdc_home = os.path.join(str(tmpdir), 'case-{}'.format(idx))
+        mock_args.sdc_home = sdc_home
         mock_qt_args = mocker.MagicMock()
 
-        sdc_home = os.path.join(str(tmpdir), 'case-{}'.format(idx))
-
         # optionally create the dir
-        if case['home_perms'] is not None:
+        if case['home_perms']:
             os.mkdir(sdc_home, case['home_perms'])
 
         mock_args.sdc_home = sdc_home
@@ -191,6 +192,8 @@ def test_create_app_dir_permissions(tmpdir, mocker):
         mocker.patch('securedrop_client.app.Window')
         mocker.patch('securedrop_client.app.Controller')
         mocker.patch('securedrop_client.app.sys')
+        mocker.patch('securedrop_client.resources.path',
+                     return_value=sdc_home + 'dummy.jpg')
         mocker.patch('securedrop_client.app.prevent_second_instance')
         mocker.patch('securedrop_client.app.make_session_maker', return_value=mock_session_maker)
 
