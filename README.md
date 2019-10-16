@@ -113,6 +113,8 @@ To run everything, run:
 make check
 ```
 
+To individually run the unit tests, run `make test` to run the suite in parallel (fast), or run `make test-random` to run the tests in random order (slower, but this is what `make check` runs and what runs in CI).
+
 ## Environments
 
 The quickest way to get started with running the client is to use the [developer environment](#developer-environment) that [runs against a test server running in a local docker container](#running-against-a-test-server). This differs from a staging or production environment where the client receives and sends requests over Tor. Things are a lot snappier in the developer environment and can sometimes lead to a much different user experience, which is why it is important to do end-to-end testing in Qubes using the [staging environment](#staging-environment), especially if you are modifying code paths involving how we handle server requests and responses.
