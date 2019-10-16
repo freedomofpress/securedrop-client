@@ -537,8 +537,9 @@ def test_timeout_length_of_file_downloads(mocker, homedir, session, session_make
 
     # ceil(file_size / 10000 bytes/sec) is expected for file sizes less than 1MiB
     # ceil(file_size / 100000 bytes/sec) is expected for file sizes greater than or equal to 1MiB
-    assert one_byte_file_timeout == 1
-    assert one_KiB_file_timeout == 1
+    # minimum timeout is 3 seconds
+    assert one_byte_file_timeout == 3
+    assert one_KiB_file_timeout == 3
     assert fifty_KiB_file_timeout == 6
     assert half_MiB_file_timeout == 53
     assert one_MiB_file_timeout == 11

@@ -66,15 +66,20 @@ class DownloadJob(ApiJob):
         * As you might expect, this method returns timeouts that are larger than the expected
           download time, which is why the rates below are slower than what you see above with the
           Tor metrics.
+
+        * Minimum timeout allowed is 3 seconds.
         '''
         SMALL_FILE_DOWNLOAD_TIMEOUT_BYTES_PER_SECOND = 10000.0
         DOWNLOAD_TIMEOUT_BYTES_PER_SECOND = 100000.0
         ONE_MIBIBYTE = 1049000
+        MINIMUM_TIMEOUT = 3
 
         if size_in_bytes < ONE_MIBIBYTE:
-            return math.ceil(size_in_bytes / SMALL_FILE_DOWNLOAD_TIMEOUT_BYTES_PER_SECOND)
+            timeout = math.ceil(size_in_bytes / SMALL_FILE_DOWNLOAD_TIMEOUT_BYTES_PER_SECOND)
+            return max(MINIMUM_TIMEOUT, timeout)
 
-        return math.ceil(size_in_bytes / DOWNLOAD_TIMEOUT_BYTES_PER_SECOND)
+        timeout = math.ceil(size_in_bytes / DOWNLOAD_TIMEOUT_BYTES_PER_SECOND)
+        return max(MINIMUM_TIMEOUT, timeout)
 
     def call_download_api(self, api: API,
                           db_object: Union[File, Message, Reply]) -> Tuple[str, str]:
