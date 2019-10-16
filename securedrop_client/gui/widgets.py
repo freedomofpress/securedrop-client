@@ -1348,7 +1348,7 @@ class LoginDialog(QDialog):
 
         self.password_label = QLabel(_('Passphrase'))
         self.password_field = QLineEdit()
-        self.password_field.setEchoMode(QLineEdit.Password)
+        # self.password_field.setEchoMode(QLineEdit.Password)
 
         self.tfa_label = QLabel(_('2-Factor Code'))
         self.tfa_field = QLineEdit()
