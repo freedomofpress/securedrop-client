@@ -561,7 +561,7 @@ class UserMenu(QMenu):
 
     def __init__(self):
         super().__init__()
-        self.logout = QAction(_('SIGN OUT'))
+        self.logout = QAction(_('Sign Out'))
         self.logout.setFont(QFont("OpenSans", 10))
         self.addAction(self.logout)
         self.logout.triggered.connect(self._on_logout_triggered)
@@ -2306,7 +2306,7 @@ class DeleteSourceAction(QAction):
     def __init__(self, source, parent, controller):
         self.source = source
         self.controller = controller
-        self.text = _("Delete source account")
+        self.text = _("Delete Source Account")
 
         super().__init__(self.text, parent)
 
