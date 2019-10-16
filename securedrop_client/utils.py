@@ -6,14 +6,22 @@ def safe_mkdir(sdc_home: str, relative_path: str = None) -> None:
     '''
     Safely create directories while checking permissions along the way.
     '''
+
+    if relative_path:
+        full_path = os.path.join(sdc_home, relative_path)
+    else:
+        full_path = sdc_home
+
+    if not full_path == os.path.abspath(full_path):
+        raise ValueError('Path is not absolute: {}'.format(full_path))
+
+    if not os.path.exists(sdc_home):
+        os.makedirs(sdc_home, 0o700)
+
     check_dir_permissions(sdc_home)
 
     if not relative_path:
         return
-
-    full_path = os.path.join(sdc_home, relative_path)
-    if not full_path == os.path.abspath(full_path):
-        raise ValueError('Path is not absolute: {}'.format(full_path))
 
     path_components = split_path(relative_path)
 
