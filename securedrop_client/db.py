@@ -203,6 +203,13 @@ class Reply(Base):
         nullable=True,
     )
 
+    # This tracks the sending status of the reply.
+    send_status_id = Column(
+        Integer,
+        ForeignKey('replysendstatuses.id')
+    )
+    send_status = relationship("ReplySendStatus")
+
     def __init__(self, **kwargs: Any) -> None:
         if 'file_counter' in kwargs:
             raise TypeError('Cannot manually set file_counter')
@@ -212,6 +219,21 @@ class Reply(Base):
 
     def __repr__(self) -> str:
         return '<Reply {}>'.format(self.filename)
+
+
+class ReplySendStatus(Base):
+
+    __tablename__ = 'replysendstatuses'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(36), unique=True, nullable=False)
+
+    def __init__(self, name: str) -> None:
+        super().__init__()
+        self.name = name
+
+    def __repr__(self) -> str:
+        return '<Reply status {}>'.format(self.name)
 
 
 class User(Base):

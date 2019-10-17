@@ -6,8 +6,9 @@ import pytest
 from configparser import ConfigParser
 from datetime import datetime
 from securedrop_client.config import Config
+from securedrop_client.api_jobs.uploads import ReplySendStatusCodes
 from securedrop_client.app import configure_locale_and_language
-from securedrop_client.db import Base, make_session_maker, Source
+from securedrop_client.db import Base, make_session_maker, Source, ReplySendStatus
 from uuid import uuid4
 
 
@@ -91,6 +92,15 @@ def session(session_maker):
     Base.metadata.create_all(bind=sess.get_bind(), checkfirst=False)
     yield sess
     sess.close()
+
+
+@pytest.fixture(scope='function')
+def reply_status_codes(session) -> None:
+    for reply_send_status in ReplySendStatusCodes:
+        reply_status = ReplySendStatus(reply_send_status.value)
+        session.add(reply_status)
+        session.commit()
+    return
 
 
 @pytest.fixture(scope='function')

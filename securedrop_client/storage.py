@@ -29,7 +29,8 @@ from sqlalchemy import or_
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.session import Session
 
-from securedrop_client.db import Source, Message, File, Reply, User
+from securedrop_client.api_jobs.uploads import ReplySendStatusCodes
+from securedrop_client.db import Source, Message, File, Reply, User, ReplySendStatus
 from sdclientapi import API
 from sdclientapi import Source as SDKSource
 from sdclientapi import Submission as SDKSubmission
@@ -269,11 +270,15 @@ def update_replies(remote_replies: List[SDKReply], local_replies: List[Reply],
                 reply.journalist_uuid,
                 reply.journalist_username,
                 session)
+            # All replies fetched from the server have succeeded in being sent.
+            success_status = session.query(ReplySendStatus).filter_by(
+                name=ReplySendStatusCodes.SUCCEEDED.value).one()
             nr = Reply(uuid=reply.uuid,
                        journalist_id=user.id,
                        source_id=source.id,
                        filename=reply.filename,
-                       size=reply.size)
+                       size=reply.size,
+                       send_status_id=success_status.id)
             session.add(nr)
             logger.debug('Added new reply {}'.format(reply.uuid))
 
