@@ -12,6 +12,8 @@ import tarfile
 import tempfile
 import time
 
+from enum import Enum
+
 PRINTER_NAME = "sdw-printer"
 PRINTER_WAIT_TIMEOUT = 60
 DEVICE = "/dev/sda"
@@ -21,6 +23,41 @@ BRLASER_DRIVER = "/usr/share/cups/drv/brlaser.drv"
 BRLASER_PPD = "/usr/share/cups/model/br7030.ppd"
 
 logger = logging.getLogger(__name__)
+
+
+class ExportStatus(Enum):
+
+    # General errors
+    ERROR_FILE_NOT_FOUND = 'ERROR_FILE_NOT_FOUND'
+    ERROR_EXTRACTION = 'ERROR_EXTRACTION'
+    ERROR_METADATA_PARSING = 'ERROR_METADATA_PARSING'
+    ERROR_ARCHIVE_METADATA = 'ERROR_ARCHIVE_METADATA'
+    ERROR_USB_CONFIGURATION = 'ERROR_USB_CONFIGURATION'
+    ERROR_GENERIC = 'ERROR_GENERIC'
+
+    # USB preflight related errors
+    USB_CONNECTED = 'USB_CONNECTED'
+    USB_NOT_CONNECTED = 'USB_NOT_CONNECTED'
+    ERROR_USB_CHECK = 'ERROR_USB_CHECK'
+
+    # USB Disk preflight related errors
+    USB_ENCRYPTED = 'USB_ENCRYPTED'
+    USB_ENCRYPTION_NOT_SUPPORTED = 'USB_ENCRYPTION_NOT_SUPPORTED'
+    USB_DISK_ERROR = 'USB_DISK_ERROR'
+
+    # Printer preflight related errors
+    ERROR_PRINTER_NOT_FOUND = 'ERROR_PRINTER_NOT_FOUND'
+    ERROR_PRINTER_NOT_SUPPORTED = 'ERROR_PRINTER_NOT_SUPPORTED'
+    ERROR_PRINTER_DRIVER_UNAVAILABLE = 'ERROR_PRINTER_DRIVER_UNAVAILABLE'
+    ERROR_PRINTER_INSTALL = 'ERROR_PRINTER_INSTALL'
+
+    # Disk export errors
+    USB_BAD_PASSPHRASE = 'USB_BAD_PASSPHRASE'
+    ERROR_USB_MOUNT = 'ERROR_USB_MOUNT'
+    ERROR_USB_WRITE = 'ERROR_USB_WRITE'
+
+    # Printer export errors
+    ERROR_PRINT = 'ERROR_PRINT'
 
 
 class Metadata(object):
@@ -111,7 +148,7 @@ class SDExport(object):
                     raise
         except Exception:
             logger.error("error parsing VM configuration.")
-            self.exit_gracefully("ERROR_CONFIG")
+            self.exit_gracefully(ExportStatus.ERROR_USB_CONFIGURATION.value)
 
     def exit_gracefully(self, msg, e=False):
         """
@@ -160,7 +197,7 @@ class SDExport(object):
             with tarfile.open(self.archive) as tar:
                 tar.extractall(self.tmpdir)
         except Exception:
-            msg = "ERROR_EXTRACTION"
+            msg = ExportStatus.ERROR_EXTRACTION.value
             self.exit_gracefully(msg)
 
     def check_usb_connected(self):
@@ -173,7 +210,7 @@ class SDExport(object):
                 stderr=subprocess.PIPE)
             self.exit_gracefully("USB_CONNECTED")
         except subprocess.CalledProcessError:
-            self.exit_gracefully("USB_NOT_CONNECTED")
+            self.exit_gracefully(ExportStatus.USB_NOT_CONNECTED.value)
 
     def set_extracted_device_name(self):
         try:
@@ -184,13 +221,12 @@ class SDExport(object):
             partition_count = device_and_partitions.decode('utf-8').split('\n').count('part')
             if partition_count > 1:
                 logging.debug("multiple partitions not supported")
-                self.exit_gracefully("USB_NO_SUPPORTED_ENCRYPTION")
+                self.exit_gracefully(ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED)
 
             # set device to /dev/sda if disk is encrypted, /dev/sda1 if partition encrypted
             self.device = DEVICE if partition_count == 0 else DEVICE + '1'
         except subprocess.CalledProcessError:
-            msg = "USB_NO_SUPPORTED_ENCRYPTION"
-            self.exit_gracefully(msg)
+            self.exit_gracefully(ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED)
 
     def check_luks_volume(self):
         logging.info('Checking if volume is luks-encrypted')
@@ -198,9 +234,9 @@ class SDExport(object):
             self.set_extracted_device_name()
             logging.debug("checking if {} is luks encrypted".format(self.device))
             subprocess.check_call(["sudo", "cryptsetup", "isLuks", self.device])
-            self.exit_gracefully("USB_ENCRYPTED")
+            self.exit_gracefully(ExportStatus.USB_ENCRYPTED.value)
         except subprocess.CalledProcessError:
-            msg = "USB_NO_SUPPORTED_ENCRYPTION"
+            msg = ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED.value
             self.exit_gracefully(msg)
 
     def unlock_luks_volume(self, encryption_key):
@@ -228,10 +264,10 @@ class SDExport(object):
                 rc = p.returncode
                 if rc != 0:
                     logging.error('Bad phassphrase for {}'.format(self.encrypted_device))
-                    msg = "USB_BAD_PASSPHRASE"
+                    msg = ExportStatus.USB_BAD_PASSPHRASE.value
                     self.exit_gracefully(msg)
         except subprocess.CalledProcessError:
-            self.exit_gracefully("USB_NO_SUPPORTED_ENCRYPTION")
+            self.exit_gracefully(ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED)
 
     def mount_volume(self):
         try:
@@ -250,7 +286,7 @@ class SDExport(object):
             subprocess.check_call(
                 ["sudo", "cryptsetup", "luksClose", self.encrypted_device]
             )
-            msg = "ERROR_USB_MOUNT"
+            msg = ExportStatus.ERROR_USB_MOUNT.value
             self.exit_gracefully(msg)
 
     def copy_submission(self):
@@ -264,7 +300,7 @@ class SDExport(object):
             logging.info('File copied successfully to {}'.format(self.target_dirname))
             self.popup_message("Files exported successfully to disk.")
         except (subprocess.CalledProcessError, OSError):
-            msg = "ERROR_USB_WRITE"
+            msg = ExportStatus.ERROR_USB_WRITE.value
             self.exit_gracefully(msg)
         finally:
             # Finally, we sync the filesystem, unmount the drive and lock the
@@ -297,11 +333,11 @@ class SDExport(object):
                 else:
                     time.sleep(5)
             except subprocess.CalledProcessError:
-                msg = "ERROR_PRINT"
+                msg = ExportStatus.ERROR_PRINT.value
                 self.exit_gracefully(msg)
             except TimeoutException:
                 logging.error('Timeout waiting for printer {}'.format(self.printer_name))
-                msg = "ERROR_PRINT"
+                msg = ExportStatus.ERROR_PRINT.value
                 self.exit_gracefully(msg)
         return True
 
@@ -311,7 +347,7 @@ class SDExport(object):
         try:
             output = subprocess.check_output(["sudo", "lpinfo", "-v"])
         except subprocess.CalledProcessError:
-            msg = "ERROR_PRINTER_URI"
+            msg = ExportStatus.ERROR_PRINTER_URI.value
             self.exit_gracefully(msg)
 
         # fetch the usb printer uri
@@ -324,14 +360,14 @@ class SDExport(object):
         if printer_uri == "":
             # No usb printer is connected
             logging.info('No usb printers connected')
-            self.exit_gracefully("ERROR_PRINTER_NOT_FOUND")
+            self.exit_gracefully(ExportStatus.ERROR_PRINTER_NOT_FOUND.value)
         elif "Brother" in printer_uri:
             logging.info('Printer {} is supported'.format(printer_uri))
             return printer_uri
         else:
             # printer url is a make that is unsupported
             logging.info('Printer {} is unsupported'.format(printer_uri))
-            self.exit_gracefully("ERROR_PRINTER_NOT_SUPPORTED")
+            self.exit_gracefully(ExportStatus.ERROR_PRINTER_NOT_SUPPORTED.value)
 
     def install_printer_ppd(self, uri):
         # Some drivers don't come with ppd files pre-compiled, we must compile them
@@ -347,12 +383,13 @@ class SDExport(object):
                     ]
                 )
             except subprocess.CalledProcessError:
-                msg = "ERROR_PRINTER_DRIVER_UNAVAILBLE"
+                msg = ExportStatus.ERROR_PRINTER_DRIVER_UNAVAILBLE.value
                 self.exit_gracefully(msg)
             return self.brlaser_ppd
         # Here, we could support ppd drivers for other makes or models in the future
 
     def setup_printer(self, printer_uri, printer_ppd):
+        # Add the printer using lpadmin
         try:
             # Add the printer using lpadmin
             subprocess.check_call(
@@ -374,7 +411,7 @@ class SDExport(object):
                 ["sudo", "lpadmin", "-p", self.printer_name, "-u", "allow:user"]
             )
         except subprocess.CalledProcessError:
-            msg = "ERROR_PRINTER_INSTALL"
+            msg = ExportStatus.ERROR_PRINTER_INSTALL.value
             self.exit_gracefully(msg)
 
     def print_test_page(self):
@@ -424,7 +461,7 @@ class SDExport(object):
             logging.info('Sending file to printer {}:{}'.format(self.printer_name))
             subprocess.check_call(["xpp", "-P", self.printer_name, file_to_print])
         except subprocess.CalledProcessError:
-            msg = "ERROR_PRINT"
+            msg = ExportStatus.ERROR_PRINT.value
             self.exit_gracefully(msg)
 
 
