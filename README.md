@@ -87,7 +87,7 @@ in **dom0**.
 
 ```
 sd-svs sd-journalist allow
-$anyvm $anyvm deny
+@anyvm @anyvm deny
 ```
 
 The above mentioned setup can also be created using `securedrop-workstation` project.
