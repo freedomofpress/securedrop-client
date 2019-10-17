@@ -737,6 +737,7 @@ class MainView(QWidget):
         source = self.source_list.get_current_source()
 
         if source:
+            self.controller.session.refresh(source)
             # Try to get the SourceConversationWrapper from the persistent dict,
             # else we create it.
             try:
@@ -1567,18 +1568,70 @@ class ReplyWidget(SpeechBubble):
     Represents a reply to a source.
     """
 
-    CSS_COLOR_BAR_REPLY_FAIL = '''
-    background-color: #ff3366;
+    CSS_REPLY_FAILED = '''
+    #message {
+        min-width: 540px;
+        max-width: 540px;
+        font-family: 'Source Sans Pro';
+        font-weight: 400;
+        font-size: 15px;
+        background-color: #fff;
+        color: #3b3b3b;
+        padding: 16px;
+    }
+    #color_bar {
+        min-height: 5px;
+        max-height: 5px;
+        background-color: #ff3366;
+        border: 0px;
+    }
     '''
 
-    CSS_COLOR_BAR_REPLY = '''
-    background-color: #0065db;
+    CSS_REPLY_SUCCEEDED = '''
+    #message {
+        min-width: 540px;
+        max-width: 540px;
+        font-family: 'Source Sans Pro';
+        font-weight: 400;
+        font-size: 15px;
+        background-color: #fff;
+        color: #3b3b3b;
+        padding: 16px;
+    }
+    #color_bar {
+        min-height: 5px;
+        max-height: 5px;
+        background-color: #0065db;
+        border: 0px;
+    }
+    '''
+
+    # Custom pending CSS styling simulates the effect of opacity which is only
+    # supported by tooltips for QSS.
+    CSS_REPLY_PENDING = '''
+    #message {
+        min-width: 540px;
+        max-width: 540px;
+        font-family: 'Source Sans Pro';
+        font-weight: 400;
+        font-size: 15px;
+        color: #A9AAAD;
+        background-color: #F7F8FC;
+        padding: 16px;
+    }
+    #color_bar {
+        min-height: 5px;
+        max-height: 5px;
+        background-color: #8715FF;
+        border: 0px;
+    }
     '''
 
     def __init__(
         self,
         message_id: str,
         message: str,
+        reply_status: str,
         update_signal,
         message_succeeded_signal,
         message_failed_signal,
@@ -1587,10 +1640,18 @@ class ReplyWidget(SpeechBubble):
         self.message_id = message_id
 
         # Set styles
-        self.color_bar.setStyleSheet(self.CSS_COLOR_BAR_REPLY)
+        self._set_reply_state(reply_status)
 
         message_succeeded_signal.connect(self._on_reply_success)
         message_failed_signal.connect(self._on_reply_failure)
+
+    def _set_reply_state(self, status: str) -> None:
+        if status == 'SUCCEEDED':
+            self.setStyleSheet(self.CSS_REPLY_SUCCEEDED)
+        elif status == 'FAILED':
+            self.setStyleSheet(self.CSS_REPLY_FAILED)
+        elif status == 'PENDING':
+            self.setStyleSheet(self.CSS_REPLY_PENDING)
 
     @pyqtSlot(str)
     def _on_reply_success(self, message_id: str) -> None:
@@ -1600,6 +1661,7 @@ class ReplyWidget(SpeechBubble):
         """
         if message_id == self.message_id:
             logger.debug('Message {} succeeded'.format(message_id))
+            self._set_reply_state('SUCCEEDED')
 
     @pyqtSlot(str)
     def _on_reply_failure(self, message_id: str) -> None:
@@ -1609,7 +1671,7 @@ class ReplyWidget(SpeechBubble):
         """
         if message_id == self.message_id:
             logger.debug('Message {} failed'.format(message_id))
-            self.color_bar.setStyleSheet(self.CSS_COLOR_BAR_REPLY_FAIL)
+            self._set_reply_state('FAILED')
 
 
 class FileWidget(QWidget):
@@ -2172,9 +2234,11 @@ class ConversationView(QWidget):
         else:
             content = '<Reply not yet available>'
 
+        logger.debug('adding reply: with status {}'.format(reply.send_status.name))
         conversation_item = ReplyWidget(
             reply.uuid,
             content,
+            reply.send_status.name,
             self.controller.reply_ready,
             self.controller.reply_succeeded,
             self.controller.reply_failed)
@@ -2187,6 +2251,7 @@ class ConversationView(QWidget):
         conversation_item = ReplyWidget(
             uuid,
             content,
+            'PENDING',
             self.controller.reply_ready,
             self.controller.reply_succeeded,
             self.controller.reply_failed)
@@ -2352,8 +2417,8 @@ class ReplyBoxWidget(QWidget):
 
     def send_reply(self) -> None:
         """
-        Send reply and emit a signal so that the gui can be updated immediately, even before the
-        the reply is saved locally.
+        Send reply and emit a signal so that the gui can be updated immediately indicating
+        that it is a pending reply.
         """
         reply_text = self.text_edit.toPlainText().strip()
         if reply_text:

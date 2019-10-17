@@ -14,8 +14,9 @@ from sdclientapi import Submission as SdkSubmission
 from sqlalchemy.orm.session import Session
 
 from securedrop_client.api_jobs.base import ApiJob
+from securedrop_client.api_jobs.uploads import ReplySendStatusCodes
 from securedrop_client.crypto import GpgHelper, CryptoError
-from securedrop_client.db import File, Message, Reply
+from securedrop_client.db import File, Message, Reply, ReplySendStatus
 from securedrop_client.storage import mark_as_decrypted, mark_as_downloaded, \
     set_message_or_reply_content
 
@@ -279,11 +280,14 @@ class MessageDownloadJob(DownloadJob):
         '''
         with NamedTemporaryFile('w+') as plaintext_file:
             self.gpg.decrypt_submission_or_reply(filepath, plaintext_file.name, is_doc=False)
+            success_status = session.query(ReplySendStatus).filter_by(
+                name=ReplySendStatusCodes.SUCCEEDED.value).one()
             set_message_or_reply_content(
                 model_type=Message,
                 uuid=self.uuid,
                 session=session,
-                content=plaintext_file.read())
+                content=plaintext_file.read(),
+                send_status_id=success_status.id)
         return ""
 
 
