@@ -505,42 +505,55 @@ def test_timeout_length_of_file_downloads(mocker, homedir, session, session_make
     Ensure that files downloads have timeouts scaled by the size of the file.
     """
     source = factory.Source()
+    zero_byte_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=0)
     one_byte_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=1)
-    one_KiB_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=1024)
-    fifty_KiB_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=51200)
-    half_MiB_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=524288)
-    one_MiB_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=1049000)
-    five_MiB_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=5243000)
+    KB_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=1000)
+    fifty_KB_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=50000)
+    half_MB_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=500000)
+    MB_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=1000000)
+    five_MB_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=5000000)
+    haf_GB_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=500000000)
+    GB_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=1000000000)
     session.add(source)
+    session.add(zero_byte_file)
     session.add(one_byte_file)
-    session.add(one_KiB_file)
-    session.add(fifty_KiB_file)
-    session.add(half_MiB_file)
-    session.add(one_MiB_file)
-    session.add(five_MiB_file)
+    session.add(KB_file)
+    session.add(fifty_KB_file)
+    session.add(half_MB_file)
+    session.add(MB_file)
+    session.add(five_MB_file)
+    session.add(haf_GB_file)
+    session.add(GB_file)
     session.commit()
 
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    zero_byte_file_job = FileDownloadJob(zero_byte_file.uuid, os.path.join(homedir, 'data'), gpg)
     one_byte_file_job = FileDownloadJob(one_byte_file.uuid, os.path.join(homedir, 'data'), gpg)
-    one_KiB_file_job = FileDownloadJob(one_KiB_file.uuid, os.path.join(homedir, 'data'), gpg)
-    fifty_KiB_file_job = FileDownloadJob(fifty_KiB_file.uuid, os.path.join(homedir, 'data'), gpg)
-    half_MiB_file_job = FileDownloadJob(half_MiB_file.uuid, os.path.join(homedir, 'data'), gpg)
-    one_MiB_file_job = FileDownloadJob(one_MiB_file.uuid, os.path.join(homedir, 'data'), gpg)
-    five_MiB_file_job = FileDownloadJob(five_MiB_file.uuid, os.path.join(homedir, 'data'), gpg)
+    KB_file_job = FileDownloadJob(KB_file.uuid, os.path.join(homedir, 'data'), gpg)
+    fifty_KB_file_job = FileDownloadJob(fifty_KB_file.uuid, os.path.join(homedir, 'data'), gpg)
+    half_MB_file_job = FileDownloadJob(half_MB_file.uuid, os.path.join(homedir, 'data'), gpg)
+    MB_file_job = FileDownloadJob(MB_file.uuid, os.path.join(homedir, 'data'), gpg)
+    five_MB_file_job = FileDownloadJob(five_MB_file.uuid, os.path.join(homedir, 'data'), gpg)
+    half_GB_file_job = FileDownloadJob(haf_GB_file.uuid, os.path.join(homedir, 'data'), gpg)
+    GB_file_job = FileDownloadJob(GB_file.uuid, os.path.join(homedir, 'data'), gpg)
 
+    zero_byte_file_timeout = zero_byte_file_job._get_realistic_timeout(zero_byte_file.size)
     one_byte_file_timeout = one_byte_file_job._get_realistic_timeout(one_byte_file.size)
-    one_KiB_file_timeout = one_KiB_file_job._get_realistic_timeout(one_KiB_file.size)
-    fifty_KiB_file_timeout = fifty_KiB_file_job._get_realistic_timeout(fifty_KiB_file.size)
-    half_MiB_file_timeout = half_MiB_file_job._get_realistic_timeout(half_MiB_file.size)
-    one_MiB_file_timeout = one_MiB_file_job._get_realistic_timeout(one_MiB_file.size)
-    five_MiB_file_timeout = five_MiB_file_job._get_realistic_timeout(five_MiB_file.size)
+    KB_file_timeout = KB_file_job._get_realistic_timeout(KB_file.size)
+    fifty_KB_file_timeout = fifty_KB_file_job._get_realistic_timeout(fifty_KB_file.size)
+    half_MB_file_timeout = half_MB_file_job._get_realistic_timeout(half_MB_file.size)
+    MB_file_timeout = MB_file_job._get_realistic_timeout(MB_file.size)
+    five_MB_file_timeout = five_MB_file_job._get_realistic_timeout(five_MB_file.size)
+    GB_file_timeout = GB_file_job._get_realistic_timeout(GB_file.size)
+    half_GB_file_timeout = half_GB_file_job._get_realistic_timeout(haf_GB_file.size)
 
-    # ceil(file_size / 10000 bytes/sec) is expected for file sizes less than 1MB
-    # ceil(file_size / 100000 bytes/sec) is expected for file sizes greater than or equal to 1MB
-    # minimum timeout is 3 seconds
-    assert one_byte_file_timeout == 3
-    assert one_KiB_file_timeout == 3
-    assert fifty_KiB_file_timeout == 6
-    assert half_MiB_file_timeout == 53
-    assert one_MiB_file_timeout == 11
-    assert five_MiB_file_timeout == 53
+    # timeout = ceil((file_size/100000)*1.5)+25
+    assert zero_byte_file_timeout == 25
+    assert one_byte_file_timeout == 26
+    assert KB_file_timeout == 26
+    assert fifty_KB_file_timeout == 26
+    assert half_MB_file_timeout == 33
+    assert MB_file_timeout == 40
+    assert five_MB_file_timeout == 100
+    assert half_GB_file_timeout == 7525
+    assert GB_file_timeout == 15025
