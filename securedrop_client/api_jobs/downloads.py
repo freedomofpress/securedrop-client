@@ -46,8 +46,7 @@ class DownloadJob(ApiJob):
         '''
         Return a realistic timeout in seconds for a file, message, or reply based on its size.
 
-        This simply scales the timeouts per file so that in general it increases as the file size
-        increases.
+        This simply scales the timeouts per file so that it increases as the file size increases.
 
         Note that:
 
@@ -65,22 +64,16 @@ class DownloadJob(ApiJob):
 
         * As you might expect, this method returns timeouts that are larger than the expected
           download time, which is why the rates below are slower than what you see above with the
-          Tor metrics, e.g. instead of setting SMALL_FILE_DOWNLOAD_TIMEOUT_BYTES_PER_SECOND to
-          12800 bytes/second, we set it to 10000 bytes per second.
+          Tor metrics, e.g. instead of setting TIMEOUT_BYTES_PER_SECOND to 139867 bytes/second, we
+          set it to 100000 bytes/second.
 
-        * Minimum timeout allowed is 3 seconds.
+        * Minimum timeout allowed is 25 seconds
         '''
-        SMALL_FILE_DOWNLOAD_TIMEOUT_BYTES_PER_SECOND = 10000.0
-        DOWNLOAD_TIMEOUT_BYTES_PER_SECOND = 100000.0
-        ONE_MEGABYTE = 1000000
-        MINIMUM_TIMEOUT = 3
-
-        if size_in_bytes < ONE_MEGABYTE:
-            timeout = math.ceil(size_in_bytes / SMALL_FILE_DOWNLOAD_TIMEOUT_BYTES_PER_SECOND)
-            return max(MINIMUM_TIMEOUT, timeout)
-
-        timeout = math.ceil(size_in_bytes / DOWNLOAD_TIMEOUT_BYTES_PER_SECOND)
-        return max(MINIMUM_TIMEOUT, timeout)
+        TIMEOUT_BYTES_PER_SECOND = 100000.0
+        TIMEOUT_ADJUSTMENT_FACTOR = 1.5
+        TIMEOUT_BASE = 25
+        timeout = math.ceil((size_in_bytes / TIMEOUT_BYTES_PER_SECOND) * TIMEOUT_ADJUSTMENT_FACTOR)
+        return timeout + TIMEOUT_BASE
 
     def call_download_api(self, api: API,
                           db_object: Union[File, Message, Reply]) -> Tuple[str, str]:
