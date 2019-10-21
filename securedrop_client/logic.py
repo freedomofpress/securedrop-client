@@ -34,7 +34,7 @@ from securedrop_client import db
 from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob, \
     ReplyDownloadJob, DownloadChecksumMismatchException
 from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobError, \
-    SendReplyJobTimeoutError
+    SendReplyJobTimeoutError, ReplySendStatusCodes
 from securedrop_client.api_jobs.updatestar import UpdateStarJob, UpdateStarJobException
 from securedrop_client.crypto import GpgHelper, CryptoError
 from securedrop_client.export import Export
@@ -341,7 +341,8 @@ class Controller(QObject):
             result['first_name'],
             result['last_name'],
             self.session)
-        self.gui.show_main_window(user)
+        self.user = user
+        self.gui.show_main_window(self.user)
 
     def on_get_current_user_failure(self, result: Exception) -> None:
         self.api = None
@@ -749,6 +750,29 @@ class Controller(QObject):
         """
         Send a reply to a source.
         """
+        # Before we send the reply, add to the database with a PENDING reply send status
+        source = self.session.query(db.Source).filter_by(uuid=source_uuid).one()
+        reply_status = self.session.query(db.ReplySendStatus).filter_by(
+            name=ReplySendStatusCodes.PENDING.value).one()
+
+        # Filename will be (interaction_count + 1) || journalist_designation
+        source.interaction_count += 1
+        filename = '{}-{}-reply.gpg'.format(source.interaction_count,
+                                            source.journalist_designation)
+        reply_db_object = db.Reply(
+            uuid=reply_uuid,
+            source_id=source.id,
+            filename=filename,
+            journalist_id=self.user.uuid,
+            content=message,
+            is_downloaded=True,
+            is_decrypted=True,
+            send_status_id=reply_status.id,
+        )
+        self.session.add(reply_db_object)
+        self.session.add(source)
+        self.session.commit()
+
         job = SendReplyJob(
             source_uuid,
             reply_uuid,
