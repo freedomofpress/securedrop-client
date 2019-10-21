@@ -62,9 +62,12 @@ def get_local_files(session: Session) -> List[File]:
 
 def get_local_replies(session: Session) -> List[Reply]:
     """
-    Return all reply objects from the local database.
+    Return all reply objects from the local database that are successful
+    (i.e. those that are not failed or pending).
     """
-    return session.query(Reply).all()
+    success_status = session.query(ReplySendStatus).filter_by(
+        name=ReplySendStatusCodes.SUCCEEDED.value).one()
+    return session.query(Reply).filter_by(send_status_id=success_status.id).all()
 
 
 def get_remote_data(api: API) -> Tuple[List[SDKSource], List[SDKSubmission], List[SDKReply]]:
@@ -242,7 +245,7 @@ def update_replies(remote_replies: List[SDKReply], local_replies: List[Reply],
     * Existing replies are updated in the local database.
     * New replies have an entry created in the local database.
     * Local replies not returned in the remote replies are deleted from the
-      local database.
+      local database unless they are pending or failed.
 
     If a reply references a new journalist username, add them to the database
     as a new user.
@@ -284,7 +287,8 @@ def update_replies(remote_replies: List[SDKReply], local_replies: List[Reply],
 
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
-    for deleted_reply in [r for r in local_replies if r.uuid in local_uuids]:
+    replies_to_delete = [r for r in local_replies if r.uuid in local_uuids]
+    for deleted_reply in replies_to_delete:
         delete_single_submission_or_reply_on_disk(deleted_reply, data_dir)
         session.delete(deleted_reply)
         logger.debug('Deleted reply {}'.format(deleted_reply.uuid))
