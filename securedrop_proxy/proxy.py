@@ -1,10 +1,14 @@
-import requests
 import furl
-import tempfile
 import json
+import logging
+import requests
+import tempfile
 import werkzeug
 
 import securedrop_proxy.version as version
+
+
+logger = logging.getLogger(__name__)
 
 
 class Req:
@@ -71,7 +75,7 @@ class Proxy:
         try:
             url = furl.furl("{}://{}:{}/{}".format(scheme, host, port, path))
         except Exception as e:
-
+            logging.error(e)
             self.simple_error(500, "Proxy error while generating URL to request")
             raise ValueError("Error generating URL from provided values")
 
@@ -99,7 +103,7 @@ class Proxy:
         res = Response(self._presp.status_code)
 
         # Create a NamedTemporaryFile, we don't want
-        # to delete it after closing.
+        # to delete it after closign.
         fh = tempfile.NamedTemporaryFile(delete=False)
 
         for c in self._presp.iter_content(10):
@@ -114,6 +118,7 @@ class Proxy:
         self.res = res
 
     def handle_response(self):
+        logging.debug('Handling response')
 
         ctype = werkzeug.http.parse_options_header(self._presp.headers["content-type"])
 
@@ -134,11 +139,13 @@ class Proxy:
                 raise ValueError("Request callback is not set.")
 
             self.prep_request()
+            logging.debug('Sending request')
             s = requests.Session()
             self._presp = s.send(self._prepared_request)
             self.handle_response()
 
-        except ValueError:
+        except ValueError as e:
+            logging.error(e)
 
             # effectively a 4xx error
             # we have set self.response to indicate an error
