@@ -1,6 +1,25 @@
+---
+common-steps:
+  - &run_tests
+    run:
+      name: Install requirements and run tests
+      command: |
+        virtualenv .venv
+        source .venv/bin/activate
+        pip install --require-hashes -r dev-requirements.txt
+        make test
+
+  - &check_python_dependencies_for_vulns
+    run:
+      name: Check Python dependencies for CVEs
+      command: |
+        set -e
+        source .venv/bin/activate
+        make safety
+
 version: 2
 jobs:
-  build:
+  build-stretch:
     docker:
       - image: circleci/python:3.5-stretch
     steps:
@@ -30,30 +49,26 @@ jobs:
             export PKG_PATH=~/project/dist/securedrop-proxy-$PKG_VERSION.tar.gz
             make securedrop-proxy
 
-  test:
+  test-stretch:
     docker:
-      - image: circleci/python:3.5
+      - image: circleci/python:3.5-stretch
     steps:
       - checkout
+      - *run_tests
+      - *check_python_dependencies_for_vulns
 
-      - run:
-          name: Install requirements and run tests
-          command: |
-            virtualenv .venv
-            source .venv/bin/activate
-            pip install --require-hashes -r dev-requirements.txt
-            make test
-
-      - run:
-          name: Check Python dependencies for CVEs
-          command: |
-            set -e
-            source .venv/bin/activate
-            make safety
+  test-buster:
+    docker:
+      - image: circleci/python:3.7-buster
+    steps:
+      - checkout
+      - *run_tests
+      - *check_python_dependencies_for_vulns
 
 workflows:
   version: 2
   securedrop_proxy_ci:
     jobs:
-      - test
-      - build
+      - test-stretch
+      - test-buster
+      - build-stretch
