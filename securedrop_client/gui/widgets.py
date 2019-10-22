@@ -2237,18 +2237,27 @@ class ReplyBoxWidget(QWidget):
     """
 
     CSS = '''
-    #replybox {
+    #replybox_holder {
         min-height: 173px;
         max-height: 173px;
+    }
+    #replybox {
+        background-color: #ffffff;
+    }
+    QTextEdit {
         font-family: 'Montserrat';
         font-weight: 400;
         font-size: 18px;
-        color: #9c9dbb;
-    }
-    QTextEdit {
         border: none;
+        margin: 5px;
     }
     QPushButton {
+        border: none;
+    }
+    QWidget#horizontal_line {
+        min-height: 2px;
+        max-height: 2px;
+        background-color: rgba(42, 49, 157, 0.15);
         border: none;
     }
     '''
@@ -2262,19 +2271,31 @@ class ReplyBoxWidget(QWidget):
         self.controller = controller
 
         # Set css id
-        self.setObjectName('replybox')
+        self.setObjectName('replybox_holder')
 
         # Set styles
         self.setStyleSheet(self.CSS)
 
         # Set layout
-        layout = QVBoxLayout()
-        self.setLayout(layout)
+        main_layout = QVBoxLayout()
+        self.setLayout(main_layout)
 
         # Set margins
-        layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
 
-        # Create widgets
+        # Create top horizontal line
+        horizontal_line = QWidget()
+        horizontal_line.setObjectName('horizontal_line')
+
+        # Create replybox
+        replybox = QWidget()
+        replybox.setObjectName('replybox')
+        replybox_layout = QHBoxLayout(replybox)
+        replybox_layout.setContentsMargins(0,0,0,0)
+        replybox_layout.setSpacing(0)
+
+        # Create relybox widgets
         self.text_edit = QTextEdit()
 
         self.send_button = QPushButton()
@@ -2285,9 +2306,13 @@ class ReplyBoxWidget(QWidget):
         self.send_button.setIcon(button_icon)
         self.send_button.setIconSize(button_pixmap.rect().size())
 
+        # Add widgets to replybox
+        replybox_layout.addWidget(self.text_edit)
+        replybox_layout.addWidget(self.send_button, alignment=Qt.AlignBottom)
+
         # Add widgets
-        layout.addWidget(self.text_edit)
-        layout.addWidget(self.send_button, alignment=Qt.AlignRight)
+        main_layout.addWidget(horizontal_line)
+        main_layout.addWidget(replybox)
 
         # Determine whether or not this widget should be enabled
         if self.controller.is_authenticated:
