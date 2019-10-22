@@ -637,7 +637,7 @@ class Controller(QObject):
         file = self.get_file(file_uuid)
         logger.info('Exporting file {}'.format(file.original_filename))
 
-        fn_no_ext, _ = os.path.splitext(os.path.splitext(file.filename)[0])
+        fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
         filepath = os.path.join(self.data_dir, fn_no_ext)
         if not os.path.exists(filepath):
             msg = _('Could not export {}. File does not exist.'.format(file.original_filename))
