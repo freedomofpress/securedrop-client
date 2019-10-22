@@ -28,7 +28,7 @@ from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QEvent, QTimer, QSize, pyqtBo
 from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
-    QToolButton, QSizePolicy, QTextEdit, QStatusBar, QGraphicsDropShadowEffect, QApplication
+    QToolButton, QSizePolicy, QPlainTextEdit, QStatusBar, QGraphicsDropShadowEffect, QApplication
 
 from securedrop_client.db import Source, Message, File, Reply, User
 from securedrop_client.storage import source_exists
@@ -2244,7 +2244,7 @@ class ReplyBoxWidget(QWidget):
     #replybox {
         background-color: #ffffff;
     }
-    QTextEdit {
+    QPlainTextEdit {
         font-family: 'Montserrat';
         font-weight: 400;
         font-size: 18px;
@@ -2301,7 +2301,7 @@ class ReplyBoxWidget(QWidget):
         replybox_layout.setSpacing(0)
 
         # Create relybox widgets
-        self.text_edit = QTextEdit()
+        self.text_edit = QPlainTextEdit()
 
         self.send_button = QPushButton()
         self.send_button.clicked.connect(self.send_reply)
@@ -2333,7 +2333,7 @@ class ReplyBoxWidget(QWidget):
         self.send_button.show()
 
     def disable(self):
-        self.text_edit.setText(_('You need to log in to send replies.'))
+        self.text_edit.setPlainText(_('You need to log in to send replies.'))
         self.text_edit.setEnabled(False)
         self.send_button.hide()
 
