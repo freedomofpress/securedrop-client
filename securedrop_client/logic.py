@@ -181,6 +181,7 @@ class Controller(QObject):
 
         self.export = Export()
         self.export.export_usb_call_success.connect(self.on_export_usb_call_success)
+        self.export.export_usb_call_failure.connect(self.on_export_usb_call_failure)
 
         self.sync_flag = os.path.join(home, 'sync_flag')
 
@@ -668,6 +669,14 @@ class Controller(QObject):
         self.export.begin_usb_export.emit([path_to_file_with_original_name], passphrase)
 
     def on_export_usb_call_success(self, filepaths: List[str]):
+        '''
+        Clean export files that are hard links to the file on disk.
+        '''
+        for filepath in filepaths:
+            if os.path.exists(filepath):
+                os.remove(filepath)
+
+    def on_export_usb_call_failure(self, filepaths: List[str]):
         '''
         Clean export files that are hard links to the file on disk.
         '''

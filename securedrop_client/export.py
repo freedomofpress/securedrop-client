@@ -256,4 +256,5 @@ class Export(QObject):
                 logger.debug('Export successful')
                 self.export_usb_call_success.emit(filepaths)
             except ExportError as e:
-                self.export_usb_call_failure.emit(e.status)
+                logger.error(e)
+                self.export_usb_call_failure.emit(filepaths)
