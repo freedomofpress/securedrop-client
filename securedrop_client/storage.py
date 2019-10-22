@@ -104,18 +104,16 @@ def update_local_storage(session: Session,
     with this data.
     """
 
-    local_sources = get_local_sources(session)
-    local_files = get_local_files(session)
-    local_messages = get_local_messages(session)
-    local_replies = get_local_replies(session)
-
     remote_messages = [x for x in remote_submissions if x.filename.endswith('msg.gpg')]
     remote_files = [x for x in remote_submissions if not x.filename.endswith('msg.gpg')]
 
-    update_sources(remote_sources, local_sources, session, data_dir)
-    update_files(remote_files, local_files, session, data_dir)
-    update_messages(remote_messages, local_messages, session, data_dir)
-    update_replies(remote_replies, local_replies, session, data_dir)
+    # The following update_* functions may change the database state.
+    # Because of that, each get_local_* function needs to be called just before
+    # its respective update_* function.
+    update_sources(remote_sources, get_local_sources(session), session, data_dir)
+    update_files(remote_files, get_local_files(session), session, data_dir)
+    update_messages(remote_messages, get_local_messages(session), session, data_dir)
+    update_replies(remote_replies, get_local_replies(session), session, data_dir)
 
 
 def update_sources(remote_sources: List[SDKSource],
