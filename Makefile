@@ -31,7 +31,14 @@ clean:  ## Clean the workspace of generated resources
 TESTS ?= tests
 TESTOPTS ?= -v
 .PHONY: test
-test: ## Run the application tests
+test: ## Run the application tests in parallel (for rapid development)
+	@TEST_CMD="python -m pytest -v -n 4 --cov-config .coveragerc --cov-report html --cov-report term-missing --cov=securedrop_client --cov-fail-under 100 $(TESTOPTS) $(TESTS)" ; \
+		if command -v xvfb-run > /dev/null; then \
+		xvfb-run $$TEST_CMD ; else \
+		$$TEST_CMD ; fi
+
+.PHONY: test-random
+test-random: ## Run the application tests in random order
 	@TEST_CMD="python -m pytest -v --random-order-bucket=global --cov-config .coveragerc --cov-report html --cov-report term-missing --cov=securedrop_client --cov-fail-under 100 $(TESTOPTS) $(TESTS)" ; \
 		if command -v xvfb-run > /dev/null; then \
 		xvfb-run $$TEST_CMD ; else \
@@ -60,7 +67,7 @@ bandit: ## Run bandit with medium level excluding test-related folders
 	bandit -ll --recursive . --exclude ./tests,./.venv
 
 .PHONY: check
-check: clean bandit lint mypy test ## Run the full CI test suite
+check: clean bandit lint mypy test-random ## Run the full CI test suite
 
 .PHONY: update-pip-requirements
 update-pip-requirements: ## Updates all Python requirements files via pip-compile.
