@@ -1975,12 +1975,12 @@ class ExportDialog(QDialog):
             self._on_export_success, type=Qt.QueuedConnection)
 
     def export(self):
-        self.controller.run_export_preflight_checks()
+        self.controller.run_export_preflight_checks(self.file_uuid)
 
     @pyqtSlot()
     def _on_retry_export_button_clicked(self):
         self.starting_export_message.hide()
-        self.controller.run_export_preflight_checks()
+        self.controller.run_export_preflight_checks(self.file_uuid)
 
     @pyqtSlot()
     def _on_unlock_disk_clicked(self):

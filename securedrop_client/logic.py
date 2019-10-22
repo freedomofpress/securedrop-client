@@ -610,12 +610,24 @@ class Controller(QObject):
         process = QProcess(self)
         process.start(command, args)
 
-    def run_export_preflight_checks(self):
+    def run_export_preflight_checks(self, file_uuid: str):
         '''
-        Run preflight checks to make sure the Export VM is configured correctly
+        Run preflight checks to make sure the Export VM is configured correctly. Also check if the
+        file we're about to export exists before asking the user to connect their thumb drive and
+        type in their passphrase to unlock it.
         '''
-        logger.debug('Calling export preflight checks from thread {}'.format(
-            threading.current_thread().ident))
+        logger.info('Running export preflight checks')
+
+        file = self.get_file(file_uuid)
+        fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
+        filepath = os.path.join(self.data_dir, fn_no_ext)
+        if not os.path.exists(filepath):
+            msg = _('Could not export {}. File does not exist.'.format(file.original_filename))
+            storage.mark_as_not_downloaded(file_uuid, self.session)
+            self.sync_api()
+            logger.debug(msg)
+            self.gui.update_error_status(msg)
+            return
 
         if not self.qubes:
             return
