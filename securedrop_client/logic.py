@@ -21,7 +21,6 @@ import inspect
 import logging
 import os
 import sdclientapi
-import threading
 import uuid
 from typing import Dict, Tuple, Union, Any, List, Type  # noqa: F401
 
@@ -591,7 +590,7 @@ class Controller(QObject):
         fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
         filepath = os.path.join(self.data_dir, fn_no_ext)
         if not os.path.exists(filepath):
-            msg = _('Could not export {}. File does not exist.'.format(file.original_filename))
+            msg = _('Could not open {}. File does not exist.'.format(file.original_filename))
             storage.mark_as_not_downloaded(file_uuid, self.session)
             self.sync_api()
             logger.debug(msg)

@@ -1437,7 +1437,7 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
 
     fw._on_export_clicked()
 
-    controller.run_export_preflight_checks.assert_called_once_with()
+    controller.run_export_preflight_checks.assert_called_once_with(file.uuid)
 
 
 def test_ExportDialog_export(mocker):
@@ -1450,7 +1450,7 @@ def test_ExportDialog_export(mocker):
 
     export_dialog.export()
 
-    controller.run_export_preflight_checks.assert_called_with()
+    controller.run_export_preflight_checks.assert_called_with('mock_uuid')
 
 
 def test_ExportDialog_pre_flight_request_to_insert_usb_device_on_CALLED_PROCESS_ERROR(mocker):
@@ -1500,7 +1500,7 @@ def test_ExportDialog__on_retry_export_button_clicked(mocker):
 
     export_dialog._on_retry_export_button_clicked()
 
-    controller.run_export_preflight_checks.assert_called_with()
+    controller.run_export_preflight_checks.assert_called_with('mock_uuid')
 
 
 def test_ExportDialog__update_export_button_clicked_USB_NOT_CONNECTED(mocker):
