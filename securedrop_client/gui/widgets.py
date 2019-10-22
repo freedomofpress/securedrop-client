@@ -2234,10 +2234,15 @@ class ReplyBoxWidget(QWidget):
         font-weight: 400;
         font-size: 18px;
         border: none;
-        margin: 5px;
+        margin-left: 32.6px;
+        margin-top: 19px;
+        margin-bottom: 11px;
+        margin-right: 30.2px;
     }
     QPushButton {
         border: none;
+        margin-right: 27.3px;
+        margin-bottom: 27.1px;
     }
     QWidget#horizontal_line {
         min-height: 2px;
@@ -2285,11 +2290,10 @@ class ReplyBoxWidget(QWidget):
 
         self.send_button = QPushButton()
         self.send_button.clicked.connect(self.send_reply)
-        self.send_button.setMaximumSize(40, 40)
-        button_pixmap = load_image('send.png')
+        button_pixmap = load_image('send.svg')
         button_icon = QIcon(button_pixmap)
         self.send_button.setIcon(button_icon)
-        self.send_button.setIconSize(button_pixmap.rect().size())
+        self.send_button.setIconSize(QSize(56.5,47))
 
         # Add widgets to replybox
         replybox_layout.addWidget(self.text_edit)
