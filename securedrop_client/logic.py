@@ -592,7 +592,7 @@ class Controller(QObject):
         filepath = os.path.join(self.data_dir, fn_no_ext)
         if not os.path.exists(filepath):
             msg = _('Could not export {}. File does not exist.'.format(file.original_filename))
-            storage.mark_as_not_downloaded(file_uuid)
+            storage.mark_as_not_downloaded(file_uuid, self.session)
             self.sync_api()
             logger.debug(msg)
             self.gui.update_error_status(msg)
@@ -641,7 +641,7 @@ class Controller(QObject):
         filepath = os.path.join(self.data_dir, fn_no_ext)
         if not os.path.exists(filepath):
             msg = _('Could not export {}. File does not exist.'.format(file.original_filename))
-            storage.mark_as_not_downloaded(file_uuid)
+            storage.mark_as_not_downloaded(file_uuid, self.session)
             self.sync_api()
             logger.debug(msg)
             self.gui.update_error_status(msg)
