@@ -2288,10 +2288,12 @@ class ReplyBoxWidget(QWidget):
         replybox_layout.setContentsMargins(0,0,0,0)
         replybox_layout.setSpacing(0)
 
-        # Create relybox widgets
+        # Create reply text box
         self.text_edit = QPlainTextEdit()
+        self.text_edit.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.text_edit.setPlaceholderText("Compose a reply to %bold_source_name%")
 
+        # Create reply send button (airplane)
         self.send_button = QPushButton()
         self.send_button.clicked.connect(self.send_reply)
         button_pixmap = load_image('send.svg')
