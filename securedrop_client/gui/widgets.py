@@ -2290,6 +2290,7 @@ class ReplyBoxWidget(QWidget):
 
         # Create relybox widgets
         self.text_edit = QPlainTextEdit()
+        self.text_edit.setPlaceholderText("Compose a reply to %bold_source_name%")
 
         self.send_button = QPushButton()
         self.send_button.clicked.connect(self.send_reply)
