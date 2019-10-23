@@ -2229,6 +2229,9 @@ class ReplyBoxWidget(QWidget):
     #replybox {
         background-color: #ffffff;
     }
+    #replybox::disabled {
+        background-color: #efefef;
+    }
     QPlainTextEdit {
         font-family: 'Montserrat';
         font-weight: 400;
@@ -2279,9 +2282,9 @@ class ReplyBoxWidget(QWidget):
         horizontal_line.setObjectName('horizontal_line')
 
         # Create replybox
-        replybox = QWidget()
-        replybox.setObjectName('replybox')
-        replybox_layout = QHBoxLayout(replybox)
+        self.replybox = QWidget()
+        self.replybox.setObjectName('replybox')
+        replybox_layout = QHBoxLayout(self.replybox)
         replybox_layout.setContentsMargins(0,0,0,0)
         replybox_layout.setSpacing(0)
 
@@ -2301,7 +2304,7 @@ class ReplyBoxWidget(QWidget):
 
         # Add widgets
         main_layout.addWidget(horizontal_line)
-        main_layout.addWidget(replybox)
+        main_layout.addWidget(self.replybox)
 
         # Determine whether or not this widget should be enabled
         if self.controller.is_authenticated:
@@ -2315,11 +2318,13 @@ class ReplyBoxWidget(QWidget):
     def enable(self):
         self.text_edit.clear()
         self.text_edit.setEnabled(True)
+        self.replybox.setEnabled(True)
         self.send_button.show()
 
     def disable(self):
         self.text_edit.setPlainText(_('You need to log in to send replies.'))
         self.text_edit.setEnabled(False)
+        self.replybox.setEnabled(False)
         self.send_button.hide()
 
     def send_reply(self) -> None:
