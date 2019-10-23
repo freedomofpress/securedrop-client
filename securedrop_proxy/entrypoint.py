@@ -26,6 +26,16 @@ DEFAULT_HOME = os.path.join(os.path.expanduser("~"), ".securedrop_proxy")
 
 
 def start():
+    '''
+    Set up a new proxy object with an error handler, configuration that we read from  argv[1], and
+    the original user request from STDIN.
+    '''
+    try:
+        configure_logging()
+    except Exception as e:
+        print(e)
+        return
+
     logging.info('Starting SecureDrop Proxy {}'.format(version))
 
     # a fresh, new proxy object
@@ -67,7 +77,7 @@ def excepthook(*exc_args):
     sys.exit(1)
 
 
-def configure_logging(sdc_home: str) -> None:
+def configure_logging() -> None:
     '''
     All logging related settings are set up by this function.
     '''
