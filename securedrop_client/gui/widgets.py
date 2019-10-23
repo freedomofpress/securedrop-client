@@ -138,16 +138,18 @@ class LeftPane(QWidget):
         self.setMinimumHeight(558)
 
         # Set background image
-        logo = QWidget()
-        logo_layout = QVBoxLayout()
-        logo_layout.addWidget(logo)
-        palette = QPalette()
-        palette.setBrush(QPalette.Background, QBrush(load_image('left_pane.svg')))
-        logo.setPalette(palette)
-        logo.setAutoFillBackground(True)
-        logo.setMaximumHeight(884)
-        logo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        logo_layout.setAlignment(Qt.AlignBottom)
+        self.logo = QWidget()
+        self.online_palette = QPalette()
+        # the sd logo on the background image becomes more faded in offline mode
+        self.online_palette.setBrush(QPalette.Background, QBrush(load_image('left_pane.svg')))
+        self.offline_palette = QPalette()
+        self.offline_palette.setBrush(QPalette.Background,
+                                      QBrush(load_image('left_pane_offline.svg')))
+        self.logo.setPalette(self.offline_palette)
+        self.logo.setAutoFillBackground(True)
+        self.logo.setMaximumHeight(884)
+        self.logo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.logo.setEnabled(False)
 
         # User profile
         self.user_profile = UserProfile()
@@ -157,7 +159,7 @@ class LeftPane(QWidget):
 
         # Add widgets to layout
         layout.addWidget(self.user_profile)
-        layout.addWidget(logo)
+        layout.addWidget(self.logo)
 
     def setup(self, window, controller):
         self.user_profile.setup(window, controller)
@@ -168,12 +170,14 @@ class LeftPane(QWidget):
         """
         self.user_profile.set_user(db_user)
         self.user_profile.show()
+        self.logo.setPalette(self.online_palette)
 
     def set_logged_out(self):
         """
         Update the UI to a logged out state.
         """
         self.user_profile.hide()
+        self.logo.setPalette(self.offline_palette)
 
 
 class RefreshButton(SvgPushButton):
