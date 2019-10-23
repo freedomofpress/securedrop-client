@@ -2300,7 +2300,7 @@ class ReplyBoxWidget(QWidget):
         self.replybox = QWidget()
         self.replybox.setObjectName('replybox')
         replybox_layout = QHBoxLayout(self.replybox)
-        replybox_layout.setContentsMargins(0,0,0,0)
+        replybox_layout.setContentsMargins(0, 0, 0, 0)
         replybox_layout.setSpacing(0)
 
         # Create reply text box
@@ -2314,7 +2314,7 @@ class ReplyBoxWidget(QWidget):
         button_pixmap = load_image('send.svg')
         button_icon = QIcon(button_pixmap)
         self.send_button.setIcon(button_icon)
-        self.send_button.setIconSize(QSize(56.5,47))
+        self.send_button.setIconSize(QSize(56.5, 47))
 
         # Add widgets to replybox
         replybox_layout.addWidget(self.text_edit)
