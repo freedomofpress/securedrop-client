@@ -1,3 +1,4 @@
+import datetime
 import os
 
 from typing import Any, List, Union  # noqa: F401
@@ -54,7 +55,11 @@ class Source(Base):
         collection.extend(self.messages)
         collection.extend(self.files)
         collection.extend(self.replies)
-        collection.sort(key=lambda x: x.file_counter)
+        collection.extend(self.draftreplies)
+        # Sort first by the file_counter, then by timestamp (used only for draft replies).
+        collection.sort(key=lambda x: (x.file_counter,
+                                       getattr(x, "timestamp",
+                                               datetime.datetime(datetime.MINYEAR, 1, 1))))
         return collection
 
 
@@ -203,13 +208,6 @@ class Reply(Base):
         nullable=True,
     )
 
-    # This tracks the sending status of the reply.
-    send_status_id = Column(
-        Integer,
-        ForeignKey('replysendstatuses.id')
-    )
-    send_status = relationship("ReplySendStatus")
-
     def __init__(self, **kwargs: Any) -> None:
         if 'file_counter' in kwargs:
             raise TypeError('Cannot manually set file_counter')
@@ -219,6 +217,40 @@ class Reply(Base):
 
     def __repr__(self) -> str:
         return '<Reply {}>'.format(self.filename)
+
+
+class DraftReply(Base):
+
+    __tablename__ = 'draftreplies'
+
+    id = Column(Integer, primary_key=True)
+    uuid = Column(String(36), unique=True, nullable=False)
+    timestamp = Column(DateTime, nullable=False)
+    source_id = Column(Integer, ForeignKey('sources.id'), nullable=False)
+    source = relationship("Source",
+                          backref=backref("draftreplies", order_by=id,
+                                          cascade="delete"))
+    journalist_id = Column(Integer, ForeignKey('users.id'))
+    journalist = relationship(
+        "User", backref=backref('draftreplies', order_by=id))
+
+    # Tracks where in this conversation the draft reply was sent.
+    # This points to the file_counter of the previous conversation item.
+    file_counter = Column(Integer, nullable=False)
+    content = Column(Text)
+
+    # This tracks the sending status of the reply.
+    send_status_id = Column(
+        Integer,
+        ForeignKey('replysendstatuses.id')
+    )
+    send_status = relationship("ReplySendStatus")
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+
+    def __repr__(self) -> str:
+        return '<DraftReply {}>'.format(self.uuid)
 
 
 class ReplySendStatus(Base):
