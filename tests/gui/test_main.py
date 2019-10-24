@@ -252,4 +252,4 @@ def test_logout(mocker):
     w.logout()
 
     w.left_pane.set_logged_out.assert_called_once_with()
-    w.top_pane.disable_refresh.assert_called_once_with()
+    w.top_pane.set_logged_out.assert_called_once_with()

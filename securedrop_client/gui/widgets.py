@@ -111,18 +111,12 @@ class TopPane(QWidget):
         self.refresh.setup(controller)
         self.error_status_bar.setup(controller)
 
-    def enable_refresh(self):
+    def set_logged_in(self):
         self.refresh.enable()
-        self.set_online_style()
-
-    def disable_refresh(self):
-        self.refresh.disable()
-        self.set_offline_style()
-
-    def set_online_style(self):
         self.setPalette(self.online_palette)
 
-    def set_offline_style(self):
+    def set_logged_out(self):
+        self.refresh.disable()
         self.setPalette(self.offline_palette)
 
     def update_activity_status(self, message: str, duration: int):
