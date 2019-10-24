@@ -2291,7 +2291,8 @@ class ReplyBoxWidget(QWidget):
         # Create reply text box
         self.text_edit = QPlainTextEdit()
         self.text_edit.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.text_edit.setPlaceholderText("Compose a reply to %bold_source_name%")
+        self.text_edit.setPlaceholderText("Compose a reply to %s" %
+                                          self.source.journalist_designation)
 
         # Create reply send button (airplane)
         self.send_button = QPushButton()
