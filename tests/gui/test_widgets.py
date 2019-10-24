@@ -1236,6 +1236,7 @@ def test_ReplyWidget_init(mocker):
     ReplyWidget(
         'mock id',
         'hello',
+        'dummy',
         mock_update_signal,
         mock_success_signal,
         mock_failure_signal,
@@ -1852,7 +1853,7 @@ def test_ConversationView_add_reply_from_reply_box(mocker):
     cv.add_reply_from_reply_box('abc123', 'test message')
 
     reply_widget.assert_called_once_with(
-        'abc123', 'test message', reply_ready, reply_succeeded, reply_failed)
+        'abc123', 'test message', 'PENDING', reply_ready, reply_succeeded, reply_failed)
     cv.conversation_layout.addWidget.assert_called_once_with(
         reply_widget_res, alignment=Qt.AlignRight)
 
@@ -1890,6 +1891,7 @@ def test_ConversationView_add_reply(mocker, session, source):
     mock_reply_widget.assert_called_once_with(
         reply.uuid,
         content,
+        'SUCCEEDED',
         mock_reply_ready_signal,
         mock_reply_succeeded_signal,
         mock_reply_failed_signal)
@@ -1933,6 +1935,7 @@ def test_ConversationView_add_reply_no_content(mocker, session, source):
     mock_reply_widget.assert_called_once_with(
         reply.uuid,
         '<Reply not yet available>',
+        'SUCCEEDED',
         mock_reply_ready_signal,
         mock_reply_succeeded_signal,
         mock_reply_failed_signal)
@@ -2272,6 +2275,7 @@ def test_ReplyWidget_success_failure_slots(mocker):
 
     widget = ReplyWidget(msg_id,
                          'lol',
+                         'PENDING',
                          mock_update_signal,
                          mock_success_signal,
                          mock_failure_signal)

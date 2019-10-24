@@ -646,8 +646,7 @@ def test_update_replies(homedir, mocker):
     local_user.username = remote_reply_create.journalist_username
     local_user.id = 42
     mock_session.query().filter_by.side_effect = [[local_source, ],
-                                                  [local_user, ],
-                                                  [local_user, ], ]
+                                                  NoResultFound()]
     mock_focu = mocker.MagicMock(return_value=local_user)
     mocker.patch('securedrop_client.storage.find_or_create_user', mock_focu)
     patch_rename_file = mocker.patch('securedrop_client.storage.rename_file')

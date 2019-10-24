@@ -1,7 +1,8 @@
+import datetime
 import pytest
 
 from tests import factory
-from securedrop_client.db import Reply, File, Message, User
+from securedrop_client.db import DraftReply, Reply, File, Message, ReplySendStatus, User
 
 
 def test_user_fullname():
@@ -72,6 +73,18 @@ def test_string_representation_of_reply():
     reply.__repr__()
 
 
+def test_string_representation_of_draft_reply():
+    user = User(username='hehe')
+    source = factory.Source()
+    draft_reply = DraftReply(source=source, journalist=user, uuid='test')
+    draft_reply.__repr__()
+
+
+def test_string_representation_of_send_reply_status():
+    reply_status = ReplySendStatus(name='teehee')
+    reply_status.__repr__()
+
+
 def test_source_collection():
     # Create some test submissions and replies
     source = factory.Source()
@@ -90,6 +103,36 @@ def test_source_collection():
     assert source.collection[0] == reply
     assert source.collection[1] == file_
     assert source.collection[2] == message
+
+
+def test_source_collection_ordering_with_multiple_draft_replies():
+    # Create some test submissions, replies, and draft replies.
+    source = factory.Source()
+    file_1 = File(source=source, uuid="test", size=123, filename="1-test.doc.gpg",
+                  download_url='http://test/test')
+    message_2 = Message(source=source, uuid="test", size=123, filename="2-test.doc.gpg",
+                        download_url='http://test/test')
+    user = User(username='hehe')
+    reply_3 = Reply(source=source, journalist=user, filename="3-reply.gpg",
+                    size=1234, uuid='test')
+    draft_reply_4 = DraftReply(uuid='4', source=source, journalist=user, file_counter=3,
+                               timestamp=datetime.datetime(2000, 6, 6, 6, 0))
+    draft_reply_5 = DraftReply(uuid='5', source=source, journalist=user, file_counter=3,
+                               timestamp=datetime.datetime(2001, 6, 6, 6, 0))
+    reply_6 = Reply(source=source, journalist=user, filename="4-reply.gpg",
+                    size=1234, uuid='test2')
+    source.files = [file_1]
+    source.messages = [message_2]
+    source.replies = [reply_3, reply_6]
+    source.draftreplies = [draft_reply_4, draft_reply_5]
+
+    # Now these items should be in the source collection in the proper order
+    assert source.collection[0] == file_1
+    assert source.collection[1] == message_2
+    assert source.collection[2] == reply_3
+    assert source.collection[3] == draft_reply_4
+    assert source.collection[4] == draft_reply_5
+    assert source.collection[5] == reply_6
 
 
 def test_file_init():

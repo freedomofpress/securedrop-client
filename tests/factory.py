@@ -12,6 +12,7 @@ SOURCE_COUNT = 0
 MESSAGE_COUNT = 0
 FILE_COUNT = 0
 REPLY_COUNT = 0
+DRAFT_REPLY_COUNT = 0
 USER_COUNT = 0
 
 
@@ -80,6 +81,23 @@ def Reply(**attrs):
     defaults.update(attrs)
 
     return db.Reply(**defaults)
+
+
+def DraftReply(**attrs):
+    global DRAFT_REPLY_COUNT
+    DRAFT_REPLY_COUNT += 1
+    defaults = dict(
+        timestamp=datetime.utcnow(),
+        source_id=1,
+        journalist_id=1,
+        file_counter=1,
+        uuid='draft-reply-uuid-{}'.format(REPLY_COUNT),
+        content='content',
+    )
+
+    defaults.update(attrs)
+
+    return db.DraftReply(**defaults)
 
 
 def File(**attrs):

@@ -1345,12 +1345,14 @@ def test_Controller_delete_source(homedir, config, mocker, session_maker):
     )
 
 
-def test_Controller_send_reply_success(homedir, config, mocker, session_maker, session):
+def test_Controller_send_reply_success(homedir, config, mocker, session_maker, session,
+                                       reply_status_codes):
     '''
     Check that a SendReplyJob is submitted to the queue when send_reply is called.
     '''
     mock_gui = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
+    co.user = factory.User()
 
     mock_success_signal = mocker.MagicMock()
     mock_failure_signal = mocker.MagicMock()
@@ -1362,9 +1364,9 @@ def test_Controller_send_reply_success(homedir, config, mocker, session_maker, s
 
     source = factory.Source()
     session.add(source)
+    msg_uuid = 'xyz456'
     session.commit()
 
-    msg_uuid = 'xyz456'
     msg = 'wat'
 
     co.send_reply(source.uuid, msg_uuid, msg)
