@@ -591,7 +591,7 @@ class Controller(QObject):
         if self.proxy or self.qubes:
             # Running on Qubes.
             command = "qvm-open-in-vm"
-            args = ['$dispvm:sd-svs-disp', original_filepath]
+            args = ['@dispvm:sd-svs-disp', original_filepath]
 
             # QProcess (Qt) or Python's subprocess? Who cares? They do the
             # same thing. :-)
