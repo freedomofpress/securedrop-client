@@ -50,12 +50,21 @@ class TopPane(QWidget):
         super().__init__()
 
         # Fill the background with a gradient
-        palette = QPalette()
-        gradient = QLinearGradient(0, 0, 900, 0)
-        gradient.setColorAt(0, QColor('#0565d4'))
-        gradient.setColorAt(1, QColor('#002c55'))
-        palette.setBrush(QPalette.Background, QBrush(gradient))
-        self.setPalette(palette)
+        self.online_palette = QPalette()
+        gradient = QLinearGradient(0, 0, 1553, 0)
+        gradient.setColorAt(0, QColor('#1573d8'))
+        gradient.setColorAt(0.22, QColor('#0060d3'))
+        gradient.setColorAt(1, QColor('#002c53'))
+        self.online_palette.setBrush(QPalette.Background, QBrush(gradient))
+
+        self.offline_palette = QPalette()
+        gradient = QLinearGradient(0, 0, 1553, 0)
+        gradient.setColorAt(0, QColor('#1e1e1e'))
+        gradient.setColorAt(0.22, QColor('#122d61'))
+        gradient.setColorAt(1, QColor('#0d4a81'))
+        self.offline_palette.setBrush(QPalette.Background, QBrush(gradient))
+
+        self.setPalette(self.offline_palette)
         self.setAutoFillBackground(True)
 
         # Set layout
@@ -104,9 +113,17 @@ class TopPane(QWidget):
 
     def enable_refresh(self):
         self.refresh.enable()
+        self.set_online_style()
 
     def disable_refresh(self):
         self.refresh.disable()
+        self.set_offline_style()
+
+    def set_online_style(self):
+        self.setPalette(self.online_palette)
+
+    def set_offline_style(self):
+        self.setPalette(self.offline_palette)
 
     def update_activity_status(self, message: str, duration: int):
         self.activity_status_bar.update_message(message, duration)
