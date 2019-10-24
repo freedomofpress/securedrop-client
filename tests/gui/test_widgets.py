@@ -42,26 +42,26 @@ def test_TopPane_setup(mocker):
     tp.refresh.setup.assert_called_once_with(mock_controller)
 
 
-def test_TopPane_enable_refresh(mocker):
+def test_TopPane_set_logged_in(mocker):
     """
-    Calling enable_refresh calls enable on RefreshButton.
+    Calling set_logged_in calls enable on TopPane.
     """
     tp = TopPane()
     tp.refresh = mocker.MagicMock()
 
-    tp.enable_refresh()
+    tp.set_logged_in()
 
     tp.refresh.enable.assert_called_once_with()
 
 
-def test_TopPane_disable_refresh(mocker):
+def test_TopPane_set_logged_out(mocker):
     """
-    Calling disable_refresh calls disable on RefreshButton.
+    Calling set_logged_out calls disable on RefreshButton.
     """
     tp = TopPane()
     tp.refresh = mocker.MagicMock()
 
-    tp.disable_refresh()
+    tp.set_logged_out()
 
     tp.refresh.disable.assert_called_once_with()
 

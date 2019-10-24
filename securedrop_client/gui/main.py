@@ -162,14 +162,14 @@ class Window(QMainWindow):
         Update the UI to show user logged in with username.
         """
         self.left_pane.set_logged_in_as(db_user)
-        self.top_pane.enable_refresh()
+        self.top_pane.set_logged_in()
 
     def logout(self):
         """
         Update the UI to show the user is logged out.
         """
         self.left_pane.set_logged_out()
-        self.top_pane.disable_refresh()
+        self.top_pane.set_logged_out()
 
     def update_activity_status(self, message: str, duration=0):
         """
