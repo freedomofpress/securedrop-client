@@ -22,7 +22,7 @@ import html
 import sys
 
 from gettext import gettext as _
-from typing import Dict, List  # noqa: F401
+from typing import Dict, List, Union  # noqa: F401
 from uuid import uuid4
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QEvent, QTimer, QSize, pyqtBoundSignal, QObject
 from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient
@@ -30,7 +30,7 @@ from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBox
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
     QToolButton, QSizePolicy, QPlainTextEdit, QStatusBar, QGraphicsDropShadowEffect, QApplication
 
-from securedrop_client.db import Source, Message, File, Reply, User
+from securedrop_client.db import DraftReply, Source, Message, File, Reply, User
 from securedrop_client.storage import source_exists
 from securedrop_client.export import ExportStatus
 from securedrop_client.gui import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
@@ -2188,9 +2188,9 @@ class ConversationView(QWidget):
         self.controller.session.refresh(self.source)
         # add new items
         for conversation_item in collection:
-            if conversation_item.filename.endswith('msg.gpg'):
+            if isinstance(conversation_item, Message):
                 self.add_message(conversation_item)
-            elif conversation_item.filename.endswith('reply.gpg'):
+            elif isinstance(conversation_item, (DraftReply, Reply)):
                 self.add_reply(conversation_item)
             else:
                 self.add_file(conversation_item)
@@ -2225,7 +2225,7 @@ class ConversationView(QWidget):
         conversation_item = MessageWidget(message.uuid, content, self.controller.message_ready)
         self.conversation_layout.addWidget(conversation_item, alignment=Qt.AlignLeft)
 
-    def add_reply(self, reply: Reply) -> None:
+    def add_reply(self, reply: Union[DraftReply, Reply]) -> None:
         """
         Add a reply from a journalist to the source.
         """
@@ -2234,11 +2234,16 @@ class ConversationView(QWidget):
         else:
             content = '<Reply not yet available>'
 
-        logger.debug('adding reply: with status {}'.format(reply.send_status.name))
+        try:
+            send_status = reply.send_status.name
+        except AttributeError:
+            send_status = 'SUCCEEDED'
+
+        logger.debug('adding reply: with status {}'.format(send_status))
         conversation_item = ReplyWidget(
             reply.uuid,
             content,
-            reply.send_status.name,
+            send_status,
             self.controller.reply_ready,
             self.controller.reply_succeeded,
             self.controller.reply_failed)

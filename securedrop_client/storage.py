@@ -29,8 +29,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.session import Session
 
-from securedrop_client.api_jobs.uploads import ReplySendStatusCodes
-from securedrop_client.db import Source, Message, File, Reply, User, ReplySendStatus
+from securedrop_client.db import DraftReply, Source, Message, File, Reply, User
 from sdclientapi import API
 from sdclientapi import Source as SDKSource
 from sdclientapi import Submission as SDKSubmission
@@ -62,12 +61,9 @@ def get_local_files(session: Session) -> List[File]:
 
 def get_local_replies(session: Session) -> List[Reply]:
     """
-    Return all reply objects from the local database that are successful
-    (i.e. those that are not failed or pending).
+    Return all reply objects from the local database that are successful.
     """
-    success_status = session.query(ReplySendStatus).filter_by(
-        name=ReplySendStatusCodes.SUCCEEDED.value).one()
-    return session.query(Reply).filter_by(send_status_id=success_status.id).all()
+    return session.query(Reply).all()
 
 
 def get_remote_data(api: API) -> Tuple[List[SDKSource], List[SDKSubmission], List[SDKReply]]:
@@ -167,7 +163,8 @@ def update_sources(remote_sources: List[SDKSource],
     # delete the related records.
     for deleted_source in [s for s in local_sources if s.uuid in local_uuids]:
         for document in deleted_source.collection:
-            delete_single_submission_or_reply_on_disk(document, data_dir)
+            if isinstance(document, (Message, File, Reply)):
+                delete_single_submission_or_reply_on_disk(document, data_dir)
 
         session.delete(deleted_source)
         logger.debug('Deleted source {}'.format(deleted_source.uuid))
@@ -273,15 +270,21 @@ def update_replies(remote_replies: List[SDKReply], local_replies: List[Reply],
                 reply.journalist_uuid,
                 reply.journalist_username,
                 session)
-            # All replies fetched from the server have succeeded in being sent.
-            success_status = session.query(ReplySendStatus).filter_by(
-                name=ReplySendStatusCodes.SUCCEEDED.value).one()
+
+            # All replies fetched from the server have succeeded in being sent,
+            # so we should delete the corresponding draft locally if it exists.
+            try:
+                draft_reply_db_object = session.query(DraftReply).filter_by(
+                    uuid=reply.uuid).one()
+                session.delete(draft_reply_db_object)
+            except NoResultFound:
+                pass  # No draft locally stored corresponding to this reply.
+
             nr = Reply(uuid=reply.uuid,
                        journalist_id=user.id,
                        source_id=source.id,
                        filename=reply.filename,
-                       size=reply.size,
-                       send_status_id=success_status.id)
+                       size=reply.size)
             session.add(nr)
             logger.debug('Added new reply {}'.format(reply.uuid))
 

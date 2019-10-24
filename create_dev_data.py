@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import json
 import os
+from sqlalchemy.orm.exc import NoResultFound
 import sys
+
 from securedrop_client.config import Config
 from securedrop_client.db import Base, make_session_maker, ReplySendStatus
 from securedrop_client.api_jobs.uploads import ReplySendStatusCodes
@@ -16,6 +18,10 @@ with open(os.path.join(sdc_home, Config.CONFIG_NAME), 'w') as f:
     }))
 
 for reply_send_status in ReplySendStatusCodes:
-    reply_status = ReplySendStatus(reply_send_status.value)
-    session.add(reply_status)
-    session.commit()
+    try:
+        reply_status = session.query(ReplySendStatus).filter_by(
+                name=reply_send_status.value).one()
+    except NoResultFound:
+        reply_status = ReplySendStatus(reply_send_status.value)
+        session.add(reply_status)
+        session.commit()

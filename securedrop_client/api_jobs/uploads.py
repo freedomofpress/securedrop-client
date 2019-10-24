@@ -3,18 +3,19 @@ import logging
 import sdclientapi
 
 from sdclientapi import API, RequestTimeoutError
+from sqlalchemy import and_
 from sqlalchemy.orm.session import Session
 
 from securedrop_client.api_jobs.base import ApiJob
 from securedrop_client.crypto import GpgHelper
-from securedrop_client.db import Reply, ReplySendStatus
+from securedrop_client.db import DraftReply, Reply, ReplySendStatus, Source
 
 logger = logging.getLogger(__name__)
 
 
 class ReplySendStatusCodes(Enum):
+    """In progress (sending) replies can currently have the following statuses"""
     PENDING = 'PENDING'
-    SUCCEEDED = 'SUCCEEDED'
     FAILED = 'FAILED'
 
 
@@ -35,17 +36,46 @@ class SendReplyJob(ApiJob):
         we can return the reply uuid.
         '''
         try:
+            draft_reply_db_object = session.query(DraftReply).filter_by(uuid=self.reply_uuid).one()
+            source = session.query(Source).filter_by(uuid=self.source_uuid).one()
+            session.commit()
+
             encrypted_reply = self.gpg.encrypt_to_source(self.source_uuid, self.message)
-            reply_db_object = session.query(Reply).filter_by(uuid=self.reply_uuid).one()
+            interaction_count = source.interaction_count + 1
+            filename = '{}-{}-reply.gpg'.format(interaction_count,
+                                                source.journalist_designation)
+            reply_db_object = Reply(
+                uuid=self.reply_uuid,
+                source_id=source.id,
+                filename=filename,
+                journalist_id=api_client.token_journalist_uuid,
+                content=self.message,
+                is_downloaded=True,
+                is_decrypted=True,
+            )
             sdk_reply = self._make_call(encrypted_reply, api_client)
 
-            # Update reply send status to SUCCEEDED
-            reply_status = session.query(ReplySendStatus).filter_by(
-                name=ReplySendStatusCodes.SUCCEEDED.value).one()
-            reply_db_object.send_status_id = reply_status.id
-            # Update filename in case it changed on the server
+            # Update filename and file_counter in case they changed on the server
+            new_file_counter = int(sdk_reply.filename.split('-')[0])
+            reply_db_object.file_counter = new_file_counter
             reply_db_object.filename = sdk_reply.filename
+
+            draft_file_counter = draft_reply_db_object.file_counter
+            draft_timestamp = draft_reply_db_object.timestamp
+
+            # If there were replies also in draft state sent after this one,
+            # re-position them after this successfully sent reply.
+            for draft_reply in session.query(DraftReply) \
+                                      .filter(and_(DraftReply.source_id == source.id,
+                                                   DraftReply.timestamp > draft_timestamp,
+                                                   DraftReply.file_counter == draft_file_counter)) \
+                                      .all():
+                draft_reply.file_counter = new_file_counter
+                session.add(draft_reply)
+
+            # Delete draft, add reply to replies table.
             session.add(reply_db_object)
+            session.delete(draft_reply_db_object)
             session.commit()
 
             return reply_db_object.uuid
@@ -53,11 +83,11 @@ class SendReplyJob(ApiJob):
             message = "Failed to send reply for source {id} due to Exception: {error}".format(
                 id=self.source_uuid, error=e)
 
-            # Update reply send status to FAILED
+            # Update draft reply send status to FAILED
             reply_status = session.query(ReplySendStatus).filter_by(
                 name=ReplySendStatusCodes.FAILED.value).one()
-            reply_db_object.send_status_id = reply_status.id
-            session.add(reply_db_object)
+            draft_reply_db_object.send_status_id = reply_status.id
+            session.add(draft_reply_db_object)
             session.commit()
 
             raise SendReplyJobTimeoutError(message, self.reply_uuid)
@@ -65,11 +95,11 @@ class SendReplyJob(ApiJob):
             message = "Failed to send reply for source {id} due to Exception: {error}".format(
                 id=self.source_uuid, error=e)
 
-            # Update reply send status to FAILED
+            # Update draft reply send status to FAILED
             reply_status = session.query(ReplySendStatus).filter_by(
                 name=ReplySendStatusCodes.FAILED.value).one()
-            reply_db_object.send_status_id = reply_status.id
-            session.add(reply_db_object)
+            draft_reply_db_object.send_status_id = reply_status.id
+            session.add(draft_reply_db_object)
             session.commit()
 
             raise SendReplyJobError(message, self.reply_uuid)

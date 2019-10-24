@@ -17,6 +17,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <fhttp://www.gnu.org/licenses/>.
 """
 import arrow
+from datetime import datetime
 import inspect
 import logging
 import os
@@ -750,27 +751,21 @@ class Controller(QObject):
         """
         Send a reply to a source.
         """
-        # Before we send the reply, add to the database with a PENDING reply send status
+        # Before we send the reply, add the draft to the database with a PENDING
+        # reply send status.
         source = self.session.query(db.Source).filter_by(uuid=source_uuid).one()
         reply_status = self.session.query(db.ReplySendStatus).filter_by(
             name=ReplySendStatusCodes.PENDING.value).one()
-
-        # Filename will be (interaction_count + 1) || journalist_designation
-        source.interaction_count += 1
-        filename = '{}-{}-reply.gpg'.format(source.interaction_count,
-                                            source.journalist_designation)
-        reply_db_object = db.Reply(
+        draft_reply = db.DraftReply(
             uuid=reply_uuid,
+            timestamp=datetime.utcnow(),
             source_id=source.id,
-            filename=filename,
             journalist_id=self.user.uuid,
+            file_counter=source.interaction_count,
             content=message,
-            is_downloaded=True,
-            is_decrypted=True,
             send_status_id=reply_status.id,
         )
-        self.session.add(reply_db_object)
-        self.session.add(source)
+        self.session.add(draft_reply)
         self.session.commit()
 
         job = SendReplyJob(
