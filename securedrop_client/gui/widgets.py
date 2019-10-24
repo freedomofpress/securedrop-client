@@ -2239,13 +2239,13 @@ class ReplyBoxWidget(QWidget):
         border: none;
         margin-left: 32.6px;
         margin-top: 19px;
-        margin-bottom: 11px;
+        margin-bottom: 18px;
         margin-right: 30.2px;
     }
     QPushButton {
         border: none;
         margin-right: 27.3px;
-        margin-bottom: 27.1px;
+        margin-bottom: 18px;
     }
     QWidget#horizontal_line {
         min-height: 2px;
