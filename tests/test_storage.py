@@ -167,6 +167,8 @@ def test_update_sources(homedir, mocker):
     * New sources have an entry in the local database.
     * Local sources not returned by the remote server are deleted from the
       local database.
+    * We don't attempt to delete the (non-existent) files associated with
+      draft replies.
     """
     mock_session = mocker.MagicMock()
     # Some source objects from the API, one of which will exist in the local
@@ -182,8 +184,14 @@ def test_update_sources(homedir, mocker):
     local_source1.uuid = source_update.uuid
     local_source2 = mocker.MagicMock()
     local_source2.uuid = str(uuid.uuid4())
+    draft_reply = factory.DraftReply(uuid='mock_reply_uuid')
+    local_source2.collection = [draft_reply]
     local_sources = [local_source1, local_source2]
+    file_delete_fcn = mocker.patch(
+        'securedrop_client.storage.delete_single_submission_or_reply_on_disk')
+
     update_sources(remote_sources, local_sources, mock_session, homedir)
+
     # Check the expected local source object has been updated with values from
     # the API.
     assert local_source1.journalist_designation == \
@@ -208,6 +216,10 @@ def test_update_sources(homedir, mocker):
     # Ensure the record for the local source that is missing from the results
     # of the API is deleted.
     mock_session.delete.assert_called_once_with(local_source2)
+    # Ensure that we didn't attempt to delete files associated with draft replies,
+    # as they don't have files (content stored directly in the database).
+    assert file_delete_fcn.call_count == 0
+
     # Session is committed to database.
     assert mock_session.commit.call_count == 1
 
