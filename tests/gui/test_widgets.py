@@ -1434,10 +1434,40 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
     fw.update = mocker.MagicMock()
     mocker.patch('securedrop_client.gui.widgets.QDialog.exec')
     controller.run_export_preflight_checks = mocker.MagicMock()
+    controller.downloaded_file_exists = mocker.MagicMock(return_value=True)
 
     fw._on_export_clicked()
 
-    controller.run_export_preflight_checks.assert_called_once_with(file.uuid)
+    controller.run_export_preflight_checks.assert_called_once_with()
+
+    # Also assert that the dialog is initialized
+    dialog = mocker.patch('securedrop_client.gui.widgets.ExportDialog')
+    fw._on_export_clicked()
+    dialog.assert_called_once_with(controller, file.uuid)
+
+
+def test_FileWidget__on_export_clicked_missing_file(mocker, session, source):
+    """
+    Ensure dialog does not open when the EXPORT button is clicked yet the file to export is missing
+    """
+    file = factory.File(source=source['source'], is_downloaded=True)
+    session.add(file)
+    session.commit()
+
+    get_file = mocker.MagicMock(return_value=file)
+    controller = mocker.MagicMock(get_file=get_file)
+
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock())
+    fw.update = mocker.MagicMock()
+    mocker.patch('securedrop_client.gui.widgets.QDialog.exec')
+    controller.run_export_preflight_checks = mocker.MagicMock()
+    controller.downloaded_file_exists = mocker.MagicMock(return_value=False)
+    dialog = mocker.patch('securedrop_client.gui.widgets.ExportDialog')
+
+    fw._on_export_clicked()
+
+    controller.run_export_preflight_checks.assert_not_called()
+    dialog.assert_not_called()
 
 
 def test_ExportDialog_export(mocker):
@@ -1450,7 +1480,7 @@ def test_ExportDialog_export(mocker):
 
     export_dialog.export()
 
-    controller.run_export_preflight_checks.assert_called_with('mock_uuid')
+    controller.run_export_preflight_checks.assert_called_with()
 
 
 def test_ExportDialog_pre_flight_request_to_insert_usb_device_on_CALLED_PROCESS_ERROR(mocker):
@@ -1500,7 +1530,7 @@ def test_ExportDialog__on_retry_export_button_clicked(mocker):
 
     export_dialog._on_retry_export_button_clicked()
 
-    controller.run_export_preflight_checks.assert_called_with('mock_uuid')
+    controller.run_export_preflight_checks.assert_called_with()
 
 
 def test_ExportDialog__update_export_button_clicked_USB_NOT_CONNECTED(mocker):

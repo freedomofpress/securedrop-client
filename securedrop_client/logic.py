@@ -398,9 +398,15 @@ class Controller(QObject):
 
     def on_sync_success(self, result) -> None:
         """
-        Called when syncronisation of data via the API succeeds
+        Called when syncronisation of data via the API succeeds.
+
+            * Update db with new metadata
+            * Set last sync flag
+            * Import keys into keyring
+            * Display the last sync time and updated list of sources in GUI
+            * Download new messages and replies
+            * Update missing files so that they can be re-downloaded
         """
-        # Update db with new metadata
         remote_sources, remote_submissions, remote_replies = result
         storage.update_local_storage(self.session,
                                      remote_sources,
@@ -408,11 +414,9 @@ class Controller(QObject):
                                      remote_replies,
                                      self.data_dir)
 
-        # Set last sync flag
         with open(self.sync_flag, 'w') as f:
             f.write(arrow.now().format())
 
-        # Import keys into keyring
         for source in remote_sources:
             if source.key and source.key.get('type', None) == 'PGP':
                 pub_key = source.key.get('public', None)
@@ -424,6 +428,7 @@ class Controller(QObject):
                 except CryptoError:
                     logger.warning('Failed to import key for source {}'.format(source.uuid))
 
+        storage.update_missing_files(self.data_dir, self.session)
         self.update_sources()
         self.download_new_messages()
         self.download_new_replies()
@@ -574,6 +579,22 @@ class Controller(QObject):
             logger.debug('Failure due to checksum mismatch, retrying {}'.format(exception.uuid))
             self._submit_download_job(exception.object_type, exception.uuid)
 
+    def downloaded_file_exists(self, file_uuid: str) -> bool:
+        '''
+        Check if the file specified by file_uuid exists. If it doesn't sync the api so that any
+        missing files, including this one, are updated to be re-downloaded.
+        '''
+        file = self.get_file(file_uuid)
+        fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
+        filepath = os.path.join(self.data_dir, fn_no_ext)
+        if not os.path.exists(filepath):
+            self.gui.update_error_status(_(
+                'File does not exist in the data directory. Please try re-downloading.'))
+            logger.debug('Cannot find {} in the data directory. File does not exist.'.format(
+                file.original_filename))
+            return False
+        return True
+
     def on_file_open(self, file_uuid: str) -> None:
         '''
         Open the file specified by file_uuid.
@@ -588,18 +609,15 @@ class Controller(QObject):
         file = self.get_file(file_uuid)
         logger.info('Opening file "{}".'.format(file.original_filename))
 
-        fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
-        filepath = os.path.join(self.data_dir, fn_no_ext)
-        if not os.path.exists(filepath):
-            msg = _('Could not open {}. File does not exist.'.format(file.original_filename))
-            storage.mark_as_not_downloaded(file_uuid, self.session)
+        if not self.downloaded_file_exists(file.uuid):
             self.sync_api()
-            logger.debug(msg)
-            self.gui.update_error_status(msg)
             return
 
         path_to_file_with_original_name = os.path.join(self.data_dir, file.original_filename)
+
         if not os.path.exists(path_to_file_with_original_name):
+            fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
+            filepath = os.path.join(self.data_dir, fn_no_ext)
             os.link(filepath, path_to_file_with_original_name)
 
         if not self.qubes:
@@ -610,24 +628,11 @@ class Controller(QObject):
         process = QProcess(self)
         process.start(command, args)
 
-    def run_export_preflight_checks(self, file_uuid: str):
+    def run_export_preflight_checks(self):
         '''
-        Run preflight checks to make sure the Export VM is configured correctly. Also check if the
-        file we're about to export exists before asking the user to connect their thumb drive and
-        type in their passphrase to unlock it.
+        Run preflight checks to make sure the Export VM is configured correctly.
         '''
         logger.info('Running export preflight checks')
-
-        file = self.get_file(file_uuid)
-        fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
-        filepath = os.path.join(self.data_dir, fn_no_ext)
-        if not os.path.exists(filepath):
-            msg = _('Could not export {}. File does not exist.'.format(file.original_filename))
-            storage.mark_as_not_downloaded(file_uuid, self.session)
-            self.sync_api()
-            logger.debug(msg)
-            self.gui.update_error_status(msg)
-            return
 
         if not self.qubes:
             return
@@ -649,18 +654,15 @@ class Controller(QObject):
         file = self.get_file(file_uuid)
         logger.info('Exporting file {}'.format(file.original_filename))
 
-        fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
-        filepath = os.path.join(self.data_dir, fn_no_ext)
-        if not os.path.exists(filepath):
-            msg = _('Could not export {}. File does not exist.'.format(file.original_filename))
-            storage.mark_as_not_downloaded(file_uuid, self.session)
+        if not self.downloaded_file_exists(file.uuid):
             self.sync_api()
-            logger.debug(msg)
-            self.gui.update_error_status(msg)
             return
 
         path_to_file_with_original_name = os.path.join(self.data_dir, file.original_filename)
+
         if not os.path.exists(path_to_file_with_original_name):
+            fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
+            filepath = os.path.join(self.data_dir, fn_no_ext)
             os.link(filepath, path_to_file_with_original_name)
 
         if not self.qubes:
@@ -715,7 +717,7 @@ class Controller(QObject):
             logger.debug('Failure due to checksum mismatch, retrying {}'.format(exception.uuid))
             self._submit_download_job(exception.object_type, exception.uuid)
         else:
-            self.set_status(_('The file download failed. Please try again.'))
+            self.gui.update_error_status(_('The file download failed. Please try again.'))
 
     def on_delete_source_success(self, result) -> None:
         """

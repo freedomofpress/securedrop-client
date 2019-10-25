@@ -883,12 +883,12 @@ def test_Controller_on_file_downloaded_api_failure(homedir, config, mocker, sess
 
     # signal when file is downloaded
     mock_file_ready = mocker.patch.object(co, 'file_ready')
-    mock_set_status = mocker.patch.object(co, 'set_status')
+    mock_update_error_status = mocker.patch.object(mock_gui, 'update_error_status')
     result_data = Exception('error message')
 
     co.on_file_download_failure(result_data)
 
-    mock_set_status.assert_called_once_with("The file download failed. Please try again.")
+    mock_update_error_status.assert_called_once_with("The file download failed. Please try again.")
     mock_file_ready.emit.assert_not_called()
 
 
@@ -948,7 +948,7 @@ def test_Controller_on_file_open(homedir, config, mocker, session, session_maker
 
     co.on_file_open(file.uuid)
 
-    co.get_file.assert_called_once_with(file.uuid)
+    co.get_file.assert_called_with(file.uuid)
     mock_process.assert_called_once_with(co)
     assert mock_subprocess.start.call_count == 1
     assert mock_link.call_count == 1
@@ -975,7 +975,7 @@ def test_Controller_on_file_open_not_qubes(homedir, config, mocker, session, ses
 
     co.on_file_open(file.uuid)
 
-    co.get_file.assert_called_once_with(file.uuid)
+    co.get_file.assert_called_with(file.uuid)
     assert mock_link.call_count == 1
 
 
@@ -1011,7 +1011,7 @@ def test_Controller_on_file_open_when_orig_file_already_exists(
 
     co.on_file_open(file.uuid)
 
-    co.get_file.assert_called_once_with(file.uuid)
+    co.get_file.assert_called_with(file.uuid)
     mock_process.assert_called_once_with(co)
     assert mock_subprocess.start.call_count == 1
     assert mock_link.call_count == 0
@@ -1044,7 +1044,7 @@ def test_Controller_on_file_open_when_orig_file_already_exists_not_qubes(
 
     co.on_file_open(file.uuid)
 
-    co.get_file.assert_called_once_with(file.uuid)
+    co.get_file.assert_called_with(file.uuid)
     assert mock_link.call_count == 0
 
 
@@ -1060,15 +1060,16 @@ def test_Controller_on_file_open_file_missing(mocker, homedir, session_maker, se
     session.commit()
     mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
     debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
-    mark_as_not_downloaded = mocker.patch('securedrop_client.logic.storage.mark_as_not_downloaded')
+    co.sync_api = mocker.MagicMock()
 
     co.on_file_open(file.uuid)
 
-    msg = 'Could not open {}. File does not exist.'.format(file.original_filename)
-    co.gui.update_error_status.assert_called_once_with(msg)
-    mark_as_not_downloaded.assert_called_once_with(file.uuid, session)
+    user_error = 'File does not exist in the data directory. Please try re-downloading.'
+    log_msg = 'Cannot find {} in the data directory. File does not exist.'.format(
+        file.original_filename)
+    co.gui.update_error_status.assert_called_once_with(user_error)
+    debug_logger.assert_called_once_with(log_msg)
     co.sync_api.assert_called_once_with()
-    debug_logger.assert_called_once_with(msg)
 
 
 def test_Controller_on_file_open_file_missing_not_qubes(
@@ -1086,15 +1087,16 @@ def test_Controller_on_file_open_file_missing_not_qubes(
     session.commit()
     mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
     debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
-    mark_as_not_downloaded = mocker.patch('securedrop_client.logic.storage.mark_as_not_downloaded')
+    co.sync_api = mocker.MagicMock()
 
     co.on_file_open(file.uuid)
 
-    msg = 'Could not open {}. File does not exist.'.format(file.original_filename)
-    co.gui.update_error_status.assert_called_once_with(msg)
-    mark_as_not_downloaded.assert_called_once_with(file.uuid, session)
+    user_error = 'File does not exist in the data directory. Please try re-downloading.'
+    log_msg = 'Cannot find {} in the data directory. File does not exist.'.format(
+        file.original_filename)
+    co.gui.update_error_status.assert_called_once_with(user_error)
+    debug_logger.assert_called_once_with(log_msg)
     co.sync_api.assert_called_once_with()
-    debug_logger.assert_called_once_with(msg)
 
 
 def test_Controller_download_new_replies_with_new_reply(mocker, session, session_maker, homedir):
@@ -1549,9 +1551,8 @@ def test_Controller_run_export_preflight_checks(homedir, mocker, session, source
     session.add(file)
     session.commit()
     mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
-    mocker.patch('os.path.exists', return_value=True)
 
-    co.run_export_preflight_checks(file.uuid)
+    co.run_export_preflight_checks()
 
     co.export.begin_usb_export.emit.call_count == 1
 
@@ -1567,26 +1568,8 @@ def test_Controller_run_export_preflight_checks_not_qubes(homedir, mocker, sessi
     session.add(file)
     session.commit()
     mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
-    mocker.patch('os.path.exists', return_value=True)
 
-    co.run_export_preflight_checks(file.uuid)
-
-    co.export.begin_usb_export.emit.call_count == 0
-
-
-def test_Controller_run_export_preflight_checks_file_missing(homedir, mocker, session, source):
-    co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
-    co.export = mocker.MagicMock()
-    co.export.begin_preflight_check = mocker.MagicMock()
-    co.export.begin_preflight_check.emit = mocker.MagicMock()
-
-    file = factory.File(source=source['source'])
-    session.add(file)
-    session.commit()
-    mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
-    mocker.patch('os.path.exists', return_value=False)
-
-    co.run_export_preflight_checks(file.uuid)
+    co.run_export_preflight_checks()
 
     co.export.begin_usb_export.emit.call_count == 0
 
@@ -1655,15 +1638,16 @@ def test_Controller_export_file_to_usb_drive_file_missing(homedir, mocker, sessi
     session.commit()
     mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
     debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
-    mark_as_not_downloaded = mocker.patch('securedrop_client.logic.storage.mark_as_not_downloaded')
+    co.sync_api = mocker.MagicMock()
 
     co.export_file_to_usb_drive(file.uuid, 'mock passphrase')
 
-    msg = 'Could not export {}. File does not exist.'.format(file.original_filename)
-    co.gui.update_error_status.assert_called_once_with(msg)
-    mark_as_not_downloaded.assert_called_once_with(file.uuid, session)
+    user_error = 'File does not exist in the data directory. Please try re-downloading.'
+    log_msg = 'Cannot find {} in the data directory. File does not exist.'.format(
+        file.original_filename)
+    co.gui.update_error_status.assert_called_once_with(user_error)
+    debug_logger.assert_called_once_with(log_msg)
     co.sync_api.assert_called_once_with()
-    debug_logger.assert_called_once_with(msg)
 
 
 def test_Controller_export_file_to_usb_drive_file_missing_not_qubes(
@@ -1681,15 +1665,16 @@ def test_Controller_export_file_to_usb_drive_file_missing_not_qubes(
     session.commit()
     mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
     debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
-    mark_as_not_downloaded = mocker.patch('securedrop_client.logic.storage.mark_as_not_downloaded')
+    co.sync_api = mocker.MagicMock()
 
     co.export_file_to_usb_drive(file.uuid, 'mock passphrase')
 
-    msg = 'Could not export {}. File does not exist.'.format(file.original_filename)
-    co.gui.update_error_status.assert_called_once_with(msg)
-    mark_as_not_downloaded.assert_called_once_with(file.uuid, session)
+    user_error = 'File does not exist in the data directory. Please try re-downloading.'
+    log_msg = 'Cannot find {} in the data directory. File does not exist.'.format(
+        file.original_filename)
+    co.gui.update_error_status.assert_called_once_with(user_error)
+    debug_logger.assert_called_once_with(log_msg)
     co.sync_api.assert_called_once_with()
-    debug_logger.assert_called_once_with(msg)
 
 
 def test_Controller_export_file_to_usb_drive_when_orig_file_already_exists(
@@ -1712,7 +1697,7 @@ def test_Controller_export_file_to_usb_drive_when_orig_file_already_exists(
     co.export_file_to_usb_drive(file.uuid, 'mock passphrase')
 
     co.export.begin_usb_export.emit.call_count == 1
-    co.get_file.assert_called_once_with(file.uuid)
+    co.get_file.assert_called_with(file.uuid)
     assert mock_link.call_count == 0
 
 
@@ -1746,7 +1731,7 @@ def test_Controller_export_file_to_usb_drive_when_orig_file_already_exists_not_q
     co.export_file_to_usb_drive(file.uuid, 'mock passphrase')
 
     co.export.begin_usb_export.emit.call_count == 1
-    co.get_file.assert_called_once_with(file.uuid)
+    co.get_file.assert_called_with(file.uuid)
     assert mock_link.call_count == 0
 
 

@@ -332,6 +332,22 @@ def update_and_get_user(uuid: str,
     return user
 
 
+def update_missing_files(data_dir: str, session: Session) -> None:
+    '''
+    Update files that are marked as downloaded yet missing from the filesystem.
+    '''
+    files_that_have_been_downloaded = session.query(File).filter_by(is_downloaded=True).all()
+    for file in files_that_have_been_downloaded:
+        fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
+        filepath = os.path.join(data_dir, fn_no_ext)
+        if not os.path.exists(filepath):
+            mark_as_not_downloaded(file.uuid, session)
+
+
+def find_new_files(session: Session) -> List[File]:
+    return session.query(File).filter_by(is_downloaded=False).all()
+
+
 def find_new_messages(session: Session) -> List[Message]:
     """
     Find messages to process. Those messages are those where one of the following
@@ -345,10 +361,6 @@ def find_new_messages(session: Session) -> List[Message]:
         or_(Message.is_downloaded == False,
             Message.is_decrypted == False,
             Message.is_decrypted == None)).all()  # noqa: E711
-
-
-def find_new_files(session: Session) -> List[File]:
-    return session.query(File).filter_by(is_downloaded=False).all()
 
 
 def find_new_replies(session: Session) -> List[Reply]:

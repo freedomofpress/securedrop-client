@@ -1799,6 +1799,10 @@ class FileWidget(QWidget):
         """
         Called when the export button is clicked.
         """
+        if not self.controller.downloaded_file_exists(self.file.uuid):
+            self.controller.sync_api()
+            return
+
         dialog = ExportDialog(self.controller, self.file.uuid)
         # The underlying function of the `export` method makes a blocking call that can potentially
         # take a long time to run (if the Export VM is not already running and needs to start, this
@@ -1975,12 +1979,12 @@ class ExportDialog(QDialog):
             self._on_export_success, type=Qt.QueuedConnection)
 
     def export(self):
-        self.controller.run_export_preflight_checks(self.file_uuid)
+        self.controller.run_export_preflight_checks()
 
     @pyqtSlot()
     def _on_retry_export_button_clicked(self):
         self.starting_export_message.hide()
-        self.controller.run_export_preflight_checks(self.file_uuid)
+        self.controller.run_export_preflight_checks()
 
     @pyqtSlot()
     def _on_unlock_disk_clicked(self):
