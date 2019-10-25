@@ -2153,6 +2153,39 @@ def test_ReplyBoxWidget_init_no_auth(mocker):
     assert rb.send_button.isHidden()
 
 
+def test_ReplyBoxWidget_placeholder_show_currently_selected_source(mocker):
+    """
+    Ensure placeholder of replybox "Compose a reply to [source designation]" displays the
+    designation for the correct source. #sanity-check
+    """
+    controller = mocker.MagicMock()
+    sl = SourceList()
+    sl.setup(controller)
+
+    source_1 = factory.Source()
+    source_1.journalist_designation = "source one"
+    source_2 = factory.Source()
+    source_2.journalist_designation = "source two"
+
+    # add sources to sources list
+    sl.update([source_1, source_2])
+
+    source_1_item = sl.item(0)
+    source_2_item = sl.item(1)
+
+    # select source 1
+    sl.setCurrentItem(source_1_item)
+    assert sl.currentItem() == source_1_item
+
+    # select source other source
+    sl.setCurrentItem(source_2_item)
+    assert sl.currentItem() == source_2_item
+
+    selected_source = sl.itemWidget(sl.currentItem()).source
+    rb = ReplyBoxWidget(selected_source, controller)
+    assert rb.text_edit.placeholderText().find(source_2.journalist_designation) != -1
+
+
 def test_ReplyBoxWidget_send_reply(mocker):
     """
     Ensure sending a reply from the reply box emits signal, clears text box, and sends the reply
