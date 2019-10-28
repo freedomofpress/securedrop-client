@@ -21,9 +21,8 @@ import inspect
 import logging
 import os
 import sdclientapi
-import threading
 import uuid
-from typing import Dict, Tuple, Union, Any, Type  # noqa: F401
+from typing import Dict, Tuple, Union, Any, List, Type  # noqa: F401
 
 from gettext import gettext as _
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess, Qt
@@ -181,6 +180,8 @@ class Controller(QObject):
         self.gpg = GpgHelper(home, self.session_maker, proxy)
 
         self.export = Export()
+        self.export.export_usb_call_success.connect(self.on_export_usb_call_success)
+        self.export.export_usb_call_failure.connect(self.on_export_usb_call_failure)
 
         self.sync_flag = os.path.join(home, 'sync_flag')
 
@@ -397,9 +398,15 @@ class Controller(QObject):
 
     def on_sync_success(self, result) -> None:
         """
-        Called when syncronisation of data via the API succeeds
+        Called when syncronisation of data via the API succeeds.
+
+            * Update db with new metadata
+            * Set last sync flag
+            * Import keys into keyring
+            * Display the last sync time and updated list of sources in GUI
+            * Download new messages and replies
+            * Update missing files so that they can be re-downloaded
         """
-        # Update db with new metadata
         remote_sources, remote_submissions, remote_replies = result
         storage.update_local_storage(self.session,
                                      remote_sources,
@@ -407,11 +414,9 @@ class Controller(QObject):
                                      remote_replies,
                                      self.data_dir)
 
-        # Set last sync flag
         with open(self.sync_flag, 'w') as f:
             f.write(arrow.now().format())
 
-        # Import keys into keyring
         for source in remote_sources:
             if source.key and source.key.get('type', None) == 'PGP':
                 pub_key = source.key.get('public', None)
@@ -423,6 +428,7 @@ class Controller(QObject):
                 except CryptoError:
                     logger.warning('Failed to import key for source {}'.format(source.uuid))
 
+        storage.update_missing_files(self.data_dir, self.session)
         self.update_sources()
         self.download_new_messages()
         self.download_new_replies()
@@ -573,40 +579,60 @@ class Controller(QObject):
             logger.debug('Failure due to checksum mismatch, retrying {}'.format(exception.uuid))
             self._submit_download_job(exception.object_type, exception.uuid)
 
-    def on_file_open(self, file_uuid: str) -> None:
-        """
-        Open the already downloaded file associated with the message (which is a `File`).
-        """
-        # Once downloaded, submissions are stored in the data directory
-        # with the same filename as the server, except with the .gz.gpg
-        # stripped off.
+    def downloaded_file_exists(self, file_uuid: str) -> bool:
+        '''
+        Check if the file specified by file_uuid exists. If it doesn't sync the api so that any
+        missing files, including this one, are updated to be re-downloaded.
+        '''
         file = self.get_file(file_uuid)
-        fn_no_ext, _ = os.path.splitext(os.path.splitext(file.filename)[0])
-        submission_filepath = os.path.join(self.data_dir, fn_no_ext)
-        original_filepath = os.path.join(self.data_dir, file.original_filename)
+        fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
+        filepath = os.path.join(self.data_dir, fn_no_ext)
+        if not os.path.exists(filepath):
+            self.gui.update_error_status(_(
+                'File does not exist in the data directory. Please try re-downloading.'))
+            logger.debug('Cannot find {} in the data directory. File does not exist.'.format(
+                file.original_filename))
+            return False
+        return True
 
-        if os.path.exists(original_filepath):
-            os.remove(original_filepath)
-        os.link(submission_filepath, original_filepath)
-        if self.proxy or self.qubes:
-            # Running on Qubes.
-            command = "qvm-open-in-vm"
-            args = ['@dispvm:sd-svs-disp', original_filepath]
+    def on_file_open(self, file_uuid: str) -> None:
+        '''
+        Open the file specified by file_uuid.
 
-            # QProcess (Qt) or Python's subprocess? Who cares? They do the
-            # same thing. :-)
-            process = QProcess(self)
-            process.start(command, args)
-        else:  # pragma: no cover
-            # Non Qubes OS. Just log the event for now.
-            logger.info('Opening file "{}".'.format(original_filepath))
+        Once a file is downloaded, it exists in the data directory with the same filename as the
+        server, except with the .gz.gpg stripped off. In order for the Display VM to know which
+        application to open the file in, we create a hard link to this file with the original file
+        name, including its extension.
+
+        If the file is missing, update the db so that is_downloaded is set to False.
+        '''
+        file = self.get_file(file_uuid)
+        logger.info('Opening file "{}".'.format(file.original_filename))
+
+        if not self.downloaded_file_exists(file.uuid):
+            self.sync_api()
+            return
+
+        path_to_file_with_original_name = os.path.join(self.data_dir, file.original_filename)
+
+        if not os.path.exists(path_to_file_with_original_name):
+            fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
+            filepath = os.path.join(self.data_dir, fn_no_ext)
+            os.link(filepath, path_to_file_with_original_name)
+
+        if not self.qubes:
+            return
+
+        command = "qvm-open-in-vm"
+        args = ['$dispvm:sd-svs-disp', path_to_file_with_original_name]
+        process = QProcess(self)
+        process.start(command, args)
 
     def run_export_preflight_checks(self):
         '''
-        Run preflight checks to make sure the Export VM is configured correctly
+        Run preflight checks to make sure the Export VM is configured correctly.
         '''
-        logger.debug('Calling export preflight checks from thread {}'.format(
-            threading.current_thread().ident))
+        logger.info('Running export preflight checks')
 
         if not self.qubes:
             return
@@ -614,17 +640,51 @@ class Controller(QObject):
         self.export.begin_preflight_check.emit()
 
     def export_file_to_usb_drive(self, file_uuid: str, passphrase: str) -> None:
-        file = self.get_file(file_uuid)
+        '''
+        Send the file specified by file_uuid to the Export VM with the user-provided passphrase for
+        unlocking the attached transfer device.
 
-        logger.debug('Exporting {} from thread {}'.format(
-            file.original_filename, threading.current_thread().ident))
+        Once a file is downloaded, it exists in the data directory with the same filename as the
+        server, except with the .gz.gpg stripped off. In order for the user to know which
+        application to open the file in, we export the file with a different name: the original
+        filename which includes the file extesion.
+
+        If the file is missing, update the db so that is_downloaded is set to False.
+        '''
+        file = self.get_file(file_uuid)
+        logger.info('Exporting file {}'.format(file.original_filename))
+
+        if not self.downloaded_file_exists(file.uuid):
+            self.sync_api()
+            return
+
+        path_to_file_with_original_name = os.path.join(self.data_dir, file.original_filename)
+
+        if not os.path.exists(path_to_file_with_original_name):
+            fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
+            filepath = os.path.join(self.data_dir, fn_no_ext)
+            os.link(filepath, path_to_file_with_original_name)
 
         if not self.qubes:
             return
 
-        filepath = os.path.join(self.data_dir, file.original_filename)
+        self.export.begin_usb_export.emit([path_to_file_with_original_name], passphrase)
 
-        self.export.begin_usb_export.emit([filepath], passphrase)
+    def on_export_usb_call_success(self, filepaths: List[str]):
+        '''
+        Clean export files that are hard links to the file on disk.
+        '''
+        for filepath in filepaths:
+            if os.path.exists(filepath):
+                os.remove(filepath)
+
+    def on_export_usb_call_failure(self, filepaths: List[str]):
+        '''
+        Clean export files that are hard links to the file on disk.
+        '''
+        for filepath in filepaths:
+            if os.path.exists(filepath):
+                os.remove(filepath)
 
     def on_submission_download(
         self,
@@ -657,7 +717,7 @@ class Controller(QObject):
             logger.debug('Failure due to checksum mismatch, retrying {}'.format(exception.uuid))
             self._submit_download_job(exception.object_type, exception.uuid)
         else:
-            self.set_status(_('The file download failed. Please try again.'))
+            self.gui.update_error_status(_('The file download failed. Please try again.'))
 
     def on_delete_source_success(self, result) -> None:
         """

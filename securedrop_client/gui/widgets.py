@@ -1799,6 +1799,10 @@ class FileWidget(QWidget):
         """
         Called when the export button is clicked.
         """
+        if not self.controller.downloaded_file_exists(self.file.uuid):
+            self.controller.sync_api()
+            return
+
         dialog = ExportDialog(self.controller, self.file.uuid)
         # The underlying function of the `export` method makes a blocking call that can potentially
         # take a long time to run (if the Export VM is not already running and needs to start, this

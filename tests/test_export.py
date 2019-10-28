@@ -36,13 +36,13 @@ def test_send_file_to_usb_device_error(mocker):
     export = Export()
     export.export_usb_call_failure = mocker.MagicMock()
     export.export_usb_call_failure.emit = mocker.MagicMock()
-    error = ExportError('bang')
+    error = ExportError('[mock_filepath]')
     _run_disk_export = mocker.patch.object(export, '_run_disk_export', side_effect=error)
 
     export.send_file_to_usb_device(['mock_filepath'], 'mock passphrase')
 
     _run_disk_export.assert_called_once_with('mock_temp_dir', ['mock_filepath'], 'mock passphrase')
-    export.export_usb_call_failure.emit.assert_called_once_with(error.status)
+    export.export_usb_call_failure.emit.assert_called_once_with(['mock_filepath'])
 
 
 def test_run_preflight_checks(mocker):

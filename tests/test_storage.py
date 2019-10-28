@@ -15,7 +15,7 @@ from securedrop_client.storage import get_local_sources, get_local_messages, get
     update_replies, find_or_create_user, find_new_messages, find_new_replies, \
     delete_single_submission_or_reply_on_disk, rename_file, get_local_files, find_new_files, \
     source_exists, set_message_or_reply_content, mark_as_downloaded, mark_as_decrypted, get_file, \
-    get_message, get_reply, update_and_get_user
+    get_message, get_reply, update_and_get_user, update_missing_files, mark_as_not_downloaded
 
 from securedrop_client import db
 from tests import factory
@@ -778,6 +778,22 @@ def test_find_new_messages(mocker, session):
         assert message.is_downloaded is False or message.is_decrypted is not True
 
 
+def test_update_missing_files(mocker, homedir):
+    session = mocker.MagicMock()
+    file = mocker.MagicMock()
+    file.is_downloaded = True
+    files = [file]
+    session.query().filter_by().all.return_value = files
+    data_dir = os.path.join(homedir, 'data')
+    mocker.patch('os.path.splitext', return_value=('mock_filename', 'dummy'))
+    mocker.patch('os.path.exists', return_value=False)
+    mark_as_not_downloaded_fn = mocker.patch('securedrop_client.storage.mark_as_not_downloaded')
+
+    update_missing_files(data_dir, session)
+
+    mark_as_not_downloaded_fn.assert_called_once_with(file.uuid, session)
+
+
 def test_find_new_files(mocker, session):
     mock_session = mocker.MagicMock()
     mock_submission = mocker.MagicMock()
@@ -863,6 +879,17 @@ def test_set_message_decryption_status_with_content_with_content(session, source
     message = session.query(db.Message).get(message.id)
     assert message.is_decrypted is True
     assert message.content == 'mock_content'
+
+
+def test_mark_file_as_not_downloaded(mocker):
+    session = mocker.MagicMock()
+    file = factory.File(source=factory.Source(), is_downloaded=True, is_decrypted=True)
+    session.query().filter_by().one.return_value = file
+    mark_as_not_downloaded('mock_uuid', session)
+    assert file.is_downloaded is False
+    assert file.is_decrypted is None
+    session.add.assert_called_once_with(file)
+    session.commit.assert_called_once_with()
 
 
 def test_mark_file_as_downloaded(mocker):
