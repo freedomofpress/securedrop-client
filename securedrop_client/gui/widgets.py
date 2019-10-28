@@ -24,7 +24,8 @@ import sys
 from gettext import gettext as _
 from typing import Dict, List  # noqa: F401
 from uuid import uuid4
-from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QEvent, QTimer, QSize, pyqtBoundSignal, QObject
+from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QEvent, QTimer, QSize, pyqtBoundSignal, \
+    QObject, QPoint
 from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
@@ -2251,20 +2252,8 @@ class ReplyBoxWidget(QWidget):
     #replybox::disabled {
         background-color: #efefef;
     }
-    QPlainTextEdit {
-        font-family: 'Montserrat';
-        font-weight: 400;
-        font-size: 18px;
-        border: none;
-        margin-left: 32.6px;
-        margin-top: 19px;
-        margin-bottom: 18px;
-        margin-right: 30.2px;
-    }
     QPushButton {
         border: none;
-        margin-right: 27.3px;
-        margin-bottom: 18px;
     }
     QWidget#horizontal_line {
         min-height: 2px;
@@ -2304,14 +2293,12 @@ class ReplyBoxWidget(QWidget):
         self.replybox = QWidget()
         self.replybox.setObjectName('replybox')
         replybox_layout = QHBoxLayout(self.replybox)
-        replybox_layout.setContentsMargins(0, 0, 0, 0)
+        replybox_layout.setContentsMargins(32.6, 19, 27.3, 18)
         replybox_layout.setSpacing(0)
 
         # Create reply text box
-        self.text_edit = QPlainTextEdit()
+        self.text_edit = ReplyTextEdit(self.source, self.controller)
         self.text_edit.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.text_edit.setPlaceholderText("Compose a reply to %s" %
-                                          self.source.journalist_designation)
 
         # Create reply send button (airplane)
         self.send_button = QPushButton()
@@ -2367,6 +2354,65 @@ class ReplyBoxWidget(QWidget):
             self.enable()
         else:
             self.disable()
+
+
+class ReplyTextEdit(QPlainTextEdit):
+    """
+    A plaintext textbox with placeholder that disapears when clicked and
+    a richtext lable on top to replace the placeholder functionality
+    """
+
+    CSS = '''
+    #reply_textedit {
+        font-family: 'Montserrat';
+        font-weight: 400;
+        font-size: 18px;
+        border: none;
+        margin-right: 30.2px;
+    }
+    #reply_placeholder {
+        font-family: 'Montserrat';
+        font-weight: 400;
+        font-size: 18px;
+        color: #404040;
+    }
+    '''
+
+    def __init__(self, source, controller):
+        super().__init__()
+        self.controller = controller
+        self.source = source
+
+        self.setObjectName('reply_textedit')
+        self.setStyleSheet(self.CSS)
+
+        formatted_source_name = "<strong><font color=\"#24276d\">%s</font></strong>" % \
+                                self.source.journalist_designation
+        formatted_placeholder = _("Compose a reply to ") + formatted_source_name
+
+        self.placeholder = QLabel(formatted_placeholder)
+        self.placeholder.setObjectName("reply_placeholder")
+        self.placeholder.setParent(self)
+        self.placeholder.move(QPoint(3, 4))  # make label match text below
+
+    def focusInEvent(self, e):
+        # override default behavior: when reply text box is focused, the placeholder
+        # disappears instead of only doing so when text is typed
+        if self.toPlainText() == "":
+            self.placeholder.hide()
+        super(ReplyTextEdit, self).focusInEvent(e)
+
+    def focusOutEvent(self, e):
+        if self.toPlainText() == "":
+            self.placeholder.show()
+        super(ReplyTextEdit, self).focusOutEvent(e)
+
+    def setPlainText(self, text):
+        if text == "":
+            self.placeholder.show()
+        else:
+            self.placeholder.hide()
+        super(ReplyTextEdit, self).setPlainText(text)
 
 
 class DeleteSourceAction(QAction):
