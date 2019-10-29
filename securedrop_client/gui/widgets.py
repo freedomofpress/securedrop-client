@@ -2326,14 +2326,12 @@ class ReplyBoxWidget(QWidget):
         self.controller.authentication_state.connect(self._on_authentication_changed)
 
     def enable(self):
-        self.text_edit.clear()
-        self.text_edit.setEnabled(True)
+        self.text_edit.set_logged_in()
         self.replybox.setEnabled(True)
         self.send_button.show()
 
     def disable(self):
-        self.text_edit.setPlainText(_('You need to log in to send replies.'))
-        self.text_edit.setEnabled(False)
+        self.text_edit.set_logged_out()
         self.replybox.setEnabled(False)
         self.send_button.hide()
 
@@ -2386,14 +2384,11 @@ class ReplyTextEdit(QPlainTextEdit):
         self.setObjectName('reply_textedit')
         self.setStyleSheet(self.CSS)
 
-        formatted_source_name = "<strong><font color=\"#24276d\">%s</font></strong>" % \
-                                self.source.journalist_designation
-        formatted_placeholder = _("Compose a reply to ") + formatted_source_name
-
-        self.placeholder = QLabel(formatted_placeholder)
+        self.placeholder = QLabel()
         self.placeholder.setObjectName("reply_placeholder")
         self.placeholder.setParent(self)
         self.placeholder.move(QPoint(3, 4))  # make label match text below
+        self.set_logged_in()
 
     def focusInEvent(self, e):
         # override default behavior: when reply text box is focused, the placeholder
@@ -2407,7 +2402,20 @@ class ReplyTextEdit(QPlainTextEdit):
             self.placeholder.show()
         super(ReplyTextEdit, self).focusOutEvent(e)
 
-    def setPlainText(self, text):
+    def set_logged_in(self):
+        source_name = "<strong><font color=\"#24276d\">%s</font></strong>" % \
+                                self.source.journalist_designation
+        placeholder = _("Compose a reply to ") + source_name
+        self.placeholder.setText(placeholder)
+        self.setEnabled(True)
+
+    def set_logged_out(self):
+        text = "<strong><font color=\"#2a319d\">" + _("Sign in") + " </font></strong>" + \
+            _("to compose or send a reply.")
+        self.placeholder.setText(text)
+        self.setEnabled(False)
+
+    def setText(self, text):
         if text == "":
             self.placeholder.show()
         else:
