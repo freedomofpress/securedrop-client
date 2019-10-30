@@ -2373,6 +2373,45 @@ def test_ReplyBoxWidget_disable(mocker):
     rb.text_edit.set_logged_out.assert_called_once_with()
     rb.send_button.hide.assert_called_once_with()
 
+def test_ReplyTextEdit_focus_change_no_text(mocker):
+    """
+    Tests if placeholder text in reply box disappears when it's focused (clicked)
+    and reappears when it's no longer on focus
+    """
+    source = mocker.MagicMock()
+    controller = mocker.MagicMock()
+    rt = ReplyTextEdit(source, controller)
+    rt.placeholder = mocker.MagicMock()
+
+    rt.setFocus()
+    assert rt.placeholder.hide.assert_called_once_with()
+    assert rt.text() == ''
+
+    rt.clearFocus()
+    assert rt.placeholder.show.assert_called_once_with()
+    assert rt.text() == ''
+
+
+def test_ReplyTextEdit_focus_change_with_text_typed(mocker):
+    """
+    Tests if placeholder text in reply box disappears when it's focused and does
+    not reappear when text has been typed and it becomes out of focus again
+    """
+    source = mocker.MagicMock()
+    controller = mocker.MagicMock()
+    rt = ReplyTextEdit(source, controller)
+
+    assert rt.placeholder.hide.assert_called_once_with()
+
+    rt.setFocus()
+
+    reply_text = mocker.MagicMock()
+    rt.setText(reply_text)
+
+    rt.clearFocus()
+    assert rt.placeholder.show.assert_not_called()
+    assert rt.text() == reply_text
+
 
 def test_ReplyTextEdit_set_logged_out(mocker):
     """
