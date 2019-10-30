@@ -3,7 +3,7 @@ Make sure the UI widgets are configured correctly and work as expected.
 """
 import html
 
-from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QMessageBox, QMainWindow, QTextEdit
+from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QMessageBox, QMainWindow
 from PyQt5.QtCore import Qt, QEvent
 from sqlalchemy.orm import scoped_session, sessionmaker
 
@@ -14,8 +14,8 @@ from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, Lo
     SpeechBubble, MessageWidget, ReplyWidget, FileWidget, ConversationView, \
     DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, LeftPane, RefreshButton, \
     ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
-    ReplyBoxWidget, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, LoginErrorBar, \
-    EmptyConversationView, ExportDialog
+    ReplyBoxWidget, ReplyTextEdit, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, \
+    LoginErrorBar, EmptyConversationView, ExportDialog
 
 
 app = QApplication([])
@@ -2233,7 +2233,8 @@ def test_ReplyBoxWidget_send_reply(mocker):
     on_reply_sent_fn = mocker.MagicMock()
     scw.conversation_view.on_reply_sent = on_reply_sent_fn
     scw.reply_box.reply_sent = mocker.MagicMock()
-    scw.reply_box.text_edit = QTextEdit('Alles für Alle')
+    scw.reply_box.text_edit = ReplyTextEdit(source, controller)
+    scw.reply_box.text_edit.setPlainText('Alles für Alle')
 
     scw.reply_box.send_reply()
 
@@ -2249,7 +2250,7 @@ def test_ReplyBoxWidget_send_reply_does_not_send_empty_string(mocker):
     source = mocker.MagicMock()
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
-    rb.text_edit = QTextEdit()
+    rb.text_edit = ReplyTextEdit(source, controller)
     assert not rb.text_edit.toPlainText()
 
     rb.send_reply()
@@ -2347,13 +2348,14 @@ def test_ReplyBoxWidget_enable(mocker):
     source = mocker.MagicMock()
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
-    rb.text_edit = QTextEdit()
+    rb.text_edit = ReplyTextEdit(source, controller)
+    rb.text_edit.set_logged_in = mocker.MagicMock()
     rb.send_button = mocker.MagicMock()
 
     rb.enable()
 
-    assert rb.text_edit.isEnabled()
     assert rb.text_edit.toPlainText() == ''
+    rb.text_edit.set_logged_in.assert_called_once_with()
     rb.send_button.show.assert_called_once_with()
 
 
@@ -2361,13 +2363,14 @@ def test_ReplyBoxWidget_disable(mocker):
     source = mocker.MagicMock()
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
-    rb.text_edit = QTextEdit()
+    rb.text_edit = ReplyTextEdit(source, controller)
+    rb.text_edit.set_logged_out = mocker.MagicMock()
     rb.send_button = mocker.MagicMock()
 
     rb.disable()
 
-    assert not rb.text_edit.isEnabled()
-    assert rb.text_edit.toPlainText() == 'You need to log in to send replies.'
+    assert rb.text_edit.toPlainText() == ''
+    rb.text_edit.set_logged_out.assert_called_once_with()
     rb.send_button.hide.assert_called_once_with()
 
 
