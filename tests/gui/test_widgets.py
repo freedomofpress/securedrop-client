@@ -2374,6 +2374,35 @@ def test_ReplyBoxWidget_disable(mocker):
     rb.send_button.hide.assert_called_once_with()
 
 
+def test_ReplyTextEdit_set_logged_out(mocker):
+    """
+    Checks the placeholder text for reply box is correct for offline mode
+    """
+    source = mocker.MagicMock()
+    controller = mocker.MagicMock()
+    rt = ReplyTextEdit(source, controller)
+
+    rt.set_logged_out()
+
+    assert 'Sign in' in rt.placeholder.text()
+    assert 'to compose or send a reply.' in rt.placeholder.text()
+
+
+def test_ReplyTextEdit_set_logged_in(mocker):
+    """
+    Checks the placeholder text for reply box is correct for online mode
+    """
+    source = mocker.MagicMock()
+    source.journalist_designation = 'journalist designation'
+    controller = mocker.MagicMock()
+    rt = ReplyTextEdit(source, controller)
+
+    rt.set_logged_in()
+
+    assert 'Compose a reply to' in rt.placeholder.text()
+    assert source.journalist_designation in rt.placeholder.text()
+
+
 def test_update_conversation_maintains_old_items(mocker, session):
     """
     Calling update_conversation deletes and adds old items back to layout
