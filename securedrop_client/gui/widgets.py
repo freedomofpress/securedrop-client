@@ -2374,6 +2374,9 @@ class ReplyTextEdit(QPlainTextEdit):
         font-size: 18px;
         color: #404040;
     }
+    #reply_placeholder::disabled {
+        color: rgba(42, 49, 157, 0.6);
+    }
     '''
 
     def __init__(self, source, controller):
