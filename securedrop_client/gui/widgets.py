@@ -2414,7 +2414,7 @@ class ReplyTextEdit(QPlainTextEdit):
 
     def set_logged_out(self):
         text = "<strong><font color=\"#2a319d\">" + _("Sign in") + " </font></strong>" + \
-            _("to compose or send a reply.")
+            _("to compose or send a reply")
         self.placeholder.setText(text)
         self.setEnabled(False)
 
