@@ -1622,7 +1622,7 @@ class ReplyWidget(SpeechBubble):
     #color_bar {
         min-height: 5px;
         max-height: 5px;
-        background-color: #8715FF;
+        background-color: #0065db;
         border: 0px;
     }
     '''
