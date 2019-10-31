@@ -23,6 +23,7 @@ from securedrop_proxy.version import version
 
 
 DEFAULT_HOME = os.path.join(os.path.expanduser("~"), ".securedrop_proxy")
+LOGLEVEL = os.environ.get('LOGLEVEL', 'info').upper()
 
 
 def start():
@@ -98,7 +99,7 @@ def configure_logging() -> None:
 
     # set up primary log
     log = logging.getLogger()
-    log.setLevel(logging.DEBUG)
+    log.setLevel(LOGLEVEL)
     log.addHandler(handler)
 
     # override excepthook to capture a log of catastrophic failures.

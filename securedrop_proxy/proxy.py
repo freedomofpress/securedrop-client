@@ -103,7 +103,7 @@ class Proxy:
         res = Response(self._presp.status_code)
 
         # Create a NamedTemporaryFile, we don't want
-        # to delete it after closign.
+        # to delete it after closing.
         fh = tempfile.NamedTemporaryFile(delete=False)
 
         for c in self._presp.iter_content(10):
