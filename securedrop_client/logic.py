@@ -661,7 +661,39 @@ class Controller(QObject):
         if not self.qubes:
             return
 
+        fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
+        filepath = os.path.join(self.data_dir, fn_no_ext)
         self.export.begin_usb_export.emit([path_to_file_with_original_name], passphrase)
+
+    def print_file(self, file_uuid: str) -> None:
+        '''
+        Send the file specified by file_uuid to the Export VM.
+
+        Once a file is downloaded, it exists in the data directory with the same filename as the
+        server, except with the .gz.gpg stripped off.
+
+        If the file is missing, update the db so that is_downloaded is set to False.
+        '''
+        file = self.get_file(file_uuid)
+        logger.info('Printing file {}'.format(file.original_filename))
+
+        if not self.downloaded_file_exists(file.uuid):
+            self.sync_api()
+            return
+
+        path_to_file_with_original_name = os.path.join(self.data_dir, file.original_filename)
+
+        if not os.path.exists(path_to_file_with_original_name):
+            fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
+            filepath = os.path.join(self.data_dir, fn_no_ext)
+            os.link(filepath, path_to_file_with_original_name)
+
+        if not self.qubes:
+            return
+
+        fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
+        filepath = os.path.join(self.data_dir, fn_no_ext)
+        self.export.begin_print.emit([path_to_file_with_original_name])
 
     def on_submission_download(
         self,

@@ -1698,6 +1698,7 @@ class FileWidget(QWidget):
     }
     QPushButton#export_print {
         border: none;
+        padding: 8px;
         font-family: 'Source Sans Pro';
         font-weight: 500;
         font-size: 13px;
@@ -1827,7 +1828,7 @@ class FileWidget(QWidget):
             self.download_button.hide()
             self.no_file_name.hide()
             self.export_button.show()
-            self.print_button.hide()  # Show once print is supported on the workstation client
+            self.print_button.show()
             self.file_name.show()
         else:
             self.export_button.hide()
@@ -1903,7 +1904,7 @@ class FileWidget(QWidget):
         # control to the dialog for the rest of the export process.
         dialog.show()
         QApplication.processEvents()
-        dialog.export()
+        dialog.print()
         dialog.exec()
 
     def _on_left_click(self):
@@ -2014,7 +2015,10 @@ class PrintDialog(QDialog):
             self._on_print_success, type=Qt.QueuedConnection)
 
     def print(self):
+        self.starting_message.hide()
         self.printing_message.show()
+        self.generic_error.hide()
+        self.insert_usb_form.hide()
         self.controller.print_file(self.file_uuid)
 
     @pyqtSlot()
@@ -2026,20 +2030,27 @@ class PrintDialog(QDialog):
         self.close()
 
     @pyqtSlot(object)
-    def _on_print_failure(self, status):
-        self._update(status)
+    def _on_print_failure(self, error: ExportError):
+        self._update(error.status)
 
     def _update(self, status):
         logger.debug('updating status... ')
-        if status == PrintStatus.PRINTER_NOT_FOUND.value:
+        if status == ExportStatus.PRINTER_NOT_FOUND.value:
             self._request_to_insert_usb_device()
-        elif status == PrintStatus.MISSING_PRINTER_URI.value:
+        elif status == ExportStatus.MISSING_PRINTER_URI.value:
             self._request_to_insert_usb_device()
         else:
             self.error_status_code.setText(_(status))
-            self.generic_error.show()
             self.starting_message.hide()
+            self.printing_message.hide()
+            self.generic_error.show()
             self.insert_usb_form.hide()
+
+    def _request_to_insert_usb_device(self):
+        self.starting_message.hide()
+        self.printing_message.hide()
+        self.generic_error.hide()
+        self.insert_usb_form.show()
 
 
 class ExportDialog(QDialog):
