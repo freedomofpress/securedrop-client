@@ -1,6 +1,7 @@
 """
 Tests for storage sync logic.
 """
+import datetime
 import pytest
 import os
 import uuid
@@ -687,6 +688,44 @@ def test_update_replies(homedir, mocker):
     mock_session.delete.assert_called_once_with(local_reply_delete)
     # Session is committed to database.
     assert mock_session.commit.call_count == 1
+
+
+def test_update_replies_cleanup_drafts(homedir, mocker, session):
+    """
+    Check that draft replies are deleted if they correspond to a reply fetched from
+    the server.
+    """
+    data_dir = os.path.join(homedir, 'data')
+    # Source object related to the submissions.
+    source = factory.Source()
+    user = factory.User()
+    session.add(source)
+    session.add(user)
+    session.commit()
+
+    # One reply will exist on the server.
+    remote_reply_create = make_remote_reply(source.uuid, 'hehe')
+    remote_replies = [remote_reply_create]
+
+    # One draft reply will exist in the local database corresponding to the server reply.
+    draft_reply = db.DraftReply(uuid=remote_reply_create.uuid, source=source, journalist=user,
+                                file_counter=3, timestamp=datetime.datetime(2000, 6, 6, 6, 0))
+    session.add(draft_reply)
+    session.commit()
+
+    # We have no replies locally stored.
+    local_replies = []
+
+    update_replies(remote_replies, local_replies, session, data_dir)
+
+    # Check the expected local source object has been created with values from
+    # the API.
+    new_local_replies = session.query(db.Reply).all()
+    assert len(new_local_replies) == 1
+
+    # Check that the draft is now gone.
+    new_draft_replies = session.query(db.DraftReply).all()
+    assert len(new_draft_replies) == 0
 
 
 def test_find_or_create_user_existing_uuid(mocker):
