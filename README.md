@@ -51,4 +51,6 @@ if __name__ == "__main__":
 
 ## The journalctl example
 
-TODO: add an example of streaming journalctl logs via python code.
+You will need `python3-systemd` package for the same.
+
+The code is in `journal-example.py` file.
