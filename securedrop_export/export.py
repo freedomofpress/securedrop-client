@@ -14,7 +14,7 @@ import time
 
 PRINTER_NAME = "sdw-printer"
 PRINTER_WAIT_TIMEOUT = 60
-DEVICE = "/dev/sda1"
+DEVICE = "/dev/sda"
 MOUNTPOINT = "/media/usb"
 ENCRYPTED_DEVICE = "encrypted_volume"
 BRLASER_DRIVER = "/usr/share/cups/drv/brlaser.drv"
@@ -168,7 +168,8 @@ class SDExport(object):
         # return code of 1
         logging.info('Performing usb preflight')
         try:
-            subprocess.check_output(["lsblk", "-p", "-o", "KNAME", DEVICE], stderr=subprocess.PIPE)
+            subprocess.check_output(
+                ["lsblk", "-p", "-o", "KNAME", DEVICE, "--noheadings"], stderr=subprocess.PIPE)
             self.exit_gracefully("USB_CONNECTED")
         except subprocess.CalledProcessError:
             self.exit_gracefully("USB_NOT_CONNECTED")
