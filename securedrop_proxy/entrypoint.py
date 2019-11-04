@@ -37,7 +37,7 @@ def start():
         print(e)
         return
 
-    logging.info('Starting SecureDrop Proxy {}'.format(version))
+    logging.debug('Starting SecureDrop Proxy {}'.format(version))
 
     # a fresh, new proxy object
     p = proxy.Proxy()
