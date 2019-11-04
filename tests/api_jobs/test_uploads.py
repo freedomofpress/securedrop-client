@@ -1,3 +1,4 @@
+import datetime
 import pytest
 import sdclientapi
 
@@ -59,6 +60,80 @@ def test_send_reply_success(homedir, mocker, session, session_maker,
     # assert reply got added to db
     reply = session.query(db.Reply).filter_by(uuid=msg_uuid).one()
     assert reply.journalist_id == api_client.token_journalist_uuid
+
+
+def test_drafts_ordering(homedir, mocker, session, session_maker,
+                         reply_status_codes):
+    '''
+    Check that if a reply is successful, drafts sent before and after
+    continue to appear in the same order.
+    '''
+    source = factory.Source(interaction_count=1)
+    session.add(source)
+    msg_uuid = 'xyz456'
+
+    draft_reply = factory.DraftReply(uuid=msg_uuid, file_counter=1)
+    session.add(draft_reply)
+    session.commit()
+
+    # Draft reply from the previous queue job.
+    draft_reply_before = factory.DraftReply(
+        timestamp=draft_reply.timestamp - datetime.timedelta(minutes=1),
+        source_id=source.id,
+        file_counter=draft_reply.file_counter,
+        uuid='foo'
+    )
+    session.add(draft_reply_before)
+
+    # Draft reply that the queue will operate on next.
+    draft_reply_after = factory.DraftReply(
+        timestamp=draft_reply.timestamp + datetime.timedelta(minutes=1),
+        source_id=source.id,
+        file_counter=draft_reply.file_counter,
+        uuid='bar'
+    )
+
+    session.add(draft_reply_after)
+    session.commit()
+
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+
+    api_client = mocker.MagicMock()
+    api_client.token_journalist_uuid = 'journalist ID sending the reply'
+
+    encrypted_reply = 's3kr1t m3ss1dg3'
+    mock_encrypt = mocker.patch.object(gpg, 'encrypt_to_source', return_value=encrypted_reply)
+    msg = 'wat'
+
+    mock_reply_response = sdclientapi.Reply(uuid=msg_uuid, filename='2-dummy-reply')
+    api_client.reply_source = mocker.MagicMock()
+    api_client.reply_source.return_value = mock_reply_response
+
+    mock_sdk_source = mocker.Mock()
+    mock_source_init = mocker.patch('securedrop_client.logic.sdclientapi.Source',
+                                    return_value=mock_sdk_source)
+
+    job = SendReplyJob(
+        source.uuid,
+        msg_uuid,
+        msg,
+        gpg,
+    )
+
+    job.call_api(api_client, session)
+
+    # ensure message gets encrypted
+    mock_encrypt.assert_called_once_with(source.uuid, msg)
+    mock_source_init.assert_called_once_with(uuid=source.uuid)
+
+    # assert reply got added to db
+    reply = session.query(db.Reply).filter_by(uuid=msg_uuid).one()
+    assert reply.journalist_id == api_client.token_journalist_uuid
+
+    # Check the ordering displayed to the user
+    assert source.collection[0] == draft_reply_before
+    assert source.collection[1] == reply
+    assert source.collection[2] == draft_reply_after
 
 
 def test_send_reply_failure_gpg_error(homedir, mocker, session, session_maker,
