@@ -4,16 +4,14 @@ import os
 import pytest
 import subprocess  # noqa: F401
 import tempfile
+from subprocess import CalledProcessError
 
 from securedrop_export import export
 
 SAMPLE_OUTPUT_NO_PRINTER = b"network beh\nnetwork https\nnetwork ipp\nnetwork ipps\nnetwork http\nnetwork\nnetwork ipp14\nnetwork lpd"  # noqa
 SAMPLE_OUTPUT_BOTHER_PRINTER = b"network beh\nnetwork https\nnetwork ipp\nnetwork ipps\nnetwork http\nnetwork\nnetwork ipp14\ndirect usb://Brother/HL-L2320D%20series?serial=A00000A000000\nnetwork lpd"  # noqa
 
-SAMPLE_OUTPUT_NO_USB = b"Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub"  # noqa
-SAMPLE_OUTPUT_USB = b"Bus 001 Device 002: ID 0781:5575 SanDisk Corp.\nBus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub"  # noqa
-SAMPLE_OUTPUT_USB_ERROR = b""
-SAMPLE_OUTPUT_USB_ERROR2 = b"h\ne\nl\nl\no"
+SAMPLE_OUTPUT_USB = b"/dev/sda"  # noqa
 TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config.json")
 BAD_TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config-bad.json")
 ANOTHER_BAD_TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config-bad-2.json")
@@ -204,11 +202,13 @@ def test_is_not_open_office_file(capsys, open_office_paths):
     assert not submission.is_open_office_file(open_office_paths)
 
 
-@mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_NO_USB)
-def test_usb_precheck_connected(mocked_call, capsys):
+def test_usb_precheck_disconnected(capsys):
     submission = export.SDExport("testfile", TEST_CONFIG)
     expected_message = "USB_NOT_CONNECTED"
     mocked_exit = mock.patch("export.exit_gracefully", return_value=0)
+
+    mock.patch("subprocess.check_output", return_value=CalledProcessError(1, 'check_output'))
+
     with pytest.raises(SystemExit) as sysexit:
         submission.check_usb_connected()
         mocked_exit.assert_called_once_with(expected_message)
@@ -219,37 +219,9 @@ def test_usb_precheck_connected(mocked_call, capsys):
 
 
 @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_USB)
-def test_usb_precheck_disconnected(mocked_call, capsys):
+def test_usb_precheck_connected(mocked_call, capsys):
     submission = export.SDExport("testfile", TEST_CONFIG)
     expected_message = "USB_CONNECTED"
-    mocked_exit = mock.patch("export.exit_gracefully", return_value=0)
-    with pytest.raises(SystemExit) as sysexit:
-        submission.check_usb_connected()
-        mocked_exit.assert_called_once_with(expected_message)
-
-    assert sysexit.value.code == 0
-    captured = capsys.readouterr()
-    assert captured.err == "{}\n".format(expected_message)
-
-
-@mock.patch("subprocess.check_output", return_code=1)
-def test_usb_precheck_error(mocked_call, capsys):
-    submission = export.SDExport("testfile", TEST_CONFIG)
-    expected_message = "ERROR_USB_CHECK"
-    mocked_exit = mock.patch("export.exit_gracefully", return_value=0)
-    with pytest.raises(SystemExit) as sysexit:
-        submission.check_usb_connected()
-        mocked_exit.assert_called_once_with(expected_message)
-
-    assert sysexit.value.code == 0
-    captured = capsys.readouterr()
-    assert captured.err == "{}\n".format(expected_message)
-
-
-@mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_USB_ERROR2)
-def test_usb_precheck_error_2(mocked_call, capsys):
-    submission = export.SDExport("testfile", TEST_CONFIG)
-    expected_message = "ERROR_USB_CHECK"
     mocked_exit = mock.patch("export.exit_gracefully", return_value=0)
     with pytest.raises(SystemExit) as sysexit:
         submission.check_usb_connected()

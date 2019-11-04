@@ -169,7 +169,8 @@ class SDExport(object):
         logging.info('Performing usb preflight')
         try:
             subprocess.check_output(
-                ["lsblk", "-p", "-o", "KNAME", DEVICE, "--noheadings"], stderr=subprocess.PIPE)
+                ["lsblk", "-p", "-o", "KNAME", DEVICE, "--noheadings", "--inverse"],
+                stderr=subprocess.PIPE)
             self.exit_gracefully("USB_CONNECTED")
         except subprocess.CalledProcessError:
             self.exit_gracefully("USB_NOT_CONNECTED")
