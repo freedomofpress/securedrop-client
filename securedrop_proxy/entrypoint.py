@@ -6,18 +6,39 @@
 # called with exactly one argument: the path to its config file. See
 # the README for configuration options.
 
-import sys
 import json
-import uuid
+import logging
+import os
 import subprocess
+import sys
+import uuid
 
-from . import proxy
-from . import config
-from . import callbacks
-from . import main
+from logging.handlers import TimedRotatingFileHandler
+
+from securedrop_proxy import callbacks
+from securedrop_proxy import config
+from securedrop_proxy import main
+from securedrop_proxy import proxy
+from securedrop_proxy.version import version
+
+
+DEFAULT_HOME = os.path.join(os.path.expanduser("~"), ".securedrop_proxy")
+LOGLEVEL = os.environ.get('LOGLEVEL', 'info').upper()
 
 
 def start():
+    '''
+    Set up a new proxy object with an error handler, configuration that we read from  argv[1], and
+    the original user request from STDIN.
+    '''
+    try:
+        configure_logging()
+    except Exception as e:
+        print(e)
+        return
+
+    logging.debug('Starting SecureDrop Proxy {}'.format(version))
+
     # a fresh, new proxy object
     p = proxy.Proxy()
 
@@ -44,3 +65,42 @@ def start():
     incoming = "\n".join(incoming)
 
     main.__main__(incoming, p)
+
+
+def excepthook(*exc_args):
+    '''
+    This function is called in the event of a catastrophic failure.
+    Log exception and exit cleanly.
+    '''
+    logging.error('Unrecoverable error', exc_info=(exc_args))
+    sys.__excepthook__(*exc_args)
+    print('')  # force terminal prompt on to a new line
+    sys.exit(1)
+
+
+def configure_logging() -> None:
+    '''
+    All logging related settings are set up by this function.
+    '''
+    log_folder = os.path.join(DEFAULT_HOME, 'logs')
+    if not os.path.exists(log_folder):
+        os.makedirs(log_folder)
+
+    log_file = os.path.join(DEFAULT_HOME, 'logs', 'proxy.log')
+
+    # set logging format
+    log_fmt = ('%(asctime)s - %(name)s:%(lineno)d(%(funcName)s) %(levelname)s: %(message)s')
+    formatter = logging.Formatter(log_fmt)
+
+    # define log handlers such as for rotating log files
+    handler = TimedRotatingFileHandler(log_file)
+    handler.setFormatter(formatter)
+    handler.setLevel(logging.DEBUG)
+
+    # set up primary log
+    log = logging.getLogger()
+    log.setLevel(LOGLEVEL)
+    log.addHandler(handler)
+
+    # override excepthook to capture a log of catastrophic failures.
+    sys.excepthook = excepthook
