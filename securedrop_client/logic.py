@@ -308,6 +308,7 @@ class Controller(QObject):
         Given a username, password and time based one-time-passcode (TOTP),
         create a new instance representing the SecureDrop api and authenticate.
         """
+        storage.mark_all_pending_drafts_as_failed(self.session)
         self.api = sdclientapi.API(self.hostname, username, password, totp, self.proxy)
         self.call_api(self.api.authenticate,
                       self.on_authenticate_success,
@@ -355,6 +356,7 @@ class Controller(QObject):
         """
         self.gui.hide_login()
         self.gui.show_main_window()
+        storage.mark_all_pending_drafts_as_failed(self.session)
         self.is_authenticated = False
         self.update_sources()
 
@@ -500,6 +502,7 @@ class Controller(QObject):
                       self.on_logout_failure)
         self.api = None
         self.api_job_queue.logout()
+        storage.mark_all_pending_drafts_as_failed(self.session)
         self.gui.logout()
         self.is_authenticated = False
 

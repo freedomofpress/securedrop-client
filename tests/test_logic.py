@@ -132,6 +132,8 @@ def test_Controller_login(homedir, config, mocker, session_maker):
     """
     mock_gui = mocker.MagicMock()
     mock_api = mocker.patch('securedrop_client.logic.sdclientapi.API')
+    fail_draft_replies = mocker.patch(
+        'securedrop_client.storage.mark_all_pending_drafts_as_failed')
 
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     co.call_api = mocker.MagicMock()
@@ -141,6 +143,7 @@ def test_Controller_login(homedir, config, mocker, session_maker):
     co.call_api.assert_called_once_with(mock_api().authenticate,
                                         co.on_authenticate_success,
                                         co.on_authenticate_failure)
+    fail_draft_replies.assert_called_once_with(co.session)
 
 
 def test_Controller_login_offline_mode(homedir, config, mocker):
@@ -681,6 +684,8 @@ def test_Controller_logout_success(homedir, config, mocker, session_maker):
     co.api_job_queue.logout = mocker.MagicMock()
     co.call_api = mocker.MagicMock()
     info_logger = mocker.patch('securedrop_client.logic.logging.info')
+    fail_draft_replies = mocker.patch(
+        'securedrop_client.storage.mark_all_pending_drafts_as_failed')
     logout_method = co.api.logout
     co.logout()
     co.call_api.assert_called_with(
@@ -693,6 +698,7 @@ def test_Controller_logout_success(homedir, config, mocker, session_maker):
     co.gui.logout.assert_called_once_with()
     msg = 'Client logout successful'
     info_logger.assert_called_once_with(msg)
+    fail_draft_replies.called_once_with(co.session)
 
 
 def test_Controller_logout_failure(homedir, config, mocker, session_maker):
@@ -709,6 +715,8 @@ def test_Controller_logout_failure(homedir, config, mocker, session_maker):
     co.api_job_queue.logout = mocker.MagicMock()
     co.call_api = mocker.MagicMock()
     info_logger = mocker.patch('securedrop_client.logic.logging.info')
+    fail_draft_replies = mocker.patch(
+        'securedrop_client.storage.mark_all_pending_drafts_as_failed')
     logout_method = co.api.logout
 
     co.logout()
@@ -723,6 +731,7 @@ def test_Controller_logout_failure(homedir, config, mocker, session_maker):
     co.gui.logout.assert_called_once_with()
     msg = 'Client logout failure'
     info_logger.assert_called_once_with(msg)
+    fail_draft_replies.called_once_with(co.session)
 
 
 def test_Controller_set_activity_status(homedir, config, mocker, session_maker):
