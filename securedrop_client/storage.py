@@ -29,7 +29,8 @@ from sqlalchemy import or_
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.session import Session
 
-from securedrop_client.db import DraftReply, Source, Message, File, Reply, User
+from securedrop_client.db import DraftReply, Source, Message, File, Reply, ReplySendStatus, User
+from securedrop_client.api_jobs.uploads import ReplySendStatusCodes
 from sdclientapi import API
 from sdclientapi import Source as SDKSource
 from sdclientapi import Submission as SDKSubmission
@@ -509,3 +510,22 @@ def get_message(session: Session, uuid: str) -> Message:
 
 def get_reply(session: Session, uuid: str) -> Reply:
     return session.query(Reply).filter_by(uuid=uuid).one()
+
+
+def mark_all_pending_drafts_as_failed(session: Session) -> None:
+    """
+    When we login (offline or online) or logout, we need to set all
+    the pending replies as failed.
+    """
+    pending_status = session.query(ReplySendStatus).filter_by(
+        name=ReplySendStatusCodes.PENDING.value).one()
+    failed_status = session.query(ReplySendStatus).filter_by(
+        name=ReplySendStatusCodes.FAILED.value).one()
+
+    pending_drafts = session.query(DraftReply).filter_by(
+        send_status=pending_status
+    ).all()
+    for pending_draft in pending_drafts:
+        pending_draft.send_status = failed_status
+
+    session.commit()
