@@ -2189,31 +2189,11 @@ def test_ReplyBoxWidget_placeholder_show_currently_selected_source(mocker):
     designation for the correct source. #sanity-check
     """
     controller = mocker.MagicMock()
-    sl = SourceList()
-    sl.setup(controller)
+    source = factory.Source()
+    source.journalist_designation = "source name"
 
-    source_1 = factory.Source()
-    source_1.journalist_designation = "source one"
-    source_2 = factory.Source()
-    source_2.journalist_designation = "source two"
-
-    # add sources to sources list
-    sl.update([source_1, source_2])
-
-    source_1_item = sl.item(0)
-    source_2_item = sl.item(1)
-
-    # select source 1
-    sl.setCurrentItem(source_1_item)
-    assert sl.currentItem() == source_1_item
-
-    # select source other source
-    sl.setCurrentItem(source_2_item)
-    assert sl.currentItem() == source_2_item
-
-    selected_source = sl.itemWidget(sl.currentItem()).source
-    rb = ReplyBoxWidget(selected_source, controller)
-    assert rb.text_edit.placeholderText().find(source_2.journalist_designation) != -1
+    rb = ReplyBoxWidget(source, controller)
+    assert rb.text_edit.placeholder.text().find(source.journalist_designation) != -1
 
 
 def test_ReplyBoxWidget_send_reply(mocker):
