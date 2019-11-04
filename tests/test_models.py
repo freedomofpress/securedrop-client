@@ -121,10 +121,12 @@ def test_source_collection_ordering_with_multiple_draft_replies():
                                timestamp=datetime.datetime(2001, 6, 6, 6, 0))
     reply_6 = Reply(source=source, journalist=user, filename="4-reply.gpg",
                     size=1234, uuid='test2')
+    draft_reply_7 = DraftReply(uuid='6', source=source, journalist=user, file_counter=4,
+                               timestamp=datetime.datetime(2002, 6, 6, 6, 0))
     source.files = [file_1]
     source.messages = [message_2]
     source.replies = [reply_3, reply_6]
-    source.draftreplies = [draft_reply_4, draft_reply_5]
+    source.draftreplies = [draft_reply_4, draft_reply_5, draft_reply_7]
 
     # Now these items should be in the source collection in the proper order
     assert source.collection[0] == file_1
@@ -133,6 +135,7 @@ def test_source_collection_ordering_with_multiple_draft_replies():
     assert source.collection[3] == draft_reply_4
     assert source.collection[4] == draft_reply_5
     assert source.collection[5] == reply_6
+    assert source.collection[6] == draft_reply_7
 
 
 def test_file_init():
