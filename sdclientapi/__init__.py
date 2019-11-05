@@ -92,6 +92,8 @@ class API:
         self.token = None  # type: Optional[str]
         self.token_expiration = None  # type: Optional[datetime]
         self.token_journalist_uuid = None  # type: Optional[str]
+        self.journalist_first_name = None  # type: Optional[str]
+        self.journalist_last_name = None  # type: Optional[str]
         self.req_headers = dict()  # type: Dict[str, str]
         self.proxy = proxy  # type: bool
         self.default_request_timeout = (
@@ -207,6 +209,8 @@ class API:
             token_data["expiration"], "%Y-%m-%dT%H:%M:%S.%fZ"
         )
         self.token_journalist_uuid = token_data["journalist_uuid"]
+        self.journalist_first_name = token_data["journalist_first_name"]
+        self.journalist_last_name = token_data["journalist_last_name"]
 
         self.update_auth_header()
 
