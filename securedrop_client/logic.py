@@ -318,12 +318,15 @@ class Controller(QObject):
         """
         logger.info('{} successfully logged in'.format(self.api.username))
         self.gui.hide_login()
+        user = storage.update_and_get_user(
+            self.api.token_journalist_uuid,
+            self.api.username,
+            self.api.journalist_first_name,
+            self.api.journalist_last_name,
+            self.session)
+        self.gui.show_main_window(user)
         self.sync_api()
-        self.call_api(self.api.get_current_user,
-                      self.on_get_current_user_success,
-                      self.on_get_current_user_failure)
         self.api_job_queue.login(self.api)
-
         self.is_authenticated = True
         self.resume_queues()
 
@@ -333,20 +336,6 @@ class Controller(QObject):
         error = _('There was a problem signing in. '
                   'Please verify your credentials and try again.')
         self.gui.show_login_error(error=error)
-
-    def on_get_current_user_success(self, result) -> None:
-        user = storage.update_and_get_user(
-            result['uuid'],
-            result['username'],
-            result['first_name'],
-            result['last_name'],
-            self.session)
-        self.user = user
-        self.gui.show_main_window(self.user)
-
-    def on_get_current_user_failure(self, result: Exception) -> None:
-        self.api = None
-        self.gui.show_login_error(error=_('Could not find your account.'))
 
     def login_offline_mode(self):
         """
