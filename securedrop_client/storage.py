@@ -19,18 +19,19 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from datetime import datetime
 import logging
 import glob
 import os
 from dateutil.parser import parse
 from typing import List, Tuple, Type, Union
 
-from sqlalchemy import or_
+from sqlalchemy import and_, or_
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.session import Session
 
-from securedrop_client.db import DraftReply, Source, Message, File, Reply, ReplySendStatus, User
-from securedrop_client.api_jobs.uploads import ReplySendStatusCodes
+from securedrop_client.db import (DraftReply, Source, Message, File, Reply, ReplySendStatus,
+                                  ReplySendStatusCodes, User)
 from sdclientapi import API
 from sdclientapi import Source as SDKSource
 from sdclientapi import Submission as SDKSubmission
@@ -272,21 +273,28 @@ def update_replies(remote_replies: List[SDKReply], local_replies: List[Reply],
                 reply.journalist_username,
                 session)
 
-            # All replies fetched from the server have succeeded in being sent,
-            # so we should delete the corresponding draft locally if it exists.
-            try:
-                draft_reply_db_object = session.query(DraftReply).filter_by(
-                    uuid=reply.uuid).one()
-                session.delete(draft_reply_db_object)
-            except NoResultFound:
-                pass  # No draft locally stored corresponding to this reply.
-
             nr = Reply(uuid=reply.uuid,
                        journalist_id=user.id,
                        source_id=source.id,
                        filename=reply.filename,
                        size=reply.size)
             session.add(nr)
+
+            # All replies fetched from the server have succeeded in being sent,
+            # so we should delete the corresponding draft locally if it exists.
+            try:
+                draft_reply_db_object = session.query(DraftReply).filter_by(
+                    uuid=reply.uuid).one()
+
+                update_draft_replies(session, draft_reply_db_object.source.id,
+                                     draft_reply_db_object.timestamp,
+                                     draft_reply_db_object.file_counter,
+                                     nr.file_counter)
+                session.delete(draft_reply_db_object)
+
+            except NoResultFound:
+                pass  # No draft locally stored corresponding to this reply.
+
             logger.debug('Added new reply {}'.format(reply.uuid))
 
     # The uuids remaining in local_uuids do not exist on the remote server, so
@@ -355,6 +363,23 @@ def update_missing_files(data_dir: str, session: Session) -> None:
         filepath = os.path.join(data_dir, fn_no_ext)
         if not os.path.exists(filepath):
             mark_as_not_downloaded(file.uuid, session)
+
+
+def update_draft_replies(session: Session, source_id: int, timestamp: datetime,
+                         old_file_counter: int, new_file_counter: int) -> None:
+    """
+    When we confirm a sent reply, if there are drafts that were sent after it,
+    we need to reposition them to ensure that they appear _after_ the confirmed
+    replies.
+    """
+    for draft_reply in session.query(DraftReply) \
+                              .filter(and_(DraftReply.source_id == source_id,
+                                           DraftReply.timestamp > timestamp,
+                                           DraftReply.file_counter == old_file_counter)) \
+                              .all():
+        draft_reply.file_counter = new_file_counter
+        session.add(draft_reply)
+    session.commit()
 
 
 def find_new_files(session: Session) -> List[File]:

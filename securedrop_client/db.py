@@ -1,4 +1,5 @@
 import datetime
+from enum import Enum
 import os
 
 from typing import Any, List, Union  # noqa: F401
@@ -266,6 +267,12 @@ class ReplySendStatus(Base):
 
     def __repr__(self) -> str:
         return '<Reply status {}>'.format(self.name)
+
+
+class ReplySendStatusCodes(Enum):
+    """In progress (sending) replies can currently have the following statuses"""
+    PENDING = 'PENDING'
+    FAILED = 'FAILED'
 
 
 class User(Base):

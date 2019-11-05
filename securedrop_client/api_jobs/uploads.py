@@ -1,22 +1,15 @@
-from enum import Enum
 import logging
 import sdclientapi
 
 from sdclientapi import API, RequestTimeoutError
-from sqlalchemy import and_
 from sqlalchemy.orm.session import Session
 
 from securedrop_client.api_jobs.base import ApiJob
 from securedrop_client.crypto import GpgHelper
-from securedrop_client.db import DraftReply, Reply, ReplySendStatus, Source
+from securedrop_client.db import DraftReply, Reply, ReplySendStatus, ReplySendStatusCodes, Source
+from securedrop_client.storage import update_draft_replies
 
 logger = logging.getLogger(__name__)
-
-
-class ReplySendStatusCodes(Enum):
-    """In progress (sending) replies can currently have the following statuses"""
-    PENDING = 'PENDING'
-    FAILED = 'FAILED'
 
 
 class SendReplyJob(ApiJob):
@@ -63,15 +56,8 @@ class SendReplyJob(ApiJob):
             draft_file_counter = draft_reply_db_object.file_counter
             draft_timestamp = draft_reply_db_object.timestamp
 
-            # If there were replies also in draft state sent after this one,
-            # re-position them after this successfully sent reply.
-            for draft_reply in session.query(DraftReply) \
-                                      .filter(and_(DraftReply.source_id == source.id,
-                                                   DraftReply.timestamp > draft_timestamp,
-                                                   DraftReply.file_counter == draft_file_counter)) \
-                                      .all():
-                draft_reply.file_counter = new_file_counter
-                session.add(draft_reply)
+            update_draft_replies(session, source.id, draft_timestamp,
+                                 draft_file_counter, new_file_counter)
 
             # Delete draft, add reply to replies table.
             session.add(reply_db_object)

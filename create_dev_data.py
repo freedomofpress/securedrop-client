@@ -5,8 +5,7 @@ from sqlalchemy.orm.exc import NoResultFound
 import sys
 
 from securedrop_client.config import Config
-from securedrop_client.db import Base, make_session_maker, ReplySendStatus
-from securedrop_client.api_jobs.uploads import ReplySendStatusCodes
+from securedrop_client.db import Base, make_session_maker, ReplySendStatus, ReplySendStatusCodes
 
 sdc_home = sys.argv[1]
 session = make_session_maker(sdc_home)()

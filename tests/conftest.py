@@ -6,9 +6,9 @@ import pytest
 from configparser import ConfigParser
 from datetime import datetime
 from securedrop_client.config import Config
-from securedrop_client.api_jobs.uploads import ReplySendStatusCodes
 from securedrop_client.app import configure_locale_and_language
-from securedrop_client.db import Base, make_session_maker, Source, ReplySendStatus
+from securedrop_client.db import (Base, make_session_maker, Source, ReplySendStatus,
+                                  ReplySendStatusCodes)
 from uuid import uuid4
 
 
