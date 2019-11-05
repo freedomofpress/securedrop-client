@@ -35,7 +35,7 @@ from securedrop_client import db
 from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob, \
     ReplyDownloadJob, DownloadChecksumMismatchException
 from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobError, \
-    SendReplyJobTimeoutError, ReplySendStatusCodes
+    SendReplyJobTimeoutError
 from securedrop_client.api_jobs.updatestar import UpdateStarJob, UpdateStarJobException
 from securedrop_client.crypto import GpgHelper, CryptoError
 from securedrop_client.export import Export
@@ -758,7 +758,7 @@ class Controller(QObject):
         # reply send status.
         source = self.session.query(db.Source).filter_by(uuid=source_uuid).one()
         reply_status = self.session.query(db.ReplySendStatus).filter_by(
-            name=ReplySendStatusCodes.PENDING.value).one()
+            name=db.ReplySendStatusCodes.PENDING.value).one()
         draft_reply = db.DraftReply(
             uuid=reply_uuid,
             timestamp=datetime.utcnow(),

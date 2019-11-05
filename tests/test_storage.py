@@ -11,7 +11,6 @@ from sdclientapi import Source, Submission, Reply
 from sqlalchemy.orm.exc import NoResultFound
 
 import securedrop_client.db
-from securedrop_client.api_jobs.uploads import ReplySendStatusCodes
 from securedrop_client.storage import get_local_sources, get_local_messages, get_local_replies, \
     get_remote_data, update_local_storage, update_sources, update_files, update_messages, \
     update_replies, find_or_create_user, find_new_messages, find_new_replies, \
@@ -59,7 +58,7 @@ def make_remote_reply(source_uuid, journalist_uuid='testymctestface'):
     """
     source_url = '/api/v1/sources/{}'.format(source_uuid)
     return Reply(filename='1-reply.filename', journalist_uuid=journalist_uuid,
-                 journalist_username='test',
+                 journalist_username='test', file_counter=1,
                  is_deleted_by_source=False, reply_url='test', size=1234,
                  source_url=source_url, uuid=str(uuid.uuid4()))
 
@@ -713,6 +712,12 @@ def test_update_replies_cleanup_drafts(homedir, mocker, session):
     draft_reply = db.DraftReply(uuid=remote_reply_create.uuid, source=source, journalist=user,
                                 file_counter=3, timestamp=datetime.datetime(2000, 6, 6, 6, 0))
     session.add(draft_reply)
+    # Another draft reply will exist that should be moved to _after_ the new reply
+    # once we confirm the previous reply. This ensures consistent ordering of interleaved
+    # drafts (pending and failed) with replies, messages, and files from the user's perspective.
+    draft_reply_new = db.DraftReply(uuid='foo', source=source, journalist=user,
+                                    file_counter=3, timestamp=datetime.datetime(2001, 6, 6, 6, 0))
+    session.add(draft_reply_new)
     session.commit()
 
     # We have no replies locally stored.
@@ -720,14 +725,16 @@ def test_update_replies_cleanup_drafts(homedir, mocker, session):
 
     update_replies(remote_replies, local_replies, session, data_dir)
 
-    # Check the expected local source object has been created with values from
-    # the API.
+    # Check the expected local source object has been created.
     new_local_replies = session.query(db.Reply).all()
     assert len(new_local_replies) == 1
 
-    # Check that the draft is now gone.
+    # Check that the only draft is the one sent with uuid 'foo' and its file_counter now
+    # matches the file_counter of the updated reply. This ensures consistent ordering.
     new_draft_replies = session.query(db.DraftReply).all()
-    assert len(new_draft_replies) == 0
+    assert len(new_draft_replies) == 1
+    assert new_draft_replies[0].file_counter == new_local_replies[0].file_counter
+    assert new_draft_replies[0].uuid == draft_reply_new.uuid
 
 
 def test_find_or_create_user_existing_uuid(mocker):
@@ -1085,9 +1092,9 @@ def test_pending_replies_are_marked_as_failed_on_logout_login(mocker, session,
                                                               reply_status_codes):
     source = factory.Source()
     pending_status = session.query(db.ReplySendStatus).filter_by(
-        name=ReplySendStatusCodes.PENDING.value).one()
+        name=db.ReplySendStatusCodes.PENDING.value).one()
     failed_status = session.query(db.ReplySendStatus).filter_by(
-        name=ReplySendStatusCodes.FAILED.value).one()
+        name=db.ReplySendStatusCodes.FAILED.value).one()
     pending_draft_reply = factory.DraftReply(source=source,
                                              send_status=pending_status)
     session.add(source)
