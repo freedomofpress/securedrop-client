@@ -185,90 +185,34 @@ def test_Controller_on_authenticate_failure(homedir, config, mocker, session_mak
                                 'verify your credentials and try again.')
 
 
-def test_Controller_on_authenticate_success(homedir, config, mocker, session_maker):
+def test_Controller_on_authenticate_success(homedir, config, mocker, session_maker,
+                                            session):
     """
     Ensure the client syncs when the user successfully logs in.
     Using the `config` fixture to ensure the config is written to disk.
     """
+    user = factory.User()
     mock_gui = mocker.MagicMock()
     mock_api_job_queue = mocker.patch("securedrop_client.logic.ApiJobQueue")
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     co.sync_api = mocker.MagicMock()
+    co.session.add(user)
+    co.session.commit()
     co.api = mocker.MagicMock()
-    co.call_api = mocker.MagicMock()
+    co.api.token_journalist_uuid = user.uuid
+    co.api.username = user.username
+    co.api.journalist_first_name = user.firstname
+    co.api.journalist_last_name = user.lastname
     co.resume_queues = mocker.MagicMock()
     login = mocker.patch.object(co.api_job_queue, 'login')
-    current_user_api_result = {
-        'uuid': 'mock_uuid',
-        'username': 'mock_username',
-        'first_name': 'mock_firstname',
-        'last_name': 'mock_lastname'}
-    co.api.get_current_user = mocker.MagicMock(return_value=(current_user_api_result))
 
     co.on_authenticate_success(True)
 
     co.sync_api.assert_called_once_with()
+    assert co.is_authenticated
     assert mock_api_job_queue.called
     login.assert_called_with(co.api)
     co.resume_queues.assert_called_once_with()
-
-
-def test_Controller_on_get_current_user_success(mocker, session_maker, session, homedir):
-    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
-    co.api = mocker.MagicMock()
-    co.call_api = mocker.MagicMock()
-    user = factory.User(uuid='mock_uuid', username='mock_username')
-    session.add(user)
-    session.commit()
-    current_user_api_result = {
-        'uuid': 'mock_uuid',
-        'username': 'mock_username',
-        'first_name': 'firstname_mock',
-        'last_name': 'lastname_mock'}
-
-    co.on_get_current_user_success(current_user_api_result)
-
-    user = session.query(db.User).filter_by(uuid='mock_uuid').one_or_none()
-    assert user.firstname == 'firstname_mock'
-    assert user.lastname == 'lastname_mock'
-    assert user.fullname == 'firstname_mock lastname_mock'
-    assert user.initials == 'fl'
-    co.gui.show_main_window.assert_called_with(user)
-
-
-def test_Controller_on_get_current_user_success_no_name(mocker, session_maker, session, homedir):
-    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
-    co.api = mocker.MagicMock()
-    co.call_api = mocker.MagicMock()
-    user = factory.User(uuid='mock_uuid', username='mock_username')
-    session.add(user)
-    session.commit()
-    storage = mocker.patch('securedrop_client.logic.storage')
-    storage.update_and_get_user = mocker.MagicMock(return_value=user)
-    current_user_api_result = {
-        'uuid': 'mock_uuid',
-        'username': 'mock_username',
-        'first_name': None,
-        'last_name': None}
-
-    co.on_get_current_user_success(current_user_api_result)
-
-    user = session.query(db.User).filter_by(uuid='mock_uuid').one_or_none()
-    assert user.firstname is None
-    assert user.lastname is None
-    assert user.fullname == 'mock_username'
-    assert user.initials == 'mo'
-    co.gui.show_main_window.assert_called_with(user)
-
-
-def test_Controller_on_get_current_user_failure(homedir, mocker, session_maker):
-    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
-    result = Exception('oh no')
-
-    co.on_get_current_user_failure(result)
-
-    co.gui.show_login_error.assert_called_once_with(error='Could not find your account.')
-    assert co.api is None
 
 
 def test_Controller_completed_api_call_without_current_object(

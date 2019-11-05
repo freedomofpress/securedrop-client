@@ -22,6 +22,8 @@ def User(**attrs):
     defaults = dict(
         uuid='user-uuid-{}'.format(USER_COUNT),
         username='test-user-id-{}'.format(USER_COUNT),
+        firstname='slim',
+        lastname='shady'
     )
 
     defaults.update(attrs)
