@@ -37,7 +37,7 @@ from securedrop_client.utils import safe_mkdir
 
 DEFAULT_SDC_HOME = '~/.securedrop_client'
 ENCODING = 'utf-8'
-
+LOGLEVEL = os.environ.get('LOGLEVEL', 'info').upper()
 
 def init(sdc_home: str) -> None:
     safe_mkdir(sdc_home)
@@ -97,7 +97,7 @@ def configure_logging(sdc_home: str) -> None:
 
     # set up primary log
     log = logging.getLogger()
-    log.setLevel(logging.DEBUG)
+    log.setLevel(LOGLEVEL)
     log.addHandler(handler)
 
     # override excepthook to capture a log of catastrophic failures.
