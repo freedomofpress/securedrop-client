@@ -84,7 +84,7 @@ def test_exit_gracefully_exception(capsys):
     assert sysexit.value.code == 0
 
     captured = capsys.readouterr()
-    assert captured.err == "{}\n<unknown exception>\n".format(test_msg)
+    assert captured.err == export.ExportStatus.ERROR_GENERIC.value
     assert captured.out == ""
 
 

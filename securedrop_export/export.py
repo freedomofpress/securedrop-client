@@ -167,20 +167,19 @@ class SDExport(object):
         since non-zero exit values will cause system to try alternative
         solutions for mimetype handling, which we want to avoid.
         """
-        sys.stderr.write(msg)
-        sys.stderr.write("\n")
         logger.info('Exiting with message: {}'.format(msg))
-        if e:
+        if not e:
+            sys.stderr.write(msg)
+            sys.stderr.write("\n")
+        else:
             try:
                 # If the file archive was extracted, delete before returning
                 if os.path.isdir(self.tmpdir):
                     shutil.rmtree(self.tmpdir)
-                e_output = e.output
-                logger.error(e_output)
-            except Exception:
-                e_output = "<unknown exception>"
-            sys.stderr.write(str(e_output))
-            sys.stderr.write("\n")
+                logger.error("{}:{}".format(msg, e.output))
+            except Exception as ex:
+                logger.error("Unhandled exception: {}".format(ex))
+                sys.stderr.write(ExportStatus.ERROR_GENERIC.value)
         # exit with 0 return code otherwise the os will attempt to open
         # the file with another application
         sys.exit(0)
