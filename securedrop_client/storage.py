@@ -368,9 +368,30 @@ def update_missing_files(data_dir: str, session: Session) -> None:
 def update_draft_replies(session: Session, source_id: int, timestamp: datetime,
                          old_file_counter: int, new_file_counter: int) -> None:
     """
-    When we confirm a sent reply, if there are drafts that were sent after it,
+    When we confirm a sent reply R, if there are drafts that were sent after it,
     we need to reposition them to ensure that they appear _after_ the confirmed
-    replies.
+    replies. We do this by updating the file_counter stored on the drafts sent
+    after reply R.
+
+    Example:
+        1. Reply Q, has file_counter=2
+        2. User adds DraftReply R, it has file_counter=2
+        3. User adds DraftReply S, it has file_counter=2 and
+           timestamp(S) > timestamp(R).
+        4. DraftReply R saved on server with file_counter=4 (this can happen as other
+           journalist can be sending replies), it is converted to Reply R locally.
+        5. We must now update file_counter on DraftReply S such that it appears
+           after Reply R in the conversation view.
+
+    Args:
+        session (Session): The SQLAlchemy session object to be used.
+        source_id (int): this is the ID of the source that the reply R corresponds to.
+        timestamp (datetime): this is the timestamp of the draft that corresponds to
+            reply R.
+        old_file_counter (int): this is the file_counter of the draft that
+            corresponds to reply R.
+        new_file_counter (int): this is the file_counter of the reply R confirmed
+            as successfully sent from the server.
     """
     for draft_reply in session.query(DraftReply) \
                               .filter(and_(DraftReply.source_id == source_id,
