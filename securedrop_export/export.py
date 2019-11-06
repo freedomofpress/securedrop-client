@@ -203,8 +203,7 @@ class SDExport(object):
             with tarfile.open(self.archive) as tar:
                 tar.extractall(self.tmpdir)
         except Exception:
-            msg = ExportStatus.ERROR_EXTRACTION.value
-            self.exit_gracefully(msg)
+            self.exit_gracefully(ExportStatus.ERROR_EXTRACTION.value)
 
     def check_usb_connected(self):
         # If the USB is not attached via qvm-usb attach, lsusb will return empty string and a
@@ -271,8 +270,7 @@ class SDExport(object):
                 rc = p.returncode
                 if rc != 0:
                     logging.error('Bad phassphrase for {}'.format(self.encrypted_device))
-                    msg = ExportStatus.USB_BAD_PASSPHRASE.value
-                    self.exit_gracefully(msg)
+                    self.exit_gracefully(ExportStatus.USB_BAD_PASSPHRASE.value)
         except subprocess.CalledProcessError:
             self.exit_gracefully(ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED)
 
@@ -308,8 +306,7 @@ class SDExport(object):
             logging.info('File copied successfully to {}'.format(self.target_dirname))
             self.popup_message("Files exported successfully to disk.")
         except (subprocess.CalledProcessError, OSError):
-            msg = ExportStatus.ERROR_USB_WRITE.value
-            self.exit_gracefully(msg)
+            self.exit_gracefully(ExportStatus.ERROR_USB_WRITE.value)
         finally:
             # Finally, we sync the filesystem, unmount the drive and lock the
             # luks volume, and exit 0
@@ -341,12 +338,10 @@ class SDExport(object):
                 else:
                     time.sleep(5)
             except subprocess.CalledProcessError:
-                msg = ExportStatus.ERROR_PRINT.value
-                self.exit_gracefully(msg)
+                self.exit_gracefully(ExportStatus.ERROR_PRINT.value)
             except TimeoutException:
                 logging.error('Timeout waiting for printer {}'.format(self.printer_name))
-                msg = ExportStatus.ERROR_PRINT.value
-                self.exit_gracefully(msg)
+                self.exit_gracefully(ExportStatus.ERROR_PRINT.value)
         return True
 
     def get_printer_uri(self):
@@ -355,8 +350,7 @@ class SDExport(object):
         try:
             output = subprocess.check_output(["sudo", "lpinfo", "-v"])
         except subprocess.CalledProcessError:
-            msg = ExportStatus.ERROR_PRINTER_URI.value
-            self.exit_gracefully(msg)
+            self.exit_gracefully(ExportStatus.ERROR_PRINTER_URI.value)
 
         # fetch the usb printer uri
         for line in output.split():
