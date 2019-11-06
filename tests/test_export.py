@@ -299,3 +299,16 @@ def test_luks_precheck_encrypted(mocked_call, capsys):
     assert sysexit.value.code == 0
     captured = capsys.readouterr()
     assert captured.err == "{}\n".format(expected_message)
+
+
+def test_safe_check_call(capsys):
+    submission = export.SDExport("testfile", TEST_CONFIG)
+    submission.safe_check_call(['ls'], "this will work")
+    mocked_exit = mock.patch("export.exit_gracefully", return_value=0)
+    expected_message = "uh oh!!!!"
+    with pytest.raises(SystemExit) as sysexit:
+        submission.safe_check_call(['ls', 'kjdsfhkdjfh'], expected_message)
+        mocked_exit.assert_called_once_with(expected_message)
+    assert sysexit.value.code == 0
+    captured = capsys.readouterr()
+    assert captured.err == "{}\n".format(expected_message)

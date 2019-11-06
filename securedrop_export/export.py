@@ -150,6 +150,16 @@ class SDExport(object):
             logger.error("error parsing VM configuration.")
             self.exit_gracefully(ExportStatus.ERROR_USB_CONFIGURATION.value)
 
+    def safe_check_call(self, command, error_message):
+        """
+        Safely wrap subprocess.check_output to ensure we always return 0 and
+        log the error messages
+        """
+        try:
+            subprocess.check_call(command)
+        except subprocess.CalledProcessError as ex:
+            self.exit_gracefully(msg=error_message, e=ex.output)
+
     def exit_gracefully(self, msg, e=False):
         """
         Utility to print error messages, mostly used during debugging,
@@ -169,27 +179,24 @@ class SDExport(object):
                 logger.error(e_output)
             except Exception:
                 e_output = "<unknown exception>"
-            sys.stderr.write(e_output)
+            sys.stderr.write(str(e_output))
             sys.stderr.write("\n")
         # exit with 0 return code otherwise the os will attempt to open
         # the file with another application
         sys.exit(0)
 
     def popup_message(self, msg):
-        try:
-            subprocess.check_call(
-                [
-                    "notify-send",
-                    "--expire-time",
-                    "3000",
-                    "--icon",
-                    "/usr/share/securedrop/icons/sd-logo.png",
-                    "SecureDrop: {}".format(msg),
-                ]
-            )
-        except subprocess.CalledProcessError as e:
-            msg = "Error sending notification:"
-            self.exit_gracefully(msg, e=e)
+        self.safe_check_call(
+            command=[
+                "notify-send",
+                "--expire-time",
+                "3000",
+                "--icon",
+                "/usr/share/securedrop/icons/sd-logo.png",
+                "SecureDrop: {}".format(msg),
+            ],
+            error_message="Error sending notification:"
+        )
 
     def extract_tarball(self):
         try:
@@ -229,15 +236,16 @@ class SDExport(object):
             self.exit_gracefully(ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED)
 
     def check_luks_volume(self):
+        # cryptsetup isLuks returns 0 if the device is a luks volume
+        # subprocess with throw if the device is not luks (rc !=0)
         logging.info('Checking if volume is luks-encrypted')
-        try:
-            self.set_extracted_device_name()
-            logging.debug("checking if {} is luks encrypted".format(self.device))
-            subprocess.check_call(["sudo", "cryptsetup", "isLuks", self.device])
-            self.exit_gracefully(ExportStatus.USB_ENCRYPTED.value)
-        except subprocess.CalledProcessError:
-            msg = ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED.value
-            self.exit_gracefully(msg)
+        self.set_extracted_device_name()
+        logging.debug("checking if {} is luks encrypted".format(self.device))
+        self.safe_check_call(
+            command=["sudo", "cryptsetup", "isLuks", self.device],
+            error_message=ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED.value
+        )
+        self.exit_gracefully(ExportStatus.USB_ENCRYPTED.value)
 
     def unlock_luks_volume(self, encryption_key):
         try:
@@ -270,27 +278,28 @@ class SDExport(object):
             self.exit_gracefully(ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED)
 
     def mount_volume(self):
-        try:
-            # mount target not created
-            if not os.path.exists(self.mountpoint):
-                subprocess.check_call(["sudo", "mkdir", self.mountpoint])
-
-            mapped_device_path = os.path.join("/dev/mapper/", self.encrypted_device)
-            logging.info('Mounting {}'.format(mapped_device_path))
-            subprocess.check_call(["sudo", "mount", mapped_device_path, self.mountpoint])
-            subprocess.check_call(["sudo", "chown", "-R", "user:user", self.mountpoint])
-        except subprocess.CalledProcessError:
-            # clean up
-            logging.error('Error mounting {} to {}'.format(self.encrypted_device, self.mountpoint))
-            logging.info('Locking luks volume {}'.format(self.encrypted_device))
-            subprocess.check_call(
-                ["sudo", "cryptsetup", "luksClose", self.encrypted_device]
+        # mount target not created, create folder
+        if not os.path.exists(self.mountpoint):
+            self.safe_check_call(
+                command=["sudo", "mkdir", self.mountpoint],
+                error_message=ExportStatus.ERROR_USB_MOUNT
             )
-            msg = ExportStatus.ERROR_USB_MOUNT.value
-            self.exit_gracefully(msg)
+
+        mapped_device_path = os.path.join("/dev/mapper/", self.encrypted_device)
+        logging.info('Mounting {}'.format(mapped_device_path))
+        self.safe_check_call(
+            command=["sudo", "mount", mapped_device_path, self.mountpoint],
+            error_message=ExportStatus.ERROR_USB_MOUNT.value
+        )
+        self.safe_check_call(
+            command=["sudo", "chown", "-R", "user:user", self.mountpoint],
+            error_message=ExportStatus.ERROR_USB_MOUNT.value
+        )
 
     def copy_submission(self):
         # move files to drive (overwrites files with same filename) and unmount drive
+        # we don't use safe_check_call here because we must lock and
+        # unmount the drive as part of the finally block
         try:
             target_path = os.path.join(self.mountpoint, self.target_dirname)
             subprocess.check_call(["mkdir", target_path])
@@ -372,47 +381,44 @@ class SDExport(object):
     def install_printer_ppd(self, uri):
         # Some drivers don't come with ppd files pre-compiled, we must compile them
         if "Brother" in uri:
-            try:
-                subprocess.check_call(
-                    [
-                        "sudo",
-                        "ppdc",
-                        self.brlaser_driver,
-                        "-d",
-                        "/usr/share/cups/model/",
-                    ]
-                )
-            except subprocess.CalledProcessError:
-                msg = ExportStatus.ERROR_PRINTER_DRIVER_UNAVAILBLE.value
-                self.exit_gracefully(msg)
+            self.safe_check_call(
+                command=[
+                    "sudo",
+                    "ppdc",
+                    self.brlaser_driver,
+                    "-d",
+                    "/usr/share/cups/model/",
+                ],
+                error_message=ExportStatus.ERROR_PRINTER_DRIVER_UNAVAILABLE.value
+            )
             return self.brlaser_ppd
         # Here, we could support ppd drivers for other makes or models in the future
 
     def setup_printer(self, printer_uri, printer_ppd):
         # Add the printer using lpadmin
-        try:
-            # Add the printer using lpadmin
-            subprocess.check_call(
-                [
-                    "sudo",
-                    "lpadmin",
-                    "-p",
-                    self.printer_name,
-                    "-v",
-                    printer_uri,
-                    "-P",
-                    printer_ppd,
-                ]
-            )
-            # Activate the printer so that it can receive jobs
-            subprocess.check_call(["sudo", "lpadmin", "-p", self.printer_name, "-E"])
-            # Allow user to print (without using sudo)
-            subprocess.check_call(
-                ["sudo", "lpadmin", "-p", self.printer_name, "-u", "allow:user"]
-            )
-        except subprocess.CalledProcessError:
-            msg = ExportStatus.ERROR_PRINTER_INSTALL.value
-            self.exit_gracefully(msg)
+        self.safe_check_call(
+            command=[
+                "sudo",
+                "lpadmin",
+                "-p",
+                self.printer_name,
+                "-v",
+                printer_uri,
+                "-P",
+                printer_ppd,
+            ],
+            error_message=ExportStatus.ERROR_PRINTER_INSTALL.value
+        )
+        # Activate the printer so that it can receive jobs
+        self.safe_check_call(
+            command=["sudo", "lpadmin", "-p", self.printer_name, "-E"],
+            error_message=ExportStatus.ERROR_PRINTER_INSTALL.value
+        )
+        # Allow user to print (without using sudo)
+        self.safe_check_call(
+            command=["sudo", "lpadmin", "-p", self.printer_name, "-u", "allow:user"],
+            error_message=ExportStatus.ERROR_PRINTER_INSTALL.value
+        )
 
     def print_test_page(self):
         self.print_file("/usr/share/cups/data/testprint")
@@ -447,22 +453,24 @@ class SDExport(object):
         return False
 
     def print_file(self, file_to_print):
-        try:
-            # If the file to print is an (open)office document, we need to call unoconf to
-            # convert the file to pdf as printer drivers do not support this format
-            if self.is_open_office_file(file_to_print):
-                logging.info('Converting Office document to pdf'.format(self.printer_name))
-                folder = os.path.dirname(file_to_print)
-                converted_filename = file_to_print + ".pdf"
-                converted_path = os.path.join(folder, converted_filename)
-                subprocess.check_call(["unoconv", "-o", converted_path, file_to_print])
-                file_to_print = converted_path
+        # If the file to print is an (open)office document, we need to call unoconf to
+        # convert the file to pdf as printer drivers do not support this format
+        if self.is_open_office_file(file_to_print):
+            logging.info('Converting Office document to pdf'.format(self.printer_name))
+            folder = os.path.dirname(file_to_print)
+            converted_filename = file_to_print + ".pdf"
+            converted_path = os.path.join(folder, converted_filename)
+            self.safe_check_call(
+                command=["unoconv", "-o", converted_path, file_to_print],
+                error_message=ExportStatus.ERROR_PRINT.value
+            )
+            file_to_print = converted_path
 
-            logging.info('Sending file to printer {}:{}'.format(self.printer_name))
-            subprocess.check_call(["xpp", "-P", self.printer_name, file_to_print])
-        except subprocess.CalledProcessError:
-            msg = ExportStatus.ERROR_PRINT.value
-            self.exit_gracefully(msg)
+        logging.info('Sending file to printer {}:{}'.format(self.printer_name))
+        self.safe_check_call(
+            command=["xpp", "-P", self.printer_name, file_to_print],
+            error_message=ExportStatus.ERROR_PRINT.value
+        )
 
 
 # class ends here
