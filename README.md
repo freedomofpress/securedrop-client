@@ -4,6 +4,15 @@
 
 Code for exporting and printing files from the SecureDrop Qubes Workstation.
 
+## Supported Printers
+
+TBD
+
+## Supported Export Devices
+
+We support luks-encrypted drives that are either MBR/DOS partitioned or GPT partitioned. If you use `Disks` in Linux to partition your drive, you can [follow these instructions](https://docs.securedrop.org/en/stable/set_up_transfer_and_export_device.html#create-usb-transfer-device). For full-disk encryption, you can use [cryptsetup](https://linux.die.net/man/8/cryptsetup), e.g. `sudo cryptsetup luksFormat --hash=sha512 --key-size=512 /dev/sda` if `/dev/sda` is your device.
+
+We do not yet support drives that use full-disk encryption with VeraCrypt.
 
 ## Export Archive Format
 

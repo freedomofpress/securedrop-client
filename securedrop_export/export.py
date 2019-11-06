@@ -169,7 +169,7 @@ class SDExport(object):
         logging.info('Performing usb preflight')
         try:
             subprocess.check_output(
-                ["lsblk", "-p", "-o", "KNAME", DEVICE, "--noheadings", "--inverse"],
+                ["lsblk", "-p", "-o", "KNAME", "--noheadings", "--inverse", DEVICE],
                 stderr=subprocess.PIPE)
             self.exit_gracefully("USB_CONNECTED")
         except subprocess.CalledProcessError:
@@ -178,11 +178,20 @@ class SDExport(object):
     def check_luks_volume(self):
         logging.info('Checking if volume is luks-encrypted')
         try:
-            # cryptsetup isLuks returns 0 if the device is a luks volume
-            # subprocess with throw if the device is not luks (rc !=0)
-            subprocess.check_call(["sudo", "cryptsetup", "isLuks", DEVICE])
-            msg = "USB_ENCRYPTED"
-            self.exit_gracefully(msg)
+            device_and_partitions = subprocess.check_output(
+                ["lsblk", "-o", "TYPE", "--noheadings", DEVICE], stderr=subprocess.PIPE)
+
+            # we don't support multiple partitions
+            partition_count = device_and_partitions.decode('utf-8').split('\n').count('part')
+            if partition_count > 1:
+                logging.debug("multiple partitions not supported")
+                self.exit_gracefully("USB_NO_SUPPORTED_ENCRYPTION")
+
+            # we support full-disk luks encryption where there are 0 partitions
+            # or 1 partition which will be /dev/sda1 instead of /dev/sda
+            dev = DEVICE if partition_count == 0 else DEVICE + '1'
+            subprocess.check_call(["sudo", "cryptsetup", "isLuks", dev])
+            self.exit_gracefully("USB_ENCRYPTED")
         except subprocess.CalledProcessError:
             msg = "USB_NO_SUPPORTED_ENCRYPTION"
             self.exit_gracefully(msg)
