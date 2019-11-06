@@ -10,7 +10,15 @@ TBD
 
 ## Supported Export Devices
 
-We support luks-encrypted drives that are either MBR/DOS partitioned or GPT partitioned. If you use `Disks` in Linux to partition your drive, you can [follow these instructions](https://docs.securedrop.org/en/stable/set_up_transfer_and_export_device.html#create-usb-transfer-device). For full-disk encryption, you can use [cryptsetup](https://linux.die.net/man/8/cryptsetup), e.g. `sudo cryptsetup luksFormat --hash=sha512 --key-size=512 /dev/sda` if `/dev/sda` is your device.
+We support luks-encrypted drives that are either MBR/DOS partitioned or GPT partitioned. If you use `Disks` in Linux to partition your drive, you can [follow these instructions](https://docs.securedrop.org/en/stable/set_up_transfer_and_export_device.html#create-usb-transfer-device) to create a new export device. You can also use [cryptsetup](https://linux.die.net/man/8/cryptsetup) to create a luks-encrypted device with full-disk encryption, for example:
+
+1. `sudo cryptsetup luksFormat --hash=sha512 --key-size=512 DEVICE` where `DEIVCE` is the name of your removable drive, which you can find via `lsblk -p`.
+
+   Make sure `DEVICE` is correct because you will be overwriting its data irrevocably.
+
+2. `sudo cryptsetup luksOpen /dev/sdb encrypted_device`
+
+3. `sudo mkfs.ext4 /dev/mapper/encrypted_device`
 
 We do not yet support drives that use full-disk encryption with VeraCrypt.
 
