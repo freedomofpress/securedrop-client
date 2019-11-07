@@ -2215,13 +2215,31 @@ def test_ReplyBoxWidget_send_reply(mocker):
     scw.conversation_view.on_reply_sent = on_reply_sent_fn
     scw.reply_box.reply_sent = mocker.MagicMock()
     scw.reply_box.text_edit = ReplyTextEdit(source, controller)
+    scw.reply_box.text_edit.setText = mocker.MagicMock()
     scw.reply_box.text_edit.setPlainText('Alles für Alle')
 
     scw.reply_box.send_reply()
 
     scw.reply_box.reply_sent.emit.assert_called_once_with('abc123', '456xyz', 'Alles für Alle')
-    assert scw.reply_box.text_edit.toPlainText() == ''
+    scw.reply_box.text_edit.setText.assert_called_once_with('')
     controller.send_reply.assert_called_once_with('abc123', '456xyz', 'Alles für Alle')
+
+
+def test_ReplyBoxWidget_send_reply_calls_setText_after_send(mocker):
+    """
+    Ensure sending a reply from the reply box emits signal, clears text box, and sends the reply
+    details to the controller.
+    """
+    source = factory.Source()
+    controller = mocker.MagicMock()
+    rb = ReplyBoxWidget(source, controller)
+    rb.text_edit = ReplyTextEdit(source, controller)
+    setText = mocker.patch.object(rb.text_edit, 'setText')
+    rb.text_edit.setPlainText('Alles für Alle')
+
+    rb.send_reply()
+
+    setText.assert_called_once_with('')
 
 
 def test_ReplyBoxWidget_send_reply_does_not_send_empty_string(mocker):

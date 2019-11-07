@@ -2345,7 +2345,7 @@ class ReplyBoxWidget(QWidget):
             reply_uuid = str(uuid4())
             self.controller.send_reply(self.source.uuid, reply_uuid, reply_text)
             self.reply_sent.emit(self.source.uuid, reply_uuid, reply_text)
-            self.text_edit.clear()
+            self.text_edit.setText('')
 
     def _on_authentication_changed(self, authenticated: bool) -> None:
         if authenticated:
