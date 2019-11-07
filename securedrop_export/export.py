@@ -14,7 +14,7 @@ import time
 
 PRINTER_NAME = "sdw-printer"
 PRINTER_WAIT_TIMEOUT = 60
-DEVICE = "/dev/sda1"
+DEVICE = "/dev/sda"
 MOUNTPOINT = "/media/usb"
 ENCRYPTED_DEVICE = "encrypted_volume"
 BRLASER_DRIVER = "/usr/share/cups/drv/brlaser.drv"
@@ -164,76 +164,84 @@ class SDExport(object):
             self.exit_gracefully(msg)
 
     def check_usb_connected(self):
-
         # If the USB is not attached via qvm-usb attach, lsusb will return empty string and a
         # return code of 1
         logging.info('Performing usb preflight')
         try:
-            p = subprocess.check_output(["lsusb", "-s", "{}:".format(self.pci_bus_id)])
-            logging.info("lsusb -s {} : {}".format(self.pci_bus_id, p.decode("utf-8")))
+            subprocess.check_output(
+                ["lsblk", "-p", "-o", "KNAME", "--noheadings", "--inverse", DEVICE],
+                stderr=subprocess.PIPE)
+            self.exit_gracefully("USB_CONNECTED")
         except subprocess.CalledProcessError:
-            msg = "ERROR_USB_CONFIGURATION"
-            self.exit_gracefully(msg)
-        n_usb = len(p.decode("utf-8").rstrip().split("\n"))
-        # If there is one device, it is the root hub.
-        if n_usb == 1:
-            logging.info('usb preflight - no external devices connected')
-            msg = "USB_NOT_CONNECTED"
-            self.exit_gracefully(msg)
-        # If there are two devices, it's the root hub and another device (presumably for export)
-        elif n_usb == 2:
-            logging.info('usb preflight - external device connected')
-            msg = "USB_CONNECTED"
-            self.exit_gracefully(msg)
-        # Else the result is unexpected
-        else:
-            msg = "ERROR_USB_CHECK"
+            self.exit_gracefully("USB_NOT_CONNECTED")
+
+    def set_extracted_device_name(self):
+        try:
+            device_and_partitions = subprocess.check_output(
+                ["lsblk", "-o", "TYPE", "--noheadings", DEVICE], stderr=subprocess.PIPE)
+
+            # we don't support multiple partitions
+            partition_count = device_and_partitions.decode('utf-8').split('\n').count('part')
+            if partition_count > 1:
+                logging.debug("multiple partitions not supported")
+                self.exit_gracefully("USB_NO_SUPPORTED_ENCRYPTION")
+
+            # set device to /dev/sda if disk is encrypted, /dev/sda1 if partition encrypted
+            self.device = DEVICE if partition_count == 0 else DEVICE + '1'
+        except subprocess.CalledProcessError:
+            msg = "USB_NO_SUPPORTED_ENCRYPTION"
             self.exit_gracefully(msg)
 
     def check_luks_volume(self):
         logging.info('Checking if volume is luks-encrypted')
         try:
-            # cryptsetup isLuks returns 0 if the device is a luks volume
-            # subprocess with throw if the device is not luks (rc !=0)
-            subprocess.check_call(["sudo", "cryptsetup", "isLuks", DEVICE])
-            msg = "USB_ENCRYPTED"
-            self.exit_gracefully(msg)
+            self.set_extracted_device_name()
+            logging.debug("checking if {} is luks encrypted".format(self.device))
+            subprocess.check_call(["sudo", "cryptsetup", "isLuks", self.device])
+            self.exit_gracefully("USB_ENCRYPTED")
         except subprocess.CalledProcessError:
             msg = "USB_NO_SUPPORTED_ENCRYPTION"
             self.exit_gracefully(msg)
 
     def unlock_luks_volume(self, encryption_key):
-        # the luks device is not already unlocked
-        logging.info('Unlocking luks volume {}'.format(self.encrypted_device))
-        if not os.path.exists(os.path.join("/dev/mapper/", self.encrypted_device)):
-            p = subprocess.Popen(
-                ["sudo", "cryptsetup", "luksOpen", self.device, self.encrypted_device],
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
-            logging.info('Passing key')
-            p.communicate(input=str.encode(encryption_key, "utf-8"))
-            rc = p.returncode
-            if rc != 0:
-                logging.error('Bad phassphrase for {}'.format(self.encrypted_device))
-                msg = "USB_BAD_PASSPHRASE"
-                self.exit_gracefully(msg)
+        try:
+            # get the encrypted device name
+            self.set_extracted_device_name()
+            luks_header = subprocess.check_output(["sudo", "cryptsetup", "luksDump", self.device])
+            luks_header_list = luks_header.decode('utf-8').split('\n')
+            for line in luks_header_list:
+                items = line.split('\t')
+                if 'UUID' in items[0]:
+                    self.encrypted_device = 'luks-' + items[1]
+
+            # the luks device is not already unlocked
+            if not os.path.exists(os.path.join("/dev/mapper/", self.encrypted_device)):
+                logging.debug('Unlocking luks volume {}'.format(self.encrypted_device))
+                p = subprocess.Popen(
+                    ["sudo", "cryptsetup", "luksOpen", self.device, self.encrypted_device],
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE
+                )
+                logging.debug('Passing key')
+                p.communicate(input=str.encode(encryption_key, "utf-8"))
+                rc = p.returncode
+                if rc != 0:
+                    logging.error('Bad phassphrase for {}'.format(self.encrypted_device))
+                    msg = "USB_BAD_PASSPHRASE"
+                    self.exit_gracefully(msg)
+        except subprocess.CalledProcessError:
+            self.exit_gracefully("USB_NO_SUPPORTED_ENCRYPTION")
 
     def mount_volume(self):
-        # mount target not created
-        if not os.path.exists(self.mountpoint):
-            subprocess.check_call(["sudo", "mkdir", self.mountpoint])
         try:
-            logging.info('Mounting {} to {}'.format(self.encrypted_device, self.mountpoint))
-            subprocess.check_call(
-                [
-                    "sudo",
-                    "mount",
-                    os.path.join("/dev/mapper/", self.encrypted_device),
-                    self.mountpoint,
-                ]
-            )
+            # mount target not created
+            if not os.path.exists(self.mountpoint):
+                subprocess.check_call(["sudo", "mkdir", self.mountpoint])
+
+            mapped_device_path = os.path.join("/dev/mapper/", self.encrypted_device)
+            logging.info('Mounting {}'.format(mapped_device_path))
+            subprocess.check_call(["sudo", "mount", mapped_device_path, self.mountpoint])
             subprocess.check_call(["sudo", "chown", "-R", "user:user", self.mountpoint])
         except subprocess.CalledProcessError:
             # clean up
