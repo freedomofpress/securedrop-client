@@ -3,11 +3,11 @@ Make sure the UI widgets are configured correctly and work as expected.
 """
 import html
 
-from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QMessageBox, QMainWindow
 from PyQt5.QtCore import Qt, QEvent
+from PyQt5.QtGui import QFocusEvent
+from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QMessageBox, QMainWindow
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from tests import factory
 from securedrop_client import db, logic
 from securedrop_client.export import ExportError, ExportStatus
 from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, LoginDialog, \
@@ -16,6 +16,7 @@ from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, Lo
     ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
     ReplyBoxWidget, ReplyTextEdit, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, \
     LoginErrorBar, EmptyConversationView, ExportDialog
+from tests import factory
 
 
 app = QApplication([])
@@ -2353,6 +2354,7 @@ def test_ReplyBoxWidget_disable(mocker):
     rb.text_edit.set_logged_out.assert_called_once_with()
     rb.send_button.hide.assert_called_once_with()
 
+
 def test_ReplyTextEdit_focus_change_no_text(mocker):
     """
     Tests if placeholder text in reply box disappears when it's focused (clicked)
@@ -2361,36 +2363,68 @@ def test_ReplyTextEdit_focus_change_no_text(mocker):
     source = mocker.MagicMock()
     controller = mocker.MagicMock()
     rt = ReplyTextEdit(source, controller)
-    rt.placeholder = mocker.MagicMock()
 
-    rt.setFocus()
-    assert rt.placeholder.hide.assert_called_once_with()
-    assert rt.text() == ''
+    focus_in_event = QFocusEvent(QEvent.FocusIn)
+    focus_out_event = QFocusEvent(QEvent.FocusOut)
 
-    rt.clearFocus()
-    assert rt.placeholder.show.assert_called_once_with()
-    assert rt.text() == ''
+    rt.focusInEvent(focus_in_event)
+    assert rt.placeholder.isHidden()
+    assert rt.toPlainText() == ''
+
+    rt.focusOutEvent(focus_out_event)
+    assert not rt.placeholder.isHidden()
+    assert rt.toPlainText() == ''
 
 
 def test_ReplyTextEdit_focus_change_with_text_typed(mocker):
     """
-    Tests if placeholder text in reply box disappears when it's focused and does
-    not reappear when text has been typed and it becomes out of focus again
+    Test that the placeholder does not appear when there is text in the ReplyTextEdit widget and
+    that the text remains in the ReplyTextEdit regardless of focus.
     """
     source = mocker.MagicMock()
     controller = mocker.MagicMock()
     rt = ReplyTextEdit(source, controller)
-
-    assert rt.placeholder.hide.assert_called_once_with()
-
-    rt.setFocus()
-
-    reply_text = mocker.MagicMock()
+    reply_text = 'mocked reply text'
     rt.setText(reply_text)
 
-    rt.clearFocus()
-    assert rt.placeholder.show.assert_not_called()
-    assert rt.text() == reply_text
+    focus_in_event = QFocusEvent(QEvent.FocusIn)
+    focus_out_event = QFocusEvent(QEvent.FocusOut)
+
+    rt.focusInEvent(focus_in_event)
+    assert rt.placeholder.isHidden()
+    assert rt.toPlainText() == reply_text
+
+    rt.focusOutEvent(focus_out_event)
+    assert rt.placeholder.isHidden()
+    assert rt.toPlainText() == reply_text
+
+
+def test_ReplyTextEdit_setText(mocker):
+    """
+    Checks that a non-empty string parameter causes placeholder to hide and that super's
+    setPlainText method is called (to ensure cursor is hidden).
+    """
+    rt = ReplyTextEdit(mocker.MagicMock(), mocker.MagicMock())
+    mocker.patch('securedrop_client.gui.widgets.QPlainTextEdit.setPlainText')
+
+    rt.setText('mocked reply text')
+
+    assert rt.placeholder.isHidden()
+    rt.setPlainText.assert_called_once_with('mocked reply text')
+
+
+def test_ReplyTextEdit_setText_empty_string(mocker):
+    """
+    Checks that plain string parameter causes placeholder to show and that super's setPlainText
+    method is called (to ensure cursor is hidden).
+    """
+    rt = ReplyTextEdit(mocker.MagicMock(), mocker.MagicMock())
+    mocker.patch('securedrop_client.gui.widgets.QPlainTextEdit.setPlainText')
+
+    rt.setText('')
+
+    assert not rt.placeholder.isHidden()
+    rt.setPlainText.assert_called_once_with('')
 
 
 def test_ReplyTextEdit_set_logged_out(mocker):
@@ -2404,7 +2438,7 @@ def test_ReplyTextEdit_set_logged_out(mocker):
     rt.set_logged_out()
 
     assert 'Sign in' in rt.placeholder.text()
-    assert 'to compose or send a reply.' in rt.placeholder.text()
+    assert 'to compose or send a reply' in rt.placeholder.text()
 
 
 def test_ReplyTextEdit_set_logged_in(mocker):
