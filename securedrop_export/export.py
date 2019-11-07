@@ -205,11 +205,14 @@ class SDExport(object):
 
     def unlock_luks_volume(self, encryption_key):
         try:
-            # set encrypted device (depends on how device was encrypted)
+            # get the encrypted device name
             self.set_extracted_device_name()
-            device_uuid = subprocess.check_output(
-                ["sudo", "lsblk", "-o", "UUID", "--noheadings", self.device])
-            self.encrypted_device = 'luks-' + device_uuid
+            luks_header = subprocess.check_output(["sudo", "cryptsetup", "luksDump", self.device])
+            luks_header_list = luks_header.decode('utf-8').split('\n')
+            for line in luks_header_list:
+                items = line.split('\t')
+                if 'UUID' in items[0]:
+                    self.encrypted_device = 'luks-' + items[1]
 
             # the luks device is not already unlocked
             if not os.path.exists(os.path.join("/dev/mapper/", self.encrypted_device)):
