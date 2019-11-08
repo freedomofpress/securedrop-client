@@ -3,19 +3,20 @@ Make sure the UI widgets are configured correctly and work as expected.
 """
 import html
 
-from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QMessageBox, QMainWindow, QTextEdit
 from PyQt5.QtCore import Qt, QEvent
+from PyQt5.QtGui import QFocusEvent
+from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QMessageBox, QMainWindow
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from tests import factory
 from securedrop_client import db, logic
 from securedrop_client.export import ExportError, ExportStatus
 from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, LoginDialog, \
     SpeechBubble, MessageWidget, ReplyWidget, FileWidget, ConversationView, \
     DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, LeftPane, RefreshButton, \
     ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
-    ReplyBoxWidget, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, LoginErrorBar, \
-    EmptyConversationView, ExportDialog
+    ReplyBoxWidget, ReplyTextEdit, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, \
+    LoginErrorBar, EmptyConversationView, ExportDialog
+from tests import factory
 
 
 app = QApplication([])
@@ -2192,31 +2193,11 @@ def test_ReplyBoxWidget_placeholder_show_currently_selected_source(mocker):
     designation for the correct source. #sanity-check
     """
     controller = mocker.MagicMock()
-    sl = SourceList()
-    sl.setup(controller)
+    source = factory.Source()
+    source.journalist_designation = "source name"
 
-    source_1 = factory.Source()
-    source_1.journalist_designation = "source one"
-    source_2 = factory.Source()
-    source_2.journalist_designation = "source two"
-
-    # add sources to sources list
-    sl.update([source_1, source_2])
-
-    source_1_item = sl.item(0)
-    source_2_item = sl.item(1)
-
-    # select source 1
-    sl.setCurrentItem(source_1_item)
-    assert sl.currentItem() == source_1_item
-
-    # select source other source
-    sl.setCurrentItem(source_2_item)
-    assert sl.currentItem() == source_2_item
-
-    selected_source = sl.itemWidget(sl.currentItem()).source
-    rb = ReplyBoxWidget(selected_source, controller)
-    assert rb.text_edit.placeholderText().find(source_2.journalist_designation) != -1
+    rb = ReplyBoxWidget(source, controller)
+    assert rb.text_edit.placeholder.text().find(source.journalist_designation) != -1
 
 
 def test_ReplyBoxWidget_send_reply(mocker):
@@ -2236,13 +2217,32 @@ def test_ReplyBoxWidget_send_reply(mocker):
     on_reply_sent_fn = mocker.MagicMock()
     scw.conversation_view.on_reply_sent = on_reply_sent_fn
     scw.reply_box.reply_sent = mocker.MagicMock()
-    scw.reply_box.text_edit = QTextEdit('Alles für Alle')
+    scw.reply_box.text_edit = ReplyTextEdit(source, controller)
+    scw.reply_box.text_edit.setText = mocker.MagicMock()
+    scw.reply_box.text_edit.setPlainText('Alles für Alle')
 
     scw.reply_box.send_reply()
 
     scw.reply_box.reply_sent.emit.assert_called_once_with('abc123', '456xyz', 'Alles für Alle')
-    assert scw.reply_box.text_edit.toPlainText() == ''
+    scw.reply_box.text_edit.setText.assert_called_once_with('')
     controller.send_reply.assert_called_once_with('abc123', '456xyz', 'Alles für Alle')
+
+
+def test_ReplyBoxWidget_send_reply_calls_setText_after_send(mocker):
+    """
+    Ensure sending a reply from the reply box emits signal, clears text box, and sends the reply
+    details to the controller.
+    """
+    source = factory.Source()
+    controller = mocker.MagicMock()
+    rb = ReplyBoxWidget(source, controller)
+    rb.text_edit = ReplyTextEdit(source, controller)
+    setText = mocker.patch.object(rb.text_edit, 'setText')
+    rb.text_edit.setPlainText('Alles für Alle')
+
+    rb.send_reply()
+
+    setText.assert_called_once_with('')
 
 
 def test_ReplyBoxWidget_send_reply_does_not_send_empty_string(mocker):
@@ -2252,7 +2252,7 @@ def test_ReplyBoxWidget_send_reply_does_not_send_empty_string(mocker):
     source = mocker.MagicMock()
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
-    rb.text_edit = QTextEdit()
+    rb.text_edit = ReplyTextEdit(source, controller)
     assert not rb.text_edit.toPlainText()
 
     rb.send_reply()
@@ -2351,13 +2351,14 @@ def test_ReplyBoxWidget_enable(mocker):
     source = mocker.MagicMock()
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
-    rb.text_edit = QTextEdit()
+    rb.text_edit = ReplyTextEdit(source, controller)
+    rb.text_edit.set_logged_in = mocker.MagicMock()
     rb.send_button = mocker.MagicMock()
 
     rb.enable()
 
-    assert rb.text_edit.isEnabled()
     assert rb.text_edit.toPlainText() == ''
+    rb.text_edit.set_logged_in.assert_called_once_with()
     rb.send_button.show.assert_called_once_with()
 
 
@@ -2365,14 +2366,116 @@ def test_ReplyBoxWidget_disable(mocker):
     source = mocker.MagicMock()
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
-    rb.text_edit = QTextEdit()
+    rb.text_edit = ReplyTextEdit(source, controller)
+    rb.text_edit.set_logged_out = mocker.MagicMock()
     rb.send_button = mocker.MagicMock()
 
     rb.disable()
 
-    assert not rb.text_edit.isEnabled()
-    assert rb.text_edit.toPlainText() == 'You need to log in to send replies.'
+    assert rb.text_edit.toPlainText() == ''
+    rb.text_edit.set_logged_out.assert_called_once_with()
     rb.send_button.hide.assert_called_once_with()
+
+
+def test_ReplyTextEdit_focus_change_no_text(mocker):
+    """
+    Tests if placeholder text in reply box disappears when it's focused (clicked)
+    and reappears when it's no longer on focus
+    """
+    source = mocker.MagicMock()
+    controller = mocker.MagicMock()
+    rt = ReplyTextEdit(source, controller)
+
+    focus_in_event = QFocusEvent(QEvent.FocusIn)
+    focus_out_event = QFocusEvent(QEvent.FocusOut)
+
+    rt.focusInEvent(focus_in_event)
+    assert rt.placeholder.isHidden()
+    assert rt.toPlainText() == ''
+
+    rt.focusOutEvent(focus_out_event)
+    assert not rt.placeholder.isHidden()
+    assert rt.toPlainText() == ''
+
+
+def test_ReplyTextEdit_focus_change_with_text_typed(mocker):
+    """
+    Test that the placeholder does not appear when there is text in the ReplyTextEdit widget and
+    that the text remains in the ReplyTextEdit regardless of focus.
+    """
+    source = mocker.MagicMock()
+    controller = mocker.MagicMock()
+    rt = ReplyTextEdit(source, controller)
+    reply_text = 'mocked reply text'
+    rt.setText(reply_text)
+
+    focus_in_event = QFocusEvent(QEvent.FocusIn)
+    focus_out_event = QFocusEvent(QEvent.FocusOut)
+
+    rt.focusInEvent(focus_in_event)
+    assert rt.placeholder.isHidden()
+    assert rt.toPlainText() == reply_text
+
+    rt.focusOutEvent(focus_out_event)
+    assert rt.placeholder.isHidden()
+    assert rt.toPlainText() == reply_text
+
+
+def test_ReplyTextEdit_setText(mocker):
+    """
+    Checks that a non-empty string parameter causes placeholder to hide and that super's
+    setPlainText method is called (to ensure cursor is hidden).
+    """
+    rt = ReplyTextEdit(mocker.MagicMock(), mocker.MagicMock())
+    mocker.patch('securedrop_client.gui.widgets.QPlainTextEdit.setPlainText')
+
+    rt.setText('mocked reply text')
+
+    assert rt.placeholder.isHidden()
+    rt.setPlainText.assert_called_once_with('mocked reply text')
+
+
+def test_ReplyTextEdit_setText_empty_string(mocker):
+    """
+    Checks that plain string parameter causes placeholder to show and that super's setPlainText
+    method is called (to ensure cursor is hidden).
+    """
+    rt = ReplyTextEdit(mocker.MagicMock(), mocker.MagicMock())
+    mocker.patch('securedrop_client.gui.widgets.QPlainTextEdit.setPlainText')
+
+    rt.setText('')
+
+    assert not rt.placeholder.isHidden()
+    rt.setPlainText.assert_called_once_with('')
+
+
+def test_ReplyTextEdit_set_logged_out(mocker):
+    """
+    Checks the placeholder text for reply box is correct for offline mode
+    """
+    source = mocker.MagicMock()
+    controller = mocker.MagicMock()
+    rt = ReplyTextEdit(source, controller)
+
+    rt.set_logged_out()
+
+    assert 'Sign in' in rt.placeholder.text()
+    assert 'to compose or send a reply' in rt.placeholder.text()
+
+
+def test_ReplyTextEdit_set_logged_in(mocker):
+    """
+    Checks the placeholder text for reply box is correct for online mode
+    """
+    source = mocker.MagicMock()
+    source.journalist_designation = 'journalist designation'
+    controller = mocker.MagicMock()
+    rt = ReplyTextEdit(source, controller)
+
+    rt.set_logged_in()
+
+    assert 'Compose a reply to' in rt.placeholder.text()
+    assert source.journalist_designation in rt.placeholder.text()
 
 
 def test_update_conversation_maintains_old_items(mocker, session):
