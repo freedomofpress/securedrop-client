@@ -1,6 +1,7 @@
 import logging
 
 from securedrop_export import export
+from securedrop_export.export import ExportStatus
 
 logger = logging.getLogger(__name__)
 
@@ -11,7 +12,7 @@ def __main__(submission):
     try:
         submission.archive_metadata = export.Metadata(submission.tmpdir)
     except Exception:
-        submission.exit_gracefully("ERROR_METADATA_PARSING")
+        submission.exit_gracefully(ExportStatus.ERROR_METADATA_PARSING.value)
 
     if submission.archive_metadata.is_valid():
         if submission.archive_metadata.export_method == "usb-test":
@@ -47,4 +48,4 @@ def __main__(submission):
             submission.setup_printer(printer_uri, printer_ppd)
             submission.print_test_page()
     else:
-        submission.exit_gracefully("ERROR_ARCHIVE_METADATA")
+        submission.exit_gracefully(ExportStatus.ERROR_ARCHIVE_METADATA.value)
