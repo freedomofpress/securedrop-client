@@ -226,12 +226,12 @@ class SDExport(object):
             partition_count = device_and_partitions.decode('utf-8').split('\n').count('part')
             if partition_count > 1:
                 logging.debug("multiple partitions not supported")
-                self.exit_gracefully(ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED)
+                self.exit_gracefully(ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED.value)
 
             # set device to /dev/sda if disk is encrypted, /dev/sda1 if partition encrypted
             self.device = DEVICE if partition_count == 0 else DEVICE + '1'
         except subprocess.CalledProcessError:
-            self.exit_gracefully(ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED)
+            self.exit_gracefully(ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED.value)
 
     def check_luks_volume(self):
         # cryptsetup isLuks returns 0 if the device is a luks volume
