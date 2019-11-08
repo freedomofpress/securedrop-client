@@ -1746,30 +1746,6 @@ def test_Controller_export_file_to_usb_drive_when_orig_file_already_exists_not_q
     assert mock_link.call_count == 0
 
 
-def test_on_export_usb_call_success(mocker, homedir):
-    co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
-    mocker.patch('os.path.exists', return_value=True)
-    os_remove = mocker.patch('os.remove')
-
-    co.on_export_usb_call_success(['mock_filepath_1', 'mock_filepath_2'])
-
-    assert os_remove.call_count == 2
-    assert os_remove.call_args_list[0][0][0] == 'mock_filepath_1'
-    assert os_remove.call_args_list[1][0][0] == 'mock_filepath_2'
-
-
-def test_on_export_usb_call_failure(mocker, homedir):
-    co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
-    mocker.patch('os.path.exists', return_value=True)
-    os_remove = mocker.patch('os.remove')
-
-    co.on_export_usb_call_failure(['mock_filepath_1', 'mock_filepath_2'])
-
-    assert os_remove.call_count == 2
-    assert os_remove.call_args_list[0][0][0] == 'mock_filepath_1'
-    assert os_remove.call_args_list[1][0][0] == 'mock_filepath_2'
-
-
 def test_get_file(mocker, session, homedir):
     co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
     storage = mocker.patch('securedrop_client.logic.storage')

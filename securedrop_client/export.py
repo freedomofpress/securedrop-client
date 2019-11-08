@@ -72,7 +72,7 @@ class Export(QObject):
     begin_usb_export = pyqtSignal(list, str)
     begin_preflight_check = pyqtSignal()
     export_usb_call_failure = pyqtSignal(object)
-    export_usb_call_success = pyqtSignal(list)
+    export_usb_call_success = pyqtSignal()
 
     def __init__(self) -> None:
         super().__init__()
@@ -237,7 +237,7 @@ class Export(QObject):
                 self.preflight_check_call_success.emit('success')
             except ExportError as e:
                 logger.debug('completed preflight checks: failure')
-                self.preflight_check_call_failure.emit(e.status)
+                self.preflight_check_call_failure.emit(e)
 
     @pyqtSlot(list, str)
     def send_file_to_usb_device(self, filepaths: List[str], passphrase: str) -> None:
@@ -253,8 +253,13 @@ class Export(QObject):
                 logger.debug('beginning export from thread {}'.format(
                     threading.current_thread().ident))
                 self._run_disk_export(temp_dir, filepaths, passphrase)
+                self.export_usb_call_success.emit()
                 logger.debug('Export successful')
-                self.export_usb_call_success.emit(filepaths)
             except ExportError as e:
                 logger.error(e)
-                self.export_usb_call_failure.emit(filepaths)
+                self.export_usb_call_failure.emit(e)
+
+        # Export is finished, now remov files created when export began
+        for filepath in filepaths:
+            if os.path.exists(filepath):
+                os.remove(filepath)
