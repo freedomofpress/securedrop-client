@@ -137,19 +137,6 @@ class SDExport(object):
         )
         self.tmpdir = tempfile.mkdtemp()
 
-        try:
-            with open(config_path) as f:
-                logging.info('Retrieving VM configuration')
-                json_config = json.loads(f.read())
-                self.pci_bus_id = json_config.get("pci_bus_id", None)
-                logging.info('pci_bus_id is {}'.format(self.pci_bus_id))
-                if self.pci_bus_id is None:
-                    logging.error('pci_bus_id is not set in VM configuration')
-                    raise
-        except Exception:
-            logger.error("error parsing VM configuration.")
-            self.exit_gracefully(ExportStatus.ERROR_USB_CONFIGURATION.value)
-
     def safe_check_call(self, command, error_message):
         """
         Safely wrap subprocess.check_output to ensure we always return 0 and

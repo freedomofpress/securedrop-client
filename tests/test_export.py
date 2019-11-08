@@ -20,41 +20,6 @@ BAD_TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config-bad.
 ANOTHER_BAD_TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config-bad-2.json")
 
 
-def test_bad_sd_export_config_invalid_json(capsys):
-
-    expected_message = "ERROR_USB_CONFIGURATION"
-    assert export.ExportStatus.ERROR_USB_CONFIGURATION.value == expected_message
-
-    with pytest.raises(SystemExit) as sysexit:
-        export.SDExport("", BAD_TEST_CONFIG)
-    # A graceful exit means a return code of 0
-    assert sysexit.value.code == 0
-
-    captured = capsys.readouterr()
-    assert captured.err == "{}\n".format(expected_message)
-    assert captured.out == ""
-
-
-def test_bad_sd_export_config_invalid_value(capsys):
-
-    expected_message = "ERROR_USB_CONFIGURATION"
-    assert export.ExportStatus.ERROR_USB_CONFIGURATION.value == expected_message
-
-    with pytest.raises(SystemExit) as sysexit:
-        export.SDExport("", ANOTHER_BAD_TEST_CONFIG)
-    # A graceful exit means a return code of 0
-    assert sysexit.value.code == 0
-
-    captured = capsys.readouterr()
-    assert captured.err == "{}\n".format(expected_message)
-    assert captured.out == ""
-
-
-def test_good_sd_export_config(capsys):
-    submission = export.SDExport("", TEST_CONFIG)
-    assert submission.pci_bus_id == "2"
-
-
 def test_exit_gracefully_no_exception(capsys):
 
     submission = export.SDExport("testfile", TEST_CONFIG)
