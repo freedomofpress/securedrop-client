@@ -32,7 +32,7 @@ from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBox
 
 from securedrop_client.db import DraftReply, Source, Message, File, Reply, User
 from securedrop_client.storage import source_exists
-from securedrop_client.export import ExportStatus
+from securedrop_client.export import ExportStatus, ExportError
 from securedrop_client.gui import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_icon, load_image
@@ -2032,11 +2032,11 @@ class ExportDialog(QDialog):
         unlock_disk_button.clicked.connect(self._on_unlock_disk_clicked)
 
         self.controller.export.preflight_check_call_failure.connect(
-            self._update_preflight, type=Qt.QueuedConnection)
+            self._on_preflight_check_call_failure, type=Qt.QueuedConnection)
+        self.controller.export.export_usb_call_failure.connect(
+            self._on_export_usb_call_failure, type=Qt.QueuedConnection)
         self.controller.export.preflight_check_call_success.connect(
             self._request_passphrase, type=Qt.QueuedConnection)
-        self.controller.export.export_usb_call_failure.connect(
-            self._update_usb_export, type=Qt.QueuedConnection)
         self.controller.export.export_usb_call_success.connect(
             self._on_export_success, type=Qt.QueuedConnection)
 
@@ -2100,7 +2100,7 @@ class ExportDialog(QDialog):
             self.insert_usb_form.hide()
 
     @pyqtSlot(object)
-    def _update_preflight(self, status):
+    def _on_preflight_check_call_failure(self, error: ExportError):
         # The first time we see a CALLED_PROCESS_ERROR, tell the user to insert the USB device
         # in case the issue is that the Export VM cannot start due to a USB device being
         # unavailable for attachment. According to the Qubes docs:
@@ -2109,14 +2109,14 @@ class ExportDialog(QDialog):
         #    the targetVM fails."
         #
         # For information, see https://www.qubes-os.org/doc/device-handling
-        if status == ExportStatus.CALLED_PROCESS_ERROR.value:
+        if error.status == ExportStatus.CALLED_PROCESS_ERROR.value:
             self._request_to_insert_usb_device()
         else:
-            self._update(status)
+            self._update(error.status)
 
     @pyqtSlot(object)
-    def _update_usb_export(self, status):
-        self._update(status)
+    def _on_export_usb_call_failure(self, error: ExportError):
+        self._update(error.status)
 
 
 class ConversationView(QWidget):

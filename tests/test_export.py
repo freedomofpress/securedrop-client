@@ -18,11 +18,16 @@ def test_send_file_to_usb_device(mocker):
     export.export_usb_call_success = mocker.MagicMock()
     export.export_usb_call_success.emit = mocker.MagicMock()
     _run_disk_export = mocker.patch.object(export, '_run_disk_export')
+    mocker.patch('os.path.exists', return_value=True)
+    os_remove = mocker.patch('os.remove')
 
-    export.send_file_to_usb_device(['mock_filepath'], 'mock passphrase')
+    export.send_file_to_usb_device(['path1', 'path2'], 'mock passphrase')
 
-    _run_disk_export.assert_called_once_with('mock_temp_dir', ['mock_filepath'], 'mock passphrase')
-    export.export_usb_call_success.emit.assert_called_once_with(['mock_filepath'])
+    _run_disk_export.assert_called_once_with('mock_temp_dir', ['path1', 'path2'], 'mock passphrase')
+    export.export_usb_call_success.emit.assert_called_once_with()
+    assert os_remove.call_count == 2
+    assert os_remove.call_args_list[0][0][0] == 'path1'
+    assert os_remove.call_args_list[1][0][0] == 'path2'
 
 
 def test_send_file_to_usb_device_error(mocker):
@@ -38,11 +43,16 @@ def test_send_file_to_usb_device_error(mocker):
     export.export_usb_call_failure.emit = mocker.MagicMock()
     error = ExportError('[mock_filepath]')
     _run_disk_export = mocker.patch.object(export, '_run_disk_export', side_effect=error)
+    mocker.patch('os.path.exists', return_value=True)
+    os_remove = mocker.patch('os.remove')
 
-    export.send_file_to_usb_device(['mock_filepath'], 'mock passphrase')
+    export.send_file_to_usb_device(['path1', 'path2'], 'mock passphrase')
 
-    _run_disk_export.assert_called_once_with('mock_temp_dir', ['mock_filepath'], 'mock passphrase')
-    export.export_usb_call_failure.emit.assert_called_once_with(['mock_filepath'])
+    _run_disk_export.assert_called_once_with('mock_temp_dir', ['path1', 'path2'], 'mock passphrase')
+    export.export_usb_call_failure.emit.assert_called_once_with(error)
+    assert os_remove.call_count == 2
+    assert os_remove.call_args_list[0][0][0] == 'path1'
+    assert os_remove.call_args_list[1][0][0] == 'path2'
 
 
 def test_run_preflight_checks(mocker):
@@ -85,7 +95,7 @@ def test_run_preflight_checks_error(mocker):
 
     _run_usb_export.assert_called_once_with('mock_temp_dir')
     _run_disk_export.assert_called_once_with('mock_temp_dir')
-    export.preflight_check_call_failure.emit.assert_called_once_with(error.status)
+    export.preflight_check_call_failure.emit.assert_called_once_with(error)
 
 
 def test__run_disk_export(mocker):

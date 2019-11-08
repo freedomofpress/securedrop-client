@@ -1496,7 +1496,7 @@ def test_ExportDialog_pre_flight_request_to_insert_usb_device_on_CALLED_PROCESS_
     export_dialog._request_to_insert_usb_device = mocker.MagicMock()
     export_dialog._update = mocker.MagicMock()
 
-    export_dialog._update_preflight(called_process_error.status)
+    export_dialog._on_preflight_check_call_failure(called_process_error)
 
     export_dialog._request_passphrase.assert_not_called()
     export_dialog._request_to_insert_usb_device.assert_called_once_with()
@@ -1515,7 +1515,7 @@ def test_ExportDialog_export_request_to_insert_usb_device_on_CALLED_PROCESS_ERRO
     export_dialog._request_to_insert_usb_device = mocker.MagicMock()
     export_dialog._update = mocker.MagicMock()
 
-    export_dialog._update_usb_export(called_process_error.status)
+    export_dialog._on_export_usb_call_failure(called_process_error)
 
     export_dialog._request_passphrase.assert_not_called()
     export_dialog._request_to_insert_usb_device.assert_not_called()
@@ -1635,7 +1635,7 @@ def test_ExportDialog__on_unlock_disk_clicked_asks_for_passphrase_again_on_error
     export_dialog._request_passphrase = mocker.MagicMock()
     export_dialog.passphrase_field.text = mocker.MagicMock(return_value='mock_passphrase')
 
-    export_dialog._update_usb_export(bad_password_export_error.status)
+    export_dialog._on_export_usb_call_failure(bad_password_export_error)
 
     export_dialog._request_passphrase.assert_called_with(True)
 
@@ -1646,7 +1646,8 @@ def test_ExportDialog__update_preflight_non_called_process_error(mocker):
     """
     export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid')
     export_dialog.generic_error = mocker.MagicMock()
-    export_dialog._update_preflight(ExportStatus.UNEXPECTED_RETURN_STATUS.value)
+    error = ExportError('generic error')
+    export_dialog._on_preflight_check_call_failure(error)
     export_dialog.generic_error.show.assert_called_once_with()
 
 
@@ -1678,8 +1679,9 @@ def test_ExportDialog__update_after_CALLED_PROCESS_ERROR(mocker):
     export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid')
     export_dialog._request_to_insert_usb_device = mocker.MagicMock()
     export_dialog._request_passphrase = mocker.MagicMock()
+    error = ExportError(ExportStatus.CALLED_PROCESS_ERROR.value)
 
-    export_dialog._update_usb_export(ExportStatus.CALLED_PROCESS_ERROR.value)
+    export_dialog._on_export_usb_call_failure(error)
 
     assert export_dialog.starting_export_message.isHidden()
     assert export_dialog.passphrase_form.isHidden()
