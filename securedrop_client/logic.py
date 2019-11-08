@@ -306,9 +306,12 @@ class Controller(QObject):
         """
         Given a username, password and time based one-time-passcode (TOTP),
         create a new instance representing the SecureDrop api and authenticate.
+
+        Default to 60 seconds until we implement a better request timeout strategy.
         """
         storage.mark_all_pending_drafts_as_failed(self.session)
-        self.api = sdclientapi.API(self.hostname, username, password, totp, self.proxy)
+        self.api = sdclientapi.API(
+            self.hostname, username, password, totp, self.proxy, default_request_timeout=60)
         self.call_api(self.api.authenticate,
                       self.on_authenticate_success,
                       self.on_authenticate_failure)
