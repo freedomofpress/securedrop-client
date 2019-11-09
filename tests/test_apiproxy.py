@@ -51,6 +51,8 @@ class TestAPIProxy(unittest.TestCase):
         self.assertTrue(isinstance(self.api.token, str))
         self.assertTrue(isinstance(self.api.token_expiration, datetime.datetime))
         self.assertTrue(isinstance(self.api.token_journalist_uuid, str))
+        self.assertTrue(isinstance(self.api.journalist_first_name, (str, None)))
+        self.assertTrue(isinstance(self.api.journalist_last_name, (str, None)))
 
     @dastollervey_datasaver
     def test_get_sources(self):
