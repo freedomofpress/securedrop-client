@@ -1416,6 +1416,12 @@ class LoginDialog(QDialog):
         if event.key() == Qt.Key_Escape:
             event.ignore()
 
+        """
+        Pressing return or enter should attempt to submit the login form.
+        """
+        if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
+            self.validate()
+
     def setup(self, controller):
         self.controller = controller
         self.offline_mode.clicked.connect(self.controller.login_offline_mode)
