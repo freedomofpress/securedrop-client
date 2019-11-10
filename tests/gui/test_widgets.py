@@ -2,6 +2,7 @@
 Make sure the UI widgets are configured correctly and work as expected.
 """
 import html
+import pytest
 
 from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtGui import QFocusEvent
@@ -1068,7 +1069,7 @@ def test_LoginDialog_validate_input_ok(mocker):
     mock_controller.login.assert_called_once_with('foo', 'nicelongpassword', '123456')
 
 
-def test_LoginDialog_keyPressEvent(mocker):
+def test_LoginDialog_escapeKeyPressEvent(mocker):
     """
     Ensure we don't hide the login dialog when Esc key is pressed.
     """
@@ -1079,6 +1080,23 @@ def test_LoginDialog_keyPressEvent(mocker):
     ld.keyPressEvent(event)
 
     event.ignore.assert_called_once_with()
+
+
+@pytest.mark.parametrize("qt_key", [Qt.Key_Enter, Qt.Key_Return])
+def test_LoginDialog_submitKeyPressEvent(mocker, qt_key):
+    """
+    Ensure we submit the form when the user presses [Enter] or [Return]
+    """
+
+    ld = LoginDialog(None)
+    event = mocker.MagicMock()
+    event.key = mocker.MagicMock(return_value=qt_key)
+
+    ld.validate = mocker.MagicMock()
+
+    ld.keyPressEvent(event)
+
+    ld.validate.assert_called_once_with()
 
 
 def test_LoginDialog_closeEvent_exits(mocker):
