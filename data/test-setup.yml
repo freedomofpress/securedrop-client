@@ -1,22 +1,35 @@
 interactions:
 - request:
-    body: '{"one_time_code": "278592", "passphrase": "correct horse battery staple
-      profanity oil chewy", "username": "journalist"}'
+    body: '{"passphrase": "correct horse battery staple profanity oil chewy", "username":
+      "journalist", "one_time_code": "190968"}'
     headers:
-      Accept: ['*/*']
-      Accept-Encoding: ['gzip, deflate']
-      Connection: [keep-alive]
-      Content-Length: ['119']
-      User-Agent: [python-requests/2.20.0]
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '119'
+      User-Agent:
+      - python-requests/2.21.0
     method: POST
     uri: http://127.0.0.1:8081/api/v1/token
   response:
-    body: {string: "{\n  \"expiration\": \"2019-03-20T02:56:30.121480Z\", \n  \"journalist_uuid\":
-        \"f775c4e9-e616-4fd4-9d87-e42cef293c3b\", \n  \"token\": \"eyJhbGciOiJIUzI1NiIsImV4cCI6MTU1MzA1MDU5MCwiaWF0IjoxNTUzMDIxNzkwfQ.eyJpZCI6MX0.16UNxpkI4yOEI6Jqsz3hrmjhgqSiw61xAENb654nRX0\"\n}\n"}
+    body:
+      string: "{\n  \"expiration\": \"2019-11-10T02:12:38.519862Z\", \n  \"journalist_first_name\":
+        \"bob\", \n  \"journalist_last_name\": \"bobathy\", \n  \"journalist_uuid\": \"6c05e07a-24aa-4475-99b4-25fb5a1ba3c4\",
+        \n  \"token\": \"eyJpYXQiOjE1NzMzMjMxNTgsImFsZyI6IkhTMjU2IiwiZXhwIjoxNTczMzUxOTU4fQ.eyJpZCI6MX0.6DOFozpT3pg5YSF4hk0ISTc1VRNSTjbGxaN17EjPvJM\"\n}\n"
     headers:
-      Content-Length: ['250']
-      Content-Type: [application/json]
-      Date: ['Tue, 19 Mar 2019 18:56:30 GMT']
-      Server: [Werkzeug/0.14.1 Python/2.7.12]
-    status: {code: 200, message: OK}
+      Content-Length:
+      - '317'
+      Content-Type:
+      - application/json
+      Date:
+      - Sat, 09 Nov 2019 18:12:38 GMT
+      Server:
+      - Werkzeug/0.14.1 Python/3.5.2
+    status:
+      code: 200
+      message: OK
 version: 1
