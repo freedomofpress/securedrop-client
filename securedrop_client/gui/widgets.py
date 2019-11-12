@@ -1410,15 +1410,14 @@ class LoginDialog(QDialog):
 
     def keyPressEvent(self, event):
         """
-        Override default QDialog behavior that closes the dialog window when the Esc key is pressed.
-        Instead, ignore the event.
+        Cutomize keyboard behavior in the login dialog.
+
+        - [Esc] should not close the dialog
+        - [Enter] or [Return] should attempt to submit the form
         """
         if event.key() == Qt.Key_Escape:
             event.ignore()
 
-        """
-        Pressing return or enter should attempt to submit the login form.
-        """
         if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
             self.validate()
 
