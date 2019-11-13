@@ -834,14 +834,16 @@ class SourceList(QListWidget):
     Displays the list of sources.
     """
 
+    # Thick 500px border in QListView::item:selected is a workaround.
+    # See https://github.com/freedomofpress/securedrop-client/issues/331
     CSS = '''
     QListView {
         border: none;
-        show-decoration-selected: 0;
+        show-decoration-selected: 1;
         border-right: 3px solid #f3f5f9;
     }
     QListView::item:selected {
-        background: #f3f5f9;
+        border: 500px solid #f3f5f9;
     }
     '''
 
