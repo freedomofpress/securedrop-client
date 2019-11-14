@@ -32,8 +32,8 @@ python-editor==1.0.3 \
 requests==2.20.0 \
     --hash=sha256:99dcfdaaeb17caf6e526f32b6a7b780461512ab3f1d992187801694cba42770c \
     --hash=sha256:a84b8c9ab6239b578f22d1c21d51b696dcfe004032bb80ea832398d6909d7279
-securedrop-sdk==0.0.11 \
-    --hash=sha256:89a454a45eac15db702e06d24f5e4be64b8d033a5546aff056de762ecfc5f72a
+securedrop-sdk==0.0.12 \
+    --hash=sha256:b5ddca26ce87d4007db5d64fe77d44b4086a902c3f79e69fb9a81343c81ce278
 six==1.11.0 \
     --hash=sha256:70e8a77beed4562e7f14fe23a786b54f6296e34344c23bc42f07b15018ff98e9 \
     --hash=sha256:832dc0e10feb1aa2c68dcc57dbb658f1c7e65b9b61af69048abc87a2db00a0eb
