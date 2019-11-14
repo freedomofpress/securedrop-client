@@ -734,7 +734,7 @@ class Controller(QObject):
             uuid=reply_uuid,
             timestamp=datetime.utcnow(),
             source_id=source.id,
-            journalist_id=self.user.uuid,
+            journalist_id=self.api.token_journalist_uuid,
             file_counter=source.interaction_count,
             content=message,
             send_status_id=reply_status.id,

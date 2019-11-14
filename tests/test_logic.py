@@ -1306,6 +1306,8 @@ def test_Controller_send_reply_success(homedir, config, mocker, session_maker, s
     mock_gui = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     co.user = factory.User()
+    co.api = mocker.MagicMock()
+    co.api.token_journalist_uuid = co.user.uuid
 
     mock_success_signal = mocker.MagicMock()
     mock_failure_signal = mocker.MagicMock()
@@ -1317,17 +1319,14 @@ def test_Controller_send_reply_success(homedir, config, mocker, session_maker, s
 
     source = factory.Source()
     session.add(source)
-    msg_uuid = 'xyz456'
     session.commit()
 
-    msg = 'wat'
-
-    co.send_reply(source.uuid, msg_uuid, msg)
+    co.send_reply(source.uuid, 'mock_user_uuid', 'mock_msg')
 
     mock_job_cls.assert_called_once_with(
         source.uuid,
-        msg_uuid,
-        msg,
+        'mock_user_uuid',
+        'mock_msg',
         co.gpg,
     )
 
