@@ -28,12 +28,14 @@ from argparse import ArgumentParser
 from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5.QtCore import Qt, QTimer
 from logging.handlers import TimedRotatingFileHandler
+
 from securedrop_client import __version__
 from securedrop_client.logic import Controller
 from securedrop_client.gui.main import Window
 from securedrop_client.resources import load_icon, load_css, load_font
 from securedrop_client.db import make_session_maker
 from securedrop_client.utils import safe_mkdir
+from oqubeslogging import OQubesLog
 
 DEFAULT_SDC_HOME = '~/.securedrop_client'
 ENCODING = 'utf-8'
@@ -95,11 +97,13 @@ def configure_logging(sdc_home: str) -> None:
                                        encoding=ENCODING)
     handler.setFormatter(formatter)
     handler.setLevel(logging.DEBUG)
+    qubeshandler = OQubesLog("sd-svs", "sd-log")
 
     # set up primary log
     log = logging.getLogger()
     log.setLevel(LOGLEVEL)
     log.addHandler(handler)
+    log.addHandler(qubeshandler)
 
     # override excepthook to capture a log of catastrophic failures.
     sys.excepthook = excepthook
