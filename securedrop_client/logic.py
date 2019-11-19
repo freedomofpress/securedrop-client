@@ -325,6 +325,7 @@ class Controller(QObject):
             self.api.journalist_last_name,
             self.session)
         self.gui.show_main_window(user)
+        self.update_sources()
         self.sync_api()
         self.api_job_queue.login(self.api)
         self.is_authenticated = True
