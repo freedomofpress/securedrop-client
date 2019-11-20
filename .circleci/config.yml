@@ -1,3 +1,20 @@
+---
+common-steps:
+  - &install_packages
+    run:
+      name: Install packages
+      command: |
+        sudo apt install libnotify-bin
+
+  - &run_tests
+    run:
+      name: Install test requirements and run tests
+      command: |
+        virtualenv .venv
+        source .venv/bin/activate
+        pip install --require-hashes -r test-requirements.txt
+        make test
+
 version: 2
 jobs:
   lint:
@@ -19,26 +36,27 @@ jobs:
             source .venv/bin/activate
             make safety
 
-  test:
+  test-stretch:
     docker:
-      - image: circleci/python:3.5
+      - image: circleci/python:3.5-stretch
     steps:
       - checkout
-      - run:
-          name: Install packages
-          command: |
-            sudo apt install libnotify-bin
-      - run:
-          name: Install test requirements and run tests
-          command: |
-            virtualenv .venv
-            source .venv/bin/activate
-            pip install --require-hashes -r test-requirements.txt
-            make test
+      - *install_packages
+      - *run_tests
+
+  test-buster:
+    docker:
+      - image: circleci/python:3.7-buster
+    steps:
+      - checkout
+      - *install_packages
+      - *run_tests
+
 workflows:
   version: 2
   securedrop_export_ci:
     jobs:
       - lint
-      - test
+      - test-stretch
+      - test-buster
 
