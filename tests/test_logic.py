@@ -196,6 +196,7 @@ def test_Controller_on_authenticate_success(homedir, config, mocker, session_mak
     mock_api_job_queue = mocker.patch("securedrop_client.logic.ApiJobQueue")
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     co.sync_api = mocker.MagicMock()
+    co.update_sources = mocker.MagicMock()
     co.session.add(user)
     co.session.commit()
     co.api = mocker.MagicMock()
@@ -211,6 +212,7 @@ def test_Controller_on_authenticate_success(homedir, config, mocker, session_mak
     co.sync_api.assert_called_once_with()
     assert co.is_authenticated
     assert mock_api_job_queue.called
+    co.update_sources.assert_called_once_with()
     login.assert_called_with(co.api)
     co.resume_queues.assert_called_once_with()
 
