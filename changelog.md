@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.0.10
+
+  * Add Python 3.7/buster support (#568, #609)
+  * Add export to USB support (#611, #547, #562, #563, #564)
+  * Retry failed replies (#530)
+  * Pause queue on auth errors, connection failures, and timeouts (#531)
+  * Add pending reply status, persist replies in the database (#578)
+  * Set realistic timeouts, scale file/message download timeouts using file size (#515, #567)
+  * Update qrexec keyword prefix characters (#537)
+  * Reply box no longer accepts rich text input (#580)
+  * Format reply box placeholder text (#597)
+  * Redesign FileWidget (#535)
+  * Style conversation header (#543)
+  * Login form submits if user presses Enter or Return (#615)
+  * Enable changeable log levels (#603)
+  * Remove borders around source list, send icon, and reply box (#505)
+  * Move star and date in source widget (#506)
+  * Polish source widget (#522)
+  * Polish offline UI (#586)
+  * Add branding image to left pane and polish styling (#520)
+  * Add empty conversation view (#510)
+  * Update fonts weights and colors (#502)
+  * Bugfix: handle missing files during export and open (#566)
+  * Bugfix: do not escape quotes in SecureQLabel (#516)
+  * Bugfix: skip round trip to user endpoint during logic (#605, #621, #623)
+  * Bugfix: fix bug of sources disappearing from source list (#620)
+  * Bugfix: fix db warnings upon source deletion (#581)
+  * Add more detailed developer documentation (#508)
+  * Add documentation for updating dependencies (#536)
+  * Ensure build/dev requirements files stay in sync (#602)
+  * Parallelize test suite (#569)
+  * Ignore third-party deprecation warnings (#576)
+  * Add bandit to check target (#548)
+
 ## 0.0.9
 
   * Use Montserrat and Source Sans Pro (#493)
