@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.5
+
+  * Update build-requirements.txt to include wheels for Buster
+
 ## 0.1.4
 
   * Update urllib3 to version 1.24.3 or later due to CVE-2019-11324 (#35)
