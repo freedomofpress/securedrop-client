@@ -12,6 +12,9 @@ safety: ## Runs `safety check` to check python dependencies for vulnerabilities
 update-pip-requirements: ## Updates all Python requirements files via pip-compile.
 	pip-compile --generate-hashes --output-file test-requirements.txt test-requirements.in
 
+.PHONY: check
+check: lint test
+   
 .PHONY: test
 test:
 	pytest -v tests/
