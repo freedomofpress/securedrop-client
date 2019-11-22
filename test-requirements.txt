@@ -12,6 +12,10 @@ attrs==19.1.0 \
     --hash=sha256:69c0dbf2ed392de1cb5ec704444b08a5ef81680a61cb899dc08127123af36a79 \
     --hash=sha256:f0b870f674851ecbfbbbd364d6b5cbdff9dcedbc7f3f5e18a6891057f21fe399 \
     # via pytest
+click==7.0 \
+    --hash=sha256:2335065e6395b9e67ca716de5f7526736bfa6ceead690adf616d925bdc622b13 \
+    --hash=sha256:5b94b49521f6456670fdb30cd82a4eca9412788a93fa6dd6df72c94d5a8ff2d7 \
+    # via pip-tools
 entrypoints==0.3 \
     --hash=sha256:589f874b313739ad35be6e0cd7efde2a4e9b6fea91edcc34e58ecbb8dbe56d19 \
     --hash=sha256:c70dd71abe5a8c85e55e12c19bd91ccfeec11a6e99044204511f9ed547d48451 \
@@ -36,10 +40,9 @@ packaging==19.0 \
     --hash=sha256:0c98a5d0be38ed775798ece1b9727178c4469d9c3b4ada66e8e6b7849f8732af \
     --hash=sha256:9e1cbf8c12b1f1ce0bb5344b8d7ecf66a6f8a6e91bcb0c84593ed6d3ab5c4ab3 \
     # via pytest
-pathlib2==2.3.4 \
-    --hash=sha256:2156525d6576d21c4dcaddfa427fae887ef89a7a9de5cbfe0728b3aafa78427e \
-    --hash=sha256:446014523bb9be5c28128c4d2a10ad6bb60769e78bd85658fe44a450674e0ef8 \
-    # via pytest
+pip-tools==4.2.0 \
+    --hash=sha256:123174aabf7f4a63dd6e0bfc8aeeb5eaddbecb75a41e9f0dd4c447b1f2de14f7 \
+    --hash=sha256:5427ea4dcc175649723985fbcace9b2d8f46f9adbcc63bc2d7b247d9bcc74917
 pluggy==0.12.0 \
     --hash=sha256:0825a152ac059776623854c1543d65a4ad408eb3d33ee114dff91e57ec6ae6fc \
     --hash=sha256:b9817417e95936bf75d85d3f8767f7df6cdde751fc40aed3bb3074cbcb77757c \
@@ -60,13 +63,16 @@ pyparsing==2.4.1.1 \
     --hash=sha256:43c5486cefefa536c9aab528881c992328f020eefe4f6d06332449c365218580 \
     --hash=sha256:d6c5ffe9d0305b9b977f7a642d36b9370954d1da7ada4c62393382cbadad4265 \
     # via packaging
+pytest-mock==1.12.1 \
+    --hash=sha256:96a0cebc66e09930be2a15b03333d90b59584d3fb011924f81c14b50ee0afbba \
+    --hash=sha256:e5381be2608e49547f5e47633c5f81241ebf6206d17ce516a7a18d5a917e3859
 pytest==4.6.4 \
     --hash=sha256:6aa9bc2f6f6504d7949e9df2a756739ca06e58ffda19b5e53c725f7b03fb4aae \
     --hash=sha256:b77ae6f2d1a760760902a7676887b665c086f71e3461c64ed2a312afcedc00d6
 six==1.12.0 \
     --hash=sha256:3350809f0555b11f552448330d0b52d5f24c91a322ea4a15ef22629740f3761c \
     --hash=sha256:d16a0141ec1a18405cd4ce8b4613101da75da0e9a7aec5bdd4fa804d0e0eba73 \
-    # via more-itertools, packaging, pathlib2, pytest
+    # via more-itertools, packaging, pip-tools, pytest
 wcwidth==0.1.7 \
     --hash=sha256:3df37372226d6e63e1b1e1eda15c594bca98a22d33a23832a90998faa96bc65e \
     --hash=sha256:f4ebe71925af7b40a864553f761ed559b43544f8f71746c2d756c7fe788ade7c \

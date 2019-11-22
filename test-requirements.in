@@ -1,2 +1,4 @@
 flake8
+pip-tools
 pytest
+pytest-mock
