@@ -14,10 +14,11 @@ update-pip-requirements: ## Updates all Python requirements files via pip-compil
 
 .PHONY: check
 check: lint test
-   
+
+TESTS ?= tests
 .PHONY: test
 test:
-	pytest -v tests/
+	pytest -v $$TESTS
 
 .PHONY: lint
 lint:
