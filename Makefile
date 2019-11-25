@@ -71,7 +71,7 @@ check: clean bandit lint mypy test-random ## Run the full CI test suite
 
 .PHONY: update-pip-requirements
 update-pip-requirements: ## Updates all Python requirements files via pip-compile.
-	pip-compile --generate-hashes --output-file dev-requirements.txt requirements.in dev-requirements.in
+	pip-compile --generate-hashes --allow-unsafe --output-file dev-requirements.txt requirements.in dev-requirements.in
 	pip-compile --generate-hashes --output-file requirements.txt requirements.in
 
 # Explaination of the below shell command should it ever break.
