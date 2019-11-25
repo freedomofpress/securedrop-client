@@ -3,6 +3,7 @@ from unittest import mock
 import os
 import pytest
 import subprocess  # noqa: F401
+import sys
 import tempfile
 from subprocess import CalledProcessError
 
@@ -59,7 +60,9 @@ def test_empty_config(capsys):
     metadata = os.path.join(temp_folder, export.Metadata.METADATA_FILE)
     with open(metadata, "w") as f:
         f.write("{}")
+
     config = export.Metadata(temp_folder)
+
     assert not config.is_valid()
 
 
@@ -69,7 +72,9 @@ def test_valid_printer_test_config(capsys):
     metadata = os.path.join(temp_folder, export.Metadata.METADATA_FILE)
     with open(metadata, "w") as f:
         f.write('{"device": "printer-test"}')
+
     config = export.Metadata(temp_folder)
+
     assert config.is_valid()
     assert config.encryption_key is None
     assert config.encryption_method is None
@@ -81,7 +86,9 @@ def test_valid_printer_config(capsys):
     metadata = os.path.join(temp_folder, export.Metadata.METADATA_FILE)
     with open(metadata, "w") as f:
         f.write('{"device": "printer"}')
+
     config = export.Metadata(temp_folder)
+
     assert config.is_valid()
     assert config.encryption_key is None
     assert config.encryption_method is None
@@ -96,7 +103,9 @@ def test_invalid_encryption_config(capsys):
         f.write(
             '{"device": "disk", "encryption_method": "base64", "encryption_key": "hunter1"}'
         )
+
     config = export.Metadata(temp_folder)
+
     assert config.encryption_key == "hunter1"
     assert config.encryption_method == "base64"
     assert not config.is_valid()
@@ -110,7 +119,9 @@ def test_valid_encryption_config(capsys):
         f.write(
             '{"device": "disk", "encryption_method": "luks", "encryption_key": "hunter1"}'
         )
+
     config = export.Metadata(temp_folder)
+
     assert config.encryption_key == "hunter1"
     assert config.encryption_method == "luks"
     assert config.is_valid()
@@ -131,7 +142,9 @@ def test_popup_message(mocked_call):
 @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_BOTHER_PRINTER)
 def test_get_good_printer_uri(mocked_call):
     submission = export.SDExport("testfile", TEST_CONFIG)
+
     result = submission.get_printer_uri()
+
     assert result == "usb://Brother/HL-L2320D%20series?serial=A00000A000000"
 
 
@@ -140,17 +153,13 @@ def test_get_bad_printer_uri(mocked_call, capsys, mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
     expected_message = "ERROR_PRINTER_NOT_FOUND"
     assert export.ExportStatus.ERROR_PRINTER_NOT_FOUND.value == expected_message
-    mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
+    mocked_exit = mocker.patch.object(submission, "exit_gracefully",
+                                      side_effect=lambda x: sys.exit(0))
 
-    with pytest.raises(SystemExit) as sysexit:
-        result = submission.get_printer_uri()
-        assert result == ""
-        mocked_exit.assert_called_once_with(expected_message)
+    with pytest.raises(SystemExit):
+        submission.get_printer_uri()
 
-    assert sysexit.value.code == 0
-    captured = capsys.readouterr()
-    assert captured.err == "{}\n".format(expected_message)
-    assert captured.out == ""
+    mocked_exit.assert_called_once_with(expected_message)
 
 
 @pytest.mark.parametrize('open_office_paths', [
@@ -182,15 +191,10 @@ def test_usb_precheck_disconnected(capsys, mocker):
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
 
     mocker.patch("subprocess.check_output",
-                 return_value=CalledProcessError(1, 'check_output'))
+                 side_effect=CalledProcessError(1, 'check_output'))
 
-    with pytest.raises(SystemExit) as sysexit:
-        submission.check_usb_connected()
-        mocked_exit.assert_called_once_with(expected_message)
-
-    assert sysexit.value.code == 0
-    captured = capsys.readouterr()
-    assert captured.err == "{}\n".format(expected_message)
+    submission.check_usb_connected()
+    mocked_exit.assert_called_once_with(expected_message)
 
 
 @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_USB)
@@ -198,29 +202,28 @@ def test_usb_precheck_connected(mocked_call, capsys, mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
     expected_message = "USB_CONNECTED"
     assert export.ExportStatus.USB_CONNECTED.value == expected_message
-
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
 
-    with pytest.raises(SystemExit) as sysexit:
-        submission.check_usb_connected()
-        mocked_exit.assert_called_once_with(expected_message)
+    submission.check_usb_connected()
 
-    assert sysexit.value.code == 0
-    captured = capsys.readouterr()
-    assert captured.err == "{}\n".format(expected_message)
+    mocked_exit.assert_called_once_with(expected_message)
 
 
 @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_NO_PART)
 def test_extract_device_name_no_part(mocked_call, capsys):
     submission = export.SDExport("testfile", TEST_CONFIG)
+
     submission.set_extracted_device_name()
+
     assert submission.device == "/dev/sda"
 
 
 @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_ONE_PART)
 def test_extract_device_name_single_part(mocked_call, capsys):
     submission = export.SDExport("testfile", TEST_CONFIG)
+
     submission.set_extracted_device_name()
+
     assert submission.device == "/dev/sda1"
 
 
@@ -230,12 +233,9 @@ def test_extract_device_name_multiple_part(mocked_call, capsys, mocker):
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
     expected_message = export.ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED.value
 
-    with pytest.raises(SystemExit) as sysexit:
-        submission.set_extracted_device_name()
-        mocked_exit.assert_called_once_with(expected_message)
-    assert sysexit.value.code == 0
-    captured = capsys.readouterr()
-    assert captured.err == "{}\n".format(expected_message)
+    submission.set_extracted_device_name()
+
+    mocked_exit.assert_called_once_with(expected_message)
 
 
 @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_NO_PART)
@@ -245,10 +245,9 @@ def test_luks_precheck_encrypted_fde(mocked_call, capsys, mocker):
     expected_message = export.ExportStatus.USB_ENCRYPTED.value
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
 
-    with pytest.raises(SystemExit) as sysexit:
-        submission.check_luks_volume()
-        mocked_exit.assert_called_once_with(expected_message)
-    assert sysexit.value.code == 0
+    submission.check_luks_volume()
+
+    mocked_exit.assert_called_once_with(expected_message)
 
 
 @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_ONE_PART)
@@ -258,24 +257,32 @@ def test_luks_precheck_encrypted_single_part(mocked_call, capsys, mocker):
     expected_message = export.ExportStatus.USB_ENCRYPTED.value
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
 
-    with pytest.raises(SystemExit) as sysexit:
-        submission.check_luks_volume()
-        mocked_exit.assert_called_once_with(expected_message)
-    assert sysexit.value.code == 0
+    submission.check_luks_volume()
+
+    mocked_exit.assert_called_once_with(expected_message)
 
 
 @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_MULTI_PART)
 def test_luks_precheck_encrypted_multi_part(mocked_call, capsys, mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
     expected_message = export.ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED.value
-    mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
 
-    with pytest.raises(SystemExit) as sysexit:
+    # Here we need to mock the exit_gracefully method with a side effect otherwise
+    # program execution will continue after exit_gracefully and exit_gracefully
+    # may be called a second time.
+    mocked_exit = mocker.patch.object(submission, "exit_gracefully",
+                                      side_effect=lambda x: sys.exit(0))
+
+    # Output of `lsblk -o TYPE --noheadings DEVICE_NAME` when a drive has multiple
+    # partitions
+    multi_partition_lsblk_output = b"disk\npart\npart\n"
+    mocker.patch("subprocess.check_call", return_value=0)
+    mocker.patch("subprocess.check_output", return_value=multi_partition_lsblk_output)
+
+    with pytest.raises(SystemExit):
         submission.check_luks_volume()
-        mocked_exit.assert_called_once_with(expected_message)
-    assert sysexit.value.code == 0
-    captured = capsys.readouterr()
-    assert captured.err == "{}\n".format(expected_message)
+
+    mocked_exit.assert_called_once_with(expected_message)
 
 
 @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_ONE_PART)
@@ -283,16 +290,19 @@ def test_luks_precheck_encrypted_luks_error(mocked_call, capsys, mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
     expected_message = "USB_ENCRYPTION_NOT_SUPPORTED"
     assert expected_message == export.ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED.value
-    mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
 
-    mocker.patch("subprocess.check_call", return_value=CalledProcessError(1, 'check_call'))
+    mocked_exit = mocker.patch.object(submission, "exit_gracefully",
+                                      side_effect=lambda msg, e: sys.exit(0))
 
-    with pytest.raises(SystemExit) as sysexit:
+    single_partition_lsblk_output = b"disk\npart\n"
+    mocker.patch("subprocess.check_output", return_value=single_partition_lsblk_output)
+    mocker.patch("subprocess.check_call", side_effect=CalledProcessError(1, 'check_call'))
+
+    with pytest.raises(SystemExit):
         submission.check_luks_volume()
-        mocked_exit.assert_called_once_with(expected_message)
-    assert sysexit.value.code == 0
-    captured = capsys.readouterr()
-    assert captured.err == "{}\n".format(expected_message)
+
+    assert mocked_exit.mock_calls[0][2]['msg'] == expected_message
+    assert mocked_exit.mock_calls[0][2]['e'] is None
 
 
 def test_safe_check_call(capsys, mocker):
@@ -300,9 +310,8 @@ def test_safe_check_call(capsys, mocker):
     submission.safe_check_call(['ls'], "this will work")
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
     expected_message = "uh oh!!!!"
-    with pytest.raises(SystemExit) as sysexit:
-        submission.safe_check_call(['ls', 'kjdsfhkdjfh'], expected_message)
-        mocked_exit.assert_called_once_with(expected_message)
-    assert sysexit.value.code == 0
-    captured = capsys.readouterr()
-    assert captured.err == "{}\n".format(expected_message)
+
+    submission.safe_check_call(['ls', 'kjdsfhkdjfh'], expected_message)
+
+    assert mocked_exit.mock_calls[0][2]['msg'] == expected_message
+    assert mocked_exit.mock_calls[0][2]['e'] is None
