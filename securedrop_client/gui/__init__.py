@@ -156,6 +156,7 @@ class SecureQLabel(QLabel):
         flags: Union[Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags(),
     ):
         super().__init__(parent, flags)
+        self.setTextFormat(Qt.PlainText)
         self.setText(text)
 
     def setText(self, text: str) -> None:
