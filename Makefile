@@ -18,7 +18,7 @@ check: lint test  ## Run linter and tests
 TESTS ?= tests
 .PHONY: test
 test:  ## Run tests
-	pytest -v $$TESTS
+	pytest -v --cov-report html --cov-report term-missing --cov=securedrop_export $$TESTS
 
 .PHONY: lint
 lint:  ## Run linter
