@@ -350,17 +350,17 @@ class SDExport(object):
             # No usb printer is connected
             logging.info('No usb printers connected')
             self.exit_gracefully(ExportStatus.ERROR_PRINTER_NOT_FOUND.value)
-        elif "Brother" in printer_uri:
-            logging.info('Printer {} is supported'.format(printer_uri))
-            return printer_uri
-        else:
+        elif not any(x in printer_uri for x in ("Brother", "LaserJet")):
             # printer url is a make that is unsupported
             logging.info('Printer {} is unsupported'.format(printer_uri))
             self.exit_gracefully(ExportStatus.ERROR_PRINTER_NOT_SUPPORTED.value)
 
+        logging.info('Printer {} is supported'.format(printer_uri))
+        return printer_uri
+
     def install_printer_ppd(self, uri):
         # Some drivers don't come with ppd files pre-compiled, we must compile them
-        if "Brother" in uri:
+        if any(x in uri for x in ("Brother", "LaserJet")):
             self.safe_check_call(
                 command=[
                     "sudo",
