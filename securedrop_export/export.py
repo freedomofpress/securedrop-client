@@ -200,7 +200,7 @@ class SDExport(object):
             subprocess.check_output(
                 ["lsblk", "-p", "-o", "KNAME", "--noheadings", "--inverse", DEVICE],
                 stderr=subprocess.PIPE)
-            self.exit_gracefully("USB_CONNECTED")
+            self.exit_gracefully(ExportStatus.USB_CONNECTED.value)
         except subprocess.CalledProcessError:
             self.exit_gracefully(ExportStatus.USB_NOT_CONNECTED.value)
 
