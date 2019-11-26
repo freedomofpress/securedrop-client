@@ -1497,12 +1497,164 @@ def test_Controller_call_update_star_success(homedir, config, mocker, session_ma
         co.on_update_star_failure, type=Qt.QueuedConnection)
 
 
+def test_Controller_run_print_file(mocker, session, homedir):
+    co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
+    co.export = mocker.MagicMock()
+    co.export.begin_print.emit = mocker.MagicMock()
+    file = factory.File(source=factory.Source(), original_filename='mock_filename')
+    session.add(file)
+    session.commit()
+    mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
+    mock_link = mocker.patch('os.link')
+
+    fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
+    filepath = os.path.join(homedir, 'data', fn_no_ext)
+    with open(filepath, 'w'):
+        pass
+
+    co.print_file(file.uuid)
+
+    co.export.begin_print.emit.call_count == 1
+    assert mock_link.call_count == 1
+
+
+def test_Controller_run_print_file_not_qubes(mocker, session, homedir):
+    co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
+    co.qubes = False
+    co.export = mocker.MagicMock()
+    co.export.begin_print = mocker.MagicMock()
+    co.export.begin_print.emit = mocker.MagicMock()
+    file = factory.File(source=factory.Source(), original_filename='mock_filename')
+    session.add(file)
+    session.commit()
+    mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
+    mock_link = mocker.patch('os.link')
+
+    fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
+    filepath = os.path.join(homedir, 'data', fn_no_ext)
+    with open(filepath, 'w'):
+        pass
+
+    co.print_file(file.uuid)
+
+    co.export.begin_print.emit.call_count == 0
+    assert mock_link.call_count == 1
+
+
+def test_Controller_print_file_file_missing(homedir, mocker, session, session_maker):
+    """
+    If the file is missing from the data dir, is_downloaded should be set to False and the failure
+    should be communicated to the user.
+    """
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    co.sync_api = mocker.MagicMock()
+    file = factory.File(source=factory.Source(), original_filename='mock_filename')
+    session.add(file)
+    session.commit()
+    mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
+    debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
+    co.sync_api = mocker.MagicMock()
+
+    co.print_file(file.uuid)
+
+    user_error = 'File does not exist in the data directory. Please try re-downloading.'
+    log_msg = 'Cannot find {} in the data directory. File does not exist.'.format(
+        file.original_filename)
+    co.gui.update_error_status.assert_called_once_with(user_error)
+    debug_logger.assert_called_once_with(log_msg)
+    co.sync_api.assert_called_once_with()
+
+
+def test_Controller_print_file_file_missing_not_qubes(
+    homedir, mocker, session, session_maker
+):
+    """
+    If the file is missing from the data dir, is_downloaded should be set to False and the failure
+    should be communicated to the user.
+    """
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    co.qubes = False
+    co.sync_api = mocker.MagicMock()
+    file = factory.File(source=factory.Source(), original_filename='mock_filename')
+    session.add(file)
+    session.commit()
+    mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
+    debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
+    co.sync_api = mocker.MagicMock()
+
+    co.print_file(file.uuid)
+
+    user_error = 'File does not exist in the data directory. Please try re-downloading.'
+    log_msg = 'Cannot find {} in the data directory. File does not exist.'.format(
+        file.original_filename)
+    co.gui.update_error_status.assert_called_once_with(user_error)
+    debug_logger.assert_called_once_with(log_msg)
+    co.sync_api.assert_called_once_with()
+
+
+def test_Controller_print_file_when_orig_file_already_exists(
+    homedir, config, mocker, session, session_maker, source
+):
+    """
+    The signal `begin_print` should still be emmited if the original file already exists.
+    """
+    co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
+    co.export = mocker.MagicMock()
+    co.export.begin_print = mocker.MagicMock()
+    co.export.begin_print.emit = mocker.MagicMock()
+    file = factory.File(source=factory.Source(), original_filename='mock_filename')
+    session.add(file)
+    session.commit()
+    mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
+    mocker.patch('os.path.exists', return_value=True)
+    mock_link = mocker.patch('os.link')
+
+    co.print_file(file.uuid)
+
+    co.export.begin_print.emit.call_count == 1
+    co.get_file.assert_called_with(file.uuid)
+    assert mock_link.call_count == 0
+
+
+def test_Controller_print_file_when_orig_file_already_exists_not_qubes(
+    homedir, config, mocker, session, session_maker, source
+):
+    """
+    The signal `begin_print` should still be emmited if the original file already exists.
+    """
+    co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
+    co.qubes = False
+    co.export = mocker.MagicMock()
+    co.export.begin_print = mocker.MagicMock()
+    co.export.begin_print.emit = mocker.MagicMock()
+    file = factory.File(source=factory.Source(), original_filename='mock_filename')
+    session.add(file)
+    session.commit()
+    mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
+    mocker.patch('os.path.exists', return_value=True)
+    mock_link = mocker.patch('os.link')
+
+    fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
+    filepath = os.path.join(homedir, 'data', fn_no_ext)
+    with open(filepath, 'w'):
+        pass
+
+    original_filepath = os.path.join(homedir, 'data', file.original_filename)
+    with open(original_filepath, 'w'):
+        pass
+
+    co.export_file_to_usb_drive(file.uuid, 'mock passphrase')
+
+    co.export.begin_print.emit.call_count == 1
+    co.get_file.assert_called_with(file.uuid)
+    assert mock_link.call_count == 0
+
+
 def test_Controller_run_export_preflight_checks(homedir, mocker, session, source):
     co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
     co.export = mocker.MagicMock()
     co.export.begin_preflight_check = mocker.MagicMock()
     co.export.begin_preflight_check.emit = mocker.MagicMock()
-
     file = factory.File(source=source['source'])
     session.add(file)
     session.commit()
@@ -1519,7 +1671,6 @@ def test_Controller_run_export_preflight_checks_not_qubes(homedir, mocker, sessi
     co.export = mocker.MagicMock()
     co.export.begin_preflight_check = mocker.MagicMock()
     co.export.begin_preflight_check.emit = mocker.MagicMock()
-
     file = factory.File(source=source['source'])
     session.add(file)
     session.commit()

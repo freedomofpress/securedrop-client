@@ -6,6 +6,88 @@ from tempfile import TemporaryDirectory, NamedTemporaryFile
 from securedrop_client.export import Export, ExportError
 
 
+def test_print(mocker):
+    '''
+    Ensure TemporaryDirectory is used when creating and sending the archive containing the file to
+    print and that the success signal is emitted.
+    '''
+    mock_temp_dir = mocker.MagicMock()
+    mock_temp_dir.__enter__ = mocker.MagicMock(return_value='mock_temp_dir')
+    mocker.patch('securedrop_client.export.TemporaryDirectory', return_value=mock_temp_dir)
+    export = Export()
+    export.print_call_success = mocker.MagicMock()
+    export.print_call_success.emit = mocker.MagicMock()
+    _run_print = mocker.patch.object(export, '_run_print')
+    mocker.patch('os.path.exists', return_value=True)
+    os_remove = mocker.patch('os.remove')
+
+    export.print(['path1', 'path2'])
+
+    _run_print.assert_called_once_with('mock_temp_dir', ['path1', 'path2'])
+    export.print_call_success.emit.assert_called_once_with()
+    assert os_remove.call_count == 2
+    assert os_remove.call_args_list[0][0][0] == 'path1'
+    assert os_remove.call_args_list[1][0][0] == 'path2'
+
+
+def test_print_error(mocker):
+    '''
+    Ensure TemporaryDirectory is used when creating and sending the archive containing the file to
+    print and that the failure signal is emitted.
+    '''
+    mock_temp_dir = mocker.MagicMock()
+    mock_temp_dir.__enter__ = mocker.MagicMock(return_value='mock_temp_dir')
+    mocker.patch('securedrop_client.export.TemporaryDirectory', return_value=mock_temp_dir)
+    export = Export()
+    export.print_call_failure = mocker.MagicMock()
+    export.print_call_failure.emit = mocker.MagicMock()
+    error = ExportError('[mock_filepath]')
+    _run_print = mocker.patch.object(export, '_run_print', side_effect=error)
+    mocker.patch('os.path.exists', return_value=True)
+    os_remove = mocker.patch('os.remove')
+
+    export.print(['path1', 'path2'])
+
+    _run_print.assert_called_once_with('mock_temp_dir', ['path1', 'path2'])
+    export.print_call_failure.emit.assert_called_once_with(error)
+    assert os_remove.call_count == 2
+    assert os_remove.call_args_list[0][0][0] == 'path1'
+    assert os_remove.call_args_list[1][0][0] == 'path2'
+
+
+def test__run_print(mocker):
+    '''
+    Ensure _export_archive and _create_archive are called with the expected parameters and
+    _export_archive is called with the return value of _create_archive.
+    '''
+    export = Export()
+    export._create_archive = mocker.MagicMock(return_value='mock_archive_path')
+    export._export_archive = mocker.MagicMock(return_value='')
+
+    export._run_print('mock_archive_dir', ['mock_filepath'])
+
+    export._export_archive.assert_called_once_with('mock_archive_path')
+    export._create_archive.assert_called_once_with(
+        'mock_archive_dir',
+        'print_archive.sd-export',
+        {
+            'device': 'printer',
+        },
+        ['mock_filepath'])
+
+
+def test__run_print_raises_ExportError_if_not_empty_string(mocker):
+    '''
+    Ensure ExportError is raised if _run_print returns anything other than ''.
+    '''
+    export = Export()
+    export._create_archive = mocker.MagicMock(return_value='mock_archive_path')
+    export._export_archive = mocker.MagicMock(return_value='SOMETHING_OTHER_THAN_EMPTY_STRING')
+
+    with pytest.raises(ExportError):
+        export._run_print('mock_archive_dir', ['mock_filepath'])
+
+
 def test_send_file_to_usb_device(mocker):
     '''
     Ensure TemporaryDirectory is used when creating and sending the archive containing the export

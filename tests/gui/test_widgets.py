@@ -16,7 +16,7 @@ from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, Lo
     DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, LeftPane, RefreshButton, \
     ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
     ReplyBoxWidget, ReplyTextEdit, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, \
-    LoginErrorBar, EmptyConversationView, ExportDialog
+    LoginErrorBar, EmptyConversationView, ExportDialog, PrintDialog
 from tests import factory
 
 
@@ -1306,7 +1306,7 @@ def test_FileWidget_init_file_downloaded(mocker, source, session):
     assert fw.download_button.isHidden()
     assert fw.no_file_name.isHidden()
     assert not fw.export_button.isHidden()
-    assert fw.print_button.isHidden()  # Show once export is supported on the workstation client
+    assert not fw.print_button.isHidden()
     assert not fw.file_name.isHidden()
 
 
@@ -1487,6 +1487,57 @@ def test_FileWidget__on_export_clicked_missing_file(mocker, session, source):
     fw._on_export_clicked()
 
     controller.run_export_preflight_checks.assert_not_called()
+    dialog.assert_not_called()
+
+
+def test_FileWidget__on_print_clicked(mocker, session, source):
+    """
+    Ensure preflight checks start when the EXPORT button is clicked and that password is requested
+    """
+    file = factory.File(source=source['source'], is_downloaded=True)
+    session.add(file)
+    session.commit()
+
+    get_file = mocker.MagicMock(return_value=file)
+    controller = mocker.MagicMock(get_file=get_file)
+
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock())
+    fw.update = mocker.MagicMock()
+    mocker.patch('securedrop_client.gui.widgets.QDialog.exec')
+    controller.print_file = mocker.MagicMock()
+    controller.downloaded_file_exists = mocker.MagicMock(return_value=True)
+
+    fw._on_print_clicked()
+
+    controller.print_file.assert_called_once_with(file.uuid)
+
+    # Also assert that the dialog is initialized
+    dialog = mocker.patch('securedrop_client.gui.widgets.PrintDialog')
+    fw._on_print_clicked()
+    dialog.assert_called_once_with(controller, file.uuid)
+
+
+def test_FileWidget__on_print_clicked_missing_file(mocker, session, source):
+    """
+    Ensure dialog does not open when the EXPORT button is clicked yet the file to export is missing
+    """
+    file = factory.File(source=source['source'], is_downloaded=True)
+    session.add(file)
+    session.commit()
+
+    get_file = mocker.MagicMock(return_value=file)
+    controller = mocker.MagicMock(get_file=get_file)
+
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock())
+    fw.update = mocker.MagicMock()
+    mocker.patch('securedrop_client.gui.widgets.QDialog.exec')
+    controller.print_file = mocker.MagicMock()
+    controller.downloaded_file_exists = mocker.MagicMock(return_value=False)
+    dialog = mocker.patch('securedrop_client.gui.widgets.PrintDialog')
+
+    fw._on_print_clicked()
+
+    controller.print_file.assert_not_called()
     dialog.assert_not_called()
 
 
@@ -1709,6 +1760,122 @@ def test_ExportDialog__update_after_CALLED_PROCESS_ERROR(mocker):
     assert export_dialog.error_status_code.text() == 'CALLED_PROCESS_ERROR'
     export_dialog._request_to_insert_usb_device.assert_not_called()
     export_dialog._request_passphrase.assert_not_called()
+
+
+def test_PrintDialog__on_retry_button_clicked(mocker):
+    """
+    Ensure happy path runs preflight checks.
+    """
+    controller = mocker.MagicMock()
+    dialog = PrintDialog(controller, 'mock_uuid')
+
+    dialog._on_retry_button_clicked()
+
+    controller.print_file.assert_called_with('mock_uuid')
+
+
+def test_PrintDialog__update_print_button_clicked_PRINTER_NOT_FOUND(mocker):
+    """
+    Ensure request to insert USB device on PRINTER_NOT_FOUND.
+    """
+    controller = mocker.MagicMock()
+    error = ExportError(ExportStatus.PRINTER_NOT_FOUND.value)
+    dialog = PrintDialog(controller, 'mock_uuid')
+    dialog._request_to_insert_usb_device = mocker.MagicMock()
+
+    dialog._update(error.status)
+
+    dialog._request_to_insert_usb_device.assert_called_once_with()
+
+
+def test_PrintDialog__request_to_insert_usb_device(mocker):
+    """Ensure that the correct widgets are visible or hidden."""
+    dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid')
+
+    dialog._request_to_insert_usb_device()
+
+    assert dialog.starting_message.isHidden()
+    assert dialog.printing_message.isHidden()
+    assert dialog.generic_error.isHidden()
+    assert not dialog.insert_usb_form.isHidden()
+    assert not dialog.usb_error_message.isHidden()
+
+
+def test_PrintDialog__on_print_success_closes_window(mocker):
+    """
+    Ensure successful print results in the print dialog window closing.
+    """
+    controller = mocker.MagicMock()
+    dialog = PrintDialog(controller, 'mock_uuid')
+    dialog.close = mocker.MagicMock()
+
+    dialog._on_print_success()
+
+    dialog.close.assert_called_once_with()
+
+
+def test_PrintDialog__on_print_call_failure_generic_error(mocker):
+    """
+    Ensure generic errors are passed through to _update
+    """
+    dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid')
+    dialog.generic_error = mocker.MagicMock()
+    error = ExportError('generic error')
+
+    dialog._on_print_failure(error)
+
+    dialog.generic_error.show.assert_called_once_with()
+
+
+def test_PrintDialog__update_after_PRINTER_NOT_FOUND(mocker):
+    """
+    Ensure PRINTER_NOT_FOUND results in asking the user connect their USB device.
+    """
+    dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid')
+    dialog._request_to_insert_usb_device = mocker.MagicMock()
+    dialog._update(ExportStatus.PRINTER_NOT_FOUND.value)
+    dialog._request_to_insert_usb_device.assert_called_once_with()
+
+
+def test_PrintDialog__update_after_MISSING_PRINTER_URI(mocker):
+    """
+    Ensure MISSING_PRINTER_URI shows generic 'contact admin' error with correct
+    error status code.
+    """
+    dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid')
+    dialog._request_to_insert_usb_device = mocker.MagicMock()
+    dialog._update(ExportStatus.MISSING_PRINTER_URI.value)
+    dialog._request_to_insert_usb_device = mocker.MagicMock()
+
+    error = ExportError(ExportStatus.MISSING_PRINTER_URI.value)
+    dialog._on_print_failure(error)
+
+    assert dialog.error_status_code.text() == 'ERROR_MISSING_PRINTER_URI'
+    assert dialog.starting_message.isHidden()
+    assert dialog.printing_message.isHidden()
+    assert not dialog.generic_error.isHidden()
+    assert dialog.insert_usb_form.isHidden()
+    dialog._request_to_insert_usb_device.assert_not_called()
+
+
+def test_PrintDialog__update_after_CALLED_PROCESS_ERROR(mocker):
+    """
+    Ensure CALLED_PROCESS_ERROR shows generic 'contact admin' error with correct
+    error status code.
+    """
+    dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid')
+    dialog._request_to_insert_usb_device = mocker.MagicMock()
+    dialog._update(ExportStatus.MISSING_PRINTER_URI.value)
+    dialog._request_to_insert_usb_device = mocker.MagicMock()
+
+    error = ExportError(ExportStatus.CALLED_PROCESS_ERROR.value)
+    dialog._on_print_failure(error)
+
+    assert dialog.error_status_code.text() == 'CALLED_PROCESS_ERROR'
+    assert dialog.starting_message.isHidden()
+    assert dialog.insert_usb_form.isHidden()
+    assert not dialog.generic_error.isHidden()
+    dialog._request_to_insert_usb_device.assert_not_called()
 
 
 def test_ConversationView_init(mocker, homedir):
