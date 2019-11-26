@@ -29,7 +29,7 @@ from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QEvent, QTimer, QSize, pyqtBo
 from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
-    QToolButton, QSizePolicy, QPlainTextEdit, QStatusBar, QGraphicsDropShadowEffect, QApplication
+    QToolButton, QSizePolicy, QPlainTextEdit, QStatusBar, QGraphicsDropShadowEffect
 
 from securedrop_client.db import DraftReply, Source, Message, File, Reply, User
 from securedrop_client.storage import source_exists
@@ -1875,14 +1875,7 @@ class FileWidget(QWidget):
             return
 
         dialog = ExportDialog(self.controller, self.file.uuid)
-        # The underlying function of the `export` method makes a blocking call that can potentially
-        # take a long time to run (if the Export VM is not already running and needs to start, this
-        # can take 15 or more seconds). Calling `QApplication.processEvents` ensures that the `show`
-        # event is processed before the blocking call so that the user can see the dialog with a
-        # message to wait before the blocking call. We also call `exec` afterwards in order to give
-        # control to the dialog for the rest of the export process.
         dialog.show()
-        QApplication.processEvents()
         dialog.export()
         dialog.exec()
 
@@ -1896,14 +1889,7 @@ class FileWidget(QWidget):
             return
 
         dialog = PrintDialog(self.controller, self.file.uuid)
-        # The underlying function of the `export` method makes a blocking call that can potentially
-        # take a long time to run (if the Export VM is not already running and needs to start, this
-        # can take 15 or more seconds). Calling `QApplication.processEvents` ensures that the `show`
-        # event is processed before the blocking call so that the user can see the dialog with a
-        # message to wait before the blocking call. We also call `exec` afterwards in order to give
-        # control to the dialog for the rest of the export process.
         dialog.show()
-        QApplication.processEvents()
         dialog.print()
         dialog.exec()
 
@@ -2036,8 +2022,6 @@ class PrintDialog(QDialog):
     def _update(self, status):
         logger.debug('updating status... ')
         if status == ExportStatus.PRINTER_NOT_FOUND.value:
-            self._request_to_insert_usb_device()
-        elif status == ExportStatus.MISSING_PRINTER_URI.value:
             self._request_to_insert_usb_device()
         else:
             self.error_status_code.setText(_(status))
