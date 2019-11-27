@@ -446,7 +446,7 @@ class SDExport(object):
             )
             file_to_print = converted_path
 
-        logging.info('Sending file to printer {}:{}'.format(self.printer_name))
+        logging.info('Sending file to printer {}:{}'.format(self.printer_name, file_to_print))
         self.safe_check_call(
             command=["xpp", "-P", self.printer_name, file_to_print],
             error_message=ExportStatus.ERROR_PRINT.value
