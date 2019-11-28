@@ -1369,7 +1369,7 @@ class LoginDialog(QDialog):
         self.password_field = QLineEdit()
         self.password_field.setEchoMode(QLineEdit.Password)
 
-        self.tfa_label = QLabel(_('2-Factor Code'))
+        self.tfa_label = QLabel(_('Two-Factor Code'))
         self.tfa_field = QLineEdit()
 
         buttons = QWidget()
@@ -1475,14 +1475,14 @@ class LoginDialog(QDialog):
                 int(tfa_token)
             except ValueError:
                 self.setDisabled(False)
-                self.error(_('Please use only numerals for the two factor number.'))
+                self.error(_('Please use only numerals for the two-factor code.'))
                 return
 
             self.controller.login(username, password, tfa_token)
         else:
             self.setDisabled(False)
             self.error(_('Please enter a username, password and '
-                         'two factor number.'))
+                         'two-factor code.'))
 
 
 class SpeechBubble(QWidget):
