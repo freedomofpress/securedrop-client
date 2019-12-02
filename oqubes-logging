@@ -21,10 +21,9 @@ def sanitize_line(untrusted_line):
             line[i] = 0x2e
     return bytearray(line).decode('ascii')
 
-try:
-    stdin = sys.stdin.buffer  # python3
-except AttributeError:
-    stdin = io.open(0, 'rb')  # python2
+
+stdin = sys.stdin.buffer  # python3
+
 
 start = datetime.utcnow()
 
@@ -44,6 +43,7 @@ def log(msg, remote=True, now=None):
     line = '{:%F %T.%f} +0000 {} {}\n'.format(now, remote_str, msg)
 
     tmp_log.write(line.encode('utf-8'))
+    tmp_log.flush()
 
 log('starting log', now=start, remote=False)
 
