@@ -83,6 +83,7 @@ class Export(QObject):
     begin_print = pyqtSignal(list)
     print_call_failure = pyqtSignal(object)
     print_call_success = pyqtSignal()
+    export_completed = pyqtSignal(list)
 
     def __init__(self) -> None:
         super().__init__()
@@ -282,10 +283,7 @@ class Export(QObject):
                 logger.error(e)
                 self.export_usb_call_failure.emit(e)
 
-        # Export is finished, now remove files created when export began
-        for filepath in filepaths:
-            if os.path.exists(filepath):
-                os.remove(filepath)
+        self.export_completed.emit(filepaths)
 
     @pyqtSlot(list)
     def print(self, filepaths: List[str]) -> None:
@@ -306,7 +304,4 @@ class Export(QObject):
                 logger.error(e)
                 self.print_call_failure.emit(e)
 
-        # Print is finished, now remove files created when print began
-        for filepath in filepaths:
-            if os.path.exists(filepath):
-                os.remove(filepath)
+        self.export_completed.emit(filepaths)

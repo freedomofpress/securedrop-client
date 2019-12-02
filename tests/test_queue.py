@@ -273,7 +273,7 @@ def test_ApiJobQueue_pause_queues(mocker):
 
     job_queue.on_queue_paused()
 
-    job_queue.paused.emit()
+    job_queue.paused.emit.assert_called_once_with()
 
 
 def test_ApiJobQueue_resume_queues_emits_resume_signal(mocker):

@@ -17,17 +17,16 @@ def test_print(mocker):
     export = Export()
     export.print_call_success = mocker.MagicMock()
     export.print_call_success.emit = mocker.MagicMock()
+    export.export_completed = mocker.MagicMock()
+    export.export_completed.emit = mocker.MagicMock()
     _run_print = mocker.patch.object(export, '_run_print')
     mocker.patch('os.path.exists', return_value=True)
-    os_remove = mocker.patch('os.remove')
 
     export.print(['path1', 'path2'])
 
     _run_print.assert_called_once_with('mock_temp_dir', ['path1', 'path2'])
     export.print_call_success.emit.assert_called_once_with()
-    assert os_remove.call_count == 2
-    assert os_remove.call_args_list[0][0][0] == 'path1'
-    assert os_remove.call_args_list[1][0][0] == 'path2'
+    export.export_completed.emit.assert_called_once_with(['path1', 'path2'])
 
 
 def test_print_error(mocker):
@@ -41,18 +40,17 @@ def test_print_error(mocker):
     export = Export()
     export.print_call_failure = mocker.MagicMock()
     export.print_call_failure.emit = mocker.MagicMock()
+    export.export_completed = mocker.MagicMock()
+    export.export_completed.emit = mocker.MagicMock()
     error = ExportError('[mock_filepath]')
     _run_print = mocker.patch.object(export, '_run_print', side_effect=error)
     mocker.patch('os.path.exists', return_value=True)
-    os_remove = mocker.patch('os.remove')
 
     export.print(['path1', 'path2'])
 
     _run_print.assert_called_once_with('mock_temp_dir', ['path1', 'path2'])
     export.print_call_failure.emit.assert_called_once_with(error)
-    assert os_remove.call_count == 2
-    assert os_remove.call_args_list[0][0][0] == 'path1'
-    assert os_remove.call_args_list[1][0][0] == 'path2'
+    export.export_completed.emit.assert_called_once_with(['path1', 'path2'])
 
 
 def test__run_print(mocker):
@@ -99,17 +97,16 @@ def test_send_file_to_usb_device(mocker):
     export = Export()
     export.export_usb_call_success = mocker.MagicMock()
     export.export_usb_call_success.emit = mocker.MagicMock()
+    export.export_completed = mocker.MagicMock()
+    export.export_completed.emit = mocker.MagicMock()
     _run_disk_export = mocker.patch.object(export, '_run_disk_export')
     mocker.patch('os.path.exists', return_value=True)
-    os_remove = mocker.patch('os.remove')
 
     export.send_file_to_usb_device(['path1', 'path2'], 'mock passphrase')
 
     _run_disk_export.assert_called_once_with('mock_temp_dir', ['path1', 'path2'], 'mock passphrase')
     export.export_usb_call_success.emit.assert_called_once_with()
-    assert os_remove.call_count == 2
-    assert os_remove.call_args_list[0][0][0] == 'path1'
-    assert os_remove.call_args_list[1][0][0] == 'path2'
+    export.export_completed.emit.assert_called_once_with(['path1', 'path2'])
 
 
 def test_send_file_to_usb_device_error(mocker):
@@ -123,18 +120,17 @@ def test_send_file_to_usb_device_error(mocker):
     export = Export()
     export.export_usb_call_failure = mocker.MagicMock()
     export.export_usb_call_failure.emit = mocker.MagicMock()
+    export.export_completed = mocker.MagicMock()
+    export.export_completed.emit = mocker.MagicMock()
     error = ExportError('[mock_filepath]')
     _run_disk_export = mocker.patch.object(export, '_run_disk_export', side_effect=error)
     mocker.patch('os.path.exists', return_value=True)
-    os_remove = mocker.patch('os.remove')
 
     export.send_file_to_usb_device(['path1', 'path2'], 'mock passphrase')
 
     _run_disk_export.assert_called_once_with('mock_temp_dir', ['path1', 'path2'], 'mock passphrase')
     export.export_usb_call_failure.emit.assert_called_once_with(error)
-    assert os_remove.call_count == 2
-    assert os_remove.call_args_list[0][0][0] == 'path1'
-    assert os_remove.call_args_list[1][0][0] == 'path2'
+    export.export_completed.emit.assert_called_once_with(['path1', 'path2'])
 
 
 def test_run_preflight_checks(mocker):

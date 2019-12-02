@@ -181,6 +181,7 @@ class Controller(QObject):
         self.gpg = GpgHelper(home, self.session_maker, proxy)
 
         self.export = Export()
+        self.export.export_completed.connect(self.cleanup_hardlinked_file)
 
         self.sync_flag = os.path.join(home, 'sync_flag')
 
@@ -588,16 +589,40 @@ class Controller(QObject):
             return False
         return True
 
-    def on_file_open(self, file_uuid: str) -> None:
+    def cleanup_hardlinked_file(cls, filepaths):
         '''
-        Open the file specified by file_uuid.
+        Once inter-vm communication is complete and we no longer need to keep file copies with the
+        original filenames, delete them.
+        '''
+        for filepath in filepaths:
+            if os.path.exists(filepath):
+                os.remove(filepath)
+
+    def get_path_to_file_with_original_name(
+        cls, file_dir: str, filename: str, filename_orig: str
+    ) -> str:
+        '''
+        Create a hardlink with the original filename and return its path.
 
         Once a file is downloaded, it exists in the data directory with the same filename as the
         server, except with the .gz.gpg stripped off. In order for the Display VM to know which
         application to open the file in, we create a hard link to this file with the original file
         name, including its extension.
+        '''
 
-        If the file is missing, update the db so that is_downloaded is set to False.
+        path_to_file_with_original_name = os.path.join(file_dir, filename_orig)
+
+        if not os.path.exists(path_to_file_with_original_name):
+            fn_no_ext, dummy = os.path.splitext(os.path.splitext(filename)[0])
+            filepath = os.path.join(file_dir, fn_no_ext)
+            os.link(filepath, path_to_file_with_original_name)
+
+        return path_to_file_with_original_name
+
+    def on_file_open(self, file_uuid: str) -> None:
+        '''
+        Open the file specified by file_uuid. If the file is missing, update the db so that
+        is_downloaded is set to False.
         '''
         file = self.get_file(file_uuid)
         logger.info('Opening file "{}".'.format(file.original_filename))
@@ -606,15 +631,11 @@ class Controller(QObject):
             self.sync_api()
             return
 
-        path_to_file_with_original_name = os.path.join(self.data_dir, file.original_filename)
-
-        if not os.path.exists(path_to_file_with_original_name):
-            fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
-            filepath = os.path.join(self.data_dir, fn_no_ext)
-            os.link(filepath, path_to_file_with_original_name)
-
         if not self.qubes:
             return
+
+        path_to_file_with_original_name = self.get_path_to_file_with_original_name(
+            self.data_dir, file.filename, file.original_filename)
 
         command = "qvm-open-in-vm"
         args = ['$dispvm:sd-svs-disp', path_to_file_with_original_name]
@@ -635,14 +656,8 @@ class Controller(QObject):
     def export_file_to_usb_drive(self, file_uuid: str, passphrase: str) -> None:
         '''
         Send the file specified by file_uuid to the Export VM with the user-provided passphrase for
-        unlocking the attached transfer device.
-
-        Once a file is downloaded, it exists in the data directory with the same filename as the
-        server, except with the .gz.gpg stripped off. In order for the user to know which
-        application to open the file in, we export the file with a different name: the original
-        filename which includes the file extesion.
-
-        If the file is missing, update the db so that is_downloaded is set to False.
+        unlocking the attached transfer device.  If the file is missing, update the db so that
+        is_downloaded is set to False.
         '''
         file = self.get_file(file_uuid)
         logger.info('Exporting file {}'.format(file.original_filename))
@@ -651,28 +666,18 @@ class Controller(QObject):
             self.sync_api()
             return
 
-        path_to_file_with_original_name = os.path.join(self.data_dir, file.original_filename)
-
-        if not os.path.exists(path_to_file_with_original_name):
-            fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
-            filepath = os.path.join(self.data_dir, fn_no_ext)
-            os.link(filepath, path_to_file_with_original_name)
-
         if not self.qubes:
             return
 
-        fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
-        filepath = os.path.join(self.data_dir, fn_no_ext)
+        path_to_file_with_original_name = self.get_path_to_file_with_original_name(
+            self.data_dir, file.filename, file.original_filename)
+
         self.export.begin_usb_export.emit([path_to_file_with_original_name], passphrase)
 
     def print_file(self, file_uuid: str) -> None:
         '''
-        Send the file specified by file_uuid to the Export VM.
-
-        Once a file is downloaded, it exists in the data directory with the same filename as the
-        server, except with the .gz.gpg stripped off.
-
-        If the file is missing, update the db so that is_downloaded is set to False.
+        Send the file specified by file_uuid to the Export VM. If the file is missing, update the db
+        so that is_downloaded is set to False.
         '''
         file = self.get_file(file_uuid)
         logger.info('Printing file {}'.format(file.original_filename))
@@ -681,18 +686,12 @@ class Controller(QObject):
             self.sync_api()
             return
 
-        path_to_file_with_original_name = os.path.join(self.data_dir, file.original_filename)
-
-        if not os.path.exists(path_to_file_with_original_name):
-            fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
-            filepath = os.path.join(self.data_dir, fn_no_ext)
-            os.link(filepath, path_to_file_with_original_name)
-
         if not self.qubes:
             return
 
-        fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
-        filepath = os.path.join(self.data_dir, fn_no_ext)
+        path_to_file_with_original_name = self.get_path_to_file_with_original_name(
+            self.data_dir, file.filename, file.original_filename)
+
         self.export.begin_print.emit([path_to_file_with_original_name])
 
     def on_submission_download(

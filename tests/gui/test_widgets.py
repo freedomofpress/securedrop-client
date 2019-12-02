@@ -1492,7 +1492,7 @@ def test_FileWidget__on_export_clicked_missing_file(mocker, session, source):
 
 def test_FileWidget__on_print_clicked(mocker, session, source):
     """
-    Ensure preflight checks start when the EXPORT button is clicked and that password is requested
+    Ensure print_file is called when the PRINT button is clicked
     """
     file = factory.File(source=source['source'], is_downloaded=True)
     session.add(file)
@@ -1764,7 +1764,7 @@ def test_ExportDialog__update_after_CALLED_PROCESS_ERROR(mocker):
 
 def test_PrintDialog__on_retry_button_clicked(mocker):
     """
-    Ensure happy path runs preflight checks.
+    Ensure happy path prints the file.
     """
     controller = mocker.MagicMock()
     dialog = PrintDialog(controller, 'mock_uuid')
