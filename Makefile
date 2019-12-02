@@ -12,12 +12,16 @@ safety: ## Runs `safety check` to check python dependencies for vulnerabilities
 update-pip-requirements: ## Updates all Python requirements files via pip-compile.
 	pip-compile --generate-hashes --output-file test-requirements.txt test-requirements.in
 
+.PHONY: check
+check: lint test  ## Run linter and tests
+
+TESTS ?= tests
 .PHONY: test
-test:
-	pytest -v tests/
+test:  ## Run tests
+	pytest -v --cov-report html --cov-report term-missing --cov=securedrop_export $$TESTS
 
 .PHONY: lint
-lint:
+lint:  ## Run linter
 	flake8 securedrop_export/ tests/
 
 # Explaination of the below shell command should it ever break.
@@ -29,7 +33,7 @@ lint:
 # 6. Format columns with colon as delimiter.
 .PHONY: help
 help: ## Print this message and exit.
-	@printf "Makefile for developing and testing the SecureDrop proxy.\n"
+	@printf "Makefile for developing and testing the SecureDrop export code.\n"
 	@printf "Subcommands:\n\n"
 	@awk 'BEGIN {FS = ":.*?## "} /^[0-9a-zA-Z_-]+:.*?## / {printf "\033[36m%s\033[0m : %s\n", $$1, $$2}' $(MAKEFILE_LIST) \
 		| sort \

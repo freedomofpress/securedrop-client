@@ -4,6 +4,22 @@
 
 Code for exporting and printing files from the SecureDrop Qubes Workstation.
 
+## Getting Started
+
+Python 3 support is required. To get started:
+
+```
+virtualenv --python=python3.7 .venv
+source .venv/bin/activate
+pip install -r test-requirements.txt
+```
+
+To run the linter and tests:
+
+```
+make check
+```
+
 ## Supported Printers
 
 TBD

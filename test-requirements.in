@@ -1,2 +1,6 @@
 flake8
+pathlib2  # required by pytest for python 3.5
+pip-tools
 pytest
+pytest-cov
+pytest-mock
