@@ -10,7 +10,8 @@ from subprocess import CalledProcessError
 from securedrop_export import export
 
 SAMPLE_OUTPUT_NO_PRINTER = b"network beh\nnetwork https\nnetwork ipp\nnetwork ipps\nnetwork http\nnetwork\nnetwork ipp14\nnetwork lpd"  # noqa
-SAMPLE_OUTPUT_BOTHER_PRINTER = b"network beh\nnetwork https\nnetwork ipp\nnetwork ipps\nnetwork http\nnetwork\nnetwork ipp14\ndirect usb://Brother/HL-L2320D%20series?serial=A00000A000000\nnetwork lpd"  # noqa
+SAMPLE_OUTPUT_BROTHER_PRINTER = b"network beh\nnetwork https\nnetwork ipp\nnetwork ipps\nnetwork http\nnetwork\nnetwork ipp14\ndirect usb://Brother/HL-L2320D%20series?serial=A00000A000000\nnetwork lpd"  # noqa
+SAMPLE_OUTPUT_LASERJET_PRINTER = b"network beh\nnetwork https\nnetwork ipp\nnetwork ipps\nnetwork http\nnetwork\nnetwork ipp14\ndirect usb://HP/LaserJet%20Pro%20M404-M405?serial=A00000A000000\nnetwork lpd"  # noqa
 
 SAMPLE_OUTPUT_NO_PART = b"disk\ncrypt"  # noqa
 SAMPLE_OUTPUT_ONE_PART = b"disk\npart\ncrypt"  # noqa
@@ -139,13 +140,20 @@ def test_popup_message(mocked_call):
     ])
 
 
-@mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_BOTHER_PRINTER)
-def test_get_good_printer_uri(mocked_call):
+@mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_BROTHER_PRINTER)
+def test_get_good_printer_uri_laserjet(mocked_call):
     submission = export.SDExport("testfile", TEST_CONFIG)
 
     result = submission.get_printer_uri()
 
     assert result == "usb://Brother/HL-L2320D%20series?serial=A00000A000000"
+
+
+@mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_LASERJET_PRINTER)
+def test_get_good_printer_uri_brother(mocked_call):
+    submission = export.SDExport("testfile", TEST_CONFIG)
+    result = submission.get_printer_uri()
+    assert result == "usb://HP/LaserJet%20Pro%20M404-M405?serial=A00000A000000"
 
 
 @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_NO_PRINTER)
