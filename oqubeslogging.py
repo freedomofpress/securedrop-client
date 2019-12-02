@@ -1,13 +1,16 @@
 from logging import StreamHandler
 from subprocess import Popen, PIPE
+import threading
 
 
 class Singleton(type):
     _ins = {}
+    _lock = threading.Lock()
 
     def __call__(cls, *args, **kwargs):
-        if cls not in cls._ins:
-            cls._ins[cls] = (super(Singleton, cls).__call__(*args, **kwargs), args)
+        with cls._lock:  # First thread that gets here creates the instance
+            if cls not in cls._ins:
+                cls._ins[cls] = (super(Singleton, cls).__call__(*args, **kwargs), args)
 
         if len(args) > 1:
             if args != cls._ins[cls][1]:
