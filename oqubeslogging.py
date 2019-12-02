@@ -7,9 +7,12 @@ class Singleton(type):
 
     def __call__(cls, *args, **kwargs):
         if cls not in cls._ins:
-            cls._ins[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+            cls._ins[cls] = (super(Singleton, cls).__call__(*args, **kwargs), args)
 
-        return cls._ins[cls]
+        if len(args) > 1:
+            if args != cls._ins[cls][1]:
+                raise Exception("Arguments not matching for logvm name and Qubes VM name")
+        return cls._ins[cls][0]
 
 
 class InternalLog(metaclass=Singleton):
@@ -35,6 +38,10 @@ class OQubesLog(StreamHandler):
         self.qubes_log = InternalLog(name, logvmname)
 
     def emit(self, record):
-        msg = self.format(record)
-        self.qubes_log.write(msg)
-        return True
+        try:
+            msg = self.format(record)
+            self.qubes_log.write(msg)
+            return True
+
+        except Exception:
+            self.handleError(record)
