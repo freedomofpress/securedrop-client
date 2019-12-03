@@ -1413,6 +1413,8 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_matches(mocker, sou
     fw._on_file_downloaded(file.uuid)
 
     assert fw.download_button.isHidden()
+    assert not fw.export_button.isHidden()
+    assert not fw.print_button.isHidden()
     assert fw.no_file_name.isHidden()
     assert not fw.file_name.isHidden()
 
@@ -1437,6 +1439,11 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(
     fw._on_file_downloaded('not a matching uuid')
 
     fw.clear.assert_not_called()
+    assert fw.download_button.isHidden()
+    assert not fw.export_button.isHidden()
+    assert not fw.print_button.isHidden()
+    assert fw.no_file_name.isHidden()
+    assert not fw.file_name.isHidden()
 
 
 def test_FileWidget__on_export_clicked(mocker, session, source):

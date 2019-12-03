@@ -1862,7 +1862,7 @@ class FileWidget(QWidget):
                 self.download_button.hide()
                 self.no_file_name.hide()
                 self.export_button.show()
-                self.print_button.hide()  # Show once print is supported on the workstation client
+                self.print_button.show()
                 self.file_name.show()
 
     @pyqtSlot()
