@@ -12,7 +12,6 @@ from tests import factory
 
 from securedrop_client import storage, db
 from securedrop_client.crypto import CryptoError
-from securedrop_client.export import Export
 from securedrop_client.logic import APICallRunner, Controller
 from securedrop_client.api_jobs.downloads import DownloadChecksumMismatchException
 from securedrop_client.api_jobs.uploads import SendReplyJobError
