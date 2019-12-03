@@ -1470,7 +1470,7 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
     # Also assert that the dialog is initialized
     dialog = mocker.patch('securedrop_client.gui.widgets.ExportDialog')
     fw._on_export_clicked()
-    dialog.assert_called_once_with(controller, file.uuid)
+    dialog.assert_called_once_with(controller, file.uuid, file.original_filename)
 
 
 def test_FileWidget__on_export_clicked_missing_file(mocker, session, source):
@@ -1553,7 +1553,7 @@ def test_ExportDialog_export(mocker):
     Ensure happy path runs preflight checks and requests passphrase.
     """
     controller = mocker.MagicMock()
-    export_dialog = ExportDialog(controller, 'mock_uuid')
+    export_dialog = ExportDialog(controller, 'mock_uuid', 'mock.jpg')
     export_dialog._request_passphrase = mocker.MagicMock()
 
     export_dialog.export()
@@ -1568,7 +1568,7 @@ def test_ExportDialog_pre_flight_request_to_insert_usb_device_on_CALLED_PROCESS_
     controller = mocker.MagicMock()
     called_process_error = ExportError(ExportStatus.CALLED_PROCESS_ERROR.value)
     controller.run_export_preflight_checks = mocker.MagicMock(side_effect=called_process_error)
-    export_dialog = ExportDialog(controller, 'mock_uuid')
+    export_dialog = ExportDialog(controller, 'mock_uuid', 'mock.jpg')
     export_dialog._request_passphrase = mocker.MagicMock()
     export_dialog._request_to_insert_usb_device = mocker.MagicMock()
     export_dialog._update = mocker.MagicMock()
@@ -1587,7 +1587,7 @@ def test_ExportDialog_export_request_to_insert_usb_device_on_CALLED_PROCESS_ERRO
     controller = mocker.MagicMock()
     called_process_error = ExportError(ExportStatus.CALLED_PROCESS_ERROR.value)
     controller.run_export_preflight_checks = mocker.MagicMock(side_effect=called_process_error)
-    export_dialog = ExportDialog(controller, 'mock_uuid')
+    export_dialog = ExportDialog(controller, 'mock_uuid', 'mock.jpg')
     export_dialog._request_passphrase = mocker.MagicMock()
     export_dialog._request_to_insert_usb_device = mocker.MagicMock()
     export_dialog._update = mocker.MagicMock()
@@ -1604,7 +1604,7 @@ def test_ExportDialog__on_retry_export_button_clicked(mocker):
     Ensure happy path runs preflight checks.
     """
     controller = mocker.MagicMock()
-    export_dialog = ExportDialog(controller, 'mock_uuid')
+    export_dialog = ExportDialog(controller, 'mock_uuid', 'mock.jpg')
 
     export_dialog._on_retry_export_button_clicked()
 
@@ -1617,7 +1617,7 @@ def test_ExportDialog__update_export_button_clicked_USB_NOT_CONNECTED(mocker):
     """
     controller = mocker.MagicMock()
     usb_not_connected_error = ExportError(ExportStatus.USB_NOT_CONNECTED.value)
-    export_dialog = ExportDialog(controller, 'mock_uuid')
+    export_dialog = ExportDialog(controller, 'mock_uuid', 'mock.jpg')
     export_dialog._request_passphrase = mocker.MagicMock()
     export_dialog._request_to_insert_usb_device = mocker.MagicMock()
 
@@ -1629,7 +1629,7 @@ def test_ExportDialog__update_export_button_clicked_USB_NOT_CONNECTED(mocker):
 
 def test_ExportDialog__request_to_insert_usb_device(mocker):
     """Ensure that the correct widgets are visible or hidden."""
-    export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid')
+    export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
 
     export_dialog._request_to_insert_usb_device()
 
@@ -1640,7 +1640,7 @@ def test_ExportDialog__request_to_insert_usb_device(mocker):
 
 def test_ExportDialog__request_to_insert_usb_device_after_encryption_error(mocker):
     """Ensure that the correct widgets are visible or hidden."""
-    export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid')
+    export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
 
     export_dialog._request_to_insert_usb_device(encryption_not_supported=True)
 
@@ -1651,7 +1651,7 @@ def test_ExportDialog__request_to_insert_usb_device_after_encryption_error(mocke
 
 def test_ExportDialog__request_passphrase(mocker):
     """Ensure that the correct widgets are visible or hidden."""
-    export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid')
+    export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
 
     export_dialog._request_passphrase()
 
@@ -1663,7 +1663,7 @@ def test_ExportDialog__request_passphrase(mocker):
 
 def test_ExportDialog__request_passphrase_more_than_once(mocker):
     """Ensure that the correct widgets are visible or hidden."""
-    export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid')
+    export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
 
     export_dialog._request_passphrase(bad_passphrase=True)
 
@@ -1678,7 +1678,7 @@ def test_ExportDialog__on_export_success_closes_window(mocker):
     Ensure successful export results in the export dialog window closing.
     """
     controller = mocker.MagicMock()
-    export_dialog = ExportDialog(controller, 'mock_uuid')
+    export_dialog = ExportDialog(controller, 'mock_uuid', 'mock.jpg')
     export_dialog.close = mocker.MagicMock()
 
     export_dialog._on_export_success()
@@ -1692,7 +1692,7 @@ def test_ExportDialog__on_unlock_disk_clicked(mocker):
     """
     controller = mocker.MagicMock()
     controller.export_file_to_usb_drive = mocker.MagicMock()
-    export_dialog = ExportDialog(controller, 'mock_uuid')
+    export_dialog = ExportDialog(controller, 'mock_uuid', 'mock.jpg')
     export_dialog._update = mocker.MagicMock()
     export_dialog.passphrase_field.text = mocker.MagicMock(return_value='mock_passphrase')
 
@@ -1708,7 +1708,7 @@ def test_ExportDialog__on_unlock_disk_clicked_asks_for_passphrase_again_on_error
     """
     controller = mocker.MagicMock()
     bad_password_export_error = ExportError(ExportStatus.BAD_PASSPHRASE.value)
-    export_dialog = ExportDialog(controller, 'mock_uuid')
+    export_dialog = ExportDialog(controller, 'mock_uuid', 'mock.jpg')
     export_dialog._request_passphrase = mocker.MagicMock()
     export_dialog.passphrase_field.text = mocker.MagicMock(return_value='mock_passphrase')
 
@@ -1721,7 +1721,7 @@ def test_ExportDialog__update_preflight_non_called_process_error(mocker):
     """
     Ensure generic errors are passed through to _update
     """
-    export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid')
+    export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
     export_dialog.generic_error = mocker.MagicMock()
     error = ExportError('generic error')
     export_dialog._on_preflight_check_call_failure(error)
@@ -1732,7 +1732,7 @@ def test_ExportDialog__update_after_USB_NOT_CONNECTED(mocker):
     """
     Ensure USB_NOT_CONNECTED results in asking the user connect their USB device.
     """
-    export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid')
+    export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
     export_dialog._request_to_insert_usb_device = mocker.MagicMock()
     export_dialog._update(ExportStatus.USB_NOT_CONNECTED.value)
     export_dialog._request_to_insert_usb_device.assert_called_once_with()
@@ -1742,7 +1742,7 @@ def test_ExportDialog__update_after_DISK_ENCRYPTION_NOT_SUPPORTED_ERROR(mocker):
     """
     Ensure USB_NOT_CONNECTED results in asking the user connect their USB device.
     """
-    export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid')
+    export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
     export_dialog._request_to_insert_usb_device = mocker.MagicMock()
     export_dialog._update(ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value)
     export_dialog._request_to_insert_usb_device.assert_called_once_with(True)
@@ -1753,7 +1753,7 @@ def test_ExportDialog__update_after_CALLED_PROCESS_ERROR(mocker):
     Ensure CALLED_PROCESS_ERROR shows generic 'contact admin' error with correct
     error status code.
     """
-    export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid')
+    export_dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
     export_dialog._request_to_insert_usb_device = mocker.MagicMock()
     export_dialog._request_passphrase = mocker.MagicMock()
     error = ExportError(ExportStatus.CALLED_PROCESS_ERROR.value)

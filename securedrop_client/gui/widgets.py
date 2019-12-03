@@ -1874,7 +1874,8 @@ class FileWidget(QWidget):
             self.controller.sync_api()
             return
 
-        dialog = ExportDialog(self.controller, self.file.uuid)
+        dialog = ExportDialog(self.controller, self.file.uuid,
+                              self.file.original_filename)
         dialog.show()
         dialog.export()
         dialog.exec()
@@ -2074,11 +2075,12 @@ class ExportDialog(QDialog):
     }
     '''
 
-    def __init__(self, controller, file_uuid):
+    def __init__(self, controller, file_uuid, file_name):
         super().__init__()
 
         self.controller = controller
         self.file_uuid = file_uuid
+        self.file_name = file_name
 
         self.setObjectName('export_dialog')
         self.setStyleSheet(self.CSS)
@@ -2089,7 +2091,8 @@ class ExportDialog(QDialog):
         self.setLayout(layout)
 
         # Starting export message
-        self.starting_export_message = SecureQLabel(_('Preparing export...'))
+        self.starting_export_message = SecureQLabel(_(
+            'Preparing to export:\n' + self.file_name))
         self.starting_export_message.setWordWrap(True)
 
         # Widget to show error messages that occur during an export
@@ -2109,17 +2112,18 @@ class ExportDialog(QDialog):
         usb_form_layout = QVBoxLayout()
         self.insert_usb_form.setLayout(usb_form_layout)
         self.usb_error_message = SecureQLabel(_(
-            'Either the drive is not luks-encrypted, or there is something else wrong'
-            'with it. Please try another drive, or see your administrator for help.'))
+            'Either the drive is not LUKS-encrypted, or there is something '
+            'else wrong with it.'))
         self.usb_error_message.setWordWrap(True)
         usb_instructions = SecureQLabel(_(
-            'Please insert your encrypted drive into one of the USB ports marked EXTERNAL.'))
+            'Please insert one of the export drives provisioned specifically '
+            'for the SecureDrop Workstation.'))
         usb_instructions.setWordWrap(True)
         buttons = QWidget()
         buttons_layout = QHBoxLayout()
         buttons.setLayout(buttons_layout)
         usb_cancel_button = QPushButton(_('CANCEL'))
-        retry_export_button = QPushButton(_('CONTINUE'))
+        retry_export_button = QPushButton(_('OK'))
         buttons_layout.addWidget(usb_cancel_button)
         buttons_layout.addWidget(retry_export_button)
         usb_form_layout.addWidget(self.usb_error_message)
@@ -2134,7 +2138,7 @@ class ExportDialog(QDialog):
         self.passphrase_error_message = SecureQLabel(_(
             'The passphrase provided did not work. Please try again.'))
         self.passphrase_error_message.setWordWrap(True)
-        self.passphrase_instructions = SecureQLabel(_('Enter password for safe USB drive.'))
+        self.passphrase_instructions = SecureQLabel(_('Enter the passphrase for this drive'))
         self.passphrase_instructions.setWordWrap(True)
         passphrase_label = SecureQLabel(_('Passphrase'))
         passphrase_label.setObjectName('passphrase_label')
@@ -2155,7 +2159,8 @@ class ExportDialog(QDialog):
         self.passphrase_error_message.hide()
 
         # Starting export message
-        self.exporting_message = SecureQLabel(_('Exporting...'))
+        self.exporting_message = SecureQLabel(_(
+            'File export in progress:\n' + self.file_name))
         self.exporting_message.setWordWrap(True)
 
         layout.addWidget(self.starting_export_message)
