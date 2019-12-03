@@ -304,10 +304,12 @@ class Controller(QObject):
 
     def login(self, username, password, totp):
         """
-        Given a username, password and time based one-time-passcode (TOTP),
-        create a new instance representing the SecureDrop api and authenticate.
+        Given a username, password and time based one-time-passcode (TOTP), create a new instance
+        representing the SecureDrop api and authenticate.
 
-        Default to 60 seconds until we implement a better request timeout strategy.
+        Default to 60 seconds until we implement a better request timeout strategy. We lower the
+        default_request_timeout for Queue API requests in ApiJobQueue in order to display errors
+        faster.
         """
         storage.mark_all_pending_drafts_as_failed(self.session)
         self.api = sdclientapi.API(
@@ -366,7 +368,7 @@ class Controller(QObject):
         """
         return bool(self.api and self.api.token is not None)
 
-    def sync_api(self):
+    def sync_api(self, manual_refresh: bool = False):
         """
         Grab data from the remote SecureDrop API in a non-blocking manner.
         """
@@ -377,9 +379,20 @@ class Controller(QObject):
             logger.debug("You are authenticated, going to make your call")
 
             job = MetadataSyncJob(self.data_dir, self.gpg)
-
             job.success_signal.connect(self.on_sync_success, type=Qt.QueuedConnection)
-            job.failure_signal.connect(self.on_sync_failure, type=Qt.QueuedConnection)
+
+            # If the sync did not originate from a manual refrsh, increase the number of
+            # retry attempts (remaining_attempts) to 15, otherwise use the default so that a user
+            # finds out quicker whether or not their refresh-attempt failed.
+            #
+            # Set up failure-handling depending on whether or not the sync originated from a manual
+            # refresh.
+            if manual_refresh:
+                job.failure_signal.connect(self.on_refresh_failure, type=Qt.QueuedConnection)
+            else:
+                job.remaining_attempts = 15
+                job.failure_signal.connect(self.on_sync_failure, type=Qt.QueuedConnection)
+
             self.api_job_queue.enqueue(job)
 
             logger.debug("In sync_api, after call to submit job to queue, on "
@@ -404,6 +417,8 @@ class Controller(QObject):
             * Download new messages and replies
             * Update missing files so that they can be re-downloaded
         """
+        self.set_status('')  # remove any permanent error status message
+
         with open(self.sync_flag, 'w') as f:
             f.write(arrow.now().format())
 
@@ -415,8 +430,21 @@ class Controller(QObject):
 
     def on_sync_failure(self, result: Exception) -> None:
         """
-        Called when syncronisation of data via the API queue fails.
+        Called when syncronisation of data via the API fails after a background sync. Resume the
+        queues so that we continue to retry syncing with the server in the background.
         """
+        logger.debug('The SecureDrop server cannot be reached due to Error: {}'.format(result))
+        self.gui.update_error_status(
+            _('The SecureDrop server cannot be reached.'),
+            duration=0,
+            retry=True)
+        self.resume_queues()
+
+    def on_refresh_failure(self, result: Exception) -> None:
+        """
+        Called when syncronisation of data via the API fails after a user manual clicks refresh.
+        """
+        logger.debug('The SecureDrop server cannot be reached due to Error: {}'.format(result))
         self.gui.update_error_status(
             _('The SecureDrop server cannot be reached.'),
             duration=0,

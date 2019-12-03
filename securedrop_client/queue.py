@@ -158,6 +158,16 @@ class ApiJobQueue(QObject):
 
     def login(self, api_client: API) -> None:
         logger.debug('Passing API token to queues')
+
+        # Setting realistic (shorter) timeout for general requests so that user feedback is faster.
+        # General requests includes:
+        #       FileDownloadJob
+        #       MessageDownloadJob
+        #       ReplyDownloadJo
+        #       SendReplyJob
+        #       UpdateStarJob
+        api_client.default_request_timeout = 5
+
         self.main_queue.api_client = api_client
         self.download_file_queue.api_client = api_client
         self.start_queues()
