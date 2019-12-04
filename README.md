@@ -1,7 +1,6 @@
-# OQubes Logging
+# securedrop-log
 
-This is a PoC logging service based on [Qubes
-buildlog](https://github.com/QubesOS/qubes-builder/blob/master/rpc-services/qubesbuilder.BuildLog).
+This is a Python module and qrexec service for logging in Qubes for [SecureDrop](https://securedrop.org).
 
 ## How to use/try this?
 
@@ -10,7 +9,7 @@ In our example, we will use a vm named *logging* for storing logs, and we will u
 
 ### In dom0
 
-- Create a file `/etc/qubes-rpc/policy/oqubes.Logging` in `dom0` with the following content.
+- Create a file `/etc/qubes-rpc/policy/securedrop.Log` in `dom0` with the following content.
 
 ```
 workvm logging allow
@@ -19,13 +18,13 @@ workvm logging allow
 
 ### In logging vm
 
-Add the following content to `/etc/qubes-rpc/oqubes.Logging`
+Add the following content to `/etc/qubes-rpc/securedrop.Log`
 
 ```
-/usr/sbin/oqubes-logging
+/usr/sbin/securedrop-log
 ```
 
-and then place `oqubes-logging` script to `/usr/sbin/` directory and make sure that
+and then place `securedrop-log` script to `/usr/sbin/` directory and make sure that
 it is executable.
 
 ### To use from any Python code in workvm
@@ -34,10 +33,10 @@ Here is an example code using Python logging
 
 ```Python
 import logging
-from oqubeslogging import OQubesLog
+from securedrop_log import SecureDropLog
 
 def main():
-    handler = OQubesLog("workvm", "proxy-debian")
+    handler = SecureDropLog("workvm", "proxy-debian")
     logging.basicConfig(level=logging.DEBUG, handlers=[handler])
     logger = logging.getLogger("example")
 
