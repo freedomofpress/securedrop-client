@@ -1,0 +1,8 @@
+include LICENSE
+include README.md
+include build-requirements.txt
+include requirements.txt
+include securedrop_log/*.py
+include setup.py
+include securedrop-log
+
