@@ -21,6 +21,8 @@ MOUNTPOINT = "/media/usb"
 ENCRYPTED_DEVICE = "encrypted_volume"
 BRLASER_DRIVER = "/usr/share/cups/drv/brlaser.drv"
 BRLASER_PPD = "/usr/share/cups/model/br7030.ppd"
+LASERJET_DRIVER = "/usr/share/cups/drv/hpcups.drv"
+LASERJET_PPD = "/usr/share/cups/model/hp-laserjet_6l.ppd"
 
 logger = logging.getLogger(__name__)
 
@@ -127,8 +129,8 @@ class SDExport(object):
         self.printer_name = PRINTER_NAME
         self.printer_wait_timeout = PRINTER_WAIT_TIMEOUT
 
-        self.brlaser_driver = BRLASER_DRIVER
-        self.brlaser_ppd = BRLASER_PPD
+        self.printer_driver = None
+        self.printer_ppd = None
 
         self.archive = archive
         self.submission_dirname = os.path.basename(self.archive).split(".")[0]
@@ -359,19 +361,26 @@ class SDExport(object):
         return printer_uri
 
     def install_printer_ppd(self, uri):
+        if "Brother" in uri:
+            self.printer_driver = BRLASER_DRIVER
+            self.printer_ppd = BRLASER_PPD
+        elif "LaserJet" in uri:
+            self.printer_driver = LASERJET_DRIVER
+            self.printer_ppd = LASERJET_PPD
+
         # Some drivers don't come with ppd files pre-compiled, we must compile them
         if any(x in uri for x in ("Brother", "LaserJet")):
             self.safe_check_call(
                 command=[
                     "sudo",
                     "ppdc",
-                    self.brlaser_driver,
+                    self.printer_driver,
                     "-d",
                     "/usr/share/cups/model/",
                 ],
                 error_message=ExportStatus.ERROR_PRINTER_DRIVER_UNAVAILABLE.value
             )
-            return self.brlaser_ppd
+            return self.printer_ppd
         # Here, we could support ppd drivers for other makes or models in the future
 
     def setup_printer(self, printer_uri, printer_ppd):
