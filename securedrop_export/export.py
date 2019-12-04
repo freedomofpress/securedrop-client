@@ -376,6 +376,7 @@ class SDExport(object):
 
     def setup_printer(self, printer_uri, printer_ppd):
         # Add the printer using lpadmin
+        logger.info('Setting up printer name {}'.format(self.printer_name))
         self.safe_check_call(
             command=[
                 "sudo",
@@ -390,17 +391,34 @@ class SDExport(object):
             error_message=ExportStatus.ERROR_PRINTER_INSTALL.value
         )
         # Activate the printer so that it can receive jobs
+        logger.info('Activating printer {}'.format(self.printer_name))
         self.safe_check_call(
-            command=["sudo", "lpadmin", "-p", self.printer_name, "-E"],
+            command=["sudo", "lpadmin", "-p", self.printer_name],
             error_message=ExportStatus.ERROR_PRINTER_INSTALL.value
         )
+        # worksaround for version of lpadmin/cups in debian buster:
+        # see https://forums.developer.apple.com/thread/106112
+        self.safe_check_call(
+            command=["sudo", "cupsaccept", self.printer_name],
+            error_message=ExportStatus.ERROR_PRINTER_INSTALL.value
+        )
+        # A non-zero return code is expected here, but the command is required
+        # and works as expected.
+        command = ["sudo", "cupsenable", self.printer_name]
+        try:
+            subprocess.check_call(command)
+        except subprocess.CalledProcessError:
+            pass
+
         # Allow user to print (without using sudo)
+        logger.info('Allow user to print {}'.format(self.printer_name))
         self.safe_check_call(
             command=["sudo", "lpadmin", "-p", self.printer_name, "-u", "allow:user"],
             error_message=ExportStatus.ERROR_PRINTER_INSTALL.value
         )
 
     def print_test_page(self):
+        logger.info('Printing test page')
         self.print_file("/usr/share/cups/data/testprint")
         self.popup_message("Printing test page")
 
@@ -436,7 +454,7 @@ class SDExport(object):
         # If the file to print is an (open)office document, we need to call unoconf to
         # convert the file to pdf as printer drivers do not support this format
         if self.is_open_office_file(file_to_print):
-            logging.info('Converting Office document to pdf'.format(self.printer_name))
+            logger.info('Converting Office document to pdf')
             folder = os.path.dirname(file_to_print)
             converted_filename = file_to_print + ".pdf"
             converted_path = os.path.join(folder, converted_filename)
