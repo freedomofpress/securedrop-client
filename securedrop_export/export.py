@@ -82,27 +82,27 @@ class Metadata(object):
 
         try:
             with open(self.metadata_path) as f:
-                logging.info('Parsing archive metadata')
+                logger.info('Parsing archive metadata')
                 json_config = json.loads(f.read())
                 self.export_method = json_config.get("device", None)
                 self.encryption_method = json_config.get("encryption_method", None)
                 self.encryption_key = json_config.get(
                     "encryption_key", None
                 )
-                logging.info(
+                logger.info(
                     'Exporting to device {} with encryption_method {}'.format(
                         self.export_method, self.encryption_method
                     )
                 )
 
         except Exception:
-            logging.error('Metadata parsing failure')
+            logger.error('Metadata parsing failure')
             raise
 
     def is_valid(self):
-        logging.info('Validating metadata contents')
+        logger.info('Validating metadata contents')
         if self.export_method not in self.SUPPORTED_EXPORT_METHODS:
-            logging.error(
+            logger.error(
                 'Archive metadata: Export method {} is not supported'.format(
                     self.export_method
                 )
@@ -111,7 +111,7 @@ class Metadata(object):
 
         if self.export_method == "disk":
             if self.encryption_method not in self.SUPPORTED_ENCRYPTION_METHODS:
-                logging.error(
+                logger.error(
                     'Archive metadata: Encryption method {} is not supported'.format(
                         self.encryption_method
                     )
@@ -185,7 +185,7 @@ class SDExport(object):
 
     def extract_tarball(self):
         try:
-            logging.info('Extracting tarball {} into {}'.format(self.archive, self.tmpdir))
+            logger.info('Extracting tarball {} into {}'.format(self.archive, self.tmpdir))
             with tarfile.open(self.archive) as tar:
                 tar.extractall(self.tmpdir)
         except Exception:
@@ -195,17 +195,20 @@ class SDExport(object):
         usb_devices = self._get_connected_usbs()
 
         if len(usb_devices) == 0:
+            logger.info('0 USB devices connected')
             self.exit_gracefully(ExportStatus.USB_NOT_CONNECTED.value)
         elif len(usb_devices) == 1:
+            logger.info('1 USB device connected')
             self.device = usb_devices[0]
             if exit:
                 self.exit_gracefully(ExportStatus.USB_CONNECTED.value)
         elif len(usb_devices) > 1:
+            logger.info('>1 USB devices connected')
             # Return generic error until freedomofpress/securedrop-export/issues/25
             self.exit_gracefully(ExportStatus.ERROR_GENERIC.value)
 
     def _get_connected_usbs(self) -> List[str]:
-        logging.info('Performing usb preflight')
+        logger.info('Performing usb preflight')
         # List all block devices attached to VM that are disks and not partitions.
         try:
             lsblk = subprocess.Popen(["lsblk", "-o", "NAME,TYPE"], stdout=subprocess.PIPE,
@@ -243,7 +246,7 @@ class SDExport(object):
             # we don't support multiple partitions
             partition_count = device_and_partitions.decode('utf-8').split('\n').count('part')
             if partition_count > 1:
-                logging.debug("multiple partitions not supported")
+                logger.debug("multiple partitions not supported")
                 self.exit_gracefully(ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED.value)
 
             # redefine device to /dev/sda if disk is encrypted, /dev/sda1 if partition encrypted
@@ -254,9 +257,9 @@ class SDExport(object):
     def check_luks_volume(self):
         # cryptsetup isLuks returns 0 if the device is a luks volume
         # subprocess with throw if the device is not luks (rc !=0)
-        logging.info('Checking if volume is luks-encrypted')
+        logger.info('Checking if volume is luks-encrypted')
         self.set_extracted_device_name()
-        logging.debug("checking if {} is luks encrypted".format(self.device))
+        logger.debug("checking if {} is luks encrypted".format(self.device))
         self.safe_check_call(
             command=["sudo", "cryptsetup", "isLuks", self.device],
             error_message=ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED.value
@@ -276,18 +279,18 @@ class SDExport(object):
 
             # the luks device is not already unlocked
             if not os.path.exists(os.path.join("/dev/mapper/", self.encrypted_device)):
-                logging.debug('Unlocking luks volume {}'.format(self.encrypted_device))
+                logger.debug('Unlocking luks volume {}'.format(self.encrypted_device))
                 p = subprocess.Popen(
                     ["sudo", "cryptsetup", "luksOpen", self.device, self.encrypted_device],
                     stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE
                 )
-                logging.debug('Passing key')
+                logger.debug('Passing key')
                 p.communicate(input=str.encode(encryption_key, "utf-8"))
                 rc = p.returncode
                 if rc != 0:
-                    logging.error('Bad phassphrase for {}'.format(self.encrypted_device))
+                    logger.error('Bad phassphrase for {}'.format(self.encrypted_device))
                     self.exit_gracefully(ExportStatus.USB_BAD_PASSPHRASE.value)
         except subprocess.CalledProcessError:
             self.exit_gracefully(ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED)
@@ -301,7 +304,7 @@ class SDExport(object):
             )
 
         mapped_device_path = os.path.join("/dev/mapper/", self.encrypted_device)
-        logging.info('Mounting {}'.format(mapped_device_path))
+        logger.info('Mounting {}'.format(mapped_device_path))
         self.safe_check_call(
             command=["sudo", "mount", mapped_device_path, self.mountpoint],
             error_message=ExportStatus.ERROR_USB_MOUNT.value
@@ -319,24 +322,24 @@ class SDExport(object):
             target_path = os.path.join(self.mountpoint, self.target_dirname)
             subprocess.check_call(["mkdir", target_path])
             export_data = os.path.join(self.tmpdir, "export_data/")
-            logging.info('Copying file to {}'.format(self.target_dirname))
+            logger.info('Copying file to {}'.format(self.target_dirname))
             subprocess.check_call(["cp", "-r", export_data, target_path])
-            logging.info('File copied successfully to {}'.format(self.target_dirname))
+            logger.info('File copied successfully to {}'.format(self.target_dirname))
             self.popup_message("Files exported successfully to disk.")
         except (subprocess.CalledProcessError, OSError):
             self.exit_gracefully(ExportStatus.ERROR_USB_WRITE.value)
         finally:
             # Finally, we sync the filesystem, unmount the drive and lock the
             # luks volume, and exit 0
-            logging.info('Syncing filesystems')
+            logger.info('Syncing filesystems')
             subprocess.check_call(["sync"])
-            logging.info('Unmounting drive from {}'.format(self.mountpoint))
+            logger.info('Unmounting drive from {}'.format(self.mountpoint))
             subprocess.check_call(["sudo", "umount", self.mountpoint])
-            logging.info('Locking luks volume {}'.format(self.encrypted_device))
+            logger.info('Locking luks volume {}'.format(self.encrypted_device))
             subprocess.check_call(
                 ["sudo", "cryptsetup", "luksClose", self.encrypted_device]
             )
-            logging.info('Deleting temporary directory {}'.format(self.tmpdir))
+            logger.info('Deleting temporary directory {}'.format(self.tmpdir))
             subprocess.check_call(["rm", "-rf", self.tmpdir])
             sys.exit(0)
 
@@ -348,17 +351,17 @@ class SDExport(object):
         printer_idle_string = "printer {} is idle".format(self.printer_name)
         while True:
             try:
-                logging.info('Running lpstat waiting for printer {}'.format(self.printer_name))
+                logger.info('Running lpstat waiting for printer {}'.format(self.printer_name))
                 output = subprocess.check_output(["lpstat", "-p", self.printer_name])
                 if printer_idle_string in output.decode("utf-8"):
-                    logging.info('Print completed')
+                    logger.info('Print completed')
                     return True
                 else:
                     time.sleep(5)
             except subprocess.CalledProcessError:
                 self.exit_gracefully(ExportStatus.ERROR_PRINT.value)
             except TimeoutException:
-                logging.error('Timeout waiting for printer {}'.format(self.printer_name))
+                logger.error('Timeout waiting for printer {}'.format(self.printer_name))
                 self.exit_gracefully(ExportStatus.ERROR_PRINT.value)
         return True
 
@@ -374,19 +377,19 @@ class SDExport(object):
         for line in output.split():
             if "usb://" in line.decode("utf-8"):
                 printer_uri = line.decode("utf-8")
-                logging.info('lpinfo usb printer: {}'.format(printer_uri))
+                logger.info('lpinfo usb printer: {}'.format(printer_uri))
 
         # verify that the printer is supported, else exit
         if printer_uri == "":
             # No usb printer is connected
-            logging.info('No usb printers connected')
+            logger.info('No usb printers connected')
             self.exit_gracefully(ExportStatus.ERROR_PRINTER_NOT_FOUND.value)
         elif not any(x in printer_uri for x in ("Brother", "LaserJet")):
             # printer url is a make that is unsupported
-            logging.info('Printer {} is unsupported'.format(printer_uri))
+            logger.info('Printer {} is unsupported'.format(printer_uri))
             self.exit_gracefully(ExportStatus.ERROR_PRINTER_NOT_SUPPORTED.value)
 
-        logging.info('Printer {} is supported'.format(printer_uri))
+        logger.info('Printer {} is supported'.format(printer_uri))
         return printer_uri
 
     def install_printer_ppd(self, uri):
@@ -505,7 +508,7 @@ class SDExport(object):
             )
             file_to_print = converted_path
 
-        logging.info('Sending file to printer {}:{}'.format(self.printer_name, file_to_print))
+        logger.info('Sending file to printer {}:{}'.format(self.printer_name, file_to_print))
         self.safe_check_call(
             command=["xpp", "-P", self.printer_name, file_to_print],
             error_message=ExportStatus.ERROR_PRINT.value

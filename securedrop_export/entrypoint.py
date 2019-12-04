@@ -11,6 +11,8 @@ from securedrop_export import main
 CONFIG_PATH = "/etc/sd-export-config.json"
 DEFAULT_HOME = os.path.join(os.path.expanduser("~"), ".securedrop_export")
 
+logger = logging.getLogger(__name__)
+
 
 def configure_logging():
     """
@@ -44,13 +46,13 @@ def start():
         msg = "ERROR_LOGGING"
         export.SDExport.exit_gracefully(msg)
 
-    logging.info('Starting SecureDrop Export {}'.format(__version__))
+    logger.info('Starting SecureDrop Export {}'.format(__version__))
     my_sub = export.SDExport(sys.argv[1], CONFIG_PATH)
 
     try:
         # Halt immediately if target file is absent
         if not os.path.exists(my_sub.archive):
-            logging.info('Archive is not found {}.'.format(my_sub.archive))
+            logger.info('Archive is not found {}.'.format(my_sub.archive))
             msg = "ERROR_FILE_NOT_FOUND"
             my_sub.exit_gracefully(msg)
         main.__main__(my_sub)
