@@ -323,3 +323,52 @@ def test_safe_check_call(capsys, mocker):
 
     assert mocked_exit.mock_calls[0][2]['msg'] == expected_message
     assert mocked_exit.mock_calls[0][2]['e'] is None
+
+
+@mock.patch("subprocess.check_call")
+def test_install_printer_ppd_laserjet(mocker):
+    submission = export.SDExport("testfile", TEST_CONFIG)
+    ppd = submission.install_printer_ppd("usb://HP/LaserJet%20Pro%20M404-M405?serial=A00000A00000")
+    assert ppd == "/usr/share/cups/model/hp-laserjet_6l.ppd"
+
+
+@mock.patch("subprocess.check_call")
+def test_install_printer_ppd_brother(mocker):
+    submission = export.SDExport("testfile", TEST_CONFIG)
+    ppd = submission.install_printer_ppd("usb://Brother/HL-L2320D%20series?serial=A00000A000000")
+    assert ppd == "/usr/share/cups/model/br7030.ppd"
+
+
+def test_install_printer_ppd_error_no_driver(mocker):
+    submission = export.SDExport("testfile", TEST_CONFIG)
+    mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
+    mocker.patch("subprocess.check_call", side_effect=CalledProcessError(1, 'check_call'))
+
+    submission.install_printer_ppd("usb://HP/LaserJet%20Pro%20M404-M405?serial=A00000A000000")
+
+    assert mocked_exit.mock_calls[0][2]['msg'] == "ERROR_PRINTER_DRIVER_UNAVAILABLE"
+    assert mocked_exit.mock_calls[0][2]['e'] is None
+
+
+def test_install_printer_ppd_error_not_supported(mocker):
+    submission = export.SDExport("testfile", TEST_CONFIG)
+    mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
+    mocker.patch("subprocess.check_call", side_effect=CalledProcessError(1, 'check_call'))
+
+    submission.install_printer_ppd("usb://Not/Supported?serial=A00000A000000")
+
+    assert mocked_exit.mock_calls[0][2]['msg'] == "ERROR_PRINTER_NOT_SUPPORTED"
+
+
+def test_setup_printer_error(mocker):
+    submission = export.SDExport("testfile", TEST_CONFIG)
+    mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
+    mocker.patch("subprocess.check_call", side_effect=CalledProcessError(1, 'check_call'))
+
+    submission.setup_printer(
+        "usb://Brother/HL-L2320D%20series?serial=A00000A000000",
+        "/usr/share/cups/model/br7030.ppd"
+    )
+
+    assert mocked_exit.mock_calls[0][2]['msg'] == "ERROR_PRINTER_INSTALL"
+    assert mocked_exit.mock_calls[0][2]['e'] is None

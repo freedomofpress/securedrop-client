@@ -129,9 +129,6 @@ class SDExport(object):
         self.printer_name = PRINTER_NAME
         self.printer_wait_timeout = PRINTER_WAIT_TIMEOUT
 
-        self.printer_driver = None
-        self.printer_ppd = None
-
         self.archive = archive
         self.submission_dirname = os.path.basename(self.archive).split(".")[0]
         self.target_dirname = "sd-export-{}".format(
@@ -361,27 +358,30 @@ class SDExport(object):
         return printer_uri
 
     def install_printer_ppd(self, uri):
+        if not any(x in uri for x in ("Brother", "LaserJet")):
+            logger.error("Cannot install printer ppd for unsupported printer: {}".format(uri))
+            self.exit_gracefully(msg=ExportStatus.ERROR_PRINTER_NOT_SUPPORTED.value)
+            return
+
         if "Brother" in uri:
-            self.printer_driver = BRLASER_DRIVER
-            self.printer_ppd = BRLASER_PPD
+            printer_driver = BRLASER_DRIVER
+            printer_ppd = BRLASER_PPD
         elif "LaserJet" in uri:
-            self.printer_driver = LASERJET_DRIVER
-            self.printer_ppd = LASERJET_PPD
+            printer_driver = LASERJET_DRIVER
+            printer_ppd = LASERJET_PPD
 
         # Some drivers don't come with ppd files pre-compiled, we must compile them
-        if any(x in uri for x in ("Brother", "LaserJet")):
-            self.safe_check_call(
-                command=[
-                    "sudo",
-                    "ppdc",
-                    self.printer_driver,
-                    "-d",
-                    "/usr/share/cups/model/",
-                ],
-                error_message=ExportStatus.ERROR_PRINTER_DRIVER_UNAVAILABLE.value
-            )
-            return self.printer_ppd
-        # Here, we could support ppd drivers for other makes or models in the future
+        self.safe_check_call(
+            command=[
+                "sudo",
+                "ppdc",
+                printer_driver,
+                "-d",
+                "/usr/share/cups/model/",
+            ],
+            error_message=ExportStatus.ERROR_PRINTER_DRIVER_UNAVAILABLE.value
+        )
+        return printer_ppd
 
     def setup_printer(self, printer_uri, printer_ppd):
         # Add the printer using lpadmin
