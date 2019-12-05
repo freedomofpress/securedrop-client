@@ -4,6 +4,7 @@ include changelog.md
 include build-requirements.txt
 include requirements.txt
 include securedrop_log/*.py
+include securdrop_log/VERSION
 include setup.py
 include securedrop-log
 
