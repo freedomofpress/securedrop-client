@@ -11,12 +11,12 @@ import sys
 import tarfile
 import tempfile
 import time
+from typing import List, Optional  # noqa: F401
 
 from enum import Enum
 
 PRINTER_NAME = "sdw-printer"
 PRINTER_WAIT_TIMEOUT = 60
-DEVICE = "/dev/sda"
 MOUNTPOINT = "/media/usb"
 ENCRYPTED_DEVICE = "encrypted_volume"
 BRLASER_DRIVER = "/usr/share/cups/drv/brlaser.drv"
@@ -122,7 +122,7 @@ class Metadata(object):
 
 class SDExport(object):
     def __init__(self, archive, config_path):
-        self.device = DEVICE
+        self.device = None  # Optional[str]
         self.mountpoint = MOUNTPOINT
         self.encrypted_device = ENCRYPTED_DEVICE
 
@@ -191,22 +191,54 @@ class SDExport(object):
         except Exception:
             self.exit_gracefully(ExportStatus.ERROR_EXTRACTION.value)
 
-    def check_usb_connected(self):
-        # If the USB is not attached via qvm-usb attach, lsusb will return empty string and a
-        # return code of 1
-        logging.info('Performing usb preflight')
-        try:
-            subprocess.check_output(
-                ["lsblk", "-p", "-o", "KNAME", "--noheadings", "--inverse", DEVICE],
-                stderr=subprocess.PIPE)
-            self.exit_gracefully(ExportStatus.USB_CONNECTED.value)
-        except subprocess.CalledProcessError:
+    def check_usb_connected(self, exit=False) -> None:
+        usb_devices = self._get_connected_usbs()
+
+        if len(usb_devices) == 0:
             self.exit_gracefully(ExportStatus.USB_NOT_CONNECTED.value)
+        elif len(usb_devices) == 1:
+            self.device = usb_devices[0]
+            if exit:
+                self.exit_gracefully(ExportStatus.USB_CONNECTED.value)
+        elif len(usb_devices) > 1:
+            # Return generic error until freedomofpress/securedrop-export/issues/25
+            self.exit_gracefully(ExportStatus.ERROR_GENERIC.value)
+
+    def _get_connected_usbs(self) -> List[str]:
+        logging.info('Performing usb preflight')
+        # List all block devices attached to VM that are disks and not partitions.
+        try:
+            lsblk = subprocess.Popen(["lsblk", "-o", "NAME,TYPE"], stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE)
+            grep = subprocess.Popen(["grep", "disk"], stdin=lsblk.stdout, stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
+            command_output = grep.stdout.readlines()
+
+            # The first word in each element of the command_output list is the device name
+            attached_devices = [x.decode('utf8').split()[0] for x in command_output]
+        except subprocess.CalledProcessError:
+            self.exit_gracefully(ExportStatus.ERROR_GENERIC.value)
+
+        # Determine which are USBs by selecting those block devices that are removable disks.
+        usb_devices = []
+        for device in attached_devices:
+            try:
+                removable = subprocess.check_output(
+                    ["cat", "/sys/class/block/{}/removable".format(device)],
+                    stderr=subprocess.PIPE)
+                is_removable = int(removable.decode('utf8').strip())
+            except subprocess.CalledProcessError:
+                is_removable = False
+
+            if is_removable:
+                usb_devices.append("/dev/{}".format(device))
+
+        return usb_devices
 
     def set_extracted_device_name(self):
         try:
             device_and_partitions = subprocess.check_output(
-                ["lsblk", "-o", "TYPE", "--noheadings", DEVICE], stderr=subprocess.PIPE)
+                ["lsblk", "-o", "TYPE", "--noheadings", self.device], stderr=subprocess.PIPE)
 
             # we don't support multiple partitions
             partition_count = device_and_partitions.decode('utf-8').split('\n').count('part')
@@ -214,8 +246,8 @@ class SDExport(object):
                 logging.debug("multiple partitions not supported")
                 self.exit_gracefully(ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED.value)
 
-            # set device to /dev/sda if disk is encrypted, /dev/sda1 if partition encrypted
-            self.device = DEVICE if partition_count == 0 else DEVICE + '1'
+            # redefine device to /dev/sda if disk is encrypted, /dev/sda1 if partition encrypted
+            self.device = self.device if partition_count == 0 else self.device + '1'
         except subprocess.CalledProcessError:
             self.exit_gracefully(ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED.value)
 

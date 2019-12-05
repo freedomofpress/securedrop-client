@@ -193,33 +193,81 @@ def test_is_not_open_office_file(capsys, open_office_paths):
 
 
 def test_usb_precheck_disconnected(capsys, mocker):
+    """Tests the scenario where there are disks connected, but none of them are USB"""
     submission = export.SDExport("testfile", TEST_CONFIG)
     expected_message = "USB_NOT_CONNECTED"
     assert export.ExportStatus.USB_NOT_CONNECTED.value == expected_message
+
+    # Popen call returns lsblk output
+    command_output = mock.MagicMock()
+    command_output.stdout = mock.MagicMock()
+    command_output.stdout.readlines = mock.MagicMock(return_value=[b"sda disk\n", b"sdb disk\n"])
+    mocker.patch("subprocess.Popen", return_value=command_output)
+
+    # check_output returns removable status
+    mocker.patch("subprocess.check_output", return_value=[b'0\n', b'0\n'])
+
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
 
     mocker.patch("subprocess.check_output",
                  side_effect=CalledProcessError(1, 'check_output'))
 
-    submission.check_usb_connected()
+    submission.check_usb_connected(exit=True)
+
     mocked_exit.assert_called_once_with(expected_message)
+    assert submission.device is None
 
 
-@mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_USB)
-def test_usb_precheck_connected(mocked_call, capsys, mocker):
+def test_usb_precheck_connected(capsys, mocker):
+    """Tests the scenario where there is one USB connected"""
     submission = export.SDExport("testfile", TEST_CONFIG)
+
+    # Popen call returns lsblk output
+    command_output = mock.MagicMock()
+    command_output.stdout = mock.MagicMock()
+    command_output.stdout.readlines = mock.MagicMock(return_value=[b"sdb disk\n"])
+    mocker.patch("subprocess.Popen", return_value=command_output)
+
+    # check_output returns removable status
+    mocker.patch("subprocess.check_output", return_value=b"1\n")
+
     expected_message = "USB_CONNECTED"
     assert export.ExportStatus.USB_CONNECTED.value == expected_message
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
 
-    submission.check_usb_connected()
+    submission.check_usb_connected(exit=True)
 
     mocked_exit.assert_called_once_with(expected_message)
+    assert submission.device == "/dev/sdb"
+
+
+def test_usb_precheck_multiple_devices_connected(capsys, mocker):
+    """Tests the scenario where there are multiple USB drives connected"""
+    submission = export.SDExport("testfile", TEST_CONFIG)
+
+    # Popen call returns lsblk output
+    command_output = mock.MagicMock()
+    command_output.stdout = mock.MagicMock()
+    command_output.stdout.readlines = mock.MagicMock(return_value=[b"sdb disk\n", b"sdc disk\n"])
+    mocker.patch("subprocess.Popen", return_value=command_output)
+
+    # check_output returns removable status
+    mocker.patch("subprocess.check_output", return_value=b"1\n")
+
+    expected_message = "ERROR_GENERIC"
+    assert export.ExportStatus.ERROR_GENERIC.value == expected_message
+    mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
+
+    submission.check_usb_connected(exit=True)
+
+    mocked_exit.assert_called_once_with(expected_message)
+    assert submission.device is None
 
 
 @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_NO_PART)
 def test_extract_device_name_no_part(mocked_call, capsys):
     submission = export.SDExport("testfile", TEST_CONFIG)
+    submission.device = "/dev/sda"
 
     submission.set_extracted_device_name()
 
@@ -229,6 +277,7 @@ def test_extract_device_name_no_part(mocked_call, capsys):
 @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_ONE_PART)
 def test_extract_device_name_single_part(mocked_call, capsys):
     submission = export.SDExport("testfile", TEST_CONFIG)
+    submission.device = "/dev/sda"
 
     submission.set_extracted_device_name()
 
@@ -238,6 +287,7 @@ def test_extract_device_name_single_part(mocked_call, capsys):
 @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_MULTI_PART)
 def test_extract_device_name_multiple_part(mocked_call, capsys, mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
+    submission.device = "/dev/sda"
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
     expected_message = export.ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED.value
 
@@ -262,6 +312,7 @@ def test_luks_precheck_encrypted_fde(mocked_call, capsys, mocker):
 @mock.patch("subprocess.check_call", return_value=0)
 def test_luks_precheck_encrypted_single_part(mocked_call, capsys, mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
+    submission.device = "/dev/sda"
     expected_message = export.ExportStatus.USB_ENCRYPTED.value
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
 
@@ -273,6 +324,7 @@ def test_luks_precheck_encrypted_single_part(mocked_call, capsys, mocker):
 @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_MULTI_PART)
 def test_luks_precheck_encrypted_multi_part(mocked_call, capsys, mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
+    submission.device = "/dev/sda"
     expected_message = export.ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED.value
 
     # Here we need to mock the exit_gracefully method with a side effect otherwise
@@ -296,6 +348,7 @@ def test_luks_precheck_encrypted_multi_part(mocked_call, capsys, mocker):
 @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_ONE_PART)
 def test_luks_precheck_encrypted_luks_error(mocked_call, capsys, mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
+    submission.device = "/dev/sda"
     expected_message = "USB_ENCRYPTION_NOT_SUPPORTED"
     assert expected_message == export.ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED.value
 

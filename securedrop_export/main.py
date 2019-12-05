@@ -17,9 +17,11 @@ def __main__(submission):
     if submission.archive_metadata.is_valid():
         if submission.archive_metadata.export_method == "usb-test":
             logging.info('Export archive is usb-test')
-            submission.check_usb_connected()
+            submission.check_usb_connected(exit=True)
         elif submission.archive_metadata.export_method == "disk":
             logging.info('Export archive is disk')
+            # check_usb_connected looks for the drive, sets the drive to use
+            submission.check_usb_connected()
             logging.info('Unlocking volume')
             # exports all documents in the archive to luks-encrypted volume
             submission.unlock_luks_volume(submission.archive_metadata.encryption_key)
@@ -29,6 +31,8 @@ def __main__(submission):
             submission.copy_submission()
         elif submission.archive_metadata.export_method == "disk-test":
             logging.info('Export archive is disk-test')
+            # check_usb_connected looks for the drive, sets the drive to use
+            submission.check_usb_connected()
             submission.check_luks_volume()
         elif submission.archive_metadata.export_method == "printer":
             logging.info('Export archive is printer')
