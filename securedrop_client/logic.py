@@ -33,11 +33,11 @@ from sqlalchemy.orm.session import sessionmaker
 from securedrop_client import storage
 from securedrop_client import db
 from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob, \
-    ReplyDownloadJob, DownloadChecksumMismatchException
+    ReplyDownloadJob, DownloadChecksumMismatchException, MetadataSyncJob
 from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobError, \
     SendReplyJobTimeoutError
 from securedrop_client.api_jobs.updatestar import UpdateStarJob, UpdateStarJobException
-from securedrop_client.crypto import GpgHelper, CryptoError
+from securedrop_client.crypto import GpgHelper
 from securedrop_client.export import Export
 from securedrop_client.queue import ApiJobQueue
 from securedrop_client.utils import check_dir_permissions
@@ -327,8 +327,8 @@ class Controller(QObject):
             self.session)
         self.gui.show_main_window(user)
         self.update_sources()
-        self.sync_api()
         self.api_job_queue.login(self.api)
+        self.sync_api()
         self.is_authenticated = True
         self.resume_queues()
 
@@ -372,11 +372,14 @@ class Controller(QObject):
 
         if self.authenticated():
             logger.debug("You are authenticated, going to make your call")
-            self.call_api(storage.get_remote_data,
-                          self.on_sync_success,
-                          self.on_sync_failure,
-                          self.api)
-            logger.debug("In sync_api, after call to call_api, on "
+
+            job = MetadataSyncJob(self.data_dir, self.gpg)
+
+            job.success_signal.connect(self.on_sync_success, type=Qt.QueuedConnection)
+            job.failure_signal.connect(self.on_sync_failure, type=Qt.QueuedConnection)
+            self.api_job_queue.enqueue(job)
+
+            logger.debug("In sync_api, after call to submit job to queue, on "
                          "thread {}".format(self.thread().currentThreadId()))
 
     def last_sync(self):
@@ -389,37 +392,17 @@ class Controller(QObject):
         except Exception:
             return None
 
-    def on_sync_success(self, result) -> None:
+    def on_sync_success(self) -> None:
         """
-        Called when syncronisation of data via the API succeeds.
+        Called when syncronisation of data via the API queue succeeds.
 
-            * Update db with new metadata
             * Set last sync flag
-            * Import keys into keyring
             * Display the last sync time and updated list of sources in GUI
             * Download new messages and replies
             * Update missing files so that they can be re-downloaded
         """
-        remote_sources, remote_submissions, remote_replies = result
-        storage.update_local_storage(self.session,
-                                     remote_sources,
-                                     remote_submissions,
-                                     remote_replies,
-                                     self.data_dir)
-
         with open(self.sync_flag, 'w') as f:
             f.write(arrow.now().format())
-
-        for source in remote_sources:
-            if source.key and source.key.get('type', None) == 'PGP':
-                pub_key = source.key.get('public', None)
-                fingerprint = source.key.get('fingerprint', None)
-                if not pub_key or not fingerprint:
-                    continue
-                try:
-                    self.gpg.import_key(source.uuid, pub_key, fingerprint)
-                except CryptoError:
-                    logger.warning('Failed to import key for source {}'.format(source.uuid))
 
         storage.update_missing_files(self.data_dir, self.session)
         self.update_sources()
@@ -429,7 +412,7 @@ class Controller(QObject):
 
     def on_sync_failure(self, result: Exception) -> None:
         """
-        Called when syncronisation of data via the API fails.
+        Called when syncronisation of data via the API queue fails.
         """
         self.gui.update_error_status(
             _('The SecureDrop server cannot be reached.'),

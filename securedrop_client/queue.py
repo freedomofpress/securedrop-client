@@ -10,7 +10,7 @@ from typing import Optional, Tuple  # noqa: F401
 from securedrop_client.api_jobs.base import ApiJob, ApiInaccessibleError, DEFAULT_NUM_ATTEMPTS, \
     PauseQueueJob
 from securedrop_client.api_jobs.downloads import (FileDownloadJob, MessageDownloadJob,
-                                                  ReplyDownloadJob)
+                                                  ReplyDownloadJob, MetadataSyncJob)
 from securedrop_client.api_jobs.uploads import SendReplyJob
 from securedrop_client.api_jobs.updatestar import UpdateStarJob
 
@@ -41,7 +41,7 @@ class RunnableQueue(QObject):
     JOB_PRIORITIES = {
         # TokenInvalidationJob: 10,  # Not yet implemented
         PauseQueueJob: 11,
-        # MetadataSyncJob: 12,  # Not yet implemented
+        MetadataSyncJob: 12,
         FileDownloadJob: 13,  # File downloads processed in separate queue
         MessageDownloadJob: 13,
         ReplyDownloadJob: 13,
