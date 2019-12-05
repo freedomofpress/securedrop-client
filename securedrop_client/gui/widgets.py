@@ -29,7 +29,7 @@ from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QEvent, QTimer, QSize, pyqtBo
 from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
-    QToolButton, QSizePolicy, QPlainTextEdit, QStatusBar, QGraphicsDropShadowEffect, QApplication
+    QToolButton, QSizePolicy, QPlainTextEdit, QStatusBar, QGraphicsDropShadowEffect
 
 from securedrop_client.db import DraftReply, Source, Message, File, Reply, User
 from securedrop_client.storage import source_exists
@@ -1698,6 +1698,7 @@ class FileWidget(QWidget):
     }
     QPushButton#export_print {
         border: none;
+        padding: 8px;
         font-family: 'Source Sans Pro';
         font-weight: 500;
         font-size: 13px;
@@ -1802,7 +1803,7 @@ class FileWidget(QWidget):
 
         self.download_button.installEventFilter(self)
         self.export_button.clicked.connect(self._on_export_clicked)
-        # self.print_button.installEventFilter(self)
+        self.print_button.clicked.connect(self._on_print_clicked)
 
         # File name or default string
         self.file_name = SecureQLabel(self.file.original_filename)
@@ -1827,7 +1828,7 @@ class FileWidget(QWidget):
             self.download_button.hide()
             self.no_file_name.hide()
             self.export_button.show()
-            self.print_button.hide()  # Show once print is supported on the workstation client
+            self.print_button.show()
             self.file_name.show()
         else:
             self.export_button.hide()
@@ -1861,7 +1862,7 @@ class FileWidget(QWidget):
                 self.download_button.hide()
                 self.no_file_name.hide()
                 self.export_button.show()
-                self.print_button.hide()  # Show once print is supported on the workstation client
+                self.print_button.show()
                 self.file_name.show()
 
     @pyqtSlot()
@@ -1874,15 +1875,22 @@ class FileWidget(QWidget):
             return
 
         dialog = ExportDialog(self.controller, self.file.uuid)
-        # The underlying function of the `export` method makes a blocking call that can potentially
-        # take a long time to run (if the Export VM is not already running and needs to start, this
-        # can take 15 or more seconds). Calling `QApplication.processEvents` ensures that the `show`
-        # event is processed before the blocking call so that the user can see the dialog with a
-        # message to wait before the blocking call. We also call `exec` afterwards in order to give
-        # control to the dialog for the rest of the export process.
         dialog.show()
-        QApplication.processEvents()
         dialog.export()
+        dialog.exec()
+
+    @pyqtSlot()
+    def _on_print_clicked(self):
+        """
+        Called when the print button is clicked.
+        """
+        if not self.controller.downloaded_file_exists(self.file.uuid):
+            self.controller.sync_api()
+            return
+
+        dialog = PrintDialog(self.controller, self.file.uuid)
+        dialog.show()
+        dialog.print()
         dialog.exec()
 
     def _on_left_click(self):
@@ -1899,6 +1907,134 @@ class FileWidget(QWidget):
         else:
             # Download the file.
             self.controller.on_submission_download(File, self.file.uuid)
+
+
+class PrintDialog(QDialog):
+
+    CSS_FOR_DIALOG_WITH_ERROR = '''
+    #print_dialog {
+        min-width: 830;
+        min-height: 430;
+        border: 1px solid #2a319d;
+    }
+    '''
+
+    CSS = '''
+    #print_dialog {
+        min-width: 400;
+        max-width: 400;
+        min-height: 200;
+        max-height: 200;
+    }
+    '''
+
+    def __init__(self, controller, file_uuid):
+        super().__init__()
+
+        self.controller = controller
+        self.file_uuid = file_uuid
+
+        self.setObjectName('print_dialog')
+        self.setStyleSheet(self.CSS)
+        self.setWindowFlags(Qt.Popup)
+        self.setWindowModality(Qt.WindowModal)
+
+        layout = QVBoxLayout(self)
+        self.setLayout(layout)
+
+        # Opening VM message
+        self.starting_message = SecureQLabel(_('Preparing print...'))
+        self.starting_message.setWordWrap(True)
+
+        # Widget to show error messages that occur during print
+        self.generic_error = QWidget()
+        self.generic_error.setObjectName('generic_error')
+        generic_error_layout = QHBoxLayout()
+        self.generic_error.setLayout(generic_error_layout)
+        self.error_status_code = SecureQLabel()
+        generic_error_message = SecureQLabel(_('See your administrator for help.'))
+        generic_error_message.setWordWrap(True)
+        generic_error_layout.addWidget(self.error_status_code)
+        generic_error_layout.addWidget(generic_error_message)
+
+        # Insert USB Device Form
+        self.insert_usb_form = QWidget()
+        self.insert_usb_form.setObjectName('insert_usb_form')
+        usb_form_layout = QVBoxLayout()
+        self.insert_usb_form.setLayout(usb_form_layout)
+        self.usb_error_message = SecureQLabel(_(
+            'Please try reconnecting your printer, or see your administrator for help.'))
+        self.usb_error_message.setWordWrap(True)
+        usb_instructions = SecureQLabel(_('Please connect your printer to a USB port.'))
+        usb_instructions.setWordWrap(True)
+        buttons = QWidget()
+        buttons_layout = QHBoxLayout()
+        buttons.setLayout(buttons_layout)
+        cancel_button = QPushButton(_('CANCEL'))
+        retry_button = QPushButton(_('CONTINUE'))
+        buttons_layout.addWidget(cancel_button)
+        buttons_layout.addWidget(retry_button)
+        usb_form_layout.addWidget(self.usb_error_message)
+        usb_form_layout.addWidget(usb_instructions)
+        usb_form_layout.addWidget(buttons, alignment=Qt.AlignRight)
+
+        # Printing message
+        self.printing_message = SecureQLabel(_('Printing...'))
+        self.printing_message.setWordWrap(True)
+
+        layout.addWidget(self.starting_message)
+        layout.addWidget(self.printing_message)
+        layout.addWidget(self.generic_error)
+        layout.addWidget(self.insert_usb_form)
+
+        self.starting_message.show()
+        self.printing_message.hide()
+        self.generic_error.hide()
+        self.insert_usb_form.hide()
+
+        cancel_button.clicked.connect(self.close)
+        retry_button.clicked.connect(self._on_retry_button_clicked)
+
+        self.controller.export.print_call_failure.connect(
+            self._on_print_failure, type=Qt.QueuedConnection)
+        self.controller.export.print_call_success.connect(
+            self._on_print_success, type=Qt.QueuedConnection)
+
+    def print(self):
+        self.starting_message.hide()
+        self.printing_message.show()
+        self.generic_error.hide()
+        self.insert_usb_form.hide()
+        self.controller.print_file(self.file_uuid)
+
+    @pyqtSlot()
+    def _on_retry_button_clicked(self):
+        self.print()
+
+    @pyqtSlot()
+    def _on_print_success(self):
+        self.close()
+
+    @pyqtSlot(object)
+    def _on_print_failure(self, error: ExportError):
+        self._update(error.status)
+
+    def _update(self, status):
+        logger.debug('updating status... ')
+        if status == ExportStatus.PRINTER_NOT_FOUND.value:
+            self._request_to_insert_usb_device()
+        else:
+            self.error_status_code.setText(_(status))
+            self.starting_message.hide()
+            self.printing_message.hide()
+            self.generic_error.show()
+            self.insert_usb_form.hide()
+
+    def _request_to_insert_usb_device(self):
+        self.starting_message.hide()
+        self.printing_message.hide()
+        self.generic_error.hide()
+        self.insert_usb_form.show()
 
 
 class ExportDialog(QDialog):

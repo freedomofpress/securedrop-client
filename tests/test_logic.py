@@ -877,6 +877,57 @@ def test_Controller_on_file_downloaded_checksum_failure(homedir, config, mocker,
     mock_set_status.assert_not_called()
 
 
+def test_get_path_to_file_with_original_name(mocker, homedir, session):
+    '''
+    Test that the hardlink is created and returned.
+    '''
+    co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
+
+    with open(os.path.join(homedir, 'mock_filename'), 'w'):
+        pass
+
+    path_to_file_with_original_name = co.get_path_to_file_with_original_name(
+        homedir, 'mock_filename', 'mock_filename_orig')
+
+    assert path_to_file_with_original_name == os.path.join(homedir, 'mock_filename_orig')
+
+
+def test_get_path_to_file_with_original_name_already_exists(mocker, homedir, session):
+    '''
+    Test that the hardlink is returned if already exists.
+    '''
+    co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
+
+    with open(os.path.join(homedir, 'mock_filename_orig'), 'w'):
+        pass
+
+    path_to_file_with_original_name = co.get_path_to_file_with_original_name(
+        homedir, 'mock_filename', 'mock_filename_orig')
+
+    assert path_to_file_with_original_name == os.path.join(homedir, 'mock_filename_orig')
+
+
+def test_cleanup_hardlinked_file(mocker, homedir):
+    '''
+    Test that we delete all the files in the list.
+    '''
+    co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
+
+    filepath = os.path.join(homedir, 'testfile')
+    filepath2 = os.path.join(homedir, 'testfile2')
+    filepaths = [filepath, filepath2]
+
+    for file in filepaths:
+        with open(file, 'w'):
+            pass
+        assert os.path.exists(file)
+
+    co.cleanup_hardlinked_file(filepaths)
+
+    assert not os.path.exists(filepath)
+    assert not os.path.exists(filepath2)
+
+
 def test_Controller_on_file_open(homedir, config, mocker, session, session_maker, source):
     """
     If running on Qubes, a new QProcess with the expected command and args should be started when
@@ -894,7 +945,7 @@ def test_Controller_on_file_open(homedir, config, mocker, session, session_maker
     mock_subprocess = mocker.MagicMock()
     mock_process = mocker.MagicMock(return_value=mock_subprocess)
     mocker.patch('securedrop_client.logic.QProcess', mock_process)
-    mock_link = mocker.patch('os.link')
+    co.get_path_to_file_with_original_name = mocker.MagicMock()
 
     fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
     filepath = os.path.join(homedir, 'data', fn_no_ext)
@@ -904,15 +955,15 @@ def test_Controller_on_file_open(homedir, config, mocker, session, session_maker
     co.on_file_open(file.uuid)
 
     co.get_file.assert_called_with(file.uuid)
+    co.get_path_to_file_with_original_name.assert_called_once_with(
+        os.path.join(homedir, 'data'), file.filename, file.original_filename)
     mock_process.assert_called_once_with(co)
     assert mock_subprocess.start.call_count == 1
-    assert mock_link.call_count == 1
 
 
 def test_Controller_on_file_open_not_qubes(homedir, config, mocker, session, session_maker, source):
     """
-    If not running on Qubes, a hard link to the file in the data dir should be created using the
-    original filename.
+    Check that we just check if the file exists if not running on Qubes.
     """
     co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
     co.qubes = False
@@ -921,7 +972,7 @@ def test_Controller_on_file_open_not_qubes(homedir, config, mocker, session, ses
     session.add(file)
     session.commit()
     mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
-    mock_link = mocker.patch('os.link')
+    co.get_path_to_file_with_original_name = mocker.MagicMock()
 
     fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
     filepath = os.path.join(homedir, 'data', fn_no_ext)
@@ -931,7 +982,7 @@ def test_Controller_on_file_open_not_qubes(homedir, config, mocker, session, ses
     co.on_file_open(file.uuid)
 
     co.get_file.assert_called_with(file.uuid)
-    assert mock_link.call_count == 1
+    co.get_path_to_file_with_original_name.assert_not_called()
 
 
 def test_Controller_on_file_open_when_orig_file_already_exists(
@@ -953,7 +1004,7 @@ def test_Controller_on_file_open_when_orig_file_already_exists(
     mock_subprocess = mocker.MagicMock()
     mock_process = mocker.MagicMock(return_value=mock_subprocess)
     mocker.patch('securedrop_client.logic.QProcess', mock_process)
-    mock_link = mocker.patch('os.link')
+    co.get_path_to_file_with_original_name = mocker.MagicMock()
 
     fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
     filepath = os.path.join(homedir, 'data', fn_no_ext)
@@ -967,17 +1018,17 @@ def test_Controller_on_file_open_when_orig_file_already_exists(
     co.on_file_open(file.uuid)
 
     co.get_file.assert_called_with(file.uuid)
+    co.get_path_to_file_with_original_name.assert_called_once_with(
+        os.path.join(homedir, 'data'), file.filename, file.original_filename)
     mock_process.assert_called_once_with(co)
     assert mock_subprocess.start.call_count == 1
-    assert mock_link.call_count == 0
 
 
 def test_Controller_on_file_open_when_orig_file_already_exists_not_qubes(
     homedir, config, mocker, session, session_maker, source
 ):
     """
-    If not running on Qubes, a hard link to the file in the data dir should be created using the
-    original filename.
+    Check that we just check if the file exists if not running on Qubes.
     """
     co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
     co.qubes = False
@@ -986,7 +1037,7 @@ def test_Controller_on_file_open_when_orig_file_already_exists_not_qubes(
     session.add(file)
     session.commit()
     mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
-    mock_link = mocker.patch('os.link')
+    co.get_path_to_file_with_original_name = mocker.MagicMock()
 
     fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
     filepath = os.path.join(homedir, 'data', fn_no_ext)
@@ -1000,7 +1051,7 @@ def test_Controller_on_file_open_when_orig_file_already_exists_not_qubes(
     co.on_file_open(file.uuid)
 
     co.get_file.assert_called_with(file.uuid)
-    assert mock_link.call_count == 0
+    co.get_path_to_file_with_original_name.assert_not_called()
 
 
 def test_Controller_on_file_open_file_missing(mocker, homedir, session_maker, session, source):
@@ -1497,12 +1548,166 @@ def test_Controller_call_update_star_success(homedir, config, mocker, session_ma
         co.on_update_star_failure, type=Qt.QueuedConnection)
 
 
+def test_Controller_run_print_file(mocker, session, homedir):
+    co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
+    co.export = mocker.MagicMock()
+    co.export.begin_print.emit = mocker.MagicMock()
+    file = factory.File(source=factory.Source(), original_filename='mock_filename')
+    session.add(file)
+    session.commit()
+    mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
+    co.get_path_to_file_with_original_name = mocker.MagicMock()
+
+    fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
+    filepath = os.path.join(homedir, 'data', fn_no_ext)
+    with open(filepath, 'w'):
+        pass
+
+    co.print_file(file.uuid)
+
+    co.export.begin_print.emit.call_count == 1
+    co.get_path_to_file_with_original_name.assert_called_once_with(
+        os.path.join(homedir, 'data'), file.filename, file.original_filename)
+
+
+def test_Controller_run_print_file_not_qubes(mocker, session, homedir):
+    co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
+    co.qubes = False
+    co.export = mocker.MagicMock()
+    co.export.begin_print = mocker.MagicMock()
+    co.export.begin_print.emit = mocker.MagicMock()
+    file = factory.File(source=factory.Source(), original_filename='mock_filename')
+    session.add(file)
+    session.commit()
+    mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
+    co.get_path_to_file_with_original_name = mocker.MagicMock()
+
+    fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
+    filepath = os.path.join(homedir, 'data', fn_no_ext)
+    with open(filepath, 'w'):
+        pass
+
+    co.print_file(file.uuid)
+
+    co.export.begin_print.emit.call_count == 0
+    co.get_path_to_file_with_original_name.assert_not_called()
+
+
+def test_Controller_print_file_file_missing(homedir, mocker, session, session_maker):
+    """
+    If the file is missing from the data dir, is_downloaded should be set to False and the failure
+    should be communicated to the user.
+    """
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    co.sync_api = mocker.MagicMock()
+    file = factory.File(source=factory.Source(), original_filename='mock_filename')
+    session.add(file)
+    session.commit()
+    mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
+    debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
+    co.sync_api = mocker.MagicMock()
+
+    co.print_file(file.uuid)
+
+    user_error = 'File does not exist in the data directory. Please try re-downloading.'
+    log_msg = 'Cannot find {} in the data directory. File does not exist.'.format(
+        file.original_filename)
+    co.gui.update_error_status.assert_called_once_with(user_error)
+    debug_logger.assert_called_once_with(log_msg)
+    co.sync_api.assert_called_once_with()
+
+
+def test_Controller_print_file_file_missing_not_qubes(
+    homedir, mocker, session, session_maker
+):
+    """
+    If the file is missing from the data dir, is_downloaded should be set to False and the failure
+    should be communicated to the user.
+    """
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    co.qubes = False
+    co.sync_api = mocker.MagicMock()
+    file = factory.File(source=factory.Source(), original_filename='mock_filename')
+    session.add(file)
+    session.commit()
+    mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
+    debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
+    co.sync_api = mocker.MagicMock()
+
+    co.print_file(file.uuid)
+
+    user_error = 'File does not exist in the data directory. Please try re-downloading.'
+    log_msg = 'Cannot find {} in the data directory. File does not exist.'.format(
+        file.original_filename)
+    co.gui.update_error_status.assert_called_once_with(user_error)
+    debug_logger.assert_called_once_with(log_msg)
+    co.sync_api.assert_called_once_with()
+
+
+def test_Controller_print_file_when_orig_file_already_exists(
+    homedir, config, mocker, session, session_maker, source
+):
+    """
+    The signal `begin_print` should still be emmited if the original file already exists.
+    """
+    co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
+    co.export = mocker.MagicMock()
+    co.export.begin_print = mocker.MagicMock()
+    co.export.begin_print.emit = mocker.MagicMock()
+    file = factory.File(source=factory.Source(), original_filename='mock_filename')
+    session.add(file)
+    session.commit()
+    mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
+    mocker.patch('os.path.exists', return_value=True)
+    co.get_path_to_file_with_original_name = mocker.MagicMock()
+
+    co.print_file(file.uuid)
+
+    co.export.begin_print.emit.call_count == 1
+    co.get_file.assert_called_with(file.uuid)
+    co.get_path_to_file_with_original_name.assert_called_once_with(
+        os.path.join(homedir, 'data'), file.filename, file.original_filename)
+
+
+def test_Controller_print_file_when_orig_file_already_exists_not_qubes(
+    homedir, config, mocker, session, session_maker, source
+):
+    """
+    The signal `begin_print` should still be emmited if the original file already exists.
+    """
+    co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
+    co.qubes = False
+    co.export = mocker.MagicMock()
+    co.export.begin_print = mocker.MagicMock()
+    co.export.begin_print.emit = mocker.MagicMock()
+    file = factory.File(source=factory.Source(), original_filename='mock_filename')
+    session.add(file)
+    session.commit()
+    mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
+    mocker.patch('os.path.exists', return_value=True)
+    co.get_path_to_file_with_original_name = mocker.MagicMock()
+
+    fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
+    filepath = os.path.join(homedir, 'data', fn_no_ext)
+    with open(filepath, 'w'):
+        pass
+
+    original_filepath = os.path.join(homedir, 'data', file.original_filename)
+    with open(original_filepath, 'w'):
+        pass
+
+    co.export_file_to_usb_drive(file.uuid, 'mock passphrase')
+
+    co.export.begin_print.emit.call_count == 1
+    co.get_file.assert_called_with(file.uuid)
+    co.get_path_to_file_with_original_name.assert_not_called()
+
+
 def test_Controller_run_export_preflight_checks(homedir, mocker, session, source):
     co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
     co.export = mocker.MagicMock()
     co.export.begin_preflight_check = mocker.MagicMock()
     co.export.begin_preflight_check.emit = mocker.MagicMock()
-
     file = factory.File(source=source['source'])
     session.add(file)
     session.commit()
@@ -1519,7 +1724,6 @@ def test_Controller_run_export_preflight_checks_not_qubes(homedir, mocker, sessi
     co.export = mocker.MagicMock()
     co.export.begin_preflight_check = mocker.MagicMock()
     co.export.begin_preflight_check.emit = mocker.MagicMock()
-
     file = factory.File(source=source['source'])
     session.add(file)
     session.commit()
@@ -1542,7 +1746,7 @@ def test_Controller_export_file_to_usb_drive(homedir, mocker, session):
     session.add(file)
     session.commit()
     mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
-    mock_link = mocker.patch('os.link')
+    co.get_path_to_file_with_original_name = mocker.MagicMock()
 
     fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
     filepath = os.path.join(homedir, 'data', fn_no_ext)
@@ -1552,7 +1756,8 @@ def test_Controller_export_file_to_usb_drive(homedir, mocker, session):
     co.export_file_to_usb_drive(file.uuid, 'mock passphrase')
 
     co.export.begin_usb_export.emit.call_count == 1
-    assert mock_link.call_count == 1
+    co.get_path_to_file_with_original_name.assert_called_once_with(
+        os.path.join(homedir, 'data'), file.filename, file.original_filename)
 
 
 def test_Controller_export_file_to_usb_drive_not_qubes(homedir, mocker, session):
@@ -1568,7 +1773,7 @@ def test_Controller_export_file_to_usb_drive_not_qubes(homedir, mocker, session)
     session.add(file)
     session.commit()
     mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
-    mock_link = mocker.patch('os.link')
+    co.get_path_to_file_with_original_name = mocker.MagicMock()
 
     fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
     filepath = os.path.join(homedir, 'data', fn_no_ext)
@@ -1579,7 +1784,7 @@ def test_Controller_export_file_to_usb_drive_not_qubes(homedir, mocker, session)
 
     co.export.send_file_to_usb_device.assert_not_called()
     co.export.begin_usb_export.emit.call_count == 0
-    assert mock_link.call_count == 1
+    co.get_path_to_file_with_original_name.assert_not_called()
 
 
 def test_Controller_export_file_to_usb_drive_file_missing(homedir, mocker, session, session_maker):
@@ -1648,13 +1853,14 @@ def test_Controller_export_file_to_usb_drive_when_orig_file_already_exists(
     session.commit()
     mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
     mocker.patch('os.path.exists', return_value=True)
-    mock_link = mocker.patch('os.link')
+    co.get_path_to_file_with_original_name = mocker.MagicMock()
 
     co.export_file_to_usb_drive(file.uuid, 'mock passphrase')
 
     co.export.begin_usb_export.emit.call_count == 1
     co.get_file.assert_called_with(file.uuid)
-    assert mock_link.call_count == 0
+    co.get_path_to_file_with_original_name.assert_called_once_with(
+        os.path.join(homedir, 'data'), file.filename, file.original_filename)
 
 
 def test_Controller_export_file_to_usb_drive_when_orig_file_already_exists_not_qubes(
@@ -1673,7 +1879,7 @@ def test_Controller_export_file_to_usb_drive_when_orig_file_already_exists_not_q
     session.commit()
     mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
     mocker.patch('os.path.exists', return_value=True)
-    mock_link = mocker.patch('os.link')
+    co.get_path_to_file_with_original_name = mocker.MagicMock()
 
     fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
     filepath = os.path.join(homedir, 'data', fn_no_ext)
@@ -1688,7 +1894,7 @@ def test_Controller_export_file_to_usb_drive_when_orig_file_already_exists_not_q
 
     co.export.begin_usb_export.emit.call_count == 1
     co.get_file.assert_called_with(file.uuid)
-    assert mock_link.call_count == 0
+    co.get_path_to_file_with_original_name.assert_not_called()
 
 
 def test_get_file(mocker, session, homedir):

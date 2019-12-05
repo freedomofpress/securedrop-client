@@ -35,6 +35,8 @@ class ExportStatus(Enum):
     DISK_ENCRYPTION_NOT_SUPPORTED_ERROR = 'USB_ENCRYPTION_NOT_SUPPORTED'
     ERROR_USB_CONFIGURATION = 'ERROR_USB_CONFIGURATION'
     UNEXPECTED_RETURN_STATUS = 'UNEXPECTED_RETURN_STATUS'
+    PRINTER_NOT_FOUND = 'ERROR_PRINTER_NOT_FOUND'
+    MISSING_PRINTER_URI = 'ERROR_MISSING_PRINTER_URI'
 
 
 class Export(QObject):
@@ -58,6 +60,11 @@ class Export(QObject):
         'device': 'disk-test'
     }
 
+    PRINT_FN = 'print_archive.sd-export'
+    PRINT_METADATA = {
+        'device': 'printer',
+    }
+
     DISK_FN = 'archive.sd-export'
     DISK_METADATA = {
         'device': 'disk',
@@ -73,14 +80,17 @@ class Export(QObject):
     begin_preflight_check = pyqtSignal()
     export_usb_call_failure = pyqtSignal(object)
     export_usb_call_success = pyqtSignal()
+    begin_print = pyqtSignal(list)
+    print_call_failure = pyqtSignal(object)
+    print_call_success = pyqtSignal()
+    export_completed = pyqtSignal(list)
 
     def __init__(self) -> None:
         super().__init__()
 
-        self.begin_preflight_check.connect(self.run_preflight_checks,
-                                           type=Qt.QueuedConnection)
-        self.begin_usb_export.connect(self.send_file_to_usb_device,
-                                      type=Qt.QueuedConnection)
+        self.begin_preflight_check.connect(self.run_preflight_checks, type=Qt.QueuedConnection)
+        self.begin_usb_export.connect(self.send_file_to_usb_device, type=Qt.QueuedConnection)
+        self.begin_print.connect(self.print, type=Qt.QueuedConnection)
 
     def _export_archive(cls, archive_path: str) -> str:
         '''
@@ -222,6 +232,20 @@ class Export(QObject):
         if status:
             raise ExportError(status)
 
+    def _run_print(self, archive_dir: str, filepaths: List[str]) -> None:
+        '''
+        Create "printer" archive to send to Export VM.
+
+        Args:
+            archive_dir (str): The path to the directory in which to create the archive.
+
+        '''
+        metadata = self.PRINT_METADATA.copy()
+        archive_path = self._create_archive(archive_dir, self.PRINT_FN, metadata, filepaths)
+        status = self._export_archive(archive_path)
+        if status:
+            raise ExportError(status)
+
     @pyqtSlot()
     def run_preflight_checks(self) -> None:
         '''
@@ -259,7 +283,25 @@ class Export(QObject):
                 logger.error(e)
                 self.export_usb_call_failure.emit(e)
 
-        # Export is finished, now remov files created when export began
-        for filepath in filepaths:
-            if os.path.exists(filepath):
-                os.remove(filepath)
+        self.export_completed.emit(filepaths)
+
+    @pyqtSlot(list)
+    def print(self, filepaths: List[str]) -> None:
+        '''
+        Print the file to the printer attached to the Export VM.
+
+        Args:
+            filepath: The path of file to export.
+        '''
+        with TemporaryDirectory() as temp_dir:
+            try:
+                logger.debug('beginning printer from thread {}'.format(
+                    threading.current_thread().ident))
+                self._run_print(temp_dir, filepaths)
+                self.print_call_success.emit()
+                logger.debug('Print successful')
+            except ExportError as e:
+                logger.error(e)
+                self.print_call_failure.emit(e)
+
+        self.export_completed.emit(filepaths)
