@@ -21,6 +21,8 @@ MOUNTPOINT = "/media/usb"
 ENCRYPTED_DEVICE = "encrypted_volume"
 BRLASER_DRIVER = "/usr/share/cups/drv/brlaser.drv"
 BRLASER_PPD = "/usr/share/cups/model/br7030.ppd"
+LASERJET_DRIVER = "/usr/share/cups/drv/hpcups.drv"
+LASERJET_PPD = "/usr/share/cups/model/hp-laserjet_6l.ppd"
 
 logger = logging.getLogger(__name__)
 
@@ -126,9 +128,6 @@ class SDExport(object):
 
         self.printer_name = PRINTER_NAME
         self.printer_wait_timeout = PRINTER_WAIT_TIMEOUT
-
-        self.brlaser_driver = BRLASER_DRIVER
-        self.brlaser_ppd = BRLASER_PPD
 
         self.archive = archive
         self.submission_dirname = os.path.basename(self.archive).split(".")[0]
@@ -350,32 +349,43 @@ class SDExport(object):
             # No usb printer is connected
             logging.info('No usb printers connected')
             self.exit_gracefully(ExportStatus.ERROR_PRINTER_NOT_FOUND.value)
-        elif "Brother" in printer_uri:
-            logging.info('Printer {} is supported'.format(printer_uri))
-            return printer_uri
-        else:
+        elif not any(x in printer_uri for x in ("Brother", "LaserJet")):
             # printer url is a make that is unsupported
             logging.info('Printer {} is unsupported'.format(printer_uri))
             self.exit_gracefully(ExportStatus.ERROR_PRINTER_NOT_SUPPORTED.value)
 
+        logging.info('Printer {} is supported'.format(printer_uri))
+        return printer_uri
+
     def install_printer_ppd(self, uri):
-        # Some drivers don't come with ppd files pre-compiled, we must compile them
+        if not any(x in uri for x in ("Brother", "LaserJet")):
+            logger.error("Cannot install printer ppd for unsupported printer: {}".format(uri))
+            self.exit_gracefully(msg=ExportStatus.ERROR_PRINTER_NOT_SUPPORTED.value)
+            return
+
         if "Brother" in uri:
-            self.safe_check_call(
-                command=[
-                    "sudo",
-                    "ppdc",
-                    self.brlaser_driver,
-                    "-d",
-                    "/usr/share/cups/model/",
-                ],
-                error_message=ExportStatus.ERROR_PRINTER_DRIVER_UNAVAILABLE.value
-            )
-            return self.brlaser_ppd
-        # Here, we could support ppd drivers for other makes or models in the future
+            printer_driver = BRLASER_DRIVER
+            printer_ppd = BRLASER_PPD
+        elif "LaserJet" in uri:
+            printer_driver = LASERJET_DRIVER
+            printer_ppd = LASERJET_PPD
+
+        # Some drivers don't come with ppd files pre-compiled, we must compile them
+        self.safe_check_call(
+            command=[
+                "sudo",
+                "ppdc",
+                printer_driver,
+                "-d",
+                "/usr/share/cups/model/",
+            ],
+            error_message=ExportStatus.ERROR_PRINTER_DRIVER_UNAVAILABLE.value
+        )
+        return printer_ppd
 
     def setup_printer(self, printer_uri, printer_ppd):
         # Add the printer using lpadmin
+        logger.info('Setting up printer name {}'.format(self.printer_name))
         self.safe_check_call(
             command=[
                 "sudo",
@@ -390,17 +400,34 @@ class SDExport(object):
             error_message=ExportStatus.ERROR_PRINTER_INSTALL.value
         )
         # Activate the printer so that it can receive jobs
+        logger.info('Activating printer {}'.format(self.printer_name))
         self.safe_check_call(
-            command=["sudo", "lpadmin", "-p", self.printer_name, "-E"],
+            command=["sudo", "lpadmin", "-p", self.printer_name],
             error_message=ExportStatus.ERROR_PRINTER_INSTALL.value
         )
+        # worksaround for version of lpadmin/cups in debian buster:
+        # see https://forums.developer.apple.com/thread/106112
+        self.safe_check_call(
+            command=["sudo", "cupsaccept", self.printer_name],
+            error_message=ExportStatus.ERROR_PRINTER_INSTALL.value
+        )
+        # A non-zero return code is expected here, but the command is required
+        # and works as expected.
+        command = ["sudo", "cupsenable", self.printer_name]
+        try:
+            subprocess.check_call(command)
+        except subprocess.CalledProcessError:
+            pass
+
         # Allow user to print (without using sudo)
+        logger.info('Allow user to print {}'.format(self.printer_name))
         self.safe_check_call(
             command=["sudo", "lpadmin", "-p", self.printer_name, "-u", "allow:user"],
             error_message=ExportStatus.ERROR_PRINTER_INSTALL.value
         )
 
     def print_test_page(self):
+        logger.info('Printing test page')
         self.print_file("/usr/share/cups/data/testprint")
         self.popup_message("Printing test page")
 
@@ -436,7 +463,7 @@ class SDExport(object):
         # If the file to print is an (open)office document, we need to call unoconf to
         # convert the file to pdf as printer drivers do not support this format
         if self.is_open_office_file(file_to_print):
-            logging.info('Converting Office document to pdf'.format(self.printer_name))
+            logger.info('Converting Office document to pdf')
             folder = os.path.dirname(file_to_print)
             converted_filename = file_to_print + ".pdf"
             converted_path = os.path.join(folder, converted_filename)
@@ -446,7 +473,7 @@ class SDExport(object):
             )
             file_to_print = converted_path
 
-        logging.info('Sending file to printer {}:{}'.format(self.printer_name))
+        logging.info('Sending file to printer {}:{}'.format(self.printer_name, file_to_print))
         self.safe_check_call(
             command=["xpp", "-P", self.printer_name, file_to_print],
             error_message=ExportStatus.ERROR_PRINT.value
