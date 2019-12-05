@@ -10,8 +10,7 @@ from PyQt5.QtCore import Qt
 from sdclientapi import RequestTimeoutError
 from tests import factory
 
-from securedrop_client import storage, db
-from securedrop_client.crypto import CryptoError
+from securedrop_client import db
 from securedrop_client.logic import APICallRunner, Controller
 from securedrop_client.api_jobs.downloads import DownloadChecksumMismatchException
 from securedrop_client.api_jobs.uploads import SendReplyJobError
@@ -351,11 +350,12 @@ def test_Controller_sync_api_not_authenticated(homedir, config, mocker, session_
 
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     co.authenticated = mocker.MagicMock(return_value=False)
-    co.call_api = mocker.MagicMock()
+    co.api_job_queue = mocker.MagicMock()
+    co.api_job_queue.enqueue = mocker.MagicMock()
 
     co.sync_api()
 
-    assert co.call_api.call_count == 0
+    co.api_job_queue.enqueue.call_count == 0
 
 
 def test_Controller_sync_api(homedir, config, mocker, session_maker):
@@ -368,14 +368,12 @@ def test_Controller_sync_api(homedir, config, mocker, session_maker):
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
 
     co.authenticated = mocker.MagicMock(return_value=True)
-    co.call_api = mocker.MagicMock()
+    co.api_job_queue = mocker.MagicMock()
+    co.api_job_queue.enqueue = mocker.MagicMock()
 
     co.sync_api()
 
-    co.call_api.assert_called_once_with(storage.get_remote_data,
-                                        co.on_sync_success,
-                                        co.on_sync_failure,
-                                        co.api)
+    co.api_job_queue.enqueue.call_count == 1
 
 
 def test_Controller_last_sync_with_file(homedir, config, mocker, session_maker):
@@ -440,100 +438,17 @@ def test_Controller_on_sync_success(homedir, config, mocker):
 
     co = Controller('http://localhost', mock_gui, mock_session_maker, homedir)
     co.update_sources = mocker.MagicMock()
-    co.api_runner = mocker.MagicMock()
+    co.download_new_messages = mocker.MagicMock()
+    co.download_new_replies = mocker.MagicMock()
     co.gpg = mocker.MagicMock()
-
-    result_data = ('sources', 'submissions', 'replies')
-
-    co.update_sources = mocker.MagicMock()
-    co.api_runner = mocker.MagicMock()
-
-    mock_source = mocker.MagicMock()
-    mock_source.key = {
-        'type': 'PGP',
-        'public': PUB_KEY,
-    }
-
-    mock_sources = [mock_source]
-
-    result_data = (mock_sources, 'submissions', 'replies')
-
-    co.call_reset = mocker.MagicMock()
     mock_storage = mocker.patch('securedrop_client.logic.storage')
-    co.on_sync_success(result_data)
-    mock_storage.update_local_storage. \
-        assert_called_once_with(mock_session, mock_sources, "submissions",
-                                "replies",
-                                os.path.join(homedir, 'data'))
 
+    co.on_sync_success()
+
+    mock_storage.update_missing_files.assert_called_once_with(co.data_dir, co.session)
     co.update_sources.assert_called_once_with()
-
-
-def test_Controller_on_sync_success_with_non_pgp_key(homedir, config, mocker):
-    """
-    If there's a result to syncing, then update local storage.
-    This is it to check that we can gracefully handle missing keys.
-    Using the `config` fixture to ensure the config is written to disk.
-    """
-    mock_gui = mocker.MagicMock()
-    mock_session = mocker.MagicMock()
-    mock_session_maker = mocker.MagicMock(return_value=mock_session)
-
-    co = Controller('http://localhost', mock_gui, mock_session_maker, homedir)
-    co.update_sources = mocker.MagicMock()
-    co.api_runner = mocker.MagicMock()
-
-    mock_source = mocker.MagicMock()
-    mock_source.key = {
-        'type': 'PGP',
-    }
-
-    mock_sources = [mock_source]
-    result_data = (mock_sources, 'submissions', 'replies')
-
-    co.call_reset = mocker.MagicMock()
-    mock_storage = mocker.patch('securedrop_client.logic.storage')
-    co.on_sync_success(result_data)
-    mock_storage.update_local_storage. \
-        assert_called_once_with(mock_session, mock_sources, "submissions",
-                                "replies",
-                                os.path.join(homedir, 'data'))
-    co.update_sources.assert_called_once_with()
-
-
-def test_Controller_on_sync_success_with_key_import_fail(homedir, config, mocker):
-    """
-    If there's a result to syncing, then update local storage.
-    This is it to check that we can gracefully handle an import failure.
-    Using the `config` fixture to ensure the config is written to disk.
-    """
-    mock_gui = mocker.MagicMock()
-    mock_session = mocker.MagicMock()
-    mock_session_maker = mocker.MagicMock(return_value=mock_session)
-
-    co = Controller('http://localhost', mock_gui, mock_session_maker, homedir)
-    co.update_sources = mocker.MagicMock()
-    co.api_runner = mocker.MagicMock()
-
-    mock_source = mocker.MagicMock()
-    mock_source.key = {
-        'type': 'PGP',
-        'public': PUB_KEY,
-        'fingerprint': 'ABCDEFGHIJKLMAO'
-    }
-
-    mock_sources = [mock_source]
-    result_data = (mock_sources, 'submissions', 'replies')
-
-    co.call_reset = mocker.MagicMock()
-    mock_storage = mocker.patch('securedrop_client.logic.storage')
-    mocker.patch.object(co.gpg, 'import_key', side_effect=CryptoError)
-    co.on_sync_success(result_data)
-    mock_storage.update_local_storage. \
-        assert_called_once_with(mock_session, mock_sources, "submissions",
-                                "replies",
-                                os.path.join(homedir, 'data'))
-    co.update_sources.assert_called_once_with()
+    co.download_new_messages.assert_called_once_with()
+    co.download_new_replies.assert_called_once_with()
 
 
 def test_Controller_update_sync(homedir, config, mocker, session_maker):
