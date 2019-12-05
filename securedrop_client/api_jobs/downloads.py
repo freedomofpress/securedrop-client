@@ -64,7 +64,10 @@ class MetadataSyncJob(ApiJob):
                 pub_key = source.key.get('public', None)
                 fingerprint = source.key.get('fingerprint', None)
                 if not pub_key or not fingerprint:
-                    continue
+                    # The below line needs to be excluded from the coverage computation
+                    # as it will show as uncovered due to a cpython compiler optimziation.
+                    # See: https://bugs.python.org/issue2506
+                    continue  # pragma: no cover
                 try:
                     self.gpg.import_key(source.uuid, pub_key, fingerprint)
                 except CryptoError:
