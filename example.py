@@ -1,12 +1,12 @@
 import logging
-from oqubeslogging import OQubesLog
+from securedrop_log import SecureDropLog
 
 import ex2
 import ex1
 
 
 def main():
-    handler = OQubesLog("workvm", "logging")
+    handler = SecureDropLog("workvm", "logging")
     logging.basicConfig(level=logging.DEBUG, handlers=[handler])
     logger = logging.getLogger("example")
 

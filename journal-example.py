@@ -1,11 +1,11 @@
 import logging
-from oqubeslogging import OQubesLog
+from securedrop_log import SecureDropLog
 from systemd import journal
 import select
 
 
 def main():
-    handler = OQubesLog("workvm", "logging")
+    handler = SecureDropLog("workvm", "logging")
     logging.basicConfig(level=logging.DEBUG, handlers=[handler])
     logger = logging.getLogger("example")
     j = journal.Reader()
