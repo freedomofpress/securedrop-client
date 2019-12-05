@@ -16,34 +16,34 @@ def __main__(submission):
 
     if submission.archive_metadata.is_valid():
         if submission.archive_metadata.export_method == "usb-test":
-            logging.info('Export archive is usb-test')
+            logger.info('Export archive is usb-test')
             submission.check_usb_connected(exit=True)
         elif submission.archive_metadata.export_method == "disk":
-            logging.info('Export archive is disk')
+            logger.info('Export archive is disk')
             # check_usb_connected looks for the drive, sets the drive to use
             submission.check_usb_connected()
-            logging.info('Unlocking volume')
+            logger.info('Unlocking volume')
             # exports all documents in the archive to luks-encrypted volume
             submission.unlock_luks_volume(submission.archive_metadata.encryption_key)
-            logging.info('Mounting volume')
+            logger.info('Mounting volume')
             submission.mount_volume()
-            logging.info('Copying submission to drive')
+            logger.info('Copying submission to drive')
             submission.copy_submission()
         elif submission.archive_metadata.export_method == "disk-test":
-            logging.info('Export archive is disk-test')
+            logger.info('Export archive is disk-test')
             # check_usb_connected looks for the drive, sets the drive to use
             submission.check_usb_connected()
             submission.check_luks_volume()
         elif submission.archive_metadata.export_method == "printer":
-            logging.info('Export archive is printer')
+            logger.info('Export archive is printer')
             # prints all documents in the archive
-            logging.info('Searching for printer')
+            logger.info('Searching for printer')
             printer_uri = submission.get_printer_uri()
-            logging.info('Installing printer drivers')
+            logger.info('Installing printer drivers')
             printer_ppd = submission.install_printer_ppd(printer_uri)
-            logging.info('Setting up printer')
+            logger.info('Setting up printer')
             submission.setup_printer(printer_uri, printer_ppd)
-            logging.info('Printing files')
+            logger.info('Printing files')
             submission.print_all_files()
         elif submission.archive_metadata.export_method == "printer-test":
             # Prints a test page to ensure the printer is functional
