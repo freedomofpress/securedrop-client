@@ -159,13 +159,12 @@ class ApiJobQueue(QObject):
     def login(self, api_client: API) -> None:
         logger.debug('Passing API token to queues')
 
-        # Setting realistic (shorter) timeout for general requests so that user feedback is faster.
-        # General requests includes:
-        #       FileDownloadJob
-        #       MessageDownloadJob
-        #       ReplyDownloadJo
-        #       SendReplyJob
-        #       UpdateStarJob
+        # Setting shorter default timeout so that user feedback is faster. For download jobs, this
+        # timeout is adjusted to be more realistic depending on file size.
+        #
+        # Currently ReplyDownloadJobs do not use adjusted timeouts because it is dependent on adding
+        # an optional timeout parameter to the download_reply securedrop-sdk method, see:
+        # https://github.com/freedomofpress/securedrop-sdk/issues/108
         api_client.default_request_timeout = 5
 
         self.main_queue.api_client = api_client
