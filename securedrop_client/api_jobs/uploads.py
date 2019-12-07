@@ -92,6 +92,11 @@ class SendReplyJob(ApiJob):
 
     def _make_call(self, encrypted_reply: str, api_client: API) -> sdclientapi.Reply:
         sdk_source = sdclientapi.Source(uuid=self.source_uuid)
+
+        # TODO: Once https://github.com/freedomofpress/securedrop-client/issues/648, we will want to
+        # pass the default request timeout to download_reply instead of setting it on the api object
+        # directly.
+        api_client.default_request_timeout = 5
         return api_client.reply_source(sdk_source, encrypted_reply, self.reply_uuid)
 
 

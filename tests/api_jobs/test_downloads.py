@@ -38,7 +38,9 @@ def test_MetadataSyncJob_success(mocker, homedir, session, session_maker):
         'securedrop_client.api_jobs.downloads.get_remote_data',
         return_value=([mock_source], 'submissions', 'replies'))
 
-    api_client = 'foo'
+    api_client = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
 
     mocker.patch(
         'securedrop_client.api_jobs.downloads.update_local_storage',
@@ -73,7 +75,8 @@ def test_MetadataSyncJob_success_with_key_import_fail(mocker, homedir, session, 
         'securedrop_client.api_jobs.downloads.get_remote_data',
         return_value=([mock_source], 'submissions', 'replies'))
 
-    api_client = 'foo'
+    api_client = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
 
     mocker.patch(
         'securedrop_client.api_jobs.downloads.update_local_storage',
@@ -107,7 +110,8 @@ def test_MetadataSyncJob_success_with_missing_key(mocker, homedir, session, sess
         'securedrop_client.api_jobs.downloads.get_remote_data',
         return_value=([mock_source], 'submissions', 'replies'))
 
-    api_client = 'foo'
+    api_client = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
 
     mocker.patch(
         'securedrop_client.api_jobs.downloads.update_local_storage',
@@ -149,6 +153,7 @@ def test_ReplyDownloadJob_no_download_or_decrypt(mocker, homedir, session, sessi
     mocker.patch.object(job_1.gpg, 'decrypt_submission_or_reply')
     mocker.patch.object(job_2.gpg, 'decrypt_submission_or_reply')
     api_client = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
     path = os.path.join(homedir, 'data')
     api_client.download_submission = mocker.MagicMock(return_value=('', path))
 
@@ -194,6 +199,7 @@ def test_ReplyDownloadJob_message_already_downloaded(mocker, homedir, session, s
     job = ReplyDownloadJob(reply.uuid, homedir, gpg)
     mocker.patch.object(job.gpg, 'decrypt_submission_or_reply')
     api_client = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
     download_fn = mocker.patch.object(api_client, 'download_reply')
 
     return_uuid = job.call_api(api_client, session)
@@ -216,6 +222,7 @@ def test_ReplyDownloadJob_happiest_path(mocker, homedir, session, session_maker)
     job = ReplyDownloadJob(reply.uuid, homedir, gpg)
     mocker.patch.object(job.gpg, 'decrypt_submission_or_reply')
     api_client = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
     data_dir = os.path.join(homedir, 'data')
     api_client.download_reply = mocker.MagicMock(return_value=('', data_dir))
 
@@ -244,6 +251,7 @@ def test_MessageDownloadJob_no_download_or_decrypt(mocker, homedir, session, ses
     mocker.patch.object(job_1.gpg, 'decrypt_submission_or_reply')
     mocker.patch.object(job_2.gpg, 'decrypt_submission_or_reply')
     api_client = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
     path = os.path.join(homedir, 'data')
     api_client.download_submission = mocker.MagicMock(return_value=('', path))
 
@@ -269,6 +277,7 @@ def test_MessageDownloadJob_message_already_decrypted(mocker, homedir, session, 
     job = MessageDownloadJob(message.uuid, homedir, gpg)
     decrypt_fn = mocker.patch.object(job.gpg, 'decrypt_submission_or_reply')
     api_client = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
     download_fn = mocker.patch.object(api_client, 'download_submission')
 
     return_uuid = job.call_api(api_client, session)
@@ -289,6 +298,7 @@ def test_MessageDownloadJob_message_already_downloaded(mocker, homedir, session,
     job = MessageDownloadJob(message.uuid, homedir, gpg)
     mocker.patch.object(job.gpg, 'decrypt_submission_or_reply')
     api_client = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
     download_fn = mocker.patch.object(api_client, 'download_submission')
 
     return_uuid = job.call_api(api_client, session)
@@ -311,6 +321,7 @@ def test_MessageDownloadJob_happiest_path(mocker, homedir, session, session_make
     job = MessageDownloadJob(message.uuid, homedir, gpg)
     mocker.patch.object(job.gpg, 'decrypt_submission_or_reply')
     api_client = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
     data_dir = os.path.join(homedir, 'data')
     api_client.download_submission = mocker.MagicMock(return_value=('', data_dir))
 
@@ -332,6 +343,7 @@ def test_MessageDownloadJob_with_base_error(mocker, homedir, session, session_ma
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
     job = MessageDownloadJob(message.uuid, homedir, gpg)
     api_client = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
     mocker.patch.object(api_client, 'download_submission', side_effect=BaseError)
     decrypt_fn = mocker.patch.object(job.gpg, 'decrypt_submission_or_reply')
 
@@ -357,7 +369,7 @@ def test_MessageDownloadJob_with_crypto_error(mocker, homedir, session, session_
     job = MessageDownloadJob(message.uuid, homedir, gpg)
     mocker.patch.object(job.gpg, 'decrypt_submission_or_reply', side_effect=CryptoError)
     api_client = mocker.MagicMock()
-    api_client = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
     path = os.path.join(homedir, 'data')
     api_client.download_submission = mocker.MagicMock(return_value=('', path))
 
@@ -380,6 +392,7 @@ def test_FileDownloadJob_message_already_decrypted(mocker, homedir, session, ses
     job = FileDownloadJob(file_.uuid, homedir, gpg)
     decrypt_fn = mocker.patch.object(job.gpg, 'decrypt_submission_or_reply')
     api_client = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
     download_fn = mocker.patch.object(api_client, 'download_submission')
 
     return_uuid = job.call_api(api_client, session)
@@ -400,6 +413,7 @@ def test_FileDownloadJob_message_already_downloaded(mocker, homedir, session, se
     job = FileDownloadJob(file_.uuid, os.path.join(homedir, 'data'), gpg)
     patch_decrypt(mocker, homedir, gpg, file_.filename)
     api_client = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
     download_fn = mocker.patch.object(api_client, 'download_submission')
 
     return_uuid = job.call_api(api_client, session)
@@ -429,6 +443,7 @@ def test_FileDownloadJob_happy_path_no_etag(mocker, homedir, session, session_ma
         return ('', full_path)
 
     api_client = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
     api_client.download_submission = fake_download
 
     job = FileDownloadJob(
@@ -471,6 +486,7 @@ def test_FileDownloadJob_happy_path_sha256_etag(mocker, homedir, session, sessio
                 full_path)
 
     api_client = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
     api_client.download_submission = fake_download
 
     job = FileDownloadJob(
@@ -506,6 +522,7 @@ def test_FileDownloadJob_bad_sha256_etag(mocker, homedir, session, session_maker
                 full_path)
 
     api_client = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
     api_client.download_submission = fake_download
 
     job = FileDownloadJob(
@@ -538,6 +555,7 @@ def test_FileDownloadJob_happy_path_unknown_etag(mocker, homedir, session, sessi
                 full_path)
 
     api_client = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
     api_client.download_submission = fake_download
 
     job = FileDownloadJob(
@@ -581,6 +599,7 @@ def test_FileDownloadJob_decryption_error(mocker, homedir, session, session_make
                 full_path)
 
     api_client = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
     api_client.download_submission = fake_download
 
     job = FileDownloadJob(
