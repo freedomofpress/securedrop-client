@@ -77,15 +77,10 @@ def get_remote_data(api: API) -> Tuple[List[SDKSource], List[SDKSubmission], Lis
     (remote_sources, remote_submissions, remote_replies)
     """
     remote_submissions = []  # type: List[SDKSubmission]
-    try:
-        remote_sources = api.get_sources()
-        for source in remote_sources:
-            remote_submissions.extend(api.get_submissions(source))
-        remote_replies = api.get_all_replies()
-    except Exception as ex:
-        # Log any errors but allow the caller to handle the exception.
-        logger.error(ex)
-        raise(ex)
+    remote_sources = api.get_sources()
+    for source in remote_sources:
+        remote_submissions.extend(api.get_submissions(source))
+    remote_replies = api.get_all_replies()
 
     logger.info('Fetched {} remote sources.'.format(len(remote_sources)))
     logger.info('Fetched {} remote submissions.'.format(
