@@ -168,14 +168,14 @@ def test_RefreshButton_setup(mocker):
 
 def test_RefreshButton_on_clicked(mocker):
     """
-    When refresh button is clicked, sync_api should be called.
+    When refresh button is clicked, sync_api should be called with manual_refresh set to True.
     """
     rb = RefreshButton()
     rb.controller = mocker.MagicMock()
 
     rb._on_clicked()
 
-    rb.controller.sync_api.assert_called_once_with()
+    rb.controller.sync_api.assert_called_once_with(manual_refresh=True)
 
 
 def test_RefreshButton_on_refresh_complete(mocker):

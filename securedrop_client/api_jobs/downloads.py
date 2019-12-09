@@ -50,6 +50,10 @@ class MetadataSyncJob(ApiJob):
         jobs.
         '''
 
+        # TODO: Once https://github.com/freedomofpress/securedrop-client/issues/648, we will want to
+        # pass the default request timeout to api calls instead of setting it on the api object
+        # directly.
+        api_client.default_request_timeout = 20
         remote_sources, remote_submissions, remote_replies = \
             get_remote_data(api_client)
 
@@ -87,7 +91,7 @@ class DownloadJob(ApiJob):
 
     def _get_realistic_timeout(self, size_in_bytes: int) -> int:
         '''
-        Return a realistic timeout in seconds for a file, message, or reply based on its size.
+        Return a realistic timeout in seconds based on the size of the download.
 
         This simply scales the timeouts per file so that it increases as the file size increases.
 
@@ -260,6 +264,11 @@ class ReplyDownloadJob(DownloadJob):
         '''
         sdk_object = SdkReply(uuid=db_object.uuid, filename=db_object.filename)
         sdk_object.source_uuid = db_object.source.uuid
+
+        # TODO: Once https://github.com/freedomofpress/securedrop-sdk/issues/108 is implemented, we
+        # will want to pass the default request timeout to download_reply instead of setting it on
+        # the api object directly.
+        api.default_request_timeout = 20
         return api.download_reply(sdk_object)
 
     def call_decrypt(self, filepath: str, session: Session = None) -> str:

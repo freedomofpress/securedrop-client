@@ -231,7 +231,7 @@ class RefreshButton(SvgPushButton):
         self.controller.sync_events.connect(self._on_refresh_complete)
 
     def _on_clicked(self):
-        self.controller.sync_api()
+        self.controller.sync_api(manual_refresh=True)
         # This is a temporary solution for showing the icon as active for the entire duration of a
         # refresh, rather than for just the duration of a click. The icon image will be replaced
         # when the controller tells us the refresh has finished. A cleaner solution would be to

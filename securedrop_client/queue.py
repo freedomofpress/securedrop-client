@@ -136,13 +136,12 @@ class ApiJobQueue(QObject):
 
     def __init__(self, api_client: API, session_maker: scoped_session) -> None:
         super().__init__(None)
-        self.api_client = api_client
 
         self.main_thread = QThread()
         self.download_file_thread = QThread()
 
-        self.main_queue = RunnableQueue(self.api_client, session_maker)
-        self.download_file_queue = RunnableQueue(self.api_client, session_maker)
+        self.main_queue = RunnableQueue(api_client, session_maker)
+        self.download_file_queue = RunnableQueue(api_client, session_maker)
 
         self.main_queue.moveToThread(self.main_thread)
         self.download_file_queue.moveToThread(self.download_file_thread)
@@ -159,11 +158,6 @@ class ApiJobQueue(QObject):
 
     def login(self, api_client: API) -> None:
         logger.debug('Passing API token to queues')
-
-        # Setting realistic (shorter) timeout for general requests so that user feedback
-        # is faster
-        api_client.default_request_timeout = 5
-
         self.main_queue.api_client = api_client
         self.download_file_queue.api_client = api_client
         self.start_queues()
