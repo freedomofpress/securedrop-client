@@ -417,7 +417,7 @@ class Controller(QObject):
             * Download new messages and replies
             * Update missing files so that they can be re-downloaded
         """
-        self.set_status('')  # remove any permanent error status message
+        self.gui.clear_error_status()  # remove any permanent error status message
 
         with open(self.sync_flag, 'w') as f:
             f.write(arrow.now().format())
@@ -470,6 +470,7 @@ class Controller(QObject):
         """
         After we star a source, we should sync the API such that the local database is updated.
         """
+        self.gui.clear_error_status()  # remove any permanent error status message
         self.sync_api()  # Syncing the API also updates the source list UI
 
     def on_update_star_failure(self, result: UpdateStarJobException) -> None:
@@ -550,6 +551,7 @@ class Controller(QObject):
         """
         Called when a message has downloaded.
         """
+        self.gui.clear_error_status()  # remove any permanent error status message
         message = storage.get_message(self.session, uuid)
         self.message_ready.emit(message.uuid, message.content)
 
@@ -573,6 +575,7 @@ class Controller(QObject):
         """
         Called when a reply has downloaded.
         """
+        self.gui.clear_error_status()  # remove any permanent error status message
         reply = storage.get_reply(self.session, uuid)
         self.reply_ready.emit(reply.uuid, reply.content)
 
@@ -745,6 +748,7 @@ class Controller(QObject):
         """
         Handler for when a source deletion succeeds.
         """
+        self.gui.clear_error_status()  # remove any permanent error status message
         self.sync_api()
 
     def on_delete_source_failure(self, result: Exception) -> None:
@@ -801,6 +805,7 @@ class Controller(QObject):
 
     def on_reply_success(self, reply_uuid: str) -> None:
         logger.debug('{} sent successfully'.format(reply_uuid))
+        self.gui.clear_error_status()  # remove any permanent error status message
         self.reply_succeeded.emit(reply_uuid)
         self.sync_api()
 
@@ -818,6 +823,7 @@ class Controller(QObject):
 
     def on_logout_success(self, result) -> None:
         logging.info('Client logout successful')
+        self.gui.clear_error_status()  # remove any permanent error status message
 
     def on_logout_failure(self, result: Exception) -> None:
         logging.info('Client logout failure')
