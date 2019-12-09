@@ -25,8 +25,8 @@ class UpdateStarJob(ApiJob):
             source_sdk_object = sdclientapi.Source(uuid=self.source_uuid)
 
             # TODO: Once https://github.com/freedomofpress/securedrop-client/issues/648, we will
-            # want to pass the default request timeout to download_reply instead of setting it on
-            # the api object directly.
+            # want to pass the default request timeout to remove_star and add_star instead of
+            # setting it on the api object directly.
             api_client.default_request_timeout = 5
             if self.star_status:
                 api_client.remove_star(source_sdk_object)

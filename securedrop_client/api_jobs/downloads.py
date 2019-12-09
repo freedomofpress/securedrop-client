@@ -51,7 +51,7 @@ class MetadataSyncJob(ApiJob):
         '''
 
         # TODO: Once https://github.com/freedomofpress/securedrop-client/issues/648, we will want to
-        # pass the default request timeout to download_reply instead of setting it on the api object
+        # pass the default request timeout to api calls instead of setting it on the api object
         # directly.
         api_client.default_request_timeout = 20
         remote_sources, remote_submissions, remote_replies = \
