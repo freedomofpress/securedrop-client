@@ -729,6 +729,7 @@ class Controller(QObject):
         """
         Called when a file has downloaded.
         """
+        self.gui.clear_error_status()  # remove any permanent error status message
         self.file_ready.emit(result)
 
     def on_file_download_failure(self, exception: Exception) -> None:
