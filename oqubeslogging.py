@@ -15,7 +15,7 @@ class Singleton(type):
 class InternalLog(metaclass=Singleton):
     def __init__(self, name, logvmname):
         self.process = Popen(
-            ["/usr/lib/qubes/qrexec-client-vm", logvmname, "oqubes.Logging"],
+            ["/usr/lib/qubes/qrexec-client-vm", logvmname, "securedrop.Log"],
             stdin=PIPE,
             stdout=PIPE,
             stderr=PIPE,
