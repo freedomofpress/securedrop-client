@@ -21,16 +21,14 @@ setuptools.setup(
     python_requires=">=3.5",
     url="https://github.com/freedomofpress/securedrop-log",
     packages=["securedrop_log",],
-    package_data={
-            'securedrop_log': ['VERSION'],
-    },
+    package_data={"securedrop_log": ["VERSION"],},
     classifiers=(
         "Development Status :: 3 - Alpha",
         "Programming Language :: Python :: 3",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Intended Audience :: Developers",
-        "OOperating System :: POSIX :: Linux",
+        "Operating System :: POSIX :: Linux",
     ),
-    data_files = [("sbin",["securedrop-log"])]
+    data_files=[("sbin", ["securedrop-log"])],
 )
