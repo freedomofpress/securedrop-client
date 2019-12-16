@@ -1525,29 +1525,43 @@ class SpeechBubble(QWidget):
         # Set styles
         self.setObjectName('speech_bubble')
         self.setStyleSheet(self.CSS)
+        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         # Set layout
         layout = QVBoxLayout()
         self.setLayout(layout)
 
         # Set margins and spacing
-        layout.setContentsMargins(0, self.TOP_MARGIN, 0, self.BOTTOM_MARGIN)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         # Message box
         self.message = SecureQLabel(text)
         self.message.setObjectName('message')
         self.message.setWordWrap(True)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         # Color bar
         self.color_bar = QWidget()
         self.color_bar.setObjectName('color_bar')
 
-        # Add widgets to layout
-        layout.addWidget(self.message)
-        layout.addWidget(self.color_bar)
+        # Speech bubble
+        speech_bubble = QWidget()
+        speech_bubble_layout = QVBoxLayout()
+        speech_bubble.setLayout(speech_bubble_layout)
+        speech_bubble_layout.addWidget(self.message)
+        speech_bubble_layout.addWidget(self.color_bar)
+        speech_bubble_layout.setSpacing(0)
+
+        # Bubble area includes speech bubble plus error message if there is an error
+        bubble_area = QWidget()
+        bubble_area.setLayoutDirection(Qt.RightToLeft)
+        self.bubble_area_layout = QHBoxLayout()
+        self.bubble_area_layout.setContentsMargins(0, self.TOP_MARGIN, 0, self.BOTTOM_MARGIN)
+        bubble_area.setLayout(self.bubble_area_layout)
+        self.bubble_area_layout.addWidget(speech_bubble)
+
+        # Add widget to layout
+        layout.addWidget(bubble_area)
 
         # Connect signals to slots
         update_signal.connect(self._update_text)
@@ -1592,6 +1606,12 @@ class ReplyWidget(SpeechBubble):
         max-height: 5px;
         background-color: #ff3366;
         border: 0px;
+    }
+    #error_message {
+        font-family: 'Source Sans Pro';
+        font-weight: 500;
+        font-size: 13px;
+        color: #ff3366;
     }
     '''
 
@@ -1647,17 +1667,36 @@ class ReplyWidget(SpeechBubble):
         super().__init__(message_id, message, update_signal)
         self.message_id = message_id
 
-        # Set styles
-        self._set_reply_state(reply_status)
+        error_icon = SvgLabel('error_icon.svg', svg_size=QSize(12, 12))
+        error_icon.setObjectName('error_icon')  # Set css id
+        error_icon.setFixedWidth(12)
+        error_message = SecureQLabel('Failed to send')
+        error_message.setObjectName('error_message')
+
+        self.error = QWidget()
+        error_layout = QHBoxLayout()
+        error_layout.setContentsMargins(0, 0, 0, 0)
+        error_layout.setSpacing(4)
+        self.error.setLayout(error_layout)
+        error_layout.addWidget(error_message)
+        error_layout.addWidget(error_icon)
+
+        self.error.hide()
+        self.bubble_area_layout.addWidget(self.error)
 
         message_succeeded_signal.connect(self._on_reply_success)
         message_failed_signal.connect(self._on_reply_failure)
 
+        # Set styles
+        self._set_reply_state(reply_status)
+
     def _set_reply_state(self, status: str) -> None:
         if status == 'SUCCEEDED':
             self.setStyleSheet(self.CSS_REPLY_SUCCEEDED)
+            self.error.hide()
         elif status == 'FAILED':
             self.setStyleSheet(self.CSS_REPLY_FAILED)
+            self.error.show()
         elif status == 'PENDING':
             self.setStyleSheet(self.CSS_REPLY_PENDING)
 

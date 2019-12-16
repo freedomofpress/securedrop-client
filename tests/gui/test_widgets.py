@@ -1168,9 +1168,6 @@ def test_SpeechBubble_init(mocker):
     Check the speech bubble is configured correctly (there's a label containing
     the passed in text).
     """
-    mock_label = mocker.patch('securedrop_client.gui.widgets.SecureQLabel')
-    mocker.patch('securedrop_client.gui.widgets.QVBoxLayout')
-    mocker.patch('securedrop_client.gui.widgets.SpeechBubble.setLayout')
     mock_signal = mocker.Mock()
     mock_connect = mocker.Mock()
     mock_signal.connect = mock_connect
@@ -1178,7 +1175,7 @@ def test_SpeechBubble_init(mocker):
     sb = SpeechBubble('mock id', 'hello', mock_signal)
     ss = sb.styleSheet()
 
-    mock_label.assert_called_once_with('hello')
+    sb.message.text() == 'hello'
     assert mock_connect.called
     assert 'background-color' in ss
 
@@ -1187,8 +1184,6 @@ def test_SpeechBubble_update_text(mocker):
     """
     Check that the calling the slot updates the text.
     """
-    mocker.patch('securedrop_client.gui.widgets.QVBoxLayout')
-    mocker.patch('securedrop_client.gui.widgets.SpeechBubble.setLayout')
     mock_signal = mocker.MagicMock()
 
     msg_id = 'abc123'
@@ -2482,16 +2477,21 @@ def test_ReplyWidget_success_failure_slots(mocker):
     # check the success slog
     mock_logger = mocker.patch('securedrop_client.gui.widgets.logger')
     widget._on_reply_success(msg_id + "x")
+    assert widget.error.isHidden()
     assert not mock_logger.debug.called
     widget._on_reply_success(msg_id)
+    assert widget.error.isHidden()
     assert mock_logger.debug.called
     mock_logger.reset_mock()
 
-    # check the failure slot
+    # check the failure slot where message id does not match
     mock_logger = mocker.patch('securedrop_client.gui.widgets.logger')
     widget._on_reply_failure(msg_id + "x")
+    assert widget.error.isHidden()
     assert not mock_logger.debug.called
+    # check the failure slot where message id matches
     widget._on_reply_failure(msg_id)
+    assert not widget.error.isHidden()
     assert mock_logger.debug.called
 
 
