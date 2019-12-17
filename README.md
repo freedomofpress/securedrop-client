@@ -32,7 +32,8 @@ pip install --require-hashes -r dev-requirements.txt
 Please install system libraries for PyQt rather than using PyPI-managed libraries- this makes packaging possible later. On Debian, `apt install python3-pyqt5 python3-pyqt5.qtsvg` will install what you need.
 
 In order to run the test suite you should also install the `xvfb` package (to
-make the `xvfb-run` command available): `apt install xvfb`.
+make the `xvfb-run` command available): `apt install xvfb`. You may also need
+to install the `sqlite3` command: `apt install sqlite3`.
 
 ### OSX
 
