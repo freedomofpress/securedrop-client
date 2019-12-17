@@ -1,4 +1,5 @@
 import furl
+import http
 import json
 import logging
 import requests
@@ -6,6 +7,7 @@ import tempfile
 import werkzeug
 
 import securedrop_proxy.version as version
+from securedrop_proxy import callbacks
 
 
 logger = logging.getLogger(__name__)
@@ -28,21 +30,20 @@ class Response:
 
 
 class Proxy:
-    @staticmethod
-    def _on_done(res):
-        print(json.dumps(res.__dict__))
-
-    def __init__(self, conf=None, req=Req(), on_save=None, on_done=None):
+    def __init__(self, conf=None, req=Req(), on_save=None, on_done=None, timeout: float = None):
         self.conf = conf
         self.req = req
         self.res = None
         self.on_save = on_save
         if on_done is not None:
             self.on_done = on_done
-        else:
-            self.on_done = self._on_done
+
+        self.timeout = float(timeout) if timeout else 10
 
         self._prepared_request = None
+
+    def on_done(self, res):
+        callbacks.on_done(res)
 
     @staticmethod
     def valid_path(path):
@@ -75,7 +76,7 @@ class Proxy:
         try:
             url = furl.furl("{}://{}:{}/{}".format(scheme, host, port, path))
         except Exception as e:
-            logging.error(e)
+            logger.error(e)
             self.simple_error(500, "Proxy error while generating URL to request")
             raise ValueError("Error generating URL from provided values")
 
@@ -118,7 +119,7 @@ class Proxy:
         self.res = res
 
     def handle_response(self):
-        logging.debug('Handling response')
+        logger.debug("Handling response")
 
         ctype = werkzeug.http.parse_options_header(self._presp.headers["content-type"])
 
@@ -135,23 +136,45 @@ class Proxy:
 
         try:
             if self.on_save is None:
-                self.simple_error(400, "Request callback is not set.")
-                raise ValueError("Request callback is not set.")
+                self.simple_error(
+                    http.HTTPStatus.BAD_REQUEST, "Request on_save callback is not set."
+                )
+                raise ValueError("Request on_save callback is not set.")
 
             self.prep_request()
-            logging.debug('Sending request')
+            logger.debug("Sending request")
             s = requests.Session()
-            self._presp = s.send(self._prepared_request)
+            self._presp = s.send(self._prepared_request, timeout=self.timeout)
+            self._presp.raise_for_status()
             self.handle_response()
-
         except ValueError as e:
-            logging.error(e)
+            logger.error(e)
 
             # effectively a 4xx error
             # we have set self.response to indicate an error
             pass
-
-        # catch server errors here, handle maybe-differently from
-        # ValueErrors...
-
+        except requests.exceptions.Timeout as e:
+            # Timeout covers both ConnectTimeout and ReadTimeout
+            logger.error(e)
+            self.simple_error(http.HTTPStatus.GATEWAY_TIMEOUT, "request timed out")
+        except (
+            requests.exceptions.ConnectionError,  # covers ProxyError, SSLError
+            requests.exceptions.TooManyRedirects,
+        ) as e:
+            logger.error(e)
+            self.simple_error(http.HTTPStatus.BAD_GATEWAY, "could not connect to server")
+        except requests.exceptions.HTTPError as e:
+            logger.error(e)
+            try:
+                self.simple_error(
+                    e.response.status_code,
+                    http.HTTPStatus(e.response.status_code).phrase.lower()
+                )
+            except ValueError:
+                # Return a generic error message when the response
+                # status code is not found in http.HTTPStatus.
+                self.simple_error(e.response.status_code, "unspecified server error")
+        except Exception as e:
+            logger.error(e)
+            self.simple_error(http.HTTPStatus.INTERNAL_SERVER_ERROR, "internal proxy error")
         self.on_done(self.res)

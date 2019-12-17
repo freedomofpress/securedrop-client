@@ -1,9 +1,12 @@
+import http
 from io import StringIO
 import json
 import subprocess
 import sys
 import unittest
 import uuid
+
+import vcr
 
 from securedrop_proxy import config
 from securedrop_proxy import main
@@ -18,6 +21,7 @@ class TestMain(unittest.TestCase):
         self.conf.port = 443
         self.conf.dev = True
 
+    @vcr.use_cassette('fixtures/main_json_response.yaml')
     def test_json_response(self):
         test_input_json = """{ "method": "GET",
                             "path_query": "/posts?userId=1" }"""
@@ -32,12 +36,10 @@ class TestMain(unittest.TestCase):
             pass
 
         def on_done(res):
-            res = res.__dict__
-            self.assertEqual(res['status'], 200)
+            self.assertEqual(res.status, http.HTTPStatus.OK)
+            print(json.dumps(res.__dict__))
 
-        self.p = proxy.Proxy(self.conf, req, on_save)
-        self.p.on_done = on_done
-        self.p.proxy()
+        self.p = proxy.Proxy(self.conf, req, on_save, on_done)
 
         saved_stdout = sys.stdout
         try:
@@ -52,6 +54,7 @@ class TestMain(unittest.TestCase):
         for item in json.loads(response['body']):
             self.assertEqual(item['userId'], 1)
 
+    @vcr.use_cassette('fixtures/main_non_json_response.yaml')
     def test_non_json_response(self):
         test_input_json = """{ "method": "GET",
                                "path_query": "" }"""
@@ -66,7 +69,6 @@ class TestMain(unittest.TestCase):
             res.body = json.dumps({'filename': self.fn})
 
         self.p = proxy.Proxy(self.conf, proxy.Req(), on_save)
-        self.p.proxy()
 
         saved_stdout = sys.stdout
         try:
@@ -88,9 +90,9 @@ class TestMain(unittest.TestCase):
             saved_file = f.read()
 
         # We expect HTML content in the file from the test data
-        self.assertIn("<html>", saved_file)
+        self.assertIn("<!DOCTYPE html>", saved_file)
 
-    def test_error_response(self):
+    def test_input_invalid_json(self):
         test_input_json = """"foo": "bar", "baz": "bliff" }"""
 
         def on_save(fh, res, conf):
@@ -101,9 +103,66 @@ class TestMain(unittest.TestCase):
             self.assertEqual(res['status'], 400)
             sys.exit(1)
 
-        self.p = proxy.Proxy(self.conf, proxy.Req(), on_save)
-        self.p.on_done = on_done
+        p = proxy.Proxy(self.conf, proxy.Req(), on_save, on_done)
 
         with self.assertRaises(SystemExit):
-            self.p.proxy()
-            main.__main__(test_input_json, self.p)
+            main.__main__(test_input_json, p)
+
+    def test_input_missing_keys(self):
+        test_input_json = """{ "foo": "bar", "baz": "bliff" }"""
+
+        def on_save(fh, res, conf):
+            pass
+
+        def on_done(res):
+            res = res.__dict__
+            self.assertEqual(res['status'], 400)
+            self.assertEqual(res['body'], '{"error": "Missing keys in request"}')
+            sys.exit(1)
+
+        p = proxy.Proxy(self.conf, proxy.Req(), on_save, on_done)
+        with self.assertRaises(SystemExit):
+            main.__main__(test_input_json, p)
+
+    @vcr.use_cassette('fixtures/main_json_response.yaml')
+    def test_input_headers(self):
+        test_input = {
+            "method": "GET",
+            "path_query": "/posts?userId=1",
+            "headers": { "X-Test-Header": "th" }
+        }
+
+        def on_save(fh, res, conf):
+            pass
+
+        p = proxy.Proxy(self.conf, proxy.Req(), on_save)
+        main.__main__(json.dumps(test_input), p)
+        self.assertEqual(p.req.headers, test_input["headers"])
+
+    @vcr.use_cassette('fixtures/main_input_body.yaml')
+    def test_input_body(self):
+        test_input = {
+            "method": "POST",
+            "path_query": "/posts",
+            "body": { "id": 42, "title": "test" }
+        }
+
+        def on_save(fh, res, conf):
+            pass
+
+        p = proxy.Proxy(self.conf, proxy.Req(), on_save)
+        main.__main__(json.dumps(test_input), p)
+        self.assertEqual(p.req.body, test_input["body"])
+
+    @vcr.use_cassette('fixtures/main_non_json_response.yaml')
+    def test_default_callbacks(self):
+        test_input = {
+            "method": "GET",
+            "path_query": "",
+        }
+
+        p = proxy.Proxy(self.conf, proxy.Req())
+        with unittest.mock.patch("securedrop_proxy.callbacks.on_done") as on_done, unittest.mock.patch("securedrop_proxy.callbacks.on_save") as on_save:
+            main.__main__(json.dumps(test_input), p)
+            self.assertEqual(on_save.call_count, 1)
+            self.assertEqual(on_done.call_count, 1)

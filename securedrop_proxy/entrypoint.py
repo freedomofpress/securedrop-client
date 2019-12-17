@@ -6,6 +6,8 @@
 # called with exactly one argument: the path to its config file. See
 # the README for configuration options.
 
+import http
+import json
 import logging
 import os
 import sys
@@ -30,60 +32,55 @@ def start():
     '''
     try:
         configure_logging()
+
+        logging.debug('Starting SecureDrop Proxy {}'.format(version))
+
+        # a fresh, new proxy object
+        p = proxy.Proxy()
+
+        # set up an error handler early, so we can use it during
+        # configuration, etc
+        original_on_done = p.on_done
+        p.on_done = callbacks.err_on_done
+
+        # path to config file must be at argv[1]
+        if len(sys.argv) != 2:
+            raise ValueError("sd-proxy script not called with path to configuration file")
+
+        # read config. `read_conf` will call `p.on_done` if there is a config
+        # problem, and will return a Conf object on success.
+        conf_path = sys.argv[1]
+        p.conf = config.read_conf(conf_path, p)
+
+        # read user request from STDIN
+        incoming = []
+        for line in sys.stdin:
+            incoming.append(line)
+        incoming = "\n".join(incoming)
+
+        p.on_done = original_on_done
+        main.__main__(incoming, p)
     except Exception as e:
-        print(e)
-        return
-
-    logging.debug('Starting SecureDrop Proxy {}'.format(version))
-
-    # a fresh, new proxy object
-    p = proxy.Proxy()
-
-    # set up an error handler early, so we can use it during
-    # configuration, etc
-    p.on_done = callbacks.err_on_done
-
-    # path to config file must be at argv[1]
-    if len(sys.argv) != 2:
-        p.simple_error(
-            500, "sd-proxy script not called with path to configuration file"
-        )
-        p.on_done(p.res)
-
-    # read config. `read_conf` will call `p.on_done` if there is a config
-    # problem, and will return a Conf object on success.
-    conf_path = sys.argv[1]
-    p.conf = config.read_conf(conf_path, p)
-
-    # read user request from STDIN
-    incoming = []
-    for line in sys.stdin:
-        incoming.append(line)
-    incoming = "\n".join(incoming)
-
-    main.__main__(incoming, p)
-
-
-def excepthook(*exc_args):
-    '''
-    This function is called in the event of a catastrophic failure.
-    Log exception and exit cleanly.
-    '''
-    logging.error('Unrecoverable error', exc_info=(exc_args))
-    sys.__excepthook__(*exc_args)
-    print('')  # force terminal prompt on to a new line
-    sys.exit(1)
+        response = {
+            "status": http.HTTPStatus.INTERNAL_SERVER_ERROR,
+            "body": json.dumps({
+                "error": str(e),
+            })
+        }
+        print(json.dumps(response))
+        sys.exit(1)
 
 
 def configure_logging() -> None:
     '''
     All logging related settings are set up by this function.
     '''
-    log_folder = os.path.join(DEFAULT_HOME, 'logs')
+    home = os.getenv("SECUREDROP_HOME", DEFAULT_HOME)
+    log_folder = os.path.join(home, 'logs')
     if not os.path.exists(log_folder):
         os.makedirs(log_folder)
 
-    log_file = os.path.join(DEFAULT_HOME, 'logs', 'proxy.log')
+    log_file = os.path.join(home, 'logs', 'proxy.log')
 
     # set logging format
     log_fmt = ('%(asctime)s - %(name)s:%(lineno)d(%(funcName)s) %(levelname)s: %(message)s')
@@ -98,6 +95,3 @@ def configure_logging() -> None:
     log = logging.getLogger()
     log.setLevel(LOGLEVEL)
     log.addHandler(handler)
-
-    # override excepthook to capture a log of catastrophic failures.
-    sys.excepthook = excepthook
