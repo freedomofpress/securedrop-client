@@ -13,7 +13,7 @@ import tempfile
 import time
 from typing import List, Optional  # noqa: F401
 
-from enum import Enum
+from securedrop_export.exceptions import ExportStatus, handler, TimeoutException
 
 PRINTER_NAME = "sdw-printer"
 PRINTER_WAIT_TIMEOUT = 60
@@ -25,41 +25,6 @@ LASERJET_DRIVER = "/usr/share/cups/drv/hpcups.drv"
 LASERJET_PPD = "/usr/share/cups/model/hp-laserjet_6l.ppd"
 
 logger = logging.getLogger(__name__)
-
-
-class ExportStatus(Enum):
-
-    # General errors
-    ERROR_FILE_NOT_FOUND = 'ERROR_FILE_NOT_FOUND'
-    ERROR_EXTRACTION = 'ERROR_EXTRACTION'
-    ERROR_METADATA_PARSING = 'ERROR_METADATA_PARSING'
-    ERROR_ARCHIVE_METADATA = 'ERROR_ARCHIVE_METADATA'
-    ERROR_USB_CONFIGURATION = 'ERROR_USB_CONFIGURATION'
-    ERROR_GENERIC = 'ERROR_GENERIC'
-
-    # USB preflight related errors
-    USB_CONNECTED = 'USB_CONNECTED'
-    USB_NOT_CONNECTED = 'USB_NOT_CONNECTED'
-    ERROR_USB_CHECK = 'ERROR_USB_CHECK'
-
-    # USB Disk preflight related errors
-    USB_ENCRYPTED = 'USB_ENCRYPTED'
-    USB_ENCRYPTION_NOT_SUPPORTED = 'USB_ENCRYPTION_NOT_SUPPORTED'
-    USB_DISK_ERROR = 'USB_DISK_ERROR'
-
-    # Printer preflight related errors
-    ERROR_PRINTER_NOT_FOUND = 'ERROR_PRINTER_NOT_FOUND'
-    ERROR_PRINTER_NOT_SUPPORTED = 'ERROR_PRINTER_NOT_SUPPORTED'
-    ERROR_PRINTER_DRIVER_UNAVAILABLE = 'ERROR_PRINTER_DRIVER_UNAVAILABLE'
-    ERROR_PRINTER_INSTALL = 'ERROR_PRINTER_INSTALL'
-
-    # Disk export errors
-    USB_BAD_PASSPHRASE = 'USB_BAD_PASSPHRASE'
-    ERROR_USB_MOUNT = 'ERROR_USB_MOUNT'
-    ERROR_USB_WRITE = 'ERROR_USB_WRITE'
-
-    # Printer export errors
-    ERROR_PRINT = 'ERROR_PRINT'
 
 
 class Metadata(object):
@@ -528,12 +493,3 @@ class SDExport(object):
             command=["xpp", "-P", self.printer_name, file_to_print],
             error_message=ExportStatus.ERROR_PRINT.value
         )
-
-
-# class ends here
-class TimeoutException(Exception):
-    pass
-
-
-def handler(s, f):
-    raise TimeoutException("Timeout")
