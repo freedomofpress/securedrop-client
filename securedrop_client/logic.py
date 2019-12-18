@@ -34,6 +34,7 @@ from securedrop_client import storage
 from securedrop_client import db
 from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob, \
     ReplyDownloadJob, DownloadChecksumMismatchException, MetadataSyncJob
+from securedrop_client.api_jobs.sources import DeleteSourceJob
 from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobError, \
     SendReplyJobTimeoutError
 from securedrop_client.api_jobs.updatestar import UpdateStarJob, UpdateStarJobException
@@ -757,20 +758,24 @@ class Controller(QObject):
         error = _('Failed to delete source at server')
         self.gui.update_error_status(error)
 
-    def delete_source(self, source):
-        """Performs a delete operation on source record.
-
-        This method will first request server to delete the source record. If
-        the process of deleting record at server is successful, it will sync
-        the server records with the local state. On failure, it will display an
-        error.
+    def delete_source(self, source: db.Source):
         """
-        self.call_api(
-            self.api.delete_source,
-            self.on_delete_source_success,
-            self.on_delete_source_failure,
-            source
-        )
+        Performs a delete operation on source record.
+
+        This method will submit a job to delete the source record on
+        the server. If the job succeeds, the success handler will
+        synchronize the server records with the local state. If not,
+        the failure handler will display an error.
+        """
+        if not self.api:  # Then we should tell the user they need to login.
+            self.on_action_requiring_login()
+            return
+
+        job = DeleteSourceJob(source.uuid)
+        job.success_signal.connect(self.on_delete_source_success, type=Qt.QueuedConnection)
+        job.failure_signal.connect(self.on_delete_source_failure, type=Qt.QueuedConnection)
+
+        self.api_job_queue.enqueue(job)
 
     def send_reply(self, source_uuid: str, reply_uuid: str, message: str) -> None:
         """

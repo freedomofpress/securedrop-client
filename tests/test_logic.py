@@ -1283,21 +1283,53 @@ def test_Controller_on_delete_source_failure(homedir, config, mocker, session_ma
     co.gui.update_error_status.assert_called_with('Failed to delete source at server')
 
 
-def test_Controller_delete_source(homedir, config, mocker, session_maker):
+def test_Controller_delete_source_not_logged_in(homedir, config, mocker, session_maker):
+    """
+    Deleting a source when not logged in should cause an error.
+
+    Ensure that trying to delete a source when not logged in calls the
+    method that displays an error status in the left sidebar.
+    """
+    mock_gui = mocker.MagicMock()
+    co = Controller('http://localhost', mock_gui, session_maker, homedir)
+    source_db_object = mocker.MagicMock()
+    co.on_action_requiring_login = mocker.MagicMock()
+    co.api = None
+    co.delete_source(source_db_object)
+    co.on_action_requiring_login.assert_called_with()
+
+
+def test_Controller_delete_source(homedir, config, mocker, session_maker, session):
     '''
-    Using the `config` fixture to ensure the config is written to disk.
+    Check that a DeleteSourceJob is submitted when delete_source is called.
     '''
     mock_gui = mocker.MagicMock()
-    mock_source = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     co.call_api = mocker.MagicMock()
     co.api = mocker.MagicMock()
-    co.delete_source(mock_source)
-    co.call_api.assert_called_with(
-        co.api.delete_source,
-        co.on_delete_source_success,
-        co.on_delete_source_failure,
-        mock_source
+
+    mock_success_signal = mocker.MagicMock()
+    mock_failure_signal = mocker.MagicMock()
+    mock_job = mocker.MagicMock(
+        success_signal=mock_success_signal, failure_signal=mock_failure_signal
+    )
+    mock_job_cls = mocker.patch(
+        "securedrop_client.logic.DeleteSourceJob", return_value=mock_job
+    )
+    mock_queue = mocker.patch.object(co, 'api_job_queue')
+
+    source = factory.Source()
+    session.add(source)
+    session.commit()
+
+    co.delete_source(source)
+    mock_job_cls.assert_called_once_with(source.uuid)
+    mock_queue.enqueue.assert_called_once_with(mock_job)
+    mock_success_signal.connect.assert_called_once_with(
+        co.on_delete_source_success, type=Qt.QueuedConnection
+    )
+    mock_failure_signal.connect.assert_called_once_with(
+        co.on_delete_source_failure, type=Qt.QueuedConnection
     )
 
 
