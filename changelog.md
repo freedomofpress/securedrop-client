@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.11
+
+  * Add apparmor profile (#673)
+  * Add failure message for replies (#664)
+  * Move metadata sync to api queue (#640)
+  * Add print integration (#631)
+  * Populate source list immediately upon login (#626)
+
 ## 0.0.10
 
   * Add Python 3.7/buster support (#568, #609)
