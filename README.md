@@ -82,6 +82,36 @@ If you want to persist data across restarts, you will need to run the client wit
 ./run.sh --sdc-home /path/to/my/dir/
 ```
 
+## AppArmor support
+
+An AppArmor profile is available for mandatory access control. When installing securedrop-client from a .deb package, the AppArmor profile will automatically be copied and enforced. Below are instructions to use the profile in non-production scenarios.
+
+### Requirements
+
+1. The entrypoint for the application must be through `/usr/bin/securedrop-client` with application code in `/opt/venvs/securedrop-client`.
+
+2. The kernel must support AppArmor (running `sudo aa-status` will return zero if AppArmor is supported).
+
+3. The `apparmor-utils` package is installed (`sudo apt install apparmor-utils` in Debian).
+
+### Enabling AppArmor
+
+1. Copy `files/usr.bin.securedrop-client` to `/etc/apparmor.d/`.
+
+2. `sudo aa-enforce /etc/apparmor.d/usr.bin.securedrop-client/`.
+
+3. `sudo aa-status` and observe securedrop-client profile is being enforced.
+
+### Testing and updating the AppArmor profile
+
+1. Update the profile in `/etc/apparmor.d/usr.bin.securedrop-client`.
+
+2. `sudo aa-teardown`.
+
+3. `sudo service apparmor restart`.
+
+4. Once you've made all the changes necessary (e.g.: no apparmor errors in `/var/log/syslog`) you can copy `/etc/apparmor.d/usr.bin.securedrop-client` into `files/usr.bin.securedrop-client` in this repository and commit the changes.
+
 ## Debugging
 
 To use `pdb`, add these lines:
