@@ -124,7 +124,7 @@ class TestMain(unittest.TestCase):
         with self.assertRaises(SystemExit):
             main.__main__(test_input_json, p)
 
-    @vcr.use_cassette('fixtures/main_json_response.yaml')
+    @vcr.use_cassette('fixtures/main_input_headers.yaml')
     def test_input_headers(self):
         test_input = {
             "method": "GET",

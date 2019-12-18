@@ -135,7 +135,7 @@ class Proxy:
     def proxy(self):
 
         try:
-            if self.on_save is None:
+            if not self.on_save:
                 self.simple_error(
                     http.HTTPStatus.BAD_REQUEST, "Request on_save callback is not set."
                 )

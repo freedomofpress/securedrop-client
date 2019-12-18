@@ -39,6 +39,6 @@ def __main__(incoming, p):
         req.body = client_req['body']
 
     p.req = req
-    if p.on_save is None:
+    if not p.on_save:
         p.on_save = callbacks.on_save
     p.proxy()
