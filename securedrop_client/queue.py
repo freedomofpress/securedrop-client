@@ -11,6 +11,7 @@ from securedrop_client.api_jobs.base import ApiJob, ApiInaccessibleError, DEFAUL
     PauseQueueJob
 from securedrop_client.api_jobs.downloads import (FileDownloadJob, MessageDownloadJob,
                                                   ReplyDownloadJob, MetadataSyncJob)
+from securedrop_client.api_jobs.sources import DeleteSourceJob
 from securedrop_client.api_jobs.uploads import SendReplyJob
 from securedrop_client.api_jobs.updatestar import UpdateStarJob
 
@@ -45,7 +46,7 @@ class RunnableQueue(QObject):
         FileDownloadJob: 13,  # File downloads processed in separate queue
         MessageDownloadJob: 13,
         ReplyDownloadJob: 13,
-        # DeletionJob: 14,  # Not yet implemented
+        DeleteSourceJob: 14,
         SendReplyJob: 15,
         UpdateStarJob: 16,
         # FlagJob: 16,  # Not yet implemented
