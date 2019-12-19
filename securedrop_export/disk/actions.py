@@ -14,7 +14,7 @@ ENCRYPTED_DEVICE = "encrypted_volume"
 logger = logging.getLogger(__name__)
 
 
-class USBAction(ExportAction):
+class DiskAction(ExportAction):
     def __init__(self, submission):
         self.submission = submission
         self.device = None  # Optional[str]
@@ -193,7 +193,7 @@ class USBAction(ExportAction):
             sys.exit(0)
 
 
-class USBTestAction(USBAction):
+class USBTestAction(DiskAction):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -202,7 +202,7 @@ class USBTestAction(USBAction):
         self.check_usb_connected(exit=True)
 
 
-class USBDiskTestAction(USBAction):
+class DiskTestAction(DiskAction):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -213,7 +213,7 @@ class USBDiskTestAction(USBAction):
         self.check_luks_volume()
 
 
-class USBExportAction(USBAction):
+class DiskExportAction(DiskAction):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

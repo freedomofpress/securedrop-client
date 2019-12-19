@@ -7,7 +7,7 @@ import sys
 from subprocess import CalledProcessError
 
 from securedrop_export import export
-from securedrop_export.usb.actions import USBExportAction, USBTestAction
+from securedrop_export.disk.actions import DiskExportAction, DiskTestAction
 
 TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config.json")
 SAMPLE_OUTPUT_NO_PART = b"disk\ncrypt"  # noqa
@@ -19,7 +19,7 @@ SAMPLE_OUTPUT_USB = b"/dev/sda"  # noqa
 def test_usb_precheck_disconnected(capsys, mocker):
     """Tests the scenario where there are disks connected, but none of them are USB"""
     submission = export.SDExport("testfile", TEST_CONFIG)
-    action = USBTestAction(submission)
+    action = DiskTestAction(submission)
     expected_message = "USB_NOT_CONNECTED"
     assert export.ExportStatus.USB_NOT_CONNECTED.value == expected_message
 
@@ -46,7 +46,7 @@ def test_usb_precheck_disconnected(capsys, mocker):
 def test_usb_precheck_connected(capsys, mocker):
     """Tests the scenario where there is one USB connected"""
     submission = export.SDExport("testfile", TEST_CONFIG)
-    action = USBTestAction(submission)
+    action = DiskTestAction(submission)
 
     # Popen call returns lsblk output
     command_output = mock.MagicMock()
@@ -70,7 +70,7 @@ def test_usb_precheck_connected(capsys, mocker):
 def test_usb_precheck_multiple_devices_connected(capsys, mocker):
     """Tests the scenario where there are multiple USB drives connected"""
     submission = export.SDExport("testfile", TEST_CONFIG)
-    action = USBTestAction(submission)
+    action = DiskTestAction(submission)
 
     # Popen call returns lsblk output
     command_output = mock.MagicMock()
@@ -94,7 +94,7 @@ def test_usb_precheck_multiple_devices_connected(capsys, mocker):
 @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_NO_PART)
 def test_extract_device_name_no_part(mocked_call, capsys):
     submission = export.SDExport("testfile", TEST_CONFIG)
-    action = USBExportAction(submission)
+    action = DiskExportAction(submission)
 
     action.device = "/dev/sda"
 
@@ -106,7 +106,7 @@ def test_extract_device_name_no_part(mocked_call, capsys):
 @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_ONE_PART)
 def test_extract_device_name_single_part(mocked_call, capsys):
     submission = export.SDExport("testfile", TEST_CONFIG)
-    action = USBExportAction(submission)
+    action = DiskExportAction(submission)
 
     action.device = "/dev/sda"
 
@@ -118,7 +118,7 @@ def test_extract_device_name_single_part(mocked_call, capsys):
 @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_MULTI_PART)
 def test_extract_device_name_multiple_part(mocked_call, capsys, mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
-    action = USBExportAction(submission)
+    action = DiskExportAction(submission)
     action.device = "/dev/sda"
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
     expected_message = export.ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED.value
@@ -132,7 +132,7 @@ def test_extract_device_name_multiple_part(mocked_call, capsys, mocker):
 @mock.patch("subprocess.check_call", return_value=0)
 def test_luks_precheck_encrypted_fde(mocked_call, capsys, mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
-    action = USBExportAction(submission)
+    action = DiskExportAction(submission)
 
     expected_message = export.ExportStatus.USB_ENCRYPTED.value
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
@@ -146,7 +146,7 @@ def test_luks_precheck_encrypted_fde(mocked_call, capsys, mocker):
 @mock.patch("subprocess.check_call", return_value=0)
 def test_luks_precheck_encrypted_single_part(mocked_call, capsys, mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
-    action = USBExportAction(submission)
+    action = DiskExportAction(submission)
     action.device = "/dev/sda"
     expected_message = export.ExportStatus.USB_ENCRYPTED.value
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
@@ -159,7 +159,7 @@ def test_luks_precheck_encrypted_single_part(mocked_call, capsys, mocker):
 @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_MULTI_PART)
 def test_luks_precheck_encrypted_multi_part(mocked_call, capsys, mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
-    action = USBExportAction(submission)
+    action = DiskExportAction(submission)
     action.device = "/dev/sda"
     expected_message = export.ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED.value
 
@@ -184,7 +184,7 @@ def test_luks_precheck_encrypted_multi_part(mocked_call, capsys, mocker):
 @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_ONE_PART)
 def test_luks_precheck_encrypted_luks_error(mocked_call, capsys, mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
-    action = USBExportAction(submission)
+    action = DiskExportAction(submission)
     action.device = "/dev/sda"
     expected_message = "USB_ENCRYPTION_NOT_SUPPORTED"
     assert expected_message == export.ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED.value

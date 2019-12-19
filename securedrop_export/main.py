@@ -3,7 +3,7 @@ import logging
 from securedrop_export import export
 from securedrop_export.exceptions import ExportStatus
 from securedrop_export.print.actions import PrintExportAction, PrintTestPageAction
-from securedrop_export.usb.actions import USBDiskTestAction, USBExportAction, USBTestAction
+from securedrop_export.disk.actions import DiskTestAction, DiskExportAction, USBTestAction
 
 logger = logging.getLogger(__name__)
 
@@ -22,9 +22,9 @@ def __main__(submission):
     if submission.archive_metadata.export_method == "usb-test":
         action = USBTestAction(submission)
     elif submission.archive_metadata.export_method == "disk":
-        action = USBExportAction(submission)
+        action = DiskExportAction(submission)
     elif submission.archive_metadata.export_method == "disk-test":
-        action = USBDiskTestAction(submission)
+        action = DiskTestAction(submission)
     elif submission.archive_metadata.export_method == "printer":
         action = PrintExportAction(submission)
     elif submission.archive_metadata.export_method == "printer-test":
