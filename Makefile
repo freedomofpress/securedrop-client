@@ -1,10 +1,13 @@
 # Bandit is a static code analysis tool to detect security vulnerabilities in Python applications
 # https://wiki.openstack.org/wiki/Security/Projects/Bandit
+.PHONY: all
+all: help
+
 .PHONY: bandit
 bandit: ## Run bandit with medium level excluding test-related folders
 	pip install --upgrade pip && \
-        pip install --upgrade bandit!=1.6.0 && \
-	bandit -ll --recursive . --exclude tests,.venv
+		pip install --upgrade bandit!=1.6.0 && \
+	bandit -ll --recursive securedrop_proxy
 
 .PHONY: safety
 safety: ## Runs `safety check` to check python dependencies for vulnerabilities
@@ -16,16 +19,43 @@ safety: ## Runs `safety check` to check python dependencies for vulnerabilities
 			|| exit 1; \
 		done
 
+.PHONY: lint
+lint: ## Run flake8
+	@flake8 securedrop_proxy tests
+
+.PHONY: mypy
+mypy: ## Run mypy static type checker
+	@mypy --ignore-missing-imports securedrop_proxy
+
+
 .PHONY: update-pip-requirements
 update-pip-requirements: ## Updates all Python requirements files via pip-compile.
 	pip-compile --generate-hashes --output-file dev-requirements.txt dev-requirements.in requirements.in
 	pip-compile --generate-hashes --output-file requirements.txt requirements.in
 
 .PHONY: test
-test:
-	python -m unittest -v
+test: clean .coverage ## Runs tests with coverage
 
-# Explaination of the below shell command should it ever break.
+.coverage:
+	@coverage run --source securedrop_proxy -m unittest
+
+.PHONY: browse-coverage
+browse-coverage: .coverage ## Generates and opens HTML coverage report
+	@coverage html
+	@xdg-open htmlcov/index.html 2>/dev/null || open htmlcov/index.html 2>/dev/null
+
+.PHONY: check
+check: clean lint test mypy safety bandit  ## Runs all tests and code checkers
+
+.PHONY: clean
+clean:  ## Clean the workspace of generated resources
+	@rm -rf .mypy_cache build dist *.egg-info .coverage .eggs docs/_build .pytest_cache lib htmlcov .cache && \
+		find . \( -name '*.py[co]' -o -name dropin.cache \) -delete && \
+		find . \( -name '*.bak' -o -name dropin.cache \) -delete && \
+		find . \( -name '*.tgz' -o -name dropin.cache \) -delete && \
+		find . -name __pycache__ -print0 | xargs -0 rm -rf
+
+# Explanation of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##
 # 2. Use sed-like syntax to remove the make targets
 # 3. Format the split fields into $$1) the target name (in blue) and $$2) the target descrption
