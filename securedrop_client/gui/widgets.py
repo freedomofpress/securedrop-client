@@ -26,7 +26,7 @@ from typing import Dict, List, Union  # noqa: F401
 from uuid import uuid4
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QEvent, QTimer, QSize, pyqtBoundSignal, \
     QObject, QPoint
-from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient, QKeySequence
+from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient, QKeySequence, QCursor
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
     QToolButton, QSizePolicy, QPlainTextEdit, QStatusBar, QGraphicsDropShadowEffect
@@ -113,10 +113,12 @@ class TopPane(QWidget):
 
     def set_logged_in(self):
         self.sync_icon.enable()
+        self.sync_icon.setCursor(QCursor(Qt.PointingHandCursor))
         self.setPalette(self.online_palette)
 
     def set_logged_out(self):
         self.sync_icon.disable()
+        self.sync_icon.setCursor(QCursor(Qt.ArrowCursor))
         self.setPalette(self.offline_palette)
 
     def update_activity_status(self, message: str, duration: int):
@@ -227,6 +229,9 @@ class SyncIcon(QLabel):
             self.sync_animation.setScaledSize(QSize(24, 20))
             self.setMovie(self.sync_animation)
             self.sync_animation.start()
+            self.setCursor(QCursor(Qt.WaitCursor))
+        elif data == 'synced':
+            self.setCursor(QCursor(Qt.PointingHandCursor))
 
     def enable(self):
         self.sync_animation = load_movie("sync.gif")
@@ -548,11 +553,19 @@ class UserButton(SvgPushButton):
         self.menu = UserMenu()
         self.setMenu(self.menu)
 
+        # Set cursor.
+        self.setCursor(QCursor(Qt.PointingHandCursor))
+
     def setup(self, controller):
         self.menu.setup(controller)
 
     def set_username(self, username):
-        self.setText(_('{}').format(html.escape(username)))
+        formatted_name = _('{}').format(html.escape(username))
+        self.setText(formatted_name)
+        if len(formatted_name) > 21:
+            # The name will be truncated, so create a tooltip to display full
+            # name if the mouse hovers over the widget.
+            self.setToolTip(_('{}').format(html.escape(username)))
 
 
 class UserMenu(QMenu):
@@ -821,6 +834,9 @@ class SourceList(QListWidget):
     QListView::item:selected {
         background-color: #f3f5f9;
     }
+    QListView::item:hover{
+        border: 500px solid #f9f9f9;
+    }
     '''
 
     def __init__(self):
@@ -962,6 +978,9 @@ class SourceWidget(QWidget):
         layout = QHBoxLayout(self)
         self.setLayout(layout)
 
+        # Set cursor.
+        self.setCursor(QCursor(Qt.PointingHandCursor))
+
         # Remove margins and spacing
         layout.setContentsMargins(self.SIDE_MARGIN, 0, self.SIDE_MARGIN, 0)
         layout.setSpacing(0)
@@ -1073,6 +1092,10 @@ class StarToggleButton(SvgToggleButton):
     css = '''
     #star_button {
         border: none;
+    }
+    #star_button:hover {
+        border: 4px solid #D3D8EA;
+        border-radius: 8px;
     }
     '''
 
@@ -1242,6 +1265,9 @@ class SignInButton(QPushButton):
         self.setStyleSheet(self.CSS)
         self.setFixedHeight(40)
         self.setFixedWidth(140)
+
+        # Set cursor.
+        self.setCursor(QCursor(Qt.PointingHandCursor))
 
         # Set drop shadow effect
         effect = QGraphicsDropShadowEffect(self)
@@ -2671,6 +2697,10 @@ class ReplyBoxWidget(QWidget):
     QPushButton {
         border: none;
     }
+    QPushButton:hover {
+        background: #D3D8EA;
+        border-radius: 8px;
+    }
     QWidget#horizontal_line {
         min-height: 2px;
         max-height: 2px;
@@ -2728,6 +2758,9 @@ class ReplyBoxWidget(QWidget):
 
         # Ensure TAB order from text edit -> send button
         self.setTabOrder(self.text_edit, self.send_button)
+        
+        # Set cursor.
+        self.send_button.setCursor(QCursor(Qt.PointingHandCursor))
 
         # Add widgets to replybox
         replybox_layout.addWidget(self.text_edit)
@@ -2828,6 +2861,8 @@ class ReplyTextEdit(QPlainTextEdit):
         self.placeholder.setParent(self)
         self.placeholder.move(QPoint(3, 4))  # make label match text below
         self.set_logged_in()
+        # Set cursor.
+        self.setCursor(QCursor(Qt.IBeamCursor))
 
     def focusInEvent(self, e):
         # override default behavior: when reply text box is focused, the placeholder
@@ -2941,6 +2976,8 @@ class SourceMenuButton(QToolButton):
         self.setMenu(self.menu)
 
         self.setPopupMode(QToolButton.InstantPopup)
+        # Set cursor.
+        self.setCursor(QCursor(Qt.PointingHandCursor))
 
 
 class TitleLabel(QLabel):

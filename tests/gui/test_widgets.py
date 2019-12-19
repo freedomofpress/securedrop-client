@@ -404,6 +404,15 @@ def test_UserButton_set_username():
     ub.text() == 'test_username'
 
 
+def test_UserButton_set_long_username(mocker):
+    ub = UserButton()
+    ub.setToolTip = mocker.MagicMock()
+    ub.set_username('test_username_that_is_very_very_long')
+    ub.setToolTip.assert_called_once_with(
+        'test_username_that_is_very_very_long'
+    )
+
+
 def test_UserMenu_setup(mocker):
     um = UserMenu()
     controller = mocker.MagicMock()
