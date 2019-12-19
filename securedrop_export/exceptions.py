@@ -40,5 +40,9 @@ class TimeoutException(Exception):
     pass
 
 
-def handler(s, f):
+def handler(signum, frame):
+    """
+    This is a signal handler used for raising timeouts:
+    https://docs.python.org/3/library/signal.html#signal.signal
+    """
     raise TimeoutException("Timeout")
