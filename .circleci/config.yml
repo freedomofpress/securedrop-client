@@ -7,15 +7,7 @@ common-steps:
         virtualenv .venv
         source .venv/bin/activate
         pip install --require-hashes -r dev-requirements.txt
-        make test
-
-  - &check_python_dependencies_for_vulns
-    run:
-      name: Check Python dependencies for CVEs
-      command: |
-        set -e
-        source .venv/bin/activate
-        make safety
+        make check
 
   - &install_packaging_dependencies
     run:
@@ -81,7 +73,6 @@ jobs:
     steps:
       - checkout
       - *run_tests
-      - *check_python_dependencies_for_vulns
 
   test-buster:
     docker:
@@ -89,7 +80,6 @@ jobs:
     steps:
       - checkout
       - *run_tests
-      - *check_python_dependencies_for_vulns
 
 workflows:
   version: 2

@@ -6,12 +6,9 @@
 # called with exactly one argument: the path to its config file. See
 # the README for configuration options.
 
-import json
 import logging
 import os
-import subprocess
 import sys
-import uuid
 
 from logging.handlers import TimedRotatingFileHandler
 
