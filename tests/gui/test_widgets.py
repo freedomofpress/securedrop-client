@@ -6,7 +6,8 @@ import pytest
 
 from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtGui import QFocusEvent
-from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QMessageBox, QMainWindow
+from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QMessageBox, QMainWindow, \
+    QLineEdit
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from securedrop_client import db, logic
@@ -16,7 +17,7 @@ from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, Lo
     DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, LeftPane, RefreshButton, \
     ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
     ReplyBoxWidget, ReplyTextEdit, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, \
-    LoginErrorBar, EmptyConversationView, ExportDialog, PrintDialog
+    LoginErrorBar, EmptyConversationView, ExportDialog, PrintDialog, PasswordEdit
 from tests import factory
 
 
@@ -2320,6 +2321,15 @@ def test_DeleteSourceAction_init(mocker):
         None,
         mock_controller
     )
+
+
+def test_PasswordEdit(mocker):
+    passwordline = PasswordEdit(None)
+    passwordline.togglepasswordAction.trigger()
+
+    assert passwordline.echoMode() == QLineEdit.Normal
+    passwordline.togglepasswordAction.trigger()
+    assert passwordline.echoMode() == QLineEdit.Password
 
 
 def test_DeleteSourceAction_trigger(mocker):
