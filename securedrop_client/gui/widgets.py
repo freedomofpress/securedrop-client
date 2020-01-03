@@ -2289,18 +2289,7 @@ class ExportDialog(QDialog):
 
     @pyqtSlot(object)
     def _on_preflight_check_call_failure(self, error: ExportError):
-        # The first time we see a CALLED_PROCESS_ERROR, tell the user to insert the USB device
-        # in case the issue is that the Export VM cannot start due to a USB device being
-        # unavailable for attachment. According to the Qubes docs:
-        #
-        #   "If the device is unavailable (physically missing or sourceVM not started), booting
-        #    the targetVM fails."
-        #
-        # For information, see https://www.qubes-os.org/doc/device-handling
-        if error.status == ExportStatus.CALLED_PROCESS_ERROR.value:
-            self._request_to_insert_usb_device()
-        else:
-            self._update(error.status)
+        self._update(error.status)
 
     @pyqtSlot(object)
     def _on_export_usb_call_failure(self, error: ExportError):

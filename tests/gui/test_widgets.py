@@ -1556,9 +1556,9 @@ def test_ExportDialog_export(mocker):
     controller.run_export_preflight_checks.assert_called_with()
 
 
-def test_ExportDialog_pre_flight_request_to_insert_usb_device_on_CALLED_PROCESS_ERROR(mocker):
+def test_ExportDialog_pre_flight_updates_dialog_on_CALLED_PROCESS_ERROR(mocker):
     """
-    Ensure request to insert USB device on CALLED_PROCESS_ERROR during pre-flight.
+    Ensure CALLED_PROCESS_ERROR during pre-flight updates the dialog with the status code.
     """
     controller = mocker.MagicMock()
     called_process_error = ExportError(ExportStatus.CALLED_PROCESS_ERROR.value)
@@ -1571,13 +1571,13 @@ def test_ExportDialog_pre_flight_request_to_insert_usb_device_on_CALLED_PROCESS_
     export_dialog._on_preflight_check_call_failure(called_process_error)
 
     export_dialog._request_passphrase.assert_not_called()
-    export_dialog._request_to_insert_usb_device.assert_called_once_with()
-    export_dialog._update.assert_not_called()
+    export_dialog._request_to_insert_usb_device.assert_not_called()
+    export_dialog._update.assert_called_once_with(called_process_error.status)
 
 
-def test_ExportDialog_export_request_to_insert_usb_device_on_CALLED_PROCESS_ERROR(mocker):
+def test_ExportDialog_export_updates_dialog_on_CALLED_PROCESS_ERROR(mocker):
     """
-    Ensure request to insert USB device on CALLED_PROCESS_ERROR during export.
+    Ensure CALLED_PROCESS_ERROR during export updates the dialog with the status code.
     """
     controller = mocker.MagicMock()
     called_process_error = ExportError(ExportStatus.CALLED_PROCESS_ERROR.value)
