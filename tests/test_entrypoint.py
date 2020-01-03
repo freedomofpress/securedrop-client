@@ -3,7 +3,6 @@ import http
 import io
 import json
 import os
-import sys
 import tempfile
 import unittest.mock
 
@@ -33,7 +32,9 @@ class TestEntrypoint(unittest.TestCase):
         output = None
         with unittest.mock.patch(
             "sys.argv", new_callable=lambda: ["sd-proxy", config_path]
-        ) as mock_argv, unittest.mock.patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+        ) as mock_argv, unittest.mock.patch(  # noqa: F841
+            "sys.stdout", new_callable=io.StringIO
+        ) as mock_stdout:
             with self.assertRaises(SystemExit), sdhome():
                 entrypoint.start()
             output = mock_stdout.getvalue()
@@ -52,7 +53,9 @@ class TestEntrypoint(unittest.TestCase):
         output = None
         with sdhome() as home:
             os.chmod(home, 0o0444)
-            with unittest.mock.patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+            with unittest.mock.patch(
+                "sys.stdout", new_callable=io.StringIO
+            ) as mock_stdout:
                 with self.assertRaises(SystemExit):
                     entrypoint.start()
                 output = mock_stdout.getvalue()
@@ -64,10 +67,10 @@ class TestEntrypoint(unittest.TestCase):
         self.assertIn("Permission denied: ", body["error"])
 
     def test_wrong_number_of_arguments(self):
-        with sdhome() as home:
+        with sdhome() as home:  # noqa: F841
             with unittest.mock.patch(
                 "sys.argv", new_callable=lambda: ["sd-proxy"]
-            ) as mock_argv, unittest.mock.patch(
+            ) as mock_argv, unittest.mock.patch(  # noqa: F841
                 "sys.stdout", new_callable=io.StringIO
             ) as mock_stdout:
                 with self.assertRaises(SystemExit):
@@ -85,23 +88,21 @@ class TestEntrypoint(unittest.TestCase):
         config_path = "tests/files/valid-config.yaml"
         self.assertTrue(os.path.exists(config_path))
 
-        with sdhome() as home:
+        with sdhome() as home:  # noqa: F841
             with unittest.mock.patch(
                 "sys.stdin", new_callable=lambda: io.StringIO("")
-            ) as mock_stdin, unittest.mock.patch(
+            ) as mock_stdin, unittest.mock.patch(  # noqa: F841
                 "sys.stdout", new_callable=io.StringIO
             ) as mock_stdout, unittest.mock.patch(
                 "sys.argv", new_callable=lambda: ["sd-proxy", config_path]
-            ) as mock_argv:
+            ) as mock_argv:  # noqa: F841
                 entrypoint.start()
                 output = mock_stdout.getvalue()
 
         response = json.loads(output)
         self.assertEqual(response["status"], http.HTTPStatus.BAD_REQUEST)
         body = json.loads(response["body"])
-        self.assertEqual(
-            body["error"], "Invalid JSON in request"
-        )
+        self.assertEqual(body["error"], "Invalid JSON in request")
 
     @vcr.use_cassette("fixtures/main_json_response.yaml")
     def test_json_response(self):
@@ -114,13 +115,13 @@ class TestEntrypoint(unittest.TestCase):
         }
 
         output = None
-        with sdhome() as home, unittest.mock.patch(
+        with sdhome() as home, unittest.mock.patch(  # noqa: F841
             "sys.stdin", new_callable=lambda: io.StringIO(json.dumps(test_input))
-        ) as mock_stding, unittest.mock.patch(
+        ) as mock_stding, unittest.mock.patch(  # noqa: F841
             "sys.stdout", new_callable=io.StringIO
         ) as mock_stdout, unittest.mock.patch(
             "sys.argv", new_callable=lambda: ["sd-proxy", config_path]
-        ) as mock_argv:
+        ) as mock_argv:  # noqa: F841
             entrypoint.start()
             output = mock_stdout.getvalue()
 

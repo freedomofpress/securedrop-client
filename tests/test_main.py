@@ -16,20 +16,20 @@ from securedrop_proxy import proxy
 class TestMain(unittest.TestCase):
     def setUp(self):
         self.conf = config.Conf()
-        self.conf.host = 'jsonplaceholder.typicode.com'
-        self.conf.scheme = 'https'
+        self.conf.host = "jsonplaceholder.typicode.com"
+        self.conf.scheme = "https"
         self.conf.port = 443
         self.conf.dev = True
 
-    @vcr.use_cassette('fixtures/main_json_response.yaml')
+    @vcr.use_cassette("fixtures/main_json_response.yaml")
     def test_json_response(self):
         test_input_json = """{ "method": "GET",
                             "path_query": "/posts?userId=1" }"""
 
         req = proxy.Req()
-        req.method = 'GET'
-        req.path_query = ''
-        req.headers = {'Accept': 'application/json'}
+        req.method = "GET"
+        req.path_query = ""
+        req.headers = {"Accept": "application/json"}
 
         # Use custom callbacks
         def on_save(res, fh, conf):
@@ -51,10 +51,10 @@ class TestMain(unittest.TestCase):
             sys.stdout = saved_stdout
 
         response = json.loads(output)
-        for item in json.loads(response['body']):
-            self.assertEqual(item['userId'], 1)
+        for item in json.loads(response["body"]):
+            self.assertEqual(item["userId"], 1)
 
-    @vcr.use_cassette('fixtures/main_non_json_response.yaml')
+    @vcr.use_cassette("fixtures/main_non_json_response.yaml")
     def test_non_json_response(self):
         test_input_json = """{ "method": "GET",
                                "path_query": "" }"""
@@ -64,9 +64,9 @@ class TestMain(unittest.TestCase):
 
             subprocess.run(["cp", fh.name, "/tmp/{}".format(self.fn)])
 
-            res.headers['X-Origin-Content-Type'] = res.headers['Content-Type']
-            res.headers['Content-Type'] = 'application/json'
-            res.body = json.dumps({'filename': self.fn})
+            res.headers["X-Origin-Content-Type"] = res.headers["Content-Type"]
+            res.headers["Content-Type"] = "application/json"
+            res.body = json.dumps({"filename": self.fn})
 
         self.p = proxy.Proxy(self.conf, proxy.Req(), on_save)
 
@@ -80,10 +80,10 @@ class TestMain(unittest.TestCase):
             sys.stdout = saved_stdout
 
         response = json.loads(output)
-        self.assertEqual(response['status'], 200)
+        self.assertEqual(response["status"], 200)
 
         # The proxy should have created a filename in the response body
-        self.assertIn('filename', response['body'])
+        self.assertIn("filename", response["body"])
 
         # The file should not be empty
         with open("/tmp/{}".format(self.fn)) as f:
@@ -100,7 +100,7 @@ class TestMain(unittest.TestCase):
 
         def on_done(res):
             res = res.__dict__
-            self.assertEqual(res['status'], 400)
+            self.assertEqual(res["status"], 400)
             sys.exit(1)
 
         p = proxy.Proxy(self.conf, proxy.Req(), on_save, on_done)
@@ -116,20 +116,20 @@ class TestMain(unittest.TestCase):
 
         def on_done(res):
             res = res.__dict__
-            self.assertEqual(res['status'], 400)
-            self.assertEqual(res['body'], '{"error": "Missing keys in request"}')
+            self.assertEqual(res["status"], 400)
+            self.assertEqual(res["body"], '{"error": "Missing keys in request"}')
             sys.exit(1)
 
         p = proxy.Proxy(self.conf, proxy.Req(), on_save, on_done)
         with self.assertRaises(SystemExit):
             main.__main__(test_input_json, p)
 
-    @vcr.use_cassette('fixtures/main_input_headers.yaml')
+    @vcr.use_cassette("fixtures/main_input_headers.yaml")
     def test_input_headers(self):
         test_input = {
             "method": "GET",
             "path_query": "/posts?userId=1",
-            "headers": { "X-Test-Header": "th" }
+            "headers": {"X-Test-Header": "th"},
         }
 
         def on_save(fh, res, conf):
@@ -139,12 +139,12 @@ class TestMain(unittest.TestCase):
         main.__main__(json.dumps(test_input), p)
         self.assertEqual(p.req.headers, test_input["headers"])
 
-    @vcr.use_cassette('fixtures/main_input_body.yaml')
+    @vcr.use_cassette("fixtures/main_input_body.yaml")
     def test_input_body(self):
         test_input = {
             "method": "POST",
             "path_query": "/posts",
-            "body": { "id": 42, "title": "test" }
+            "body": {"id": 42, "title": "test"},
         }
 
         def on_save(fh, res, conf):
@@ -154,7 +154,7 @@ class TestMain(unittest.TestCase):
         main.__main__(json.dumps(test_input), p)
         self.assertEqual(p.req.body, test_input["body"])
 
-    @vcr.use_cassette('fixtures/main_non_json_response.yaml')
+    @vcr.use_cassette("fixtures/main_non_json_response.yaml")
     def test_default_callbacks(self):
         test_input = {
             "method": "GET",
@@ -162,7 +162,11 @@ class TestMain(unittest.TestCase):
         }
 
         p = proxy.Proxy(self.conf, proxy.Req())
-        with unittest.mock.patch("securedrop_proxy.callbacks.on_done") as on_done, unittest.mock.patch("securedrop_proxy.callbacks.on_save") as on_save:
+        with unittest.mock.patch(
+            "securedrop_proxy.callbacks.on_done"
+        ) as on_done, unittest.mock.patch(
+            "securedrop_proxy.callbacks.on_save"
+        ) as on_save:
             main.__main__(json.dumps(test_input), p)
             self.assertEqual(on_save.call_count, 1)
             self.assertEqual(on_done.call_count, 1)
