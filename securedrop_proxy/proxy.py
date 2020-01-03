@@ -35,14 +35,14 @@ class Proxy:
         self.req = req
         self.res = None
         self.on_save = on_save
-        if on_done is not None:
+        if on_done:
             self.on_done = on_done
 
         self.timeout = float(timeout) if timeout else 10
 
         self._prepared_request = None
 
-    def on_done(self, res):
+    def on_done(self, res):  # type: ignore
         callbacks.on_done(res)
 
     @staticmethod
