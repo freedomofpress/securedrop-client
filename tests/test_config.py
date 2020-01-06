@@ -90,3 +90,7 @@ class TestConfig(unittest.TestCase):
 
         with self.assertRaises(SystemExit):
             config.read_conf('tests/files/missing-target-vm.yaml', self.p)
+
+    def test_dev_config(self):
+        c = config.read_conf('tests/files/dev-config.yaml', self.p)
+        self.assertTrue(c.dev)

@@ -21,6 +21,7 @@ def __main__(incoming, p):
         logging.error(e)
         p.simple_error(400, 'Invalid JSON in request')
         p.on_done(p.res)
+        return
 
     req = proxy.Req()
     try:
@@ -38,6 +39,6 @@ def __main__(incoming, p):
         req.body = client_req['body']
 
     p.req = req
-    p.on_save = callbacks.on_save
-    p.on_done = callbacks.on_done
+    if not p.on_save:
+        p.on_save = callbacks.on_save
     p.proxy()

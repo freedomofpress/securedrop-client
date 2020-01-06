@@ -5,6 +5,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+import vcr
+
 from securedrop_proxy import callbacks
 from securedrop_proxy import config
 from securedrop_proxy import proxy
@@ -76,3 +78,52 @@ class TestCallbacks(unittest.TestCase):
                          'application/json')
         self.assertEqual(self.res.status, 200)
         self.assertIn('filename', self.res.body)
+
+    @vcr.use_cassette("fixtures/proxy_callbacks.yaml")
+    def test_custom_callbacks(self):
+        """
+        Test the handlers in a real proxy request.
+        """
+        conf = config.Conf()
+        conf.host = 'jsonplaceholder.typicode.com'
+        conf.scheme = 'https'
+        conf.port = 443
+
+        req = proxy.Req()
+        req.method = "GET"
+
+        on_save_addition = "added by the on_save callback\n"
+        on_done_addition = "added by the on_done callback\n"
+
+        def on_save(fh, res, conf):
+            res.headers['Content-Type'] = 'text/plain'
+            res.body = on_save_addition
+
+        def on_done(res):
+            res.headers['Content-Type'] = 'text/plain'
+            res.body += on_done_addition
+
+        p = proxy.Proxy(self.conf, req, on_save=on_save, on_done=on_done)
+        p.proxy()
+
+        self.assertEqual(
+            p.res.body,
+            "{}{}".format(on_save_addition, on_done_addition)
+        )
+
+    @vcr.use_cassette("fixtures/proxy_callbacks.yaml")
+    def test_production_on_save(self):
+        """
+        Test on_save's production file handling.
+        """
+        conf = config.Conf()
+        conf.host = 'jsonplaceholder.typicode.com'
+        conf.scheme = 'https'
+        conf.port = 443
+        conf.dev = False
+        conf.target_vm = "sd-svs-dispvm"
+
+        with patch("subprocess.run") as patched_run:
+            fh = tempfile.NamedTemporaryFile()
+            callbacks.on_save(fh, self.res, conf)
+            self.assertEqual(patched_run.call_args[0][0][0], "qvm-move-to-vm")
