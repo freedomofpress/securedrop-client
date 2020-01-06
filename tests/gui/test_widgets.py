@@ -1279,6 +1279,7 @@ def test_FileWidget_init_file_not_downloaded(mocker, source, session):
     assert not fw.download_button.isHidden()
     assert not fw.no_file_name.isHidden()
     assert fw.export_button.isHidden()
+    assert fw.middot.isHidden()
     assert fw.print_button.isHidden()
     assert fw.file_name.isHidden()
 
@@ -1301,6 +1302,7 @@ def test_FileWidget_init_file_downloaded(mocker, source, session):
     assert fw.download_button.isHidden()
     assert fw.no_file_name.isHidden()
     assert not fw.export_button.isHidden()
+    assert not fw.middot.isHidden()
     assert not fw.print_button.isHidden()
     assert not fw.file_name.isHidden()
 
@@ -1409,6 +1411,7 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_matches(mocker, sou
 
     assert fw.download_button.isHidden()
     assert not fw.export_button.isHidden()
+    assert not fw.middot.isHidden()
     assert not fw.print_button.isHidden()
     assert fw.no_file_name.isHidden()
     assert not fw.file_name.isHidden()
@@ -1436,6 +1439,7 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(
     fw.clear.assert_not_called()
     assert fw.download_button.isHidden()
     assert not fw.export_button.isHidden()
+    assert not fw.middot.isHidden()
     assert not fw.print_button.isHidden()
     assert fw.no_file_name.isHidden()
     assert not fw.file_name.isHidden()
