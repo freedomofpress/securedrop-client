@@ -26,7 +26,7 @@ from typing import Dict, List, Union  # noqa: F401
 from uuid import uuid4
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QEvent, QTimer, QSize, pyqtBoundSignal, \
     QObject, QPoint
-from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient
+from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient, QKeySequence
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
     QToolButton, QSizePolicy, QPlainTextEdit, QStatusBar, QGraphicsDropShadowEffect
@@ -2561,6 +2561,11 @@ class ReplyBoxWidget(QWidget):
         button_icon = QIcon(button_pixmap)
         self.send_button.setIcon(button_icon)
         self.send_button.setIconSize(QSize(56.5, 47))
+        self.send_button.setShortcut(QKeySequence("Ctrl+Return"))
+        self.send_button.setDefault(True)
+
+        # Ensure TAB order from text edit -> send button
+        self.setTabOrder(self.text_edit, self.send_button)
 
         # Add widgets to replybox
         replybox_layout.addWidget(self.text_edit)
@@ -2640,6 +2645,8 @@ class ReplyTextEdit(QPlainTextEdit):
 
         self.setObjectName('reply_textedit')
         self.setStyleSheet(self.CSS)
+
+        self.setTabChangesFocus(True)  # Needed so we can TAB to send button.
 
         self.placeholder = QLabel()
         self.placeholder.setObjectName("reply_placeholder")

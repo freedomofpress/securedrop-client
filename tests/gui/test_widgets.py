@@ -2367,6 +2367,8 @@ def test_ReplyBoxWidget_init(mocker):
     rb = ReplyBoxWidget(mocker.MagicMock(), mocker.MagicMock())
     assert rb.text_edit.isEnabled()
     assert not rb.send_button.isHidden()
+    assert rb.send_button.isDefault() is True  # Needed for "Enter" to work.
+    assert rb.send_button.shortcut().toString() == "Ctrl+Return"
 
 
 def test_ReplyBoxWidget_init_no_auth(mocker):
