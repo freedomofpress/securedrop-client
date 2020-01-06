@@ -1741,7 +1741,10 @@ class FileWidget(QWidget):
         font-family: 'Source Sans Pro';
         font-weight: 500;
         font-size: 13px;
-        color: #0065db;
+        color: #2A319D;
+    }
+    QPushButton#export_print:hover {
+        color: #05a6fe;
     }
     QPushButton#download_button {
         border: none;
@@ -1833,11 +1836,13 @@ class FileWidget(QWidget):
         self.export_button = QPushButton(_('EXPORT'))
         self.export_button.setObjectName('export_print')
         self.export_button.setFont(file_buttons_font)
+        self.middot = QLabel("·")
         self.print_button = QPushButton(_('PRINT'))
         self.print_button.setObjectName('export_print')
         self.print_button.setFont(file_buttons_font)
         file_options_layout.addWidget(self.download_button)
         file_options_layout.addWidget(self.export_button)
+        file_options_layout.addWidget(self.middot)
         file_options_layout.addWidget(self.print_button)
 
         self.download_button.installEventFilter(self)
@@ -1867,10 +1872,12 @@ class FileWidget(QWidget):
             self.download_button.hide()
             self.no_file_name.hide()
             self.export_button.show()
+            self.middot.show()
             self.print_button.show()
             self.file_name.show()
         else:
             self.export_button.hide()
+            self.middot.hide()
             self.print_button.hide()
             self.file_name.hide()
             self.download_button.show()
@@ -1901,6 +1908,7 @@ class FileWidget(QWidget):
                 self.download_button.hide()
                 self.no_file_name.hide()
                 self.export_button.show()
+                self.middot.show()
                 self.print_button.show()
                 self.file_name.show()
 
