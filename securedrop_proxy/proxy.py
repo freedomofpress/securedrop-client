@@ -6,52 +6,157 @@ import requests
 import tempfile
 import werkzeug
 
-import securedrop_proxy.version as version
-from securedrop_proxy import callbacks
+import os
+import subprocess
+import sys
+import uuid
+import yaml
+from typing import Dict, Optional
 
+import securedrop_proxy.version as version
+
+from tempfile import _TemporaryFileWrapper  # type: ignore
 
 logger = logging.getLogger(__name__)
 
 
+class Conf:
+    scheme = ""
+    host = ""
+    port = 0
+    dev = False
+    target_vm = ""
+
+
 class Req:
-    def __init__(self):
+    def __init__(self) -> None:
         self.method = ""
         self.path_query = ""
-        self.body = None
-        self.headers = {}
+        self.body = ""
+        self.headers: Dict[str, str] = {}
 
 
 class Response:
-    def __init__(self, status):
+    def __init__(self, status: int) -> None:
         self.status = status
-        self.body = None
-        self.headers = {}
+        self.body = ""
+        self.headers: Dict[str, str] = {}
         self.version = version.version
 
 
 class Proxy:
-    def __init__(self, conf=None, req=Req(), on_save=None, on_done=None, timeout: float = None):
-        self.conf = conf
-        self.req = req
-        self.res = None
-        self.on_save = on_save
-        if on_done:
-            self.on_done = on_done
+    def __init__(
+        self, conf_path: str, req: Req = Req(), timeout: float = None,
+    ) -> None:
+        # The configuration path for Proxy is a must.
+        self.read_conf(conf_path)
 
+        self.req = req
+        self.res: Optional[Response] = None
         self.timeout = float(timeout) if timeout else 10
 
         self._prepared_request = None
 
-    def on_done(self, res):  # type: ignore
-        callbacks.on_done(res)
+    def on_done(self) -> None:
+        print(json.dumps(self.res.__dict__))
 
     @staticmethod
-    def valid_path(path):
+    def valid_path(path: str) -> bool:
         u = furl.furl(path)
 
         if u.host is not None:
             return False
         return True
+
+    def err_on_done(self):
+        print(json.dumps(self.res.__dict__))
+        sys.exit(1)
+
+    def read_conf(self, conf_path: str) -> None:
+
+        if not os.path.isfile(conf_path):
+            self.simple_error(
+                500, "Configuration file does not exist at {}".format(conf_path)
+            )
+            self.err_on_done()
+
+        try:
+            with open(conf_path) as fh:
+                conf_in = yaml.safe_load(fh)
+        except yaml.YAMLError:
+            self.simple_error(
+                500,
+                "YAML syntax error while reading configuration file {}".format(
+                    conf_path
+                ),
+            )
+            self.err_on_done()
+        except Exception:
+            self.simple_error(
+                500,
+                "Error while opening or reading configuration file {}".format(
+                    conf_path
+                ),
+            )
+            self.err_on_done()
+
+        req_conf_keys = set(("host", "scheme", "port"))
+        missing_keys = req_conf_keys - set(conf_in.keys())
+        if len(missing_keys) > 0:
+            self.simple_error(
+                500, "Configuration file missing required keys: {}".format(missing_keys)
+            )
+            self.err_on_done()
+
+        self.conf = Conf()
+        self.conf.host = conf_in["host"]
+        self.conf.scheme = conf_in["scheme"]
+        self.conf.port = conf_in["port"]
+
+        if "dev" in conf_in and conf_in["dev"]:
+            self.conf.dev = True
+        else:
+            if "target_vm" not in conf_in:
+                self.simple_error(
+                    500,
+                    (
+                        "Configuration file missing `target_vm` key, which is required "
+                        "when not in development mode"
+                    ),
+                )
+                self.err_on_done()
+
+            self.conf.target_vm = conf_in["target_vm"]
+
+    # callback for handling non-JSON content. in production-like
+    # environments, we want to call `qvm-move-to-vm` (and expressly not
+    # `qvm-move`, since we want to include the destination VM name) to
+    # move the content to the target VM. for development and testing, we
+    # keep the file on the local VM.
+    #
+    # In any case, this callback mutates the given result object (in
+    # `res`) to include the name of the new file, or to indicate errors.
+    def on_save(self, fh: _TemporaryFileWrapper, res: Response) -> None:
+        fn = str(uuid.uuid4())
+
+        try:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                tmpfile = os.path.join(os.path.abspath(tmpdir), fn)
+                subprocess.run(["cp", fh.name, tmpfile])
+                if self.conf.dev is not True:
+                    subprocess.run(["qvm-move-to-vm", self.conf.target_vm, tmpfile])
+        except Exception:
+            res.status = 500
+            res.headers["Content-Type"] = "application/json"
+            res.headers["X-Origin-Content-Type"] = res.headers["Content-Type"]
+            res.body = json.dumps(
+                {"error": "Unhandled error while handling non-JSON content, sorry"}
+            )
+            return
+
+        res.headers["Content-Type"] = "application/json"
+        res.headers["X-Origin-Content-Type"] = res.headers["Content-Type"]
+        res.body = json.dumps({"filename": fn})
 
     def simple_error(self, status, err):
         res = Response(status)
@@ -60,7 +165,7 @@ class Proxy:
 
         self.res = res
 
-    def prep_request(self):
+    def prep_request(self) -> None:
 
         scheme = self.conf.scheme
         host = self.conf.host
@@ -83,14 +188,13 @@ class Proxy:
         url.path.normalize()
 
         preq = requests.Request(method, url.url)
-        preq.stream = True
         preq.headers = self.req.headers
         preq.data = self.req.body
         prep = preq.prepare()
 
         self._prepared_request = prep
 
-    def handle_json_response(self):
+    def handle_json_response(self) -> None:
 
         res = Response(self._presp.status_code)
 
@@ -114,11 +218,11 @@ class Proxy:
 
         res.headers = self._presp.headers
 
-        self.on_save(fh, res, self.conf)
+        self.on_save(fh, res)
 
         self.res = res
 
-    def handle_response(self):
+    def handle_response(self) -> None:
         logger.debug("Handling response")
 
         ctype = werkzeug.http.parse_options_header(self._presp.headers["content-type"])
@@ -128,11 +232,14 @@ class Proxy:
         else:
             self.handle_non_json_response()
 
+        # https://mypy.readthedocs.io/en/latest/kinds_of_types.html#union-types
+        # To make sure that mypy knows the type of self.res is not None.
+        assert self.res
         # headers is a Requests class which doesn't JSON serialize.
         # coerce it into a normal dict so it will
         self.res.headers = dict(self.res.headers)
 
-    def proxy(self):
+    def proxy(self) -> None:
 
         try:
             if not self.on_save:
@@ -162,13 +269,15 @@ class Proxy:
             requests.exceptions.TooManyRedirects,
         ) as e:
             logger.error(e)
-            self.simple_error(http.HTTPStatus.BAD_GATEWAY, "could not connect to server")
+            self.simple_error(
+                http.HTTPStatus.BAD_GATEWAY, "could not connect to server"
+            )
         except requests.exceptions.HTTPError as e:
             logger.error(e)
             try:
                 self.simple_error(
                     e.response.status_code,
-                    http.HTTPStatus(e.response.status_code).phrase.lower()
+                    http.HTTPStatus(e.response.status_code).phrase.lower(),
                 )
             except ValueError:
                 # Return a generic error message when the response
@@ -176,5 +285,7 @@ class Proxy:
                 self.simple_error(e.response.status_code, "unspecified server error")
         except Exception as e:
             logger.error(e)
-            self.simple_error(http.HTTPStatus.INTERNAL_SERVER_ERROR, "internal proxy error")
-        self.on_done(self.res)
+            self.simple_error(
+                http.HTTPStatus.INTERNAL_SERVER_ERROR, "internal proxy error"
+            )
+        self.on_done()
