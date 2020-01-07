@@ -46,16 +46,16 @@ class Response:
 
 class Proxy:
     def __init__(
-        self, conf_path: str, req: Req = Req(), timeout: float = None,
+        self, conf_path: str, req: Req = Req(), timeout: float = 10.0
     ) -> None:
         # The configuration path for Proxy is a must.
         self.read_conf(conf_path)
 
         self.req = req
         self.res: Optional[Response] = None
-        self.timeout = float(timeout) if timeout else 10
+        self.timeout = float(timeout)
 
-        self._prepared_request = None
+        self._prepared_request: Optional[Req] = None
 
     def on_done(self) -> None:
         print(json.dumps(self.res.__dict__))
@@ -158,7 +158,7 @@ class Proxy:
         res.headers["X-Origin-Content-Type"] = res.headers["Content-Type"]
         res.body = json.dumps({"filename": fn})
 
-    def simple_error(self, status, err):
+    def simple_error(self, status: int, err: str) -> None:
         res = Response(status)
         res.body = json.dumps({"error": err})
         res.headers = {"Content-Type": "application/json"}
@@ -203,7 +203,7 @@ class Proxy:
 
         self.res = res
 
-    def handle_non_json_response(self):
+    def handle_non_json_response(self) -> None:
 
         res = Response(self._presp.status_code)
 
@@ -242,13 +242,10 @@ class Proxy:
     def proxy(self) -> None:
 
         try:
-            if not self.on_save:
-                self.simple_error(
-                    http.HTTPStatus.BAD_REQUEST, "Request on_save callback is not set."
-                )
-                raise ValueError("Request on_save callback is not set.")
 
             self.prep_request()
+            # To confirm that we have a prepared request before the proxy call
+            assert self._prepared_request
             logger.debug("Sending request")
             s = requests.Session()
             self._presp = s.send(self._prepared_request, timeout=self.timeout)
