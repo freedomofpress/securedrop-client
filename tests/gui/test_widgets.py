@@ -1914,25 +1914,6 @@ def test_ConversationView_update_conversation_position_follow(mocker, homedir):
     cv.scroll.verticalScrollBar().setValue.assert_called_once_with(6000)
 
 
-def test_ConversationView_update_conversation_position_stay_fixed(mocker, homedir):
-    """
-    Check the signal handler does not change the conversation position when
-    journalist is reading older messages
-    """
-    mocked_source = mocker.MagicMock()
-    mocked_controller = mocker.MagicMock()
-
-    cv = ConversationView(mocked_source, mocked_controller)
-
-    cv.scroll.verticalScrollBar().value = mocker.MagicMock(return_value=5500)
-    cv.scroll.viewport().height = mocker.MagicMock(return_value=500)
-    cv.scroll.verticalScrollBar().setValue = mocker.MagicMock()
-
-    cv.update_conversation_position(0, 6000)
-
-    cv.scroll.verticalScrollBar().setValue.assert_not_called()
-
-
 def test_ConversationView_add_message(mocker, session, source):
     """
     Adding a message results in a new MessageWidget added to the layout.

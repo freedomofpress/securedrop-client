@@ -2392,11 +2392,7 @@ class ConversationView(QWidget):
         Handler called when a new item is added to the conversation. Ensures
         it's scrolled to the bottom and thus visible.
         """
-        current_val = self.scroll.verticalScrollBar().value()
-        viewport_height = self.scroll.viewport().height()
-
-        if current_val + viewport_height > max_val:
-            self.scroll.verticalScrollBar().setValue(max_val)
+        self.scroll.verticalScrollBar().setValue(max_val)
 
     def add_message(self, message: Message) -> None:
         """
