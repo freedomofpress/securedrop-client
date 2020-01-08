@@ -55,6 +55,11 @@ class Export(QObject):
         'device': 'usb-test'
     }
 
+    START_EXPORT_VM_FN = 'start-vm.sd-export'
+    START_EXPORT_VM_METADATA = {
+        'device': 'start-vm'
+    }
+
     DISK_TEST_FN = 'disk-test.sd-export'
     DISK_TEST_METADATA = {
         'device': 'disk-test'
@@ -74,6 +79,9 @@ class Export(QObject):
     DISK_EXPORT_DIR = 'export_data'
 
     # Set up signals for communication with the GUI thread
+    start_export_vm = pyqtSignal()
+    start_export_vm_success = pyqtSignal()
+    start_export_vm_failure = pyqtSignal(object)
     preflight_check_call_failure = pyqtSignal(object)
     preflight_check_call_success = pyqtSignal(str)
     begin_usb_export = pyqtSignal(list, str)
@@ -91,6 +99,7 @@ class Export(QObject):
         self.begin_preflight_check.connect(self.run_preflight_checks, type=Qt.QueuedConnection)
         self.begin_usb_export.connect(self.send_file_to_usb_device, type=Qt.QueuedConnection)
         self.begin_print.connect(self.print, type=Qt.QueuedConnection)
+        self.start_export_vm.connect(self._start_export_vm, type=Qt.QueuedConnection)
 
     def _export_archive(cls, archive_path: str) -> str:
         '''
@@ -183,6 +192,17 @@ class Export(QObject):
         arcname = os.path.join(cls.DISK_EXPORT_DIR, filename)
         archive.add(filepath, arcname=arcname, recursive=False)
 
+    def _run_start_export_vm(self, archive_dir: str) -> None:
+        '''
+        Make sure Export VM is started.
+        '''
+        archive_path = self._create_archive(
+            archive_dir, self.START_EXPORT_VM_FN, self.START_EXPORT_VM_METADATA)
+
+        status = self._export_archive(archive_path)
+        if status:
+            raise ExportError(status)
+
     def _run_usb_test(self, archive_dir: str) -> None:
         '''
         Run usb-test.
@@ -262,6 +282,19 @@ class Export(QObject):
             except ExportError as e:
                 logger.debug('completed preflight checks: failure')
                 self.preflight_check_call_failure.emit(e)
+
+    @pyqtSlot()
+    def _start_export_vm(self) -> None:
+        '''
+        Make sure the Export VM is started.
+        '''
+        with TemporaryDirectory() as temp_dir:
+            try:
+                self._run_start_export_vm(temp_dir)
+                self.start_export_vm_success.emit()
+            except ExportError as e:
+                logger.error(e)
+                self.start_export_vm_failure.emit(e)
 
     @pyqtSlot(list, str)
     def send_file_to_usb_device(self, filepaths: List[str], passphrase: str) -> None:
