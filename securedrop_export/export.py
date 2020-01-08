@@ -125,19 +125,6 @@ class SDExport(object):
         except subprocess.CalledProcessError as ex:
             self.exit_gracefully(msg=error_message, e=ex.output)
 
-    def popup_message(self, msg: str):
-        self.safe_check_call(
-            command=[
-                "notify-send",
-                "--expire-time",
-                "3000",
-                "--icon",
-                "/usr/share/securedrop/icons/sd-logo.png",
-                "SecureDrop: {}".format(msg),
-            ],
-            error_message="Error sending notification:"
-        )
-
 
 class ExportAction(abc.ABC):
     """
