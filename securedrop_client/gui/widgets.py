@@ -2647,7 +2647,11 @@ class ReplyTextEdit(QPlainTextEdit):
         self.setStyleSheet(self.CSS)
 
         self.setTabChangesFocus(True)  # Needed so we can TAB to send button.
-        self.placeholder = None
+
+        self.placeholder = QLabel()
+        self.placeholder.setObjectName("reply_placeholder")
+        self.placeholder.setParent(self)
+        self.placeholder.move(QPoint(3, 4))  # make label match text below
         self.set_logged_in()
 
     def focusInEvent(self, e):
@@ -2662,37 +2666,20 @@ class ReplyTextEdit(QPlainTextEdit):
             self.placeholder.show()
         super(ReplyTextEdit, self).focusOutEvent(e)
 
-    def set_placeholder(self, message):
-        """
-        See #684 for context. Sometimes, the placeholder widget wasn't
-        repainted correctly by Qt when the setText method was used (the text
-        appeared truncated). Therefore, each time the placeholder text
-        is set by this method, the old placeholder is hidden then
-        self.placeholder is re-assigned to new placeholder (with the correct
-        dimensions). At the end of this method the old (now hidden placeholder)
-        goes out of scope and is garbage collected by Python.
-        """
-        if self.placeholder:
-            self.placeholder.hide()
-        self.placeholder = QLabel()
-        self.placeholder.setObjectName("reply_placeholder")
-        self.placeholder.setParent(self)
-        self.placeholder.move(QPoint(3, 4))  # make label match text below
-        self.placeholder.setText(message)
-        self.placeholder.show()
-
     def set_logged_in(self):
         self.setEnabled(True)
         source_name = "<strong><font color=\"#24276d\">{}</font></strong>".format(
             self.source.journalist_designation
         )
         placeholder = _("Compose a reply to ") + source_name
-        self.set_placeholder(placeholder)
+        self.placeholder.setText(placeholder)
+        self.placeholder.adjustSize()
 
     def set_logged_out(self):
         text = "<strong><font color=\"#2a319d\">" + _("Sign in") + " </font></strong>" + \
             _("to compose or send a reply")
-        self.set_placeholder(text)
+        self.placeholder.setText(text)
+        self.placeholder.adjustSize()
         self.setEnabled(False)
 
     def setText(self, text):

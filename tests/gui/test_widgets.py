@@ -2678,24 +2678,6 @@ def test_ReplyTextEdit_set_logged_in(mocker):
     assert source.journalist_designation in rt.placeholder.text()
 
 
-def test_ReplyTextEdit_set_placeholder(mocker):
-    """
-    Checks the placeholder text is updated.
-    """
-    source = mocker.MagicMock()
-    source.journalist_designation = 'journalist designation'
-    controller = mocker.MagicMock()
-    rt = ReplyTextEdit(source, controller)
-    mock_old_placeholder = mocker.MagicMock()
-    rt.placeholder = mock_old_placeholder
-    rt.set_placeholder("Hello, World!")
-    # The old placeholder is hidden and replaced with a new QLabel with the
-    # expected text.
-    mock_old_placeholder.hide.assert_called_once_with()
-    assert rt.placeholder is not mock_old_placeholder
-    assert rt.placeholder.text() == "Hello, World!"
-
-
 def test_update_conversation_maintains_old_items(mocker, session):
     """
     Calling update_conversation deletes and adds old items back to layout
