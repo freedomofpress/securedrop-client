@@ -660,6 +660,14 @@ class Controller(QObject):
         process = QProcess(self)
         process.start(command, args)
 
+    def run_start_export_vm(self):
+        logger.info('Starting Export VM')
+
+        if not self.qubes:
+            return
+
+        self.export.start_export_vm.emit()
+
     def run_export_preflight_checks(self):
         '''
         Run preflight checks to make sure the Export VM is configured correctly.
@@ -667,6 +675,7 @@ class Controller(QObject):
         logger.info('Running export preflight checks')
 
         if not self.qubes:
+            self.export.export_usb_call_success.emit()
             return
 
         self.export.begin_preflight_check.emit()
@@ -705,6 +714,7 @@ class Controller(QObject):
             return
 
         if not self.qubes:
+            self.export.print_call_success.emit()
             return
 
         path_to_file_with_original_name = self.get_path_to_file_with_original_name(
