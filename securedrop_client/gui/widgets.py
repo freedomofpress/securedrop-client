@@ -1557,9 +1557,10 @@ class SpeechBubble(QWidget):
     TOP_MARGIN = 28
     BOTTOM_MARGIN = 10
 
-    def __init__(self, message_id: str, text: str, update_signal) -> None:
+    def __init__(self, message_id: str, text: str, update_signal, index: int) -> None:
         super().__init__()
         self.message_id = message_id
+        self.index = index
 
         # Set styles
         self.setObjectName('speech_bubble')
@@ -1620,8 +1621,8 @@ class MessageWidget(SpeechBubble):
     Represents an incoming message from the source.
     """
 
-    def __init__(self, message_id: str, message: str, update_signal) -> None:
-        super().__init__(message_id, message, update_signal)
+    def __init__(self, message_id: str, message: str, update_signal, index: int) -> None:
+        super().__init__(message_id, message, update_signal, index)
 
 
 class ReplyWidget(SpeechBubble):
@@ -1702,8 +1703,9 @@ class ReplyWidget(SpeechBubble):
         update_signal,
         message_succeeded_signal,
         message_failed_signal,
+        index: int,
     ) -> None:
-        super().__init__(message_id, message, update_signal)
+        super().__init__(message_id, message, update_signal, index)
         self.message_id = message_id
 
         error_icon = SvgLabel('error_icon.svg', svg_size=QSize(12, 12))
@@ -1833,6 +1835,7 @@ class FileWidget(QWidget):
         file_uuid: str,
         controller: Controller,
         file_ready_signal: pyqtBoundSignal,
+        index: int,
     ) -> None:
         """
         Given some text and a reference to the controller, make something to display a file.
@@ -1841,6 +1844,7 @@ class FileWidget(QWidget):
 
         self.controller = controller
         self.file = self.controller.get_file(file_uuid)
+        self.index = index
 
         # Set styles
         self.setObjectName('file_widget')
@@ -2388,6 +2392,8 @@ class ConversationView(QWidget):
         self.source = source_db_object
         self.controller = controller
 
+        self.current_messages = {}  # To hold currently displayed messages.
+
         # Set styles
         self.setStyleSheet(self.CSS)
 
@@ -2428,44 +2434,73 @@ class ConversationView(QWidget):
                 child.widget().deleteLater()
 
     def update_conversation(self, collection: list) -> None:
-        # clear all old items
-        self.clear_conversation()
-        self.controller.session.refresh(self.source)
-        # add new items
-        for conversation_item in collection:
-            if isinstance(conversation_item, Message):
-                self.add_message(conversation_item)
-            elif isinstance(conversation_item, (DraftReply, Reply)):
-                self.add_reply(conversation_item)
-            else:
-                self.add_file(conversation_item)
+        """
+        Given a list of conversation items that reflect the new state of the
+        conversation, this method does two things:
 
-    def add_file(self, file: File):
+        * Checks if the conversation item already exists in the conversation.
+          If so, it checks that it's still in the same position. If it isn't,
+          the item is removed from its current position and re-added at the
+          new position. Then the index meta-data on the widget is updated to
+          reflect this change.
+        * If the item is a new item, this is created (as before) and inserted
+          into the conversation at the correct index.
+
+        Things to note, speech bubbles and files have an index attribute which
+        defines where they currently are. This is the attribute that's checked
+        when the new conversation state (i.e. the collection argument) is
+        passed into this method in case of a mismatch between where the widget
+        has been and now is in terms of its index in the conversation.
+        """
+        self.controller.session.refresh(self.source)
+        for index, conversation_item in enumerate(collection):
+            item_widget = self.current_messages.get(conversation_item.uuid)
+            if item_widget:
+                # check an already displayed item.
+                if item_widget.index != index:
+                    # The existing widget is out of order, remove / re-add it
+                    # and update index details.
+                    self.conversation_layout.removeWidget(item_widget)
+                    item_widget.index = index
+                    self.conversation_layout.insertWidget(index, item_widget)
+                # TODO: Check if text in item has changed, then update the
+                # widget to reflect this change.
+                # TODO: Check for any other possible changes of state in the
+                # message so this can be reflected in the widget.
+                # TODO: Get rid of the damn todos and write/update tests. ;-)
+            else:
+                # add a new item to be displayed.
+                if isinstance(conversation_item, Message):
+                    self.add_message(conversation_item, index)
+                elif isinstance(conversation_item, (DraftReply, Reply)):
+                    self.add_reply(conversation_item, index)
+                else:
+                    self.add_file(conversation_item, index)
+
+    def add_file(self, file: File, index):
         """
         Add a file from the source.
         """
-        conversation_item = FileWidget(file.uuid, self.controller, self.controller.file_ready)
-        self.conversation_layout.addWidget(conversation_item, alignment=Qt.AlignLeft)
+        conversation_item = FileWidget(file.uuid, self.controller, self.controller.file_ready, index)
+        self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignLeft)
+        self.current_messages[file.uuid] = conversation_item
 
     def update_conversation_position(self, min_val, max_val):
         """
         Handler called when a new item is added to the conversation. Ensures
         it's scrolled to the bottom and thus visible.
         """
-        current_val = self.scroll.verticalScrollBar().value()
-        viewport_height = self.scroll.viewport().height()
+        self.scroll.verticalScrollBar().setValue(max_val)
 
-        if current_val + viewport_height > max_val:
-            self.scroll.verticalScrollBar().setValue(max_val)
-
-    def add_message(self, message: Message) -> None:
+    def add_message(self, message: Message, index) -> None:
         """
         Add a message from the source.
         """
-        conversation_item = MessageWidget(message.uuid, str(message), self.controller.message_ready)
-        self.conversation_layout.addWidget(conversation_item, alignment=Qt.AlignLeft)
+        conversation_item = MessageWidget(message.uuid, str(message), self.controller.message_ready, index)
+        self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignLeft)
+        self.current_messages[message.uuid] = conversation_item
 
-    def add_reply(self, reply: Union[DraftReply, Reply]) -> None:
+    def add_reply(self, reply: Union[DraftReply, Reply], index) -> None:
         """
         Add a reply from a journalist to the source.
         """
@@ -2481,28 +2516,34 @@ class ConversationView(QWidget):
             send_status,
             self.controller.reply_ready,
             self.controller.reply_succeeded,
-            self.controller.reply_failed)
-        self.conversation_layout.addWidget(conversation_item, alignment=Qt.AlignRight)
+            self.controller.reply_failed,
+            index)
+        self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignRight)
+        self.current_messages[reply.uuid] = conversation_item
 
     def add_reply_from_reply_box(self, uuid: str, content: str) -> None:
         """
         Add a reply from the reply box.
         """
+        index = len(self.current_messages)
         conversation_item = ReplyWidget(
             uuid,
             content,
             'PENDING',
             self.controller.reply_ready,
             self.controller.reply_succeeded,
-            self.controller.reply_failed)
+            self.controller.reply_failed,
+            index)
         self.conversation_layout.addWidget(conversation_item, alignment=Qt.AlignRight)
 
     def on_reply_sent(self, source_uuid: str, reply_uuid: str, reply_text: str) -> None:
         """
         Add the reply text sent from ReplyBoxWidget to the conversation.
         """
-        if source_uuid == self.source.uuid:
-            self.add_reply_from_reply_box(reply_uuid, reply_text)
+        # TODO: replace this with UI indication that the reply is "in flight"
+        # For now, just do nothing.
+        # if source_uuid == self.source.uuid:
+        #    self.add_reply_from_reply_box(reply_uuid, reply_text)
 
 
 class SourceConversationWrapper(QWidget):
