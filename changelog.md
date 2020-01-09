@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.4
+
+  * Converts into rsyslog based logging system.
+
 ## 0.0.3
 
   * Fixes typos MANIFEST.in and setup.py

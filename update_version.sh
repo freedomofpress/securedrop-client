@@ -10,17 +10,17 @@ if [ -z "$NEW_VERSION" ]; then
   exit 1
 fi
 
-# Get the old version from securedrop_log/VERSION
-OLD_VERSION=$(cat securedrop_log/VERSION)
+# Get the old version from VERSION
+OLD_VERSION=$(cat VERSION)
 if [ -z "$OLD_VERSION" ]; then
   echo "Couldn't find the old version: does this script need to be updated?"
   exit 1
 fi
 
-# Update the version in securedrop_log/VERSION (setup.py is done automatically)
+# Update the version in VERSION (setup.py is done automatically)
 if [[ "$OSTYPE" == "darwin"* ]]; then
     # The empty '' after sed -i is required on macOS to indicate no backup file should be saved.
-    sed -i '' "s@$(echo "${OLD_VERSION}" | sed 's/\./\\./g')@$NEW_VERSION@g" securedrop_log/VERSION
+    sed -i '' "s@$(echo "${OLD_VERSION}" | sed 's/\./\\./g')@$NEW_VERSION@g" VERSION
 else
-    sed -i "s@$(echo "${OLD_VERSION}" | sed 's/\./\\./g')@$NEW_VERSION@g" securedrop_log/VERSION
+    sed -i "s@$(echo "${OLD_VERSION}" | sed 's/\./\\./g')@$NEW_VERSION@g" VERSION
 fi
