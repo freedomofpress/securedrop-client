@@ -149,7 +149,6 @@ class PrintAction(ExportAction):
     def print_test_page(self):
         logger.info('Printing test page')
         self.print_file("/usr/share/cups/data/testprint")
-        self.submission.popup_message("Printing test page")
 
     def print_all_files(self):
         files_path = os.path.join(self.submission.tmpdir, "export_data/")
@@ -159,8 +158,7 @@ class PrintAction(ExportAction):
             file_path = os.path.join(files_path, f)
             self.print_file(file_path)
             print_count += 1
-            msg = "Printing document {} of {}".format(print_count, len(files))
-            self.submission.popup_message(msg)
+            logger.info("Printing document {} of {}".format(print_count, len(files)))
 
     def is_open_office_file(self, filename):
         OPEN_OFFICE_FORMATS = [

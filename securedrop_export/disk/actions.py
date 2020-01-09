@@ -171,7 +171,6 @@ class DiskAction(ExportAction):
             logger.info('Copying file to {}'.format(self.submission.target_dirname))
             subprocess.check_call(["cp", "-r", export_data, target_path])
             logger.info('File copied successfully to {}'.format(self.submission.target_dirname))
-            self.submission.popup_message("Files exported successfully to disk.")
         except (subprocess.CalledProcessError, OSError):
             self.submission.exit_gracefully(ExportStatus.ERROR_USB_WRITE.value)
         finally:

@@ -1,5 +1,3 @@
-from unittest import mock
-
 import os
 import pytest
 import subprocess  # noqa: F401
@@ -116,18 +114,6 @@ def test_valid_encryption_config(capsys):
     assert config.encryption_key == "hunter1"
     assert config.encryption_method == "luks"
     assert config.is_valid()
-
-
-@mock.patch("subprocess.check_call")
-def test_popup_message(mocked_call):
-    submission = export.SDExport("testfile", TEST_CONFIG)
-    submission.popup_message("hello!")
-    mocked_call.assert_called_once_with([
-        "notify-send",
-        "--expire-time", "3000",
-        "--icon", "/usr/share/securedrop/icons/sd-logo.png",
-        "SecureDrop: hello!"
-    ])
 
 
 def test_safe_check_call(capsys, mocker):
