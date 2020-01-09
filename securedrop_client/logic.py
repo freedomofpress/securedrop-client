@@ -43,7 +43,7 @@ from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobError, 
     SendReplyJobTimeoutError
 from securedrop_client.api_jobs.updatestar import UpdateStarJob, UpdateStarJobException
 from securedrop_client.crypto import GpgHelper
-from securedrop_client.export import Export
+from securedrop_client.export import Export, ExportError
 from securedrop_client.queue import ApiJobQueue
 from securedrop_client.sync import ApiSync
 from securedrop_client.utils import check_dir_permissions
@@ -638,6 +638,7 @@ class Controller(QObject):
         logger.info('Starting Export VM')
 
         if not self.qubes:
+            self.export.start_export_vm_success.emit()
             return
 
         self.export.start_export_vm.emit()
@@ -649,7 +650,7 @@ class Controller(QObject):
         logger.info('Running export preflight checks')
 
         if not self.qubes:
-            self.export.export_usb_call_success.emit()
+            self.export.preflight_check_call_success.emit()
             return
 
         self.export.begin_preflight_check.emit()
@@ -668,6 +669,7 @@ class Controller(QObject):
             return
 
         if not self.qubes:
+            self.export.export_usb_call_success.emit()
             return
 
         self.export.begin_usb_export.emit([file_location], passphrase)
