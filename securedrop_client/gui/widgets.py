@@ -2667,16 +2667,19 @@ class ReplyTextEdit(QPlainTextEdit):
         super(ReplyTextEdit, self).focusOutEvent(e)
 
     def set_logged_in(self):
-        source_name = "<strong><font color=\"#24276d\">%s</font></strong>" % \
-                                self.source.journalist_designation
+        self.setEnabled(True)
+        source_name = "<strong><font color=\"#24276d\">{}</font></strong>".format(
+            self.source.journalist_designation
+        )
         placeholder = _("Compose a reply to ") + source_name
         self.placeholder.setText(placeholder)
-        self.setEnabled(True)
+        self.placeholder.adjustSize()
 
     def set_logged_out(self):
         text = "<strong><font color=\"#2a319d\">" + _("Sign in") + " </font></strong>" + \
             _("to compose or send a reply")
         self.placeholder.setText(text)
+        self.placeholder.adjustSize()
         self.setEnabled(False)
 
     def setText(self, text):
