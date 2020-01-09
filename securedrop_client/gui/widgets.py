@@ -1926,10 +1926,7 @@ class FileWidget(QWidget):
             self.controller.sync_api()
             return
 
-        dialog = ExportDialog(self.controller, self.file.uuid,
-                              self.file.original_filename)
-        dialog.show()
-        dialog.export()
+        dialog = ExportDialog(self.controller, self.file.uuid, self.file.original_filename)
         dialog.exec()
 
     @pyqtSlot()
@@ -1942,8 +1939,6 @@ class FileWidget(QWidget):
             return
 
         dialog = PrintDialog(self.controller, self.file.uuid)
-        dialog.show()
-        dialog.print()
         dialog.exec()
 
     def _on_left_click(self):
@@ -2020,16 +2015,20 @@ class PrintDialog(QDialog):
         self.usb_error_message.setWordWrap(True)
         usb_instructions = SecureQLabel(_('Please connect your printer to a USB port.'))
         usb_instructions.setWordWrap(True)
-        buttons = QWidget()
-        buttons_layout = QHBoxLayout()
-        buttons.setLayout(buttons_layout)
-        cancel_button = QPushButton(_('CANCEL'))
-        retry_button = QPushButton(_('CONTINUE'))
-        buttons_layout.addWidget(cancel_button)
-        buttons_layout.addWidget(retry_button)
         usb_form_layout.addWidget(self.usb_error_message)
         usb_form_layout.addWidget(usb_instructions)
-        usb_form_layout.addWidget(buttons, alignment=Qt.AlignRight)
+
+        # Buttons
+        self.buttons = QWidget()
+        buttons_layout = QHBoxLayout()
+        self.buttons.setLayout(buttons_layout)
+        cancel_button = QPushButton(_('CANCEL'))
+        cancel_button.clicked.connect(self.close)
+        self.continue_button = QPushButton(_('CONTINUE'))
+        self.continue_button.clicked.connect(self._on_continue_clicked)
+        self.continue_button.setEnabled(False)
+        buttons_layout.addWidget(cancel_button)
+        buttons_layout.addWidget(self.continue_button)
 
         # Printing message
         self.printing_message = SecureQLabel(_('Printing...'))
@@ -2039,19 +2038,19 @@ class PrintDialog(QDialog):
         layout.addWidget(self.printing_message)
         layout.addWidget(self.generic_error)
         layout.addWidget(self.insert_usb_form)
+        layout.addWidget(self.buttons)
 
-        self.starting_message.show()
         self.printing_message.hide()
         self.generic_error.hide()
         self.insert_usb_form.hide()
 
-        cancel_button.clicked.connect(self.close)
-        retry_button.clicked.connect(self._on_retry_button_clicked)
+        # Connect controller signals to slots
+        self.controller.export.start_export_vm_success.connect(self._on_start_export_vm_success)
+        self.controller.export.start_export_vm_failure.connect(self._on_start_export_vm_failure)
+        self.controller.export.print_call_success.connect(self._on_print_success)
+        self.controller.export.print_call_failure.connect(self._on_print_failure)
 
-        self.controller.export.print_call_failure.connect(
-            self._on_print_failure, type=Qt.QueuedConnection)
-        self.controller.export.print_call_success.connect(
-            self._on_print_success, type=Qt.QueuedConnection)
+        self.controller.run_start_export_vm()
 
     def print(self):
         self.starting_message.hide()
@@ -2061,8 +2060,16 @@ class PrintDialog(QDialog):
         self.controller.print_file(self.file_uuid)
 
     @pyqtSlot()
-    def _on_retry_button_clicked(self):
+    def _on_continue_clicked(self):
         self.print()
+
+    @pyqtSlot()
+    def _on_start_export_vm_success(self):
+        self.continue_button.setEnabled(True)
+
+    @pyqtSlot(object)
+    def _on_start_export_vm_failure(self, error: ExportError):
+        self._update(error.status)
 
     @pyqtSlot()
     def _on_print_success(self):
@@ -2082,6 +2089,7 @@ class PrintDialog(QDialog):
             self.printing_message.hide()
             self.generic_error.show()
             self.insert_usb_form.hide()
+            self.buttons.hide()
 
     def _request_to_insert_usb_device(self):
         self.starting_message.hide()
@@ -2171,16 +2179,8 @@ class ExportDialog(QDialog):
             'Please insert one of the export drives provisioned specifically '
             'for the SecureDrop Workstation.'))
         usb_instructions.setWordWrap(True)
-        buttons = QWidget()
-        buttons_layout = QHBoxLayout()
-        buttons.setLayout(buttons_layout)
-        usb_cancel_button = QPushButton(_('CANCEL'))
-        retry_export_button = QPushButton(_('OK'))
-        buttons_layout.addWidget(usb_cancel_button)
-        buttons_layout.addWidget(retry_export_button)
         usb_form_layout.addWidget(self.usb_error_message)
         usb_form_layout.addWidget(usb_instructions)
-        usb_form_layout.addWidget(buttons, alignment=Qt.AlignRight)
 
         # Passphrase Form
         self.passphrase_form = QWidget()
@@ -2196,18 +2196,10 @@ class ExportDialog(QDialog):
         passphrase_label.setObjectName('passphrase_label')
         self.passphrase_field = QLineEdit()
         self.passphrase_field.setEchoMode(QLineEdit.Password)
-        buttons = QWidget()
-        buttons_layout = QHBoxLayout()
-        buttons.setLayout(buttons_layout)
-        passphrase_cancel_button = QPushButton(_('CANCEL'))
-        unlock_disk_button = QPushButton(_('SUBMIT'))
-        buttons_layout.addWidget(passphrase_cancel_button)
-        buttons_layout.addWidget(unlock_disk_button)
         passphrase_form_layout.addWidget(self.passphrase_error_message)
         passphrase_form_layout.addWidget(self.passphrase_instructions)
         passphrase_form_layout.addWidget(passphrase_label)
         passphrase_form_layout.addWidget(self.passphrase_field)
-        passphrase_form_layout.addWidget(buttons, alignment=Qt.AlignRight)
         self.passphrase_error_message.hide()
 
         # Starting export message
@@ -2215,23 +2207,32 @@ class ExportDialog(QDialog):
             'File export in progress:\n' + self.file_name))
         self.exporting_message.setWordWrap(True)
 
+        # Buttons
+        self.buttons = QWidget()
+        buttons_layout = QHBoxLayout()
+        self.buttons.setLayout(buttons_layout)
+        cancel_button = QPushButton(_('CANCEL'))
+        cancel_button.clicked.connect(self.close)
+        self.continue_button = QPushButton(_('CONTINUE'))
+        self.continue_button.clicked.connect(self._on_continue_clicked)
+        self.continue_button.setEnabled(False)
+        buttons_layout.addWidget(cancel_button)
+        buttons_layout.addWidget(self.continue_button)
+
         layout.addWidget(self.starting_export_message)
         layout.addWidget(self.exporting_message)
         layout.addWidget(self.generic_error)
         layout.addWidget(self.insert_usb_form)
         layout.addWidget(self.passphrase_form)
+        layout.addWidget(self.buttons)
 
-        self.starting_export_message.show()
         self.exporting_message.hide()
         self.generic_error.hide()
         self.insert_usb_form.hide()
         self.passphrase_form.hide()
 
-        usb_cancel_button.clicked.connect(self.close)
-        passphrase_cancel_button.clicked.connect(self.close)
-        retry_export_button.clicked.connect(self._on_retry_export_button_clicked)
-        unlock_disk_button.clicked.connect(self._on_unlock_disk_clicked)
-
+        self.controller.export.start_export_vm_success.connect(self._on_start_export_vm_success)
+        self.controller.export.start_export_vm_failure.connect(self._on_start_export_vm_failure)
         self.controller.export.preflight_check_call_failure.connect(
             self._on_preflight_check_call_failure, type=Qt.QueuedConnection)
         self.controller.export.export_usb_call_failure.connect(
@@ -2241,12 +2242,18 @@ class ExportDialog(QDialog):
         self.controller.export.export_usb_call_success.connect(
             self._on_export_success, type=Qt.QueuedConnection)
 
-    def export(self):
-        self.controller.run_export_preflight_checks()
+        self.controller.run_start_export_vm()
 
     @pyqtSlot()
-    def _on_retry_export_button_clicked(self):
-        self.starting_export_message.hide()
+    def _on_start_export_vm_success(self):
+        self.continue_button.setEnabled(True)
+
+    @pyqtSlot(object)
+    def _on_start_export_vm_failure(self, error: ExportError):
+        self._update(error.status)
+
+    @pyqtSlot()
+    def _on_continue_clicked(self):
         self.controller.run_export_preflight_checks()
 
     @pyqtSlot()
@@ -2272,6 +2279,8 @@ class ExportDialog(QDialog):
 
     @pyqtSlot()
     def _request_passphrase(self, bad_passphrase: bool = False):
+        self.continue_button.clicked.connect(self._on_unlock_disk_clicked)
+
         logger.debug('requesting passphrase... ')
         self.starting_export_message.hide()
         self.exporting_message.hide()

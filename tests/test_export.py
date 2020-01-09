@@ -219,7 +219,7 @@ def test_run_preflight_checks(mocker):
 
     _run_usb_export.assert_called_once_with('mock_temp_dir')
     _run_disk_export.assert_called_once_with('mock_temp_dir')
-    export.preflight_check_call_success.emit.assert_called_once_with('success')
+    export.preflight_check_call_success.emit.assert_called_once_with()
 
 
 def test_run_preflight_checks_error(mocker):

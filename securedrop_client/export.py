@@ -83,7 +83,7 @@ class Export(QObject):
     start_export_vm_success = pyqtSignal()
     start_export_vm_failure = pyqtSignal(object)
     preflight_check_call_failure = pyqtSignal(object)
-    preflight_check_call_success = pyqtSignal(str)
+    preflight_check_call_success = pyqtSignal()
     begin_usb_export = pyqtSignal(list, str)
     begin_preflight_check = pyqtSignal()
     export_usb_call_failure = pyqtSignal(object)
@@ -278,7 +278,7 @@ class Export(QObject):
                 self._run_usb_test(temp_dir)
                 self._run_disk_test(temp_dir)
                 logger.debug('completed preflight checks: success')
-                self.preflight_check_call_success.emit('success')
+                self.preflight_check_call_success.emit()
             except ExportError as e:
                 logger.debug('completed preflight checks: failure')
                 self.preflight_check_call_failure.emit(e)
