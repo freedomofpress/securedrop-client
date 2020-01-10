@@ -213,6 +213,8 @@ class RefreshButton(SvgPushButton):
             selected='refresh.svg',
             svg_size=QSize(16, 16))
 
+        self.active = False
+
         # Set css id
         self.setObjectName('refresh_button')
 
@@ -231,14 +233,17 @@ class RefreshButton(SvgPushButton):
         self.controller.sync_events.connect(self._on_refresh_complete)
 
     def _on_clicked(self):
+        if self.active:
+            return
+
         self.controller.sync_api(manual_refresh=True)
+
         # This is a temporary solution for showing the icon as active for the entire duration of a
         # refresh, rather than for just the duration of a click. The icon image will be replaced
         # when the controller tells us the refresh has finished. A cleaner solution would be to
         # store and update our own icon mode so we don't have to reload any images.
-        self.setIcon(load_icon(
-            normal='refresh_active.svg',
-            disabled='refresh_offline.svg'))
+        self.setIcon(load_icon(normal='refresh_active.svg', disabled='refresh_offline.svg'))
+        self.active = True
 
     def _on_refresh_complete(self, data):
         if (data == 'synced'):
@@ -247,9 +252,11 @@ class RefreshButton(SvgPushButton):
                 disabled='refresh_offline.svg',
                 active='refresh_active.svg',
                 selected='refresh.svg'))
+        self.active = False
 
     def enable(self):
         self.setEnabled(True)
+        self.active is False
 
     def disable(self):
         self.setEnabled(False)
@@ -2669,8 +2676,7 @@ class ReplyTextEdit(QPlainTextEdit):
     def set_logged_in(self):
         self.setEnabled(True)
         source_name = "<strong><font color=\"#24276d\">{}</font></strong>".format(
-            self.source.journalist_designation
-        )
+            self.source.journalist_designation)
         placeholder = _("Compose a reply to ") + source_name
         self.placeholder.setText(placeholder)
         self.placeholder.adjustSize()

@@ -24,7 +24,7 @@ from typing import Union
 from PyQt5.QtWidgets import QLabel, QHBoxLayout, QPushButton, QWidget
 from PyQt5.QtCore import QSize, Qt
 
-from securedrop_client.resources import load_svg, load_icon, load_toggle_icon
+from securedrop_client.resources import load_svg, load_icon
 
 
 class SvgToggleButton(QPushButton):
@@ -54,7 +54,7 @@ class SvgToggleButton(QPushButton):
         layout.setSpacing(0)
 
         # Add SVG icon and set its size
-        self.icon = load_toggle_icon(on=on, off=off)
+        self.icon = load_icon(normal=on, normal_off=off)
         self.setIcon(self.icon)
         self.setIconSize(svg_size) if svg_size else self.setIconSize(QSize())
 
@@ -68,7 +68,7 @@ class SvgToggleButton(QPushButton):
         self.setEnabled(False)
 
     def set_icon(self, on: str, off: str) -> None:
-        self.icon = load_toggle_icon(on=on, off=off)
+        self.icon = load_icon(normal=on, normal_off=off)
         self.setIcon(self.icon)
 
 
@@ -110,7 +110,12 @@ class SvgPushButton(QPushButton):
         layout.setSpacing(0)
 
         # Add SVG icon and set its size
-        self.icon = load_icon(normal=normal, disabled=disabled, active=active, selected=selected)
+        self.icon = load_icon(
+            normal=normal,
+            disabled=disabled,
+            active=active,
+            selected=selected,
+            disabled_off=disabled)
         self.setIcon(self.icon)
         self.setIconSize(svg_size) if svg_size else self.setIconSize(QSize())
 
