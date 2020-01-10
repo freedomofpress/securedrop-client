@@ -25,7 +25,15 @@ def test_load_icon():
     """
     Check the load_icon function returns the expected QIcon object.
     """
-    result = securedrop_client.resources.load_icon('icon')
+    result = securedrop_client.resources.load_icon(
+        'normal_mock',
+        'disabled_mock',
+        'active_mock',
+        'selected_mock',
+        'normal_off_mock',
+        'disabled_off_mock',
+        'active_off_mock',
+        'selected_off_mock')
     assert isinstance(result, QIcon)
 
 

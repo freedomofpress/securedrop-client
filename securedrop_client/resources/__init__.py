@@ -45,37 +45,20 @@ def load_font(font_folder_name: str) -> None:
             QFontDatabase.addApplicationFont(directory + '/' + filename)
 
 
-def load_toggle_icon(on: str, off: str) -> QIcon:
+def load_icon(
+    normal: str,
+    disabled: str = None,
+    active: str = None,
+    selected: str = None,
+    normal_off: str = None,
+    disabled_off: str = None,
+    active_off: str = None,
+    selected_off: str = None,
+) -> QIcon:
     """
-    Add the contents of Scalable Vector Graphics (SVG) files provided for associated icon states,
-    see https://doc.qt.io/qt-5/qicon.html#State-enum.
-
-    Parameters
-    ----------
-    on: str
-        file name to the on-state image
-    off: str
-        file name to the on-state image
-
-    Returns
-    -------
-    QIcon
-        The icon that displays the contents of the SVG files.
-
-    """
-
-    icon = QIcon()
-
-    icon.addFile(path(on), state=QIcon.On)
-    icon.addFile(path(off), state=QIcon.Off)
-
-    return icon
-
-
-def load_icon(normal: str, disabled: str = None, active: str = None, selected: str = None) -> QIcon:
-    """
-    Add the contents of Scalable Vector Graphics (SVG) files provided for associated icon modes,
-    see https://doc.qt.io/qt-5/qicon.html#Mode-enum.
+    Add the contents of Scalable Vector Graphics (SVG) files provided for associated icon modes and
+    states, see https://doc.qt.io/qt-5/qicon.html#Mode-enum. If the widget containing this icon is
+    set to checkable, then the *_off states will be displayed.
 
     Parameters
     ----------
@@ -86,6 +69,14 @@ def load_icon(normal: str, disabled: str = None, active: str = None, selected: s
     active: str, optional
         The name of the SVG file to add to the icon for QIcon.Active mode.
     selected: str, optional
+        The name of the SVG file to add to the icon for QIcon.Selected mode.
+    normal_off: str
+        The name of the SVG file to add to the icon for QIcon.Normal mode.
+    disabled_off: str or None, optional
+        The name of the SVG file to add to the icon for QIcon.Disabled mode.
+    active_off: str, optional
+        The name of the SVG file to add to the icon for QIcon.Active mode.
+    selected_off: str, optional
         The name of the SVG file to add to the icon for QIcon.Selected mode.
 
     Returns
@@ -100,13 +91,25 @@ def load_icon(normal: str, disabled: str = None, active: str = None, selected: s
     icon.addFile(path(normal), mode=QIcon.Normal, state=QIcon.On)
 
     if disabled:
-        icon.addFile(path(disabled), mode=QIcon.Disabled, state=QIcon.Off)
+        icon.addFile(path(disabled), mode=QIcon.Disabled, state=QIcon.On)
 
     if active:
         icon.addFile(path(active), mode=QIcon.Active, state=QIcon.On)
 
     if selected:
         icon.addFile(path(selected), mode=QIcon.Selected, state=QIcon.On)
+
+    if normal_off:
+        icon.addFile(path(normal_off), mode=QIcon.Normal, state=QIcon.Off)
+
+    if disabled_off:
+        icon.addFile(path(disabled_off), mode=QIcon.Disabled, state=QIcon.Off)
+
+    if active_off:
+        icon.addFile(path(active_off), mode=QIcon.Active, state=QIcon.Off)
+
+    if selected_off:
+        icon.addFile(path(selected_off), mode=QIcon.Selected, state=QIcon.Off)
 
     return icon
 

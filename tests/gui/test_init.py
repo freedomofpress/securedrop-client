@@ -19,14 +19,14 @@ def test_SvgToggleButton_init(mocker):
     """
     svg_size = QSize(1, 1)
     icon = mocker.MagicMock()
-    load_toggle_icon_fn = mocker.patch('securedrop_client.gui.load_toggle_icon', return_value=icon)
+    load_icon_fn = mocker.patch('securedrop_client.gui.load_icon', return_value=icon)
     setIcon_fn = mocker.patch('securedrop_client.gui.SvgToggleButton.setIcon')
     setIconSize_fn = mocker.patch('securedrop_client.gui.SvgToggleButton.setIconSize')
 
     stb = SvgToggleButton(on='mock_on', off='mock_off', svg_size=svg_size)
 
     assert stb.isCheckable() is True
-    load_toggle_icon_fn.assert_called_once_with(on='mock_on', off='mock_off')
+    load_icon_fn.assert_called_once_with(normal='mock_on', normal_off='mock_off')
     setIcon_fn.assert_called_once_with(icon)
     setIconSize_fn.assert_called_once_with(svg_size)
 
@@ -68,12 +68,12 @@ def test_SvgToggleButton_set_icon(mocker):
     """
     setIcon_fn = mocker.patch('securedrop_client.gui.SvgToggleButton.setIcon')
     icon = mocker.MagicMock()
-    load_toggle_icon_fn = mocker.patch('securedrop_client.gui.load_toggle_icon', return_value=icon)
+    load_icon_fn = mocker.patch('securedrop_client.gui.load_icon', return_value=icon)
     stb = SvgToggleButton(on='mock_on', off='mock_off')
 
     stb.set_icon(on='mock_on', off='mock_off')
 
-    load_toggle_icon_fn.assert_called_with(on='mock_on', off='mock_off')
+    load_icon_fn.assert_called_with(normal='mock_on', normal_off='mock_off')
     setIcon_fn.assert_called_with(icon)
     assert stb.icon == icon
 
@@ -93,7 +93,7 @@ def test_SvgPushButton_init(mocker):
 
     assert spb.isCheckable() is False
     load_icon_fn.assert_called_once_with(
-        normal='mock1', disabled='mock2', active='mock3', selected='mock4')
+        normal='mock1', disabled='mock2', active='mock3', selected='mock4', disabled_off='mock2')
     setIcon_fn.assert_called_once_with(icon)
     setIconSize_fn.assert_called_once_with(svg_size)
 

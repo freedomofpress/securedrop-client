@@ -178,6 +178,19 @@ def test_RefreshButton_on_clicked(mocker):
     rb.controller.sync_api.assert_called_once_with(manual_refresh=True)
 
 
+def test_RefreshButton_on_clicked_while_active(mocker):
+    """
+    When refresh button is clicked while active, sync_api should not be called.
+    """
+    rb = RefreshButton()
+    rb.active = True
+    rb.controller = mocker.MagicMock()
+
+    rb._on_clicked()
+
+    rb.controller.sync_api.assert_not_called()
+
+
 def test_RefreshButton_on_refresh_complete(mocker):
     """
     Make sure we are enabled after a refresh completes.
@@ -185,18 +198,29 @@ def test_RefreshButton_on_refresh_complete(mocker):
     rb = RefreshButton()
     rb._on_refresh_complete('synced')
     assert rb.isEnabled()
+    assert rb.active is False
 
 
 def test_RefreshButton_enable(mocker):
     rb = RefreshButton()
     rb.enable()
     assert rb.isEnabled()
+    assert rb.active is False
 
 
 def test_RefreshButton_disable(mocker):
     rb = RefreshButton()
     rb.disable()
     assert not rb.isEnabled()
+    assert rb.active is False
+
+
+def test_RefreshButton_disable_while_active(mocker):
+    rb = RefreshButton()
+    rb.active = True
+    rb.disable()
+    assert not rb.isEnabled()
+    assert rb.active is True
 
 
 def test_ErrorStatusBar_clear_error_status(mocker):
