@@ -1,184 +1,158 @@
+import sys
 import http
 import json
 import unittest
 import uuid
+import types
+from io import StringIO
+import tempfile
+from unittest.mock import patch
 
 import requests
 import vcr
 
-from securedrop_proxy import callbacks
 from securedrop_proxy import proxy
-from securedrop_proxy import config
 from securedrop_proxy import version
 
 
 class TestProxyValidConfig(unittest.TestCase):
     def setUp(self):
-        self.conf = config.Conf()
-        self.conf.host = 'jsonplaceholder.typicode.com'
-        self.conf.scheme = 'https'
-        self.conf.port = 443
+        self.conf_path = "tests/files/valid-config.yaml"
 
-    def on_save(self, fh, res, conf):
-        self.fn = str(uuid.uuid4())
-        res.headers['X-Origin-Content-Type'] = res.headers['Content-Type']
-        res.headers['Content-Type'] = 'application/json'
-        res.body = json.dumps({'filename': self.fn})
+    def on_save(self, fh, res):
+        res.headers["X-Origin-Content-Type"] = res.headers["Content-Type"]
+        res.headers["Content-Type"] = "application/json"
+        res.body = json.dumps({"filename": self.fn})
 
     def on_done(self, res):
-        res.headers['X-Origin-Content-Type'] = res.headers['Content-Type']
-        res.headers['Content-Type'] = 'application/json'
+        res.headers["X-Origin-Content-Type"] = res.headers["Content-Type"]
+        res.headers["Content-Type"] = "application/json"
 
     def test_version(self):
         req = proxy.Req()
-        req.method = 'GET'
-        req.path_query = ''
-        req.headers = {'Accept': 'application/json'}
+        req.method = "GET"
+        req.path_query = ""
+        req.headers = {"Accept": "application/json"}
 
-        p = proxy.Proxy()
+        p = proxy.Proxy(self.conf_path)
         p.proxy()
 
         self.assertEqual(p.res.version, version.version)
 
-    def test_400_if_callback_not_set(self):
-        req = proxy.Req()
-        req.method = 'GET'
-        req.path_query = ''
-        req.headers = {'Accept': 'application/json'}
-
-        p = proxy.Proxy()
-        p.proxy()
-
-        self.assertEqual(p.res.status, 400)
-
-    @vcr.use_cassette('fixtures/basic_proxy_functionality.yaml')
+    @vcr.use_cassette("fixtures/basic_proxy_functionality.yaml")
     def test_proxy_basic_functionality(self):
         req = proxy.Req()
-        req.method = 'GET'
-        req.path_query = ''
-        req.headers = {'Accept': 'application/json'}
+        req.method = "GET"
+        req.path_query = ""
+        req.headers = {"Accept": "application/json"}
 
-        p = proxy.Proxy(self.conf, req, self.on_save)
+        def on_save(self, fh, res):
+            res.headers["X-Origin-Content-Type"] = res.headers["Content-Type"]
+            res.headers["Content-Type"] = "application/json"
+            res.body = json.dumps({"filename": self.fn})
+
+        p = proxy.Proxy(self.conf_path, req)
+        # Patching on_save for test
+        p.on_save = types.MethodType(on_save, p)
+        p.fn = str(uuid.uuid4())
         p.proxy()
 
         self.assertEqual(p.res.status, 200)
-        self.assertEqual(p.res.body, json.dumps({'filename': self.fn}))
-        self.assertEqual(p.res.headers['Content-Type'], 'application/json')
+        self.assertEqual(p.res.body, json.dumps({"filename": p.fn}))
+        self.assertEqual(p.res.headers["Content-Type"], "application/json")
 
-    @vcr.use_cassette('fixtures/proxy_404.yaml')
+    @vcr.use_cassette("fixtures/proxy_404.yaml")
     def test_proxy_produces_404(self):
         req = proxy.Req()
-        req.method = 'GET'
-        req.path_query = '/notfound'
-        req.headers = {'Accept': 'application/json'}
+        req.method = "GET"
+        req.path_query = "/notfound"
+        req.headers = {"Accept": "application/json"}
 
-        p = proxy.Proxy(self.conf, req)
-        p.on_save = self.on_save
-        p.on_done = self.on_done
+        p = proxy.Proxy(self.conf_path, req)
+
         p.proxy()
 
         self.assertEqual(p.res.status, 404)
-        self.assertEqual(p.res.headers['Content-Type'], 'application/json')
+        self.assertEqual(p.res.headers["Content-Type"], "application/json")
 
-    @vcr.use_cassette('fixtures/proxy_parameters.yaml')
+    @vcr.use_cassette("fixtures/proxy_parameters.yaml")
     def test_proxy_handles_query_params_gracefully(self):
         req = proxy.Req()
-        req.method = 'GET'
-        req.path_query = '/posts?userId=1'
-        req.headers = {'Accept': 'application/json'}
+        req.method = "GET"
+        req.path_query = "/posts?userId=1"
+        req.headers = {"Accept": "application/json"}
 
-        p = proxy.Proxy(self.conf, req, self.on_save)
+        p = proxy.Proxy(self.conf_path, req)
+
         p.proxy()
 
         self.assertEqual(p.res.status, 200)
-        self.assertIn('application/json', p.res.headers['Content-Type'])
+        self.assertIn("application/json", p.res.headers["Content-Type"])
         body = json.loads(p.res.body)
         for item in body:
-            self.assertEqual(item['userId'], 1)
+            self.assertEqual(item["userId"], 1)
 
     # No cassette needed as no network request should be sent
     def test_proxy_400_bad_path(self):
         req = proxy.Req()
-        req.method = 'GET'
-        req.path_query = 'http://badpath.lol/path'
-        req.headers = {'Accept': 'application/json'}
+        req.method = "GET"
+        req.path_query = "http://badpath.lol/path"
+        req.headers = {"Accept": "application/json"}
 
-        p = proxy.Proxy(self.conf, req)
-        p.on_save = self.on_save
-        p.on_done = self.on_done
+        p = proxy.Proxy(self.conf_path, req)
+
         p.proxy()
 
         self.assertEqual(p.res.status, 400)
-        self.assertEqual(p.res.headers['Content-Type'], 'application/json')
-        self.assertIn('Path provided in request did not look valid',
-                      p.res.body)
+        self.assertEqual(p.res.headers["Content-Type"], "application/json")
+        self.assertIn("Path provided in request did not look valid", p.res.body)
 
-    @vcr.use_cassette('fixtures/proxy_200_valid_path.yaml')
+    @vcr.use_cassette("fixtures/proxy_200_valid_path.yaml")
     def test_proxy_200_valid_path(self):
         req = proxy.Req()
-        req.method = 'GET'
-        req.path_query = '/posts/1'
-        req.headers = {'Accept': 'application/json'}
+        req.method = "GET"
+        req.path_query = "/posts/1"
+        req.headers = {"Accept": "application/json"}
 
-        p = proxy.Proxy(self.conf, req, self.on_save)
+        p = proxy.Proxy(self.conf_path, req)
+
         p.proxy()
 
         self.assertEqual(p.res.status, 200)
-        self.assertIn('application/json', p.res.headers['Content-Type'])
+        self.assertIn("application/json", p.res.headers["Content-Type"])
         body = json.loads(p.res.body)
-        self.assertEqual(body['userId'], 1)
-
-    # No cassette needed as no network request should be sent
-    def test_proxy_400_no_handler(self):
-        req = proxy.Req()
-        req.method = 'GET'
-        req.path_query = 'http://badpath.lol/path'
-        req.headers = {'Accept': 'application/json'}
-
-        p = proxy.Proxy(self.conf, req)
-        p.proxy()
-
-        self.assertEqual(p.res.status, 400)
-        self.assertEqual(p.res.headers['Content-Type'], 'application/json')
-        self.assertIn('Request on_save callback is not set',
-                      p.res.body)
+        self.assertEqual(body["userId"], 1)
 
 
 class TestProxyInvalidConfig(unittest.TestCase):
     def setUp(self):
-        self.conf = config.Conf()
-        self.conf.host = 'jsonplaceholder.typicode.com'
-        self.conf.scheme = 'https://http'  # bad
-        self.conf.port = 443
+        self.conf_path = "tests/files/invalid-config.yaml"
 
-    def on_save(self, fh, res, conf):
+    def on_save(self, fh, res):
         self.fn = str(uuid.uuid4())
-        res.headers['X-Origin-Content-Type'] = res.headers['Content-Type']
-        res.headers['Content-Type'] = 'application/json'
-        res.body = json.dumps({'filename': self.fn})
+        res.headers["X-Origin-Content-Type"] = res.headers["Content-Type"]
+        res.headers["Content-Type"] = "application/json"
+        res.body = json.dumps({"filename": self.fn})
 
     # No cassette needed as no network request should be sent
     def test_proxy_500_misconfiguration(self):
         req = proxy.Req()
-        req.method = 'GET'
-        req.path_query = '/posts/1'
-        req.headers = {'Accept': 'application/json'}
+        req.method = "GET"
+        req.path_query = "/posts/1"
+        req.headers = {"Accept": "application/json"}
 
-        p = proxy.Proxy(self.conf, req, self.on_save)
+        p = proxy.Proxy(self.conf_path, req)
+
         p.proxy()
 
         self.assertEqual(p.res.status, 500)
-        self.assertEqual(p.res.headers['Content-Type'], 'application/json')
-        self.assertIn('Proxy error while generating URL to request',
-                      p.res.body)
+        self.assertEqual(p.res.headers["Content-Type"], "application/json")
+        self.assertIn("Proxy error while generating URL to request", p.res.body)
 
 
 class TestServerErrorHandling(unittest.TestCase):
     def setUp(self):
-        self.conf = config.Conf()
-        self.conf.host = "localhost"
-        self.conf.scheme = "http"
-        self.conf.port = 8000
+        self.conf_path = "tests/files/local-config.yaml"
 
     def make_request(self, method="GET", path_query="/", headers=None):
         req = proxy.Req()
@@ -193,12 +167,7 @@ class TestServerErrorHandling(unittest.TestCase):
         """
         req = self.make_request()
 
-        conf = config.Conf()
-        conf.host = "sdproxytest.local"
-        conf.scheme = "https"
-        conf.port = 8000
-
-        p = proxy.Proxy(conf, req, on_save=callbacks.on_save)
+        p = proxy.Proxy("tests/files/badgateway-config.yaml", req)
         p.proxy()
 
         self.assertEqual(p.res.status, http.HTTPStatus.BAD_GATEWAY)
@@ -210,6 +179,7 @@ class TestServerErrorHandling(unittest.TestCase):
         """
         Test for "504 Gateway Timeout" when the server times out.
         """
+
         class TimeoutProxy(proxy.Proxy):
             """
             Mocks a slow upstream server.
@@ -218,11 +188,12 @@ class TestServerErrorHandling(unittest.TestCase):
             long. This Proxy subclass raises the exception that would
             cause.
             """
+
             def prep_request(self):
-                raise requests.exceptions.Timeout('test timeout')
+                raise requests.exceptions.Timeout("test timeout")
 
         req = self.make_request(path_query="/tarpit")
-        p = TimeoutProxy(self.conf, req, on_save=callbacks.on_save, timeout=0.00001)
+        p = TimeoutProxy(self.conf_path, req, timeout=0.00001)
         p.proxy()
 
         self.assertEqual(p.res.status, http.HTTPStatus.GATEWAY_TIMEOUT)
@@ -236,7 +207,7 @@ class TestServerErrorHandling(unittest.TestCase):
         Test handling of "400 Bad Request" from the server.
         """
         req = self.make_request(path_query="/bad")
-        p = proxy.Proxy(self.conf, req, on_save=callbacks.on_save)
+        p = proxy.Proxy(self.conf_path, req)
         p.proxy()
 
         self.assertEqual(p.res.status, http.HTTPStatus.BAD_REQUEST)
@@ -254,7 +225,7 @@ class TestServerErrorHandling(unittest.TestCase):
         proper JSON error response with a generic error message.
         """
         req = self.make_request(path_query="/teapot")
-        p = proxy.Proxy(self.conf, req, on_save=callbacks.on_save)
+        p = proxy.Proxy(self.conf_path, req)
         p.proxy()
 
         self.assertEqual(p.res.status, 418)
@@ -268,15 +239,14 @@ class TestServerErrorHandling(unittest.TestCase):
         Test handling of "500 Internal Server Error" from the server.
         """
         req = self.make_request(path_query="/crash")
-        p = proxy.Proxy(self.conf, req, on_save=callbacks.on_save)
+        p = proxy.Proxy(self.conf_path, req)
         p.proxy()
 
         self.assertEqual(p.res.status, http.HTTPStatus.INTERNAL_SERVER_ERROR)
         self.assertIn("application/json", p.res.headers["Content-Type"])
         body = json.loads(p.res.body)
         self.assertEqual(
-            body["error"],
-            http.HTTPStatus.INTERNAL_SERVER_ERROR.phrase.lower()
+            body["error"], http.HTTPStatus.INTERNAL_SERVER_ERROR.phrase.lower()
         )
 
     @vcr.use_cassette("fixtures/proxy_internal_error.yaml")
@@ -284,14 +254,226 @@ class TestServerErrorHandling(unittest.TestCase):
         """
         Ensure that the proxy returns JSON despite internal errors.
         """
+
         def bad_on_save(self, fh, res, conf):
             raise Exception("test internal proxy error")
 
         req = self.make_request()
-        p = proxy.Proxy(self.conf, req, on_save=bad_on_save)
+        p = proxy.Proxy(self.conf_path, req)
+
+        # Patching on_save for tests
+        p.on_save = types.MethodType(bad_on_save, p)
         p.proxy()
 
         self.assertEqual(p.res.status, http.HTTPStatus.INTERNAL_SERVER_ERROR)
         self.assertIn("application/json", p.res.headers["Content-Type"])
         body = json.loads(p.res.body)
         self.assertEqual(body["error"], "internal proxy error")
+
+
+class TestProxyMethods(unittest.TestCase):
+    def setUp(self):
+        self.res = proxy.Response(status=200)
+        self.res.body = "babbys request"
+
+        self.conf_path = "tests/files/dev-config.yaml"
+
+    def test_err_on_done(self):
+        saved_stdout = sys.stdout
+        try:
+            out = StringIO()
+            sys.stdout = out
+            with self.assertRaises(SystemExit):
+                p = proxy.Proxy(self.conf_path)
+                p.res = self.res
+                p.err_on_done()
+            output = out.getvalue().strip()
+        finally:
+            sys.stdout = saved_stdout
+
+        response = json.loads(output)
+        self.assertEqual(response["status"], 200)
+        self.assertEqual(response["body"], "babbys request")
+
+    def test_on_done(self):
+        saved_stdout = sys.stdout
+        try:
+            out = StringIO()
+            sys.stdout = out
+            p = proxy.Proxy(self.conf_path)
+            p.res = self.res
+            p.on_done()
+            output = out.getvalue().strip()
+        finally:
+            sys.stdout = saved_stdout
+
+        response = json.loads(output)
+        self.assertEqual(response["status"], 200)
+        self.assertEqual(response["body"], "babbys request")
+
+    def test_on_save_500_unhandled_error(self):
+        fh = tempfile.NamedTemporaryFile()
+
+        # Let's generate an error and ensure that an appropriate response
+        # is sent back to the user
+        with patch("subprocess.run", side_effect=IOError):
+            p = proxy.Proxy(self.conf_path)
+            p.on_save(fh, self.res)
+
+        self.assertEqual(self.res.status, 500)
+        self.assertEqual(self.res.headers["Content-Type"], "application/json")
+        self.assertEqual(self.res.headers["X-Origin-Content-Type"], "application/json")
+        self.assertIn("Unhandled error", self.res.body)
+
+    def test_on_save_200_success(self):
+        fh = tempfile.NamedTemporaryFile()
+
+        p = proxy.Proxy(self.conf_path)
+        p.on_save(fh, self.res)
+
+        self.assertEqual(self.res.headers["Content-Type"], "application/json")
+        self.assertEqual(self.res.headers["X-Origin-Content-Type"], "application/json")
+        self.assertEqual(self.res.status, 200)
+        self.assertIn("filename", self.res.body)
+
+    @vcr.use_cassette("fixtures/proxy_callbacks.yaml")
+    def test_custom_callbacks(self):
+        """
+        Test the handlers in a real proxy request.
+        """
+        conf = proxy.Conf()
+        conf.host = "jsonplaceholder.typicode.com"
+        conf.scheme = "https"
+        conf.port = 443
+
+        req = proxy.Req()
+        req.method = "GET"
+
+        on_save_addition = "added by the on_save callback\n"
+        on_done_addition = "added by the on_done callback\n"
+
+        def on_save(self, fh, res):
+            res.headers["Content-Type"] = "text/plain"
+            res.body = on_save_addition
+
+        def on_done(self):
+            self.res.headers["Content-Type"] = "text/plain"
+            self.res.body += on_done_addition
+
+        p = proxy.Proxy(self.conf_path, req)
+        # Patching for tests
+        p.conf = conf
+        p.on_done = types.MethodType(on_done, p)
+        p.on_save = types.MethodType(on_save, p)
+        p.proxy()
+
+        self.assertEqual(p.res.body, "{}{}".format(on_save_addition, on_done_addition))
+
+    @vcr.use_cassette("fixtures/proxy_callbacks.yaml")
+    def test_production_on_save(self):
+        """
+        Test on_save's production file handling.
+        """
+        conf = proxy.Conf()
+        conf.host = "jsonplaceholder.typicode.com"
+        conf.scheme = "https"
+        conf.port = 443
+        conf.dev = False
+        conf.target_vm = "sd-svs-dispvm"
+
+        with patch("subprocess.run") as patched_run:
+            fh = tempfile.NamedTemporaryFile()
+            p = proxy.Proxy(self.conf_path)
+            # Patching for tests
+            p.conf = conf
+            p.on_save(fh, self.res)
+            self.assertEqual(patched_run.call_args[0][0][0], "qvm-move-to-vm")
+
+
+class TestConfig(unittest.TestCase):
+    def setUp(self):
+        self.conf_path = "tests/files/dev-config.yaml"
+
+    def test_config_file_does_not_exist(self):
+        def err_on_done(self):
+            res = self.res.__dict__
+            assert res["status"] == 500
+            assert "Configuration file does not exist" in res["body"]
+            assert res["headers"]["Content-Type"] == "application/json"
+            sys.exit(1)
+
+        p = proxy.Proxy(self.conf_path)
+        p.err_on_done = types.MethodType(err_on_done, p)
+        with self.assertRaises(SystemExit):
+            p.read_conf("not/a/real/path")
+
+    def test_config_file_when_yaml_is_invalid(self):
+        def err_on_done(self):
+            res = self.res.__dict__
+            assert res["status"] == 500
+            assert "YAML syntax error" in res["body"]
+            assert res["headers"]["Content-Type"] == "application/json"
+            sys.exit(1)
+
+        p = proxy.Proxy(self.conf_path)
+        p.err_on_done = types.MethodType(err_on_done, p)
+        with self.assertRaises(SystemExit):
+            p.read_conf("tests/files/invalid_yaml.yaml")
+
+    def test_config_file_open_generic_exception(self):
+        def err_on_done(self):
+            res = self.res.__dict__
+            assert res["status"] == 500
+            assert res["headers"]["Content-Type"] == "application/json"
+            sys.exit(1)
+
+        p = proxy.Proxy(self.conf_path)
+        p.err_on_done = types.MethodType(err_on_done, p)
+
+        with self.assertRaises(SystemExit):
+            # Patching open so that we can simulate a non-YAML error
+            # (e.g. permissions)
+            with patch("builtins.open", side_effect=IOError):
+                p.read_conf("tests/files/valid-config.yaml")
+
+    def test_config_has_valid_keys(self):
+        p = proxy.Proxy("tests/files/valid-config.yaml")
+
+        # Verify we have a valid Conf object
+        self.assertEqual(p.conf.host, "jsonplaceholder.typicode.com")
+        self.assertEqual(p.conf.port, 443)
+        self.assertFalse(p.conf.dev)
+        self.assertEqual(p.conf.scheme, "https")
+        self.assertEqual(p.conf.target_vm, "compost")
+
+    def test_config_500_when_missing_a_required_key(self):
+        def err_on_done(self):
+            res = self.res.__dict__
+            assert res["status"] == 500
+            assert "missing required keys" in res["body"]
+            assert res["headers"]["Content-Type"] == "application/json"
+            sys.exit(1)
+
+        p = proxy.Proxy(self.conf_path)
+        p.err_on_done = types.MethodType(err_on_done, p)
+
+        with self.assertRaises(SystemExit):
+            p.read_conf("tests/files/missing-key.yaml")
+
+    def test_config_500_when_missing_target_vm(self):
+        def err_on_done(self):
+            res = self.res.__dict__
+            assert res["status"] == 500
+            assert "missing `target_vm` key" in res["body"]
+            assert res["headers"]["Content-Type"] == "application/json"
+            sys.exit(1)
+
+        p = proxy.Proxy(self.conf_path)
+        p.err_on_done = types.MethodType(err_on_done, p)
+
+        with self.assertRaises(SystemExit):
+            p.read_conf("tests/files/missing-target-vm.yaml")
+
+    def test_dev_config(self):
+        p = proxy.Proxy("tests/files/dev-config.yaml")
+        assert p.conf.dev

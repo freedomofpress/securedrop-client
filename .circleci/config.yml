@@ -47,16 +47,6 @@ common-steps:
 
 version: 2
 jobs:
-  build-stretch:
-    docker:
-      - image: circleci/python:3.5-stretch
-    steps:
-      - checkout
-      - *install_packaging_dependencies
-      - *verify_requirements
-      - *make_source_tarball
-      - *build_debian_package
-
   build-buster:
     docker:
       - image: circleci/python:3.7-buster
@@ -66,13 +56,6 @@ jobs:
       - *verify_requirements
       - *make_source_tarball
       - *build_debian_package
-
-  test-stretch:
-    docker:
-      - image: circleci/python:3.5-stretch
-    steps:
-      - checkout
-      - *run_tests
 
   test-buster:
     docker:
@@ -85,7 +68,5 @@ workflows:
   version: 2
   securedrop_proxy_ci:
     jobs:
-      - test-stretch
       - test-buster
-      - build-stretch
       - build-buster

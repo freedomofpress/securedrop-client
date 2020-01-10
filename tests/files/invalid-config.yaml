@@ -1,0 +1,5 @@
+host: jsonplaceholder.typicode.com
+scheme: https://http
+port: 443
+target_vm: compost
+dev: False
