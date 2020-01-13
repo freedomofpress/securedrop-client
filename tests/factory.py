@@ -13,6 +13,7 @@ MESSAGE_COUNT = 0
 FILE_COUNT = 0
 REPLY_COUNT = 0
 DRAFT_REPLY_COUNT = 0
+REPLY_SEND_STATUS_COUNT = 0
 USER_COUNT = 0
 
 
@@ -54,7 +55,7 @@ def Message(**attrs):
     global MESSAGE_COUNT
     MESSAGE_COUNT += 1
     defaults = dict(
-        uuid='source-uuid-{}'.format(MESSAGE_COUNT),
+        uuid='msg-uuid-{}'.format(MESSAGE_COUNT),
         filename='{}-msg.gpg'.format(MESSAGE_COUNT),
         size=123,
         download_url='http://wat.onion/abc',
@@ -72,7 +73,7 @@ def Reply(**attrs):
     global REPLY_COUNT
     REPLY_COUNT += 1
     defaults = dict(
-        uuid='source-uuid-{}'.format(REPLY_COUNT),
+        uuid='reply-uuid-{}'.format(REPLY_COUNT),
         filename='{}-reply.gpg'.format(REPLY_COUNT),
         size=123,
         is_decrypted=True,
@@ -95,6 +96,7 @@ def DraftReply(**attrs):
         file_counter=1,
         uuid='draft-reply-uuid-{}'.format(REPLY_COUNT),
         content='content',
+        send_status_id=1,
     )
 
     defaults.update(attrs)
@@ -102,11 +104,23 @@ def DraftReply(**attrs):
     return db.DraftReply(**defaults)
 
 
+def ReplySendStatus(**attrs):
+    global REPLY_SEND_STATUS_COUNT
+    REPLY_SEND_STATUS_COUNT += 1
+    defaults = dict(
+        name=db.ReplySendStatusCodes.PENDING.value,
+    )
+
+    defaults.update(attrs)
+
+    return db.ReplySendStatus(**defaults)
+
+
 def File(**attrs):
     global FILE_COUNT
     FILE_COUNT += 1
     defaults = dict(
-        uuid='source-uuid-{}'.format(FILE_COUNT),
+        uuid='file-uuid-{}'.format(FILE_COUNT),
         filename='{}-doc.gz.gpg'.format(FILE_COUNT),
         original_filename='{}-doc.txt'.format(FILE_COUNT),
         size=123,

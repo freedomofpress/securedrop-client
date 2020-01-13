@@ -31,7 +31,8 @@ from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBox
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
     QToolButton, QSizePolicy, QPlainTextEdit, QStatusBar, QGraphicsDropShadowEffect
 
-from securedrop_client.db import DraftReply, Source, Message, File, Reply, User
+from securedrop_client.db import (DraftReply, Source, Message, File, Reply, User,
+                                  ReplySendStatusCodes)
 from securedrop_client.storage import source_exists
 from securedrop_client.export import ExportStatus, ExportError
 from securedrop_client.gui import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
@@ -2392,7 +2393,8 @@ class ConversationView(QWidget):
         self.source = source_db_object
         self.controller = controller
 
-        self.current_messages = {}  # To hold currently displayed messages.
+        # To hold currently displayed messages.
+        self.current_messages = {}  # type: Dict[str, QWidget]
 
         # Set styles
         self.setStyleSheet(self.CSS)
@@ -2418,6 +2420,9 @@ class ConversationView(QWidget):
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll.setWidget(self.container)
         self.scroll.setWidgetResizable(True)
+
+        # Flag to show if the current user has sent a reply. See issue #61.
+        self.reply_flag = False
 
         # Completely unintuitive way to ensure the view remains scrolled to the bottom.
         sb = self.scroll.verticalScrollBar()
@@ -2462,12 +2467,21 @@ class ConversationView(QWidget):
                     # and update index details.
                     self.conversation_layout.removeWidget(item_widget)
                     item_widget.index = index
-                    self.conversation_layout.insertWidget(index, item_widget)
-                # TODO: Check if text in item has changed, then update the
+                    if isinstance(item_widget, ReplyWidget):
+                        self.conversation_layout.insertWidget(index, item_widget,
+                                                              alignment=Qt.AlignRight)
+                    else:
+                        self.conversation_layout.insertWidget(index, item_widget,
+                                                              alignment=Qt.AlignLeft)
+                # Check if text in item has changed, then update the
                 # widget to reflect this change.
-                # TODO: Check for any other possible changes of state in the
-                # message so this can be reflected in the widget.
-                # TODO: Get rid of the damn todos and write/update tests. ;-)
+                if not isinstance(item_widget, FileWidget):
+                    if item_widget.message.text() != conversation_item.content:
+                        item_widget.message.setText(conversation_item.content)
+                # Check if this is a draft reply then ensure it's removed.
+                if isinstance(conversation_item, DraftReply):
+                    if conversation_item.send_status.name == ReplySendStatusCodes.PENDING.value:
+                        self.conversation_layout.removeWidget(item_widget)
             else:
                 # add a new item to be displayed.
                 if isinstance(conversation_item, Message):
@@ -2481,7 +2495,8 @@ class ConversationView(QWidget):
         """
         Add a file from the source.
         """
-        conversation_item = FileWidget(file.uuid, self.controller, self.controller.file_ready, index)
+        conversation_item = FileWidget(file.uuid, self.controller, self.controller.file_ready,
+                                       index)
         self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignLeft)
         self.current_messages[file.uuid] = conversation_item
 
@@ -2490,13 +2505,16 @@ class ConversationView(QWidget):
         Handler called when a new item is added to the conversation. Ensures
         it's scrolled to the bottom and thus visible.
         """
-        self.scroll.verticalScrollBar().setValue(max_val)
+        if self.reply_flag and max_val > 0:
+            self.scroll.verticalScrollBar().setValue(max_val)
+            self.reply_flag = False
 
     def add_message(self, message: Message, index) -> None:
         """
         Add a message from the source.
         """
-        conversation_item = MessageWidget(message.uuid, str(message), self.controller.message_ready, index)
+        conversation_item = MessageWidget(message.uuid, str(message), self.controller.message_ready,
+                                          index)
         self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignLeft)
         self.current_messages[message.uuid] = conversation_item
 
@@ -2534,16 +2552,16 @@ class ConversationView(QWidget):
             self.controller.reply_succeeded,
             self.controller.reply_failed,
             index)
-        self.conversation_layout.addWidget(conversation_item, alignment=Qt.AlignRight)
+        self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignRight)
+        self.current_messages[uuid] = conversation_item
 
     def on_reply_sent(self, source_uuid: str, reply_uuid: str, reply_text: str) -> None:
         """
         Add the reply text sent from ReplyBoxWidget to the conversation.
         """
-        # TODO: replace this with UI indication that the reply is "in flight"
-        # For now, just do nothing.
-        # if source_uuid == self.source.uuid:
-        #    self.add_reply_from_reply_box(reply_uuid, reply_text)
+        self.reply_flag = True
+        if source_uuid == self.source.uuid:
+            self.add_reply_from_reply_box(reply_uuid, reply_text)
 
 
 class SourceConversationWrapper(QWidget):
@@ -2692,10 +2710,11 @@ class ReplyBoxWidget(QWidget):
         """
         reply_text = self.text_edit.toPlainText().strip()
         if reply_text:
+            self.text_edit.clearFocus()  # Fixes #691
+            self.text_edit.setText('')
             reply_uuid = str(uuid4())
             self.controller.send_reply(self.source.uuid, reply_uuid, reply_text)
             self.reply_sent.emit(self.source.uuid, reply_uuid, reply_text)
-            self.text_edit.setText('')
 
     def _on_authentication_changed(self, authenticated: bool) -> None:
         if authenticated:

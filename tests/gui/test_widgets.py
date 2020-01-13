@@ -1279,7 +1279,7 @@ def test_SpeechBubble_init(mocker):
     mock_connect = mocker.Mock()
     mock_signal.connect = mock_connect
 
-    sb = SpeechBubble('mock id', 'hello', mock_signal)
+    sb = SpeechBubble('mock id', 'hello', mock_signal, 0)
     ss = sb.styleSheet()
 
     sb.message.text() == 'hello'
@@ -1294,7 +1294,7 @@ def test_SpeechBubble_update_text(mocker):
     mock_signal = mocker.MagicMock()
 
     msg_id = 'abc123'
-    sb = SpeechBubble(msg_id, 'hello', mock_signal)
+    sb = SpeechBubble(msg_id, 'hello', mock_signal, 0)
 
     new_msg = 'new message'
     sb._update_text(msg_id, new_msg)
@@ -1312,7 +1312,7 @@ def test_SpeechBubble_html_init(mocker):
     """
     mock_signal = mocker.MagicMock()
 
-    bubble = SpeechBubble('mock id', '<b>hello</b>', mock_signal)
+    bubble = SpeechBubble('mock id', '<b>hello</b>', mock_signal, 0)
     assert bubble.message.text() == '<b>hello</b>'
 
 
@@ -1321,7 +1321,7 @@ def test_SpeechBubble_with_apostrophe_in_text(mocker):
     mock_signal = mocker.MagicMock()
 
     message = "I'm sure, you are reading my message."
-    bubble = SpeechBubble('mock id', message, mock_signal)
+    bubble = SpeechBubble('mock id', message, mock_signal, 0)
     assert bubble.message.text() == message
 
 
@@ -1333,7 +1333,7 @@ def test_MessageWidget_init(mocker):
     mock_connected = mocker.Mock()
     mock_signal.connect = mock_connected
 
-    MessageWidget('mock id', 'hello', mock_signal)
+    MessageWidget('mock id', 'hello', mock_signal, 0)
 
     assert mock_connected.called
 
@@ -1361,6 +1361,7 @@ def test_ReplyWidget_init(mocker):
         mock_update_signal,
         mock_success_signal,
         mock_failure_signal,
+        0,
     )
 
     assert mock_update_connected.called
@@ -1379,7 +1380,7 @@ def test_FileWidget_init_file_not_downloaded(mocker, source, session):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget('mock', controller, mocker.MagicMock())
+    fw = FileWidget('mock', controller, mocker.MagicMock(), 0)
 
     assert fw.controller == controller
     assert fw.file.is_downloaded is False
@@ -1402,7 +1403,7 @@ def test_FileWidget_init_file_downloaded(mocker, source, session):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget('mock', controller, mocker.MagicMock())
+    fw = FileWidget('mock', controller, mocker.MagicMock(), 0)
 
     assert fw.controller == controller
     assert fw.file.is_downloaded is True
@@ -1431,7 +1432,7 @@ def test_FileWidget_event_handler(mocker, session, source):
     test_event = QEvent(QEvent.MouseButtonPress)
     test_event.button = mocker.MagicMock(return_value=Qt.LeftButton)
 
-    fw = FileWidget(file_.uuid, mock_controller, mock_signal)
+    fw = FileWidget(file_.uuid, mock_controller, mock_signal, 0)
     fw._on_left_click = mocker.MagicMock()
 
     fw.eventFilter(fw, test_event)
@@ -1454,7 +1455,7 @@ def test_FileWidget_on_left_click_download(mocker, session, source):
     mock_get_file = mocker.MagicMock(return_value=file_)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
-    fw = FileWidget(file_.uuid, mock_controller, mock_signal)
+    fw = FileWidget(file_.uuid, mock_controller, mock_signal, 0)
     fw.download_button = mocker.MagicMock()
     mock_get_file.assert_called_once_with(file_.uuid)
     mock_get_file.reset_mock()
@@ -1482,7 +1483,7 @@ def test_FileWidget_start_button_animation(mocker, session, source):
     session.commit()
     mock_get_file = mocker.MagicMock(return_value=file_)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
-    fw = FileWidget(file_.uuid, mock_controller, mock_signal)
+    fw = FileWidget(file_.uuid, mock_controller, mock_signal, 0)
     fw.download_button = mocker.MagicMock()
     fw.start_button_animation()
     # Check indicators of activity have been updated.
@@ -1504,7 +1505,7 @@ def test_FileWidget_on_left_click_open(mocker, session, source):
     mock_get_file = mocker.MagicMock(return_value=file_)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
-    fw = FileWidget(file_.uuid, mock_controller, mock_signal)
+    fw = FileWidget(file_.uuid, mock_controller, mock_signal, 0)
     fw._on_left_click()
     fw.controller.on_file_open.assert_called_once_with(file_.uuid)
 
@@ -1525,7 +1526,7 @@ def test_FileWidget_set_button_animation_frame(mocker, session, source):
     mock_get_file = mocker.MagicMock(return_value=file_)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
-    fw = FileWidget(file_.uuid, mock_controller, mock_signal)
+    fw = FileWidget(file_.uuid, mock_controller, mock_signal, 0)
     fw.download_button = mocker.MagicMock()
     fw.set_button_animation_frame(1)
     assert fw.download_button.setIcon.call_count == 1
@@ -1540,7 +1541,7 @@ def test_FileWidget_update(mocker, session, source):
     session.commit()
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock())
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), 0)
 
     fw.update()
 
@@ -1560,7 +1561,7 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_matches(mocker, sou
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock())
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), 0)
     fw.update = mocker.MagicMock()
 
     fw._on_file_downloaded(file.uuid)
@@ -1586,7 +1587,7 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock())
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), 0)
     fw.clear = mocker.MagicMock()
     fw.update = mocker.MagicMock()
 
@@ -1612,7 +1613,7 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock())
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), 0)
     fw.update = mocker.MagicMock()
     mocker.patch('securedrop_client.gui.widgets.QDialog.exec')
     controller.run_export_preflight_checks = mocker.MagicMock()
@@ -1639,7 +1640,7 @@ def test_FileWidget__on_export_clicked_missing_file(mocker, session, source):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock())
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), 0)
     fw.update = mocker.MagicMock()
     mocker.patch('securedrop_client.gui.widgets.QDialog.exec')
     controller.run_export_preflight_checks = mocker.MagicMock()
@@ -1663,7 +1664,7 @@ def test_FileWidget__on_print_clicked(mocker, session, source):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock())
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), 0)
     fw.update = mocker.MagicMock()
     mocker.patch('securedrop_client.gui.widgets.QDialog.exec')
     controller.print_file = mocker.MagicMock()
@@ -1690,7 +1691,7 @@ def test_FileWidget__on_print_clicked_missing_file(mocker, session, source):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock())
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), 0)
     fw.update = mocker.MagicMock()
     mocker.patch('securedrop_client.gui.widgets.QDialog.exec')
     controller.print_file = mocker.MagicMock()
@@ -2054,12 +2055,16 @@ def test_ConversationView_update_conversation_position_follow(mocker, homedir):
     """
     Check the signal handler sets the correct value for the scrollbar to be
     the maximum possible value, when the scrollbar is near the bottom, meaning
-    it is following the conversation.
+    it is following the conversation. This should only work if the user has
+    submitted a reply to a source.
     """
     mocked_source = mocker.MagicMock()
     mocked_controller = mocker.MagicMock()
 
     cv = ConversationView(mocked_source, mocked_controller)
+
+    # Flag to denote a reply was sent by the user.
+    cv.reply_flag = True
 
     cv.scroll.verticalScrollBar().value = mocker.MagicMock(return_value=5900)
     cv.scroll.viewport().height = mocker.MagicMock(return_value=500)
@@ -2111,14 +2116,14 @@ def test_ConversationView_add_message(mocker, session, source):
     mock_msg_widget = mocker.patch('securedrop_client.gui.widgets.MessageWidget',
                                    return_value=mock_msg_widget_res)
 
-    cv.add_message(message)
+    cv.add_message(message, 0)
 
     # check that we built the widget was called with the correct args
-    mock_msg_widget.assert_called_once_with(message.uuid, content, mock_message_ready_signal)
+    mock_msg_widget.assert_called_once_with(message.uuid, content, mock_message_ready_signal, 0)
 
     # check that we added the correct widget to the layout
-    cv.conversation_layout.addWidget.assert_called_once_with(
-        mock_msg_widget_res, alignment=Qt.AlignLeft)
+    cv.conversation_layout.insertWidget.assert_called_once_with(
+        0, mock_msg_widget_res, alignment=Qt.AlignLeft)
 
 
 def test_ConversationView_add_message_no_content(mocker, session, source):
@@ -2144,15 +2149,15 @@ def test_ConversationView_add_message_no_content(mocker, session, source):
     mock_msg_widget = mocker.patch('securedrop_client.gui.widgets.MessageWidget',
                                    return_value=mock_msg_widget_res)
 
-    cv.add_message(message)
+    cv.add_message(message, 0)
 
     # check that we built the widget was called with the correct args
     mock_msg_widget.assert_called_once_with(
-        message.uuid, '<Message not yet available>', mock_message_ready_signal)
+        message.uuid, '<Message not yet available>', mock_message_ready_signal, 0)
 
     # check that we added the correct widget to the layout
-    cv.conversation_layout.addWidget.assert_called_once_with(
-        mock_msg_widget_res, alignment=Qt.AlignLeft)
+    cv.conversation_layout.insertWidget.assert_called_once_with(
+        0, mock_msg_widget_res, alignment=Qt.AlignLeft)
 
 
 def test_ConversationView_on_reply_sent(mocker):
@@ -2164,9 +2169,11 @@ def test_ConversationView_on_reply_sent(mocker):
     cv = ConversationView(source, controller)
     cv.add_reply_from_reply_box = mocker.MagicMock()
 
+    assert cv.reply_flag is False
     cv.on_reply_sent(source.uuid, 'abc123', 'test message')
 
     cv.add_reply_from_reply_box.assert_called_with('abc123', 'test message')
+    assert cv.reply_flag is True
 
 
 def test_ConversationView_on_reply_sent_does_not_add_message_intended_for_different_source(mocker):
@@ -2203,9 +2210,9 @@ def test_ConversationView_add_reply_from_reply_box(mocker):
     cv.add_reply_from_reply_box('abc123', 'test message')
 
     reply_widget.assert_called_once_with(
-        'abc123', 'test message', 'PENDING', reply_ready, reply_succeeded, reply_failed)
-    cv.conversation_layout.addWidget.assert_called_once_with(
-        reply_widget_res, alignment=Qt.AlignRight)
+        'abc123', 'test message', 'PENDING', reply_ready, reply_succeeded, reply_failed, 0)
+    cv.conversation_layout.insertWidget.assert_called_once_with(
+        0, reply_widget_res, alignment=Qt.AlignRight)
 
 
 def test_ConversationView_add_reply(mocker, session, source):
@@ -2235,7 +2242,7 @@ def test_ConversationView_add_reply(mocker, session, source):
     mock_reply_widget = mocker.patch('securedrop_client.gui.widgets.ReplyWidget',
                                      return_value=reply_widget_res)
 
-    cv.add_reply(reply)
+    cv.add_reply(reply, 0)
 
     # check that we built the widget was called with the correct args
     mock_reply_widget.assert_called_once_with(
@@ -2244,11 +2251,12 @@ def test_ConversationView_add_reply(mocker, session, source):
         'SUCCEEDED',
         mock_reply_ready_signal,
         mock_reply_succeeded_signal,
-        mock_reply_failed_signal)
+        mock_reply_failed_signal,
+        0)
 
     # check that we added the correct widget to the layout
-    cv.conversation_layout.addWidget.assert_called_once_with(
-        reply_widget_res, alignment=Qt.AlignRight)
+    cv.conversation_layout.insertWidget.assert_called_once_with(
+        0, reply_widget_res, alignment=Qt.AlignRight)
 
 
 def test_ConversationView_add_reply_no_content(mocker, session, source):
@@ -2279,7 +2287,7 @@ def test_ConversationView_add_reply_no_content(mocker, session, source):
     mock_reply_widget = mocker.patch('securedrop_client.gui.widgets.ReplyWidget',
                                      return_value=reply_widget_res)
 
-    cv.add_reply(reply)
+    cv.add_reply(reply, 0)
 
     # check that we built the widget was called with the correct args
     mock_reply_widget.assert_called_once_with(
@@ -2288,11 +2296,12 @@ def test_ConversationView_add_reply_no_content(mocker, session, source):
         'SUCCEEDED',
         mock_reply_ready_signal,
         mock_reply_succeeded_signal,
-        mock_reply_failed_signal)
+        mock_reply_failed_signal,
+        0)
 
     # check that we added the correct widget to the layout
-    cv.conversation_layout.addWidget.assert_called_once_with(
-        reply_widget_res, alignment=Qt.AlignRight)
+    cv.conversation_layout.insertWidget.assert_called_once_with(
+        0, reply_widget_res, alignment=Qt.AlignRight)
 
 
 def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
@@ -2315,13 +2324,13 @@ def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
     mocker.patch('securedrop_client.gui.widgets.QHBoxLayout.addWidget')
     mocker.patch('securedrop_client.gui.widgets.FileWidget.setLayout')
 
-    cv.add_file(file)
+    cv.add_file(file, 0)
 
     mock_label.assert_called_with('123B')  # default factory filesize
-    assert cv.conversation_layout.addWidget.call_count == 1
+    assert cv.conversation_layout.insertWidget.call_count == 1
 
-    cal = cv.conversation_layout.addWidget.call_args_list
-    assert isinstance(cal[0][0][0], FileWidget)
+    cal = cv.conversation_layout.insertWidget.call_args_list
+    assert isinstance(cal[0][0][1], FileWidget)
 
 
 def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, session):
@@ -2342,11 +2351,11 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, sessi
     mocker.patch('securedrop_client.gui.widgets.QHBoxLayout.addWidget')
     mocker.patch('securedrop_client.gui.widgets.FileWidget.setLayout')
 
-    cv.add_file(file)
-    assert cv.conversation_layout.addWidget.call_count == 1
+    cv.add_file(file, 0)
+    assert cv.conversation_layout.insertWidget.call_count == 1
 
-    cal = cv.conversation_layout.addWidget.call_args_list
-    assert isinstance(cal[0][0][0], FileWidget)
+    cal = cv.conversation_layout.insertWidget.call_args_list
+    assert isinstance(cal[0][0][1], FileWidget)
 
 
 def test_DeleteSourceMessageBox_init(mocker, source):
@@ -2638,7 +2647,8 @@ def test_ReplyWidget_success_failure_slots(mocker):
                          'PENDING',
                          mock_update_signal,
                          mock_success_signal,
-                         mock_failure_signal)
+                         mock_failure_signal,
+                         0)
 
     # ensure we have connected the slots
     mock_success_signal.connect.assert_called_once_with(widget._on_reply_success)
@@ -2845,11 +2855,12 @@ def test_ReplyTextEdit_set_logged_in(mocker):
 
 def test_update_conversation_maintains_old_items(mocker, session):
     """
-    Calling update_conversation deletes and adds old items back to layout
+    Calling update_conversation maintains old item state / position if there's
+    no change to the conversation collection.
     """
     source = factory.Source()
     session.add(source)
-    session.flush()
+    session.commit()
 
     file_ = factory.File(filename='1-source-doc.gpg', source=source)
     session.add(file_)
@@ -2870,13 +2881,82 @@ def test_update_conversation_maintains_old_items(mocker, session):
     assert cv.conversation_layout.count() == 3
 
 
+def test_update_conversation_removes_draft_items(mocker, session):
+    """
+    Calling update_conversation removes items that were added as drafts.
+    """
+    source = factory.Source()
+    session.add(source)
+    send_status = factory.ReplySendStatus()
+    session.add(send_status)
+    session.commit()
+
+    file_ = factory.File(filename='1-source-doc.gpg', source=source)
+    session.add(file_)
+    message = factory.Message(filename='2-source-msg.gpg', source=source)
+    session.add(message)
+    draft_reply = factory.DraftReply(source=source, send_status=send_status)
+    session.add(draft_reply)
+    session.commit()
+
+    mock_get_file = mocker.MagicMock(return_value=file_)
+    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+
+    cv = ConversationView(source, mock_controller)
+    assert cv.conversation_layout.count() == 3  # precondition with draft
+
+    # add the new message and persist
+    new_message = factory.Message(filename='4-source-msg.gpg', source=source)
+    session.add(new_message)
+    session.commit()
+
+    # New message added, draft message removed.
+    cv.update_conversation(cv.source.collection)
+    assert cv.conversation_layout.count() == 3
+
+
+def test_update_conversation_keeps_failed_draft_items(mocker, session):
+    """
+    Calling update_conversation keeps items that were added as drafts but which
+    have failed.
+    """
+    source = factory.Source()
+    session.add(source)
+    send_status = factory.ReplySendStatus(name="FAILED")
+    session.add(send_status)
+    session.commit()
+
+    file_ = factory.File(filename='1-source-doc.gpg', source=source)
+    session.add(file_)
+    message = factory.Message(filename='2-source-msg.gpg', source=source)
+    session.add(message)
+    draft_reply = factory.DraftReply(source=source, send_status=send_status)
+    session.add(draft_reply)
+    session.commit()
+
+    mock_get_file = mocker.MagicMock(return_value=file_)
+    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+
+    cv = ConversationView(source, mock_controller)
+    assert cv.conversation_layout.count() == 3  # precondition with draft
+
+    # add the new message and persist
+    new_message = factory.Message(filename='4-source-msg.gpg', source=source)
+    session.add(new_message)
+    session.commit()
+
+    # New message added, draft message retained.
+    cv.update_conversation(cv.source.collection)
+    assert cv.conversation_layout.count() == 4
+
+
 def test_update_conversation_adds_new_items(mocker, session):
     """
     Calling update_conversation adds new items to layout
     """
     source = factory.Source()
     session.add(source)
-    session.flush()
+    session.commit()
 
     file_ = factory.File(filename='1-source-doc.gpg', source=source)
     session.add(file_)
@@ -2901,6 +2981,42 @@ def test_update_conversation_adds_new_items(mocker, session):
     assert cv.conversation_layout.count() == 4
 
 
+def test_update_conversation_position_updates(mocker, session):
+    """
+    Calling update_conversation adds new items to layout
+    """
+    source = factory.Source()
+    session.add(source)
+    session.commit()
+
+    file_ = factory.File(filename='1-source-doc.gpg', source=source)
+    session.add(file_)
+    message = factory.Message(filename='2-source-msg.gpg', source=source)
+    session.add(message)
+    reply = factory.Reply(filename='3-source-reply.gpg', source=source)
+    session.add(reply)
+    session.commit()
+
+    mock_get_file = mocker.MagicMock(return_value=file_)
+    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+
+    cv = ConversationView(source, mock_controller)
+    assert cv.conversation_layout.count() == 3  # precondition
+
+    # Change the position of the Reply.
+    reply_widget = cv.current_messages[reply.uuid]
+    reply_widget.index = 1
+
+    # add the new message and persist
+    new_message = factory.Message(filename='4-source-msg.gpg', source=source)
+    session.add(new_message)
+    session.commit()
+
+    cv.update_conversation(cv.source.collection)
+    assert cv.conversation_layout.count() == 4
+    assert reply_widget.index == 2  # re-ordered.
+
+
 def test_update_conversation_content_updates(mocker, session):
     """
     Subsequent calls to update_conversation update the content of the conversation_item
@@ -2911,15 +3027,17 @@ def test_update_conversation_content_updates(mocker, session):
     mock_controller.session = session
     source = factory.Source()
     session.add(source)
-    session.flush()
+    session.commit()
 
     message = factory.Message(filename='2-source-msg.gpg', source=source, content=None)
     session.add(message)
     session.commit()
 
     cv = ConversationView(source, mock_controller)
+    cv.current_messages = {}  # Reset!
 
-    cv.conversation_layout.addWidget = mocker.MagicMock()
+    cv.conversation_layout.insertWidget = mocker.MagicMock()
+    cv.conversation_layout.removeWidget = mocker.MagicMock()
     # this is the MessageWidget that __init__() would return
     mock_msg_widget_res = mocker.MagicMock()
     # mock MessageWidget so we can inspect the __init__ call to see what content
@@ -2947,7 +3065,7 @@ def test_update_conversation_content_updates(mocker, session):
     cv.update_conversation(cv.source.collection)
 
     # Check that the widget was updated with the expected content.
-    assert mock_msg_widget.call_args[0][1] == expected_content
+    assert mock_msg_widget_res.message.setText.call_args[0][0] == expected_content
 
 
 def test_clear_conversation_deletes_items(mocker, homedir):
@@ -2958,7 +3076,7 @@ def test_clear_conversation_deletes_items(mocker, homedir):
     mock_source = mocker.MagicMock()
     message = db.Message(uuid='uuid', content='message', filename='1-foo')
     cv = ConversationView(mock_source, mock_controller)
-    cv.add_message(message)
+    cv.add_message(message, 0)
     assert cv.conversation_layout.count() == 1
 
     cv.clear_conversation()
