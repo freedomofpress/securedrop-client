@@ -30,7 +30,7 @@ from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient,
 from PyQt5.QtWidgets import QApplication, QListWidget, QLabel, QWidget, QListWidgetItem, \
     QHBoxLayout, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
     QToolButton, QSizePolicy, QPlainTextEdit, QStatusBar, QGraphicsDropShadowEffect, QPushButton, \
-    QDialogButtonBox, QLayout
+    QDialogButtonBox
 
 from securedrop_client.db import DraftReply, Source, Message, File, Reply, User
 from securedrop_client.storage import source_exists
@@ -2275,8 +2275,6 @@ class PrintDialog(FramelessModal):
             'To protect your sources, please consider redacting documents before printing them.')
         self.insert_usb_message = _('Please connect your printer to a USB port.')
         self.generic_error_message = _('See your administrator for help.')
-        self.usb_error_message = _(
-            'Please try reconnecting your printer, or see your administrator for help.')
         self.continue_disabled_message = _(
             'The CONTINUE button will be disabled until the Export VM is ready')
 
@@ -2294,18 +2292,7 @@ class PrintDialog(FramelessModal):
 
     def _show_generic_error_message(self, error_code: str):
         self.header.setText(self.error_header)
-        if not error_code:
-            self.body.setText(self.generic_error_message)
-        else:
-            self.body.setText(error_code + '\n' + self.generic_error_message)
-
-    def _show_usb_error_message(self, error_code: str):
-        self.header.setText(self.error_header)
-        if not error_code:
-            self.body.setText(self.usb_error_message)
-        else:
-            message = error_code + '\n' + self.usb_error_message
-            self.body.setText(message)
+        self.body.setText('{}: {}'.format(error_code, self.generic_error_message))
 
     def _update(self, status: str):
         if status == ExportStatus.PRINTER_NOT_FOUND.value:
@@ -2434,7 +2421,7 @@ class ExportDialog(FramelessModal):
 
     def _show_passphrase_request_message_again(self):
         self.header.setText(self.passphrase_header)
-        self.body.setText(self.passphrase_message)
+        self.body.setText(self.passphrase_error_message)
         self.passphrase_form.show()
 
     def _show_insert_usb_message(self):
@@ -2443,14 +2430,14 @@ class ExportDialog(FramelessModal):
         self.passphrase_form.hide()
 
     def _show_insert_encrypted_usb_message(self):
-        self.header.setText(self.error_header)
+        self.header.setText(self.insert_usb_header)
         self.body.setText(
             '{}\n\n{}'.format(self.usb_error_message, self.insert_usb_message))
         self.passphrase_form.hide()
 
     def _show_generic_error_message(self, error_code: str):
         self.header.setText(self.error_header)
-        self.body.setText('{}\n\n{}'.format(error_code, self.generic_error_message))
+        self.body.setText('{}: {}'.format(error_code, self.generic_error_message))
         self.passphrase_form.hide()
 
     def _update(self, status):
