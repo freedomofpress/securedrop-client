@@ -1956,8 +1956,6 @@ class FramelessModal(QDialog):
     #frameless_modal {
         min-width: 800px;
         max-width: 800px;
-        min-height: 300px;
-        max-height: 800px;
         background-color: #fff;
         border: 1px solid #2a319d;
     }
@@ -2029,7 +2027,8 @@ class FramelessModal(QDialog):
         self.setStyleSheet(self.CSS)
         self.setWindowFlags(Qt.Widget | Qt.FramelessWindowHint)
         self.setWindowModality(Qt.WindowModal)
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        self.setMinimumSize(800, 400)
 
         # Set drop shadow effect
         effect = QGraphicsDropShadowEffect(self)
@@ -2043,6 +2042,7 @@ class FramelessModal(QDialog):
         titlebar = QWidget()
         titlebar_layout = QVBoxLayout()
         titlebar.setLayout(titlebar_layout)
+        titlebar.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         close_button = SvgPushButton('delete_close.svg', svg_size=QSize(10, 10))
         close_button.setObjectName('close_button')
         close_button.setText('CLOSE')
@@ -2051,26 +2051,36 @@ class FramelessModal(QDialog):
 
         # Content including: header, body, help menu, and buttons
         content = QWidget()
+        content.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         content_layout = QVBoxLayout()
+        #content_layout.setSpacing(0)
         content.setLayout(content_layout)
-        content_layout.setContentsMargins(
-            self.CONTENT_MARGIN, 0, self.CONTENT_MARGIN, self.CONTENT_MARGIN)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        #content_layout.setContentsMargins(
+        #    self.CONTENT_MARGIN, 0, self.CONTENT_MARGIN, self.CONTENT_MARGIN)
         self.header = QLabel()
         self.header.setObjectName('header')
         self.header.setWordWrap(True)
+        self.header.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         header_line = QWidget()
         header_line.setObjectName('header_line')
+        header_line.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         self.error_details = QLabel()
         self.error_details.setObjectName('error_details')
         self.error_details.setWordWrap(True)
+        self.error_details.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         self.body = QLabel()
         self.body.setObjectName('body')
         self.body.setWordWrap(True)
         self.body.setScaledContents(True)
+        self.body.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         body_container = QWidget()
+        body_container.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         self.body_layout = QVBoxLayout()
-        self.body_layout.setContentsMargins(
-            self.BODY_MARGIN, self.BODY_MARGIN, self.BODY_MARGIN, self.BODY_MARGIN)
+        self.body_layout.setSpacing(0)
+        self.body_layout.setContentsMargins(0, 0, 0, 0)
+        #self.body_layout.setContentsMargins(
+        #    self.BODY_MARGIN, self.BODY_MARGIN, self.BODY_MARGIN, self.BODY_MARGIN)
         body_container.setLayout(self.body_layout)
         self.body_layout.addWidget(self.body)
         window_buttons = QWidget()
@@ -2093,7 +2103,7 @@ class FramelessModal(QDialog):
         content_layout.addWidget(header_line)
         content_layout.addWidget(self.error_details)
         content_layout.addWidget(body_container)
-        content_layout.addStretch()
+        #content_layout.addStretch()
         content_layout.addWidget(window_buttons)
 
         # Layout
@@ -2101,6 +2111,7 @@ class FramelessModal(QDialog):
         self.setLayout(layout)
         layout.addWidget(titlebar)
         layout.addWidget(content)
+        #layout.setContentsMargins(0,0,0,0)
 
         self.center_dialog()
 
@@ -2155,22 +2166,22 @@ class PrintDialog(FramelessModal):
         self.error_details.hide()
         self.body.setText(self.starting_message)
         self.button_message.setText('<i>' + self.continue_disabled_message + '</i>')
-        self.adjustSize()
-        self.center_dialog()
+        #self.adjustSize()
+        #self.center_dialog()
 
     def _show_insert_usb_message(self):
         self.header.setText(self.insert_usb_header)
         self.error_details.hide()
         self.body.setText(self.insert_usb_message)
-        self.adjustSize()
-        self.center_dialog()
+        #self.adjustSize()
+        #self.center_dialog()
 
     def _show_generic_error_message(self, error_code: str):
         self.header.setText(self.error_header)
         self.error_details.hide()
         self.body.setText('{}: {}'.format(error_code, self.generic_error_message))
-        self.adjustSize()
-        self.center_dialog()
+        #self.adjustSize()
+        #self.center_dialog()
 
     def _update(self, status: str):
         if status == ExportStatus.PRINTER_NOT_FOUND.value:
@@ -2309,8 +2320,8 @@ class ExportDialog(FramelessModal):
         self.header.setText(self.starting_header)
         self.body.setText(self.starting_message)
         self.button_message.setText('<i>' + self.continue_disabled_message + '</i>')
-        self.adjustSize()
-        self.center_dialog()
+        #self.adjustSize()
+        #self.center_dialog()
 
     def _show_passphrase_request_message(self):
         self.header.setText(self.passphrase_header)
@@ -2318,8 +2329,8 @@ class ExportDialog(FramelessModal):
         self.body.hide()
         self.passphrase_form.show()
         self.continue_button.setText('SUBMIT')
-        self.adjustSize()
-        self.center_dialog()
+        #self.adjustSize()
+        #self.center_dialog()
 
     def _show_passphrase_request_message_again(self):
         self.header.setText(self.passphrase_header)
@@ -2327,8 +2338,8 @@ class ExportDialog(FramelessModal):
         self.body.hide()
         self.passphrase_form.show()
         self.continue_button.setText('SUBMIT')
-        self.adjustSize()
-        self.center_dialog()
+        #self.adjustSize()
+        #self.center_dialog()
 
     def _show_insert_usb_message(self):
         self.header.setText(self.insert_usb_header)
@@ -2336,8 +2347,8 @@ class ExportDialog(FramelessModal):
         self.error_details.hide()
         self.passphrase_form.hide()
         self.continue_button.setText('CONTINUE')
-        self.adjustSize()
-        self.center_dialog()
+        #self.adjustSize()
+        #self.center_dialog()
 
     def _show_insert_encrypted_usb_message(self):
         self.header.setText(self.insert_usb_header)
@@ -2345,16 +2356,16 @@ class ExportDialog(FramelessModal):
         self.body.setText(self.insert_usb_message)
         self.passphrase_form.hide()
         self.continue_button.setText('CONTINUE')
-        self.adjustSize()
-        self.center_dialog()
+        #self.adjustSize()
+        #self.center_dialog()
 
     def _show_generic_error_message(self, error_code: str):
         self.header.setText(self.error_header)
         self.error_details.hide()
         self.body.setText('{}: {}'.format(error_code, self.generic_error_message))
         self.passphrase_form.hide()
-        self.adjustSize()
-        self.center_dialog()
+        #self.adjustSize()
+        #self.center_dialog()
 
     def _update(self, status):
         if status == ExportStatus.USB_NOT_CONNECTED.value:
