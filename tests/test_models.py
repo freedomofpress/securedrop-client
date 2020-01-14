@@ -92,6 +92,8 @@ def test_string_representation_of_file():
     file_ = File(source=source, uuid="test", size=123, filename="1-test.docx",
                  download_url='http://test/test')
     file_.__str__()
+    file_.is_downloaded = True
+    file_.__str__()
 
 
 def test_string_representation_of_reply():
