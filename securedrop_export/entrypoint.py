@@ -58,8 +58,9 @@ def start():
         main.__main__(my_sub)
         # Delete extracted achive from tempfile
         shutil.rmtree(my_sub.tmpdir)
-    except Exception:
+    except Exception as e:
         # exit with 0 return code otherwise the os will attempt to open
         # the file with another application
+        logger.error(e)
         msg = "ERROR_GENERIC"
         my_sub.exit_gracefully(msg)

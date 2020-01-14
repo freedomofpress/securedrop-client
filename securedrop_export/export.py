@@ -23,11 +23,13 @@ class Metadata(object):
 
     METADATA_FILE = "metadata.json"
     SUPPORTED_EXPORT_METHODS = [
+        "start-vm",
         "usb-test",  # general preflight check
         "disk",
         "disk-test",  # disk preflight test
         "printer",
         "printer-test",  # print test page
+        "printer-preflight"
     ]
     SUPPORTED_ENCRYPTION_METHODS = ["luks"]
 
