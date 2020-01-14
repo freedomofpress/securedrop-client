@@ -34,7 +34,7 @@ common-steps:
         mkdir ~/packaging && cd ~/packaging
         git clone https://github.com/freedomofpress/securedrop-debian-packaging.git
         cd securedrop-debian-packaging
-        make install-deps && make fetch-wheels
+        make install-deps
         PKG_DIR=~/project make requirements
 
   - &verify_requirements
