@@ -1045,6 +1045,11 @@ class SourceWidget(QWidget):
         """
         self.timestamp.setText(arrow.get(self.source.last_updated).format('DD MMM'))
         self.name.setText(self.source.journalist_designation)
+        if self.source.collection:
+            msg = str(self.source.collection[-1])
+            if len(msg) > 120:
+                msg = msg[:120] + "..."
+            self.preview.setText(msg)
         if self.source.document_count == 0:
             self.paperclip.hide()
 
@@ -2407,23 +2412,13 @@ class ConversationView(QWidget):
         """
         Add a message from the source.
         """
-        if message.content is not None:
-            content = message.content
-        else:
-            content = '<Message not yet available>'
-
-        conversation_item = MessageWidget(message.uuid, content, self.controller.message_ready)
+        conversation_item = MessageWidget(message.uuid, str(message), self.controller.message_ready)
         self.conversation_layout.addWidget(conversation_item, alignment=Qt.AlignLeft)
 
     def add_reply(self, reply: Union[DraftReply, Reply]) -> None:
         """
         Add a reply from a journalist to the source.
         """
-        if reply.content is not None:
-            content = reply.content
-        else:
-            content = '<Reply not yet available>'
-
         try:
             send_status = reply.send_status.name
         except AttributeError:
@@ -2432,7 +2427,7 @@ class ConversationView(QWidget):
         logger.debug('adding reply: with status {}'.format(send_status))
         conversation_item = ReplyWidget(
             reply.uuid,
-            content,
+            str(reply),
             send_status,
             self.controller.reply_ready,
             self.controller.reply_succeeded,
