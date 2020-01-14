@@ -2250,10 +2250,11 @@ class FramelessModal(QDialog):
         layout.addWidget(titlebar)
         layout.addWidget(content)
 
-        self.center_dialog()
-
     def center_dialog(self):
-        application_window_size = QApplication.activeWindow().geometry()
+        active_window = QApplication.activeWindow()
+        if not active_window:
+            return
+        application_window_size = active_window.geometry()
         dialog_size = self.geometry()
         x_center = (application_window_size.width() - dialog_size.width()) / 2
         y_center = (application_window_size.height() - dialog_size.height()) / 2
