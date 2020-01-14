@@ -746,6 +746,21 @@ def test_SourceWidget_update_attachment_icon():
     assert sw.paperclip.isHidden()
 
 
+def test_SourceWidget_update_truncate_latest_msg(mocker):
+    """
+    If the latest message in the conversation is longer than 120 characters,
+    truncate and add "..." to the end.
+    """
+    #source = factory.Source(document_count=1)
+    source = mocker.MagicMock()
+    source.journalist_designation = "Testy McTestface"
+    source.collection = [factory.Message(content="a" * 121), ]
+    sw = SourceWidget(source)
+
+    sw.update()
+    assert sw.preview.text().endswith("...")
+
+
 def test_SourceWidget_delete_source(mocker, session, source):
     mock_delete_source_message_box_object = mocker.MagicMock(DeleteSourceMessageBox)
     mock_controller = mocker.MagicMock()
