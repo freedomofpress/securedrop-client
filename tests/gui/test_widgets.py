@@ -1589,7 +1589,10 @@ def test_ExportDialog__show_starting_instructions(mocker):
     assert dialog.passphrase_form.isHidden()
     assert dialog.button_message.text() == \
         '<i>The CONTINUE button will be disabled until the Export VM is ready</i>'
-    assert dialog.header.text() == '<b>Preparing to export:</b><br />mock.jpg'
+    assert dialog.header.text() == \
+        'Preparing to export:' \
+        '<br />' \
+        '<span style="font-weight:normal">mock.jpg</span>'
     assert dialog.body.text() == \
         '<h2>Proceed with caution when exporting files</h2>' \
         '<b>Malware</b>' \
@@ -1616,7 +1619,7 @@ def test_ExportDialog___show_passphrase_request_message(mocker):
 
     assert not dialog.passphrase_form.isHidden()
     assert dialog.header.text() == 'Enter passphrase for USB drive'
-    assert dialog.body.text() == ''
+    assert dialog.body.isHidden()
 
 
 def test_ExportDialog__show_passphrase_request_message_again(mocker):
@@ -1629,7 +1632,8 @@ def test_ExportDialog__show_passphrase_request_message_again(mocker):
 
     assert not dialog.passphrase_form.isHidden()
     assert dialog.header.text() == 'Enter passphrase for USB drive'
-    assert dialog.body.text() == 'The passphrase provided did not work. Please try again.'
+    assert dialog.error_details.text() == 'The passphrase provided did not work. Please try again.'
+    assert dialog.body.isHidden()
 
 
 def test_ExportDialog__show_insert_usb_message(mocker):
@@ -1656,10 +1660,9 @@ def test_ExportDialog__show_insert_encrypted_usb_message(mocker):
     dialog._show_insert_encrypted_usb_message()
 
     assert dialog.header.text() == 'Insert encrypted USB drive'
+    assert dialog.error_details.text() == \
+        'Either the drive is not encrypted or there is something else wrong with it.'
     assert dialog.body.text() == \
-        'Either the drive is not encrypted or there is something else wrong with it. Please ' \
-        'try another drive, or see your administrator for help.' \
-        '\n\n' \
         'Please insert one of the export drives provisioned specifically for the SecureDrop ' \
         'Workstation.'
     assert dialog.passphrase_form.isHidden()
@@ -1675,6 +1678,7 @@ def test_ExportDialog__show_generic_error_message(mocker):
 
     assert dialog.passphrase_form.isHidden()
     assert dialog.header.text() == 'Unable to export'
+    assert dialog.error_details.isHidden()
     assert dialog.body.text() == 'mock_error_status: See your administrator for help.'
 
 
@@ -1886,7 +1890,7 @@ def test_PrintDialog_init(mocker):
     _show_starting_instructions_fn = mocker.patch(
         'securedrop_client.gui.widgets.PrintDialog._show_starting_instructions')
 
-    dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
 
     _show_starting_instructions_fn.assert_called_once_with()
 
@@ -1901,7 +1905,10 @@ def test_PrintDialog__show_starting_instructions(mocker):
 
     assert dialog.button_message.text() == \
         '<i>The CONTINUE button will be disabled until the Export VM is ready</i>'
-    assert dialog.header.text() == '<b>Preparing to print:</b><br />mock.jpg'
+    assert dialog.header.text() == \
+        'Preparing to print:' \
+        '<br />' \
+        '<span style="font-weight:normal">mock.jpg</span>'
     assert dialog.body.text() == \
         '<h2>Proceed with caution when exporting files</h2>' \
         'Documents submitted by sources may contain information that identifies who they are. ' \
