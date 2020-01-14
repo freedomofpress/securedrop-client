@@ -27,6 +27,18 @@ common-steps:
         source .venv/bin/activate
         make bandit
 
+  - &installgitlfs
+    run:
+      name: Install Git LFS.
+      command: |
+        export GIT_LFS_VERSION=2.7.2
+        export GIT_LFS_CHECKSUM=89f5aa2c29800bbb71f5d4550edd69c5f83e3ee9e30f770446436dd7f4ef1d4c
+        wget https://github.com/git-lfs/git-lfs/releases/download/v$GIT_LFS_VERSION/git-lfs-linux-amd64-v$GIT_LFS_VERSION.tar.gz
+        sha256sum git-lfs-linux-amd64-v$GIT_LFS_VERSION.tar.gz | grep $GIT_LFS_CHECKSUM
+        tar xzf git-lfs-linux-amd64-v$GIT_LFS_VERSION.tar.gz
+        sudo mv git-lfs /usr/local/bin/git-lfs
+        git lfs install
+
   - &install_packaging_dependencies
     run:
       name: Install Debian packaging dependencies and download wheels
@@ -70,6 +82,7 @@ jobs:
       - image: circleci/python:3.7-buster
     steps:
       - checkout
+      - *installgitlfs
       - *install_packaging_dependencies
       - *verify_requirements
       - *make_source_tarball
