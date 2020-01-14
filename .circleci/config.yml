@@ -110,6 +110,4 @@ workflows:
   securedrop_client_ci:
     jobs:
       - test-stretch
-      - build-stretch
       - test-buster
-      - build-buster
