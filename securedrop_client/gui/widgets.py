@@ -2287,9 +2287,19 @@ class PrintDialog(FramelessModal):
         self.insert_usb_header = _('Insert USB printer')
         self.error_header = _('Unable to print')
         self.starting_message = _(
-            '<h2>Proceed with caution when exporting files</h2>'
-            'Documents submitted by sources may contain information that identifies who they are. '
-            'To protect your sources, please consider redacting documents before printing them.')
+            '<h2>Security advice for printing documents</h2>'
+            '<br />'
+            '<b>Malware</b>'
+            '<br />'
+            'Never open web addresses or scan QR codes contained in printed documents without '
+            'taking security precautions. If you are unsure how to manage this risk, please '
+            'contact your administrator.'
+            '<br /><br />'
+            '<b>Anonymity</b>'
+            '<br />'
+            'Before publishing, protect your sources by redacting any information that could '
+            'identify them. Documents may contain identifying information invisible to the naked '
+            'eye (e.g., printer dots).')
         self.insert_usb_message = _('Please connect your printer to a USB port.')
         self.generic_error_message = _('See your administrator for help.')
         self.continue_disabled_message = _(

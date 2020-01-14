@@ -2159,10 +2159,19 @@ def test_PrintDialog__show_starting_instructions(mocker):
         '<br />' \
         '<span style="font-weight:normal">mock.jpg</span>'
     assert dialog.body.text() == \
-        '<h2>Proceed with caution when exporting files</h2>' \
-        'Documents submitted by sources may contain information that identifies who they are. ' \
-        'To protect your sources, please consider redacting documents ' \
-        'before printing them.' \
+        '<h2>Security advice for printing documents</h2>' \
+        '<br />' \
+        '<b>Malware</b>' \
+        '<br />' \
+        'Never open web addresses or scan QR codes contained in printed documents without ' \
+        'taking security precautions. If you are unsure how to manage this risk, please ' \
+        'contact your administrator.' \
+        '<br /><br />' \
+        '<b>Anonymity</b>' \
+        '<br />' \
+        'Before publishing, protect your sources by redacting any information that could ' \
+        'identify them. Documents may contain identifying information invisible to the naked ' \
+        'eye (e.g., printer dots).'
 
 
 def test_PrintDialog__show_insert_usb_message(mocker):
