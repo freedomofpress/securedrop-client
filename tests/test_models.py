@@ -85,6 +85,8 @@ def test_string_representation_of_message():
     msg = Message(source=source, uuid="test", size=123, filename="1-test.docx",
                   download_url='http://test/test')
     msg.__str__()
+    msg.content = "hello"
+    msg.__str__()
 
 
 def test_string_representation_of_file():
@@ -101,6 +103,8 @@ def test_string_representation_of_reply():
     source = factory.Source()
     reply = Reply(source=source, journalist=user, filename="1-reply.gpg",
                   size=1234, uuid='test')
+    reply.__str__()
+    reply.content = "hello"
     reply.__str__()
 
 
