@@ -1958,8 +1958,10 @@ class FileWidget(QWidget):
             # Open the already downloaded file.
             self.controller.on_file_open(self.file.uuid)
         else:
-            # Add spinner.
+            # Indicate in downloading state...
             self.download_button.setIcon(load_icon('download_active.svg'))
+            self.download_button.setText(_(" DOWNLOADING "))
+            self.download_button.setStyleSheet("color: #05a6fe")
             # Download the file.
             self.controller.on_submission_download(File, self.file.uuid)
 

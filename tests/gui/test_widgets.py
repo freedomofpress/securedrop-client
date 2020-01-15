@@ -1372,7 +1372,7 @@ def test_FileWidget_on_left_click_download(mocker, session, source):
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
     fw = FileWidget(file_.uuid, mock_controller, mock_signal)
-    fw.download_button.setIcon = mocker.MagicMock()
+    fw.download_button = mocker.MagicMock()
     mock_get_file.assert_called_once_with(file_.uuid)
     mock_get_file.reset_mock()
 
@@ -1380,8 +1380,10 @@ def test_FileWidget_on_left_click_download(mocker, session, source):
     mock_get_file.assert_called_once_with(file_.uuid)
     mock_controller.on_submission_download.assert_called_once_with(
         db.File, file_.uuid)
-    # Add spinner.
+    # Check indicators of activity have been updated.
     assert fw.download_button.setIcon.call_count == 1
+    fw.download_button.setText.assert_called_once_with(" DOWNLOADING ")
+    fw.download_button.setStyleSheet.assert_called_once_with("color: #05a6fe")
 
 
 def test_FileWidget_on_left_click_open(mocker, session, source):
