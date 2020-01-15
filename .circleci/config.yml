@@ -32,6 +32,7 @@ common-steps:
       name: Install Debian packaging dependencies and download wheels
       command: |
         mkdir ~/packaging && cd ~/packaging
+        git config --global --unset url.ssh://git@github.com.insteadof
         git clone https://github.com/freedomofpress/securedrop-debian-packaging.git
         cd securedrop-debian-packaging
         make install-deps
