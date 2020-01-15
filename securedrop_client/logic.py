@@ -657,7 +657,7 @@ class Controller(QObject):
             self.data_dir, file.filename, file.original_filename)
 
         command = "qvm-open-in-vm"
-        args = ['$dispvm:sd-svs-disp', path_to_file_with_original_name]
+        args = ['$dispvm:sd-viewer', path_to_file_with_original_name]
         process = QProcess(self)
         process.start(command, args)
 
