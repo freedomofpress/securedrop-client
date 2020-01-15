@@ -379,7 +379,7 @@ class TestProxyMethods(unittest.TestCase):
         conf.scheme = "https"
         conf.port = 443
         conf.dev = False
-        conf.target_vm = "sd-svs-dispvm"
+        conf.target_vm = "sd-viewer"
 
         with patch("subprocess.run") as patched_run:
             fh = tempfile.NamedTemporaryFile()
