@@ -109,7 +109,7 @@ The supported device types for export are as follows, including the possible err
     - `USB_CHECK_ERROR` if an error occurred during pre-flight
 
 2. `disk-test`: Preflight check that checks for LUKS-encrypted volume that returns:
-    - `USB_ENCRYPTED` if a LUKS volume is attached to sd-export
+    - `USB_ENCRYPTED` if a LUKS volume is attached to sd-devices
     - `USB_ENCRYPTION_NOT_SUPPORTED` if a LUKS volume is not attached or there was any other error
     - `USB_DISK_ERROR`
 
