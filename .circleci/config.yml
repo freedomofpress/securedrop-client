@@ -32,9 +32,10 @@ common-steps:
       name: Install Debian packaging dependencies and download wheels
       command: |
         mkdir ~/packaging && cd ~/packaging
+        git config --global --unset url.ssh://git@github.com.insteadof
         git clone https://github.com/freedomofpress/securedrop-debian-packaging.git
         cd securedrop-debian-packaging
-        make install-deps && make fetch-wheels
+        make install-deps
         PKG_DIR=~/project make requirements
 
   - &verify_requirements
@@ -65,16 +66,6 @@ common-steps:
 
 version: 2
 jobs:
-  build-stretch:
-    docker:
-      - image: circleci/python:3.5-stretch
-    steps:
-      - checkout
-      - *install_packaging_dependencies
-      - *verify_requirements
-      - *make_source_tarball
-      - *build_debian_package
-
   build-buster:
     docker:
       - image: circleci/python:3.7-buster
@@ -84,16 +75,6 @@ jobs:
       - *verify_requirements
       - *make_source_tarball
       - *build_debian_package
-
-  test-stretch:
-    docker:
-      - image: circleci/python:3.5-stretch
-    steps:
-      - checkout
-      - run: sudo apt-get install -y sqlite3 libqt5x11extras5
-      - *run_tests
-      - *check_python_dependencies_for_vulns
-      - *run_static_analysis
 
   test-buster:
     docker:
@@ -109,5 +90,5 @@ workflows:
   version: 2
   securedrop_client_ci:
     jobs:
-      - test-stretch
       - test-buster
+      - build-buster
