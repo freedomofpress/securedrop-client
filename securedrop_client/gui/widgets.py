@@ -2237,10 +2237,10 @@ class FramelessModal(QDialog):
             self.BODY_MARGIN, self.BODY_MARGIN, self.BODY_MARGIN, self.BODY_MARGIN)
         body_container.setLayout(self.body_layout)
         self.body_layout.addWidget(self.body)
-        window_buttons = QWidget()
-        window_buttons.setObjectName('window_buttons')
+        self.window_buttons = QWidget()
+        self.window_buttons.setObjectName('window_buttons')
         button_layout = QVBoxLayout()
-        window_buttons.setLayout(button_layout)
+        self.window_buttons.setLayout(button_layout)
         cancel_button = QPushButton(_('CANCEL'))
         cancel_button.setAutoDefault(False)
         cancel_button.clicked.connect(self.close)
@@ -2258,7 +2258,7 @@ class FramelessModal(QDialog):
         content_layout.addWidget(self.error_details)
         content_layout.addWidget(body_container)
         content_layout.addStretch()
-        content_layout.addWidget(window_buttons)
+        content_layout.addWidget(self.window_buttons)
 
         # Layout
         layout = QVBoxLayout(self)
@@ -2289,15 +2289,14 @@ class PrintDialog(FramelessModal):
         self.controller = controller
         self.file_uuid = file_uuid
         self.file_name = file_name
+        self.error_status = None
 
         # Connect controller signals to slots
-        self.controller.export.start_export_vm_success.connect(self._on_start_export_vm_success)
-        self.controller.export.start_export_vm_failure.connect(self._on_start_export_vm_failure)
-        self.controller.export.print_call_success.connect(self._on_print_success)
-        self.controller.export.print_call_failure.connect(self._on_print_failure)
+        self.controller.export.printer_preflight_success.connect(self._on_preflight_success)
+        self.controller.export.printer_preflight_failure.connect(self._on_preflight_failure)
 
         # Connect parent signals to slots
-        self.continue_button.clicked.connect(self._on_continue_clicked)
+        self.continue_button.clicked.connect(self._print_file)
         self.continue_button.setEnabled(False)
 
         # Dialog content
@@ -2327,7 +2326,7 @@ class PrintDialog(FramelessModal):
             'The CONTINUE button will be disabled until the Export VM is ready')
 
         self._show_starting_instructions()
-        self.controller.run_start_export_vm()
+        self.controller.run_printer_preflight_checks()
 
     def _show_starting_instructions(self):
         self.header.setText(self.starting_header)
@@ -2344,40 +2343,46 @@ class PrintDialog(FramelessModal):
         self.adjustSize()
         self.center_dialog()
 
-    def _show_generic_error_message(self, error_code: str):
+    def _show_generic_error_message(self):
+        self.window_buttons.hide()
         self.header.setText(self.error_header)
         self.error_details.hide()
-        self.body.setText('{}: {}'.format(error_code, self.generic_error_message))
+        self.body.setText('{}: {}'.format(self.error_status, self.generic_error_message))
         self.adjustSize()
         self.center_dialog()
 
-    def _update(self, status: str):
-        if status == ExportStatus.PRINTER_NOT_FOUND.value:
-            self._show_insert_usb_message()
-        else:
-            self._show_generic_error_message(status)
-
     @pyqtSlot()
-    def _on_continue_clicked(self):
+    def _print_file(self):
         self.controller.print_file(self.file_uuid)
-
-    @pyqtSlot()
-    def _on_start_export_vm_success(self):
-        self.button_message.hide()
-        self.continue_button.setEnabled(True)
-
-    @pyqtSlot(object)
-    def _on_start_export_vm_failure(self, error: ExportError):
-        self.button_message.hide()
-        self._update(error.status)
-
-    @pyqtSlot()
-    def _on_print_success(self):
         self.close()
 
+    @pyqtSlot()
+    def _on_preflight_success(self):
+        # Wire up continue button to the next step
+        self.continue_button.clicked.connect(self._print_file)
+
+        # If the continue button is disabled then this is the result of a background preflight check
+        if not self.continue_button.isEnabled():
+            self.button_message.hide()
+            self.continue_button.setEnabled(True)
+        else:
+            self.continue_button.click()
+
     @pyqtSlot(object)
-    def _on_print_failure(self, error: ExportError):
-        self._update(error.status)
+    def _on_preflight_failure(self, error: ExportError):
+        # Wire up continue button to the next step
+        self.error_status = error.status
+        if self.error_status == ExportStatus.PRINTER_NOT_FOUND.value:
+            self.continue_button.clicked.connect(self._show_insert_usb_message)
+        else:
+            self.continue_button.clicked.connect(self._show_generic_error_message)
+
+        # If the continue button is disabled then this is the result of a background preflight check
+        if not self.continue_button.isEnabled():
+            self.button_message.hide()
+            self.continue_button.setEnabled(True)
+        else:
+            self.continue_button.click()
 
 
 class ExportDialog(FramelessModal):
@@ -2407,17 +2412,16 @@ class ExportDialog(FramelessModal):
         self.controller = controller
         self.file_uuid = file_uuid
         self.file_name = file_name
+        self.error_status = None
 
         # Connect controller signals to slots
-        self.controller.export.start_export_vm_success.connect(self._on_start_export_vm_success)
-        self.controller.export.start_export_vm_failure.connect(self._on_start_export_vm_failure)
         self.controller.export.preflight_check_call_success.connect(self._on_preflight_success)
         self.controller.export.preflight_check_call_failure.connect(self._on_preflight_failure)
         self.controller.export.export_usb_call_success.connect(self._on_export_success)
         self.controller.export.export_usb_call_failure.connect(self._on_export_failure)
 
         # Connect parent signals to slots
-        self.continue_button.clicked.connect(self._on_continue_clicked)
+        self.continue_button.clicked.connect(self._export_file)
         self.continue_button.setEnabled(False)
 
         # Dialog content
@@ -2482,7 +2486,7 @@ class ExportDialog(FramelessModal):
         self.passphrase_form.hide()
 
         self._show_starting_instructions()
-        self.controller.run_start_export_vm()
+        self.controller.run_export_preflight_checks()
 
     def _show_starting_instructions(self):
         self.header.setText(self.starting_header)
@@ -2492,6 +2496,7 @@ class ExportDialog(FramelessModal):
         self.center_dialog()
 
     def _show_passphrase_request_message(self):
+        self.continue_button.clicked.connect(self._export_file)
         self.header.setText(self.passphrase_header)
         self.error_details.hide()
         self.body.hide()
@@ -2501,6 +2506,7 @@ class ExportDialog(FramelessModal):
         self.center_dialog()
 
     def _show_passphrase_request_message_again(self):
+        self.continue_button.clicked.connect(self._export_file)
         self.header.setText(self.passphrase_header)
         self.error_details.setText(self.passphrase_error_message)
         self.body.hide()
@@ -2510,6 +2516,7 @@ class ExportDialog(FramelessModal):
         self.center_dialog()
 
     def _show_insert_usb_message(self):
+        self.continue_button.clicked.connect(self.controller.run_export_preflight_checks)
         self.header.setText(self.insert_usb_header)
         self.body.setText(self.insert_usb_message)
         self.error_details.hide()
@@ -2519,6 +2526,7 @@ class ExportDialog(FramelessModal):
         self.center_dialog()
 
     def _show_insert_encrypted_usb_message(self):
+        self.continue_button.clicked.connect(self.controller.run_export_preflight_checks)
         self.header.setText(self.insert_usb_header)
         self.error_details.setText(self.usb_error_message)
         self.body.setText(self.insert_usb_message)
@@ -2527,50 +2535,51 @@ class ExportDialog(FramelessModal):
         self.adjustSize()
         self.center_dialog()
 
-    def _show_generic_error_message(self, error_code: str):
+    def _show_generic_error_message(self):
+        self.window_buttons.hide()
         self.header.setText(self.error_header)
         self.error_details.hide()
-        self.body.setText('{}: {}'.format(error_code, self.generic_error_message))
+        self.body.setText('{}: {}'.format(self.error_status, self.generic_error_message))
         self.passphrase_form.hide()
+        self.window_buttons.hide()
         self.adjustSize()
         self.center_dialog()
 
-    def _update(self, status):
-        if status == ExportStatus.USB_NOT_CONNECTED.value:
-            self._show_insert_usb_message()
-        elif status == ExportStatus.BAD_PASSPHRASE.value:
-            self._show_passphrase_request_message_again()
-        elif status == ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value:
-            self._show_insert_encrypted_usb_message()
-        else:
-            self._show_generic_error_message(_(status))
-
     @pyqtSlot()
-    def _on_continue_clicked(self):
-        self.controller.run_export_preflight_checks()
-
-    @pyqtSlot()
-    def _on_continue_clicked_after_preflight(self, checked: bool = False):
+    def _export_file(self, checked: bool = False):
         self.controller.export_file_to_usb_drive(self.file_uuid, self.passphrase_field.text())
 
     @pyqtSlot()
-    def _on_start_export_vm_success(self):
-        self.button_message.hide()
-        self.continue_button.setEnabled(True)
-
-    @pyqtSlot(object)
-    def _on_start_export_vm_failure(self, error: ExportError):
-        self.button_message.hide()
-        self._update(error.status)
-
-    @pyqtSlot()
     def _on_preflight_success(self):
-        self.continue_button.clicked.connect(self._on_continue_clicked_after_preflight)
-        self._show_passphrase_request_message()
+        # Wire up continue button to the next step
+        self.continue_button.clicked.connect(self._show_passphrase_request_message)
+
+        # If the continue button is disabled then this is the result of a background preflight check
+        if not self.continue_button.isEnabled():
+            self.button_message.hide()
+            self.continue_button.setEnabled(True)
+        else:
+            self.continue_button.click()
 
     @pyqtSlot(object)
     def _on_preflight_failure(self, error: ExportError):
-        self._update(error.status)
+        # Wire up continue button to the next step
+        self.error_status = error.status
+        if self.error_status == ExportStatus.USB_NOT_CONNECTED.value:
+            self.continue_button.clicked.connect(self._show_insert_usb_message)
+        elif self.error_status == ExportStatus.BAD_PASSPHRASE.value:
+            self.continue_button.clicked.connect(self._show_passphrase_request_message_again)
+        elif self.error_status == ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value:
+            self.continue_button.clicked.connect(self._show_insert_encrypted_usb_message)
+        else:
+            self.continue_button.clicked.connect(self._show_generic_error_message)
+
+        # If the continue button is disabled then this is the result of a background preflight check
+        if not self.continue_button.isEnabled():
+            self.button_message.hide()
+            self.continue_button.setEnabled(True)
+        else:
+            self.continue_button.click()
 
     @pyqtSlot()
     def _on_export_success(self):
@@ -2578,7 +2587,9 @@ class ExportDialog(FramelessModal):
 
     @pyqtSlot(object)
     def _on_export_failure(self, error: ExportError):
-        self._update(error.status)
+        self.error_status = error.status
+        self.error_status = error.status
+        self._show_generic_error_message()
 
 
 class ConversationView(QWidget):

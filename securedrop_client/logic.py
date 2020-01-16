@@ -634,14 +634,17 @@ class Controller(QObject):
         process = QProcess(self)
         process.start(command, args)
 
-    def run_start_export_vm(self):
+    def run_printer_preflight_checks(self):
+        '''
+        Run preflight checks to make sure the Export VM is configured correctly.
+        '''
         logger.info('Starting Export VM')
 
         if not self.qubes:
-            self.export.start_export_vm_success.emit()
+            self.export.printer_preflight_success.emit()
             return
 
-        self.export.start_export_vm.emit()
+        self.export.begin_printer_preflight.emit()
 
     def run_export_preflight_checks(self):
         '''

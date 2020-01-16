@@ -55,6 +55,11 @@ class Export(QObject):
         'device': 'usb-test'
     }
 
+    PRINTER_PREFLIGHT_FN = 'printer-preflight.sd-export'
+    PRINTER_PREFLIGHT_METADATA = {
+        'device': 'printer-preflight'
+    }
+
     DISK_TEST_FN = 'disk-test.sd-export'
     DISK_TEST_METADATA = {
         'device': 'disk-test'
@@ -74,16 +79,20 @@ class Export(QObject):
     DISK_EXPORT_DIR = 'export_data'
 
     # Set up signals for communication with the GUI thread
+    begin_preflight_check = pyqtSignal()
     preflight_check_call_failure = pyqtSignal(object)
     preflight_check_call_success = pyqtSignal()
     begin_usb_export = pyqtSignal(list, str)
-    begin_preflight_check = pyqtSignal()
     export_usb_call_failure = pyqtSignal(object)
     export_usb_call_success = pyqtSignal()
+    export_completed = pyqtSignal(list)
+
+    begin_printer_preflight = pyqtSignal()
+    printer_preflight_success = pyqtSignal()
+    printer_preflight_failure = pyqtSignal(object)
     begin_print = pyqtSignal(list)
     print_call_failure = pyqtSignal(object)
     print_call_success = pyqtSignal()
-    export_completed = pyqtSignal(list)
 
     def __init__(self) -> None:
         super().__init__()
@@ -91,6 +100,7 @@ class Export(QObject):
         self.begin_preflight_check.connect(self.run_preflight_checks, type=Qt.QueuedConnection)
         self.begin_usb_export.connect(self.send_file_to_usb_device, type=Qt.QueuedConnection)
         self.begin_print.connect(self.print, type=Qt.QueuedConnection)
+        self.begin_printer_preflight.connect(self.run_printer_preflight, type=Qt.QueuedConnection)
 
     def _export_archive(cls, archive_path: str) -> str:
         '''
@@ -183,6 +193,17 @@ class Export(QObject):
         arcname = os.path.join(cls.DISK_EXPORT_DIR, filename)
         archive.add(filepath, arcname=arcname, recursive=False)
 
+    def _run_printer_preflight(self, archive_dir: str) -> None:
+        '''
+        Make sure printer is ready.
+        '''
+        archive_path = self._create_archive(
+            archive_dir, self.PRINTER_PREFLIGHT_FN, self.PRINTER_PREFLIGHT_METADATA)
+
+        status = self._export_archive(archive_path)
+        if status:
+            raise ExportError(status)
+
     def _run_usb_test(self, archive_dir: str) -> None:
         '''
         Run usb-test.
@@ -262,6 +283,19 @@ class Export(QObject):
             except ExportError as e:
                 logger.debug('completed preflight checks: failure')
                 self.preflight_check_call_failure.emit(e)
+
+    @pyqtSlot()
+    def run_printer_preflight(self) -> None:
+        '''
+        Make sure the Export VM is started.
+        '''
+        with TemporaryDirectory() as temp_dir:
+            try:
+                self._run_printer_preflight(temp_dir)
+                self.printer_preflight_success.emit()
+            except ExportError as e:
+                logger.error(e)
+                self.printer_preflight_failure.emit(e)
 
     @pyqtSlot(list, str)
     def send_file_to_usb_device(self, filepaths: List[str], passphrase: str) -> None:
