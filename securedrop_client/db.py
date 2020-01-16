@@ -179,7 +179,7 @@ class File(Base):
         Return something that's a useful string representation of the file.
         """
         if self.is_downloaded:
-            return "File: {}".format(self.filename)
+            return "File: {}".format(self.original_filename)
         else:
             return '<Encrypted file on server>'
 
