@@ -50,6 +50,36 @@ class PrintAction(ExportAction):
                 self.submission.exit_gracefully(ExportStatus.ERROR_PRINT.value)
         return True
 
+    def check_printer_setup(self) -> None:
+        try:
+            logger.info('Searching for printer')
+            output = subprocess.check_output(["sudo", "lpinfo", "-v"])
+            printers = [x for x in output.decode('utf-8').split() if "usb://" in x]
+            if not printers:
+                logger.info('No usb printers connected')
+                self.submission.exit_gracefully(ExportStatus.ERROR_PRINTER_NOT_FOUND.value)
+
+            supported_printers = \
+                [p for p in printers if any(sub in p for sub in ("Brother", "LaserJet"))]
+            if not supported_printers:
+                logger.info('{} are unsupported printers'.format(printers))
+                self.submission.exit_gracefully(ExportStatus.ERROR_PRINTER_NOT_SUPPORTED.value)
+
+            if len(supported_printers) > 1:
+                logger.info('Too many usb printers connected')
+                self.submission.exit_gracefully(ExportStatus.ERROR_MULTIPLE_PRINTERS_FOUND.value)
+
+            printer_uri = printers[0]
+
+            logger.info('Installing printer drivers')
+            printer_ppd = self.install_printer_ppd(printer_uri)
+
+            logger.info('Setting up printer')
+            self.setup_printer(printer_uri, printer_ppd)
+        except subprocess.CalledProcessError as e:
+            logger.error(e)
+            self.submission.exit_gracefully(ExportStatus.ERROR_GENERIC.value)
+
     def get_printer_uri(self):
         # Get the URI via lpinfo and only accept URIs of supported printers
         printer_uri = ""
@@ -204,14 +234,8 @@ class PrintExportAction(PrintAction):
 
     def run(self):
         logger.info('Export archive is printer')
+        self.check_printer_setup()
         # prints all documents in the archive
-        logger.info('Searching for printer')
-        printer_uri = self.get_printer_uri()
-        logger.info('Installing printer drivers')
-        printer_ppd = self.install_printer_ppd(printer_uri)
-        logger.info('Setting up printer')
-        self.setup_printer(printer_uri, printer_ppd)
-        logger.info('Printing files')
         self.print_all_files()
 
 
@@ -220,8 +244,16 @@ class PrintTestPageAction(PrintAction):
         super().__init__(*args, **kwargs)
 
     def run(self):
+        logger.info('Export archive is printer-test')
+        self.check_printer_setup()
         # Prints a test page to ensure the printer is functional
-        printer_uri = self.get_printer_uri()
-        printer_ppd = self.install_printer_ppd(printer_uri)
-        self.setup_printer(printer_uri, printer_ppd)
         self.print_test_page()
+
+
+class PrintPreflightAction(PrintAction):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def run(self):
+        logger.info('Export archive is printer-preflight')
+        self.check_printer_setup()
