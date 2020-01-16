@@ -2,9 +2,7 @@
 Tests for the gui helper functions in __init__.py
 """
 
-import html
-
-from PyQt5.QtCore import QSize
+from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtWidgets import QApplication
 
 from securedrop_client.gui import SecureQLabel, SvgPushButton, SvgLabel, SvgToggleButton
@@ -135,16 +133,19 @@ def test_SvgLabel_init(mocker):
 def test_SecureQLabel_init():
     label_text = '<script>alert("hi!");</script>'
     sl = SecureQLabel(label_text)
-    assert sl.text() == html.escape(label_text, quote=False)
+    assert sl.text() == label_text
 
 
-def test_SecureQLabel_setText():
+def test_SecureQLabel_setText(mocker):
     sl = SecureQLabel("hello")
     assert sl.text() == "hello"
 
     label_text = '<script>alert("hi!");</script>'
+    sl.setTextFormat = mocker.MagicMock()
     sl.setText(label_text)
-    assert sl.text() == html.escape(label_text, quote=False)
+    assert sl.text() == label_text
+    # Ensure *safe* plain text with no HTML entities.
+    sl.setTextFormat.assert_called_once_with(Qt.PlainText)
 
 
 def test_SecureQLabel_quotes_not_escaped_for_readability():
