@@ -1555,6 +1555,8 @@ class SpeechBubble(QWidget):
         max-height: 5px;
         background-color: #102781;
         border: 0px;
+        min-width: 590px;
+        max-width: 590px;
     }
     '''
 
