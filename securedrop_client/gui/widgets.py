@@ -1985,6 +1985,10 @@ class FileWidget(QWidget):
         file_ready_signal.connect(self._on_file_downloaded, type=Qt.QueuedConnection)
         file_missing.connect(self._on_file_missing, type=Qt.QueuedConnection)
 
+        # Make sure we only allow one export or print operation at a time (workaround for frameless
+        # modals not working as expected on QubesOS)
+        self.modal_in_progress = False
+
     def eventFilter(self, obj, event):
         t = event.type()
         if t == QEvent.MouseButtonPress:
@@ -2042,8 +2046,11 @@ class FileWidget(QWidget):
         if not self.controller.downloaded_file_exists(self.file):
             return
 
-        dialog = ExportDialog(self.controller, self.file.uuid, self.file.original_filename)
-        dialog.exec()
+        if not self.modal_in_progress:
+            self.modal_in_progress = True
+            dialog = ExportDialog(self.controller, self.file.uuid, self.file.original_filename)
+            dialog.modal_closing.connect(self._unset_modal_in_progress)
+            dialog.exec()
 
     @pyqtSlot()
     def _on_print_clicked(self):
@@ -2053,8 +2060,15 @@ class FileWidget(QWidget):
         if not self.controller.downloaded_file_exists(self.file):
             return
 
-        dialog = PrintDialog(self.controller, self.file.uuid, self.file.original_filename)
-        dialog.exec()
+        if not self.modal_in_progress:
+            self.modal_in_progress = True
+            dialog = PrintDialog(self.controller, self.file.uuid, self.file.original_filename)
+            dialog.modal_closing.connect(self._unset_modal_in_progress)
+            dialog.exec()
+
+    @pyqtSlot()
+    def _unset_modal_in_progress(self):
+        self.modal_in_progress = False
 
     def _on_left_click(self):
         """
@@ -2169,6 +2183,8 @@ class FramelessModal(QDialog):
     CONTENT_MARGIN = 40
     BODY_MARGIN = 0
 
+    modal_closing = pyqtSignal()
+
     def __init__(self):
         parent = QApplication.activeWindow()
         super().__init__(parent)
@@ -2176,7 +2192,7 @@ class FramelessModal(QDialog):
         self.setObjectName('frameless_modal')
         self.setStyleSheet(self.CSS)
         self.setWindowFlags(Qt.Widget | Qt.FramelessWindowHint)
-        self.setWindowModality(Qt.WindowModal)
+        self.setWindowModality(Qt.ApplicationModal)
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
 
         # Set drop shadow effect
@@ -2249,6 +2265,10 @@ class FramelessModal(QDialog):
         self.setLayout(layout)
         layout.addWidget(titlebar)
         layout.addWidget(content)
+
+    def close(self):
+        self.modal_closing.emit()
+        super().close()
 
     def center_dialog(self):
         active_window = QApplication.activeWindow()

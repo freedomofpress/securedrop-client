@@ -1410,6 +1410,29 @@ def test_ReplyWidget_init(mocker):
     assert mock_failure_connected.called
 
 
+def test_FileWidget__unset_modal_in_progress(mocker, source, session):
+    file = factory.File(source=source['source'], is_downloaded=True)
+    session.add(file)
+    session.commit()
+
+    get_file = mocker.MagicMock(return_value=file)
+    controller = mocker.MagicMock(get_file=get_file)
+
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock())
+    fw.update = mocker.MagicMock()
+    mocker.patch('securedrop_client.gui.widgets.QDialog.exec')
+    controller.run_export_preflight_checks = mocker.MagicMock()
+    controller.downloaded_file_exists = mocker.MagicMock(return_value=True)
+
+    assert fw.modal_in_progress is False
+    fw._unset_modal_in_progress()
+    assert fw.modal_in_progress is False
+    fw._on_export_clicked()
+    assert fw.modal_in_progress is True
+    fw._unset_modal_in_progress()
+    assert fw.modal_in_progress is False
+
+
 def test_FileWidget_init_file_not_downloaded(mocker, source, session):
     """
     Check the FileWidget is configured correctly when the file is not downloaded.
@@ -1815,7 +1838,7 @@ def test_FileWidget__on_print_clicked_missing_file(mocker, session, source):
 
 
 def test_ExportDialog_init(mocker):
-    """Ensure that the correct widgets are visible or hidden."""
+    """Ensure that ExportDialog is set up correctly."""
     mocker.patch(
          'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     _show_starting_instructions_fn = mocker.patch(
@@ -1825,6 +1848,22 @@ def test_ExportDialog_init(mocker):
 
     _show_starting_instructions_fn.assert_called_once_with()
     assert dialog.passphrase_form.isHidden()
+
+
+def test_ExportDialog_close(mocker):
+    """Ensure that dialog emits closing signal and is hidden after close is called."""
+    mocker.patch(
+         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
+    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog.modal_closing = mocker.MagicMock()
+    dialog.modal_closing.emit = mocker.MagicMock()
+
+    assert dialog.isHidden() is False
+
+    dialog.close()
+
+    dialog.modal_closing.emit.assert_called_once_with()
+    assert dialog.isHidden() is True
 
 
 def test_ExportDialog__show_starting_instructions(mocker):
