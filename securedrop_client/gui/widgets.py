@@ -1326,7 +1326,7 @@ class PasswordEdit(QLineEdit):
         self.hiddenIcon = load_icon("eye_hidden.svg")
 
         self.setEchoMode(QLineEdit.Password)
-        self.togglepasswordAction = self.addAction(self.visibleIcon, QLineEdit.TrailingPosition)
+        self.togglepasswordAction = self.addAction(self.hiddenIcon, QLineEdit.TrailingPosition)
         self.togglepasswordAction.triggered.connect(self.on_toggle_password_Action)
         self.password_shown = False
 
@@ -1334,11 +1334,11 @@ class PasswordEdit(QLineEdit):
         if not self.password_shown:
             self.setEchoMode(QLineEdit.Normal)
             self.password_shown = True
-            self.togglepasswordAction.setIcon(self.hiddenIcon)
+            self.togglepasswordAction.setIcon(self.visibleIcon)
         else:
             self.setEchoMode(QLineEdit.Password)
             self.password_shown = False
-            self.togglepasswordAction.setIcon(self.visibleIcon)
+            self.togglepasswordAction.setIcon(self.hiddenIcon)
 
 
 class LoginDialog(QDialog):
