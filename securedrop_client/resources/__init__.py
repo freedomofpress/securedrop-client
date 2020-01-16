@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 
 from pkg_resources import resource_filename, resource_string
-from PyQt5.QtGui import QPixmap, QIcon, QFontDatabase
+from PyQt5.QtGui import QPixmap, QIcon, QFontDatabase, QMovie
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtCore import QDir
 
@@ -133,3 +133,10 @@ def load_css(name: str) -> str:
     Return the contents of the referenced CSS file in the resources.
     """
     return resource_string(__name__, "css/" + name).decode('utf-8')
+
+
+def load_movie(name: str) -> str:
+    """
+    Return a GIF animation to use in the UI.
+    """
+    return QMovie(path(name))

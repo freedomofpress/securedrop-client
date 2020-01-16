@@ -2,7 +2,7 @@
 Tests for the resources sub-module.
 """
 import securedrop_client.resources
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtGui import QIcon, QPixmap, QMovie
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtWidgets import QApplication
 
@@ -63,3 +63,11 @@ def test_load_css(mocker):
     assert 'foo' == securedrop_client.resources.load_css('foo')
     rs.assert_called_once_with(securedrop_client.resources.__name__,
                                'css/foo')
+
+
+def test_load_movie():
+    """
+    Check the load_movie function returns the expected QMovie object.
+    """
+    result = securedrop_client.resources.load_movie('download_animation.gif')
+    assert isinstance(result, QMovie)
