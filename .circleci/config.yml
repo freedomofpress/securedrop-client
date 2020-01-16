@@ -20,9 +20,10 @@ common-steps:
       name: Install Debian packaging dependencies and download wheels
       command: |
         mkdir ~/packaging && cd ~/packaging
+        git config --global --unset url.ssh://git@github.com.insteadof
         git clone https://github.com/freedomofpress/securedrop-debian-packaging.git
         cd securedrop-debian-packaging
-        make install-deps && make fetch-wheels
+        make install-deps
         PKG_DIR=~/project make requirements
 
   - &verify_requirements
@@ -72,14 +73,6 @@ jobs:
             source .venv/bin/activate
             make safety
 
-  test-stretch:
-    docker:
-      - image: circleci/python:3.5-stretch
-    steps:
-      - checkout
-      - *install_packages
-      - *run_tests
-
   test-buster:
     docker:
       - image: circleci/python:3.7-buster
@@ -103,6 +96,5 @@ workflows:
   securedrop_export_ci:
     jobs:
       - lint
-      - test-stretch
       - test-buster
       - build-buster
