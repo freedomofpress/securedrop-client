@@ -36,7 +36,7 @@ from securedrop_client.storage import source_exists
 from securedrop_client.export import ExportStatus, ExportError
 from securedrop_client.gui import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.logic import Controller
-from securedrop_client.resources import load_icon, load_image
+from securedrop_client.resources import load_icon, load_image, load_movie
 from securedrop_client.utils import humanize_filesize
 
 logger = logging.getLogger(__name__)
@@ -1797,7 +1797,7 @@ class FileWidget(QWidget):
     }
     QPushButton#export_print {
         border: none;
-        padding: 8px;
+        padding: 0px 8px;
         font-family: 'Source Sans Pro';
         font-weight: 500;
         font-size: 13px;
@@ -1818,7 +1818,7 @@ class FileWidget(QWidget):
         padding-right: 8px;
         font-family: 'Source Sans Pro';
         font-weight: 700;
-        font-size: 14px;
+        font-size: 13px;
         color: #2a319d;
     }
     QLabel#no_file_name {
@@ -1893,6 +1893,7 @@ class FileWidget(QWidget):
         self.download_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.download_button.setIcon(load_icon('download_file.svg'))
         self.download_button.setFont(file_buttons_font)
+        self.download_animation = load_movie("download_animation.gif")
         self.export_button = QPushButton(_('EXPORT'))
         self.export_button.setObjectName('export_print')
         self.export_button.setFont(file_buttons_font)
@@ -2014,11 +2015,19 @@ class FileWidget(QWidget):
             self.controller.on_file_open(self.file.uuid)
         else:
             # Indicate in downloading state...
-            self.download_button.setIcon(load_icon('download_active.svg'))
+            self.download_animation.frameChanged.connect(self.set_button_animation_frame)
+            self.download_animation.start()
             self.download_button.setText(_(" DOWNLOADING "))
             self.download_button.setStyleSheet("color: #05a6fe")
             # Download the file.
             self.controller.on_submission_download(File, self.file.uuid)
+
+    def set_button_animation_frame(self, frame_number):
+        """
+        Sets the download button's icon to the current frame of the spinner
+        animation.
+        """
+        self.download_button.setIcon(QIcon(self.download_animation.currentPixmap()))
 
 
 class PrintDialog(QDialog):
