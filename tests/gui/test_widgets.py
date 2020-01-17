@@ -1872,8 +1872,6 @@ def test_ExportDialog__show_starting_instructions(mocker):
     dialog._show_starting_instructions()
 
     assert dialog.passphrase_form.isHidden()
-    assert dialog.button_message.text() == \
-        '<i>The CONTINUE button will be disabled until the Export VM is ready</i>'
     assert dialog.header.text() == \
         'Preparing to export:' \
         '<br />' \
@@ -2091,7 +2089,6 @@ def test_ExportDialog__on_preflight_success(mocker):
     dialog._show_passphrase_request_message.assert_not_called()
     dialog.continue_button.clicked.connect.assert_called_once_with(
         dialog._show_passphrase_request_message)
-    assert dialog.button_message.isHidden()
 
 
 def test_ExportDialog__on_preflight_success_when_continue_enabled(mocker):
@@ -2165,8 +2162,6 @@ def test_PrintDialog__show_starting_instructions(mocker):
 
     dialog._show_starting_instructions()
 
-    assert dialog.button_message.text() == \
-        '<i>The CONTINUE button will be disabled until the Export VM is ready</i>'
     assert dialog.header.text() == \
         'Preparing to print:' \
         '<br />' \
@@ -2233,7 +2228,6 @@ def test_PrintDialog__on_preflight_success(mocker):
 
     dialog._print_file.assert_not_called()
     dialog.continue_button.clicked.connect.assert_called_once_with(dialog._print_file)
-    assert dialog.button_message.isHidden()
 
 
 def test_PrintDialog__on_preflight_success_when_continue_enabled(mocker):

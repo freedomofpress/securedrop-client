@@ -2176,16 +2176,9 @@ class FramelessModal(QDialog):
         color: #fff;
     }
     #button_box QPushButton#primary_button::disabled {
-        border: 2px solid #8084C5;
-        background-color: #8084C5;
-        color: #fff;
-    }
-    #button_message {
-        font-family: 'Source Sans Pro';
-        font-weight: 500;
-        font-size: 16px;
-        color: #ff3366;
-        padding-bottom: 6px;
+        border: 2px solid #C2C4E3;
+        background-color: #C2C4E3;
+        color: #E1E2F1;
     }
     '''
 
@@ -2260,9 +2253,6 @@ class FramelessModal(QDialog):
         button_box.setObjectName('button_box')
         button_box.addButton(cancel_button, QDialogButtonBox.ActionRole)
         button_box.addButton(self.continue_button, QDialogButtonBox.ActionRole)
-        self.button_message = QLabel()
-        self.button_message.setObjectName('button_message')
-        button_layout.addWidget(self.button_message, alignment=Qt.AlignRight)
         button_layout.addWidget(button_box, alignment=Qt.AlignRight)
         content_layout.addWidget(self.header)
         content_layout.addWidget(self.header_line)
@@ -2332,8 +2322,6 @@ class PrintDialog(FramelessModal):
             'consider this risk when working with or publishing scanned printouts.')
         self.insert_usb_message = _('Please connect your printer to a USB port.')
         self.generic_error_message = _('See your administrator for help.')
-        self.continue_disabled_message = _(
-            'The CONTINUE button will be disabled until the Export VM is ready')
 
         self._show_starting_instructions()
         self.controller.run_printer_preflight_checks()
@@ -2342,7 +2330,6 @@ class PrintDialog(FramelessModal):
         self.header.setText(self.starting_header)
         self.error_details.hide()
         self.body.setText(self.starting_message)
-        self.button_message.setText('<i>' + self.continue_disabled_message + '</i>')
         self.adjustSize()
         self.center_dialog()
 
@@ -2372,7 +2359,6 @@ class PrintDialog(FramelessModal):
         # If the continue button is disabled then this is the result of a background preflight check
         if not self.continue_button.isEnabled():
             self.continue_button.clicked.connect(self._print_file)
-            self.button_message.hide()
             self.continue_button.setEnabled(True)
             return
 
@@ -2387,7 +2373,6 @@ class PrintDialog(FramelessModal):
             else:
                 self.continue_button.clicked.connect(self._show_generic_error_message)
 
-            self.button_message.hide()
             self.continue_button.setEnabled(True)
         else:
             if error.status == ExportStatus.PRINTER_NOT_FOUND.value:
@@ -2500,7 +2485,6 @@ class ExportDialog(FramelessModal):
     def _show_starting_instructions(self):
         self.header.setText(self.starting_header)
         self.body.setText(self.starting_message)
-        self.button_message.setText('<i>' + self.continue_disabled_message + '</i>')
         self.adjustSize()
         self.center_dialog()
 
@@ -2568,7 +2552,6 @@ class ExportDialog(FramelessModal):
         # If the continue button is disabled then this is the result of a background preflight check
         if not self.continue_button.isEnabled():
             self.continue_button.clicked.connect(self._show_passphrase_request_message)
-            self.button_message.hide()
             self.continue_button.setEnabled(True)
             return
 
@@ -2587,7 +2570,6 @@ class ExportDialog(FramelessModal):
             else:
                 self.continue_button.clicked.connect(self._show_generic_error_message)
 
-            self.button_message.hide()
             self.continue_button.setEnabled(True)
         else:
             if error.status == ExportStatus.BAD_PASSPHRASE.value:
