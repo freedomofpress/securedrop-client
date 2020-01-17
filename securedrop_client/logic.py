@@ -43,7 +43,7 @@ from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobError, 
     SendReplyJobTimeoutError
 from securedrop_client.api_jobs.updatestar import UpdateStarJob, UpdateStarJobException
 from securedrop_client.crypto import GpgHelper
-from securedrop_client.export import Export
+from securedrop_client.export import Export, ExportError, ExportStatus
 from securedrop_client.queue import ApiJobQueue
 from securedrop_client.sync import ApiSync
 from securedrop_client.utils import check_dir_permissions
@@ -638,10 +638,12 @@ class Controller(QObject):
         '''
         Run preflight checks to make sure the Export VM is configured correctly.
         '''
-        logger.info('Starting Export VM')
+        logger.info('Running printer preflight check')
 
         if not self.qubes:
-            self.export.printer_preflight_success.emit()
+            self.export.printer_preflight_failure.emit(
+                ExportError(ExportStatus.PRINTER_NOT_FOUND.value))
+            # self.export.printer_preflight_success.emit()
             return
 
         self.export.begin_printer_preflight.emit()
@@ -650,10 +652,12 @@ class Controller(QObject):
         '''
         Run preflight checks to make sure the Export VM is configured correctly.
         '''
-        logger.info('Running export preflight checks')
+        logger.info('Running export preflight check')
 
         if not self.qubes:
-            self.export.preflight_check_call_success.emit()
+            self.export.preflight_check_call_failure.emit(
+                ExportError(ExportStatus.USB_NOT_CONNECTED.value))
+            # self.export.preflight_check_call_success.emit()
             return
 
         self.export.begin_preflight_check.emit()
@@ -690,7 +694,6 @@ class Controller(QObject):
             return
 
         if not self.qubes:
-            self.export.print_call_success.emit()
             return
 
         self.export.begin_print.emit([file_location])
