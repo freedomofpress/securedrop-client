@@ -641,9 +641,7 @@ class Controller(QObject):
         logger.info('Running printer preflight check')
 
         if not self.qubes:
-            self.export.printer_preflight_failure.emit(
-                ExportError(ExportStatus.PRINTER_NOT_FOUND.value))
-            # self.export.printer_preflight_success.emit()
+            self.export.printer_preflight_success.emit()
             return
 
         self.export.begin_printer_preflight.emit()
@@ -655,9 +653,7 @@ class Controller(QObject):
         logger.info('Running export preflight check')
 
         if not self.qubes:
-            self.export.preflight_check_call_failure.emit(
-                ExportError(ExportStatus.USB_NOT_CONNECTED.value))
-            # self.export.preflight_check_call_success.emit()
+            self.export.preflight_check_call_success.emit()
             return
 
         self.export.begin_preflight_check.emit()
