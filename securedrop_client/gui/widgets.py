@@ -2171,6 +2171,15 @@ class FramelessModal(QDialog):
         border: 2px solid rgba(42, 49, 157, 0.4);
         color: rgba(42, 49, 157, 0.4);
     }
+    #button_box QPushButton#primary_button {
+        background-color: #2a319d;
+        color: #fff;
+    }
+    #button_box QPushButton#primary_button::disabled {
+        border: 2px solid #8084C5;
+        background-color: #8084C5;
+        color: #fff;
+    }
     #button_message {
         font-family: 'Source Sans Pro';
         font-weight: 500;
@@ -2245,6 +2254,8 @@ class FramelessModal(QDialog):
         cancel_button.setAutoDefault(False)
         cancel_button.clicked.connect(self.close)
         self.continue_button = QPushButton(_('CONTINUE'))
+        self.continue_button.setObjectName('primary_button')
+        self.continue_button.setDefault(True)
         button_box = QDialogButtonBox(Qt.Horizontal)
         button_box.setObjectName('button_box')
         button_box.addButton(cancel_button, QDialogButtonBox.ActionRole)
