@@ -20,13 +20,20 @@ safety: ## Runs `safety check` to check python dependencies for vulnerabilities
 		done
 
 .PHONY: lint
-lint: ## Run flake8
+lint: isort black ## Run isort, black and flake8
 	@flake8 securedrop_proxy tests
 
 .PHONY: mypy
 mypy: ## Run mypy static type checker
 	@mypy --ignore-missing-imports securedrop_proxy
 
+.PHONY: black
+black: ## Run black for file formatting
+	@black --config ./blackconfig/pyproject.toml --check securedrop_proxy tests
+
+.PHONY: isort
+isort: ## Run isort for file formatting
+	@isort -c -w 100 securedrop_proxy/*.py tests/*.py --diff
 
 .PHONY: update-pip-requirements
 update-pip-requirements: ## Updates all Python requirements files via pip-compile.

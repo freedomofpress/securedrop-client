@@ -17,7 +17,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     license="GPLv3+",
     install_requires=["requests", "furl", "pyyaml", "werkzeug"],
-    python_requires=">=3.5",
+    python_requires=">=3.7",
     url="https://github.com/freedomofpress/securedrop-proxy",
     packages=setuptools.find_packages(exclude=["docs", "tests"]),
     package_data={

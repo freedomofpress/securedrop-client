@@ -26,8 +26,8 @@ LOGLEVEL = os.environ.get("LOGLEVEL", "info").upper()
 
 def start() -> None:
     """
-    Set up a new proxy object with an error handler, configuration that we read from  argv[1], and
-    the original user request from STDIN.
+    Set up a new proxy object with an error handler, configuration that we read
+    from  argv[1], and the original user request from STDIN.
     """
     try:
         configure_logging()
