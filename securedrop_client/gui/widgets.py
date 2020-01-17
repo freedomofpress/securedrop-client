@@ -2222,8 +2222,8 @@ class FramelessModal(QDialog):
         self.header = QLabel()
         self.header.setObjectName('header')
         self.header.setWordWrap(True)
-        header_line = QWidget()
-        header_line.setObjectName('header_line')
+        self.header_line = QWidget()
+        self.header_line.setObjectName('header_line')
         self.error_details = QLabel()
         self.error_details.setObjectName('error_details')
         self.error_details.setWordWrap(True)
@@ -2254,7 +2254,7 @@ class FramelessModal(QDialog):
         button_layout.addWidget(self.button_message, alignment=Qt.AlignRight)
         button_layout.addWidget(button_box, alignment=Qt.AlignRight)
         content_layout.addWidget(self.header)
-        content_layout.addWidget(header_line)
+        content_layout.addWidget(self.header_line)
         content_layout.addWidget(self.error_details)
         content_layout.addWidget(body_container)
         content_layout.addStretch()
@@ -2498,6 +2498,7 @@ class ExportDialog(FramelessModal):
     def _show_passphrase_request_message(self):
         self.continue_button.clicked.connect(self._export_file)
         self.header.setText(self.passphrase_header)
+        self.header_line.hide()
         self.error_details.hide()
         self.body.hide()
         self.passphrase_form.show()
@@ -2508,6 +2509,7 @@ class ExportDialog(FramelessModal):
     def _show_passphrase_request_message_again(self):
         self.continue_button.clicked.connect(self._export_file)
         self.header.setText(self.passphrase_header)
+        self.header_line.hide()
         self.error_details.setText(self.passphrase_error_message)
         self.body.hide()
         self.passphrase_form.show()
@@ -2518,6 +2520,7 @@ class ExportDialog(FramelessModal):
     def _show_insert_usb_message(self):
         self.continue_button.clicked.connect(self._show_insert_usb_message)
         self.header.setText(self.insert_usb_header)
+        self.header_line.show()
         self.body.setText(self.insert_usb_message)
         self.error_details.hide()
         self.passphrase_form.hide()
@@ -2528,6 +2531,7 @@ class ExportDialog(FramelessModal):
     def _show_insert_encrypted_usb_message(self):
         self.continue_button.clicked.connect(self._show_insert_usb_message)
         self.header.setText(self.insert_usb_header)
+        self.header_line.show()
         self.error_details.setText(self.usb_error_message)
         self.body.setText(self.insert_usb_message)
         self.passphrase_form.hide()
@@ -2538,6 +2542,7 @@ class ExportDialog(FramelessModal):
     def _show_generic_error_message(self, error_status: str):
         self.window_buttons.hide()
         self.header.setText(self.error_header)
+        self.header_line.show()
         self.error_details.hide()
         self.body.setText('{}: {}'.format(error_status, self.generic_error_message))
         self.passphrase_form.hide()
