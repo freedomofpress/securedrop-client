@@ -2198,19 +2198,19 @@ def test_PrintDialog__show_starting_instructions(mocker):
         '<br />' \
         '<span style="font-weight:normal">mock.jpg</span>'
     assert dialog.body.text() == \
-        '<h2>Security advice for printing documents</h2>' \
+        '<h2>Managing printout risks</h2>' \
         '<br />' \
-        '<b>Malware</b>' \
+        '<b>QR-Codes and visible web addresses</b>' \
         '<br />' \
         'Never open web addresses or scan QR codes contained in printed documents without ' \
         'taking security precautions. If you are unsure how to manage this risk, please ' \
         'contact your administrator.' \
         '<br /><br />' \
-        '<b>Anonymity</b>' \
+        '<b>Printer dots</b>' \
         '<br />' \
-        'Before publishing, protect your sources by redacting any information that could ' \
-        'identify them. Documents may contain identifying information invisible to the naked ' \
-        'eye (e.g., printer dots).'
+        'Any part of a printed page may contain identifying information ' \
+        'invisible to the naked eye, such as printer dots. Please carefully ' \
+        'consider this risk when working with or publishing scanned printouts.'
 
 
 def test_PrintDialog__show_insert_usb_message(mocker):
