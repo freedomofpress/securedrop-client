@@ -2298,7 +2298,6 @@ class PrintDialog(FramelessModal):
 
         # Connect parent signals to slots
         self.continue_button.setEnabled(False)
-        self.continue_button.clicked.connect(self.controller.run_printer_preflight_checks)
 
         # Dialog content
         self.starting_header = _(
@@ -2325,7 +2324,7 @@ class PrintDialog(FramelessModal):
         self.generic_error_message = _('See your administrator for help.')
 
         self._show_starting_instructions()
-        self.controller.run_printer_preflight_checks()
+        self._run_preflight()
 
     def _show_starting_instructions(self):
         self.header.setText(self.starting_header)
@@ -2335,7 +2334,7 @@ class PrintDialog(FramelessModal):
         self.center_dialog()
 
     def _show_insert_usb_message(self):
-        self.continue_button.clicked.connect(self.controller.run_printer_preflight_checks)
+        self.continue_button.clicked.connect(self._run_preflight)
         self.header.setText(self.insert_usb_header)
         self.error_details.hide()
         self.body.setText(self.insert_usb_message)
@@ -2350,6 +2349,10 @@ class PrintDialog(FramelessModal):
         self.body.setText('{}: {}'.format(self.error_status, self.generic_error_message))
         self.adjustSize()
         self.center_dialog()
+
+    @pyqtSlot()
+    def _run_preflight(self):
+        self.controller.run_printer_preflight_checks()
 
     @pyqtSlot()
     def _print_file(self):
@@ -2484,7 +2487,7 @@ class ExportDialog(FramelessModal):
         self.passphrase_form.hide()
 
         self._show_starting_instructions()
-        self.controller.run_export_preflight_checks()
+        self._run_preflight()
 
     def _show_starting_instructions(self):
         self.header.setText(self.starting_header)
@@ -2515,7 +2518,7 @@ class ExportDialog(FramelessModal):
         self.center_dialog()
 
     def _show_insert_usb_message(self):
-        self.continue_button.clicked.connect(self._show_insert_usb_message)
+        self.continue_button.clicked.connect(self._run_preflight)
         self.header.setText(self.insert_usb_header)
         self.header_line.show()
         self.body.setText(self.insert_usb_message)
@@ -2526,7 +2529,7 @@ class ExportDialog(FramelessModal):
         self.center_dialog()
 
     def _show_insert_encrypted_usb_message(self):
-        self.continue_button.clicked.connect(self._show_insert_usb_message)
+        self.continue_button.clicked.connect(self._run_preflight)
         self.header.setText(self.insert_usb_header)
         self.header_line.show()
         self.error_details.setText(self.usb_error_message)
@@ -2546,6 +2549,10 @@ class ExportDialog(FramelessModal):
         self.passphrase_form.hide()
         self.adjustSize()
         self.center_dialog()
+
+    @pyqtSlot()
+    def _run_preflight(self):
+        self.controller.run_export_preflight_checks()
 
     @pyqtSlot()
     def _export_file(self, checked: bool = False):
