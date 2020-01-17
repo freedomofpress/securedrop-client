@@ -2358,11 +2358,9 @@ class PrintDialog(FramelessModal):
 
     @pyqtSlot()
     def _on_preflight_success(self):
-        # Wire up continue button to the next step
-        self.continue_button.clicked.connect(self._print_file)
-
         # If the continue button is disabled then this is the result of a background preflight check
         if not self.continue_button.isEnabled():
+            self.continue_button.clicked.connect(self._print_file)
             self.button_message.hide()
             self.continue_button.setEnabled(True)
             return
@@ -2590,11 +2588,9 @@ class ExportDialog(FramelessModal):
             else:
                 self._show_generic_error_message(error.status)
 
-
     @pyqtSlot()
     def _on_export_success(self):
-        pass
-        # self.close()
+        self.close()
 
     @pyqtSlot(object)
     def _on_export_failure(self, error: ExportError):

@@ -43,7 +43,7 @@ from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobError, 
     SendReplyJobTimeoutError
 from securedrop_client.api_jobs.updatestar import UpdateStarJob, UpdateStarJobException
 from securedrop_client.crypto import GpgHelper
-from securedrop_client.export import Export, ExportError, ExportStatus
+from securedrop_client.export import Export
 from securedrop_client.queue import ApiJobQueue
 from securedrop_client.sync import ApiSync
 from securedrop_client.utils import check_dir_permissions
