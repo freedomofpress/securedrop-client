@@ -2130,6 +2130,9 @@ class FramelessModal(QDialog):
         font-size: 12px;
         color: #2a319d;
     }
+    #header_icon {
+        padding-left: 10px;
+    }
     #header {
         font-family: 'Montserrat';
         font-size: 24px;
@@ -2183,6 +2186,7 @@ class FramelessModal(QDialog):
     '''
 
     CONTENT_MARGIN = 40
+    HEADER_MARGIN = 0
     BODY_MARGIN = 0
 
     modal_closing = pyqtSignal()
@@ -2221,9 +2225,20 @@ class FramelessModal(QDialog):
         content.setLayout(content_layout)
         content_layout.setContentsMargins(
             self.CONTENT_MARGIN, 0, self.CONTENT_MARGIN, self.CONTENT_MARGIN)
+        header_container = QWidget()
+        header_container_layout = QHBoxLayout()
+        header_container_layout.setContentsMargins(
+            self.HEADER_MARGIN, self.HEADER_MARGIN, self.HEADER_MARGIN, self.HEADER_MARGIN)
+        header_container.setLayout(header_container_layout)
+        self.header_icon = SvgLabel('blank.svg', svg_size=QSize(64, 64))
+        self.header_icon.setObjectName('header_icon')
+        self.header_icon.setFixedWidth(80)
         self.header = QLabel()
         self.header.setObjectName('header')
         self.header.setWordWrap(True)
+        header_container_layout.addWidget(self.header_icon, alignment=Qt.AlignLeft)
+        header_container_layout.addWidget(self.header, alignment=Qt.AlignLeft)
+        header_container_layout.addStretch()
         self.header_line = QWidget()
         self.header_line.setObjectName('header_line')
         self.error_details = QLabel()
@@ -2254,7 +2269,7 @@ class FramelessModal(QDialog):
         button_box.addButton(cancel_button, QDialogButtonBox.ActionRole)
         button_box.addButton(self.continue_button, QDialogButtonBox.ActionRole)
         button_layout.addWidget(button_box, alignment=Qt.AlignRight)
-        content_layout.addWidget(self.header)
+        content_layout.addWidget(header_container)
         content_layout.addWidget(self.header_line)
         content_layout.addWidget(self.error_details)
         content_layout.addWidget(body_container)
@@ -2298,6 +2313,8 @@ class PrintDialog(FramelessModal):
 
         # Connect parent signals to slots
         self.continue_button.setEnabled(False)
+
+        self.header_icon.update_image('printer.svg', svg_size=QSize(64, 64))
 
         # Dialog content
         self.starting_header = _(
@@ -2424,6 +2441,8 @@ class ExportDialog(FramelessModal):
 
         # Connect parent signals to slots
         self.continue_button.setEnabled(False)
+
+        self.header_icon.update_image('savetodisk.svg', QSize(64, 64))
 
         # Dialog content
         self.starting_header = _(

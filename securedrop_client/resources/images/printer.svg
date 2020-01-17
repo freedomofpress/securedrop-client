@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="69px" height="69px" viewBox="0 0 69 69" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 61 (89581) - https://sketch.com -->
+    <title>Print icon export</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <polygon id="path-1" points="0 0.884 63.4737 0.884 63.4737 56.9999 0 56.9999"></polygon>
+    </defs>
+    <g id="Export-Nov2019b" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Artboard" transform="translate(-1522.000000, -446.000000)">
+            <g id="Print-icon-export" transform="translate(1523.000000, 447.000000)">
+                <rect id="Rectangle" stroke="#FFFFFF" x="0" y="0" width="67" height="67"></rect>
+                <g id="Print-Icon" transform="translate(2.000000, 5.000000)">
+                    <g id="Group-3" transform="translate(0.000000, 0.116200)">
+                        <mask id="mask-2" fill="white">
+                            <use xlink:href="#path-1"></use>
+                        </mask>
+                        <g id="Clip-2"></g>
+                        <path d="M58.9437,39.5089 L50.2097,39.5299 L50.2097,32.5819 L13.1497,32.5819 L13.1497,39.6159 L4.5297,39.6369 L4.5297,26.1049 C4.5297,23.3969 6.7327,21.1939 9.4407,21.1939 L54.0327,21.1939 C56.7407,21.1939 58.9437,23.3969 58.9437,26.1049 L58.9437,39.5089 Z M17.6797,52.4699 L45.6787,52.4699 L45.6787,37.1129 L17.6797,37.1129 L17.6797,52.4699 Z M17.9567,16.6639 L45.9557,16.6639 L45.9557,5.4139 L17.9567,5.4139 L17.9567,16.6639 Z M63.4737,26.1049 C63.4737,20.8989 59.2387,16.6639 54.0327,16.6639 L50.4857,16.6639 L50.4857,0.8839 L13.4267,0.8839 L13.4267,16.6639 L9.4407,16.6639 C4.2357,16.6639 -0.0003,20.8989 -0.0003,26.1049 L-0.0003,44.1769 L13.1497,44.1459 L13.1497,56.9999 L50.2097,56.9999 L50.2097,44.0589 L63.4737,44.0279 L63.4737,26.1049 Z" id="Fill-1" fill="#2A319D" mask="url(#mask-2)"></path>
+                    </g>
+                    <path d="M55.0028,27.212 C55.0028,28.591 53.8848,29.71 52.5048,29.71 C51.1268,29.71 50.0078,28.591 50.0078,27.212 C50.0078,25.833 51.1268,24.715 52.5048,24.715 C53.8848,24.715 55.0028,25.833 55.0028,27.212" id="Fill-4" fill="#2A319D"></path>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

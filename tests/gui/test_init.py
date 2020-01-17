@@ -130,6 +130,24 @@ def test_SvgLabel_init(mocker):
     assert sl.svg == svg
 
 
+def test_SvgLabel_update(mocker):
+    """
+    Ensure SvgLabel calls the expected methods correctly to set the icon and size.
+    """
+    svg = mocker.MagicMock()
+    load_svg_fn = mocker.patch('securedrop_client.gui.load_svg', return_value=svg)
+    mocker.patch('securedrop_client.gui.QHBoxLayout.addWidget')
+    sl = SvgLabel(filename='mock', svg_size=QSize(1, 1))
+
+    sl.update_image(filename='mock_two', svg_size=QSize(2, 2))
+
+    assert sl.svg == svg
+    assert load_svg_fn.call_args_list[0][0][0] == 'mock'
+    assert load_svg_fn.call_args_list[1][0][0] == 'mock_two'
+    assert sl.svg.setFixedSize.call_args_list[0][0][0] == QSize(1, 1)
+    assert sl.svg.setFixedSize.call_args_list[1][0][0] == QSize(2, 2)
+
+
 def test_SecureQLabel_init():
     label_text = '<script>alert("hi!");</script>'
     sl = SecureQLabel(label_text)
