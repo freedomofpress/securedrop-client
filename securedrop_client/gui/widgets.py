@@ -2239,10 +2239,10 @@ class FramelessModal(QDialog):
             self.BODY_MARGIN, self.BODY_MARGIN, self.BODY_MARGIN, self.BODY_MARGIN)
         body_container.setLayout(self.body_layout)
         self.body_layout.addWidget(self.body)
-        self.window_buttons = QWidget()
-        self.window_buttons.setObjectName('window_buttons')
+        window_buttons = QWidget()
+        window_buttons.setObjectName('window_buttons')
         button_layout = QVBoxLayout()
-        self.window_buttons.setLayout(button_layout)
+        window_buttons.setLayout(button_layout)
         cancel_button = QPushButton(_('CANCEL'))
         cancel_button.setAutoDefault(False)
         cancel_button.clicked.connect(self.close)
@@ -2259,7 +2259,7 @@ class FramelessModal(QDialog):
         content_layout.addWidget(self.error_details)
         content_layout.addWidget(body_container)
         content_layout.addStretch()
-        content_layout.addWidget(self.window_buttons)
+        content_layout.addWidget(window_buttons)
 
         # Layout
         layout = QVBoxLayout(self)
@@ -2343,7 +2343,8 @@ class PrintDialog(FramelessModal):
         self.center_dialog()
 
     def _show_generic_error_message(self):
-        self.window_buttons.hide()
+        self.continue_button.clicked.connect(self.close)
+        self.continue_button.setText('DONE')
         self.header.setText(self.error_header)
         self.error_details.hide()
         self.body.setText('{}: {}'.format(self.error_status, self.generic_error_message))
@@ -2536,13 +2537,13 @@ class ExportDialog(FramelessModal):
         self.center_dialog()
 
     def _show_generic_error_message(self):
-        self.window_buttons.hide()
+        self.continue_button.clicked.connect(self.close)
+        self.continue_button.setText('DONE')
         self.header.setText(self.error_header)
         self.header_line.show()
         self.error_details.hide()
         self.body.setText('{}: {}'.format(self.error_status, self.generic_error_message))
         self.passphrase_form.hide()
-        self.window_buttons.hide()
         self.adjustSize()
         self.center_dialog()
 
