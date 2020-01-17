@@ -120,17 +120,19 @@ class PrintAction(ExportAction):
             printer_driver = LASERJET_DRIVER
             printer_ppd = LASERJET_PPD
 
-        # Some drivers don't come with ppd files pre-compiled, we must compile them
-        self.submission.safe_check_call(
-            command=[
-                "sudo",
-                "ppdc",
-                printer_driver,
-                "-d",
-                "/usr/share/cups/model/",
-            ],
-            error_message=ExportStatus.ERROR_PRINTER_DRIVER_UNAVAILABLE.value
-        )
+        # Compile and install drivers that are not already installed
+        if not os.path.exists(printer_ppd):
+            self.submission.safe_check_call(
+                command=[
+                    "sudo",
+                    "ppdc",
+                    printer_driver,
+                    "-d",
+                    "/usr/share/cups/model/",
+                ],
+                error_message=ExportStatus.ERROR_PRINTER_DRIVER_UNAVAILABLE.value
+            )
+
         return printer_ppd
 
     def setup_printer(self, printer_uri, printer_ppd):
