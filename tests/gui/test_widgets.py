@@ -1951,8 +1951,9 @@ def test_ExportDialog__show_generic_error_message(mocker):
     mocker.patch(
          'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog.error_status = 'mock_error_status'
 
-    dialog._show_generic_error_message('mock_error_status')
+    dialog._show_generic_error_message()
 
     assert dialog.passphrase_form.isHidden()
     assert dialog.header.text() == 'Unable to export'
@@ -2034,13 +2035,13 @@ def test_ExportDialog__on_preflight_failure_when_status_is_CALLED_PROCESS_ERROR(
     dialog._on_preflight_failure(ExportError(ExportStatus.CALLED_PROCESS_ERROR.value))
     dialog.continue_button.clicked.connect.assert_called_once_with(
         dialog._show_generic_error_message)
+    assert dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR.value
 
     # When the continue button is enabled, ensure next instructions are shown
     mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
     dialog._on_preflight_failure(ExportError(ExportStatus.CALLED_PROCESS_ERROR.value))
-    dialog._show_generic_error_message.assert_called_once_with(
-        ExportStatus.CALLED_PROCESS_ERROR.value)
-
+    dialog._show_generic_error_message.assert_called_once_with()
+    assert dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR.value
 
 def test_ExportDialog__on_preflight_failure_when_status_is_unknown(mocker):
     mocker.patch(
@@ -2055,12 +2056,13 @@ def test_ExportDialog__on_preflight_failure_when_status_is_unknown(mocker):
     dialog._on_preflight_failure(ExportError('Some Unknown Error Status'))
     dialog.continue_button.clicked.connect.assert_called_once_with(
         dialog._show_generic_error_message)
+    assert dialog.error_status == 'Some Unknown Error Status'
 
     # When the continue button is enabled, ensure next instructions are shown
     mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
     dialog._on_preflight_failure(ExportError('Some Unknown Error Status'))
-    dialog._show_generic_error_message.assert_called_once_with('Some Unknown Error Status')
-
+    dialog._show_generic_error_message.assert_called_once_with()
+    assert dialog.error_status == 'Some Unknown Error Status'
 
 def test_ExportDialog__export_file(mocker):
     mocker.patch(
@@ -2141,7 +2143,8 @@ def test_ExportDialog__on_export_failure(mocker):
     dialog._on_export_failure(ExportError('mock_error_status'))
 
     assert dialog.passphrase_form.isHidden()
-    dialog._show_generic_error_message.assert_called_with('mock_error_status')
+    dialog._show_generic_error_message.assert_called_with()
+    assert dialog.error_status == 'mock_error_status'
 
 
 def test_PrintDialog_init(mocker):
@@ -2197,8 +2200,9 @@ def test_PrintDialog__show_generic_error_message(mocker):
     mocker.patch(
          'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog.error_status = 'mock_error_status'
 
-    dialog._show_generic_error_message('mock_error_status')
+    dialog._show_generic_error_message()
 
     assert dialog.header.text() == 'Unable to print'
     assert dialog.body.text() == 'mock_error_status: See your administrator for help.'
@@ -2292,12 +2296,13 @@ def test_PrintDialog__on_preflight_failure_when_status_is_MISSING_PRINTER_URI(mo
     dialog._on_preflight_failure(ExportError(ExportStatus.MISSING_PRINTER_URI.value))
     dialog.continue_button.clicked.connect.assert_called_once_with(
         dialog._show_generic_error_message)
+    assert dialog.error_status == ExportStatus.MISSING_PRINTER_URI.value
 
     # When the continue button is enabled, ensure next instructions are shown
     mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
     dialog._on_preflight_failure(ExportError(ExportStatus.MISSING_PRINTER_URI.value))
-    dialog._show_generic_error_message.assert_called_once_with(
-        ExportStatus.MISSING_PRINTER_URI.value)
+    dialog._show_generic_error_message.assert_called_once_with()
+    assert dialog.error_status == ExportStatus.MISSING_PRINTER_URI.value
 
 
 def test_PrintDialog__on_preflight_failure_when_status_is_CALLED_PROCESS_ERROR(mocker):
@@ -2313,12 +2318,13 @@ def test_PrintDialog__on_preflight_failure_when_status_is_CALLED_PROCESS_ERROR(m
     dialog._on_preflight_failure(ExportError(ExportStatus.CALLED_PROCESS_ERROR.value))
     dialog.continue_button.clicked.connect.assert_called_once_with(
         dialog._show_generic_error_message)
+    assert dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR.value
 
     # When the continue button is enabled, ensure next instructions are shown
     mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
     dialog._on_preflight_failure(ExportError(ExportStatus.CALLED_PROCESS_ERROR.value))
-    dialog._show_generic_error_message.assert_called_once_with(
-        ExportStatus.CALLED_PROCESS_ERROR.value)
+    dialog._show_generic_error_message.assert_called_once_with()
+    assert dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR.value
 
 
 def test_PrintDialog__on_preflight_failure_when_status_is_unknown(mocker):
@@ -2334,11 +2340,13 @@ def test_PrintDialog__on_preflight_failure_when_status_is_unknown(mocker):
     dialog._on_preflight_failure(ExportError('Some Unknown Error Status'))
     dialog.continue_button.clicked.connect.assert_called_once_with(
         dialog._show_generic_error_message)
+    assert dialog.error_status == 'Some Unknown Error Status'
 
     # When the continue button is enabled, ensure next instructions are shown
     mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
     dialog._on_preflight_failure(ExportError('Some Unknown Error Status'))
-    dialog._show_generic_error_message.assert_called_once_with('Some Unknown Error Status')
+    dialog._show_generic_error_message.assert_called_once_with()
+    assert dialog.error_status == 'Some Unknown Error Status'
 
 
 def test_ConversationView_init(mocker, homedir):
