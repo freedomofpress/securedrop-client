@@ -1961,109 +1961,6 @@ def test_ExportDialog__show_generic_error_message(mocker):
     assert dialog.body.text() == 'mock_error_status: See your administrator for help.'
 
 
-def test_ExportDialog__on_preflight_failure_when_status_is_USB_NOT_CONNECTED(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
-    dialog._show_insert_usb_message = mocker.MagicMock()
-    dialog.continue_button = mocker.MagicMock()
-    dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
-
-    # When the continue button is enabled, ensure clicking continue will show next instructions
-    dialog._on_preflight_failure(ExportError(ExportStatus.USB_NOT_CONNECTED.value))
-    dialog.continue_button.clicked.connect.assert_called_once_with(dialog._show_insert_usb_message)
-
-    # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
-    dialog._on_preflight_failure(ExportError(ExportStatus.USB_NOT_CONNECTED.value))
-    dialog._show_insert_usb_message.assert_called_once_with()
-
-
-def test_ExportDialog__on_preflight_failure_when_status_is_BAD_PASSPHRASE(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
-    dialog._show_passphrase_request_message_again = mocker.MagicMock()
-    dialog.continue_button = mocker.MagicMock()
-    dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
-
-    # When the continue button is enabled, ensure clicking continue will show next instructions
-    dialog._on_preflight_failure(ExportError(ExportStatus.BAD_PASSPHRASE.value))
-    dialog.continue_button.clicked.connect.assert_called_once_with(
-        dialog._show_passphrase_request_message_again)
-
-    # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
-    dialog._on_preflight_failure(ExportError(ExportStatus.BAD_PASSPHRASE.value))
-    dialog._show_passphrase_request_message_again.assert_called_once_with()
-
-
-def test_ExportDialog__on_preflight_failure_when_status_DISK_ENCRYPTION_NOT_SUPPORTED_ERROR(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
-    dialog._show_insert_encrypted_usb_message = mocker.MagicMock()
-    dialog.continue_button = mocker.MagicMock()
-    dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
-
-    # When the continue button is enabled, ensure clicking continue will show next instructions
-    dialog._on_preflight_failure(
-        ExportError(ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value))
-    dialog.continue_button.clicked.connect.assert_called_once_with(
-        dialog._show_insert_encrypted_usb_message)
-
-    # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
-    dialog._on_preflight_failure(ExportError(
-        ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value))
-    dialog._show_insert_encrypted_usb_message.assert_called_once_with()
-
-
-def test_ExportDialog__on_preflight_failure_when_status_is_CALLED_PROCESS_ERROR(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
-    dialog._show_generic_error_message = mocker.MagicMock()
-    dialog.continue_button = mocker.MagicMock()
-    dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
-
-    # When the continue button is enabled, ensure clicking continue will show next instructions
-    dialog._on_preflight_failure(ExportError(ExportStatus.CALLED_PROCESS_ERROR.value))
-    dialog.continue_button.clicked.connect.assert_called_once_with(
-        dialog._show_generic_error_message)
-    assert dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR.value
-
-    # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
-    dialog._on_preflight_failure(ExportError(ExportStatus.CALLED_PROCESS_ERROR.value))
-    dialog._show_generic_error_message.assert_called_once_with()
-    assert dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR.value
-
-def test_ExportDialog__on_preflight_failure_when_status_is_unknown(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
-    dialog._show_generic_error_message = mocker.MagicMock()
-    dialog.continue_button = mocker.MagicMock()
-    dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
-
-    # When the continue button is enabled, ensure clicking continue will show next instructions
-    dialog._on_preflight_failure(ExportError('Some Unknown Error Status'))
-    dialog.continue_button.clicked.connect.assert_called_once_with(
-        dialog._show_generic_error_message)
-    assert dialog.error_status == 'Some Unknown Error Status'
-
-    # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
-    dialog._on_preflight_failure(ExportError('Some Unknown Error Status'))
-    dialog._show_generic_error_message.assert_called_once_with()
-    assert dialog.error_status == 'Some Unknown Error Status'
-
 def test_ExportDialog__export_file(mocker):
     mocker.patch(
         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
@@ -2123,6 +2020,18 @@ def test_ExportDialog__on_preflight_success_enabled_after_preflight_failure(mock
     assert dialog.continue_button.isEnabled()
 
 
+def test_ExportDialog__on_preflight_failure(mocker):
+    mocker.patch(
+         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
+    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog._update_dialog = mocker.MagicMock()
+
+    error = ExportError('mock_error_status')
+    dialog._on_preflight_failure(error)
+
+    dialog._update_dialog.assert_called_with(error)
+
+
 def test_ExportDialog__on_export_success(mocker):
     mocker.patch(
          'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
@@ -2138,13 +2047,116 @@ def test_ExportDialog__on_export_failure(mocker):
     mocker.patch(
          'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog._update_dialog = mocker.MagicMock()
+
+    error = ExportError('mock_error_status')
+    dialog._on_export_failure(error)
+
+    dialog._update_dialog.assert_called_with(error)
+
+
+def test_ExportDialog__update_dialog_when_status_is_USB_NOT_CONNECTED(mocker):
+    mocker.patch(
+         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
+    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
+    dialog._show_insert_usb_message = mocker.MagicMock()
+    dialog.continue_button = mocker.MagicMock()
+    dialog.continue_button.clicked = mocker.MagicMock()
+    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
+
+    # When the continue button is enabled, ensure clicking continue will show next instructions
+    dialog._update_dialog(ExportError(ExportStatus.USB_NOT_CONNECTED.value))
+    dialog.continue_button.clicked.connect.assert_called_once_with(dialog._show_insert_usb_message)
+
+    # When the continue button is enabled, ensure next instructions are shown
+    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
+    dialog._update_dialog(ExportError(ExportStatus.USB_NOT_CONNECTED.value))
+    dialog._show_insert_usb_message.assert_called_once_with()
+
+
+def test_ExportDialog__update_dialog_when_status_is_BAD_PASSPHRASE(mocker):
+    mocker.patch(
+         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
+    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
+    dialog._show_passphrase_request_message_again = mocker.MagicMock()
+    dialog.continue_button = mocker.MagicMock()
+    dialog.continue_button.clicked = mocker.MagicMock()
+    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
+
+    # When the continue button is enabled, ensure clicking continue will show next instructions
+    dialog._update_dialog(ExportError(ExportStatus.BAD_PASSPHRASE.value))
+    dialog.continue_button.clicked.connect.assert_called_once_with(
+        dialog._show_passphrase_request_message_again)
+
+    # When the continue button is enabled, ensure next instructions are shown
+    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
+    dialog._update_dialog(ExportError(ExportStatus.BAD_PASSPHRASE.value))
+    dialog._show_passphrase_request_message_again.assert_called_once_with()
+
+
+def test_ExportDialog__update_dialog_when_status_DISK_ENCRYPTION_NOT_SUPPORTED_ERROR(mocker):
+    mocker.patch(
+         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
+    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
+    dialog._show_insert_encrypted_usb_message = mocker.MagicMock()
+    dialog.continue_button = mocker.MagicMock()
+    dialog.continue_button.clicked = mocker.MagicMock()
+    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
+
+    # When the continue button is enabled, ensure clicking continue will show next instructions
+    dialog._update_dialog(
+        ExportError(ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value))
+    dialog.continue_button.clicked.connect.assert_called_once_with(
+        dialog._show_insert_encrypted_usb_message)
+
+    # When the continue button is enabled, ensure next instructions are shown
+    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
+    dialog._update_dialog(ExportError(
+        ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value))
+    dialog._show_insert_encrypted_usb_message.assert_called_once_with()
+
+
+def test_ExportDialog__update_dialog_when_status_is_CALLED_PROCESS_ERROR(mocker):
+    mocker.patch(
+         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
+    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
     dialog._show_generic_error_message = mocker.MagicMock()
+    dialog.continue_button = mocker.MagicMock()
+    dialog.continue_button.clicked = mocker.MagicMock()
+    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
 
-    dialog._on_export_failure(ExportError('mock_error_status'))
+    # When the continue button is enabled, ensure clicking continue will show next instructions
+    dialog._update_dialog(ExportError(ExportStatus.CALLED_PROCESS_ERROR.value))
+    dialog.continue_button.clicked.connect.assert_called_once_with(
+        dialog._show_generic_error_message)
+    assert dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR.value
 
-    assert dialog.passphrase_form.isHidden()
-    dialog._show_generic_error_message.assert_called_with()
-    assert dialog.error_status == 'mock_error_status'
+    # When the continue button is enabled, ensure next instructions are shown
+    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
+    dialog._update_dialog(ExportError(ExportStatus.CALLED_PROCESS_ERROR.value))
+    dialog._show_generic_error_message.assert_called_once_with()
+    assert dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR.value
+
+def test_ExportDialog__update_dialog_when_status_is_unknown(mocker):
+    mocker.patch(
+         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
+    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
+    dialog._show_generic_error_message = mocker.MagicMock()
+    dialog.continue_button = mocker.MagicMock()
+    dialog.continue_button.clicked = mocker.MagicMock()
+    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
+
+    # When the continue button is enabled, ensure clicking continue will show next instructions
+    dialog._update_dialog(ExportError('Some Unknown Error Status'))
+    dialog.continue_button.clicked.connect.assert_called_once_with(
+        dialog._show_generic_error_message)
+    assert dialog.error_status == 'Some Unknown Error Status'
+
+    # When the continue button is enabled, ensure next instructions are shown
+    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
+    dialog._update_dialog(ExportError('Some Unknown Error Status'))
+    dialog._show_generic_error_message.assert_called_once_with()
+    assert dialog.error_status == 'Some Unknown Error Status'
 
 
 def test_PrintDialog_init(mocker):

@@ -2570,6 +2570,17 @@ class ExportDialog(FramelessModal):
 
     @pyqtSlot(object)
     def _on_preflight_failure(self, error: ExportError):
+        self._update_dialog(error)
+
+    @pyqtSlot()
+    def _on_export_success(self):
+        self.close()
+
+    @pyqtSlot(object)
+    def _on_export_failure(self, error: ExportError):
+        self._update_dialog(error)
+
+    def _update_dialog(self, error: ExportStatus):
         self.error_status = error.status
         # If the continue button is disabled then this is the result of a background preflight check
         if not self.continue_button.isEnabled():
@@ -2592,15 +2603,6 @@ class ExportDialog(FramelessModal):
                 self._show_insert_encrypted_usb_message()
             else:
                 self._show_generic_error_message()
-
-    @pyqtSlot()
-    def _on_export_success(self):
-        self.close()
-
-    @pyqtSlot(object)
-    def _on_export_failure(self, error: ExportError):
-        self.error_status = error.status
-        self._show_generic_error_message()
 
 
 class ConversationView(QWidget):
