@@ -76,10 +76,8 @@ def get_remote_data(api: API) -> Tuple[List[SDKSource], List[SDKSubmission], Lis
 
     (remote_sources, remote_submissions, remote_replies)
     """
-    remote_submissions = []  # type: List[SDKSubmission]
     remote_sources = api.get_sources()
-    for source in remote_sources:
-        remote_submissions.extend(api.get_submissions(source))
+    remote_submissions = api.get_all_submissions()
     remote_replies = api.get_all_replies()
 
     logger.info('Fetched {} remote sources.'.format(len(remote_sources)))
