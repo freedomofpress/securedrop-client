@@ -2151,7 +2151,8 @@ class FramelessDialog(QDialog):
         font-family: 'Montserrat';
         font-size: 16px;
         color: #ff0064;
-        padding-bottom: 20px;
+        padding-top: 20px;
+        padding-bottom: 10px;
     }
     #body {
         font-family: 'Montserrat';
@@ -2242,6 +2243,7 @@ class FramelessDialog(QDialog):
         self.error_details = QLabel()
         self.error_details.setObjectName('error_details')
         self.error_details.setWordWrap(True)
+        self.error_details.hide()
         self.body = QLabel()
         self.body.setObjectName('body')
         self.body.setWordWrap(True)
@@ -2410,6 +2412,7 @@ class ExportDialog(FramelessDialog):
         font-weight: 500;
         font-size: 12px;
         color: #2a319d;
+        padding-top: 10px;
     }
     #passphrase_form QLineEdit {
         border-radius: 0px;
@@ -2528,6 +2531,7 @@ class ExportDialog(FramelessDialog):
         self.header.setText(self.passphrase_header)
         self.header_line.hide()
         self.error_details.setText(self.passphrase_error_message)
+        self.error_details.show()
         self.body.hide()
         self.passphrase_form.show()
         self.continue_button.setText('SUBMIT')

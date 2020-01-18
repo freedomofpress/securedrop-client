@@ -1909,8 +1909,11 @@ def test_ExportDialog__show_passphrase_request_message_again(mocker):
          'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
 
+    assert dialog.error_details.isHidden() is True
+
     dialog._show_passphrase_request_message_again()
 
+    assert dialog.error_details.isHidden() is False
     assert not dialog.passphrase_form.isHidden()
     assert dialog.header.text() == 'Enter passphrase for USB drive'
     assert dialog.error_details.text() == 'The passphrase provided did not work. Please try again.'
