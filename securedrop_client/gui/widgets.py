@@ -2494,7 +2494,7 @@ class ExportDialog(FramelessDialog):
         font = QFont()
         font.setLetterSpacing(QFont.AbsoluteSpacing, self.PASSPHRASE_LABEL_SPACING)
         passphrase_label.setFont(font)
-        self.passphrase_field = QLineEdit()
+        self.passphrase_field = PasswordEdit(self)
         self.passphrase_field.setEchoMode(QLineEdit.Password)
         effect = QGraphicsDropShadowEffect(self)
         effect.setOffset(0, -1)
