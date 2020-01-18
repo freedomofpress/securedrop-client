@@ -2112,10 +2112,10 @@ class FileWidget(QWidget):
         self.set_button_state()
 
 
-class FramelessModal(QDialog):
+class FramelessDialog(QDialog):
 
     CSS = '''
-    #frameless_modal {
+    #frameless_dialog {
         min-width: 800px;
         max-width: 800px;
         min-height: 300px;
@@ -2195,11 +2195,9 @@ class FramelessModal(QDialog):
         parent = QApplication.activeWindow()
         super().__init__(parent)
 
-        self.setObjectName('frameless_modal')
+        self.setObjectName('frameless_dialog')
         self.setStyleSheet(self.CSS)
-        self.setWindowFlags(Qt.Widget | Qt.FramelessWindowHint)
-        self.setWindowModality(Qt.ApplicationModal)
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.setWindowFlags(Qt.Widget)
 
         # Set drop shadow effect
         effect = QGraphicsDropShadowEffect(self)
@@ -2297,7 +2295,7 @@ class FramelessModal(QDialog):
         self.move(x_center, y_center)
 
 
-class PrintDialog(FramelessModal):
+class PrintDialog(FramelessDialog):
 
     def __init__(self, controller: Controller, file_uuid: str, file_name: str):
         super().__init__()
@@ -2404,7 +2402,7 @@ class PrintDialog(FramelessModal):
                 self._show_generic_error_message()
 
 
-class ExportDialog(FramelessModal):
+class ExportDialog(FramelessDialog):
 
     PASSPHRASE_FORM_CSS = '''
     #passphrase_form QLabel {
