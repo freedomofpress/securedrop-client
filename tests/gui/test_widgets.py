@@ -1,7 +1,6 @@
 """
 Make sure the UI widgets are configured correctly and work as expected.
 """
-import html
 import pytest
 
 from PyQt5.QtCore import Qt, QEvent
@@ -1245,7 +1244,7 @@ def test_SpeechBubble_html_init(mocker):
     mock_signal = mocker.MagicMock()
 
     bubble = SpeechBubble('mock id', '<b>hello</b>', mock_signal)
-    assert bubble.message.text() == html.escape('<b>hello</b>')
+    assert bubble.message.text() == '<b>hello</b>'
 
 
 def test_SpeechBubble_with_apostrophe_in_text(mocker):
@@ -1254,7 +1253,7 @@ def test_SpeechBubble_with_apostrophe_in_text(mocker):
 
     message = "I'm sure, you are reading my message."
     bubble = SpeechBubble('mock id', message, mock_signal)
-    assert bubble.message.text() == html.escape(message, quote=False)
+    assert bubble.message.text() == message
 
 
 def test_MessageWidget_init(mocker):
