@@ -2014,13 +2014,20 @@ class FileWidget(QWidget):
             # Open the already downloaded file.
             self.controller.on_file_open(self.file.uuid)
         else:
-            # Indicate in downloading state...
-            self.download_animation.frameChanged.connect(self.set_button_animation_frame)
-            self.download_animation.start()
-            self.download_button.setText(_(" DOWNLOADING "))
-            self.download_button.setStyleSheet("color: #05a6fe")
+            # Indicate in downloading state... but only after 0.3 seconds (i.e.
+            # this is taking a noticable amount of time to complete).
+            QTimer.singleShot(300, self.start_button_animation)
             # Download the file.
             self.controller.on_submission_download(File, self.file.uuid)
+
+    def start_button_animation(self):
+        """
+        Update the download button to the animated "downloading" state.
+        """
+        self.download_animation.frameChanged.connect(self.set_button_animation_frame)
+        self.download_animation.start()
+        self.download_button.setText(_(" DOWNLOADING "))
+        self.download_button.setStyleSheet("color: #05a6fe")
 
     def set_button_animation_frame(self, frame_number):
         """
