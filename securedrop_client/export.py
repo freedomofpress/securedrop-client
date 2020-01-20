@@ -117,7 +117,7 @@ class Export(QObject):
             output = subprocess.check_output(
                 [
                     quote('qvm-open-in-vm'),
-                    quote('sd-export-usb'),
+                    quote('sd-devices'),
                     quote(archive_path),
                     '--view-only'
                 ],
