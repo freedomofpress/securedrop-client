@@ -1376,10 +1376,32 @@ def test_FileWidget_on_left_click_download(mocker, session, source):
     mock_get_file.assert_called_once_with(file_.uuid)
     mock_get_file.reset_mock()
 
-    fw._on_left_click()
+    mock_timer = mocker.MagicMock()
+
+    with mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer):
+        fw._on_left_click()
     mock_get_file.assert_called_once_with(file_.uuid)
     mock_controller.on_submission_download.assert_called_once_with(
         db.File, file_.uuid)
+    mock_timer.singleShot.assert_called_once_with(300, fw.start_button_animation)
+
+
+def test_FileWidget_start_button_animation(mocker, session, source):
+    """
+    Ensure widget state is updated when this method is called.
+    """
+    mock_signal = mocker.MagicMock()  # not important for this test
+
+    file_ = factory.File(source=source['source'],
+                         is_downloaded=False,
+                         is_decrypted=None)
+    session.add(file_)
+    session.commit()
+    mock_get_file = mocker.MagicMock(return_value=file_)
+    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+    fw = FileWidget(file_.uuid, mock_controller, mock_signal)
+    fw.download_button = mocker.MagicMock()
+    fw.start_button_animation()
     # Check indicators of activity have been updated.
     assert fw.download_button.setIcon.call_count == 1
     fw.download_button.setText.assert_called_once_with(" DOWNLOADING ")
