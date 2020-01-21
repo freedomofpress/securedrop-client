@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.0.12
+
+  * Use revised VM names `sd-app` (was `sd-svs`), `sd-devices`
+    (was `sd-export-usb`) and `sd-viewer` (was `sd-svs-disp`) throughout
+    the application. Part of a workstation-wide VM rename operation described
+    in https://github.com/freedomofpress/securedrop-workstation/issues/285
+  * Delete sources using the general queue (#402)
+  * Add a preview snippet for sources (#135)
+  * Add a show/hide password feature on the login screen (#659)
+  * Disable sync icon during active sync (#388)
+  * Add keyboard shortcuts for sending replies (#606)
+  * Add hover states for UI elements (#591)
+
 ## 0.0.11
 
   * Add apparmor profile (#673)

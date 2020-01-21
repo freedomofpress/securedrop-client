@@ -1045,6 +1045,11 @@ class SourceWidget(QWidget):
         """
         self.timestamp.setText(arrow.get(self.source.last_updated).format('DD MMM'))
         self.name.setText(self.source.journalist_designation)
+        if self.source.collection:
+            msg = str(self.source.collection[-1])
+            if len(msg) > 120:
+                msg = msg[:120] + "..."
+            self.preview.setText(msg)
         if self.source.document_count == 0:
             self.paperclip.hide()
 
@@ -1311,6 +1316,43 @@ class LoginErrorBar(QWidget):
         self.hide()
 
 
+class PasswordEdit(QLineEdit):
+    """
+    A LineEdit with icons to show/hide password entries
+    """
+    CSS = '''QLineEdit {
+        border-radius: 0px;
+        height: 30px;
+        margin: 0px 0px 0px 0px;
+    }
+    '''
+
+    def __init__(self, parent):
+        self.parent = parent
+        super().__init__(self.parent)
+
+        # Set styles
+        self.setStyleSheet(self.CSS)
+
+        self.visibleIcon = load_icon("eye_visible.svg")
+        self.hiddenIcon = load_icon("eye_hidden.svg")
+
+        self.setEchoMode(QLineEdit.Password)
+        self.togglepasswordAction = self.addAction(self.hiddenIcon, QLineEdit.TrailingPosition)
+        self.togglepasswordAction.triggered.connect(self.on_toggle_password_Action)
+        self.password_shown = False
+
+    def on_toggle_password_Action(self):
+        if not self.password_shown:
+            self.setEchoMode(QLineEdit.Normal)
+            self.password_shown = True
+            self.togglepasswordAction.setIcon(self.visibleIcon)
+        else:
+            self.setEchoMode(QLineEdit.Password)
+            self.password_shown = False
+            self.togglepasswordAction.setIcon(self.hiddenIcon)
+
+
 class LoginDialog(QDialog):
     """
     A dialog to display the login form.
@@ -1326,7 +1368,7 @@ class LoginDialog(QDialog):
     #login_form QLineEdit {
         border-radius: 0px;
         height: 30px;
-        margin: 0px 0px 10px 0px;
+        margin: 0px 0px 0px 0px;
     }
     '''
 
@@ -1378,8 +1420,7 @@ class LoginDialog(QDialog):
         self.username_field = QLineEdit()
 
         self.password_label = QLabel(_('Passphrase'))
-        self.password_field = QLineEdit()
-        self.password_field.setEchoMode(QLineEdit.Password)
+        self.password_field = PasswordEdit(self)
 
         self.tfa_label = QLabel(_('Two-Factor Code'))
         self.tfa_field = QLineEdit()
@@ -1397,8 +1438,10 @@ class LoginDialog(QDialog):
 
         form_layout.addWidget(self.username_label)
         form_layout.addWidget(self.username_field)
+        form_layout.addWidget(QWidget(self))
         form_layout.addWidget(self.password_label)
         form_layout.addWidget(self.password_field)
+        form_layout.addWidget(QWidget(self))
         form_layout.addWidget(self.tfa_label)
         form_layout.addWidget(self.tfa_field)
         form_layout.addWidget(buttons)
@@ -1524,6 +1567,8 @@ class SpeechBubble(QWidget):
         max-height: 5px;
         background-color: #102781;
         border: 0px;
+        min-width: 590px;
+        max-width: 590px;
     }
     '''
 
@@ -2414,23 +2459,13 @@ class ConversationView(QWidget):
         """
         Add a message from the source.
         """
-        if message.content is not None:
-            content = message.content
-        else:
-            content = '<Message not yet available>'
-
-        conversation_item = MessageWidget(message.uuid, content, self.controller.message_ready)
+        conversation_item = MessageWidget(message.uuid, str(message), self.controller.message_ready)
         self.conversation_layout.addWidget(conversation_item, alignment=Qt.AlignLeft)
 
     def add_reply(self, reply: Union[DraftReply, Reply]) -> None:
         """
         Add a reply from a journalist to the source.
         """
-        if reply.content is not None:
-            content = reply.content
-        else:
-            content = '<Reply not yet available>'
-
         try:
             send_status = reply.send_status.name
         except AttributeError:
@@ -2439,7 +2474,7 @@ class ConversationView(QWidget):
         logger.debug('adding reply: with status {}'.format(send_status))
         conversation_item = ReplyWidget(
             reply.uuid,
-            content,
+            str(reply),
             send_status,
             self.controller.reply_ready,
             self.controller.reply_succeeded,

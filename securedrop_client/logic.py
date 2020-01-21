@@ -555,6 +555,7 @@ class Controller(QObject):
         self.gui.clear_error_status()  # remove any permanent error status message
         message = storage.get_message(self.session, uuid)
         self.message_ready.emit(message.uuid, message.content)
+        self.update_sources()
 
     def on_message_download_failure(self, exception: Exception) -> None:
         """
@@ -656,7 +657,7 @@ class Controller(QObject):
             self.data_dir, file.filename, file.original_filename)
 
         command = "qvm-open-in-vm"
-        args = ['$dispvm:sd-svs-disp', path_to_file_with_original_name]
+        args = ['$dispvm:sd-viewer', path_to_file_with_original_name]
         process = QProcess(self)
         process.start(command, args)
 
@@ -732,6 +733,7 @@ class Controller(QObject):
         """
         self.gui.clear_error_status()  # remove any permanent error status message
         self.file_ready.emit(result)
+        self.update_sources()
 
     def on_file_download_failure(self, exception: Exception) -> None:
         """

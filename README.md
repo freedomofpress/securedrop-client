@@ -180,7 +180,7 @@ We support running the [developer environment on a non-Qubes OS](#developer-envi
 
 ### Staging environment
 
-* Run by directly invoking the client `python -m securedrop_client` on the `sd-svs` AppVM
+* Run by directly invoking the client `python -m securedrop_client` on the `sd-app` AppVM
 * Requires that `make all` in the `securedrop-workstation` repository has completed successfully
 * Uses `~/.securedrop_client` as its configuration directory
 * Uses the gpg key in the `sd-gpg` AppVM configured during `make all`
@@ -189,7 +189,7 @@ We support running the [developer environment on a non-Qubes OS](#developer-envi
 
 ### Production environment
 
-* Run by executing `securedrop-client` in the `sd-svs` AppVM (see [workstation documentation here](https://github.com/freedomofpress/securedrop-workstation/#using-the-securedrop-client))
+* Run by executing `securedrop-client` in the `sd-app` AppVM (see [workstation documentation here](https://github.com/freedomofpress/securedrop-workstation/#using-the-securedrop-client))
 * Requires that `make all` in the `securedrop-workstation` repository has completed successfully
 * Uses `~/.securedrop_client` as its configuration directory
 * Uses the gpg key in the `sd-gpg` AppVM configured during `make all`

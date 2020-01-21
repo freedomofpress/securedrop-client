@@ -17,8 +17,6 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import html
-
 from typing import Union
 
 from PyQt5.QtWidgets import QLabel, QHBoxLayout, QPushButton, QWidget
@@ -161,8 +159,8 @@ class SecureQLabel(QLabel):
         flags: Union[Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags(),
     ):
         super().__init__(parent, flags)
-        self.setTextFormat(Qt.PlainText)
         self.setText(text)
 
     def setText(self, text: str) -> None:
-        super().setText(html.escape(text, quote=False))
+        self.setTextFormat(Qt.PlainText)
+        super().setText(text)

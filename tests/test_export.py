@@ -346,4 +346,4 @@ def test__export_archive_with_evil_command(mocker):
     export._export_archive('somefile; rm -rf ~')
 
     check_output.assert_called_once_with(
-        ['qvm-open-in-vm', 'sd-export-usb', "'somefile; rm -rf ~'", '--view-only'], stderr=-2)
+        ['qvm-open-in-vm', 'sd-devices', "'somefile; rm -rf ~'", '--view-only'], stderr=-2)
