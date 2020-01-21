@@ -16,7 +16,7 @@ from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, Lo
     DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, LeftPane, RefreshButton, \
     ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
     ReplyBoxWidget, ReplyTextEdit, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, \
-    LoginErrorBar, EmptyConversationView, ExportDialog, PrintDialog, PasswordEdit
+    LoginErrorBar, EmptyConversationView, ExportDialog, PrintDialog, PasswordEdit, SecureQLabel
 from tests import factory
 
 
@@ -798,6 +798,24 @@ def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker, session, so
     )
     sw.delete_source(None)
     sw.controller.delete_source.assert_not_called()
+
+
+def test_SourceWidget_uses_SecureQLabel(mocker):
+    """
+    Ensure the source widget preview uses SecureQLabel and is not injectable
+    """
+    source = mocker.MagicMock()
+    source.journalist_designation = "Testy McTestface"
+    source.collection = [factory.Message(content="a" * 121), ]
+    sw = SourceWidget(source)
+
+    sw.update()
+    assert isinstance(sw.preview, SecureQLabel)
+
+    sw.preview.setTextFormat = mocker.MagicMock()
+    sw.preview.setText("<b>bad text</b>")
+    sw.update()
+    sw.preview.setTextFormat.assert_called_with(Qt.PlainText)
 
 
 def test_StarToggleButton_init_source_starred(mocker):
