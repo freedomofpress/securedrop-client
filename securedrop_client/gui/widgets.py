@@ -1043,7 +1043,7 @@ class SourceWidget(QWidget):
         """
         Updates the displayed values with the current values from self.source.
         """
-        self.timestamp.setText(arrow.get(self.source.last_updated).format('DD MMM'))
+        self.timestamp.setText(_(arrow.get(self.source.last_updated).format('DD MMM')))
         self.name.setText(self.source.journalist_designation)
         if self.source.collection:
             msg = str(self.source.collection[-1])
@@ -2839,7 +2839,7 @@ class LastUpdatedLabel(QLabel):
     '''
 
     def __init__(self, last_updated):
-        super().__init__(_(_('{}').format(arrow.get(last_updated).humanize())))
+        super().__init__(last_updated)
 
         # Set css id
         self.setObjectName('conversation-title-date')
@@ -2889,7 +2889,7 @@ class SourceProfileShortWidget(QWidget):
         header_layout.setContentsMargins(
             self.MARGIN_LEFT, self.VERTICAL_MARGIN, self.MARGIN_RIGHT, self.VERTICAL_MARGIN)
         title = TitleLabel(self.source.journalist_designation)
-        updated = LastUpdatedLabel(self.source.last_updated)
+        updated = LastUpdatedLabel(_(arrow.get(self.source.last_updated).format('DD MMM')))
         menu = SourceMenuButton(self.source, self.controller)
         header_layout.addWidget(title, alignment=Qt.AlignLeft)
         header_layout.addStretch()
