@@ -47,6 +47,15 @@ def get_local_sources(session: Session) -> List[Source]:
     return session.query(Source).all()
 
 
+def delete_local_source_by_uuid(session: Session, uuid: str) -> Source:
+    """
+    Return the source with the referenced UUID.
+    """
+    source = session.query(Source).filter_by(uuid=uuid)
+    session.delete(source)
+    session.commit()
+
+
 def get_local_messages(session: Session) -> List[Message]:
     """
     Return all submission objects from the local database.
