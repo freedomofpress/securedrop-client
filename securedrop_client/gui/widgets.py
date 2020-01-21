@@ -1106,7 +1106,7 @@ class StarToggleButton(SvgToggleButton):
         """
         Tell the controller to make an API call to update the source's starred field.
         """
-        self.controller.update_star(self.source)
+        self.controller.update_star(self.source, self.on_update)
 
     def on_toggle_offline(self):
         """
@@ -1119,6 +1119,13 @@ class StarToggleButton(SvgToggleButton):
         self.setCheckable(False)
         if self.source.is_starred:
             self.set_icon(on='star_on.svg', off='star_on.svg')
+
+    def on_update(self, result):
+        """
+        The result is a uuid for the source and boolean flag for the new state
+        of the star.
+        """
+        self.setChecked(result[1])
 
 
 class DeleteSourceMessageBox:
