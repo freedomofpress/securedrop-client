@@ -1987,7 +1987,7 @@ class FileWidget(QWidget):
 
         # Make sure we only allow one export or print operation at a time (workaround for frameless
         # modals not working as expected on QubesOS)
-        self.modal_in_progress = False
+        self.dialog_in_progress = False
 
     def eventFilter(self, obj, event):
         t = event.type()
@@ -2046,10 +2046,10 @@ class FileWidget(QWidget):
         if not self.controller.downloaded_file_exists(self.file):
             return
 
-        if not self.modal_in_progress:
-            self.modal_in_progress = True
+        if not self.dialog_in_progress:
+            self.dialog_in_progress = True
             dialog = ExportDialog(self.controller, self.file.uuid, self.file.original_filename)
-            dialog.modal_closing.connect(self._unset_modal_in_progress)
+            dialog.dialog_closing.connect(self._unset_dialog_in_progress)
             dialog.exec()
 
     @pyqtSlot()
@@ -2060,15 +2060,15 @@ class FileWidget(QWidget):
         if not self.controller.downloaded_file_exists(self.file):
             return
 
-        if not self.modal_in_progress:
-            self.modal_in_progress = True
+        if not self.dialog_in_progress:
+            self.dialog_in_progress = True
             dialog = PrintDialog(self.controller, self.file.uuid, self.file.original_filename)
-            dialog.modal_closing.connect(self._unset_modal_in_progress)
+            dialog.dialog_closing.connect(self._unset_dialog_in_progress)
             dialog.exec()
 
     @pyqtSlot()
-    def _unset_modal_in_progress(self):
-        self.modal_in_progress = False
+    def _unset_dialog_in_progress(self):
+        self.dialog_in_progress = False
 
     def _on_left_click(self):
         """
@@ -2190,7 +2190,7 @@ class FramelessDialog(QDialog):
     HEADER_MARGIN = 0
     BODY_MARGIN = 0
 
-    modal_closing = pyqtSignal()
+    dialog_closing = pyqtSignal()
 
     def __init__(self):
         parent = QApplication.activeWindow()
@@ -2258,15 +2258,15 @@ class FramelessDialog(QDialog):
         window_buttons.setObjectName('window_buttons')
         button_layout = QVBoxLayout()
         window_buttons.setLayout(button_layout)
-        cancel_button = QPushButton(_('CANCEL'))
-        cancel_button.setAutoDefault(False)
-        cancel_button.clicked.connect(self.close)
+        self.cancel_button = QPushButton(_('CANCEL'))
+        self.cancel_button.setAutoDefault(False)
+        self.cancel_button.clicked.connect(self.close)
         self.continue_button = QPushButton(_('CONTINUE'))
         self.continue_button.setObjectName('primary_button')
         self.continue_button.setDefault(True)
         button_box = QDialogButtonBox(Qt.Horizontal)
         button_box.setObjectName('button_box')
-        button_box.addButton(cancel_button, QDialogButtonBox.ActionRole)
+        button_box.addButton(self.cancel_button, QDialogButtonBox.ActionRole)
         button_box.addButton(self.continue_button, QDialogButtonBox.ActionRole)
         button_layout.addWidget(button_box, alignment=Qt.AlignRight)
         content_layout.addWidget(header_container)
@@ -2283,7 +2283,7 @@ class FramelessDialog(QDialog):
         layout.addWidget(content)
 
     def close(self):
-        self.modal_closing.emit()
+        self.dialog_closing.emit()
         super().close()
 
     def center_dialog(self):
@@ -2345,25 +2345,25 @@ class PrintDialog(FramelessDialog):
 
     def _show_starting_instructions(self):
         self.header.setText(self.starting_header)
-        self.error_details.hide()
         self.body.setText(self.starting_message)
+        self.error_details.hide()
         self.adjustSize()
         self.center_dialog()
 
     def _show_insert_usb_message(self):
         self.continue_button.clicked.connect(self._run_preflight)
-        self.header.setText(self.insert_usb_header)
-        self.error_details.hide()
+        self.header.setText('\n{}'.format(self.insert_usb_header))
         self.body.setText(self.insert_usb_message)
+        self.error_details.hide()
         self.adjustSize()
         self.center_dialog()
 
     def _show_generic_error_message(self):
         self.continue_button.clicked.connect(self.close)
         self.continue_button.setText('DONE')
-        self.header.setText(self.error_header)
-        self.error_details.hide()
+        self.header.setText('\n{}'.format(self.error_header))
         self.body.setText('{}: {}'.format(self.error_status, self.generic_error_message))
+        self.error_details.hide()
         self.adjustSize()
         self.center_dialog()
 
@@ -2452,6 +2452,7 @@ class ExportDialog(FramelessDialog):
             '<span style="font-weight:normal">{}</span>'.format(self.file_name))
         self.insert_usb_header = _('Insert encrypted USB drive')
         self.passphrase_header = _('Enter passphrase for USB drive')
+        self.success_header = _('Export successful')
         self.error_header = _('Unable to export')
         self.starting_message = _(
             '<h2>Proceed with caution when exporting files</h2>'
@@ -2477,6 +2478,8 @@ class ExportDialog(FramelessDialog):
         self.generic_error_message = _('See your administrator for help.')
         self.continue_disabled_message = _(
             'The CONTINUE button will be disabled until the Export VM is ready')
+        self.success_message = _(
+            'Remember to be careful when working with files outside of your Workstation machine.')
 
         # Passphrase Form
         self.passphrase_form = QWidget()
@@ -2517,57 +2520,74 @@ class ExportDialog(FramelessDialog):
 
     def _show_passphrase_request_message(self):
         self.continue_button.clicked.connect(self._export_file)
-        self.header.setText(self.passphrase_header)
+        self.header.setText('\n{}'.format(self.passphrase_header))
+        self.continue_button.setText('SUBMIT')
         self.header_line.hide()
         self.error_details.hide()
         self.body.hide()
         self.passphrase_form.show()
-        self.continue_button.setText('SUBMIT')
         self.adjustSize()
         self.center_dialog()
 
     def _show_passphrase_request_message_again(self):
         self.continue_button.clicked.connect(self._export_file)
-        self.header.setText(self.passphrase_header)
-        self.header_line.hide()
+        self.header.setText('\n{}'.format(self.passphrase_header))
         self.error_details.setText(self.passphrase_error_message)
-        self.error_details.show()
-        self.body.hide()
-        self.passphrase_form.show()
         self.continue_button.setText('SUBMIT')
+        self.header_line.hide()
+        self.body.hide()
+        self.error_details.show()
+        self.passphrase_form.show()
+        self.adjustSize()
+        self.center_dialog()
+
+    def _show_success_message(self):
+        self.continue_button.clicked.connect(self.close)
+        self.header.setText('\n{}'.format(self.success_header))
+        self.continue_button.setText('DONE')
+        self.body.setText(self.success_message)
+        self.cancel_button.hide()
+        self.error_details.hide()
+        self.passphrase_form.hide()
+        self.header_line.show()
+        self.body.show()
         self.adjustSize()
         self.center_dialog()
 
     def _show_insert_usb_message(self):
         self.continue_button.clicked.connect(self._run_preflight)
-        self.header.setText(self.insert_usb_header)
-        self.header_line.show()
+        self.header.setText('\n{}'.format(self.insert_usb_header))
+        self.continue_button.setText('CONTINUE')
         self.body.setText(self.insert_usb_message)
         self.error_details.hide()
         self.passphrase_form.hide()
-        self.continue_button.setText('CONTINUE')
+        self.header_line.show()
+        self.body.show()
         self.adjustSize()
         self.center_dialog()
 
     def _show_insert_encrypted_usb_message(self):
         self.continue_button.clicked.connect(self._run_preflight)
-        self.header.setText(self.insert_usb_header)
-        self.header_line.show()
+        self.header.setText('\n{}'.format(self.insert_usb_header))
         self.error_details.setText(self.usb_error_message)
+        self.continue_button.setText('CONTINUE')
         self.body.setText(self.insert_usb_message)
         self.passphrase_form.hide()
-        self.continue_button.setText('CONTINUE')
+        self.header_line.show()
+        self.error_details.show()
+        self.body.show()
         self.adjustSize()
         self.center_dialog()
 
     def _show_generic_error_message(self):
         self.continue_button.clicked.connect(self.close)
         self.continue_button.setText('DONE')
-        self.header.setText(self.error_header)
-        self.header_line.show()
-        self.error_details.hide()
+        self.header.setText('\n{}'.format(self.error_header))
         self.body.setText('{}: {}'.format(self.error_status, self.generic_error_message))
+        self.error_details.hide()
         self.passphrase_form.hide()
+        self.header_line.show()
+        self.body.show()
         self.adjustSize()
         self.center_dialog()
 
@@ -2595,7 +2615,7 @@ class ExportDialog(FramelessDialog):
 
     @pyqtSlot()
     def _on_export_success(self):
-        self.close()
+        self._show_success_message()
 
     @pyqtSlot(object)
     def _on_export_failure(self, error: ExportError):

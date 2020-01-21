@@ -1410,7 +1410,7 @@ def test_ReplyWidget_init(mocker):
     assert mock_failure_connected.called
 
 
-def test_FileWidget__unset_modal_in_progress(mocker, source, session):
+def test_FileWidget__unset_dialog_in_progress(mocker, source, session):
     file = factory.File(source=source['source'], is_downloaded=True)
     session.add(file)
     session.commit()
@@ -1424,13 +1424,13 @@ def test_FileWidget__unset_modal_in_progress(mocker, source, session):
     controller.run_export_preflight_checks = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=True)
 
-    assert fw.modal_in_progress is False
-    fw._unset_modal_in_progress()
-    assert fw.modal_in_progress is False
+    assert fw.dialog_in_progress is False
+    fw._unset_dialog_in_progress()
+    assert fw.dialog_in_progress is False
     fw._on_export_clicked()
-    assert fw.modal_in_progress is True
-    fw._unset_modal_in_progress()
-    assert fw.modal_in_progress is False
+    assert fw.dialog_in_progress is True
+    fw._unset_dialog_in_progress()
+    assert fw.dialog_in_progress is False
 
 
 def test_FileWidget_init_file_not_downloaded(mocker, source, session):
@@ -1853,15 +1853,15 @@ def test_ExportDialog_close(mocker):
     mocker.patch(
          'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
-    dialog.modal_closing = mocker.MagicMock()
-    dialog.modal_closing.emit = mocker.MagicMock()
+    dialog.dialog_closing = mocker.MagicMock()
+    dialog.dialog_closing.emit = mocker.MagicMock()
 
-    assert dialog.isHidden() is False
+    assert not dialog.isHidden()
 
     dialog.close()
 
-    dialog.modal_closing.emit.assert_called_once_with()
-    assert dialog.isHidden() is True
+    dialog.dialog_closing.emit.assert_called_once_with()
+    assert dialog.isHidden()
 
 
 def test_ExportDialog__show_starting_instructions(mocker):
@@ -1871,7 +1871,6 @@ def test_ExportDialog__show_starting_instructions(mocker):
 
     dialog._show_starting_instructions()
 
-    assert dialog.passphrase_form.isHidden()
     assert dialog.header.text() == \
         'Preparing to export:' \
         '<br />' \
@@ -1890,6 +1889,13 @@ def test_ExportDialog__show_starting_instructions(mocker):
         'Documents submitted by sources may contain information or hidden metadata that ' \
         'identifies who they are. To protect your sources, please consider redacting documents ' \
         'before working with them on network-connected computers.'
+    assert not dialog.header.isHidden()
+    assert not dialog.header_line.isHidden()
+    assert dialog.error_details.isHidden()
+    assert not dialog.body.isHidden()
+    assert dialog.passphrase_form.isHidden()
+    assert not dialog.continue_button.isHidden()
+    assert not dialog.cancel_button.isHidden()
 
 
 def test_ExportDialog___show_passphrase_request_message(mocker):
@@ -1899,9 +1905,14 @@ def test_ExportDialog___show_passphrase_request_message(mocker):
 
     dialog._show_passphrase_request_message()
 
-    assert not dialog.passphrase_form.isHidden()
-    assert dialog.header.text() == 'Enter passphrase for USB drive'
+    assert dialog.header.text() == '\nEnter passphrase for USB drive'
+    assert not dialog.header.isHidden()
+    assert dialog.header_line.isHidden()
+    assert dialog.error_details.isHidden()
     assert dialog.body.isHidden()
+    assert not dialog.passphrase_form.isHidden()
+    assert not dialog.continue_button.isHidden()
+    assert not dialog.cancel_button.isHidden()
 
 
 def test_ExportDialog__show_passphrase_request_message_again(mocker):
@@ -1909,15 +1920,37 @@ def test_ExportDialog__show_passphrase_request_message_again(mocker):
          'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
 
-    assert dialog.error_details.isHidden() is True
-
     dialog._show_passphrase_request_message_again()
 
-    assert dialog.error_details.isHidden() is False
-    assert not dialog.passphrase_form.isHidden()
-    assert dialog.header.text() == 'Enter passphrase for USB drive'
+    assert dialog.header.text() == '\nEnter passphrase for USB drive'
     assert dialog.error_details.text() == 'The passphrase provided did not work. Please try again.'
     assert dialog.body.isHidden()
+    assert not dialog.header.isHidden()
+    assert dialog.header_line.isHidden()
+    assert not dialog.error_details.isHidden()
+    assert dialog.body.isHidden()
+    assert not dialog.passphrase_form.isHidden()
+    assert not dialog.continue_button.isHidden()
+    assert not dialog.cancel_button.isHidden()
+
+
+def test_ExportDialog__show_success_message(mocker):
+    mocker.patch(
+         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
+    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+
+    dialog._show_success_message()
+
+    assert dialog.header.text() == '\nExport successful'
+    assert dialog.body.text() == \
+        'Remember to be careful when working with files outside of your Workstation machine.'
+    assert not dialog.header.isHidden()
+    assert not dialog.header_line.isHidden()
+    assert dialog.error_details.isHidden()
+    assert not dialog.body.isHidden()
+    assert dialog.passphrase_form.isHidden()
+    assert not dialog.continue_button.isHidden()
+    assert dialog.cancel_button.isHidden()
 
 
 def test_ExportDialog__show_insert_usb_message(mocker):
@@ -1927,11 +1960,17 @@ def test_ExportDialog__show_insert_usb_message(mocker):
 
     dialog._show_insert_usb_message()
 
-    assert dialog.header.text() == 'Insert encrypted USB drive'
+    assert dialog.header.text() == '\nInsert encrypted USB drive'
     assert dialog.body.text() == \
         'Please insert one of the export drives provisioned specifically ' \
         'for the SecureDrop Workstation.'
+    assert not dialog.header.isHidden()
+    assert not dialog.header_line.isHidden()
+    assert dialog.error_details.isHidden()
+    assert not dialog.body.isHidden()
     assert dialog.passphrase_form.isHidden()
+    assert not dialog.continue_button.isHidden()
+    assert not dialog.cancel_button.isHidden()
 
 
 def test_ExportDialog__show_insert_encrypted_usb_message(mocker):
@@ -1941,13 +1980,19 @@ def test_ExportDialog__show_insert_encrypted_usb_message(mocker):
 
     dialog._show_insert_encrypted_usb_message()
 
-    assert dialog.header.text() == 'Insert encrypted USB drive'
+    assert dialog.header.text() == '\nInsert encrypted USB drive'
     assert dialog.error_details.text() == \
         'Either the drive is not encrypted or there is something else wrong with it.'
     assert dialog.body.text() == \
         'Please insert one of the export drives provisioned specifically for the SecureDrop ' \
         'Workstation.'
+    assert not dialog.header.isHidden()
+    assert not dialog.header_line.isHidden()
+    assert not dialog.error_details.isHidden()
+    assert not dialog.body.isHidden()
     assert dialog.passphrase_form.isHidden()
+    assert not dialog.continue_button.isHidden()
+    assert not dialog.cancel_button.isHidden()
 
 
 def test_ExportDialog__show_generic_error_message(mocker):
@@ -1958,10 +2003,15 @@ def test_ExportDialog__show_generic_error_message(mocker):
 
     dialog._show_generic_error_message()
 
-    assert dialog.passphrase_form.isHidden()
-    assert dialog.header.text() == 'Unable to export'
-    assert dialog.error_details.isHidden()
+    assert dialog.header.text() == '\nUnable to export'
     assert dialog.body.text() == 'mock_error_status: See your administrator for help.'
+    assert not dialog.header.isHidden()
+    assert not dialog.header_line.isHidden()
+    assert dialog.error_details.isHidden()
+    assert not dialog.body.isHidden()
+    assert dialog.passphrase_form.isHidden()
+    assert not dialog.continue_button.isHidden()
+    assert not dialog.cancel_button.isHidden()
 
 
 def test_ExportDialog__export_file(mocker):
@@ -2039,11 +2089,11 @@ def test_ExportDialog__on_export_success(mocker):
     mocker.patch(
          'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
-    dialog.close = mocker.MagicMock()
+    dialog._show_success_message = mocker.MagicMock()
 
     dialog._on_export_success()
 
-    dialog.close.assert_called_once_with()
+    dialog._show_success_message.assert_called_once_with()
 
 
 def test_ExportDialog__on_export_failure(mocker):
@@ -2140,6 +2190,7 @@ def test_ExportDialog__update_dialog_when_status_is_CALLED_PROCESS_ERROR(mocker)
     dialog._show_generic_error_message.assert_called_once_with()
     assert dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR.value
 
+
 def test_ExportDialog__update_dialog_when_status_is_unknown(mocker):
     mocker.patch(
          'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
@@ -2198,6 +2249,12 @@ def test_PrintDialog__show_starting_instructions(mocker):
         'Any part of a printed page may contain identifying information ' \
         'invisible to the naked eye, such as printer dots. Please carefully ' \
         'consider this risk when working with or publishing scanned printouts.'
+    assert not dialog.header.isHidden()
+    assert not dialog.header_line.isHidden()
+    assert dialog.error_details.isHidden()
+    assert not dialog.body.isHidden()
+    assert not dialog.continue_button.isHidden()
+    assert not dialog.cancel_button.isHidden()
 
 
 def test_PrintDialog__show_insert_usb_message(mocker):
@@ -2207,8 +2264,14 @@ def test_PrintDialog__show_insert_usb_message(mocker):
 
     dialog._show_insert_usb_message()
 
-    assert dialog.header.text() == 'Insert USB printer'
+    assert dialog.header.text() == '\nInsert USB printer'
     assert dialog.body.text() == 'Please connect your printer to a USB port.'
+    assert not dialog.header.isHidden()
+    assert not dialog.header_line.isHidden()
+    assert dialog.error_details.isHidden()
+    assert not dialog.body.isHidden()
+    assert not dialog.continue_button.isHidden()
+    assert not dialog.cancel_button.isHidden()
 
 
 def test_PrintDialog__show_generic_error_message(mocker):
@@ -2219,8 +2282,14 @@ def test_PrintDialog__show_generic_error_message(mocker):
 
     dialog._show_generic_error_message()
 
-    assert dialog.header.text() == 'Unable to print'
+    assert dialog.header.text() == '\nUnable to print'
     assert dialog.body.text() == 'mock_error_status: See your administrator for help.'
+    assert not dialog.header.isHidden()
+    assert not dialog.header_line.isHidden()
+    assert dialog.error_details.isHidden()
+    assert not dialog.body.isHidden()
+    assert not dialog.continue_button.isHidden()
+    assert not dialog.cancel_button.isHidden()
 
 
 def test_PrintDialog__print_file(mocker):
