@@ -121,7 +121,7 @@ def test_get_remote_data(mocker):
     source = make_remote_source()
     mock_api.get_sources.return_value = [source, ]
     submission = mocker.MagicMock()
-    mock_api.get_submissions.return_value = [submission, ]
+    mock_api.get_all_submissions.return_value = [submission, ]
     reply = mocker.MagicMock()
     mock_api.get_all_replies.return_value = [reply, ]
     sources, submissions, replies = get_remote_data(mock_api)
