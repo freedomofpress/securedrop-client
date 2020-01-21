@@ -2082,7 +2082,7 @@ def test_ExportDialog__on_preflight_failure(mocker):
     error = ExportError('mock_error_status')
     dialog._on_preflight_failure(error)
 
-    dialog._update_dialog.assert_called_with(error)
+    dialog._update_dialog.assert_called_with('mock_error_status')
 
 
 def test_ExportDialog__on_export_success(mocker):
@@ -2105,7 +2105,7 @@ def test_ExportDialog__on_export_failure(mocker):
     error = ExportError('mock_error_status')
     dialog._on_export_failure(error)
 
-    dialog._update_dialog.assert_called_with(error)
+    dialog._update_dialog.assert_called_with('mock_error_status')
 
 
 def test_ExportDialog__update_dialog_when_status_is_USB_NOT_CONNECTED(mocker):
@@ -2118,12 +2118,12 @@ def test_ExportDialog__update_dialog_when_status_is_USB_NOT_CONNECTED(mocker):
     mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    dialog._update_dialog(ExportError(ExportStatus.USB_NOT_CONNECTED.value))
+    dialog._update_dialog(ExportStatus.USB_NOT_CONNECTED.value)
     dialog.continue_button.clicked.connect.assert_called_once_with(dialog._show_insert_usb_message)
 
     # When the continue button is enabled, ensure next instructions are shown
     mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
-    dialog._update_dialog(ExportError(ExportStatus.USB_NOT_CONNECTED.value))
+    dialog._update_dialog(ExportStatus.USB_NOT_CONNECTED.value)
     dialog._show_insert_usb_message.assert_called_once_with()
 
 
@@ -2137,13 +2137,13 @@ def test_ExportDialog__update_dialog_when_status_is_BAD_PASSPHRASE(mocker):
     mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    dialog._update_dialog(ExportError(ExportStatus.BAD_PASSPHRASE.value))
+    dialog._update_dialog(ExportStatus.BAD_PASSPHRASE.value)
     dialog.continue_button.clicked.connect.assert_called_once_with(
         dialog._show_passphrase_request_message_again)
 
     # When the continue button is enabled, ensure next instructions are shown
     mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
-    dialog._update_dialog(ExportError(ExportStatus.BAD_PASSPHRASE.value))
+    dialog._update_dialog(ExportStatus.BAD_PASSPHRASE.value)
     dialog._show_passphrase_request_message_again.assert_called_once_with()
 
 
@@ -2157,15 +2157,13 @@ def test_ExportDialog__update_dialog_when_status_DISK_ENCRYPTION_NOT_SUPPORTED_E
     mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    dialog._update_dialog(
-        ExportError(ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value))
+    dialog._update_dialog(ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value)
     dialog.continue_button.clicked.connect.assert_called_once_with(
         dialog._show_insert_encrypted_usb_message)
 
     # When the continue button is enabled, ensure next instructions are shown
     mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
-    dialog._update_dialog(ExportError(
-        ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value))
+    dialog._update_dialog(ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value)
     dialog._show_insert_encrypted_usb_message.assert_called_once_with()
 
 
@@ -2179,14 +2177,14 @@ def test_ExportDialog__update_dialog_when_status_is_CALLED_PROCESS_ERROR(mocker)
     mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    dialog._update_dialog(ExportError(ExportStatus.CALLED_PROCESS_ERROR.value))
+    dialog._update_dialog(ExportStatus.CALLED_PROCESS_ERROR.value)
     dialog.continue_button.clicked.connect.assert_called_once_with(
         dialog._show_generic_error_message)
     assert dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR.value
 
     # When the continue button is enabled, ensure next instructions are shown
     mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
-    dialog._update_dialog(ExportError(ExportStatus.CALLED_PROCESS_ERROR.value))
+    dialog._update_dialog(ExportStatus.CALLED_PROCESS_ERROR.value)
     dialog._show_generic_error_message.assert_called_once_with()
     assert dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR.value
 
@@ -2201,14 +2199,14 @@ def test_ExportDialog__update_dialog_when_status_is_unknown(mocker):
     mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    dialog._update_dialog(ExportError('Some Unknown Error Status'))
+    dialog._update_dialog('Some Unknown Error Status')
     dialog.continue_button.clicked.connect.assert_called_once_with(
         dialog._show_generic_error_message)
     assert dialog.error_status == 'Some Unknown Error Status'
 
     # When the continue button is enabled, ensure next instructions are shown
     mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
-    dialog._update_dialog(ExportError('Some Unknown Error Status'))
+    dialog._update_dialog('Some Unknown Error Status')
     dialog._show_generic_error_message.assert_called_once_with()
     assert dialog.error_status == 'Some Unknown Error Status'
 

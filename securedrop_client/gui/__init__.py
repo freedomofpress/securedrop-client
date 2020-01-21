@@ -150,7 +150,7 @@ class SvgLabel(QLabel):
         self.svg.setFixedSize(svg_size) if svg_size else self.svg.setFixedSize(QSize())
         layout.addWidget(self.svg)
 
-    def update_image(self, filename, svg_size: str = None):
+    def update_image(self, filename: str, svg_size: str = None) -> None:
         self.svg = load_svg(filename)
         self.svg.setFixedSize(svg_size) if svg_size else self.svg.setFixedSize(QSize())
         child = self.layout().takeAt(0)

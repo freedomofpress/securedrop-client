@@ -26,7 +26,8 @@ from typing import Dict, List, Union  # noqa: F401
 from uuid import uuid4
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QEvent, QTimer, QSize, pyqtBoundSignal, \
     QObject, QPoint
-from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient, QKeySequence
+from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient,QKeySequence, \
+    QCursor
 from PyQt5.QtWidgets import QApplication, QListWidget, QLabel, QWidget, QListWidgetItem, \
     QHBoxLayout, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
     QToolButton, QSizePolicy, QPlainTextEdit, QStatusBar, QGraphicsDropShadowEffect, QPushButton, \
@@ -2048,7 +2049,7 @@ class FileWidget(QWidget):
 
         if not self.dialog_in_progress:
             self.dialog_in_progress = True
-            dialog = ExportDialog(self.controller, self.file.uuid, self.file.original_filename)
+            dialog = ExportDialog(self.controller, self.file.uuid, self.file.filename)
             dialog.dialog_closing.connect(self._unset_dialog_in_progress)
             dialog.exec()
 
@@ -2062,7 +2063,7 @@ class FileWidget(QWidget):
 
         if not self.dialog_in_progress:
             self.dialog_in_progress = True
-            dialog = PrintDialog(self.controller, self.file.uuid, self.file.original_filename)
+            dialog = PrintDialog(self.controller, self.file.uuid, self.file.filename)
             dialog.dialog_closing.connect(self._unset_dialog_in_progress)
             dialog.exec()
 
@@ -2305,7 +2306,7 @@ class PrintDialog(FramelessDialog):
         self.controller = controller
         self.file_uuid = file_uuid
         self.file_name = file_name
-        self.error_status = None  # Hold onto the error status we receive from the Export VM
+        self.error_status = ''  # Hold onto the error status we receive from the Export VM
 
         # Connect controller signals to slots
         self.controller.export.printer_preflight_success.connect(self._on_preflight_success)
@@ -2432,7 +2433,7 @@ class ExportDialog(FramelessDialog):
         self.controller = controller
         self.file_uuid = file_uuid
         self.file_name = file_name
-        self.error_status = None  # Hold onto the error status we receive from the Export VM
+        self.error_status = ''  # Hold onto the error status we receive from the Export VM
 
         # Connect controller signals to slots
         self.controller.export.preflight_check_call_success.connect(self._on_preflight_success)
@@ -2611,7 +2612,7 @@ class ExportDialog(FramelessDialog):
 
     @pyqtSlot(object)
     def _on_preflight_failure(self, error: ExportError):
-        self._update_dialog(error)
+        self._update_dialog(error.status)
 
     @pyqtSlot()
     def _on_export_success(self):
@@ -2619,28 +2620,28 @@ class ExportDialog(FramelessDialog):
 
     @pyqtSlot(object)
     def _on_export_failure(self, error: ExportError):
-        self._update_dialog(error)
+        self._update_dialog(error.status)
 
-    def _update_dialog(self, error: ExportStatus):
-        self.error_status = error.status
+    def _update_dialog(self, error_status: str):
+        self.error_status = error_status
         # If the continue button is disabled then this is the result of a background preflight check
         if not self.continue_button.isEnabled():
-            if error.status == ExportStatus.BAD_PASSPHRASE.value:
+            if self.error_status == ExportStatus.BAD_PASSPHRASE.value:
                 self.continue_button.clicked.connect(self._show_passphrase_request_message_again)
-            elif error.status == ExportStatus.USB_NOT_CONNECTED.value:
+            elif self.error_status == ExportStatus.USB_NOT_CONNECTED.value:
                 self.continue_button.clicked.connect(self._show_insert_usb_message)
-            elif error.status == ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value:
+            elif self.error_status == ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value:
                 self.continue_button.clicked.connect(self._show_insert_encrypted_usb_message)
             else:
                 self.continue_button.clicked.connect(self._show_generic_error_message)
 
             self.continue_button.setEnabled(True)
         else:
-            if error.status == ExportStatus.BAD_PASSPHRASE.value:
+            if self.error_status == ExportStatus.BAD_PASSPHRASE.value:
                 self._show_passphrase_request_message_again()
-            elif error.status == ExportStatus.USB_NOT_CONNECTED.value:
+            elif self.error_status == ExportStatus.USB_NOT_CONNECTED.value:
                 self._show_insert_usb_message()
-            elif error.status == ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value:
+            elif self.error_status == ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value:
                 self._show_insert_encrypted_usb_message()
             else:
                 self._show_generic_error_message()
