@@ -994,7 +994,7 @@ class SourceWidget(QWidget):
         summary_layout.setSpacing(0)
         self.name = QLabel()
         self.name.setObjectName('source_name')
-        self.preview = QLabel()
+        self.preview = SecureQLabel()
         self.preview.setObjectName('preview')
         self.preview.setFixedSize(QSize(self.PREVIEW_WIDTH, self.PREVIEW_HEIGHT))
         self.preview.setWordWrap(True)
