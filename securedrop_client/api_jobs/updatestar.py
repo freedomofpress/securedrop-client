@@ -33,7 +33,9 @@ class UpdateStarJob(ApiJob):
             else:
                 api_client.add_star(source_sdk_object)
 
-            return self.source_uuid
+            # Identify the source and *new* state of the star so the UI can be
+            # updated.
+            return self.source_uuid, not self.star_status
         except Exception as e:
             error_message = "Failed to update star on source {uuid} due to {exception}".format(
                 uuid=self.source_uuid, exception=repr(e))
