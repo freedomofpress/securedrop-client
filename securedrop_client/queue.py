@@ -42,14 +42,13 @@ class RunnableQueue(QObject):
     JOB_PRIORITIES = {
         # TokenInvalidationJob: 10,  # Not yet implemented
         PauseQueueJob: 11,
-        MetadataSyncJob: 12,
         FileDownloadJob: 13,  # File downloads processed in separate queue
-        MessageDownloadJob: 13,
-        ReplyDownloadJob: 13,
         DeleteSourceJob: 14,
         SendReplyJob: 15,
         UpdateStarJob: 16,
-        # FlagJob: 16,  # Not yet implemented
+        MetadataSyncJob: 17,
+        MessageDownloadJob: 18,
+        ReplyDownloadJob: 18,
     }
 
     '''

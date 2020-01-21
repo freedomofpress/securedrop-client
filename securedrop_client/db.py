@@ -111,6 +111,15 @@ class Message(Base):
         kwargs['file_counter'] = int(filename.split('-')[0])
         super().__init__(**kwargs)
 
+    def __str__(self) -> str:
+        """
+        Return something that's a useful string representation of the message.
+        """
+        if self.content is not None:
+            return self.content
+        else:
+            return '<Message not yet available>'
+
     def __repr__(self) -> str:
         return '<Message {}>'.format(self.filename)
 
@@ -165,6 +174,15 @@ class File(Base):
         kwargs['file_counter'] = int(filename.split('-')[0])
         super().__init__(**kwargs)
 
+    def __str__(self) -> str:
+        """
+        Return something that's a useful string representation of the file.
+        """
+        if self.is_downloaded:
+            return "File: {}".format(self.original_filename)
+        else:
+            return '<Encrypted file on server>'
+
     def __repr__(self) -> str:
         return '<File {}>'.format(self.filename)
 
@@ -216,6 +234,15 @@ class Reply(Base):
         kwargs['file_counter'] = int(filename.split('-')[0])
         super().__init__(**kwargs)
 
+    def __str__(self) -> str:
+        """
+        Return something that's a useful string representation of the reply.
+        """
+        if self.content is not None:
+            return self.content
+        else:
+            return '<Reply not yet available>'
+
     def __repr__(self) -> str:
         return '<Reply {}>'.format(self.filename)
 
@@ -249,6 +276,15 @@ class DraftReply(Base):
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
+
+    def __str__(self) -> str:
+        """
+        Return something that's a useful string representation of the reply.
+        """
+        if self.content is not None:
+            return self.content
+        else:
+            return '<Reply not yet available>'
 
     def __repr__(self) -> str:
         return '<DraftReply {}>'.format(self.uuid)

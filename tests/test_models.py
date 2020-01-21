@@ -51,21 +51,21 @@ def test_string_representation_of_source():
     source.__repr__()
 
 
-def test_string_representation_of_message():
+def test_repr_representation_of_message():
     source = factory.Source()
     msg = Message(source=source, uuid="test", size=123, filename="1-test.docx",
                   download_url='http://test/test')
     msg.__repr__()
 
 
-def test_string_representation_of_file():
+def test_repr_representation_of_file():
     source = factory.Source()
     file_ = File(source=source, uuid="test", size=123, filename="1-test.docx",
                  download_url='http://test/test')
     file_.__repr__()
 
 
-def test_string_representation_of_reply():
+def test_repr_representation_of_reply():
     user = User(username='hehe')
     source = factory.Source()
     reply = Reply(source=source, journalist=user, filename="1-reply.gpg",
@@ -73,11 +73,48 @@ def test_string_representation_of_reply():
     reply.__repr__()
 
 
-def test_string_representation_of_draft_reply():
+def test_repr_representation_of_draft_reply():
     user = User(username='hehe')
     source = factory.Source()
     draft_reply = DraftReply(source=source, journalist=user, uuid='test')
     draft_reply.__repr__()
+
+
+def test_string_representation_of_message():
+    source = factory.Source()
+    msg = Message(source=source, uuid="test", size=123, filename="1-test.docx",
+                  download_url='http://test/test')
+    msg.__str__()
+    msg.content = "hello"
+    msg.__str__()
+
+
+def test_string_representation_of_file():
+    source = factory.Source()
+    file_ = File(source=source, uuid="test", size=123, filename="1-test.docx",
+                 download_url='http://test/test')
+    file_.__str__()
+    file_.is_downloaded = True
+    file_.__str__()
+
+
+def test_string_representation_of_reply():
+    user = User(username='hehe')
+    source = factory.Source()
+    reply = Reply(source=source, journalist=user, filename="1-reply.gpg",
+                  size=1234, uuid='test')
+    reply.__str__()
+    reply.content = "hello"
+    reply.__str__()
+
+
+def test_string_representation_of_draft_reply():
+    user = User(username='hehe')
+    source = factory.Source()
+    draft_reply = DraftReply(source=source, journalist=user, uuid='test')
+    draft_reply.__str__()
+    draft_reply.content = "hello"
+    draft_reply.__str__()
 
 
 def test_string_representation_of_send_reply_status():

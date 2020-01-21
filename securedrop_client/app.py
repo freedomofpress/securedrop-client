@@ -27,7 +27,7 @@ import socket
 from argparse import ArgumentParser
 from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5.QtCore import Qt, QTimer
-from logging.handlers import TimedRotatingFileHandler
+from logging.handlers import TimedRotatingFileHandler, SysLogHandler
 from securedrop_client import __version__
 from securedrop_client.logic import Controller
 from securedrop_client.gui.main import Window
@@ -96,10 +96,23 @@ def configure_logging(sdc_home: str) -> None:
     handler.setFormatter(formatter)
     handler.setLevel(logging.DEBUG)
 
+    # For rsyslog handler
+    if platform.system() != "Linux":  # pragma: no cover
+        syslog_file = "/var/run/syslog"
+    else:
+        syslog_file = "/dev/log"
+
+    sysloghandler = SysLogHandler(address=syslog_file)
+    sysloghandler.setFormatter(formatter)
+    handler.setLevel(logging.DEBUG)
+
     # set up primary log
     log = logging.getLogger()
     log.setLevel(LOGLEVEL)
     log.addHandler(handler)
+
+    # add the secondard logger
+    log.addHandler(sysloghandler)
 
     # override excepthook to capture a log of catastrophic failures.
     sys.excepthook = excepthook
