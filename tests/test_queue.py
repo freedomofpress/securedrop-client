@@ -4,7 +4,7 @@ Testing for the ApiJobQueue and related classes.
 from queue import Queue
 from sdclientapi import RequestTimeoutError
 
-from securedrop_client.api_jobs.downloads import FileDownloadJob
+from securedrop_client.api_jobs.downloads import FileDownloadJob, MetadataSyncJob
 from securedrop_client.api_jobs.base import ApiInaccessibleError, PauseQueueJob
 from securedrop_client.queue import RunnableQueue, ApiJobQueue
 from tests import factory
@@ -239,17 +239,32 @@ def test_ApiJobQueue_enqueue(mocker):
     job_queue.JOB_PRIORITIES = {FileDownloadJob: job_priority, type(dummy_job): job_priority}
 
     mock_download_file_queue = mocker.patch.object(job_queue, 'download_file_queue')
+    mock_metadata_queue = mocker.patch.object(job_queue, 'metadata_queue')
     mock_main_queue = mocker.patch.object(job_queue, 'main_queue')
     mock_download_file_add_job = mocker.patch.object(mock_download_file_queue, 'add_job')
+    mock_metadata_add_job = mocker.patch.object(mock_metadata_queue, 'add_job')
     mock_main_queue_add_job = mocker.patch.object(mock_main_queue, 'add_job')
     job_queue.main_queue.api_client = 'has a value'
     job_queue.download_file_queue.api_client = 'has a value'
+    job_queue.metadata_queue.api_client = 'has a value'
     mock_start_queues = mocker.patch.object(job_queue, 'start_queues')
 
     dl_job = FileDownloadJob('mock', 'mock', 'mock')
     job_queue.enqueue(dl_job)
 
     mock_download_file_add_job.assert_called_once_with(dl_job)
+    assert not mock_main_queue_add_job.called
+
+    # reset for next test
+    mock_download_file_queue.reset_mock()
+    mock_download_file_add_job.reset_mock()
+    mock_main_queue.reset_mock()
+    mock_main_queue_add_job.reset_mock()
+
+    md_job = MetadataSyncJob("mock", "mock")
+    job_queue.enqueue(md_job)
+
+    mock_metadata_add_job.assert_called_once_with(md_job)
     assert not mock_main_queue_add_job.called
 
     # reset for next test
@@ -320,18 +335,23 @@ def test_ApiJobQueue_login_if_queues_not_running(mocker):
 
     mock_main_queue = mocker.patch.object(job_queue, 'main_queue')
     mock_download_file_queue = mocker.patch.object(job_queue, 'download_file_queue')
+    mock_metadata_queue = mocker.patch.object(job_queue, 'metadata_queue')
     mock_main_thread = mocker.patch.object(job_queue, 'main_thread')
     mock_download_file_thread = mocker.patch.object(job_queue, 'download_file_thread')
+    mock_metadata_thread = mocker.patch.object(job_queue, 'metadata_thread')
     job_queue.main_thread.isRunning = mocker.MagicMock(return_value=False)
     job_queue.download_file_thread.isRunning = mocker.MagicMock(return_value=False)
+    job_queue.metadata_thread.isRunning = mocker.MagicMock(return_value=False)
 
     job_queue.login(mock_api)
 
     assert mock_main_queue.api_client == mock_api
     assert mock_download_file_queue.api_client == mock_api
+    assert mock_metadata_queue.api_client == mock_api
 
     mock_main_thread.start.assert_called_once_with()
     mock_download_file_thread.start.assert_called_once_with()
+    mock_metadata_thread.start.assert_called_once_with()
 
 
 def test_ApiJobQueue_login_if_queues_running(mocker):
@@ -343,18 +363,23 @@ def test_ApiJobQueue_login_if_queues_running(mocker):
 
     mock_main_queue = mocker.patch.object(job_queue, 'main_queue')
     mock_download_file_queue = mocker.patch.object(job_queue, 'download_file_queue')
+    mock_metadata_queue = mocker.patch.object(job_queue, 'metadata_queue')
     mock_main_thread = mocker.patch.object(job_queue, 'main_thread')
     mock_download_file_thread = mocker.patch.object(job_queue, 'download_file_thread')
+    mock_metadata_thread = mocker.patch.object(job_queue, 'metadata_thread')
     job_queue.main_thread.isRunning = mocker.MagicMock(return_value=True)
     job_queue.download_file_thread.isRunning = mocker.MagicMock(return_value=True)
+    job_queue.metadata_thread.isRunning = mocker.MagicMock(return_value=True)
 
     job_queue.login(mock_api)
 
     assert mock_main_queue.api_client == mock_api
     assert mock_download_file_queue.api_client == mock_api
+    assert mock_metadata_queue.api_client == mock_api
 
     assert not mock_main_thread.start.called
     assert not mock_download_file_thread.start.called
+    assert not mock_metadata_thread.start.called
 
 
 def test_ApiJobQueue_logout_removes_api_client(mocker):
@@ -364,8 +389,10 @@ def test_ApiJobQueue_logout_removes_api_client(mocker):
     job_queue = ApiJobQueue(mock_client, mock_session_maker)
     job_queue.main_queue.api_client = 'my token!!!'
     job_queue.download_file_queue.api_client = 'my token!!!'
+    job_queue.metadata_queue.api_client = 'my token!!!'
 
     job_queue.logout()
 
     assert job_queue.main_queue.api_client is None
     assert job_queue.download_file_queue.api_client is None
+    assert job_queue.metadata_queue.api_client is None
