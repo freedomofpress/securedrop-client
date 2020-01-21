@@ -529,9 +529,10 @@ def test_Controller_update_star_not_logged_in(homedir, config, mocker, session_m
     mock_gui = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     source_db_object = mocker.MagicMock()
+    mock_callback = mocker.MagicMock()
     co.on_action_requiring_login = mocker.MagicMock()
     co.api = None
-    co.update_star(source_db_object)
+    co.update_star(source_db_object, mock_callback)
     co.on_action_requiring_login.assert_called_with()
 
 
@@ -547,7 +548,7 @@ def test_Controller_on_update_star_success(homedir, config, mocker, session_make
     co.call_reset = mocker.MagicMock()
     co.sync_api = mocker.MagicMock()
     co.on_update_star_success(result)
-    co.sync_api.assert_called_once_with()
+    assert mock_gui.clear_error_status.called
 
 
 def test_Controller_on_update_star_failed(homedir, config, mocker, session_maker):
@@ -1520,7 +1521,9 @@ def test_Controller_call_update_star_success(homedir, config, mocker, session_ma
     session.add(source)
     session.commit()
 
-    co.update_star(source)
+    mock_callback = mocker.MagicMock()
+
+    co.update_star(source, mock_callback)
 
     mock_job_cls.assert_called_once_with(
         source.uuid,
@@ -1528,8 +1531,12 @@ def test_Controller_call_update_star_success(homedir, config, mocker, session_ma
     )
 
     mock_queue.enqueue.assert_called_once_with(mock_job)
-    mock_success_signal.connect.assert_called_once_with(
-        co.on_update_star_success, type=Qt.QueuedConnection)
+    assert mock_success_signal.connect.call_count == 2
+    cal = mock_success_signal.connect.call_args_list
+    assert cal[0][0][0] == co.on_update_star_success
+    assert cal[0][1]['type'] == Qt.QueuedConnection
+    assert cal[1][0][0] == mock_callback
+    assert cal[1][1]['type'] == Qt.QueuedConnection
     mock_failure_signal.connect.assert_called_once_with(
         co.on_update_star_failure, type=Qt.QueuedConnection)
 

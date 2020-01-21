@@ -1,6 +1,8 @@
 import logging
 import sdclientapi
 
+from typing import Tuple
+
 from sdclientapi import API
 from sqlalchemy.orm.session import Session
 
@@ -15,7 +17,7 @@ class UpdateStarJob(ApiJob):
         self.source_uuid = source_uuid
         self.star_status = star_status
 
-    def call_api(self, api_client: API, session: Session) -> str:
+    def call_api(self, api_client: API, session: Session) -> Tuple[str, bool]:
         '''
         Override ApiJob.
 

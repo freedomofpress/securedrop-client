@@ -895,7 +895,7 @@ def test_StarToggleButton_on_toggle(mocker):
 
     stb.on_toggle()
 
-    stb.controller.update_star.assert_called_once_with(source)
+    stb.controller.update_star.assert_called_once_with(source, stb.on_update)
     assert stb.isCheckable() is True
 
 
@@ -927,6 +927,22 @@ def test_StarToggleButton_on_toggle_offline_when_checked(mocker):
     stb.controller.on_action_requiring_login.assert_called_once_with()
     assert stb.isCheckable() is False
     set_icon_fn.assert_called_with(on='star_on.svg', off='star_on.svg')
+
+
+def test_StarToggleButton_on_update(mocker):
+    """
+    Ensure the on_update callback updates the state of the source and UI
+    element to the current "enabled" state.
+    """
+    source = mocker.MagicMock()
+    source.is_starred = True
+    stb = StarToggleButton(source)
+    stb.setChecked = mocker.MagicMock()
+    stb.controller = mocker.MagicMock()
+    stb.on_update(("uuid", False))
+    assert source.is_starred is False
+    stb.controller.update_sources.assert_called_once_with()
+    stb.setChecked.assert_called_once_with(False)
 
 
 def test_LoginDialog_setup(mocker, i18n):
