@@ -1125,7 +1125,10 @@ class StarToggleButton(SvgToggleButton):
         The result is a uuid for the source and boolean flag for the new state
         of the star.
         """
-        self.setChecked(result[1])
+        enabled = result[1]
+        self.source.is_starred = enabled
+        self.controller.update_sources()
+        self.setChecked(enabled)
 
 
 class DeleteSourceMessageBox:
