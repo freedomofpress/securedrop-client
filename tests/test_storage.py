@@ -17,7 +17,7 @@ from securedrop_client.storage import get_local_sources, get_local_messages, get
     delete_single_submission_or_reply_on_disk, rename_file, get_local_files, find_new_files, \
     source_exists, set_message_or_reply_content, mark_as_downloaded, mark_as_decrypted, get_file, \
     get_message, get_reply, update_and_get_user, update_missing_files, mark_as_not_downloaded, \
-    mark_all_pending_drafts_as_failed
+    mark_all_pending_drafts_as_failed, delete_local_source_by_uuid
 
 from securedrop_client import db
 from tests import factory
@@ -70,6 +70,22 @@ def test_get_local_sources(mocker):
     mock_session = mocker.MagicMock()
     get_local_sources(mock_session)
     mock_session.query.assert_called_once_with(securedrop_client.db.Source)
+
+
+def test_delete_local_source_by_uuid(mocker):
+    """
+    Delete the referenced source in the session.
+    """
+    mock_session = mocker.MagicMock()
+    source = make_remote_source()
+    mock_session.query().filter_by().one_or_none.return_value = source
+    mock_session.query.reset_mock()
+    delete_local_source_by_uuid(mock_session, "uuid")
+    mock_session.query.assert_called_once_with(securedrop_client.db.Source)
+    mock_session.query().filter_by.assert_called_once_with(uuid="uuid")
+    assert mock_session.query().filter_by().one_or_none.call_count == 1
+    mock_session.delete.assert_called_once_with(source)
+    mock_session.commit.assert_called_once_with()
 
 
 def test_get_local_messages(mocker):
