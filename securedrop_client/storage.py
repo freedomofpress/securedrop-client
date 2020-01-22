@@ -47,13 +47,15 @@ def get_local_sources(session: Session) -> List[Source]:
     return session.query(Source).all()
 
 
-def delete_local_source_by_uuid(session: Session, uuid: str) -> Source:
+def delete_local_source_by_uuid(session: Session, uuid: str) -> None:
     """
-    Return the source with the referenced UUID.
+    Delete the source with the referenced UUID.
     """
-    source = session.query(Source).filter_by(uuid=uuid)
-    session.delete(source)
-    session.commit()
+    source = session.query(Source).filter_by(uuid=uuid).one_or_none()
+    if source:
+        session.delete(source)
+        session.commit()
+        logger.info("Deleted source with UUID {} from local database.".format(uuid))
 
 
 def get_local_messages(session: Session) -> List[Message]:

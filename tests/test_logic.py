@@ -1271,10 +1271,12 @@ def test_Controller_on_delete_source_success(homedir, config, mocker, session_ma
     Using the `config` fixture to ensure the config is written to disk.
     '''
     mock_gui = mocker.MagicMock()
+    storage = mocker.patch('securedrop_client.logic.storage')
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
-    co.sync_api = mocker.MagicMock()
-    co.on_delete_source_success(True)
-    co.sync_api.assert_called_with()
+    co.update_sources = mocker.MagicMock()
+    co.on_delete_source_success("uuid")
+    storage.delete_local_source_by_uuid.assert_called_once_with(co.session, "uuid")
+    assert co.update_sources.call_count == 1
 
 
 def test_Controller_on_delete_source_failure(homedir, config, mocker, session_maker):
