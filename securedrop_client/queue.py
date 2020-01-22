@@ -61,6 +61,11 @@ class RunnableQueue(QObject):
     '''
     resume = pyqtSignal()
 
+    """
+    Signal emitted when the queue successfully.
+    """
+    pinged = pyqtSignal()
+
     def __init__(self, api_client: API, session_maker: scoped_session, size: int = 0) -> None:
         """
         A size of zero means there's no upper bound to the queue size.
@@ -125,6 +130,7 @@ class RunnableQueue(QObject):
             try:
                 session = self.session_maker()
                 job._do_call_api(self.api_client, session)
+                self.pinged.emit()
             except (RequestTimeoutError, ApiInaccessibleError) as e:
                 logger.debug('Job {} raised an exception: {}: {}'.format(self, type(e).__name__, e))
                 self.add_job(PauseQueueJob())
@@ -164,6 +170,10 @@ class ApiJobQueue(QObject):
         self.main_queue.paused.connect(self.on_queue_paused)
         self.download_file_queue.paused.connect(self.on_queue_paused)
         self.metadata_queue.paused.connect(self.on_queue_paused)
+
+        self.main_queue.pinged.connect(self.resume_queues)
+        self.download_file_queue.pinged.connect(self.resume_queues)
+        self.metadata_queue.pinged.connect(self.resume_queues)
 
     def logout(self) -> None:
         self.main_queue.api_client = None
