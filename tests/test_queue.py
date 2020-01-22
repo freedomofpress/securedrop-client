@@ -44,6 +44,26 @@ def test_RunnableQueue_happy_path(mocker):
     assert queue.queue.empty()
 
 
+def test_RunnableQueue_with_size_constraint(mocker):
+    '''
+    Add one job to the queue, run it.
+    '''
+    mock_api_client = mocker.MagicMock()
+    mock_session = mocker.MagicMock()
+    mock_session_maker = mocker.MagicMock(return_value=mock_session)
+    return_value = 'foo'
+
+    dummy_job_cls = factory.dummy_job_factory(mocker, return_value)
+    queue = RunnableQueue(mock_api_client, mock_session_maker, size=1)
+    queue.JOB_PRIORITIES = {dummy_job_cls: 1, PauseQueueJob: 2}
+
+    queue.add_job(dummy_job_cls())
+    queue.add_job(dummy_job_cls())
+    queue.add_job(dummy_job_cls())
+
+    assert queue.queue.qsize() == 1
+
+
 def test_RunnableQueue_job_timeout(mocker):
     '''
     Add two jobs to the queue. The first times out, and then gets resubmitted for the next pass

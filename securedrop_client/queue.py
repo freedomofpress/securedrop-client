@@ -2,7 +2,7 @@ import itertools
 import logging
 
 from PyQt5.QtCore import QObject, QThread, pyqtSlot, pyqtSignal
-from queue import PriorityQueue
+from queue import PriorityQueue, Full
 from sdclientapi import API, RequestTimeoutError
 from sqlalchemy.orm import scoped_session
 from typing import Optional, Tuple  # noqa: F401
@@ -61,11 +61,14 @@ class RunnableQueue(QObject):
     '''
     resume = pyqtSignal()
 
-    def __init__(self, api_client: API, session_maker: scoped_session) -> None:
+    def __init__(self, api_client: API, session_maker: scoped_session, size: int = 0) -> None:
+        """
+        A size of zero means there's no upper bound to the queue size.
+        """
         super().__init__()
         self.api_client = api_client
         self.session_maker = session_maker
-        self.queue = PriorityQueue()  # type: PriorityQueue[Tuple[int, ApiJob]]
+        self.queue = PriorityQueue(maxsize=size)  # type: PriorityQueue[Tuple[int, ApiJob]]
         # `order_number` ensures jobs with equal priority are retrived in FIFO order. This is needed
         # because PriorityQueue is implemented using heapq which does not have sort stability. For
         # more info, see : https://bugs.python.org/issue17794
@@ -81,7 +84,12 @@ class RunnableQueue(QObject):
         current_order_number = next(self.order_number)
         job.order_number = current_order_number
         priority = self.JOB_PRIORITIES[type(job)]
-        self.queue.put_nowait((priority, job))
+        try:
+            self.queue.put_nowait((priority, job))
+        except Full:
+            # Pass silently if the queue is full. For use with MetadataSyncJob.
+            # See #652.
+            pass
 
     def re_add_job(self, job: ApiJob) -> None:
         '''
@@ -143,7 +151,7 @@ class ApiJobQueue(QObject):
 
         self.main_queue = RunnableQueue(api_client, session_maker)
         self.download_file_queue = RunnableQueue(api_client, session_maker)
-        self.metadata_queue = RunnableQueue(api_client, session_maker)
+        self.metadata_queue = RunnableQueue(api_client, session_maker, size=1)
 
         self.main_queue.moveToThread(self.main_thread)
         self.download_file_queue.moveToThread(self.download_file_thread)
