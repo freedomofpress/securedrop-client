@@ -135,7 +135,7 @@ def load_css(name: str) -> str:
     return resource_string(__name__, "css/" + name).decode('utf-8')
 
 
-def load_movie(name: str) -> str:
+def load_movie(name: str) -> QMovie:
     """
     Return a GIF animation to use in the UI.
     """

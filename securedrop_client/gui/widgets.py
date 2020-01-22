@@ -1836,6 +1836,7 @@ class FileWidget(QWidget):
         file_uuid: str,
         controller: Controller,
         file_ready_signal: pyqtBoundSignal,
+        file_missing: pyqtBoundSignal,
         index: int,
     ) -> None:
         """
@@ -1852,8 +1853,9 @@ class FileWidget(QWidget):
         self.setStyleSheet(self.CSS)
         file_description_font = QFont()
         file_description_font.setLetterSpacing(QFont.AbsoluteSpacing, self.FILE_FONT_SPACING)
-        file_buttons_font = QFont()
-        file_buttons_font.setLetterSpacing(QFont.AbsoluteSpacing, self.FILE_OPTIONS_FONT_SPACING)
+        self.file_buttons_font = QFont()
+        self.file_buttons_font.setLetterSpacing(
+            QFont.AbsoluteSpacing, self.FILE_OPTIONS_FONT_SPACING)
 
         # Set layout
         layout = QHBoxLayout()
@@ -1876,15 +1878,15 @@ class FileWidget(QWidget):
         self.download_button.setObjectName('download_button')
         self.download_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.download_button.setIcon(load_icon('download_file.svg'))
-        self.download_button.setFont(file_buttons_font)
+        self.download_button.setFont(self.file_buttons_font)
         self.download_animation = load_movie("download_file.gif")
         self.export_button = QPushButton(_('EXPORT'))
         self.export_button.setObjectName('export_print')
-        self.export_button.setFont(file_buttons_font)
+        self.export_button.setFont(self.file_buttons_font)
         self.middot = QLabel("·")
         self.print_button = QPushButton(_('PRINT'))
         self.print_button.setObjectName('export_print')
-        self.print_button.setFont(file_buttons_font)
+        self.print_button.setFont(self.file_buttons_font)
         file_options_layout.addWidget(self.download_button)
         file_options_layout.addWidget(self.export_button)
         file_options_layout.addWidget(self.middot)
@@ -1937,6 +1939,7 @@ class FileWidget(QWidget):
 
         # Connect signals to slots
         file_ready_signal.connect(self._on_file_downloaded, type=Qt.QueuedConnection)
+        file_missing.connect(self._on_file_missing, type=Qt.QueuedConnection)
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.MouseButtonPress:
@@ -1957,17 +1960,34 @@ class FileWidget(QWidget):
                 self.print_button.show()
                 self.file_name.show()
 
+    @pyqtSlot(str)
+    def _on_file_missing(self, file_uuid: str) -> None:
+        pass
+        if file_uuid == self.file.uuid:
+            self.file = self.controller.get_file(self.file.uuid)
+            if not self.file.is_downloaded:
+                self.download_animation.stop()
+                self.download_button.setText(_('DOWNLOAD'))
+                self.download_button.setIcon(load_icon('download_file.svg'))
+                self.download_button.setStyleSheet('color: #2a319d')
+                self.download_button.setFont(self.file_buttons_font)
+                self.download_button.show()
+                self.no_file_name.hide()
+                self.export_button.hide()
+                self.middot.hide()
+                self.print_button.hide()
+                self.file_name.hide()
+                self.no_file_name.show()
+
     @pyqtSlot()
     def _on_export_clicked(self):
         """
         Called when the export button is clicked.
         """
         if not self.controller.downloaded_file_exists(self.file.uuid):
-            self.controller.sync_api()
             return
 
-        dialog = ExportDialog(self.controller, self.file.uuid,
-                              self.file.original_filename)
+        dialog = ExportDialog(self.controller, self.file.uuid, self.file.original_filename)
         dialog.show()
         dialog.export()
         dialog.exec()
@@ -1978,7 +1998,6 @@ class FileWidget(QWidget):
         Called when the print button is clicked.
         """
         if not self.controller.downloaded_file_exists(self.file.uuid):
-            self.controller.sync_api()
             return
 
         dialog = PrintDialog(self.controller, self.file.uuid)
@@ -2495,8 +2514,12 @@ class ConversationView(QWidget):
         """
         Add a file from the source.
         """
-        conversation_item = FileWidget(file.uuid, self.controller, self.controller.file_ready,
-                                       index)
+        conversation_item = FileWidget(
+            file.uuid,
+            self.controller,
+            self.controller.file_ready,
+            self.controller.file_missing,
+            index)
         self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignLeft)
         self.current_messages[file.uuid] = conversation_item
 
