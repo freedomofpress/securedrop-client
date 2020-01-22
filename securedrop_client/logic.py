@@ -221,10 +221,10 @@ class Controller(QObject):
         self.sync_timer.timeout.connect(self.update_sync)
         self.sync_timer.start(30000)
 
-        # Automagically sync with the API every 5 minutes.
+        # Automagically sync with the API every minute.
         self.sync_update = QTimer()
         self.sync_update.timeout.connect(self.sync_api)
-        self.sync_update.start(1000 * 60 * 5)  # every 5 minutes.
+        self.sync_update.start(1000 * 60)  # every minute.
 
         # Run export object in a separate thread context (a reference to the
         # thread is kept on self such that it does not get garbage collected
