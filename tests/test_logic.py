@@ -1392,7 +1392,7 @@ def test_Controller_on_reply_success(homedir, mocker, session_maker, session):
     assert debug_logger.call_args_list[0][0][0] == '{} sent successfully'.format(reply.uuid)
     reply_succeeded.emit.assert_called_once_with(reply.uuid)
     reply_failed.emit.assert_not_called()
-    co.sync_api.assert_called_once_with()
+    co.sync_api.assert_not_called()
 
 
 def test_Controller_on_reply_failure(homedir, mocker, session_maker):

@@ -815,7 +815,6 @@ class Controller(QObject):
         logger.debug('{} sent successfully'.format(reply_uuid))
         self.gui.clear_error_status()  # remove any permanent error status message
         self.reply_succeeded.emit(reply_uuid)
-        self.sync_api()
 
     def on_reply_failure(
         self,
