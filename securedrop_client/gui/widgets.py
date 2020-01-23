@@ -2014,9 +2014,10 @@ class FileWidget(QWidget):
             # Open the already downloaded file.
             self.controller.on_file_open(self.file.uuid)
         else:
-            # Indicate in downloading state... but only after 0.3 seconds (i.e.
-            # this is taking a noticable amount of time to complete).
-            QTimer.singleShot(300, self.start_button_animation)
+            if self.controller.api:
+                # Indicate in downloading state... but only after 0.3 seconds (i.e.
+                # this is taking a noticable amount of time to complete).
+                QTimer.singleShot(300, self.start_button_animation)
             # Download the file.
             self.controller.on_submission_download(File, self.file.uuid)
 
