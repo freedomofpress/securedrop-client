@@ -1,12 +1,12 @@
 """
 Make sure the UI widgets are configured correctly and work as expected.
 """
-import html
 import pytest
 
 from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtGui import QFocusEvent
-from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QMessageBox, QMainWindow
+from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QMessageBox, QMainWindow, \
+    QLineEdit
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from securedrop_client import db, logic
@@ -16,7 +16,7 @@ from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, Lo
     DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, LeftPane, RefreshButton, \
     ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
     ReplyBoxWidget, ReplyTextEdit, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, \
-    LoginErrorBar, EmptyConversationView, ExportDialog, PrintDialog
+    LoginErrorBar, EmptyConversationView, ExportDialog, PrintDialog, PasswordEdit, SecureQLabel
 from tests import factory
 
 
@@ -745,6 +745,20 @@ def test_SourceWidget_update_attachment_icon():
     assert sw.paperclip.isHidden()
 
 
+def test_SourceWidget_update_truncate_latest_msg(mocker):
+    """
+    If the latest message in the conversation is longer than 120 characters,
+    truncate and add "..." to the end.
+    """
+    source = mocker.MagicMock()
+    source.journalist_designation = "Testy McTestface"
+    source.collection = [factory.Message(content="a" * 121), ]
+    sw = SourceWidget(source)
+
+    sw.update()
+    assert sw.preview.text().endswith("...")
+
+
 def test_SourceWidget_delete_source(mocker, session, source):
     mock_delete_source_message_box_object = mocker.MagicMock(DeleteSourceMessageBox)
     mock_controller = mocker.MagicMock()
@@ -784,6 +798,24 @@ def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker, session, so
     )
     sw.delete_source(None)
     sw.controller.delete_source.assert_not_called()
+
+
+def test_SourceWidget_uses_SecureQLabel(mocker):
+    """
+    Ensure the source widget preview uses SecureQLabel and is not injectable
+    """
+    source = mocker.MagicMock()
+    source.journalist_designation = "Testy McTestface"
+    source.collection = [factory.Message(content="a" * 121), ]
+    sw = SourceWidget(source)
+
+    sw.update()
+    assert isinstance(sw.preview, SecureQLabel)
+
+    sw.preview.setTextFormat = mocker.MagicMock()
+    sw.preview.setText("<b>bad text</b>")
+    sw.update()
+    sw.preview.setTextFormat.assert_called_with(Qt.PlainText)
 
 
 def test_StarToggleButton_init_source_starred(mocker):
@@ -881,7 +913,7 @@ def test_StarToggleButton_on_toggle(mocker):
 
     stb.on_toggle()
 
-    stb.controller.update_star.assert_called_once_with(source)
+    stb.controller.update_star.assert_called_once_with(source, stb.on_update)
     assert stb.isCheckable() is True
 
 
@@ -913,6 +945,22 @@ def test_StarToggleButton_on_toggle_offline_when_checked(mocker):
     stb.controller.on_action_requiring_login.assert_called_once_with()
     assert stb.isCheckable() is False
     set_icon_fn.assert_called_with(on='star_on.svg', off='star_on.svg')
+
+
+def test_StarToggleButton_on_update(mocker):
+    """
+    Ensure the on_update callback updates the state of the source and UI
+    element to the current "enabled" state.
+    """
+    source = mocker.MagicMock()
+    source.is_starred = True
+    stb = StarToggleButton(source)
+    stb.setChecked = mocker.MagicMock()
+    stb.controller = mocker.MagicMock()
+    stb.on_update(("uuid", False))
+    assert source.is_starred is False
+    stb.controller.update_sources.assert_called_once_with()
+    stb.setChecked.assert_called_once_with(False)
 
 
 def test_LoginDialog_setup(mocker, i18n):
@@ -1230,7 +1278,7 @@ def test_SpeechBubble_html_init(mocker):
     mock_signal = mocker.MagicMock()
 
     bubble = SpeechBubble('mock id', '<b>hello</b>', mock_signal)
-    assert bubble.message.text() == html.escape('<b>hello</b>')
+    assert bubble.message.text() == '<b>hello</b>'
 
 
 def test_SpeechBubble_with_apostrophe_in_text(mocker):
@@ -1239,7 +1287,7 @@ def test_SpeechBubble_with_apostrophe_in_text(mocker):
 
     message = "I'm sure, you are reading my message."
     bubble = SpeechBubble('mock id', message, mock_signal)
-    assert bubble.message.text() == html.escape(message, quote=False)
+    assert bubble.message.text() == message
 
 
 def test_MessageWidget_init(mocker):
@@ -2369,6 +2417,15 @@ def test_DeleteSourceAction_init(mocker):
         None,
         mock_controller
     )
+
+
+def test_PasswordEdit(mocker):
+    passwordline = PasswordEdit(None)
+    passwordline.togglepasswordAction.trigger()
+
+    assert passwordline.echoMode() == QLineEdit.Normal
+    passwordline.togglepasswordAction.trigger()
+    assert passwordline.echoMode() == QLineEdit.Password
 
 
 def test_DeleteSourceAction_trigger(mocker):

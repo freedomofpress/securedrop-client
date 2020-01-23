@@ -39,12 +39,14 @@ def test_configure_logging(homedir, mocker):
     expected (rotating logs) manner.
     """
     mock_log_conf = mocker.patch('securedrop_client.app.TimedRotatingFileHandler')
+    mock_log_conf_sys = mocker.patch('securedrop_client.app.SysLogHandler')
     mock_logging = mocker.patch('securedrop_client.app.logging')
     mock_log_file = os.path.join(homedir, 'logs', 'client.log')
     configure_logging(homedir)
     mock_log_conf.assert_called_once_with(mock_log_file, when='midnight',
                                           backupCount=5, delay=0,
                                           encoding=ENCODING)
+    mock_log_conf_sys.assert_called_once_with(address="/dev/log")
     mock_logging.getLogger.assert_called_once_with()
     assert sys.excepthook == excepthook
 

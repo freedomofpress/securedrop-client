@@ -529,9 +529,10 @@ def test_Controller_update_star_not_logged_in(homedir, config, mocker, session_m
     mock_gui = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     source_db_object = mocker.MagicMock()
+    mock_callback = mocker.MagicMock()
     co.on_action_requiring_login = mocker.MagicMock()
     co.api = None
-    co.update_star(source_db_object)
+    co.update_star(source_db_object, mock_callback)
     co.on_action_requiring_login.assert_called_with()
 
 
@@ -547,7 +548,7 @@ def test_Controller_on_update_star_success(homedir, config, mocker, session_make
     co.call_reset = mocker.MagicMock()
     co.sync_api = mocker.MagicMock()
     co.on_update_star_success(result)
-    co.sync_api.assert_called_once_with()
+    assert mock_gui.clear_error_status.called
 
 
 def test_Controller_on_update_star_failed(homedir, config, mocker, session_maker):
@@ -769,6 +770,7 @@ def test_Controller_on_file_downloaded_success(homedir, config, mocker, session_
     mock_gui = mocker.MagicMock()
 
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
+    co.update_sources = mocker.MagicMock()
 
     # signal when file is downloaded
     mock_file_ready = mocker.patch.object(co, 'file_ready')
@@ -777,6 +779,7 @@ def test_Controller_on_file_downloaded_success(homedir, config, mocker, session_
     co.on_file_download_success(mock_uuid)
 
     mock_file_ready.emit.assert_called_once_with(mock_uuid)
+    co.update_sources.assert_called_once_with()
 
 
 def test_Controller_on_file_downloaded_api_failure(homedir, config, mocker, session_maker):
@@ -1209,6 +1212,7 @@ def test_Controller_on_message_downloaded_success(mocker, homedir, session_maker
     Check that a successful download emits proper signal.
     """
     co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    co.update_sources = mocker.MagicMock()
     message_ready = mocker.patch.object(co, 'message_ready')
     message = factory.Message(source=factory.Source())
     mocker.patch('securedrop_client.storage.get_message', return_value=message)
@@ -1216,6 +1220,7 @@ def test_Controller_on_message_downloaded_success(mocker, homedir, session_maker
     co.on_message_download_success(message.uuid)
 
     message_ready.emit.assert_called_once_with(message.uuid, message.content)
+    co.update_sources.assert_called_once_with()
 
 
 def test_Controller_on_message_downloaded_failure(mocker, homedir, session_maker):
@@ -1266,10 +1271,12 @@ def test_Controller_on_delete_source_success(homedir, config, mocker, session_ma
     Using the `config` fixture to ensure the config is written to disk.
     '''
     mock_gui = mocker.MagicMock()
+    storage = mocker.patch('securedrop_client.logic.storage')
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
-    co.sync_api = mocker.MagicMock()
-    co.on_delete_source_success(True)
-    co.sync_api.assert_called_with()
+    co.update_sources = mocker.MagicMock()
+    co.on_delete_source_success("uuid")
+    storage.delete_local_source_by_uuid.assert_called_once_with(co.session, "uuid")
+    assert co.update_sources.call_count == 1
 
 
 def test_Controller_on_delete_source_failure(homedir, config, mocker, session_maker):
@@ -1516,7 +1523,9 @@ def test_Controller_call_update_star_success(homedir, config, mocker, session_ma
     session.add(source)
     session.commit()
 
-    co.update_star(source)
+    mock_callback = mocker.MagicMock()
+
+    co.update_star(source, mock_callback)
 
     mock_job_cls.assert_called_once_with(
         source.uuid,
@@ -1524,8 +1533,12 @@ def test_Controller_call_update_star_success(homedir, config, mocker, session_ma
     )
 
     mock_queue.enqueue.assert_called_once_with(mock_job)
-    mock_success_signal.connect.assert_called_once_with(
-        co.on_update_star_success, type=Qt.QueuedConnection)
+    assert mock_success_signal.connect.call_count == 2
+    cal = mock_success_signal.connect.call_args_list
+    assert cal[0][0][0] == co.on_update_star_success
+    assert cal[0][1]['type'] == Qt.QueuedConnection
+    assert cal[1][0][0] == mock_callback
+    assert cal[1][1]['type'] == Qt.QueuedConnection
     mock_failure_signal.connect.assert_called_once_with(
         co.on_update_star_failure, type=Qt.QueuedConnection)
 

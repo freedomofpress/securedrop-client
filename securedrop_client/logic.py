@@ -472,7 +472,6 @@ class Controller(QObject):
         After we star a source, we should sync the API such that the local database is updated.
         """
         self.gui.clear_error_status()  # remove any permanent error status message
-        self.sync_api()  # Syncing the API also updates the source list UI
 
     def on_update_star_failure(self, result: UpdateStarJobException) -> None:
         """
@@ -482,7 +481,7 @@ class Controller(QObject):
         error = _('Failed to update star.')
         self.gui.update_error_status(error)
 
-    def update_star(self, source_db_object):
+    def update_star(self, source_db_object, callback):
         """
         Star or unstar. The callback here is the API sync as we first make sure
         that we apply the change to the server, and then update locally.
@@ -493,6 +492,7 @@ class Controller(QObject):
 
         job = UpdateStarJob(source_db_object.uuid, source_db_object.is_starred)
         job.success_signal.connect(self.on_update_star_success, type=Qt.QueuedConnection)
+        job.success_signal.connect(callback, type=Qt.QueuedConnection)
         job.failure_signal.connect(self.on_update_star_failure, type=Qt.QueuedConnection)
 
         self.api_job_queue.enqueue(job)
@@ -555,6 +555,7 @@ class Controller(QObject):
         self.gui.clear_error_status()  # remove any permanent error status message
         message = storage.get_message(self.session, uuid)
         self.message_ready.emit(message.uuid, message.content)
+        self.update_sources()
 
     def on_message_download_failure(self, exception: Exception) -> None:
         """
@@ -656,7 +657,7 @@ class Controller(QObject):
             self.data_dir, file.filename, file.original_filename)
 
         command = "qvm-open-in-vm"
-        args = ['$dispvm:sd-svs-disp', path_to_file_with_original_name]
+        args = ['$dispvm:sd-viewer', path_to_file_with_original_name]
         process = QProcess(self)
         process.start(command, args)
 
@@ -732,6 +733,7 @@ class Controller(QObject):
         """
         self.gui.clear_error_status()  # remove any permanent error status message
         self.file_ready.emit(result)
+        self.update_sources()
 
     def on_file_download_failure(self, exception: Exception) -> None:
         """
@@ -750,8 +752,11 @@ class Controller(QObject):
         """
         Handler for when a source deletion succeeds.
         """
+        # Delete the local version of the source.
+        storage.delete_local_source_by_uuid(self.session, result)
         self.gui.clear_error_status()  # remove any permanent error status message
-        self.sync_api()
+        # Update the sources UI.
+        self.update_sources()
 
     def on_delete_source_failure(self, result: Exception) -> None:
         logging.info("failed to delete source at server")
