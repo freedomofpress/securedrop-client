@@ -441,7 +441,6 @@ def test_Controller_on_sync_failure(homedir, config, mocker, session_maker):
     co.on_sync_failure(exception)
 
     assert mock_storage.update_local_storage.call_count == 0
-    co.resume_queues.assert_called_once_with()
 
 
 def test_Controller_on_refresh_failure(homedir, config, mocker, session_maker):

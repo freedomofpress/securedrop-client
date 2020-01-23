@@ -439,7 +439,6 @@ class Controller(QObject):
             _('The SecureDrop server cannot be reached.'),
             duration=0,
             retry=True)
-        self.resume_queues()
 
     def on_refresh_failure(self, result: Exception) -> None:
         """
