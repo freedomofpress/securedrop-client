@@ -1893,7 +1893,7 @@ class FileWidget(QWidget):
         self.download_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.download_button.setIcon(load_icon('download_file.svg'))
         self.download_button.setFont(file_buttons_font)
-        self.download_animation = load_movie("download_animation.gif")
+        self.download_animation = load_movie("download_file.gif")
         self.export_button = QPushButton(_('EXPORT'))
         self.export_button.setObjectName('export_print')
         self.export_button.setFont(file_buttons_font)
