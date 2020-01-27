@@ -4,7 +4,7 @@ Make sure the UI widgets are configured correctly and work as expected.
 import pytest
 
 from PyQt5.QtCore import Qt, QEvent
-from PyQt5.QtGui import QFocusEvent
+from PyQt5.QtGui import QFocusEvent, QMovie
 from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QMessageBox, QMainWindow, \
     QLineEdit
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -28,7 +28,9 @@ def test_TopPane_init(mocker):
     Ensure the TopPane instance is correctly set up.
     """
     tp = TopPane()
-    assert tp.sync_icon.disabled is True
+    file_path = tp.sync_icon.sync_animation.fileName()
+    filename = file_path[file_path.rfind('/') + 1:]
+    assert filename == 'sync_disabled.gif'
 
 
 def test_TopPane_setup(mocker):
@@ -153,6 +155,23 @@ def test_LeftPane_set_logged_out(mocker):
     lp.user_profile.hide.assert_called_once_with()
 
 
+def test_SyncIcon_init(mocker):
+    sync_icon = SyncIcon()
+    file_path = sync_icon.sync_animation.fileName()
+    filename = file_path[file_path.rfind('/') + 1:]
+    assert filename == 'sync_disabled.gif'
+
+
+def test_SyncIcon_init_starts_animiation(mocker):
+    movie = QMovie()
+    movie.start = mocker.MagicMock()
+    mocker.patch('securedrop_client.gui.widgets.load_movie', return_value=movie)
+
+    sync_icon = SyncIcon()
+
+    sync_icon.sync_animation.start.assert_called_once_with()
+
+
 def test_SyncIcon_setup(mocker):
     """
     Calling setup stores reference to controller, which will later be used to update sync icon on
@@ -168,22 +187,51 @@ def test_SyncIcon_setup(mocker):
 
 def test_SyncIcon_enable(mocker):
     sync_icon = SyncIcon()
+
     sync_icon.enable()
-    assert sync_icon.disabled is False
+
+    file_path = sync_icon.sync_animation.fileName()
+    filename = file_path[file_path.rfind('/') + 1:]
+    assert filename == 'sync.gif'
+
+
+def test_SyncIcon_enable_starts_animiation(mocker):
+    movie = QMovie()
+    movie.start = mocker.MagicMock()
+    mocker.patch('securedrop_client.gui.widgets.load_movie', return_value=movie)
+
+    sync_icon = SyncIcon()
+    sync_icon.enable()
+
+    sync_icon.sync_animation.start.assert_called_with()
 
 
 def test_SyncIcon_disable(mocker):
     sync_icon = SyncIcon()
+
     sync_icon.disable()
-    assert sync_icon.disabled is True
+
+    file_path = sync_icon.sync_animation.fileName()
+    filename = file_path[file_path.rfind('/') + 1:]
+    assert filename == 'sync_disabled.gif'
 
 
-def test_SyncIcon___on_sync(mocker):
+def test_SyncIcon_disable_starts_animiation(mocker):
+    movie = QMovie()
+    movie.start = mocker.MagicMock()
+    mocker.patch('securedrop_client.gui.widgets.load_movie', return_value=movie)
+
+    sync_icon = SyncIcon()
+    sync_icon.disable()
+
+    sync_icon.sync_animation.start.assert_called_with()
+
+
+def test_SyncIcon__on_sync(mocker):
     '''
     Sync icon becomes active when it receives the syncing sync signal.
     '''
     sync_icon = SyncIcon()
-    sync_icon.disabled = False
 
     sync_icon._on_sync('syncing')
 
@@ -192,32 +240,22 @@ def test_SyncIcon___on_sync(mocker):
     assert filename == 'sync_active.gif'
 
 
-def test_SyncIcon___on_sync_when_sync_disabled(mocker):
-    '''
-    Sync does not because active when the sync icon is disabled.
-    '''
-    sync_icon = SyncIcon()
-    sync_icon.disabled = True
-
-    sync_icon._on_sync('syncing')
-
-    file_path = sync_icon.sync_animation.fileName()
-    filename = file_path[file_path.rfind('/') + 1:]
-    assert filename == 'sync_disabled.gif'
-
-
 def test_SyncIcon___on_sync_with_data_not_equal_to_syncing(mocker):
     '''
     Sync does not because active when the sync signal's data is something other than 'syncing'
     '''
+    movie = QMovie()
+    movie.start = mocker.MagicMock()
+    mocker.patch('securedrop_client.gui.widgets.load_movie', return_value=movie)
     sync_icon = SyncIcon()
-    sync_icon.disabled = False
+
+    # assert that start call count has only been called once
+    sync_icon.sync_animation.start.assert_called_once_with()
 
     sync_icon._on_sync('something other than syncing')
 
-    file_path = sync_icon.sync_animation.fileName()
-    filename = file_path[file_path.rfind('/') + 1:]
-    assert filename == 'sync_disabled.gif'
+    # assert that _on_sync doesn't increase start call count from one
+    sync_icon.sync_animation.start.assert_called_once_with()
 
 
 def test_ErrorStatusBar_clear_error_status(mocker):

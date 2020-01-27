@@ -209,7 +209,6 @@ class SyncIcon(QLabel):
         self.setObjectName('sync_icon')
         self.setStyleSheet(self.CSS)
         self.setFixedSize(QSize(24, 20))
-        self.disabled = True
         self.sync_animation = load_movie("sync_disabled.gif")
         self.sync_animation.setScaledSize(QSize(24, 20))
         self.setMovie(self.sync_animation)
@@ -223,21 +222,19 @@ class SyncIcon(QLabel):
         self.controller.sync_events.connect(self._on_sync)
 
     def _on_sync(self, data):
-        if not self.disabled and data == 'syncing':
+        if data == 'syncing':
             self.sync_animation = load_movie("sync_active.gif")
             self.sync_animation.setScaledSize(QSize(24, 20))
             self.setMovie(self.sync_animation)
             self.sync_animation.start()
 
     def enable(self):
-        self.disabled = False
         self.sync_animation = load_movie("sync.gif")
         self.sync_animation.setScaledSize(QSize(24, 20))
         self.setMovie(self.sync_animation)
         self.sync_animation.start()
 
     def disable(self):
-        self.disabled = True
         self.sync_animation = load_movie("sync_disabled.gif")
         self.sync_animation.setScaledSize(QSize(24, 20))
         self.setMovie(self.sync_animation)

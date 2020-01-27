@@ -374,9 +374,8 @@ class Controller(QObject):
         Grab data from the remote SecureDrop API in a non-blocking manner.
         """
         logger.debug("In sync_api on thread {}".format(self.thread().currentThreadId()))
-        self.sync_events.emit('syncing')
-
         if self.authenticated():
+            self.sync_events.emit('syncing')
             logger.debug("You are authenticated, going to make your call")
 
             job = MetadataSyncJob(self.data_dir, self.gpg)
