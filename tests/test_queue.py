@@ -312,9 +312,16 @@ def test_ApiJobQueue_pause_queues(mocker):
 
 
 def test_ApiJobQueue_resume_queues_emits_resume_signal(mocker):
+    """
+    Resume only emits if the queue is paused.
+    """
     job_queue = ApiJobQueue(mocker.MagicMock(), mocker.MagicMock())
     mocker.patch.object(job_queue.main_queue, 'resume')
     mocker.patch.object(job_queue.download_file_queue, 'resume')
+    mocker.patch.object(job_queue.metadata_queue, 'resume')
+    job_queue.main_thread.isRunning = mocker.MagicMock(return_value=False)
+    job_queue.download_file_thread.isRunning = mocker.MagicMock(return_value=False)
+    job_queue.metadata_thread.isRunning = mocker.MagicMock(return_value=False)
     job_queue.start_queues = mocker.MagicMock()
 
     job_queue.resume_queues()
@@ -322,6 +329,7 @@ def test_ApiJobQueue_resume_queues_emits_resume_signal(mocker):
     job_queue.start_queues.assert_called_once_with()
     job_queue.main_queue.resume.emit.assert_called_once_with()
     job_queue.download_file_queue.resume.emit.assert_called_once_with()
+    job_queue.metadata_queue.resume.emit.assert_called_once_with()
 
 
 def test_ApiJobQueue_enqueue_no_auth(mocker):

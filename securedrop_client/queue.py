@@ -171,8 +171,6 @@ class ApiJobQueue(QObject):
         self.download_file_queue.paused.connect(self.on_queue_paused)
         self.metadata_queue.paused.connect(self.on_queue_paused)
 
-        self.main_queue.pinged.connect(self.resume_queues)
-        self.download_file_queue.pinged.connect(self.resume_queues)
         self.metadata_queue.pinged.connect(self.resume_queues)
 
     def logout(self) -> None:
@@ -205,10 +203,16 @@ class ApiJobQueue(QObject):
 
     def resume_queues(self) -> None:
         logger.info("Resuming queues")
+        main_paused = not self.main_thread.isRunning()
+        download_paused = not self.download_file_thread.isRunning()
+        metadata_paused = not self.metadata_thread.isRunning()
         self.start_queues()
-        self.main_queue.resume.emit()
-        self.download_file_queue.resume.emit()
-        self.metadata_queue.resume.emit()
+        if main_paused:
+            self.main_queue.resume.emit()
+        if download_paused:
+            self.download_file_queue.resume.emit()
+        if metadata_paused:
+            self.metadata_queue.resume.emit()
 
     def enqueue(self, job: ApiJob) -> None:
         # Prevent api jobs being added to the queue when not logged in.
