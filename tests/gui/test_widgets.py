@@ -1499,7 +1499,7 @@ def test_FileWidget_on_left_click_open(mocker, session, source):
 
     fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw._on_left_click()
-    fw.controller.on_file_open.assert_called_once_with(file_.uuid)
+    fw.controller.on_file_open.assert_called_once_with(file_)
 
 
 def test_FileWidget_set_button_animation_frame(mocker, session, source):
@@ -1662,7 +1662,7 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
     # Also assert that the dialog is initialized
     dialog = mocker.patch('securedrop_client.gui.widgets.ExportDialog')
     fw._on_export_clicked()
-    dialog.assert_called_once_with(controller, file.uuid, file.original_filename)
+    dialog.assert_called_once_with(controller, file.uuid, file.filename)
 
 
 def test_FileWidget__on_export_clicked_missing_file(mocker, session, source):

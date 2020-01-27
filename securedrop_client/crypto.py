@@ -125,8 +125,12 @@ class GpgHelper:
 
             # Store the plaintext in the file located at the specified plaintext_filepath
             if is_doc:
-                original_filename = read_gzip_header_filename(out.name)
-                with gzip.open(out.name, 'rb') as infile, open(plaintext_filepath, 'wb') as outfile:
+                original_filename = read_gzip_header_filename(out.name) or plaintext_filepath
+                decrypt_path = os.path.join(
+                    os.path.dirname(filepath),
+                    os.path.basename(original_filename)
+                )
+                with gzip.open(out.name, 'rb') as infile, open(decrypt_path, 'wb') as outfile:
                     shutil.copyfileobj(infile, outfile)
             else:
                 shutil.copy(out.name, plaintext_filepath)

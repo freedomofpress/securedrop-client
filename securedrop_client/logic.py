@@ -187,7 +187,6 @@ class Controller(QObject):
         self.gpg = GpgHelper(home, self.session_maker, proxy)
 
         self.export = Export()
-        self.export.export_completed.connect(self.cleanup_hardlinked_file)
 
         self.sync_flag = os.path.join(home, 'sync_flag')
 
@@ -574,71 +573,36 @@ class Controller(QObject):
             logger.debug('Failure due to checksum mismatch, retrying {}'.format(exception.uuid))
             self._submit_download_job(exception.object_type, exception.uuid)
 
-    def downloaded_file_exists(self, file_uuid: str) -> bool:
+    def downloaded_file_exists(self, file: db.File) -> bool:
         '''
         Check if the file specified by file_uuid exists. If it doesn't update the local db and
         GUI to show the file as not downloaded.
         '''
-        file = self.get_file(file_uuid)
-        fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
-        filepath = os.path.join(self.data_dir, fn_no_ext)
-        if not os.path.exists(filepath):
+        if not os.path.exists(file.location(self.data_dir)):
+            self.gui.update_error_status(_(
+                'File does not exist in the data directory. Please try re-downloading.'))
             logger.debug('Cannot find {} in the data directory. File does not exist.'.format(
-                file.original_filename))
+                file.filename))
             storage.update_missing_files(self.data_dir, self.session)
             self.file_missing.emit(file.uuid)
             return False
         return True
 
-    def cleanup_hardlinked_file(cls, filepaths):
-        '''
-        Once inter-vm communication is complete and we no longer need to keep file copies with the
-        original filenames, delete them.
-        '''
-        for filepath in filepaths:
-            if os.path.exists(filepath):
-                os.remove(filepath)
-
-    def get_path_to_file_with_original_name(
-        cls, file_dir: str, filename: str, filename_orig: str
-    ) -> str:
-        '''
-        Create a hardlink with the original filename and return its path.
-
-        Once a file is downloaded, it exists in the data directory with the same filename as the
-        server, except with the .gz.gpg stripped off. In order for the Display VM to know which
-        application to open the file in, we create a hard link to this file with the original file
-        name, including its extension.
-        '''
-
-        path_to_file_with_original_name = os.path.join(file_dir, filename_orig)
-
-        if not os.path.exists(path_to_file_with_original_name):
-            fn_no_ext, dummy = os.path.splitext(os.path.splitext(filename)[0])
-            filepath = os.path.join(file_dir, fn_no_ext)
-            os.link(filepath, path_to_file_with_original_name)
-
-        return path_to_file_with_original_name
-
-    def on_file_open(self, file_uuid: str) -> None:
+    def on_file_open(self, file: db.File) -> None:
         '''
         Open the file specified by file_uuid. If the file is missing, update the db so that
         is_downloaded is set to False.
         '''
-        file = self.get_file(file_uuid)
-        logger.info('Opening file "{}".'.format(file.original_filename))
+        logger.info('Opening file "{}".'.format(file.location(self.data_dir)))
 
-        if not self.downloaded_file_exists(file.uuid):
+        if not self.downloaded_file_exists(file):
             return
 
         if not self.qubes:
             return
 
-        path_to_file_with_original_name = self.get_path_to_file_with_original_name(
-            self.data_dir, file.filename, file.original_filename)
-
         command = "qvm-open-in-vm"
-        args = ['$dispvm:sd-viewer', path_to_file_with_original_name]
+        args = ['$dispvm:sd-viewer', file.location(self.data_dir)]
         process = QProcess(self)
         process.start(command, args)
 
@@ -660,18 +624,15 @@ class Controller(QObject):
         is_downloaded is set to False.
         '''
         file = self.get_file(file_uuid)
-        logger.info('Exporting file {}'.format(file.original_filename))
+        file_location = file.location(self.data_dir)
 
-        if not self.downloaded_file_exists(file.uuid):
+        if not self.downloaded_file_exists(file):
             return
 
         if not self.qubes:
             return
 
-        path_to_file_with_original_name = self.get_path_to_file_with_original_name(
-            self.data_dir, file.filename, file.original_filename)
-
-        self.export.begin_usb_export.emit([path_to_file_with_original_name], passphrase)
+        self.export.begin_usb_export.emit([file_location], passphrase)
 
     def print_file(self, file_uuid: str) -> None:
         '''
@@ -679,18 +640,16 @@ class Controller(QObject):
         so that is_downloaded is set to False.
         '''
         file = self.get_file(file_uuid)
-        logger.info('Printing file {}'.format(file.original_filename))
+        file_location = file.location(self.data_dir)
+        logger.info('Printing file {}'.format(file_location))
 
-        if not self.downloaded_file_exists(file.uuid):
+        if not self.downloaded_file_exists(file):
             return
 
         if not self.qubes:
             return
 
-        path_to_file_with_original_name = self.get_path_to_file_with_original_name(
-            self.data_dir, file.filename, file.original_filename)
-
-        self.export.begin_print.emit([path_to_file_with_original_name])
+        self.export.begin_print.emit([file_location])
 
     def on_submission_download(
         self,

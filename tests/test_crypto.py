@@ -47,7 +47,7 @@ def test_gunzip_logic(homedir, config, mocker, session_maker):
     gpg._import(JOURNO_KEY)
 
     test_gzip = 'tests/files/test-doc.gz.gpg'
-    expected_output_filepath = 'tests/files/test-doc'
+    expected_output_filepath = 'tests/files/test-doc.txt'
 
     # mock_gpg = mocker.patch('subprocess.call', return_value=0)
     mock_unlink = mocker.patch('os.unlink')
@@ -61,6 +61,35 @@ def test_gunzip_logic(homedir, config, mocker, session_maker):
     assert mock_unlink.call_count == 2
     mock_unlink.stop()
     os.remove(expected_output_filepath)
+
+
+def test_gzip_header_without_filename(homedir, config, mocker, session_maker):
+    """
+    Test processing of a gzipped file without a filename in the header.
+    """
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+
+    gpg._import(PUB_KEY)
+    gpg._import(JOURNO_KEY)
+
+    mocker.patch('os.unlink')
+    mocker.patch('gzip.open')
+    mocker.patch('shutil.copy')
+    mocker.patch('shutil.copyfileobj')
+
+    # pretend the gzipped file header lacked the original filename
+    mock_read_gzip_header_filename = mocker.patch(
+        'securedrop_client.crypto.read_gzip_header_filename'
+    )
+    mock_read_gzip_header_filename.return_value = ""
+
+    test_gzip = 'tests/files/test-doc.gz.gpg'
+    output_filename = 'test-doc'
+    expected_output_filename = 'tests/files/test-doc'
+
+    original_filename = gpg.decrypt_submission_or_reply(test_gzip, output_filename, is_doc=True)
+    assert original_filename == output_filename
+    os.remove(expected_output_filename)
 
 
 def test_read_gzip_header_filename_with_bad_file(homedir):
