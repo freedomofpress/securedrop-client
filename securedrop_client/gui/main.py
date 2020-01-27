@@ -190,3 +190,12 @@ class Window(QMainWindow):
         Clear any message currently in the error status bar.
         """
         self.top_pane.clear_error_status()
+
+    def focus_reply_box(self):
+        """
+        If there's text in the reply box, ensure it has focus. To be called
+        after a sync to fix #726
+        """
+        if (self.main_view.current_conversation and
+                self.main_view.current_conversation.has_text()):
+            self.main_view.current_conversation.focus_reply()
