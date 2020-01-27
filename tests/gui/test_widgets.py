@@ -16,7 +16,7 @@ from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, Lo
     DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, LeftPane, RefreshButton, \
     ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
     ReplyBoxWidget, ReplyTextEdit, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, \
-    LoginErrorBar, EmptyConversationView, ExportDialog, PrintDialog, PasswordEdit
+    LoginErrorBar, EmptyConversationView, ExportDialog, PrintDialog, PasswordEdit, SecureQLabel
 from tests import factory
 
 
@@ -800,6 +800,24 @@ def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker, session, so
     sw.controller.delete_source.assert_not_called()
 
 
+def test_SourceWidget_uses_SecureQLabel(mocker):
+    """
+    Ensure the source widget preview uses SecureQLabel and is not injectable
+    """
+    source = mocker.MagicMock()
+    source.journalist_designation = "Testy McTestface"
+    source.collection = [factory.Message(content="a" * 121), ]
+    sw = SourceWidget(source)
+
+    sw.update()
+    assert isinstance(sw.preview, SecureQLabel)
+
+    sw.preview.setTextFormat = mocker.MagicMock()
+    sw.preview.setText("<b>bad text</b>")
+    sw.update()
+    sw.preview.setTextFormat.assert_called_with(Qt.PlainText)
+
+
 def test_StarToggleButton_init_source_starred(mocker):
     source = factory.Source()
     source.is_starred = True
@@ -895,7 +913,7 @@ def test_StarToggleButton_on_toggle(mocker):
 
     stb.on_toggle()
 
-    stb.controller.update_star.assert_called_once_with(source)
+    stb.controller.update_star.assert_called_once_with(source, stb.on_update)
     assert stb.isCheckable() is True
 
 
@@ -927,6 +945,22 @@ def test_StarToggleButton_on_toggle_offline_when_checked(mocker):
     stb.controller.on_action_requiring_login.assert_called_once_with()
     assert stb.isCheckable() is False
     set_icon_fn.assert_called_with(on='star_on.svg', off='star_on.svg')
+
+
+def test_StarToggleButton_on_update(mocker):
+    """
+    Ensure the on_update callback updates the state of the source and UI
+    element to the current "enabled" state.
+    """
+    source = mocker.MagicMock()
+    source.is_starred = True
+    stb = StarToggleButton(source)
+    stb.setChecked = mocker.MagicMock()
+    stb.controller = mocker.MagicMock()
+    stb.on_update(("uuid", False))
+    assert source.is_starred is False
+    stb.controller.update_sources.assert_called_once_with()
+    stb.setChecked.assert_called_once_with(False)
 
 
 def test_LoginDialog_setup(mocker, i18n):
@@ -1386,13 +1420,40 @@ def test_FileWidget_on_left_click_download(mocker, session, source):
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
     fw = FileWidget(file_.uuid, mock_controller, mock_signal)
+    fw.download_button = mocker.MagicMock()
     mock_get_file.assert_called_once_with(file_.uuid)
     mock_get_file.reset_mock()
 
-    fw._on_left_click()
+    mock_timer = mocker.MagicMock()
+
+    with mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer):
+        fw._on_left_click()
     mock_get_file.assert_called_once_with(file_.uuid)
     mock_controller.on_submission_download.assert_called_once_with(
         db.File, file_.uuid)
+    mock_timer.singleShot.assert_called_once_with(300, fw.start_button_animation)
+
+
+def test_FileWidget_start_button_animation(mocker, session, source):
+    """
+    Ensure widget state is updated when this method is called.
+    """
+    mock_signal = mocker.MagicMock()  # not important for this test
+
+    file_ = factory.File(source=source['source'],
+                         is_downloaded=False,
+                         is_decrypted=None)
+    session.add(file_)
+    session.commit()
+    mock_get_file = mocker.MagicMock(return_value=file_)
+    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+    fw = FileWidget(file_.uuid, mock_controller, mock_signal)
+    fw.download_button = mocker.MagicMock()
+    fw.start_button_animation()
+    # Check indicators of activity have been updated.
+    assert fw.download_button.setIcon.call_count == 1
+    fw.download_button.setText.assert_called_once_with(" DOWNLOADING ")
+    fw.download_button.setStyleSheet.assert_called_once_with("color: #05a6fe")
 
 
 def test_FileWidget_on_left_click_open(mocker, session, source):
@@ -1411,6 +1472,28 @@ def test_FileWidget_on_left_click_open(mocker, session, source):
     fw = FileWidget(file_.uuid, mock_controller, mock_signal)
     fw._on_left_click()
     fw.controller.on_file_open.assert_called_once_with(file_.uuid)
+
+
+def test_FileWidget_set_button_animation_frame(mocker, session, source):
+    """
+    Left click on download when file is not downloaded should trigger
+    a download.
+    """
+    mock_signal = mocker.MagicMock()  # not important for this test
+
+    file_ = factory.File(source=source['source'],
+                         is_downloaded=False,
+                         is_decrypted=None)
+    session.add(file_)
+    session.commit()
+
+    mock_get_file = mocker.MagicMock(return_value=file_)
+    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+
+    fw = FileWidget(file_.uuid, mock_controller, mock_signal)
+    fw.download_button = mocker.MagicMock()
+    fw.set_button_animation_frame(1)
+    assert fw.download_button.setIcon.call_count == 1
 
 
 def test_FileWidget_update(mocker, session, source):

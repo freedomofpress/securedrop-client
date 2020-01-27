@@ -36,7 +36,7 @@ from securedrop_client.storage import source_exists
 from securedrop_client.export import ExportStatus, ExportError
 from securedrop_client.gui import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.logic import Controller
-from securedrop_client.resources import load_icon, load_image
+from securedrop_client.resources import load_icon, load_image, load_movie
 from securedrop_client.utils import humanize_filesize
 
 logger = logging.getLogger(__name__)
@@ -994,7 +994,7 @@ class SourceWidget(QWidget):
         summary_layout.setSpacing(0)
         self.name = QLabel()
         self.name.setObjectName('source_name')
-        self.preview = QLabel()
+        self.preview = SecureQLabel()
         self.preview.setObjectName('preview')
         self.preview.setFixedSize(QSize(self.PREVIEW_WIDTH, self.PREVIEW_HEIGHT))
         self.preview.setWordWrap(True)
@@ -1043,7 +1043,7 @@ class SourceWidget(QWidget):
         """
         Updates the displayed values with the current values from self.source.
         """
-        self.timestamp.setText(arrow.get(self.source.last_updated).format('DD MMM'))
+        self.timestamp.setText(_(arrow.get(self.source.last_updated).format('DD MMM')))
         self.name.setText(self.source.journalist_designation)
         if self.source.collection:
             msg = str(self.source.collection[-1])
@@ -1106,7 +1106,7 @@ class StarToggleButton(SvgToggleButton):
         """
         Tell the controller to make an API call to update the source's starred field.
         """
-        self.controller.update_star(self.source)
+        self.controller.update_star(self.source, self.on_update)
 
     def on_toggle_offline(self):
         """
@@ -1119,6 +1119,16 @@ class StarToggleButton(SvgToggleButton):
         self.setCheckable(False)
         if self.source.is_starred:
             self.set_icon(on='star_on.svg', off='star_on.svg')
+
+    def on_update(self, result):
+        """
+        The result is a uuid for the source and boolean flag for the new state
+        of the star.
+        """
+        enabled = result[1]
+        self.source.is_starred = enabled
+        self.controller.update_sources()
+        self.setChecked(enabled)
 
 
 class DeleteSourceMessageBox:
@@ -1787,7 +1797,7 @@ class FileWidget(QWidget):
     }
     QPushButton#export_print {
         border: none;
-        padding: 8px;
+        padding: 0px 8px;
         font-family: 'Source Sans Pro';
         font-weight: 500;
         font-size: 13px;
@@ -1808,7 +1818,7 @@ class FileWidget(QWidget):
         padding-right: 8px;
         font-family: 'Source Sans Pro';
         font-weight: 700;
-        font-size: 14px;
+        font-size: 13px;
         color: #2a319d;
     }
     QLabel#no_file_name {
@@ -1883,6 +1893,7 @@ class FileWidget(QWidget):
         self.download_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.download_button.setIcon(load_icon('download_file.svg'))
         self.download_button.setFont(file_buttons_font)
+        self.download_animation = load_movie("download_animation.gif")
         self.export_button = QPushButton(_('EXPORT'))
         self.export_button.setObjectName('export_print')
         self.export_button.setFont(file_buttons_font)
@@ -2003,8 +2014,28 @@ class FileWidget(QWidget):
             # Open the already downloaded file.
             self.controller.on_file_open(self.file.uuid)
         else:
+            if self.controller.api:
+                # Indicate in downloading state... but only after 0.3 seconds (i.e.
+                # this is taking a noticable amount of time to complete).
+                QTimer.singleShot(300, self.start_button_animation)
             # Download the file.
             self.controller.on_submission_download(File, self.file.uuid)
+
+    def start_button_animation(self):
+        """
+        Update the download button to the animated "downloading" state.
+        """
+        self.download_animation.frameChanged.connect(self.set_button_animation_frame)
+        self.download_animation.start()
+        self.download_button.setText(_(" DOWNLOADING "))
+        self.download_button.setStyleSheet("color: #05a6fe")
+
+    def set_button_animation_frame(self, frame_number):
+        """
+        Sets the download button's icon to the current frame of the spinner
+        animation.
+        """
+        self.download_button.setIcon(QIcon(self.download_animation.currentPixmap()))
 
 
 class PrintDialog(QDialog):
@@ -2839,7 +2870,7 @@ class LastUpdatedLabel(QLabel):
     '''
 
     def __init__(self, last_updated):
-        super().__init__(_(_('{}').format(arrow.get(last_updated).humanize())))
+        super().__init__(last_updated)
 
         # Set css id
         self.setObjectName('conversation-title-date')
@@ -2889,7 +2920,7 @@ class SourceProfileShortWidget(QWidget):
         header_layout.setContentsMargins(
             self.MARGIN_LEFT, self.VERTICAL_MARGIN, self.MARGIN_RIGHT, self.VERTICAL_MARGIN)
         title = TitleLabel(self.source.journalist_designation)
-        updated = LastUpdatedLabel(self.source.last_updated)
+        updated = LastUpdatedLabel(_(arrow.get(self.source.last_updated).format('DD MMM')))
         menu = SourceMenuButton(self.source, self.controller)
         header_layout.addWidget(title, alignment=Qt.AlignLeft)
         header_layout.addStretch()

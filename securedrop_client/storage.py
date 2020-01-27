@@ -47,6 +47,17 @@ def get_local_sources(session: Session) -> List[Source]:
     return session.query(Source).all()
 
 
+def delete_local_source_by_uuid(session: Session, uuid: str) -> None:
+    """
+    Delete the source with the referenced UUID.
+    """
+    source = session.query(Source).filter_by(uuid=uuid).one_or_none()
+    if source:
+        session.delete(source)
+        session.commit()
+        logger.info("Deleted source with UUID {} from local database.".format(uuid))
+
+
 def get_local_messages(session: Session) -> List[Message]:
     """
     Return all submission objects from the local database.
@@ -76,10 +87,8 @@ def get_remote_data(api: API) -> Tuple[List[SDKSource], List[SDKSubmission], Lis
 
     (remote_sources, remote_submissions, remote_replies)
     """
-    remote_submissions = []  # type: List[SDKSubmission]
     remote_sources = api.get_sources()
-    for source in remote_sources:
-        remote_submissions.extend(api.get_submissions(source))
+    remote_submissions = api.get_all_submissions()
     remote_replies = api.get_all_replies()
 
     logger.info('Fetched {} remote sources.'.format(len(remote_sources)))

@@ -1,6 +1,8 @@
 import logging
 import sdclientapi
 
+from typing import Tuple
+
 from sdclientapi import API
 from sqlalchemy.orm.session import Session
 
@@ -15,7 +17,7 @@ class UpdateStarJob(ApiJob):
         self.source_uuid = source_uuid
         self.star_status = star_status
 
-    def call_api(self, api_client: API, session: Session) -> str:
+    def call_api(self, api_client: API, session: Session) -> Tuple[str, bool]:
         '''
         Override ApiJob.
 
@@ -33,7 +35,9 @@ class UpdateStarJob(ApiJob):
             else:
                 api_client.add_star(source_sdk_object)
 
-            return self.source_uuid
+            # Identify the source and *new* state of the star so the UI can be
+            # updated.
+            return self.source_uuid, not self.star_status
         except Exception as e:
             error_message = "Failed to update star on source {uuid} due to {exception}".format(
                 uuid=self.source_uuid, exception=repr(e))
