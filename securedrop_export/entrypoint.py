@@ -2,8 +2,9 @@ import logging
 import os
 import shutil
 import sys
+import platform
 
-from logging.handlers import TimedRotatingFileHandler
+from logging.handlers import TimedRotatingFileHandler, SysLogHandler
 from securedrop_export import __version__
 from securedrop_export import export
 from securedrop_export import main
@@ -31,12 +32,23 @@ def configure_logging():
 
     handler = TimedRotatingFileHandler(log_file)
     handler.setFormatter(formatter)
+
+    # For rsyslog handler
+    if platform.system() != "Linux":  # pragma: no cover
+        syslog_file = "/var/run/syslog"
+    else:
+        syslog_file = "/dev/log"
+
+    sysloghandler = SysLogHandler(address=syslog_file)
+    sysloghandler.setFormatter(formatter)
     handler.setLevel(logging.DEBUG)
 
     # set up primary log
     log = logging.getLogger()
     log.setLevel(logging.DEBUG)
     log.addHandler(handler)
+    # add the second logger
+    log.addHandler(sysloghandler)
 
 
 def start():
