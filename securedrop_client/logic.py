@@ -428,6 +428,7 @@ class Controller(QObject):
         self.download_new_messages()
         self.download_new_replies()
         self.sync_events.emit('synced')
+        self.resume_queues()
 
     def on_sync_failure(self, result: Exception) -> None:
         """

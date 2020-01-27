@@ -475,6 +475,7 @@ def test_Controller_on_sync_success(homedir, config, mocker):
     co.download_new_messages = mocker.MagicMock()
     co.download_new_replies = mocker.MagicMock()
     co.gpg = mocker.MagicMock()
+    co.resume_queues = mocker.MagicMock()
     mock_storage = mocker.patch('securedrop_client.logic.storage')
 
     co.on_sync_success()
@@ -483,6 +484,7 @@ def test_Controller_on_sync_success(homedir, config, mocker):
     co.update_sources.assert_called_once_with()
     co.download_new_messages.assert_called_once_with()
     co.download_new_replies.assert_called_once_with()
+    co.resume_queues.assert_called_once_with()
 
 
 def test_Controller_update_sync(homedir, config, mocker, session_maker):
