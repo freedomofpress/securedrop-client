@@ -37,7 +37,7 @@ class MetadataSyncJob(ApiJob):
     '''
 
     def __init__(self, data_dir: str, gpg: GpgHelper) -> None:
-        super().__init__()
+        super().__init__(remaining_attempts=15)
         self.data_dir = data_dir
         self.gpg = gpg
 
