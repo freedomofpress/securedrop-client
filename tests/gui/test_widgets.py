@@ -13,7 +13,7 @@ from securedrop_client import db, logic
 from securedrop_client.export import ExportError, ExportStatus
 from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, LoginDialog, \
     SpeechBubble, MessageWidget, ReplyWidget, FileWidget, ConversationView, \
-    DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, LeftPane, RefreshButton, \
+    DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, LeftPane, SyncIcon, \
     ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
     ReplyBoxWidget, ReplyTextEdit, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, \
     LoginErrorBar, EmptyConversationView, ExportDialog, PrintDialog, PasswordEdit, SecureQLabel
@@ -28,20 +28,20 @@ def test_TopPane_init(mocker):
     Ensure the TopPane instance is correctly set up.
     """
     tp = TopPane()
-    assert not tp.refresh.isEnabled()
+    assert tp.sync_icon.disabled is True
 
 
 def test_TopPane_setup(mocker):
     """
-    Calling setup calls setup for RefreshButton.
+    Calling setup calls setup for SyncIcon.
     """
     tp = TopPane()
-    tp.refresh = mocker.MagicMock()
+    tp.sync_icon = mocker.MagicMock()
     mock_controller = mocker.MagicMock()
 
     tp.setup(mock_controller)
 
-    tp.refresh.setup.assert_called_once_with(mock_controller)
+    tp.sync_icon.setup.assert_called_once_with(mock_controller)
 
 
 def test_TopPane_set_logged_in(mocker):
@@ -49,23 +49,23 @@ def test_TopPane_set_logged_in(mocker):
     Calling set_logged_in calls enable on TopPane.
     """
     tp = TopPane()
-    tp.refresh = mocker.MagicMock()
+    tp.sync_icon = mocker.MagicMock()
 
     tp.set_logged_in()
 
-    tp.refresh.enable.assert_called_once_with()
+    tp.sync_icon.enable.assert_called_once_with()
 
 
 def test_TopPane_set_logged_out(mocker):
     """
-    Calling set_logged_out calls disable on RefreshButton.
+    Calling set_logged_out calls disable on SyncIcon.
     """
     tp = TopPane()
-    tp.refresh = mocker.MagicMock()
+    tp.sync_icon = mocker.MagicMock()
 
     tp.set_logged_out()
 
-    tp.refresh.disable.assert_called_once_with()
+    tp.sync_icon.disable.assert_called_once_with()
 
 
 def test_TopPane_update_activity_status(mocker):
@@ -94,7 +94,7 @@ def test_TopPane_update_error_status(mocker):
 
 def test_TopPane_clear_error_status(mocker):
     """
-    Calling clear_error_status calls clear_message on RefreshButton.
+    Calling clear_error_status calls clear_message.
     """
     tp = TopPane()
     tp.error_status_bar = mocker.MagicMock()
@@ -153,79 +153,76 @@ def test_LeftPane_set_logged_out(mocker):
     lp.user_profile.hide.assert_called_once_with()
 
 
-def test_RefreshButton_setup(mocker):
+def test_SyncIcon_setup(mocker):
     """
-    Calling setup stores reference to controller, which will later be used to update button icon on
-    sync event.
+    Calling setup stores reference to controller, which will later be used to update sync icon on
+    syncing event.
     """
-    rb = RefreshButton()
+    sync_icon = SyncIcon()
     controller = mocker.MagicMock()
 
-    rb.setup(controller)
+    sync_icon.setup(controller)
 
-    assert rb.controller == controller
-
-
-def test_RefreshButton_on_clicked(mocker):
-    """
-    When refresh button is clicked, sync_api should be called with manual_refresh set to True.
-    """
-    rb = RefreshButton()
-    rb.controller = mocker.MagicMock()
-
-    rb._on_clicked()
-
-    rb.controller.sync_api.assert_called_once_with(manual_refresh=True)
+    assert sync_icon.controller == controller
 
 
-def test_RefreshButton_on_clicked_while_active(mocker):
-    """
-    When refresh button is clicked while active, sync_api should not be called.
-    """
-    rb = RefreshButton()
-    rb.active = True
-    rb.controller = mocker.MagicMock()
-
-    rb._on_clicked()
-
-    rb.controller.sync_api.assert_not_called()
+def test_SyncIcon_enable(mocker):
+    sync_icon = SyncIcon()
+    sync_icon.enable()
+    assert sync_icon.disabled is False
 
 
-def test_RefreshButton_on_refresh_complete(mocker):
-    """
-    Make sure we are enabled after a refresh completes.
-    """
-    rb = RefreshButton()
-    rb._on_refresh_complete('synced')
-    assert rb.isEnabled()
-    assert rb.active is False
+def test_SyncIcon_disable(mocker):
+    sync_icon = SyncIcon()
+    sync_icon.disable()
+    assert sync_icon.disabled is True
 
 
-def test_RefreshButton_enable(mocker):
-    rb = RefreshButton()
-    rb.enable()
-    assert rb.isEnabled()
-    assert rb.active is False
+def test_SyncIcon___on_sync(mocker):
+    '''
+    Sync icon becomes active when it receives the syncing sync signal.
+    '''
+    sync_icon = SyncIcon()
+    sync_icon.disabled = False
+
+    sync_icon._on_sync('syncing')
+
+    file_path = sync_icon.sync_animation.fileName()
+    filename = file_path[file_path.rfind('/') + 1:]
+    assert filename == 'sync_active.gif'
 
 
-def test_RefreshButton_disable(mocker):
-    rb = RefreshButton()
-    rb.disable()
-    assert not rb.isEnabled()
-    assert rb.active is False
+def test_SyncIcon___on_sync_when_sync_disabled(mocker):
+    '''
+    Sync does not because active when the sync icon is disabled.
+    '''
+    sync_icon = SyncIcon()
+    sync_icon.disabled = True
+
+    sync_icon._on_sync('syncing')
+
+    file_path = sync_icon.sync_animation.fileName()
+    filename = file_path[file_path.rfind('/') + 1:]
+    assert filename == 'sync_disabled.gif'
 
 
-def test_RefreshButton_disable_while_active(mocker):
-    rb = RefreshButton()
-    rb.active = True
-    rb.disable()
-    assert not rb.isEnabled()
-    assert rb.active is True
+def test_SyncIcon___on_sync_with_data_not_equal_to_syncing(mocker):
+    '''
+    Sync does not because active when the sync signal's data is something other than 'syncing'
+    '''
+    sync_icon = SyncIcon()
+    sync_icon.disabled = False
+
+    sync_icon._on_sync('something other than syncing')
+
+    file_path = sync_icon.sync_animation.fileName()
+    filename = file_path[file_path.rfind('/') + 1:]
+    assert filename == 'sync_disabled.gif'
 
 
 def test_ErrorStatusBar_clear_error_status(mocker):
     """
-    Calling clear_error_status calls clear_message on RefreshButton.
+    Calling clear_error_status calls clear_message.
     """
     esb = ErrorStatusBar()
     esb.status_bar = mocker.MagicMock()

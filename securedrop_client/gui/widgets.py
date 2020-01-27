@@ -78,7 +78,6 @@ class TopPane(QWidget):
 
         # Sync icon
         self.sync_icon = SyncIcon()
-        self.sync_icon.disable()
 
         # Activity status bar
         self.activity_status_bar = ActivityStatusBar()
