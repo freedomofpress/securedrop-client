@@ -1897,7 +1897,7 @@ class FileWidget(QWidget):
         self.print_button.clicked.connect(self._on_print_clicked)
 
         # File name or default string
-        self.file_name = SecureQLabel(self.file.original_filename)
+        self.file_name = SecureQLabel(self.file.filename)
         self.file_name.setObjectName('file_name')
         self.file_name.installEventFilter(self)
         self.no_file_name = SecureQLabel('ENCRYPTED FILE ON SERVER')
@@ -1952,7 +1952,7 @@ class FileWidget(QWidget):
         if file_uuid == self.file.uuid:
             self.file = self.controller.get_file(self.file.uuid)
             if self.file.is_downloaded:
-                self.file_name.setText(self.file.original_filename)
+                self.file_name.setText(self.file.filename)
                 self.download_button.hide()
                 self.no_file_name.hide()
                 self.export_button.show()
@@ -1983,10 +1983,11 @@ class FileWidget(QWidget):
         """
         Called when the export button is clicked.
         """
-        if not self.controller.downloaded_file_exists(self.file.uuid):
+        if not self.controller.downloaded_file_exists(self.file):
             return
 
-        dialog = ExportDialog(self.controller, self.file.uuid, self.file.original_filename)
+        dialog = ExportDialog(self.controller, self.file.uuid,
+                              self.file.filename)
         dialog.show()
         dialog.export()
         dialog.exec()
@@ -1996,7 +1997,7 @@ class FileWidget(QWidget):
         """
         Called when the print button is clicked.
         """
-        if not self.controller.downloaded_file_exists(self.file.uuid):
+        if not self.controller.downloaded_file_exists(self.file):
             return
 
         dialog = PrintDialog(self.controller, self.file.uuid)
@@ -2014,7 +2015,7 @@ class FileWidget(QWidget):
 
         if self.file.is_downloaded:
             # Open the already downloaded file.
-            self.controller.on_file_open(self.file.uuid)
+            self.controller.on_file_open(self.file)
         else:
             if self.controller.api:
                 # Indicate in downloading state... but only after 0.3 seconds (i.e.

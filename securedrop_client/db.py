@@ -123,6 +123,19 @@ class Message(Base):
     def __repr__(self) -> str:
         return '<Message {}>'.format(self.filename)
 
+    def location(self, data_dir: str) -> str:
+        '''
+        Return the full path to the Message's file.
+        '''
+        return os.path.abspath(
+            os.path.join(
+                data_dir,
+                self.__class__.__name__,
+                self.uuid,
+                self.filename,
+            )
+        )
+
 
 class File(Base):
 
@@ -134,15 +147,6 @@ class File(Base):
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
     filename = Column(String(255), nullable=False)
-
-    # Files from the SecureDrop journalist API are gzipped, then
-    # encrypted with GPG. The gzip header contains the original
-    # filename, which makes it easier for the client to open the file
-    # with the right application. We'll record that filename here
-    # after we've downloaded, decrypted and extracted the file.
-    # If the header does not contain the filename for some reason,
-    # this should be the same as filename.
-    original_filename = Column(String(255), nullable=False, server_default="")
 
     file_counter = Column(Integer, nullable=False)
     size = Column(Integer, nullable=False)
@@ -179,12 +183,25 @@ class File(Base):
         Return something that's a useful string representation of the file.
         """
         if self.is_downloaded:
-            return "File: {}".format(self.original_filename)
+            return "File: {}".format(self.filename)
         else:
             return '<Encrypted file on server>'
 
     def __repr__(self) -> str:
         return '<File {}>'.format(self.filename)
+
+    def location(self, data_dir: str) -> str:
+        '''
+        Return the full path to the File's file.
+        '''
+        return os.path.abspath(
+            os.path.join(
+                data_dir,
+                self.__class__.__name__,
+                self.uuid,
+                self.filename,
+            )
+        )
 
 
 class Reply(Base):
@@ -245,6 +262,19 @@ class Reply(Base):
 
     def __repr__(self) -> str:
         return '<Reply {}>'.format(self.filename)
+
+    def location(self, data_dir: str) -> str:
+        '''
+        Return the full path to the Reply's file.
+        '''
+        return os.path.abspath(
+            os.path.join(
+                data_dir,
+                self.__class__.__name__,
+                self.uuid,
+                self.filename,
+            )
+        )
 
 
 class DraftReply(Base):

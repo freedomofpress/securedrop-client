@@ -208,12 +208,13 @@ def __update_submissions(model: Union[Type[File], Type[Message]],
                                 if s.uuid == submission.uuid][0]
 
             # Update files on disk to match new filename.
-            if (local_submission.filename != submission.filename):
-                rename_file(data_dir, local_submission.filename,
-                            submission.filename)
+            if (
+                (local_submission.is_downloaded and not local_submission.is_decrypted) and
+                (local_submission.filename != submission.filename)
+            ):
+                rename_file(data_dir, local_submission, submission.filename)
+                local_submission.filename = submission.filename
 
-            # Update an existing record.
-            local_submission.filename = submission.filename
             local_submission.size = submission.size
             local_submission.is_read = submission.is_read
             local_submission.download_url = submission.download_url
@@ -259,11 +260,11 @@ def update_replies(remote_replies: List[SDKReply], local_replies: List[Reply],
             local_reply = [r for r in local_replies if r.uuid == reply.uuid][0]
             # Update files on disk to match new filename.
             if (local_reply.filename != reply.filename):
-                rename_file(data_dir, local_reply.filename, reply.filename)
-            # Update an existing record.
+                rename_file(data_dir, local_reply, reply.filename)
+                local_reply.filename = reply.filename
+
             user = find_or_create_user(reply.journalist_uuid, reply.journalist_username, session)
             local_reply.journalist_id = user.id
-            local_reply.filename = reply.filename
             local_reply.size = reply.size
 
             local_uuids.remove(reply.uuid)
@@ -363,9 +364,7 @@ def update_missing_files(data_dir: str, session: Session) -> None:
     '''
     files_that_have_been_downloaded = session.query(File).filter_by(is_downloaded=True).all()
     for file in files_that_have_been_downloaded:
-        fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
-        filepath = os.path.join(data_dir, fn_no_ext)
-        if not os.path.exists(filepath):
+        if not os.path.exists(file.location(data_dir)):
             mark_as_not_downloaded(file.uuid, session)
 
 
@@ -479,11 +478,8 @@ def mark_as_decrypted(
     db_obj = session.query(model_type).filter_by(uuid=uuid).one()
     db_obj.is_decrypted = is_decrypted
 
-    if model_type == File:
-        if original_filename:
-            db_obj.original_filename = original_filename
-        else:
-            db_obj.original_filename = db_obj.filename
+    if model_type == File and original_filename:
+        db_obj.filename = original_filename
 
     session.add(db_obj)
     session.commit()
@@ -511,13 +507,6 @@ def delete_single_submission_or_reply_on_disk(obj_db: Union[File, Message, Reply
     Delete on disk a single submission or reply.
     """
     files_to_delete = []
-    try:
-        if obj_db.original_filename:
-            files_to_delete.append(os.path.join(data_dir, obj_db.original_filename))
-    except AttributeError:
-        # only files have it
-        pass
-
     filename_without_extensions = obj_db.filename.split('.')[0]
     file_glob_pattern = os.path.join(
         data_dir,
@@ -532,12 +521,14 @@ def delete_single_submission_or_reply_on_disk(obj_db: Union[File, Message, Reply
             logging.info('File %s already deleted, skipping', file_to_delete)
 
 
-def rename_file(data_dir: str, filename: str, new_filename: str) -> None:
-    filename, _ = os.path.splitext(filename)
-    new_filename, _ = os.path.splitext(new_filename)
+def rename_file(data_dir: str, file: Union[Message, File, Reply], new_filename: str) -> None:
     try:
-        os.rename(os.path.join(data_dir, filename),
-                  os.path.join(data_dir, new_filename))
+        current_location = file.location(data_dir)
+        new_location = os.path.join(
+            os.path.dirname(current_location),
+            os.path.basename(new_filename)
+        )
+        os.rename(current_location, new_location)
     except OSError as e:
         logger.debug('File could not be renamed: {}'.format(e))
 

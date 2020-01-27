@@ -250,32 +250,31 @@ def test_update_files_renames_file_on_disk(homedir, mocker):
     """
     data_dir = os.path.join(homedir, 'data')
     mock_session = mocker.MagicMock()
-    # Remote submission with new filename
-    server_filename = '1-spotted-potato-msg.gpg'
-    remote_submission = mocker.MagicMock()
-    remote_submission.uuid = 'test-uuid'
-    remote_submission.filename = server_filename
-    remote_submissions = [remote_submission]
+
     # Local submission that needs to be updated
-    local_filename = '1-pericardial-surfacing-msg.gpg'
-    local_submission = mocker.MagicMock()
-    local_submission.uuid = 'test-uuid'
-    local_submission.filename = local_filename
+    local_submission = factory.File(
+        source=factory.Source(),
+        filename="1-unquestionable_complaint-msg.gpg",
+        is_downloaded=True,
+        is_decrypted=False,
+    )
     local_submissions = [local_submission]
+
     # Add submission file to test directory
-    local_filename_decrypted = '1-pericardial-surfacing-msg'
-    add_test_file_to_temp_dir(data_dir, local_filename_decrypted)
-    # There needs to be a corresponding local_source.
-    local_source = mocker.MagicMock()
-    local_source.uuid = 'test-source-uuid'
-    local_source.id = 123
-    mock_session.query().filter_by.return_value = [local_source, ]
+    add_test_file_to_temp_dir(data_dir, local_submission.location(data_dir))
+
+    mock_session.query().filter_by.return_value = [local_submission.source]
+
+    # Remote submission with new filename
+    remote_submission = mocker.MagicMock()
+    remote_submission.uuid = local_submission.uuid
+    remote_submission.filename = '1-spotted-potato-msg.gpg'
+    remote_submissions = [remote_submission]
 
     update_files(remote_submissions, local_submissions, mock_session, data_dir)
 
-    updated_local_filename = '1-spotted-potato-msg'
     assert local_submission.filename == remote_submission.filename
-    assert os.path.exists(os.path.join(data_dir, updated_local_filename))
+    assert os.path.exists(local_submission.location(data_dir))
 
 
 def test_update_replies_renames_file_on_disk(homedir, mocker):
@@ -292,30 +291,41 @@ def test_update_replies_renames_file_on_disk(homedir, mocker):
     remote_reply.uuid = 'test-uuid'
     remote_reply.filename = server_filename
     remote_replies = [remote_reply]
+
     # Local reply that needs to be updated
     local_filename = '1-pericardial-surfacing-reply.gpg'
     local_reply = mocker.MagicMock()
     local_reply.uuid = 'test-uuid'
     local_reply.filename = local_filename
+    local_reply.location = lambda data_dir: os.path.join(
+        data_dir, "Reply", local_reply.uuid, local_reply.filename
+    )
     local_replies = [local_reply]
+
     # Add reply file to test directory
-    local_filename_decrypted = '1-pericardial-surfacing-reply'
-    add_test_file_to_temp_dir(data_dir, local_filename_decrypted)
+    add_test_file_to_temp_dir(
+        data_dir,
+        os.path.join(
+            os.path.dirname(local_reply.location(data_dir)),
+            os.path.splitext(local_reply.filename)[0]
+        )
+    )
+
     # There needs to be a corresponding local_source and local_user
     local_source = mocker.MagicMock()
     local_source.uuid = 'test-source-uuid'
     local_source.id = 123
+
     local_user = mocker.MagicMock()
-    local_user.username = 'jounalist designation'
+    local_user.username = 'journalist designation'
     local_user.id = 42
+
     mock_focu = mocker.MagicMock(return_value=local_user)
     mocker.patch('securedrop_client.storage.find_or_create_user', mock_focu)
 
     update_replies(remote_replies, local_replies, mock_session, data_dir)
 
-    updated_local_filename = '1-spotted-potato-reply'
     assert local_reply.filename == remote_reply.filename
-    assert os.path.exists(os.path.join(data_dir, updated_local_filename))
 
 
 def add_test_file_to_temp_dir(home_dir, filename):
@@ -324,6 +334,7 @@ def add_test_file_to_temp_dir(home_dir, filename):
     """
 
     dest = os.path.join(home_dir, filename)
+    os.makedirs(os.path.dirname(dest), mode=0o700, exist_ok=True)
     with open(dest, 'w') as f:
         f.write('I am test content for tests')
 
@@ -351,7 +362,6 @@ def test_update_submissions_deletes_files_associated_with_the_submission(
     local_submission = mocker.MagicMock()
     local_submission.uuid = 'test-uuid'
     local_submission.filename = server_filename
-    local_submission.original_filename = "localsub.txt"
     abs_server_filename = add_test_file_to_temp_dir(
         homedir, server_filename)
     abs_local_filename = add_test_file_to_temp_dir(
@@ -397,7 +407,6 @@ def test_update_replies_deletes_files_associated_with_the_reply(
     local_reply = mocker.MagicMock()
     local_reply.uuid = 'test-uuid'
     local_reply.filename = server_filename
-    local_reply.original_filename = ""
     abs_server_filename = add_test_file_to_temp_dir(
         homedir, server_filename)
     abs_local_filename = add_test_file_to_temp_dir(
@@ -518,12 +527,12 @@ def test_update_files(homedir, mocker):
     # be deleted from the local database).
     local_sub_update = mocker.MagicMock()
     local_sub_update.uuid = remote_sub_update.uuid
+    local_sub_update.is_downloaded = True
+    local_sub_update.is_decrypted = False
     local_sub_update.filename = "overwrite_this.filename"
-    local_sub_update.original_filename = "overwrite_this.filename.txt"
     local_sub_delete = mocker.MagicMock()
     local_sub_delete.uuid = str(uuid.uuid4())
     local_sub_delete.filename = "local_sub_delete.filename"
-    local_sub_delete.original_filename = "local_sub_delete.filename.txt"
     local_submissions = [local_sub_update, local_sub_delete]
     # There needs to be a corresponding local_source.
     local_source = mocker.MagicMock()
@@ -586,11 +595,11 @@ def test_update_messages(homedir, mocker):
     local_message_update = mocker.MagicMock()
     local_message_update.uuid = remote_message_update.uuid
     local_message_update.filename = "overwrite_this.filename"
-    local_message_update.original_filename = ""
+    local_message_update.is_downloaded = True
+    local_message_update.is_decrypted = False
     local_message_delete = mocker.MagicMock()
     local_message_delete.uuid = str(uuid.uuid4())
     local_message_delete.filename = "local_message_delete.filename"
-    local_message_delete.original_filename = ""
     local_messages = [local_message_update, local_message_delete]
     # There needs to be a corresponding local_source and local_user
     local_source = mocker.MagicMock()
@@ -660,12 +669,10 @@ def test_update_replies(homedir, mocker):
     local_reply_update = mocker.MagicMock()
     local_reply_update.uuid = remote_reply_update.uuid
     local_reply_update.filename = "overwrite_this.filename"
-    local_reply_update.original_filename = ""
     local_reply_update.journalist_uuid = str(uuid.uuid4())
     local_reply_delete = mocker.MagicMock()
     local_reply_delete.uuid = str(uuid.uuid4())
     local_reply_delete.filename = "local_reply_delete.filename"
-    local_reply_delete.original_filename = ""
     local_reply_delete.journalist_uuid = str(uuid.uuid4())
     local_replies = [local_reply_update, local_reply_delete]
     # There needs to be a corresponding local_source and local_user
@@ -1006,7 +1013,6 @@ def test_delete_single_submission_or_reply_race_guard(homedir, mocker):
 
     test_obj = mocker.MagicMock()
     test_obj.filename = '1-dissolved-steak-msg.gpg'
-    test_obj.original_filename = 'gelatinous-death.txt'
     add_test_file_to_temp_dir(homedir, test_obj.filename)
 
     mock_remove = mocker.patch('os.remove', side_effect=FileNotFoundError)
@@ -1019,12 +1025,22 @@ def test_rename_file_does_not_throw(homedir):
     """
     If file cannot be found then OSError is caught and logged.
     """
-    original_file = 'foo.txt'
-    new_file = 'bar.txt'
-    rename_file(os.path.join(homedir, 'data'), original_file, new_file)
+    data_dir = os.path.join(homedir, 'data')
 
-    assert not os.path.exists(os.path.join(homedir, 'data', original_file))
-    assert not os.path.exists(os.path.join(homedir, 'data', new_file))
+    original_file = factory.File(
+        source=factory.Source(),
+        filename="1-unquestionable_complaint-msg.gpg",
+        is_downloaded=True,
+        is_decrypted=False,
+    )
+    new_filename = "1-demonstrable_reciprocity-msg.gpg"
+    rename_file(data_dir, original_file, new_filename)
+
+    assert not os.path.exists(original_file.location(data_dir))
+
+    original_file.filename = new_filename
+
+    assert not os.path.exists(original_file.location(data_dir))
 
 
 def test_rename_file_success(homedir):
@@ -1033,17 +1049,27 @@ def test_rename_file_success(homedir):
     file's content using the new filename.
     """
     data_dir = os.path.join(homedir, 'data')
-    orig_filename = 'foo.txt'
-    new_filename = 'bar.txt'
-    filename, _ = os.path.splitext(orig_filename)
-    trunc_new_filename, _ = os.path.splitext(new_filename)
+    original_file = factory.File(
+        source=factory.Source(),
+        filename="1-unquestionable_complaint-msg.gpg",
+        is_downloaded=True,
+        is_decrypted=False,
+    )
     contents = 'bar'
-    with open(os.path.join(data_dir, filename), 'w') as f:
+    os.makedirs(os.path.dirname(original_file.location(data_dir)))
+    with open(original_file.location(data_dir), 'w') as f:
         f.write(contents)
 
-    rename_file(data_dir, orig_filename, new_filename)
+    new_filename = "1-demonstrable_reciprocity-msg.gpg"
+    rename_file(os.path.join(homedir, 'data'), original_file, new_filename)
 
-    with open(os.path.join(homedir, 'data', trunc_new_filename)) as f:
+    assert not os.path.exists(original_file.location(data_dir))
+
+    original_file.filename = new_filename
+
+    assert os.path.exists(original_file.location(data_dir))
+
+    with open(original_file.location(data_dir)) as f:
         out = f.read()
     assert out == contents
 

@@ -172,14 +172,14 @@ class DownloadJob(ApiJob):
             self._decrypt(os.path.join(self.data_dir, db_object.filename), db_object, session)
             return db_object.uuid
 
-        self._download(api_client, db_object, session)
-        self._decrypt(os.path.join(self.data_dir, db_object.filename), db_object, session)
+        destination = self._download(api_client, db_object, session)
+        self._decrypt(destination, db_object, session)
         return db_object.uuid
 
     def _download(self,
                   api: API,
                   db_object: Union[File, Message, Reply],
-                  session: Session) -> None:
+                  session: Session) -> str:
         '''
         Download the encrypted file. Check file integrity and move it to the data directory before
         marking it as downloaded.
@@ -197,9 +197,12 @@ class DownloadJob(ApiJob):
                     )
                 raise exception
 
-            shutil.move(download_path, os.path.join(self.data_dir, db_object.filename))
+            destination = db_object.location(self.data_dir)
+            os.makedirs(os.path.dirname(destination), mode=0o700, exist_ok=True)
+            shutil.move(download_path, destination)
             mark_as_downloaded(type(db_object), db_object.uuid, session)
-            logger.info("File downloaded: {}".format(db_object.filename))
+            logger.info("File downloaded to {}".format(destination))
+            return destination
         except BaseError as e:
             logger.debug("Failed to download file: {}".format(db_object.filename))
             raise e
@@ -216,7 +219,9 @@ class DownloadJob(ApiJob):
             mark_as_decrypted(
                 type(db_object), db_object.uuid, session, original_filename=original_filename
             )
-            logger.info("File decrypted: {}".format(os.path.basename(filepath)))
+            logger.info("File decrypted: {} (decrypted file: {})".format(
+                os.path.basename(filepath), original_filename)
+            )
         except CryptoError as e:
             mark_as_decrypted(type(db_object), db_object.uuid, session, is_decrypted=False)
             logger.debug("Failed to decrypt file: {}".format(os.path.basename(filepath)))
@@ -293,11 +298,21 @@ class ReplyDownloadJob(DownloadJob):
         '''
         with NamedTemporaryFile('w+') as plaintext_file:
             self.gpg.decrypt_submission_or_reply(filepath, plaintext_file.name, is_doc=False)
-            set_message_or_reply_content(
-                model_type=Reply,
-                uuid=self.uuid,
-                session=session,
-                content=plaintext_file.read())
+            try:
+                set_message_or_reply_content(
+                    model_type=Reply,
+                    uuid=self.uuid,
+                    session=session,
+                    content=plaintext_file.read())
+            finally:
+                # clean up directory where decryption happened
+                try:
+                    os.rmdir(os.path.dirname(filepath))
+                except Exception as e:
+                    logger.warning(
+                        "Error deleting decryption directory of message %s: %s", self.uuid, e
+                    )
+
         return ""
 
 
@@ -339,12 +354,21 @@ class MessageDownloadJob(DownloadJob):
         The return value is an empty string; messages have no original filename.
         '''
         with NamedTemporaryFile('w+') as plaintext_file:
-            self.gpg.decrypt_submission_or_reply(filepath, plaintext_file.name, is_doc=False)
-            set_message_or_reply_content(
-                model_type=Message,
-                uuid=self.uuid,
-                session=session,
-                content=plaintext_file.read())
+            try:
+                self.gpg.decrypt_submission_or_reply(filepath, plaintext_file.name, is_doc=False)
+                set_message_or_reply_content(
+                    model_type=Message,
+                    uuid=self.uuid,
+                    session=session,
+                    content=plaintext_file.read())
+            finally:
+                # clean up directory where decryption happened
+                try:
+                    os.rmdir(os.path.dirname(filepath))
+                except Exception as e:
+                    logger.warning(
+                        "Error deleting decryption directory of message %s: %s", self.uuid, e
+                    )
         return ""
 
 
@@ -385,8 +409,9 @@ class FileDownloadJob(DownloadJob):
         the file extensions, e.g. 1-impractical_thing-doc.gz.gpg -> 1-impractical_thing-doc
         '''
         fn_no_ext, _ = os.path.splitext(os.path.splitext(os.path.basename(filepath))[0])
-        plaintext_filepath = os.path.join(self.data_dir, fn_no_ext)
+        plaintext_filepath = os.path.join(os.path.dirname(filepath), fn_no_ext)
         original_filename = self.gpg.decrypt_submission_or_reply(
             filepath, plaintext_filepath, is_doc=True
         )
+        logger.info("""Decrypted file "%s" to "%s" """, filepath, original_filename)
         return original_filename
