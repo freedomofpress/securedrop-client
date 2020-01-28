@@ -376,23 +376,6 @@ def test_Controller_sync_api(homedir, config, mocker, session_maker):
     co.api_job_queue.enqueue.call_count == 1
 
 
-def test_Controller_sync_api_manual_refresh(homedir, config, mocker, session_maker):
-    """
-    Syncing from a manual refresh also enqueues a job.
-    """
-    mock_gui = mocker.MagicMock()
-
-    co = Controller('http://localhost', mock_gui, session_maker, homedir)
-
-    co.authenticated = mocker.MagicMock(return_value=True)
-    co.api_job_queue = mocker.MagicMock()
-    co.api_job_queue.enqueue = mocker.MagicMock()
-
-    co.sync_api(manual_refresh=True)
-
-    co.api_job_queue.enqueue.call_count == 1
-
-
 def test_Controller_last_sync_with_file(homedir, config, mocker, session_maker):
     """
     The flag indicating the time of the last sync with the API is stored in a
@@ -441,24 +424,6 @@ def test_Controller_on_sync_failure(homedir, config, mocker, session_maker):
     co.on_sync_failure(exception)
 
     assert mock_storage.update_local_storage.call_count == 0
-
-
-def test_Controller_on_refresh_failure(homedir, config, mocker, session_maker):
-    """
-    If there's no result to syncing, then don't attempt to update local storage
-    and perhaps implement some as-yet-undefined UI update.
-    Using the `config` fixture to ensure the config is written to disk.
-    """
-    gui = mocker.MagicMock()
-    co = Controller('http://localhost', gui, session_maker, homedir)
-    exception = Exception('mock')  # Not the expected tuple.
-    mock_storage = mocker.patch('securedrop_client.logic.storage')
-
-    co.on_refresh_failure(exception)
-
-    assert mock_storage.update_local_storage.call_count == 0
-    gui.update_error_status.assert_called_once_with(
-        'The SecureDrop server cannot be reached.', duration=0, retry=True)
 
 
 def test_Controller_on_sync_success(homedir, config, mocker):

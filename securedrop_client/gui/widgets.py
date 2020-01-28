@@ -76,9 +76,8 @@ class TopPane(QWidget):
         layout.setContentsMargins(10, 0, 0, 0)
         layout.setSpacing(0)
 
-        # Refresh button
-        self.refresh = RefreshButton()
-        self.refresh.disable()
+        # Sync icon
+        self.sync_icon = SyncIcon()
 
         # Activity status bar
         self.activity_status_bar = ActivityStatusBar()
@@ -89,35 +88,35 @@ class TopPane(QWidget):
         # Create space the size of the status bar to keep the error status bar centered
         spacer = QWidget()
 
-        # Create space ths size of the refresh button to keep the error status bar centered
+        # Create space ths size of the sync icon to keep the error status bar centered
         spacer2 = QWidget()
         spacer2.setFixedWidth(42)
 
         # Set height of top pane to 42 pixels
         self.setFixedHeight(42)
-        self.refresh.setFixedHeight(42)
+        self.sync_icon.setFixedHeight(42)
         self.activity_status_bar.setFixedHeight(42)
         self.error_status_bar.setFixedHeight(42)
         spacer.setFixedHeight(42)
         spacer2.setFixedHeight(42)
 
         # Add widgets to layout
-        layout.addWidget(self.refresh, 1)
+        layout.addWidget(self.sync_icon, 1)
         layout.addWidget(self.activity_status_bar, 1)
         layout.addWidget(self.error_status_bar, 1)
         layout.addWidget(spacer, 1)
         layout.addWidget(spacer2, 1)
 
     def setup(self, controller):
-        self.refresh.setup(controller)
+        self.sync_icon.setup(controller)
         self.error_status_bar.setup(controller)
 
     def set_logged_in(self):
-        self.refresh.enable()
+        self.sync_icon.enable()
         self.setPalette(self.online_palette)
 
     def set_logged_out(self):
-        self.refresh.disable()
+        self.sync_icon.disable()
         self.setPalette(self.offline_palette)
 
     def update_activity_status(self, message: str, duration: int):
@@ -192,13 +191,13 @@ class LeftPane(QWidget):
         self.logo.setPalette(self.offline_palette)
 
 
-class RefreshButton(SvgPushButton):
+class SyncIcon(QLabel):
     """
-    A button that shows an icon for different refresh states.
+    An icon that shows sync state.
     """
 
     CSS = '''
-    #refresh_button {
+    #sync_icon {
         border: none;
         color: #fff;
     }
@@ -206,60 +205,40 @@ class RefreshButton(SvgPushButton):
 
     def __init__(self):
         # Add svg images to button
-        super().__init__(
-            normal='refresh.svg',
-            disabled='refresh_offline.svg',
-            active='refresh_active.svg',
-            selected='refresh.svg',
-            svg_size=QSize(16, 16))
-
-        self.active = False
-
-        # Set css id
-        self.setObjectName('refresh_button')
-
-        # Set styles
+        super().__init__()
+        self.setObjectName('sync_icon')
         self.setStyleSheet(self.CSS)
-        self.setFixedSize(QSize(20, 20))
-
-        # Click event handler
-        self.clicked.connect(self._on_clicked)
+        self.setFixedSize(QSize(24, 20))
+        self.sync_animation = load_movie("sync_disabled.gif")
+        self.sync_animation.setScaledSize(QSize(24, 20))
+        self.setMovie(self.sync_animation)
+        self.sync_animation.start()
 
     def setup(self, controller):
         """
         Assign a controller object (containing the application logic).
         """
         self.controller = controller
-        self.controller.sync_events.connect(self._on_refresh_complete)
+        self.controller.sync_events.connect(self._on_sync)
 
-    def _on_clicked(self):
-        if self.active:
-            return
-
-        self.controller.sync_api(manual_refresh=True)
-
-        # This is a temporary solution for showing the icon as active for the entire duration of a
-        # refresh, rather than for just the duration of a click. The icon image will be replaced
-        # when the controller tells us the refresh has finished. A cleaner solution would be to
-        # store and update our own icon mode so we don't have to reload any images.
-        self.setIcon(load_icon(normal='refresh_active.svg', disabled='refresh_offline.svg'))
-        self.active = True
-
-    def _on_refresh_complete(self, data):
-        if (data == 'synced'):
-            self.setIcon(load_icon(
-                normal='refresh.svg',
-                disabled='refresh_offline.svg',
-                active='refresh_active.svg',
-                selected='refresh.svg'))
-        self.active = False
+    def _on_sync(self, data):
+        if data == 'syncing':
+            self.sync_animation = load_movie("sync_active.gif")
+            self.sync_animation.setScaledSize(QSize(24, 20))
+            self.setMovie(self.sync_animation)
+            self.sync_animation.start()
 
     def enable(self):
-        self.setEnabled(True)
-        self.active is False
+        self.sync_animation = load_movie("sync.gif")
+        self.sync_animation.setScaledSize(QSize(24, 20))
+        self.setMovie(self.sync_animation)
+        self.sync_animation.start()
 
     def disable(self):
-        self.setEnabled(False)
+        self.sync_animation = load_movie("sync_disabled.gif")
+        self.sync_animation.setScaledSize(QSize(24, 20))
+        self.setMovie(self.sync_animation)
+        self.sync_animation.start()
 
 
 class ActivityStatusBar(QStatusBar):

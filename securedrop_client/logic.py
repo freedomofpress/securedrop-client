@@ -369,30 +369,18 @@ class Controller(QObject):
         """
         return bool(self.api and self.api.token is not None)
 
-    def sync_api(self, manual_refresh: bool = False):
+    def sync_api(self):
         """
         Grab data from the remote SecureDrop API in a non-blocking manner.
         """
         logger.debug("In sync_api on thread {}".format(self.thread().currentThreadId()))
-        self.sync_events.emit('syncing')
-
         if self.authenticated():
+            self.sync_events.emit('syncing')
             logger.debug("You are authenticated, going to make your call")
 
             job = MetadataSyncJob(self.data_dir, self.gpg)
             job.success_signal.connect(self.on_sync_success, type=Qt.QueuedConnection)
-
-            # If the sync did not originate from a manual refrsh, increase the number of
-            # retry attempts (remaining_attempts) to 15, otherwise use the default so that a user
-            # finds out quicker whether or not their refresh-attempt failed.
-            #
-            # Set up failure-handling depending on whether or not the sync originated from a manual
-            # refresh.
-            if manual_refresh:
-                job.failure_signal.connect(self.on_refresh_failure, type=Qt.QueuedConnection)
-            else:
-                job.remaining_attempts = 15
-                job.failure_signal.connect(self.on_sync_failure, type=Qt.QueuedConnection)
+            job.failure_signal.connect(self.on_sync_failure, type=Qt.QueuedConnection)
 
             self.api_job_queue.enqueue(job)
 
@@ -434,16 +422,6 @@ class Controller(QObject):
         """
         Called when syncronisation of data via the API fails after a background sync. Resume the
         queues so that we continue to retry syncing with the server in the background.
-        """
-        logger.debug('The SecureDrop server cannot be reached due to Error: {}'.format(result))
-        self.gui.update_error_status(
-            _('The SecureDrop server cannot be reached.'),
-            duration=0,
-            retry=True)
-
-    def on_refresh_failure(self, result: Exception) -> None:
-        """
-        Called when syncronisation of data via the API fails after a user manual clicks refresh.
         """
         logger.debug('The SecureDrop server cannot be reached due to Error: {}'.format(result))
         self.gui.update_error_status(
