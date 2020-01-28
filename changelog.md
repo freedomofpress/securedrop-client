@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.0.13
+
+  * remove user refresh and replace with sync icon (#732)
+  * build-requirements: update for production beta (#730)
+  * No sync on ui operations (#721)
+  * Use SecureQLabel for message previews (#720)
+  * Show DD MMM format for source title (#719)
+  * Add new metadata queue. (#715)
+  * Improve performance of storage.get_remote_data (#709)
+  * app/queue: prioritize user-triggered state changes (#708)
+  * Fix HTML entities being escaped in speech bubbles. (#703)
+  * Activity indicator for file download / decryption. (#702)
+  * Rename VMs (#701)
+
 ## 0.0.12
 
   * Use revised VM names `sd-app` (was `sd-svs`), `sd-devices`
