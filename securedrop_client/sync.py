@@ -59,18 +59,18 @@ class ApiSync(QObject):
         Create and run a new MetadataSyncJob.
         '''
         job = MetadataSyncJob(self.data_dir, self.gpg)
-        job.success_signal.connect(self.on_sync_success, type=Qt.QueuedConnection)
-        job.failure_signal.connect(self.on_sync_failure, type=Qt.QueuedConnection)
+        job.success_signal.connect(self._on_sync_success, type=Qt.QueuedConnection)
+        job.failure_signal.connect(self._on_sync_failure, type=Qt.QueuedConnection)
 
         session = self.session_maker()
         job._do_call_api(self.api_client, session)
         self.sync_started.emit()
 
-    def on_sync_success(self) -> None:
+    def _on_sync_success(self) -> None:
         self.sync_success.emit()
         QTimer.singleShot(self.TIME_BETWEEN_SYNCS_MS, self.sync)
 
-    def on_sync_failure(self, result: Exception) -> None:
+    def _on_sync_failure(self, result: Exception) -> None:
         self.sync_failure.emit(result)
         if isinstance(result, RequestTimeoutError):
             QTimer.singleShot(self.TIME_BETWEEN_SYNCS_MS, self.sync)
