@@ -176,10 +176,12 @@ def test_Controller_on_authenticate_failure(homedir, config, mocker, session_mak
     mock_gui = mocker.MagicMock()
 
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
+    co.api_sync.stop = mocker.MagicMock()
 
     result_data = Exception('oh no')
     co.on_authenticate_failure(result_data)
 
+    co.api_sync.stop.assert_called_once_with()
     mock_gui.show_login_error.\
         assert_called_once_with(error='There was a problem signing in. Please '
                                 'verify your credentials and try again.')
@@ -195,7 +197,8 @@ def test_Controller_on_authenticate_success(homedir, config, mocker, session_mak
     mock_gui = mocker.MagicMock()
     mock_api_job_queue = mocker.patch("securedrop_client.logic.ApiJobQueue")
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
-    co.sync_api = mocker.MagicMock()
+    # co.api_sync = mocker.MagicMock()
+    co.api_sync.start = mocker.MagicMock()
     co.update_sources = mocker.MagicMock()
     co.session.add(user)
     co.session.commit()
@@ -209,8 +212,7 @@ def test_Controller_on_authenticate_success(homedir, config, mocker, session_mak
 
     co.on_authenticate_success(True)
 
-    co.sync_api.assert_called_once_with()
-    co.update_sources.assert_called_once_with()
+    co.api_sync.start.assert_called_once_with(co.api)
     assert co.is_authenticated
     assert mock_api_job_queue.called
     login.assert_called_with(co.api)
@@ -408,6 +410,18 @@ def test_Controller_last_sync_no_file(homedir, config, mocker, session_maker):
 
     mocker.patch("builtins.open", mocker.MagicMock(side_effect=Exception()))
     assert co.last_sync() is None
+
+
+def test_Controller_on_sync_started(mocker, homedir):
+    co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
+
+    co.on_sync_started()
+
+    sync_events = mocker.patch.object(co, 'sync_events')
+
+    co.on_sync_started()
+
+    sync_events.emit.assert_called_once_with('syncing')
 
 
 def test_Controller_on_sync_failure(homedir, config, mocker, session_maker):
