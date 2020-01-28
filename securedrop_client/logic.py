@@ -361,6 +361,7 @@ class Controller(QObject):
         self.invalidate_token()
         error = _('There was a problem signing in. Please verify your credentials and try again.')
         self.gui.show_login_error(error=error)
+        self.api_sync.stop()
 
     def login_offline_mode(self):
         """
@@ -513,6 +514,7 @@ class Controller(QObject):
         for failed_reply in failed_replies:
             self.reply_failed.emit(failed_reply.uuid)
 
+        self.api_sync.stop()
         self.api_job_queue.logout()
         self.gui.logout()
 

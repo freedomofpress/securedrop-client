@@ -36,7 +36,7 @@ class ApiSync(QObject):
 
     def start(self, api_client: API) -> None:
         '''
-        Stop metadata syncs.
+        Start metadata syncs.
         '''
         self.api_client = api_client
 
@@ -54,7 +54,7 @@ class ApiSync(QObject):
             logger.debug('Stopping sync thread')
             self.sync_thread.quit()
 
-    def sync(self):
+    def _sync(self):
         '''
         Create and run a new MetadataSyncJob.
         '''
@@ -68,9 +68,9 @@ class ApiSync(QObject):
 
     def _on_sync_success(self) -> None:
         self.sync_success.emit()
-        QTimer.singleShot(self.TIME_BETWEEN_SYNCS_MS, self.sync)
+        QTimer.singleShot(self.TIME_BETWEEN_SYNCS_MS, self._sync)
 
     def _on_sync_failure(self, result: Exception) -> None:
         self.sync_failure.emit(result)
         if isinstance(result, RequestTimeoutError):
-            QTimer.singleShot(self.TIME_BETWEEN_SYNCS_MS, self.sync)
+            QTimer.singleShot(self.TIME_BETWEEN_SYNCS_MS, self._sync)
