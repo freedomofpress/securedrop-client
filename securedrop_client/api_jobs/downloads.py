@@ -65,6 +65,7 @@ class MetadataSyncJob(ApiJob):
                              remote_replies,
                              self.data_dir)
 
+        fingerprints = self.gpg.fingerprints()
         for source in remote_sources:
             if source.key and source.key.get('type', None) == 'PGP':
                 pub_key = source.key.get('public', None)
@@ -74,7 +75,13 @@ class MetadataSyncJob(ApiJob):
                     # as it will show as uncovered due to a cpython compiler optimziation.
                     # See: https://bugs.python.org/issue2506
                     continue  # pragma: no cover
+
+                if fingerprint in fingerprints:
+                    logger.debug("Skipping import of key with fingerprint {}".format(fingerprint))
+                    continue
+
                 try:
+                    logger.debug("Importing key with fingerprint {}".format(fingerprint))
                     self.gpg.import_key(source.uuid, pub_key, fingerprint)
                 except CryptoError:
                     logger.warning('Failed to import key for source {}'.format(source.uuid))

@@ -1,6 +1,7 @@
 import os
 import pytest
 from typing import Tuple
+from uuid import UUID
 
 from sdclientapi import BaseError
 from sdclientapi import Submission as SdkSubmission
@@ -40,7 +41,6 @@ def test_MetadataSyncJob_success(mocker, homedir, session, session_maker):
 
     api_client = mocker.MagicMock()
     api_client.default_request_timeout = mocker.MagicMock()
-    api_client.default_request_timeout = mocker.MagicMock()
 
     mocker.patch(
         'securedrop_client.api_jobs.downloads.update_local_storage',
@@ -52,6 +52,58 @@ def test_MetadataSyncJob_success(mocker, homedir, session, session_maker):
     assert mock_key_import.call_args[0][1] == mock_source.key['public']
     assert mock_key_import.call_args[0][2] == mock_source.key['fingerprint']
     assert mock_get_remote_data.call_count == 1
+
+
+def test_MetadataSyncJob_only_imports_new_source_keys(mocker, homedir, session, session_maker):
+    """
+    Verify that we only import source keys we don't already have.
+    """
+    class LimitedImportGpgHelper(GpgHelper):
+        def import_key(self, source_uuid: UUID, key_data: str, fingerprint: str) -> None:
+            self._import(key_data)
+
+    gpg = LimitedImportGpgHelper(homedir, session_maker, is_qubes=False)
+    job = MetadataSyncJob(homedir, gpg)
+
+    mock_source = mocker.MagicMock()
+    mock_source.uuid = 'bar'
+    mock_source.key = {
+        'type': 'PGP',
+        'public': PUB_KEY,
+        'fingerprint': 'B2FF7FB28EED8CABEBC5FB6C6179D97BCFA52E5F',
+    }
+
+    mock_get_remote_data = mocker.patch(
+        'securedrop_client.api_jobs.downloads.get_remote_data',
+        return_value=([mock_source], [], []))
+
+    api_client = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
+
+    mocker.patch(
+        'securedrop_client.api_jobs.downloads.update_local_storage',
+        return_value=([mock_source], [], []))
+
+    mock_logger = mocker.patch('securedrop_client.api_jobs.downloads.logger')
+
+    job.call_api(api_client, session)
+
+    assert mock_get_remote_data.call_count == 1
+    assert len(gpg.fingerprints()) == 2
+
+    log_msg = mock_logger.debug.call_args_list[0][0][0]
+    assert log_msg.startswith(
+        'Importing key with fingerprint {}'.format(mock_source.key['fingerprint'])
+    )
+
+    job.call_api(api_client, session)
+
+    assert mock_get_remote_data.call_count == 2
+
+    log_msg = mock_logger.debug.call_args_list[1][0][0]
+    assert log_msg.startswith(
+        'Skipping import of key with fingerprint {}'.format(mock_source.key['fingerprint'])
+    )
 
 
 def test_MetadataSyncJob_success_with_key_import_fail(mocker, homedir, session, session_maker):
