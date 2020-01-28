@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.6
+
+  * Fixes CI for git-lfs based package builds (#60)
+  * Rename VMs (#59)
+  * Restructures the code base with more object methods (#55)
+  * Add quality control tools (#54)
+  * Improve error handling, tests (#53)
+  * Adds buster packaging in CI (#52)
+
 ## 0.1.5
 
   * Update build-requirements.txt to include wheels for Buster
