@@ -36,8 +36,10 @@ class MetadataSyncJob(ApiJob):
     Update source metadata such that new download jobs can be added to the queue.
     '''
 
+    NUMBER_OF_TIMES_TO_RETRY_AN_API_CALL = 15
+
     def __init__(self, data_dir: str, gpg: GpgHelper) -> None:
-        super().__init__(remaining_attempts=15)
+        super().__init__(remaining_attempts=self.NUMBER_OF_TIMES_TO_RETRY_AN_API_CALL)
         self.data_dir = data_dir
         self.gpg = gpg
 
