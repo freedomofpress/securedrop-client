@@ -98,7 +98,7 @@ For all device types (described in detail below), the following standard error t
 - `ERROR_EXTRACTION`: Error while extracting the archive
 - `ERROR_METADATA_PARSING`: The metadata.json file cannot be correctly parsed
 - `ERROR_ARCHIVE_METADATA`: The metadata failed the check
-- `ERROR_USB_CONFIGURATION`: There is no USB controller attached to the VM, the dom0 configuration (in `config.json`) or USB device identifier is is misconfigured
+- `ERROR_USB_CONFIGURATION`: There is no USB controller attached to the VM
 - `ERROR_GENERIC`: An uncaught (unexpected) error somewhere in the script. These should not happen unless the code improperly handles errors
 
 The supported device types for export are as follows, including the possible errors specific to that device type:
@@ -134,22 +134,31 @@ The supported device types for export are as follows, including the possible err
 
 ### Export Folder Structure
 
-When exporting to a USB drive (using the disk device in metadata.json), the files will be placed on the drive as follows: The root of the USB drive will contain one folder per source, reflecting their source codename in the client. Documents or messages exported will be copied to that directory, preserving the filename from the server. In case a same file is exported twice, a confirmation window replace/rename/abort.
-
-Example folder structure of USB export drive:
+When exporting to a USB drive, the files will be placed on the drive as follows: The root of the USB drive will contain one `sd-export-[timestamp]` folder, where `[timestamp]` is in the format `YYYYMMDD-hhmmss`. This folder will contain a subfolder `export_data`, which will contain the exported file with its original name as submitted by the source. For example:
 
 ```
 .
 
-├── cytotoxic payer
+└── sd-export-20200116-003153
+    └── export_data
+        └── secret_memo.pdf
+```
+
+To support multiple files, in the long term, we are planning to use a folder structure similar to the following, where the journalist designation for a source is used for folder names and message/reply file names.
+
+
+```
+.
+
+├── cytotoxic-payer
 │   ├── 1-cytotoxic-payer-msg
-│   │   └── file-to-export-1.txt
+│   │   └── 1-cytotoxic-payer-msg.txt
 │   ├── 2-cytotoxic-payer-msg
-│   │   └── file-to-export-2.txt
+│   │   └── 2-cytotoxic-payer-msg.txt
 │   └── 3-cytotoxic-payer-doc
-│   │   └── file-to-export-3.doc
-├── grandiloquent pasteboard
+│   │   └── interesting_file.doc
+├── grandiloquent-pasteboard
 │   └── 1-grandiloquent-pasteboard-doc
-│   │   └── file-to-export-1.doc
-└── snug seek
+│   │   └── questionable_file.pdf
+└── snug-seek
 ```
