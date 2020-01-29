@@ -11,8 +11,9 @@ import json
 import logging
 import os
 import sys
+import platform
 
-from logging.handlers import TimedRotatingFileHandler
+from logging.handlers import TimedRotatingFileHandler, SysLogHandler
 
 from securedrop_proxy import main
 from securedrop_proxy import proxy
@@ -83,7 +84,19 @@ def configure_logging() -> None:
     handler.setFormatter(formatter)
     handler.setLevel(logging.DEBUG)
 
+    # For rsyslog handler
+    if platform.system() != "Linux":  # pragma: no cover
+        syslog_file = "/var/run/syslog"
+    else:
+        syslog_file = "/dev/log"
+
+    sysloghandler = SysLogHandler(address=syslog_file)
+    sysloghandler.setFormatter(formatter)
+
     # set up primary log
     log = logging.getLogger()
     log.setLevel(LOGLEVEL)
     log.addHandler(handler)
+
+    # add the secondard logger
+    log.addHandler(sysloghandler)

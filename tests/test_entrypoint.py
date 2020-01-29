@@ -3,8 +3,10 @@ import http
 import io
 import json
 import os
+import platform
 import tempfile
 import unittest.mock
+from unittest.mock import patch
 
 import vcr
 from securedrop_proxy import entrypoint
@@ -45,6 +47,22 @@ class TestEntrypoint(unittest.TestCase):
         self.assertEqual(
             body["error"], "Configuration file does not exist at {}".format(config_path)
         )
+
+    @patch("securedrop_proxy.entrypoint.logging")
+    @patch("securedrop_proxy.entrypoint.SysLogHandler")
+    @patch("securedrop_proxy.entrypoint.TimedRotatingFileHandler")
+    def test_configure_logging(self, mock_log_conf, mock_log_conf_sys, mock_logging):
+        with sdhome() as homedir:
+            mock_log_file = os.path.join(homedir, 'logs', 'proxy.log')
+            entrypoint.configure_logging()
+            mock_log_conf.assert_called_once_with(mock_log_file)
+            # For rsyslog handler
+            if platform.system() != "Linux":  # pragma: no cover
+                syslog_file = "/var/run/syslog"
+            else:
+                syslog_file = "/dev/log"
+            mock_log_conf_sys.assert_called_once_with(address=syslog_file)
+            mock_logging.getLogger.assert_called_once_with()
 
     def test_unwritable_log_folder(self):
         """
