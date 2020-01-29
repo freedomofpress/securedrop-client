@@ -103,7 +103,12 @@ class RunnableQueue(QObject):
         '''
         job.remaining_attempts = DEFAULT_NUM_ATTEMPTS
         priority = self.JOB_PRIORITIES[type(job)]
-        self.queue.put_nowait((priority, job))
+        try:
+            self.queue.put_nowait((priority, job))
+        except Full:
+            # Pass silently if the queue is full. For use with MetadataSyncJob.
+            # See #652.
+            pass
 
     @pyqtSlot()
     def process(self) -> None:
@@ -216,7 +221,9 @@ class ApiJobQueue(QObject):
 
     def enqueue(self, job: ApiJob) -> None:
         # Prevent api jobs being added to the queue when not logged in.
-        if not self.main_queue.api_client or not self.download_file_queue.api_client:
+        if (not self.main_queue.api_client or
+                not self.download_file_queue.api_client or
+                not self.metadata_queue.api_client):
             logger.info('Not adding job, we are not logged in')
             return
 

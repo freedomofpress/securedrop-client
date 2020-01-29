@@ -1,7 +1,7 @@
 '''
 Testing for the ApiJobQueue and related classes.
 '''
-from queue import Queue
+from queue import Queue, Full
 from sdclientapi import RequestTimeoutError
 
 from securedrop_client.api_jobs.downloads import FileDownloadJob, MetadataSyncJob
@@ -140,7 +140,8 @@ def test_RunnableQueue_high_priority_jobs_run_first_and_in_fifo_order(mocker):
 def test_RunnableQueue_resubmitted_jobs(mocker):
     """Jobs that fail due to timeout are resubmitted without modifying the job
     order_number. In this test we verify the order of job execution in
-    this scenario."""
+    this scenario and if the queue is full, the error is passed over
+    silently."""
     mock_api_client = mocker.MagicMock()
     mock_session = mocker.MagicMock()
     mock_session_maker = mocker.MagicMock(return_value=mock_session)
@@ -169,6 +170,10 @@ def test_RunnableQueue_resubmitted_jobs(mocker):
     assert queue.queue.get(block=True) == (1, job3)
     assert queue.queue.get(block=True) == (2, job2)
     assert queue.queue.get(block=True) == (2, job4)
+
+    # If put_nowait results in a Full exception, just pass on silently.
+    queue.queue.put_nowait = mocker.MagicMock(side_effect=Full("Bang!"))
+    queue.re_add_job(job1)
 
 
 def test_RunnableQueue_job_ApiInaccessibleError(mocker):
@@ -339,19 +344,23 @@ def test_ApiJobQueue_enqueue_no_auth(mocker):
     job_queue = ApiJobQueue(mock_client, mock_session_maker)
     mock_download_file_queue = mocker.patch.object(job_queue, 'download_file_queue')
     mock_main_queue = mocker.patch.object(job_queue, 'main_queue')
+    mock_metadata_queue = mocker.patch.object(job_queue, 'metadata_queue')
     mock_download_file_add_job = mocker.patch.object(mock_download_file_queue, 'add_job')
     mock_main_queue_add_job = mocker.patch.object(mock_main_queue, 'add_job')
+    mock_metadata_queue_add_job = mocker.patch.object(mock_metadata_queue, "add_job")
     job_queue.main_queue.api_client = None
     job_queue.download_file_queue.api_client = None
+    job_queue.metadata_queue.api_client = None
     mock_start_queues = mocker.patch.object(job_queue, 'start_queues')
 
     dummy_job = factory.dummy_job_factory(mocker, 'mock')()
     job_queue.JOB_PRIORITIES = {type(dummy_job): 1}
     job_queue.enqueue(dummy_job)
 
-    assert not mock_download_file_add_job.called
-    assert not mock_main_queue_add_job.called
-    assert not mock_start_queues.called
+    assert mock_download_file_add_job.call_count == 0
+    assert mock_main_queue_add_job.call_count == 0
+    assert mock_metadata_queue_add_job.call_count == 0
+    assert mock_start_queues.call_count == 0
 
 
 def test_ApiJobQueue_login_if_queues_not_running(mocker):
