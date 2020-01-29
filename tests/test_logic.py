@@ -136,9 +136,11 @@ def test_Controller_login(homedir, config, mocker, session_maker):
 
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     co.call_api = mocker.MagicMock()
+    co.update_sources = mocker.MagicMock()
 
     co.login('username', 'password', '123456')
 
+    co.update_sources.assert_called_once_with()
     co.call_api.assert_called_once_with(mock_api().authenticate,
                                         co.on_authenticate_success,
                                         co.on_authenticate_failure)

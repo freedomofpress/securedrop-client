@@ -313,6 +313,7 @@ class Controller(QObject):
         faster.
         """
         storage.mark_all_pending_drafts_as_failed(self.session)
+        self.update_sources()
         self.api = sdclientapi.API(
             self.hostname, username, password, totp, self.proxy, default_request_timeout=60)
         self.call_api(self.api.authenticate,
