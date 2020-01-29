@@ -443,7 +443,6 @@ class Controller(QObject):
         if sources:
             sources.sort(key=lambda x: x.last_updated, reverse=True)
         self.gui.show_sources(sources)
-        self.gui.focus_reply_box()
         self.update_sync()
 
     def on_update_star_success(self, result) -> None:

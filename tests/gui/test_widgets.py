@@ -2525,42 +2525,6 @@ def test_DeleteSource_from_source_widget_when_user_is_loggedout(mocker):
         mock_delete_source_message_box_obj.launch.assert_not_called()
 
 
-def test_SourceConversationWrapper_has_text(mocker):
-    """
-    Return a boolean indication of the textual content of the text box.
-    """
-    mock_source = mocker.MagicMock()
-    mock_controller = mocker.MagicMock()
-    # Ugh. Mocking these away because PyQt is strongly typed.
-    with mocker.patch("securedrop_client.gui.widgets.QVBoxLayout.addWidget"), \
-            mocker.patch("securedrop_client.gui.widgets.SourceProfileShortWidget"), \
-            mocker.patch("securedrop_client.gui.widgets.ConversationView"), \
-            mocker.patch("securedrop_client.gui.widgets.ReplyBoxWidget"):
-        scw = SourceConversationWrapper(mock_source, mock_controller)
-    scw.reply_box = mocker.MagicMock()
-    scw.reply_box.text_edit.toPlainText = mocker.MagicMock(return_value="Hello")
-    assert scw.has_text() is True
-    scw.reply_box.text_edit.toPlainText = mocker.MagicMock(return_value="")
-    assert scw.has_text() is False
-
-
-def test_SourceConversationWrapper_focus_reply(mocker):
-    """
-    Ensure the reply box's text edit widget has focus.
-    """
-    mock_source = mocker.MagicMock()
-    mock_controller = mocker.MagicMock()
-    # Ugh. Mocking these away because PyQt is strongly typed.
-    with mocker.patch("securedrop_client.gui.widgets.QVBoxLayout.addWidget"), \
-            mocker.patch("securedrop_client.gui.widgets.SourceProfileShortWidget"), \
-            mocker.patch("securedrop_client.gui.widgets.ConversationView"), \
-            mocker.patch("securedrop_client.gui.widgets.ReplyBoxWidget"):
-        scw = SourceConversationWrapper(mock_source, mock_controller)
-    scw.reply_box = mocker.MagicMock()
-    scw.focus_reply()
-    scw.reply_box.text_edit.setFocus.assert_called_once_with()
-
-
 def test_ReplyBoxWidget_init(mocker):
     """
     Ensure reply box set up properly.

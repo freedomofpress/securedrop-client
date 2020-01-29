@@ -695,8 +695,6 @@ class MainView(QWidget):
         # is a temporary solution to keep copies of our objects since we do delete them.
         self.source_conversations = {}  # type: Dict[Source, SourceConversationWrapper]
 
-        self.current_conversation = None
-
     def setup(self, controller):
         """
         Pass through the controller object to this widget.
@@ -753,7 +751,6 @@ class MainView(QWidget):
 
         self.empty_conversation_view.hide()
         self.view_layout.addWidget(widget)
-        self.current_conversation = widget
         widget.show()
 
     def clear_conversation(self):
@@ -761,7 +758,6 @@ class MainView(QWidget):
             child = self.view_layout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
-        self.current_conversation = None
 
 
 class EmptyConversationView(QWidget):
@@ -2543,15 +2539,6 @@ class SourceConversationWrapper(QWidget):
         # Connect reply_box to conversation_view
         self.reply_box.reply_sent.connect(self.conversation_view.on_reply_sent)
 
-    def has_text(self):
-        """
-        Returns True if there's text in the ReplyBox.
-        """
-        return bool(self.reply_box.text_edit.toPlainText().strip())
-
-    def focus_reply(self):
-        self.reply_box.text_edit.setFocus()
-
 
 class ReplyBoxWidget(QWidget):
     """
@@ -2644,8 +2631,12 @@ class ReplyBoxWidget(QWidget):
         else:
             self.disable()
 
+        # Text area refocus flag.
+        self.refocus_after_sync = False
+
         # Connect signals to slots
         self.controller.authentication_state.connect(self._on_authentication_changed)
+        self.controller.sync_events.connect(self._on_synced)
 
     def enable(self):
         self.text_edit.set_logged_in()
@@ -2674,6 +2665,14 @@ class ReplyBoxWidget(QWidget):
             self.enable()
         else:
             self.disable()
+
+    def _on_synced(self, data: str) -> None:
+        if data == 'syncing' and self.text_edit.hasFocus():
+            self.refocus_after_sync = True
+        elif data == 'synced' and self.refocus_after_sync:
+            self.text_edit.setFocus()
+        else:
+            self.refocus_after_sync = False
 
 
 class ReplyTextEdit(QPlainTextEdit):
