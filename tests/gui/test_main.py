@@ -253,13 +253,3 @@ def test_logout(mocker):
 
     w.left_pane.set_logged_out.assert_called_once_with()
     w.top_pane.set_logged_out.assert_called_once_with()
-
-
-def test_focus_reply_box(mocker):
-    """
-    If there's text in the reply text area, cause it to be focused.
-    """
-    w = Window()
-    w.main_view = mocker.MagicMock()
-    w.focus_reply_box()
-    w.main_view.current_conversation.focus_reply.assert_called_once_with()
