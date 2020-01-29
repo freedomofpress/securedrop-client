@@ -12,6 +12,7 @@ from tests import factory
 
 from securedrop_client import db
 from securedrop_client.logic import APICallRunner, Controller
+from securedrop_client.api_jobs.base import ApiInaccessibleError
 from securedrop_client.api_jobs.downloads import DownloadChecksumMismatchException
 from securedrop_client.api_jobs.uploads import SendReplyJobError
 
@@ -424,6 +425,25 @@ def test_Controller_on_sync_failure(homedir, config, mocker, session_maker):
     co.on_sync_failure(exception)
 
     assert mock_storage.update_local_storage.call_count == 0
+
+
+def test_Controller_on_sync_failure_due_to_invalid_token(homedir, config, mocker, session_maker):
+    """
+    If the sync fails because the api is inaccessible then ensure user is logged out and shown the
+    login window.
+    """
+    gui = mocker.MagicMock()
+    co = Controller('http://localhost', gui, session_maker, homedir)
+    co.logout = mocker.MagicMock()
+    co.gui = mocker.MagicMock()
+    co.gui.show_login = mocker.MagicMock()
+    mock_storage = mocker.patch('securedrop_client.logic.storage')
+
+    co.on_sync_failure(ApiInaccessibleError())
+
+    assert mock_storage.update_local_storage.call_count == 0
+    co.logout.assert_called_once_with()
+    co.gui.show_login.assert_called_once_with(error='Your session expired. Please log in again.')
 
 
 def test_Controller_on_sync_success(homedir, config, mocker):
@@ -1359,22 +1379,29 @@ def test_Controller_on_queue_paused(homedir, config, mocker, session_maker):
     '''
     mock_gui = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
-    co.api = 'mock'
+    mocker.patch.object(co, 'api_job_queue')
+    co.api = 'not none'
     co.on_queue_paused()
     mock_gui.update_error_status.assert_called_once_with(
         'The SecureDrop server cannot be reached.', duration=0, retry=True)
 
 
-def test_Controller_on_queue_paused_when_logged_out(homedir, config, mocker, session_maker):
-    '''
-    Check that a paused queue is communicated to the user via the error status bar. There should not
-    be a retry option displayed to the user
-    '''
-    mock_gui = mocker.MagicMock()
-    co = Controller('http://localhost', mock_gui, session_maker, homedir)
+def test_Controller_on_queue_paused_due_to_invalid_token(homedir, config, mocker, session_maker):
+    """
+    If the api is inaccessible then ensure user is logged out and shown the login window. Also check
+    that "SecureDrop server cannot be reached" is not shown when the user is not authenticated.
+    """
+    gui = mocker.MagicMock()
+    co = Controller('http://localhost', gui, session_maker, homedir)
     co.api = None
+    co.logout = mocker.MagicMock()
+    co.gui = mocker.MagicMock()
+    co.gui.show_login = mocker.MagicMock()
+
     co.on_queue_paused()
-    mock_gui.update_error_status.assert_called_once_with('The SecureDrop server cannot be reached.')
+
+    co.logout.assert_called_once_with()
+    co.gui.show_login.assert_called_once_with(error='Your session expired. Please log in again.')
 
 
 def test_Controller_call_update_star_success(homedir, config, mocker, session_maker, session):

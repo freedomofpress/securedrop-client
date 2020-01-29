@@ -112,6 +112,22 @@ def test_show_login(mocker):
     w.login_dialog.exec.assert_called_once_with()
 
 
+def test_show_login_with_error_message(mocker):
+    """
+    The login dialog is displayed with a clean state.
+    """
+    w = Window()
+    w.controller = mocker.MagicMock()
+    mock_ld = mocker.patch('securedrop_client.gui.main.LoginDialog')
+
+    w.show_login('this-is-an-error-message-to-show-on-login-window')
+
+    mock_ld.assert_called_once_with(w)
+    w.login_dialog.reset.assert_called_once_with()
+    w.login_dialog.exec.assert_called_once_with()
+    w.login_dialog.error.assert_called_once_with('this-is-an-error-message-to-show-on-login-window')
+
+
 def test_show_login_error(mocker):
     """
     Ensures that an error message is displayed in the login dialog.

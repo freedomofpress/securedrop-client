@@ -32,6 +32,7 @@ from sqlalchemy.orm.session import sessionmaker
 
 from securedrop_client import storage
 from securedrop_client import db
+from securedrop_client.api_jobs.base import ApiInaccessibleError
 from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob, \
     ReplyDownloadJob, DownloadChecksumMismatchException, MetadataSyncJob
 from securedrop_client.api_jobs.sources import DeleteSourceJob
@@ -279,13 +280,23 @@ class Controller(QObject):
         new_api_thread.start()
 
     def on_queue_paused(self) -> None:
-        if self.api is None:
-            self.gui.update_error_status(_('The SecureDrop server cannot be reached.'))
-        else:
-            self.gui.update_error_status(
-                _('The SecureDrop server cannot be reached.'),
-                duration=0,
-                retry=True)
+        # TODO: remove if block once https://github.com/freedomofpress/securedrop-client/pull/739
+        # is merged and rely on continuous metadata sync to encounter same auth error from the
+        # server which will log the user out in the on_sync_failure handler
+        if (
+            not self.api or
+            not self.api_job_queue.main_queue.api_client or
+            not self.api_job_queue.download_file_queue.api_client or
+            not self.api_job_queue.metadata_queue.api_client
+        ):
+            self.logout()
+            self.gui.show_login(error=_('Your session expired. Please log in again.'))
+            return
+
+        self.gui.update_error_status(
+            _('The SecureDrop server cannot be reached.'),
+            duration=0,
+            retry=True)
 
     def resume_queues(self) -> None:
         self.api_job_queue.resume_queues()
@@ -338,6 +349,7 @@ class Controller(QObject):
         self.gui.show_main_window(user)
         self.update_sources()
         self.api_job_queue.login(self.api)
+        self.update_sources()
         self.sync_api()
         self.is_authenticated = True
         self.resume_queues()
@@ -424,14 +436,15 @@ class Controller(QObject):
 
     def on_sync_failure(self, result: Exception) -> None:
         """
-        Called when syncronisation of data via the API fails after a background sync. Resume the
-        queues so that we continue to retry syncing with the server in the background.
+        Called when syncronisation of data via the API fails after a background sync. If the reason
+        a sync fails is ApiInaccessibleError then we need to log the user out for security reasons
+        and show them the login window in order to get a new token.
         """
         logger.debug('The SecureDrop server cannot be reached due to Error: {}'.format(result))
-        self.gui.update_error_status(
-            _('The SecureDrop server cannot be reached.'),
-            duration=0,
-            retry=True)
+
+        if isinstance(result, ApiInaccessibleError):
+            self.logout()
+            self.gui.show_login(error=_('Your session expired. Please log in again.'))
 
     def update_sync(self):
         """
@@ -697,6 +710,7 @@ class Controller(QObject):
 
     def on_delete_source_failure(self, result: Exception) -> None:
         logging.info("failed to delete source at server")
+
         error = _('Failed to delete source at server')
         self.gui.update_error_status(error)
 
