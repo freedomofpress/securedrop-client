@@ -33,7 +33,6 @@ from sqlalchemy.orm.session import sessionmaker
 from securedrop_client import storage
 from securedrop_client import db
 from securedrop_client.sync import ApiSync
-from securedrop_client.api_jobs.sync import MetadataSyncJob
 from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob, \
     ReplyDownloadJob, DownloadChecksumMismatchException
 from securedrop_client.api_jobs.sources import DeleteSourceJob
@@ -386,26 +385,6 @@ class Controller(QObject):
         authenticated.
         """
         return bool(self.api and self.api.token is not None)
-
-    def sync_api(self):
-        """
-        Grab data from the remote SecureDrop API in a non-blocking manner.
-
-        TODO: This should be removed once sync_api calls have been removed from all the different
-        job handlers.
-        """
-        logger.debug("In sync_api on thread {}".format(self.thread().currentThreadId()))
-        if self.authenticated():
-            logger.debug("You are authenticated, going to make your call")
-
-            job = MetadataSyncJob(self.data_dir, self.gpg)
-            job.success_signal.connect(self.on_sync_success, type=Qt.QueuedConnection)
-            job.failure_signal.connect(self.on_sync_failure, type=Qt.QueuedConnection)
-
-            self.api_job_queue.enqueue(job)
-
-            logger.debug("In sync_api, after call to submit job to queue, on "
-                         "thread {}".format(self.thread().currentThreadId()))
 
     def last_sync(self):
         """

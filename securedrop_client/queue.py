@@ -194,12 +194,10 @@ class ApiJobQueue(QObject):
 
     def resume_queues(self) -> None:
         logger.info("Resuming queues")
-        main_paused = not self.main_thread.isRunning()
-        download_paused = not self.download_file_thread.isRunning()
         self.start_queues()
-        if main_paused:
+        if not self.main_thread.isRunning():
             self.main_queue.resume.emit()
-        if download_paused:
+        if not self.download_file_thread.isRunning():
             self.download_file_queue.resume.emit()
 
     def enqueue(self, job: ApiJob) -> None:
