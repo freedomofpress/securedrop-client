@@ -2636,6 +2636,24 @@ def test_ReplyBoxWidget_send_reply_does_not_send_empty_string(mocker):
     assert not controller.send_reply.called
 
 
+def test_ReplyBoxWidget_on_synced(mocker):
+    source = mocker.MagicMock()
+    controller = mocker.MagicMock()
+    rb = ReplyBoxWidget(source, controller)
+    rb.text_edit.hasFocus = mocker.MagicMock(return_value=True)
+    rb.text_edit.setFocus = mocker.MagicMock()
+
+    rb._on_synced("syncing")
+    assert rb.refocus_after_sync is True
+
+    rb._on_synced("synced")
+    rb.text_edit.setFocus.assert_called_once_with()
+
+    rb.text_edit.hasFocus.return_value = False
+    rb._on_synced("syncing")
+    assert rb.refocus_after_sync is False
+
+
 def test_ReplyWidget_success_failure_slots(mocker):
     mock_update_signal = mocker.Mock()
     mock_success_signal = mocker.Mock()
