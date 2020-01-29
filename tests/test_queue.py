@@ -1,7 +1,7 @@
 '''
 Testing for the ApiJobQueue and related classes.
 '''
-from queue import Queue
+from queue import Queue, Full
 from sdclientapi import RequestTimeoutError
 
 from securedrop_client.api_jobs.downloads import FileDownloadJob, MetadataSyncJob
@@ -140,7 +140,8 @@ def test_RunnableQueue_high_priority_jobs_run_first_and_in_fifo_order(mocker):
 def test_RunnableQueue_resubmitted_jobs(mocker):
     """Jobs that fail due to timeout are resubmitted without modifying the job
     order_number. In this test we verify the order of job execution in
-    this scenario."""
+    this scenario and if the queue is full, the error is passed over
+    silently."""
     mock_api_client = mocker.MagicMock()
     mock_session = mocker.MagicMock()
     mock_session_maker = mocker.MagicMock(return_value=mock_session)
@@ -169,6 +170,10 @@ def test_RunnableQueue_resubmitted_jobs(mocker):
     assert queue.queue.get(block=True) == (1, job3)
     assert queue.queue.get(block=True) == (2, job2)
     assert queue.queue.get(block=True) == (2, job4)
+
+    # If put_nowait results in a Full exception, just pass on silently.
+    queue.queue.put_nowait = mocker.MagicMock(side_effect=Full("Bang!"))
+    queue.re_add_job(job1)
 
 
 def test_RunnableQueue_job_ApiInaccessibleError(mocker):
