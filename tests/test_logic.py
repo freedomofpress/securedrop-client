@@ -553,6 +553,28 @@ def test_Controller_on_update_star_failed(homedir, config, mocker, session_maker
     mock_gui.update_error_status.assert_called_once_with('Failed to update star.')
 
 
+def test_Controller_logout_with_no_api(homedir, config, mocker, session_maker):
+    '''
+    Ensure we don't attempt to make an api call to logout when the api has been set to None
+    because token is invalid.
+    '''
+    mock_gui = mocker.MagicMock()
+    co = Controller('http://localhost', mock_gui, session_maker, homedir)
+    co.api = None
+    co.api_job_queue = mocker.MagicMock()
+    co.api_job_queue.logout = mocker.MagicMock()
+    co.call_api = mocker.MagicMock()
+    fail_draft_replies = mocker.patch(
+        'securedrop_client.storage.mark_all_pending_drafts_as_failed')
+
+    co.logout()
+
+    co.call_api.assert_not_called()
+    co.api_job_queue.logout.assert_called_once_with()
+    co.gui.logout.assert_called_once_with()
+    fail_draft_replies.called_once_with(co.session)
+
+
 def test_Controller_logout_success(homedir, config, mocker, session_maker):
     """
     Ensure the API is called on logout and if the API call succeeds,

@@ -289,6 +289,7 @@ class Controller(QObject):
             not self.api_job_queue.download_file_queue.api_client or
             not self.api_job_queue.metadata_queue.api_client
         ):
+            self.api = None
             self.logout()
             self.gui.show_login(error=_('Your session expired. Please log in again.'))
             return
@@ -443,6 +444,7 @@ class Controller(QObject):
         logger.debug('The SecureDrop server cannot be reached due to Error: {}'.format(result))
 
         if isinstance(result, ApiInaccessibleError):
+            self.api = None
             self.logout()
             self.gui.show_login(error=_('Your session expired. Please log in again.'))
 
@@ -497,10 +499,10 @@ class Controller(QObject):
         Call logout function in the API, reset the API object, and force the UI
         to update into a logged out state.
         """
-        self.call_api(self.api.logout,
-                      self.on_logout_success,
-                      self.on_logout_failure)
-        self.api = None
+        if self.api is not None:
+            self.call_api(self.api.logout, self.on_logout_success, self.on_logout_failure)
+            self.api = None
+
         self.api_job_queue.logout()
         storage.mark_all_pending_drafts_as_failed(self.session)
         self.gui.logout()
