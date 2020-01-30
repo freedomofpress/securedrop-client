@@ -207,14 +207,6 @@ def __update_submissions(model: Union[Type[File], Type[Message]],
             local_submission = [s for s in local_submissions
                                 if s.uuid == submission.uuid][0]
 
-            # Update files on disk to match new filename.
-            if (
-                (local_submission.is_downloaded and not local_submission.is_decrypted) and
-                (local_submission.filename != submission.filename)
-            ):
-                rename_file(data_dir, local_submission, submission.filename)
-                local_submission.filename = submission.filename
-
             local_submission.size = submission.size
             local_submission.is_read = submission.is_read
             local_submission.download_url = submission.download_url
@@ -258,10 +250,6 @@ def update_replies(remote_replies: List[SDKReply], local_replies: List[Reply],
     for reply in remote_replies:
         if reply.uuid in local_uuids:
             local_reply = [r for r in local_replies if r.uuid == reply.uuid][0]
-            # Update files on disk to match new filename.
-            if (local_reply.filename != reply.filename):
-                rename_file(data_dir, local_reply, reply.filename)
-                local_reply.filename = reply.filename
 
             user = find_or_create_user(reply.journalist_uuid, reply.journalist_username, session)
             local_reply.journalist_id = user.id
@@ -519,18 +507,6 @@ def delete_single_submission_or_reply_on_disk(obj_db: Union[File, Message, Reply
             os.remove(file_to_delete)
         except FileNotFoundError:
             logging.info('File %s already deleted, skipping', file_to_delete)
-
-
-def rename_file(data_dir: str, file: Union[Message, File, Reply], new_filename: str) -> None:
-    try:
-        current_location = file.location(data_dir)
-        new_location = os.path.join(
-            os.path.dirname(current_location),
-            os.path.basename(new_filename)
-        )
-        os.rename(current_location, new_location)
-    except OSError as e:
-        logger.debug('File could not be renamed: {}'.format(e))
 
 
 def source_exists(session: Session, source_uuid: str) -> bool:

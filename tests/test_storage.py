@@ -14,7 +14,7 @@ import securedrop_client.db
 from securedrop_client.storage import get_local_sources, get_local_messages, get_local_replies, \
     get_remote_data, update_local_storage, update_sources, update_files, update_messages, \
     update_replies, find_or_create_user, find_new_messages, find_new_replies, \
-    delete_single_submission_or_reply_on_disk, rename_file, get_local_files, find_new_files, \
+    delete_single_submission_or_reply_on_disk, get_local_files, find_new_files, \
     source_exists, set_message_or_reply_content, mark_as_downloaded, mark_as_decrypted, get_file, \
     get_message, get_reply, update_and_get_user, update_missing_files, mark_as_not_downloaded, \
     mark_all_pending_drafts_as_failed, delete_local_source_by_uuid
@@ -242,92 +242,6 @@ def test_update_sources(homedir, mocker):
     assert mock_session.commit.call_count == 1
 
 
-def test_update_files_renames_file_on_disk(homedir, mocker):
-    """
-    Check that:
-
-    * Submissions are renamed on disk after sync.
-    """
-    data_dir = os.path.join(homedir, 'data')
-    mock_session = mocker.MagicMock()
-
-    # Local submission that needs to be updated
-    local_submission = factory.File(
-        source=factory.Source(),
-        filename="1-unquestionable_complaint-msg.gpg",
-        is_downloaded=True,
-        is_decrypted=False,
-    )
-    local_submissions = [local_submission]
-
-    # Add submission file to test directory
-    add_test_file_to_temp_dir(data_dir, local_submission.location(data_dir))
-
-    mock_session.query().filter_by.return_value = [local_submission.source]
-
-    # Remote submission with new filename
-    remote_submission = mocker.MagicMock()
-    remote_submission.uuid = local_submission.uuid
-    remote_submission.filename = '1-spotted-potato-msg.gpg'
-    remote_submissions = [remote_submission]
-
-    update_files(remote_submissions, local_submissions, mock_session, data_dir)
-
-    assert local_submission.filename == remote_submission.filename
-    assert os.path.exists(local_submission.location(data_dir))
-
-
-def test_update_replies_renames_file_on_disk(homedir, mocker):
-    """
-    Check that:
-
-    * Replies are renamed on disk after sync.
-    """
-    data_dir = os.path.join(homedir, 'data')
-    mock_session = mocker.MagicMock()
-    # Remote replies with new filename
-    server_filename = '1-spotted-potato-reply.gpg'
-    remote_reply = mocker.MagicMock()
-    remote_reply.uuid = 'test-uuid'
-    remote_reply.filename = server_filename
-    remote_replies = [remote_reply]
-
-    # Local reply that needs to be updated
-    local_filename = '1-pericardial-surfacing-reply.gpg'
-    local_reply = mocker.MagicMock()
-    local_reply.uuid = 'test-uuid'
-    local_reply.filename = local_filename
-    local_reply.location = lambda data_dir: os.path.join(
-        data_dir, "Reply", local_reply.uuid, local_reply.filename
-    )
-    local_replies = [local_reply]
-
-    # Add reply file to test directory
-    add_test_file_to_temp_dir(
-        data_dir,
-        os.path.join(
-            os.path.dirname(local_reply.location(data_dir)),
-            os.path.splitext(local_reply.filename)[0]
-        )
-    )
-
-    # There needs to be a corresponding local_source and local_user
-    local_source = mocker.MagicMock()
-    local_source.uuid = 'test-source-uuid'
-    local_source.id = 123
-
-    local_user = mocker.MagicMock()
-    local_user.username = 'journalist designation'
-    local_user.id = 42
-
-    mock_focu = mocker.MagicMock(return_value=local_user)
-    mocker.patch('securedrop_client.storage.find_or_create_user', mock_focu)
-
-    update_replies(remote_replies, local_replies, mock_session, data_dir)
-
-    assert local_reply.filename == remote_reply.filename
-
-
 def add_test_file_to_temp_dir(home_dir, filename):
     """
     Add test file with the given filename to data dir.
@@ -506,10 +420,6 @@ def test_update_files(homedir, mocker):
     * New submissions have an entry in the local database.
     * Local submission not returned by the remote server are deleted from the
       local database.
-    * `rename_file` is called if local data files need to be updated with new
-      filenames to match remote. Note: The only reason this should happen is if
-      there is a new journalist_designation that causes remote filenames to be
-      updated.
     """
     data_dir = os.path.join(homedir, 'data')
     mock_session = mocker.MagicMock()
@@ -529,7 +439,8 @@ def test_update_files(homedir, mocker):
     local_sub_update.uuid = remote_sub_update.uuid
     local_sub_update.is_downloaded = True
     local_sub_update.is_decrypted = False
-    local_sub_update.filename = "overwrite_this.filename"
+    local_filename = "originalsubmissionname.txt"
+    local_sub_update.filename = local_filename
     local_sub_delete = mocker.MagicMock()
     local_sub_delete.uuid = str(uuid.uuid4())
     local_sub_delete.filename = "local_sub_delete.filename"
@@ -539,18 +450,15 @@ def test_update_files(homedir, mocker):
     local_source.uuid = source.uuid
     local_source.id = 666  # };-)
     mock_session.query().filter_by.return_value = [local_source, ]
-    patch_rename_file = mocker.patch('securedrop_client.storage.rename_file')
 
     update_files(remote_submissions, local_submissions, mock_session, data_dir)
 
     # Check the expected local submission object has been updated with values
     # from the API.
-    assert local_sub_update.filename == remote_sub_update.filename
+    assert local_sub_update.filename == local_filename
     assert local_sub_update.size == remote_sub_update.size
     assert local_sub_update.is_read == remote_sub_update.is_read
-    # Check that rename_file is called if the local storage filenames need to
-    # be updated
-    assert patch_rename_file.called
+
     # Check the expected local source object has been created with values from
     # the API.
     assert mock_session.add.call_count == 1
@@ -573,10 +481,6 @@ def test_update_messages(homedir, mocker):
     * New messages have an entry in the local database.
     * Local messages not returned by the remote server are deleted from the
       local database.
-    * `rename_file` is called if local data files need to be updated with new
-      filenames to match remote. Note: The only reason this should happen is if
-      there is a new journalist_designation that causes remote filenames to be
-      updated.
     """
     data_dir = os.path.join(homedir, 'data')
     mock_session = mocker.MagicMock()
@@ -594,7 +498,8 @@ def test_update_messages(homedir, mocker):
     # be deleted from the local database).
     local_message_update = mocker.MagicMock()
     local_message_update.uuid = remote_message_update.uuid
-    local_message_update.filename = "overwrite_this.filename"
+    local_filename = "originalsubmissionname.txt"
+    local_message_update.filename = local_filename
     local_message_update.is_downloaded = True
     local_message_update.is_decrypted = False
     local_message_delete = mocker.MagicMock()
@@ -612,17 +517,14 @@ def test_update_messages(homedir, mocker):
                                                   [local_user, ], ]
     mock_focu = mocker.MagicMock(return_value=local_user)
     mocker.patch('securedrop_client.storage.find_or_create_user', mock_focu)
-    patch_rename_file = mocker.patch('securedrop_client.storage.rename_file')
 
     update_messages(remote_messages, local_messages, mock_session, data_dir)
 
     # Check the expected local message object has been updated with values
     # from the API.
-    assert local_message_update.filename == remote_message_update.filename
+    assert local_message_update.filename == local_filename
     assert local_message_update.size == remote_message_update.size
-    # Check that rename_file is called if the local storage filenames need to
-    # be updated
-    assert patch_rename_file.called
+
     # Check the expected local source object has been created with values from
     # the API.
     assert mock_session.add.call_count == 1
@@ -647,10 +549,6 @@ def test_update_replies(homedir, mocker):
     * Local replies not returned by the remote server are deleted from the
       local database.
     * References to journalist's usernames are correctly handled.
-    * `rename_file` is called if local data files need to be updated with new
-      filenames to match remote. Note: The only reason this should happen is if
-      there is a new journalist_designation that causes remote filenames to be
-      updated.
     """
     data_dir = os.path.join(homedir, 'data')
     mock_session = mocker.MagicMock()
@@ -668,7 +566,8 @@ def test_update_replies(homedir, mocker):
     # be deleted from the local database).
     local_reply_update = mocker.MagicMock()
     local_reply_update.uuid = remote_reply_update.uuid
-    local_reply_update.filename = "overwrite_this.filename"
+    local_filename = "originalsubmissionname.txt"
+    local_reply_update.filename = local_filename
     local_reply_update.journalist_uuid = str(uuid.uuid4())
     local_reply_delete = mocker.MagicMock()
     local_reply_delete.uuid = str(uuid.uuid4())
@@ -686,18 +585,15 @@ def test_update_replies(homedir, mocker):
                                                   NoResultFound()]
     mock_focu = mocker.MagicMock(return_value=local_user)
     mocker.patch('securedrop_client.storage.find_or_create_user', mock_focu)
-    patch_rename_file = mocker.patch('securedrop_client.storage.rename_file')
 
     update_replies(remote_replies, local_replies, mock_session, data_dir)
 
     # Check the expected local reply object has been updated with values
     # from the API.
     assert local_reply_update.journalist_id == local_user.id
-    assert local_reply_update.filename == remote_reply_update.filename
+    assert local_reply_update.filename == local_filename
     assert local_reply_update.size == remote_reply_update.size
-    # Check that rename_file is called if the local storage filenames need to
-    # be updated
-    assert patch_rename_file.called
+
     # Check the expected local source object has been created with values from
     # the API.
     assert mock_session.add.call_count == 1
@@ -1019,59 +915,6 @@ def test_delete_single_submission_or_reply_race_guard(homedir, mocker):
     delete_single_submission_or_reply_on_disk(test_obj, homedir)
 
     mock_remove.call_count == 1
-
-
-def test_rename_file_does_not_throw(homedir):
-    """
-    If file cannot be found then OSError is caught and logged.
-    """
-    data_dir = os.path.join(homedir, 'data')
-
-    original_file = factory.File(
-        source=factory.Source(),
-        filename="1-unquestionable_complaint-msg.gpg",
-        is_downloaded=True,
-        is_decrypted=False,
-    )
-    new_filename = "1-demonstrable_reciprocity-msg.gpg"
-    rename_file(data_dir, original_file, new_filename)
-
-    assert not os.path.exists(original_file.location(data_dir))
-
-    original_file.filename = new_filename
-
-    assert not os.path.exists(original_file.location(data_dir))
-
-
-def test_rename_file_success(homedir):
-    """
-    If file was renamed successfully then we should be able to retrieve the
-    file's content using the new filename.
-    """
-    data_dir = os.path.join(homedir, 'data')
-    original_file = factory.File(
-        source=factory.Source(),
-        filename="1-unquestionable_complaint-msg.gpg",
-        is_downloaded=True,
-        is_decrypted=False,
-    )
-    contents = 'bar'
-    os.makedirs(os.path.dirname(original_file.location(data_dir)))
-    with open(original_file.location(data_dir), 'w') as f:
-        f.write(contents)
-
-    new_filename = "1-demonstrable_reciprocity-msg.gpg"
-    rename_file(os.path.join(homedir, 'data'), original_file, new_filename)
-
-    assert not os.path.exists(original_file.location(data_dir))
-
-    original_file.filename = new_filename
-
-    assert os.path.exists(original_file.location(data_dir))
-
-    with open(original_file.location(data_dir)) as f:
-        out = f.read()
-    assert out == contents
 
 
 def test_source_exists_true(homedir, mocker):
