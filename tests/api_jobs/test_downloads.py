@@ -1,7 +1,6 @@
 import os
 import pytest
 from typing import Tuple
-from uuid import UUID
 
 from sdclientapi import BaseError
 from sdclientapi import Submission as SdkSubmission
