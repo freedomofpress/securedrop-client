@@ -1018,9 +1018,10 @@ class SourceWidget(QWidget):
         """
         self.controller = controller
         self.star.setup(self.controller)
-        self.controller.message_ready.connect(self.update_snippet)
-        self.controller.reply_ready.connect(self.update_snippet)
-        self.controller.file_ready.connect(self.update_snippet)
+        self.controller.message_ready.connect(self.set_snippet)
+        self.controller.reply_ready.connect(self.set_snippet)
+        self.controller.reply_succeeded.connect(self.set_snippet)
+        self.controller.file_ready.connect(self.set_snippet)
 
     def update(self):
         """
@@ -1032,12 +1033,16 @@ class SourceWidget(QWidget):
         if self.source.document_count == 0:
             self.paperclip.hide()
 
-    def set_snippet(self):
+    def set_snippet(self, uuid=None, content=None):
         if self.source.collection:
-            msg = str(self.source.collection[-1])
-            if len(msg) > 120:
-                msg = msg[:120] + "..."
-            self.preview.setText(msg)
+            msg = self.source.collection[-1]
+            if uuid and uuid == msg.uuid and content:
+                msg_text = content
+            else:
+                msg_text = str(msg)
+            if len(msg_text) > 120:
+                msg_text = msg_text[:120] + "..."
+            self.preview.setText(msg_text)
 
     def delete_source(self, event):
         if self.controller.api is None:
@@ -1046,9 +1051,6 @@ class SourceWidget(QWidget):
         else:
             messagebox = DeleteSourceMessageBox(self.source, self.controller)
             messagebox.launch()
-
-    def update_snippet(self, *args):
-        self.set_snippet()
 
 
 class StarToggleButton(SvgToggleButton):
@@ -1622,7 +1624,6 @@ class SpeechBubble(QWidget):
         Conditionally update this SpeechBubble's text if and only if the message_id of the emitted
         signal matches the message_id of this speech bubble.
         """
-        print(message_id, text)
         if message_id == self.message_id:
             self.message.setText(text)
 

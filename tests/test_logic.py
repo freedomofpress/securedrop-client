@@ -736,14 +736,21 @@ def test_Controller_on_file_downloaded_success(homedir, config, mocker, session_
     mock_gui = mocker.MagicMock()
 
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
+    co.session = mocker.MagicMock()
 
     # signal when file is downloaded
     mock_file_ready = mocker.patch.object(co, 'file_ready')
     mock_uuid = 'mock'
 
-    co.on_file_download_success(mock_uuid)
+    mock_storage = mocker.MagicMock()
+    mock_file = mocker.MagicMock()
+    mock_file.original_filename = "foo.txt"
+    mock_storage.get_file.return_value = mock_file
 
-    mock_file_ready.emit.assert_called_once_with(mock_uuid)
+    with mocker.patch("securedrop_client.logic.storage", mock_storage):
+        co.on_file_download_success(mock_uuid)
+
+    mock_file_ready.emit.assert_called_once_with(mock_uuid, "foo.txt")
 
 
 def test_Controller_on_file_downloaded_api_failure(homedir, config, mocker, session_maker):
@@ -1346,16 +1353,23 @@ def test_Controller_on_reply_success(homedir, mocker, session_maker, session):
     Check that when the method is called, the client emits the correct signal.
     '''
     co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    co.session = mocker.MagicMock()
     mocker.patch.object(co, 'sync_api')
     reply_succeeded = mocker.patch.object(co, 'reply_succeeded')
     reply_failed = mocker.patch.object(co, 'reply_failed')
     reply = factory.Reply(source=factory.Source())
     debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
 
-    co.on_reply_success(reply.uuid)
+    mock_storage = mocker.MagicMock()
+    mock_reply = mocker.MagicMock()
+    mock_reply.content = "a message"
+    mock_storage.get_reply.return_value = mock_reply
+
+    with mocker.patch("securedrop_client.logic.storage", mock_storage):
+        co.on_reply_success(reply.uuid)
 
     assert debug_logger.call_args_list[0][0][0] == '{} sent successfully'.format(reply.uuid)
-    reply_succeeded.emit.assert_called_once_with(reply.uuid)
+    reply_succeeded.emit.assert_called_once_with(reply.uuid, "a message")
     reply_failed.emit.assert_not_called()
     co.sync_api.assert_not_called()
 

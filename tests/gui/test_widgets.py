@@ -780,6 +780,19 @@ def test_SourceWidget_update_attachment_icon():
     assert sw.paperclip.isHidden()
 
 
+def test_SourceWidget_set_snippet(mocker):
+    """
+    Snippets are set as expected.
+    """
+    source = mocker.MagicMock()
+    source.journalist_designation = "Testy McTestface"
+    msg = factory.Message(content="abcdefg")
+    source.collection = [msg, ]
+    sw = SourceWidget(source)
+    sw.set_snippet(msg.uuid, msg.content)
+    assert sw.preview.text() == "abcdefg"
+
+
 def test_SourceWidget_update_truncate_latest_msg(mocker):
     """
     If the latest message in the conversation is longer than 120 characters,
