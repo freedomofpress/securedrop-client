@@ -585,7 +585,6 @@ class Controller(QObject):
             logger.debug('Cannot find {} in the data directory. File does not exist.'.format(
                 file.original_filename))
             storage.update_missing_files(self.data_dir, self.session)
-            self.session.refresh(file)
             self.file_missing.emit(file.uuid)
             return False
         return True
