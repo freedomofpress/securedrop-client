@@ -63,6 +63,12 @@ class Source(Base):
                                                datetime.datetime(datetime.MINYEAR, 1, 1))))
         return collection
 
+    @property
+    def journalist_filename(self) -> str:
+        valid_chars = 'abcdefghijklmnopqrstuvwxyz1234567890-_'
+        return ''.join([c for c in self.journalist_designation.lower().replace(
+            ' ', '_') if c in valid_chars])
+
 
 class Message(Base):
 
@@ -130,9 +136,8 @@ class Message(Base):
         return os.path.abspath(
             os.path.join(
                 data_dir,
-                self.__class__.__name__,
-                self.uuid,
-                self.filename,
+                self.source.journalist_filename,
+                os.path.splitext(self.filename)[0] + '.txt'
             )
         )
 
@@ -197,9 +202,9 @@ class File(Base):
         return os.path.abspath(
             os.path.join(
                 data_dir,
-                self.__class__.__name__,
-                self.uuid,
-                self.filename,
+                self.source.journalist_filename,
+                '{}-{}-doc'.format(self.file_counter, self.source.journalist_filename),
+                self.filename
             )
         )
 
@@ -270,9 +275,8 @@ class Reply(Base):
         return os.path.abspath(
             os.path.join(
                 data_dir,
-                self.__class__.__name__,
-                self.uuid,
-                self.filename,
+                self.source.journalist_filename,
+                os.path.splitext(self.filename)[0] + '.txt'
             )
         )
 
