@@ -1962,7 +1962,6 @@ class FileWidget(QWidget):
 
     @pyqtSlot(str)
     def _on_file_missing(self, file_uuid: str) -> None:
-        pass
         if file_uuid == self.file.uuid:
             self.file = self.controller.get_file(self.file.uuid)
             if not self.file.is_downloaded:
