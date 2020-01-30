@@ -1380,7 +1380,7 @@ def test_FileWidget_init_file_not_downloaded(mocker, source, session):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget('mock', controller, mocker.MagicMock(), 0)
+    fw = FileWidget('mock', controller, mocker.MagicMock(), mocker.MagicMock(), 0)
 
     assert fw.controller == controller
     assert fw.file.is_downloaded is False
@@ -1403,7 +1403,7 @@ def test_FileWidget_init_file_downloaded(mocker, source, session):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget('mock', controller, mocker.MagicMock(), 0)
+    fw = FileWidget('mock', controller, mocker.MagicMock(), mocker.MagicMock(), 0)
 
     assert fw.controller == controller
     assert fw.file.is_downloaded is True
@@ -1419,8 +1419,6 @@ def test_FileWidget_event_handler(mocker, session, source):
     """
     Left click on filename should trigger an open.
     """
-    mock_signal = mocker.MagicMock()  # not important for this test
-
     file_ = factory.File(source=source['source'],
                          is_downloaded=False,
                          is_decrypted=None)
@@ -1432,7 +1430,7 @@ def test_FileWidget_event_handler(mocker, session, source):
     test_event = QEvent(QEvent.MouseButtonPress)
     test_event.button = mocker.MagicMock(return_value=Qt.LeftButton)
 
-    fw = FileWidget(file_.uuid, mock_controller, mock_signal, 0)
+    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw._on_left_click = mocker.MagicMock()
 
     fw.eventFilter(fw, test_event)
@@ -1444,8 +1442,6 @@ def test_FileWidget_on_left_click_download(mocker, session, source):
     Left click on download when file is not downloaded should trigger
     a download.
     """
-    mock_signal = mocker.MagicMock()  # not important for this test
-
     file_ = factory.File(source=source['source'],
                          is_downloaded=False,
                          is_decrypted=None)
@@ -1455,7 +1451,7 @@ def test_FileWidget_on_left_click_download(mocker, session, source):
     mock_get_file = mocker.MagicMock(return_value=file_)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
-    fw = FileWidget(file_.uuid, mock_controller, mock_signal, 0)
+    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw.download_button = mocker.MagicMock()
     mock_get_file.assert_called_once_with(file_.uuid)
     mock_get_file.reset_mock()
@@ -1474,8 +1470,6 @@ def test_FileWidget_start_button_animation(mocker, session, source):
     """
     Ensure widget state is updated when this method is called.
     """
-    mock_signal = mocker.MagicMock()  # not important for this test
-
     file_ = factory.File(source=source['source'],
                          is_downloaded=False,
                          is_decrypted=None)
@@ -1483,7 +1477,7 @@ def test_FileWidget_start_button_animation(mocker, session, source):
     session.commit()
     mock_get_file = mocker.MagicMock(return_value=file_)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
-    fw = FileWidget(file_.uuid, mock_controller, mock_signal, 0)
+    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw.download_button = mocker.MagicMock()
     fw.start_button_animation()
     # Check indicators of activity have been updated.
@@ -1496,8 +1490,6 @@ def test_FileWidget_on_left_click_open(mocker, session, source):
     """
     Left click on open when file is downloaded should trigger an open.
     """
-    mock_signal = mocker.MagicMock()  # not important for this test
-
     file_ = factory.File(source=source['source'], is_downloaded=True)
     session.add(file_)
     session.commit()
@@ -1505,7 +1497,7 @@ def test_FileWidget_on_left_click_open(mocker, session, source):
     mock_get_file = mocker.MagicMock(return_value=file_)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
-    fw = FileWidget(file_.uuid, mock_controller, mock_signal, 0)
+    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw._on_left_click()
     fw.controller.on_file_open.assert_called_once_with(file_.uuid)
 
@@ -1515,8 +1507,6 @@ def test_FileWidget_set_button_animation_frame(mocker, session, source):
     Left click on download when file is not downloaded should trigger
     a download.
     """
-    mock_signal = mocker.MagicMock()  # not important for this test
-
     file_ = factory.File(source=source['source'],
                          is_downloaded=False,
                          is_decrypted=None)
@@ -1526,7 +1516,7 @@ def test_FileWidget_set_button_animation_frame(mocker, session, source):
     mock_get_file = mocker.MagicMock(return_value=file_)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
-    fw = FileWidget(file_.uuid, mock_controller, mock_signal, 0)
+    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw.download_button = mocker.MagicMock()
     fw.set_button_animation_frame(1)
     assert fw.download_button.setIcon.call_count == 1
@@ -1541,7 +1531,7 @@ def test_FileWidget_update(mocker, session, source):
     session.commit()
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), 0)
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
 
     fw.update()
 
@@ -1561,7 +1551,7 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_matches(mocker, sou
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), 0)
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw.update = mocker.MagicMock()
 
     fw._on_file_downloaded(file.uuid)
@@ -1587,7 +1577,7 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), 0)
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw.clear = mocker.MagicMock()
     fw.update = mocker.MagicMock()
 
@@ -1602,6 +1592,52 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(
     assert not fw.file_name.isHidden()
 
 
+def test_FileWidget_on_file_missing_show_download_button_when_uuid_matches(mocker, source, session):
+    """
+    The _on_file_missing method should update the FileWidget when uuid matches.
+    """
+    file = factory.File(source=source['source'], is_decrypted=None, is_downloaded=False)
+    session.add(file)
+    session.commit()
+
+    get_file = mocker.MagicMock(return_value=file)
+    controller = mocker.MagicMock(get_file=get_file)
+
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
+    fw.update = mocker.MagicMock()
+
+    fw._on_file_missing(file.uuid)
+
+    assert not fw.download_button.isHidden()
+    assert fw.export_button.isHidden()
+    assert fw.middot.isHidden()
+    assert fw.print_button.isHidden()
+    assert not fw.no_file_name.isHidden()
+    assert fw.file_name.isHidden()
+    assert fw.download_animation.state() == QMovie.NotRunning
+
+
+def test_FileWidget_on_file_missing_does_not_show_download_button_when_uuid_does_not_match(
+    mocker, homedir, session, source,
+):
+    """
+    The _on_file_missing method should not update the FileWidget when uuid doesn't match.
+    """
+    file = factory.File(source=source['source'])
+    session.add(file)
+    session.commit()
+
+    get_file = mocker.MagicMock(return_value=file)
+    controller = mocker.MagicMock(get_file=get_file)
+
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
+    fw.download_button.show = mocker.MagicMock()
+
+    fw._on_file_missing('not a matching uuid')
+
+    fw.download_button.show.assert_not_called()
+
+
 def test_FileWidget__on_export_clicked(mocker, session, source):
     """
     Ensure preflight checks start when the EXPORT button is clicked and that password is requested
@@ -1613,7 +1649,7 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), 0)
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw.update = mocker.MagicMock()
     mocker.patch('securedrop_client.gui.widgets.QDialog.exec')
     controller.run_export_preflight_checks = mocker.MagicMock()
@@ -1640,7 +1676,7 @@ def test_FileWidget__on_export_clicked_missing_file(mocker, session, source):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), 0)
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw.update = mocker.MagicMock()
     mocker.patch('securedrop_client.gui.widgets.QDialog.exec')
     controller.run_export_preflight_checks = mocker.MagicMock()
@@ -1664,7 +1700,7 @@ def test_FileWidget__on_print_clicked(mocker, session, source):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), 0)
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw.update = mocker.MagicMock()
     mocker.patch('securedrop_client.gui.widgets.QDialog.exec')
     controller.print_file = mocker.MagicMock()
@@ -1691,7 +1727,7 @@ def test_FileWidget__on_print_clicked_missing_file(mocker, session, source):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), 0)
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw.update = mocker.MagicMock()
     mocker.patch('securedrop_client.gui.widgets.QDialog.exec')
     controller.print_file = mocker.MagicMock()

@@ -987,12 +987,10 @@ def test_Controller_on_file_open_file_missing(mocker, homedir, session_maker, se
 
     co.on_file_open(file.uuid)
 
-    user_error = 'File does not exist in the data directory. Please try re-downloading.'
     log_msg = 'Cannot find {} in the data directory. File does not exist.'.format(
         file.original_filename)
-    co.gui.update_error_status.assert_called_once_with(user_error)
     debug_logger.assert_called_once_with(log_msg)
-    co.sync_api.assert_called_once_with()
+    co.sync_api.assert_not_called()
 
 
 def test_Controller_on_file_open_file_missing_not_qubes(
@@ -1014,12 +1012,10 @@ def test_Controller_on_file_open_file_missing_not_qubes(
 
     co.on_file_open(file.uuid)
 
-    user_error = 'File does not exist in the data directory. Please try re-downloading.'
     log_msg = 'Cannot find {} in the data directory. File does not exist.'.format(
         file.original_filename)
-    co.gui.update_error_status.assert_called_once_with(user_error)
     debug_logger.assert_called_once_with(log_msg)
-    co.sync_api.assert_called_once_with()
+    co.sync_api.assert_not_called()
 
 
 def test_Controller_download_new_replies_with_new_reply(mocker, session, session_maker, homedir):
@@ -1566,12 +1562,10 @@ def test_Controller_print_file_file_missing(homedir, mocker, session, session_ma
 
     co.print_file(file.uuid)
 
-    user_error = 'File does not exist in the data directory. Please try re-downloading.'
     log_msg = 'Cannot find {} in the data directory. File does not exist.'.format(
         file.original_filename)
-    co.gui.update_error_status.assert_called_once_with(user_error)
     debug_logger.assert_called_once_with(log_msg)
-    co.sync_api.assert_called_once_with()
+    co.sync_api.assert_not_called()
 
 
 def test_Controller_print_file_file_missing_not_qubes(
@@ -1593,12 +1587,10 @@ def test_Controller_print_file_file_missing_not_qubes(
 
     co.print_file(file.uuid)
 
-    user_error = 'File does not exist in the data directory. Please try re-downloading.'
     log_msg = 'Cannot find {} in the data directory. File does not exist.'.format(
         file.original_filename)
-    co.gui.update_error_status.assert_called_once_with(user_error)
     debug_logger.assert_called_once_with(log_msg)
-    co.sync_api.assert_called_once_with()
+    co.sync_api.assert_not_called()
 
 
 def test_Controller_print_file_when_orig_file_already_exists(
@@ -1760,12 +1752,10 @@ def test_Controller_export_file_to_usb_drive_file_missing(homedir, mocker, sessi
 
     co.export_file_to_usb_drive(file.uuid, 'mock passphrase')
 
-    user_error = 'File does not exist in the data directory. Please try re-downloading.'
     log_msg = 'Cannot find {} in the data directory. File does not exist.'.format(
         file.original_filename)
-    co.gui.update_error_status.assert_called_once_with(user_error)
     debug_logger.assert_called_once_with(log_msg)
-    co.sync_api.assert_called_once_with()
+    co.sync_api.assert_not_called()
 
 
 def test_Controller_export_file_to_usb_drive_file_missing_not_qubes(
@@ -1787,12 +1777,10 @@ def test_Controller_export_file_to_usb_drive_file_missing_not_qubes(
 
     co.export_file_to_usb_drive(file.uuid, 'mock passphrase')
 
-    user_error = 'File does not exist in the data directory. Please try re-downloading.'
     log_msg = 'Cannot find {} in the data directory. File does not exist.'.format(
         file.original_filename)
-    co.gui.update_error_status.assert_called_once_with(user_error)
     debug_logger.assert_called_once_with(log_msg)
-    co.sync_api.assert_called_once_with()
+    co.sync_api.assert_not_called()
 
 
 def test_Controller_export_file_to_usb_drive_when_orig_file_already_exists(

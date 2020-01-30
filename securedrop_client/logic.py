@@ -125,6 +125,11 @@ class Controller(QObject):
     file_ready = pyqtSignal(str)
 
     """
+    This signal indicates that a file needs to be redownloaded by emitting the file's UUID.
+    """
+    file_missing = pyqtSignal(str)
+
+    """
     This signal indicates that a message has been successfully downloaded by emitting the message's
     UUID as a string.
     """
@@ -571,17 +576,17 @@ class Controller(QObject):
 
     def downloaded_file_exists(self, file_uuid: str) -> bool:
         '''
-        Check if the file specified by file_uuid exists. If it doesn't sync the api so that any
-        missing files, including this one, are updated to be re-downloaded.
+        Check if the file specified by file_uuid exists. If it doesn't update the local db and
+        GUI to show the file as not downloaded.
         '''
         file = self.get_file(file_uuid)
         fn_no_ext, dummy = os.path.splitext(os.path.splitext(file.filename)[0])
         filepath = os.path.join(self.data_dir, fn_no_ext)
         if not os.path.exists(filepath):
-            self.gui.update_error_status(_(
-                'File does not exist in the data directory. Please try re-downloading.'))
             logger.debug('Cannot find {} in the data directory. File does not exist.'.format(
                 file.original_filename))
+            storage.update_missing_files(self.data_dir, self.session)
+            self.file_missing.emit(file.uuid)
             return False
         return True
 
@@ -624,7 +629,6 @@ class Controller(QObject):
         logger.info('Opening file "{}".'.format(file.original_filename))
 
         if not self.downloaded_file_exists(file.uuid):
-            self.sync_api()
             return
 
         if not self.qubes:
@@ -659,7 +663,6 @@ class Controller(QObject):
         logger.info('Exporting file {}'.format(file.original_filename))
 
         if not self.downloaded_file_exists(file.uuid):
-            self.sync_api()
             return
 
         if not self.qubes:
@@ -679,7 +682,6 @@ class Controller(QObject):
         logger.info('Printing file {}'.format(file.original_filename))
 
         if not self.downloaded_file_exists(file.uuid):
-            self.sync_api()
             return
 
         if not self.qubes:
