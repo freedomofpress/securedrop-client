@@ -153,7 +153,7 @@ class GpgHelper:
         cmd = self._gpg_cmd_base()
         cmd.extend(["--list-public-keys", "--fingerprint", "--with-colons",
                     "--fixed-list-mode", "--list-options", "no-show-photos"])
-        output = subprocess.check_output(cmd, text=True)
+        output = subprocess.check_output(cmd, universal_newlines=True)
 
         fingerprints = {}
         for line in output.splitlines():
