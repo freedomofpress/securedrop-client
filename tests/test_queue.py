@@ -3,7 +3,6 @@ Testing for the ApiJobQueue and related classes.
 '''
 from queue import Queue, Full
 from sdclientapi import RequestTimeoutError
-import pytest
 
 from securedrop_client.api_jobs.downloads import FileDownloadJob
 from securedrop_client.api_jobs.base import ApiInaccessibleError, PauseQueueJob
@@ -45,25 +44,22 @@ def test_RunnableQueue_happy_path(mocker):
     assert queue.queue.empty()
 
 
-def test_RunnableQueue_with_size_constraint(mocker):
+def test_RunnableQueue_with_size_constraint(mocker, session_maker):
     '''
-    Add one job to the queue, run it.
+    Add one job to a queue with the size constraint of 1 and see that the next job is dropped.
     '''
-    mock_api_client = mocker.MagicMock()
-    mock_session = mocker.MagicMock()
-    mock_session_maker = mocker.MagicMock(return_value=mock_session)
-    return_value = 'foo'
+    queue = RunnableQueue(mocker.MagicMock(), session_maker, size=1)
+    job_cls = factory.dummy_job_factory(mocker, 'mock_return_value')
+    queue.JOB_PRIORITIES = {job_cls: 1}
+    job1 = job_cls()
+    job2 = job_cls()
 
-    dummy_job_cls = factory.dummy_job_factory(mocker, return_value)
-    queue = RunnableQueue(mock_api_client, mock_session_maker, size=1)
-    queue.JOB_PRIORITIES = {dummy_job_cls: 1, PauseQueueJob: 2}
-
-    queue.add_job(dummy_job_cls())
-    with pytest.raises(Full):
-        queue.add_job(dummy_job_cls())
-        queue.add_job(dummy_job_cls())
+    queue.add_job(job1)
+    queue.add_job(job2)
 
     assert queue.queue.qsize() == 1
+    assert queue.queue.get(block=True) == (1, job1)
+    assert queue.queue.qsize() == 0
 
 
 def test_RunnableQueue_job_timeout(mocker):
@@ -203,12 +199,10 @@ def test_RunnableQueue_job_generic_exception(mocker):
 
 def test_RunnableQueue_does_not_run_jobs_when_not_authed(mocker):
     '''
-    Check that the queue is paused when a job returns with aApiInaccessibleError. Check that the
-    job does not get resubmitted since it is not authorized and that its api_client is None.
+    Check that a job that sees an ApiInaccessibleError does not get resubmitted since it is not
+    authorized and that its api_client is None.
     '''
     queue = RunnableQueue(mocker.MagicMock(), mocker.MagicMock())
-    queue.paused = mocker.MagicMock()
-    queue.paused.emit = mocker.MagicMock()
     job_cls = factory.dummy_job_factory(mocker, ApiInaccessibleError())
     queue.JOB_PRIORITIES = {PauseQueueJob: 0, job_cls: 1}
 
@@ -220,7 +214,6 @@ def test_RunnableQueue_does_not_run_jobs_when_not_authed(mocker):
     queue.process()
     assert queue.queue.qsize() == 0  # queue should not contain job since it was not resubmitted
     assert queue.api_client is None
-    queue.paused.emit.assert_called_once_with()
 
 
 def test_ApiJobQueue_enqueue(mocker):
@@ -373,7 +366,6 @@ def test_ApiJobQueue_logout_stops_queue_threads(mocker):
 
     assert not job_queue.main_thread.isRunning()
     assert not job_queue.download_file_thread.isRunning()
-    assert not job_queue.metadata_thread.isRunning()
 
 
 def test_ApiJobQueue_logout_results_in_queue_threads_not_running(mocker):

@@ -1430,24 +1430,6 @@ def test_Controller_on_queue_paused(homedir, config, mocker, session_maker):
         'The SecureDrop server cannot be reached.', duration=0, retry=True)
 
 
-def test_Controller_on_queue_paused_due_to_invalid_token(homedir, config, mocker, session_maker):
-    """
-    If the api is inaccessible then ensure user is logged out and shown the login window. Also check
-    that "SecureDrop server cannot be reached" is not shown when the user is not authenticated.
-    """
-    gui = mocker.MagicMock()
-    co = Controller('http://localhost', gui, session_maker, homedir)
-    co.api = None
-    co.logout = mocker.MagicMock()
-    co.gui = mocker.MagicMock()
-    co.gui.show_login = mocker.MagicMock()
-
-    co.on_queue_paused()
-
-    co.logout.assert_called_once_with()
-    co.gui.show_login.assert_called_once_with(error='Your session expired. Please log in again.')
-
-
 def test_Controller_call_update_star_success(homedir, config, mocker, session_maker, session):
     '''
     Check that a UpdateStar is submitted to the queue when update_star is called.

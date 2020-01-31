@@ -1,4 +1,5 @@
 import os
+from uuid import UUID
 
 from securedrop_client.api_jobs.sync import MetadataSyncJob
 from securedrop_client.crypto import GpgHelper, CryptoError
@@ -107,3 +108,55 @@ def test_MetadataSyncJob_success_with_missing_key(mocker, homedir, session, sess
 
     assert mock_key_import.call_count == 0
     assert mock_get_remote_data.call_count == 1
+
+
+def test_MetadataSyncJob_only_import_new_source_keys(mocker, homedir, session, session_maker):
+    """
+    Verify that we only import source keys we don't already have.
+    """
+    class LimitedImportGpgHelper(GpgHelper):
+        def import_key(self, source_uuid: UUID, key_data: str, fingerprint: str) -> None:
+            self._import(key_data)
+
+    gpg = LimitedImportGpgHelper(homedir, session_maker, is_qubes=False)
+    job = MetadataSyncJob(homedir, gpg)
+
+    mock_source = mocker.MagicMock()
+    mock_source.uuid = 'bar'
+    mock_source.key = {
+        'type': 'PGP',
+        'public': PUB_KEY,
+        'fingerprint': 'B2FF7FB28EED8CABEBC5FB6C6179D97BCFA52E5F',
+    }
+
+    mock_get_remote_data = mocker.patch(
+        'securedrop_client.api_jobs.sync.get_remote_data',
+        return_value=([mock_source], [], []))
+
+    api_client = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
+
+    mocker.patch(
+        'securedrop_client.api_jobs.sync.update_local_storage',
+        return_value=([mock_source], [], []))
+
+    mock_logger = mocker.patch('securedrop_client.api_jobs.sync.logger')
+
+    job.call_api(api_client, session)
+
+    assert mock_get_remote_data.call_count == 1
+    assert len(gpg.fingerprints()) == 2
+
+    log_msg = mock_logger.debug.call_args_list[0][0][0]
+    assert log_msg.startswith(
+        'Importing key with fingerprint {}'.format(mock_source.key['fingerprint'])
+    )
+
+    job.call_api(api_client, session)
+
+    assert mock_get_remote_data.call_count == 2
+
+    log_msg = mock_logger.debug.call_args_list[1][0][0]
+    assert log_msg.startswith(
+        'Skipping import of key with fingerprint {}'.format(mock_source.key['fingerprint'])
+    )

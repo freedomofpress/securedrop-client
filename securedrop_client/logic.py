@@ -32,7 +32,7 @@ from sqlalchemy.orm.session import sessionmaker
 
 from securedrop_client import storage
 from securedrop_client import db
-from securedrop_client.sync import ApiSync
+from securedrop_client.api_jobs.base import ApiInaccessibleError
 from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob, \
     ReplyDownloadJob, DownloadChecksumMismatchException
 from securedrop_client.api_jobs.sources import DeleteSourceJob
@@ -42,6 +42,7 @@ from securedrop_client.api_jobs.updatestar import UpdateStarJob, UpdateStarJobEx
 from securedrop_client.crypto import GpgHelper
 from securedrop_client.export import Export
 from securedrop_client.queue import ApiJobQueue
+from securedrop_client.sync import ApiSync
 from securedrop_client.utils import check_dir_permissions
 
 logger = logging.getLogger(__name__)
@@ -281,20 +282,6 @@ class Controller(QObject):
         new_api_thread.start()
 
     def on_queue_paused(self) -> None:
-        # TODO: remove if block once https://github.com/freedomofpress/securedrop-client/pull/739
-        # is merged and rely on continuous metadata sync to encounter same auth error from the
-        # server which will log the user out in the on_sync_failure handler
-        if (
-            not self.api or
-            not self.api_job_queue.main_queue.api_client or
-            not self.api_job_queue.download_file_queue.api_client or
-            not self.api_job_queue.metadata_queue.api_client
-        ):
-            self.invalidate_token()
-            self.logout()
-            self.gui.show_login(error=_('Your session expired. Please log in again.'))
-            return
-
         self.gui.update_error_status(
             _('The SecureDrop server cannot be reached.'),
             duration=0,

@@ -46,8 +46,8 @@ class RunnableQueue(QObject):
         DeleteSourceJob: 14,
         SendReplyJob: 15,
         UpdateStarJob: 16,
-        MessageDownloadJob: 18,
-        ReplyDownloadJob: 18,
+        MessageDownloadJob: 17,
+        ReplyDownloadJob: 17,
     }
 
     '''
@@ -108,9 +108,15 @@ class RunnableQueue(QObject):
         If the job is a PauseQueueJob, emit the paused signal and return from the processing loop so
         that no more jobs are processed until the queue resumes.
 
-        If the job raises RequestTimeoutError or ApiInaccessibleError, then:
+        If the job raises RequestTimeoutError, then:
         (1) Add a PauseQueuejob to the queue
         (2) Add the job back to the queue so that it can be reprocessed once the queue is resumed.
+
+        If the job raises ApiInaccessibleError, then:
+        (1) Set the token to None so that the queue manager will stop enqueuing jobs since we are
+        no longer able to make api requests.
+        (2) Return from the processing loop since a valid token will be needed in order to process
+        jobs.
 
         Note: Generic exceptions are handled in _do_call_api.
         '''
@@ -129,7 +135,7 @@ class RunnableQueue(QObject):
             except ApiInaccessibleError as e:
                 logger.debug('Job {} raised an exception: {}: {}'.format(self, type(e).__name__, e))
                 self.api_client = None
-                self.add_job(PauseQueueJob())
+                return
             except RequestTimeoutError as e:
                 logger.debug('Job {} raised an exception: {}: {}'.format(self, type(e).__name__, e))
                 self.add_job(PauseQueueJob())
