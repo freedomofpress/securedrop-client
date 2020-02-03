@@ -2508,7 +2508,8 @@ class ConversationView(QWidget):
                 # Check if text in item has changed, then update the
                 # widget to reflect this change.
                 if not isinstance(item_widget, FileWidget):
-                    if item_widget.message.text() != conversation_item.content:
+                    if (item_widget.message.text() != conversation_item.content) and \
+                            conversation_item.content:
                         item_widget.message.setText(conversation_item.content)
                 # Check if this is a draft reply then ensure it's removed.
                 if isinstance(conversation_item, DraftReply):
