@@ -2812,10 +2812,15 @@ class ReplyTextEdit(QPlainTextEdit):
         super(ReplyTextEdit, self).focusOutEvent(e)
 
     def set_logged_in(self):
-        self.setEnabled(True)
-        source_name = "<strong><font color=\"#24276d\">{}</font></strong>".format(
-            self.source.journalist_designation)
-        placeholder = _("Compose a reply to ") + source_name
+        if self.source.public_key:
+            self.setEnabled(True)
+            source_name = "<strong><font color=\"#24276d\">{}</font></strong>".format(
+                self.source.journalist_designation)
+            placeholder = _("Compose a reply to ") + source_name
+        else:
+            self.setEnabled(False)
+            msg = "<strong><font color=\"#24276d\">Cannot Reply</font></strong>"
+            placeholder = msg + " please wait for something to happen..."
         self.placeholder.setText(placeholder)
         self.placeholder.adjustSize()
 

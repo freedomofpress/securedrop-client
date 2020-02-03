@@ -2907,6 +2907,23 @@ def test_ReplyTextEdit_set_logged_in(mocker):
     assert source.journalist_designation in rt.placeholder.text()
 
 
+def test_ReplyTextEdit_set_logged_in_no_public_key(mocker):
+    """
+    If the selected source has no public key, ensure a warning message is
+    shown and the user is unable to send a reply.
+    """
+    source = mocker.MagicMock()
+    source.journalist_designation = 'journalist designation'
+    source.public_key = None
+    controller = mocker.MagicMock()
+    rt = ReplyTextEdit(source, controller)
+
+    rt.set_logged_in()
+
+    assert 'Cannot Reply' in rt.placeholder.text()
+    assert rt.isEnabled() is False
+
+
 def test_update_conversation_maintains_old_items(mocker, session):
     """
     Calling update_conversation maintains old item state / position if there's
