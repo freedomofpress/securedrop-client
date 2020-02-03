@@ -289,7 +289,7 @@ class Controller(QObject):
             not self.api_job_queue.download_file_queue.api_client or
             not self.api_job_queue.metadata_queue.api_client
         ):
-            self.api = None
+            self.invalidate_token()
             self.logout()
             self.gui.show_login(error=_('Your session expired. Please log in again.'))
             return
@@ -357,9 +357,8 @@ class Controller(QObject):
 
     def on_authenticate_failure(self, result: Exception) -> None:
         # Failed to authenticate. Reset state with failure message.
-        self.api = None
-        error = _('There was a problem signing in. '
-                  'Please verify your credentials and try again.')
+        self.invalidate_token()
+        error = _('There was a problem signing in. Please verify your credentials and try again.')
         self.gui.show_login_error(error=error)
 
     def login_offline_mode(self):
@@ -444,7 +443,7 @@ class Controller(QObject):
         logger.debug('The SecureDrop server cannot be reached due to Error: {}'.format(result))
 
         if isinstance(result, ApiInaccessibleError):
-            self.api = None
+            self.invalidate_token()
             self.logout()
             self.gui.show_login(error=_('Your session expired. Please log in again.'))
 
@@ -501,12 +500,15 @@ class Controller(QObject):
         """
         if self.api is not None:
             self.call_api(self.api.logout, self.on_logout_success, self.on_logout_failure)
-            self.api = None
+            self.invalidate_token()
 
-        self.api_job_queue.logout()
         storage.mark_all_pending_drafts_as_failed(self.session)
+        self.api_job_queue.logout()
         self.gui.logout()
         self.is_authenticated = False
+
+    def invalidate_token(self):
+        self.api = None
 
     def set_status(self, message, duration=5000):
         """
