@@ -183,10 +183,6 @@ class ApiJobQueue(QObject):
         self.metadata_queue.pinged.connect(self.resume_queues)
 
     def logout(self) -> None:
-        self.main_queue.api_client = None
-        self.download_file_queue.api_client = None
-        self.metadata_queue.api_client = None
-
         if self.main_thread.isRunning():
             logger.debug('Stopping main queue thread')
             self.main_thread.quit()

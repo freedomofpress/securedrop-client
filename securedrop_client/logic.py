@@ -350,7 +350,6 @@ class Controller(QObject):
         self.gui.show_main_window(user)
         self.update_sources()
         self.api_job_queue.login(self.api)
-        self.update_sources()
         self.sync_api()
         self.is_authenticated = True
         self.resume_queues()
@@ -495,16 +494,21 @@ class Controller(QObject):
 
     def logout(self):
         """
-        Call logout function in the API, reset the API object, and force the UI
-        to update into a logged out state.
+        If the token is not already invalid, make an api call to logout and invalidate the token.
+        Then mark all pending draft replies as failed, stop the queues, and show the user as logged
+        out in the GUI.
         """
         if self.api is not None:
             self.call_api(self.api.logout, self.on_logout_success, self.on_logout_failure)
             self.invalidate_token()
 
-        storage.mark_all_pending_drafts_as_failed(self.session)
+        failed_replies = storage.mark_all_pending_drafts_as_failed(self.session)
+        for failed_reply in failed_replies:
+            self.reply_failed.emit(failed_reply.uuid)
+
         self.api_job_queue.logout()
         self.gui.logout()
+
         self.is_authenticated = False
 
     def invalidate_token(self):

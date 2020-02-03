@@ -386,22 +386,6 @@ def test_ApiJobQueue_login_if_queues_running(mocker):
     assert not mock_metadata_thread.start.called
 
 
-def test_ApiJobQueue_logout_removes_api_client(mocker):
-    mock_client = mocker.MagicMock()
-    mock_session_maker = mocker.MagicMock()
-
-    job_queue = ApiJobQueue(mock_client, mock_session_maker)
-    job_queue.main_queue.api_client = 'my token!!!'
-    job_queue.download_file_queue.api_client = 'my token!!!'
-    job_queue.metadata_queue.api_client = 'my token!!!'
-
-    job_queue.logout()
-
-    assert job_queue.main_queue.api_client is None
-    assert job_queue.download_file_queue.api_client is None
-    assert job_queue.metadata_queue.api_client is None
-
-
 def test_ApiJobQueue_logout_stops_queue_threads(mocker):
     job_queue = ApiJobQueue(mocker.MagicMock(), mocker.MagicMock())
 
