@@ -835,18 +835,26 @@ class SourceList(QListWidget):
     def __init__(self):
         super().__init__()
 
-        # Set id and styles
+        # Set id and styles.
         self.setObjectName('sourcelist')
         self.setStyleSheet(self.CSS)
         self.setFixedWidth(445)
         self.setUniformItemSizes(True)
 
-        # Set layout
+        # Set layout.
         layout = QVBoxLayout(self)
         self.setLayout(layout)
 
+        # To hold references to SourceWidget instances indexed by source UUID.
+        self.source_widgets = {}
+
     def setup(self, controller):
         self.controller = controller
+        # Handle source related messages.
+        self.controller.message_ready.connect(self.set_snippet)
+        self.controller.reply_ready.connect(self.set_snippet)
+        self.controller.reply_succeeded.connect(self.set_snippet)
+        self.controller.file_ready.connect(self.set_snippet)
 
     def update(self, sources: List[Source]):
         """
@@ -860,6 +868,7 @@ class SourceList(QListWidget):
         for source in sources:
             new_source = SourceWidget(source)
             new_source.setup(self.controller)
+            self.source_widgets[source.uuid] = new_source
 
             list_item = QListWidgetItem(self)
             list_item.setSizeHint(new_source.sizeHint())
@@ -875,6 +884,16 @@ class SourceList(QListWidget):
         source_widget = self.itemWidget(source_item)
         if source_widget and source_exists(self.controller.session, source_widget.source.uuid):
             return source_widget.source
+
+    def set_snippet(self, source_uuid, message_uuid, content):
+        """
+        Given a UUID of a source, if the referenced message is the latest
+        message, then update the source's preview snippet to the referenced
+        content.
+        """
+        source_widget = self.source_widgets.get(source_uuid)
+        if source_widget:
+            source_widget.set_snippet(source_uuid, message_uuid, content)
 
 
 class SourceWidget(QWidget):
@@ -1018,10 +1037,6 @@ class SourceWidget(QWidget):
         """
         self.controller = controller
         self.star.setup(self.controller)
-        self.controller.message_ready.connect(self.set_snippet)
-        self.controller.reply_ready.connect(self.set_snippet)
-        self.controller.reply_succeeded.connect(self.set_snippet)
-        self.controller.file_ready.connect(self.set_snippet)
 
     def update(self):
         """
@@ -1029,12 +1044,18 @@ class SourceWidget(QWidget):
         """
         self.timestamp.setText(_(arrow.get(self.source.last_updated).format('DD MMM')))
         self.name.setText(self.source.journalist_designation)
-        self.set_snippet()
+        self.set_snippet(self.source.uuid)
         if self.source.document_count == 0:
             self.paperclip.hide()
 
-    def set_snippet(self, uuid=None, content=None):
-        if self.source.collection:
+    def set_snippet(self, source, uuid=None, content=None):
+        """
+        Update the preview snippet only if the new message is for the
+        referenced source and there's a source collection. If a uuid and
+        content are passed then use these, otherwise default to whatever the
+        latest item in the conversation might be.
+        """
+        if source == self.source.uuid and self.source.collection:
             msg = self.source.collection[-1]
             if uuid and uuid == msg.uuid and content:
                 msg_text = content

@@ -103,7 +103,7 @@ class Controller(QObject):
     Signal that notifies that a reply was accepted by the server. Emits the reply's
     UUID and content as a string.
     """
-    reply_succeeded = pyqtSignal([str, str])
+    reply_succeeded = pyqtSignal([str, str, str])
 
     """
     Signal that notifies that a reply failed to be accepted by the server. Emits the reply's UUID
@@ -122,19 +122,19 @@ class Controller(QObject):
     This signal indicates that a file has been successfully downloaded by emitting the file's
     UUID and original filename as a string.
     """
-    file_ready = pyqtSignal([str, str])
+    file_ready = pyqtSignal([str, str, str])
 
     """
     This signal indicates that a message has been successfully downloaded by emitting the message's
     UUID and content as a string.
     """
-    message_ready = pyqtSignal([str, str])
+    message_ready = pyqtSignal([str, str, str])
 
     """
     This signal indicates that a reply has been successfully downloaded by emitting the reply's
     UUID and content as a string.
     """
-    reply_ready = pyqtSignal([str, str])
+    reply_ready = pyqtSignal([str, str, str])
 
     def __init__(self, hostname: str, gui, session_maker: sessionmaker,
                  home: str, proxy: bool = True, qubes: bool = True) -> None:
@@ -533,7 +533,7 @@ class Controller(QObject):
         self.gui.clear_error_status()  # remove any permanent error status message
         self.session.commit()  # Needed to flush stale data.
         message = storage.get_message(self.session, uuid)
-        self.message_ready.emit(message.uuid, message.content)
+        self.message_ready.emit(message.source.uuid, message.uuid, message.content)
 
     def on_message_download_failure(self, exception: Exception) -> None:
         """
@@ -558,7 +558,7 @@ class Controller(QObject):
         self.gui.clear_error_status()  # remove any permanent error status message
         self.session.commit()  # Needed to flush stale data.
         reply = storage.get_reply(self.session, uuid)
-        self.reply_ready.emit(reply.uuid, reply.content)
+        self.reply_ready.emit(reply.source.uuid, reply.uuid, reply.content)
 
     def on_reply_download_failure(self, exception: Exception) -> None:
         """
@@ -713,7 +713,7 @@ class Controller(QObject):
         self.gui.clear_error_status()  # remove any permanent error status message
         self.session.commit()
         file_obj = storage.get_file(self.session, uuid)
-        self.file_ready.emit(uuid, file_obj.original_filename)
+        self.file_ready.emit(file_obj.source.uuid, uuid, file_obj.original_filename)
 
     def on_file_download_failure(self, exception: Exception) -> None:
         """
@@ -799,7 +799,7 @@ class Controller(QObject):
         self.gui.clear_error_status()  # remove any permanent error status message
         self.session.commit()
         reply = storage.get_reply(self.session, reply_uuid)
-        self.reply_succeeded.emit(reply_uuid, reply.content)
+        self.reply_succeeded.emit(reply.source.uuid, reply_uuid, reply.content)
 
     def on_reply_failure(
         self,
