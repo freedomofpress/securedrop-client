@@ -18,6 +18,7 @@ along with this program.  If not, see <fhttp://www.gnu.org/licenses/>.
 """
 import arrow
 from datetime import datetime
+import functools
 import inspect
 import logging
 import os
@@ -46,6 +47,18 @@ from securedrop_client.sync import ApiSync
 from securedrop_client.utils import check_dir_permissions
 
 logger = logging.getLogger(__name__)
+
+
+def login_required(f):
+    @functools.wraps(f)
+    def decorated_function(self, *args, **kwargs):
+        if not self.api:
+            self.on_action_requiring_login()
+            return
+        else:
+            return f(self, *args, **kwargs)
+
+    return decorated_function
 
 
 class APICallRunner(QObject):
@@ -471,15 +484,12 @@ class Controller(QObject):
         error = _('Failed to update star.')
         self.gui.update_error_status(error)
 
+    @login_required
     def update_star(self, source_db_object, callback):
         """
         Star or unstar. The callback here is the API sync as we first make sure
         that we apply the change to the server, and then update locally.
         """
-        if not self.api:  # Then we should tell the user they need to login.
-            self.on_action_requiring_login()
-            return
-
         job = UpdateStarJob(source_db_object.uuid, source_db_object.is_starred)
         job.success_signal.connect(self.on_update_star_success, type=Qt.QueuedConnection)
         job.success_signal.connect(callback, type=Qt.QueuedConnection)
@@ -517,6 +527,7 @@ class Controller(QObject):
         """
         self.gui.update_activity_status(message, duration)
 
+    @login_required
     def _submit_download_job(self,
                              object_type: Union[Type[db.Reply], Type[db.Message], Type[db.File]],
                              uuid: str) -> None:
@@ -670,6 +681,7 @@ class Controller(QObject):
 
         self.export.begin_print.emit([file_location])
 
+    @login_required
     def on_submission_download(
         self,
         submission_type: Union[Type[db.File], Type[db.Message]],
@@ -678,11 +690,8 @@ class Controller(QObject):
         """
         Download the file associated with the Submission (which may be a File or Message).
         """
-        if self.api:
-            self._submit_download_job(submission_type, submission_uuid)
-            self.set_status(_('Downloading file'))
-        else:
-            self.on_action_requiring_login()
+        self._submit_download_job(submission_type, submission_uuid)
+        self.set_status(_('Downloading file'))
 
     def on_file_download_success(self, uuid: Any) -> None:
         """
@@ -722,6 +731,7 @@ class Controller(QObject):
         error = _('Failed to delete source at server')
         self.gui.update_error_status(error)
 
+    @login_required
     def delete_source(self, source: db.Source):
         """
         Performs a delete operation on source record.
@@ -731,16 +741,13 @@ class Controller(QObject):
         synchronize the server records with the local state. If not,
         the failure handler will display an error.
         """
-        if not self.api:  # Then we should tell the user they need to login.
-            self.on_action_requiring_login()
-            return
-
         job = DeleteSourceJob(source.uuid)
         job.success_signal.connect(self.on_delete_source_success, type=Qt.QueuedConnection)
         job.failure_signal.connect(self.on_delete_source_failure, type=Qt.QueuedConnection)
 
         self.api_job_queue.enqueue(job)
 
+    @login_required
     def send_reply(self, source_uuid: str, reply_uuid: str, message: str) -> None:
         """
         Send a reply to a source.
