@@ -12,6 +12,7 @@ from tests import factory
 
 from securedrop_client import db
 from securedrop_client.logic import APICallRunner, Controller
+from securedrop_client.api_jobs.base import ApiInaccessibleError
 from securedrop_client.api_jobs.downloads import DownloadChecksumMismatchException
 from securedrop_client.api_jobs.uploads import SendReplyJobError
 
@@ -426,6 +427,25 @@ def test_Controller_on_sync_failure(homedir, config, mocker, session_maker):
     assert mock_storage.update_local_storage.call_count == 0
 
 
+def test_Controller_on_sync_failure_due_to_invalid_token(homedir, config, mocker, session_maker):
+    """
+    If the sync fails because the api is inaccessible then ensure user is logged out and shown the
+    login window.
+    """
+    gui = mocker.MagicMock()
+    co = Controller('http://localhost', gui, session_maker, homedir)
+    co.logout = mocker.MagicMock()
+    co.gui = mocker.MagicMock()
+    co.gui.show_login = mocker.MagicMock()
+    mock_storage = mocker.patch('securedrop_client.logic.storage')
+
+    co.on_sync_failure(ApiInaccessibleError())
+
+    assert mock_storage.update_local_storage.call_count == 0
+    co.logout.assert_called_once_with()
+    co.gui.show_login.assert_called_once_with(error='Your session expired. Please log in again.')
+
+
 def test_Controller_on_sync_success(homedir, config, mocker):
     """
     If there's a result to syncing, then update local storage.
@@ -531,6 +551,68 @@ def test_Controller_on_update_star_failed(homedir, config, mocker, session_maker
     co.on_update_star_failure(result)
     co.sync_api.assert_not_called()
     mock_gui.update_error_status.assert_called_once_with('Failed to update star.')
+
+
+def test_Controller_invalidate_token(mocker, homedir, session_maker):
+    '''
+    Ensure the controller's api token is set to None.
+    '''
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    co.api = 'not None'
+
+    co.invalidate_token()
+
+    assert co.api is None
+
+
+def test_Controller_logout_with_pending_replies(mocker, session_maker, homedir, reply_status_codes):
+    '''
+    Ensure draft reply fails on logout and that the reply_failed signal is emitted.
+    '''
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    co.api_job_queue = mocker.MagicMock()
+    co.api_job_queue.logout = mocker.MagicMock()
+    co.call_api = mocker.MagicMock()
+    co.reply_failed = mocker.MagicMock()
+
+    source = factory.Source()
+    session = session_maker()
+    pending_status = session.query(db.ReplySendStatus).filter_by(
+        name=db.ReplySendStatusCodes.PENDING.value).one()
+    failed_status = session.query(db.ReplySendStatus).filter_by(
+        name=db.ReplySendStatusCodes.FAILED.value).one()
+    pending_draft_reply = factory.DraftReply(source=source, send_status=pending_status)
+    session.add(source)
+    session.add(pending_draft_reply)
+
+    co.logout()
+
+    for draft in session.query(db.DraftReply).all():
+        assert draft.send_status == failed_status
+
+    co.reply_failed.emit.assert_called_once_with(pending_draft_reply.uuid)
+
+
+def test_Controller_logout_with_no_api(homedir, config, mocker, session_maker):
+    '''
+    Ensure we don't attempt to make an api call to logout when the api has been set to None
+    because token is invalid.
+    '''
+    mock_gui = mocker.MagicMock()
+    co = Controller('http://localhost', mock_gui, session_maker, homedir)
+    co.api = None
+    co.api_job_queue = mocker.MagicMock()
+    co.api_job_queue.logout = mocker.MagicMock()
+    co.call_api = mocker.MagicMock()
+    fail_draft_replies = mocker.patch(
+        'securedrop_client.storage.mark_all_pending_drafts_as_failed')
+
+    co.logout()
+
+    co.call_api.assert_not_called()
+    co.api_job_queue.logout.assert_called_once_with()
+    co.gui.logout.assert_called_once_with()
+    fail_draft_replies.called_once_with(co.session)
 
 
 def test_Controller_logout_success(homedir, config, mocker, session_maker):
@@ -1359,22 +1441,29 @@ def test_Controller_on_queue_paused(homedir, config, mocker, session_maker):
     '''
     mock_gui = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
-    co.api = 'mock'
+    mocker.patch.object(co, 'api_job_queue')
+    co.api = 'not none'
     co.on_queue_paused()
     mock_gui.update_error_status.assert_called_once_with(
         'The SecureDrop server cannot be reached.', duration=0, retry=True)
 
 
-def test_Controller_on_queue_paused_when_logged_out(homedir, config, mocker, session_maker):
-    '''
-    Check that a paused queue is communicated to the user via the error status bar. There should not
-    be a retry option displayed to the user
-    '''
-    mock_gui = mocker.MagicMock()
-    co = Controller('http://localhost', mock_gui, session_maker, homedir)
+def test_Controller_on_queue_paused_due_to_invalid_token(homedir, config, mocker, session_maker):
+    """
+    If the api is inaccessible then ensure user is logged out and shown the login window. Also check
+    that "SecureDrop server cannot be reached" is not shown when the user is not authenticated.
+    """
+    gui = mocker.MagicMock()
+    co = Controller('http://localhost', gui, session_maker, homedir)
     co.api = None
+    co.logout = mocker.MagicMock()
+    co.gui = mocker.MagicMock()
+    co.gui.show_login = mocker.MagicMock()
+
     co.on_queue_paused()
-    mock_gui.update_error_status.assert_called_once_with('The SecureDrop server cannot be reached.')
+
+    co.logout.assert_called_once_with()
+    co.gui.show_login.assert_called_once_with(error='Your session expired. Please log in again.')
 
 
 def test_Controller_call_update_star_success(homedir, config, mocker, session_maker, session):

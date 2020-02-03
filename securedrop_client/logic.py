@@ -32,6 +32,7 @@ from sqlalchemy.orm.session import sessionmaker
 
 from securedrop_client import storage
 from securedrop_client import db
+from securedrop_client.api_jobs.base import ApiInaccessibleError
 from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob, \
     ReplyDownloadJob, DownloadChecksumMismatchException, MetadataSyncJob
 from securedrop_client.api_jobs.sources import DeleteSourceJob
@@ -279,13 +280,24 @@ class Controller(QObject):
         new_api_thread.start()
 
     def on_queue_paused(self) -> None:
-        if self.api is None:
-            self.gui.update_error_status(_('The SecureDrop server cannot be reached.'))
-        else:
-            self.gui.update_error_status(
-                _('The SecureDrop server cannot be reached.'),
-                duration=0,
-                retry=True)
+        # TODO: remove if block once https://github.com/freedomofpress/securedrop-client/pull/739
+        # is merged and rely on continuous metadata sync to encounter same auth error from the
+        # server which will log the user out in the on_sync_failure handler
+        if (
+            not self.api or
+            not self.api_job_queue.main_queue.api_client or
+            not self.api_job_queue.download_file_queue.api_client or
+            not self.api_job_queue.metadata_queue.api_client
+        ):
+            self.invalidate_token()
+            self.logout()
+            self.gui.show_login(error=_('Your session expired. Please log in again.'))
+            return
+
+        self.gui.update_error_status(
+            _('The SecureDrop server cannot be reached.'),
+            duration=0,
+            retry=True)
 
     def resume_queues(self) -> None:
         self.api_job_queue.resume_queues()
@@ -344,9 +356,8 @@ class Controller(QObject):
 
     def on_authenticate_failure(self, result: Exception) -> None:
         # Failed to authenticate. Reset state with failure message.
-        self.api = None
-        error = _('There was a problem signing in. '
-                  'Please verify your credentials and try again.')
+        self.invalidate_token()
+        error = _('There was a problem signing in. Please verify your credentials and try again.')
         self.gui.show_login_error(error=error)
 
     def login_offline_mode(self):
@@ -424,14 +435,16 @@ class Controller(QObject):
 
     def on_sync_failure(self, result: Exception) -> None:
         """
-        Called when syncronisation of data via the API fails after a background sync. Resume the
-        queues so that we continue to retry syncing with the server in the background.
+        Called when syncronisation of data via the API fails after a background sync. If the reason
+        a sync fails is ApiInaccessibleError then we need to log the user out for security reasons
+        and show them the login window in order to get a new token.
         """
         logger.debug('The SecureDrop server cannot be reached due to Error: {}'.format(result))
-        self.gui.update_error_status(
-            _('The SecureDrop server cannot be reached.'),
-            duration=0,
-            retry=True)
+
+        if isinstance(result, ApiInaccessibleError):
+            self.invalidate_token()
+            self.logout()
+            self.gui.show_login(error=_('Your session expired. Please log in again.'))
 
     def update_sync(self):
         """
@@ -481,17 +494,25 @@ class Controller(QObject):
 
     def logout(self):
         """
-        Call logout function in the API, reset the API object, and force the UI
-        to update into a logged out state.
+        If the token is not already invalid, make an api call to logout and invalidate the token.
+        Then mark all pending draft replies as failed, stop the queues, and show the user as logged
+        out in the GUI.
         """
-        self.call_api(self.api.logout,
-                      self.on_logout_success,
-                      self.on_logout_failure)
-        self.api = None
+        if self.api is not None:
+            self.call_api(self.api.logout, self.on_logout_success, self.on_logout_failure)
+            self.invalidate_token()
+
+        failed_replies = storage.mark_all_pending_drafts_as_failed(self.session)
+        for failed_reply in failed_replies:
+            self.reply_failed.emit(failed_reply.uuid)
+
         self.api_job_queue.logout()
-        storage.mark_all_pending_drafts_as_failed(self.session)
         self.gui.logout()
+
         self.is_authenticated = False
+
+    def invalidate_token(self):
+        self.api = None
 
     def set_status(self, message, duration=5000):
         """
@@ -507,7 +528,7 @@ class Controller(QObject):
         if object_type == db.Reply:
             job = ReplyDownloadJob(
                 uuid, self.data_dir, self.gpg
-                )  # type: Union[ReplyDownloadJob, MessageDownloadJob, FileDownloadJob]
+            )  # type: Union[ReplyDownloadJob, MessageDownloadJob, FileDownloadJob]
             job.success_signal.connect(self.on_reply_download_success, type=Qt.QueuedConnection)
             job.failure_signal.connect(self.on_reply_download_failure, type=Qt.QueuedConnection)
         elif object_type == db.Message:
@@ -697,6 +718,7 @@ class Controller(QObject):
 
     def on_delete_source_failure(self, result: Exception) -> None:
         logging.info("failed to delete source at server")
+
         error = _('Failed to delete source at server')
         self.gui.update_error_status(error)
 

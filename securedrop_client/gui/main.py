@@ -110,7 +110,7 @@ class Window(QMainWindow):
         screen = QDesktopWidget().screenGeometry()
         self.resize(screen.width(), screen.height())
 
-    def show_login(self):
+    def show_login(self, error: str = ''):
         """
         Show the login form.
         """
@@ -122,9 +122,10 @@ class Window(QMainWindow):
         x_center = (screen_size.width() - login_dialog_size.width()) / 2
         y_center = (screen_size.height() - login_dialog_size.height()) / 2
         self.login_dialog.move(x_center, y_center)
-
         self.login_dialog.setup(self.controller)
         self.login_dialog.reset()
+        if error:
+            self.login_dialog.error(error)
         self.login_dialog.exec()
 
     def show_login_error(self, error):

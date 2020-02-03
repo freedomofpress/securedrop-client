@@ -136,7 +136,11 @@ class RunnableQueue(QObject):
                 session = self.session_maker()
                 job._do_call_api(self.api_client, session)
                 self.pinged.emit()
-            except (RequestTimeoutError, ApiInaccessibleError) as e:
+            except ApiInaccessibleError as e:
+                logger.debug('Job {} raised an exception: {}: {}'.format(self, type(e).__name__, e))
+                self.api_client = None
+                self.add_job(PauseQueueJob())
+            except RequestTimeoutError as e:
                 logger.debug('Job {} raised an exception: {}: {}'.format(self, type(e).__name__, e))
                 self.add_job(PauseQueueJob())
                 self.re_add_job(job)
@@ -179,9 +183,17 @@ class ApiJobQueue(QObject):
         self.metadata_queue.pinged.connect(self.resume_queues)
 
     def logout(self) -> None:
-        self.main_queue.api_client = None
-        self.download_file_queue.api_client = None
-        self.metadata_queue.api_client = None
+        if self.main_thread.isRunning():
+            logger.debug('Stopping main queue thread')
+            self.main_thread.quit()
+
+        if self.download_file_thread.isRunning():
+            logger.debug('Stopping download queue thread')
+            self.download_file_thread.quit()
+
+        if self.metadata_thread.isRunning():
+            logger.debug('Stopping metadata queue thread')
+            self.metadata_thread.quit()
 
     def login(self, api_client: API) -> None:
         logger.debug('Passing API token to queues')

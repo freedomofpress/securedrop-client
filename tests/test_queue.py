@@ -176,38 +176,6 @@ def test_RunnableQueue_resubmitted_jobs(mocker):
     queue.re_add_job(job1)
 
 
-def test_RunnableQueue_job_ApiInaccessibleError(mocker):
-    '''
-    Add two jobs to the queue. The first runs into an auth error, and then gets resubmitted for the
-    next pass through the loop.
-    '''
-    queue = RunnableQueue(mocker.MagicMock(), mocker.MagicMock())
-    queue.pause = mocker.MagicMock()
-    job_cls = factory.dummy_job_factory(mocker, ApiInaccessibleError())
-    queue.JOB_PRIORITIES = {PauseQueueJob: 0, job_cls: 1}
-
-    # ApiInaccessibleError will cause the queue to pause, use our fake pause method instead
-    def fake_pause() -> None:
-        queue.add_job(PauseQueueJob())
-    queue.pause.emit = fake_pause
-
-    # Add two jobs that timeout during processing to the queues
-    job1 = job_cls()
-    job2 = job_cls()
-    queue.add_job(job1)
-    queue.add_job(job2)
-
-    # attempt to process job1 knowing that it times out
-    queue.process()
-    assert queue.queue.qsize() == 2  # queue contains: job1, job2
-
-    # now process after making it so job1 no longer times out
-    job1.return_value = 'mock'
-    queue.process()
-    assert queue.queue.qsize() == 1  # queue contains: job2
-    assert queue.queue.get(block=True) == (1, job2)
-
-
 def test_RunnableQueue_job_generic_exception(mocker):
     '''
     Add two jobs to the queue, the first of which will cause a generic exception, which is handled
@@ -233,25 +201,24 @@ def test_RunnableQueue_job_generic_exception(mocker):
 
 def test_RunnableQueue_does_not_run_jobs_when_not_authed(mocker):
     '''
-    Add a job to the queue, ensure we don't run it when not authenticated.
+    Check that the queue is paused when a job returns with aApiInaccessibleError. Check that the
+    job does not get resubmitted since it is not authorized and that its api_client is None.
     '''
     queue = RunnableQueue(mocker.MagicMock(), mocker.MagicMock())
-    queue.pause = mocker.MagicMock()
+    queue.paused = mocker.MagicMock()
+    queue.paused.emit = mocker.MagicMock()
     job_cls = factory.dummy_job_factory(mocker, ApiInaccessibleError())
     queue.JOB_PRIORITIES = {PauseQueueJob: 0, job_cls: 1}
-
-    # ApiInaccessibleError will cause the queue to pause, use our fake pause method instead
-    def fake_pause() -> None:
-        queue.add_job(PauseQueueJob())
-    queue.pause.emit = fake_pause
 
     # Add a job that results in an ApiInaccessibleError to the queue
     job = job_cls()
     queue.add_job(job)
 
-    # attempt to process job1 knowing that it times out
+    # attempt to process job knowing that it errors
     queue.process()
-    assert queue.queue.qsize() == 1  # queue contains: job1
+    assert queue.queue.qsize() == 0  # queue should not contain job since it was not resubmitted
+    assert queue.api_client is None
+    queue.paused.emit.assert_called_once_with()
 
 
 def test_ApiJobQueue_enqueue(mocker):
@@ -419,17 +386,24 @@ def test_ApiJobQueue_login_if_queues_running(mocker):
     assert not mock_metadata_thread.start.called
 
 
-def test_ApiJobQueue_logout_removes_api_client(mocker):
-    mock_client = mocker.MagicMock()
-    mock_session_maker = mocker.MagicMock()
-
-    job_queue = ApiJobQueue(mock_client, mock_session_maker)
-    job_queue.main_queue.api_client = 'my token!!!'
-    job_queue.download_file_queue.api_client = 'my token!!!'
-    job_queue.metadata_queue.api_client = 'my token!!!'
+def test_ApiJobQueue_logout_stops_queue_threads(mocker):
+    job_queue = ApiJobQueue(mocker.MagicMock(), mocker.MagicMock())
 
     job_queue.logout()
 
-    assert job_queue.main_queue.api_client is None
-    assert job_queue.download_file_queue.api_client is None
-    assert job_queue.metadata_queue.api_client is None
+    assert not job_queue.main_thread.isRunning()
+    assert not job_queue.download_file_thread.isRunning()
+    assert not job_queue.metadata_thread.isRunning()
+
+
+def test_ApiJobQueue_logout_results_in_queue_threads_not_running(mocker):
+    job_queue = ApiJobQueue(mocker.MagicMock(), mocker.MagicMock())
+    job_queue.main_thread = mocker.MagicMock()
+    job_queue.download_file_thread = mocker.MagicMock()
+    job_queue.metadata_thread = mocker.MagicMock()
+
+    job_queue.logout()
+
+    job_queue.main_thread.quit.assert_called_once_with()
+    job_queue.download_file_thread.quit.assert_called_once_with()
+    job_queue.metadata_thread.quit.assert_called_once_with()
