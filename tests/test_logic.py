@@ -763,6 +763,7 @@ def test_Controller_on_file_download_Submission_no_auth(homedir, config, session
     """If the controller is not authenticated, do not enqueue a download job"""
     mock_gui = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
+    co.on_action_requiring_login = mocker.MagicMock()
     co.api = None
 
     mock_success_signal = mocker.MagicMock()
@@ -785,6 +786,7 @@ def test_Controller_on_file_download_Submission_no_auth(homedir, config, session
     assert not mock_queue.enqueue.called
     assert not mock_success_signal.connect.called
     assert not mock_failure_signal.connect.called
+    assert co.on_action_requiring_login.called
 
 
 def test_Controller_on_file_downloaded_success(homedir, config, mocker, session_maker):
@@ -1000,6 +1002,7 @@ def test_Controller_download_new_replies_with_new_reply(mocker, session, session
     user-facing status message when a new reply is found.
     """
     co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    co.api = 'Api token has a value'
     reply = factory.Reply(source=factory.Source())
     mocker.patch('securedrop_client.storage.find_new_replies', return_value=[reply])
     success_signal = mocker.MagicMock()
@@ -1102,6 +1105,7 @@ def test_Controller_download_new_messages_with_new_message(mocker, session, sess
     usre-facing status message when a new message is found.
     """
     co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    co.api = 'Api token has a value'
     message = factory.Message(source=factory.Source())
     mocker.patch('securedrop_client.storage.find_new_messages', return_value=[message])
     success_signal = mocker.MagicMock()
