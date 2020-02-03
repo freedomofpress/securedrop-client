@@ -553,6 +553,46 @@ def test_Controller_on_update_star_failed(homedir, config, mocker, session_maker
     mock_gui.update_error_status.assert_called_once_with('Failed to update star.')
 
 
+def test_Controller_invalidate_token(mocker, homedir, session_maker):
+    '''
+    Ensure the controller's api token is set to None.
+    '''
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    co.api = 'not None'
+
+    co.invalidate_token()
+
+    assert co.api is None
+
+
+def test_Controller_logout_with_pending_replies(mocker, session_maker, homedir, reply_status_codes):
+    '''
+    Ensure draft reply fails on logout and that the reply_failed signal is emitted.
+    '''
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    co.api_job_queue = mocker.MagicMock()
+    co.api_job_queue.logout = mocker.MagicMock()
+    co.call_api = mocker.MagicMock()
+    co.reply_failed = mocker.MagicMock()
+
+    source = factory.Source()
+    session = session_maker()
+    pending_status = session.query(db.ReplySendStatus).filter_by(
+        name=db.ReplySendStatusCodes.PENDING.value).one()
+    failed_status = session.query(db.ReplySendStatus).filter_by(
+        name=db.ReplySendStatusCodes.FAILED.value).one()
+    pending_draft_reply = factory.DraftReply(source=source, send_status=pending_status)
+    session.add(source)
+    session.add(pending_draft_reply)
+
+    co.logout()
+
+    for draft in session.query(db.DraftReply).all():
+        assert draft.send_status == failed_status
+
+    co.reply_failed.emit.assert_called_once_with(pending_draft_reply.uuid)
+
+
 def test_Controller_logout_with_no_api(homedir, config, mocker, session_maker):
     '''
     Ensure we don't attempt to make an api call to logout when the api has been set to None

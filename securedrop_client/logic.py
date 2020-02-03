@@ -528,7 +528,7 @@ class Controller(QObject):
         if object_type == db.Reply:
             job = ReplyDownloadJob(
                 uuid, self.data_dir, self.gpg
-                )  # type: Union[ReplyDownloadJob, MessageDownloadJob, FileDownloadJob]
+            )  # type: Union[ReplyDownloadJob, MessageDownloadJob, FileDownloadJob]
             job.success_signal.connect(self.on_reply_download_success, type=Qt.QueuedConnection)
             job.failure_signal.connect(self.on_reply_download_failure, type=Qt.QueuedConnection)
         elif object_type == db.Message:
