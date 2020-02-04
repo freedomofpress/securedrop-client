@@ -703,6 +703,7 @@ def test_SourceList_update(mocker):
     assert mock_lwi.call_count == len(sources)
     assert sl.addItem.call_count == len(sources)
     assert sl.setItemWidget.call_count == len(sources)
+    assert len(sl.source_widgets) == len(sources)
 
 
 def test_SourceList_maintains_selection(mocker):
@@ -719,6 +720,19 @@ def test_SourceList_maintains_selection(mocker):
 
     assert sl.currentItem()
     assert sl.itemWidget(sl.currentItem()).source.id == sources[0].id
+
+
+def test_SourceList_set_snippet(mocker):
+    """
+    Handle the emitted event in the expected manner.
+    """
+    sl = SourceList()
+    mock_widget = mocker.MagicMock()
+    sl.source_widgets = {
+        "a_uuid": mock_widget,
+    }
+    sl.set_snippet("a_uuid", "msg_uuid", "msg_content")
+    mock_widget.set_snippet.assert_called_once_with("a_uuid", "msg_uuid", "msg_content")
 
 
 def test_SourceWidget_init(mocker):
@@ -778,6 +792,20 @@ def test_SourceWidget_update_attachment_icon():
 
     sw.update()
     assert sw.paperclip.isHidden()
+
+
+def test_SourceWidget_set_snippet(mocker):
+    """
+    Snippets are set as expected.
+    """
+    source = mocker.MagicMock()
+    source.uuid = "a_uuid"
+    source.journalist_designation = "Testy McTestface"
+    msg = factory.Message(content="abcdefg")
+    source.collection = [msg, ]
+    sw = SourceWidget(source)
+    sw.set_snippet(source.uuid, msg.uuid, msg.content)
+    assert sw.preview.text() == "abcdefg"
 
 
 def test_SourceWidget_update_truncate_latest_msg(mocker):
