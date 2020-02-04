@@ -611,14 +611,6 @@ class LoginButton(QPushButton):
         self.setStyleSheet(self.CSS)
         self.setFixedHeight(40)
 
-        # Set drop shadow effect
-        effect = QGraphicsDropShadowEffect(self)
-        effect.setOffset(0, 1)
-        effect.setBlurRadius(8)
-        effect.setColor(QColor('#aa000000'))
-        self.setGraphicsEffect(effect)
-        self.update()
-
         # Set click handler
         self.clicked.connect(self._on_clicked)
 
