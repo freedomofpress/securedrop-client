@@ -1840,6 +1840,9 @@ class FileWidget(QWidget):
         font-size: 13px;
         color: #2a319d;
     }
+    QPushButton#download_button:hover {
+        color: #05a6fe;
+    }
     QLabel#file_name {
         min-width: 129px;
         padding-right: 8px;
