@@ -2935,9 +2935,10 @@ def test_update_conversation_maintains_old_items(mocker, session):
     assert cv.conversation_layout.count() == 3
 
 
-def test_update_conversation_removes_draft_items(mocker, session):
+def test_update_conversation_does_not_remove_pending_draft_items(mocker, session):
     """
-    Calling update_conversation removes items that were added as drafts.
+    Calling update_conversation should not remove items that were added as drafts that were
+    not converted to successful replies.
     """
     source = factory.Source()
     session.add(source)
@@ -2964,7 +2965,46 @@ def test_update_conversation_removes_draft_items(mocker, session):
     session.add(new_message)
     session.commit()
 
-    # New message added, draft message removed.
+    # New message added, draft message persists.
+    cv.update_conversation(cv.source.collection)
+    assert cv.conversation_layout.count() == 4
+
+
+def test_update_conversation_does_remove_successful_draft_items(mocker, session):
+    """
+    Calling update_conversation should remove items that were added as drafts that were
+    converted to successful replies.
+    """
+    source = factory.Source()
+    session.add(source)
+    send_status = factory.ReplySendStatus()
+    session.add(send_status)
+    session.commit()
+
+    file_ = factory.File(filename='1-source-doc.gpg', source=source)
+    session.add(file_)
+    message = factory.Message(filename='2-source-msg.gpg', source=source)
+    session.add(message)
+    draft_reply = factory.DraftReply(source=source, send_status=send_status)
+    session.add(draft_reply)
+    session.commit()
+
+    mock_get_file = mocker.MagicMock(return_value=file_)
+    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+
+    cv = ConversationView(source, mock_controller)
+    assert cv.conversation_layout.count() == 3  # precondition with draft
+
+    # add the new message and persist
+    new_message = factory.Message(filename='4-source-msg.gpg', source=source)
+    session.add(new_message)
+    session.commit()
+
+    # remove draft
+    session.delete(draft_reply)
+    session.commit()
+
+    # New message added, draft message is gone.
     cv.update_conversation(cv.source.collection)
     assert cv.conversation_layout.count() == 3
 
