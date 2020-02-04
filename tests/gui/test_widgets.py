@@ -2920,7 +2920,7 @@ def test_ReplyTextEdit_set_logged_in_no_public_key(mocker):
 
     rt.set_logged_in()
 
-    assert 'Cannot Reply' in rt.placeholder.text()
+    assert 'Awaiting action' in rt.placeholder.text()
     assert rt.isEnabled() is False
 
 

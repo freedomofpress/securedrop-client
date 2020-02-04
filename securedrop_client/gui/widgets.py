@@ -2819,8 +2819,8 @@ class ReplyTextEdit(QPlainTextEdit):
             placeholder = _("Compose a reply to ") + source_name
         else:
             self.setEnabled(False)
-            msg = "<strong><font color=\"#24276d\">Cannot Reply</font></strong>"
-            placeholder = msg + " please wait for something to happen..."
+            msg = "<strong><font color=\"#24276d\">Awaiting action</font></strong>"
+            placeholder = msg + " from the source to enable replies."
         self.placeholder.setText(placeholder)
         self.placeholder.adjustSize()
 
