@@ -841,10 +841,9 @@ class SourceList(QListWidget):
 
     def setup(self, controller):
         self.controller = controller
-        # Handle source related messages.
+        self.controller.reply_succeeded.connect(self.set_snippet)
         self.controller.message_ready.connect(self.set_snippet)
         self.controller.reply_ready.connect(self.set_snippet)
-        self.controller.reply_succeeded.connect(self.set_snippet)
         self.controller.file_ready.connect(self.set_snippet)
 
     def update(self, sources: List[Source]):
@@ -1630,8 +1629,8 @@ class SpeechBubble(QWidget):
         # Connect signals to slots
         update_signal.connect(self._update_text)
 
-    @pyqtSlot(str, str)
-    def _update_text(self, message_id: str, text: str) -> None:
+    @pyqtSlot(str, str, str)
+    def _update_text(self, source_id: str, message_id: str, text: str) -> None:
         """
         Conditionally update this SpeechBubble's text if and only if the message_id of the emitted
         signal matches the message_id of this speech bubble.
@@ -1765,14 +1764,13 @@ class ReplyWidget(SpeechBubble):
         elif status == 'PENDING':
             self.setStyleSheet(self.CSS_REPLY_PENDING)
 
-    @pyqtSlot(str)
-    def _on_reply_success(self, message_id: str) -> None:
+    @pyqtSlot(str, str, str)
+    def _on_reply_success(self, source_id: str, message_id: str, content: str) -> None:
         """
         Conditionally update this ReplyWidget's state if and only if the message_id of the emitted
         signal matches the message_id of this widget.
         """
         if message_id == self.message_id:
-            logger.debug('Message {} succeeded'.format(message_id))
             self._set_reply_state('SUCCEEDED')
 
     @pyqtSlot(str)
@@ -1782,7 +1780,6 @@ class ReplyWidget(SpeechBubble):
         signal matches the message_id of this widget.
         """
         if message_id == self.message_id:
-            logger.debug('Message {} failed'.format(message_id))
             self._set_reply_state('FAILED')
 
 
@@ -1970,8 +1967,8 @@ class FileWidget(QWidget):
                 self._on_left_click()
         return QObject.event(obj, event)
 
-    @pyqtSlot(str)
-    def _on_file_downloaded(self, file_uuid: str) -> None:
+    @pyqtSlot(str, str, str)
+    def _on_file_downloaded(self, source_uuid: str, file_uuid: str, filename: str) -> None:
         if file_uuid == self.file.uuid:
             self.file = self.controller.get_file(self.file.uuid)
             if self.file.is_downloaded:
@@ -1983,8 +1980,8 @@ class FileWidget(QWidget):
                 self.print_button.show()
                 self.file_name.show()
 
-    @pyqtSlot(str)
-    def _on_file_missing(self, file_uuid: str) -> None:
+    @pyqtSlot(str, str, str)
+    def _on_file_missing(self, source_uuid: str, file_uuid: str, filename: str) -> None:
         if file_uuid == self.file.uuid:
             self.file = self.controller.get_file(self.file.uuid)
             if not self.file.is_downloaded:
@@ -2566,8 +2563,8 @@ class ConversationView(QWidget):
         """
         Add a message from the source.
         """
-        conversation_item = MessageWidget(message.uuid, str(message), self.controller.message_ready,
-                                          index)
+        conversation_item = MessageWidget(
+            message.uuid, str(message), self.controller.message_ready, index)
         self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignLeft)
         self.current_messages[message.uuid] = conversation_item
 

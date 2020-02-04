@@ -101,18 +101,6 @@ class Controller(QObject):
     sync_events = pyqtSignal(str)
 
     """
-    Signal that notifies that a reply was accepted by the server. Emits the reply's
-    UUID and content as a string.
-    """
-    reply_succeeded = pyqtSignal([str, str, str])
-
-    """
-    Signal that notifies that a reply failed to be accepted by the server. Emits the reply's UUID
-    as a string.
-    """
-    reply_failed = pyqtSignal(str)
-
-    """
     A signal that emits a signal when the authentication state changes.
     - `True` when the client becomes authenticated
     - `False` when the client becomes unauthenticated
@@ -120,27 +108,61 @@ class Controller(QObject):
     authentication_state = pyqtSignal(bool)
 
     """
-    This signal indicates that a file has been successfully downloaded by emitting the file's
-    UUID and original filename as a string.
+    This signal indicates that a reply was successfully sent and received by the server.
+
+    Emits:
+        str: the reply's source UUID
+        str: the reply UUID
+        str: the content of the reply
     """
-    file_ready = pyqtSignal([str, str, str])
+    reply_succeeded = pyqtSignal(str, str, str)
 
     """
-    This signal indicates that a file needs to be redownloaded by emitting the file's UUID.
+    This signal indicates that a reply was not successfully sent or received by the server.
+
+    Emits:
+        str: the reply UUID
+    """
+    reply_failed = pyqtSignal(str)
+
+    """
+    This signal indicates that a reply has been successfully downloaded.
+
+    Emits:
+        str: the reply's source UUID
+        str: the reply UUID
+        str: the content of the reply
+    """
+    reply_ready = pyqtSignal(str, str, str)
+
+    """
+    This signal indicates that a message has been successfully downloaded.
+
+    Emits:
+        str: the message's source UUID
+        str: the message UUID
+        str: the content of the message
+    """
+    message_ready = pyqtSignal(str, str, str)
+
+    """
+    This signal indicates that a file has been successfully downloaded.
+
+    Emits:
+        str: the file's source UUID
+        str: the file UUID
+        str: the name of the file
+    """
+    file_ready = pyqtSignal(str, str, str)
+
+    """
+    This signal indicates that a file is missing.
+
+    Emits:
+        str: the file UUID
     """
     file_missing = pyqtSignal(str)
 
-    """
-    This signal indicates that a message has been successfully downloaded by emitting the message's
-    UUID and content as a string.
-    """
-    message_ready = pyqtSignal([str, str, str])
-
-    """
-    This signal indicates that a reply has been successfully downloaded by emitting the reply's
-    UUID and content as a string.
-    """
-    reply_ready = pyqtSignal([str, str, str])
 
     def __init__(self, hostname: str, gui, session_maker: sessionmaker,
                  home: str, proxy: bool = True, qubes: bool = True) -> None:
@@ -782,7 +804,7 @@ class Controller(QObject):
         self.gui.clear_error_status()  # remove any permanent error status message
         self.session.commit()
         reply = storage.get_reply(self.session, reply_uuid)
-        self.reply_succeeded.emit(reply.source.uuid, reply_uuid, reply.content)
+        self.reply_succeeded.emit(reply.source.uuid, reply.uuid, reply.content)
 
     def on_reply_failure(
         self,
