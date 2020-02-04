@@ -23,13 +23,25 @@ from securedrop_client.storage import mark_as_decrypted, mark_as_downloaded, \
 logger = logging.getLogger(__name__)
 
 
-class DownloadChecksumMismatchException(Exception):
+class DownloadException(Exception):
     def __init__(self, message: str,
                  object_type: Union[Type[Reply], Type[Message], Type[File]],
                  uuid: str):
         super().__init__(message)
         self.object_type = object_type
         self.uuid = uuid
+
+
+class DownloadChecksumMismatchException(DownloadException):
+    """
+    Raised when a download's hash does not match the SecureDrop server's.
+    """
+
+
+class DownloadDecryptionException(DownloadException):
+    """
+    Raised when an error occurs during decryption of a download.
+    """
 
 
 class DownloadJob(ApiJob):
@@ -114,7 +126,7 @@ class DownloadJob(ApiJob):
             return db_object.uuid
 
         if db_object.is_downloaded:
-            self._decrypt(os.path.join(self.data_dir, db_object.filename), db_object, session)
+            self._decrypt(db_object.location(self.data_dir), db_object, session)
             return db_object.uuid
 
         destination = self._download(api_client, db_object, session)
@@ -170,7 +182,11 @@ class DownloadJob(ApiJob):
         except CryptoError as e:
             mark_as_decrypted(type(db_object), db_object.uuid, session, is_decrypted=False)
             logger.debug("Failed to decrypt file: {}".format(os.path.basename(filepath)))
-            raise e
+            raise DownloadDecryptionException(
+                "Downloaded file could not be decrypted.",
+                type(db_object),
+                db_object.uuid
+            ) from e
 
     @classmethod
     def _check_file_integrity(cls, etag: str, file_path: str) -> bool:

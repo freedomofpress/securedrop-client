@@ -1972,20 +1972,7 @@ class FileWidget(QWidget):
         self.file_size.setAlignment(Qt.AlignRight)
 
         # Decide what to show or hide based on whether or not the file's been downloaded
-        if self.file.is_downloaded:
-            self.download_button.hide()
-            self.no_file_name.hide()
-            self.export_button.show()
-            self.middot.show()
-            self.print_button.show()
-            self.file_name.show()
-        else:
-            self.export_button.hide()
-            self.middot.hide()
-            self.print_button.hide()
-            self.file_name.hide()
-            self.download_button.show()
-            self.no_file_name.show()
+        self.set_button_state()
 
         # Add widgets
         layout.addWidget(self.file_options)
@@ -2013,38 +2000,39 @@ class FileWidget(QWidget):
             self.download_button.setIcon(load_icon('download_file.svg'))
         return QObject.event(obj, event)
 
+    def set_button_state(self):
+        if self.file.is_decrypted:
+            self.file_name.setText(self.file.filename)
+            self.download_button.hide()
+            self.no_file_name.hide()
+            self.export_button.show()
+            self.middot.show()
+            self.print_button.show()
+            self.file_name.show()
+        else:
+            self.download_button.setText(_('DOWNLOAD'))
+            self.download_button.setIcon(load_icon('download_file.svg'))
+            self.download_button.setStyleSheet('color: #2a319d')
+            self.download_button.setFont(self.file_buttons_font)
+            self.download_button.show()
+            self.no_file_name.hide()
+            self.export_button.hide()
+            self.middot.hide()
+            self.print_button.hide()
+            self.file_name.hide()
+            self.no_file_name.show()
+
     @pyqtSlot(str, str, str)
     def _on_file_downloaded(self, source_uuid: str, file_uuid: str, filename: str) -> None:
         if file_uuid == self.file.uuid:
             self.file = self.controller.get_file(self.file.uuid)
-            if self.file.is_downloaded:
-                self.downloading = False
-                self.file_name.setText(self.file.filename)
-                self.download_button.hide()
-                self.no_file_name.hide()
-                self.export_button.show()
-                self.middot.show()
-                self.print_button.show()
-                self.file_name.show()
+            QTimer.singleShot(300, self.stop_button_animation)
 
     @pyqtSlot(str, str, str)
     def _on_file_missing(self, source_uuid: str, file_uuid: str, filename: str) -> None:
         if file_uuid == self.file.uuid:
             self.file = self.controller.get_file(self.file.uuid)
-            if not self.file.is_downloaded:
-                self.downloading = False
-                self.download_animation.stop()
-                self.download_button.setText(_('DOWNLOAD'))
-                self.download_button.setIcon(load_icon('download_file.svg'))
-                self.download_button.setStyleSheet('color: #2a319d')
-                self.download_button.setFont(self.file_buttons_font)
-                self.download_button.show()
-                self.no_file_name.hide()
-                self.export_button.hide()
-                self.middot.hide()
-                self.print_button.hide()
-                self.file_name.hide()
-                self.no_file_name.show()
+            QTimer.singleShot(300, self.stop_button_animation)
 
     @pyqtSlot()
     def _on_export_clicked(self):
@@ -2081,14 +2069,12 @@ class FileWidget(QWidget):
         # update state
         self.file = self.controller.get_file(self.file.uuid)
 
-        if self.file.is_downloaded:
-            # Open the already downloaded file.
+        if self.file.is_decrypted:
+            # Open the already downloaded and decrypted file.
             self.controller.on_file_open(self.file)
         else:
             if self.controller.api:
-                # Indicate in downloading state... but only after 0.3 seconds (i.e.
-                # this is taking a noticable amount of time to complete).
-                QTimer.singleShot(300, self.start_button_animation)
+                self.start_button_animation()
             # Download the file.
             self.controller.on_submission_download(File, self.file.uuid)
 
@@ -2108,6 +2094,13 @@ class FileWidget(QWidget):
         animation.
         """
         self.download_button.setIcon(QIcon(self.download_animation.currentPixmap()))
+
+    def stop_button_animation(self):
+        """
+        Stops the download animation and restores the button to its default state.
+        """
+        self.download_animation.stop()
+        self.set_button_state()
 
 
 class PrintDialog(QDialog):
