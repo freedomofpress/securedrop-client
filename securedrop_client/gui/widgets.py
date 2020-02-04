@@ -31,8 +31,7 @@ from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBox
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
     QToolButton, QSizePolicy, QPlainTextEdit, QStatusBar, QGraphicsDropShadowEffect
 
-from securedrop_client.db import (DraftReply, Source, Message, File, Reply, User,
-                                  ReplySendStatusCodes)
+from securedrop_client.db import DraftReply, Source, Message, File, Reply, User
 from securedrop_client.storage import source_exists
 from securedrop_client.export import ExportStatus, ExportError
 from securedrop_client.gui import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
@@ -2477,13 +2476,18 @@ class ConversationView(QWidget):
         has been and now is in terms of its index in the conversation.
         """
         self.controller.session.refresh(self.source)
+
+        # Keep a temporary copy of the current conversation so we can delete any
+        # items corresponding to deleted items in the source collection.
+        current_conversation = self.current_messages.copy()
+
         for index, conversation_item in enumerate(collection):
-            item_widget = self.current_messages.get(conversation_item.uuid)
+            item_widget = current_conversation.get(conversation_item.uuid)
             if item_widget:
-                # check an already displayed item.
+                current_conversation.pop(conversation_item.uuid)
                 if item_widget.index != index:
-                    # The existing widget is out of order, remove / re-add it
-                    # and update index details.
+                    # The existing widget is out of order.
+                    # Remove / re-add it and update index details.
                     self.conversation_layout.removeWidget(item_widget)
                     item_widget.index = index
                     if isinstance(item_widget, ReplyWidget):
@@ -2497,10 +2501,6 @@ class ConversationView(QWidget):
                 if not isinstance(item_widget, FileWidget):
                     if item_widget.message.text() != conversation_item.content:
                         item_widget.message.setText(conversation_item.content)
-                # Check if this is a draft reply then ensure it's removed.
-                if isinstance(conversation_item, DraftReply):
-                    if conversation_item.send_status.name == ReplySendStatusCodes.PENDING.value:
-                        self.conversation_layout.removeWidget(item_widget)
             else:
                 # add a new item to be displayed.
                 if isinstance(conversation_item, Message):
@@ -2509,6 +2509,11 @@ class ConversationView(QWidget):
                     self.add_reply(conversation_item, index)
                 else:
                     self.add_file(conversation_item, index)
+
+        # If any items remain in current_conversation, they are no longer in the
+        # source collection and should be removed.
+        for item_widget in current_conversation.values():
+            self.conversation_layout.removeWidget(item_widget)
 
     def add_file(self, file: File, index):
         """
