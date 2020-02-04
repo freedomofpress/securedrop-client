@@ -13,7 +13,9 @@ from tests import factory
 from securedrop_client import db
 from securedrop_client.logic import APICallRunner, Controller
 from securedrop_client.api_jobs.base import ApiInaccessibleError
-from securedrop_client.api_jobs.downloads import DownloadChecksumMismatchException
+from securedrop_client.api_jobs.downloads import (
+    DownloadChecksumMismatchException, DownloadDecryptionException, DownloadException
+)
 from securedrop_client.api_jobs.uploads import SendReplyJobError
 
 with open(os.path.join(os.path.dirname(__file__), 'files', 'test-key.gpg.pub.asc')) as f:
@@ -804,13 +806,13 @@ def test_Controller_on_file_downloaded_success(homedir, config, mocker, session_
     mock_storage = mocker.MagicMock()
     mock_file = mocker.MagicMock()
     mock_file.filename = "foo.txt"
-    mock_file.source.uuid = "source_uuid"
+    mock_file.source.uuid = "a_uuid"
     mock_storage.get_file.return_value = mock_file
 
     with mocker.patch("securedrop_client.logic.storage", mock_storage):
         co.on_file_download_success('file_uuid')
 
-    mock_file_ready.emit.assert_called_once_with("source_uuid", 'file_uuid', "foo.txt")
+    mock_file_ready.emit.assert_called_once_with("a_uuid", 'file_uuid', "foo.txt")
 
 
 def test_Controller_on_file_downloaded_api_failure(homedir, config, mocker, session_maker):
@@ -823,7 +825,7 @@ def test_Controller_on_file_downloaded_api_failure(homedir, config, mocker, sess
     # signal when file is downloaded
     mock_file_ready = mocker.patch.object(co, 'file_ready')
     mock_update_error_status = mocker.patch.object(mock_gui, 'update_error_status')
-    result_data = Exception('error message')
+    result_data = DownloadException('error message', type(db.File), "test-uuid")
 
     co.on_file_download_failure(result_data)
 
@@ -852,12 +854,43 @@ def test_Controller_on_file_downloaded_checksum_failure(homedir, config, mocker,
     mock_file_ready.emit.assert_not_called()
 
     # Job should get resubmitted and we should log this is happening
-    co._submit_download_job.call_count == 1
+    assert co._submit_download_job.call_count == 1
     debug_logger.call_args_list[0][0][0] == \
         'Failure due to checksum mismatch, retrying {}'.format(file_.uuid)
 
     # No status will be set if it's a file corruption issue, the file just gets
     # re-downloaded.
+    mock_set_status.assert_not_called()
+
+
+def test_Controller_on_file_decryption_failure(homedir, config, mocker, session, session_maker):
+    '''
+    Check handling of a download decryption failure.
+    '''
+
+    mock_gui = mocker.MagicMock()
+    co = Controller('http://localhost', mock_gui, session_maker, homedir)
+
+    file_ = factory.File(is_downloaded=True, is_decrypted=False, source=factory.Source())
+    session.add(file_)
+    session.commit()
+
+    mock_set_status = mocker.patch.object(co, 'set_status')
+    mock_file_ready = mocker.patch.object(co, 'file_ready')
+    mock_update_error_status = mocker.patch.object(mock_gui, 'update_error_status')
+
+    error_logger = mocker.patch('securedrop_client.logic.logger.error')
+    co._submit_download_job = mocker.MagicMock()
+
+    co.on_file_download_failure(DownloadDecryptionException('bang!', type(file_), file_.uuid))
+
+    mock_file_ready.emit.assert_not_called()
+    mock_update_error_status.assert_called_once_with("The file download failed. Please try again.")
+
+    co._submit_download_job.call_count == 1
+    error_logger.call_args_list[0][0][0] == \
+        'Failed to decrypt {}'.format(file_.uuid)
+
     mock_set_status.assert_not_called()
 
 

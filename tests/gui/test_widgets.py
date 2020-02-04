@@ -7,6 +7,7 @@ from datetime import datetime
 
 from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtGui import QFocusEvent, QMovie
+from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QMessageBox, QMainWindow, \
     QLineEdit
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -1530,14 +1531,10 @@ def test_FileWidget_on_left_click_download(mocker, session, source):
     mock_get_file.assert_called_once_with(file_.uuid)
     mock_get_file.reset_mock()
 
-    mock_timer = mocker.MagicMock()
-
-    with mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer):
-        fw._on_left_click()
+    fw._on_left_click()
     mock_get_file.assert_called_once_with(file_.uuid)
     mock_controller.on_submission_download.assert_called_once_with(
         db.File, file_.uuid)
-    mock_timer.singleShot.assert_called_once_with(300, fw.start_button_animation)
 
 
 def test_FileWidget_start_button_animation(mocker, session, source):
@@ -1666,7 +1663,9 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(
     assert not fw.file_name.isHidden()
 
 
-def test_FileWidget_on_file_missing_show_download_button_when_uuid_matches(mocker, source, session):
+def test_FileWidget_on_file_missing_show_download_button_when_uuid_matches(
+        mocker, source, session, session_maker, homedir
+):
     """
     The _on_file_missing method should update the FileWidget when uuid matches.
     """
@@ -1674,13 +1673,21 @@ def test_FileWidget_on_file_missing_show_download_button_when_uuid_matches(mocke
     session.add(file)
     session.commit()
 
-    get_file = mocker.MagicMock(return_value=file)
-    controller = mocker.MagicMock(get_file=get_file)
+    mock_gui = mocker.MagicMock()
+    controller = logic.Controller('http://localhost', mock_gui, session_maker, homedir)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
-    fw.update = mocker.MagicMock()
-
+    fw = FileWidget(
+        file.uuid,
+        controller,
+        controller.file_ready,
+        controller.file_missing,
+        0
+    )
     fw._on_file_missing(file.source.uuid, file.uuid, str(file))
+
+    # this is necessary for the timer that stops the download
+    # animation to execute
+    QTest.qWait(1000)
 
     assert not fw.download_button.isHidden()
     assert fw.export_button.isHidden()
