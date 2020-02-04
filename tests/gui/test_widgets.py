@@ -6,7 +6,7 @@ import arrow
 from datetime import datetime
 
 from PyQt5.QtCore import Qt, QEvent
-from PyQt5.QtGui import QFocusEvent, QMovie
+from PyQt5.QtGui import QFocusEvent, QMovie, QCursor
 from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QMessageBox, QMainWindow, \
     QLineEdit
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -235,12 +235,19 @@ def test_SyncIcon__on_sync(mocker):
     Sync icon becomes active when it receives the syncing sync signal.
     '''
     sync_icon = SyncIcon()
+    sync_icon.setCursor = mocker.MagicMock()
 
     sync_icon._on_sync('syncing')
 
     file_path = sync_icon.sync_animation.fileName()
     filename = file_path[file_path.rfind('/') + 1:]
     assert filename == 'sync_active.gif'
+    sync_icon.setCursor.assert_called_once_with(QCursor(Qt.WaitCursor))
+
+    sync_icon.setCursor.reset_mock()
+
+    sync_icon._on_sync("synced")
+    sync_icon.setCursor.assert_called_once_with(QCursor(Qt.PointingHandCursor))
 
 
 def test_SyncIcon___on_sync_with_data_not_equal_to_syncing(mocker):

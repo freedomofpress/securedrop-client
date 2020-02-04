@@ -26,7 +26,8 @@ from typing import Dict, List, Union  # noqa: F401
 from uuid import uuid4
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QEvent, QTimer, QSize, pyqtBoundSignal, \
     QObject, QPoint
-from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient, QKeySequence, QCursor
+from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient,\
+    QKeySequence, QCursor
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
     QToolButton, QSizePolicy, QPlainTextEdit, QStatusBar, QGraphicsDropShadowEffect
@@ -2762,7 +2763,7 @@ class ReplyBoxWidget(QWidget):
 
         # Ensure TAB order from text edit -> send button
         self.setTabOrder(self.text_edit, self.send_button)
-        
+
         # Set cursor.
         self.send_button.setCursor(QCursor(Qt.PointingHandCursor))
 
