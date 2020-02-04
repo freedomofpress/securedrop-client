@@ -1843,13 +1843,16 @@ class FileWidget(QWidget):
     QLabel#file_name {
         min-width: 129px;
         padding-right: 8px;
+        padding-bottom: 4px;
+        padding-top: 1px;
         font-family: 'Source Sans Pro';
-        font-weight: 700;
+        font-weight: 600;
         font-size: 13px;
         color: #2a319d;
     }
     QLabel#no_file_name {
         padding-right: 8px;
+        padding-bottom: 1px;
         font-family: 'Source Sans Pro';
         font-weight: 300;
         font-size: 13px;
