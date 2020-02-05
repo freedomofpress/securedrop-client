@@ -114,12 +114,10 @@ class TopPane(QWidget):
 
     def set_logged_in(self):
         self.sync_icon.enable()
-        self.sync_icon.setCursor(QCursor(Qt.PointingHandCursor))
         self.setPalette(self.online_palette)
 
     def set_logged_out(self):
         self.sync_icon.disable()
-        self.sync_icon.setCursor(QCursor(Qt.ArrowCursor))
         self.setPalette(self.offline_palette)
 
     def update_activity_status(self, message: str, duration: int):
@@ -1855,6 +1853,9 @@ class FileWidget(QWidget):
         font-size: 13px;
         color: #2a319d;
     }
+    QLabel#file_name:hover {
+        color: #05a6fe;
+    }
     QLabel#no_file_name {
         padding-right: 8px;
         padding-bottom: 1px;
@@ -1956,6 +1957,7 @@ class FileWidget(QWidget):
         self.file_name = SecureQLabel(self.file.filename)
         self.file_name.setObjectName('file_name')
         self.file_name.installEventFilter(self)
+        self.file_name.setCursor(QCursor(Qt.PointingHandCursor))
         self.no_file_name = SecureQLabel('ENCRYPTED FILE ON SERVER')
         self.no_file_name.setObjectName('no_file_name')
         self.no_file_name.setFont(file_description_font)
@@ -1998,9 +2000,15 @@ class FileWidget(QWidget):
         file_missing.connect(self._on_file_missing, type=Qt.QueuedConnection)
 
     def eventFilter(self, obj, event):
-        if event.type() == QEvent.MouseButtonPress:
+        t = event.type()
+        if t == QEvent.MouseButtonPress:
             if event.button() == Qt.LeftButton:
                 self._on_left_click()
+        if self.download_animation.state() != self.download_animation.Running:
+            if t == QEvent.HoverEnter or t == QEvent.HoverMove:
+                self.download_button.setIcon(load_icon('download_file_hover.svg'))
+            elif t == QEvent.HoverLeave:
+                self.download_button.setIcon(load_icon('download_file.svg'))
         return QObject.event(obj, event)
 
     @pyqtSlot(str)
