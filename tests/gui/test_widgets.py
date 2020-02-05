@@ -1455,7 +1455,7 @@ def test_FileWidget_init_file_downloaded(mocker, source, session):
     assert not fw.file_name.isHidden()
 
 
-def test_FileWidget_event_handler(mocker, session, source):
+def test_FileWidget_event_handler_left_click(mocker, session, source):
     """
     Left click on filename should trigger an open.
     """
@@ -1475,6 +1475,40 @@ def test_FileWidget_event_handler(mocker, session, source):
 
     fw.eventFilter(fw, test_event)
     fw._on_left_click.call_count == 1
+
+
+def test_FileWidget_event_handler_hover(mocker, session, source):
+    """
+    Hover events when the file isn't being downloaded should change the
+    widget's icon.
+    """
+    file_ = factory.File(source=source['source'],
+                         is_downloaded=False,
+                         is_decrypted=None)
+    session.add(file_)
+    session.commit()
+
+    mock_get_file = mocker.MagicMock(return_value=file_)
+    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+
+    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0)
+    fw.download_button = mocker.MagicMock()
+
+    # Hover enter
+    test_event = QEvent(QEvent.HoverEnter)
+    fw.eventFilter(fw, test_event)
+    assert fw.download_button.setIcon.call_count == 1
+    fw.download_button.setIcon.reset_mock()
+    # Hover move
+    test_event = QEvent(QEvent.HoverMove)
+    fw.eventFilter(fw, test_event)
+    assert fw.download_button.setIcon.call_count == 1
+    fw.download_button.setIcon.reset_mock()
+    # Hover leave
+    test_event = QEvent(QEvent.HoverLeave)
+    fw.eventFilter(fw, test_event)
+    assert fw.download_button.setIcon.call_count == 1
+    fw.download_button.setIcon.reset_mock()
 
 
 def test_FileWidget_on_left_click_download(mocker, session, source):

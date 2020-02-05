@@ -1899,6 +1899,7 @@ class FileWidget(QWidget):
         self.controller = controller
         self.file = self.controller.get_file(file_uuid)
         self.index = index
+        self.downloading = False
 
         # Set styles
         self.setObjectName('file_widget')
@@ -2002,11 +2003,14 @@ class FileWidget(QWidget):
         if t == QEvent.MouseButtonPress:
             if event.button() == Qt.LeftButton:
                 self._on_left_click()
-        if self.download_animation.state() != self.download_animation.Running:
-            if t == QEvent.HoverEnter or t == QEvent.HoverMove:
-                self.download_button.setIcon(load_icon('download_file_hover.svg'))
-            elif t == QEvent.HoverLeave:
-                self.download_button.setIcon(load_icon('download_file.svg'))
+        # HERE BE DRAGONS. Usually I'd wrap this in an if not self.download,
+        # but for reasons not entirely clear, this caused a crash. The
+        # following odd way of expressing the same conditional doesn't cause a
+        # crash. Go figure... :-/
+        if t == QEvent.HoverEnter or t == QEvent.HoverMove and not self.downloading:
+            self.download_button.setIcon(load_icon('download_file_hover.svg'))
+        elif t == QEvent.HoverLeave and not self.downloading:
+            self.download_button.setIcon(load_icon('download_file.svg'))
         return QObject.event(obj, event)
 
     @pyqtSlot(str, str, str)
@@ -2014,6 +2018,7 @@ class FileWidget(QWidget):
         if file_uuid == self.file.uuid:
             self.file = self.controller.get_file(self.file.uuid)
             if self.file.is_downloaded:
+                self.downloading = False
                 self.file_name.setText(self.file.filename)
                 self.download_button.hide()
                 self.no_file_name.hide()
@@ -2027,6 +2032,7 @@ class FileWidget(QWidget):
         if file_uuid == self.file.uuid:
             self.file = self.controller.get_file(self.file.uuid)
             if not self.file.is_downloaded:
+                self.downloading = False
                 self.download_animation.stop()
                 self.download_button.setText(_('DOWNLOAD'))
                 self.download_button.setIcon(load_icon('download_file.svg'))
@@ -2090,6 +2096,7 @@ class FileWidget(QWidget):
         """
         Update the download button to the animated "downloading" state.
         """
+        self.downloading = True
         self.download_animation.frameChanged.connect(self.set_button_animation_frame)
         self.download_animation.start()
         self.download_button.setText(_(" DOWNLOADING "))
