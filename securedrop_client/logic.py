@@ -163,7 +163,6 @@ class Controller(QObject):
     """
     file_missing = pyqtSignal(str, str, str)
 
-
     def __init__(self, hostname: str, gui, session_maker: sessionmaker,
                  home: str, proxy: bool = True, qubes: bool = True) -> None:
         """
@@ -804,7 +803,7 @@ class Controller(QObject):
         self.gui.clear_error_status()  # remove any permanent error status message
         self.session.commit()
         reply = storage.get_reply(self.session, reply_uuid)
-        self.reply_succeeded.emit(reply.source.uuid, reply.uuid, reply.content)
+        self.reply_succeeded.emit(reply.source.uuid, reply_uuid, reply.content)
 
     def on_reply_failure(
         self,

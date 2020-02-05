@@ -1325,11 +1325,11 @@ def test_SpeechBubble_update_text(mocker):
     sb = SpeechBubble(msg_id, 'hello', mock_signal, 0)
 
     new_msg = 'new message'
-    sb._update_text(msg_id, new_msg)
+    sb._update_text('mock_source_uuid', msg_id, new_msg)
     assert sb.message.text() == new_msg
 
     newer_msg = 'an even newer message'
-    sb._update_text(msg_id + 'xxxxx', newer_msg)
+    sb._update_text('mock_source_uuid', msg_id + 'xxxxx', newer_msg)
     assert sb.message.text() == new_msg
 
 
@@ -1582,7 +1582,7 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_matches(mocker, sou
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw.update = mocker.MagicMock()
 
-    fw._on_file_downloaded(file.uuid)
+    fw._on_file_downloaded(file.source.uuid, file.uuid, str(file))
 
     assert fw.download_button.isHidden()
     assert not fw.export_button.isHidden()
@@ -1609,7 +1609,7 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(
     fw.clear = mocker.MagicMock()
     fw.update = mocker.MagicMock()
 
-    fw._on_file_downloaded('not a matching uuid')
+    fw._on_file_downloaded('not a matching source uuid', 'not a matching file uuid', 'mock')
 
     fw.clear.assert_not_called()
     assert fw.download_button.isHidden()
@@ -1634,7 +1634,7 @@ def test_FileWidget_on_file_missing_show_download_button_when_uuid_matches(mocke
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw.update = mocker.MagicMock()
 
-    fw._on_file_missing(file.uuid)
+    fw._on_file_missing(file.source.uuid, file.uuid, str(file))
 
     assert not fw.download_button.isHidden()
     assert fw.export_button.isHidden()
@@ -1661,7 +1661,7 @@ def test_FileWidget_on_file_missing_does_not_show_download_button_when_uuid_does
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw.download_button.show = mocker.MagicMock()
 
-    fw._on_file_missing('not a matching uuid')
+    fw._on_file_missing('not a matching source uuid', 'not a matching file uuid', 'mock filename')
 
     fw.download_button.show.assert_not_called()
 
@@ -2738,24 +2738,17 @@ def test_ReplyWidget_success_failure_slots(mocker):
     assert mock_update_signal.connect.called  # to ensure no stale mocks
 
     # check the success slog
-    mock_logger = mocker.patch('securedrop_client.gui.widgets.logger')
-    widget._on_reply_success(msg_id + "x")
+    widget._on_reply_success('mock_source_id', msg_id + "x", 'lol')
     assert widget.error.isHidden()
-    assert not mock_logger.debug.called
-    widget._on_reply_success(msg_id)
+    widget._on_reply_success('mock_source_id', msg_id, 'lol')
     assert widget.error.isHidden()
-    assert mock_logger.debug.called
-    mock_logger.reset_mock()
 
     # check the failure slot where message id does not match
-    mock_logger = mocker.patch('securedrop_client.gui.widgets.logger')
     widget._on_reply_failure(msg_id + "x")
     assert widget.error.isHidden()
-    assert not mock_logger.debug.called
     # check the failure slot where message id matches
     widget._on_reply_failure(msg_id)
     assert not widget.error.isHidden()
-    assert mock_logger.debug.called
 
 
 def test_ReplyBoxWidget__on_authentication_changed(mocker, homedir):
