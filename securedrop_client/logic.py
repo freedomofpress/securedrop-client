@@ -161,7 +161,7 @@ class Controller(QObject):
     Emits:
         str: the file UUID
     """
-    file_missing = pyqtSignal(str)
+    file_missing = pyqtSignal(str, str, str)
 
 
     def __init__(self, hostname: str, gui, session_maker: sessionmaker,
@@ -629,7 +629,7 @@ class Controller(QObject):
             logger.debug('Cannot find {} in the data directory. File does not exist.'.format(
                 file.filename))
             storage.update_missing_files(self.data_dir, self.session)
-            self.file_missing.emit(file.uuid)
+            self.file_missing.emit(file.source.uuid, file.uuid, str(file))
             return False
         return True
 

@@ -845,6 +845,7 @@ class SourceList(QListWidget):
         self.controller.message_ready.connect(self.set_snippet)
         self.controller.reply_ready.connect(self.set_snippet)
         self.controller.file_ready.connect(self.set_snippet)
+        self.controller.file_missing.connect(self.set_snippet)
 
     def update(self, sources: List[Source]):
         """
