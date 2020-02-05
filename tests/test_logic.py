@@ -826,7 +826,7 @@ def test_Controller_on_file_downloaded_success(homedir, config, mocker, session_
 
     mock_storage = mocker.MagicMock()
     mock_file = mocker.MagicMock()
-    mock_file.original_filename = "foo.txt"
+    mock_file.filename = "foo.txt"
     mock_file.source.uuid = "a_uuid"
     mock_storage.get_file.return_value = mock_file
 

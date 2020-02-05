@@ -695,7 +695,7 @@ class Controller(QObject):
         self.gui.clear_error_status()  # remove any permanent error status message
         self.session.commit()
         file_obj = storage.get_file(self.session, uuid)
-        self.file_ready.emit(file_obj.source.uuid, uuid, file_obj.original_filename)
+        self.file_ready.emit(file_obj.source.uuid, uuid, file_obj.filename)
 
     def on_file_download_failure(self, exception: Exception) -> None:
         """
