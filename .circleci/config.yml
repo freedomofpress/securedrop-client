@@ -1,3 +1,42 @@
+---
+common-steps:
+  - &install_packaging_dependencies
+    run:
+      name: Install Debian packaging dependencies and download wheels
+      command: |
+        mkdir ~/packaging && cd ~/packaging
+        git config --global --unset url.ssh://git@github.com.insteadof
+        git clone https://github.com/freedomofpress/securedrop-debian-packaging.git
+        cd securedrop-debian-packaging
+        make install-deps
+        PKG_DIR=~/project make requirements
+
+  - &verify_requirements
+    run:
+      name: Ensure that build-requirements.txt and requirements.txt are in sync.
+      command: |
+        cd ~/project
+        # Return 1 if unstaged changes exist (after `make requirements` in the
+        # previous run step), else return 0.
+        git diff --quiet
+
+  - &make_source_tarball
+    run:
+      name: Tag and make source tarball
+      command: |
+        cd ~/project
+        ./update_version.sh 1000.0  # Dummy version number, doesn't matter what we put here
+        python3 setup.py sdist
+
+  - &build_debian_package
+    run:
+      name: Build debian package
+      command: |
+        cd ~/packaging/securedrop-debian-packaging
+        export PKG_VERSION=1000.0
+        export PKG_PATH=/home/circleci/project/dist/securedrop-log-$PKG_VERSION.tar.gz
+        make securedrop-log
+
 version: 2
 jobs:
   test:
@@ -9,8 +48,19 @@ jobs:
           name: Run tests
           command: python3 -m unittest
 
+  build-buster:
+    docker:
+      - image: circleci/python:3.7-buster
+    steps:
+      - checkout
+      - *install_packaging_dependencies
+      - *verify_requirements
+      - *make_source_tarball
+      - *build_debian_package
+
 workflows:
   version: 2
   per_pr:
     jobs:
       - test
+      - build-buster
