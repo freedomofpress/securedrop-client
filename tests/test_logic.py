@@ -176,10 +176,12 @@ def test_Controller_on_authenticate_failure(homedir, config, mocker, session_mak
     mock_gui = mocker.MagicMock()
 
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
+    co.api_sync.stop = mocker.MagicMock()
 
     result_data = Exception('oh no')
     co.on_authenticate_failure(result_data)
 
+    co.api_sync.stop.assert_called_once_with()
     mock_gui.show_login_error.\
         assert_called_once_with(error='There was a problem signing in. Please '
                                 'verify your credentials and try again.')
@@ -195,7 +197,8 @@ def test_Controller_on_authenticate_success(homedir, config, mocker, session_mak
     mock_gui = mocker.MagicMock()
     mock_api_job_queue = mocker.patch("securedrop_client.logic.ApiJobQueue")
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
-    co.sync_api = mocker.MagicMock()
+    # co.api_sync = mocker.MagicMock()
+    co.api_sync.start = mocker.MagicMock()
     co.update_sources = mocker.MagicMock()
     co.session.add(user)
     co.session.commit()
@@ -209,8 +212,7 @@ def test_Controller_on_authenticate_success(homedir, config, mocker, session_mak
 
     co.on_authenticate_success(True)
 
-    co.sync_api.assert_called_once_with()
-    co.update_sources.assert_called_once_with()
+    co.api_sync.start.assert_called_once_with(co.api)
     assert co.is_authenticated
     assert mock_api_job_queue.called
     login.assert_called_with(co.api)
@@ -342,41 +344,6 @@ def test_Controller_authenticated_no_api(homedir, config, mocker, session_maker)
     assert co.authenticated() is False
 
 
-def test_Controller_sync_api_not_authenticated(homedir, config, mocker, session_maker):
-    """
-    If the API isn't authenticated, don't sync.
-    Using the `config` fixture to ensure the config is written to disk.
-    """
-    mock_gui = mocker.MagicMock()
-
-    co = Controller('http://localhost', mock_gui, session_maker, homedir)
-    co.authenticated = mocker.MagicMock(return_value=False)
-    co.api_job_queue = mocker.MagicMock()
-    co.api_job_queue.enqueue = mocker.MagicMock()
-
-    co.sync_api()
-
-    co.api_job_queue.enqueue.call_count == 0
-
-
-def test_Controller_sync_api(homedir, config, mocker, session_maker):
-    """
-    Sync the API is authenticated.
-    Using the `config` fixture to ensure the config is written to disk.
-    """
-    mock_gui = mocker.MagicMock()
-
-    co = Controller('http://localhost', mock_gui, session_maker, homedir)
-
-    co.authenticated = mocker.MagicMock(return_value=True)
-    co.api_job_queue = mocker.MagicMock()
-    co.api_job_queue.enqueue = mocker.MagicMock()
-
-    co.sync_api()
-
-    co.api_job_queue.enqueue.call_count == 1
-
-
 def test_Controller_last_sync_with_file(homedir, config, mocker, session_maker):
     """
     The flag indicating the time of the last sync with the API is stored in a
@@ -408,6 +375,18 @@ def test_Controller_last_sync_no_file(homedir, config, mocker, session_maker):
 
     mocker.patch("builtins.open", mocker.MagicMock(side_effect=Exception()))
     assert co.last_sync() is None
+
+
+def test_Controller_on_sync_started(mocker, homedir):
+    co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
+
+    co.on_sync_started()
+
+    sync_events = mocker.patch.object(co, 'sync_events')
+
+    co.on_sync_started()
+
+    sync_events.emit.assert_called_once_with('syncing')
 
 
 def test_Controller_on_sync_failure(homedir, config, mocker, session_maker):
@@ -532,7 +511,6 @@ def test_Controller_on_update_star_success(homedir, config, mocker, session_make
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     result = True
     co.call_reset = mocker.MagicMock()
-    co.sync_api = mocker.MagicMock()
     co.on_update_star_success(result)
     assert mock_gui.clear_error_status.called
 
@@ -547,9 +525,7 @@ def test_Controller_on_update_star_failed(homedir, config, mocker, session_maker
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     result = Exception('boom')
     co.call_reset = mocker.MagicMock()
-    co.sync_api = mocker.MagicMock()
     co.on_update_star_failure(result)
-    co.sync_api.assert_not_called()
     mock_gui.update_error_status.assert_called_once_with('Failed to update star.')
 
 
@@ -984,20 +960,17 @@ def test_Controller_on_file_open_file_missing(mocker, homedir, session_maker, se
     When file does not exist, test that we log and send status update to user.
     """
     co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
-    co.sync_api = mocker.MagicMock()
     file = factory.File(source=source['source'])
     session.add(file)
     session.commit()
     mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
     debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
-    co.sync_api = mocker.MagicMock()
 
     co.on_file_open(file)
 
     log_msg = 'Cannot find {} in the data directory. File does not exist.'.format(
         file.filename)
     debug_logger.assert_called_once_with(log_msg)
-    co.sync_api.assert_not_called()
 
 
 def test_Controller_on_file_open_file_missing_not_qubes(
@@ -1008,20 +981,17 @@ def test_Controller_on_file_open_file_missing_not_qubes(
     """
     co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
     co.qubes = False
-    co.sync_api = mocker.MagicMock()
     file = factory.File(source=source['source'])
     session.add(file)
     session.commit()
     mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
     debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
-    co.sync_api = mocker.MagicMock()
 
     co.on_file_open(file)
 
     log_msg = 'Cannot find {} in the data directory. File does not exist.'.format(
         file.filename)
     debug_logger.assert_called_once_with(log_msg)
-    co.sync_api.assert_not_called()
 
 
 def test_Controller_download_new_replies_with_new_reply(mocker, session, session_maker, homedir):
@@ -1249,7 +1219,6 @@ def test_Controller_on_delete_source_failure(homedir, config, mocker, session_ma
     '''
     mock_gui = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
-    co.sync_api = mocker.MagicMock()
     co.on_delete_source_failure(Exception())
     co.gui.update_error_status.assert_called_with('Failed to delete source at server')
 
@@ -1348,8 +1317,6 @@ def test_Controller_on_reply_success(homedir, mocker, session_maker, session):
     Check that when the method is called, the client emits the correct signal.
     '''
     co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
-    co.session = mocker.MagicMock()
-    mocker.patch.object(co, 'sync_api')
     reply_succeeded = mocker.patch.object(co, 'reply_succeeded')
     reply_failed = mocker.patch.object(co, 'reply_failed')
     reply = factory.Reply(source=factory.Source())
@@ -1367,7 +1334,6 @@ def test_Controller_on_reply_success(homedir, mocker, session_maker, session):
     assert debug_logger.call_args_list[0][0][0] == '{} sent successfully'.format(reply.uuid)
     reply_succeeded.emit.assert_called_once_with("source_uuid", reply.uuid, "reply_message_mock")
     reply_failed.emit.assert_not_called()
-    co.sync_api.assert_not_called()
 
 
 def test_Controller_on_reply_failure(homedir, mocker, session_maker):
@@ -1463,24 +1429,6 @@ def test_Controller_on_queue_paused(homedir, config, mocker, session_maker):
         'The SecureDrop server cannot be reached.', duration=0, retry=True)
 
 
-def test_Controller_on_queue_paused_due_to_invalid_token(homedir, config, mocker, session_maker):
-    """
-    If the api is inaccessible then ensure user is logged out and shown the login window. Also check
-    that "SecureDrop server cannot be reached" is not shown when the user is not authenticated.
-    """
-    gui = mocker.MagicMock()
-    co = Controller('http://localhost', gui, session_maker, homedir)
-    co.api = None
-    co.logout = mocker.MagicMock()
-    co.gui = mocker.MagicMock()
-    co.gui.show_login = mocker.MagicMock()
-
-    co.on_queue_paused()
-
-    co.logout.assert_called_once_with()
-    co.gui.show_login.assert_called_once_with(error='Your session expired. Please log in again.')
-
-
 def test_Controller_call_update_star_success(homedir, config, mocker, session_maker, session):
     '''
     Check that a UpdateStar is submitted to the queue when update_star is called.
@@ -1568,20 +1516,16 @@ def test_Controller_print_file_file_missing(homedir, mocker, session, session_ma
     should be communicated to the user.
     """
     co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
-    co.sync_api = mocker.MagicMock()
     file = factory.File(source=factory.Source())
     session.add(file)
     session.commit()
     mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
     debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
-    co.sync_api = mocker.MagicMock()
 
     co.print_file(file.uuid)
 
-    log_msg = 'Cannot find {} in the data directory. File does not exist.'.format(
-        file.filename)
+    log_msg = 'Cannot find {} in the data directory. File does not exist.'.format(file.filename)
     debug_logger.assert_called_once_with(log_msg)
-    co.sync_api.assert_not_called()
 
 
 def test_Controller_print_file_file_missing_not_qubes(
@@ -1593,20 +1537,17 @@ def test_Controller_print_file_file_missing_not_qubes(
     """
     co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
     co.qubes = False
-    co.sync_api = mocker.MagicMock()
     file = factory.File(source=factory.Source())
     session.add(file)
     session.commit()
     mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
     debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
-    co.sync_api = mocker.MagicMock()
 
     co.print_file(file.uuid)
 
     log_msg = 'Cannot find {} in the data directory. File does not exist.'.format(
         file.filename)
     debug_logger.assert_called_once_with(log_msg)
-    co.sync_api.assert_not_called()
 
 
 def test_Controller_print_file_when_orig_file_already_exists(
@@ -1743,20 +1684,17 @@ def test_Controller_export_file_to_usb_drive_file_missing(homedir, mocker, sessi
     should be communicated to the user.
     """
     co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
-    co.sync_api = mocker.MagicMock()
     file = factory.File(source=factory.Source())
     session.add(file)
     session.commit()
     mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
     debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
-    co.sync_api = mocker.MagicMock()
 
     co.export_file_to_usb_drive(file.uuid, 'mock passphrase')
 
     log_msg = 'Cannot find {} in the data directory. File does not exist.'.format(
         file.filename)
     debug_logger.assert_called_once_with(log_msg)
-    co.sync_api.assert_not_called()
 
 
 def test_Controller_export_file_to_usb_drive_file_missing_not_qubes(
@@ -1768,20 +1706,17 @@ def test_Controller_export_file_to_usb_drive_file_missing_not_qubes(
     """
     co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
     co.qubes = False
-    co.sync_api = mocker.MagicMock()
     file = factory.File(source=factory.Source())
     session.add(file)
     session.commit()
     mocker.patch('securedrop_client.logic.Controller.get_file', return_value=file)
     debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
-    co.sync_api = mocker.MagicMock()
 
     co.export_file_to_usb_drive(file.uuid, 'mock passphrase')
 
     log_msg = 'Cannot find {} in the data directory. File does not exist.'.format(
         file.filename)
     debug_logger.assert_called_once_with(log_msg)
-    co.sync_api.assert_not_called()
 
 
 def test_Controller_export_file_to_usb_drive_when_orig_file_already_exists(
