@@ -1,4 +1,6 @@
 import datetime
+import http
+import json
 import os
 import pyotp
 import pytest
@@ -362,3 +364,14 @@ def test_download_submission_timeout(mocker):
     with pytest.raises(RequestTimeoutError):
         s = Submission(uuid="climateproblem")
         api.download_submission(s)
+
+
+def test_download_get_sources_error_request_timeout(mocker):
+    api = API("mock", "mock", "mock", "mock", True)
+    mocker.patch("sdclientapi.json_query",
+                 return_value=(
+                    json.dumps({"body": json.dumps({"error": "wah"}),
+                                "status": http.HTTPStatus.GATEWAY_TIMEOUT,
+                                "headers": "foo"})))
+    with pytest.raises(RequestTimeoutError):
+        api.get_sources()
