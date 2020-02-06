@@ -10,7 +10,7 @@ from typing import Optional, Tuple  # noqa: F401
 from securedrop_client.api_jobs.base import ApiJob, ApiInaccessibleError, DEFAULT_NUM_ATTEMPTS, \
     PauseQueueJob
 from securedrop_client.api_jobs.downloads import (FileDownloadJob, MessageDownloadJob,
-                                                  ReplyDownloadJob, MetadataSyncJob)
+                                                  ReplyDownloadJob)
 from securedrop_client.api_jobs.sources import DeleteSourceJob
 from securedrop_client.api_jobs.uploads import SendReplyJob
 from securedrop_client.api_jobs.updatestar import UpdateStarJob
@@ -46,9 +46,8 @@ class RunnableQueue(QObject):
         DeleteSourceJob: 14,
         SendReplyJob: 15,
         UpdateStarJob: 16,
-        MetadataSyncJob: 17,
-        MessageDownloadJob: 18,
-        ReplyDownloadJob: 18,
+        MessageDownloadJob: 17,
+        ReplyDownloadJob: 17,
     }
 
     '''
@@ -60,11 +59,6 @@ class RunnableQueue(QObject):
     Signal that is emitted to resume processing jobs
     '''
     resume = pyqtSignal()
-
-    """
-    Signal emitted when the queue successfully.
-    """
-    pinged = pyqtSignal()
 
     def __init__(self, api_client: API, session_maker: scoped_session, size: int = 0) -> None:
         """
@@ -92,9 +86,7 @@ class RunnableQueue(QObject):
         try:
             self.queue.put_nowait((priority, job))
         except Full:
-            # Pass silently if the queue is full. For use with MetadataSyncJob.
-            # See #652.
-            pass
+            pass  # Pass silently if the queue is full
 
     def re_add_job(self, job: ApiJob) -> None:
         '''
@@ -106,9 +98,7 @@ class RunnableQueue(QObject):
         try:
             self.queue.put_nowait((priority, job))
         except Full:
-            # Pass silently if the queue is full. For use with MetadataSyncJob.
-            # See #652.
-            pass
+            pass  # Pass silently if the queue is full
 
     @pyqtSlot()
     def process(self) -> None:
@@ -118,9 +108,15 @@ class RunnableQueue(QObject):
         If the job is a PauseQueueJob, emit the paused signal and return from the processing loop so
         that no more jobs are processed until the queue resumes.
 
-        If the job raises RequestTimeoutError or ApiInaccessibleError, then:
+        If the job raises RequestTimeoutError, then:
         (1) Add a PauseQueuejob to the queue
         (2) Add the job back to the queue so that it can be reprocessed once the queue is resumed.
+
+        If the job raises ApiInaccessibleError, then:
+        (1) Set the token to None so that the queue manager will stop enqueuing jobs since we are
+        no longer able to make api requests.
+        (2) Return from the processing loop since a valid token will be needed in order to process
+        jobs.
 
         Note: Generic exceptions are handled in _do_call_api.
         '''
@@ -135,11 +131,10 @@ class RunnableQueue(QObject):
             try:
                 session = self.session_maker()
                 job._do_call_api(self.api_client, session)
-                self.pinged.emit()
             except ApiInaccessibleError as e:
                 logger.debug('Job {} raised an exception: {}: {}'.format(self, type(e).__name__, e))
                 self.api_client = None
-                self.add_job(PauseQueueJob())
+                return
             except RequestTimeoutError as e:
                 logger.debug('Job {} raised an exception: {}: {}'.format(self, type(e).__name__, e))
                 self.add_job(PauseQueueJob())
@@ -162,25 +157,18 @@ class ApiJobQueue(QObject):
 
         self.main_thread = QThread()
         self.download_file_thread = QThread()
-        self.metadata_thread = QThread()
 
         self.main_queue = RunnableQueue(api_client, session_maker)
         self.download_file_queue = RunnableQueue(api_client, session_maker)
-        self.metadata_queue = RunnableQueue(api_client, session_maker, size=1)
 
         self.main_queue.moveToThread(self.main_thread)
         self.download_file_queue.moveToThread(self.download_file_thread)
-        self.metadata_queue.moveToThread(self.metadata_thread)
 
         self.main_thread.started.connect(self.main_queue.process)
         self.download_file_thread.started.connect(self.download_file_queue.process)
-        self.metadata_thread.started.connect(self.metadata_queue.process)
 
         self.main_queue.paused.connect(self.on_queue_paused)
         self.download_file_queue.paused.connect(self.on_queue_paused)
-        self.metadata_queue.paused.connect(self.on_queue_paused)
-
-        self.metadata_queue.pinged.connect(self.resume_queues)
 
     def logout(self) -> None:
         if self.main_thread.isRunning():
@@ -191,15 +179,10 @@ class ApiJobQueue(QObject):
             logger.debug('Stopping download queue thread')
             self.download_file_thread.quit()
 
-        if self.metadata_thread.isRunning():
-            logger.debug('Stopping metadata queue thread')
-            self.metadata_thread.quit()
-
     def login(self, api_client: API) -> None:
         logger.debug('Passing API token to queues')
         self.main_queue.api_client = api_client
         self.download_file_queue.api_client = api_client
-        self.metadata_queue.api_client = api_client
         self.start_queues()
 
     def start_queues(self) -> None:
@@ -211,31 +194,20 @@ class ApiJobQueue(QObject):
             logger.debug('Starting download thread')
             self.download_file_thread.start()
 
-        if not self.metadata_thread.isRunning():
-            logger.debug("Starting metadata thread")
-            self.metadata_thread.start()
-
     def on_queue_paused(self) -> None:
         self.paused.emit()
 
     def resume_queues(self) -> None:
         logger.info("Resuming queues")
-        main_paused = not self.main_thread.isRunning()
-        download_paused = not self.download_file_thread.isRunning()
-        metadata_paused = not self.metadata_thread.isRunning()
         self.start_queues()
-        if main_paused:
+        if not self.main_thread.isRunning():
             self.main_queue.resume.emit()
-        if download_paused:
+        if not self.download_file_thread.isRunning():
             self.download_file_queue.resume.emit()
-        if metadata_paused:
-            self.metadata_queue.resume.emit()
 
     def enqueue(self, job: ApiJob) -> None:
         # Prevent api jobs being added to the queue when not logged in.
-        if (not self.main_queue.api_client or
-                not self.download_file_queue.api_client or
-                not self.metadata_queue.api_client):
+        if (not self.main_queue.api_client or not self.download_file_queue.api_client):
             logger.info('Not adding job, we are not logged in')
             return
 
@@ -245,9 +217,6 @@ class ApiJobQueue(QObject):
         if isinstance(job, FileDownloadJob):
             logger.debug('Adding job to download queue')
             self.download_file_queue.add_job(job)
-        elif isinstance(job, MetadataSyncJob):
-            logger.debug("Adding job to metadata queue")
-            self.metadata_queue.add_job(job)
         else:
             logger.debug('Adding job to main queue')
             self.main_queue.add_job(job)
