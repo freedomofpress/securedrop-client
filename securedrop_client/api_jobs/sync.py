@@ -17,7 +17,7 @@ class MetadataSyncJob(ApiJob):
     Update source metadata such that new download jobs can be added to the queue.
     '''
 
-    NUMBER_OF_TIMES_TO_RETRY_AN_API_CALL = 15
+    NUMBER_OF_TIMES_TO_RETRY_AN_API_CALL = 2
 
     def __init__(self, data_dir: str, gpg: GpgHelper) -> None:
         super().__init__(remaining_attempts=self.NUMBER_OF_TIMES_TO_RETRY_AN_API_CALL)
@@ -37,8 +37,7 @@ class MetadataSyncJob(ApiJob):
         # pass the default request timeout to api calls instead of setting it on the api object
         # directly.
         api_client.default_request_timeout = 40
-        remote_sources, remote_submissions, remote_replies = \
-            get_remote_data(api_client)
+        remote_sources, remote_submissions, remote_replies = get_remote_data(api_client)
 
         update_local_storage(session,
                              remote_sources,
