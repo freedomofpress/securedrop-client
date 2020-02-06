@@ -717,20 +717,22 @@ class MainView(QWidget):
 
         if source:
             self.controller.session.refresh(source)
-            # Try to get the SourceConversationWrapper from the persistent dict,
-            # else we create it.
-            try:
-                conversation_wrapper = self.source_conversations[source]
+            if source_exists(self.controller.session, source.uuid):
+                # Try to get the SourceConversationWrapper from the persistent dict,
+                # else we create it.
+                try:
+                    conversation_wrapper = self.source_conversations[source]
 
-                # Redraw the conversation view such that new messages, replies, files appear.
-                conversation_wrapper.conversation_view.update_conversation(source.collection)
-            except KeyError:
-                conversation_wrapper = SourceConversationWrapper(source, self.controller)
-                self.source_conversations[source] = conversation_wrapper
+                    # Redraw the conversation view such that new messages, replies, files appear.
+                    conversation_wrapper.conversation_view.update_conversation(source.collection)
+                except KeyError:
+                    conversation_wrapper = SourceConversationWrapper(source, self.controller)
+                    self.source_conversations[source] = conversation_wrapper
 
-            self.set_conversation(conversation_wrapper)
-        else:
-            self.clear_conversation()
+                self.set_conversation(conversation_wrapper)
+                return
+        # Fall through to clear conversation.
+        self.clear_conversation()
 
     def set_conversation(self, widget):
         """
