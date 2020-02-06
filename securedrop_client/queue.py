@@ -131,7 +131,6 @@ class RunnableQueue(QObject):
             try:
                 session = self.session_maker()
                 job._do_call_api(self.api_client, session)
-                self.pinged.emit()
             except ApiInaccessibleError as e:
                 logger.debug('Job {} raised an exception: {}: {}'.format(self, type(e).__name__, e))
                 self.api_client = None
