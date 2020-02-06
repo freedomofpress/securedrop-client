@@ -2,6 +2,8 @@
 Make sure the UI widgets are configured correctly and work as expected.
 """
 import pytest
+import arrow
+from datetime import datetime
 
 from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtGui import QFocusEvent, QMovie
@@ -16,7 +18,8 @@ from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, Lo
     DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, LeftPane, SyncIcon, \
     ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
     ReplyBoxWidget, ReplyTextEdit, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, \
-    LoginErrorBar, EmptyConversationView, ExportDialog, PrintDialog, PasswordEdit, SecureQLabel
+    LoginErrorBar, EmptyConversationView, ExportDialog, PrintDialog, PasswordEdit, SecureQLabel, \
+    SourceProfileShortWidget
 from tests import factory
 
 
@@ -402,6 +405,15 @@ def test_UserButton_set_username():
     ub = UserButton()
     ub.set_username('test_username')
     ub.text() == 'test_username'
+
+
+def test_UserButton_set_long_username(mocker):
+    ub = UserButton()
+    ub.setToolTip = mocker.MagicMock()
+    ub.set_username('test_username_that_is_very_very_long')
+    ub.setToolTip.assert_called_once_with(
+        'test_username_that_is_very_very_long'
+    )
 
 
 def test_UserMenu_setup(mocker):
@@ -1443,7 +1455,7 @@ def test_FileWidget_init_file_downloaded(mocker, source, session):
     assert not fw.file_name.isHidden()
 
 
-def test_FileWidget_event_handler(mocker, session, source):
+def test_FileWidget_event_handler_left_click(mocker, session, source):
     """
     Left click on filename should trigger an open.
     """
@@ -1463,6 +1475,40 @@ def test_FileWidget_event_handler(mocker, session, source):
 
     fw.eventFilter(fw, test_event)
     fw._on_left_click.call_count == 1
+
+
+def test_FileWidget_event_handler_hover(mocker, session, source):
+    """
+    Hover events when the file isn't being downloaded should change the
+    widget's icon.
+    """
+    file_ = factory.File(source=source['source'],
+                         is_downloaded=False,
+                         is_decrypted=None)
+    session.add(file_)
+    session.commit()
+
+    mock_get_file = mocker.MagicMock(return_value=file_)
+    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+
+    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0)
+    fw.download_button = mocker.MagicMock()
+
+    # Hover enter
+    test_event = QEvent(QEvent.HoverEnter)
+    fw.eventFilter(fw, test_event)
+    assert fw.download_button.setIcon.call_count == 1
+    fw.download_button.setIcon.reset_mock()
+    # Hover move
+    test_event = QEvent(QEvent.HoverMove)
+    fw.eventFilter(fw, test_event)
+    assert fw.download_button.setIcon.call_count == 1
+    fw.download_button.setIcon.reset_mock()
+    # Hover leave
+    test_event = QEvent(QEvent.HoverLeave)
+    fw.eventFilter(fw, test_event)
+    assert fw.download_button.setIcon.call_count == 1
+    fw.download_button.setIcon.reset_mock()
 
 
 def test_FileWidget_on_left_click_download(mocker, session, source):
@@ -2174,6 +2220,7 @@ def test_ConversationView_add_message(mocker, session, source):
 
     cv = ConversationView(source, mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
+    cv.conversation_updated = mocker.MagicMock()
     # this is the MessageWidget that __init__() would return
     mock_msg_widget_res = mocker.MagicMock()
     # mock the actual MessageWidget so we can inspect the __init__ call
@@ -2188,6 +2235,10 @@ def test_ConversationView_add_message(mocker, session, source):
     # check that we added the correct widget to the layout
     cv.conversation_layout.insertWidget.assert_called_once_with(
         0, mock_msg_widget_res, alignment=Qt.AlignLeft)
+
+    # Check the signal is emitted to say the message has been added (and thus
+    # the timestamps need updating.
+    assert cv.conversation_updated.emit.call_count == 1
 
 
 def test_ConversationView_add_message_no_content(mocker, session, source):
@@ -2383,6 +2434,7 @@ def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
 
     cv = ConversationView(source['source'], mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
+    cv.conversation_updated = mocker.MagicMock()
 
     mock_label = mocker.patch('securedrop_client.gui.widgets.SecureQLabel')
     mocker.patch('securedrop_client.gui.widgets.QHBoxLayout.addWidget')
@@ -2392,6 +2444,7 @@ def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
 
     mock_label.assert_called_with('123B')  # default factory filesize
     assert cv.conversation_layout.insertWidget.call_count == 1
+    assert cv.conversation_updated.emit.call_count == 1
 
     cal = cv.conversation_layout.insertWidget.call_args_list
     assert isinstance(cal[0][0][1], FileWidget)
@@ -3214,3 +3267,19 @@ def test_clear_conversation_deletes_items(mocker, homedir):
     cv.clear_conversation()
 
     assert cv.conversation_layout.count() == 0
+
+
+def test_SourceProfileShortWidget_update_timestamp(mocker):
+    """
+    Ensure the update_timestamp slot actually updates the LastUpdatedLabel
+    instance with the last_updated value from the source..
+    """
+    mock_controller = mocker.MagicMock()
+    mock_source = mocker.MagicMock()
+    mock_source.last_updated = datetime.now()
+    mock_source.journalist_designation = "wimple horse knackered unittest"
+    spsw = SourceProfileShortWidget(mock_source, mock_controller)
+    spsw.updated = mocker.MagicMock()
+    spsw.update_timestamp()
+    spsw.updated.setText.assert_called_once_with(
+        arrow.get(mock_source.last_updated).format('DD MMM'))

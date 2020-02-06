@@ -26,7 +26,8 @@ from typing import Dict, List, Union  # noqa: F401
 from uuid import uuid4
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QEvent, QTimer, QSize, pyqtBoundSignal, \
     QObject, QPoint
-from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient, QKeySequence
+from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient,\
+    QKeySequence, QCursor
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
     QToolButton, QSizePolicy, QPlainTextEdit, QStatusBar, QGraphicsDropShadowEffect
@@ -548,11 +549,19 @@ class UserButton(SvgPushButton):
         self.menu = UserMenu()
         self.setMenu(self.menu)
 
+        # Set cursor.
+        self.setCursor(QCursor(Qt.PointingHandCursor))
+
     def setup(self, controller):
         self.menu.setup(controller)
 
     def set_username(self, username):
-        self.setText(_('{}').format(html.escape(username)))
+        formatted_name = _('{}').format(html.escape(username))
+        self.setText(formatted_name)
+        if len(formatted_name) > 21:
+            # The name will be truncated, so create a tooltip to display full
+            # name if the mouse hovers over the widget.
+            self.setToolTip(_('{}').format(html.escape(username)))
 
 
 class UserMenu(QMenu):
@@ -821,6 +830,9 @@ class SourceList(QListWidget):
     QListView::item:selected {
         background-color: #f3f5f9;
     }
+    QListView::item:hover{
+        border: 500px solid #f9f9f9;
+    }
     '''
 
     def __init__(self):
@@ -962,6 +974,9 @@ class SourceWidget(QWidget):
         layout = QHBoxLayout(self)
         self.setLayout(layout)
 
+        # Set cursor.
+        self.setCursor(QCursor(Qt.PointingHandCursor))
+
         # Remove margins and spacing
         layout.setContentsMargins(self.SIDE_MARGIN, 0, self.SIDE_MARGIN, 0)
         layout.setSpacing(0)
@@ -1073,6 +1088,10 @@ class StarToggleButton(SvgToggleButton):
     css = '''
     #star_button {
         border: none;
+    }
+    #star_button:hover {
+        border: 4px solid #D3D8EA;
+        border-radius: 8px;
     }
     '''
 
@@ -1242,6 +1261,9 @@ class SignInButton(QPushButton):
         self.setStyleSheet(self.CSS)
         self.setFixedHeight(40)
         self.setFixedWidth(140)
+
+        # Set cursor.
+        self.setCursor(QCursor(Qt.PointingHandCursor))
 
         # Set drop shadow effect
         effect = QGraphicsDropShadowEffect(self)
@@ -1816,16 +1838,25 @@ class FileWidget(QWidget):
         font-size: 13px;
         color: #2a319d;
     }
+    QPushButton#download_button:hover {
+        color: #05a6fe;
+    }
     QLabel#file_name {
         min-width: 129px;
         padding-right: 8px;
+        padding-bottom: 4px;
+        padding-top: 1px;
         font-family: 'Source Sans Pro';
-        font-weight: 700;
+        font-weight: 600;
         font-size: 13px;
         color: #2a319d;
     }
+    QLabel#file_name:hover {
+        color: #05a6fe;
+    }
     QLabel#no_file_name {
         padding-right: 8px;
+        padding-bottom: 1px;
         font-family: 'Source Sans Pro';
         font-weight: 300;
         font-size: 13px;
@@ -1868,6 +1899,7 @@ class FileWidget(QWidget):
         self.controller = controller
         self.file = self.controller.get_file(file_uuid)
         self.index = index
+        self.downloading = False
 
         # Set styles
         self.setObjectName('file_widget')
@@ -1900,14 +1932,17 @@ class FileWidget(QWidget):
         self.download_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.download_button.setIcon(load_icon('download_file.svg'))
         self.download_button.setFont(self.file_buttons_font)
+        self.download_button.setCursor(QCursor(Qt.PointingHandCursor))
         self.download_animation = load_movie("download_file.gif")
         self.export_button = QPushButton(_('EXPORT'))
         self.export_button.setObjectName('export_print')
         self.export_button.setFont(self.file_buttons_font)
+        self.export_button.setCursor(QCursor(Qt.PointingHandCursor))
         self.middot = QLabel("·")
         self.print_button = QPushButton(_('PRINT'))
         self.print_button.setObjectName('export_print')
         self.print_button.setFont(self.file_buttons_font)
+        self.print_button.setCursor(QCursor(Qt.PointingHandCursor))
         file_options_layout.addWidget(self.download_button)
         file_options_layout.addWidget(self.export_button)
         file_options_layout.addWidget(self.middot)
@@ -1921,6 +1956,7 @@ class FileWidget(QWidget):
         self.file_name = SecureQLabel(self.file.filename)
         self.file_name.setObjectName('file_name')
         self.file_name.installEventFilter(self)
+        self.file_name.setCursor(QCursor(Qt.PointingHandCursor))
         self.no_file_name = SecureQLabel('ENCRYPTED FILE ON SERVER')
         self.no_file_name.setObjectName('no_file_name')
         self.no_file_name.setFont(file_description_font)
@@ -1963,9 +1999,18 @@ class FileWidget(QWidget):
         file_missing.connect(self._on_file_missing, type=Qt.QueuedConnection)
 
     def eventFilter(self, obj, event):
-        if event.type() == QEvent.MouseButtonPress:
+        t = event.type()
+        if t == QEvent.MouseButtonPress:
             if event.button() == Qt.LeftButton:
                 self._on_left_click()
+        # HERE BE DRAGONS. Usually I'd wrap this in an if not self.download,
+        # but for reasons not entirely clear, this caused a crash. The
+        # following odd way of expressing the same conditional doesn't cause a
+        # crash. Go figure... :-/
+        if t == QEvent.HoverEnter or t == QEvent.HoverMove and not self.downloading:
+            self.download_button.setIcon(load_icon('download_file_hover.svg'))
+        elif t == QEvent.HoverLeave and not self.downloading:
+            self.download_button.setIcon(load_icon('download_file.svg'))
         return QObject.event(obj, event)
 
     @pyqtSlot(str, str, str)
@@ -1973,6 +2018,7 @@ class FileWidget(QWidget):
         if file_uuid == self.file.uuid:
             self.file = self.controller.get_file(self.file.uuid)
             if self.file.is_downloaded:
+                self.downloading = False
                 self.file_name.setText(self.file.filename)
                 self.download_button.hide()
                 self.no_file_name.hide()
@@ -1986,6 +2032,7 @@ class FileWidget(QWidget):
         if file_uuid == self.file.uuid:
             self.file = self.controller.get_file(self.file.uuid)
             if not self.file.is_downloaded:
+                self.downloading = False
                 self.download_animation.stop()
                 self.download_button.setText(_('DOWNLOAD'))
                 self.download_button.setIcon(load_icon('download_file.svg'))
@@ -2049,6 +2096,7 @@ class FileWidget(QWidget):
         """
         Update the download button to the animated "downloading" state.
         """
+        self.downloading = True
         self.download_animation.frameChanged.connect(self.set_button_animation_frame)
         self.download_animation.start()
         self.download_button.setText(_(" DOWNLOADING "))
@@ -2424,6 +2472,8 @@ class ConversationView(QWidget):
     }
     '''
 
+    conversation_updated = pyqtSignal()
+
     MARGIN_LEFT = 38
     MARGIN_RIGHT = 20
 
@@ -2550,6 +2600,7 @@ class ConversationView(QWidget):
             index)
         self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignLeft)
         self.current_messages[file.uuid] = conversation_item
+        self.conversation_updated.emit()
 
     def update_conversation_position(self, min_val, max_val):
         """
@@ -2568,6 +2619,7 @@ class ConversationView(QWidget):
             message.uuid, str(message), self.controller.message_ready, index)
         self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignLeft)
         self.current_messages[message.uuid] = conversation_item
+        self.conversation_updated.emit()
 
     def add_reply(self, reply: Union[DraftReply, Reply], index) -> None:
         """
@@ -2648,6 +2700,8 @@ class SourceConversationWrapper(QWidget):
 
         # Connect reply_box to conversation_view
         self.reply_box.reply_sent.connect(self.conversation_view.on_reply_sent)
+        self.conversation_view.conversation_updated.connect(
+            self.conversation_title_bar.update_timestamp)
 
 
 class ReplyBoxWidget(QWidget):
@@ -2668,6 +2722,10 @@ class ReplyBoxWidget(QWidget):
     }
     QPushButton {
         border: none;
+    }
+    QPushButton:hover {
+        background: #D3D8EA;
+        border-radius: 8px;
     }
     QWidget#horizontal_line {
         min-height: 2px;
@@ -2726,6 +2784,9 @@ class ReplyBoxWidget(QWidget):
 
         # Ensure TAB order from text edit -> send button
         self.setTabOrder(self.text_edit, self.send_button)
+
+        # Set cursor.
+        self.send_button.setCursor(QCursor(Qt.PointingHandCursor))
 
         # Add widgets to replybox
         replybox_layout.addWidget(self.text_edit)
@@ -2826,6 +2887,8 @@ class ReplyTextEdit(QPlainTextEdit):
         self.placeholder.setParent(self)
         self.placeholder.move(QPoint(3, 4))  # make label match text below
         self.set_logged_in()
+        # Set cursor.
+        self.setCursor(QCursor(Qt.IBeamCursor))
 
     def focusInEvent(self, e):
         # override default behavior: when reply text box is focused, the placeholder
@@ -2939,6 +3002,8 @@ class SourceMenuButton(QToolButton):
         self.setMenu(self.menu)
 
         self.setPopupMode(QToolButton.InstantPopup)
+        # Set cursor.
+        self.setCursor(QCursor(Qt.PointingHandCursor))
 
 
 class TitleLabel(QLabel):
@@ -3027,11 +3092,11 @@ class SourceProfileShortWidget(QWidget):
         header_layout.setContentsMargins(
             self.MARGIN_LEFT, self.VERTICAL_MARGIN, self.MARGIN_RIGHT, self.VERTICAL_MARGIN)
         title = TitleLabel(self.source.journalist_designation)
-        updated = LastUpdatedLabel(_(arrow.get(self.source.last_updated).format('DD MMM')))
+        self.updated = LastUpdatedLabel(_(arrow.get(self.source.last_updated).format('DD MMM')))
         menu = SourceMenuButton(self.source, self.controller)
         header_layout.addWidget(title, alignment=Qt.AlignLeft)
         header_layout.addStretch()
-        header_layout.addWidget(updated, alignment=Qt.AlignRight)
+        header_layout.addWidget(self.updated, alignment=Qt.AlignRight)
         header_layout.addWidget(menu, alignment=Qt.AlignRight)
 
         # Create horizontal line
@@ -3042,3 +3107,10 @@ class SourceProfileShortWidget(QWidget):
         # Add widgets
         layout.addWidget(header)
         layout.addWidget(horizontal_line)
+
+    def update_timestamp(self):
+        """
+        Ensure the timestamp is always kept up to date with the latest activity
+        from the source.
+        """
+        self.updated.setText(_(arrow.get(self.source.last_updated).format('DD MMM')))
