@@ -58,7 +58,7 @@
   owner /home/user/.securedrop_client/ rw,
   owner /home/user/.securedrop_client/config.json r,
   owner /home/user/.securedrop_client/data/ w,
-  owner /home/user/.securedrop_client/data/* rwl,
+  owner /home/user/.securedrop_client/data/** rwl,
   owner /home/user/.securedrop_client/gpg/ rw,
   owner /home/user/.securedrop_client/gpg/* rwl,
   owner /home/user/.securedrop_client/logs/ rw,
