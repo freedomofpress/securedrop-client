@@ -2424,6 +2424,8 @@ class ConversationView(QWidget):
     }
     '''
 
+    conversation_updated = pyqtSignal()
+
     MARGIN_LEFT = 38
     MARGIN_RIGHT = 20
 
@@ -2550,6 +2552,7 @@ class ConversationView(QWidget):
             index)
         self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignLeft)
         self.current_messages[file.uuid] = conversation_item
+        self.conversation_updated.emit()
 
     def update_conversation_position(self, min_val, max_val):
         """
@@ -2568,6 +2571,7 @@ class ConversationView(QWidget):
             message.uuid, str(message), self.controller.message_ready, index)
         self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignLeft)
         self.current_messages[message.uuid] = conversation_item
+        self.conversation_updated.emit()
 
     def add_reply(self, reply: Union[DraftReply, Reply], index) -> None:
         """
@@ -2648,6 +2652,8 @@ class SourceConversationWrapper(QWidget):
 
         # Connect reply_box to conversation_view
         self.reply_box.reply_sent.connect(self.conversation_view.on_reply_sent)
+        self.conversation_view.conversation_updated.connect(
+            self.conversation_title_bar.update_timestamp)
 
 
 class ReplyBoxWidget(QWidget):
@@ -3027,11 +3033,11 @@ class SourceProfileShortWidget(QWidget):
         header_layout.setContentsMargins(
             self.MARGIN_LEFT, self.VERTICAL_MARGIN, self.MARGIN_RIGHT, self.VERTICAL_MARGIN)
         title = TitleLabel(self.source.journalist_designation)
-        updated = LastUpdatedLabel(_(arrow.get(self.source.last_updated).format('DD MMM')))
+        self.updated = LastUpdatedLabel(_(arrow.get(self.source.last_updated).format('DD MMM')))
         menu = SourceMenuButton(self.source, self.controller)
         header_layout.addWidget(title, alignment=Qt.AlignLeft)
         header_layout.addStretch()
-        header_layout.addWidget(updated, alignment=Qt.AlignRight)
+        header_layout.addWidget(self.updated, alignment=Qt.AlignRight)
         header_layout.addWidget(menu, alignment=Qt.AlignRight)
 
         # Create horizontal line
@@ -3042,3 +3048,10 @@ class SourceProfileShortWidget(QWidget):
         # Add widgets
         layout.addWidget(header)
         layout.addWidget(horizontal_line)
+
+    def update_timestamp(self):
+        """
+        Ensure the timestamp is always kept up to date with the latest activity
+        from the source.
+        """
+        self.updated.setText(_(arrow.get(self.source.last_updated).format('DD MMM')))
