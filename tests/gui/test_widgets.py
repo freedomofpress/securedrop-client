@@ -2,6 +2,8 @@
 Make sure the UI widgets are configured correctly and work as expected.
 """
 import pytest
+import arrow
+from datetime import datetime
 
 from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtGui import QFocusEvent, QMovie
@@ -16,7 +18,8 @@ from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, Lo
     DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, LeftPane, SyncIcon, \
     ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
     ReplyBoxWidget, ReplyTextEdit, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, \
-    LoginErrorBar, EmptyConversationView, ExportDialog, PrintDialog, PasswordEdit, SecureQLabel
+    LoginErrorBar, EmptyConversationView, ExportDialog, PrintDialog, PasswordEdit, SecureQLabel, \
+    SourceProfileShortWidget
 from tests import factory
 
 
@@ -2174,6 +2177,7 @@ def test_ConversationView_add_message(mocker, session, source):
 
     cv = ConversationView(source, mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
+    cv.conversation_updated = mocker.MagicMock()
     # this is the MessageWidget that __init__() would return
     mock_msg_widget_res = mocker.MagicMock()
     # mock the actual MessageWidget so we can inspect the __init__ call
@@ -2188,6 +2192,10 @@ def test_ConversationView_add_message(mocker, session, source):
     # check that we added the correct widget to the layout
     cv.conversation_layout.insertWidget.assert_called_once_with(
         0, mock_msg_widget_res, alignment=Qt.AlignLeft)
+
+    # Check the signal is emitted to say the message has been added (and thus
+    # the timestamps need updating.
+    assert cv.conversation_updated.emit.call_count == 1
 
 
 def test_ConversationView_add_message_no_content(mocker, session, source):
@@ -2383,6 +2391,7 @@ def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
 
     cv = ConversationView(source['source'], mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
+    cv.conversation_updated = mocker.MagicMock()
 
     mock_label = mocker.patch('securedrop_client.gui.widgets.SecureQLabel')
     mocker.patch('securedrop_client.gui.widgets.QHBoxLayout.addWidget')
@@ -2392,6 +2401,7 @@ def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
 
     mock_label.assert_called_with('123B')  # default factory filesize
     assert cv.conversation_layout.insertWidget.call_count == 1
+    assert cv.conversation_updated.emit.call_count == 1
 
     cal = cv.conversation_layout.insertWidget.call_args_list
     assert isinstance(cal[0][0][1], FileWidget)
@@ -3214,3 +3224,19 @@ def test_clear_conversation_deletes_items(mocker, homedir):
     cv.clear_conversation()
 
     assert cv.conversation_layout.count() == 0
+
+
+def test_SourceProfileShortWidget_update_timestamp(mocker):
+    """
+    Ensure the update_timestamp slot actually updates the LastUpdatedLabel
+    instance with the last_updated value from the source..
+    """
+    mock_controller = mocker.MagicMock()
+    mock_source = mocker.MagicMock()
+    mock_source.last_updated = datetime.now()
+    mock_source.journalist_designation = "wimple horse knackered unittest"
+    spsw = SourceProfileShortWidget(mock_source, mock_controller)
+    spsw.updated = mocker.MagicMock()
+    spsw.update_timestamp()
+    spsw.updated.setText.assert_called_once_with(
+        arrow.get(mock_source.last_updated).format('DD MMM'))
