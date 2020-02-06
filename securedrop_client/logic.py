@@ -34,7 +34,7 @@ from securedrop_client import storage
 from securedrop_client import db
 from securedrop_client.api_jobs.base import ApiInaccessibleError
 from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob, \
-    ReplyDownloadJob, DownloadChecksumMismatchException, MetadataSyncJob
+    ReplyDownloadJob, DownloadChecksumMismatchException
 from securedrop_client.api_jobs.sources import DeleteSourceJob
 from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobError, \
     SendReplyJobTimeoutError
@@ -42,6 +42,7 @@ from securedrop_client.api_jobs.updatestar import UpdateStarJob, UpdateStarJobEx
 from securedrop_client.crypto import GpgHelper
 from securedrop_client.export import Export
 from securedrop_client.queue import ApiJobQueue
+from securedrop_client.sync import ApiSync
 from securedrop_client.utils import check_dir_permissions
 
 logger = logging.getLogger(__name__)
@@ -101,18 +102,6 @@ class Controller(QObject):
     sync_events = pyqtSignal(str)
 
     """
-    Signal that notifies that a reply was accepted by the server. Emits the reply's
-    UUID and content as a string.
-    """
-    reply_succeeded = pyqtSignal([str, str, str])
-
-    """
-    Signal that notifies that a reply failed to be accepted by the server. Emits the reply's UUID
-    as a string.
-    """
-    reply_failed = pyqtSignal(str)
-
-    """
     A signal that emits a signal when the authentication state changes.
     - `True` when the client becomes authenticated
     - `False` when the client becomes unauthenticated
@@ -120,27 +109,60 @@ class Controller(QObject):
     authentication_state = pyqtSignal(bool)
 
     """
-    This signal indicates that a file has been successfully downloaded by emitting the file's
-    UUID and original filename as a string.
+    This signal indicates that a reply was successfully sent and received by the server.
+
+    Emits:
+        str: the reply's source UUID
+        str: the reply UUID
+        str: the content of the reply
     """
-    file_ready = pyqtSignal([str, str, str])
+    reply_succeeded = pyqtSignal(str, str, str)
 
     """
-    This signal indicates that a file needs to be redownloaded by emitting the file's UUID.
+    This signal indicates that a reply was not successfully sent or received by the server.
+
+    Emits:
+        str: the reply UUID
     """
-    file_missing = pyqtSignal(str)
+    reply_failed = pyqtSignal(str)
 
     """
-    This signal indicates that a message has been successfully downloaded by emitting the message's
-    UUID and content as a string.
+    This signal indicates that a reply has been successfully downloaded.
+
+    Emits:
+        str: the reply's source UUID
+        str: the reply UUID
+        str: the content of the reply
     """
-    message_ready = pyqtSignal([str, str, str])
+    reply_ready = pyqtSignal(str, str, str)
 
     """
-    This signal indicates that a reply has been successfully downloaded by emitting the reply's
-    UUID and content as a string.
+    This signal indicates that a message has been successfully downloaded.
+
+    Emits:
+        str: the message's source UUID
+        str: the message UUID
+        str: the content of the message
     """
-    reply_ready = pyqtSignal([str, str, str])
+    message_ready = pyqtSignal(str, str, str)
+
+    """
+    This signal indicates that a file has been successfully downloaded.
+
+    Emits:
+        str: the file's source UUID
+        str: the file UUID
+        str: the name of the file
+    """
+    file_ready = pyqtSignal(str, str, str)
+
+    """
+    This signal indicates that a file is missing.
+
+    Emits:
+        str: the file UUID
+    """
+    file_missing = pyqtSignal(str, str, str)
 
     def __init__(self, hostname: str, gui, session_maker: sessionmaker,
                  home: str, proxy: bool = True, qubes: bool = True) -> None:
@@ -194,6 +216,12 @@ class Controller(QObject):
         # File data.
         self.data_dir = os.path.join(self.home, 'data')
 
+        # Background sync to keep client up-to-date with server changes
+        self.api_sync = ApiSync(self.api, self.session_maker, self.gpg, self.data_dir)
+        self.api_sync.sync_started.connect(self.on_sync_started, type=Qt.QueuedConnection)
+        self.api_sync.sync_success.connect(self.on_sync_success, type=Qt.QueuedConnection)
+        self.api_sync.sync_failure.connect(self.on_sync_failure, type=Qt.QueuedConnection)
+
     @property
     def is_authenticated(self) -> bool:
         return self.__is_authenticated
@@ -225,11 +253,6 @@ class Controller(QObject):
         self.sync_timer = QTimer()
         self.sync_timer.timeout.connect(self.update_sync)
         self.sync_timer.start(30000)
-
-        # Automagically sync with the API every minute.
-        self.sync_update = QTimer()
-        self.sync_update.timeout.connect(self.sync_api)
-        self.sync_update.start(1000 * 60)  # every minute.
 
         # Run export object in a separate thread context (a reference to the
         # thread is kept on self such that it does not get garbage collected
@@ -280,20 +303,6 @@ class Controller(QObject):
         new_api_thread.start()
 
     def on_queue_paused(self) -> None:
-        # TODO: remove if block once https://github.com/freedomofpress/securedrop-client/pull/739
-        # is merged and rely on continuous metadata sync to encounter same auth error from the
-        # server which will log the user out in the on_sync_failure handler
-        if (
-            not self.api or
-            not self.api_job_queue.main_queue.api_client or
-            not self.api_job_queue.download_file_queue.api_client or
-            not self.api_job_queue.metadata_queue.api_client
-        ):
-            self.invalidate_token()
-            self.logout()
-            self.gui.show_login(error=_('Your session expired. Please log in again.'))
-            return
-
         self.gui.update_error_status(
             _('The SecureDrop server cannot be reached.'),
             duration=0,
@@ -350,7 +359,7 @@ class Controller(QObject):
         self.gui.show_main_window(user)
         self.update_sources()
         self.api_job_queue.login(self.api)
-        self.sync_api()
+        self.api_sync.start(self.api)
         self.is_authenticated = True
         self.resume_queues()
 
@@ -359,6 +368,7 @@ class Controller(QObject):
         self.invalidate_token()
         error = _('There was a problem signing in. Please verify your credentials and try again.')
         self.gui.show_login_error(error=error)
+        self.api_sync.stop()
 
     def login_offline_mode(self):
         """
@@ -384,24 +394,6 @@ class Controller(QObject):
         """
         return bool(self.api and self.api.token is not None)
 
-    def sync_api(self):
-        """
-        Grab data from the remote SecureDrop API in a non-blocking manner.
-        """
-        logger.debug("In sync_api on thread {}".format(self.thread().currentThreadId()))
-        if self.authenticated():
-            self.sync_events.emit('syncing')
-            logger.debug("You are authenticated, going to make your call")
-
-            job = MetadataSyncJob(self.data_dir, self.gpg)
-            job.success_signal.connect(self.on_sync_success, type=Qt.QueuedConnection)
-            job.failure_signal.connect(self.on_sync_failure, type=Qt.QueuedConnection)
-
-            self.api_job_queue.enqueue(job)
-
-            logger.debug("In sync_api, after call to submit job to queue, on "
-                         "thread {}".format(self.thread().currentThreadId()))
-
     def last_sync(self):
         """
         Returns the time of last synchronisation with the remote SD server.
@@ -411,6 +403,9 @@ class Controller(QObject):
                 return arrow.get(f.read())
         except Exception:
             return None
+
+    def on_sync_started(self) -> None:
+        self.sync_events.emit('syncing')
 
     def on_sync_success(self) -> None:
         """
@@ -506,6 +501,7 @@ class Controller(QObject):
         for failed_reply in failed_replies:
             self.reply_failed.emit(failed_reply.uuid)
 
+        self.api_sync.stop()
         self.api_job_queue.logout()
         self.gui.logout()
 
@@ -607,7 +603,7 @@ class Controller(QObject):
             logger.debug('Cannot find {} in the data directory. File does not exist.'.format(
                 file.filename))
             storage.update_missing_files(self.data_dir, self.session)
-            self.file_missing.emit(file.uuid)
+            self.file_missing.emit(file.source.uuid, file.uuid, str(file))
             return False
         return True
 

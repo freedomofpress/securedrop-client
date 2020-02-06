@@ -853,11 +853,11 @@ class SourceList(QListWidget):
 
     def setup(self, controller):
         self.controller = controller
-        # Handle source related messages.
+        self.controller.reply_succeeded.connect(self.set_snippet)
         self.controller.message_ready.connect(self.set_snippet)
         self.controller.reply_ready.connect(self.set_snippet)
-        self.controller.reply_succeeded.connect(self.set_snippet)
         self.controller.file_ready.connect(self.set_snippet)
+        self.controller.file_missing.connect(self.set_snippet)
 
     def update(self, sources: List[Source]):
         """
@@ -1652,8 +1652,8 @@ class SpeechBubble(QWidget):
         # Connect signals to slots
         update_signal.connect(self._update_text)
 
-    @pyqtSlot(str, str)
-    def _update_text(self, message_id: str, text: str) -> None:
+    @pyqtSlot(str, str, str)
+    def _update_text(self, source_id: str, message_id: str, text: str) -> None:
         """
         Conditionally update this SpeechBubble's text if and only if the message_id of the emitted
         signal matches the message_id of this speech bubble.
@@ -1787,14 +1787,13 @@ class ReplyWidget(SpeechBubble):
         elif status == 'PENDING':
             self.setStyleSheet(self.CSS_REPLY_PENDING)
 
-    @pyqtSlot(str)
-    def _on_reply_success(self, message_id: str) -> None:
+    @pyqtSlot(str, str, str)
+    def _on_reply_success(self, source_id: str, message_id: str, content: str) -> None:
         """
         Conditionally update this ReplyWidget's state if and only if the message_id of the emitted
         signal matches the message_id of this widget.
         """
         if message_id == self.message_id:
-            logger.debug('Message {} succeeded'.format(message_id))
             self._set_reply_state('SUCCEEDED')
 
     @pyqtSlot(str)
@@ -1804,7 +1803,6 @@ class ReplyWidget(SpeechBubble):
         signal matches the message_id of this widget.
         """
         if message_id == self.message_id:
-            logger.debug('Message {} failed'.format(message_id))
             self._set_reply_state('FAILED')
 
 
@@ -2015,8 +2013,8 @@ class FileWidget(QWidget):
             self.download_button.setIcon(load_icon('download_file.svg'))
         return QObject.event(obj, event)
 
-    @pyqtSlot(str)
-    def _on_file_downloaded(self, file_uuid: str) -> None:
+    @pyqtSlot(str, str, str)
+    def _on_file_downloaded(self, source_uuid: str, file_uuid: str, filename: str) -> None:
         if file_uuid == self.file.uuid:
             self.file = self.controller.get_file(self.file.uuid)
             if self.file.is_downloaded:
@@ -2029,8 +2027,8 @@ class FileWidget(QWidget):
                 self.print_button.show()
                 self.file_name.show()
 
-    @pyqtSlot(str)
-    def _on_file_missing(self, file_uuid: str) -> None:
+    @pyqtSlot(str, str, str)
+    def _on_file_missing(self, source_uuid: str, file_uuid: str, filename: str) -> None:
         if file_uuid == self.file.uuid:
             self.file = self.controller.get_file(self.file.uuid)
             if not self.file.is_downloaded:
@@ -2474,6 +2472,8 @@ class ConversationView(QWidget):
     }
     '''
 
+    conversation_updated = pyqtSignal()
+
     MARGIN_LEFT = 38
     MARGIN_RIGHT = 20
 
@@ -2600,6 +2600,7 @@ class ConversationView(QWidget):
             index)
         self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignLeft)
         self.current_messages[file.uuid] = conversation_item
+        self.conversation_updated.emit()
 
     def update_conversation_position(self, min_val, max_val):
         """
@@ -2614,10 +2615,11 @@ class ConversationView(QWidget):
         """
         Add a message from the source.
         """
-        conversation_item = MessageWidget(message.uuid, str(message), self.controller.message_ready,
-                                          index)
+        conversation_item = MessageWidget(
+            message.uuid, str(message), self.controller.message_ready, index)
         self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignLeft)
         self.current_messages[message.uuid] = conversation_item
+        self.conversation_updated.emit()
 
     def add_reply(self, reply: Union[DraftReply, Reply], index) -> None:
         """
@@ -2698,6 +2700,8 @@ class SourceConversationWrapper(QWidget):
 
         # Connect reply_box to conversation_view
         self.reply_box.reply_sent.connect(self.conversation_view.on_reply_sent)
+        self.conversation_view.conversation_updated.connect(
+            self.conversation_title_bar.update_timestamp)
 
 
 class ReplyBoxWidget(QWidget):
@@ -3088,11 +3092,11 @@ class SourceProfileShortWidget(QWidget):
         header_layout.setContentsMargins(
             self.MARGIN_LEFT, self.VERTICAL_MARGIN, self.MARGIN_RIGHT, self.VERTICAL_MARGIN)
         title = TitleLabel(self.source.journalist_designation)
-        updated = LastUpdatedLabel(_(arrow.get(self.source.last_updated).format('DD MMM')))
+        self.updated = LastUpdatedLabel(_(arrow.get(self.source.last_updated).format('DD MMM')))
         menu = SourceMenuButton(self.source, self.controller)
         header_layout.addWidget(title, alignment=Qt.AlignLeft)
         header_layout.addStretch()
-        header_layout.addWidget(updated, alignment=Qt.AlignRight)
+        header_layout.addWidget(self.updated, alignment=Qt.AlignRight)
         header_layout.addWidget(menu, alignment=Qt.AlignRight)
 
         # Create horizontal line
@@ -3103,3 +3107,10 @@ class SourceProfileShortWidget(QWidget):
         # Add widgets
         layout.addWidget(header)
         layout.addWidget(horizontal_line)
+
+    def update_timestamp(self):
+        """
+        Ensure the timestamp is always kept up to date with the latest activity
+        from the source.
+        """
+        self.updated.setText(_(arrow.get(self.source.last_updated).format('DD MMM')))

@@ -2,6 +2,8 @@
 Make sure the UI widgets are configured correctly and work as expected.
 """
 import pytest
+import arrow
+from datetime import datetime
 
 from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtGui import QFocusEvent, QMovie
@@ -16,7 +18,8 @@ from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, Lo
     DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, LeftPane, SyncIcon, \
     ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
     ReplyBoxWidget, ReplyTextEdit, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, \
-    LoginErrorBar, EmptyConversationView, ExportDialog, PrintDialog, PasswordEdit, SecureQLabel
+    LoginErrorBar, EmptyConversationView, ExportDialog, PrintDialog, PasswordEdit, SecureQLabel, \
+    SourceProfileShortWidget
 from tests import factory
 
 
@@ -1334,11 +1337,11 @@ def test_SpeechBubble_update_text(mocker):
     sb = SpeechBubble(msg_id, 'hello', mock_signal, 0)
 
     new_msg = 'new message'
-    sb._update_text(msg_id, new_msg)
+    sb._update_text('mock_source_uuid', msg_id, new_msg)
     assert sb.message.text() == new_msg
 
     newer_msg = 'an even newer message'
-    sb._update_text(msg_id + 'xxxxx', newer_msg)
+    sb._update_text('mock_source_uuid', msg_id + 'xxxxx', newer_msg)
     assert sb.message.text() == new_msg
 
 
@@ -1625,7 +1628,7 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_matches(mocker, sou
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw.update = mocker.MagicMock()
 
-    fw._on_file_downloaded(file.uuid)
+    fw._on_file_downloaded(file.source.uuid, file.uuid, str(file))
 
     assert fw.download_button.isHidden()
     assert not fw.export_button.isHidden()
@@ -1652,7 +1655,7 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(
     fw.clear = mocker.MagicMock()
     fw.update = mocker.MagicMock()
 
-    fw._on_file_downloaded('not a matching uuid')
+    fw._on_file_downloaded('not a matching source uuid', 'not a matching file uuid', 'mock')
 
     fw.clear.assert_not_called()
     assert fw.download_button.isHidden()
@@ -1677,7 +1680,7 @@ def test_FileWidget_on_file_missing_show_download_button_when_uuid_matches(mocke
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw.update = mocker.MagicMock()
 
-    fw._on_file_missing(file.uuid)
+    fw._on_file_missing(file.source.uuid, file.uuid, str(file))
 
     assert not fw.download_button.isHidden()
     assert fw.export_button.isHidden()
@@ -1704,7 +1707,7 @@ def test_FileWidget_on_file_missing_does_not_show_download_button_when_uuid_does
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw.download_button.show = mocker.MagicMock()
 
-    fw._on_file_missing('not a matching uuid')
+    fw._on_file_missing('not a matching source uuid', 'not a matching file uuid', 'mock filename')
 
     fw.download_button.show.assert_not_called()
 
@@ -2217,6 +2220,7 @@ def test_ConversationView_add_message(mocker, session, source):
 
     cv = ConversationView(source, mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
+    cv.conversation_updated = mocker.MagicMock()
     # this is the MessageWidget that __init__() would return
     mock_msg_widget_res = mocker.MagicMock()
     # mock the actual MessageWidget so we can inspect the __init__ call
@@ -2231,6 +2235,10 @@ def test_ConversationView_add_message(mocker, session, source):
     # check that we added the correct widget to the layout
     cv.conversation_layout.insertWidget.assert_called_once_with(
         0, mock_msg_widget_res, alignment=Qt.AlignLeft)
+
+    # Check the signal is emitted to say the message has been added (and thus
+    # the timestamps need updating.
+    assert cv.conversation_updated.emit.call_count == 1
 
 
 def test_ConversationView_add_message_no_content(mocker, session, source):
@@ -2426,6 +2434,7 @@ def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
 
     cv = ConversationView(source['source'], mocked_controller)
     cv.conversation_layout = mocker.MagicMock()
+    cv.conversation_updated = mocker.MagicMock()
 
     mock_label = mocker.patch('securedrop_client.gui.widgets.SecureQLabel')
     mocker.patch('securedrop_client.gui.widgets.QHBoxLayout.addWidget')
@@ -2435,6 +2444,7 @@ def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
 
     mock_label.assert_called_with('123B')  # default factory filesize
     assert cv.conversation_layout.insertWidget.call_count == 1
+    assert cv.conversation_updated.emit.call_count == 1
 
     cal = cv.conversation_layout.insertWidget.call_args_list
     assert isinstance(cal[0][0][1], FileWidget)
@@ -2781,24 +2791,17 @@ def test_ReplyWidget_success_failure_slots(mocker):
     assert mock_update_signal.connect.called  # to ensure no stale mocks
 
     # check the success slog
-    mock_logger = mocker.patch('securedrop_client.gui.widgets.logger')
-    widget._on_reply_success(msg_id + "x")
+    widget._on_reply_success('mock_source_id', msg_id + "x", 'lol')
     assert widget.error.isHidden()
-    assert not mock_logger.debug.called
-    widget._on_reply_success(msg_id)
+    widget._on_reply_success('mock_source_id', msg_id, 'lol')
     assert widget.error.isHidden()
-    assert mock_logger.debug.called
-    mock_logger.reset_mock()
 
     # check the failure slot where message id does not match
-    mock_logger = mocker.patch('securedrop_client.gui.widgets.logger')
     widget._on_reply_failure(msg_id + "x")
     assert widget.error.isHidden()
-    assert not mock_logger.debug.called
     # check the failure slot where message id matches
     widget._on_reply_failure(msg_id)
     assert not widget.error.isHidden()
-    assert mock_logger.debug.called
 
 
 def test_ReplyBoxWidget__on_authentication_changed(mocker, homedir):
@@ -3264,3 +3267,19 @@ def test_clear_conversation_deletes_items(mocker, homedir):
     cv.clear_conversation()
 
     assert cv.conversation_layout.count() == 0
+
+
+def test_SourceProfileShortWidget_update_timestamp(mocker):
+    """
+    Ensure the update_timestamp slot actually updates the LastUpdatedLabel
+    instance with the last_updated value from the source..
+    """
+    mock_controller = mocker.MagicMock()
+    mock_source = mocker.MagicMock()
+    mock_source.last_updated = datetime.now()
+    mock_source.journalist_designation = "wimple horse knackered unittest"
+    spsw = SourceProfileShortWidget(mock_source, mock_controller)
+    spsw.updated = mocker.MagicMock()
+    spsw.update_timestamp()
+    spsw.updated.setText.assert_called_once_with(
+        arrow.get(mock_source.last_updated).format('DD MMM'))
