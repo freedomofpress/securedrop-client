@@ -5,7 +5,12 @@ if typing.TYPE_CHECKING:
 
 
 class BaseError(Exception):
-    pass
+    """For generic errors not covered by other exceptions"""
+    def __init__(self, message: typing.Optional[str] = None) -> None:
+        self.msg = message
+
+    def __str__(self) -> str:
+        return repr(self.msg)
 
 
 class ReplyError(BaseError):

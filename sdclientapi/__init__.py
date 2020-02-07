@@ -173,8 +173,25 @@ class API:
             data["headers"] = headers
 
         data_str = json.dumps(data)
-        result = json.loads(json_query(self.proxy_vm_name, data_str, timeout))
-        return json.loads(result["body"]), result["status"], result["headers"]
+
+        try:
+            result = json.loads(json_query(self.proxy_vm_name, data_str, timeout))
+        except json.decoder.JSONDecodeError:
+            raise BaseError("Error in parsing JSON")
+
+        data = json.loads(result["body"])
+
+        if "error" in data and result["status"] == http.HTTPStatus.GATEWAY_TIMEOUT:
+            raise RequestTimeoutError
+        elif "error" in data and result["status"] == 403:
+            raise AuthError(data["error"])
+        elif "error" in data and result["status"] != 404:
+            # We exclude 404 since if we encounter a 404, it means that an
+            # item is missing. In that case we return to the caller to
+            # handle that with an appropriate message.
+            raise BaseError(data["error"])
+
+        return data, result["status"], result["headers"]
 
     def authenticate(self, totp: Optional[str] = None) -> bool:
         """
@@ -234,22 +251,12 @@ class API:
         path_query = "api/v1/sources"
         method = "GET"
 
-        try:
-            data, status_code, headers = self._send_json_request(
-                method,
-                path_query,
-                headers=self.req_headers,
-                timeout=self.default_request_timeout,
-            )
-        except json.decoder.JSONDecodeError:
-            raise BaseError("Error in parsing JSON")
-
-        if "error" in data and status_code == http.HTTPStatus.GATEWAY_TIMEOUT:
-            raise RequestTimeoutError
-        elif "error" in data and status_code == 403:
-            raise AuthError(data["error"])
-        elif "error" in data:
-            raise BaseError(data["error"])
+        data, status_code, headers = self._send_json_request(
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
+        )
 
         sources = data["sources"]
         result = []  # type: List[Source]
@@ -270,22 +277,15 @@ class API:
         path_query = "api/v1/sources/{}".format(source.uuid)
         method = "GET"
 
-        try:
-            data, status_code, headers = self._send_json_request(
-                method,
-                path_query,
-                headers=self.req_headers,
-                timeout=self.default_request_timeout,
-            )
+        data, status_code, headers = self._send_json_request(
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
+        )
 
-            if status_code == 404:
-                raise WrongUUIDError("Missing source {}".format(source.uuid))
-
-        except json.decoder.JSONDecodeError:
-            raise BaseError("Error in parsing JSON")
-
-        if "error" in data:
-            raise AuthError(data["error"])
+        if status_code == 404:
+            raise WrongUUIDError("Missing source {}".format(source.uuid))
 
         return Source(**data)
 
@@ -311,22 +311,15 @@ class API:
         path_query = "api/v1/sources/{}".format(source.uuid)
         method = "DELETE"
 
-        try:
-            data, status_code, headers = self._send_json_request(
-                method,
-                path_query,
-                headers=self.req_headers,
-                timeout=self.default_request_timeout,
-            )
+        data, status_code, headers = self._send_json_request(
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
+        )
 
-            if status_code == 404:
-                raise WrongUUIDError("Missing source {}".format(source.uuid))
-
-        except json.decoder.JSONDecodeError:
-            raise BaseError("Error in parsing JSON")
-
-        if "error" in data:
-            raise AuthError(data["error"])
+        if status_code == 404:
+            raise WrongUUIDError("Missing source {}".format(source.uuid))
 
         if "message" in data and data["message"] == "Source and submissions deleted":
             return True
@@ -356,17 +349,14 @@ class API:
         path_query = "api/v1/sources/{}/add_star".format(source.uuid)
         method = "POST"
 
-        try:
-            data, status_code, headers = self._send_json_request(
-                method,
-                path_query,
-                headers=self.req_headers,
-                timeout=self.default_request_timeout,
-            )
-            if status_code == 404:
-                raise WrongUUIDError("Missing source {}".format(source.uuid))
-        except json.decoder.JSONDecodeError:
-            raise BaseError("Error in parsing JSON")
+        data, status_code, headers = self._send_json_request(
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
+        )
+        if status_code == 404:
+            raise WrongUUIDError("Missing source {}".format(source.uuid))
 
         if "message" in data and data["message"] == "Star added":
             return True
@@ -382,17 +372,14 @@ class API:
         path_query = "api/v1/sources/{}/remove_star".format(source.uuid)
         method = "DELETE"
 
-        try:
-            data, status_code, headers = self._send_json_request(
-                method,
-                path_query,
-                headers=self.req_headers,
-                timeout=self.default_request_timeout,
-            )
-            if status_code == 404:
-                raise WrongUUIDError("Missing source {}".format(source.uuid))
-        except json.decoder.JSONDecodeError:
-            raise BaseError("Error in parsing JSON")
+        data, status_code, headers = self._send_json_request(
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
+        )
+        if status_code == 404:
+            raise WrongUUIDError("Missing source {}".format(source.uuid))
 
         if "message" in data and data["message"] == "Star removed":
             return True
@@ -409,22 +396,15 @@ class API:
         path_query = "api/v1/sources/{}/submissions".format(source.uuid)
         method = "GET"
 
-        try:
-            data, status_code, headers = self._send_json_request(
-                method,
-                path_query,
-                headers=self.req_headers,
-                timeout=self.default_request_timeout,
-            )
+        data, status_code, headers = self._send_json_request(
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
+        )
 
-            if status_code == 404:
-                raise WrongUUIDError("Missing submission {}".format(source.uuid))
-
-        except json.decoder.JSONDecodeError:
-            raise BaseError("Error in parsing JSON")
-
-        if "error" in data:
-            raise AuthError(data["error"])
+        if status_code == 404:
+            raise WrongUUIDError("Missing submission {}".format(source.uuid))
 
         result = []  # type: List[Submission]
         values = data["submissions"]
@@ -447,22 +427,15 @@ class API:
         )
         method = "GET"
 
-        try:
-            data, status_code, headers = self._send_json_request(
-                method,
-                path_query,
-                headers=self.req_headers,
-                timeout=self.default_request_timeout,
-            )
+        data, status_code, headers = self._send_json_request(
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
+        )
 
-            if status_code == 404:
-                raise WrongUUIDError("Missing submission {}".format(submission.uuid))
-
-        except json.decoder.JSONDecodeError:
-            raise BaseError("Error in parsing JSON")
-
-        if "error" in data:
-            raise AuthError(data["error"])
+        if status_code == 404:
+            raise WrongUUIDError("Missing submission {}".format(submission.uuid))
 
         return Submission(**data)
 
@@ -487,18 +460,12 @@ class API:
         path_query = "api/v1/submissions"
         method = "GET"
 
-        try:
-            data, status_code, headers = self._send_json_request(
-                method,
-                path_query,
-                headers=self.req_headers,
-                timeout=self.default_request_timeout,
-            )
-        except json.decoder.JSONDecodeError:
-            raise BaseError("Error in parsing JSON")
-
-        if "error" in data:
-            raise AuthError(data["error"])
+        data, status_code, headers = self._send_json_request(
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
+        )
 
         result = []  # type: List[Submission]
         values = data["submissions"]
@@ -524,22 +491,15 @@ class API:
         )
         method = "DELETE"
 
-        try:
-            data, status_code, headers = self._send_json_request(
-                method,
-                path_query,
-                headers=self.req_headers,
-                timeout=self.default_request_timeout,
-            )
+        data, status_code, headers = self._send_json_request(
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
+        )
 
-            if status_code == 404:
-                raise WrongUUIDError("Missing submission {}".format(submission.uuid))
-
-        except json.decoder.JSONDecodeError:
-            raise BaseError("Error in parsing JSON")
-
-        if "error" in data:
-            raise AuthError(data["error"])
+        if status_code == 404:
+            raise WrongUUIDError("Missing submission {}".format(submission.uuid))
 
         if "message" in data and data["message"] == "Submission deleted":
             return True
@@ -620,22 +580,15 @@ class API:
         path_query = "api/v1/sources/{}/flag".format(source.uuid)
         method = "POST"
 
-        try:
-            data, status_code, headers = self._send_json_request(
-                method,
-                path_query,
-                headers=self.req_headers,
-                timeout=self.default_request_timeout,
-            )
+        data, status_code, headers = self._send_json_request(
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
+        )
 
-            if status_code == 404:
-                raise WrongUUIDError("Missing source {}".format(source.uuid))
-
-        except json.decoder.JSONDecodeError:
-            raise BaseError("Error in parsing JSON")
-
-        if "error" in data:
-            raise AuthError(data["error"])
+        if status_code == 404:
+            raise WrongUUIDError("Missing source {}".format(source.uuid))
 
         return True
 
@@ -654,19 +607,12 @@ class API:
         path_query = "api/v1/user"
         method = "GET"
 
-        try:
-            data, status_code, headers = self._send_json_request(
-                method,
-                path_query,
-                headers=self.req_headers,
-                timeout=self.default_request_timeout,
-            )
-
-        except json.decoder.JSONDecodeError:
-            raise BaseError("Error in parsing JSON")
-
-        if "error" in data:
-            raise AuthError(data["error"])
+        data, status_code, headers = self._send_json_request(
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
+        )
 
         return data
 
@@ -688,23 +634,16 @@ class API:
         if reply_uuid:
             reply["uuid"] = reply_uuid
 
-        try:
-            data, status_code, headers = self._send_json_request(
-                method,
-                path_query,
-                body=json.dumps(reply),
-                headers=self.req_headers,
-                timeout=self.default_request_timeout,
-            )
+        data, status_code, headers = self._send_json_request(
+            method,
+            path_query,
+            body=json.dumps(reply),
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
+        )
 
-            if status_code == 400:
-                raise ReplyError(data["message"])
-
-        except json.decoder.JSONDecodeError:
-            raise BaseError("Error in parsing JSON")
-
-        if "error" in data:
-            raise AuthError(data["error"])
+        if status_code == 400:
+            raise ReplyError(data["message"])
 
         if "message" in data and data["message"] == "Your reply has been stored":
             return Reply(uuid=data["uuid"], filename=data["filename"])
@@ -721,22 +660,15 @@ class API:
         path_query = "api/v1/sources/{}/replies".format(source.uuid)
         method = "GET"
 
-        try:
-            data, status_code, headers = self._send_json_request(
-                method,
-                path_query,
-                headers=self.req_headers,
-                timeout=self.default_request_timeout,
-            )
+        data, status_code, headers = self._send_json_request(
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
+        )
 
-            if status_code == 404:
-                raise WrongUUIDError("Missing source {}".format(source.uuid))
-
-        except json.decoder.JSONDecodeError:
-            raise BaseError("Error in parsing JSON")
-
-        if "error" in data:
-            raise AuthError(data["error"])
+        if status_code == 404:
+            raise WrongUUIDError("Missing source {}".format(source.uuid))
 
         result = []
         for datum in data["replies"]:
@@ -756,22 +688,15 @@ class API:
         path_query = "api/v1/sources/{}/replies/{}".format(source.uuid, reply_uuid)
         method = "GET"
 
-        try:
-            data, status_code, headers = self._send_json_request(
-                method,
-                path_query,
-                headers=self.req_headers,
-                timeout=self.default_request_timeout,
-            )
+        data, status_code, headers = self._send_json_request(
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
+        )
 
-            if status_code == 404:
-                raise WrongUUIDError("Missing source {}".format(source.uuid))
-
-        except json.decoder.JSONDecodeError:
-            raise BaseError("Error in parsing JSON")
-
-        if "error" in data:
-            raise AuthError(data["error"])
+        if status_code == 404:
+            raise WrongUUIDError("Missing source {}".format(source.uuid))
 
         reply = Reply(**data)
 
@@ -786,19 +711,12 @@ class API:
         path_query = "api/v1/replies"
         method = "GET"
 
-        try:
-            data, status_code, headers = self._send_json_request(
-                method,
-                path_query,
-                headers=self.req_headers,
-                timeout=self.default_request_timeout,
-            )
-
-        except json.decoder.JSONDecodeError:
-            raise BaseError("Error in parsing JSON")
-
-        if "error" in data:
-            raise AuthError(data["error"])
+        data, status_code, headers = self._send_json_request(
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
+        )
 
         result = []
         for datum in data["replies"]:
@@ -874,21 +792,15 @@ class API:
 
         method = "DELETE"
 
-        try:
-            data, status_code, headers = self._send_json_request(
-                method,
-                path_query,
-                headers=self.req_headers,
-                timeout=self.default_request_timeout,
-            )
+        data, status_code, headers = self._send_json_request(
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
+        )
 
-            if status_code == 404:
-                raise WrongUUIDError("Missing reply {}".format(reply.uuid))
-        except json.decoder.JSONDecodeError:
-            raise BaseError("Error in parsing JSON")
-
-        if "error" in data:
-            raise AuthError(data["error"])
+        if status_code == 404:
+            raise WrongUUIDError("Missing reply {}".format(reply.uuid))
 
         if "message" in data and data["message"] == "Reply deleted":
             return True
@@ -902,19 +814,12 @@ class API:
         path_query = "api/v1/logout"
         method = "POST"
 
-        try:
-            data, status_code, headers = self._send_json_request(
-                method,
-                path_query,
-                headers=self.req_headers,
-                timeout=self.default_request_timeout,
-            )
-
-        except json.decoder.JSONDecodeError:
-            raise BaseError("Error in parsing JSON")
-
-        if "error" in data:
-            raise AuthError(data["error"])
+        data, status_code, headers = self._send_json_request(
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
+        )
 
         if "message" in data and data["message"] == "Your token has been revoked.":
             return True
