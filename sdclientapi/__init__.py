@@ -40,11 +40,11 @@ class RequestTimeoutError(Exception):
 
 class ServerConnectionError(Exception):
     """
-    Error raised if a request times out.
+    Error raised if we cannot connect to the server.
     """
 
     def __init__(self) -> None:
-        super().__init__("The request timed out.")
+        super().__init__("Cannot connect to the server.")
 
 
 def json_query(proxy_vm_name: str, data: str, timeout: Optional[int] = None) -> str:
@@ -166,6 +166,9 @@ class API:
         except (TooManyRedirects, ConnectionError):
             raise ServerConnectionError
 
+        if result.status_code == http.HTTPStatus.FORBIDDEN:
+            raise AuthError("forbidden")
+
         # Because when we download a file there is no JSON in the body
         if path_query.endswith("/download"):
             return result, result.status_code, dict(result.headers)
@@ -201,12 +204,13 @@ class API:
             raise RequestTimeoutError
         elif "error" in data and result["status"] == http.HTTPStatus.BAD_GATEWAY:
             raise ServerConnectionError
-        elif "error" in data and result["status"] == 403:
+        elif "error" in data and result["status"] == http.HTTPStatus.FORBIDDEN:
             raise AuthError(data["error"])
-        elif "error" in data and result["status"] != 404:
+        elif "error" in data and result["status"] != http.HTTPStatus.NOT_FOUND:
             # We exclude 404 since if we encounter a 404, it means that an
             # item is missing. In that case we return to the caller to
-            # handle that with an appropriate message.
+            # handle that with an appropriate message. However, if the error
+            # is not a 404, then we raise.
             raise BaseError(data["error"])
 
         return data, result["status"], result["headers"]
