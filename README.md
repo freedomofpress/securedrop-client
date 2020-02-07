@@ -24,19 +24,47 @@ Add the following content to `/etc/qubes-rpc/securedrop.Log`
 /usr/sbin/securedrop-log
 ```
 
-and then place `securedrop-log` script to `/usr/sbin/` directory and make sure that
-it is executable.
+and then place `securedrop-redis-log` and `securedrop-log-saver` scripts to the
+virtualenv at `/opt/venvs/securedrop-log` and create links to `/usr/sbin/`
+directory and make sure that they are executable. This step will be automated via
+the Debian package.
+
+
+Copy `securedrop-log.service` file to `/usr/systemd/system` and then
+
+```
+sudo systemctl daemon-reload
+sudo systemctl start redis
+sudo systemctl start securedrop-log
+```
+
+To test the logging, make sure to execute `securedrop-log-saver` from a terminal in `sd-log`
+and check the ~/QubesIncomingLogs/vmname/syslog.log file via **tail -f**.
+
 
 ### To use from any Python code in workvm
+
+Put `sd-rsyslog-example.conf` file to `/etc/sd-rsyslog.conf`, make sure update
+it so that is shows the right **localvm** name.
+
+Copy `sd-rsyslog` executable to **/usr/sbin**, and remember to `chmod +x`
+the binary. 
+
+Next, restart the rsyslog service.
+
+```
+systemctl restart rsyslog
+```
+
 
 Here is an example code using Python logging
 
 ```Python
 import logging
-from securedrop_log import SecureDropLog
+import logging.handlers
 
 def main():
-    handler = SecureDropLog("workvm", "proxy-debian")
+    handler = logging.handlers.SysLogHandler(address="/dev/log")
     logging.basicConfig(level=logging.DEBUG, handlers=[handler])
     logger = logging.getLogger("example")
 
@@ -48,8 +76,9 @@ if __name__ == "__main__":
 
 ```
 
-## The journalctl example
+Or use the logger command.
 
-You will need `python3-systemd` package for the same.
+```
+logger This line should show in the syslog.log file in the sd-log file.
+```
 
-The code is in `journal-example.py` file.

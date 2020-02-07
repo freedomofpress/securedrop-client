@@ -1,0 +1,46 @@
+#!/opt/venvs/securedrop-log/bin/python3
+
+from __future__ import print_function
+
+import tempfile
+import io
+import sys
+import os
+import errno
+import shutil
+import subprocess
+import redis
+from datetime import datetime
+
+
+def sanitize_line(untrusted_line):
+    line = bytearray(untrusted_line)
+    for i, c in enumerate(line):
+        if c >= 0x20 and c <= 0x7E:
+            pass
+        else:
+            line[i] = 0x2E
+    return bytearray(line).decode("ascii")
+
+
+stdin = sys.stdin.buffer  # python3
+
+
+rd = redis.Redis()
+
+
+def log(msg, vmname="remote"):
+    global rd
+    redis_msg = f"{vmname}::{msg}"
+    rd.rpush("syslogmsg", redis_msg)
+
+
+# the first line is always the remote vm name
+untrusted_line = stdin.readline()
+qrexec_remote = untrusted_line.rstrip(b"\n").decode("utf-8")
+while True:
+    untrusted_line = stdin.readline()
+    if untrusted_line == b"":
+        break
+
+    log(sanitize_line(untrusted_line.rstrip(b"\n")), qrexec_remote)

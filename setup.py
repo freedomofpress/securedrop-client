@@ -4,8 +4,8 @@ import setuptools
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-version = pkgutil.get_data("securedrop_log", "VERSION").decode("utf-8")
-version = version.strip()
+with open("VERSION") as fh:
+    version = fh.read().strip()
 
 
 setuptools.setup(
@@ -20,15 +20,13 @@ setuptools.setup(
     install_requires=[],
     python_requires=">=3.5",
     url="https://github.com/freedomofpress/securedrop-log",
-    packages=["securedrop_log",],
-    package_data={"securedrop_log": ["VERSION"],},
-    classifiers=(
+    classifiers=[
         "Development Status :: 3 - Alpha",
         "Programming Language :: Python :: 3",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Intended Audience :: Developers",
         "Operating System :: POSIX :: Linux",
-    ),
-    data_files=[("sbin", ["securedrop-log"])],
+    ],
+    data_files=[("sbin", ["securedrop-log", "securedrop-log-saver", "securedrop-redis-log"])],
 )
