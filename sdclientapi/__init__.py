@@ -1,4 +1,5 @@
 import configparser
+import http
 import json
 import os
 import requests
@@ -243,8 +244,12 @@ class API:
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
 
-        if "error" in data:
+        if "error" in data and status_code == http.HTTPStatus.GATEWAY_TIMEOUT:
+            raise RequestTimeoutError
+        elif "error" in data and status_code == 403:
             raise AuthError(data["error"])
+        elif "error" in data:
+            raise BaseError(data["error"])
 
         sources = data["sources"]
         result = []  # type: List[Source]
