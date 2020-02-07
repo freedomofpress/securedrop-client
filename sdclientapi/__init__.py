@@ -4,7 +4,12 @@ import json
 import os
 import requests
 from datetime import datetime
-from requests.exceptions import ConnectTimeout, ReadTimeout
+from requests.exceptions import (
+    ConnectTimeout,
+    ReadTimeout,
+    ConnectionError,
+    TooManyRedirects
+)
 from subprocess import PIPE, Popen, TimeoutExpired
 from typing import List, Tuple, Dict, Optional, Any
 from urllib.parse import urljoin
@@ -25,6 +30,15 @@ DEFAULT_DOWNLOAD_TIMEOUT = 60 * 60  # 60 minutes
 
 
 class RequestTimeoutError(Exception):
+    """
+    Error raised if a request times out.
+    """
+
+    def __init__(self) -> None:
+        super().__init__("The request timed out.")
+
+
+class ServerConnectionError(Exception):
     """
     Error raised if a request times out.
     """
@@ -149,6 +163,8 @@ class API:
             result = requests.request(method, url, **kwargs)
         except (ConnectTimeout, ReadTimeout):
             raise RequestTimeoutError
+        except (TooManyRedirects, ConnectionError):
+            raise ServerConnectionError
 
         # Because when we download a file there is no JSON in the body
         if path_query.endswith("/download"):
@@ -183,6 +199,8 @@ class API:
 
         if "error" in data and result["status"] == http.HTTPStatus.GATEWAY_TIMEOUT:
             raise RequestTimeoutError
+        elif "error" in data and result["status"] == http.HTTPStatus.BAD_GATEWAY:
+            raise ServerConnectionError
         elif "error" in data and result["status"] == 403:
             raise AuthError(data["error"])
         elif "error" in data and result["status"] != 404:
