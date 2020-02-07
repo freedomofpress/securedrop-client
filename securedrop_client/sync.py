@@ -115,6 +115,7 @@ class ApiSyncBackgroundTask(QObject):
         try:
             self.sync_started.emit()
             session = self.session_maker()
+            self.job.remaining_attempts = 2
             self.job._do_call_api(self.api_client, session)
         except ApiInaccessibleError as e:
             self.job.failure_signal.emit(e)  # the job's failure signal is not emitted in base

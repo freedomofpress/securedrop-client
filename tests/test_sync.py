@@ -79,6 +79,20 @@ def test_ApiSyncBackgroundTask_sync(mocker, session_maker, homedir):
     assert _do_call_api_fn.called
 
 
+def test_ApiSyncBackgroundTask_sync_resets_retries(mocker, session_maker, homedir):
+    '''
+    Ensure sync enqueues a MetadataSyncJob and calls it's parent's processing function
+    '''
+    api_client = mocker.MagicMock()
+    api_sync = ApiSync(api_client, session_maker, mocker.MagicMock(), homedir)
+
+    api_sync.api_sync_bg_task.sync()
+    assert api_sync.api_sync_bg_task.job.remaining_attempts == 1
+
+    api_sync.api_sync_bg_task.sync()
+    assert api_sync.api_sync_bg_task.job.remaining_attempts == 1
+
+
 def test_ApiSyncBackgroundTask_sync_catches_ApiInaccessibleError(mocker, session_maker, homedir):
     '''
     Ensure sync calls the parent processing function of MetadataSyncJob, catches
