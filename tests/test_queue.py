@@ -273,22 +273,36 @@ def test_ApiJobQueue_pause_queues(mocker):
     job_queue.paused.emit.assert_called_once_with()
 
 
-def test_ApiJobQueue_resume_queues_emits_resume_signal(mocker):
+def test_ApiJobQueue_resume_queues_emits_resume_signal_if_queues_are_running(mocker):
     """
-    Resume only emits if the queue is paused.
+    Ensure resume signal is emitted if the queues are running.
+    """
+    job_queue = ApiJobQueue(mocker.MagicMock(), mocker.MagicMock())
+    mocker.patch.object(job_queue.main_queue, 'resume')
+    mocker.patch.object(job_queue.download_file_queue, 'resume')
+    job_queue.main_thread.isRunning = mocker.MagicMock(return_value=True)
+    job_queue.download_file_thread.isRunning = mocker.MagicMock(return_value=True)
+
+    job_queue.resume_queues()
+
+    job_queue.main_queue.resume.emit.assert_called_once_with()
+    job_queue.download_file_queue.resume.emit.assert_called_once_with()
+
+
+def test_ApiJobQueue_resume_queues_does_not_emit_resume_signal_if_queues_are_not_running(mocker):
+    """
+    Ensure resume signal is not emitted if the queues ar not running.
     """
     job_queue = ApiJobQueue(mocker.MagicMock(), mocker.MagicMock())
     mocker.patch.object(job_queue.main_queue, 'resume')
     mocker.patch.object(job_queue.download_file_queue, 'resume')
     job_queue.main_thread.isRunning = mocker.MagicMock(return_value=False)
     job_queue.download_file_thread.isRunning = mocker.MagicMock(return_value=False)
-    job_queue.start_queues = mocker.MagicMock()
 
     job_queue.resume_queues()
 
-    job_queue.start_queues.assert_called_once_with()
-    job_queue.main_queue.resume.emit.assert_called_once_with()
-    job_queue.download_file_queue.resume.emit.assert_called_once_with()
+    job_queue.main_queue.resume.emit.assert_not_called()
+    job_queue.download_file_queue.resume.emit.assert_not_called()
 
 
 def test_ApiJobQueue_enqueue_no_auth(mocker):
@@ -314,6 +328,9 @@ def test_ApiJobQueue_enqueue_no_auth(mocker):
 
 
 def test_ApiJobQueue_login_if_queues_not_running(mocker):
+    '''
+    Ensure token is passed to the queues and that they are started.
+    '''
     mock_api = mocker.MagicMock()
     mock_client = mocker.MagicMock()
     mock_session_maker = mocker.MagicMock()
@@ -337,6 +354,9 @@ def test_ApiJobQueue_login_if_queues_not_running(mocker):
 
 
 def test_ApiJobQueue_login_if_queues_running(mocker):
+    '''
+    Ensure token is passed to the queues that are already started.
+    '''
     mock_api = mocker.MagicMock()
     mock_client = mocker.MagicMock()
     mock_session_maker = mocker.MagicMock()

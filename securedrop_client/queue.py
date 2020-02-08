@@ -120,6 +120,8 @@ class RunnableQueue(QObject):
 
         Note: Generic exceptions are handled in _do_call_api.
         '''
+        logger.debug('Beginning queue processing loop')
+
         while True:
             priority, job = self.queue.get(block=True)
 
@@ -198,11 +200,9 @@ class ApiJobQueue(QObject):
         self.paused.emit()
 
     def resume_queues(self) -> None:
-        logger.info("Resuming queues")
-        self.start_queues()
-        if not self.main_thread.isRunning():
+        if self.main_thread.isRunning():
             self.main_queue.resume.emit()
-        if not self.download_file_thread.isRunning():
+        if self.download_file_thread.isRunning():
             self.download_file_queue.resume.emit()
 
     def enqueue(self, job: ApiJob) -> None:
