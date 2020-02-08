@@ -216,7 +216,7 @@ def test_RunnableQueue_does_not_run_jobs_when_not_authed(mocker):
     assert queue.api_client is None
 
 
-def test_ApiJobQueue_enqueue(mocker):
+def test_ApiJobQueue_enqueue_when_queues_are_running(mocker):
     mock_client = mocker.MagicMock()
     mock_session_maker = mocker.MagicMock()
 
@@ -231,7 +231,9 @@ def test_ApiJobQueue_enqueue(mocker):
     mock_main_queue_add_job = mocker.patch.object(mock_main_queue, 'add_job')
     job_queue.main_queue.api_client = 'has a value'
     job_queue.download_file_queue.api_client = 'has a value'
-    mock_start_queues = mocker.patch.object(job_queue, 'start_queues')
+
+    job_queue.main_thread.isRunning = mocker.MagicMock(return_value=True)
+    job_queue.download_file_thread.isRunning = mocker.MagicMock(return_value=True)
 
     dl_job = FileDownloadJob('mock', 'mock', 'mock')
     job_queue.enqueue(dl_job)
@@ -259,16 +261,51 @@ def test_ApiJobQueue_enqueue(mocker):
 
     mock_main_queue_add_job.assert_called_once_with(dummy_job)
     assert not mock_download_file_add_job.called
-    assert mock_start_queues.called
 
 
-def test_ApiJobQueue_pause_queues(mocker):
+def test_ApiJobQueue_enqueue_when_queues_are_not_running(mocker):
+    mock_client = mocker.MagicMock()
+    mock_session_maker = mocker.MagicMock()
+
+    job_queue = ApiJobQueue(mock_client, mock_session_maker)
+    job_priority = 2
+    dummy_job = factory.dummy_job_factory(mocker, 'mock')()
+    job_queue.JOB_PRIORITIES = {FileDownloadJob: job_priority, type(dummy_job): job_priority}
+
+    mock_download_file_queue = mocker.patch.object(job_queue, 'download_file_queue')
+    mock_main_queue = mocker.patch.object(job_queue, 'main_queue')
+    mock_download_file_add_job = mocker.patch.object(mock_download_file_queue, 'add_job')
+    mock_main_queue_add_job = mocker.patch.object(mock_main_queue, 'add_job')
+    job_queue.main_queue.api_client = 'has a value'
+    job_queue.download_file_queue.api_client = 'has a value'
+
+    job_queue.stop()  # queues are already not running, but just in case the code changes one day
+
+    dl_job = FileDownloadJob('mock', 'mock', 'mock')
+    job_queue.enqueue(dl_job)
+
+    mock_download_file_add_job.assert_not_called()
+    mock_main_queue_add_job.assert_not_called()
+
+
+def test_ApiJobQueue_on_main_queue_paused(mocker):
     job_queue = ApiJobQueue(mocker.MagicMock(), mocker.MagicMock())
     mocker.patch.object(job_queue, 'paused')
     pause_job = PauseQueueJob()
     mocker.patch('securedrop_client.queue.PauseQueueJob', return_value=pause_job)
 
-    job_queue.on_queue_paused()
+    job_queue.on_main_queue_paused()
+
+    job_queue.paused.emit.assert_called_once_with()
+
+
+def test_ApiJobQueue_on_file_download_queue_paused(mocker):
+    job_queue = ApiJobQueue(mocker.MagicMock(), mocker.MagicMock())
+    mocker.patch.object(job_queue, 'paused')
+    pause_job = PauseQueueJob()
+    mocker.patch('securedrop_client.queue.PauseQueueJob', return_value=pause_job)
+
+    job_queue.on_file_download_queue_paused()
 
     job_queue.paused.emit.assert_called_once_with()
 
@@ -316,7 +353,6 @@ def test_ApiJobQueue_enqueue_no_auth(mocker):
     mock_main_queue_add_job = mocker.patch.object(mock_main_queue, 'add_job')
     job_queue.main_queue.api_client = None
     job_queue.download_file_queue.api_client = None
-    mock_start_queues = mocker.patch.object(job_queue, 'start_queues')
 
     dummy_job = factory.dummy_job_factory(mocker, 'mock')()
     job_queue.JOB_PRIORITIES = {type(dummy_job): 1}
@@ -324,10 +360,9 @@ def test_ApiJobQueue_enqueue_no_auth(mocker):
 
     assert mock_download_file_add_job.call_count == 0
     assert mock_main_queue_add_job.call_count == 0
-    assert mock_start_queues.call_count == 0
 
 
-def test_ApiJobQueue_login_if_queues_not_running(mocker):
+def test_ApiJobQueue_start_if_queues_not_running(mocker):
     '''
     Ensure token is passed to the queues and that they are started.
     '''
@@ -344,7 +379,7 @@ def test_ApiJobQueue_login_if_queues_not_running(mocker):
     job_queue.main_thread.isRunning = mocker.MagicMock(return_value=False)
     job_queue.download_file_thread.isRunning = mocker.MagicMock(return_value=False)
 
-    job_queue.login(mock_api)
+    job_queue.start(mock_api)
 
     assert mock_main_queue.api_client == mock_api
     assert mock_download_file_queue.api_client == mock_api
@@ -353,7 +388,7 @@ def test_ApiJobQueue_login_if_queues_not_running(mocker):
     mock_download_file_thread.start.assert_called_once_with()
 
 
-def test_ApiJobQueue_login_if_queues_running(mocker):
+def test_ApiJobQueue_start_if_queues_running(mocker):
     '''
     Ensure token is passed to the queues that are already started.
     '''
@@ -370,7 +405,7 @@ def test_ApiJobQueue_login_if_queues_running(mocker):
     job_queue.main_thread.isRunning = mocker.MagicMock(return_value=True)
     job_queue.download_file_thread.isRunning = mocker.MagicMock(return_value=True)
 
-    job_queue.login(mock_api)
+    job_queue.start(mock_api)
 
     assert mock_main_queue.api_client == mock_api
     assert mock_download_file_queue.api_client == mock_api
@@ -379,21 +414,21 @@ def test_ApiJobQueue_login_if_queues_running(mocker):
     assert not mock_download_file_thread.start.called
 
 
-def test_ApiJobQueue_logout_stops_queue_threads(mocker):
+def test_ApiJobQueue_stop_stops_queue_threads(mocker):
     job_queue = ApiJobQueue(mocker.MagicMock(), mocker.MagicMock())
 
-    job_queue.logout()
+    job_queue.stop()
 
     assert not job_queue.main_thread.isRunning()
     assert not job_queue.download_file_thread.isRunning()
 
 
-def test_ApiJobQueue_logout_results_in_queue_threads_not_running(mocker):
+def test_ApiJobQueue_stop_results_in_queue_threads_not_running(mocker):
     job_queue = ApiJobQueue(mocker.MagicMock(), mocker.MagicMock())
     job_queue.main_thread = mocker.MagicMock()
     job_queue.download_file_thread = mocker.MagicMock()
 
-    job_queue.logout()
+    job_queue.stop()
 
     job_queue.main_thread.quit.assert_called_once_with()
     job_queue.download_file_thread.quit.assert_called_once_with()
