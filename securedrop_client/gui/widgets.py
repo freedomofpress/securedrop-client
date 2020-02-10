@@ -33,6 +33,7 @@ from PyQt5.QtWidgets import QApplication, QListWidget, QLabel, QWidget, QListWid
     QToolButton, QSizePolicy, QPlainTextEdit, QStatusBar, QGraphicsDropShadowEffect, QPushButton, \
     QDialogButtonBox
 
+from securedrop_client import __version__ as sd_version
 from securedrop_client.db import DraftReply, Source, Message, File, Reply, User
 from securedrop_client.storage import source_exists
 from securedrop_client.export import ExportStatus, ExportError
@@ -1378,6 +1379,7 @@ class LoginDialog(QDialog):
         border-radius: 0px;
         height: 30px;
         margin: 0px 0px 0px 0px;
+        padding-left: 5px;
     }
     '''
 
@@ -1459,6 +1461,10 @@ class LoginDialog(QDialog):
         application_version = QWidget()
         application_version_layout = QHBoxLayout()
         application_version.setLayout(application_version_layout)
+        application_version_label = QLabel(_("Workstation app v") + sd_version)
+        application_version_label.setAlignment(Qt.AlignHCenter)
+        application_version_label.setStyleSheet("QLabel {color: #2A319D;}")
+        application_version_layout.addWidget(application_version_label)
 
         # Add widgets
         layout.addWidget(self.error_bar)
@@ -1507,6 +1513,7 @@ class LoginDialog(QDialog):
         Ensures the passed in message is displayed as an error message.
         """
         self.setDisabled(False)
+        self.submit.setText(_("SIGN IN"))
         self.error_bar.set_message(html.escape(message))
 
     def validate(self):
@@ -1541,7 +1548,7 @@ class LoginDialog(QDialog):
                 self.setDisabled(False)
                 self.error(_('Please use only numerals for the two-factor code.'))
                 return
-
+            self.submit.setText(_("SIGNING IN"))
             self.controller.login(username, password, tfa_token)
         else:
             self.setDisabled(False)
