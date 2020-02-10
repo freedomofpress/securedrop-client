@@ -44,6 +44,14 @@ test-random: ## Run the application tests in random order
 		xvfb-run $$TEST_CMD ; else \
 		$$TEST_CMD ; fi
 
+FUNCTESTS ?= func_tests
+.PHONY: func-test
+func-test:
+	@TEST_CMD="python -m pytest -v --random-order-bucket=global $(TESTOPTS) $(FUNCTESTS)" ; \
+		if command -v xvfb-run > /dev/null; then \
+		xvfb-run $$TEST_CMD ; else \
+		$$TEST_CMD ; fi
+
 .PHONY: lint
 lint: ## Run the linters
 	@flake8 securedrop_client tests
