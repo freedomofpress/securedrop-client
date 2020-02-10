@@ -454,12 +454,28 @@ def test_Controller_update_sync(homedir, config, mocker, session_maker):
     """
     Cause the UI to update with the result of self.last_sync().
     Using the `config` fixture to ensure the config is written to disk.
+    This should only happen if the user isn't logged in or the API queues are
+    paused (indicating network problems).
     """
     co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
     co.last_sync = mocker.MagicMock()
+    co.api = None
     co.update_sync()
     assert co.last_sync.call_count == 1
     co.gui.show_sync.assert_called_once_with(co.last_sync())
+    co.last_sync.reset_mock()
+    co.gui.show_sync.reset_mock()
+    co.api = mocker.MagicMock()  # user is logged in.
+    co.api_paused = True  # but they're experiencing network problems.
+    co.update_sync()
+    assert co.last_sync.call_count == 1
+    co.gui.show_sync.assert_called_once_with(co.last_sync())
+    co.last_sync.reset_mock()
+    co.gui.show_sync.reset_mock()
+    co.api_paused = False  # no more network problems.
+    co.update_sync()
+    assert co.last_sync.call_count == 0
+    co.gui.show_sync.call_count == 0
 
 
 def test_Controller_update_sources(homedir, config, mocker):
@@ -1143,7 +1159,6 @@ def test_Controller_download_new_messages_with_new_message(mocker, session, sess
     job = mocker.MagicMock(success_signal=success_signal, failure_signal=failure_signal)
     mocker.patch("securedrop_client.logic.MessageDownloadJob", return_value=job)
     api_job_queue = mocker.patch.object(co, 'api_job_queue')
-    set_status = mocker.patch.object(co, 'set_status')
 
     co.download_new_messages()
 
@@ -1152,7 +1167,6 @@ def test_Controller_download_new_messages_with_new_message(mocker, session, sess
         co.on_message_download_success, type=Qt.QueuedConnection)
     failure_signal.connect.assert_called_once_with(
         co.on_message_download_failure, type=Qt.QueuedConnection)
-    set_status.assert_called_once_with("Downloading new messages")
 
 
 def test_Controller_download_new_messages_without_messages(mocker, session, session_maker, homedir):

@@ -215,6 +215,9 @@ class Controller(QObject):
         self.session_maker = session_maker
         self.session = session_maker()
 
+        # A flag to indicate if the API queues are paused (connection issues).
+        self.api_paused = False
+
         # Queue that handles running API job
         self.api_job_queue = ApiJobQueue(self.api, self.session_maker)
         self.api_job_queue.paused.connect(self.on_queue_paused)
@@ -318,12 +321,14 @@ class Controller(QObject):
         new_api_thread.start()
 
     def on_queue_paused(self) -> None:
+        self.api_paused = True
         self.gui.update_error_status(
             _('The SecureDrop server cannot be reached.'),
             duration=0,
             retry=True)
 
     def resume_queues(self) -> None:
+        self.api_paused = False
         self.api_job_queue.resume_queues()
 
         # clear error status in case queue was paused resulting in a permanent error message with
@@ -459,9 +464,13 @@ class Controller(QObject):
 
     def update_sync(self):
         """
-        Updates the UI to show human time of last sync.
+        Updates the UI to show human time of last sync only if the user is
+        either logged off or experiencing network problems (the message queue
+        is paused).
         """
-        self.gui.show_sync(self.last_sync())
+        logged_out = not bool(self.api)
+        if logged_out or self.api_paused:
+            self.gui.show_sync(self.last_sync())
 
     def update_sources(self):
         """
@@ -551,9 +560,6 @@ class Controller(QObject):
 
     def download_new_messages(self) -> None:
         messages = storage.find_new_messages(self.session)
-
-        if len(messages) > 0:
-            self.set_status(_('Downloading new messages'))
 
         for message in messages:
             self._submit_download_job(type(message), message.uuid)
