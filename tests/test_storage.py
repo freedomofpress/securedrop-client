@@ -7,35 +7,21 @@ import os
 import uuid
 from dateutil.parser import parse
 
-from sdclientapi import Source, Submission, Reply
+from sdclientapi import Submission, Reply
 from sqlalchemy.orm.exc import NoResultFound
 
 import securedrop_client.db
+from securedrop_client.crypto import GpgHelper
 from securedrop_client.storage import get_local_sources, get_local_messages, get_local_replies, \
     get_remote_data, update_local_storage, update_sources, update_files, update_messages, \
     update_replies, find_or_create_user, find_new_messages, find_new_replies, \
     delete_single_submission_or_reply_on_disk, get_local_files, find_new_files, \
     source_exists, set_message_or_reply_content, mark_as_downloaded, mark_as_decrypted, get_file, \
     get_message, get_reply, update_and_get_user, update_missing_files, mark_as_not_downloaded, \
-    mark_all_pending_drafts_as_failed, delete_local_source_by_uuid
+    mark_all_pending_drafts_as_failed, delete_local_source_by_uuid, update_source_key
 
 from securedrop_client import db
 from tests import factory
-
-
-def make_remote_source():
-    """
-    Utility function for generating sdclientapi Source instances to act upon
-    in the following unit tests.
-    """
-    return Source(add_star_url='foo', interaction_count=1, is_flagged=False,
-                  is_starred=True, journalist_designation='foo',
-                  key={'public': 'bar'},
-                  last_updated='2018-09-11T11:42:31.366649Z',
-                  number_of_documents=1, number_of_messages=1,
-                  remove_star_url='baz', replies_url='qux',
-                  submissions_url='wibble', url='url',
-                  uuid=str(uuid.uuid4()))
 
 
 def make_remote_submission(source_uuid):
@@ -77,7 +63,7 @@ def test_delete_local_source_by_uuid(mocker):
     Delete the referenced source in the session.
     """
     mock_session = mocker.MagicMock()
-    source = make_remote_source()
+    source = factory.RemoteSource()
     mock_session.query().filter_by().one_or_none.return_value = source
     mock_session.query.reset_mock()
     delete_local_source_by_uuid(mock_session, "uuid")
@@ -134,7 +120,7 @@ def test_get_remote_data(mocker):
     """
     # Some source, submission and reply objects from the API.
     mock_api = mocker.MagicMock()
-    source = make_remote_source()
+    source = factory.RemoteSource()
     mock_api.get_sources.return_value = [source, ]
     submission = mocker.MagicMock()
     mock_api.get_all_submissions.return_value = [submission, ]
@@ -146,12 +132,12 @@ def test_get_remote_data(mocker):
     assert replies == [reply, ]
 
 
-def test_update_local_storage(homedir, mocker):
+def test_update_local_storage(homedir, mocker, session_maker):
     """
     Assuming no errors getting data, check the expected functions to update
     the state of the local database are called with the necessary data.
     """
-    remote_source = make_remote_source()
+    remote_source = factory.RemoteSource()
     remote_message = mocker.Mock(filename='1-foo.msg.gpg')
     remote_file = mocker.Mock(filename='2-foo.gpg')
     remote_submissions = [remote_message, remote_file]
@@ -170,14 +156,18 @@ def test_update_local_storage(homedir, mocker):
     file_fn = mocker.patch('securedrop_client.storage.update_files')
     msg_fn = mocker.patch('securedrop_client.storage.update_messages')
 
-    update_local_storage(mock_session, [remote_source], remote_submissions, [remote_reply], homedir)
-    src_fn.assert_called_once_with([remote_source], [local_source], mock_session, homedir)
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+
+    update_local_storage(
+        mock_session, gpg, [remote_source], remote_submissions, [remote_reply], homedir
+    )
+    src_fn.assert_called_once_with(gpg, [remote_source], [local_source], mock_session, homedir)
     rpl_fn.assert_called_once_with([remote_reply], [local_reply], mock_session, homedir)
     file_fn.assert_called_once_with([remote_file], [local_file], mock_session, homedir)
     msg_fn.assert_called_once_with([remote_message], [local_message], mock_session, homedir)
 
 
-def test_update_sources(homedir, mocker):
+def test_update_sources(homedir, mocker, session_maker, session):
     """
     Check that:
 
@@ -188,58 +178,115 @@ def test_update_sources(homedir, mocker):
     * We don't attempt to delete the (non-existent) files associated with
       draft replies.
     """
-    mock_session = mocker.MagicMock()
-    # Some source objects from the API, one of which will exist in the local
-    # database, the other will NOT exist in the local source database (this
-    # will be added to the database)
-    source_update = make_remote_source()
-    source_create = make_remote_source()
+    # This remote source exists locally and will be updated.
+    source_update = factory.RemoteSource(journalist_designation="source update")
+
+    # This remote source does not exist locally and will be created.
+    source_create = factory.RemoteSource(journalist_designation="source create")
+
     remote_sources = [source_update, source_create]
-    # Some local source objects. One already exists in the API results (this
-    # will be updated), one does NOT exist in the API results (this will be
-    # deleted from the local database).
-    local_source1 = mocker.MagicMock()
-    local_source1.uuid = source_update.uuid
-    local_source2 = mocker.MagicMock()
-    local_source2.uuid = str(uuid.uuid4())
-    draft_reply = factory.DraftReply(uuid='mock_reply_uuid')
-    local_source2.collection = [draft_reply]
+
+    # This local source already exists in the API results and will be updated.
+    local_source1 = factory.Source(
+        journalist_designation=source_update.journalist_designation,
+        uuid=source_update.uuid,
+    )
+
+    # This local source does not exist in the API results and will be
+    # deleted from the local database.
+    local_source2 = factory.Source()
+
+    # This reply exists just to prove a negative.
+    draft_reply = factory.DraftReply(source_id=local_source2.uuid)
+
+    session.add(local_source1)
+    session.add(local_source2)
+    session.add(draft_reply)
+    session.commit()
+
     local_sources = [local_source1, local_source2]
+
     file_delete_fcn = mocker.patch(
         'securedrop_client.storage.delete_single_submission_or_reply_on_disk')
 
-    update_sources(remote_sources, local_sources, mock_session, homedir)
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+
+    update_sources(gpg, remote_sources, local_sources, session, homedir)
 
     # Check the expected local source object has been updated with values from
     # the API.
-    assert local_source1.journalist_designation == \
-        source_update.journalist_designation
-    assert local_source1.is_flagged == source_update.is_flagged
-    assert local_source1.public_key == source_update.key['public']
-    assert local_source1.interaction_count == source_update.interaction_count
-    assert local_source1.is_starred == source_update.is_starred
-    assert local_source1.last_updated == parse(source_update.last_updated)
+    updated_source = session.query(db.Source).filter_by(uuid=source_update.uuid).one()
+    assert updated_source.journalist_designation == source_update.journalist_designation
+    assert updated_source.is_flagged == source_update.is_flagged
+    assert updated_source.public_key == source_update.key['public']
+    assert updated_source.fingerprint == source_update.key['fingerprint']
+    assert updated_source.interaction_count == source_update.interaction_count
+    assert updated_source.is_starred == source_update.is_starred
+    assert updated_source.last_updated == parse(source_update.last_updated)
+
     # Check the expected local source object has been created with values from
     # the API.
-    assert mock_session.add.call_count == 1
-    new_source = mock_session.add.call_args_list[0][0][0]
+    new_source = session.query(db.Source).filter_by(uuid=source_create.uuid).one()
     assert new_source.uuid == source_create.uuid
-    assert new_source.journalist_designation == \
-        source_create.journalist_designation
+    assert new_source.journalist_designation == source_create.journalist_designation
     assert new_source.is_flagged == source_create.is_flagged
     assert new_source.public_key == source_create.key['public']
+    assert new_source.fingerprint == source_create.key['fingerprint']
     assert new_source.interaction_count == source_create.interaction_count
     assert new_source.is_starred == source_create.is_starred
     assert new_source.last_updated == parse(source_create.last_updated)
-    # Ensure the record for the local source that is missing from the results
-    # of the API is deleted.
-    mock_session.delete.assert_called_once_with(local_source2)
+
+    # Check that the local source not present in the API results was deleted.
+    with pytest.raises(NoResultFound):
+        session.query(db.Source).filter_by(uuid=local_source2.uuid).one()
+
     # Ensure that we didn't attempt to delete files associated with draft replies,
     # as they don't have files (content stored directly in the database).
     assert file_delete_fcn.call_count == 0
 
-    # Session is committed to database.
-    assert mock_session.commit.call_count == 1
+
+def test_update_source_key_without_fingerprint(mocker, session):
+    """
+    Checks handling of a source from the API that lacks a fingerprint.
+    """
+
+    error_logger = mocker.patch('securedrop_client.storage.logger.error')
+
+    local_source = factory.Source(public_key=None, fingerprint=None)
+    session.add(local_source)
+
+    remote_source = factory.RemoteSource()
+    remote_source.key = {}
+
+    update_source_key(None, session, local_source, remote_source)
+
+    error_logger.assert_called_once_with("New source data lacks key fingerprint")
+
+    local_source2 = session.query(db.Source).filter_by(uuid=local_source.uuid).one()
+    assert not local_source2.fingerprint
+    assert not local_source2.public_key
+
+
+def test_update_source_key_without_key(mocker, session):
+    """
+    Checks handling of a source from the API that lacks a public key.
+    """
+
+    error_logger = mocker.patch('securedrop_client.storage.logger.error')
+
+    local_source = factory.Source(public_key=None, fingerprint=None)
+    session.add(local_source)
+
+    remote_source = factory.RemoteSource()
+    del remote_source.key["public"]
+
+    update_source_key(None, session, local_source, remote_source)
+
+    error_logger.assert_called_once_with("New source data lacks public key")
+
+    local_source2 = session.query(db.Source).filter_by(uuid=local_source.uuid).one()
+    assert not local_source2.fingerprint
+    assert not local_source2.public_key
 
 
 def add_test_file_to_temp_dir(home_dir, filename):
@@ -347,7 +394,9 @@ def test_update_replies_deletes_files_associated_with_the_reply(
 
 def test_update_sources_deletes_files_associated_with_the_source(
         homedir,
-        mocker):
+        mocker,
+        session_maker
+):
     """
     Check that:
 
@@ -398,7 +447,10 @@ def test_update_sources_deletes_files_associated_with_the_source(
         test_filename_absolute_paths.append(abs_server_filename)
 
     local_sources = [local_source]
-    update_sources(remote_sources, local_sources, mock_session, homedir)
+
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+
+    update_sources(gpg, remote_sources, local_sources, mock_session, homedir)
 
     # Ensure the files associated with the reply are deleted on disk.
     for test_filename in test_filename_absolute_paths:
@@ -922,7 +974,7 @@ def test_source_exists_true(homedir, mocker):
     Check that method returns True if a source is return from the query.
     '''
     session = mocker.MagicMock()
-    source = make_remote_source()
+    source = factory.RemoteSource()
     source.uuid = 'test-source-uuid'
     session.query().filter_by().one.return_value = source
     assert source_exists(session, 'test-source-uuid')

@@ -30,6 +30,7 @@ from sqlalchemy import and_, or_
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.session import Session
 
+from securedrop_client.crypto import CryptoError, GpgHelper
 from securedrop_client.db import (DraftReply, Source, Message, File, Reply, ReplySendStatus,
                                   ReplySendStatusCodes, User)
 from sdclientapi import API
@@ -100,6 +101,7 @@ def get_remote_data(api: API) -> Tuple[List[SDKSource], List[SDKSubmission], Lis
 
 
 def update_local_storage(session: Session,
+                         gpg: GpgHelper,
                          remote_sources: List[SDKSource],
                          remote_submissions: List[SDKSubmission],
                          remote_replies: List[SDKReply],
@@ -116,13 +118,48 @@ def update_local_storage(session: Session,
     # The following update_* functions may change the database state.
     # Because of that, each get_local_* function needs to be called just before
     # its respective update_* function.
-    update_sources(remote_sources, get_local_sources(session), session, data_dir)
+    update_sources(gpg, remote_sources, get_local_sources(session), session, data_dir)
     update_files(remote_files, get_local_files(session), session, data_dir)
     update_messages(remote_messages, get_local_messages(session), session, data_dir)
     update_replies(remote_replies, get_local_replies(session), session, data_dir)
 
 
-def update_sources(remote_sources: List[SDKSource],
+def update_source_key(
+        gpg: GpgHelper, session: Session, local_source: Source, remote_source: SDKSource
+) -> None:
+    """
+    Updates a source's GPG key.
+    """
+    if not remote_source.key.get("fingerprint"):
+        logger.error("New source data lacks key fingerprint")
+        return
+
+    if not remote_source.key.get("public"):
+        logger.error("New source data lacks public key")
+        return
+
+    if (
+        local_source.fingerprint == remote_source.key['fingerprint'] and
+        local_source.public_key == remote_source.key['public']
+    ):
+        logger.debug("Source key data is unchanged")
+        return
+
+    try:
+        # commit so the new source is visible to import_key, which uses a new session
+        session.commit()
+
+        # import_key updates the source's key and fingerprint, and commits
+        gpg.import_key(
+            remote_source.uuid,
+            remote_source.key['public'],
+            remote_source.key['fingerprint']
+        )
+    except CryptoError:
+        logger.error('Failed to update key information for source %s', remote_source.uuid)
+
+
+def update_sources(gpg: GpgHelper, remote_sources: List[SDKSource],
                    local_sources: List[Source], session: Session, data_dir: str) -> None:
     """
     Given collections of remote sources, the current local sources and a
@@ -134,40 +171,43 @@ def update_sources(remote_sources: List[SDKSource],
     * Local items not returned in the remote sources are deleted from the
       local database.
     """
-    local_uuids = {source.uuid for source in local_sources}
+    local_sources_by_uuid = {s.uuid: s for s in local_sources}
     for source in remote_sources:
-        if source.uuid in local_uuids:
+        if source.uuid in local_sources_by_uuid:
             # Update an existing record.
-            local_source = [s for s in local_sources
-                            if s.uuid == source.uuid][0]
+            local_source = local_sources_by_uuid[source.uuid]
             local_source.journalist_designation = source.journalist_designation
             local_source.is_flagged = source.is_flagged
-            local_source.public_key = source.key['public']
             local_source.interaction_count = source.interaction_count
             local_source.document_count = source.number_of_documents
             local_source.is_starred = source.is_starred
             local_source.last_updated = parse(source.last_updated)
 
-            # Removing the UUID from local_uuids ensures this record won't be
-            # deleted at the end of this function.
-            local_uuids.remove(source.uuid)
+            update_source_key(gpg, session, local_source, source)
+
+            # Removing the UUID from local_sources_by_uuid ensures
+            # this record won't be deleted at the end of this
+            # function.
+            del local_sources_by_uuid[source.uuid]
             logger.debug('Updated source {}'.format(source.uuid))
         else:
             # A new source to be added to the database.
             ns = Source(uuid=source.uuid,
                         journalist_designation=source.journalist_designation,
                         is_flagged=source.is_flagged,
-                        public_key=source.key['public'],
                         interaction_count=source.interaction_count,
                         is_starred=source.is_starred,
                         last_updated=parse(source.last_updated),
                         document_count=source.number_of_documents)
             session.add(ns)
+
+            update_source_key(gpg, session, ns, source)
+
             logger.debug('Added new source {}'.format(source.uuid))
 
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
-    for deleted_source in [s for s in local_sources if s.uuid in local_uuids]:
+    for deleted_source in local_sources_by_uuid.values():
         for document in deleted_source.collection:
             if isinstance(document, (Message, File, Reply)):
                 delete_single_submission_or_reply_on_disk(document, data_dir)

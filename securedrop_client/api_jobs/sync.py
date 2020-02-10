@@ -5,7 +5,7 @@ from sdclientapi import API
 from sqlalchemy.orm.session import Session
 
 from securedrop_client.api_jobs.base import ApiJob
-from securedrop_client.crypto import GpgHelper, CryptoError
+from securedrop_client.crypto import GpgHelper
 from securedrop_client.storage import get_remote_data, update_local_storage
 
 
@@ -40,28 +40,8 @@ class MetadataSyncJob(ApiJob):
         remote_sources, remote_submissions, remote_replies = get_remote_data(api_client)
 
         update_local_storage(session,
+                             self.gpg,
                              remote_sources,
                              remote_submissions,
                              remote_replies,
                              self.data_dir)
-
-        fingerprints = self.gpg.fingerprints()
-        for source in remote_sources:
-            if source.key and source.key.get('type', None) == 'PGP':
-                pub_key = source.key.get('public', None)
-                fingerprint = source.key.get('fingerprint', None)
-                if not pub_key or not fingerprint:
-                    # The below line needs to be excluded from the coverage computation
-                    # as it will show as uncovered due to a cpython compiler optimziation.
-                    # See: https://bugs.python.org/issue2506
-                    continue  # pragma: no cover
-
-                if fingerprint in fingerprints:
-                    logger.debug("Skipping import of key with fingerprint {}".format(fingerprint))
-                    continue
-
-                try:
-                    logger.debug("Importing key with fingerprint {}".format(fingerprint))
-                    self.gpg.import_key(source.uuid, pub_key, fingerprint)
-                except CryptoError:
-                    logger.warning('Failed to import key for source {}'.format(source.uuid))
