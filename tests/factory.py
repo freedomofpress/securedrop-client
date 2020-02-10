@@ -3,7 +3,11 @@ changes forcing an update of all test code.
 """
 from datetime import datetime
 from itertools import cycle
+import os
 from typing import List
+import uuid
+
+from sdclientapi import Source as SDKSource
 
 from securedrop_client import db
 from securedrop_client.api_jobs.base import ApiJob
@@ -40,6 +44,7 @@ def Source(**attrs):
         journalist_designation='testy-mctestface',
         is_flagged=False,
         public_key='mah pub key',
+        fingerprint='mah fingerprint',
         interaction_count=0,
         is_starred=False,
         last_updated=datetime.now(),
@@ -156,3 +161,33 @@ def dummy_job_factory(mocker, return_value, **kwargs):
                 return return_value
 
     return DummyApiJob
+
+
+def RemoteSource(**attrs):
+
+    with open(os.path.join(os.path.dirname(__file__), 'files', 'test-key.gpg.pub.asc')) as f:
+        pub_key = f.read()
+
+    defaults = dict(
+        add_star_url='foo',
+        interaction_count=0,
+        is_flagged=False,
+        is_starred=True,
+        journalist_designation='testy-mctestface',
+        key={
+            'public': pub_key,
+            'fingerprint': 'B2FF7FB28EED8CABEBC5FB6C6179D97BCFA52E5F'
+        },
+        last_updated=datetime.now().isoformat(),
+        number_of_documents=0,
+        number_of_messages=0,
+        remove_star_url='baz',
+        replies_url='qux',
+        submissions_url='wibble',
+        url='url',
+        uuid=str(uuid.uuid4())
+    )
+
+    defaults.update(attrs)
+
+    return SDKSource(**defaults)

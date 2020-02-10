@@ -22,7 +22,6 @@ import shutil
 import struct
 import subprocess
 import tempfile
-import typing
 
 from sqlalchemy.orm import scoped_session
 from uuid import UUID
@@ -146,35 +145,15 @@ class GpgHelper:
         cmd.extend(['--trust-model', 'always'])
         return cmd
 
-    def fingerprints(self) -> typing.Dict[str, bool]:
-        """
-        Returns a map of key fingerprints.
-
-        The result is a map wherein each key is the fingerprint of a
-        key on our keyring, mapped to True. It's intended to help us
-        avoid expensive import operations for keys we already have.
-        """
-        cmd = self._gpg_cmd_base()
-        cmd.extend(["--list-public-keys", "--fingerprint", "--with-colons",
-                    "--fixed-list-mode", "--list-options", "no-show-photos"])
-        output = subprocess.check_output(cmd, universal_newlines=True)
-
-        fingerprints = {}
-        for line in output.splitlines():
-            if line.startswith("fpr:"):
-                fields = line.split(":")
-                fingerprint = fields[9]
-                fingerprints[fingerprint] = True
-
-        return fingerprints
-
     def import_key(self, source_uuid: UUID, key_data: str, fingerprint: str) -> None:
         session = self.session_maker()
         local_source = session.query(Source).filter_by(uuid=source_uuid).one()
 
+        logger.debug("Importing key with fingerprint %s", fingerprint)
         self._import(key_data)
 
         local_source.fingerprint = fingerprint
+        local_source.public_key = key_data
         session.add(local_source)
         session.commit()
 
