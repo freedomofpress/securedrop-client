@@ -18,6 +18,7 @@ PyQt5==5.11.3
 pytest==5.2.1
 pytest-cov==2.8.1
 pytest-mock==1.10.0
+pytest-qt==3.3.0
 pytest-random-order==1.0.4
 pytest-xdist==1.30.0
 sip==4.19.8
