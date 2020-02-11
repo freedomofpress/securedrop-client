@@ -34,8 +34,10 @@ from sqlalchemy.orm.session import sessionmaker
 from securedrop_client import storage
 from securedrop_client import db
 from securedrop_client.api_jobs.base import ApiInaccessibleError
-from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob, \
-    ReplyDownloadJob, DownloadChecksumMismatchException
+from securedrop_client.api_jobs.downloads import (
+    DownloadChecksumMismatchException, DownloadDecryptionException, FileDownloadJob,
+    MessageDownloadJob, ReplyDownloadJob,
+)
 from securedrop_client.api_jobs.sources import DeleteSourceJob
 from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobError, \
     SendReplyJobTimeoutError
@@ -651,6 +653,7 @@ class Controller(QObject):
         '''
         file = self.get_file(file_uuid)
         file_location = file.location(self.data_dir)
+        logger.info('Exporting file %s', file_location)
 
         if not self.downloaded_file_exists(file):
             return
@@ -708,6 +711,10 @@ class Controller(QObject):
             logger.debug('Failure due to checksum mismatch, retrying {}'.format(exception.uuid))
             self._submit_download_job(exception.object_type, exception.uuid)
         else:
+            if isinstance(exception, DownloadDecryptionException):
+                logger.error("Failed to decrypt %s", exception.uuid)
+                f = self.get_file(exception.uuid)
+                self.file_missing.emit(f.source.uuid, f.uuid, str(f))
             self.gui.update_error_status(_('The file download failed. Please try again.'))
 
     def on_delete_source_success(self, result) -> None:

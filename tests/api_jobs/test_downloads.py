@@ -5,8 +5,10 @@ from typing import Tuple
 from sdclientapi import BaseError
 from sdclientapi import Submission as SdkSubmission
 
-from securedrop_client.api_jobs.downloads import DownloadJob, FileDownloadJob, MessageDownloadJob, \
-    ReplyDownloadJob, DownloadChecksumMismatchException
+from securedrop_client.api_jobs.downloads import (
+    DownloadJob, FileDownloadJob, MessageDownloadJob,
+    ReplyDownloadJob, DownloadChecksumMismatchException, DownloadDecryptionException,
+)
 from securedrop_client.crypto import GpgHelper, CryptoError
 from tests import factory
 
@@ -271,7 +273,7 @@ def test_MessageDownloadJob_with_crypto_error(mocker, homedir, session, session_
     path = os.path.join(homedir, 'data')
     api_client.download_submission = mocker.MagicMock(return_value=('', path))
 
-    with pytest.raises(CryptoError):
+    with pytest.raises(DownloadDecryptionException):
         job.call_api(api_client, session)
 
     assert message.content is None
@@ -508,7 +510,7 @@ def test_FileDownloadJob_decryption_error(mocker, homedir, session, session_make
 
     mock_logger = mocker.patch('securedrop_client.api_jobs.downloads.logger')
 
-    with pytest.raises(CryptoError):
+    with pytest.raises(DownloadDecryptionException):
         job.call_api(api_client, session)
 
     log_msg = mock_logger.debug.call_args_list[0][0][0]
