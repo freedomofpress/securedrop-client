@@ -120,16 +120,16 @@ class RunnableQueue(QObject):
                 session = self.session_maker()
                 job._do_call_api(self.api_client, session)
             except ApiInaccessibleError as e:
-                logger.debug('Job {} raised an exception: {}: {}'.format(self, type(e).__name__, e))
+                logger.debug('{}: {}'.format(type(e).__name__, e))
                 self.api_client = None
                 return
             except RequestTimeoutError as e:
-                logger.debug('Job {} raised an exception: {}: {}'.format(self, type(e).__name__, e))
+                logger.debug('{}: {}'.format(type(e).__name__, e))
                 self.add_job(PauseQueueJob())
                 self.re_add_job(job)
             except Exception as e:
-                logger.error('Job {} raised an exception: {}: {}'.format(self, type(e).__name__, e))
-                logger.error('Skipping job')
+                logger.error('{}: {}'.format(type(e).__name__, e))
+                logger.debug('Skipping job')
             finally:
                 session.close()
 
@@ -230,7 +230,7 @@ class ApiJobQueue(QObject):
 
         if isinstance(job, FileDownloadJob):
             self.download_file_queue.add_job(job)
-            logger.debug('Added job to download queue')
+            logger.debug('Added {} to download queue'.format(job.__class__.__name__))
         else:
             self.main_queue.add_job(job)
-            logger.debug('Added job to main queue')
+            logger.debug('Added {} to main queue'.format(job.__class__.__name__))
