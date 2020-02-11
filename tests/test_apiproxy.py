@@ -375,3 +375,15 @@ def test_download_get_sources_error_request_timeout(mocker):
                                 "headers": "foo"})))
     with pytest.raises(RequestTimeoutError):
         api.get_sources()
+
+
+def test_filename_key_not_in_download_response(mocker):
+    api = API("mock", "mock", "mock", "mock", True)
+    s = Submission(uuid="foobar")
+    mocker.patch("sdclientapi.json_query",
+                 return_value=(
+                    json.dumps({"body": json.dumps({"error": "wah"}),
+                                "status": 200,
+                                "headers": "foo"})))
+    with pytest.raises(BaseError):
+        api.download_submission(s)
