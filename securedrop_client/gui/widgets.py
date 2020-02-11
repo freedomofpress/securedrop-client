@@ -1969,7 +1969,7 @@ class FileWidget(QWidget):
         # but for reasons not entirely clear, this caused a crash. The
         # following odd way of expressing the same conditional doesn't cause a
         # crash. Go figure... :-/
-        if t == QEvent.HoverEnter or t == QEvent.HoverMove and not self.downloading:
+        if (t == QEvent.HoverEnter or t == QEvent.HoverMove) and not self.downloading:
             self.download_button.setIcon(load_icon('download_file_hover.svg'))
         elif t == QEvent.HoverLeave and not self.downloading:
             self.download_button.setIcon(load_icon('download_file.svg'))
