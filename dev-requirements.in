@@ -1,0 +1,11 @@
+coverage
+flake8
+mypy
+pyotp
+pytest
+pytest-cov
+sphinx
+vcrpy
+pyyaml>=5.1,<6
+pytest-mock
+pip-tools

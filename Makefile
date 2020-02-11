@@ -20,7 +20,22 @@ mypy: ## Run the mypy typechecker
 	@mypy sdclientapi
 
 .PHONY: check
-check: lint mypy test ## Run all checks and tests
+check: lint mypy test safety ## Run all checks and tests
+
+.PHONY: safety
+safety: ## Runs `safety check` to check python dependencies for vulnerabilities
+	pip install --upgrade safety && \
+		for req_file in `find . -type f -name '*requirements.txt'`; do \
+			echo "Checking file $$req_file" \
+			&& safety check --full-report -r $$req_file \
+			&& echo -e '\n' \
+			|| exit 1; \
+		done
+
+.PHONY: update-pip-requirements
+update-pip-requirements: ## Updates all Python requirements files via pip-compile.
+	pip-compile --generate-hashes --output-file dev-requirements.txt requirements.in dev-requirements.in
+	pip-compile --generate-hashes --output-file requirements.txt requirements.in
 
 .PHONY: open-coverage-report
 open-coverage-report: ## Open the coverage report in your browser
