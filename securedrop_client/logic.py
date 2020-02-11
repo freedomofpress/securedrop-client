@@ -367,6 +367,7 @@ class Controller(QObject):
         self.call_api(self.api.authenticate,
                       self.on_authenticate_success,
                       self.on_authenticate_failure)
+        self.update_sync()
 
     def on_authenticate_success(self, result):
         """
@@ -401,7 +402,9 @@ class Controller(QObject):
         self.gui.show_main_window()
         storage.mark_all_pending_drafts_as_failed(self.session)
         self.is_authenticated = False
+        self.api = None
         self.update_sources()
+        self.update_sync()
 
     def on_action_requiring_login(self):
         """
@@ -471,6 +474,8 @@ class Controller(QObject):
         logged_out = not bool(self.api)
         if logged_out or self.api_paused:
             self.gui.show_sync(self.last_sync())
+        else:
+            self.set_status("", 0)
 
     def update_sources(self):
         """
@@ -525,6 +530,7 @@ class Controller(QObject):
         self.gui.logout()
 
         self.is_authenticated = False
+        self.update_sync()
 
     def invalidate_token(self):
         self.api = None
