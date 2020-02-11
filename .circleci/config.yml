@@ -1,5 +1,10 @@
 ---
 common-steps:
+  - &removevirtualenv
+    run:
+      name: Removes the upstream virtualenv from the original container image
+      command: sudo pip uninstall virtualenv -y
+
   - &run_tests
     run:
       name: Install requirements and run tests
@@ -71,6 +76,7 @@ jobs:
       - image: circleci/python:3.7-buster
     steps:
       - checkout
+      - *removevirtualenv
       - *install_packaging_dependencies
       - *verify_requirements
       - *make_source_tarball
