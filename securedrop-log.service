@@ -1,6 +1,6 @@
 [Unit]
 Description=securedrop logging Service
-After=network.target
+After=network.target redis.service
 
 [Service]
 Type=simple
