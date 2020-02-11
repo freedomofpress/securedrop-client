@@ -2,7 +2,7 @@ import itertools
 import logging
 
 from PyQt5.QtCore import QObject, QThread, pyqtSlot, pyqtSignal
-from queue import PriorityQueue, Full
+from queue import PriorityQueue
 from sdclientapi import API, RequestTimeoutError
 from sqlalchemy.orm import scoped_session
 from typing import Optional, Tuple  # noqa: F401
@@ -59,12 +59,11 @@ class RunnableQueue(QObject):
     # Signal that is emitted to resume processing jobs
     resume = pyqtSignal()
 
-    def __init__(self, api_client: API, session_maker: scoped_session, size: int = 0) -> None:
+    def __init__(self, api_client: API, session_maker: scoped_session) -> None:
         super().__init__()
         self.api_client = api_client
         self.session_maker = session_maker
-        # If the maxsize provided to PriorityQueue is 0, there will be no upper bound
-        self.queue = PriorityQueue(maxsize=size)  # type: PriorityQueue[Tuple[int, ApiJob]]
+        self.queue = PriorityQueue()  # type: PriorityQueue[Tuple[int, ApiJob]]
         # `order_number` ensures jobs with equal priority are retrived in FIFO order. This is needed
         # because PriorityQueue is implemented using heapq which does not have sort stability. For
         # more info, see : https://bugs.python.org/issue17794
@@ -79,10 +78,7 @@ class RunnableQueue(QObject):
         current_order_number = next(self.order_number)
         job.order_number = current_order_number
         priority = self.JOB_PRIORITIES[type(job)]
-        try:
-            self.queue.put_nowait((priority, job))
-        except Full:
-            pass  # Pass silently if the queue is full
+        self.queue.put_nowait((priority, job))
 
     def re_add_job(self, job: ApiJob) -> None:
         '''
@@ -91,10 +87,7 @@ class RunnableQueue(QObject):
         '''
         job.remaining_attempts = DEFAULT_NUM_ATTEMPTS
         priority = self.JOB_PRIORITIES[type(job)]
-        try:
-            self.queue.put_nowait((priority, job))
-        except Full:
-            pass  # Pass silently if the queue is full
+        self.queue.put_nowait((priority, job))
 
     @pyqtSlot()
     def process(self) -> None:
@@ -116,13 +109,10 @@ class RunnableQueue(QObject):
 
         Note: Generic exceptions are handled in _do_call_api.
         '''
-        logger.debug('Beginning queue processing loop')
-
         while True:
             priority, job = self.queue.get(block=True)
 
             if isinstance(job, PauseQueueJob):
-                logger.debug('Paused queue')
                 self.paused.emit()
                 return
 
@@ -239,8 +229,8 @@ class ApiJobQueue(QObject):
             return
 
         if isinstance(job, FileDownloadJob):
-            logger.debug('Adding job to download queue')
             self.download_file_queue.add_job(job)
+            logger.debug('Added job to download queue')
         else:
-            logger.debug('Adding job to main queue')
             self.main_queue.add_job(job)
+            logger.debug('Added job to main queue')
