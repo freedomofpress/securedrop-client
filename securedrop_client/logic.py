@@ -326,6 +326,10 @@ class Controller(QObject):
     def resume_queues(self) -> None:
         self.api_job_queue.resume_queues()
 
+        # clear error status in case queue was paused resulting in a permanent error message with
+        # retry link
+        self.gui.clear_error_status()
+
     def completed_api_call(self, thread_id, user_callback):
         """
         Manage a completed API call. The actual result *may* be an exception or
@@ -373,10 +377,9 @@ class Controller(QObject):
             self.session)
         self.gui.show_main_window(user)
         self.update_sources()
-        self.api_job_queue.login(self.api)
+        self.api_job_queue.start(self.api)
         self.api_sync.start(self.api)
         self.is_authenticated = True
-        self.resume_queues()
 
     def on_authenticate_failure(self, result: Exception) -> None:
         # Failed to authenticate. Reset state with failure message.
@@ -431,8 +434,6 @@ class Controller(QObject):
             * Download new messages and replies
             * Update missing files so that they can be re-downloaded
         """
-        self.gui.clear_error_status()  # remove any permanent error status message
-
         with open(self.sync_flag, 'w') as f:
             f.write(arrow.now().format())
 
@@ -473,18 +474,10 @@ class Controller(QObject):
         self.update_sync()
 
     def on_update_star_success(self, result) -> None:
-        """
-        After we star a source, we should sync the API such that the local database is updated.
-        """
-        self.gui.clear_error_status()  # remove any permanent error status message
+        pass
 
     def on_update_star_failure(self, result: UpdateStarJobException) -> None:
-        """
-        After we unstar a source, we should sync the API such that the local database is updated.
-        """
-        logging.info("failed to push change to server")
-        error = _('Failed to update star.')
-        self.gui.update_error_status(error)
+        self.gui.update_error_status(_('Failed to update star.'))
 
     @login_required
     def update_star(self, source_db_object, callback):
@@ -505,6 +498,11 @@ class Controller(QObject):
         Then mark all pending draft replies as failed, stop the queues, and show the user as logged
         out in the GUI.
         """
+
+        # clear error status in case queue was paused resulting in a permanent error message with
+        # retry link
+        self.gui.clear_error_status()
+
         if self.api is not None:
             self.call_api(self.api.logout, self.on_logout_success, self.on_logout_failure)
             self.invalidate_token()
@@ -514,7 +512,7 @@ class Controller(QObject):
             self.reply_failed.emit(failed_reply.uuid)
 
         self.api_sync.stop()
-        self.api_job_queue.logout()
+        self.api_job_queue.stop()
         self.gui.logout()
 
         self.is_authenticated = False
@@ -564,7 +562,6 @@ class Controller(QObject):
         """
         Called when a message has downloaded.
         """
-        self.gui.clear_error_status()  # remove any permanent error status message
         self.session.commit()  # Needed to flush stale data.
         message = storage.get_message(self.session, uuid)
         self.message_ready.emit(message.source.uuid, message.uuid, message.content)
@@ -589,7 +586,6 @@ class Controller(QObject):
         """
         Called when a reply has downloaded.
         """
-        self.gui.clear_error_status()  # remove any permanent error status message
         self.session.commit()  # Needed to flush stale data.
         reply = storage.get_reply(self.session, uuid)
         self.reply_ready.emit(reply.source.uuid, reply.uuid, reply.content)
@@ -700,7 +696,6 @@ class Controller(QObject):
         """
         Called when a file has downloaded.
         """
-        self.gui.clear_error_status()  # remove any permanent error status message
         self.session.commit()
         file_obj = storage.get_file(self.session, uuid)
         self.file_ready.emit(file_obj.source.uuid, uuid, file_obj.filename)
@@ -728,7 +723,6 @@ class Controller(QObject):
         """
         # Delete the local version of the source.
         storage.delete_local_source_by_uuid(self.session, result)
-        self.gui.clear_error_status()  # remove any permanent error status message
         # Update the sources UI.
         self.update_sources()
 
@@ -789,7 +783,6 @@ class Controller(QObject):
 
     def on_reply_success(self, reply_uuid: str) -> None:
         logger.debug('{} sent successfully'.format(reply_uuid))
-        self.gui.clear_error_status()  # remove any permanent error status message
         self.session.commit()
         reply = storage.get_reply(self.session, reply_uuid)
         self.reply_succeeded.emit(reply.source.uuid, reply_uuid, reply.content)
@@ -808,7 +801,6 @@ class Controller(QObject):
 
     def on_logout_success(self, result) -> None:
         logging.info('Client logout successful')
-        self.gui.clear_error_status()  # remove any permanent error status message
 
     def on_logout_failure(self, result: Exception) -> None:
         logging.info('Client logout failure')

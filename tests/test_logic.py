@@ -197,10 +197,10 @@ def test_Controller_on_authenticate_success(homedir, config, mocker, session_mak
     """
     user = factory.User()
     mock_gui = mocker.MagicMock()
-    mock_api_job_queue = mocker.patch("securedrop_client.logic.ApiJobQueue")
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     # co.api_sync = mocker.MagicMock()
     co.api_sync.start = mocker.MagicMock()
+    co.api_job_queue.start = mocker.MagicMock()
     co.update_sources = mocker.MagicMock()
     co.session.add(user)
     co.session.commit()
@@ -210,15 +210,12 @@ def test_Controller_on_authenticate_success(homedir, config, mocker, session_mak
     co.api.journalist_first_name = user.firstname
     co.api.journalist_last_name = user.lastname
     co.resume_queues = mocker.MagicMock()
-    login = mocker.patch.object(co.api_job_queue, 'login')
 
     co.on_authenticate_success(True)
 
     co.api_sync.start.assert_called_once_with(co.api)
+    co.api_job_queue.start.assert_called_once_with(co.api)
     assert co.is_authenticated
-    assert mock_api_job_queue.called
-    login.assert_called_with(co.api)
-    co.resume_queues.assert_called_once_with()
 
 
 def test_Controller_completed_api_call_without_current_object(
@@ -514,7 +511,6 @@ def test_Controller_on_update_star_success(homedir, config, mocker, session_make
     result = True
     co.call_reset = mocker.MagicMock()
     co.on_update_star_success(result)
-    assert mock_gui.clear_error_status.called
 
 
 def test_Controller_on_update_star_failed(homedir, config, mocker, session_maker):
@@ -549,7 +545,7 @@ def test_Controller_logout_with_pending_replies(mocker, session_maker, homedir, 
     '''
     co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
     co.api_job_queue = mocker.MagicMock()
-    co.api_job_queue.logout = mocker.MagicMock()
+    co.api_job_queue.stop = mocker.MagicMock()
     co.call_api = mocker.MagicMock()
     co.reply_failed = mocker.MagicMock()
 
@@ -569,6 +565,7 @@ def test_Controller_logout_with_pending_replies(mocker, session_maker, homedir, 
         assert draft.send_status == failed_status
 
     co.reply_failed.emit.assert_called_once_with(pending_draft_reply.uuid)
+    co.api_job_queue.stop.assert_called_once_with()
 
 
 def test_Controller_logout_with_no_api(homedir, config, mocker, session_maker):
@@ -580,7 +577,7 @@ def test_Controller_logout_with_no_api(homedir, config, mocker, session_maker):
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     co.api = None
     co.api_job_queue = mocker.MagicMock()
-    co.api_job_queue.logout = mocker.MagicMock()
+    co.api_job_queue.stop = mocker.MagicMock()
     co.call_api = mocker.MagicMock()
     fail_draft_replies = mocker.patch(
         'securedrop_client.storage.mark_all_pending_drafts_as_failed')
@@ -588,7 +585,7 @@ def test_Controller_logout_with_no_api(homedir, config, mocker, session_maker):
     co.logout()
 
     co.call_api.assert_not_called()
-    co.api_job_queue.logout.assert_called_once_with()
+    co.api_job_queue.stop.assert_called_once_with()
     co.gui.logout.assert_called_once_with()
     fail_draft_replies.called_once_with(co.session)
 
@@ -604,7 +601,7 @@ def test_Controller_logout_success(homedir, config, mocker, session_maker):
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     co.api = mocker.MagicMock()
     co.api_job_queue = mocker.MagicMock()
-    co.api_job_queue.logout = mocker.MagicMock()
+    co.api_job_queue.stop = mocker.MagicMock()
     co.call_api = mocker.MagicMock()
     info_logger = mocker.patch('securedrop_client.logic.logging.info')
     fail_draft_replies = mocker.patch(
@@ -617,7 +614,7 @@ def test_Controller_logout_success(homedir, config, mocker, session_maker):
         co.on_logout_failure)
     co.on_logout_success(True)
     assert co.api is None
-    co.api_job_queue.logout.assert_called_once_with()
+    co.api_job_queue.stop.assert_called_once_with()
     co.gui.logout.assert_called_once_with()
     msg = 'Client logout successful'
     info_logger.assert_called_once_with(msg)
@@ -635,7 +632,7 @@ def test_Controller_logout_failure(homedir, config, mocker, session_maker):
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     co.api = mocker.MagicMock()
     co.api_job_queue = mocker.MagicMock()
-    co.api_job_queue.logout = mocker.MagicMock()
+    co.api_job_queue.stop = mocker.MagicMock()
     co.call_api = mocker.MagicMock()
     info_logger = mocker.patch('securedrop_client.logic.logging.info')
     fail_draft_replies = mocker.patch(
@@ -650,7 +647,7 @@ def test_Controller_logout_failure(homedir, config, mocker, session_maker):
         co.on_logout_failure)
     co.on_logout_failure(Exception())
     assert co.api is None
-    co.api_job_queue.logout.assert_called_once_with()
+    co.api_job_queue.stop.assert_called_once_with()
     co.gui.logout.assert_called_once_with()
     msg = 'Client logout failure'
     info_logger.assert_called_once_with(msg)
