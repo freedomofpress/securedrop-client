@@ -13,15 +13,11 @@ The SDK is currently used by the [SecureDrop Client](https://github.com/freedomo
 ## Quick Start
 
 ```bash
-pip install -U pipenv
-pipenv sync --dev
-pipenv shell
+virtualenv --python=python3 .venv
+source .venv/bin/activate
+pip install --require-hashes -r dev-requirements.txt
 make test
 ```
-
-This project uses [pipenv](https://docs.pipenv.org) to manage all dependencies.
-This is a Python 3 project. When using ``pipenv`` locally, ensure you used the ``--keep-outdated``
-flag to prevent dependencies from being unnecessarily upgraded during normal development.
 
 We cover all the API calls supported by the SecureDrop Journalist Interface API.
 
@@ -29,7 +25,7 @@ We cover all the API calls supported by the SecureDrop Journalist Interface API.
 
 The tests are located in the `tests` directory. This project uses [vcrpy](http://vcrpy.readthedocs.io/en/latest/) to record and then reply the API calls so that
 developers will have repeatable results so that they may work offline. `vcrpy` stores YAML
-recordings of the API calls in the `data` directory. 
+recordings of the API calls in the `data` directory.
 
 To run all the test cases, use the following command.
 
@@ -118,7 +114,7 @@ Please read [CONTRIBUTING.md](https://github.com/freedomofpress/securedrop-sdk/b
 
 # Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/freedomofpress/securedrop-sdk/tags). 
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/freedomofpress/securedrop-sdk/tags).
 
 # License
 

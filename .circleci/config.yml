@@ -3,41 +3,36 @@ jobs:
   test-run:
     working_directory: ~/sdclientapi
     docker:
-      - image: circleci/python:3.5.3
-        environment:
-          PIPENV_VENV_IN_PROJECT: true
+      - image: circleci/python:3.7
     steps:
       - checkout
       - run: sudo chown -R circleci:circleci /usr/local/bin
-      - run: sudo chown -R circleci:circleci /usr/local/lib/python3.5/site-packages
+      - run: sudo chown -R circleci:circleci /usr/local/lib/python3.7/site-packages
       - restore_cache:
-          key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+          key: deps9-{{ .Branch }}-{{ checksum "dev-requirements.txt" }}
       - run:
           name: Install dependencies
           command: |
-            set -e
-            sudo pip install pipenv
-            pipenv install --dev --skip-lock
-            pipenv run pip freeze
+            virtualenv --python=python3 .venv
+            source .venv/bin/activate
+            pip install --require-hashes -r dev-requirements.txt
       - save_cache:
-          key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+          key: deps9-{{ .Branch }}-{{ checksum "dev-requirements.txt" }}
           paths:
             - ".venv"
             - "/usr/local/bin"
-            - "/usr/local/lib/python3.5/site-packages"
+            - "/usr/local/lib/python3.7/site-packages"
       - run:
-          name: Run linters
-          command: pipenv run make lint mypy
-      - run:
-          name: Run tests
-          command: pipenv run make test
-      - run:
-          name: Check for known CVEs
-          command: pipenv check
+          name: Run linter, tests, check for known CVEs
+          command: |
+            source .venv/bin/activate
+            make check
+
   test-against-latest-api:
     working_directory: ~/project
     machine:
       enabled: true
+      image: ubuntu-1604:201903-01
     environment:
       DOCKER_API_VERSION: 1.23
     steps:
@@ -45,9 +40,10 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            sudo pip install pipenv
-            pipenv install --dev --skip-lock
-            pipenv run pip freeze
+            pyenv global 3.7.0
+            virtualenv --python=python3 .venv
+            source .venv/bin/activate
+            pip install --require-hashes -r dev-requirements.txt
       - run:
           name: Download SecureDrop server code
           command: git clone https://github.com/freedomofpress/securedrop.git
@@ -56,7 +52,7 @@ jobs:
           command: |
             cd securedrop
             NUM_SOURCES=5 make -C securedrop dev
-          background: true  
+          background: true
       - run:  # As suggested in https://discuss.circleci.com/t/prevent-race-conditions-by-waiting-for-services-with-dockerize/11215
           name: Install dockerize
           command: |
@@ -74,7 +70,9 @@ jobs:
           name: Remove VCR cassettes and run tests against latest API
           command: |
             rm data/*.yml  # Removing VCR cassettes
-            pipenv run make test
+            source .venv/bin/activate
+            make test
+
 workflows:
   version: 2
   securedrop_ci:
