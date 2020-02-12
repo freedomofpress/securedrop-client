@@ -258,7 +258,7 @@ def test_update_source_key_without_fingerprint(mocker, session):
     remote_source = factory.RemoteSource()
     remote_source.key = {}
 
-    update_source_key(None, session, local_source, remote_source)
+    update_source_key(None, local_source, remote_source)
 
     error_logger.assert_called_once_with("New source data lacks key fingerprint")
 
@@ -280,7 +280,7 @@ def test_update_source_key_without_key(mocker, session):
     remote_source = factory.RemoteSource()
     del remote_source.key["public"]
 
-    update_source_key(None, session, local_source, remote_source)
+    update_source_key(None, local_source, remote_source)
 
     error_logger.assert_called_once_with("New source data lacks public key")
 
