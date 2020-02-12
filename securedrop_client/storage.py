@@ -124,9 +124,7 @@ def update_local_storage(session: Session,
     update_replies(remote_replies, get_local_replies(session), session, data_dir)
 
 
-def update_source_key(
-        gpg: GpgHelper, session: Session, local_source: Source, remote_source: SDKSource
-) -> None:
+def update_source_key(gpg: GpgHelper, local_source: Source, remote_source: SDKSource) -> None:
     """
     Updates a source's GPG key.
     """
@@ -146,9 +144,6 @@ def update_source_key(
         return
 
     try:
-        # commit so the new source is visible to import_key, which uses a new session
-        session.commit()
-
         # import_key updates the source's key and fingerprint, and commits
         gpg.import_key(
             remote_source.uuid,
@@ -182,8 +177,9 @@ def update_sources(gpg: GpgHelper, remote_sources: List[SDKSource],
             local_source.document_count = source.number_of_documents
             local_source.is_starred = source.is_starred
             local_source.last_updated = parse(source.last_updated)
+            session.commit()
 
-            update_source_key(gpg, session, local_source, source)
+            update_source_key(gpg, local_source, source)
 
             # Removing the UUID from local_sources_by_uuid ensures
             # this record won't be deleted at the end of this
@@ -200,8 +196,9 @@ def update_sources(gpg: GpgHelper, remote_sources: List[SDKSource],
                         last_updated=parse(source.last_updated),
                         document_count=source.number_of_documents)
             session.add(ns)
+            session.commit()
 
-            update_source_key(gpg, session, ns, source)
+            update_source_key(gpg, ns, source)
 
             logger.debug('Added new source {}'.format(source.uuid))
 
