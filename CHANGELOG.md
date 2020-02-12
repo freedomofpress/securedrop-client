@@ -1,6 +1,18 @@
 Changelog
 =========
 
+0.0.13
+------
+
+* Bug fix: return RequestTimeoutError and ServerConnectionError exceptions instead of AuthError, no longer raise KeyError when a file fails to download via the proxy (#109)
+* Adds test cases and uses pip-tools for development dependency management (#112).
+
+0.0.12
+------
+
+* Updates qrexec policy keyword character (#102).
+* Expose journalist first and last name through the API (#105).
+
 0.0.11
 ------
 
