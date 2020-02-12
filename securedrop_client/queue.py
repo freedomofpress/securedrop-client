@@ -3,7 +3,7 @@ import logging
 
 from PyQt5.QtCore import QObject, QThread, pyqtSlot, pyqtSignal
 from queue import PriorityQueue
-from sdclientapi import API, RequestTimeoutError
+from sdclientapi import API, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm import scoped_session
 from typing import Optional, Tuple  # noqa: F401
 
@@ -26,10 +26,10 @@ class RunnableQueue(QObject):
     job type. If multiple jobs of the same type are added to the queue then they are retrieved
     in FIFO order.
 
-    If a RequestTimeoutError is encountered while processing a job, the job will be added back to
-    the queue, the processing loop will stop, and the paused signal will be emitted. New jobs can
-    still be added, but the processing function will need to be called again in order to resume. The
-    processing loop is resumed when the resume signal is emitted.
+    If a RequestTimeoutError or ServerConnectionError is encountered while processing a job, the
+    job will be added back to the queue, the processing loop will stop, and the paused signal will
+    be emitted. New jobs can still be added, but the processing function will need to be called
+    again in order to resume. The processing loop is resumed when the resume signal is emitted.
 
     If an ApiInaccessibleError is encountered while processing a job, api_client will be set to
     None and the processing loop will stop. If the queue is resumed before the queue manager
@@ -97,7 +97,7 @@ class RunnableQueue(QObject):
         If the job is a PauseQueueJob, emit the paused signal and return from the processing loop so
         that no more jobs are processed until the queue resumes.
 
-        If the job raises RequestTimeoutError, then:
+        If the job raises RequestTimeoutError or ServerConnectionError, then:
         (1) Add a PauseQueuejob to the queue
         (2) Add the job back to the queue so that it can be reprocessed once the queue is resumed.
 
@@ -123,7 +123,7 @@ class RunnableQueue(QObject):
                 logger.debug('{}: {}'.format(type(e).__name__, e))
                 self.api_client = None
                 return
-            except RequestTimeoutError as e:
+            except (RequestTimeoutError, ServerConnectionError) as e:
                 logger.debug('{}: {}'.format(type(e).__name__, e))
                 self.add_job(PauseQueueJob())
                 self.re_add_job(job)
