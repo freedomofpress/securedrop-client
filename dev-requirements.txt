@@ -176,8 +176,9 @@ python-editor==1.0.3 \
 requests==2.20.0 \
     --hash=sha256:99dcfdaaeb17caf6e526f32b6a7b780461512ab3f1d992187801694cba42770c \
     --hash=sha256:a84b8c9ab6239b578f22d1c21d51b696dcfe004032bb80ea832398d6909d7279
-securedrop-sdk==0.0.12 \
-    --hash=sha256:b5ddca26ce87d4007db5d64fe77d44b4086a902c3f79e69fb9a81343c81ce278
+securedrop-sdk==0.0.13 \
+    --hash=sha256:3d521e7a63cd7df55f9c6508010f968692eccdb222c57ed9c2d0390fbbbd6f99 \
+    --hash=sha256:7763bb44755bdfc387ab6c002cbe49eeec2611feb04a8787c3c9f2aa48a1ee5f
 sip==4.19.8 \
     --hash=sha256:09f9a4e6c28afd0bafedb26ffba43375b97fe7207bd1a0d3513f79b7d168b331 \
     --hash=sha256:105edaaa1c8aa486662226360bd3999b4b89dd56de3e314d82b83ed0587d8783 \

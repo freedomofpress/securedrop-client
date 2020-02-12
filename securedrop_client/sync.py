@@ -2,7 +2,7 @@ import logging
 
 from PyQt5.QtCore import pyqtSignal, QObject, QThread, QTimer, Qt
 from sqlalchemy.orm import scoped_session
-from sdclientapi import API, RequestTimeoutError
+from sdclientapi import API, RequestTimeoutError, ServerConnectionError
 
 from securedrop_client.api_jobs.base import ApiInaccessibleError
 from securedrop_client.api_jobs.sync import MetadataSyncJob
@@ -75,7 +75,7 @@ class ApiSync(QObject):
         Only start another sync on failure if the reason is a timeout request.
         '''
         self.sync_failure.emit(result)
-        if isinstance(result, RequestTimeoutError):
+        if isinstance(result, (RequestTimeoutError, ServerConnectionError)):
             QTimer.singleShot(self.TIME_BETWEEN_SYNCS_MS, self.api_sync_bg_task.sync)
 
 

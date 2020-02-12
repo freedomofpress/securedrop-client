@@ -1,7 +1,7 @@
 import logging
 import sdclientapi
 
-from sdclientapi import API, RequestTimeoutError
+from sdclientapi import API, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm.session import Session
 
 from securedrop_client.api_jobs.base import ApiJob
@@ -65,7 +65,7 @@ class SendReplyJob(ApiJob):
             session.commit()
 
             return reply_db_object.uuid
-        except RequestTimeoutError as e:
+        except (RequestTimeoutError, ServerConnectionError) as e:
             message = "Failed to send reply for source {id} due to Exception: {error}".format(
                 id=self.source_uuid, error=e)
 
