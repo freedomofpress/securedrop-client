@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.7
+
+  * Update Werkzeug to 0.16.0 due to CVE-2019-14806 (#64)
+
 ## 0.1.6
 
   * Fixes CI for git-lfs based package builds (#60)
