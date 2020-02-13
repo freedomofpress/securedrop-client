@@ -1,6 +1,6 @@
 import pytest
 
-from sdclientapi import AuthError, RequestTimeoutError
+from sdclientapi import AuthError, RequestTimeoutError, ServerConnectionError
 
 from securedrop_client.api_jobs.base import ApiInaccessibleError, ApiJob
 from tests.factory import dummy_job_factory
@@ -68,15 +68,18 @@ def test_ApiJob_auth_error(mocker):
     assert not api_job.failure_signal.emit.called
 
 
-def test_ApiJob_timeout_error(mocker):
-    return_value = RequestTimeoutError()
+@pytest.mark.parametrize("exception", [RequestTimeoutError, ServerConnectionError])
+def test_ApiJob_timeout_error(mocker, exception):
+    """If the server times out or is unreachable, the corresponding
+    exception should be raised"""
+    return_value = exception()
     api_job_cls = dummy_job_factory(mocker, return_value)
     api_job = api_job_cls()
 
     mock_api_client = mocker.MagicMock()
     mock_session = mocker.MagicMock()
 
-    with pytest.raises(RequestTimeoutError):
+    with pytest.raises(exception):
         api_job._do_call_api(mock_api_client, mock_session)
 
     assert not api_job.success_signal.emit.called
@@ -98,12 +101,13 @@ def test_ApiJob_other_error(mocker):
     api_job.failure_signal.emit.assert_called_once_with(return_value)
 
 
-def test_ApiJob_retry_suceeds_after_failed_attempt(mocker):
+@pytest.mark.parametrize("exception", [RequestTimeoutError, ServerConnectionError])
+def test_ApiJob_retry_suceeds_after_failed_attempt(mocker, exception):
     """Retry logic: after failed attempt should succeed"""
 
     number_of_attempts = 5
     success_return_value = 'now works'
-    return_values = [RequestTimeoutError(), success_return_value]
+    return_values = [exception(), success_return_value]
     api_job_cls = dummy_job_factory(mocker, return_values,
                                     remaining_attempts=number_of_attempts)
     api_job = api_job_cls()
@@ -119,12 +123,13 @@ def test_ApiJob_retry_suceeds_after_failed_attempt(mocker):
     api_job.success_signal.emit.assert_called_once_with(success_return_value)
 
 
-def test_ApiJob_retry_exactly_n_attempts_times(mocker):
+@pytest.mark.parametrize("exception", [RequestTimeoutError, ServerConnectionError])
+def test_ApiJob_retry_exactly_n_attempts_times(mocker, exception):
     """Retry logic: boundary value case - 5th attempt should succeed"""
 
     number_of_attempts = 5
     success_return_value = 'now works'
-    return_values = [RequestTimeoutError()] * (number_of_attempts - 1) + [success_return_value]
+    return_values = [exception()] * (number_of_attempts - 1) + [success_return_value]
     api_job_cls = dummy_job_factory(mocker, return_values,
                                     remaining_attempts=number_of_attempts)
     api_job = api_job_cls()
@@ -140,11 +145,12 @@ def test_ApiJob_retry_exactly_n_attempts_times(mocker):
     api_job.success_signal.emit.assert_called_once_with(success_return_value)
 
 
-def test_ApiJob_retry_timeout(mocker):
+@pytest.mark.parametrize("exception", [RequestTimeoutError, ServerConnectionError])
+def test_ApiJob_retry_timeout(mocker, exception):
     """Retry logic: If we exceed the number of attempts, the job will still fail"""
 
     number_of_attempts = 5
-    return_values = [RequestTimeoutError()] * (number_of_attempts + 1)
+    return_values = [exception()] * (number_of_attempts + 1)
     api_job_cls = dummy_job_factory(mocker, return_values,
                                     remaining_attempts=number_of_attempts)
     api_job = api_job_cls()
@@ -152,7 +158,7 @@ def test_ApiJob_retry_timeout(mocker):
     mock_api_client = mocker.MagicMock()
     mock_session = mocker.MagicMock()
 
-    with pytest.raises(RequestTimeoutError):
+    with pytest.raises(exception):
         api_job._do_call_api(mock_api_client, mock_session)
 
     assert api_job.remaining_attempts == 0
