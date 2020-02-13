@@ -1,4 +1,6 @@
-from sdclientapi import RequestTimeoutError
+import pytest
+
+from sdclientapi import RequestTimeoutError, ServerConnectionError
 
 from securedrop_client.api_jobs.base import ApiInaccessibleError
 from securedrop_client.sync import ApiSync
@@ -153,7 +155,7 @@ def test_ApiSync_on_sync_success(mocker, session_maker, homedir):
 def test_ApiSync_on_sync_failure(mocker, session_maker, homedir):
     '''
     Ensure failure handler emits failure signal that the Controller links to and does not fire
-    another sync for errors other than RequestTimeoutError
+    another sync for errors other than RequestTimeoutError or ServerConnectionError
     '''
     api_sync = ApiSync(mocker.MagicMock(), session_maker, mocker.MagicMock(), homedir)
     sync_failure = mocker.patch.object(api_sync, 'sync_failure')
@@ -167,15 +169,17 @@ def test_ApiSync_on_sync_failure(mocker, session_maker, homedir):
     singleShot_fn.assert_not_called()
 
 
-def test_ApiSync_on_sync_failure_because_of_timeout(mocker, session_maker, homedir):
+@pytest.mark.parametrize("exception", [RequestTimeoutError, ServerConnectionError])
+def test_ApiSync_on_sync_failure_because_of_timeout(mocker, session_maker, homedir, exception):
     '''
     Ensure failure handler emits failure signal that the Controller links to and sets up timer to
-    fire another sync after 15 seconds if the failure reason is a RequestTimeoutError.
+    fire another sync after 15 seconds if the failure reason is a RequestTimeoutError or
+    ServerConnectionError.
     '''
     api_sync = ApiSync(mocker.MagicMock(), session_maker, mocker.MagicMock(), homedir)
     sync_failure = mocker.patch.object(api_sync, 'sync_failure')
     singleShot_fn = mocker.patch('securedrop_client.sync.QTimer.singleShot')
-    error = RequestTimeoutError()
+    error = exception()
 
     api_sync.on_sync_failure(error)
 

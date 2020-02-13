@@ -1,8 +1,10 @@
 '''
 Testing for the ApiJobQueue and related classes.
 '''
+import pytest
+
 from queue import Queue
-from sdclientapi import RequestTimeoutError
+from sdclientapi import RequestTimeoutError, ServerConnectionError
 
 from securedrop_client.api_jobs.downloads import FileDownloadJob
 from securedrop_client.api_jobs.base import ApiInaccessibleError, PauseQueueJob
@@ -44,19 +46,21 @@ def test_RunnableQueue_happy_path(mocker):
     assert queue.queue.empty()
 
 
-def test_RunnableQueue_job_timeout(mocker):
+@pytest.mark.parametrize("exception", [RequestTimeoutError, ServerConnectionError])
+def test_RunnableQueue_job_timeout(mocker, exception):
     '''
     Add two jobs to the queue. The first times out, and then gets resubmitted for the next pass
     through the loop.
     '''
     queue = RunnableQueue(mocker.MagicMock(), mocker.MagicMock())
     queue.pause = mocker.MagicMock()
-    job_cls = factory.dummy_job_factory(mocker, RequestTimeoutError(), remaining_attempts=5)
+    job_cls = factory.dummy_job_factory(mocker, exception(), remaining_attempts=5)
     job1 = job_cls()
     job2 = job_cls()
     queue.JOB_PRIORITIES = {PauseQueueJob: 0, job_cls: 1}
 
-    # RequestTimeoutError will cause the queue to pause, use our fake pause method instead
+    # RequestTimeoutError or ServerConnectionError will cause the queue to pause,
+    # use our fake pause method instead
     def fake_pause() -> None:
         queue.add_job(PauseQueueJob())
     queue.pause.emit = fake_pause
