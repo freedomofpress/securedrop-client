@@ -1972,7 +1972,7 @@ class FileWidget(QWidget):
         # clear, this regularly caused random crashes when running the test
         # suite (on Ubuntu 18.04, Python3.7). The following code expresses the
         # same logic but without causing the random the crash of the test
-        # suite. 
+        # suite.
         if (t == QEvent.HoverEnter or t == QEvent.HoverMove) and not self.downloading:
             self.download_button.setIcon(load_icon('download_file_hover.svg'))
         elif t == QEvent.HoverLeave and not self.downloading:
