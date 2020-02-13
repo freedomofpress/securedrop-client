@@ -2017,7 +2017,6 @@ class FileWidget(QWidget):
         else:
             self.download_button.setText(_('DOWNLOAD'))
             self.download_button.setIcon(load_icon('download_file.svg'))
-            self.download_button.setStyleSheet('color: #2a319d')
             self.download_button.setFont(self.file_buttons_font)
             self.download_button.show()
             self.no_file_name.hide()
