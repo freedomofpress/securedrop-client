@@ -241,8 +241,8 @@ class Controller(QObject):
         self.api_sync.sync_failure.connect(self.on_sync_failure, type=Qt.QueuedConnection)
 
         # Create a timer to check for sync status every SYNC_FREQUENCY seconds.
-        self.sync_timer = QTimer()
-        self.sync_timer.timeout.connect(self.show_last_sync_time)
+        self.show_last_sync_timer = QTimer()
+        self.show_last_sync_timer.timeout.connect(self.show_last_sync_time)
 
     @property
     def is_authenticated(self) -> bool:
@@ -324,11 +324,11 @@ class Controller(QObject):
             _('The SecureDrop server cannot be reached.'),
             duration=0,
             retry=True)
-        self.sync_timer.start(SYNC_FREQUENCY)
+        self.show_last_sync_timer.start(SYNC_FREQUENCY)
 
     def resume_queues(self) -> None:
         self.api_job_queue.resume_queues()
-        self.sync_timer.stop()
+        self.show_last_sync_timer.stop()
 
         # clear error status in case queue was paused resulting in a permanent error message with
         # retry link
@@ -366,7 +366,7 @@ class Controller(QObject):
         self.call_api(self.api.authenticate,
                       self.on_authenticate_success,
                       self.on_authenticate_failure)
-        self.sync_timer.stop()
+        self.show_last_sync_timer.stop()
         self.set_status('')
 
     def on_authenticate_success(self, result):
@@ -404,7 +404,7 @@ class Controller(QObject):
         self.is_authenticated = False
         self.update_sources()
         self.show_last_sync_time()
-        self.sync_timer.start(SYNC_FREQUENCY)
+        self.show_last_sync_timer.start(SYNC_FREQUENCY)
 
     def on_action_requiring_login(self):
         """
@@ -522,7 +522,7 @@ class Controller(QObject):
         self.api_job_queue.stop()
         self.gui.logout()
 
-        self.sync_timer.start(SYNC_FREQUENCY)
+        self.show_last_sync_timer.start(SYNC_FREQUENCY)
         self.show_last_sync_time()
         self.is_authenticated = False
 
