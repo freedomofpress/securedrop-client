@@ -1,0 +1,35 @@
+interactions:
+- request:
+    body: '{"username": "journalist", "passphrase": "correct horse battery staple
+      profanity oil chewy", "one_time_code": "493941"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '119'
+      User-Agent:
+      - python-requests/2.20.0
+    method: POST
+    uri: http://localhost:8081/api/v1/token
+  response:
+    body:
+      string: "{\n  \"expiration\": \"2020-02-17T21:45:20.569829Z\", \n  \"journalist_first_name\":
+        null, \n  \"journalist_last_name\": null, \n  \"journalist_uuid\": \"1eff0bb5-289b-4105-b3c1-ec93d5704db6\",
+        \n  \"token\": \"eyJhbGciOiJIUzI1NiIsImlhdCI6MTU4MTk0NzEyMCwiZXhwIjoxNTgxOTc1OTIwfQ.eyJpZCI6MX0.4h6pPAy4bl58Yc5Gim1LVdhvTYELvMfIWoZPlBR2ZZI\"\n}\n"
+    headers:
+      Content-Length:
+      - '317'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 17 Feb 2020 13:45:20 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+version: 1

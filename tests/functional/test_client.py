@@ -21,14 +21,13 @@ from securedrop_client.utils import safe_mkdir
 HOSTNAME = "http://localhost:8081/"
 USERNAME = "journalist"
 PASSWORD = "correct horse battery staple profanity oil chewy"
-OTP = "783682"
 
 
 def get_safe_tempdir():
     return tempfile.TemporaryDirectory()
 
 
-def get_test_context(sdc_home, mocker):
+def get_test_context(sdc_home, qtbot):
     """
     Returns a tuple containing a Window instance and a Controller instance that
     have been correctly set up and isolated from any other instances of the
@@ -46,9 +45,10 @@ def get_test_context(sdc_home, mocker):
                             False, False)
     # Link the gui and controller together.
     gui.controller = controller
+    # Ensure Qt widgets are properly closed after test run.
+    qtbot.addWidget(gui)
     # Et Voila...
-    with mocker.patch("securedrop_client.logic.sdclientapi") as mock_api:
-        return (gui, controller, mock_api)
+    return (gui, controller)
 
 
 def create_dev_data(sdc_home, session_maker):
@@ -89,19 +89,21 @@ def test_login_ensure_errors_displayed(qtbot, mocker):
     assert actual == expected
 
 
+@pytest.mark.vcr()
 def test_login_as_journalist(qtbot, mocker):
     """
     The app is visible if the user logs in with apparently correct credentials.
     """
     tempdir = get_safe_tempdir()  # Once out of scope, is deleted.
-    gui, controller, mock_api = get_test_context(tempdir, mocker)
-    login_dialog = LoginDialog(gui)
-    login_dialog.setup(controller)
-    gui.login_dialog = login_dialog
-    login_dialog.show()
-    assert login_dialog.error_bar.error_status_bar.text() == ""
-    qtbot.keyClicks(login_dialog.username_field, USERNAME)
-    qtbot.keyClicks(login_dialog.password_field, PASSWORD)
-    qtbot.keyClicks(login_dialog.tfa_field, OTP)
-    qtbot.mouseClick(login_dialog.submit, Qt.LeftButton)
-    assert gui.isVisible() 
+    gui, controller = get_test_context(tempdir, qtbot)
+    gui.setup(controller)
+    assert gui.login_dialog.error_bar.error_status_bar.text() == ""
+    qtbot.keyClicks(gui.login_dialog.username_field, USERNAME)
+    qtbot.keyClicks(gui.login_dialog.password_field, PASSWORD)
+    qtbot.keyClicks(gui.login_dialog.tfa_field, "493941")
+    with qtbot.waitSignal(controller.authentication_state, timeout=10000):
+        qtbot.mouseClick(gui.login_dialog.submit, Qt.LeftButton)
+    # The main window is visible (indicating a successful login).
+    assert gui.isVisible()
+    # The login box isn't visible.
+    assert gui.login_dialog is None
