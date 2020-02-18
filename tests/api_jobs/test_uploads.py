@@ -218,11 +218,14 @@ def test_send_reply_failure_unknown_error(homedir, mocker, session, session_make
     assert len(drafts) == 1
 
 
+@pytest.mark.parametrize("exception",
+                         [sdclientapi.RequestTimeoutError,
+                          sdclientapi.ServerConnectionError])
 def test_send_reply_failure_timeout_error(homedir, mocker, session, session_maker,
-                                          reply_status_codes):
+                                          reply_status_codes, exception):
     '''
-    Check that if the SendReplyJob api call fails because of a RequestTimeoutError that a
-    SendReplyJobTimeoutError is raised.
+    Check that if the SendReplyJob api call fails because of a RequestTimeoutError or
+    ServerConnectionError that a SendReplyJobTimeoutError is raised.
     '''
     source = factory.Source()
     session.add(source)
@@ -230,7 +233,7 @@ def test_send_reply_failure_timeout_error(homedir, mocker, session, session_make
     session.add(draft_reply)
     session.commit()
     api_client = mocker.MagicMock()
-    mocker.patch.object(api_client, 'reply_source', side_effect=sdclientapi.RequestTimeoutError)
+    mocker.patch.object(api_client, 'reply_source', side_effect=exception)
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
     encrypt_fn = mocker.patch.object(gpg, 'encrypt_to_source')
     job = SendReplyJob(source.uuid, 'mock_reply_uuid', 'mock_message', gpg)

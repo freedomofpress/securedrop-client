@@ -7,7 +7,7 @@ import os
 import pytest
 
 from PyQt5.QtCore import Qt
-from sdclientapi import RequestTimeoutError
+from sdclientapi import RequestTimeoutError, ServerConnectionError
 from tests import factory
 
 from securedrop_client import db
@@ -1439,13 +1439,14 @@ def test_Controller_resume_queues(homedir, mocker, session_maker):
     co.show_last_sync_timer.stop.assert_called_once_with()
 
 
-def test_APICallRunner_api_call_timeout(mocker):
+@pytest.mark.parametrize("exception", [RequestTimeoutError, ServerConnectionError])
+def test_APICallRunner_api_call_timeout(mocker, exception):
     """
-    Ensure that if a RequestTimeoutError is raised, both the failure and timeout signals are
-    emitted.
+    Ensure that if a RequestTimeoutError or ServerConnectionError is raised, both
+    the failure and timeout signals are emitted.
     """
     mock_api = mocker.MagicMock()
-    mock_api.fake_request = mocker.MagicMock(side_effect=RequestTimeoutError())
+    mock_api.fake_request = mocker.MagicMock(side_effect=exception())
 
     runner = APICallRunner(mock_api.fake_request)
 

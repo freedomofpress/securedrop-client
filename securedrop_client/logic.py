@@ -28,7 +28,7 @@ from typing import Dict, Tuple, Union, Any, List, Type  # noqa: F401
 
 from gettext import gettext as _
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess, Qt
-from sdclientapi import RequestTimeoutError
+from sdclientapi import RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm.session import sessionmaker
 
 from securedrop_client import storage
@@ -101,7 +101,7 @@ class APICallRunner(QObject):
         try:
             self.result = self.api_call(*self.args, **self.kwargs)
         except Exception as ex:
-            if isinstance(ex, RequestTimeoutError):
+            if isinstance(ex, (RequestTimeoutError, ServerConnectionError)):
                 self.call_timed_out.emit()
 
             logger.error(ex)
