@@ -70,11 +70,7 @@ class PrintAction(ExportAction):
                 self.submission.exit_gracefully(ExportStatus.ERROR_MULTIPLE_PRINTERS_FOUND.value)
 
             printer_uri = printers[0]
-
-            logger.info('Installing printer drivers')
             printer_ppd = self.install_printer_ppd(printer_uri)
-
-            logger.info('Setting up printer')
             self.setup_printer(printer_uri, printer_ppd)
         except subprocess.CalledProcessError as e:
             logger.error(e)
@@ -122,6 +118,7 @@ class PrintAction(ExportAction):
 
         # Compile and install drivers that are not already installed
         if not os.path.exists(printer_ppd):
+            logger.info('Installing printer drivers')
             self.submission.safe_check_call(
                 command=[
                     "sudo",
@@ -137,44 +134,21 @@ class PrintAction(ExportAction):
 
     def setup_printer(self, printer_uri, printer_ppd):
         # Add the printer using lpadmin
-        logger.info('Setting up printer name {}'.format(self.printer_name))
+        logger.info('Setting up printer {}'.format(self.printer_name))
         self.submission.safe_check_call(
             command=[
                 "sudo",
                 "lpadmin",
                 "-p",
                 self.printer_name,
+                "-E",
                 "-v",
                 printer_uri,
                 "-P",
                 printer_ppd,
+                "-u",
+                "allow:user"
             ],
-            error_message=ExportStatus.ERROR_PRINTER_INSTALL.value
-        )
-        # Activate the printer so that it can receive jobs
-        logger.info('Activating printer {}'.format(self.printer_name))
-        self.submission.safe_check_call(
-            command=["sudo", "lpadmin", "-p", self.printer_name],
-            error_message=ExportStatus.ERROR_PRINTER_INSTALL.value
-        )
-        # worksaround for version of lpadmin/cups in debian buster:
-        # see https://forums.developer.apple.com/thread/106112
-        self.submission.safe_check_call(
-            command=["sudo", "cupsaccept", self.printer_name],
-            error_message=ExportStatus.ERROR_PRINTER_INSTALL.value
-        )
-        # A non-zero return code is expected here, but the command is required
-        # and works as expected.
-        command = ["sudo", "cupsenable", self.printer_name]
-        try:
-            subprocess.check_call(command)
-        except subprocess.CalledProcessError:
-            pass
-
-        # Allow user to print (without using sudo)
-        logger.info('Allow user to print {}'.format(self.printer_name))
-        self.submission.safe_check_call(
-            command=["sudo", "lpadmin", "-p", self.printer_name, "-u", "allow:user"],
             error_message=ExportStatus.ERROR_PRINTER_INSTALL.value
         )
 
