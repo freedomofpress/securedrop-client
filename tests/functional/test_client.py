@@ -28,6 +28,7 @@ import os
 import tempfile
 import json
 import pytest
+import subprocess
 
 
 from sqlalchemy.orm.exc import NoResultFound
@@ -56,7 +57,7 @@ def get_safe_tempdir():
     return tempfile.TemporaryDirectory()
 
 
-def get_test_context(sdc_home, qtbot):
+def get_test_context(sdc_home):
     """
     Returns a tuple containing a Window instance and a Controller instance that
     have been correctly set up and isolated from any other instances of the
@@ -67,6 +68,8 @@ def get_test_context(sdc_home, qtbot):
     # Create all app assets in a new temp directory and sub-directories.
     safe_mkdir(os.path.join(sdc_home.name, "gpg"))
     safe_mkdir(os.path.join(sdc_home.name, "data"))
+    # Configure test keys.
+    create_gpg_test_context(sdc_home)
     # Configure and create the database.
     session_maker = make_session_maker(sdc_home.name)
     create_dev_data(sdc_home.name, session_maker)
@@ -75,10 +78,44 @@ def get_test_context(sdc_home, qtbot):
                             False, False)
     # Link the gui and controller together.
     gui.controller = controller
-    # Ensure Qt widgets are properly closed after test run.
-    qtbot.addWidget(gui)
     # Et Voila...
     return (gui, controller)
+
+
+def get_logged_in_test_context(sdc_home, qtbot, totp):
+    """
+    Returns a tuple containing a Window and Controller instance that have been
+    correctly configured to work together, isolated from other runs of the
+    test suite and in a logged in state.
+    """
+    gui, controller = get_test_context(sdc_home)
+    gui.setup(controller)
+    qtbot.keyClicks(gui.login_dialog.username_field, USERNAME)
+    qtbot.keyClicks(gui.login_dialog.password_field, PASSWORD)
+    qtbot.keyClicks(gui.login_dialog.tfa_field, totp)
+    with qtbot.waitSignal(controller.authentication_state, timeout=10000):
+        qtbot.mouseClick(gui.login_dialog.submit, Qt.LeftButton)
+    return (gui, controller)
+
+
+def create_gpg_test_context(sdc_home):
+    """
+    Ensures the correct key is in the $sdc_home/gpg directory. Needs the
+    gpg command to be installed for this to work.
+    """
+    gpg_home = os.path.join(sdc_home.name, "gpg")
+    func_test_path = os.path.dirname(os.path.abspath(__file__))
+    key_file = os.path.join(func_test_path, "..", "files",
+                            "securedrop.gpg.asc")
+    cmd = [
+        'gpg',
+        '--homedir',
+        gpg_home,
+        '--allow-secret-key-import',
+        '--import',
+        os.path.abspath(key_file),
+    ]
+    subprocess.call(cmd)
 
 
 def create_dev_data(sdc_home, session_maker):
@@ -125,7 +162,7 @@ def test_login_as_journalist(qtbot, mocker):
     # Once out of scope, is deleted.
     tempdir = get_safe_tempdir()
     # Create a clean context.
-    gui, controller = get_test_context(tempdir, qtbot)
+    gui, controller = get_test_context(tempdir)
     gui.setup(controller)
     # Fill in UI with good credentials.
     qtbot.keyClicks(gui.login_dialog.username_field, USERNAME)
@@ -141,3 +178,21 @@ def test_login_as_journalist(qtbot, mocker):
     assert gui.isVisible()
     # The login box no longer exists.
     assert gui.login_dialog is None
+
+
+@pytest.mark.vcr()
+def test_logout_as_journalist(qtbot, mocker):
+    """
+    A journalist can successfully log out of the application.
+    """
+    totp = "670099"
+    tempdir = get_safe_tempdir()
+    gui, controller = get_logged_in_test_context(tempdir, qtbot, totp)
+    qtbot.wait(100)
+    with qtbot.waitSignal(controller.authentication_state, timeout=10000):
+        # The qtbot object cannot interact with QAction items (as used in the
+        # logout button/menu), so we're forced to programatically trigger it
+        # rather than pretend some sort of user interaction via the qtbot.
+        gui.left_pane.user_profile.user_button.menu.logout.trigger()
+    # The login button is visible - demonstrating the user is logged out.
+    assert gui.left_pane.user_profile.login_button.isVisible()
