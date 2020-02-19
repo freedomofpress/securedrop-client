@@ -26,7 +26,7 @@ from typing import Dict, List, Union  # noqa: F401
 from uuid import uuid4
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QEvent, QTimer, QSize, pyqtBoundSignal, \
     QObject, QPoint
-from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient,QKeySequence, \
+from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient, QKeySequence, \
     QCursor
 from PyQt5.QtWidgets import QApplication, QListWidget, QLabel, QWidget, QListWidgetItem, \
     QHBoxLayout, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
@@ -2132,34 +2132,38 @@ class FramelessDialog(QDialog):
         color: #2a319d;
     }
     #header_icon {
-        padding-left: 10px;
+        min-width: 80px;
+        max-width: 80px;
+        min-height: 64px;
+        max-height: 64px;
+        margin: 0px 0px 0px 30px;
     }
     #header {
+        min-height: 68px;
+        max-height: 68px;
+        margin: 0px 0px 0px 4px;
         font-family: 'Montserrat';
         font-size: 24px;
         font-weight: 600;
         color: #2a319d;
-        padding-bottom: 2px;
     }
     #header_line {
-        margin: 20px 0px 20px 0px;
+        margin: 0px 40px 20px 40px;
         min-height: 2px;
         max-height: 2px;
         background-color: rgba(42, 49, 157, 0.15);
         border: none;
     }
     #error_details {
+        margin: 0px 40px 0px 36px;
         font-family: 'Montserrat';
         font-size: 16px;
         color: #ff0064;
-        padding-top: 20px;
-        padding-bottom: 10px;
     }
     #body {
         font-family: 'Montserrat';
         font-size: 16px;
         color: #302aa3;
-        padding-bottom: 20px;
     }
     #button_box QPushButton {
         margin: 0px 0px 0px 12px;
@@ -2187,9 +2191,8 @@ class FramelessDialog(QDialog):
     }
     '''
 
-    CONTENT_MARGIN = 40
-    HEADER_MARGIN = 0
-    BODY_MARGIN = 0
+    MARGIN = 40
+    NO_MARGIN = 0
 
     dialog_closing = pyqtSignal()
 
@@ -2219,42 +2222,39 @@ class FramelessDialog(QDialog):
         close_button.clicked.connect(self.close)
         titlebar_layout.addWidget(close_button, alignment=Qt.AlignRight)
 
-        # Content including: header, body, help menu, and buttons
-        content = QWidget()
-        content_layout = QVBoxLayout()
-        content.setLayout(content_layout)
-        content_layout.setContentsMargins(
-            self.CONTENT_MARGIN, 0, self.CONTENT_MARGIN, self.CONTENT_MARGIN)
+        # Header for icon and task title
         header_container = QWidget()
         header_container_layout = QHBoxLayout()
-        header_container_layout.setContentsMargins(
-            self.HEADER_MARGIN, self.HEADER_MARGIN, self.HEADER_MARGIN, self.HEADER_MARGIN)
         header_container.setLayout(header_container_layout)
         self.header_icon = SvgLabel('blank.svg', svg_size=QSize(64, 64))
         self.header_icon.setObjectName('header_icon')
-        self.header_icon.setFixedWidth(80)
         self.header = QLabel()
         self.header.setObjectName('header')
-        self.header.setWordWrap(True)
-        header_container_layout.addWidget(self.header_icon, alignment=Qt.AlignLeft)
-        header_container_layout.addWidget(self.header, alignment=Qt.AlignLeft)
+        header_container_layout.addWidget(self.header_icon)
+        header_container_layout.addWidget(self.header, alignment=Qt.AlignCenter)
         header_container_layout.addStretch()
+
         self.header_line = QWidget()
         self.header_line.setObjectName('header_line')
+
+        # Widget for displaying error messages
         self.error_details = QLabel()
         self.error_details.setObjectName('error_details')
         self.error_details.setWordWrap(True)
         self.error_details.hide()
+
+        # Body to display instructions and forms
         self.body = QLabel()
         self.body.setObjectName('body')
         self.body.setWordWrap(True)
         self.body.setScaledContents(True)
         body_container = QWidget()
         self.body_layout = QVBoxLayout()
-        self.body_layout.setContentsMargins(
-            self.BODY_MARGIN, self.BODY_MARGIN, self.BODY_MARGIN, self.BODY_MARGIN)
+        self.body_layout.setContentsMargins(self.MARGIN, self.NO_MARGIN, self.MARGIN, self.MARGIN)
         body_container.setLayout(self.body_layout)
         self.body_layout.addWidget(self.body)
+
+        # Buttons to continue and cancel
         window_buttons = QWidget()
         window_buttons.setObjectName('window_buttons')
         button_layout = QVBoxLayout()
@@ -2270,18 +2270,18 @@ class FramelessDialog(QDialog):
         button_box.addButton(self.cancel_button, QDialogButtonBox.ActionRole)
         button_box.addButton(self.continue_button, QDialogButtonBox.ActionRole)
         button_layout.addWidget(button_box, alignment=Qt.AlignRight)
-        content_layout.addWidget(header_container)
-        content_layout.addWidget(self.header_line)
-        content_layout.addWidget(self.error_details)
-        content_layout.addWidget(body_container)
-        content_layout.addStretch()
-        content_layout.addWidget(window_buttons)
+        button_layout.setContentsMargins(self.NO_MARGIN, self.NO_MARGIN, self.MARGIN, self.MARGIN)
 
-        # Layout
+        # Main widget layout
         layout = QVBoxLayout(self)
         self.setLayout(layout)
         layout.addWidget(titlebar)
-        layout.addWidget(content)
+        layout.addWidget(header_container)
+        layout.addWidget(self.header_line)
+        layout.addWidget(self.error_details)
+        layout.addWidget(body_container)
+        layout.addStretch()
+        layout.addWidget(window_buttons)
 
     def close(self):
         self.dialog_closing.emit()
@@ -2326,7 +2326,6 @@ class PrintDialog(FramelessDialog):
         self.error_header = _('Unable to print')
         self.starting_message = _(
             '<h2>Managing printout risks</h2>'
-            '<br />'
             '<b>QR-Codes and visible web addresses</b>'
             '<br />'
             'Never open web addresses or scan QR codes contained in printed documents without '
@@ -2353,7 +2352,7 @@ class PrintDialog(FramelessDialog):
 
     def _show_insert_usb_message(self):
         self.continue_button.clicked.connect(self._run_preflight)
-        self.header.setText('\n{}'.format(self.insert_usb_header))
+        self.header.setText(self.insert_usb_header)
         self.body.setText(self.insert_usb_message)
         self.error_details.hide()
         self.adjustSize()
@@ -2362,7 +2361,7 @@ class PrintDialog(FramelessDialog):
     def _show_generic_error_message(self):
         self.continue_button.clicked.connect(self.close)
         self.continue_button.setText('DONE')
-        self.header.setText('\n{}'.format(self.error_header))
+        self.header.setText(self.error_header)
         self.body.setText('{}: {}'.format(self.error_status, self.generic_error_message))
         self.error_details.hide()
         self.adjustSize()
@@ -2413,7 +2412,7 @@ class ExportDialog(FramelessDialog):
         font-weight: 500;
         font-size: 12px;
         color: #2a319d;
-        padding-top: 10px;
+        padding-top: 6px;
     }
     #passphrase_form QLineEdit {
         border-radius: 0px;
@@ -2425,7 +2424,7 @@ class ExportDialog(FramelessDialog):
     '''
 
     PASSPHRASE_LABEL_SPACING = 0.5
-    PASSPHRASE_MARGIN = 0
+    NO_MARGIN = 0
 
     def __init__(self, controller: Controller, file_uuid: str, file_name: str):
         super().__init__()
@@ -2488,10 +2487,7 @@ class ExportDialog(FramelessDialog):
         self.passphrase_form.setObjectName('passphrase_form')
         passphrase_form_layout = QVBoxLayout()
         passphrase_form_layout.setContentsMargins(
-            self.PASSPHRASE_MARGIN,
-            self.PASSPHRASE_MARGIN,
-            self.PASSPHRASE_MARGIN,
-            self.PASSPHRASE_MARGIN)
+            self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN)
         self.passphrase_form.setLayout(passphrase_form_layout)
         passphrase_label = SecureQLabel(_('Passphrase'))
         passphrase_label.setObjectName('passphrase_label')
@@ -2521,7 +2517,7 @@ class ExportDialog(FramelessDialog):
 
     def _show_passphrase_request_message(self):
         self.continue_button.clicked.connect(self._export_file)
-        self.header.setText('\n{}'.format(self.passphrase_header))
+        self.header.setText(self.passphrase_header)
         self.continue_button.setText('SUBMIT')
         self.header_line.hide()
         self.error_details.hide()
@@ -2532,7 +2528,7 @@ class ExportDialog(FramelessDialog):
 
     def _show_passphrase_request_message_again(self):
         self.continue_button.clicked.connect(self._export_file)
-        self.header.setText('\n{}'.format(self.passphrase_header))
+        self.header.setText(self.passphrase_header)
         self.error_details.setText(self.passphrase_error_message)
         self.continue_button.setText('SUBMIT')
         self.header_line.hide()
@@ -2544,7 +2540,7 @@ class ExportDialog(FramelessDialog):
 
     def _show_success_message(self):
         self.continue_button.clicked.connect(self.close)
-        self.header.setText('\n{}'.format(self.success_header))
+        self.header.setText(self.success_header)
         self.continue_button.setText('DONE')
         self.body.setText(self.success_message)
         self.cancel_button.hide()
@@ -2557,7 +2553,7 @@ class ExportDialog(FramelessDialog):
 
     def _show_insert_usb_message(self):
         self.continue_button.clicked.connect(self._run_preflight)
-        self.header.setText('\n{}'.format(self.insert_usb_header))
+        self.header.setText(self.insert_usb_header)
         self.continue_button.setText('CONTINUE')
         self.body.setText(self.insert_usb_message)
         self.error_details.hide()
@@ -2569,7 +2565,7 @@ class ExportDialog(FramelessDialog):
 
     def _show_insert_encrypted_usb_message(self):
         self.continue_button.clicked.connect(self._run_preflight)
-        self.header.setText('\n{}'.format(self.insert_usb_header))
+        self.header.setText(self.insert_usb_header)
         self.error_details.setText(self.usb_error_message)
         self.continue_button.setText('CONTINUE')
         self.body.setText(self.insert_usb_message)
@@ -2583,7 +2579,7 @@ class ExportDialog(FramelessDialog):
     def _show_generic_error_message(self):
         self.continue_button.clicked.connect(self.close)
         self.continue_button.setText('DONE')
-        self.header.setText('\n{}'.format(self.error_header))
+        self.header.setText(self.error_header)
         self.body.setText('{}: {}'.format(self.error_status, self.generic_error_message))
         self.error_details.hide()
         self.passphrase_form.hide()

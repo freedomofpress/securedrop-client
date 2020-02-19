@@ -1418,7 +1418,7 @@ def test_FileWidget__unset_dialog_in_progress(mocker, source, session):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock())
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw.update = mocker.MagicMock()
     mocker.patch('securedrop_client.gui.widgets.QDialog.exec')
     controller.run_export_preflight_checks = mocker.MagicMock()
@@ -1810,7 +1810,7 @@ def test_FileWidget__on_print_clicked(mocker, session, source):
 
     fw._on_print_clicked()
 
-    dialog.assert_called_once_with(controller, file.uuid, file.original_filename)
+    dialog.assert_called_once_with(controller, file.uuid, file.filename)
 
 
 def test_FileWidget__on_print_clicked_missing_file(mocker, session, source):
@@ -1905,7 +1905,7 @@ def test_ExportDialog___show_passphrase_request_message(mocker):
 
     dialog._show_passphrase_request_message()
 
-    assert dialog.header.text() == '\nEnter passphrase for USB drive'
+    assert dialog.header.text() == 'Enter passphrase for USB drive'
     assert not dialog.header.isHidden()
     assert dialog.header_line.isHidden()
     assert dialog.error_details.isHidden()
@@ -1922,7 +1922,7 @@ def test_ExportDialog__show_passphrase_request_message_again(mocker):
 
     dialog._show_passphrase_request_message_again()
 
-    assert dialog.header.text() == '\nEnter passphrase for USB drive'
+    assert dialog.header.text() == 'Enter passphrase for USB drive'
     assert dialog.error_details.text() == 'The passphrase provided did not work. Please try again.'
     assert dialog.body.isHidden()
     assert not dialog.header.isHidden()
@@ -1941,7 +1941,7 @@ def test_ExportDialog__show_success_message(mocker):
 
     dialog._show_success_message()
 
-    assert dialog.header.text() == '\nExport successful'
+    assert dialog.header.text() == 'Export successful'
     assert dialog.body.text() == \
         'Remember to be careful when working with files outside of your Workstation machine.'
     assert not dialog.header.isHidden()
@@ -1960,7 +1960,7 @@ def test_ExportDialog__show_insert_usb_message(mocker):
 
     dialog._show_insert_usb_message()
 
-    assert dialog.header.text() == '\nInsert encrypted USB drive'
+    assert dialog.header.text() == 'Insert encrypted USB drive'
     assert dialog.body.text() == \
         'Please insert one of the export drives provisioned specifically ' \
         'for the SecureDrop Workstation.'
@@ -1980,7 +1980,7 @@ def test_ExportDialog__show_insert_encrypted_usb_message(mocker):
 
     dialog._show_insert_encrypted_usb_message()
 
-    assert dialog.header.text() == '\nInsert encrypted USB drive'
+    assert dialog.header.text() == 'Insert encrypted USB drive'
     assert dialog.error_details.text() == \
         'Either the drive is not encrypted or there is something else wrong with it.'
     assert dialog.body.text() == \
@@ -2003,7 +2003,7 @@ def test_ExportDialog__show_generic_error_message(mocker):
 
     dialog._show_generic_error_message()
 
-    assert dialog.header.text() == '\nUnable to export'
+    assert dialog.header.text() == 'Unable to export'
     assert dialog.body.text() == 'mock_error_status: See your administrator for help.'
     assert not dialog.header.isHidden()
     assert not dialog.header_line.isHidden()
@@ -2235,7 +2235,6 @@ def test_PrintDialog__show_starting_instructions(mocker):
         '<span style="font-weight:normal">mock.jpg</span>'
     assert dialog.body.text() == \
         '<h2>Managing printout risks</h2>' \
-        '<br />' \
         '<b>QR-Codes and visible web addresses</b>' \
         '<br />' \
         'Never open web addresses or scan QR codes contained in printed documents without ' \
@@ -2262,7 +2261,7 @@ def test_PrintDialog__show_insert_usb_message(mocker):
 
     dialog._show_insert_usb_message()
 
-    assert dialog.header.text() == '\nInsert USB printer'
+    assert dialog.header.text() == 'Insert USB printer'
     assert dialog.body.text() == 'Please connect your printer to a USB port.'
     assert not dialog.header.isHidden()
     assert not dialog.header_line.isHidden()
@@ -2280,7 +2279,7 @@ def test_PrintDialog__show_generic_error_message(mocker):
 
     dialog._show_generic_error_message()
 
-    assert dialog.header.text() == '\nUnable to print'
+    assert dialog.header.text() == 'Unable to print'
     assert dialog.body.text() == 'mock_error_status: See your administrator for help.'
     assert not dialog.header.isHidden()
     assert not dialog.header_line.isHidden()
