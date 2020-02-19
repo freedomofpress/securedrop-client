@@ -11,7 +11,7 @@ from sdclientapi import RequestTimeoutError, ServerConnectionError
 from tests import factory
 
 from securedrop_client import db
-from securedrop_client.logic import APICallRunner, Controller
+from securedrop_client.logic import APICallRunner, Controller, SYNC_FREQUENCY
 from securedrop_client.api_jobs.base import ApiInaccessibleError
 from securedrop_client.api_jobs.downloads import (
     DownloadChecksumMismatchException, DownloadDecryptionException, DownloadException
@@ -139,6 +139,7 @@ def test_Controller_login(homedir, config, mocker, session_maker):
 
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     co.call_api = mocker.MagicMock()
+    co.show_last_sync_timer = mocker.MagicMock()
 
     co.login('username', 'password', '123456')
 
@@ -146,6 +147,7 @@ def test_Controller_login(homedir, config, mocker, session_maker):
                                         co.on_authenticate_success,
                                         co.on_authenticate_failure)
     fail_draft_replies.assert_called_once_with(co.session)
+    co.show_last_sync_timer.stop.assert_called_once_with()
 
 
 def test_Controller_login_offline_mode(homedir, config, mocker):
@@ -159,6 +161,7 @@ def test_Controller_login_offline_mode(homedir, config, mocker):
     co.gui.show_main_window = mocker.MagicMock()
     co.gui.hide_login = mocker.MagicMock()
     co.update_sources = mocker.MagicMock()
+    co.show_last_sync_timer = mocker.MagicMock()
 
     co.login_offline_mode()
 
@@ -167,6 +170,7 @@ def test_Controller_login_offline_mode(homedir, config, mocker):
     co.gui.show_main_window.assert_called_once_with()
     co.gui.hide_login.assert_called_once_with()
     co.update_sources.assert_called_once_with()
+    co.show_last_sync_timer.start.assert_called_once_with(SYNC_FREQUENCY)
 
 
 def test_Controller_on_authenticate_failure(homedir, config, mocker, session_maker):
@@ -450,14 +454,17 @@ def test_Controller_on_sync_success(homedir, config, mocker):
     co.resume_queues.assert_called_once_with()
 
 
-def test_Controller_update_sync(homedir, config, mocker, session_maker):
+def test_Controller_show_last_sync_time(homedir, config, mocker, session_maker):
     """
     Cause the UI to update with the result of self.last_sync().
     Using the `config` fixture to ensure the config is written to disk.
+    This should only happen if the user isn't logged in or the API queues are
+    paused (indicating network problems).
     """
     co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
     co.last_sync = mocker.MagicMock()
-    co.update_sync()
+    co.api = None
+    co.show_last_sync_time()
     assert co.last_sync.call_count == 1
     co.gui.show_sync.assert_called_once_with(co.last_sync())
 
@@ -603,6 +610,7 @@ def test_Controller_logout_success(homedir, config, mocker, session_maker):
     co.api_job_queue = mocker.MagicMock()
     co.api_job_queue.stop = mocker.MagicMock()
     co.call_api = mocker.MagicMock()
+    co.show_last_sync_timer = mocker.MagicMock()
     info_logger = mocker.patch('securedrop_client.logic.logging.info')
     fail_draft_replies = mocker.patch(
         'securedrop_client.storage.mark_all_pending_drafts_as_failed')
@@ -619,6 +627,7 @@ def test_Controller_logout_success(homedir, config, mocker, session_maker):
     msg = 'Client logout successful'
     info_logger.assert_called_once_with(msg)
     fail_draft_replies.called_once_with(co.session)
+    co.show_last_sync_timer.start.assert_called_once_with(SYNC_FREQUENCY)
 
 
 def test_Controller_logout_failure(homedir, config, mocker, session_maker):
@@ -1143,7 +1152,6 @@ def test_Controller_download_new_messages_with_new_message(mocker, session, sess
     job = mocker.MagicMock(success_signal=success_signal, failure_signal=failure_signal)
     mocker.patch("securedrop_client.logic.MessageDownloadJob", return_value=job)
     api_job_queue = mocker.patch.object(co, 'api_job_queue')
-    set_status = mocker.patch.object(co, 'set_status')
 
     co.download_new_messages()
 
@@ -1152,7 +1160,6 @@ def test_Controller_download_new_messages_with_new_message(mocker, session, sess
         co.on_message_download_success, type=Qt.QueuedConnection)
     failure_signal.connect.assert_called_once_with(
         co.on_message_download_failure, type=Qt.QueuedConnection)
-    set_status.assert_called_once_with("Downloading new messages")
 
 
 def test_Controller_download_new_messages_without_messages(mocker, session, session_maker, homedir):
@@ -1426,8 +1433,10 @@ def test_Controller_is_authenticated_property(homedir, mocker, session_maker):
 def test_Controller_resume_queues(homedir, mocker, session_maker):
     co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
     co.api_job_queue = mocker.MagicMock()
+    co.show_last_sync_timer = mocker.MagicMock()
     co.resume_queues()
     co.api_job_queue.resume_queues.assert_called_once_with()
+    co.show_last_sync_timer.stop.assert_called_once_with()
 
 
 @pytest.mark.parametrize("exception", [RequestTimeoutError, ServerConnectionError])
@@ -1459,9 +1468,11 @@ def test_Controller_on_queue_paused(homedir, config, mocker, session_maker):
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     mocker.patch.object(co, 'api_job_queue')
     co.api = 'not none'
+    co.show_last_sync_timer = mocker.MagicMock()
     co.on_queue_paused()
     mock_gui.update_error_status.assert_called_once_with(
         'The SecureDrop server cannot be reached.', duration=0, retry=True)
+    co.show_last_sync_timer.start.assert_called_once_with(SYNC_FREQUENCY)
 
 
 def test_Controller_call_update_star_success(homedir, config, mocker, session_maker, session):

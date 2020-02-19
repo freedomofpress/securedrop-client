@@ -51,6 +51,9 @@ from securedrop_client.utils import check_dir_permissions
 logger = logging.getLogger(__name__)
 
 
+SYNC_FREQUENCY = 30000  #: the number of milliseconds between sync updates.
+
+
 def login_required(f):
     @functools.wraps(f)
     def decorated_function(self, *args, **kwargs):
@@ -237,6 +240,10 @@ class Controller(QObject):
         self.api_sync.sync_success.connect(self.on_sync_success, type=Qt.QueuedConnection)
         self.api_sync.sync_failure.connect(self.on_sync_failure, type=Qt.QueuedConnection)
 
+        # Create a timer to check for sync status every SYNC_FREQUENCY seconds.
+        self.show_last_sync_timer = QTimer()
+        self.show_last_sync_timer.timeout.connect(self.show_last_sync_time)
+
     @property
     def is_authenticated(self) -> bool:
         return self.__is_authenticated
@@ -263,11 +270,6 @@ class Controller(QObject):
         # The gui needs to reference this "controller" layer to call methods
         # triggered by UI events.
         self.gui.setup(self)
-
-        # Create a timer to check for sync status every 30 seconds.
-        self.sync_timer = QTimer()
-        self.sync_timer.timeout.connect(self.update_sync)
-        self.sync_timer.start(30000)
 
         # Run export object in a separate thread context (a reference to the
         # thread is kept on self such that it does not get garbage collected
@@ -322,9 +324,11 @@ class Controller(QObject):
             _('The SecureDrop server cannot be reached.'),
             duration=0,
             retry=True)
+        self.show_last_sync_timer.start(SYNC_FREQUENCY)
 
     def resume_queues(self) -> None:
         self.api_job_queue.resume_queues()
+        self.show_last_sync_timer.stop()
 
         # clear error status in case queue was paused resulting in a permanent error message with
         # retry link
@@ -362,6 +366,8 @@ class Controller(QObject):
         self.call_api(self.api.authenticate,
                       self.on_authenticate_success,
                       self.on_authenticate_failure)
+        self.show_last_sync_timer.stop()
+        self.set_status('')
 
     def on_authenticate_success(self, result):
         """
@@ -397,6 +403,8 @@ class Controller(QObject):
         storage.mark_all_pending_drafts_as_failed(self.session)
         self.is_authenticated = False
         self.update_sources()
+        self.show_last_sync_time()
+        self.show_last_sync_timer.start(SYNC_FREQUENCY)
 
     def on_action_requiring_login(self):
         """
@@ -457,7 +465,7 @@ class Controller(QObject):
             self.logout()
             self.gui.show_login(error=_('Your session expired. Please log in again.'))
 
-    def update_sync(self):
+    def show_last_sync_time(self):
         """
         Updates the UI to show human time of last sync.
         """
@@ -471,7 +479,6 @@ class Controller(QObject):
         if sources:
             sources.sort(key=lambda x: x.last_updated, reverse=True)
         self.gui.show_sources(sources)
-        self.update_sync()
 
     def on_update_star_success(self, result) -> None:
         pass
@@ -515,6 +522,8 @@ class Controller(QObject):
         self.api_job_queue.stop()
         self.gui.logout()
 
+        self.show_last_sync_timer.start(SYNC_FREQUENCY)
+        self.show_last_sync_time()
         self.is_authenticated = False
 
     def invalidate_token(self):
@@ -551,9 +560,6 @@ class Controller(QObject):
 
     def download_new_messages(self) -> None:
         messages = storage.find_new_messages(self.session)
-
-        if len(messages) > 0:
-            self.set_status(_('Downloading new messages'))
 
         for message in messages:
             self._submit_download_job(type(message), message.uuid)

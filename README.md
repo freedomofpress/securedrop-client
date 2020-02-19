@@ -14,10 +14,8 @@ This client is under active development and currently supports a minimal feature
 - the opening of all files in individual, non-networked, Qubes disposable VMs
 - replying to sources
 - deleting sources
-
-Features to be added include:
-
-- Export workflows - tracked in https://github.com/freedomofpress/securedrop-client/issues/21. These workflows (initially a USB drive) enable a journalist to transfer a document out of the Qubes workstation and to another computer for further analysis or sharing with the rest of the newsroom.
+- exporting files to LUKS-encrypted USB drives
+- printing to supported printers
 
 ## Getting Started
 
@@ -182,6 +180,8 @@ We support running the [developer environment on a non-Qubes OS](#developer-envi
 
 * Run by directly invoking the client `python -m securedrop_client` on the `sd-app` AppVM
 * Requires that `make all` in the `securedrop-workstation` repository has completed successfully
+* Requires that the installed client (e.g., nightly build) has been run at least once, or that
+  the database has been [manually initialized](https://github.com/freedomofpress/securedrop-client/blob/master/files/securedrop-client)
 * Uses `~/.securedrop_client` as its configuration directory
 * Uses the gpg key in the `sd-gpg` AppVM configured during `make all`
 * Tor is used: Requests/responses proxied via the `securedrop-proxy` RPC service
