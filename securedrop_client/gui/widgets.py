@@ -2305,7 +2305,7 @@ class PrintDialog(FramelessDialog):
 
         self.controller = controller
         self.file_uuid = file_uuid
-        self.file_name = file_name
+        self.file_name = SecureQLabel(file_name).text()
         self.error_status = ''  # Hold onto the error status we receive from the Export VM
 
         # Connect controller signals to slots
@@ -2431,7 +2431,7 @@ class ExportDialog(FramelessDialog):
 
         self.controller = controller
         self.file_uuid = file_uuid
-        self.file_name = file_name
+        self.file_name = SecureQLabel(file_name).text()
         self.error_status = ''  # Hold onto the error status we receive from the Export VM
 
         # Connect controller signals to slots

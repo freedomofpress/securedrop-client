@@ -1849,6 +1849,18 @@ def test_ExportDialog_init(mocker):
     assert dialog.passphrase_form.isHidden()
 
 
+def test_ExportDialog_init_sanitizes_filename(mocker):
+    mocker.patch(
+         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
+    secure_qlabel = mocker.patch('securedrop_client.gui.widgets.SecureQLabel')
+    mocker.patch('securedrop_client.gui.widgets.QVBoxLayout.addWidget')
+    filename = '<script>alert("boom!");</script>'
+
+    ExportDialog(mocker.MagicMock(), 'mock_uuid', filename)
+
+    secure_qlabel.call_args_list[1].assert_called_with(filename)
+
+
 def test_ExportDialog_close(mocker):
     mocker.patch(
          'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
@@ -2220,6 +2232,17 @@ def test_PrintDialog_init(mocker):
     PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
 
     _show_starting_instructions_fn.assert_called_once_with()
+
+
+def test_PrintDialog_init_sanitizes_filename(mocker):
+    mocker.patch(
+         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
+    secure_qlabel = mocker.patch('securedrop_client.gui.widgets.SecureQLabel')
+    filename = '<script>alert("boom!");</script>'
+
+    PrintDialog(mocker.MagicMock(), 'mock_uuid', filename)
+
+    secure_qlabel.assert_called_with(filename)
 
 
 def test_PrintDialog__show_starting_instructions(mocker):
