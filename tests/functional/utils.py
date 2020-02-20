@@ -27,7 +27,6 @@ just `make test-functional`.
 """
 import os
 import tempfile
-import pytest
 import subprocess
 
 
@@ -36,8 +35,8 @@ from PyQt5.QtCore import Qt
 
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
-from securedrop_client.gui.widgets import LoginDialog
 from securedrop_client.utils import safe_mkdir
+from securedrop_client.db import make_session_maker
 
 
 HOSTNAME = "http://localhost:8081/"
@@ -58,7 +57,6 @@ def get_test_context(sdc_home):
     have been correctly set up and isolated from any other instances of the
     application to be run in the test suite.
     """
-    from securedrop_client.db import make_session_maker
     # The application's window.
     gui = Window()
     # Create all app assets in a new temp directory and sub-directories.
@@ -68,7 +66,7 @@ def get_test_context(sdc_home):
     create_gpg_test_context(sdc_home)
     # Configure and create the database.
     session_maker = make_session_maker(sdc_home.name)
-    create_dev_data(sdc_home.name, session_maker)
+    create_dev_data(sdc_home.name)
     # Create the controller.
     controller = Controller(HOSTNAME, gui, session_maker, sdc_home.name,
                             False, False)
@@ -124,7 +122,7 @@ def create_gpg_test_context(sdc_home):
         )
 
 
-def create_dev_data(sdc_home, session_maker):
+def create_dev_data(sdc_home):
     """
     Run the script, "create_dev_data.py". This is used to setup and configure
     the database and GPG keyring related metadata.
