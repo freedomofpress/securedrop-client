@@ -1,11 +1,12 @@
 """
-Functional tests for the SecureDrop client application. The tests are based
-upon the client testing descriptions here:
+Utility functions for setting up and configuring isolated headless functional
+tests of the SecureDrop client app's user interface.
 
-https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-testing
-
-The code is copiously commented and you should look at test_login_as_journalist
-for a basic example of how to configure/write/test.
+The code is copiously commented and you should look at the existing tests for
+basic examples of how to configure/write/test. Some of the tests appear to get
+into a state that reliably causes subsequent tests a crash. Such tests have
+been isolated and are clearly marked. The Makefile is used to ensure we
+exercise them in a completely new process.
 
 Use the `qtbot` object to drive the UI. This is a part of the pytest-qt
 package whose documentation is here:
@@ -26,12 +27,8 @@ just `make test-functional`.
 """
 import os
 import tempfile
-import json
 import pytest
 import subprocess
-
-
-from sqlalchemy.orm.exc import NoResultFound
 
 
 from PyQt5.QtCore import Qt
@@ -39,9 +36,7 @@ from PyQt5.QtCore import Qt
 
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
-from securedrop_client.config import Config
 from securedrop_client.gui.widgets import LoginDialog
-from securedrop_client.db import Base, make_session_maker, ReplySendStatus, ReplySendStatusCodes
 from securedrop_client.utils import safe_mkdir
 
 
@@ -63,6 +58,7 @@ def get_test_context(sdc_home):
     have been correctly set up and isolated from any other instances of the
     application to be run in the test suite.
     """
+    from securedrop_client.db import make_session_maker
     # The application's window.
     gui = Window()
     # Create all app assets in a new temp directory and sub-directories.
@@ -93,8 +89,12 @@ def get_logged_in_test_context(sdc_home, qtbot, totp):
     qtbot.keyClicks(gui.login_dialog.username_field, USERNAME)
     qtbot.keyClicks(gui.login_dialog.password_field, PASSWORD)
     qtbot.keyClicks(gui.login_dialog.tfa_field, totp)
-    with qtbot.waitSignal(controller.authentication_state, timeout=10000):
-        qtbot.mouseClick(gui.login_dialog.submit, Qt.LeftButton)
+    qtbot.mouseClick(gui.login_dialog.submit, Qt.LeftButton)
+
+    def wait_for_login():
+        assert gui.login_dialog is None
+
+    qtbot.waitUntil(wait_for_login, timeout=10000)
     return (gui, controller)
 
 
@@ -115,28 +115,33 @@ def create_gpg_test_context(sdc_home):
         '--import',
         os.path.abspath(key_file),
     ]
-    subprocess.call(cmd)
+    result = subprocess.run(cmd)
+    if result.returncode != 0:
+        raise RuntimeError(
+            "Unable to import test GPG key. STDOUT: {} STDERR: {}".format(
+                result.stdout, result.stderr
+            )
+        )
 
 
 def create_dev_data(sdc_home, session_maker):
     """
-    Based upon the functionality in the script, create_dev_data.py. This is
-    used to setup and configure the database and GPG keyring related metadata.
+    Run the script, "create_dev_data.py". This is used to setup and configure
+    the database and GPG keyring related metadata.
     """
-    session = session_maker()
-    Base.metadata.create_all(bind=session.get_bind())
-    with open(os.path.join(sdc_home, Config.CONFIG_NAME), 'w') as f:
-        f.write(json.dumps({
-            'journalist_key_fingerprint': '65A1B5FF195B56353CC63DFFCC40EF1228271441',
-        }))
-    for reply_send_status in ReplySendStatusCodes:
-        try:
-            reply_status = session.query(ReplySendStatus).filter_by(
-                    name=reply_send_status.value).one()
-        except NoResultFound:
-            reply_status = ReplySendStatus(reply_send_status.value)
-            session.add(reply_status)
-            session.commit()
+    func_test_path = os.path.dirname(os.path.abspath(__file__))
+    script_path = os.path.join(func_test_path, "..", "..", "create_dev_data.py")
+    cmd = [
+        script_path,
+        sdc_home,
+    ]
+    result = subprocess.run(cmd)
+    if result.returncode != 0:
+        raise RuntimeError(
+            "Unable to configure database. STDOUT: {} STDERR: {}".format(
+                result.stdout, result.stderr
+            )
+        )
 
 
 def test_login_ensure_errors_displayed(qtbot, mocker):
@@ -170,7 +175,7 @@ def test_login_as_journalist(qtbot, mocker):
     qtbot.keyClicks(gui.login_dialog.tfa_field, "493941")
     # The waitSignal context handler is used to allow the API thread to call
     # and then (ultimately) emit the expected signal. This pattern will need to
-    # be used with all API calls. For more information about this method, see:
+    # be used with some API calls. For more information about this method, see:
     # https://pytest-qt.readthedocs.io/en/latest/signals.html
     with qtbot.waitSignal(controller.authentication_state, timeout=10000):
         qtbot.mouseClick(gui.login_dialog.submit, Qt.LeftButton)
@@ -181,18 +186,39 @@ def test_login_as_journalist(qtbot, mocker):
 
 
 @pytest.mark.vcr()
-def test_logout_as_journalist(qtbot, mocker):
+def test_send_reply_to_source(qtbot, mocker):
     """
-    A journalist can successfully log out of the application.
+    It's possible to send a reply to a source and see it show up in the
+    conversation window.
     """
-    totp = "670099"
+    totp = "778326"
     tempdir = get_safe_tempdir()
     gui, controller = get_logged_in_test_context(tempdir, qtbot, totp)
-    qtbot.wait(100)
-    with qtbot.waitSignal(controller.authentication_state, timeout=10000):
-        # The qtbot object cannot interact with QAction items (as used in the
-        # logout button/menu), so we're forced to programatically trigger it
-        # rather than pretend some sort of user interaction via the qtbot.
-        gui.left_pane.user_profile.user_button.menu.logout.trigger()
-    # The login button is visible - demonstrating the user is logged out.
-    assert gui.left_pane.user_profile.login_button.isVisible()
+    qtbot.wait(1000)
+
+    def check_for_sources():
+        assert len(list(gui.main_view.source_list.source_widgets.keys()))
+
+    qtbot.waitUntil(check_for_sources, timeout=10000)
+    source_ids = list(gui.main_view.source_list.source_widgets.keys())
+    first_source_id = source_ids[0]
+    first_source_widget = gui.main_view.source_list.source_widgets[first_source_id]
+    qtbot.mouseClick(first_source_widget, Qt.LeftButton)
+    # Type something into the reply box and click the send button.
+    message = "Hello, world!"
+    conversation = gui.main_view.view_layout.itemAt(0).widget()
+    # Focus on reply box text entry.
+    qtbot.mouseClick(conversation.reply_box.text_edit, Qt.LeftButton)
+    # Type in a message to the reply box.
+    qtbot.keyClicks(conversation.reply_box.text_edit, message)
+    qtbot.wait(1000)
+    # Wait until the result of the click on the send button has caused the
+    # reply_sent signal to trigger.
+    with qtbot.waitSignal(conversation.reply_box.reply_sent):
+        qtbot.mouseClick(conversation.reply_box.send_button, Qt.LeftButton)
+    qtbot.wait(1000)
+    # Ensure the last widget in the conversation view contains the text we
+    # just typed.
+    last_msg_id = list(conversation.conversation_view.current_messages.keys())[-1]
+    last_msg = conversation.conversation_view.current_messages[last_msg_id]
+    assert last_msg.message.text() == message
