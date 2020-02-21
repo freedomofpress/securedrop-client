@@ -1,6 +1,13 @@
-securedrop-export (0.1.1-1) unstable; urgency=medium
+# Changelog
 
-  [ Freedom Of The Press Foundation ]
-  * Initial release 
+## 0.2.0
 
- -- SecureDrop Team <securedrop@freedom.press>  Thu, 18 Jul 2019 10:47:38 -0700
+  * Initial beta release.
+
+## 0.1.2
+
+  * Adds logging (#17).
+
+## 0.1.1
+
+  * Initial release.
