@@ -2351,6 +2351,7 @@ class PrintDialog(FramelessDialog):
         self.center_dialog()
 
     def _show_insert_usb_message(self):
+        self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self._run_preflight)
         self.header.setText(self.insert_usb_header)
         self.body.setText(self.insert_usb_message)
@@ -2359,6 +2360,7 @@ class PrintDialog(FramelessDialog):
         self.center_dialog()
 
     def _show_generic_error_message(self):
+        self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self.close)
         self.continue_button.setText('DONE')
         self.header.setText(self.error_header)
@@ -2380,6 +2382,7 @@ class PrintDialog(FramelessDialog):
     def _on_preflight_success(self):
         # If the continue button is disabled then this is the result of a background preflight check
         if not self.continue_button.isEnabled():
+            self.continue_button.clicked.disconnect()
             self.continue_button.clicked.connect(self._print_file)
             self.continue_button.setEnabled(True)
             return
@@ -2391,6 +2394,7 @@ class PrintDialog(FramelessDialog):
         self.error_status = error.status
         # If the continue button is disabled then this is the result of a background preflight check
         if not self.continue_button.isEnabled():
+            self.continue_button.clicked.disconnect()
             if error.status == ExportStatus.PRINTER_NOT_FOUND.value:
                 self.continue_button.clicked.connect(self._show_insert_usb_message)
             else:
@@ -2516,6 +2520,7 @@ class ExportDialog(FramelessDialog):
         self.center_dialog()
 
     def _show_passphrase_request_message(self):
+        self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self._export_file)
         self.header.setText(self.passphrase_header)
         self.continue_button.setText('SUBMIT')
@@ -2527,6 +2532,7 @@ class ExportDialog(FramelessDialog):
         self.center_dialog()
 
     def _show_passphrase_request_message_again(self):
+        self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self._export_file)
         self.header.setText(self.passphrase_header)
         self.error_details.setText(self.passphrase_error_message)
@@ -2539,6 +2545,7 @@ class ExportDialog(FramelessDialog):
         self.center_dialog()
 
     def _show_success_message(self):
+        self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self.close)
         self.header.setText(self.success_header)
         self.continue_button.setText('DONE')
@@ -2552,6 +2559,7 @@ class ExportDialog(FramelessDialog):
         self.center_dialog()
 
     def _show_insert_usb_message(self):
+        self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self._run_preflight)
         self.header.setText(self.insert_usb_header)
         self.continue_button.setText('CONTINUE')
@@ -2564,6 +2572,7 @@ class ExportDialog(FramelessDialog):
         self.center_dialog()
 
     def _show_insert_encrypted_usb_message(self):
+        self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self._run_preflight)
         self.header.setText(self.insert_usb_header)
         self.error_details.setText(self.usb_error_message)
@@ -2577,6 +2586,7 @@ class ExportDialog(FramelessDialog):
         self.center_dialog()
 
     def _show_generic_error_message(self):
+        self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self.close)
         self.continue_button.setText('DONE')
         self.header.setText(self.error_header)
@@ -2600,6 +2610,7 @@ class ExportDialog(FramelessDialog):
     def _on_preflight_success(self):
         # If the continue button is disabled then this is the result of a background preflight check
         if not self.continue_button.isEnabled():
+            self.continue_button.clicked.disconnect()
             self.continue_button.clicked.connect(self._show_passphrase_request_message)
             self.continue_button.setEnabled(True)
             return
@@ -2622,6 +2633,7 @@ class ExportDialog(FramelessDialog):
         self.error_status = error_status
         # If the continue button is disabled then this is the result of a background preflight check
         if not self.continue_button.isEnabled():
+            self.continue_button.clicked.disconnect()
             if self.error_status == ExportStatus.BAD_PASSPHRASE.value:
                 self.continue_button.clicked.connect(self._show_passphrase_request_message_again)
             elif self.error_status == ExportStatus.USB_NOT_CONNECTED.value:
