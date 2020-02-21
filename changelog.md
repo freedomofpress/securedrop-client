@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.1.0
+
+  * Update file download animation (#731).
+  * Update conversation view inline (#688).
+  * When token is invalid, user must log back in (#750).
+  * Ensure UI stays responsive at all times when syncing with server (#733).
+  * Update conversation view on login (#748).
+  * Improve download file handling (#737).
+  * Show warning if source has no public key (#759).
+  * No longer sync after sending a reply (#722).
+  * Update gui instead of sync when a file is missing (#724).
+  * Revert usage of subprocess.check_output text parameter (#755).
+  * Update obselete original_filename usage in file_ready (#773).
+  * Don't import source keys we already have (#749).
+  * Make sync continuous (#739).
+  * Remove shadow on sign in button (#763).
+  * Add cursor styles and active states (#675).
+  * Move auth checks into decorator (#780).
+  * Only resume if queue thread is running (#787).
+  * Refactor queue resume/stop/start (#786).
+  * Improve efficiency of source key management (#793).
+  * Use ServerConnectionError from securedrop-sdk 0.0.13 (#784).
+  * Only show last refresh if not logged in or network problems (#790).
+  * Bug fix: Reset remaining attempts for each sync (#783).
+  * Bug fix: Resolve potential crasher in queue (#744).
+  * Bug fix: Ensure snippets update (#752).
+  * Bug fix: Ensure that ReplyBox doesn't lose focus on sync (#740).
+  * Bug fix: Ensure drafts are displayed when clicking between sources (#764).
+  * Bug fix: Update slots and signals to match (#772).
+  * Bug fix: Fix mkdir permission in AppArmor profile (#777).
+  * Bug fix: Update source timestamp in UI (#778).
+  * Bug fix: Fix CI due to virtualenv 20.0 installation (#794).
+
 ## 0.0.13
 
   * remove user refresh and replace with sync icon (#732)
