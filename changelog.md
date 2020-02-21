@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.0
+
+  * Initial beta release.
+
 ## 0.0.4
 
   * Converts into rsyslog based logging system.
