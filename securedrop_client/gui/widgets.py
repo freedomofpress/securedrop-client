@@ -2291,9 +2291,11 @@ class FramelessDialog(QDialog):
             return
         application_window_size = active_window.geometry()
         dialog_size = self.geometry()
+        x = application_window_size.x()
+        y = application_window_size.y()
         x_center = (application_window_size.width() - dialog_size.width()) / 2
         y_center = (application_window_size.height() - dialog_size.height()) / 2
-        self.move(x_center, y_center)
+        self.move(x + x_center, y + y_center)
 
 
 class PrintDialog(FramelessDialog):
