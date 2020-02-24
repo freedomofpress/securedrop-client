@@ -731,9 +731,7 @@ class MainView(QWidget):
             # else we create it.
             try:
                 conversation_wrapper = self.source_conversations[source]
-
-                # Redraw the conversation view such that new messages, replies, files appear.
-                conversation_wrapper.conversation_view.update_conversation(source.collection)
+                conversation_wrapper.update(source.collection)
             except KeyError:
                 conversation_wrapper = SourceConversationWrapper(source, self.controller)
                 self.source_conversations[source] = conversation_wrapper
@@ -2901,6 +2899,11 @@ class SourceConversationWrapper(QWidget):
         self.conversation_view.conversation_updated.connect(
             self.conversation_title_bar.update_timestamp)
 
+    def update(self, collection: list) -> None:
+        # Redraw the conversation view such that new messages, replies, files appear.
+        self.conversation_view.update_conversation(collection)
+        self.reply_box.set_state()
+
 
 class ReplyBoxWidget(QWidget):
     """
@@ -2994,11 +2997,7 @@ class ReplyBoxWidget(QWidget):
         main_layout.addWidget(horizontal_line)
         main_layout.addWidget(self.replybox)
 
-        # Determine whether or not this widget should be enabled
-        if self.controller.is_authenticated:
-            self.enable()
-        else:
-            self.disable()
+        self.set_state()
 
         # Text area refocus flag.
         self.refocus_after_sync = False
@@ -3031,7 +3030,11 @@ class ReplyBoxWidget(QWidget):
             self.reply_sent.emit(self.source.uuid, reply_uuid, reply_text)
 
     def _on_authentication_changed(self, authenticated: bool) -> None:
-        if authenticated:
+        self.set_state()
+
+    def set_state(self) -> None:
+        # Determine whether or not this widget should be enabled
+        if self.controller.is_authenticated:
             self.enable()
         else:
             self.disable()
