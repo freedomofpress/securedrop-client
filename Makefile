@@ -45,22 +45,9 @@ test-random: ## Run the application tests in random order
 		xvfb-run -a $$TEST_CMD ; else \
 		$$TEST_CMD ; fi
 
-.PHONY: test-functional-rest
-test-functional-rest : ## Run the non-logout functional tests in random order.
-	@TEST_CMD_REST="python -m pytest -v --ignore=$(FTESTS)/test_logout.py --random-order-bucket=global $(TESTOPTS) $(FTESTS)" ; \
-		if command -v xvfb-run > /dev/null; then \
-		xvfb-run -a $$TEST_CMD_REST ; else \
-		$$TEST_CMD_REST ; fi ; \
-
-.PHONY: test-functional-logout
-test-functional-logout : ## Run the functional test for logging out.
-	@TEST_CMD_LOGOUT="python -m pytest -v $(FTESTS)/test_logout.py" ; \
-		if command -v xvfb-run > /dev/null; then \
-		xvfb-run -a $$TEST_CMD_LOGOUT ; else \
-		$$TEST_CMD_LOGOUT ; fi
-
 .PHONY: test-functional
-test-functional: test-functional-logout test-functional-rest ## Run the functional tests
+test-functional: ## Run the functional tests
+	./test-functional.sh
 
 .PHONY: lint
 lint: ## Run the linters
