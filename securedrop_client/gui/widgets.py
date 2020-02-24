@@ -1986,10 +1986,6 @@ class FileWidget(QWidget):
         file_ready_signal.connect(self._on_file_downloaded, type=Qt.QueuedConnection)
         file_missing.connect(self._on_file_missing, type=Qt.QueuedConnection)
 
-        # Make sure we only allow one export or print operation at a time (workaround for frameless
-        # modals not working as expected on QubesOS)
-        self.dialog_in_progress = False
-
     def eventFilter(self, obj, event):
         t = event.type()
         if t == QEvent.MouseButtonPress:
@@ -2047,11 +2043,8 @@ class FileWidget(QWidget):
         if not self.controller.downloaded_file_exists(self.file):
             return
 
-        if not self.dialog_in_progress:
-            self.dialog_in_progress = True
-            dialog = ExportDialog(self.controller, self.file.uuid, self.file.filename)
-            dialog.dialog_closing.connect(self._unset_dialog_in_progress)
-            dialog.exec()
+        dialog = ExportDialog(self.controller, self.file.uuid, self.file.filename)
+        dialog.exec()
 
     @pyqtSlot()
     def _on_print_clicked(self):
@@ -2061,15 +2054,8 @@ class FileWidget(QWidget):
         if not self.controller.downloaded_file_exists(self.file):
             return
 
-        if not self.dialog_in_progress:
-            self.dialog_in_progress = True
-            dialog = PrintDialog(self.controller, self.file.uuid, self.file.filename)
-            dialog.dialog_closing.connect(self._unset_dialog_in_progress)
-            dialog.exec()
-
-    @pyqtSlot()
-    def _unset_dialog_in_progress(self):
-        self.dialog_in_progress = False
+        dialog = PrintDialog(self.controller, self.file.uuid, self.file.filename)
+        dialog.exec()
 
     def _on_left_click(self):
         """
@@ -2194,15 +2180,22 @@ class FramelessDialog(QDialog):
     MARGIN = 40
     NO_MARGIN = 0
 
-    dialog_closing = pyqtSignal()
-
     def __init__(self):
         parent = QApplication.activeWindow()
         super().__init__(parent)
 
+        # Used to determine whether or not the popup is being closed from our own internal close
+        # method or from clicking outside of the popup.
+        #
+        # This is a workaround for for frameless
+        # modals not working as expected on QubesOS, i.e. the following flags are ignored in Qubes:
+        #     self.setWindowFlags(Qt.FramelessWindowHint)
+        #     self.setWindowFlags(Qt.CustomizeWindowHint)
+        self.internal_close_event_emitted = False
+
         self.setObjectName('frameless_dialog')
         self.setStyleSheet(self.CSS)
-        self.setWindowFlags(Qt.Widget)
+        self.setWindowFlags(Qt.Popup)
 
         # Set drop shadow effect
         effect = QGraphicsDropShadowEffect(self)
@@ -2283,8 +2276,13 @@ class FramelessDialog(QDialog):
         layout.addStretch()
         layout.addWidget(window_buttons)
 
+    def closeEvent(self, e):
+        # ignore any close event that doesn't come from our custom close method
+        if not self.internal_close_event_emitted:
+            e.ignore()
+
     def close(self):
-        self.dialog_closing.emit()
+        self.internal_close_event_emitted = True
         super().close()
 
     def center_dialog(self):

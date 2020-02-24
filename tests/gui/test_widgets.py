@@ -19,8 +19,8 @@ from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, Lo
     DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, LeftPane, SyncIcon, \
     ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
     ReplyBoxWidget, ReplyTextEdit, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, \
-    LoginErrorBar, EmptyConversationView, ExportDialog, PrintDialog, PasswordEdit, SecureQLabel, \
-    SourceProfileShortWidget
+    LoginErrorBar, EmptyConversationView, FramelessDialog, ExportDialog, PrintDialog, \
+    PasswordEdit, SecureQLabel, SourceProfileShortWidget
 from tests import factory
 
 
@@ -1410,29 +1410,6 @@ def test_ReplyWidget_init(mocker):
     assert mock_failure_connected.called
 
 
-def test_FileWidget__unset_dialog_in_progress(mocker, source, session):
-    file = factory.File(source=source['source'], is_downloaded=True)
-    session.add(file)
-    session.commit()
-
-    get_file = mocker.MagicMock(return_value=file)
-    controller = mocker.MagicMock(get_file=get_file)
-
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
-    fw.update = mocker.MagicMock()
-    mocker.patch('securedrop_client.gui.widgets.QDialog.exec')
-    controller.run_export_preflight_checks = mocker.MagicMock()
-    controller.downloaded_file_exists = mocker.MagicMock(return_value=True)
-
-    assert fw.dialog_in_progress is False
-    fw._unset_dialog_in_progress()
-    assert fw.dialog_in_progress is False
-    fw._on_export_clicked()
-    assert fw.dialog_in_progress is True
-    fw._unset_dialog_in_progress()
-    assert fw.dialog_in_progress is False
-
-
 def test_FileWidget_init_file_not_downloaded(mocker, source, session):
     """
     Check the FileWidget is configured correctly when the file is not downloaded.
@@ -1837,6 +1814,64 @@ def test_FileWidget__on_print_clicked_missing_file(mocker, session, source):
     dialog.assert_not_called()
 
 
+def test_FramelessDialog_closeEvent(mocker):
+    mocker.patch(
+         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
+    dialog = FramelessDialog()
+    dialog.internal_close_event_emitted = True
+    close_event = QEvent(QEvent.Close)
+    close_event.ignore = mocker.MagicMock()
+
+    dialog.closeEvent(close_event)
+
+    close_event.ignore.assert_not_called()
+
+
+def test_FramelessDialog_closeEvent_ignored_if_not_a_close_event_from_custom_close_buttons(mocker):
+    mocker.patch(
+         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
+    dialog = FramelessDialog()
+    dialog.internal_close_event_emitted = False
+    close_event = QEvent(QEvent.Close)
+    close_event.ignore = mocker.MagicMock()
+
+    dialog.closeEvent(close_event)
+
+    close_event.ignore.assert_called_once_with()
+
+
+def test_FramelessDialog_close(mocker):
+    mocker.patch(
+         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
+    dialog = FramelessDialog()
+
+    dialog.internal_close_event_emitted = False
+
+    dialog.close()
+
+    dialog.internal_close_event_emitted = True
+
+
+def test_FramelessDialog_center_dialog(mocker):
+    mocker.patch(
+         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
+    dialog = FramelessDialog()
+    dialog.move = mocker.MagicMock()
+
+    dialog.center_dialog()
+
+    dialog.move.call_count == 1
+
+
+def test_FramelessDialog_center_dialog_with_no_active_window(mocker):
+    dialog = FramelessDialog()
+    dialog.move = mocker.MagicMock()
+
+    dialog.center_dialog()
+
+    dialog.move.assert_not_called()
+
+
 def test_ExportDialog_init(mocker):
     mocker.patch(
          'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
@@ -1859,21 +1894,6 @@ def test_ExportDialog_init_sanitizes_filename(mocker):
     ExportDialog(mocker.MagicMock(), 'mock_uuid', filename)
 
     secure_qlabel.call_args_list[1].assert_called_with(filename)
-
-
-def test_ExportDialog_close(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
-    dialog.dialog_closing = mocker.MagicMock()
-    dialog.dialog_closing.emit = mocker.MagicMock()
-
-    assert not dialog.isHidden()
-
-    dialog.close()
-
-    dialog.dialog_closing.emit.assert_called_once_with()
-    assert dialog.isHidden()
 
 
 def test_ExportDialog__show_starting_instructions(mocker):
