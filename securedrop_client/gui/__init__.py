@@ -150,6 +150,14 @@ class SvgLabel(QLabel):
         self.svg.setFixedSize(svg_size) if svg_size else self.svg.setFixedSize(QSize())
         layout.addWidget(self.svg)
 
+    def update_image(self, filename: str, svg_size: str = None) -> None:
+        self.svg = load_svg(filename)
+        self.svg.setFixedSize(svg_size) if svg_size else self.svg.setFixedSize(QSize())
+        child = self.layout().takeAt(0)
+        if child and child.widget():
+            child.widget().deleteLater()
+        self.layout().addWidget(self.svg)
+
 
 class SecureQLabel(QLabel):
     def __init__(

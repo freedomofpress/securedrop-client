@@ -640,13 +640,26 @@ class Controller(QObject):
         process = QProcess(self)
         process.start(command, args)
 
+    def run_printer_preflight_checks(self):
+        '''
+        Run preflight checks to make sure the Export VM is configured correctly.
+        '''
+        logger.info('Running printer preflight check')
+
+        if not self.qubes:
+            self.export.printer_preflight_success.emit()
+            return
+
+        self.export.begin_printer_preflight.emit()
+
     def run_export_preflight_checks(self):
         '''
         Run preflight checks to make sure the Export VM is configured correctly.
         '''
-        logger.info('Running export preflight checks')
+        logger.info('Running export preflight check')
 
         if not self.qubes:
+            self.export.preflight_check_call_success.emit()
             return
 
         self.export.begin_preflight_check.emit()
@@ -665,6 +678,7 @@ class Controller(QObject):
             return
 
         if not self.qubes:
+            self.export.export_usb_call_success.emit()
             return
 
         self.export.begin_usb_export.emit([file_location], passphrase)

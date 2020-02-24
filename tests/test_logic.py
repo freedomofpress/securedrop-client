@@ -1516,6 +1516,32 @@ def test_Controller_call_update_star_success(homedir, config, mocker, session_ma
         co.on_update_star_failure, type=Qt.QueuedConnection)
 
 
+def test_Controller_run_printer_preflight_checks(homedir, mocker, session, source):
+    co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
+    co.export = mocker.MagicMock()
+    co.export.begin_printer_preflight = mocker.MagicMock()
+    co.export.begin_printer_preflight.emit = mocker.MagicMock()
+
+    co.run_printer_preflight_checks()
+
+    co.export.begin_printer_preflight.emit.call_count == 1
+
+
+def test_Controller_run_printer_preflight_checks_not_qubes(homedir, mocker, session, source):
+    co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
+    co.qubes = False
+    co.export = mocker.MagicMock()
+    co.export.begin_printer_preflight = mocker.MagicMock()
+    co.export.begin_printer_preflight.emit = mocker.MagicMock()
+    co.export.printer_preflight_success = mocker.MagicMock()
+    co.export.printer_preflight_success.emit = mocker.MagicMock()
+
+    co.run_printer_preflight_checks()
+
+    co.export.begin_printer_preflight.emit.call_count == 0
+    co.export.printer_preflight_success.emit.call_count == 1
+
+
 def test_Controller_run_print_file(mocker, session, homedir):
     co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
     co.export = mocker.MagicMock()

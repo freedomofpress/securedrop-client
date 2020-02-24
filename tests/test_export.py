@@ -6,6 +6,74 @@ from tempfile import TemporaryDirectory, NamedTemporaryFile
 from securedrop_client.export import Export, ExportError
 
 
+def test_run_printer_preflight(mocker):
+    '''
+    Ensure TemporaryDirectory is used when creating and sending the archives during the preflight
+    checks and that the success signal is emitted by Export.
+    '''
+    mock_temp_dir = mocker.MagicMock()
+    mock_temp_dir.__enter__ = mocker.MagicMock(return_value='mock_temp_dir')
+    mocker.patch('securedrop_client.export.TemporaryDirectory', return_value=mock_temp_dir)
+    export = Export()
+    export.printer_preflight_success = mocker.MagicMock()
+    export.printer_preflight_success.emit = mocker.MagicMock()
+    _run_printer_preflight = mocker.patch.object(export, '_run_printer_preflight')
+
+    export.run_printer_preflight()
+
+    _run_printer_preflight.assert_called_once_with('mock_temp_dir')
+    export.printer_preflight_success.emit.assert_called_once_with()
+
+
+def test_run_printer_preflight_error(mocker):
+    '''
+    Ensure TemporaryDirectory is used when creating and sending the archives during the preflight
+    checks and that the failure signal is emitted by Export.
+    '''
+    mock_temp_dir = mocker.MagicMock()
+    mock_temp_dir.__enter__ = mocker.MagicMock(return_value='mock_temp_dir')
+    mocker.patch('securedrop_client.export.TemporaryDirectory', return_value=mock_temp_dir)
+    export = Export()
+    export.printer_preflight_failure = mocker.MagicMock()
+    export.printer_preflight_failure.emit = mocker.MagicMock()
+    error = ExportError('bang!')
+    _run_print_preflight = mocker.patch.object(export, '_run_printer_preflight', side_effect=error)
+
+    export.run_printer_preflight()
+
+    _run_print_preflight.assert_called_once_with('mock_temp_dir')
+    export.printer_preflight_failure.emit.assert_called_once_with(error)
+
+
+def test__run_printer_preflight(mocker):
+    '''
+    Ensure _export_archive and _create_archive are called with the expected parameters,
+    _export_archive is called with the return value of _create_archive, and
+    _run_disk_test returns without error if 'USB_CONNECTED' is the return value of _export_archive.
+    '''
+    export = Export()
+    export._create_archive = mocker.MagicMock(return_value='mock_archive_path')
+    export._export_archive = mocker.MagicMock(return_value='')
+
+    export._run_printer_preflight('mock_archive_dir')
+
+    export._export_archive.assert_called_once_with('mock_archive_path')
+    export._create_archive.assert_called_once_with(
+        'mock_archive_dir', 'printer-preflight.sd-export', {'device': 'printer-preflight'})
+
+
+def test__run_printer_preflight_raises_ExportError_if_not_empty_string(mocker):
+    '''
+    Ensure ExportError is raised if _run_disk_test returns anything other than 'USB_CONNECTED'.
+    '''
+    export = Export()
+    export._create_archive = mocker.MagicMock(return_value='mock_archive_path')
+    export._export_archive = mocker.MagicMock(return_value='SOMETHING_OTHER_THAN_EMPTY_STRING')
+
+    with pytest.raises(ExportError):
+        export._run_printer_preflight('mock_archive_dir')
+
+
 def test_print(mocker):
     '''
     Ensure TemporaryDirectory is used when creating and sending the archive containing the file to
@@ -151,7 +219,7 @@ def test_run_preflight_checks(mocker):
 
     _run_usb_export.assert_called_once_with('mock_temp_dir')
     _run_disk_export.assert_called_once_with('mock_temp_dir')
-    export.preflight_check_call_success.emit.assert_called_once_with('success')
+    export.preflight_check_call_success.emit.assert_called_once_with()
 
 
 def test_run_preflight_checks_error(mocker):
