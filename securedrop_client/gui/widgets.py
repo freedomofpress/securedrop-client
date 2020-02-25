@@ -1776,7 +1776,8 @@ class ReplyWidget(SpeechBubble):
         message_failed_signal.connect(self._on_reply_failure)
 
         # Set styles
-        self._set_reply_state(reply_status)
+        self.reply_status = reply_status
+        self._set_reply_state(self.reply_status)
 
     def _set_reply_state(self, status: str) -> None:
         if status == 'SUCCEEDED':
@@ -1795,7 +1796,8 @@ class ReplyWidget(SpeechBubble):
         signal matches the message_id of this widget.
         """
         if message_id == self.message_id:
-            self._set_reply_state('SUCCEEDED')
+            self.reply_status = "SUCCEEDED"
+            self._set_reply_state(self.reply_status)
 
     @pyqtSlot(str)
     def _on_reply_failure(self, message_id: str) -> None:
@@ -1804,7 +1806,8 @@ class ReplyWidget(SpeechBubble):
         signal matches the message_id of this widget.
         """
         if message_id == self.message_id:
-            self._set_reply_state('FAILED')
+            self.reply_status = "FAILED"
+            self._set_reply_state(self.reply_status)
 
 
 class FileWidget(QWidget):
@@ -2751,11 +2754,23 @@ class ConversationView(QWidget):
         # items corresponding to deleted items in the source collection.
         current_conversation = self.current_messages.copy()
 
+        # To hold widgets that are in a failed or pending state which need to
+        # be appended to the end of the conversation until their state is
+        # updated from the server.
+        pending_items = []
+
         for index, conversation_item in enumerate(collection):
             item_widget = current_conversation.get(conversation_item.uuid)
             if item_widget:
                 current_conversation.pop(conversation_item.uuid)
-                if item_widget.index != index:
+                if isinstance(item_widget, ReplyWidget) and item_widget.reply_status != "SUCCEEDED":
+                    # This is a failed or pending reply widget, so simply
+                    # remove it from its current position and add it to the
+                    # pending_items list, to be added to the end of the
+                    # conversation once this loop is finished.
+                    self.conversation_layout.removeWidget(item_widget)
+                    pending_items.append(item_widget)
+                elif item_widget.index != index:
                     # The existing widget is out of order.
                     # Remove / re-add it and update index details.
                     self.conversation_layout.removeWidget(item_widget)
@@ -2785,6 +2800,11 @@ class ConversationView(QWidget):
         # source collection and should be removed.
         for item_widget in current_conversation.values():
             self.conversation_layout.removeWidget(item_widget)
+        # Ensure all widgets currently in a failed or pending state are added
+        # to the end of the conversation layout.
+        for item_widget in pending_items:
+            self.conversation_layout.addWidget(item_widget,
+                                               alignment=Qt.AlignRight)
 
     def add_file(self, file: File, index):
         """
