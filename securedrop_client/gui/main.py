@@ -149,14 +149,14 @@ class Window(QMainWindow):
         """
         self.main_view.show_sources(sources)
 
-    def show_sync(self, updated_on):
+    def show_last_sync(self, updated_on):
         """
-        Display a message indicating the data-sync state.
+        Display a message indicating the time of last sync with the server.
         """
         if updated_on:
             self.update_activity_status(_('Last Refresh: {}').format(updated_on.humanize()))
         else:
-            self.update_activity_status(_('Waiting to refresh...'), 5000)
+            self.update_activity_status(_('Last Refresh: never'))
 
     def set_logged_in_as(self, db_user: User):
         """

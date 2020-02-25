@@ -50,8 +50,8 @@ from securedrop_client.utils import check_dir_permissions
 
 logger = logging.getLogger(__name__)
 
-
-SYNC_FREQUENCY = 30000  #: the number of milliseconds between sync updates.
+# 30 seconds between showing the time since the last sync
+TIME_BETWEEN_SHOWING_LAST_SYNC_MS = 1000 * 30
 
 
 def login_required(f):
@@ -229,8 +229,6 @@ class Controller(QObject):
 
         self.export = Export()
 
-        self.sync_flag = os.path.join(home, 'sync_flag')
-
         # File data.
         self.data_dir = os.path.join(self.home, 'data')
 
@@ -240,9 +238,12 @@ class Controller(QObject):
         self.api_sync.sync_success.connect(self.on_sync_success, type=Qt.QueuedConnection)
         self.api_sync.sync_failure.connect(self.on_sync_failure, type=Qt.QueuedConnection)
 
-        # Create a timer to check for sync status every SYNC_FREQUENCY seconds.
+        # Create a timer to show the time since the last sync
         self.show_last_sync_timer = QTimer()
-        self.show_last_sync_timer.timeout.connect(self.show_last_sync_time)
+        self.show_last_sync_timer.timeout.connect(self.show_last_sync)
+
+        # Path to the file containing the timestamp since the last sync with the server
+        self.last_sync_filepath = os.path.join(home, 'sync_flag')
 
     @property
     def is_authenticated(self) -> bool:
@@ -324,7 +325,7 @@ class Controller(QObject):
             _('The SecureDrop server cannot be reached.'),
             duration=0,
             retry=True)
-        self.show_last_sync_timer.start(SYNC_FREQUENCY)
+        self.show_last_sync_timer.start(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
 
     def resume_queues(self) -> None:
         self.api_job_queue.resume_queues()
@@ -403,8 +404,8 @@ class Controller(QObject):
         storage.mark_all_pending_drafts_as_failed(self.session)
         self.is_authenticated = False
         self.update_sources()
-        self.show_last_sync_time()
-        self.show_last_sync_timer.start(SYNC_FREQUENCY)
+        self.show_last_sync()
+        self.show_last_sync_timer.start(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
 
     def on_action_requiring_login(self):
         """
@@ -420,12 +421,12 @@ class Controller(QObject):
         """
         return bool(self.api and self.api.token is not None)
 
-    def last_sync(self):
+    def get_last_sync(self):
         """
         Returns the time of last synchronisation with the remote SD server.
         """
         try:
-            with open(self.sync_flag) as f:
+            with open(self.last_sync_filepath) as f:
                 return arrow.get(f.read())
         except Exception:
             return None
@@ -442,7 +443,7 @@ class Controller(QObject):
             * Download new messages and replies
             * Update missing files so that they can be re-downloaded
         """
-        with open(self.sync_flag, 'w') as f:
+        with open(self.last_sync_filepath, 'w') as f:
             f.write(arrow.now().format())
 
         storage.update_missing_files(self.data_dir, self.session)
@@ -465,11 +466,11 @@ class Controller(QObject):
             self.logout()
             self.gui.show_login(error=_('Your session expired. Please log in again.'))
 
-    def show_last_sync_time(self):
+    def show_last_sync(self):
         """
         Updates the UI to show human time of last sync.
         """
-        self.gui.show_sync(self.last_sync())
+        self.gui.show_last_sync(self.get_last_sync())
 
     def update_sources(self):
         """
@@ -522,8 +523,8 @@ class Controller(QObject):
         self.api_job_queue.stop()
         self.gui.logout()
 
-        self.show_last_sync_timer.start(SYNC_FREQUENCY)
-        self.show_last_sync_time()
+        self.show_last_sync_timer.start(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
+        self.show_last_sync()
         self.is_authenticated = False
 
     def invalidate_token(self):
