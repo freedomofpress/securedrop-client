@@ -54,8 +54,10 @@ def delete_local_source_by_uuid(session: Session, uuid: str) -> None:
     """
     source = session.query(Source).filter_by(uuid=uuid).one_or_none()
     if source:
+        print("deleting source {} in session {}".format(uuid, session))
         session.delete(source)
         session.commit()
+        print("Deleted source with UUID {} from local database.".format(uuid))
         logger.info("Deleted source with UUID {} from local database.".format(uuid))
 
 
@@ -255,11 +257,12 @@ def __update_submissions(model: Union[Type[File], Type[Message]],
         else:
             # A new submission to be added to the database.
             _, source_uuid = submission.source_url.rsplit('/', 1)
-            source = session.query(Source).filter_by(uuid=source_uuid)[0]
-            ns = model(source_id=source.id, uuid=submission.uuid, size=submission.size,
-                       filename=submission.filename, download_url=submission.download_url)
-            session.add(ns)
-            logger.debug('Added new submission {}'.format(submission.uuid))
+            source = session.query(Source).filter_by(uuid=source_uuid).first()
+            if source:
+                ns = model(source_id=source.id, uuid=submission.uuid, size=submission.size,
+                           filename=submission.filename, download_url=submission.download_url)
+                session.add(ns)
+                logger.debug('Added new submission {}'.format(submission.uuid))
 
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.

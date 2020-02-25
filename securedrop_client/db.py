@@ -5,7 +5,7 @@ import os
 from typing import Any, List, Union  # noqa: F401
 
 from sqlalchemy import Boolean, Column, create_engine, DateTime, ForeignKey, Integer, String, \
-    Text, MetaData, CheckConstraint, text, UniqueConstraint
+    Text, MetaData, CheckConstraint, text, UniqueConstraint, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, scoped_session, sessionmaker
 
@@ -26,6 +26,20 @@ Base = declarative_base(metadata=metadata)  # type: Any
 def make_session_maker(home: str) -> scoped_session:
     db_path = os.path.join(home, 'svs.sqlite')
     engine = create_engine('sqlite:///{}'.format(db_path))
+
+    @event.listens_for(engine, "connect")
+    def do_connect(dbapi_connection, connection_record):
+        # disable pysqlite's emitting of the BEGIN statement entirely.
+        # also stops it from emitting COMMIT before any DDL.
+        dbapi_connection.isolation_level = None
+
+    # without the following setup, we never really have transactions
+
+    # @event.listens_for(engine, "begin")
+    # def do_begin(conn):
+    #     # emit our own BEGIN
+    #     conn.execute("BEGIN")
+
     maker = sessionmaker(bind=engine)
     return scoped_session(maker)
 
