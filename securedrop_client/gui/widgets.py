@@ -2750,6 +2750,7 @@ class ConversationView(QWidget):
         # Keep a temporary copy of the current conversation so we can delete any
         # items corresponding to deleted items in the source collection.
         current_conversation = self.current_messages.copy()
+        logger.info(collection)
 
         for index, conversation_item in enumerate(collection):
             item_widget = current_conversation.get(conversation_item.uuid)
@@ -2840,29 +2841,13 @@ class ConversationView(QWidget):
         self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignRight)
         self.current_messages[reply.uuid] = conversation_item
 
-    def add_reply_from_reply_box(self, uuid: str, content: str) -> None:
-        """
-        Add a reply from the reply box.
-        """
-        index = len(self.current_messages)
-        conversation_item = ReplyWidget(
-            uuid,
-            content,
-            'PENDING',
-            self.controller.reply_ready,
-            self.controller.reply_succeeded,
-            self.controller.reply_failed,
-            index)
-        self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignRight)
-        self.current_messages[uuid] = conversation_item
-
     def on_reply_sent(self, source_uuid: str, reply_uuid: str, reply_text: str) -> None:
         """
         Add the reply text sent from ReplyBoxWidget to the conversation.
         """
         self.reply_flag = True
         if source_uuid == self.source.uuid:
-            self.add_reply_from_reply_box(reply_uuid, reply_text)
+            self.update_conversation(self.source.collection)
 
 
 class SourceConversationWrapper(QWidget):
