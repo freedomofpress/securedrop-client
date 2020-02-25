@@ -47,7 +47,7 @@ test-random: ## Run the application tests in random order
 
 .PHONY: test-functional
 test-functional: ## Run the functional tests
-	./test-functional.sh
+	@./test-functional.sh
 
 .PHONY: lint
 lint: ## Run the linters
