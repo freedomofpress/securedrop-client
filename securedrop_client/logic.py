@@ -813,7 +813,10 @@ class Controller(QObject):
         exception: Union[SendReplyJobError, SendReplyJobTimeoutError]
     ) -> None:
         logger.debug('{} failed to send'.format(exception.reply_uuid))
-        self.reply_failed.emit(exception.reply_uuid)
+
+        # only emit failure signal for non-timeout errors
+        if isinstance(exception, SendReplyJobError):
+            self.reply_failed.emit(exception.reply_uuid)
 
     def get_file(self, file_uuid: str) -> db.File:
         file = storage.get_file(self.session, file_uuid)

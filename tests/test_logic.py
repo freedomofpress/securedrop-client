@@ -16,7 +16,7 @@ from securedrop_client.api_jobs.base import ApiInaccessibleError
 from securedrop_client.api_jobs.downloads import (
     DownloadChecksumMismatchException, DownloadDecryptionException, DownloadException
 )
-from securedrop_client.api_jobs.uploads import SendReplyJobError
+from securedrop_client.api_jobs.uploads import SendReplyJobError, SendReplyJobTimeoutError
 
 with open(os.path.join(os.path.dirname(__file__), 'files', 'test-key.gpg.pub.asc')) as f:
     PUB_KEY = f.read()
@@ -1392,6 +1392,23 @@ def test_Controller_on_reply_failure(homedir, mocker, session_maker):
 
     debug_logger.assert_called_once_with('{} failed to send'.format('mock_reply_uuid'))
     reply_failed.emit.assert_called_once_with('mock_reply_uuid')
+    reply_succeeded.emit.assert_not_called()
+
+
+def test_Controller_on_reply_failure_for_timeout(homedir, mocker, session_maker):
+    '''
+    Check that when the method is called, the client emits the correct signal.
+    '''
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    reply_succeeded = mocker.patch.object(co, 'reply_succeeded')
+    reply_failed = mocker.patch.object(co, 'reply_failed')
+    debug_logger = mocker.patch('securedrop_client.logic.logger.debug')
+
+    exception = SendReplyJobTimeoutError('mock_error_message', 'mock_reply_uuid')
+    co.on_reply_failure(exception)
+
+    debug_logger.assert_called_once_with('{} failed to send'.format('mock_reply_uuid'))
+    reply_failed.emit.assert_not_called()
     reply_succeeded.emit.assert_not_called()
 
 
