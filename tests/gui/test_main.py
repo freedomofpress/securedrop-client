@@ -223,26 +223,26 @@ def test_clear_error_status(mocker):
     w.top_pane.clear_error_status.assert_called_once_with()
 
 
-def test_show_sync(mocker):
+def test_show_last_sync(mocker):
     """
     If there's a value display the result of its "humanize" method.humanize
     """
     w = Window()
     w.update_activity_status = mocker.MagicMock()
     updated_on = mocker.MagicMock()
-    w.show_sync(updated_on)
+    w.show_last_sync(updated_on)
     w.update_activity_status.assert_called_once_with(
         'Last Refresh: {}'.format(updated_on.humanize()))
 
 
-def test_show_sync_no_sync(mocker):
+def test_show_last_sync_no_sync(mocker):
     """
     If there's no value to display, default to a "waiting" message.
     """
     w = Window()
     w.update_activity_status = mocker.MagicMock()
-    w.show_sync(None)
-    w.update_activity_status.assert_called_once_with('Waiting to refresh...', 5000)
+    w.show_last_sync(None)
+    w.update_activity_status.assert_called_once_with('Last Refresh: never')
 
 
 def test_set_logged_in_as(mocker):

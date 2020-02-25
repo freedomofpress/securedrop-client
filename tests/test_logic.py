@@ -11,7 +11,7 @@ from sdclientapi import RequestTimeoutError, ServerConnectionError
 from tests import factory
 
 from securedrop_client import db
-from securedrop_client.logic import APICallRunner, Controller, SYNC_FREQUENCY
+from securedrop_client.logic import APICallRunner, Controller, TIME_BETWEEN_SHOWING_LAST_SYNC_MS
 from securedrop_client.api_jobs.base import ApiInaccessibleError
 from securedrop_client.api_jobs.downloads import (
     DownloadChecksumMismatchException, DownloadDecryptionException, DownloadException
@@ -170,7 +170,7 @@ def test_Controller_login_offline_mode(homedir, config, mocker):
     co.gui.show_main_window.assert_called_once_with()
     co.gui.hide_login.assert_called_once_with()
     co.update_sources.assert_called_once_with()
-    co.show_last_sync_timer.start.assert_called_once_with(SYNC_FREQUENCY)
+    co.show_last_sync_timer.start.assert_called_once_with(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
 
 
 def test_Controller_on_authenticate_failure(homedir, config, mocker, session_maker):
@@ -202,7 +202,6 @@ def test_Controller_on_authenticate_success(homedir, config, mocker, session_mak
     user = factory.User()
     mock_gui = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
-    # co.api_sync = mocker.MagicMock()
     co.api_sync.start = mocker.MagicMock()
     co.api_job_queue.start = mocker.MagicMock()
     co.update_sources = mocker.MagicMock()
@@ -361,7 +360,7 @@ def test_Controller_last_sync_with_file(homedir, config, mocker, session_maker):
     timestamp = '2018-10-10 18:17:13+01:00'
     mocker.patch("builtins.open", mocker.mock_open(read_data=timestamp))
 
-    result = co.last_sync()
+    result = co.get_last_sync()
 
     assert isinstance(result, arrow.Arrow)
     assert result.format() == timestamp
@@ -377,7 +376,7 @@ def test_Controller_last_sync_no_file(homedir, config, mocker, session_maker):
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
 
     mocker.patch("builtins.open", mocker.MagicMock(side_effect=Exception()))
-    assert co.last_sync() is None
+    assert co.get_last_sync() is None
 
 
 def test_Controller_on_sync_started(mocker, homedir):
@@ -454,19 +453,21 @@ def test_Controller_on_sync_success(homedir, config, mocker):
     co.resume_queues.assert_called_once_with()
 
 
-def test_Controller_show_last_sync_time(homedir, config, mocker, session_maker):
+def test_Controller_show_last_sync(homedir, config, mocker, session_maker):
     """
-    Cause the UI to update with the result of self.last_sync().
+    Ensure we get the last sync time when we show it.
     Using the `config` fixture to ensure the config is written to disk.
     This should only happen if the user isn't logged in or the API queues are
     paused (indicating network problems).
     """
     co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
-    co.last_sync = mocker.MagicMock()
+    co.get_last_sync = mocker.MagicMock()
     co.api = None
-    co.show_last_sync_time()
-    assert co.last_sync.call_count == 1
-    co.gui.show_sync.assert_called_once_with(co.last_sync())
+
+    co.show_last_sync()
+
+    assert co.get_last_sync.call_count == 1
+    co.gui.show_last_sync.assert_called_once_with(co.get_last_sync())
 
 
 def test_Controller_update_sources(homedir, config, mocker):
@@ -627,7 +628,7 @@ def test_Controller_logout_success(homedir, config, mocker, session_maker):
     msg = 'Client logout successful'
     info_logger.assert_called_once_with(msg)
     fail_draft_replies.called_once_with(co.session)
-    co.show_last_sync_timer.start.assert_called_once_with(SYNC_FREQUENCY)
+    co.show_last_sync_timer.start.assert_called_once_with(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
 
 
 def test_Controller_logout_failure(homedir, config, mocker, session_maker):
@@ -1472,7 +1473,7 @@ def test_Controller_on_queue_paused(homedir, config, mocker, session_maker):
     co.on_queue_paused()
     mock_gui.update_error_status.assert_called_once_with(
         'The SecureDrop server cannot be reached.', duration=0, retry=True)
-    co.show_last_sync_timer.start.assert_called_once_with(SYNC_FREQUENCY)
+    co.show_last_sync_timer.start.assert_called_once_with(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
 
 
 def test_Controller_call_update_star_success(homedir, config, mocker, session_maker, session):
