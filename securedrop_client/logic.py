@@ -562,6 +562,9 @@ class Controller(QObject):
     def download_new_messages(self) -> None:
         messages = storage.find_new_messages(self.session)
 
+        if len(messages) > 0:
+            self.set_status(_('Retrieving new messages'), 2500)
+
         for message in messages:
             self._submit_download_job(type(message), message.uuid)
 
