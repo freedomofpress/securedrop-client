@@ -7,12 +7,11 @@ from sdclientapi import API, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm import scoped_session
 from typing import Optional, Tuple  # noqa: F401
 
-from securedrop_client.api_jobs.base import ApiJob, ApiInaccessibleError, DEFAULT_NUM_ATTEMPTS, \
-    PauseQueueJob
+from securedrop_client.api_jobs.base import ApiJob, ApiInaccessibleError, PauseQueueJob
 from securedrop_client.api_jobs.downloads import (FileDownloadJob, MessageDownloadJob,
                                                   ReplyDownloadJob)
 from securedrop_client.api_jobs.sources import DeleteSourceJob
-from securedrop_client.api_jobs.uploads import SendReplyJob
+from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobTimeoutError
 from securedrop_client.api_jobs.updatestar import UpdateStarJob
 
 
@@ -85,7 +84,6 @@ class RunnableQueue(QObject):
         Reset the job's remaining attempts and put it back into the queue in the order in which it
         was submitted by the user (do not assign it the next order_number).
         '''
-        job.remaining_attempts = DEFAULT_NUM_ATTEMPTS
         priority = self.JOB_PRIORITIES[type(job)]
         self.queue.put_nowait((priority, job))
 
@@ -123,7 +121,7 @@ class RunnableQueue(QObject):
                 logger.debug('{}: {}'.format(type(e).__name__, e))
                 self.api_client = None
                 return
-            except (RequestTimeoutError, ServerConnectionError) as e:
+            except (SendReplyJobTimeoutError, RequestTimeoutError, ServerConnectionError) as e:
                 logger.debug('{}: {}'.format(type(e).__name__, e))
                 self.add_job(PauseQueueJob())
                 self.re_add_job(job)

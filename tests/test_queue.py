@@ -54,7 +54,7 @@ def test_RunnableQueue_job_timeout(mocker, exception):
     '''
     queue = RunnableQueue(mocker.MagicMock(), mocker.MagicMock())
     queue.pause = mocker.MagicMock()
-    job_cls = factory.dummy_job_factory(mocker, exception(), remaining_attempts=5)
+    job_cls = factory.dummy_job_factory(mocker, exception())
     job1 = job_cls()
     job2 = job_cls()
     queue.JOB_PRIORITIES = {PauseQueueJob: 0, job_cls: 1}

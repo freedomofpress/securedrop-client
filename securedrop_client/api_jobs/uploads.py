@@ -96,7 +96,7 @@ class SendReplyJob(ApiJob):
         # TODO: Once https://github.com/freedomofpress/securedrop-client/issues/648, we will want to
         # pass the default request timeout to reply_source instead of setting it on the api object
         # directly.
-        api_client.default_request_timeout = 5
+        api_client.default_request_timeout = 0.01
         return api_client.reply_source(sdk_source, encrypted_reply, self.reply_uuid)
 
 
@@ -106,7 +106,7 @@ class SendReplyJobError(Exception):
         self.reply_uuid = reply_uuid
 
 
-class SendReplyJobTimeoutError(RequestTimeoutError):
+class SendReplyJobTimeoutError(Exception):
     def __init__(self, message: str, reply_uuid: str) -> None:
         super().__init__()
         self.reply_uuid = reply_uuid
