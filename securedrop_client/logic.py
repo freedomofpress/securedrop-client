@@ -321,7 +321,8 @@ class Controller(QObject):
         new_api_thread.start()
 
     def on_queue_paused(self) -> None:
-        self.gui.update_error_status(_('The SecureDrop server cannot be reached.'), duration=0)
+        self.gui.update_error_status(
+            _('The SecureDrop server cannot be reached. Trying to reconnect...'), duration=0)
         self.show_last_sync_timer.start(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
 
     def resume_queues(self) -> None:
@@ -461,6 +462,9 @@ class Controller(QObject):
             self.invalidate_token()
             self.logout()
             self.gui.show_login(error=_('Your session expired. Please log in again.'))
+        elif isinstance(result, (RequestTimeoutError, ServerConnectionError)):
+            self.gui.update_error_status(
+                _('The SecureDrop server cannot be reached. Trying to reconnect...'), duration=0)
 
     def show_last_sync(self):
         """
