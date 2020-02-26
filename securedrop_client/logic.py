@@ -321,18 +321,14 @@ class Controller(QObject):
         new_api_thread.start()
 
     def on_queue_paused(self) -> None:
-        self.gui.update_error_status(
-            _('The SecureDrop server cannot be reached.'),
-            duration=0,
-            retry=True)
+        self.gui.update_error_status(_('The SecureDrop server cannot be reached.'), duration=0)
         self.show_last_sync_timer.start(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
 
     def resume_queues(self) -> None:
         self.api_job_queue.resume_queues()
         self.show_last_sync_timer.stop()
 
-        # clear error status in case queue was paused resulting in a permanent error message with
-        # retry link
+        # clear error status in case queue was paused resulting in a permanent error message
         self.gui.clear_error_status()
 
     def completed_api_call(self, thread_id, user_callback):
@@ -507,8 +503,7 @@ class Controller(QObject):
         out in the GUI.
         """
 
-        # clear error status in case queue was paused resulting in a permanent error message with
-        # retry link
+        # clear error status in case queue was paused resulting in a permanent error message
         self.gui.clear_error_status()
 
         if self.api is not None:
