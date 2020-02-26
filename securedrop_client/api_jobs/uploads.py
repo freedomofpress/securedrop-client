@@ -3,6 +3,7 @@ import sdclientapi
 
 from sdclientapi import API, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm.session import Session
+from sqlalchemy.exc import SQLAlchemyError
 
 from securedrop_client.api_jobs.base import ApiJob
 from securedrop_client.crypto import GpgHelper
@@ -68,27 +69,28 @@ class SendReplyJob(ApiJob):
         except (RequestTimeoutError, ServerConnectionError) as e:
             message = "Failed to send reply for source {id} due to Exception: {error}".format(
                 id=self.source_uuid, error=e)
-
-            # Update draft reply send status to FAILED
-            reply_status = session.query(ReplySendStatus).filter_by(
-                name=ReplySendStatusCodes.FAILED.value).one()
-            draft_reply_db_object.send_status_id = reply_status.id
-            session.add(draft_reply_db_object)
-            session.commit()
-
+            self._set_status_to_failed(session)
             raise SendReplyJobTimeoutError(message, self.reply_uuid)
         except Exception as e:
             message = "Failed to send reply for source {id} due to Exception: {error}".format(
                 id=self.source_uuid, error=e)
+            self._set_status_to_failed(session)
+            raise SendReplyJobError(message, self.reply_uuid)
 
-            # Update draft reply send status to FAILED
+    def _set_status_to_failed(self, session: Session) -> None:
+        try:  # If draft exists, we set it to failed.
+            draft_reply_db_object = session.query(DraftReply).filter_by(uuid=self.reply_uuid).one()
             reply_status = session.query(ReplySendStatus).filter_by(
                 name=ReplySendStatusCodes.FAILED.value).one()
             draft_reply_db_object.send_status_id = reply_status.id
             session.add(draft_reply_db_object)
             session.commit()
-
-            raise SendReplyJobError(message, self.reply_uuid)
+        except SQLAlchemyError as e:
+            logger.info('SQL error when setting reply {uuid} as failed, skipping: {e}'.format(
+                uuid=self.reply_uuid, e=e))
+        except Exception as e:
+            logger.error('unknown error when setting reply {uuid} as failed, skipping: {e}'.format(
+                uuid=self.reply_uuid, e=e))
 
     def _make_call(self, encrypted_reply: str, api_client: API) -> sdclientapi.Reply:
         sdk_source = sdclientapi.Source(uuid=self.source_uuid)
