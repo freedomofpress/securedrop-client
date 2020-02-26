@@ -124,8 +124,8 @@ class TopPane(QWidget):
     def update_activity_status(self, message: str, duration: int):
         self.activity_status_bar.update_message(message, duration)
 
-    def update_error_status(self, message: str, duration: int, retry: bool):
-        self.error_status_bar.update_message(message, duration, retry)
+    def update_error_status(self, message: str, duration: int):
+        self.error_status_bar.update_message(message, duration)
 
     def clear_error_status(self):
         self.error_status_bar.clear_message()
@@ -313,15 +313,6 @@ class ErrorStatusBar(QWidget):
         font-size: 14px;
         color: #0c3e75;
     }
-    QPushButton#retry_button {
-        border: none;
-        padding-right: 30px;
-        background-color: #fff;
-        color: #0065db;
-        font-family: 'Source Sans Pro';
-        font-weight: 600;
-        font-size: 12px;
-    }
     '''
 
     def __init__(self):
@@ -353,22 +344,15 @@ class ErrorStatusBar(QWidget):
         self.status_bar.setObjectName('error_status_bar')  # Set css id
         self.status_bar.setSizeGripEnabled(False)
 
-        # Retry button
-        self.retry_button = QPushButton('RETRY')
-        self.retry_button.setObjectName('retry_button')
-        self.retry_button.setFixedHeight(42)
-
         # Add widgets to layout
         layout.addWidget(self.vertical_bar)
         layout.addWidget(self.label)
         layout.addWidget(self.status_bar)
-        layout.addWidget(self.retry_button)
 
         # Hide until a message needs to be displayed
         self.vertical_bar.hide()
         self.label.hide()
         self.status_bar.hide()
-        self.retry_button.hide()
 
         # Only show errors for a set duration
         self.status_timer = QTimer()
@@ -378,7 +362,6 @@ class ErrorStatusBar(QWidget):
         self.vertical_bar.hide()
         self.label.hide()
         self.status_bar.hide()
-        self.retry_button.hide()
 
     def _show(self):
         self.vertical_bar.show()
@@ -390,21 +373,12 @@ class ErrorStatusBar(QWidget):
 
     def setup(self, controller):
         self.controller = controller
-        self.retry_button.clicked.connect(self._on_retry_clicked)
 
-    def _on_retry_clicked(self) -> None:
-        self.clear_message()
-        self._hide()
-        self.controller.resume_queues()
-
-    def update_message(self, message: str, duration: int, retry: bool) -> None:
+    def update_message(self, message: str, duration: int) -> None:
         """
         Display a status message to the user for a given duration. If the duration is zero,
         continuously show message.
         """
-        if retry:
-            self.retry_button.show()
-
         self.status_bar.showMessage(message, duration)
 
         if duration != 0:
