@@ -189,6 +189,48 @@ def test_send_reply_failure_gpg_error(homedir, mocker, session, session_maker,
     assert len(drafts) == 1
 
 
+def test_send_reply_sql_exception_during_failure(homedir, mocker, session, session_maker,
+                                                 reply_status_codes):
+    '''
+    Check that we do not raise an unhandled exception when we set the draft reply
+    status to failed in the except block if there is a SQL exception.
+    '''
+    source = factory.Source()
+    session.add(source)
+
+    # Note that we do not add a DraftReply. An exception will occur when we try
+    # to set the reply status to 'FAILED' for a non-existent reply, which we
+    # expect to be handled.
+
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    job = SendReplyJob(source.uuid, 'mock_reply_uuid', 'mock_message', gpg)
+
+    # This should not raise an exception
+    job._set_status_to_failed(session)
+
+
+def test_send_reply_unexpected_exception_during_failure(homedir, mocker, session,
+                                                        session_maker, reply_status_codes):
+    '''
+    Check that we do not raise an unhandled exception when we set the draft reply
+    status to failed in the except block if there is an unexpected exception.
+    '''
+    source = factory.Source()
+    session.add(source)
+    draft_reply = factory.DraftReply(uuid='mock_reply_uuid')
+    session.add(draft_reply)
+    session.commit()
+
+    # session.commit() is called when we try to set the status to failed.
+    session.commit = mocker.MagicMock(side_effect=Exception("BOOM"))
+
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    job = SendReplyJob(source.uuid, 'mock_reply_uuid', 'mock_message', gpg)
+
+    # This should not raise an exception
+    job._set_status_to_failed(session)
+
+
 def test_send_reply_failure_unknown_error(homedir, mocker, session, session_maker,
                                           reply_status_codes):
     '''
