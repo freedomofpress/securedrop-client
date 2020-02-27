@@ -68,7 +68,10 @@ def test_drafts_ordering(homedir, mocker, session, session_maker,
     Check that if a reply is successful, drafts sent before and after
     continue to appear in the same order.
     '''
-    source = factory.Source(interaction_count=1)
+    initial_interaction_count = 1
+    source_uuid = 'foo'
+    source = factory.Source(uuid=source_uuid,
+                            interaction_count=initial_interaction_count)
     session.add(source)
     msg_uuid = 'xyz456'
 
@@ -129,6 +132,19 @@ def test_drafts_ordering(homedir, mocker, session, session_maker,
     # assert reply got added to db
     reply = session.query(db.Reply).filter_by(uuid=msg_uuid).one()
     assert reply.journalist_id == api_client.token_journalist_uuid
+
+    # We use the file_counter on each Reply, Message, File, and DraftReply
+    # object to order the conversation view. We expect a unique file_counter
+    # for Reply, Message, and File objects since they are retrieved from
+    # the server.
+    # For DraftReply, we don't have that unique constraint, and we instead expect
+    # the file_counter to be the interaction_count at the time of send.
+    # If we do not update the interaction_count after each successful reply send,
+    # future drafts will have an interaction_count that is too low, leading
+    # to incorrectly ordered drafts until a metadata sync completes (the metadata
+    # sync is the place where the source object is updated from the server).
+    source = session.query(db.Source).filter_by(uuid=source_uuid).one()
+    assert source.interaction_count == initial_interaction_count + 1
 
     # Check the ordering displayed to the user
     assert source.collection[0] == draft_reply_before
