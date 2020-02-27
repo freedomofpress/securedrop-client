@@ -3133,11 +3133,11 @@ def test_ReplyBoxWidget__on_authentication_changed(mocker, homedir):
     source = mocker.MagicMock()
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
-    rb.enable = mocker.MagicMock()
+    rb.set_logged_in = mocker.MagicMock()
 
     rb._on_authentication_changed(True)
 
-    rb.enable.assert_called_once_with()
+    rb.set_logged_in.assert_called_once_with()
 
 
 def test_ReplyBoxWidget__on_authentication_changed_offline(mocker, homedir):
@@ -3147,11 +3147,11 @@ def test_ReplyBoxWidget__on_authentication_changed_offline(mocker, homedir):
     source = mocker.MagicMock()
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
-    rb.disable = mocker.MagicMock()
+    rb.set_logged_out = mocker.MagicMock()
 
     rb._on_authentication_changed(False)
 
-    rb.disable.assert_called_once_with()
+    rb.set_logged_out.assert_called_once_with()
 
 
 def test_ReplyBoxWidget_auth_signals(mocker, homedir):
@@ -3180,7 +3180,7 @@ def test_ReplyBoxWidget_enable(mocker):
     rb.text_edit.set_logged_in = mocker.MagicMock()
     rb.send_button = mocker.MagicMock()
 
-    rb.enable()
+    rb.set_logged_in()
 
     assert rb.text_edit.toPlainText() == ''
     rb.text_edit.set_logged_in.assert_called_once_with()
@@ -3195,7 +3195,7 @@ def test_ReplyBoxWidget_disable(mocker):
     rb.text_edit.set_logged_out = mocker.MagicMock()
     rb.send_button = mocker.MagicMock()
 
-    rb.disable()
+    rb.set_logged_out()
 
     assert rb.text_edit.toPlainText() == ''
     rb.text_edit.set_logged_out.assert_called_once_with()
@@ -3303,7 +3303,7 @@ def test_ReplyTextEdit_set_logged_in(mocker):
     assert source.journalist_designation in rt.placeholder.text()
 
 
-def test_ReplyTextEdit_set_logged_in_no_public_key(mocker):
+def test_ReplyBox_set_logged_in_no_public_key(mocker):
     """
     If the selected source has no public key, ensure a warning message is
     shown and the user is unable to send a reply.
@@ -3312,12 +3312,16 @@ def test_ReplyTextEdit_set_logged_in_no_public_key(mocker):
     source.journalist_designation = 'journalist designation'
     source.public_key = None
     controller = mocker.MagicMock()
-    rt = ReplyTextEdit(source, controller)
+    rb = ReplyBoxWidget(source, controller)
 
-    rt.set_logged_in()
+    rb.set_logged_in()
 
-    assert 'Awaiting action' in rt.placeholder.text()
-    assert rt.isEnabled() is False
+    assert 'Awaiting encryption key' in rb.text_edit.placeholder.text()
+
+    # Both the reply box and the text editor must be disabled for the widget
+    # to be rendered correctly.
+    assert rb.replybox.isEnabled() is False
+    assert rb.text_edit.isEnabled() is False
 
 
 def test_update_conversation_maintains_old_items(mocker, session):
