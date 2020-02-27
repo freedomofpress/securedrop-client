@@ -5,7 +5,7 @@ import pytest
 import arrow
 from datetime import datetime
 
-from PyQt5.QtCore import Qt, QEvent
+from PyQt5.QtCore import Qt, QEvent, QObject, pyqtSignal
 from PyQt5.QtGui import QFocusEvent, QMovie
 from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QMessageBox, QMainWindow, \
@@ -1433,6 +1433,47 @@ def test_ReplyWidget_init(mocker):
     assert mock_update_connected.called
     assert mock_success_connected.calledd
     assert mock_failure_connected.called
+
+
+def test_ReplyWidget_update_text(mocker):
+    """
+    Check that the update signal updates both text and status.
+    """
+    class Thing(QObject):
+        reply_ready = pyqtSignal(str, str, str)
+
+    mock_success_signal = mocker.MagicMock()
+    mock_success_connected = mocker.Mock()
+    mock_success_signal.connect = mock_success_connected
+
+    mock_failure_signal = mocker.MagicMock()
+    mock_failure_connected = mocker.Mock()
+    mock_failure_signal.connect = mock_failure_connected
+
+    thing = Thing()
+    source_id = 'source_id'
+    reply_id = 'reply_id'
+    original_text = 'hello'
+    rw = ReplyWidget(
+        reply_id,
+        original_text,
+        'FAILED',
+        thing.reply_ready,
+        mock_success_signal,
+        mock_failure_signal,
+        0,
+    )
+
+    assert rw.message.text() == original_text
+    assert rw.styleSheet() == rw.CSS_REPLY_FAILED
+    assert not rw.error.isHidden()
+
+    new_text = 'updated text'
+    thing.reply_ready.emit(source_id, reply_id, new_text)
+
+    assert rw.message.text() == new_text
+    assert rw.styleSheet() == rw.CSS_REPLY_SUCCEEDED
+    assert rw.error.isHidden()
 
 
 def test_FileWidget_init_file_not_downloaded(mocker, source, session):
