@@ -421,11 +421,13 @@ def update_draft_replies(session: Session, source_id: int, timestamp: datetime,
         new_file_counter (int): this is the file_counter of the reply R confirmed
             as successfully sent from the server.
     """
+    logger.debug('reordering drafts...')
     for draft_reply in session.query(DraftReply) \
                               .filter(and_(DraftReply.source_id == source_id,
                                            DraftReply.timestamp > timestamp,
                                            DraftReply.file_counter == old_file_counter)) \
                               .all():
+        logger.debug('changing counter from {} to {}'.format(draft_reply.file_counter, new_file_counter))
         draft_reply.file_counter = new_file_counter
         session.add(draft_reply)
     session.commit()

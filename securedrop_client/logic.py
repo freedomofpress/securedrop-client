@@ -777,6 +777,7 @@ class Controller(QObject):
         # Before we send the reply, add the draft to the database with a PENDING
         # reply send status.
         source = self.session.query(db.Source).filter_by(uuid=source_uuid).one()
+        logger.debug('interaction count: {}'.format(source.interaction_count))
         reply_status = self.session.query(db.ReplySendStatus).filter_by(
             name=db.ReplySendStatusCodes.PENDING.value).one()
         draft_reply = db.DraftReply(

@@ -266,7 +266,7 @@ class Reply(Base):
             return '<Reply not yet available>'
 
     def __repr__(self) -> str:
-        return '<Reply {}>'.format(self.filename)
+        return '<Reply {}: {}>'.format(self.file_counter, self.filename)
 
     def location(self, data_dir: str) -> str:
         '''
@@ -321,7 +321,7 @@ class DraftReply(Base):
             return '<Reply not yet available>'
 
     def __repr__(self) -> str:
-        return '<DraftReply {}>'.format(self.uuid)
+        return '<DraftReply {}: {}>'.format(self.file_counter, self.uuid)
 
 
 class ReplySendStatus(Base):
