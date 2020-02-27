@@ -63,6 +63,8 @@ class SendReplyJob(ApiJob):
             # Delete draft, add reply to replies table.
             session.add(reply_db_object)
             session.delete(draft_reply_db_object)
+            source.interaction_count += 1
+            session.add(source)
             session.commit()
 
             return reply_db_object.uuid
