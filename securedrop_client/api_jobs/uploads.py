@@ -71,7 +71,6 @@ class SendReplyJob(ApiJob):
         except (RequestTimeoutError, ServerConnectionError) as e:
             message = "Failed to send reply for source {id} due to Exception: {error}".format(
                 id=self.source_uuid, error=e)
-            self._set_status_to_failed(session)
             raise SendReplyJobTimeoutError(message, self.reply_uuid)
         except Exception as e:
             message = "Failed to send reply for source {id} due to Exception: {error}".format(
