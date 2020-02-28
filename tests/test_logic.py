@@ -427,33 +427,18 @@ def test_Controller_on_sync_failure_due_to_invalid_token(homedir, config, mocker
     co.gui.show_login.assert_called_once_with(error='Your session expired. Please log in again.')
 
 
-def test_Controller_on_sync_failure_due_to_request_timeout(homedir, config, mocker, session_maker):
+@pytest.mark.parametrize("exception", [RequestTimeoutError, ServerConnectionError])
+def test_Controller_on_sync_failure_due_to_timeout(homedir, mocker, exception):
     """
-    If the sync fails because of a request timeout, make sure to show an error message.
+    If the sync fails because of a timeout, make sure to show an error message.
     """
     gui = mocker.MagicMock()
-    co = Controller('http://localhost', gui, session_maker, homedir)
+    co = Controller('http://localhost', gui, mocker.MagicMock(), homedir)
     co.logout = mocker.MagicMock()
     co.gui = mocker.MagicMock()
     co.gui.update_error_status = mocker.MagicMock()
 
-    co.on_sync_failure(RequestTimeoutError())
-
-    co.gui.update_error_status.assert_called_once_with(
-        'The SecureDrop server cannot be reached. Trying to reconnect...', duration=0)
-
-
-def test_Controller_on_sync_failure_due_to_connect_timeout(homedir, config, mocker, session_maker):
-    """
-    If the sync fails because of a connect timeout, make sure to show an error message.
-    """
-    gui = mocker.MagicMock()
-    co = Controller('http://localhost', gui, session_maker, homedir)
-    co.logout = mocker.MagicMock()
-    co.gui = mocker.MagicMock()
-    co.gui.update_error_status = mocker.MagicMock()
-
-    co.on_sync_failure(ServerConnectionError())
+    co.on_sync_failure(exception())
 
     co.gui.update_error_status.assert_called_once_with(
         'The SecureDrop server cannot be reached. Trying to reconnect...', duration=0)
