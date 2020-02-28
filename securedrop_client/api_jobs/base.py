@@ -1,7 +1,7 @@
 import logging
 
 from PyQt5.QtCore import QObject, pyqtSignal
-from sdclientapi import API, AuthError, RequestTimeoutError, ServerConnectionError
+from sdclientapi import API, AuthError, RequestTimeoutError
 from sqlalchemy.orm.session import Session
 from typing import Any, Optional, TypeVar
 
@@ -71,7 +71,7 @@ class ApiJob(QueueJob):
                 result = self.call_api(api_client, session)
             except (AuthError, ApiInaccessibleError) as e:
                 raise ApiInaccessibleError() from e
-            except (RequestTimeoutError, ServerConnectionError) as e:
+            except RequestTimeoutError as e:
                 if self.remaining_attempts == 0:
                     self.failure_signal.emit(e)
                     raise
