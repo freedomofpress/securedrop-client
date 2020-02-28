@@ -1886,6 +1886,19 @@ class FileWidget(QWidget):
     }
     '''
 
+    download_button_css = """
+    QPushButton#download_button {
+        border: none;
+        font-family: 'Source Sans Pro';
+        font-weight: 600;
+        font-size: 13px;
+        color: #2a319d;
+    }
+    QPushButton#download_button:hover {
+        color: #05a6fe;
+    }
+    """
+
     VERTICAL_MARGIN = 10
     FILE_FONT_SPACING = 2
     FILE_OPTIONS_FONT_SPACING = 1.6
@@ -1940,6 +1953,7 @@ class FileWidget(QWidget):
         self.download_button.setIcon(load_icon('download_file.svg'))
         self.download_button.setFont(self.file_buttons_font)
         self.download_button.setCursor(QCursor(Qt.PointingHandCursor))
+        self.download_button.setStyleSheet(self.download_button_css)
         self.download_animation = load_movie("download_file.gif")
         self.export_button = QPushButton(_('EXPORT'))
         self.export_button.setObjectName('export_print')
@@ -2019,6 +2033,7 @@ class FileWidget(QWidget):
             self.download_button.setIcon(load_icon('download_file.svg'))
             self.download_button.setFont(self.file_buttons_font)
             self.download_button.show()
+            self.download_button.setStyleSheet(self.download_button_css)
             self.no_file_name.hide()
             self.export_button.hide()
             self.middot.hide()
@@ -2029,12 +2044,14 @@ class FileWidget(QWidget):
     @pyqtSlot(str, str, str)
     def _on_file_downloaded(self, source_uuid: str, file_uuid: str, filename: str) -> None:
         if file_uuid == self.file.uuid:
+            self.downloading = False
             self.file = self.controller.get_file(self.file.uuid)
             QTimer.singleShot(300, self.stop_button_animation)
 
     @pyqtSlot(str, str, str)
     def _on_file_missing(self, source_uuid: str, file_uuid: str, filename: str) -> None:
         if file_uuid == self.file.uuid:
+            self.downloading = False
             self.file = self.controller.get_file(self.file.uuid)
             QTimer.singleShot(300, self.stop_button_animation)
 
