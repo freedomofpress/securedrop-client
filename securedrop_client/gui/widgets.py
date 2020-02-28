@@ -2994,11 +2994,11 @@ class ReplyBoxWidget(QWidget):
         main_layout.addWidget(horizontal_line)
         main_layout.addWidget(self.replybox)
 
-        # Determine whether or not this widget should be enabled
+        # Determine whether or not this widget should be rendered in offline mode
         if self.controller.is_authenticated:
-            self.enable()
+            self.set_logged_in()
         else:
-            self.disable()
+            self.set_logged_out()
 
         # Text area refocus flag.
         self.refocus_after_sync = False
@@ -3007,12 +3007,18 @@ class ReplyBoxWidget(QWidget):
         self.controller.authentication_state.connect(self._on_authentication_changed)
         self.controller.sync_events.connect(self._on_synced)
 
-    def enable(self):
+    def set_logged_in(self):
         self.text_edit.set_logged_in()
-        self.replybox.setEnabled(True)
-        self.send_button.show()
+        # Even if we are logged in, we cannot reply to a source if we do not
+        # have a public key for it.
+        if self.source.public_key:
+            self.replybox.setEnabled(True)
+            self.send_button.show()
+        else:
+            self.replybox.setEnabled(False)
+            self.send_button.hide()
 
-    def disable(self):
+    def set_logged_out(self):
         self.text_edit.set_logged_out()
         self.replybox.setEnabled(False)
         self.send_button.hide()
@@ -3032,9 +3038,9 @@ class ReplyBoxWidget(QWidget):
 
     def _on_authentication_changed(self, authenticated: bool) -> None:
         if authenticated:
-            self.enable()
+            self.set_logged_in()
         else:
-            self.disable()
+            self.set_logged_out()
 
     def _on_synced(self, data: str) -> None:
         if data == 'syncing' and self.text_edit.hasFocus():
@@ -3108,8 +3114,8 @@ class ReplyTextEdit(QPlainTextEdit):
             placeholder = _("Compose a reply to ") + source_name
         else:
             self.setEnabled(False)
-            msg = "<strong><font color=\"#24276d\">Awaiting action</font></strong>"
-            placeholder = msg + " from the source to enable replies."
+            msg = "<strong><font color=\"#24276d\">Awaiting encryption key</font></strong>"
+            placeholder = msg + " from the server to enable replies."
         self.placeholder.setText(placeholder)
         self.placeholder.adjustSize()
 
