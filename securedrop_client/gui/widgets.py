@@ -1965,15 +1965,9 @@ class FileWidget(QWidget):
         if t == QEvent.MouseButtonPress:
             if event.button() == Qt.LeftButton:
                 self._on_left_click()
-        # HERE BE DRAGONS.
-        # The checks for "not self.downloading" in the following lines of code
-        # probably look strange. The obvious thing to do is to wrap such a
-        # check as a conditional. However, for reasons that are not entirely
-        # clear, this regularly caused random crashes when running the test
-        # suite (on Ubuntu 18.04, Python3.7). The following code expresses the
-        # same logic but without causing the random the crash of the test
-        # suite.
-        if (t == QEvent.HoverEnter or t == QEvent.HoverMove) and not self.downloading:
+        # See https://github.com/freedomofpress/securedrop-client/issues/835
+        # for context on code below.
+        if t == QEvent.HoverEnter and not self.downloading:
             self.download_button.setIcon(load_icon('download_file_hover.svg'))
         elif t == QEvent.HoverLeave and not self.downloading:
             self.download_button.setIcon(load_icon('download_file.svg'))

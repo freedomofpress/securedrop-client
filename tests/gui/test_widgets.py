@@ -1489,11 +1489,6 @@ def test_FileWidget_event_handler_hover(mocker, session, source):
     fw.eventFilter(fw, test_event)
     assert fw.download_button.setIcon.call_count == 1
     fw.download_button.setIcon.reset_mock()
-    # Hover move
-    test_event = QEvent(QEvent.HoverMove)
-    fw.eventFilter(fw, test_event)
-    assert fw.download_button.setIcon.call_count == 1
-    fw.download_button.setIcon.reset_mock()
     # Hover leave
     test_event = QEvent(QEvent.HoverLeave)
     fw.eventFilter(fw, test_event)
