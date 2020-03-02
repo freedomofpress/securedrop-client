@@ -1465,14 +1465,14 @@ def test_ReplyWidget_update_text(mocker):
     )
 
     assert rw.message.text() == original_text
-    assert rw.styleSheet() == rw.CSS_REPLY_FAILED
+    assert rw.message.styleSheet() == rw.CSS_MESSAGE_REPLY_FAILED
     assert not rw.error.isHidden()
 
     new_text = 'updated text'
     thing.reply_ready.emit(source_id, reply_id, new_text)
 
     assert rw.message.text() == new_text
-    assert rw.styleSheet() == rw.CSS_REPLY_SUCCEEDED
+    assert rw.message.styleSheet() == rw.CSS_MESSAGE_REPLY_SUCCEEDED
     assert rw.error.isHidden()
 
 
