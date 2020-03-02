@@ -1153,6 +1153,7 @@ def test_Controller_download_new_messages_with_new_message(mocker, session, sess
     job = mocker.MagicMock(success_signal=success_signal, failure_signal=failure_signal)
     mocker.patch("securedrop_client.logic.MessageDownloadJob", return_value=job)
     api_job_queue = mocker.patch.object(co, 'api_job_queue')
+    set_status = mocker.patch.object(co, 'set_status')
 
     co.download_new_messages()
 
@@ -1161,6 +1162,7 @@ def test_Controller_download_new_messages_with_new_message(mocker, session, sess
         co.on_message_download_success, type=Qt.QueuedConnection)
     failure_signal.connect.assert_called_once_with(
         co.on_message_download_failure, type=Qt.QueuedConnection)
+    set_status.assert_called_once_with('Retrieving new messages', 2500)
 
 
 def test_Controller_download_new_messages_without_messages(mocker, session, session_maker, homedir):
