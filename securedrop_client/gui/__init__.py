@@ -16,6 +16,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import textwrap
 
 from typing import Union
 
@@ -167,8 +168,11 @@ class SecureQLabel(QLabel):
         flags: Union[Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags(),
     ):
         super().__init__(parent, flags)
+        self.setWordWrap(True)
         self.setText(text)
 
     def setText(self, text: str) -> None:
         self.setTextFormat(Qt.PlainText)
-        super().setText(text)
+        # Wraps text at default of 70 characters.
+        wrapped = "\n".join(textwrap.wrap(text))
+        super().setText(wrapped)
