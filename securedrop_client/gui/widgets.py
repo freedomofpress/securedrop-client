@@ -838,6 +838,12 @@ class SourceList(QListWidget):
         """
         Reset and update the list with the passed in list of sources.
         """
+        # A flag to show if a source is currently selected (the current source
+        # doesn't have to be selected in a QListWidget -- it appears to default
+        # to whatever is in row 0, whether it's selected or not).
+        has_source_selected = False
+        if self.currentRow() > -1:
+            has_source_selected = self.item(self.currentRow()).isSelected()
         current_source = self.get_current_source()
         current_source_id = current_source and current_source.id
 
@@ -854,7 +860,7 @@ class SourceList(QListWidget):
             self.addItem(list_item)
             self.setItemWidget(list_item, new_source)
 
-            if source.id == current_source_id:
+            if source.id == current_source_id and has_source_selected:
                 self.setCurrentItem(list_item)
 
     def get_current_source(self):

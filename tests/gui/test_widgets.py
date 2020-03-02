@@ -691,6 +691,7 @@ def test_SourceList_update(mocker):
     sl.addItem = mocker.MagicMock()
     sl.setItemWidget = mocker.MagicMock()
     sl.controller = mocker.MagicMock()
+    sl.setCurrentItem = mocker.MagicMock()
 
     mock_sw = mocker.MagicMock()
     mock_lwi = mocker.MagicMock()
@@ -706,6 +707,41 @@ def test_SourceList_update(mocker):
     assert sl.addItem.call_count == len(sources)
     assert sl.setItemWidget.call_count == len(sources)
     assert len(sl.source_widgets) == len(sources)
+    assert sl.setCurrentItem.call_count == 0
+
+
+def test_SourceList_update_with_pre_selected_source(mocker):
+    """
+    If there's a source already selected. It remains selected after update.
+    """
+    sl = SourceList()
+
+    sl.clear = mocker.MagicMock()
+    sl.addItem = mocker.MagicMock()
+    sl.setItemWidget = mocker.MagicMock()
+    sl.controller = mocker.MagicMock()
+    sl.setCurrentItem = mocker.MagicMock()
+    sl.currentRow = mocker.MagicMock(return_value=1)
+    sl.item = mocker.MagicMock()
+    sl.item().isSelected.return_value = True
+    mock_source = mocker.MagicMock()
+    sl.get_current_source = mocker.MagicMock(return_value=mock_source)
+
+    mock_sw = mocker.MagicMock()
+    mock_lwi = mocker.MagicMock()
+    mocker.patch('securedrop_client.gui.widgets.SourceWidget', mock_sw)
+    mocker.patch('securedrop_client.gui.widgets.QListWidgetItem', mock_lwi)
+
+    sources = [mocker.MagicMock(), mock_source, mocker.MagicMock(), ]
+    sl.update(sources)
+
+    sl.clear.assert_called_once_with()
+    assert mock_sw.call_count == len(sources)
+    assert mock_lwi.call_count == len(sources)
+    assert sl.addItem.call_count == len(sources)
+    assert sl.setItemWidget.call_count == len(sources)
+    assert len(sl.source_widgets) == len(sources)
+    assert sl.setCurrentItem.call_count == 1
 
 
 def test_SourceList_maintains_selection(mocker):
