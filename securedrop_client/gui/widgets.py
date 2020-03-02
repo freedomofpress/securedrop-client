@@ -984,7 +984,6 @@ class SourceWidget(QWidget):
         self.preview = SecureQLabel()
         self.preview.setObjectName('preview')
         self.preview.setFixedSize(QSize(self.PREVIEW_WIDTH, self.PREVIEW_HEIGHT))
-        self.preview.setWordWrap(True)
         summary_layout.addWidget(self.name)
         summary_layout.addWidget(self.preview)
 
@@ -1612,7 +1611,6 @@ class SpeechBubble(QWidget):
         # Message box
         self.message = SecureQLabel(text)
         self.message.setObjectName('message')
-        self.message.setWordWrap(True)
 
         # Color bar
         self.color_bar = QWidget()
@@ -1742,6 +1740,7 @@ class ReplyWidget(SpeechBubble):
         error_icon.setObjectName('error_icon')  # Set css id
         error_icon.setFixedWidth(12)
         error_message = SecureQLabel('Failed to send')
+        error_message.setWordWrap(False)
         error_message.setObjectName('error_message')
         error_message.setStyleSheet(self.CSS_ERROR_MESSAGE_REPLY_FAILED)
 
@@ -1830,7 +1829,7 @@ class FileWidget(QWidget):
         color: #05a6fe;
     }
     QLabel#file_name {
-        min-width: 129px;
+        max-width: 320px;
         padding-right: 8px;
         padding-bottom: 4px;
         padding-top: 1px;
@@ -1960,6 +1959,7 @@ class FileWidget(QWidget):
         self.file_name.installEventFilter(self)
         self.file_name.setCursor(QCursor(Qt.PointingHandCursor))
         self.no_file_name = SecureQLabel('ENCRYPTED FILE ON SERVER')
+        self.no_file_name.setWordWrap(False)
         self.no_file_name.setObjectName('no_file_name')
         self.no_file_name.setFont(file_description_font)
 
@@ -1981,7 +1981,7 @@ class FileWidget(QWidget):
         layout.addWidget(self.file_name)
         layout.addWidget(self.no_file_name)
         layout.addWidget(horizontal_line)
-        layout.addWidget(self.file_size)
+        layout.addWidget(self.file_size, alignment=Qt.AlignCenter)
 
         # Connect signals to slots
         file_ready_signal.connect(self._on_file_downloaded, type=Qt.QueuedConnection)
