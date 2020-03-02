@@ -1657,8 +1657,7 @@ class ReplyWidget(SpeechBubble):
     Represents a reply to a source.
     """
 
-    CSS_REPLY_FAILED = '''
-    #message {
+    CSS_MESSAGE_REPLY_FAILED = '''
         min-width: 540px;
         max-width: 540px;
         font-family: 'Source Sans Pro';
@@ -1667,23 +1666,23 @@ class ReplyWidget(SpeechBubble):
         background-color: #fff;
         color: #3b3b3b;
         padding: 16px;
-    }
-    #color_bar {
+    '''
+
+    CSS_COLOR_BAR_REPLY_FAILED = '''
         min-height: 5px;
         max-height: 5px;
         background-color: #ff3366;
         border: 0px;
-    }
-    #error_message {
+    '''
+
+    CSS_ERROR_MESSAGE_REPLY_FAILED = '''
         font-family: 'Source Sans Pro';
         font-weight: 500;
         font-size: 13px;
         color: #ff3366;
-    }
     '''
 
-    CSS_REPLY_SUCCEEDED = '''
-    #message {
+    CSS_MESSAGE_REPLY_SUCCEEDED = '''
         min-width: 540px;
         max-width: 540px;
         font-family: 'Source Sans Pro';
@@ -1692,19 +1691,16 @@ class ReplyWidget(SpeechBubble):
         background-color: #fff;
         color: #3b3b3b;
         padding: 16px;
-    }
-    #color_bar {
+    '''
+
+    CSS_COLOR_BAR_REPLY_SUCCEEDED = '''
         min-height: 5px;
         max-height: 5px;
         background-color: #0065db;
         border: 0px;
-    }
     '''
 
-    # Custom pending CSS styling simulates the effect of opacity which is only
-    # supported by tooltips for QSS.
-    CSS_REPLY_PENDING = '''
-    #message {
+    CSS_MESSAGE_REPLY_PENDING = '''
         min-width: 540px;
         max-width: 540px;
         font-family: 'Source Sans Pro';
@@ -1713,13 +1709,13 @@ class ReplyWidget(SpeechBubble):
         color: #A9AAAD;
         background-color: #F7F8FC;
         padding: 16px;
-    }
-    #color_bar {
+    '''
+
+    CSS_COLOR_BAR_REPLY_PENDING = '''
         min-height: 5px;
         max-height: 5px;
         background-color: #0065db;
         border: 0px;
-    }
     '''
 
     def __init__(
@@ -1740,6 +1736,7 @@ class ReplyWidget(SpeechBubble):
         error_icon.setFixedWidth(12)
         error_message = SecureQLabel('Failed to send')
         error_message.setObjectName('error_message')
+        error_message.setStyleSheet(self.CSS_ERROR_MESSAGE_REPLY_FAILED)
 
         self.error = QWidget()
         error_layout = QHBoxLayout()
@@ -1760,13 +1757,16 @@ class ReplyWidget(SpeechBubble):
 
     def _set_reply_state(self, status: str) -> None:
         if status == 'SUCCEEDED':
-            self.setStyleSheet(self.CSS_REPLY_SUCCEEDED)
+            self.message.setStyleSheet(self.CSS_MESSAGE_REPLY_SUCCEEDED)
+            self.color_bar.setStyleSheet(self.CSS_COLOR_BAR_REPLY_SUCCEEDED)
             self.error.hide()
         elif status == 'FAILED':
-            self.setStyleSheet(self.CSS_REPLY_FAILED)
+            self.message.setStyleSheet(self.CSS_MESSAGE_REPLY_FAILED)
+            self.color_bar.setStyleSheet(self.CSS_COLOR_BAR_REPLY_FAILED)
             self.error.show()
         elif status == 'PENDING':
-            self.setStyleSheet(self.CSS_REPLY_PENDING)
+            self.message.setStyleSheet(self.CSS_MESSAGE_REPLY_PENDING)
+            self.color_bar.setStyleSheet(self.CSS_COLOR_BAR_REPLY_PENDING)
 
     @pyqtSlot(str, str, str)
     def _on_reply_success(self, source_id: str, message_id: str, content: str) -> None:
