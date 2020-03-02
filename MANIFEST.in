@@ -9,4 +9,6 @@ include setup.py
 include files/send-to-usb.desktop
 include files/application-x-sd-export.xml
 include files/sd-logo.png
+include files/mimeapps.list
+include files/open-in-dvm.desktop
 
