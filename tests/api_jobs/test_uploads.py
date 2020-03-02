@@ -330,9 +330,9 @@ def test_send_reply_failure_when_repr_is_none(homedir, mocker, session, session_
     encrypt_fn = mocker.patch.object(gpg, 'encrypt_to_source')
     job = SendReplyJob(source.uuid, 'mock_reply_uuid', 'mock_message', gpg)
 
-    with pytest.raises(
-            SendReplyJobError,
-            match=r'Failed to send reply for source mock_reply_uuid due to Exception: mock'):
+    error = 'Failed to send reply mock_reply_uuid for source {} due to Exception: mock'.format(
+        source.uuid)
+    with pytest.raises(SendReplyJobError, match=error):
         job.call_api(api_client, session)
 
     encrypt_fn.assert_called_once_with(source.uuid, 'mock_message')
@@ -342,3 +342,46 @@ def test_send_reply_failure_when_repr_is_none(homedir, mocker, session, session_
     # Ensure that the draft reply is still in the db
     drafts = session.query(db.DraftReply).filter_by(uuid='mock_reply_uuid').all()
     assert len(drafts) == 1
+
+
+def test_reply_already_sent(homedir, mocker, session, session_maker, reply_status_codes):
+    '''
+    Check that if a reply is already sent then we return the reply id.
+    '''
+    source = factory.Source()
+    session.add(source)
+    reply = factory.Reply(source=source)
+    session.add(reply)
+    session.commit()
+
+    job = SendReplyJob('mock_source_id', reply.uuid, 'mock reply message', mocker.MagicMock())
+    reply_uuid = job.call_api(mocker.MagicMock(), session)
+
+    assert reply.uuid == reply_uuid
+
+
+def test_reply_deleted_locally(homedir, mocker, session, session_maker, reply_status_codes):
+    '''
+    Check that if a draft does not exist then we raise a SendReplyJobException so that the job
+    is skipped.
+    '''
+    job = SendReplyJob('mock_source_id', 'mock_uuid', 'mock reply message', mocker.MagicMock())
+    error = 'Failed to send reply mock_uuid for source mock_source_id due to Exception'
+    with pytest.raises(SendReplyJobError, match=error):
+        job.call_api(mocker.MagicMock(), session)
+
+
+def test_source_deleted_locally(homedir, mocker, session, session_maker, reply_status_codes):
+    '''
+    Check that if a source has been deleted then raise a SendReplyJobException so that the job
+    is skipped.
+    '''
+    draft = factory.DraftReply()
+    session.add(draft)
+    session.commit()
+
+    job = SendReplyJob('nonexistent_id', draft.uuid, 'mock reply message', mocker.MagicMock())
+    error = 'Failed to send reply {} for source {} due to Exception'.format(
+        draft.uuid, 'nonexistent_id')
+    with pytest.raises(SendReplyJobError, match=error):
+        job.call_api(mocker.MagicMock(), session)
