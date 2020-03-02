@@ -50,7 +50,7 @@ class SendReplyJob(ApiJob):
             if not source:
                 session.delete(draft_reply_db_object)
                 session.commit()
-                raise Exception('Source {} exists'.format(self.source_uuid))
+                raise Exception('Source {} does not exists'.format(self.source_uuid))
 
             # Send the draft reply to the source
             encrypted_reply = self.gpg.encrypt_to_source(self.source_uuid, self.message)
@@ -119,7 +119,7 @@ class SendReplyJob(ApiJob):
         # TODO: Once https://github.com/freedomofpress/securedrop-client/issues/648, we will want to
         # pass the default request timeout to reply_source instead of setting it on the api object
         # directly.
-        api_client.default_request_timeout = 0.01
+        api_client.default_request_timeout = 5
         return api_client.reply_source(sdk_source, encrypted_reply, self.reply_uuid)
 
 
