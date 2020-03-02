@@ -4,11 +4,14 @@ Tests for storage sync logic.
 import datetime
 import pytest
 import os
+import time
 import uuid
 from dateutil.parser import parse
 
 from sdclientapi import Submission, Reply
 from sqlalchemy.orm.exc import NoResultFound
+
+from PyQt5.QtCore import QThread
 
 import securedrop_client.db
 from securedrop_client.crypto import GpgHelper
@@ -22,6 +25,18 @@ from securedrop_client.storage import get_local_sources, get_local_messages, get
 
 from securedrop_client import db
 from tests import factory
+
+
+def make_remote_message(source_uuid, file_counter=1):
+    """
+    Utility function for generating sdclientapi Message instances to act
+    upon in the following unit tests. The passed in source_uuid is used to
+    generate a valid URL.
+    """
+    source_url = '/api/v1/sources/{}'.format(source_uuid)
+    return Submission(download_url='test', filename='{}-submission.msg.gpg'.format(file_counter),
+                      is_read=False, size=123, source_url=source_url,
+                      submission_url='test', uuid=str(uuid.uuid4()))
 
 
 def make_remote_submission(source_uuid):
@@ -165,6 +180,79 @@ def test_update_local_storage(homedir, mocker, session_maker):
     rpl_fn.assert_called_once_with([remote_reply], [local_reply], mock_session, homedir)
     file_fn.assert_called_once_with([remote_file], [local_file], mock_session, homedir)
     msg_fn.assert_called_once_with([remote_message], [local_message], mock_session, homedir)
+
+
+def test_sync_delete_race(homedir, mocker, session_maker, session):
+    """
+    Test a race between sync and source deletion (#797).
+
+    The original failure scenario:
+      0. New source submits message 1.
+      1. Sync occurs in client. Journalist sees message 1.
+      2. Source submits message 2.
+      3. Journalist simultaneously deletes the source while the sync
+         begins. Deletion completes as it occurs independently of the
+         sync, but by this time the sync has collected the list of new
+         messages, which includes message 2.
+      4. Source is gone, yet the logic in the sync will attempt to add
+         message 2 which corresponds to a source that is deleted.
+    """
+
+    source = factory.RemoteSource()
+    message1 = make_remote_message(source.uuid)
+
+    sources = [source]
+    submissions = [message1]
+    replies = []
+
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    update_local_storage(session, gpg, sources, submissions, replies, homedir)
+
+    assert source_exists(session, source.uuid)
+    get_message(session, message1.uuid)
+
+    message2 = make_remote_message(source.uuid, file_counter=2)
+    submissions = [message1, message2]
+
+    class Deleter(QThread):
+        def __init__(self, source_uuid):
+            super().__init__()
+            self.source_uuid = source_uuid
+
+        def run(self):
+            session = db.make_session_maker(homedir)()
+            session.begin(subtransactions=True)
+            delete_local_source_by_uuid(session, self.source_uuid)
+            session.commit()
+            self.exit()
+
+    deleter = Deleter(source.uuid)
+
+    def delayed_update_messages(remote_submissions, local_submissions, session, data_dir):
+        assert source_exists(session, source.uuid)
+        deleter.start()
+        time.sleep(1)
+
+        # This next assert should fail if transactions are working, as
+        # the source should still be visible in this session -- it's
+        # only been deleted in the Deleter's session. If transactions
+        # are *not* working, the deletion will be visible here.
+        assert source_exists(session, source.uuid) is False
+        update_messages(remote_submissions, local_submissions, session, data_dir)
+
+    mocker.patch('securedrop_client.storage.update_messages', delayed_update_messages)
+
+    # simulate update_local_storage being called as part of the sync operation
+    update_local_storage(session, gpg, sources, [message1, message2], [], homedir)
+
+    assert source_exists(session, source.uuid) is False
+    with pytest.raises(NoResultFound):
+        get_message(session, message1.uuid)
+
+    assert source_exists(session, source.uuid) is False
+    with pytest.raises(NoResultFound):
+        get_message(session, message1.uuid)
+        get_message(session, message2.uuid)
 
 
 def test_update_sources(homedir, mocker, session_maker, session):
@@ -501,7 +589,7 @@ def test_update_files(homedir, mocker):
     local_source = mocker.MagicMock()
     local_source.uuid = source.uuid
     local_source.id = 666  # };-)
-    mock_session.query().filter_by.return_value = [local_source, ]
+    mock_session.query().filter_by().first.return_value = local_source
 
     update_files(remote_submissions, local_submissions, mock_session, data_dir)
 
@@ -564,9 +652,7 @@ def test_update_messages(homedir, mocker):
     local_source.id = 666  # };-)
     local_user = mocker.MagicMock()
     local_user.id = 42
-    mock_session.query().filter_by.side_effect = [[local_source, ],
-                                                  [local_user, ],
-                                                  [local_user, ], ]
+    mock_session.query().filter_by().first.return_value = local_source
     mock_focu = mocker.MagicMock(return_value=local_user)
     mocker.patch('securedrop_client.storage.find_or_create_user', mock_focu)
 

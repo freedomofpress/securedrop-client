@@ -1,6 +1,7 @@
 """
 Tests for the gui helper functions in __init__.py
 """
+import textwrap
 
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtWidgets import QApplication
@@ -169,3 +170,15 @@ def test_SecureQLabel_setText(mocker):
 def test_SecureQLabel_quotes_not_escaped_for_readability():
     sl = SecureQLabel("'hello'")
     assert sl.text() == "'hello'"
+
+
+def test_SecureQLabel_wraps_on_70():
+    msg = (
+        "thisisaverylongmessagethatwillnotwrapunlessthistestpassesproperly1234"
+        "thisisaverylongmessagethatwillnotwrapunlessthistestpassesproperly1234"
+        "thisisaverylongmessagethatwillnotwrapunlessthistestpassesproperly1234"
+    )
+    sl = SecureQLabel(msg)
+    expected = "\n".join(textwrap.wrap(msg))
+    assert sl.text() == expected
+    assert sl.wordWrap() is True

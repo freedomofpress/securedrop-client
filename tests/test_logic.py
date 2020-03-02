@@ -427,6 +427,23 @@ def test_Controller_on_sync_failure_due_to_invalid_token(homedir, config, mocker
     co.gui.show_login.assert_called_once_with(error='Your session expired. Please log in again.')
 
 
+@pytest.mark.parametrize("exception", [RequestTimeoutError, ServerConnectionError])
+def test_Controller_on_sync_failure_due_to_timeout(homedir, mocker, exception):
+    """
+    If the sync fails because of a timeout, make sure to show an error message.
+    """
+    gui = mocker.MagicMock()
+    co = Controller('http://localhost', gui, mocker.MagicMock(), homedir)
+    co.logout = mocker.MagicMock()
+    co.gui = mocker.MagicMock()
+    co.gui.update_error_status = mocker.MagicMock()
+
+    co.on_sync_failure(exception())
+
+    co.gui.update_error_status.assert_called_once_with(
+        'The SecureDrop server cannot be reached. Trying to reconnect...', duration=0)
+
+
 def test_Controller_on_sync_success(homedir, config, mocker):
     """
     If there's a result to syncing, then update local storage.
@@ -1153,6 +1170,7 @@ def test_Controller_download_new_messages_with_new_message(mocker, session, sess
     job = mocker.MagicMock(success_signal=success_signal, failure_signal=failure_signal)
     mocker.patch("securedrop_client.logic.MessageDownloadJob", return_value=job)
     api_job_queue = mocker.patch.object(co, 'api_job_queue')
+    set_status = mocker.patch.object(co, 'set_status')
 
     co.download_new_messages()
 
@@ -1161,6 +1179,7 @@ def test_Controller_download_new_messages_with_new_message(mocker, session, sess
         co.on_message_download_success, type=Qt.QueuedConnection)
     failure_signal.connect.assert_called_once_with(
         co.on_message_download_failure, type=Qt.QueuedConnection)
+    set_status.assert_called_once_with('Retrieving new messages', 2500)
 
 
 def test_Controller_download_new_messages_without_messages(mocker, session, session_maker, homedir):
@@ -1480,7 +1499,7 @@ def test_APICallRunner_api_call_timeout(mocker, exception):
 
 def test_Controller_on_queue_paused(homedir, config, mocker, session_maker):
     '''
-    Check that a paused queue is communicated to the user via the error status bar with retry option
+    Check that a paused queue is communicated to the user via the error status bar
     '''
     mock_gui = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
@@ -1489,7 +1508,7 @@ def test_Controller_on_queue_paused(homedir, config, mocker, session_maker):
     co.show_last_sync_timer = mocker.MagicMock()
     co.on_queue_paused()
     mock_gui.update_error_status.assert_called_once_with(
-        'The SecureDrop server cannot be reached.', duration=0, retry=True)
+        'The SecureDrop server cannot be reached. Trying to reconnect...', duration=0)
     co.show_last_sync_timer.start.assert_called_once_with(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
 
 
