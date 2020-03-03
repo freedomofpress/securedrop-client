@@ -1522,6 +1522,29 @@ def test_FileWidget_init_file_downloaded(mocker, source, session):
     assert not fw.file_name.isHidden()
 
 
+def test_FileWidget_set_button_state_under_mouse(mocker, source, session):
+    """
+    If the download_button is under the mouse, it should show the "hover"
+    version of the download_file icon.
+    """
+    file_ = factory.File(source=source['source'],
+                         is_downloaded=False,
+                         is_decrypted=None)
+    session.add(file_)
+    session.commit()
+
+    mock_get_file = mocker.MagicMock(return_value=file_)
+    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+
+    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0)
+    fw.download_button.underMouse = mocker.MagicMock(return_value=True)
+    fw.download_button.setIcon = mocker.MagicMock()
+    mock_load = mocker.MagicMock()
+    with mocker.patch("securedrop_client.gui.widgets.load_icon", mock_load):
+        fw.set_button_state()
+        mock_load.assert_called_once_with("download_file_hover.svg")
+
+
 def test_FileWidget_event_handler_left_click(mocker, session, source):
     """
     Left click on filename should trigger an open.
