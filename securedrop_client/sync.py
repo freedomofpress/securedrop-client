@@ -14,14 +14,14 @@ logger = logging.getLogger(__name__)
 
 class ApiSync(QObject):
     '''
-    ApiSync continuously syncs, waiting 15 seconds between task completion.
+    ApiSync continuously syncs, waiting 2 seconds between task completion.
     '''
 
     sync_started = pyqtSignal()
     sync_success = pyqtSignal()
     sync_failure = pyqtSignal(Exception)
 
-    TIME_BETWEEN_SYNCS_MS = 1000 * 15  # fifteen seconds between syncs
+    TIME_BETWEEN_SYNCS_MS = 1000 * 2  # two seconds between syncs
 
     def __init__(
         self, api_client: API, session_maker: scoped_session, gpg: GpgHelper, data_dir: str
