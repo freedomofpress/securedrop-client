@@ -443,7 +443,10 @@ class Controller(QObject):
         with open(self.last_sync_filepath, 'w') as f:
             f.write(arrow.now().format())
 
-        storage.update_missing_files(self.data_dir, self.session)
+        missing_files = storage.update_missing_files(self.data_dir, self.session)
+        for missed_file in missing_files:
+            self.file_missing.emit(missed_file.source.uuid, missed_file.uuid,
+                                   str(missed_file))
         self.update_sources()
         self.download_new_messages()
         self.download_new_replies()
@@ -620,8 +623,9 @@ class Controller(QObject):
                 'File does not exist in the data directory. Please try re-downloading.'))
             logger.debug('Cannot find {} in the data directory. File does not exist.'.format(
                 file.filename))
-            storage.update_missing_files(self.data_dir, self.session)
-            self.file_missing.emit(file.source.uuid, file.uuid, str(file))
+            missing_files = storage.update_missing_files(self.data_dir, self.session)
+            for f in missing_files:
+                self.file_missing.emit(f.source.uuid, f.uuid, str(f))
             return False
         return True
 

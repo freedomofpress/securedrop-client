@@ -384,14 +384,17 @@ def update_and_get_user(uuid: str,
     return user
 
 
-def update_missing_files(data_dir: str, session: Session) -> None:
+def update_missing_files(data_dir: str, session: Session) -> List[File]:
     '''
     Update files that are marked as downloaded yet missing from the filesystem.
     '''
     files_that_have_been_downloaded = session.query(File).filter_by(is_downloaded=True).all()
-    for file in files_that_have_been_downloaded:
-        if not os.path.exists(file.location(data_dir)):
-            mark_as_not_downloaded(file.uuid, session)
+    files_that_are_missing = []
+    for f in files_that_have_been_downloaded:
+        if not os.path.exists(f.location(data_dir)):
+            files_that_are_missing.append(f)
+            mark_as_not_downloaded(f.uuid, session)
+    return files_that_are_missing
 
 
 def update_draft_replies(session: Session, source_id: int, timestamp: datetime,
