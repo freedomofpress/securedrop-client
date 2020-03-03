@@ -1463,7 +1463,7 @@ class LoginDialog(QDialog):
         application_version.setLayout(application_version_layout)
         application_version_label = QLabel(_("Workstation app v") + sd_version)
         application_version_label.setAlignment(Qt.AlignHCenter)
-        application_version_label.setStyleSheet("QLabel {color: #2A319D;}")
+        application_version_label.setStyleSheet("QLabel {color: #9fddff;}")
         application_version_layout.addWidget(application_version_label)
 
         # Add widgets
