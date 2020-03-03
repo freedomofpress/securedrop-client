@@ -2258,7 +2258,6 @@ class FramelessDialog(QDialog):
         button_layout = QVBoxLayout()
         window_buttons.setLayout(button_layout)
         self.cancel_button = QPushButton(_('CANCEL'))
-        self.cancel_button.setAutoDefault(False)
         self.cancel_button.clicked.connect(self.close)
         self.continue_button = QPushButton(_('CONTINUE'))
         self.continue_button.setObjectName('primary_button')
@@ -2291,7 +2290,12 @@ class FramelessDialog(QDialog):
         # window in Qubes), the default behavior is to close the dialog when the Enter or Return
         # key is clicked, which we override here.
         if (event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return):
+            if self.cancel_button.hasFocus():
+                self.cancel_button.click()
+            else:
+                self.continue_button.click()
             return
+
         super().keyPressEvent(event)
 
     def close(self):

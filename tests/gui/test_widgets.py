@@ -9,7 +9,7 @@ from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtGui import QFocusEvent, QKeyEvent, QMovie
 from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QMessageBox, QMainWindow, \
-    QLineEdit, QDialog
+    QLineEdit
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from securedrop_client import db, logic
@@ -1888,11 +1888,38 @@ def test_FramelessDialog_keyPressEvent_does_not_close_on_enter_or_return(mocker,
          'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = FramelessDialog()
     dialog.close = mocker.MagicMock()
-    event = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
 
+    event = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
     dialog.keyPressEvent(event)
 
     dialog.close.assert_not_called()
+
+
+@pytest.mark.parametrize("key", [Qt.Key_Enter, Qt.Key_Return])
+def test_FramelessDialog_keyPressEvent_cancel_on_enter_when_focused(mocker, key):
+    mocker.patch(
+         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
+    dialog = FramelessDialog()
+    dialog.cancel_button.click = mocker.MagicMock()
+    dialog.cancel_button.hasFocus = mocker.MagicMock(return_value=True)
+
+    event = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
+    dialog.keyPressEvent(event)
+
+    dialog.cancel_button.click.assert_called_once_with()
+
+
+@pytest.mark.parametrize("key", [Qt.Key_Enter, Qt.Key_Return])
+def test_FramelessDialog_keyPressEvent_continue_on_enter(mocker, key):
+    mocker.patch(
+         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
+    dialog = FramelessDialog()
+    dialog.continue_button.click = mocker.MagicMock()
+
+    event = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
+    dialog.keyPressEvent(event)
+
+    dialog.continue_button.click.assert_called_once_with()
 
 
 @pytest.mark.parametrize("key", [Qt.Key_Alt, Qt.Key_A])
@@ -1901,8 +1928,8 @@ def test_FramelessDialog_keyPressEvent_does_not_close_for_other_keys(mocker, key
          'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = FramelessDialog()
     dialog.close = mocker.MagicMock()
-    event = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
 
+    event = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
     dialog.keyPressEvent(event)
 
     dialog.close.assert_not_called()
