@@ -13,7 +13,7 @@ from sdclientapi import Reply as SdkReply
 from sdclientapi import Submission as SdkSubmission
 from sqlalchemy.orm.session import Session
 
-from securedrop_client.api_jobs.base import ApiJob
+from securedrop_client.api_jobs.base import SingleObjectApiJob
 from securedrop_client.crypto import GpgHelper, CryptoError
 from securedrop_client.db import DownloadError, DownloadErrorCodes, File, Message, Reply
 from securedrop_client.storage import mark_as_decrypted, mark_as_downloaded, \
@@ -44,15 +44,15 @@ class DownloadDecryptionException(DownloadException):
     """
 
 
-class DownloadJob(ApiJob):
+class DownloadJob(SingleObjectApiJob):
     '''
     Download and decrypt a file that contains either a message, reply, or file submission.
     '''
 
     CHUNK_SIZE = 4096
 
-    def __init__(self, data_dir: str) -> None:
-        super().__init__()
+    def __init__(self, data_dir: str, uuid: str) -> None:
+        super().__init__(uuid)
         self.data_dir = data_dir
 
     def _get_realistic_timeout(self, size_in_bytes: int) -> int:
@@ -230,8 +230,7 @@ class ReplyDownloadJob(DownloadJob):
     '''
 
     def __init__(self, uuid: str, data_dir: str, gpg: GpgHelper) -> None:
-        super().__init__(data_dir)
-        self.uuid = uuid
+        super().__init__(data_dir, uuid)
         self.gpg = gpg
 
     def get_db_object(self, session: Session) -> Reply:
@@ -288,7 +287,7 @@ class MessageDownloadJob(DownloadJob):
     '''
 
     def __init__(self, uuid: str, data_dir: str, gpg: GpgHelper) -> None:
-        super().__init__(data_dir)
+        super().__init__(data_dir, uuid)
         self.uuid = uuid
         self.gpg = gpg
 
@@ -343,8 +342,7 @@ class FileDownloadJob(DownloadJob):
     '''
 
     def __init__(self, uuid: str, data_dir: str, gpg: GpgHelper) -> None:
-        super().__init__(data_dir)
-        self.uuid = uuid
+        super().__init__(data_dir, uuid)
         self.gpg = gpg
 
     def get_db_object(self, session: Session) -> File:

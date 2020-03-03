@@ -6,7 +6,7 @@ import pytest
 from queue import Queue
 from sdclientapi import RequestTimeoutError, ServerConnectionError
 
-from securedrop_client.api_jobs.downloads import FileDownloadJob
+from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob
 from securedrop_client.api_jobs.base import ApiInaccessibleError, PauseQueueJob
 from securedrop_client.queue import RunnableQueue, ApiJobQueue
 from tests import factory
@@ -153,6 +153,43 @@ def test_RunnableQueue_resubmitted_jobs(mocker):
     assert queue.queue.get(block=True) == (1, job3)
     assert queue.queue.get(block=True) == (2, job2)
     assert queue.queue.get(block=True) == (2, job4)
+
+
+def test_RunnableQueue_duplicate_jobs(mocker):
+    '''
+    Verify that duplicate jobs are not added to the queue.
+    '''
+    mock_api_client = mocker.MagicMock()
+    mock_session = mocker.MagicMock()
+    mock_session_maker = mocker.MagicMock(return_value=mock_session)
+
+    dl_job = FileDownloadJob('mock', 'mock', 'mock')
+    msg_dl_job = MessageDownloadJob('mock', 'mock', 'mock')
+    queue = RunnableQueue(mock_api_client, mock_session_maker)
+    debug_logger = mocker.patch('securedrop_client.queue.logger.debug')
+
+    # Queue begins empty (0 entries).
+    assert len(queue.queue.queue) == 0
+
+    queue.add_job(dl_job)
+    assert len(queue.queue.queue) == 1
+
+    # Now add the same job again.
+    queue.add_job(dl_job)
+    assert len(queue.queue.queue) == 1
+
+    log_msg = 'Duplicate job {}, skipping'.format(
+        dl_job)
+    debug_logger.call_args[1] == log_msg
+
+    # Now add a _different_ job with the same arguments (same uuid).
+    queue.add_job(msg_dl_job)
+    assert len(queue.queue.queue) == 2
+
+    # Ensure that using re_add_job in the case of a timeout won't allow duplicate
+    # jobs to be added.
+    queue.re_add_job(msg_dl_job)
+    assert len(queue.queue.queue) == 2
 
 
 def test_RunnableQueue_job_generic_exception(mocker):

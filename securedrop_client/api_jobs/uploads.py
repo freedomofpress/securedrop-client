@@ -5,7 +5,7 @@ from sdclientapi import API, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm.session import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from securedrop_client.api_jobs.base import ApiJob
+from securedrop_client.api_jobs.base import SingleObjectApiJob
 from securedrop_client.crypto import GpgHelper
 from securedrop_client.db import DraftReply, Reply, ReplySendStatus, ReplySendStatusCodes, Source
 from securedrop_client.storage import update_draft_replies
@@ -13,9 +13,9 @@ from securedrop_client.storage import update_draft_replies
 logger = logging.getLogger(__name__)
 
 
-class SendReplyJob(ApiJob):
+class SendReplyJob(SingleObjectApiJob):
     def __init__(self, source_uuid: str, reply_uuid: str, message: str, gpg: GpgHelper) -> None:
-        super().__init__()
+        super().__init__(reply_uuid)
         self.source_uuid = source_uuid
         self.reply_uuid = reply_uuid
         self.message = message

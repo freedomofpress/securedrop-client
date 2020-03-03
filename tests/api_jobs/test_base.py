@@ -2,7 +2,8 @@ import pytest
 
 from sdclientapi import AuthError, RequestTimeoutError, ServerConnectionError
 
-from securedrop_client.api_jobs.base import ApiInaccessibleError, ApiJob
+from securedrop_client.api_jobs.base import (ApiInaccessibleError, ApiJob,
+                                             SingleObjectApiJob)
 from tests.factory import dummy_job_factory
 
 
@@ -187,3 +188,17 @@ def test_ApiJob_order_number_unset(mocker):
 
     with pytest.raises(ValueError):
         api_job_1 < api_job_2
+
+
+def test_SingleObjectApiJob_comparison_obj_without_uuid_attr(mocker):
+    test_job_with_uuid = SingleObjectApiJob('uuid1')
+    test_job_without_uuid = ApiJob()
+
+    assert test_job_with_uuid != test_job_without_uuid
+
+
+def test_SingleObjectApiJob_comparison_obj_with_uuid_attr(mocker):
+    test_job_with_uuid = SingleObjectApiJob('uuid1')
+    test_job_with_uuid_2 = SingleObjectApiJob('uuid1')
+
+    assert test_job_with_uuid == test_job_with_uuid_2

@@ -91,3 +91,23 @@ class ApiJob(QueueJob):
         failure.
         '''
         raise NotImplementedError
+
+
+class SingleObjectApiJob(ApiJob):
+    def __init__(self, uuid: str, remaining_attempts: int = DEFAULT_NUM_ATTEMPTS) -> None:
+        super().__init__(remaining_attempts)
+        '''
+        UUID of the item (source, reply, submission, etc.) that this item
+        corresponds to. We track this to prevent the addition of duplicate jobs.
+        '''
+        self.uuid = uuid
+
+    def __repr__(self) -> str:
+        return "{}('{}', {})".format(self.__class__.__name__, self.uuid, self.remaining_attempts)
+
+    def __eq__(self, other: Any) -> bool:  # type: ignore[override]
+        # https://github.com/python/mypy/issues/2783
+        if self.uuid == getattr(other, 'uuid', None) and type(self) == type(other):
+            return True
+        else:
+            return False
