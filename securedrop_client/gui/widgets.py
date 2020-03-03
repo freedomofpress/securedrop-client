@@ -1793,25 +1793,6 @@ class ReplyWidget(SpeechBubble):
         if message_id == self.message_id:
             self._set_reply_state('FAILED')
 
-    @pyqtSlot(str, str, str)
-    def _update_text(self, source_id: str, message_id: str, text: str) -> None:
-        """
-        Update the ReplyWidget text and state.
-
-        Conditionally update this ReplyWidget's text if and only if
-        the message_id of the emitted signal matches the message_id of
-        this speech bubble.
-
-        Also, if the text is worth updating, assume that the reply is
-        in a successful state, so its widget should be too. This
-        allows us to correct a situation in which a reply actually did
-        make it to the server, the client did not believe that to be
-        the case because of timeout or error, and a later sync has
-        downloaded the reply.
-        """
-        super()._update_text(source_id, message_id, text)
-        self._set_reply_state('SUCCEEDED')
-
 
 class FileWidget(QWidget):
     """
