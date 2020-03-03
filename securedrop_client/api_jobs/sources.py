@@ -4,15 +4,14 @@ import sdclientapi
 from sdclientapi import API, ServerConnectionError, RequestTimeoutError
 from sqlalchemy.orm.session import Session
 
-from securedrop_client.api_jobs.base import ApiJob
+from securedrop_client.api_jobs.base import SingleObjectApiJob
 
 logger = logging.getLogger(__name__)
 
 
-class DeleteSourceJob(ApiJob):
-    def __init__(self, source_uuid: str) -> None:
-        super().__init__()
-        self.source_uuid = source_uuid
+class DeleteSourceJob(SingleObjectApiJob):
+    def __init__(self, uuid: str) -> None:
+        super().__init__(uuid)
 
     def call_api(self, api_client: API, session: Session) -> str:
         '''
@@ -21,16 +20,16 @@ class DeleteSourceJob(ApiJob):
         Delete a source on the server
         '''
         try:
-            source_sdk_object = sdclientapi.Source(uuid=self.source_uuid)
+            source_sdk_object = sdclientapi.Source(uuid=self.uuid)
             api_client.delete_source(source_sdk_object)
 
-            return self.source_uuid
+            return self.uuid
         except (RequestTimeoutError, ServerConnectionError):
             raise
         except Exception as e:
             error_message = "Failed to delete source {uuid} due to {exception}".format(
-                uuid=self.source_uuid, exception=repr(e))
-            raise DeleteSourceJobException(error_message, self.source_uuid)
+                uuid=self.uuid, exception=repr(e))
+            raise DeleteSourceJobException(error_message, self.uuid)
 
 
 class DeleteSourceJobException(Exception):

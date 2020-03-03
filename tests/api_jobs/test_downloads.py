@@ -24,7 +24,7 @@ def patch_decrypt(mocker, homedir, gpghelper, filename):
 
 
 def test_MessageDownloadJob_raises_NotImplementedError(mocker):
-    job = DownloadJob('mock')
+    job = DownloadJob('mock', 'uuid')
 
     with pytest.raises(NotImplementedError):
         job.call_download_api(None, None)

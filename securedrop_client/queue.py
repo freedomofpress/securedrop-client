@@ -1,5 +1,6 @@
 import itertools
 import logging
+import threading
 
 from PyQt5.QtCore import QObject, QThread, pyqtSlot, pyqtSignal
 from queue import PriorityQueue
@@ -68,23 +69,48 @@ class RunnableQueue(QObject):
         # because PriorityQueue is implemented using heapq which does not have sort stability. For
         # more info, see : https://bugs.python.org/issue17794
         self.order_number = itertools.count()
+        self.current_job = None  # type: Optional[ApiJob]
+
+        # Hold when reading/writing self.current_job or mutating queue state
+        self.mutex = threading.Lock()
 
         self.resume.connect(self.process)
+
+    def _check_for_duplicate_jobs(self, job: ApiJob) -> bool:
+        """
+        Queued jobs are stored on self.queue.queue. The currently executing job is
+        stored on self.current_job. We check that the job to be added is not among them.
+        """
+        in_progress_jobs = [in_progress_job for priority, in_progress_job in self.queue.queue]
+        in_progress_jobs.append(self.current_job)
+        if job in in_progress_jobs:
+            logger.debug('Duplicate job {}, skipping'.format(job))
+            return True
+        return False
 
     def add_job(self, job: ApiJob) -> None:
         '''
         Add the job with its priority to the queue after assigning it the next order_number.
         '''
-        current_order_number = next(self.order_number)
-        job.order_number = current_order_number
-        priority = self.JOB_PRIORITIES[type(job)]
-        self.queue.put_nowait((priority, job))
+        with self.mutex:
+            if self._check_for_duplicate_jobs(job):
+                return
+
+            logger.debug('Added {} to queue'.format(job))
+            current_order_number = next(self.order_number)
+            job.order_number = current_order_number
+            priority = self.JOB_PRIORITIES[type(job)]
+            self.queue.put_nowait((priority, job))
 
     def re_add_job(self, job: ApiJob) -> None:
         '''
         Reset the job's remaining attempts and put it back into the queue in the order in which it
         was submitted by the user (do not assign it the next order_number).
         '''
+        if self._check_for_duplicate_jobs(job):
+            return
+
+        logger.debug('Added {} to queue'.format(job))
         job.remaining_attempts = DEFAULT_NUM_ATTEMPTS
         priority = self.JOB_PRIORITIES[type(job)]
         self.queue.put_nowait((priority, job))
@@ -110,27 +136,39 @@ class RunnableQueue(QObject):
         Note: Generic exceptions are handled in _do_call_api.
         '''
         while True:
-            priority, job = self.queue.get(block=True)
+            if not self.queue.empty():
+                with self.mutex:
+                    priority, self.current_job = self.queue.get(block=False)
+            else:
+                continue
 
-            if isinstance(job, PauseQueueJob):
+            if isinstance(self.current_job, PauseQueueJob):
                 self.paused.emit()
+                with self.mutex:
+                    self.current_job = None
                 return
 
             try:
                 session = self.session_maker()
-                job._do_call_api(self.api_client, session)
+                self.current_job._do_call_api(self.api_client, session)
             except ApiInaccessibleError as e:
                 logger.debug('{}: {}'.format(type(e).__name__, e))
                 self.api_client = None
+                with self.mutex:
+                    self.current_job = None
                 return
             except (RequestTimeoutError, ServerConnectionError) as e:
                 logger.debug('{}: {}'.format(type(e).__name__, e))
                 self.add_job(PauseQueueJob())
-                self.re_add_job(job)
+                with self.mutex:
+                    job, self.current_job = self.current_job, None
+                    self.re_add_job(job)
             except Exception as e:
                 logger.error('{}: {}'.format(type(e).__name__, e))
                 logger.debug('Skipping job')
             finally:
+                with self.mutex:
+                    self.current_job = None
                 session.close()
 
 
@@ -230,7 +268,5 @@ class ApiJobQueue(QObject):
 
         if isinstance(job, FileDownloadJob):
             self.download_file_queue.add_job(job)
-            logger.debug('Added {} to download queue'.format(job.__class__.__name__))
         else:
             self.main_queue.add_job(job)
-            logger.debug('Added {} to main queue'.format(job.__class__.__name__))
