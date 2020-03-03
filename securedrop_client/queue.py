@@ -75,6 +75,12 @@ class RunnableQueue(QObject):
         '''
         Add the job with its priority to the queue after assigning it the next order_number.
         '''
+        in_progress_jobs = [in_progress_job for priority, in_progress_job in self.queue.queue]
+        if job in in_progress_jobs:
+            logger.debug('Duplicate job {}, skipping'.format(job))
+            return
+
+        logger.debug('Added {} to queue'.format(job.__class__.__name__))
         current_order_number = next(self.order_number)
         job.order_number = current_order_number
         priority = self.JOB_PRIORITIES[type(job)]
@@ -85,6 +91,7 @@ class RunnableQueue(QObject):
         Reset the job's remaining attempts and put it back into the queue in the order in which it
         was submitted by the user (do not assign it the next order_number).
         '''
+        logger.debug('Added {} to queue'.format(job.__class__.__name__))
         job.remaining_attempts = DEFAULT_NUM_ATTEMPTS
         priority = self.JOB_PRIORITIES[type(job)]
         self.queue.put_nowait((priority, job))
@@ -230,7 +237,5 @@ class ApiJobQueue(QObject):
 
         if isinstance(job, FileDownloadJob):
             self.download_file_queue.add_job(job)
-            logger.debug('Added {} to download queue'.format(job.__class__.__name__))
         else:
             self.main_queue.add_job(job)
-            logger.debug('Added {} to main queue'.format(job.__class__.__name__))

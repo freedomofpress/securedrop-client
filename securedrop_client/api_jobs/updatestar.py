@@ -6,14 +6,14 @@ from typing import Tuple
 from sdclientapi import API
 from sqlalchemy.orm.session import Session
 
-from securedrop_client.api_jobs.base import ApiJob
+from securedrop_client.api_jobs.base import SingleObjectApiJob
 
 logger = logging.getLogger(__name__)
 
 
-class UpdateStarJob(ApiJob):
+class UpdateStarJob(SingleObjectApiJob):
     def __init__(self, source_uuid: str, star_status: bool) -> None:
-        super().__init__()
+        super().__init__(source_uuid)
         self.source_uuid = source_uuid
         self.star_status = star_status
 
