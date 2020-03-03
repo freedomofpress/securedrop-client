@@ -459,7 +459,11 @@ def test_Controller_on_sync_success(homedir, config, mocker):
     co.download_new_replies = mocker.MagicMock()
     co.gpg = mocker.MagicMock()
     co.resume_queues = mocker.MagicMock()
+    co.file_missing = mocker.MagicMock()
     mock_storage = mocker.patch('securedrop_client.logic.storage')
+    source = factory.Source()
+    missing = factory.File(is_downloaded=None, is_decrypted=None, source=source)
+    mock_storage.update_missing_files.return_value = [missing, ]
 
     co.on_sync_success()
 
@@ -468,6 +472,8 @@ def test_Controller_on_sync_success(homedir, config, mocker):
     co.download_new_messages.assert_called_once_with()
     co.download_new_replies.assert_called_once_with()
     co.resume_queues.assert_called_once_with()
+    co.file_missing.emit.assert_called_once_with(missing.source.uuid,
+                                                 missing.uuid, str(missing))
 
 
 def test_Controller_show_last_sync(homedir, config, mocker, session_maker):
