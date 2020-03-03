@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.1
+
+  * Implement export/print UI design and behavior (#666).
+  * Update sync method names and message (#817).
+  * Bug fix: Ensure replies are in order (#829).
+  * Bug fix: Do not mark replies as failed if they time out (#819).
+  * Bug fix: If source is deleted during sync, do not add its messages (#832).
+  * Provide clear message in case of no keypair (#830).
+  * Bug fix: Ensure messages word wrap (#838).
+  * Show a short notifications when messages are about to download (#822).
+  * Standardize connection errors (#823).
+  * Bug fix: Fix reply succeeds but shows up as failed (#837).
+  * Bug fix: Ensure UI updates if local copy of file is no longer available (#842).
+  * Bug fix: Work around stylesheet issue causing replies to show as pending when confirmed (#831).
+
 ## 0.1.0
 
   * Update file download animation (#731).
