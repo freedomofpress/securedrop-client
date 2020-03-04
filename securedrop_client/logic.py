@@ -749,7 +749,7 @@ class Controller(QObject):
         Handler for when a source deletion succeeds.
         """
         # Delete the local version of the source.
-        storage.delete_local_source_by_uuid(self.session, result)
+        storage.delete_local_source_by_uuid(self.session, result, self.data_dir)
         # Update the sources UI.
         self.update_sources()
 
