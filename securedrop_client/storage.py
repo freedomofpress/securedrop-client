@@ -23,6 +23,7 @@ from datetime import datetime
 import logging
 import glob
 import os
+import shutil
 from dateutil.parser import parse
 from typing import List, Tuple, Type, Union
 
@@ -48,12 +49,13 @@ def get_local_sources(session: Session) -> List[Source]:
     return session.query(Source).all()
 
 
-def delete_local_source_by_uuid(session: Session, uuid: str) -> None:
+def delete_local_source_by_uuid(session: Session, uuid: str, data_dir: str) -> None:
     """
     Delete the source with the referenced UUID.
     """
     source = session.query(Source).filter_by(uuid=uuid).one_or_none()
     if source:
+        delete_source_collection(source.journalist_filename, data_dir)
         session.delete(source)
         session.commit()
         logger.info("Deleted source with UUID {} from local database.".format(uuid))
@@ -528,6 +530,15 @@ def set_message_or_reply_content(
     db_obj.content = content
     session.add(db_obj)
     session.commit()
+
+
+def delete_source_collection(journalist_filename: str, data_dir: str) -> None:
+    source_folder = os.path.join(data_dir, journalist_filename)
+    try:
+        shutil.rmtree(source_folder)
+        logging.info('Source documents for {} deleted'.format(journalist_filename))
+    except FileNotFoundError:
+        logging.info('No source documents for {} to delete'.format(journalist_filename))
 
 
 def delete_single_submission_or_reply_on_disk(obj_db: Union[File, Message, Reply],

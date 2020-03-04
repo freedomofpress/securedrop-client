@@ -73,15 +73,52 @@ def test_get_local_sources(mocker):
     mock_session.query.assert_called_once_with(securedrop_client.db.Source)
 
 
-def test_delete_local_source_by_uuid(mocker):
+def test_delete_local_source_by_uuid(homedir, mocker):
     """
-    Delete the referenced source in the session.
+    Delete the referenced source in the session. Ensure that both
+    the database object and the corresponding source documents are deleted.
     """
     mock_session = mocker.MagicMock()
     source = factory.RemoteSource()
+    source.journalist_filename = 'sourcey_mcsource'
+
+    # Make source folder
+    source_directory = os.path.join(homedir, source.journalist_filename)
+    os.mkdir(source_directory)
+
+    # Make document in source disk to be deleted
+    path_to_source_document = os.path.join(source_directory, 'teehee')
+    with open(path_to_source_document, 'w') as f:
+        f.write('this is a source document')
+
     mock_session.query().filter_by().one_or_none.return_value = source
     mock_session.query.reset_mock()
-    delete_local_source_by_uuid(mock_session, "uuid")
+    delete_local_source_by_uuid(mock_session, "uuid", homedir)
+    mock_session.query.assert_called_once_with(securedrop_client.db.Source)
+    mock_session.query().filter_by.assert_called_once_with(uuid="uuid")
+    assert mock_session.query().filter_by().one_or_none.call_count == 1
+    mock_session.delete.assert_called_once_with(source)
+    mock_session.commit.assert_called_once_with()
+
+    # Ensure both source folder and its containing file are gone.
+    with pytest.raises(FileNotFoundError):
+        f = open(path_to_source_document, 'r')
+
+    with pytest.raises(FileNotFoundError):
+        f = open(source_directory, 'r')
+
+
+def test_delete_local_source_by_uuid_no_files(homedir, mocker):
+    """
+    Delete the referenced source in the session. If there are no files
+    corresponding to this source, no exception should be raised.
+    """
+    mock_session = mocker.MagicMock()
+    source = factory.RemoteSource()
+    source.journalist_filename = 'sourcey_mcsource'
+    mock_session.query().filter_by().one_or_none.return_value = source
+    mock_session.query.reset_mock()
+    delete_local_source_by_uuid(mock_session, "uuid", homedir)
     mock_session.query.assert_called_once_with(securedrop_client.db.Source)
     mock_session.query().filter_by.assert_called_once_with(uuid="uuid")
     assert mock_session.query().filter_by().one_or_none.call_count == 1
@@ -222,7 +259,7 @@ def test_sync_delete_race(homedir, mocker, session_maker, session):
         def run(self):
             session = db.make_session_maker(homedir)()
             session.begin(subtransactions=True)
-            delete_local_source_by_uuid(session, self.source_uuid)
+            delete_local_source_by_uuid(session, self.source_uuid, homedir)
             session.commit()
             self.exit()
 

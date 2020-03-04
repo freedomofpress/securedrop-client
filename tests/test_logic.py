@@ -1276,7 +1276,7 @@ def test_Controller_on_delete_source_success(homedir, config, mocker, session_ma
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     co.update_sources = mocker.MagicMock()
     co.on_delete_source_success("uuid")
-    storage.delete_local_source_by_uuid.assert_called_once_with(co.session, "uuid")
+    storage.delete_local_source_by_uuid.assert_called_once_with(co.session, "uuid", co.data_dir)
     assert co.update_sources.call_count == 1
 
 
