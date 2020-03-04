@@ -26,8 +26,8 @@ from typing import Dict, List, Union  # noqa: F401
 from uuid import uuid4
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QEvent, QTimer, QSize, pyqtBoundSignal, \
     QObject, QPoint
-from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QFontMetrics, QLinearGradient, \
-    QKeySequence, QCursor, QKeyEvent, QCloseEvent
+from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient, QKeySequence, \
+    QCursor, QKeyEvent, QCloseEvent
 from PyQt5.QtWidgets import QApplication, QListWidget, QLabel, QWidget, QListWidgetItem, \
     QHBoxLayout, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
     QToolButton, QSizePolicy, QPlainTextEdit, QStatusBar, QGraphicsDropShadowEffect, QPushButton, \
@@ -1875,7 +1875,7 @@ class FileWidget(QWidget):
     VERTICAL_MARGIN = 10
     FILE_FONT_SPACING = 2
     FILE_OPTIONS_FONT_SPACING = 1.6
-    ELIDED_TEXT_WIDTH = 400
+    FILENAME_WIDTH_PX = 400
 
     def __init__(
         self,
@@ -1946,7 +1946,7 @@ class FileWidget(QWidget):
         self.export_button.clicked.connect(self._on_export_clicked)
         self.print_button.clicked.connect(self._on_print_clicked)
 
-        self.file_name = SecureQLabel(wordwrap=False)
+        self.file_name = SecureQLabel(wordwrap=False, max_length=self.FILENAME_WIDTH_PX)
         self.file_name.setObjectName('file_name')
         self.file_name.installEventFilter(self)
         self.file_name.setCursor(QCursor(Qt.PointingHandCursor))
@@ -2000,7 +2000,6 @@ class FileWidget(QWidget):
     def _set_file_state(self):
         if self.file.is_decrypted:
             self.download_button.hide()
-            self.no_file_name.hide()
             self.export_button.show()
             self.middot.show()
             self.print_button.show()
@@ -2008,6 +2007,7 @@ class FileWidget(QWidget):
             self.spacer.hide()
             self._set_file_name()
             self.file_name.show()
+            self.no_file_name.hide()
         else:
             self.download_button.setText(_('DOWNLOAD'))
             # Ensure correct icon depending on mouse hover state.
@@ -2026,23 +2026,16 @@ class FileWidget(QWidget):
             self.spacer.hide()
             self.file_name.hide()
             self.no_file_name.show()
+            self.download_button.setText(_('DOWNLOAD'))
+            self.download_button.setIcon(load_icon('download_file.svg'))
+            self.download_button.setStyleSheet('color: #2a319d')
+            self.download_button.setFont(self.file_buttons_font)
 
     def _set_file_name(self):
         self.file_name.setText(self.file.filename)
-        secure_file_name = self.file_name.text()
-        fm = self.file_name.fontMetrics()
-        filename_width = fm.horizontalAdvance(secure_file_name)
-        if filename_width > self.ELIDED_TEXT_WIDTH:
-            self.setToolTip(secure_file_name)
-            elidedText = ''
-            for c in secure_file_name:
-                if fm.horizontalAdvance(elidedText) > self.ELIDED_TEXT_WIDTH:
-                    elidedText = elidedText + '...'
-                    self.horizontal_line.hide()
-                    self.spacer.show()
-                    break
-                elidedText = elidedText + c
-            self.file_name.setText(elidedText)
+        if self.file_name.is_elided():
+            self.horizontal_line.hide()
+            self.spacer.show()
 
     @pyqtSlot(str, str, str)
     def _on_file_downloaded(self, source_uuid: str, file_uuid: str, filename: str) -> None:
@@ -2086,7 +2079,7 @@ class FileWidget(QWidget):
         of the file distinguishes which function in the logic layer to call.
         """
         # update state
-        self.file = self.controller.get_file(self.file.uuid)
+        # self.file = self.controller.get_file(self.file.uuid)
 
         if self.file.is_decrypted:
             # Open the already downloaded and decrypted file.
@@ -2335,12 +2328,15 @@ class FramelessDialog(QDialog):
 
 class PrintDialog(FramelessDialog):
 
+    FILENAME_WIDTH_PX = 320
+
     def __init__(self, controller: Controller, file_uuid: str, file_name: str):
         super().__init__()
 
         self.controller = controller
         self.file_uuid = file_uuid
-        self.file_name = SecureQLabel(file_name).text()
+        self.file_name = SecureQLabel(
+            file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX).text()
         self.error_status = ''  # Hold onto the error status we receive from the Export VM
 
         # Connect controller signals to slots
@@ -2464,13 +2460,15 @@ class ExportDialog(FramelessDialog):
 
     PASSPHRASE_LABEL_SPACING = 0.5
     NO_MARGIN = 0
+    FILENAME_WIDTH_PX = 200
 
     def __init__(self, controller: Controller, file_uuid: str, file_name: str):
         super().__init__()
 
         self.controller = controller
         self.file_uuid = file_uuid
-        self.file_name = SecureQLabel(file_name).text()
+        self.file_name = SecureQLabel(
+            file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX).text()
         self.error_status = ''  # Hold onto the error status we receive from the Export VM
 
         # Connect controller signals to slots
