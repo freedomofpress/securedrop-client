@@ -6,7 +6,7 @@ import arrow
 from datetime import datetime
 
 from PyQt5.QtCore import Qt, QEvent
-from PyQt5.QtGui import QFocusEvent, QMovie
+from PyQt5.QtGui import QFocusEvent, QKeyEvent, QMovie
 from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QMessageBox, QMainWindow, \
     QLineEdit
@@ -1874,7 +1874,6 @@ def test_FramelessDialog_closeEvent_ignored_if_not_a_close_event_from_custom_clo
     mocker.patch(
          'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = FramelessDialog()
-    dialog.internal_close_event_emitted = False
     close_event = QEvent(QEvent.Close)
     close_event.ignore = mocker.MagicMock()
 
@@ -1883,16 +1882,69 @@ def test_FramelessDialog_closeEvent_ignored_if_not_a_close_event_from_custom_clo
     close_event.ignore.assert_called_once_with()
 
 
+@pytest.mark.parametrize("key", [Qt.Key_Enter, Qt.Key_Return])
+def test_FramelessDialog_keyPressEvent_does_not_close_on_enter_or_return(mocker, key):
+    mocker.patch(
+         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
+    dialog = FramelessDialog()
+    dialog.close = mocker.MagicMock()
+
+    event = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
+    dialog.keyPressEvent(event)
+
+    dialog.close.assert_not_called()
+
+
+@pytest.mark.parametrize("key", [Qt.Key_Enter, Qt.Key_Return])
+def test_FramelessDialog_keyPressEvent_cancel_on_enter_when_focused(mocker, key):
+    mocker.patch(
+         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
+    dialog = FramelessDialog()
+    dialog.cancel_button.click = mocker.MagicMock()
+    dialog.cancel_button.hasFocus = mocker.MagicMock(return_value=True)
+
+    event = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
+    dialog.keyPressEvent(event)
+
+    dialog.cancel_button.click.assert_called_once_with()
+
+
+@pytest.mark.parametrize("key", [Qt.Key_Enter, Qt.Key_Return])
+def test_FramelessDialog_keyPressEvent_continue_on_enter(mocker, key):
+    mocker.patch(
+         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
+    dialog = FramelessDialog()
+    dialog.continue_button.click = mocker.MagicMock()
+
+    event = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
+    dialog.keyPressEvent(event)
+
+    dialog.continue_button.click.assert_called_once_with()
+
+
+@pytest.mark.parametrize("key", [Qt.Key_Alt, Qt.Key_A])
+def test_FramelessDialog_keyPressEvent_does_not_close_for_other_keys(mocker, key):
+    mocker.patch(
+         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
+    dialog = FramelessDialog()
+    dialog.close = mocker.MagicMock()
+
+    event = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
+    dialog.keyPressEvent(event)
+
+    dialog.close.assert_not_called()
+
+
 def test_FramelessDialog_close(mocker):
     mocker.patch(
          'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = FramelessDialog()
 
-    dialog.internal_close_event_emitted = False
+    assert dialog.internal_close_event_emitted is False
 
     dialog.close()
 
-    dialog.internal_close_event_emitted = True
+    assert dialog.internal_close_event_emitted is True
 
 
 def test_FramelessDialog_center_dialog(mocker):

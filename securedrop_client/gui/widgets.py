@@ -27,7 +27,7 @@ from uuid import uuid4
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QEvent, QTimer, QSize, pyqtBoundSignal, \
     QObject, QPoint
 from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient, QKeySequence, \
-    QCursor
+    QCursor, QKeyEvent, QCloseEvent
 from PyQt5.QtWidgets import QApplication, QListWidget, QLabel, QWidget, QListWidgetItem, \
     QHBoxLayout, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
     QToolButton, QSizePolicy, QPlainTextEdit, QStatusBar, QGraphicsDropShadowEffect, QPushButton, \
@@ -2258,7 +2258,6 @@ class FramelessDialog(QDialog):
         button_layout = QVBoxLayout()
         window_buttons.setLayout(button_layout)
         self.cancel_button = QPushButton(_('CANCEL'))
-        self.cancel_button.setAutoDefault(False)
         self.cancel_button.clicked.connect(self.close)
         self.continue_button = QPushButton(_('CONTINUE'))
         self.continue_button.setObjectName('primary_button')
@@ -2281,10 +2280,23 @@ class FramelessDialog(QDialog):
         layout.addStretch()
         layout.addWidget(window_buttons)
 
-    def closeEvent(self, e):
+    def closeEvent(self, event: QCloseEvent):
         # ignore any close event that doesn't come from our custom close method
         if not self.internal_close_event_emitted:
-            e.ignore()
+            event.ignore()
+
+    def keyPressEvent(self, event: QKeyEvent):
+        # Since the dialog sets the Qt.Popup window flag (in order to achieve a frameless dialog
+        # window in Qubes), the default behavior is to close the dialog when the Enter or Return
+        # key is clicked, which we override here.
+        if (event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return):
+            if self.cancel_button.hasFocus():
+                self.cancel_button.click()
+            else:
+                self.continue_button.click()
+            return
+
+        super().keyPressEvent(event)
 
     def close(self):
         self.internal_close_event_emitted = True
