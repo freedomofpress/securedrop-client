@@ -3012,10 +3012,7 @@ class ReplyBoxWidget(QWidget):
         main_layout.addWidget(self.replybox)
 
         # Determine whether or not this widget should be rendered in offline mode
-        if self.controller.is_authenticated:
-            self.set_logged_in()
-        else:
-            self.set_logged_out()
+        self.update_authentication_state(self.controller.is_authenticated)
 
         # Text area refocus flag.
         self.refocus_after_sync = False
@@ -3054,12 +3051,17 @@ class ReplyBoxWidget(QWidget):
             self.reply_sent.emit(self.source.uuid, reply_uuid, reply_text)
 
     def _on_authentication_changed(self, authenticated: bool) -> None:
+        self.update_authentication_state(authenticated)
+
+    def update_authentication_state(self, authenticated: bool) -> None:
         if authenticated:
             self.set_logged_in()
         else:
             self.set_logged_out()
 
     def _on_synced(self, data: str) -> None:
+        self.update_authentication_state(self.controller.is_authenticated)
+
         if data == 'syncing' and self.text_edit.hasFocus():
             self.refocus_after_sync = True
         elif data == 'synced' and self.refocus_after_sync:
