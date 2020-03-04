@@ -166,13 +166,18 @@ class SecureQLabel(QLabel):
         text: str = "",
         parent: QWidget = None,
         flags: Union[Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags(),
+        wordwrap: bool = True
     ):
         super().__init__(parent, flags)
-        self.setWordWrap(True)
+        self.wordwrap = wordwrap
+        self.setWordWrap(wordwrap)
         self.setText(text)
 
     def setText(self, text: str) -> None:
-        self.setTextFormat(Qt.PlainText)
-        # Wraps text at default of 70 characters.
-        wrapped = "\n".join(textwrap.wrap(text))
-        super().setText(wrapped)
+        # self.setTextFormat(Qt.PlainText)
+        # Wraps text at default of 70 characters
+        if self.wordwrap:
+            wrapped = "\n".join(textwrap.wrap(text))
+            super().setText(wrapped)
+        else:
+            super().setText(text)
