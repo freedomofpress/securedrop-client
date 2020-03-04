@@ -1742,8 +1742,7 @@ class ReplyWidget(SpeechBubble):
         error_icon = SvgLabel('error_icon.svg', svg_size=QSize(12, 12))
         error_icon.setObjectName('error_icon')  # Set css id
         error_icon.setFixedWidth(12)
-        error_message = SecureQLabel('Failed to send')
-        error_message.setWordWrap(False)
+        error_message = SecureQLabel('Failed to send', wordwrap=False)
         error_message.setObjectName('error_message')
         error_message.setStyleSheet(self.CSS_ERROR_MESSAGE_REPLY_FAILED)
 
@@ -1961,8 +1960,7 @@ class FileWidget(QWidget):
         self.file_name.setObjectName('file_name')
         self.file_name.installEventFilter(self)
         self.file_name.setCursor(QCursor(Qt.PointingHandCursor))
-        self.no_file_name = SecureQLabel('ENCRYPTED FILE ON SERVER')
-        self.no_file_name.setWordWrap(False)
+        self.no_file_name = SecureQLabel('ENCRYPTED FILE ON SERVER', wordwrap=False)
         self.no_file_name.setObjectName('no_file_name')
         self.no_file_name.setFont(file_description_font)
 
