@@ -1509,7 +1509,7 @@ def test_FileWidget_init_file_downloaded(mocker, source, session):
     assert not fw.file_name.isHidden()
 
 
-def test_FileWidget_set_button_state_under_mouse(mocker, source, session):
+def test_FileWidget__set_file_state_under_mouse(mocker, source, session):
     """
     If the download_button is under the mouse, it should show the "hover"
     version of the download_file icon.
@@ -1528,7 +1528,7 @@ def test_FileWidget_set_button_state_under_mouse(mocker, source, session):
     fw.download_button.setIcon = mocker.MagicMock()
     mock_load = mocker.MagicMock()
     with mocker.patch("securedrop_client.gui.widgets.load_icon", mock_load):
-        fw.set_button_state()
+        fw._set_file_state()
         mock_load.assert_called_once_with("download_file_hover.svg")
 
 
@@ -2385,7 +2385,7 @@ def test_PrintDialog_init_sanitizes_filename(mocker):
 
     PrintDialog(mocker.MagicMock(), 'mock_uuid', filename)
 
-    secure_qlabel.assert_called_with(filename)
+    secure_qlabel.assert_called_with(filename, max_length=320, wordwrap=False)
 
 
 def test_PrintDialog__show_starting_instructions(mocker):

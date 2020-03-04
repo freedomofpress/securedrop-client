@@ -167,6 +167,12 @@ def test_SecureQLabel_setText(mocker):
     sl.setTextFormat.assert_called_once_with(Qt.PlainText)
 
 
+def test_SecureQLabel_get_elided_text(mocker):
+    sl = SecureQLabel('12345678901234567890123456789012345678901234567890')
+    sl.setTextFormat = mocker.MagicMock()
+    assert sl.text() == '12345678901234567890123456789012345678901234567890'
+
+
 def test_SecureQLabel_quotes_not_escaped_for_readability():
     sl = SecureQLabel("'hello'")
     assert sl.text() == "'hello'"
