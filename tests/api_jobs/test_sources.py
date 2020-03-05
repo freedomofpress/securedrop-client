@@ -1,6 +1,6 @@
 import pytest
 
-from securedrop_client.api_jobs.sources import DeleteSourceJob, DeleteSourceJobException
+from securedrop_client.api_jobs.sources import DeleteSourceJob
 from tests import factory
 
 
@@ -22,15 +22,16 @@ def test_delete_source_job(homedir, mocker, session, session_maker):
     )
 
     job = DeleteSourceJob(source.uuid)
-    job.call_api(api_client, session)
+    uuid = job.call_api(api_client, session)
 
+    assert uuid == source.uuid
     mock_source_init.assert_called_once_with(uuid=source.uuid)
     api_client.delete_source.assert_called_once_with(mock_sdk_source)
 
 
 def test_failure_to_delete(homedir, mocker, session, session_maker):
     '''
-    Check failure of a DeleteSourceJob.
+    Check failure of a DeleteSourceJob, which relies on ApiBase for error handling.
     '''
     source = factory.Source()
     session.add(source)
@@ -41,5 +42,5 @@ def test_failure_to_delete(homedir, mocker, session, session_maker):
     api_client.delete_source.side_effect = Exception
 
     job = DeleteSourceJob(source.uuid)
-    with pytest.raises(DeleteSourceJobException):
+    with pytest.raises(Exception):
         job.call_api(api_client, session)
