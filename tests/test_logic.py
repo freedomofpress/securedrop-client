@@ -415,6 +415,8 @@ def test_Controller_on_sync_failure_due_to_invalid_token(homedir, config, mocker
     """
     gui = mocker.MagicMock()
     co = Controller('http://localhost', gui, session_maker, homedir)
+    co.is_authenticated = True
+    co.api = 'mock'
     co.logout = mocker.MagicMock()
     co.gui = mocker.MagicMock()
     co.gui.show_login = mocker.MagicMock()
@@ -425,6 +427,35 @@ def test_Controller_on_sync_failure_due_to_invalid_token(homedir, config, mocker
     assert mock_storage.update_local_storage.call_count == 0
     co.logout.assert_called_once_with()
     co.gui.show_login.assert_called_once_with(error='Your session expired. Please log in again.')
+
+
+def test_Controller_on_sync_failure_due_to_invalid_token_after_user_logs_out(
+    homedir, config, mocker, session_maker
+):
+    """
+    If the sync fails because the api is inaccessible but the user is already logged out, do not
+    show the login window.
+    """
+    gui = mocker.MagicMock()
+    co = Controller('http://localhost', gui, session_maker, homedir)
+    co.logout = mocker.MagicMock()
+    co.gui = mocker.MagicMock()
+    co.gui.show_login = mocker.MagicMock()
+    mock_storage = mocker.patch('securedrop_client.logic.storage')
+
+    co.is_authenticated = True
+    co.api = None
+    co.on_sync_failure(ApiInaccessibleError())
+    assert mock_storage.update_local_storage.call_count == 0
+    co.logout.assert_not_called()
+    co.gui.show_login.assert_not_called()
+
+    co.is_authenticated = False
+    co.api = 'mock'
+    co.on_sync_failure(ApiInaccessibleError())
+    assert mock_storage.update_local_storage.call_count == 0
+    co.logout.assert_not_called()
+    co.gui.show_login.assert_not_called()
 
 
 @pytest.mark.parametrize("exception", [RequestTimeoutError, ServerConnectionError])
