@@ -2454,7 +2454,7 @@ class ExportDialog(FramelessDialog):
 
     PASSPHRASE_LABEL_SPACING = 0.5
     NO_MARGIN = 0
-    FILENAME_WIDTH_PX = 200
+    FILENAME_WIDTH_PX = 320
 
     def __init__(self, controller: Controller, file_uuid: str, file_name: str):
         super().__init__()
