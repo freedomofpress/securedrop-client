@@ -485,7 +485,7 @@ class Controller(QObject):
         """
         sources = list(storage.get_local_sources(self.session))
         if sources:
-            sources.sort(key=lambda x: x.last_updated, reverse=True)
+            sources.sort(key=lambda x: x.last_updated)
         self.gui.show_sources(sources)
 
     def on_update_star_success(self, result) -> None:

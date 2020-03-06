@@ -537,7 +537,7 @@ def test_Controller_update_sources(homedir, config, mocker):
     co = Controller('http://localhost', mock_gui, mock_session_maker, homedir)
 
     mock_storage = mocker.patch('securedrop_client.logic.storage')
-    source_list = [factory.Source(last_updated=2), factory.Source(last_updated=1)]
+    source_list = [factory.Source(last_updated=1), factory.Source(last_updated=2)]
     mock_storage.get_local_sources.return_value = source_list
 
     co.update_sources()

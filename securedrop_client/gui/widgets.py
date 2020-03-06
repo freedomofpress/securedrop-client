@@ -854,41 +854,33 @@ class SourceList(QListWidget):
 
     def update(self, sources: List[Source]) -> List[str]:
         """
-        Reset and update the list with the passed in list of sources.
+        Update the list with the passed in list of sources.
         """
-        # A flag to show if a source is currently selected (the current source
-        # doesn't have to be selected in a QListWidget -- it appears to default
-        # to whatever is in row 0, whether it's selected or not).
-        has_source_selected = False
-        if self.currentRow() > -1:
-            has_source_selected = self.item(self.currentRow()).isSelected()
-        current_source = self.get_current_source()
-        current_source_id = current_source and current_source.id
+        # Delete widgets that no longer exist in source list
+        source_uuids = [source.uuid for source in sources]
+        for i in range(self.count()):
+            list_item = self.item(i)
+            list_widget = self.itemWidget(list_item)
 
-        # Make a copy of the source_widgets that are currently displayed
-        # so that we can compare which widgets were removed. This means that
-        # the source was deleted, and we'll return this so we can also
-        # delete the corresponding SourceConversationWrapper.
-        existing_source_widgets = self.source_widgets.copy()
+            if list_widget and list_widget.source.uuid not in source_uuids:
+                if list_item.isSelected():
+                    self.setCurrentItem(None)
+                del self.source_widgets[list_widget.source.uuid]
+                self.takeItem(i)
+                list_widget.deleteLater()
 
-        # When we call clear() to delete all SourceWidgets, we should
-        # also clear the source_widgets dict.
-        self.clear()
-        self.source_widgets = {}
-
+        # Create new widgets for new sources
+        widget_uuids = [self.itemWidget(self.item(i)).source.uuid for i in range(self.count())]
         for source in sources:
-            new_source = SourceWidget(source)
-            new_source.setup(self.controller)
-            self.source_widgets[source.uuid] = new_source
+            if source.uuid not in widget_uuids:
+                new_source = SourceWidget(source)
+                new_source.setup(self.controller)
+                self.source_widgets[source.uuid] = new_source
 
-            list_item = QListWidgetItem(self)
-            list_item.setSizeHint(new_source.sizeHint())
-
-            self.addItem(list_item)
-            self.setItemWidget(list_item, new_source)
-
-            if source.id == current_source_id and has_source_selected:
-                self.setCurrentItem(list_item)
+                list_item = QListWidgetItem()
+                self.insertItem(0, list_item)
+                list_item.setSizeHint(new_source.sizeHint())
+                self.setItemWidget(list_item, new_source)
 
         deleted_uuids = list(set(existing_source_widgets.keys()) - set(self.source_widgets.keys()))
         return deleted_uuids
