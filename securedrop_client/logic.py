@@ -756,11 +756,10 @@ class Controller(QObject):
         # Update the sources UI.
         self.update_sources()
 
-    def on_delete_source_failure(self, result: Exception) -> None:
-        logging.info("failed to delete source at server")
-
-        error = _('Failed to delete source at server')
-        self.gui.update_error_status(error)
+    def on_delete_source_failure(self, e: Exception) -> None:
+        if not isinstance(e, (RequestTimeoutError, ServerConnectionError)):
+            error = _('Failed to delete source at server')
+            self.gui.update_error_status(error)
 
     @login_required
     def delete_source(self, source: db.Source):
