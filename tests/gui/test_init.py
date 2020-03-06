@@ -170,8 +170,6 @@ def test_SecureQLabel_init_no_wordwrap(mocker):
     assert sl.text() == long_string
 
 
-
-
 def test_SecureQLabel_setText(mocker):
     sl = SecureQLabel("hello")
     assert sl.text() == "hello"
