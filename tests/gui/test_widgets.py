@@ -710,6 +710,34 @@ def test_SourceList_update(mocker):
     assert sl.setCurrentItem.call_count == 0
 
 
+def test_SourceList_update_deleted_source(mocker):
+    """
+    When the SourceList is updated after deleting a source, check that we
+    do not keep references to deleted source widgets on the source_widgets
+    dict.
+    """
+    sl = SourceList()
+
+    sl.clear = mocker.MagicMock()
+    sl.addItem = mocker.MagicMock()
+    sl.setItemWidget = mocker.MagicMock()
+    sl.controller = mocker.MagicMock()
+    sl.setCurrentItem = mocker.MagicMock()
+
+    mock_sw = mocker.MagicMock()
+    mock_lwi = mocker.MagicMock()
+    mocker.patch('securedrop_client.gui.widgets.SourceWidget', mock_sw)
+    mocker.patch('securedrop_client.gui.widgets.QListWidgetItem', mock_lwi)
+
+    sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), ]
+    sl.update(sources)
+
+    sources.pop()
+    sl.update(sources)
+
+    assert len(sl.source_widgets) == len(sources)
+
+
 def test_SourceList_update_with_pre_selected_source(mocker):
     """
     If there's a source already selected. It remains selected after update.
