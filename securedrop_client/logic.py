@@ -721,7 +721,6 @@ class Controller(QObject):
         Download the file associated with the Submission (which may be a File or Message).
         """
         self._submit_download_job(submission_type, submission_uuid)
-        self.set_status(_('Downloading file'))
 
     def on_file_download_success(self, uuid: Any) -> None:
         """
