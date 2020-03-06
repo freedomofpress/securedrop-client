@@ -2814,7 +2814,9 @@ class ConversationView(QWidget):
 
         # If any items remain in current_conversation, they are no longer in the
         # source collection and should be removed from both the layout and the conversation
-        # dict.
+        # dict. Note that an item may be removed from the source collection if it is deleted
+        # by another user (a journalist using the Web UI is able to delete individual
+        # submissions).
         for item_widget in current_conversation.values():
             self.current_messages.pop(item_widget.uuid)
             self.conversation_layout.removeWidget(item_widget)
