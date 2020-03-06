@@ -848,7 +848,10 @@ class SourceList(QListWidget):
         current_source = self.get_current_source()
         current_source_id = current_source and current_source.id
 
+        # When we call clear() to delete all SourceWidgets, we should
+        # also clear the source_widgets dict.
         self.clear()
+        self.source_widgets = {}
 
         for source in sources:
             new_source = SourceWidget(source)
