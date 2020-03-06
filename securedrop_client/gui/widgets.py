@@ -1594,9 +1594,9 @@ class SpeechBubble(QWidget):
     TOP_MARGIN = 28
     BOTTOM_MARGIN = 10
 
-    def __init__(self, message_id: str, text: str, update_signal, index: int) -> None:
+    def __init__(self, message_uuid: str, text: str, update_signal, index: int) -> None:
         super().__init__()
-        self.message_id = message_id
+        self.uuid = message_uuid
         self.index = index
 
         # Set styles
@@ -1643,12 +1643,12 @@ class SpeechBubble(QWidget):
         update_signal.connect(self._update_text)
 
     @pyqtSlot(str, str, str)
-    def _update_text(self, source_id: str, message_id: str, text: str) -> None:
+    def _update_text(self, source_id: str, message_uuid: str, text: str) -> None:
         """
-        Conditionally update this SpeechBubble's text if and only if the message_id of the emitted
-        signal matches the message_id of this speech bubble.
+        Conditionally update this SpeechBubble's text if and only if the message_uuid of the emitted
+        signal matches the uuid of this speech bubble.
         """
-        if message_id == self.message_id:
+        if message_uuid == self.uuid:
             self.message.setText(text)
 
 
@@ -1657,8 +1657,8 @@ class MessageWidget(SpeechBubble):
     Represents an incoming message from the source.
     """
 
-    def __init__(self, message_id: str, message: str, update_signal, index: int) -> None:
-        super().__init__(message_id, message, update_signal, index)
+    def __init__(self, message_uuid: str, message: str, update_signal, index: int) -> None:
+        super().__init__(message_uuid, message, update_signal, index)
 
 
 class ReplyWidget(SpeechBubble):
@@ -1729,7 +1729,7 @@ class ReplyWidget(SpeechBubble):
 
     def __init__(
         self,
-        message_id: str,
+        message_uuid: str,
         message: str,
         reply_status: str,
         update_signal,
@@ -1737,8 +1737,8 @@ class ReplyWidget(SpeechBubble):
         message_failed_signal,
         index: int,
     ) -> None:
-        super().__init__(message_id, message, update_signal, index)
-        self.message_id = message_id
+        super().__init__(message_uuid, message, update_signal, index)
+        self.uuid = message_uuid
 
         error_icon = SvgLabel('error_icon.svg', svg_size=QSize(12, 12))
         error_icon.setObjectName('error_icon')  # Set css id
@@ -1778,21 +1778,21 @@ class ReplyWidget(SpeechBubble):
             self.color_bar.setStyleSheet(self.CSS_COLOR_BAR_REPLY_PENDING)
 
     @pyqtSlot(str, str, str)
-    def _on_reply_success(self, source_id: str, message_id: str, content: str) -> None:
+    def _on_reply_success(self, source_id: str, message_uuid: str, content: str) -> None:
         """
-        Conditionally update this ReplyWidget's state if and only if the message_id of the emitted
-        signal matches the message_id of this widget.
+        Conditionally update this ReplyWidget's state if and only if the message_uuid of the emitted
+        signal matches the uuid of this widget.
         """
-        if message_id == self.message_id:
+        if message_uuid == self.uuid:
             self._set_reply_state('SUCCEEDED')
 
     @pyqtSlot(str)
-    def _on_reply_failure(self, message_id: str) -> None:
+    def _on_reply_failure(self, message_uuid: str) -> None:
         """
-        Conditionally update this ReplyWidget's state if and only if the message_id of the emitted
-        signal matches the message_id of this widget.
+        Conditionally update this ReplyWidget's state if and only if the message_uuid of the emitted
+        signal matches the uuid of this widget.
         """
-        if message_id == self.message_id:
+        if message_uuid == self.uuid:
             self._set_reply_state('FAILED')
 
 
@@ -1896,6 +1896,7 @@ class FileWidget(QWidget):
 
         self.controller = controller
         self.file = self.controller.get_file(file_uuid)
+        self.uuid = file_uuid
         self.index = index
         self.downloading = False
 
@@ -2035,14 +2036,16 @@ class FileWidget(QWidget):
 
     @pyqtSlot(str, str, str)
     def _on_file_downloaded(self, source_uuid: str, file_uuid: str, filename: str) -> None:
-        if file_uuid == self.file.uuid:
+        if file_uuid == self.uuid:
             self.downloading = False
+            self.file = self.controller.get_file(self.uuid)
             QTimer.singleShot(300, self.stop_button_animation)
 
     @pyqtSlot(str, str, str)
     def _on_file_missing(self, source_uuid: str, file_uuid: str, filename: str) -> None:
-        if file_uuid == self.file.uuid:
+        if file_uuid == self.uuid:
             self.downloading = False
+            self.file = self.controller.get_file(self.uuid)
             QTimer.singleShot(300, self.stop_button_animation)
 
     @pyqtSlot()
@@ -2053,7 +2056,7 @@ class FileWidget(QWidget):
         if not self.controller.downloaded_file_exists(self.file):
             return
 
-        dialog = ExportDialog(self.controller, self.file.uuid, self.file.filename)
+        dialog = ExportDialog(self.controller, self.uuid, self.file.filename)
         dialog.exec()
 
     @pyqtSlot()
@@ -2064,7 +2067,7 @@ class FileWidget(QWidget):
         if not self.controller.downloaded_file_exists(self.file):
             return
 
-        dialog = PrintDialog(self.controller, self.file.uuid, self.file.filename)
+        dialog = PrintDialog(self.controller, self.uuid, self.file.filename)
         dialog.exec()
 
     def _on_left_click(self):
@@ -2073,7 +2076,7 @@ class FileWidget(QWidget):
         of the file distinguishes which function in the logic layer to call.
         """
         # update state
-        self.file = self.controller.get_file(self.file.uuid)
+        self.file = self.controller.get_file(self.uuid)
 
         if self.file.is_decrypted:
             # Open the already downloaded and decrypted file.
@@ -2082,7 +2085,7 @@ class FileWidget(QWidget):
             if self.controller.api:
                 self.start_button_animation()
             # Download the file.
-            self.controller.on_submission_download(File, self.file.uuid)
+            self.controller.on_submission_download(File, self.uuid)
 
     def start_button_animation(self):
         """
@@ -2810,8 +2813,10 @@ class ConversationView(QWidget):
                     self.add_file(conversation_item, index)
 
         # If any items remain in current_conversation, they are no longer in the
-        # source collection and should be removed.
+        # source collection and should be removed from both the layout and the conversation
+        # dict.
         for item_widget in current_conversation.values():
+            self.current_messages.pop(item_widget.uuid)
             self.conversation_layout.removeWidget(item_widget)
 
     def add_file(self, file: File, index):
