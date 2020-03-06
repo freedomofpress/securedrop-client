@@ -462,6 +462,10 @@ class Controller(QObject):
         logger.debug('The SecureDrop server cannot be reached due to Error: {}'.format(result))
 
         if isinstance(result, ApiInaccessibleError):
+            # Don't show login window if the user is already logged out
+            if not self.is_authenticated or not self.api:
+                return
+
             self.invalidate_token()
             self.logout()
             self.gui.show_login(error=_('Your session expired. Please log in again.'))
