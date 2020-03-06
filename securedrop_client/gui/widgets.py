@@ -1878,7 +1878,7 @@ class FileWidget(QWidget):
     VERTICAL_MARGIN = 10
     FILE_FONT_SPACING = 2
     FILE_OPTIONS_FONT_SPACING = 1.6
-    FILENAME_WIDTH_PX = 400
+    FILENAME_WIDTH_PX = 360
 
     def __init__(
         self,
@@ -2322,7 +2322,7 @@ class FramelessDialog(QDialog):
 
 class PrintDialog(FramelessDialog):
 
-    FILENAME_WIDTH_PX = 320
+    FILENAME_WIDTH_PX = 260
 
     def __init__(self, controller: Controller, file_uuid: str, file_name: str):
         super().__init__()
@@ -2454,7 +2454,7 @@ class ExportDialog(FramelessDialog):
 
     PASSPHRASE_LABEL_SPACING = 0.5
     NO_MARGIN = 0
-    FILENAME_WIDTH_PX = 320
+    FILENAME_WIDTH_PX = 260
 
     def __init__(self, controller: Controller, file_uuid: str, file_name: str):
         super().__init__()

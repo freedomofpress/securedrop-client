@@ -2385,7 +2385,7 @@ def test_PrintDialog_init_sanitizes_filename(mocker):
 
     PrintDialog(mocker.MagicMock(), 'mock_uuid', filename)
 
-    secure_qlabel.assert_called_with(filename, max_length=320, wordwrap=False)
+    secure_qlabel.call_args_list[0].assert_called_with(filename)
 
 
 def test_PrintDialog__show_starting_instructions(mocker):
