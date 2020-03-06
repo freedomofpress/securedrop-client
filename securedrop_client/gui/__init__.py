@@ -17,6 +17,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import textwrap
+import logging
 
 from typing import Union
 
@@ -171,25 +172,35 @@ class SecureQLabel(QLabel):
     ):
         super().__init__(parent, flags)
         self.wordwrap = wordwrap
+        logging.debug('setting max_length to {}'.format(max_length))
         self.max_length = max_length
         self.setWordWrap(wordwrap)  # If True, wraps text at default of 70 characters
         self.setText(text)
+        logging.debug('self.text: {}'.format(self.text()))
+        logging.debug('text: {}'.format(text))
         self.elided = True if self.text() != text else False
 
     def setText(self, text: str) -> None:
         self.setTextFormat(Qt.PlainText)
         if self.wordwrap:
             text = "\n".join(textwrap.wrap(text))
+        logging.debug('text: {}'.format(text))
         elided_text = self.get_elided_text(text)
         self.elided = True if elided_text != text else False
+        logging.debug('text: {}'.format(elided_text))
+        logging.debug('elided: {}'.format(self.elided))
         super().setText(elided_text)
+        logging.debug('self.text: {}'.format(self.text()))
 
     def get_elided_text(self, full_text: str) -> str:
         if not self.max_length:
+            logging.debug(self.max_length)
+            logging.debug('returning')
             return full_text
 
         fm = self.fontMetrics()
         filename_width = fm.horizontalAdvance(full_text)
+        logging.debug('filename_width: {}'.format(filename_width))
         if filename_width > self.max_length:
             self.setToolTip(full_text)
             elided_text = ''

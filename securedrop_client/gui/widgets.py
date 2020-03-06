@@ -1875,7 +1875,7 @@ class FileWidget(QWidget):
     VERTICAL_MARGIN = 10
     FILE_FONT_SPACING = 2
     FILE_OPTIONS_FONT_SPACING = 1.6
-    FILENAME_WIDTH_PX = 400
+    FILENAME_WIDTH_PX = 200
 
     def __init__(
         self,
@@ -1947,12 +1947,14 @@ class FileWidget(QWidget):
         self.print_button.clicked.connect(self._on_print_clicked)
 
         self.file_name = SecureQLabel(wordwrap=False, max_length=self.FILENAME_WIDTH_PX)
+        logger.debug('self.file_name.max_length: {}'.format(self.file_name.max_length))
         self.file_name.setObjectName('file_name')
         self.file_name.installEventFilter(self)
         self.file_name.setCursor(QCursor(Qt.PointingHandCursor))
         self.no_file_name = SecureQLabel('ENCRYPTED FILE ON SERVER', wordwrap=False)
         self.no_file_name.setObjectName('no_file_name')
         self.no_file_name.setFont(file_description_font)
+        logger.debug('self.file_name.max_length: {}'.format(self.file_name.max_length))
 
         # Line between file name and file size
         self.horizontal_line = QWidget()
@@ -1968,6 +1970,7 @@ class FileWidget(QWidget):
         self.file_size = SecureQLabel(humanize_filesize(self.file.size))
         self.file_size.setObjectName('file_size')
         self.file_size.setAlignment(Qt.AlignRight)
+        logger.debug('self.file_name.max_length: {}'.format(self.file_name.max_length))
 
         # Decide what to show or hide based on whether or not the file's been downloaded
         self._set_file_state()
@@ -2005,8 +2008,11 @@ class FileWidget(QWidget):
             self.print_button.show()
             self.horizontal_line.show()
             self.spacer.hide()
+            logger.debug('self.file_name.max_length: {}'.format(self.file_name.max_length))
             self._set_file_name()
+            logger.debug('self.file_name.max_length: {}'.format(self.file_name.max_length))
             self.file_name.show()
+            logger.debug('self.file_name.max_length: {}'.format(self.file_name.max_length))
             self.no_file_name.hide()
         else:
             self.download_button.setText(_('DOWNLOAD'))
@@ -2032,7 +2038,11 @@ class FileWidget(QWidget):
             self.download_button.setFont(self.file_buttons_font)
 
     def _set_file_name(self):
+        logger.debug('is elided: {}'.format(self.file_name.is_elided()))
+        logger.debug('setting filename to {}'.format(self.file.filename))
+        logger.debug('self.file_name.max_length: {}'.format(self.file_name.max_length))
         self.file_name.setText(self.file.filename)
+        logger.debug('is elided: {}'.format(self.file_name.is_elided()))
         if self.file_name.is_elided():
             self.horizontal_line.hide()
             self.spacer.show()
