@@ -380,7 +380,6 @@ class Controller(QObject):
             self.api.journalist_last_name,
             self.session)
         self.gui.show_main_window(user)
-        self.update_sources()
         self.api_job_queue.start(self.api)
         self.api_sync.start(self.api)
         self.is_authenticated = True

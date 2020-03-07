@@ -204,7 +204,6 @@ def test_Controller_on_authenticate_success(homedir, config, mocker, session_mak
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     co.api_sync.start = mocker.MagicMock()
     co.api_job_queue.start = mocker.MagicMock()
-    co.update_sources = mocker.MagicMock()
     co.session.add(user)
     co.session.commit()
     co.api = mocker.MagicMock()
