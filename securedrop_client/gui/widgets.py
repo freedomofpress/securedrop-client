@@ -718,6 +718,19 @@ class MainView(QWidget):
         else:
             self.clear_conversation()
 
+    def delete_source(self, source) -> None:
+        """
+        When we delete a source, we should delete its SourceConversationWrapper,
+        and remove the reference to it in self.source_conversations
+        """
+        try:
+            logger.debug('Deleting SourceConversationWrapper for {}'.format(source.uuid))
+            conversation_wrapper = self.source_conversations[source]
+            conversation_wrapper.deleteLater()
+            self.source_conversations.pop(source)
+        except KeyError:
+            logger.debug('No SourceConversationWrapper for {} to delete'.format(source.uuid))
+
     def set_conversation(self, widget):
         """
         Update the view holder to contain the referenced widget.
