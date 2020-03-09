@@ -828,7 +828,7 @@ class SourceList(QListWidget):
         # Set id and styles.
         self.setObjectName('sourcelist')
         self.setStyleSheet(self.CSS)
-        self.setFixedWidth(445)
+        self.setFixedWidth(545)
         self.setUniformItemSizes(True)
 
         # Set layout.
@@ -962,7 +962,7 @@ class SourceWidget(QWidget):
 
     SIDE_MARGIN = 10
     SOURCE_WIDGET_VERTICAL_MARGIN = 10
-    PREVIEW_WIDTH = 312
+    PREVIEW_WIDTH = 412
     PREVIEW_HEIGHT = 60
 
     def __init__(self, source: Source):
