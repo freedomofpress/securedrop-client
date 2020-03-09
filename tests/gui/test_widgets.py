@@ -1072,6 +1072,23 @@ def test_StarToggleButton_setup(mocker):
     on_authentication_changed_fn.assert_called_with('mock')
 
 
+def test_StarToggleButton_eventFilter(mocker):
+    """
+    Ensure the hover events are handled properly.
+    """
+    stb = StarToggleButton(source=mocker.MagicMock())
+    stb.setIcon = mocker.MagicMock()
+    stb.set_icon = mocker.MagicMock()
+    # Hover enter
+    test_event = QEvent(QEvent.HoverEnter)
+    stb.eventFilter(stb, test_event)
+    assert stb.setIcon.call_count == 1
+    # Hover leave
+    test_event = QEvent(QEvent.HoverLeave)
+    stb.eventFilter(stb, test_event)
+    stb.set_icon.assert_called_once_with(on='star_on.svg', off='star_off.svg')
+
+
 def test_StarToggleButton_on_authentication_changed_while_authenticated_and_checked(mocker):
     """
     If on_authentication_changed is set up correctly, then calling toggle on a checked button should
