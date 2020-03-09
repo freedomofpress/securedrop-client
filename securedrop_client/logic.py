@@ -751,12 +751,9 @@ class Controller(QObject):
         """
         Handler for when a source deletion succeeds.
         """
-        # Remove the source widgets for the deleted source.
-        source = self.session.query(db.Source).filter_by(uuid=result).one()
-        self.gui.delete_source_wrapper(source)
-        # Now delete the local version of the source from the database.
+        # Delete the local version of the source from the database.
         storage.delete_local_source_by_uuid(self.session, result, self.data_dir)
-        # Finally update the sources list.
+        # Update the sources UI.
         self.update_sources()
 
     def on_delete_source_failure(self, e: Exception) -> None:
