@@ -191,7 +191,8 @@ class SecureQLabel(QLabel):
         fm = self.fontMetrics()
         filename_width = fm.horizontalAdvance(full_text)
         if filename_width > self.max_length:
-            self.setToolTip(full_text)
+            wrapped_tool_tip = SecureQLabel(full_text)
+            self.setToolTip(wrapped_tool_tip.text())
             elided_text = ''
             for c in full_text:
                 if fm.horizontalAdvance(elided_text) > self.max_length:
