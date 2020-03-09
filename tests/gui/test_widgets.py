@@ -614,7 +614,7 @@ def test_MainView_on_source_changed_SourceConversationWrapper_is_preserved(mocke
     # But if we click back (call on_source_changed again) to the source,
     # its SourceConversationWrapper should _not_ be recreated.
     mv.source_list.get_current_source = mocker.MagicMock(return_value=source)
-    conversation_wrapper = mv.source_conversations[source]
+    conversation_wrapper = mv.source_conversations[source.uuid]
     conversation_wrapper.conversation_view = mocker.MagicMock()
     conversation_wrapper.conversation_view.update_conversation = mocker.MagicMock()
 
