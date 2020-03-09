@@ -987,7 +987,6 @@ class SourceWidget(QWidget):
         self.preview = SecureQLabel()
         self.preview.setObjectName('preview')
         self.preview.setFixedSize(QSize(self.PREVIEW_WIDTH, self.PREVIEW_HEIGHT))
-        self.preview.setWordWrap(True)
         summary_layout.addWidget(self.name)
         summary_layout.addWidget(self.preview)
 
@@ -1615,7 +1614,6 @@ class SpeechBubble(QWidget):
         # Message box
         self.message = SecureQLabel(text)
         self.message.setObjectName('message')
-        self.message.setWordWrap(True)
 
         # Color bar
         self.color_bar = QWidget()
@@ -1744,7 +1742,7 @@ class ReplyWidget(SpeechBubble):
         error_icon = SvgLabel('error_icon.svg', svg_size=QSize(12, 12))
         error_icon.setObjectName('error_icon')  # Set css id
         error_icon.setFixedWidth(12)
-        error_message = SecureQLabel('Failed to send')
+        error_message = SecureQLabel('Failed to send', wordwrap=False)
         error_message.setObjectName('error_message')
         error_message.setStyleSheet(self.CSS_ERROR_MESSAGE_REPLY_FAILED)
 
@@ -1833,10 +1831,7 @@ class FileWidget(QWidget):
         color: #05a6fe;
     }
     QLabel#file_name {
-        min-width: 129px;
-        padding-right: 8px;
-        padding-bottom: 4px;
-        padding-top: 1px;
+        padding-bottom: 2px;
         font-family: 'Source Sans Pro';
         font-weight: 600;
         font-size: 13px;
@@ -1846,8 +1841,6 @@ class FileWidget(QWidget):
         color: #05a6fe;
     }
     QLabel#no_file_name {
-        padding-right: 8px;
-        padding-bottom: 1px;
         font-family: 'Source Sans Pro';
         font-weight: 300;
         font-size: 13px;
@@ -1865,8 +1858,7 @@ class FileWidget(QWidget):
         min-height: 2px;
         max-height: 2px;
         background-color: rgba(211, 216, 234, 0.45);
-        padding-left: 8px;
-        padding-right: 8px;
+        margin: 0px 8px 0px 8px;
     }
     '''
 
@@ -1886,6 +1878,7 @@ class FileWidget(QWidget):
     VERTICAL_MARGIN = 10
     FILE_FONT_SPACING = 2
     FILE_OPTIONS_FONT_SPACING = 1.6
+    FILENAME_WIDTH_PX = 360
 
     def __init__(
         self,
@@ -1921,7 +1914,6 @@ class FileWidget(QWidget):
         # Set margins and spacing
         layout.setContentsMargins(0, self.VERTICAL_MARGIN, 0, self.VERTICAL_MARGIN)
         layout.setSpacing(0)
-        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         # File options: download, export, print
         self.file_options = QWidget()
@@ -1957,19 +1949,23 @@ class FileWidget(QWidget):
         self.export_button.clicked.connect(self._on_export_clicked)
         self.print_button.clicked.connect(self._on_print_clicked)
 
-        # File name or default string
-        self.file_name = SecureQLabel(self.file.filename)
+        self.file_name = SecureQLabel(wordwrap=False, max_length=self.FILENAME_WIDTH_PX)
         self.file_name.setObjectName('file_name')
         self.file_name.installEventFilter(self)
         self.file_name.setCursor(QCursor(Qt.PointingHandCursor))
-        self.no_file_name = SecureQLabel('ENCRYPTED FILE ON SERVER')
+        self.no_file_name = SecureQLabel('ENCRYPTED FILE ON SERVER', wordwrap=False)
         self.no_file_name.setObjectName('no_file_name')
         self.no_file_name.setFont(file_description_font)
 
         # Line between file name and file size
-        horizontal_line = QWidget()
-        horizontal_line.setObjectName('horizontal_line')
-        horizontal_line.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.horizontal_line = QWidget()
+        self.horizontal_line.setObjectName('horizontal_line')
+        self.horizontal_line.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        # Space between elided file name and file size when horizontal line is hidden
+        self.spacer = QWidget()
+        self.spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.spacer.hide()
 
         # File size
         self.file_size = SecureQLabel(humanize_filesize(self.file.size))
@@ -1977,13 +1973,14 @@ class FileWidget(QWidget):
         self.file_size.setAlignment(Qt.AlignRight)
 
         # Decide what to show or hide based on whether or not the file's been downloaded
-        self.set_button_state()
+        self._set_file_state()
 
         # Add widgets
         layout.addWidget(self.file_options)
         layout.addWidget(self.file_name)
         layout.addWidget(self.no_file_name)
-        layout.addWidget(horizontal_line)
+        layout.addWidget(self.horizontal_line)
+        layout.addWidget(self.spacer)
         layout.addWidget(self.file_size)
 
         # Connect signals to slots
@@ -2003,9 +2000,9 @@ class FileWidget(QWidget):
             self.download_button.setIcon(load_icon('download_file.svg'))
         return QObject.event(obj, event)
 
-    def set_button_state(self):
+    def _set_file_state(self):
         if self.file.is_decrypted:
-            self.file_name.setText(self.file.filename)
+            self._set_file_name()
             self.download_button.hide()
             self.no_file_name.hide()
             self.export_button.show()
@@ -2029,18 +2026,22 @@ class FileWidget(QWidget):
             self.file_name.hide()
             self.no_file_name.show()
 
+    def _set_file_name(self):
+        self.file_name.setText(self.file.filename)
+        if self.file_name.is_elided():
+            self.horizontal_line.hide()
+            self.spacer.show()
+
     @pyqtSlot(str, str, str)
     def _on_file_downloaded(self, source_uuid: str, file_uuid: str, filename: str) -> None:
         if file_uuid == self.file.uuid:
             self.downloading = False
-            self.file = self.controller.get_file(self.file.uuid)
             QTimer.singleShot(300, self.stop_button_animation)
 
     @pyqtSlot(str, str, str)
     def _on_file_missing(self, source_uuid: str, file_uuid: str, filename: str) -> None:
         if file_uuid == self.file.uuid:
             self.downloading = False
-            self.file = self.controller.get_file(self.file.uuid)
             QTimer.singleShot(300, self.stop_button_animation)
 
     @pyqtSlot()
@@ -2104,7 +2105,8 @@ class FileWidget(QWidget):
         Stops the download animation and restores the button to its default state.
         """
         self.download_animation.stop()
-        self.set_button_state()
+        self.file = self.controller.get_file(self.file.uuid)
+        self._set_file_state()
 
 
 class FramelessDialog(QDialog):
@@ -2320,12 +2322,15 @@ class FramelessDialog(QDialog):
 
 class PrintDialog(FramelessDialog):
 
+    FILENAME_WIDTH_PX = 260
+
     def __init__(self, controller: Controller, file_uuid: str, file_name: str):
         super().__init__()
 
         self.controller = controller
         self.file_uuid = file_uuid
-        self.file_name = SecureQLabel(file_name).text()
+        self.file_name = SecureQLabel(
+            file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX).text()
         self.error_status = ''  # Hold onto the error status we receive from the Export VM
 
         # Connect controller signals to slots
@@ -2449,13 +2454,15 @@ class ExportDialog(FramelessDialog):
 
     PASSPHRASE_LABEL_SPACING = 0.5
     NO_MARGIN = 0
+    FILENAME_WIDTH_PX = 260
 
     def __init__(self, controller: Controller, file_uuid: str, file_name: str):
         super().__init__()
 
         self.controller = controller
         self.file_uuid = file_uuid
-        self.file_name = SecureQLabel(file_name).text()
+        self.file_name = SecureQLabel(
+            file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX).text()
         self.error_status = ''  # Hold onto the error status we receive from the Export VM
 
         # Connect controller signals to slots

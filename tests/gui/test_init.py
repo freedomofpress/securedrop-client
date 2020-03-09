@@ -155,6 +155,21 @@ def test_SecureQLabel_init():
     assert sl.text() == label_text
 
 
+def test_SecureQLabel_init_wordwrap(mocker):
+    # 71 character string
+    long_string = '12345678901234567890123456789012345678901234567890123456789012345678901'
+    sl = SecureQLabel(long_string)
+    wordwrap_string = '1234567890123456789012345678901234567890123456789012345678901234567890\n1'
+    assert sl.text() == wordwrap_string
+
+
+def test_SecureQLabel_init_no_wordwrap(mocker):
+    # 71 character string
+    long_string = '12345678901234567890123456789012345678901234567890123456789012345678901'
+    sl = SecureQLabel(long_string, wordwrap=False)
+    assert sl.text() == long_string
+
+
 def test_SecureQLabel_setText(mocker):
     sl = SecureQLabel("hello")
     assert sl.text() == "hello"
@@ -165,6 +180,14 @@ def test_SecureQLabel_setText(mocker):
     assert sl.text() == label_text
     # Ensure *safe* plain text with no HTML entities.
     sl.setTextFormat.assert_called_once_with(Qt.PlainText)
+
+
+def test_SecureQLabel_get_elided_text(mocker):
+    # 70 character string
+    long_string = '1234567890123456789012345678901234567890123456789012345678901234567890'
+    sl = SecureQLabel(long_string, wordwrap=False, max_length=100)
+    elided_text = sl.get_elided_text(long_string)
+    assert sl.text() == elided_text
 
 
 def test_SecureQLabel_quotes_not_escaped_for_readability():

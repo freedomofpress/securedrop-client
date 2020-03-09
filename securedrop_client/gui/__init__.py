@@ -166,13 +166,41 @@ class SecureQLabel(QLabel):
         text: str = "",
         parent: QWidget = None,
         flags: Union[Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags(),
+        wordwrap: bool = True,
+        max_length: int = 0
     ):
         super().__init__(parent, flags)
-        self.setWordWrap(True)
+        self.wordwrap = wordwrap
+        self.max_length = max_length
+        self.setWordWrap(wordwrap)  # If True, wraps text at default of 70 characters
         self.setText(text)
+        self.elided = True if self.text() != text else False
 
     def setText(self, text: str) -> None:
         self.setTextFormat(Qt.PlainText)
-        # Wraps text at default of 70 characters.
-        wrapped = "\n".join(textwrap.wrap(text))
-        super().setText(wrapped)
+        if self.wordwrap:
+            text = "\n".join(textwrap.wrap(text))
+        elided_text = self.get_elided_text(text)
+        self.elided = True if elided_text != text else False
+        super().setText(elided_text)
+
+    def get_elided_text(self, full_text: str) -> str:
+        if not self.max_length:
+            return full_text
+
+        fm = self.fontMetrics()
+        filename_width = fm.horizontalAdvance(full_text)
+        if filename_width > self.max_length:
+            wrapped_tool_tip = SecureQLabel(full_text)
+            self.setToolTip(wrapped_tool_tip.text())
+            elided_text = ''
+            for c in full_text:
+                if fm.horizontalAdvance(elided_text) > self.max_length:
+                    elided_text = elided_text + '...'
+                    return elided_text
+                elided_text = elided_text + c
+
+        return full_text
+
+    def is_elided(self) -> bool:
+        return self.elided
