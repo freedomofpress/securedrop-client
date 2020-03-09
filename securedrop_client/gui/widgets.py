@@ -721,7 +721,7 @@ class MainView(QWidget):
         else:
             self.clear_conversation()
 
-    def delete_source(self, source_uuid) -> None:
+    def delete_source(self, source_uuid: str) -> None:
         """
         When we delete a source, we should delete its SourceConversationWrapper,
         and remove the reference to it in self.source_conversations
