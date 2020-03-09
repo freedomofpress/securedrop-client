@@ -504,6 +504,58 @@ def test_MainView_show_sources_with_no_sources_at_all(mocker):
     mv.empty_conversation_view.show.assert_called_once_with()
 
 
+def test_MainView_show_sources_when_sources_are_deleted(mocker):
+    """
+    Ensure that show_sources also calls delete_source to delete the
+    SourceConversationWrapper for a deleted source.
+    """
+    mv = MainView(None)
+    mv.source_list = mocker.MagicMock()
+    mv.empty_conversation_view = mocker.MagicMock()
+    mv.source_list.update = mocker.MagicMock(return_value=[])
+    mv.delete_source = mocker.MagicMock()
+
+    mv.show_sources([1, 2, 3, 4])
+
+    mv.source_list.update = mocker.MagicMock(return_value=[4])
+
+    mv.show_sources([1, 2, 3])
+
+    mv.delete_source.assert_called_once_with(4)
+
+
+def test_MainView_delete_source_when_conv_wrapper_exists(mocker):
+    """
+    Ensure that delete_source deletes the SourceConversationWrapper
+    if it exists.
+    """
+    source_uuid = 'foo'
+    mock_source_conv_wrapper_widget = mocker.MagicMock()
+    mock_source_conv_wrapper_widget.deleteLater = mocker.MagicMock()
+    mv = MainView(None)
+    mv.source_conversations = {}
+    mv.source_conversations[source_uuid] = mock_source_conv_wrapper_widget
+
+    mv.delete_source(source_uuid)
+
+    mock_source_conv_wrapper_widget.deleteLater.assert_called_once_with()
+    assert mv.source_conversations == {}
+
+
+def test_MainView_delete_source_when_conv_wrapper_does_not_exist(mocker):
+    """
+    Ensure that delete_source throws no exception if the SourceConversationWrapper
+    does not exist.
+    """
+    source_uuid = 'foo'
+    mv = MainView(None)
+    mv.source_conversations = {}
+
+    mv.delete_source(source_uuid)
+
+    assert mv.source_conversations == {}
+
+
 def test_MainView_on_source_changed(mocker):
     """
     Ensure set_conversation is called when source changes.
