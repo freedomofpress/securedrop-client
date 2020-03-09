@@ -797,10 +797,15 @@ class EmptyConversationView(QWidget):
 
     def show_no_source_selected_message(self):
         self.content.setText(
-            'Select a source from the list, to:\n\n'
-            '• Read a conversation\n'
-            '• View or retrieve files\n'
-            '• Send a response\n')
+            '<hr/>'
+            '<h3>Select a source from the list, to:</h3>'
+            '<ul>'
+            '<li>Read a conversation</li>'
+            '<li>View or retrieve files</li>'
+            '<li>Send a response</li>'
+            '</ul>'
+            '<hr/>'
+        )
 
 
 class SourceList(QListWidget):
