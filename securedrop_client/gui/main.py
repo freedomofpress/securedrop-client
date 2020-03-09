@@ -142,13 +142,6 @@ class Window(QMainWindow):
         self.login_dialog.accept()
         self.login_dialog = None
 
-    def delete_source_wrapper(self, source: Source) -> None:
-        """
-        Remove the SourceConversationWrapper for this source. This deletes
-        all its children, including the ConversationView.
-        """
-        self.main_view.delete_source(source)
-
     def show_sources(self, sources: List[Source]):
         """
         Update the left hand sources list in the UI with the passed in list of

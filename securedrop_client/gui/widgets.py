@@ -671,7 +671,7 @@ class MainView(QWidget):
 
         # Note: We should not delete SourceConversationWrapper when its source is unselected. This
         # is a temporary solution to keep copies of our objects since we do delete them.
-        self.source_conversations = {}  # type: Dict[Source, SourceConversationWrapper]
+        self.source_conversations = {}  # type: Dict[str, SourceConversationWrapper]
 
     def setup(self, controller):
         """
@@ -692,7 +692,10 @@ class MainView(QWidget):
             self.empty_conversation_view.show_no_source_selected_message()
             self.empty_conversation_view.show()
 
-        self.source_list.update(sources)
+        deleted_sources = self.source_list.update(sources)
+        for source_uuid in deleted_sources:
+            # Then call the function to remove the wrapper and its children.
+            self.delete_source(source_uuid)
 
     def on_source_changed(self):
         """
@@ -706,30 +709,30 @@ class MainView(QWidget):
             # Try to get the SourceConversationWrapper from the persistent dict,
             # else we create it.
             try:
-                conversation_wrapper = self.source_conversations[source]
+                conversation_wrapper = self.source_conversations[source.uuid]
 
                 # Redraw the conversation view such that new messages, replies, files appear.
                 conversation_wrapper.conversation_view.update_conversation(source.collection)
             except KeyError:
                 conversation_wrapper = SourceConversationWrapper(source, self.controller)
-                self.source_conversations[source] = conversation_wrapper
+                self.source_conversations[source.uuid] = conversation_wrapper
 
             self.set_conversation(conversation_wrapper)
         else:
             self.clear_conversation()
 
-    def delete_source(self, source) -> None:
+    def delete_source(self, source_uuid) -> None:
         """
         When we delete a source, we should delete its SourceConversationWrapper,
         and remove the reference to it in self.source_conversations
         """
         try:
-            logger.debug('Deleting SourceConversationWrapper for {}'.format(source.uuid))
-            conversation_wrapper = self.source_conversations[source]
+            logger.debug('Deleting SourceConversationWrapper for {}'.format(source_uuid))
+            conversation_wrapper = self.source_conversations[source_uuid]
             conversation_wrapper.deleteLater()
-            self.source_conversations.pop(source)
+            self.source_conversations.pop(source_uuid)
         except KeyError:
-            logger.debug('No SourceConversationWrapper for {} to delete'.format(source.uuid))
+            logger.debug('No SourceConversationWrapper for {} to delete'.format(source_uuid))
 
     def set_conversation(self, widget):
         """
@@ -849,7 +852,7 @@ class SourceList(QListWidget):
         self.controller.file_ready.connect(self.set_snippet)
         self.controller.file_missing.connect(self.set_snippet)
 
-    def update(self, sources: List[Source]):
+    def update(self, sources: List[Source]) -> List[str]:
         """
         Reset and update the list with the passed in list of sources.
         """
@@ -861,6 +864,12 @@ class SourceList(QListWidget):
             has_source_selected = self.item(self.currentRow()).isSelected()
         current_source = self.get_current_source()
         current_source_id = current_source and current_source.id
+
+        # Make a copy of the source_widgets that are currently displayed
+        # so that we can compare which widgets were removed. This means that
+        # the source was deleted, and we'll return this so we can also
+        # delete the corresponding SourceConversationWrapper.
+        existing_source_widgets = self.source_widgets.copy()
 
         # When we call clear() to delete all SourceWidgets, we should
         # also clear the source_widgets dict.
@@ -880,6 +889,9 @@ class SourceList(QListWidget):
 
             if source.id == current_source_id and has_source_selected:
                 self.setCurrentItem(list_item)
+
+        deleted_uuids = list(set(existing_source_widgets.keys()) - set(self.source_widgets.keys()))
+        return deleted_uuids
 
     def get_current_source(self):
         source_item = self.currentItem()
