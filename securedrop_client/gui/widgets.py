@@ -1178,10 +1178,6 @@ class StarToggleButton(SvgToggleButton):
     #star_button {
         border: none;
     }
-    #star_button:hover {
-        border: 4px solid #D3D8EA;
-        border-radius: 8px;
-    }
     '''
 
     def __init__(self, source: Source):
@@ -1190,6 +1186,7 @@ class StarToggleButton(SvgToggleButton):
             off='star_off.svg',
             svg_size=QSize(16, 16))
 
+        self.installEventFilter(self)
         self.source = source
         if self.source.is_starred:
             self.setChecked(True)
@@ -1202,6 +1199,14 @@ class StarToggleButton(SvgToggleButton):
         self.controller = controller
         self.controller.authentication_state.connect(self.on_authentication_changed)
         self.on_authentication_changed(self.controller.is_authenticated)
+
+    def eventFilter(self, obj, event):
+        t = event.type()
+        if t == QEvent.HoverEnter:
+            self.setIcon(load_icon('star_hover.svg'))
+        elif t == QEvent.HoverLeave:
+            self.set_icon(on='star_on.svg', off='star_off.svg')
+        return QObject.event(obj, event)
 
     def on_authentication_changed(self, authenticated: bool):
         """
