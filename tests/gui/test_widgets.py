@@ -4,13 +4,15 @@ Make sure the UI widgets are configured correctly and work as expected.
 import pytest
 import arrow
 from datetime import datetime
+from unittest.mock import patch
 
 from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtGui import QFocusEvent, QKeyEvent, QMovie
 from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QMessageBox, QMainWindow, \
     QLineEdit
-from sqlalchemy.orm import scoped_session, sessionmaker
+import sqlalchemy.orm.exc
+from sqlalchemy.orm import attributes, scoped_session, sessionmaker
 
 from securedrop_client import db, logic
 from securedrop_client.export import ExportError, ExportStatus
@@ -3216,6 +3218,26 @@ def test_ReplyBoxWidget_on_synced(mocker):
     assert rb.refocus_after_sync is False
 
 
+def test_ReplyBoxWidget_on_sync_source_deleted(mocker, source):
+    s = source['source']
+    controller = mocker.MagicMock()
+    rb = ReplyBoxWidget(s, controller)
+
+    error_logger = mocker.patch('securedrop_client.gui.widgets.logger.error')
+
+    def pretend_source_was_deleted(self):
+        raise sqlalchemy.orm.exc.ObjectDeletedError(
+            attributes.instance_state(s), None
+        )
+
+    with patch.object(ReplyBoxWidget, 'update_authentication_state') as uas:
+        uas.side_effect = pretend_source_was_deleted
+        rb._on_synced("syncing")
+        error_logger.assert_called_once_with(
+            "During sync, ReplyBoxWidget found its source had been deleted."
+        )
+
+
 def test_ReplyWidget_success_failure_slots(mocker):
     mock_update_signal = mocker.Mock()
     mock_success_signal = mocker.Mock()
@@ -3261,6 +3283,26 @@ def test_ReplyBoxWidget__on_authentication_changed(mocker, homedir):
     rb._on_authentication_changed(True)
 
     rb.set_logged_in.assert_called_once_with()
+
+
+def test_ReplyBoxWidget_on_authentication_changed_source_deleted(mocker, source):
+    s = source['source']
+    controller = mocker.MagicMock()
+    rb = ReplyBoxWidget(s, controller)
+
+    error_logger = mocker.patch('securedrop_client.gui.widgets.logger.error')
+
+    def pretend_source_was_deleted(self):
+        raise sqlalchemy.orm.exc.ObjectDeletedError(
+            attributes.instance_state(s), None
+        )
+
+    with patch.object(ReplyBoxWidget, 'update_authentication_state') as uas:
+        uas.side_effect = pretend_source_was_deleted
+        rb._on_authentication_changed(True)
+        error_logger.assert_called_once_with(
+            "On authentication change, ReplyBoxWidget found its source had been deleted."
+        )
 
 
 def test_ReplyBoxWidget__on_authentication_changed_offline(mocker, homedir):
