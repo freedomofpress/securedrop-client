@@ -156,16 +156,19 @@ def test_SecureQLabel_init():
 
 
 def test_SecureQLabel_init_wordwrap(mocker):
-    # 71 character string
-    long_string = '12345678901234567890123456789012345678901234567890123456789012345678901'
+    # 81 character string
+    long_string = ('1234567890123456789012345678901234567890123456789012345678901234567890'
+                   '12345678901')
     sl = SecureQLabel(long_string)
-    wordwrap_string = '1234567890123456789012345678901234567890123456789012345678901234567890\n1'
+    wordwrap_string = ('1234567890123456789012345678901234567890123456789012345678901234567890'
+                       '1234567890\n1')
     assert sl.text() == wordwrap_string
 
 
 def test_SecureQLabel_init_no_wordwrap(mocker):
-    # 71 character string
-    long_string = '12345678901234567890123456789012345678901234567890123456789012345678901'
+    # 81 character string
+    long_string = ('1234567890123456789012345678901234567890123456789012345678901234567890'
+                   '12345678901')
     sl = SecureQLabel(long_string, wordwrap=False)
     assert sl.text() == long_string
 
@@ -195,13 +198,13 @@ def test_SecureQLabel_quotes_not_escaped_for_readability():
     assert sl.text() == "'hello'"
 
 
-def test_SecureQLabel_wraps_on_70():
+def test_SecureQLabel_wraps_on_80():
     msg = (
         "thisisaverylongmessagethatwillnotwrapunlessthistestpassesproperly1234"
         "thisisaverylongmessagethatwillnotwrapunlessthistestpassesproperly1234"
         "thisisaverylongmessagethatwillnotwrapunlessthistestpassesproperly1234"
     )
     sl = SecureQLabel(msg)
-    expected = "\n".join(textwrap.wrap(msg))
+    expected = "\n".join(textwrap.wrap(msg, 80))
     assert sl.text() == expected
     assert sl.wordWrap() is True
