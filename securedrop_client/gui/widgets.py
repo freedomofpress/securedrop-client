@@ -730,7 +730,7 @@ class MainView(QWidget):
             logger.debug('Deleting SourceConversationWrapper for {}'.format(source_uuid))
             conversation_wrapper = self.source_conversations[source_uuid]
             conversation_wrapper.deleteLater()
-            self.source_conversations.pop(source_uuid)
+            del self.source_conversations[source_uuid]
         except KeyError:
             logger.debug('No SourceConversationWrapper for {} to delete'.format(source_uuid))
 
@@ -2063,14 +2063,12 @@ class FileWidget(QWidget):
     def _on_file_downloaded(self, source_uuid: str, file_uuid: str, filename: str) -> None:
         if file_uuid == self.uuid:
             self.downloading = False
-            self.file = self.controller.get_file(self.uuid)
             QTimer.singleShot(300, self.stop_button_animation)
 
     @pyqtSlot(str, str, str)
     def _on_file_missing(self, source_uuid: str, file_uuid: str, filename: str) -> None:
         if file_uuid == self.uuid:
             self.downloading = False
-            self.file = self.controller.get_file(self.uuid)
             QTimer.singleShot(300, self.stop_button_animation)
 
     @pyqtSlot()
