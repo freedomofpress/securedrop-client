@@ -907,7 +907,7 @@ class SourceList(QListWidget):
         """
         source_widget = self.source_widgets.get(source_uuid)
         if source_widget:
-            source_widget.set_snippet(source_uuid, message_uuid, content)
+            source_widget.set_snippet()
 
 
 class SourceWidget(QWidget):
@@ -1060,26 +1060,23 @@ class SourceWidget(QWidget):
         """
         self.timestamp.setText(_(arrow.get(self.source.last_updated).format('DD MMM')))
         self.name.setText(self.source.journalist_designation)
-        self.set_snippet(self.source.uuid)
+        self.set_snippet()
         if self.source.document_count == 0:
             self.paperclip.hide()
 
-    def set_snippet(self, source, uuid=None, content=None):
+    def set_snippet(self):
         """
         Update the preview snippet only if the new message is for the
         referenced source and there's a source collection. If a uuid and
         content are passed then use these, otherwise default to whatever the
         latest item in the conversation might be.
         """
-        if source == self.source.uuid and self.source.collection:
-            msg = self.source.collection[-1]
-            if uuid and uuid == msg.uuid and content:
-                msg_text = content
-            else:
-                msg_text = str(msg)
-            if len(msg_text) > 120:
-                msg_text = msg_text[:120] + "..."
-            self.preview.setText(msg_text)
+        if self.source.collection:
+            last_item = self.source.collection[-1]
+            stringified_last_item = str(last_item) if last_item else None
+            if stringified_last_item and len(stringified_last_item) > 120:
+                stringified_last_item = stringified_last_item[:120] + "..."
+            self.preview.setText(stringified_last_item)
 
     def delete_source(self, event):
         if self.controller.api is None:

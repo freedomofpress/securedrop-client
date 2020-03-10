@@ -852,7 +852,7 @@ def test_SourceList_set_snippet(mocker):
         "a_uuid": mock_widget,
     }
     sl.set_snippet("a_uuid", "msg_uuid", "msg_content")
-    mock_widget.set_snippet.assert_called_once_with("a_uuid", "msg_uuid", "msg_content")
+    mock_widget.set_snippet.assert_called_once_with()
 
 
 def test_SourceWidget_init(mocker):
@@ -924,7 +924,7 @@ def test_SourceWidget_set_snippet(mocker):
     msg = factory.Message(content="abcdefg")
     source.collection = [msg, ]
     sw = SourceWidget(source)
-    sw.set_snippet(source.uuid, msg.uuid, msg.content)
+    sw.set_snippet()
     assert sw.preview.text() == "abcdefg"
 
 
