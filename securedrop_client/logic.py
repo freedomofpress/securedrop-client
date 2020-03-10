@@ -396,7 +396,8 @@ class Controller(QObject):
     def on_authenticate_failure(self, result: Exception) -> None:
         # Failed to authenticate. Reset state with failure message.
         self.invalidate_token()
-        error = _('There was a problem signing in. Please verify your credentials and try again.')
+        error = _('That didn\'t work. Please check everything and try again.\n'
+                  'Make sure to use a new two-factor code.')
         self.gui.show_login_error(error=error)
         self.api_sync.stop()
 

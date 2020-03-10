@@ -1346,7 +1346,7 @@ class LoginErrorBar(QWidget):
         self.error_icon.setFixedWidth(42)
 
         # Error status bar
-        self.error_status_bar = QLabel()
+        self.error_status_bar = SecureQLabel(wordwrap=False)
         self.error_status_bar.setObjectName('error_status_bar')
         self.setFixedHeight(42)
 
@@ -1557,7 +1557,7 @@ class LoginDialog(QDialog):
         """
         self.setDisabled(False)
         self.submit.setText(_("SIGN IN"))
-        self.error_bar.set_message(html.escape(message))
+        self.error_bar.set_message(message)
 
     def validate(self):
         """
@@ -1575,13 +1575,15 @@ class LoginDialog(QDialog):
             # Validate username
             if len(username) < self.MIN_JOURNALIST_USERNAME:
                 self.setDisabled(False)
-                self.error(_('Your username should be at least 3 characters. '))
+                self.error(_('That username won\'t work.\n'
+                             'It should be at least 3 characters long.'))
                 return
 
             # Validate password
             if len(password) < self.MIN_PASSWORD_LEN or len(password) > self.MAX_PASSWORD_LEN:
                 self.setDisabled(False)
-                self.error(_('Your password should be between 14 and 128 characters. '))
+                self.error(_('That passphrase won\'t work.\n'
+                             'It should be between 14 and 128 characters long.'))
                 return
 
             # Validate 2FA token
@@ -1589,13 +1591,14 @@ class LoginDialog(QDialog):
                 int(tfa_token)
             except ValueError:
                 self.setDisabled(False)
-                self.error(_('Please use only numerals for the two-factor code.'))
+                self.error(_('That two-factor code won\'t work.\n'
+                             'It should only contain numerals.'))
                 return
             self.submit.setText(_("SIGNING IN"))
             self.controller.login(username, password, tfa_token)
         else:
             self.setDisabled(False)
-            self.error(_('Please enter a username, password and '
+            self.error(_('Please enter a username, passphrase and '
                          'two-factor code.'))
 
 
