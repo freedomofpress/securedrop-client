@@ -858,19 +858,21 @@ class SourceList(QListWidget):
         """
         # Delete widgets that no longer exist in source list
         source_uuids = [source.uuid for source in sources]
+        deleted_uuids = []
         for i in range(self.count()):
             list_item = self.item(i)
             list_widget = self.itemWidget(list_item)
 
-            if list_widget and list_widget.source.uuid not in source_uuids:
+            if list_widget and list_widget.source_uuid not in source_uuids:
                 if list_item.isSelected():
                     self.setCurrentItem(None)
-                del self.source_widgets[list_widget.source.uuid]
+                del self.source_widgets[list_widget.source_uuid]
+                deleted_uuids.append(list_widget.source_uuid)
                 self.takeItem(i)
                 list_widget.deleteLater()
 
         # Create new widgets for new sources
-        widget_uuids = [self.itemWidget(self.item(i)).source.uuid for i in range(self.count())]
+        widget_uuids = [self.itemWidget(self.item(i)).source_uuid for i in range(self.count())]
         for source in sources:
             if source.uuid not in widget_uuids:
                 new_source = SourceWidget(source)
@@ -882,7 +884,6 @@ class SourceList(QListWidget):
                 list_item.setSizeHint(new_source.sizeHint())
                 self.setItemWidget(list_item, new_source)
 
-        deleted_uuids = list(set(existing_source_widgets.keys()) - set(self.source_widgets.keys()))
         return deleted_uuids
 
     def get_current_source(self):
@@ -969,6 +970,7 @@ class SourceWidget(QWidget):
 
         # Store source
         self.source = source
+        self.source_uuid = source.uuid
 
         # Set styles
         self.setStyleSheet(self.CSS)
