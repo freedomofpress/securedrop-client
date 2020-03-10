@@ -14,7 +14,7 @@ for name in os.listdir('./securedrop_client/resources/images/'):
 
 setuptools.setup(
     name="securedrop-client",
-    version="0.1.1",
+    version="0.1.2",
     author="Freedom of the Press Foundation",
     author_email="securedrop@freedom.press",
     description="SecureDrop Workstation client application",
