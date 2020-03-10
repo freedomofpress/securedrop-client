@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.2
+
+ * Update branding bar artwork (#871).
+ * Remove "downloading file" message in sync area (#881).
+ * Bug fix: Only force login when we're not already logged out (#884).
+ * Bug fix: Retry source deletion jobs (#879).
+ * Bug fix: Enter no longer closes print and export dialogs (#855).
+ * Bug fix: Ensure that ReplyBox is updated after client gets source key (#864).
+ * Bug fix: Ensure that we delete source collection when source is deleted (#866).
+ * Bug fix: Ensure that we delete Python wrappers for deleted items (#887, #890, #898).
+
 ## 0.1.1
 
   * Implement export/print UI design and behavior (#666).
