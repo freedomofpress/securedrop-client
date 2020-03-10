@@ -751,19 +751,28 @@ class MainView(QWidget):
 class EmptyConversationView(QWidget):
 
     CSS = '''
+    #bullet {
+        font-size: 30px;
+        font-weight: 600;
+    }
+    #no_sources {
+        min-width: 570px;
+        max-width: 700px;
+    }
     QLabel {
+        margin: 8px 0px 0px 0px;
         font-family: Montserrat;
         font-weight: 400;
         font-size: 40px;
         color: #a5b3e9;
-        qproperty-alignment: AlignLeft;
-        padding-bottom: 20px;
     }
-    #content {
+    #instructions {
         font-weight: 600;
-        padding-bottom: 40px;
     }
     '''
+
+    MARGIN = 30
+    NEWLINE_HEIGHT_PX = 40
 
     def __init__(self):
         super().__init__()
@@ -773,52 +782,85 @@ class EmptyConversationView(QWidget):
         self.setStyleSheet(self.CSS)
 
         # Set layout
-        self.layout = QHBoxLayout(self)
-        self.setLayout(self.layout)
-
-        # Set margins and spacing
-        self.layout.setContentsMargins(0, 100, 0, 0)
-        self.layout.setSpacing(0)
+        layout = QHBoxLayout()
+        layout.setContentsMargins(self.MARGIN, self.MARGIN, self.MARGIN, self.MARGIN)
+        self.setLayout(layout)
 
         # Create widgets
-        self.container = QWidget()
-        self.content = QLabel(self)
-        self.content.setObjectName('content')
-        self.content.setWordWrap(True)
-        self.content.setFixedWidth(520)
-        self.bullet1 = QLabel(self)
-        self.bullet1.setText("· Read a conversation")
-        self.bullet2 = QLabel(self)
-        self.bullet2.setText("· View or retrieve files")
-        self.bullet3 = QLabel(self)
-        self.bullet3.setText("· Send a response")
-        self.content_layout = QVBoxLayout()
-        self.content_layout.addWidget(self.content)
-        self.content_layout.addWidget(self.bullet1)
-        self.content_layout.addWidget(self.bullet2)
-        self.content_layout.addWidget(self.bullet3)
-        self.content_layout.addStretch(1)
-        self.container.setLayout(self.content_layout)
+        self.no_sources = QWidget()
+        self.no_sources.setObjectName('no_sources')
+        no_sources_layout = QVBoxLayout()
+        self.no_sources.setLayout(no_sources_layout)
+        no_sources_instructions = QLabel(_('Nothing to see just yet!'))
+        no_sources_instructions.setObjectName('instructions')
+        no_sources_instructions.setWordWrap(True)
+        no_sources_instruction_details1 = QLabel(
+            _('Source submissions will be listed to the left, once downloaded and decrypted.'))
+        no_sources_instruction_details1.setWordWrap(True)
+        no_sources_instruction_details2 = QLabel(
+            _('This is where you will read messages, reply to sources, and work with files.'))
+        no_sources_instruction_details2.setWordWrap(True)
+        no_sources_layout.addWidget(no_sources_instructions)
+        no_sources_layout.addSpacing(self.NEWLINE_HEIGHT_PX)
+        no_sources_layout.addWidget(no_sources_instruction_details1)
+        no_sources_layout.addSpacing(self.NEWLINE_HEIGHT_PX)
+        no_sources_layout.addWidget(no_sources_instruction_details2)
+
+        self.no_source_selected = QWidget()
+        self.no_source_selected.setFixedWidth(520)
+        no_source_selected_layout = QVBoxLayout()
+        self.no_source_selected.setLayout(no_source_selected_layout)
+        no_source_selected_instructions1 = QLabel(_('Select a source from'))
+        no_source_selected_instructions1.setObjectName('instructions')
+        no_source_selected_instructions1.setWordWrap(True)
+        no_source_selected_instructions2 = QLabel(_('the list, to:'))
+        no_source_selected_instructions2.setObjectName('instructions')
+        no_source_selected_instructions2.setWordWrap(True)
+        bullet1 = QWidget()
+        bullet1_layout = QHBoxLayout()
+        bullet1_layout.setContentsMargins(0, 0, 0, 0)
+        bullet1.setLayout(bullet1_layout)
+        bullet1_bullet = QLabel('•')
+        bullet1_bullet.setObjectName('bullet')
+        bullet1_layout.addWidget(bullet1_bullet)
+        bullet1_layout.addWidget(QLabel(_('Read a conversation')))
+        bullet1_layout.addStretch()
+        bullet2 = QWidget()
+        bullet2_layout = QHBoxLayout()
+        bullet2_layout.setContentsMargins(0, 0, 0, 0)
+        bullet2.setLayout(bullet2_layout)
+        bullet2_bullet = QLabel('•')
+        bullet2_bullet.setObjectName('bullet')
+        bullet2_layout.addWidget(bullet2_bullet)
+        bullet2_layout.addWidget(QLabel(_('View or retrieve files')))
+        bullet2_layout.addStretch()
+        bullet3 = QWidget()
+        bullet3_layout = QHBoxLayout()
+        bullet3_layout.setContentsMargins(0, 0, 0, 0)
+        bullet3.setLayout(bullet3_layout)
+        bullet3_bullet = QLabel('•')
+        bullet3_bullet.setObjectName('bullet')
+        bullet3_layout.addWidget(bullet3_bullet)
+        bullet3_layout.addWidget(QLabel(_('Send a response')))
+        bullet3_layout.addStretch()
+        no_source_selected_layout.addWidget(no_source_selected_instructions1)
+        no_source_selected_layout.addWidget(no_source_selected_instructions2)
+        no_source_selected_layout.addSpacing(self.NEWLINE_HEIGHT_PX)
+        no_source_selected_layout.addWidget(bullet1)
+        no_source_selected_layout.addWidget(bullet2)
+        no_source_selected_layout.addWidget(bullet3)
 
         # Add widgets
-        self.layout.addStretch(1)
-        self.layout.addWidget(self.container, 5)
-        self.layout.addStretch(1)
+        layout.addWidget(self.no_sources, alignment=Qt.AlignCenter)
+        layout.addWidget(self.no_source_selected, alignment=Qt.AlignCenter)
 
     def show_no_sources_message(self):
-        self.bullet1.hide()
-        self.bullet2.hide()
-        self.bullet3.hide()
-        self.content.setText(
-            'Nothing to see just yet!\n\n'
-            'Source submissions will be listed to the left, once downloaded and decrypted.\n\n'
-            'This is where you will read messages, reply to sources, and work with files.\n\n')
+        self.no_sources.show()
+        self.no_source_selected.hide()
 
     def show_no_source_selected_message(self):
-        self.bullet1.show()
-        self.bullet2.show()
-        self.bullet3.show()
-        self.content.setText('Select a source from the list, to:')
+        self.no_sources.hide()
+        self.no_source_selected.show()
 
 
 class SourceList(QListWidget):

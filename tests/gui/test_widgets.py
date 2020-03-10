@@ -696,35 +696,20 @@ def test_MainView_set_conversation(mocker):
 
 def test_EmptyConversationView_show_no_sources_message(mocker):
     ecv = EmptyConversationView()
-    ecv.content = mocker.MagicMock()
-    ecv.bullet1 = mocker.MagicMock()
-    ecv.bullet2 = mocker.MagicMock()
-    ecv.bullet3 = mocker.MagicMock()
 
     ecv.show_no_sources_message()
 
-    ecv.content.setText.assert_called_once_with(
-        'Nothing to see just yet!\n\n'
-        'Source submissions will be listed to the left, once downloaded and decrypted.\n\n'
-        'This is where you will read messages, reply to sources, and work with files.\n\n')
-    ecv.bullet1.hide.assert_called_once_with()
-    ecv.bullet2.hide.assert_called_once_with()
-    ecv.bullet3.hide.assert_called_once_with()
+    assert not ecv.no_sources.isHidden()
+    assert ecv.no_source_selected.isHidden()
 
 
 def test_EmptyConversationView_show_no_source_selected_message(mocker):
     ecv = EmptyConversationView()
-    ecv.content = mocker.MagicMock()
-    ecv.bullet1 = mocker.MagicMock()
-    ecv.bullet2 = mocker.MagicMock()
-    ecv.bullet3 = mocker.MagicMock()
 
     ecv.show_no_source_selected_message()
 
-    ecv.content.setText.assert_called_once_with("Select a source from the list, to:")
-    ecv.bullet1.show.assert_called_once_with()
-    ecv.bullet2.show.assert_called_once_with()
-    ecv.bullet3.show.assert_called_once_with()
+    assert ecv.no_sources.isHidden()
+    assert not ecv.no_source_selected.isHidden()
 
 
 def test_SourceList_get_current_source(mocker):
