@@ -768,12 +768,12 @@ class EmptyConversationView(QWidget):
         self.setStyleSheet(self.CSS)
 
         # Set layout
-        layout = QHBoxLayout(self)
-        self.setLayout(layout)
+        self.layout = QHBoxLayout(self)
+        self.setLayout(self.layout)
 
         # Set margins and spacing
-        layout.setContentsMargins(0, 100, 0, 0)
-        layout.setSpacing(0)
+        self.layout.setContentsMargins(0, 100, 0, 0)
+        self.layout.setSpacing(0)
 
         # Create widgets
         self.content = QLabel(self)
@@ -785,9 +785,9 @@ class EmptyConversationView(QWidget):
         content_layout.addStretch(1)
 
         # Add widgets
-        layout.addStretch(1)
-        layout.addWidget(self.content, 5)
-        layout.addStretch(1)
+        self.layout.addStretch(1)
+        self.layout.addWidget(self.content, 5)
+        self.layout.addStretch(1)
 
     def show_no_sources_message(self):
         self.content.setText(
@@ -797,14 +797,10 @@ class EmptyConversationView(QWidget):
 
     def show_no_source_selected_message(self):
         self.content.setText(
-            '<hr/>'
-            '<h3>Select a source from the list, to:</h3>'
-            '<ul>'
-            '<li>Read a conversation</li>'
-            '<li>View or retrieve files</li>'
-            '<li>Send a response</li>'
-            '</ul>'
-            '<hr/>'
+            '<b>Select a source from the list, to:</b><br/><br/><br/>'
+            '· Read a conversation<br/><br/>'
+            '· View or retrieve files<br/><br/>'
+            '· Send a response'
         )
 
 
