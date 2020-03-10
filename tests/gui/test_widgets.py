@@ -713,14 +713,10 @@ def test_EmptyConversationView_show_no_source_selected_message(mocker):
     ecv.show_no_source_selected_message()
 
     ecv.content.setText.assert_called_once_with(
-         '<hr/>'
-         '<h3>Select a source from the list, to:</h3>'
-         '<ul>'
-         '<li>Read a conversation</li>'
-         '<li>View or retrieve files</li>'
-         '<li>Send a response</li>'
-         '</ul>'
-         '<hr/>'
+        '<b>Select a source from the list, to:</b><br/><br/><br/>'
+        '· Read a conversation<br/><br/>'
+        '· View or retrieve files<br/><br/>'
+        '· Send a response'
     )
 
 
