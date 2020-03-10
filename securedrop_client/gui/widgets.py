@@ -685,11 +685,11 @@ class MainView(QWidget):
         Update the left hand sources list in the UI with the passed in list of
         sources.
         """
-        if len(sources) == 0:
-            self.empty_conversation_view.show_no_sources_message()
+        if sources:
+            self.empty_conversation_view.show_no_source_selected_message()
             self.empty_conversation_view.show()
         else:
-            self.empty_conversation_view.show_no_source_selected_message()
+            self.empty_conversation_view.show_no_sources_message()
             self.empty_conversation_view.show()
 
         deleted_sources = self.source_list.update(sources)
@@ -751,12 +751,17 @@ class MainView(QWidget):
 class EmptyConversationView(QWidget):
 
     CSS = '''
-    #content {
+    QLabel {
         font-family: Montserrat;
         font-weight: 400;
-        font-size: 35px;
+        font-size: 40px;
         color: #a5b3e9;
         qproperty-alignment: AlignLeft;
+        padding-bottom: 20px;
+    }
+    #content {
+        font-weight: 600;
+        padding-bottom: 40px;
     }
     '''
 
@@ -776,32 +781,43 @@ class EmptyConversationView(QWidget):
         self.layout.setSpacing(0)
 
         # Create widgets
+        self.container = QWidget()
         self.content = QLabel(self)
         self.content.setObjectName('content')
         self.content.setWordWrap(True)
-        content_layout = QVBoxLayout()
-        content_layout.addStretch(1)
-        content_layout.addWidget(self.content, 8)
-        content_layout.addStretch(1)
+        self.bullet1 = QLabel(self)
+        self.bullet1.setText("· Read a conversation")
+        self.bullet2 = QLabel(self)
+        self.bullet2.setText("· View or retrieve files")
+        self.bullet3 = QLabel(self)
+        self.bullet3.setText("· Send a response")
+        self.content_layout = QVBoxLayout()
+        self.content_layout.addWidget(self.content)
+        self.content_layout.addWidget(self.bullet1)
+        self.content_layout.addWidget(self.bullet2)
+        self.content_layout.addWidget(self.bullet3)
+        self.content_layout.addStretch(1)
+        self.container.setLayout(self.content_layout)
 
         # Add widgets
         self.layout.addStretch(1)
-        self.layout.addWidget(self.content, 5)
+        self.layout.addWidget(self.container, 5)
         self.layout.addStretch(1)
 
     def show_no_sources_message(self):
+        self.bullet1.hide()
+        self.bullet2.hide()
+        self.bullet3.hide()
         self.content.setText(
             'Nothing to see just yet!\n\n'
             'Source submissions will be listed to the left, once downloaded and decrypted.\n\n'
             'This is where you will read messages, reply to sources, and work with files.\n\n')
 
     def show_no_source_selected_message(self):
-        self.content.setText(
-            '<b>Select a source from the list, to:</b><br/><br/><br/>'
-            '· Read a conversation<br/><br/>'
-            '· View or retrieve files<br/><br/>'
-            '· Send a response'
-        )
+        self.bullet1.show()
+        self.bullet2.show()
+        self.bullet3.show()
+        self.content.setText('Select a source from the list, to:')
 
 
 class SourceList(QListWidget):
