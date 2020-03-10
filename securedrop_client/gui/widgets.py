@@ -785,6 +785,7 @@ class EmptyConversationView(QWidget):
         self.content = QLabel(self)
         self.content.setObjectName('content')
         self.content.setWordWrap(True)
+        self.content.setFixedWidth(520)
         self.bullet1 = QLabel(self)
         self.bullet1.setText("· Read a conversation")
         self.bullet2 = QLabel(self)
