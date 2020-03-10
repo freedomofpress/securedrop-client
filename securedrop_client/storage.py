@@ -207,10 +207,7 @@ def update_sources(gpg: GpgHelper, remote_sources: List[SDKSource],
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
     for deleted_source in local_sources_by_uuid.values():
-        for document in deleted_source.collection:
-            if isinstance(document, (Message, File, Reply)):
-                delete_single_submission_or_reply_on_disk(document, data_dir)
-
+        delete_source_collection(deleted_source.journalist_filename, data_dir)
         session.delete(deleted_source)
         logger.debug('Deleted source {}'.format(deleted_source.uuid))
 
