@@ -695,7 +695,7 @@ class MainView(QWidget):
         deleted_sources = self.source_list.update(sources)
         for source_uuid in deleted_sources:
             # Then call the function to remove the wrapper and its children.
-            self.delete_source(source_uuid)
+            self.delete_conversation(source_uuid)
 
     def on_source_changed(self):
         """
@@ -704,24 +704,24 @@ class MainView(QWidget):
         """
         source = self.source_list.get_current_source()
 
-        if source:
-            self.controller.session.refresh(source)
-            # Try to get the SourceConversationWrapper from the persistent dict,
-            # else we create it.
-            try:
-                conversation_wrapper = self.source_conversations[source.uuid]
+        if not source:
+            return
 
-                # Redraw the conversation view such that new messages, replies, files appear.
-                conversation_wrapper.conversation_view.update_conversation(source.collection)
-            except KeyError:
-                conversation_wrapper = SourceConversationWrapper(source, self.controller)
-                self.source_conversations[source.uuid] = conversation_wrapper
+        self.controller.session.refresh(source)
+        # Try to get the SourceConversationWrapper from the persistent dict,
+        # else we create it.
+        try:
+            conversation_wrapper = self.source_conversations[source.uuid]
 
-            self.set_conversation(conversation_wrapper)
-        else:
-            self.clear_conversation()
+            # Redraw the conversation view such that new messages, replies, files appear.
+            conversation_wrapper.conversation_view.update_conversation(source.collection)
+        except KeyError:
+            conversation_wrapper = SourceConversationWrapper(source, self.controller)
+            self.source_conversations[source.uuid] = conversation_wrapper
 
-    def delete_source(self, source_uuid: str) -> None:
+        self.set_conversation(conversation_wrapper)
+
+    def delete_conversation(self, source_uuid: str) -> None:
         """
         When we delete a source, we should delete its SourceConversationWrapper,
         and remove the reference to it in self.source_conversations
@@ -746,12 +746,6 @@ class MainView(QWidget):
         self.empty_conversation_view.hide()
         self.view_layout.addWidget(widget)
         widget.show()
-
-    def clear_conversation(self):
-        while self.view_layout.count():
-            child = self.view_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
 
 
 class EmptyConversationView(QWidget):
@@ -2773,12 +2767,6 @@ class ConversationView(QWidget):
         main_layout.addWidget(self.scroll)
 
         self.update_conversation(self.source.collection)
-
-    def clear_conversation(self):
-        while self.conversation_layout.count():
-            child = self.conversation_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
 
     def update_conversation(self, collection: list) -> None:
         """
