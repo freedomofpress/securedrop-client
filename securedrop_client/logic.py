@@ -182,6 +182,14 @@ class Controller(QObject):
     """
     file_missing = pyqtSignal(str, str, str)
 
+    """
+    This signal indicates that a deletion request was accepted by the server.
+
+    Emits:
+        str: the source UUID
+    """
+    source_deleted = pyqtSignal(str)
+
     def __init__(self, hostname: str, gui, session_maker: sessionmaker,
                  home: str, proxy: bool = True, qubes: bool = True) -> None:
         """
@@ -747,14 +755,11 @@ class Controller(QObject):
                 self.file_missing.emit(f.source.uuid, f.uuid, str(f))
             self.gui.update_error_status(_('The file download failed. Please try again.'))
 
-    def on_delete_source_success(self, result) -> None:
+    def on_delete_source_success(self, source_uuid: str) -> None:
         """
-        Handler for when a source deletion succeeds.
+        Rely on sync to delete the source locally so we know for sure it was deleted
         """
-        # Delete the local version of the source from the database.
-        storage.delete_local_source_by_uuid(self.session, result, self.data_dir)
-        # Update the sources UI.
-        self.update_sources()
+        self.source_deleted.emit(source_uuid)
 
     def on_delete_source_failure(self, e: Exception) -> None:
         if not isinstance(e, (RequestTimeoutError, ServerConnectionError)):

@@ -946,6 +946,12 @@ class SourceWidget(QWidget):
         font-size: 13px;
         color: #383838;
     }
+    #source_deleted {
+        font-family: 'Source Sans Pro';
+        font-weight: 400;
+        font-size: 13px;
+        color: #ff3366;
+    }
     QLabel#source_name {
         font-family: 'Montserrat';
         font-weight: 500;
@@ -969,6 +975,7 @@ class SourceWidget(QWidget):
         super().__init__()
 
         # Store source
+        self.source_uuid = source.uuid
         self.source = source
         self.source_uuid = source.uuid
 
@@ -986,9 +993,13 @@ class SourceWidget(QWidget):
         layout.setContentsMargins(self.SIDE_MARGIN, 0, self.SIDE_MARGIN, 0)
         layout.setSpacing(0)
 
+        retain_space = self.sizePolicy()
+        retain_space.setRetainSizeWhenHidden(True)
+
         # Set up gutter
         self.gutter = QWidget()
         self.gutter.setObjectName('gutter')
+        self.gutter.setSizePolicy(retain_space)
         gutter_layout = QVBoxLayout(self.gutter)
         gutter_layout.setContentsMargins(0, 0, 0, 0)
         gutter_layout.setSpacing(0)
@@ -1007,12 +1018,19 @@ class SourceWidget(QWidget):
         self.preview = SecureQLabel()
         self.preview.setObjectName('preview')
         self.preview.setFixedSize(QSize(self.PREVIEW_WIDTH, self.PREVIEW_HEIGHT))
+        self.waiting_delete_confirmation = QLabel('Deletion in progress')
+        self.waiting_delete_confirmation.setObjectName('source_deleted')
+        self.waiting_delete_confirmation.setFixedSize(
+            QSize(self.PREVIEW_WIDTH, self.PREVIEW_HEIGHT))
+        self.waiting_delete_confirmation.hide()
         summary_layout.addWidget(self.name)
         summary_layout.addWidget(self.preview)
+        summary_layout.addWidget(self.waiting_delete_confirmation)
 
         # Set up metadata
         self.metadata = QWidget()
         self.metadata.setObjectName('metadata')
+        self.metadata.setSizePolicy(retain_space)
         metadata_layout = QVBoxLayout(self.metadata)
         metadata_layout.setContentsMargins(0, 0, 0, 0)
         metadata_layout.setSpacing(0)
@@ -1046,6 +1064,7 @@ class SourceWidget(QWidget):
         Pass through the controller object to this widget.
         """
         self.controller = controller
+        self.controller.source_deleted.connect(self._on_source_deleted)
         self.star.setup(self.controller)
 
     def update(self):
@@ -1082,6 +1101,14 @@ class SourceWidget(QWidget):
         else:
             messagebox = DeleteSourceMessageBox(self.source, self.controller)
             messagebox.launch()
+
+    @pyqtSlot(str)
+    def _on_source_deleted(self, source_uuid: str):
+        if self.source_uuid == source_uuid:
+            self.gutter.hide()
+            self.metadata.hide()
+            self.preview.hide()
+            self.waiting_delete_confirmation.show()
 
 
 class StarToggleButton(SvgToggleButton):
@@ -2727,6 +2754,7 @@ class ConversationView(QWidget):
         super().__init__()
 
         self.source = source_db_object
+        self.source_uuid = self.source.uuid
         self.controller = controller
 
         # To hold currently displayed messages.
@@ -2923,12 +2951,23 @@ class SourceConversationWrapper(QWidget):
     per-source resources.
     """
 
-    def __init__(
-        self,
-        source: Source,
-        controller: Controller,
-    ) -> None:
+    SOURCE_DELETED_CSS = '''
+    #source_deleted {
+        text-align: left;
+        font-family: 'Montserrat';
+        font-weight: 500;
+        font-size: 40px;
+        color: #a5b3e9;
+        padding-bottom: 264px;
+        padding-right: 195px;
+    }
+    '''
+
+    def __init__(self, source: Source, controller: Controller) -> None:
         super().__init__()
+
+        self.source_uuid = source.uuid
+        controller.source_deleted.connect(self._on_source_deleted)
 
         # Set layout
         layout = QVBoxLayout()
@@ -2942,16 +2981,29 @@ class SourceConversationWrapper(QWidget):
         self.conversation_title_bar = SourceProfileShortWidget(source, controller)
         self.conversation_view = ConversationView(source, controller)
         self.reply_box = ReplyBoxWidget(source, controller)
+        self.waiting_delete_confirmation = QLabel('Deleting...')
+        self.waiting_delete_confirmation.setObjectName('source_deleted')
+        self.waiting_delete_confirmation.setStyleSheet(self.SOURCE_DELETED_CSS)
+        self.waiting_delete_confirmation.hide()
 
         # Add widgets
         layout.addWidget(self.conversation_title_bar)
         layout.addWidget(self.conversation_view)
         layout.addWidget(self.reply_box)
+        layout.addWidget(self.waiting_delete_confirmation, alignment=Qt.AlignCenter)
 
         # Connect reply_box to conversation_view
         self.reply_box.reply_sent.connect(self.conversation_view.on_reply_sent)
         self.conversation_view.conversation_updated.connect(
             self.conversation_title_bar.update_timestamp)
+
+    @pyqtSlot(str)
+    def _on_source_deleted(self, source_uuid: str):
+        if self.source_uuid == source_uuid:
+            self.conversation_title_bar.hide()
+            self.conversation_view.hide()
+            self.reply_box.hide()
+            self.waiting_delete_confirmation.show()
 
 
 class ReplyBoxWidget(QWidget):
