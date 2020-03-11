@@ -300,8 +300,6 @@ def test_update_sources(homedir, mocker, session_maker, session):
     * New sources have an entry in the local database.
     * Local sources not returned by the remote server are deleted from the
       local database.
-    * We don't attempt to delete the (non-existent) files associated with
-      draft replies.
     """
     # This remote source exists locally and will be updated.
     source_update = factory.RemoteSource(journalist_designation="source update")
@@ -319,20 +317,16 @@ def test_update_sources(homedir, mocker, session_maker, session):
 
     # This local source does not exist in the API results and will be
     # deleted from the local database.
-    local_source2 = factory.Source()
-
-    # This reply exists just to prove a negative.
-    draft_reply = factory.DraftReply(source_id=local_source2.uuid)
+    local_source2 = factory.Source(journalist_designation="beep_boop")
 
     session.add(local_source1)
     session.add(local_source2)
-    session.add(draft_reply)
     session.commit()
 
     local_sources = [local_source1, local_source2]
 
     file_delete_fcn = mocker.patch(
-        'securedrop_client.storage.delete_single_submission_or_reply_on_disk')
+        'securedrop_client.storage.delete_source_collection')
 
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
 
@@ -365,9 +359,9 @@ def test_update_sources(homedir, mocker, session_maker, session):
     with pytest.raises(NoResultFound):
         session.query(db.Source).filter_by(uuid=local_source2.uuid).one()
 
-    # Ensure that we didn't attempt to delete files associated with draft replies,
-    # as they don't have files (content stored directly in the database).
-    assert file_delete_fcn.call_count == 0
+    # Ensure that we called the method to delete the source collection.
+    # This will delete any content in that source's data directory.
+    assert file_delete_fcn.call_count == 1
 
 
 def test_update_source_key_without_fingerprint(mocker, session):
@@ -547,7 +541,7 @@ def test_update_sources_deletes_files_associated_with_the_source(
     reply_local_filename_decrypted = '1-pericardial-surfacing-reply'
 
     # Here we're not mocking out the models use so that we can use the collection attribute.
-    local_source = factory.Source()
+    local_source = factory.Source(journalist_designation="beep_boop")
     file_submission = db.File(
         source=local_source, uuid="test", size=123, filename=file_server_filename,
         download_url='http://test/test')
@@ -563,12 +557,13 @@ def test_update_sources_deletes_files_associated_with_the_source(
 
     # Make the test files on disk in tmpdir so we can check they get deleted.
     test_filename_absolute_paths = []
+    sourcedir = os.path.join(homedir, local_source.journalist_filename)
     for test_filename in [msg_server_filename, msg_local_filename_decrypted,
                           file_server_filename, file_local_filename_decompressed,
                           file_local_filename_decrypted, reply_server_filename,
                           reply_local_filename_decrypted]:
         abs_server_filename = add_test_file_to_temp_dir(
-            homedir, test_filename)
+            sourcedir, test_filename)
         test_filename_absolute_paths.append(abs_server_filename)
 
     local_sources = [local_source]
