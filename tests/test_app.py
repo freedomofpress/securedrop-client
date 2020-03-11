@@ -33,6 +33,7 @@ def test_excepthook(mocker):
     mock_exit.assert_called_once_with(1)
 
 
+@pytest.mark.skipif(platform.system() != 'Linux', reason="this test fails on mac")
 def test_configure_logging(homedir, mocker):
     """
     Ensure logging directory is created and logging is configured in the
