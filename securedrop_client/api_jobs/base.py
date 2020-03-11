@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 from PyQt5.QtCore import QObject, pyqtSignal
 from sdclientapi import API, AuthError, RequestTimeoutError, ServerConnectionError
@@ -77,6 +78,11 @@ class ApiJob(QueueJob):
                     raise
             except Exception as e:
                 self.failure_signal.emit(e)
+                logger.error(
+                    "%s API call error: %s",
+                    self.__class__.__name__,
+                    traceback.format_exc()
+                )
                 raise
             else:
                 self.success_signal.emit(result)

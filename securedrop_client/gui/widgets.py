@@ -931,9 +931,20 @@ class SourceList(QListWidget):
         # Create new widgets for new sources
         widget_uuids = [self.itemWidget(self.item(i)).source_uuid for i in range(self.count())]
         for source in sources:
-            if source.uuid not in widget_uuids:
-                new_source = SourceWidget(source)
-                new_source.setup(self.controller)
+            if source.uuid in widget_uuids:
+                try:
+                    self.source_widgets[source.uuid].update()
+                except sqlalchemy.exc.InvalidRequestError as e:
+                    logger.error(
+                        "Could not update SourceWidget for source %s; deleting it. Error was: %s",
+                        source.uuid,
+                        e
+                    )
+                    deleted_uuids.append(source.uuid)
+                    self.source_widgets[source.uuid].deleteLater()
+                    del self.source_widgets[list_widget.source_uuid]
+            else:
+                new_source = SourceWidget(self.controller, source)
                 self.source_widgets[source.uuid] = new_source
 
                 list_item = QListWidgetItem()
@@ -1029,8 +1040,11 @@ class SourceWidget(QWidget):
     PREVIEW_WIDTH = 412
     PREVIEW_HEIGHT = 60
 
-    def __init__(self, source: Source):
+    def __init__(self, controller: Controller, source: Source):
         super().__init__()
+
+        self.controller = controller
+        self.controller.source_deleted.connect(self._on_source_deleted)
 
         # Store source
         self.source_uuid = source.uuid
@@ -1061,7 +1075,7 @@ class SourceWidget(QWidget):
         gutter_layout = QVBoxLayout(self.gutter)
         gutter_layout.setContentsMargins(0, 0, 0, 0)
         gutter_layout.setSpacing(0)
-        self.star = StarToggleButton(self.source)
+        self.star = StarToggleButton(self.controller, self.source)
         gutter_layout.addWidget(self.star)
         gutter_layout.addStretch()
 
@@ -1117,23 +1131,25 @@ class SourceWidget(QWidget):
 
         self.update()
 
-    def setup(self, controller):
-        """
-        Pass through the controller object to this widget.
-        """
-        self.controller = controller
-        self.controller.source_deleted.connect(self._on_source_deleted)
-        self.star.setup(self.controller)
-
     def update(self):
         """
         Updates the displayed values with the current values from self.source.
         """
-        self.timestamp.setText(_(arrow.get(self.source.last_updated).format('DD MMM')))
-        self.name.setText(self.source.journalist_designation)
-        self.set_snippet(self.source.uuid)
-        if self.source.document_count == 0:
-            self.paperclip.hide()
+        try:
+            self.controller.session.refresh(self.source)
+            self.timestamp.setText(_(arrow.get(self.source.last_updated).format('DD MMM')))
+            self.name.setText(self.source.journalist_designation)
+            self.set_snippet(self.source.uuid)
+            if self.source.document_count == 0:
+                self.paperclip.hide()
+            self.star.update()
+        except sqlalchemy.exc.InvalidRequestError as e:
+            logger.error(
+                "Could not update SourceWidget for source %s: %s",
+                self.source.uuid,
+                e
+            )
+            raise
 
     def set_snippet(self, source, uuid=None, content=None):
         """
@@ -1177,20 +1193,24 @@ class StarToggleButton(SvgToggleButton):
     }
     '''
 
-    def __init__(self, source: Source):
+    def __init__(self, controller: Controller, source: Source):
         super().__init__(
             on='star_on.svg',
             off='star_off.svg',
             svg_size=QSize(16, 16))
 
-        self.installEventFilter(self)
+        self.controller = controller
         self.source = source
-        if self.source.is_starred:
-            self.setChecked(True)
+
+        self.installEventFilter(self)
+        self.toggle_event_enabled = True
 
         self.setObjectName('star_button')
         self.setStyleSheet(self.css)
         self.setFixedSize(QSize(20, 20))
+
+        self.controller.authentication_state.connect(self.on_authentication_changed)
+        self.on_authentication_changed(self.controller.is_authenticated)
 
     def disable(self):
         """
@@ -1242,11 +1262,6 @@ class StarToggleButton(SvgToggleButton):
 
         self.toggled.connect(self.on_toggle)
 
-    def setup(self, controller):
-        self.controller = controller
-        self.controller.authentication_state.connect(self.on_authentication_changed)
-        self.on_authentication_changed(self.controller.is_authenticated)
-
     def eventFilter(self, obj, event):
         t = event.type()
         if t == QEvent.HoverEnter:
@@ -1269,7 +1284,8 @@ class StarToggleButton(SvgToggleButton):
         """
         Tell the controller to make an API call to update the source's starred field.
         """
-        self.controller.update_star(self.source, self.on_update)
+        if self.toggle_event_enabled:
+            self.controller.update_star(self.source, self.on_update)
 
     def on_toggle_offline(self):
         """
@@ -1284,8 +1300,24 @@ class StarToggleButton(SvgToggleButton):
         """
         enabled = result[1]
         self.source.is_starred = enabled
+        self.controller.session.commit()
         self.controller.update_sources()
         self.setChecked(enabled)
+
+    def update(self):
+        """
+        Update the star to reflect its source's current state.
+        """
+        self.controller.session.refresh(self.source)
+        self.disable_toggle_event()
+        self.setChecked(self.source.is_starred)
+        self.enable_toggle_event()
+
+    def disable_toggle_event(self):
+        self.toggle_event_enabled = False
+
+    def enable_toggle_event(self):
+        self.toggle_event_enabled = True
 
 
 class DeleteSourceMessageBox:

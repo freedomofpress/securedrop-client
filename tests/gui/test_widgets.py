@@ -760,6 +760,46 @@ def test_SourceList_update_adds_new_sources(mocker):
     mock_sw.deleteLater.assert_not_called()
 
 
+def test_SourceList_update_when_source_deleted(mocker, session, session_maker, homedir):
+    """
+    Test that SourceWidget.update raises an exception when its source has been deleted.
+
+    When SourceList.update calls SourceWidget.update and that
+    SourceWidget's source has been deleted, SourceList.update should
+    catch the resulting excpetion, delete the SourceWidget and add its
+    source UUID to the list of deleted source UUIDs.
+    """
+    mock_gui = mocker.MagicMock()
+    controller = logic.Controller('http://localhost', mock_gui, session_maker, homedir)
+
+    # create the source in another session
+    source = factory.Source()
+    session.add(source)
+    session.commit()
+
+    # construct the SourceWidget with the source fetched in its
+    # controller's session
+    oss = controller.session.query(db.Source).filter_by(id=source.id).one()
+
+    # add it to the SourceList
+    sl = SourceList()
+    sl.setup(controller)
+    deleted_uuids = sl.update([oss])
+    assert not deleted_uuids
+    assert len(sl.source_widgets) == 1
+
+    # now delete it
+    session.delete(source)
+    session.commit()
+
+    # and finally verify that updating raises an exception, causing
+    # the SourceWidget to be deleted
+    deleted_uuids = sl.update([source])
+    assert len(deleted_uuids) == 1
+    assert source.uuid in deleted_uuids
+    assert len(sl.source_widgets) == 0
+
+
 def test_SourceList_update_maintains_selection(mocker):
     """
     Maintains the selected item if present in new list
@@ -877,25 +917,11 @@ def test_SourceWidget_init(mocker):
     """
     The source widget is initialised with the passed-in source.
     """
+    controller = mocker.MagicMock()
     mock_source = mocker.MagicMock()
     mock_source.journalist_designation = 'foo bar baz'
-    sw = SourceWidget(mock_source)
+    sw = SourceWidget(controller, mock_source)
     assert sw.source == mock_source
-
-
-def test_SourceWidget_setup(mocker):
-    """
-    The setup method adds the controller as an attribute on the SourceWidget.
-    """
-    mock_controller = mocker.MagicMock()
-    mock_source = mocker.MagicMock(journalist_designation='mock')
-    sw = SourceWidget(mock_source)
-    sw.star = mocker.MagicMock()
-
-    sw.setup(mock_controller)
-
-    assert sw.controller == mock_controller
-    sw.star.setup.assert_called_once_with(mock_controller)
 
 
 def test_SourceWidget_html_init(mocker):
@@ -903,10 +929,11 @@ def test_SourceWidget_html_init(mocker):
     The source widget is initialised with the given source name, with
     HTML escaped properly.
     """
+    controller = mocker.MagicMock()
     mock_source = mocker.MagicMock()
     mock_source.journalist_designation = 'foo <b>bar</b> baz'
 
-    sw = SourceWidget(mock_source)
+    sw = SourceWidget(controller, mock_source)
     sw.name = mocker.MagicMock()
     sw.summary_layout = mocker.MagicMock()
 
@@ -916,12 +943,13 @@ def test_SourceWidget_html_init(mocker):
     sw.name.setText.assert_called_once_with('foo <b>bar</b> baz')
 
 
-def test_SourceWidget_update_attachment_icon():
+def test_SourceWidget_update_attachment_icon(mocker):
     """
     Attachment icon identicates document count
     """
+    controller = mocker.MagicMock()
     source = factory.Source(document_count=1)
-    sw = SourceWidget(source)
+    sw = SourceWidget(controller, source)
 
     sw.update()
     assert not sw.paperclip.isHidden()
@@ -936,12 +964,13 @@ def test_SourceWidget_set_snippet(mocker):
     """
     Snippets are set as expected.
     """
+    controller = mocker.MagicMock()
     source = mocker.MagicMock()
     source.uuid = "a_uuid"
     source.journalist_designation = "Testy McTestface"
     msg = factory.Message(content="abcdefg")
     source.collection = [msg, ]
-    sw = SourceWidget(source)
+    sw = SourceWidget(controller, source)
     sw.set_snippet(source.uuid, msg.uuid, msg.content)
     assert sw.preview.text() == "abcdefg"
 
@@ -951,10 +980,11 @@ def test_SourceWidget_update_truncate_latest_msg(mocker):
     If the latest message in the conversation is longer than 150 characters,
     truncate and add "..." to the end.
     """
+    controller = mocker.MagicMock()
     source = mocker.MagicMock()
     source.journalist_designation = "Testy McTestface"
     source.collection = [factory.Message(content="a" * 151), ]
-    sw = SourceWidget(source)
+    sw = SourceWidget(controller, source)
 
     sw.update()
     assert sw.preview.text().endswith("...")
@@ -966,8 +996,7 @@ def test_SourceWidget_delete_source(mocker, session, source):
     mock_delete_source_message = mocker.MagicMock(
         return_value=mock_delete_source_message_box_object)
 
-    sw = SourceWidget(source['source'])
-    sw.controller = mock_controller
+    sw = SourceWidget(mock_controller, source['source'])
 
     mocker.patch(
         "securedrop_client.gui.widgets.DeleteSourceMessageBox",
@@ -990,8 +1019,7 @@ def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker, session, so
     mock_message_box_question.return_value = QMessageBox.Cancel
 
     mock_controller = mocker.MagicMock()
-    sw = SourceWidget(source)
-    sw.controller = mock_controller
+    sw = SourceWidget(mock_controller, source)
 
     mocker.patch(
         "securedrop_client.gui.widgets.QMessageBox.question",
@@ -1002,7 +1030,8 @@ def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker, session, so
 
 
 def test_SourceWidget__on_source_deleted(mocker, session, source):
-    sw = SourceWidget(factory.Source(uuid='123'))
+    controller = mocker.MagicMock()
+    sw = SourceWidget(controller, factory.Source(uuid='123'))
     sw._on_source_deleted('123')
     assert sw.gutter.isHidden()
     assert sw.metadata.isHidden()
@@ -1011,7 +1040,8 @@ def test_SourceWidget__on_source_deleted(mocker, session, source):
 
 
 def test_SourceWidget__on_source_deleted_wrong_uuid(mocker, session, source):
-    sw = SourceWidget(factory.Source(uuid='123'))
+    controller = mocker.MagicMock()
+    sw = SourceWidget(controller, factory.Source(uuid='123'))
     sw._on_source_deleted('321')
     assert not sw.gutter.isHidden()
     assert not sw.metadata.isHidden()
@@ -1023,10 +1053,11 @@ def test_SourceWidget_uses_SecureQLabel(mocker):
     """
     Ensure the source widget preview uses SecureQLabel and is not injectable
     """
+    controller = mocker.MagicMock()
     source = mocker.MagicMock()
     source.journalist_designation = "Testy McTestface"
     source.collection = [factory.Message(content="a" * 121), ]
-    sw = SourceWidget(source)
+    sw = SourceWidget(controller, source)
 
     sw.update()
     assert isinstance(sw.preview, SecureQLabel)
@@ -1038,45 +1069,33 @@ def test_SourceWidget_uses_SecureQLabel(mocker):
 
 
 def test_StarToggleButton_init_source_starred(mocker):
+    controller = mocker.MagicMock()
     source = factory.Source()
     source.is_starred = True
 
-    stb = StarToggleButton(source)
+    stb = StarToggleButton(controller, source)
 
     assert stb.source == source
     assert stb.isChecked() is True
 
 
 def test_StarToggleButton_init_source_unstarred(mocker):
+    controller = mocker.MagicMock()
     source = factory.Source()
     source.is_starred = False
 
-    stb = StarToggleButton(source)
+    stb = StarToggleButton(controller, source)
 
     assert stb.source == source
     assert stb.isChecked() is False
-
-
-def test_StarToggleButton_setup(mocker):
-    star_toggle_button = StarToggleButton(source=mocker.MagicMock())
-    controller = mocker.MagicMock()
-    controller.authentication_state = mocker.MagicMock()
-    controller.is_authenticated = 'mock'
-    on_authentication_changed_fn = mocker.patch.object(
-        StarToggleButton, 'on_authentication_changed')
-
-    star_toggle_button.setup(controller)
-
-    assert star_toggle_button.controller == controller
-    controller.authentication_state.connect.assert_called_once_with(on_authentication_changed_fn)
-    on_authentication_changed_fn.assert_called_with('mock')
 
 
 def test_StarToggleButton_eventFilter(mocker):
     """
     Ensure the hover events are handled properly.
     """
-    stb = StarToggleButton(source=mocker.MagicMock())
+    controller = mocker.MagicMock()
+    stb = StarToggleButton(controller=controller, source=mocker.MagicMock())
     stb.setIcon = mocker.MagicMock()
     stb.set_icon = mocker.MagicMock()
     # Hover enter
@@ -1094,8 +1113,9 @@ def test_StarToggleButton_on_authentication_changed_while_authenticated_and_chec
     If on_authentication_changed is set up correctly, then calling toggle on a checked button should
     result in the button being unchecked.
     """
+    controller = mocker.MagicMock()
     source = mocker.MagicMock()
-    stb = StarToggleButton(source=source)
+    stb = StarToggleButton(controller, source=source)
     stb.setChecked(True)
     stb.on_toggle = mocker.MagicMock()
     stb.on_authentication_changed(authenticated=True)
@@ -1111,9 +1131,11 @@ def test_StarToggleButton_on_authentication_changed_while_authenticated_and_not_
     If on_authentication_changed is set up correctly, then calling toggle on an unchecked button
     should result in the button being unchecked.
     """
+    controller = mocker.MagicMock()
     source = mocker.MagicMock()
     source.is_starred = False
-    stb = StarToggleButton(source=source)
+    stb = StarToggleButton(controller, source=source)
+    stb.setChecked(False)
     stb.on_toggle = mocker.MagicMock()
     assert stb.isChecked() is False
 
@@ -1130,8 +1152,9 @@ def test_StarToggleButton_on_authentication_changed_while_offline_mode(mocker):
     """
     Ensure on_authentication_changed is set up correctly for offline mode.
     """
+    controller = mocker.MagicMock()
     source = mocker.MagicMock()
-    stb = StarToggleButton(source=source)
+    stb = StarToggleButton(controller, source=source)
     stb.on_toggle_offline = mocker.MagicMock()
     stb.on_toggle = mocker.MagicMock()
 
@@ -1146,9 +1169,9 @@ def test_StarToggleButton_on_toggle(mocker):
     """
     Ensure correct star icon images are loaded for the enabled button.
     """
+    controller = mocker.MagicMock()
     source = mocker.MagicMock()
-    stb = StarToggleButton(source)
-    stb.controller = mocker.MagicMock()
+    stb = StarToggleButton(controller, source)
 
     stb.on_toggle()
 
@@ -1159,9 +1182,9 @@ def test_StarToggleButton_on_toggle_offline(mocker):
     """
     Ensure toggle is disabled when offline.
     """
+    controller = mocker.MagicMock()
     source = mocker.MagicMock()
-    stb = StarToggleButton(source)
-    stb.controller = mocker.MagicMock()
+    stb = StarToggleButton(controller, source)
 
     stb.on_toggle_offline()
     stb.controller.on_action_requiring_login.assert_called_once_with()
@@ -1171,10 +1194,10 @@ def test_StarToggleButton_on_toggle_offline_when_checked(mocker):
     """
     Ensure correct star icon images are loaded for the disabled button.
     """
+    controller = mocker.MagicMock()
     source = mocker.MagicMock()
     source.is_starred = True
-    stb = StarToggleButton(source)
-    stb.controller = mocker.MagicMock()
+    stb = StarToggleButton(controller, source)
     set_icon_fn = mocker.patch('securedrop_client.gui.SvgToggleButton.set_icon')
 
     # go offline
@@ -1191,11 +1214,11 @@ def test_StarToggleButton_on_update(mocker):
     Ensure the on_update callback updates the state of the source and UI
     element to the current "enabled" state.
     """
+    controller = mocker.MagicMock()
     source = mocker.MagicMock()
     source.is_starred = True
-    stb = StarToggleButton(source)
+    stb = StarToggleButton(controller, source)
     stb.setChecked = mocker.MagicMock()
-    stb.controller = mocker.MagicMock()
     stb.on_update(("uuid", False))
     assert source.is_starred is False
     stb.controller.update_sources.assert_called_once_with()
@@ -3205,7 +3228,7 @@ def test_DeleteSource_from_source_menu_when_user_is_loggedout(mocker):
 
 def test_DeleteSource_from_source_widget_when_user_is_loggedout(mocker):
     mock_source = mocker.MagicMock(journalist_designation='mock')
-    mock_controller = mocker.MagicMock(logic.Controller)
+    mock_controller = mocker.MagicMock()
     mock_controller.api = None
     mock_event = mocker.MagicMock()
     mock_delete_source_message_box_obj = mocker.MagicMock()
@@ -3218,8 +3241,7 @@ def test_DeleteSource_from_source_widget_when_user_is_loggedout(mocker):
         'securedrop_client.gui.widgets.DeleteSourceMessageBox',
         mock_delete_source_message_box
     ):
-        source_widget = SourceWidget(mock_source)
-        source_widget.setup(mock_controller)
+        source_widget = SourceWidget(mock_controller, mock_source)
         source_widget.delete_source(mock_event)
         mock_delete_source_message_box_obj.launch.assert_not_called()
 
