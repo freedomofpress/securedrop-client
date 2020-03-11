@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+  * Infers hostname from system settings, if no config value found.
+
 ## 0.1.0
 
   * Initial beta release.

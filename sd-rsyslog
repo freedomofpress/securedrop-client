@@ -30,6 +30,7 @@ import os
 import logging
 import configparser
 from subprocess import Popen, PIPE
+from socket import gethostname
 
 # Global definitions specific to your plugin
 process = None
@@ -81,7 +82,7 @@ def onInit():
     config = configparser.ConfigParser()
     config.read('/etc/sd-rsyslog.conf')
     logvmname = config['sd-rsyslog']['remotevm']
-    localvmname = config['sd-rsyslog']['localvm']
+    localvmname = config['sd-rsyslog'].get('localvm', gethostname())
     process = Popen(
             ["/usr/lib/qubes/qrexec-client-vm", logvmname, "securedrop.Log"],
             stdin=PIPE,
