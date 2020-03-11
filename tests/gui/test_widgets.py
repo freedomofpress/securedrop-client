@@ -16,13 +16,13 @@ from sqlalchemy.orm import attributes, scoped_session, sessionmaker
 
 from securedrop_client import db, logic
 from securedrop_client.export import ExportError, ExportStatus
-from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, LoginDialog, \
-    SpeechBubble, MessageWidget, ReplyWidget, FileWidget, ConversationView, \
+from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, SecureQLabel, \
+    LoginDialog, SpeechBubble, MessageWidget, ReplyWidget, FileWidget, ConversationView, \
     DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, LeftPane, SyncIcon, \
     ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
     ReplyBoxWidget, ReplyTextEdit, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, \
     LoginErrorBar, EmptyConversationView, FramelessDialog, ExportDialog, PrintDialog, \
-    PasswordEdit, SecureQLabel, SourceProfileShortWidget
+    PasswordEdit, SourceProfileShortWidget
 from tests import factory
 
 
@@ -734,112 +734,152 @@ def test_EmptyConversationView_show_no_source_selected_message(mocker):
         '• Send a response\n')
 
 
-def test_SourceList_update(mocker):
-    """
-    Check the items in the source list are cleared and a new SourceWidget for
-    each passed-in source is created along with an associated QListWidgetItem.
-    """
-    sl = SourceList()
-
-    sl.clear = mocker.MagicMock()
-    sl.addItem = mocker.MagicMock()
-    sl.setItemWidget = mocker.MagicMock()
-    sl.controller = mocker.MagicMock()
-    sl.setCurrentItem = mocker.MagicMock()
-
-    mock_sw = mocker.MagicMock()
-    mock_lwi = mocker.MagicMock()
-    mocker.patch('securedrop_client.gui.widgets.SourceWidget', mock_sw)
-    mocker.patch('securedrop_client.gui.widgets.QListWidgetItem', mock_lwi)
-
-    sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), ]
-    sl.update(sources)
-
-    sl.clear.assert_called_once_with()
-    assert mock_sw.call_count == len(sources)
-    assert mock_lwi.call_count == len(sources)
-    assert sl.addItem.call_count == len(sources)
-    assert sl.setItemWidget.call_count == len(sources)
-    assert len(sl.source_widgets) == len(sources)
-    assert sl.setCurrentItem.call_count == 0
-
-
-def test_SourceList_update_deleted_source(mocker):
-    """
-    When the SourceList is updated after deleting a source, check that we
-    do not keep references to deleted source widgets on the source_widgets
-    dict.
-    """
-    sl = SourceList()
-
-    sl.clear = mocker.MagicMock()
-    sl.addItem = mocker.MagicMock()
-    sl.setItemWidget = mocker.MagicMock()
-    sl.controller = mocker.MagicMock()
-    sl.setCurrentItem = mocker.MagicMock()
-
-    mock_sw = mocker.MagicMock()
-    mock_lwi = mocker.MagicMock()
-    mocker.patch('securedrop_client.gui.widgets.SourceWidget', mock_sw)
-    mocker.patch('securedrop_client.gui.widgets.QListWidgetItem', mock_lwi)
-
-    sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), ]
-    sl.update(sources)
-
-    sources.pop()
-    sl.update(sources)
-
-    assert len(sl.source_widgets) == len(sources)
-
-
-def test_SourceList_update_with_pre_selected_source(mocker):
-    """
-    If there's a source already selected. It remains selected after update.
-    """
-    sl = SourceList()
-
-    sl.clear = mocker.MagicMock()
-    sl.addItem = mocker.MagicMock()
-    sl.setItemWidget = mocker.MagicMock()
-    sl.controller = mocker.MagicMock()
-    sl.setCurrentItem = mocker.MagicMock()
-    sl.currentRow = mocker.MagicMock(return_value=1)
-    sl.item = mocker.MagicMock()
-    sl.item().isSelected.return_value = True
-    mock_source = mocker.MagicMock()
-    sl.get_current_source = mocker.MagicMock(return_value=mock_source)
-
-    mock_sw = mocker.MagicMock()
-    mock_lwi = mocker.MagicMock()
-    mocker.patch('securedrop_client.gui.widgets.SourceWidget', mock_sw)
-    mocker.patch('securedrop_client.gui.widgets.QListWidgetItem', mock_lwi)
-
-    sources = [mocker.MagicMock(), mock_source, mocker.MagicMock(), ]
-    sl.update(sources)
-
-    sl.clear.assert_called_once_with()
-    assert mock_sw.call_count == len(sources)
-    assert mock_lwi.call_count == len(sources)
-    assert sl.addItem.call_count == len(sources)
-    assert sl.setItemWidget.call_count == len(sources)
-    assert len(sl.source_widgets) == len(sources)
-    assert sl.setCurrentItem.call_count == 1
-
-
-def test_SourceList_maintains_selection(mocker):
+def test_SourceList_get_current_source(mocker):
     """
     Maintains the selected item if present in new list
     """
     sl = SourceList()
+    sl.controller = mocker.MagicMock()
     sources = [factory.Source(), factory.Source()]
-    sl.setup(mocker.MagicMock())
+    sl.update(sources)
+    sl.setCurrentItem(sl.itemAt(1, 0))  # select source2
+
+    current_source = sl.get_current_source()
+
+    assert current_source.id == sources[1].id
+
+
+def test_SourceList_update_adds_new_sources(mocker):
+    """
+    Check a new SourceWidget for each passed-in source is created and no widgets are cleared or
+    removed.
+    """
+    sl = SourceList()
+
+    sl.clear = mocker.MagicMock()
+    sl.insertItem = mocker.MagicMock()
+    sl.takeItem = mocker.MagicMock()
+    sl.setItemWidget = mocker.MagicMock()
+    sl.controller = mocker.MagicMock()
+    sl.setCurrentItem = mocker.MagicMock()
+
+    mock_sw = mocker.MagicMock()
+    mock_lwi = mocker.MagicMock()
+    mocker.patch('securedrop_client.gui.widgets.SourceWidget', mock_sw)
+    mocker.patch('securedrop_client.gui.widgets.QListWidgetItem', mock_lwi)
+
+    sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), ]
     sl.update(sources)
 
-    sl.setCurrentItem(sl.itemAt(0, 0))
+    assert mock_sw.call_count == len(sources)
+    assert mock_lwi.call_count == len(sources)
+    assert sl.insertItem.call_count == len(sources)
+    assert sl.setItemWidget.call_count == len(sources)
+    assert len(sl.source_widgets) == len(sources)
+    assert sl.setCurrentItem.call_count == 0
+    sl.clear.assert_not_called()
+    sl.takeItem.assert_not_called()
+    mock_sw.deleteLater.assert_not_called()
+
+
+def test_SourceList_update_maintains_selection(mocker):
+    """
+    Maintains the selected item if present in new list
+    """
+    sl = SourceList()
+    sl.controller = mocker.MagicMock()
+    sources = [factory.Source(), factory.Source()]
+    sl.update(sources)
+
+    sl.setCurrentItem(sl.itemAt(0, 0))  # select the first source
     sl.update(sources)
 
     assert sl.currentItem()
     assert sl.itemWidget(sl.currentItem()).source.id == sources[0].id
+
+    sl.setCurrentItem(sl.itemAt(1, 0))  # select the second source
+    sl.update(sources)
+
+    assert sl.currentItem()
+    assert sl.itemWidget(sl.currentItem()).source.id == sources[1].id
+
+
+def test_SourceList_update_with_pre_selected_source_maintains_selection(mocker):
+    """
+    Check that an existing source widget that is selected remains selected.
+    """
+    sl = SourceList()
+    sl.controller = mocker.MagicMock()
+    sl.update([factory.Source(), factory.Source()])
+    second_item = sl.itemAt(1, 0)
+    sl.setCurrentItem(second_item)  # select the second source
+    mocker.patch.object(second_item, 'isSelected', return_value=True)
+
+    sl.update([factory.Source(), factory.Source()])
+
+    assert second_item.isSelected() is True
+
+
+def test_SourceList_update_removes_selected_item_results_in_no_current_selection(mocker):
+    """
+    Check that no items are currently selected if the currently selected item is deleted.
+    """
+    sl = SourceList()
+    sl.controller = mocker.MagicMock()
+    sl.update([factory.Source(uuid='new'), factory.Source(uuid='newer')])
+
+    sl.setCurrentItem(sl.itemAt(0, 0))  # select source with uuid='newer'
+    sl.update([factory.Source(uuid='new')])  # delete source with uuid='newer'
+
+    assert not sl.currentItem()
+
+
+def test_SourceList_update_removes_item_from_end_of_list(mocker):
+    """
+    Check that the item is removed from the source list and dict if the source no longer exists.
+    """
+    sl = SourceList()
+    sl.controller = mocker.MagicMock()
+    sl.update([
+        factory.Source(uuid='new'), factory.Source(uuid='newer'), factory.Source(uuid='newest')])
+    assert sl.count() == 3
+    sl.update([factory.Source(uuid='newer'), factory.Source(uuid='newest')])
+    assert sl.count() == 2
+    assert sl.itemWidget(sl.item(0)).source.uuid == 'newest'
+    assert sl.itemWidget(sl.item(1)).source.uuid == 'newer'
+    assert len(sl.source_widgets) == 2
+
+
+def test_SourceList_update_removes_item_from_middle_of_list(mocker):
+    """
+    Check that the item is removed from the source list and dict if the source no longer exists.
+    """
+    sl = SourceList()
+    sl.controller = mocker.MagicMock()
+    sl.update([
+        factory.Source(uuid='new'), factory.Source(uuid='newer'), factory.Source(uuid='newest')])
+    assert sl.count() == 3
+    sl.update([factory.Source(uuid='new'), factory.Source(uuid='newest')])
+    assert sl.count() == 2
+    assert sl.itemWidget(sl.item(0)).source.uuid == 'newest'
+    assert sl.itemWidget(sl.item(1)).source.uuid == 'new'
+    assert len(sl.source_widgets) == 2
+
+
+def test_SourceList_update_removes_item_from_beginning_of_list(mocker):
+    """
+    Check that the item is removed from the source list and dict if the source no longer exists.
+    """
+    sl = SourceList()
+    sl.controller = mocker.MagicMock()
+    sl.update([
+        factory.Source(uuid='new'), factory.Source(uuid='newer'), factory.Source(uuid='newest')])
+    assert sl.count() == 3
+    sl.update([factory.Source(uuid='new'), factory.Source(uuid='newer')])
+    assert sl.count() == 2
+    assert sl.itemWidget(sl.item(0)).source.uuid == 'newer'
+    assert sl.itemWidget(sl.item(1)).source.uuid == 'new'
+    assert len(sl.source_widgets) == 2
 
 
 def test_SourceList_set_snippet(mocker):
