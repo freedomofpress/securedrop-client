@@ -561,24 +561,20 @@ def delete_single_submission_or_reply_on_disk(obj_db: Union[File, Message, Reply
             logging.info('File %s already deleted, skipping', file_to_delete)
 
 
-def source_exists(session: Session, source_uuid: str) -> bool:
-    try:
-        session.query(Source).filter_by(uuid=source_uuid).one()
-        return True
-    except NoResultFound:
-        return False
+def get_source(session: Session, uuid: str) -> File:
+    return session.query(Source).filter_by(uuid=uuid).one_or_none()
 
 
 def get_file(session: Session, uuid: str) -> File:
-    return session.query(File).filter_by(uuid=uuid).one()
+    return session.query(File).filter_by(uuid=uuid).one_or_none()
 
 
 def get_message(session: Session, uuid: str) -> Message:
-    return session.query(Message).filter_by(uuid=uuid).one()
+    return session.query(Message).filter_by(uuid=uuid).one_or_none()
 
 
 def get_reply(session: Session, uuid: str) -> Reply:
-    return session.query(Reply).filter_by(uuid=uuid).one()
+    return session.query(Reply).filter_by(uuid=uuid).one_or_none()
 
 
 def mark_all_pending_drafts_as_failed(session: Session) -> List[DraftReply]:

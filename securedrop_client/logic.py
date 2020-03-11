@@ -831,6 +831,10 @@ class Controller(QObject):
         self.session.refresh(file)
         return file
 
+    def get_source(self, source_uuid: str) -> db.Source:
+        source = storage.get_source(self.session, source_uuid)
+        return source
+
     def on_logout_success(self, result) -> None:
         logging.info('Client logout successful')
 

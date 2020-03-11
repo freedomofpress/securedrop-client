@@ -36,7 +36,7 @@ import sqlalchemy.orm.exc
 
 from securedrop_client import __version__ as sd_version
 from securedrop_client.db import DraftReply, Source, Message, File, Reply, User
-from securedrop_client.storage import source_exists
+from securedrop_client.storage import get_source
 from securedrop_client.export import ExportStatus, ExportError
 from securedrop_client.gui import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.logic import Controller
@@ -699,27 +699,30 @@ class MainView(QWidget):
 
     def on_source_changed(self):
         """
-        Show conversation for the currently-selected source if it hasn't been deleted. If the
-        current source no longer exists, clear the conversation for that source.
+        Show conversation for the currently-selected source if it hasn't been deleted.
         """
-        source = self.source_list.get_current_source()
+        source_item = self.source_list.currentItem()
+        source_widget = self.source_list.itemWidget(source_item)
+        if not source_widget:
+            return
 
-        if source:
-            self.controller.session.refresh(source)
-            # Try to get the SourceConversationWrapper from the persistent dict,
-            # else we create it.
-            try:
-                conversation_wrapper = self.source_conversations[source.uuid]
+        source = self.source_list.get_source(source_widget)
+        if not source:
+            return
 
-                # Redraw the conversation view such that new messages, replies, files appear.
-                conversation_wrapper.conversation_view.update_conversation(source.collection)
-            except KeyError:
-                conversation_wrapper = SourceConversationWrapper(source, self.controller)
-                self.source_conversations[source.uuid] = conversation_wrapper
+        self.controller.session.refresh(source)
+        # Try to get the SourceConversationWrapper from the persistent dict,
+        # else we create it.
+        try:
+            conversation_wrapper = self.source_conversations[source.uuid]
 
-            self.set_conversation(conversation_wrapper)
-        else:
-            self.clear_conversation()
+            # Redraw the conversation view such that new messages, replies, files appear.
+            conversation_wrapper.conversation_view.update_conversation(source.collection)
+        except KeyError:
+            conversation_wrapper = SourceConversationWrapper(source, self.controller)
+            self.source_conversations[source.uuid] = conversation_wrapper
+
+        self.set_conversation(conversation_wrapper)
 
     def delete_source(self, source_uuid: str) -> None:
         """
@@ -846,11 +849,11 @@ class SourceList(QListWidget):
 
     def setup(self, controller):
         self.controller = controller
-        self.controller.reply_succeeded.connect(self.set_snippet)
-        self.controller.message_ready.connect(self.set_snippet)
-        self.controller.reply_ready.connect(self.set_snippet)
-        self.controller.file_ready.connect(self.set_snippet)
-        self.controller.file_missing.connect(self.set_snippet)
+        self.controller.reply_succeeded.connect(self.update_source_widget)
+        self.controller.message_ready.connect(self.update_source_widget)
+        self.controller.reply_ready.connect(self.update_source_widget)
+        self.controller.file_ready.connect(self.update_source_widget)
+        self.controller.file_missing.connect(self.update_source_widget)
 
     def update(self, sources: List[Source]) -> List[str]:
         """
@@ -886,21 +889,24 @@ class SourceList(QListWidget):
 
         return deleted_uuids
 
-    def get_current_source(self):
-        source_item = self.currentItem()
-        source_widget = self.itemWidget(source_item)
-        if source_widget and source_exists(self.controller.session, source_widget.source.uuid):
-            return source_widget.source
+    def get_source(self, source_widget):
+        return self.controller.get_source(source_widget.source_uuid)
 
-    def set_snippet(self, source_uuid, message_uuid, content):
+    def update_source_widget(self, source_uuid, message_uuid, content):
         """
         Given a UUID of a source, if the referenced message is the latest
         message, then update the source's preview snippet to the referenced
         content.
         """
         source_widget = self.source_widgets.get(source_uuid)
-        if source_widget:
-            source_widget.set_snippet(source_uuid, message_uuid, content)
+
+        if not source_widget:
+            return
+
+        source = self.get_source(source_widget)
+
+        if source_widget and source:
+            source_widget.update(source)
 
 
 class SourceWidget(QWidget):
@@ -969,7 +975,6 @@ class SourceWidget(QWidget):
         super().__init__()
 
         # Store source
-        self.source = source
         self.source_uuid = source.uuid
 
         # Set styles
@@ -992,7 +997,7 @@ class SourceWidget(QWidget):
         gutter_layout = QVBoxLayout(self.gutter)
         gutter_layout.setContentsMargins(0, 0, 0, 0)
         gutter_layout.setSpacing(0)
-        self.star = StarToggleButton(self.source)
+        self.star = StarToggleButton(source)
         gutter_layout.addWidget(self.star)
         gutter_layout.addStretch()
 
@@ -1039,7 +1044,7 @@ class SourceWidget(QWidget):
         # Add widgets to main layout
         layout.addWidget(self.source_widget)
 
-        self.update()
+        self.update(source)
 
     def setup(self, controller):
         """
@@ -1048,32 +1053,24 @@ class SourceWidget(QWidget):
         self.controller = controller
         self.star.setup(self.controller)
 
-    def update(self):
+    def update(self, source: Source):
         """
         Updates the displayed values with the current values from self.source.
         """
-        self.timestamp.setText(_(arrow.get(self.source.last_updated).format('DD MMM')))
-        self.name.setText(self.source.journalist_designation)
-        self.set_snippet(self.source.uuid)
-        if self.source.document_count == 0:
+        self.timestamp.setText(_(arrow.get(source.last_updated).format('DD MMM')))
+        self.name.setText(source.journalist_designation)
+
+        if source.collection:
+            last_conversation_item = source.collection[-1]
+            self.set_snippet(str(last_conversation_item))
+
+        if source.document_count == 0:
             self.paperclip.hide()
 
-    def set_snippet(self, source, uuid=None, content=None):
-        """
-        Update the preview snippet only if the new message is for the
-        referenced source and there's a source collection. If a uuid and
-        content are passed then use these, otherwise default to whatever the
-        latest item in the conversation might be.
-        """
-        if source == self.source.uuid and self.source.collection:
-            msg = self.source.collection[-1]
-            if uuid and uuid == msg.uuid and content:
-                msg_text = content
-            else:
-                msg_text = str(msg)
-            if len(msg_text) > 120:
-                msg_text = msg_text[:120] + "..."
-            self.preview.setText(msg_text)
+    def set_snippet(self, preview: str = None):
+        if len(preview) > 120:
+            preview = preview[:120] + "..."
+        self.preview.setText(preview)
 
     def delete_source(self, event):
         if self.controller.api is None:
