@@ -468,7 +468,7 @@ class Controller(QObject):
         a sync fails is ApiInaccessibleError then we need to log the user out for security reasons
         and show them the login window in order to get a new token.
         """
-        logger.debug('The SecureDrop server cannot be reached due to Error: {}'.format(result))
+        logger.error('sync failure: {}'.format(result))
 
         if isinstance(result, ApiInaccessibleError):
             # Don't show login window if the user is already logged out
