@@ -506,14 +506,13 @@ def test_MainView_show_sources_with_no_sources_at_all(mocker):
 
 def test_MainView_show_sources_when_sources_are_deleted(mocker):
     """
-    Ensure that show_sources also calls delete_source to delete the
-    SourceConversationWrapper for a deleted source.
+    Ensure that show_sources also deletes the SourceConversationWrapper for a deleted source.
     """
     mv = MainView(None)
     mv.source_list = mocker.MagicMock()
     mv.empty_conversation_view = mocker.MagicMock()
     mv.source_list.update = mocker.MagicMock(return_value=[])
-    mv.delete_source = mocker.MagicMock()
+    mv.delete_conversation = mocker.MagicMock()
 
     mv.show_sources([1, 2, 3, 4])
 
@@ -521,37 +520,38 @@ def test_MainView_show_sources_when_sources_are_deleted(mocker):
 
     mv.show_sources([1, 2, 3])
 
-    mv.delete_source.assert_called_once_with(4)
+    mv.delete_conversation.assert_called_once_with(4)
 
 
-def test_MainView_delete_source_when_conv_wrapper_exists(mocker):
+def test_MainView_delete_conversation_when_conv_wrapper_exists(mocker):
     """
-    Ensure that delete_source deletes the SourceConversationWrapper
-    if it exists.
+    Ensure SourceConversationWrapper is deleted if it exists.
     """
-    source_uuid = 'foo'
+    source = factory.Source(uuid='123')
+    conversation_wrapper = SourceConversationWrapper(source, mocker.MagicMock())
+    conversation_wrapper.deleteLater = mocker.MagicMock()
     mock_source_conv_wrapper_widget = mocker.MagicMock()
     mock_source_conv_wrapper_widget.deleteLater = mocker.MagicMock()
     mv = MainView(None)
     mv.source_conversations = {}
-    mv.source_conversations[source_uuid] = mock_source_conv_wrapper_widget
+    mv.source_conversations['123'] = conversation_wrapper
 
-    mv.delete_source(source_uuid)
+    mv.delete_conversation('123')
 
-    mock_source_conv_wrapper_widget.deleteLater.assert_called_once_with()
+    conversation_wrapper.deleteLater.assert_called_once_with()
     assert mv.source_conversations == {}
 
 
-def test_MainView_delete_source_when_conv_wrapper_does_not_exist(mocker):
+def test_MainView_delete_conversation_when_conv_wrapper_does_not_exist(mocker):
     """
-    Ensure that delete_source throws no exception if the SourceConversationWrapper
+    Ensure that delete_conversation throws no exception if the SourceConversationWrapper
     does not exist.
     """
     source_uuid = 'foo'
     mv = MainView(None)
     mv.source_conversations = {}
 
-    mv.delete_source(source_uuid)
+    mv.delete_conversation(source_uuid)
 
     assert mv.source_conversations == {}
 
@@ -561,10 +561,9 @@ def test_MainView_on_source_changed(mocker):
     Ensure set_conversation is called when source changes.
     """
     mv = MainView(None)
-    mv.source_list = mocker.MagicMock()
     mv.set_conversation = mocker.MagicMock()
-    source = factory.Source()
-    mv.set_conversation.get_current_source = mocker.MagicMock(return_value=source)
+    mv.source_list = mocker.MagicMock()
+    mv.source_list.get_current_source = mocker.MagicMock(return_value=factory.Source())
     mv.controller = mocker.MagicMock(is_authenticated=True)
     mocker.patch('securedrop_client.gui.widgets.source_exists', return_value=True)
     scw = mocker.MagicMock()
@@ -581,13 +580,14 @@ def test_MainView_on_source_changed_when_source_no_longer_exists(mocker):
     Test that conversation for a source is cleared when the source no longer exists.
     """
     mv = MainView(None)
-    mv.clear_conversation = mocker.MagicMock()
-    mv.controller = mocker.MagicMock(is_authenticated=True)
-    mocker.patch('securedrop_client.gui.widgets.source_exists', return_value=False)
+    mv.set_conversation = mocker.MagicMock()
+    mv.source_list = mocker.MagicMock()
+    mv.source_list.get_current_source = mocker.MagicMock(return_value=None)
 
     mv.on_source_changed()
 
-    mv.clear_conversation.assert_called_once_with()
+    mv.source_list.get_current_source.assert_called_once_with()
+    mv.set_conversation.assert_not_called()
 
 
 def test_MainView_on_source_changed_updates_conversation_view(mocker, session):
@@ -692,21 +692,6 @@ def test_MainView_set_conversation(mocker):
 
     mv.view_layout.takeAt.assert_called_once_with(0)
     mv.view_layout.addWidget.assert_called_once_with(mock_widget)
-
-
-def test_MainView_clear_conversation(mocker, homedir):
-    """
-    Calling clear_conversation deletes items from layout
-    """
-    mv = MainView(None)
-    mv.view_layout = QVBoxLayout()
-    mv.view_layout.addWidget(QWidget())
-
-    assert mv.view_layout.count() == 1
-
-    mv.clear_conversation()
-
-    assert mv.view_layout.count() == 0
 
 
 def test_EmptyConversationView_show_no_sources_message(mocker):
@@ -3870,22 +3855,6 @@ def test_update_conversation_content_updates(mocker, session):
 
     # Check that the widget was updated with the expected content.
     assert mock_msg_widget_res.message.setText.call_args[0][0] == expected_content
-
-
-def test_clear_conversation_deletes_items(mocker, homedir):
-    """
-    Calling clear_conversation deletes items from layout
-    """
-    mock_controller = mocker.MagicMock()
-    mock_source = mocker.MagicMock()
-    message = db.Message(uuid='uuid', content='message', filename='1-foo')
-    cv = ConversationView(mock_source, mock_controller)
-    cv.add_message(message, 0)
-    assert cv.conversation_layout.count() == 1
-
-    cv.clear_conversation()
-
-    assert cv.conversation_layout.count() == 0
 
 
 def test_SourceProfileShortWidget_update_timestamp(mocker):
