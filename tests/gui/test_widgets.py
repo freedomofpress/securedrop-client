@@ -955,12 +955,12 @@ def test_SourceWidget_set_snippet(mocker):
 
 def test_SourceWidget_update_truncate_latest_msg(mocker):
     """
-    If the latest message in the conversation is longer than 120 characters,
+    If the latest message in the conversation is longer than 150 characters,
     truncate and add "..." to the end.
     """
     source = mocker.MagicMock()
     source.journalist_designation = "Testy McTestface"
-    source.collection = [factory.Message(content="a" * 121), ]
+    source.collection = [factory.Message(content="a" * 151), ]
     sw = SourceWidget(source)
 
     sw.update()
