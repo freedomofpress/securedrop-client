@@ -141,7 +141,7 @@ class DownloadJob(ApiJob):
         Download the encrypted file. Check file integrity and move it to the data directory before
         marking it as downloaded.
 
-        Note: On Qubes OS, files are downloaded to ~/QubesIncoming.
+        Note: On Qubes OS, files are downloaded to /home/user/QubesIncoming/sd-proxy
         '''
         try:
             etag, download_path = self.call_download_api(api, db_object)
