@@ -1149,7 +1149,16 @@ class SourceWidget(QWidget):
                 msg_text = str(msg)
             if len(msg_text) > 150:
                 msg_text = msg_text[:150] + "..."
-            self.preview.setText(msg_text)
+            # Discover word wrap limit.
+            wrap_limit = 0
+            fm = self.preview.fontMetrics()
+            sentence = ""
+            for c in msg_text:
+                sentence += c
+                if fm.horizontalAdvance(sentence) > self.PREVIEW_WIDTH:
+                    break
+                wrap_limit += 1
+            self.preview.setText(msg_text, wrap_limit)
 
     def delete_source(self, event):
         if self.controller.api is None:

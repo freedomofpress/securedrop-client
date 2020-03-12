@@ -176,10 +176,10 @@ class SecureQLabel(QLabel):
         self.setText(text)
         self.elided = True if self.text() != text else False
 
-    def setText(self, text: str) -> None:
+    def setText(self, text: str, wrap_limit: int = 80) -> None:
         self.setTextFormat(Qt.PlainText)
         if self.wordwrap:
-            text = "\n".join(textwrap.wrap(text, 80))
+            text = "\n".join(textwrap.wrap(text, wrap_limit))
         elided_text = self.get_elided_text(text)
         self.elided = True if elided_text != text else False
         super().setText(elided_text)
