@@ -1298,17 +1298,18 @@ def test_Controller_on_message_downloaded_checksum_failure(mocker, homedir, sess
         'Failure due to checksum mismatch, retrying {}'.format(message.uuid)
 
 
-def test_Controller_on_delete_source_success(homedir, config, mocker, session_maker):
+def test_Controller_on_delete_source_success(mocker, homedir):
     '''
-    Using the `config` fixture to ensure the config is written to disk.
+    Test that on a successful deletion request to the server that we emit a signal back to the gui.
     '''
-    mock_gui = mocker.MagicMock()
+    co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
+    co.source_deleted = mocker.MagicMock()
     storage = mocker.patch('securedrop_client.logic.storage')
-    co = Controller('http://localhost', mock_gui, session_maker, homedir)
-    co.update_sources = mocker.MagicMock()
-    co.on_delete_source_success("uuid")
-    storage.delete_local_source_by_uuid.assert_called_once_with(co.session, "uuid", co.data_dir)
-    assert co.update_sources.call_count == 1
+
+    co.on_delete_source_success('uuid')
+
+    storage.delete_local_source_by_uuid.assert_not_called()
+    co.source_deleted.emit.assert_called_once_with('uuid')
 
 
 def test_Controller_on_delete_source_failure(homedir, config, mocker, session_maker):

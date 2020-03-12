@@ -1023,6 +1023,24 @@ def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker, session, so
     sw.controller.delete_source.assert_not_called()
 
 
+def test_SourceWidget__on_source_deleted(mocker, session, source):
+    sw = SourceWidget(factory.Source(uuid='123'))
+    sw._on_source_deleted('123')
+    assert sw.gutter.isHidden()
+    assert sw.metadata.isHidden()
+    assert sw.preview.isHidden()
+    assert not sw.waiting_delete_confirmation.isHidden()
+
+
+def test_SourceWidget__on_source_deleted_wrong_uuid(mocker, session, source):
+    sw = SourceWidget(factory.Source(uuid='123'))
+    sw._on_source_deleted('321')
+    assert not sw.gutter.isHidden()
+    assert not sw.metadata.isHidden()
+    assert not sw.preview.isHidden()
+    assert sw.waiting_delete_confirmation.isHidden()
+
+
 def test_SourceWidget_uses_SecureQLabel(mocker):
     """
     Ensure the source widget preview uses SecureQLabel and is not injectable
@@ -2688,6 +2706,24 @@ def test_PrintDialog__on_preflight_failure_when_status_is_unknown(mocker):
     dialog._on_preflight_failure(ExportError('Some Unknown Error Status'))
     dialog._show_generic_error_message.assert_called_once_with()
     assert dialog.error_status == 'Some Unknown Error Status'
+
+
+def test_SourceConversationWrapper__on_source_deleted(mocker):
+    scw = SourceConversationWrapper(factory.Source(uuid='123'), mocker.MagicMock())
+    scw._on_source_deleted('123')
+    assert scw.conversation_title_bar.isHidden()
+    assert scw.conversation_view.isHidden()
+    assert scw.reply_box.isHidden()
+    assert not scw.waiting_delete_confirmation.isHidden()
+
+
+def test_SourceConversationWrapper__on_source_deleted_wrong_uuid(mocker):
+    scw = SourceConversationWrapper(factory.Source(uuid='123'), mocker.MagicMock())
+    scw._on_source_deleted('321')
+    assert not scw.conversation_title_bar.isHidden()
+    assert not scw.conversation_view.isHidden()
+    assert not scw.reply_box.isHidden()
+    assert scw.waiting_delete_confirmation.isHidden()
 
 
 def test_ConversationView_init(mocker, homedir):
