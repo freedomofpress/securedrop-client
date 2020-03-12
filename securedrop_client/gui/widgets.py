@@ -753,12 +753,12 @@ class EmptyConversationView(QWidget):
     CSS = '''
     #bullet {
         margin: 4px 0px 0px 0px;
-        font-size: 30px;
+        font-size: 35px;
         font-weight: 600;
     }
     #no_sources {
-        min-width: 570px;
-        max-width: 700px;
+        min-width: 520px;
+        max-width: 600px;
         text-align: left;
     }
     #no_source_selected {
@@ -769,16 +769,16 @@ class EmptyConversationView(QWidget):
     QLabel {
         font-family: Montserrat;
         font-weight: 400;
-        font-size: 40px;
+        font-size: 35px;
         color: #a5b3e9;
     }
     #instructions {
-        font-weight: 600;
+        font-weight: 500;
     }
     '''
 
     MARGIN = 30
-    NEWLINE_HEIGHT_PX = 40
+    NEWLINE_HEIGHT_PX = 35
 
     def __init__(self):
         super().__init__()
@@ -813,15 +813,12 @@ class EmptyConversationView(QWidget):
         no_sources_layout.addWidget(no_sources_instruction_details2)
 
         self.no_source_selected = QWidget()
-        self.no_sources.setObjectName('no_source_selected')
+        self.no_sources.setObjectName('no_sources')
         no_source_selected_layout = QVBoxLayout()
         self.no_source_selected.setLayout(no_source_selected_layout)
-        no_source_selected_instructions1 = QLabel(_('Select a source from'))
-        no_source_selected_instructions1.setObjectName('instructions')
-        no_source_selected_instructions1.setWordWrap(True)
-        no_source_selected_instructions2 = QLabel(_('the list, to:'))
-        no_source_selected_instructions2.setObjectName('instructions')
-        no_source_selected_instructions2.setWordWrap(True)
+        no_source_selected_instructions = QLabel(_('Select a source from the list, to:'))
+        no_source_selected_instructions.setObjectName('instructions')
+        no_source_selected_instructions.setWordWrap(True)
         bullet1 = QWidget()
         bullet1_layout = QHBoxLayout()
         bullet1_layout.setContentsMargins(0, 0, 0, 0)
@@ -830,6 +827,7 @@ class EmptyConversationView(QWidget):
         bullet1_bullet.setObjectName('bullet')
         bullet1_layout.addWidget(bullet1_bullet)
         bullet1_layout.addWidget(QLabel(_('Read a conversation')))
+        bullet1_layout.addStretch()
         bullet2 = QWidget()
         bullet2_layout = QHBoxLayout()
         bullet2_layout.setContentsMargins(0, 0, 0, 0)
@@ -838,6 +836,7 @@ class EmptyConversationView(QWidget):
         bullet2_bullet.setObjectName('bullet')
         bullet2_layout.addWidget(bullet2_bullet)
         bullet2_layout.addWidget(QLabel(_('View or retrieve files')))
+        bullet2_layout.addStretch()
         bullet3 = QWidget()
         bullet3_layout = QHBoxLayout()
         bullet3_layout.setContentsMargins(0, 0, 0, 0)
@@ -847,12 +846,12 @@ class EmptyConversationView(QWidget):
         bullet3_layout.addWidget(bullet3_bullet)
         bullet3_layout.addWidget(QLabel(_('Send a response')))
         bullet3_layout.addStretch()
-        no_source_selected_layout.addWidget(no_source_selected_instructions1)
-        no_source_selected_layout.addWidget(no_source_selected_instructions2)
+        no_source_selected_layout.addWidget(no_source_selected_instructions)
         no_source_selected_layout.addSpacing(self.NEWLINE_HEIGHT_PX)
         no_source_selected_layout.addWidget(bullet1)
         no_source_selected_layout.addWidget(bullet2)
         no_source_selected_layout.addWidget(bullet3)
+        no_source_selected_layout.addSpacing(self.NEWLINE_HEIGHT_PX * 4)
 
         # Add widgets
         layout.addWidget(self.no_sources, alignment=Qt.AlignCenter)
