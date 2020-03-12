@@ -828,7 +828,7 @@ class SourceList(QListWidget):
         # Set id and styles.
         self.setObjectName('sourcelist')
         self.setStyleSheet(self.CSS)
-        self.setFixedWidth(545)
+        self.setFixedWidth(525)
         self.setUniformItemSizes(True)
 
         # Set layout.
@@ -1084,8 +1084,8 @@ class SourceWidget(QWidget):
                 msg_text = content
             else:
                 msg_text = str(msg)
-            if len(msg_text) > 120:
-                msg_text = msg_text[:120] + "..."
+            if len(msg_text) > 150:
+                msg_text = msg_text[:150] + "..."
             self.preview.setText(msg_text)
 
     def delete_source(self, event):
