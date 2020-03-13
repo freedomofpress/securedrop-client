@@ -189,8 +189,9 @@ def test_Controller_on_authenticate_failure(homedir, config, mocker, session_mak
 
     co.api_sync.stop.assert_called_once_with()
     mock_gui.show_login_error.\
-        assert_called_once_with(error='There was a problem signing in. Please '
-                                'verify your credentials and try again.')
+        assert_called_once_with(error='That didn\'t work. '
+                                      'Please check everything and try again.\n'
+                                      'Make sure to use a new two-factor code.')
 
 
 def test_Controller_on_authenticate_success(homedir, config, mocker, session_maker,
