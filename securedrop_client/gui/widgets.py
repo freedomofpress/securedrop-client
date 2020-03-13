@@ -1263,11 +1263,15 @@ class StarToggleButton(SvgToggleButton):
         self.toggled.connect(self.on_toggle)
 
     def eventFilter(self, obj, event):
+        checkable = self.isCheckable()
         t = event.type()
-        if t == QEvent.HoverEnter:
+        if t == QEvent.HoverEnter and checkable:
             self.setIcon(load_icon('star_hover.svg'))
         elif t == QEvent.HoverLeave:
-            self.set_icon(on='star_on.svg', off='star_off.svg')
+            if checkable:
+                self.set_icon(on='star_on.svg', off='star_off.svg')
+            else:
+                self.set_icon(on='star_on.svg', off='star_on.svg')
         return QObject.event(obj, event)
 
     def on_authentication_changed(self, authenticated: bool):
