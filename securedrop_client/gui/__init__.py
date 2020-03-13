@@ -190,6 +190,10 @@ class SecureQLabel(QLabel):
         if not self.max_length:
             return full_text
 
+        # Only allow one line of elided text
+        if '\n' in full_text:
+            full_text = full_text.split('\n', 1)[0]
+
         fm = self.fontMetrics()
         filename_width = fm.horizontalAdvance(full_text)
         if filename_width > self.max_length:
@@ -201,6 +205,7 @@ class SecureQLabel(QLabel):
                     elided_text = elided_text[:-3] + '...'
                     return elided_text
                 elided_text = elided_text + c
+
         return full_text
 
     def is_elided(self) -> bool:
