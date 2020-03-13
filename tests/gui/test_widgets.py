@@ -1112,10 +1112,13 @@ def test_StarToggleButton_on_authentication_changed_while_authenticated_and_not_
     should result in the button being unchecked.
     """
     source = mocker.MagicMock()
+    source.is_starred = False
     stb = StarToggleButton(source=source)
-    stb.setChecked(False)
     stb.on_toggle = mocker.MagicMock()
+    assert stb.isChecked() is False
+
     stb.on_authentication_changed(authenticated=True)
+    assert stb.isChecked() is False
 
     stb.toggle()
 
@@ -1150,7 +1153,6 @@ def test_StarToggleButton_on_toggle(mocker):
     stb.on_toggle()
 
     stb.controller.update_star.assert_called_once_with(source, stb.on_update)
-    assert stb.isCheckable() is True
 
 
 def test_StarToggleButton_on_toggle_offline(mocker):
@@ -1162,9 +1164,7 @@ def test_StarToggleButton_on_toggle_offline(mocker):
     stb.controller = mocker.MagicMock()
 
     stb.on_toggle_offline()
-
     stb.controller.on_action_requiring_login.assert_called_once_with()
-    assert stb.isCheckable() is False
 
 
 def test_StarToggleButton_on_toggle_offline_when_checked(mocker):
@@ -1176,11 +1176,14 @@ def test_StarToggleButton_on_toggle_offline_when_checked(mocker):
     stb = StarToggleButton(source)
     stb.controller = mocker.MagicMock()
     set_icon_fn = mocker.patch('securedrop_client.gui.SvgToggleButton.set_icon')
-    stb.on_toggle_offline()
 
-    stb.controller.on_action_requiring_login.assert_called_once_with()
+    # go offline
+    stb.on_authentication_changed(False)
     assert stb.isCheckable() is False
     set_icon_fn.assert_called_with(on='star_on.svg', off='star_on.svg')
+
+    stb.on_toggle_offline()
+    stb.controller.on_action_requiring_login.assert_called_once_with()
 
 
 def test_StarToggleButton_on_update(mocker):
