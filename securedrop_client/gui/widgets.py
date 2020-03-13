@@ -1073,7 +1073,7 @@ class SourceWidget(QWidget):
         summary_layout.setSpacing(0)
         self.name = QLabel()
         self.name.setObjectName('source_name')
-        self.preview = SecureQLabel()
+        self.preview = SecureQLabel(max_length=self.PREVIEW_WIDTH)
         self.preview.setObjectName('preview')
         self.preview.setFixedSize(QSize(self.PREVIEW_WIDTH, self.PREVIEW_HEIGHT))
         self.waiting_delete_confirmation = QLabel('Deletion in progress')
@@ -1143,14 +1143,11 @@ class SourceWidget(QWidget):
         latest item in the conversation might be.
         """
         if source == self.source.uuid and self.source.collection:
-            msg = self.source.collection[-1]
-            if uuid and uuid == msg.uuid and content:
-                msg_text = content
+            last_collection_object = self.source.collection[-1]
+            if uuid and uuid == last_collection_object.uuid and content:
+                self.preview.setText(content)
             else:
-                msg_text = str(msg)
-            if len(msg_text) > 80:
-                self.preview.max_length = self.PREVIEW_WIDTH
-            self.preview.setText(msg_text)
+                self.preview.setText(str(last_collection_object))
 
     def delete_source(self, event):
         if self.controller.api is None:

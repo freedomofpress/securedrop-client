@@ -1,8 +1,6 @@
 """
 Tests for the gui helper functions in __init__.py
 """
-import textwrap
-
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtWidgets import QApplication
 
@@ -156,18 +154,17 @@ def test_SecureQLabel_init():
 
 
 def test_SecureQLabel_init_wordwrap(mocker):
-    # 81 character string
-    long_string = ('1234567890123456789012345678901234567890123456789012345678901234567890'
+    '''
+    Regression test to make sure we don't remove newlines.
+    '''
+    long_string = ('1234567890123456789012345678901234567890123456789012345678901234567890\n'
                    '12345678901')
-    sl = SecureQLabel(long_string)
-    wordwrap_string = ('1234567890123456789012345678901234567890123456789012345678901234567890'
-                       '1234567890\n1')
-    assert sl.text() == wordwrap_string
+    sl = SecureQLabel(long_string, wordwrap=False)
+    assert sl.text() == long_string
 
 
 def test_SecureQLabel_init_no_wordwrap(mocker):
-    # 81 character string
-    long_string = ('1234567890123456789012345678901234567890123456789012345678901234567890'
+    long_string = ('1234567890123456789012345678901234567890123456789012345678901234567890\n'
                    '12345678901')
     sl = SecureQLabel(long_string, wordwrap=False)
     assert sl.text() == long_string
@@ -191,20 +188,36 @@ def test_SecureQLabel_get_elided_text(mocker):
     sl = SecureQLabel(long_string, wordwrap=False, max_length=100)
     elided_text = sl.get_elided_text(long_string)
     assert sl.text() == elided_text
+    assert '...' in elided_text
+
+
+def test_SecureQLabel_get_elided_text_short_string(mocker):
+    # 70 character string
+    long_string = '123456789'
+    sl = SecureQLabel(long_string, wordwrap=False, max_length=100)
+    elided_text = sl.get_elided_text(long_string)
+    assert sl.text() == elided_text
+    assert elided_text == '123456789'
+
+
+def test_SecureQLabel_get_elided_text_only_returns_oneline(mocker):
+    # 70 character string
+    string_with_newline = ('this is a string\n with a newline')
+    sl = SecureQLabel(string_with_newline, wordwrap=False, max_length=100)
+    elided_text = sl.get_elided_text(string_with_newline)
+    assert sl.text() == elided_text
+    assert elided_text == 'this is a string'
+
+
+def test_SecureQLabel_get_elided_text_only_returns_oneline_elided(mocker):
+    # 70 character string
+    string_with_newline = ('this is a string\n with a newline')
+    sl = SecureQLabel(string_with_newline, wordwrap=False, max_length=38)
+    elided_text = sl.get_elided_text(string_with_newline)
+    assert sl.text() == elided_text
+    assert '...' in elided_text
 
 
 def test_SecureQLabel_quotes_not_escaped_for_readability():
     sl = SecureQLabel("'hello'")
     assert sl.text() == "'hello'"
-
-
-def test_SecureQLabel_wraps_on_80():
-    msg = (
-        "thisisaverylongmessagethatwillnotwrapunlessthistestpassesproperly1234"
-        "thisisaverylongmessagethatwillnotwrapunlessthistestpassesproperly1234"
-        "thisisaverylongmessagethatwillnotwrapunlessthistestpassesproperly1234"
-    )
-    sl = SecureQLabel(msg)
-    expected = "\n".join(textwrap.wrap(msg, 80))
-    assert sl.text() == expected
-    assert sl.wordWrap() is True

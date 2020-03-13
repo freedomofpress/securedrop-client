@@ -16,8 +16,6 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import textwrap
-
 from typing import Union
 
 from PyQt5.QtWidgets import QLabel, QHBoxLayout, QPushButton, QWidget
@@ -168,10 +166,8 @@ class SecureQLabel(QLabel):
         flags: Union[Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags(),
         wordwrap: bool = True,
         max_length: int = 0,
-        wrap_limit: int = 80,
     ):
         super().__init__(parent, flags)
-        self.wrap_limit = wrap_limit
         self.wordwrap = wordwrap
         self.max_length = max_length
         self.setWordWrap(wordwrap)  # If True, wraps text at default of 70 characters
@@ -180,8 +176,6 @@ class SecureQLabel(QLabel):
 
     def setText(self, text: str) -> None:
         self.setTextFormat(Qt.PlainText)
-        if self.wordwrap:
-            text = "\n".join(textwrap.wrap(text, self.wrap_limit))
         elided_text = self.get_elided_text(text)
         self.elided = True if elided_text != text else False
         super().setText(elided_text)
@@ -189,6 +183,10 @@ class SecureQLabel(QLabel):
     def get_elided_text(self, full_text: str) -> str:
         if not self.max_length:
             return full_text
+
+        # Only allow one line of elided text
+        if '\n' in full_text:
+            full_text = full_text.split('\n', 1)[0]
 
         fm = self.fontMetrics()
         filename_width = fm.horizontalAdvance(full_text)
@@ -201,6 +199,7 @@ class SecureQLabel(QLabel):
                     elided_text = elided_text[:-3] + '...'
                     return elided_text
                 elided_text = elided_text + c
+
         return full_text
 
     def is_elided(self) -> bool:
