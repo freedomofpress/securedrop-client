@@ -1107,6 +1107,12 @@ def test_StarToggleButton_eventFilter(mocker):
     stb.eventFilter(stb, test_event)
     stb.set_icon.assert_called_once_with(on='star_on.svg', off='star_off.svg')
 
+    # Hover leave when disabled
+    stb.disable()
+    test_event = QEvent(QEvent.HoverLeave)
+    stb.eventFilter(stb, test_event)
+    stb.set_icon.assert_called_with(on='star_on.svg', off='star_on.svg')
+
 
 def test_StarToggleButton_on_authentication_changed_while_authenticated_and_checked(mocker):
     """
