@@ -196,10 +196,9 @@ class SecureQLabel(QLabel):
             elided_text = ''
             for c in full_text:
                 if fm.horizontalAdvance(elided_text) > self.max_length:
-                    elided_text = elided_text + '...'
+                    elided_text = elided_text[:-3] + '...'
                     return elided_text
                 elided_text = elided_text + c
-
         return full_text
 
     def is_elided(self) -> bool:
