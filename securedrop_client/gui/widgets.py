@@ -707,10 +707,11 @@ class MainView(QWidget):
         if not source:
             return
 
-        self.controller.session.refresh(source)
+        self.controller.session.expire_all()
         # Try to get the SourceConversationWrapper from the persistent dict,
         # else we create it.
         try:
+            logger.debug('Drawing source conversation for {}'.format(source.uuid))
             conversation_wrapper = self.source_conversations[source.uuid]
 
             # Redraw the conversation view such that new messages, replies, files appear.
@@ -3002,6 +3003,7 @@ class ConversationView(QWidget):
         # by another user (a journalist using the Web UI is able to delete individual
         # submissions).
         for item_widget in current_conversation.values():
+            logger.debug('Deleting item: {}'.format(item_widget.uuid))
             self.current_messages.pop(item_widget.uuid)
             self.conversation_layout.removeWidget(item_widget)
 
@@ -3009,6 +3011,7 @@ class ConversationView(QWidget):
         """
         Add a file from the source.
         """
+        logger.debug('Adding file for {}'.format(file.uuid))
         conversation_item = FileWidget(
             file.uuid,
             self.controller,
