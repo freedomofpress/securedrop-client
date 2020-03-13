@@ -1192,6 +1192,56 @@ class StarToggleButton(SvgToggleButton):
         self.setStyleSheet(self.css)
         self.setFixedSize(QSize(20, 20))
 
+    def disable(self):
+        """
+        Disable the widget.
+
+        Disable toggle by setting checkable to False. Unfortunately,
+        disabling toggle doesn't freeze state, rather it always
+        displays the off state when a user tries to toggle. In order
+        to save on state we update the icon's off state image to
+        display on (hack).
+        """
+        self.setCheckable(False)
+        if self.source.is_starred:
+            self.set_icon(on='star_on.svg', off='star_on.svg')
+
+        try:
+            while True:
+                self.pressed.disconnect(self.on_toggle_offline)
+        except Exception as e:
+            logger.warning("Could not disconnect on_toggle_offline from self.pressed: %s", e)
+
+        try:
+            while True:
+                self.toggled.disconnect(self.on_toggle)
+        except Exception as e:
+            logger.warning("Could not disconnect on_toggle from self.toggled: %s", e)
+
+        self.pressed.connect(self.on_toggle_offline)
+
+    def enable(self):
+        """
+        Enable the widget.
+        """
+        self.setCheckable(True)
+        self.set_icon(on='star_on.svg', off='star_off.svg')
+        self.setChecked(self.source.is_starred)
+
+        try:
+            while True:
+                self.toggled.disconnect(self.on_toggle)
+        except Exception as e:
+            logger.warning("Could not disconnect on_toggle from self.toggled: %s", e)
+
+        try:
+            while True:
+                self.pressed.disconnect(self.on_toggle_offline)
+        except Exception as e:
+            logger.warning("Could not disconnect on_toggle_offline from self.pressed: %s", e)
+
+        self.toggled.connect(self.on_toggle)
+
     def setup(self, controller):
         self.controller = controller
         self.controller.authentication_state.connect(self.on_authentication_changed)
@@ -1211,9 +1261,9 @@ class StarToggleButton(SvgToggleButton):
         event instead of 'toggled' event when not authenticated because toggling will be disabled.
         """
         if authenticated:
-            self.toggled.connect(self.on_toggle)
+            self.enable()
         else:
-            self.pressed.connect(self.on_toggle_offline)
+            self.disable()
 
     def on_toggle(self):
         """
@@ -1223,15 +1273,9 @@ class StarToggleButton(SvgToggleButton):
 
     def on_toggle_offline(self):
         """
-        Show error message and disable toggle by setting checkable to False. Unfortunately,
-        disabling toggle doesn't freeze state, rather it always displays the off state when a user
-        tries to toggle. In order to save on state we update the icon's off state image to display
-        on (hack).
+        Show error message when not authenticated.
         """
         self.controller.on_action_requiring_login()
-        self.setCheckable(False)
-        if self.source.is_starred:
-            self.set_icon(on='star_on.svg', off='star_on.svg')
 
     def on_update(self, result):
         """
