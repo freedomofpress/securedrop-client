@@ -16,8 +16,6 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import textwrap
-
 from typing import Union
 
 from PyQt5.QtWidgets import QLabel, QHBoxLayout, QPushButton, QWidget
@@ -168,14 +166,10 @@ class SecureQLabel(QLabel):
         flags: Union[Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags(),
         wordwrap: bool = True,
         max_length: int = 0,
-        wrap_limit: int = 80,
-        condense_text: bool = False
     ):
         super().__init__(parent, flags)
         self.wordwrap = wordwrap
         self.max_length = max_length
-        self.wrap_limit = wrap_limit
-        self.condense_text = condense_text
         self.setWordWrap(wordwrap)  # If True, wraps text at default of 70 characters
         self.setText(text)
         self.elided = True if self.text() != text else False
@@ -183,8 +177,6 @@ class SecureQLabel(QLabel):
     def setText(self, text: str) -> None:
         self.setTextFormat(Qt.PlainText)
         elided_text = self.get_elided_text(text)
-        if self.condense_text:
-            text = "\n".join(textwrap.wrap(text, self.wrap_limit))
         self.elided = True if elided_text != text else False
         super().setText(elided_text)
 
