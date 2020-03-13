@@ -157,6 +157,20 @@ def test_hide_login(mocker):
     assert w.login_dialog is None
 
 
+def test_refresh_current_source_conversation(mocker):
+    """
+    Ensure on_source_changed is called on the MainView (which
+    updates the current conversation) when
+    refresh_current_source_conversation() is called.
+    """
+    w = Window()
+    w.main_view = mocker.MagicMock()
+
+    w.refresh_current_source_conversation()
+
+    w.main_view.on_source_changed.assert_called_once_with()
+
+
 def test_show_sources(mocker):
     """
     Ensure the sources list is passed to the main view to be updated.
