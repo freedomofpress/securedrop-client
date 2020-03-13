@@ -1231,14 +1231,14 @@ class StarToggleButton(SvgToggleButton):
         try:
             while True:
                 self.toggled.disconnect(self.on_toggle)
-        except Exception as e:
-            logger.warning("Could not disconnect on_toggle from self.toggled: %s", e)
+        except Exception:
+            pass
 
         try:
             while True:
                 self.pressed.disconnect(self.on_toggle_offline)
-        except Exception as e:
-            logger.warning("Could not disconnect on_toggle_offline from self.pressed: %s", e)
+        except Exception:
+            pass
 
         self.toggled.connect(self.on_toggle)
 
