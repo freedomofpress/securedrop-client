@@ -457,6 +457,7 @@ class Controller(QObject):
             self.file_missing.emit(missed_file.source.uuid, missed_file.uuid,
                                    str(missed_file))
         self.update_sources()
+        self.gui.refresh_current_source_conversation()
         self.download_new_messages()
         self.download_new_replies()
         self.sync_events.emit('synced')
