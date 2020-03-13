@@ -29,6 +29,9 @@ def test_delete_source_and_their_docs(qtbot, mocker):
     first_source_widget = gui.main_view.source_list.source_widgets[first_source_id]
     qtbot.mouseClick(first_source_widget, Qt.LeftButton)
     qtbot.wait(1000)
+
+    assert gui.main_view.source_list.count() == 2
+
     # Delete the first source.
     # This is IMPOSSIBLE to trigger via either the qtbot or DeleteSourceAction
     # instance -- hence this "direct" approach. In the end we need to know that
@@ -37,7 +40,7 @@ def test_delete_source_and_their_docs(qtbot, mocker):
     controller.delete_source(conversation.conversation_title_bar.source)
 
     def check_source_list():
-        # Confirm there are now only two sources in the client list.
+        # Confirm there is now only one source in the client list.
         assert gui.main_view.source_list.count() == 1
 
     qtbot.waitUntil(check_source_list, timeout=10000)
