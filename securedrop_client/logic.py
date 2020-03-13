@@ -260,8 +260,8 @@ class Controller(QObject):
     @is_authenticated.setter
     def is_authenticated(self, is_authenticated: bool) -> None:
         if self.__is_authenticated != is_authenticated:
-            self.authentication_state.emit(is_authenticated)
             self.__is_authenticated = is_authenticated
+            self.authentication_state.emit(is_authenticated)
 
     @is_authenticated.deleter
     def is_authenticated(self) -> None:
