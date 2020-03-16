@@ -2507,6 +2507,30 @@ def test_FramelessDialog_center_dialog_with_no_active_window(mocker):
     dialog.move.assert_not_called()
 
 
+def test_FramelessDialog_animation_of_activestate(mocker):
+    dialog = FramelessDialog()
+    assert dialog.animation
+    dialog.animation.start = mocker.MagicMock()
+    dialog.animation.stop = mocker.MagicMock()
+    dialog.continue_button = mocker.MagicMock()
+
+    # Check starting the animated state works as expected.
+    dialog.start_animate_activestate()
+    dialog.animation.start.assert_called_once_with()
+    dialog.continue_button.setText.assert_called_once_with("")
+    assert dialog.continue_button.setMinimumSize.call_count == 1
+    assert dialog.continue_button.setStyleSheet.call_count == 1
+
+    dialog.continue_button.reset_mock()
+
+    # Check stopping the animated state works as expected.
+    dialog.stop_animate_activestate()
+    dialog.animation.stop.assert_called_once_with()
+    dialog.continue_button.setText.assert_called_once_with("CONTINUE")
+    assert dialog.continue_button.setIcon.call_count == 1
+    assert dialog.continue_button.setStyleSheet.call_count == 1
+
+
 def test_ExportDialog_init(mocker):
     mocker.patch(
          'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
