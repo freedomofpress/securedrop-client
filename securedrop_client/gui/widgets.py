@@ -1157,19 +1157,24 @@ class SourceWidget(QWidget):
             )
             raise
 
-    def set_snippet(self, source, uuid=None, content=None):
+    def set_snippet(self, source, uuid=None, content=None) -> None:
         """
         Update the preview snippet only if the new message is for the
         referenced source and there's a source collection. If a uuid and
         content are passed then use these, otherwise default to whatever the
         latest item in the conversation might be.
         """
-        if source == self.source.uuid and self.source.collection:
+        if source != self.source.uuid:
+            return
+
+        if self.source.collection:
             last_collection_object = self.source.collection[-1]
             if uuid and uuid == last_collection_object.uuid and content:
                 self.preview.setText(content)
             else:
                 self.preview.setText(str(last_collection_object))
+        else:
+            self.preview.setText("")
 
     def delete_source(self, event):
         if self.controller.api is None:
