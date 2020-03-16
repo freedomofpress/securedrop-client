@@ -1203,7 +1203,6 @@ class StarToggleButton(SvgToggleButton):
         self.source = source
 
         self.installEventFilter(self)
-        self.toggle_event_enabled = True
 
         self.setObjectName('star_button')
         self.setStyleSheet(self.css)
@@ -1222,6 +1221,7 @@ class StarToggleButton(SvgToggleButton):
         to save on state we update the icon's off state image to
         display on (hack).
         """
+        self.disable_api_call()
         self.setCheckable(False)
         if self.source.is_starred:
             self.set_icon(on='star_on.svg', off='star_on.svg')
@@ -1244,6 +1244,7 @@ class StarToggleButton(SvgToggleButton):
         """
         Enable the widget.
         """
+        self.enable_api_call()
         self.setCheckable(True)
         self.set_icon(on='star_on.svg', off='star_off.svg')
         self.setChecked(self.source.is_starred)
@@ -1271,7 +1272,8 @@ class StarToggleButton(SvgToggleButton):
             if checkable:
                 self.set_icon(on='star_on.svg', off='star_off.svg')
             else:
-                self.set_icon(on='star_on.svg', off='star_on.svg')
+                if self.source.is_starred:
+                    self.set_icon(on='star_on.svg', off='star_on.svg')
         return QObject.event(obj, event)
 
     def on_authentication_changed(self, authenticated: bool):
@@ -1288,7 +1290,7 @@ class StarToggleButton(SvgToggleButton):
         """
         Tell the controller to make an API call to update the source's starred field.
         """
-        if self.toggle_event_enabled:
+        if self.is_api_call_enabled:
             self.controller.update_star(self.source, self.on_update)
 
     def on_toggle_offline(self):
@@ -1313,15 +1315,15 @@ class StarToggleButton(SvgToggleButton):
         Update the star to reflect its source's current state.
         """
         self.controller.session.refresh(self.source)
-        self.disable_toggle_event()
+        self.disable_api_call()
         self.setChecked(self.source.is_starred)
-        self.enable_toggle_event()
+        self.enable_api_call()
 
-    def disable_toggle_event(self):
-        self.toggle_event_enabled = False
+    def disable_api_call(self):
+        self.is_api_call_enabled = False
 
-    def enable_toggle_event(self):
-        self.toggle_event_enabled = True
+    def enable_api_call(self):
+        self.is_api_call_enabled = True
 
 
 class DeleteSourceMessageBox:
