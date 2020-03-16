@@ -1013,6 +1013,9 @@ def test_SourceWidget_set_snippet(mocker):
     sw.set_snippet(source.uuid, msg.uuid, msg.content)
     assert sw.preview.text() == "abcdefg"
 
+    sw.set_snippet('not-the-source-uuid', msg.uuid, 'something new')
+    assert sw.preview.text() == "abcdefg"
+
 
 def test_SourceWidget_update_truncate_latest_msg(mocker):
     """
