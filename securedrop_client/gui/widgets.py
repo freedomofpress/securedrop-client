@@ -2541,6 +2541,11 @@ class FramelessDialog(QDialog):
         layout.addStretch()
         layout.addWidget(window_buttons)
 
+        # Activestate animation.
+        self.animation = load_movie("activestate-spinner2.gif")
+        self.animation.setScaledSize(QSize(32, 32))
+        self.animation.frameChanged.connect(self.animate_activestate)
+
     def closeEvent(self, event: QCloseEvent):
         # ignore any close event that doesn't come from our custom close method
         if not self.internal_close_event_emitted:
@@ -2574,6 +2579,21 @@ class FramelessDialog(QDialog):
         x_center = (application_window_size.width() - dialog_size.width()) / 2
         y_center = (application_window_size.height() - dialog_size.height()) / 2
         self.move(x + x_center, y + y_center)
+
+    def animate_activestate(self):
+        self.continue_button.setIcon(QIcon(self.animation.currentPixmap()))
+
+    def start_animate_activestate(self):
+        self.animation.start()
+        self.continue_button.setText("")
+        self.continue_button.setMinimumSize(QSize(150, 45))
+        self.continue_button.setStyleSheet("background-color: #f1f1f6; color: #fff;")
+
+    def stop_animate_activestate(self):
+        self.continue_button.setIcon(QIcon())
+        self.animation.stop()
+        self.continue_button.setText(_('CONTINUE'))
+        self.continue_button.setStyleSheet("background-color: #2a319d; color: #fff;")
 
 
 class PrintDialog(FramelessDialog):
@@ -2622,6 +2642,7 @@ class PrintDialog(FramelessDialog):
         self.generic_error_message = _('See your administrator for help.')
 
         self._show_starting_instructions()
+        self.start_animate_activestate()
         self._run_preflight()
 
     def _show_starting_instructions(self):
