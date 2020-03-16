@@ -963,7 +963,7 @@ class SourceList(QListWidget):
     def get_current_source(self):
         source_item = self.currentItem()
         source_widget = self.itemWidget(source_item)
-        if source_widget and source_exists(self.controller.session, source_widget.source.uuid):
+        if source_widget and source_exists(self.controller.session, source_widget.source_uuid):
             return source_widget.source
 
     def set_snippet(self, source_uuid, message_uuid, content):
