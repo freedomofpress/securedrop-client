@@ -707,7 +707,7 @@ class MainView(QWidget):
         if not source:
             return
 
-        self.controller.session.expire_all()
+        self.controller.session.refresh(source)
         # Try to get the SourceConversationWrapper from the persistent dict,
         # else we create it.
         try:
