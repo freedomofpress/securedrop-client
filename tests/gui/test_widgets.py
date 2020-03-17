@@ -800,6 +800,45 @@ def test_SourceList_update_when_source_deleted(mocker, session, session_maker, h
     assert len(sl.source_widgets) == 0
 
 
+def test_SourceList_update_when_source_deleted_crash(mocker, session, session_maker, homedir):
+    """
+    When SourceList.update calls SourceWidget.update and that
+    SourceWidget has been deleted from the dict on the SourceList,
+    it should handle the exception and delete the list widget.
+    """
+    mock_gui = mocker.MagicMock()
+    controller = logic.Controller('http://localhost', mock_gui, session_maker, homedir)
+
+    # create the source in another session
+    source = factory.Source()
+    session.add(source)
+    session.commit()
+
+    # construct the SourceWidget with the source fetched in its
+    # controller's session
+    oss = controller.session.query(db.Source).filter_by(id=source.id).one()
+
+    # add it to the SourceList
+    sl = SourceList()
+    sl.setup(controller)
+    deleted_uuids = sl.update([oss])
+    assert not deleted_uuids
+    assert len(sl.source_widgets) == 1
+    assert sl.count() == 1
+
+    # Remove source_widget from dict
+    sl.source_widgets.pop(oss.uuid)
+
+    # now delete it
+    session.delete(source)
+    session.commit()
+
+    # and finally verify that updating does not throw an exception, and
+    # all widgets are removed from the list view.
+    deleted_uuids = sl.update([])
+    assert sl.count() == 0
+
+
 def test_SourceList_update_maintains_selection(mocker):
     """
     Maintains the selected item if present in new list

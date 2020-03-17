@@ -924,10 +924,15 @@ class SourceList(QListWidget):
             if list_widget and list_widget.source_uuid not in source_uuids:
                 if list_item.isSelected():
                     self.setCurrentItem(None)
-                del self.source_widgets[list_widget.source_uuid]
-                deleted_uuids.append(list_widget.source_uuid)
-                self.takeItem(i)
-                list_widget.deleteLater()
+
+                try:
+                    del self.source_widgets[list_widget.source_uuid]
+                    deleted_uuids.append(list_widget.source_uuid)
+                except KeyError:
+                    pass
+                finally:
+                    self.takeItem(i)
+                    list_widget.deleteLater()
 
         # Create new widgets for new sources
         widget_uuids = [self.itemWidget(self.item(i)).source_uuid for i in range(self.count())]
