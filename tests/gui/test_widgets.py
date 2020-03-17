@@ -1,6 +1,7 @@
 """
 Make sure the UI widgets are configured correctly and work as expected.
 """
+import re
 import pytest
 import arrow
 from datetime import datetime
@@ -1023,12 +1024,17 @@ def test_SourceWidget_set_snippet(mocker, session_maker, session, homedir):
     source_uuid = source.uuid
     session.delete(source)
     session.commit()
-    with pytest.raises(sqlalchemy.exc.InvalidRequestError):
-        error_logger = mocker.patch("securedrop_client.gui.widgets.logger.error")
-        sw.set_snippet(source_uuid, "some-uuid", "something new")
-        error_logger.assert_called_once_with(
+    error_logger = mocker.patch("securedrop_client.gui.widgets.logger.error")
+    sw.set_snippet(source_uuid, "some-uuid", "something new")
+    error_logger.assert_called_once()
+    assert re.match(
+        (
             f"Could not update snippet for source {source_uuid}: "
-        )
+            "Instance '<Source at 0x[0-9a-f]+>' is not persistent within this Session"
+        ),
+        error_logger.call_args_list[0][0][0],
+    )
+
     assert sw.preview.text() == ""
 
 
