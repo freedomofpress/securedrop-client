@@ -1167,15 +1167,15 @@ class SourceWidget(QWidget):
 
         try:
             self.controller.session.refresh(self.source)
-            if self.source.collection:
-                last_collection_object = self.source.collection[-1]
-                if uuid == last_collection_object.uuid and content:
-                    self.preview.setText(content)
-                else:
-                    self.preview.setText(str(last_collection_object))
+            if not self.source.collection:
+                return
+            last_collection_object = self.source.collection[-1]
+            if uuid == last_collection_object.uuid and content:
+                self.preview.setText(content)
+            else:
+                self.preview.setText(str(last_collection_object))
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.error(f"Could not update snippet for source {self.source_uuid}: {e}")
-            raise
 
     def delete_source(self, event):
         if self.controller.api is None:
