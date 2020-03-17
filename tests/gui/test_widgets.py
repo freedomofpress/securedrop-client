@@ -10,7 +10,8 @@ from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtGui import QFocusEvent, QKeyEvent, QMovie
 from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QMessageBox, QMainWindow, \
-    QLineEdit
+    QLineEdit, QListWidgetItem
+import sqlalchemy
 import sqlalchemy.orm.exc
 from sqlalchemy.orm import attributes, scoped_session, sessionmaker
 
@@ -472,6 +473,7 @@ def test_MainView_setup(mocker):
 
     assert mv.controller == controller
     mv.source_list.setup.assert_called_once_with(controller)
+    mv.source_list.delete_source_by_uuid.connect.assert_called_once_with(mv.delete_conversation)
 
 
 def test_MainView_show_sources_with_none_selected(mocker):
@@ -504,25 +506,6 @@ def test_MainView_show_sources_with_no_sources_at_all(mocker):
     mv.empty_conversation_view.show.assert_called_once_with()
 
 
-def test_MainView_show_sources_when_sources_are_deleted(mocker):
-    """
-    Ensure that show_sources also deletes the SourceConversationWrapper for a deleted source.
-    """
-    mv = MainView(None)
-    mv.source_list = mocker.MagicMock()
-    mv.empty_conversation_view = mocker.MagicMock()
-    mv.source_list.update = mocker.MagicMock(return_value=[])
-    mv.delete_conversation = mocker.MagicMock()
-
-    mv.show_sources([1, 2, 3, 4])
-
-    mv.source_list.update = mocker.MagicMock(return_value=[4])
-
-    mv.show_sources([1, 2, 3])
-
-    mv.delete_conversation.assert_called_once_with(4)
-
-
 def test_MainView_delete_conversation_when_conv_wrapper_exists(mocker):
     """
     Ensure SourceConversationWrapper is deleted if it exists.
@@ -538,7 +521,6 @@ def test_MainView_delete_conversation_when_conv_wrapper_exists(mocker):
 
     mv.delete_conversation('123')
 
-    conversation_wrapper.deleteLater.assert_called_once_with()
     assert mv.source_conversations == {}
 
 
@@ -719,7 +701,13 @@ def test_SourceList_get_current_source(mocker):
     sl = SourceList()
     sl.controller = mocker.MagicMock()
     sources = [factory.Source(), factory.Source()]
-    sl.update(sources)
+    for s in sources:
+        new_source = SourceWidget(sl.controller, s)
+        sl.source_widgets[s.uuid] = new_source
+        list_item = QListWidgetItem(sl)
+        list_item.setSizeHint(new_source.sizeHint())
+        sl.addItem(list_item)
+        sl.setItemWidget(list_item, new_source)
     sl.setCurrentItem(sl.itemAt(1, 0))  # select source2
 
     current_source = sl.get_current_source()
@@ -735,107 +723,132 @@ def test_SourceList_update_adds_new_sources(mocker):
     sl = SourceList()
 
     sl.clear = mocker.MagicMock()
-    sl.insertItem = mocker.MagicMock()
-    sl.takeItem = mocker.MagicMock()
+    sl.add_source = mocker.MagicMock()
     sl.setItemWidget = mocker.MagicMock()
+    sl.currentRow = mocker.MagicMock(return_value=0)
+    sl.item = mocker.MagicMock()
+    sl.item().isSelected.return_value = True
+    sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), ]
+    sl.update(sources)
+    sl.clear.assert_called_once_with()
+    sl.add_source.assert_called_once_with({}, sources, None, True)
+
+
+def test_SourceList_add_source_starts_timer(mocker, session_maker, homedir):
+    """
+    When the add_source method is called it schedules the addition of a source
+    to the source list via a single-shot QTimer.
+    """
+    sl = SourceList()
+    sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), ]
+    mock_timer = mocker.MagicMock()
+    with mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer):
+        sl.add_source({}, sources, None, False)
+    assert mock_timer.singleShot.call_count == 1
+
+
+def test_SourceList_add_source_closure_adds_sources(mocker):
+    """
+    The closure (function created within the add_source function) behaves in
+    the expected way given the context of the call to add_source.
+    """
+    sl = SourceList()
     sl.controller = mocker.MagicMock()
+    sl.addItem = mocker.MagicMock()
+    sl.setItemWidget = mocker.MagicMock()
     sl.setCurrentItem = mocker.MagicMock()
 
     mock_sw = mocker.MagicMock()
     mock_lwi = mocker.MagicMock()
     mocker.patch('securedrop_client.gui.widgets.SourceWidget', mock_sw)
     mocker.patch('securedrop_client.gui.widgets.QListWidgetItem', mock_lwi)
-
     sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), ]
-    sl.update(sources)
+    mock_timer = mocker.MagicMock()
+    with mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer):
+        sl.add_source({}, sources, 1, False)
+        # Now grab the function created within add_source:
+        inner_fn = mock_timer.singleShot.call_args_list[0][0][1]
+        # Ensure add_source is mocked to avoid recursion in the test and so we
+        # can spy on how it's called.
+        sl.add_source = mocker.MagicMock()
+        # Call the inner function (as if the timer had completed).
+        inner_fn()
+        assert mock_sw.call_count == 1
+        assert mock_lwi.call_count == 1
+        assert sl.addItem.call_count == 1
+        assert sl.setItemWidget.call_count == 1
+        assert len(sl.source_widgets) == 1
+        assert sl.setCurrentItem.call_count == 0
+        sl.add_source.assert_called_once_with({}, sources[1:], 1, False, 2)
 
-    assert mock_sw.call_count == len(sources)
-    assert mock_lwi.call_count == len(sources)
-    assert sl.insertItem.call_count == len(sources)
-    assert sl.setItemWidget.call_count == len(sources)
-    assert len(sl.source_widgets) == len(sources)
-    assert sl.setCurrentItem.call_count == 0
-    sl.clear.assert_not_called()
-    sl.takeItem.assert_not_called()
-    mock_sw.deleteLater.assert_not_called()
 
-
-def test_SourceList_update_when_source_deleted(mocker, session, session_maker, homedir):
+def test_SourceList_add_source_closure_sets_current_item(mocker):
     """
-    Test that SourceWidget.update raises an exception when its source has been deleted.
-
-    When SourceList.update calls SourceWidget.update and that
-    SourceWidget's source has been deleted, SourceList.update should
-    catch the resulting excpetion, delete the SourceWidget and add its
-    source UUID to the list of deleted source UUIDs.
-    """
-    mock_gui = mocker.MagicMock()
-    controller = logic.Controller('http://localhost', mock_gui, session_maker, homedir)
-
-    # create the source in another session
-    source = factory.Source()
-    session.add(source)
-    session.commit()
-
-    # construct the SourceWidget with the source fetched in its
-    # controller's session
-    oss = controller.session.query(db.Source).filter_by(id=source.id).one()
-
-    # add it to the SourceList
-    sl = SourceList()
-    sl.setup(controller)
-    deleted_uuids = sl.update([oss])
-    assert not deleted_uuids
-    assert len(sl.source_widgets) == 1
-
-    # now delete it
-    session.delete(source)
-    session.commit()
-
-    # and finally verify that updating raises an exception, causing
-    # the SourceWidget to be deleted
-    deleted_uuids = sl.update([source])
-    assert len(deleted_uuids) == 1
-    assert source.uuid in deleted_uuids
-    assert len(sl.source_widgets) == 0
-
-
-def test_SourceList_update_maintains_selection(mocker):
-    """
-    Maintains the selected item if present in new list
+    The closure (function created within the add_source function) ensures that
+    if an item being added to the UI is the currently selected item and is
+    already selected in the UI, it is marked as such.
     """
     sl = SourceList()
     sl.controller = mocker.MagicMock()
-    sources = [factory.Source(), factory.Source()]
-    sl.update(sources)
+    sl.addItem = mocker.MagicMock()
+    sl.setItemWidget = mocker.MagicMock()
+    sl.setCurrentItem = mocker.MagicMock()
 
-    sl.setCurrentItem(sl.itemAt(0, 0))  # select the first source
-    sl.update(sources)
+    mock_sw = mocker.MagicMock()
+    mock_lwi = mocker.MagicMock()
+    mocker.patch('securedrop_client.gui.widgets.SourceWidget', mock_sw)
+    mocker.patch('securedrop_client.gui.widgets.QListWidgetItem', mock_lwi)
+    mock_source = mocker.MagicMock()
+    mock_source.id = 1
+    sources = [mock_source, mocker.MagicMock(), mocker.MagicMock(), ]
+    mock_timer = mocker.MagicMock()
+    with mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer):
+        sl.add_source({}, sources, 1, True)
+        # Now grab the function created within add_source:
+        inner_fn = mock_timer.singleShot.call_args_list[0][0][1]
+        # Ensure add_source is mocked to avoid recursion in the test and so we
+        # can spy on how it's called.
+        sl.add_source = mocker.MagicMock()
+        # Call the inner function (as if the timer had completed).
+        inner_fn()
+        assert sl.setCurrentItem.call_count == 1
 
-    assert sl.currentItem()
-    assert sl.itemWidget(sl.currentItem()).source.id == sources[0].id
 
-    sl.setCurrentItem(sl.itemAt(1, 0))  # select the second source
-    sl.update(sources)
-
-    assert sl.currentItem()
-    assert sl.itemWidget(sl.currentItem()).source.id == sources[1].id
-
-
-def test_SourceList_update_with_pre_selected_source_maintains_selection(mocker):
+def test_SourceList_add_source_closure_deletes_sources_when_finished(mocker):
     """
-    Check that an existing source widget that is selected remains selected.
+    The closure (function created within the add_source function) ensures that
+    if an item being added to the UI is the currently selected item and is
+    already selected in the UI, it is marked as such.
     """
     sl = SourceList()
     sl.controller = mocker.MagicMock()
-    sl.update([factory.Source(), factory.Source()])
-    second_item = sl.itemAt(1, 0)
-    sl.setCurrentItem(second_item)  # select the second source
-    mocker.patch.object(second_item, 'isSelected', return_value=True)
+    sl.addItem = mocker.MagicMock()
+    sl.setItemWidget = mocker.MagicMock()
+    sl.setCurrentItem = mocker.MagicMock()
 
-    sl.update([factory.Source(), factory.Source()])
+    sl.setCurrentItem(sl.itemAt(0, 0))  # select source with uuid='newer'
+    sl.update([factory.Source(uuid='new')])  # delete source with uuid='newer'
+    existing_sources = {
+        "uuid1": mocker.MagicMock()
+    }
 
-    assert second_item.isSelected() is True
+    sl.source_widgets = {
+        "uuid2": mocker.MagicMock()
+    }
+
+    sl.delete_source_by_uuid = mocker.MagicMock()
+
+    mock_timer = mocker.MagicMock()
+    with mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer):
+        sl.add_source(existing_sources, [], 1, True)
+        # Now grab the function created within add_source:
+        inner_fn = mock_timer.singleShot.call_args_list[0][0][1]
+        # Ensure add_source is mocked to avoid recursion in the test and so we
+        # can spy on how it's called.
+        sl.add_source = mocker.MagicMock()
+        # Call the inner function (as if the timer had completed).
+        inner_fn()
+        sl.delete_source_by_uuid.emit.assert_called_once_with("uuid1")
 
 
 def test_SourceList_update_removes_selected_item_results_in_no_current_selection(mocker):
@@ -850,54 +863,6 @@ def test_SourceList_update_removes_selected_item_results_in_no_current_selection
     sl.update([factory.Source(uuid='new')])  # delete source with uuid='newer'
 
     assert not sl.currentItem()
-
-
-def test_SourceList_update_removes_item_from_end_of_list(mocker):
-    """
-    Check that the item is removed from the source list and dict if the source no longer exists.
-    """
-    sl = SourceList()
-    sl.controller = mocker.MagicMock()
-    sl.update([
-        factory.Source(uuid='new'), factory.Source(uuid='newer'), factory.Source(uuid='newest')])
-    assert sl.count() == 3
-    sl.update([factory.Source(uuid='newer'), factory.Source(uuid='newest')])
-    assert sl.count() == 2
-    assert sl.itemWidget(sl.item(0)).source.uuid == 'newest'
-    assert sl.itemWidget(sl.item(1)).source.uuid == 'newer'
-    assert len(sl.source_widgets) == 2
-
-
-def test_SourceList_update_removes_item_from_middle_of_list(mocker):
-    """
-    Check that the item is removed from the source list and dict if the source no longer exists.
-    """
-    sl = SourceList()
-    sl.controller = mocker.MagicMock()
-    sl.update([
-        factory.Source(uuid='new'), factory.Source(uuid='newer'), factory.Source(uuid='newest')])
-    assert sl.count() == 3
-    sl.update([factory.Source(uuid='new'), factory.Source(uuid='newest')])
-    assert sl.count() == 2
-    assert sl.itemWidget(sl.item(0)).source.uuid == 'newest'
-    assert sl.itemWidget(sl.item(1)).source.uuid == 'new'
-    assert len(sl.source_widgets) == 2
-
-
-def test_SourceList_update_removes_item_from_beginning_of_list(mocker):
-    """
-    Check that the item is removed from the source list and dict if the source no longer exists.
-    """
-    sl = SourceList()
-    sl.controller = mocker.MagicMock()
-    sl.update([
-        factory.Source(uuid='new'), factory.Source(uuid='newer'), factory.Source(uuid='newest')])
-    assert sl.count() == 3
-    sl.update([factory.Source(uuid='new'), factory.Source(uuid='newer')])
-    assert sl.count() == 2
-    assert sl.itemWidget(sl.item(0)).source.uuid == 'newer'
-    assert sl.itemWidget(sl.item(1)).source.uuid == 'new'
-    assert len(sl.source_widgets) == 2
 
 
 def test_SourceList_set_snippet(mocker):
@@ -958,6 +923,26 @@ def test_SourceWidget_update_attachment_icon(mocker):
 
     sw.update()
     assert sw.paperclip.isHidden()
+
+
+def test_SourceWidget_update_raises_InvalidRequestError(mocker):
+    """
+    If the source no longer exists in the local data store, ensure the expected
+    exception is logged and re-raised.
+    """
+    controller = mocker.MagicMock()
+    source = factory.Source(document_count=1)
+    sw = SourceWidget(controller, source)
+    ex = sqlalchemy.exc.InvalidRequestError()
+    controller.session.refresh.side_effect = ex
+    mock_logger = mocker.MagicMock()
+    mocker.patch(
+        "securedrop_client.gui.widgets.logger",
+        mock_logger,
+    )
+    with pytest.raises(sqlalchemy.exc.InvalidRequestError):
+        sw.update()
+        assert mock_logger.error.call_count == 1
 
 
 def test_SourceWidget_set_snippet(mocker):
