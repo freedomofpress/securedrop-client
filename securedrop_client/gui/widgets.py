@@ -1153,7 +1153,7 @@ class SourceWidget(QWidget):
             logger.error(f"Could not update SourceWidget for source {self.source_uuid}: {e}")
             raise
 
-    def set_snippet(self, source, uuid=None, content=None) -> None:
+    def set_snippet(self, source: str, uuid: str = None, content: str = None):
         """
         Update the preview snippet only if the new message is for the
         referenced source and there's a source collection. If a uuid and
