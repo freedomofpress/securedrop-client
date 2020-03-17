@@ -999,22 +999,37 @@ def test_SourceWidget_update_attachment_icon(mocker):
     assert sw.paperclip.isHidden()
 
 
-def test_SourceWidget_set_snippet(mocker):
+def test_SourceWidget_set_snippet(mocker, session_maker, session, homedir):
     """
     Snippets are set as expected.
     """
-    controller = mocker.MagicMock()
-    source = mocker.MagicMock()
-    source.uuid = "a_uuid"
-    source.journalist_designation = "Testy McTestface"
-    msg = factory.Message(content="abcdefg")
-    source.collection = [msg, ]
-    sw = SourceWidget(controller, source)
-    sw.set_snippet(source.uuid, msg.uuid, msg.content)
-    assert sw.preview.text() == "abcdefg"
+    mock_gui = mocker.MagicMock()
+    controller = logic.Controller('http://localhost', mock_gui, session_maker, homedir)
+    source = factory.Source(document_count=1)
+    f = factory.File(source=source)
+    session.add(f)
+    session.add(source)
+    session.commit()
 
-    sw.set_snippet('not-the-source-uuid', msg.uuid, 'something new')
-    assert sw.preview.text() == "abcdefg"
+    sw = SourceWidget(controller, source)
+    sw.set_snippet(source.uuid, f.uuid, f.filename)
+    assert sw.preview.text() == f.filename
+
+    # check when a different source is specified
+    sw.set_snippet("not-the-source-uuid", f.uuid, "something new")
+    assert sw.preview.text() == f.filename
+
+    # check when the source has been deleted
+    source_uuid = source.uuid
+    session.delete(source)
+    session.commit()
+    with pytest.raises(sqlalchemy.exc.InvalidRequestError):
+        error_logger = mocker.patch("securedrop_client.gui.widgets.logger.error")
+        sw.set_snippet(source_uuid, "some-uuid", "something new")
+        error_logger.assert_called_once_with(
+            f"Could not update snippet for source {source_uuid}: "
+        )
+    assert sw.preview.text() == ""
 
 
 def test_SourceWidget_update_truncate_latest_msg(mocker):

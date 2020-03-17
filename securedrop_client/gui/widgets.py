@@ -1150,11 +1150,7 @@ class SourceWidget(QWidget):
                 self.paperclip.hide()
             self.star.update()
         except sqlalchemy.exc.InvalidRequestError as e:
-            logger.error(
-                "Could not update SourceWidget for source %s: %s",
-                self.source.uuid,
-                e
-            )
+            logger.error(f"Could not update SourceWidget for source {self.source_uuid}: {e}")
             raise
 
     def set_snippet(self, source, uuid=None, content=None) -> None:
@@ -1164,17 +1160,22 @@ class SourceWidget(QWidget):
         content are passed then use these, otherwise default to whatever the
         latest item in the conversation might be.
         """
-        if source != self.source.uuid:
+        if source != self.source_uuid:
             return
 
-        if self.source.collection:
-            last_collection_object = self.source.collection[-1]
-            if uuid and uuid == last_collection_object.uuid and content:
-                self.preview.setText(content)
-            else:
-                self.preview.setText(str(last_collection_object))
-        else:
-            self.preview.setText("")
+        self.preview.setText("")
+
+        try:
+            self.controller.session.refresh(self.source)
+            if self.source.collection:
+                last_collection_object = self.source.collection[-1]
+                if uuid == last_collection_object.uuid and content:
+                    self.preview.setText(content)
+                else:
+                    self.preview.setText(str(last_collection_object))
+        except sqlalchemy.exc.InvalidRequestError as e:
+            logger.error(f"Could not update snippet for source {self.source_uuid}: {e}")
+            raise
 
     def delete_source(self, event):
         if self.controller.api is None:
