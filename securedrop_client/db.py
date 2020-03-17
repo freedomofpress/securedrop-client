@@ -108,7 +108,8 @@ class Message(Base):
     source_id = Column(Integer, ForeignKey('sources.id'), nullable=False)
     source = relationship("Source",
                           backref=backref("messages", order_by=id,
-                                          cascade="delete"))
+                                          cascade="delete"),
+                          lazy="joined")
 
     def __init__(self, **kwargs: Any) -> None:
         if 'file_counter' in kwargs:
@@ -174,7 +175,8 @@ class File(Base):
     source_id = Column(Integer, ForeignKey('sources.id'), nullable=False)
     source = relationship("Source",
                           backref=backref("files", order_by=id,
-                                          cascade="delete"))
+                                          cascade="delete"),
+                          lazy="joined")
 
     def __init__(self, **kwargs: Any) -> None:
         if 'file_counter' in kwargs:
@@ -221,7 +223,8 @@ class Reply(Base):
     source_id = Column(Integer, ForeignKey('sources.id'), nullable=False)
     source = relationship("Source",
                           backref=backref("replies", order_by=id,
-                                          cascade="delete"))
+                                          cascade="delete"),
+                          lazy="joined")
 
     journalist_id = Column(Integer, ForeignKey('users.id'))
     journalist = relationship(
@@ -291,7 +294,8 @@ class DraftReply(Base):
     source_id = Column(Integer, ForeignKey('sources.id'), nullable=False)
     source = relationship("Source",
                           backref=backref("draftreplies", order_by=id,
-                                          cascade="delete"))
+                                          cascade="delete"),
+                          lazy="joined")
     journalist_id = Column(Integer, ForeignKey('users.id'))
     journalist = relationship(
         "User", backref=backref('draftreplies', order_by=id))

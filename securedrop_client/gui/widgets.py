@@ -711,6 +711,7 @@ class MainView(QWidget):
         # Try to get the SourceConversationWrapper from the persistent dict,
         # else we create it.
         try:
+            logger.debug('Drawing source conversation for {}'.format(source.uuid))
             conversation_wrapper = self.source_conversations[source.uuid]
 
             # Redraw the conversation view such that new messages, replies, files appear.
@@ -2195,6 +2196,7 @@ class FileWidget(QWidget):
 
     def _set_file_state(self):
         if self.file.is_decrypted:
+            logger.debug('Changing file {} state to decrypted/downloaded'.format(self.uuid))
             self._set_file_name()
             self.download_button.hide()
             self.no_file_name.hide()
@@ -2203,6 +2205,7 @@ class FileWidget(QWidget):
             self.print_button.show()
             self.file_name.show()
         else:
+            logger.debug('Changing file {} state to not downloaded'.format(self.uuid))
             self.download_button.setText(_('DOWNLOAD'))
             # Ensure correct icon depending on mouse hover state.
             if self.download_button.underMouse():
@@ -3002,13 +3005,16 @@ class ConversationView(QWidget):
         # by another user (a journalist using the Web UI is able to delete individual
         # submissions).
         for item_widget in current_conversation.values():
+            logger.debug('Deleting item: {}'.format(item_widget.uuid))
             self.current_messages.pop(item_widget.uuid)
+            item_widget.deleteLater()
             self.conversation_layout.removeWidget(item_widget)
 
     def add_file(self, file: File, index):
         """
         Add a file from the source.
         """
+        logger.debug('Adding file for {}'.format(file.uuid))
         conversation_item = FileWidget(
             file.uuid,
             self.controller,

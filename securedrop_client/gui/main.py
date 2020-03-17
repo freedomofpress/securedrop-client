@@ -142,6 +142,12 @@ class Window(QMainWindow):
         self.login_dialog.accept()
         self.login_dialog = None
 
+    def refresh_current_source_conversation(self):
+        """
+        Update the current conversation if the source collection has changed.
+        """
+        self.main_view.on_source_changed()
+
     def show_sources(self, sources: List[Source]):
         """
         Update the left hand sources list in the UI with the passed in list of
