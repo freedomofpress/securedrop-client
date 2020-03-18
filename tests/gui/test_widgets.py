@@ -2509,14 +2509,19 @@ def test_FramelessDialog_center_dialog_with_no_active_window(mocker):
 
 def test_FramelessDialog_animation_of_activestate(mocker):
     dialog = FramelessDialog()
-    assert dialog.animation
-    dialog.animation.start = mocker.MagicMock()
-    dialog.animation.stop = mocker.MagicMock()
+    assert dialog.button_animation
+    dialog.button_animation.start = mocker.MagicMock()
+    dialog.button_animation.stop = mocker.MagicMock()
     dialog.continue_button = mocker.MagicMock()
+
+    # Check the animation frame is updated as expected.
+    dialog.animate_activestate()
+    assert dialog.continue_button.setIcon.call_count == 1
+    dialog.continue_button.reset_mock()
 
     # Check starting the animated state works as expected.
     dialog.start_animate_activestate()
-    dialog.animation.start.assert_called_once_with()
+    dialog.button_animation.start.assert_called_once_with()
     dialog.continue_button.setText.assert_called_once_with("")
     assert dialog.continue_button.setMinimumSize.call_count == 1
     assert dialog.continue_button.setStyleSheet.call_count == 1
@@ -2525,10 +2530,39 @@ def test_FramelessDialog_animation_of_activestate(mocker):
 
     # Check stopping the animated state works as expected.
     dialog.stop_animate_activestate()
-    dialog.animation.stop.assert_called_once_with()
+    dialog.button_animation.stop.assert_called_once_with()
     dialog.continue_button.setText.assert_called_once_with("CONTINUE")
     assert dialog.continue_button.setIcon.call_count == 1
     assert dialog.continue_button.setStyleSheet.call_count == 1
+
+
+def test_FramelessDialog_animation_of_header(mocker):
+    dialog = FramelessDialog()
+    assert dialog.header_animation
+    dialog.header_animation.start = mocker.MagicMock()
+    dialog.header_animation.stop = mocker.MagicMock()
+    dialog.header_icon.setVisible = mocker.MagicMock()
+    dialog.header_spinner_label.setVisible = mocker.MagicMock()
+    dialog.header_spinner_label.setPixmap = mocker.MagicMock()
+
+    # Check the animation frame is updated as expected.
+    dialog.animate_header()
+    assert dialog.header_spinner_label.setPixmap.call_count == 1
+
+    # Check starting the animated state works as expected.
+    dialog.start_animate_header()
+    dialog.header_animation.start.assert_called_once_with()
+    dialog.header_icon.setVisible.assert_called_once_with(False)
+    dialog.header_spinner_label.setVisible.assert_called_once_with(True)
+
+    dialog.header_icon.setVisible.reset_mock()
+    dialog.header_spinner_label.setVisible.reset_mock()
+
+    # Check stopping the animated state works as expected.
+    dialog.stop_animate_header()
+    dialog.header_animation.stop.assert_called_once_with()
+    dialog.header_icon.setVisible.assert_called_once_with(True)
+    dialog.header_spinner_label.setVisible.assert_called_once_with(False)
 
 
 def test_ExportDialog_init(mocker):
