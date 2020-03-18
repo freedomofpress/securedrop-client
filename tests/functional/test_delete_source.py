@@ -14,7 +14,7 @@ def test_delete_source_and_their_docs(qtbot, mocker):
     """
     It's possible to delete a source and see it removed from the UI.
     """
-    totp = "192894"
+    totp = "177711"
     tempdir = get_safe_tempdir()
     gui, controller = get_logged_in_test_context(tempdir, qtbot, totp)
     qtbot.wait(1000)
@@ -22,7 +22,7 @@ def test_delete_source_and_their_docs(qtbot, mocker):
     def check_for_sources():
         assert len(list(gui.main_view.source_list.source_widgets.keys()))
 
-    qtbot.waitUntil(check_for_sources, timeout=10000)
+    qtbot.waitUntil(check_for_sources, timeout=20000)
     source_ids = list(gui.main_view.source_list.source_widgets.keys())
     assert len(source_ids) == 2
     first_source_id = source_ids[0]
@@ -43,4 +43,4 @@ def test_delete_source_and_their_docs(qtbot, mocker):
         # Confirm there is now only one source in the client list.
         assert gui.main_view.source_list.count() == 1
 
-    qtbot.waitUntil(check_source_list, timeout=10000)
+    qtbot.waitUntil(check_source_list, timeout=20000)
