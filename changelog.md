@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.1.3
+
+* Update login UI messages (#903).
+* Add pending deletion status (#911).
+* Bug fix: Delete conversation in one place (#915).
+* Bug fix: Ensure that we delete individual submissions on disk (#923).
+* Bug fix: Ensure that sources are properly refreshed on sync (#916).
+* Bug fix: Fix word wrap in source (#926).
+* Bug fix: Preview oneline and no longer condense text (#931).
+* Bug fix: Ensure correct StarToggleButton signal handler state (#933).
+* Bug fix: Ensure StarToggleButton hover states honor offline status (#936).
+* Bug fix: Fix conversation refresh and syncing (#937).
+* Bug fix: Fix StarToggleButton hover leave (#941).
+* Bug fix: Make sure snippet is updated on submission deletion (#942).
+* Bug fix: Use the id of the widget, not the db object in get_current_source (#943).
+* Update MarkupSafe to 1.1.1 (#925).
+
 ## 0.1.2
 
  * Update branding bar artwork (#871).
