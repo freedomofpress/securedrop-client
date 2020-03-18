@@ -27,7 +27,7 @@ from uuid import uuid4
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QEvent, QTimer, QSize, pyqtBoundSignal, \
     QObject, QPoint
 from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient, QKeySequence, \
-    QCursor, QKeyEvent, QCloseEvent
+    QCursor, QKeyEvent, QCloseEvent, QPixmap
 from PyQt5.QtWidgets import QApplication, QListWidget, QLabel, QWidget, QListWidgetItem, \
     QHBoxLayout, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
     QToolButton, QSizePolicy, QPlainTextEdit, QStatusBar, QGraphicsDropShadowEffect, QPushButton, \
@@ -2383,7 +2383,7 @@ class FramelessDialog(QDialog):
         font-size: 12px;
         color: #2a319d;
     }
-    #header_icon {
+    #header_icon, #header_spinner {
         min-width: 80px;
         max-width: 80px;
         min-height: 64px;
@@ -2487,9 +2487,16 @@ class FramelessDialog(QDialog):
         header_container.setLayout(header_container_layout)
         self.header_icon = SvgLabel('blank.svg', svg_size=QSize(64, 64))
         self.header_icon.setObjectName('header_icon')
+        self.header_spinner = QPixmap()
+        self.header_spinner_label = QLabel()
+        self.header_spinner_label.setObjectName("header_spinner")
+        self.header_spinner_label.setMinimumSize(64, 64)
+        self.header_spinner_label.setVisible(False)
+        self.header_spinner_label.setPixmap(self.header_spinner)
         self.header = QLabel()
         self.header.setObjectName('header')
         header_container_layout.addWidget(self.header_icon)
+        header_container_layout.addWidget(self.header_spinner_label)
         header_container_layout.addWidget(self.header, alignment=Qt.AlignCenter)
         header_container_layout.addStretch()
 
@@ -2523,6 +2530,7 @@ class FramelessDialog(QDialog):
         self.continue_button = QPushButton(_('CONTINUE'))
         self.continue_button.setObjectName('primary_button')
         self.continue_button.setDefault(True)
+        self.continue_button.setIconSize(QSize(21, 21))
         button_box = QDialogButtonBox(Qt.Horizontal)
         button_box.setObjectName('button_box')
         button_box.addButton(self.cancel_button, QDialogButtonBox.ActionRole)
@@ -2542,9 +2550,14 @@ class FramelessDialog(QDialog):
         layout.addWidget(window_buttons)
 
         # Activestate animation.
-        self.animation = load_movie("activestate-spinner2.gif")
-        self.animation.setScaledSize(QSize(32, 32))
-        self.animation.frameChanged.connect(self.animate_activestate)
+        self.button_animation = load_movie("activestate-wide.gif")
+        self.button_animation.setScaledSize(QSize(32, 32))
+        self.button_animation.frameChanged.connect(self.animate_activestate)
+
+        # Header animation.
+        self.header_animation = load_movie("header_animation.gif")
+        self.header_animation.setScaledSize(QSize(64, 64))
+        self.header_animation.frameChanged.connect(self.animate_header)
 
     def closeEvent(self, event: QCloseEvent):
         # ignore any close event that doesn't come from our custom close method
@@ -2581,19 +2594,34 @@ class FramelessDialog(QDialog):
         self.move(x + x_center, y + y_center)
 
     def animate_activestate(self):
-        self.continue_button.setIcon(QIcon(self.animation.currentPixmap()))
+        self.continue_button.setIcon(QIcon(self.button_animation.currentPixmap()))
+
+    def animate_header(self):
+        self.header_spinner_label.setPixmap(self.header_animation.currentPixmap())
 
     def start_animate_activestate(self):
-        self.animation.start()
+        self.button_animation.start()
         self.continue_button.setText("")
         self.continue_button.setMinimumSize(QSize(150, 45))
-        self.continue_button.setStyleSheet("background-color: #f1f1f6; color: #fff;")
+        css = "background-color: #f1f1f6; color: #fff; border: None;"
+        self.continue_button.setStyleSheet(css)
+
+    def start_animate_header(self):
+        self.header_icon.setVisible(False)
+        self.header_spinner_label.setVisible(True)
+        self.header_animation.start()
 
     def stop_animate_activestate(self):
         self.continue_button.setIcon(QIcon())
-        self.animation.stop()
+        self.button_animation.stop()
         self.continue_button.setText(_('CONTINUE'))
-        self.continue_button.setStyleSheet("background-color: #2a319d; color: #fff;")
+        css = "background-color: #2a319d; color: #fff; border: 2px solid #2a319d;"
+        self.continue_button.setStyleSheet(css)
+
+    def stop_animate_header(self):
+        self.header_icon.setVisible(True)
+        self.header_spinner_label.setVisible(False)
+        self.header_animation.stop()
 
 
 class PrintDialog(FramelessDialog):
@@ -2642,7 +2670,6 @@ class PrintDialog(FramelessDialog):
         self.generic_error_message = _('See your administrator for help.')
 
         self._show_starting_instructions()
-        self.start_animate_activestate()
         self._run_preflight()
 
     def _show_starting_instructions(self):
@@ -2908,6 +2935,7 @@ class ExportDialog(FramelessDialog):
 
     @pyqtSlot()
     def _export_file(self, checked: bool = False):
+        self.start_animate_header()
         self.controller.export_file_to_usb_drive(self.file_uuid, self.passphrase_field.text())
 
     @pyqtSlot()
@@ -2927,10 +2955,12 @@ class ExportDialog(FramelessDialog):
 
     @pyqtSlot()
     def _on_export_success(self):
+        self.stop_animate_header()
         self._show_success_message()
 
     @pyqtSlot(object)
     def _on_export_failure(self, error: ExportError):
+        self.stop_animate_header()
         self._update_dialog(error.status)
 
     def _update_dialog(self, error_status: str):
