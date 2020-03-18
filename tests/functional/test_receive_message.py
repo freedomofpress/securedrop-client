@@ -16,7 +16,7 @@ def test_receive_message_from_source(qtbot, mocker):
     It's possible to receive a new message from a source and see it show up in
     the conversation window.
     """
-    totp = "625486"
+    totp = "795461"
     tempdir = get_safe_tempdir()
     gui, controller = get_logged_in_test_context(tempdir, qtbot, totp)
     qtbot.wait(1000)
@@ -26,7 +26,7 @@ def test_receive_message_from_source(qtbot, mocker):
 
     qtbot.waitUntil(check_for_sources, timeout=10000)
     source_ids = list(gui.main_view.source_list.source_widgets.keys())
-    first_source_id = source_ids[0]
+    first_source_id = source_ids[2]
     first_source_widget = gui.main_view.source_list.source_widgets[first_source_id]
     qtbot.mouseClick(first_source_widget, Qt.LeftButton)
 

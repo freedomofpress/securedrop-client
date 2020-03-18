@@ -21,7 +21,7 @@ def test_login_ensure_errors_displayed(qtbot, mocker):
     assert login_dialog.error_bar.error_status_bar.text() == ""
     qtbot.keyClicks(login_dialog.username_field, "journalist")
     qtbot.mouseClick(login_dialog.submit, Qt.LeftButton)
-    expected = "Please enter a username, password and two-factor code."
+    expected = "Please enter a username, passphrase and two-factor code."
     actual = login_dialog.error_bar.error_status_bar.text()
     assert actual == expected
 
