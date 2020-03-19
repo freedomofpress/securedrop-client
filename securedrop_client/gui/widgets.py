@@ -1188,7 +1188,7 @@ class SourceWidget(QWidget):
 
             if self.source.document_count == 0:
                 self.paperclip.hide()
-            self.star.update()
+            self.star.update(self.source.is_starred)
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.error(f"Could not update SourceWidget for source {self.source_uuid}: {e}")
             raise
@@ -1234,7 +1234,8 @@ class StarToggleButton(SvgToggleButton):
         super().__init__(on='star_on.svg', off='star_off.svg', svg_size=QSize(16, 16))
 
         self.controller = controller
-        self.source = source
+        self.source_uuid = source.uuid
+        self.is_starred = source.is_starred
 
         self.installEventFilter(self)
 
@@ -1257,7 +1258,7 @@ class StarToggleButton(SvgToggleButton):
         """
         self.disable_api_call()
         self.setCheckable(False)
-        if self.source.is_starred:
+        if self.is_starred:
             self.set_icon(on='star_on.svg', off='star_on.svg')
 
         try:
@@ -1281,7 +1282,7 @@ class StarToggleButton(SvgToggleButton):
         self.enable_api_call()
         self.setCheckable(True)
         self.set_icon(on='star_on.svg', off='star_off.svg')
-        self.setChecked(self.source.is_starred)
+        self.setChecked(self.is_starred)
 
         try:
             while True:
@@ -1306,7 +1307,7 @@ class StarToggleButton(SvgToggleButton):
             if checkable:
                 self.set_icon(on='star_on.svg', off='star_off.svg')
             else:
-                if self.source.is_starred:
+                if self.is_starred:
                     self.set_icon(on='star_on.svg', off='star_on.svg')
         return QObject.event(obj, event)
 
@@ -1325,7 +1326,7 @@ class StarToggleButton(SvgToggleButton):
         Tell the controller to make an API call to update the source's starred field.
         """
         if self.is_api_call_enabled:
-            self.controller.update_star(self.source)
+            self.controller.update_star(self.source_uuid, self.is_starred)
 
     def on_toggle_offline(self):
         """
@@ -1333,14 +1334,14 @@ class StarToggleButton(SvgToggleButton):
         """
         self.controller.on_action_requiring_login()
 
-    def update(self):
+    def update(self, is_starred: bool):
         """
         Update the star to reflect its source's current state.
         """
-        self.controller.session.refresh(self.source)
-        self.disable_api_call()
-        self.setChecked(self.source.is_starred)
-        self.enable_api_call()
+        if not self.controller.is_authenticated():
+            return
+
+        self.setChecked(self.is_starred)
 
     def disable_api_call(self):
         self.is_api_call_enabled = False
@@ -1467,7 +1468,7 @@ class SignInButton(QPushButton):
         effect.setBlurRadius(8)
         effect.setColor(QColor('#aa000000'))
         self.setGraphicsEffect(effect)
-        self.update()
+        self.selectedIndexes
 
 
 class LoginErrorBar(QWidget):

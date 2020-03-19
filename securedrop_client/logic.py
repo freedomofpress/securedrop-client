@@ -505,11 +505,11 @@ class Controller(QObject):
         self.gui.update_error_status(_('Failed to update star.'))
 
     @login_required
-    def update_star(self, source_db_object):
+    def update_star(self, source_uuid: str, is_starred: bool):
         """
         Star or unstar.
         """
-        job = UpdateStarJob(source_db_object.uuid, source_db_object.is_starred)
+        job = UpdateStarJob(source_uuid, is_starred)
         job.success_signal.connect(self.on_update_star_success, type=Qt.QueuedConnection)
         job.failure_signal.connect(self.on_update_star_failure, type=Qt.QueuedConnection)
 
