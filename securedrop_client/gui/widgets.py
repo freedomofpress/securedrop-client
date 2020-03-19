@@ -2273,8 +2273,8 @@ class FileWidget(QWidget):
         if not self.controller.downloaded_file_exists(self.file):
             return
 
-        dialog = ExportDialog(self.controller, self.uuid, self.file.filename)
-        dialog.exec()
+        self.export_dialog = ExportDialog(self.controller, self.uuid, self.file.filename)
+        self.export_dialog.show()
 
     @pyqtSlot()
     def _on_print_clicked(self):
