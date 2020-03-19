@@ -2602,8 +2602,16 @@ class FramelessDialog(QDialog):
     def start_animate_activestate(self):
         self.button_animation.start()
         self.continue_button.setText("")
-        self.continue_button.setMinimumSize(QSize(150, 45))
-        css = "background-color: #f1f1f6; color: #fff; border: None;"
+        self.continue_button.setMinimumSize(QSize(142, 43))
+        css = """
+        background-color: #f1f1f6;
+        color: #fff;
+        border: 2px solid #f1f1f6;
+        margin: 0px 0px 0px 12px;
+        height: 40px;
+        padding-left: 20px;
+        padding-right: 20px;
+        """
         self.continue_button.setStyleSheet(css)
 
     def start_animate_header(self):
@@ -2644,11 +2652,13 @@ class PrintDialog(FramelessDialog):
         # Connect parent signals to slots
         self.continue_button.setEnabled(False)
 
-        self.header_icon.update_image('printer.svg', svg_size=QSize(64, 64))
-
         # Dialog content
         self.starting_header = _(
             'Preparing to print:'
+            '<br />'
+            '<span style="font-weight:normal">{}</span>'.format(self.file_name))
+        self.ready_header = _(
+            'Ready to print:'
             '<br />'
             '<span style="font-weight:normal">{}</span>'.format(self.file_name))
         self.insert_usb_header = _('Connect USB printer')
@@ -2670,6 +2680,7 @@ class PrintDialog(FramelessDialog):
         self.generic_error_message = _('See your administrator for help.')
 
         self._show_starting_instructions()
+        self.start_animate_header()
         self._run_preflight()
 
     def _show_starting_instructions(self):
@@ -2710,6 +2721,9 @@ class PrintDialog(FramelessDialog):
     @pyqtSlot()
     def _on_preflight_success(self):
         # If the continue button is disabled then this is the result of a background preflight check
+        self.stop_animate_header()
+        self.header_icon.update_image('printer.svg', svg_size=QSize(64, 64))
+        self.header.setText(self.ready_header)
         if not self.continue_button.isEnabled():
             self.continue_button.clicked.disconnect()
             self.continue_button.clicked.connect(self._print_file)
@@ -2720,6 +2734,8 @@ class PrintDialog(FramelessDialog):
 
     @pyqtSlot(object)
     def _on_preflight_failure(self, error: ExportError):
+        self.stop_animate_header()
+        self.header_icon.update_image('printer.svg', svg_size=QSize(64, 64))
         self.error_status = error.status
         # If the continue button is disabled then this is the result of a background preflight check
         if not self.continue_button.isEnabled():
@@ -2778,11 +2794,13 @@ class ExportDialog(FramelessDialog):
         # Connect parent signals to slots
         self.continue_button.setEnabled(False)
 
-        self.header_icon.update_image('savetodisk.svg', QSize(64, 64))
-
         # Dialog content
         self.starting_header = _(
             'Preparing to export:'
+            '<br />'
+            '<span style="font-weight:normal">{}</span>'.format(self.file_name))
+        self.ready_header = _(
+            'Ready to export:'
             '<br />'
             '<span style="font-weight:normal">{}</span>'.format(self.file_name))
         self.insert_usb_header = _('Insert encrypted USB drive')
@@ -2842,6 +2860,7 @@ class ExportDialog(FramelessDialog):
         self.passphrase_form.hide()
 
         self._show_starting_instructions()
+        self.start_animate_header()
         self._run_preflight()
 
     def _show_starting_instructions(self):
@@ -2935,12 +2954,15 @@ class ExportDialog(FramelessDialog):
 
     @pyqtSlot()
     def _export_file(self, checked: bool = False):
-        self.start_animate_header()
+        self.start_animate_activestate()
         self.controller.export_file_to_usb_drive(self.file_uuid, self.passphrase_field.text())
 
     @pyqtSlot()
     def _on_preflight_success(self):
         # If the continue button is disabled then this is the result of a background preflight check
+        self.stop_animate_header()
+        self.header_icon.update_image('savetodisk.svg', QSize(64, 64))
+        self.header.setText(self.ready_header)
         if not self.continue_button.isEnabled():
             self.continue_button.clicked.disconnect()
             self.continue_button.clicked.connect(self._show_passphrase_request_message)
@@ -2951,16 +2973,18 @@ class ExportDialog(FramelessDialog):
 
     @pyqtSlot(object)
     def _on_preflight_failure(self, error: ExportError):
+        self.stop_animate_header()
+        self.header_icon.update_image('savetodisk.svg', QSize(64, 64))
         self._update_dialog(error.status)
 
     @pyqtSlot()
     def _on_export_success(self):
-        self.stop_animate_header()
+        self.stop_animate_activestate()
         self._show_success_message()
 
     @pyqtSlot(object)
     def _on_export_failure(self, error: ExportError):
-        self.stop_animate_header()
+        self.stop_animate_activestate()
         self._update_dialog(error.status)
 
     def _update_dialog(self, error_status: str):
