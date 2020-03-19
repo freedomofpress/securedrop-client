@@ -1237,117 +1237,104 @@ class StarToggleButton(SvgToggleButton):
         self.source_uuid = source.uuid
         self.is_starred = source.is_starred
 
+        self.controller.authentication_state.connect(self.on_authentication_changed)
         self.installEventFilter(self)
 
         self.setObjectName('star_button')
         self.setStyleSheet(self.css)
         self.setFixedSize(QSize(20, 20))
 
-        self.controller.authentication_state.connect(self.on_authentication_changed)
-        self.on_authentication_changed(self.controller.is_authenticated)
-
-    def disable(self):
-        """
-        Disable the widget.
-
-        Disable toggle by setting checkable to False. Unfortunately,
-        disabling toggle doesn't freeze state, rather it always
-        displays the off state when a user tries to toggle. In order
-        to save on state we update the icon's off state image to
-        display on (hack).
-        """
-        self.disable_api_call()
-        self.setCheckable(False)
-        if self.is_starred:
-            self.set_icon(on='star_on.svg', off='star_on.svg')
-
-        try:
-            while True:
-                self.pressed.disconnect(self.on_toggle_offline)
-        except Exception as e:
-            logger.warning("Could not disconnect on_toggle_offline from self.pressed: %s", e)
-
-        try:
-            while True:
-                self.toggled.disconnect(self.on_toggle)
-        except Exception as e:
-            logger.warning("Could not disconnect on_toggle from self.toggled: %s", e)
-
-        self.pressed.connect(self.on_toggle_offline)
-
-    def enable(self):
-        """
-        Enable the widget.
-        """
-        self.enable_api_call()
+        self.pressed.connect(self.on_pressed)
         self.setCheckable(True)
-        self.set_icon(on='star_on.svg', off='star_off.svg')
         self.setChecked(self.is_starred)
 
-        try:
-            while True:
-                self.toggled.disconnect(self.on_toggle)
-        except Exception:
-            pass
+        if not self.controller.is_authenticated:
+            self.disable_toggle()
 
-        try:
-            while True:
-                self.pressed.disconnect(self.on_toggle_offline)
-        except Exception:
-            pass
+    def disable_toggle(self):
+        """
+        Unset `checkable` so that the star cannot be toggled.
 
-        self.toggled.connect(self.on_toggle)
+        Disconnect the `pressed` signal from previous handler and connect it to the offline handler.
+        """
+        self.pressed.disconnect()
+        self.pressed.connect(self.on_pressed_offline)
+
+        # If the source is starred, we must update the icon so that the off state continues to show
+        # the source as starred. We could instead disable the button, which will continue to show
+        # the star as checked, but Qt will also gray out the star, which we don't want.
+        if self.is_starred:
+            self.set_icon(on='star_on.svg', off='star_on.svg')
+        self.setCheckable(False)
+
+    def enable_toggle(self):
+        """
+        Enable the widget.
+
+        Disconnect the pressed signal from previous handler, set checkable so that the star can be
+        toggled, and connect to the online toggle handler.
+
+        Note: We must update the icon in case it was modified after being disabled.
+        """
+        self.pressed.disconnect()
+        self.pressed.connect(self.on_pressed)
+        self.setCheckable(True)
+        self.set_icon(on='star_on.svg', off='star_off.svg')  # Undo icon change from disable_toggle
 
     def eventFilter(self, obj, event):
-        checkable = self.isCheckable()
+        """
+        If the button is checkable then we show a hover state.
+        """
+        if not self.isCheckable():
+            return QObject.event(obj, event)
+
         t = event.type()
-        if t == QEvent.HoverEnter and checkable:
+        if t == QEvent.HoverEnter:
             self.setIcon(load_icon('star_hover.svg'))
         elif t == QEvent.HoverLeave:
-            if checkable:
-                self.set_icon(on='star_on.svg', off='star_off.svg')
-            else:
-                if self.is_starred:
-                    self.set_icon(on='star_on.svg', off='star_on.svg')
+            self.set_icon(on='star_on.svg', off='star_off.svg')
+
         return QObject.event(obj, event)
 
-    def on_authentication_changed(self, authenticated: bool):
+    @pyqtSlot(bool)
+    def on_authentication_changed(self, authenticated: bool) -> None:
         """
         Set up handlers based on whether or not the user is authenticated. Connect to 'pressed'
         event instead of 'toggled' event when not authenticated because toggling will be disabled.
         """
         if authenticated:
-            self.enable()
+            self.enable_toggle()
+            self.setChecked(self.is_starred)
         else:
-            self.disable()
+            self.disable_toggle()
 
-    def on_toggle(self):
+    @pyqtSlot()
+    def on_pressed(self) -> None:
         """
         Tell the controller to make an API call to update the source's starred field.
         """
-        if self.is_api_call_enabled:
-            self.controller.update_star(self.source_uuid, self.is_starred)
+        self.controller.update_star(self.source_uuid, self.isChecked())
+        self.is_starred = not self.is_starred
 
-    def on_toggle_offline(self):
+    @pyqtSlot()
+    def on_pressed_offline(self) -> None:
         """
         Show error message when not authenticated.
         """
         self.controller.on_action_requiring_login()
 
-    def update(self, is_starred: bool):
+    @pyqtSlot(bool)
+    def update(self, is_starred: bool) -> None:
         """
-        Update the star to reflect its source's current state.
+        If star was updated via the Journalist Interface or by another instance of the client, then
+        self.is_starred will not match the server and will need to be updated.
         """
-        if not self.controller.is_authenticated():
+        if not self.controller.is_authenticated:
             return
 
-        self.setChecked(self.is_starred)
-
-    def disable_api_call(self):
-        self.is_api_call_enabled = False
-
-    def enable_api_call(self):
-        self.is_api_call_enabled = True
+        if self.is_starred != is_starred:
+            self.is_starred = is_starred
+            self.setChecked(self.is_starred)
 
 
 class DeleteSourceMessageBox:
