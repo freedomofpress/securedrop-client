@@ -190,6 +190,14 @@ class Controller(QObject):
     """
     source_deleted = pyqtSignal(str)
 
+    """
+    This signal indicates that a star update request failed.
+
+    Emits:
+        str: the source UUID
+    """
+    star_update_failed = pyqtSignal(str)
+
     def __init__(self, hostname: str, gui, session_maker: sessionmaker,
                  home: str, proxy: bool = True, qubes: bool = True) -> None:
         """
@@ -501,8 +509,9 @@ class Controller(QObject):
     def on_update_star_success(self, result) -> None:
         pass
 
-    def on_update_star_failure(self, result: UpdateStarJobException) -> None:
+    def on_update_star_failure(self, error: UpdateStarJobException) -> None:
         self.gui.update_error_status(_('Failed to update star.'))
+        self.gui.star_update_failed.emit(error.source_uuid, error.is_starred)
 
     @login_required
     def update_star(self, source_uuid: str, is_starred: bool):

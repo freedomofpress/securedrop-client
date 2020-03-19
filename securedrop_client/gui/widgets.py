@@ -1238,6 +1238,7 @@ class StarToggleButton(SvgToggleButton):
         self.is_starred = source.is_starred
 
         self.controller.authentication_state.connect(self.on_authentication_changed)
+        self.controller.star_update_failed.connect(self.on_star_update_failed)
         self.installEventFilter(self)
 
         self.setObjectName('star_button')
@@ -1335,6 +1336,15 @@ class StarToggleButton(SvgToggleButton):
         if self.is_starred != is_starred:
             self.is_starred = is_starred
             self.setChecked(self.is_starred)
+
+    @pyqtSlot(str)
+    def on_star_update_failed(self, source_uuid: str, is_starred: bool) -> None:
+        """
+        If the star update failed to update on the server, toggle back to previous state.
+        """
+        if self.source_uuid == source_uuid:
+            self.is_starred = is_starred
+            self.setChecked(is_starred)
 
 
 class DeleteSourceMessageBox:
@@ -1456,7 +1466,7 @@ class SignInButton(QPushButton):
         effect.setBlurRadius(8)
         effect.setColor(QColor('#aa000000'))
         self.setGraphicsEffect(effect)
-        self.selectedIndexes
+        self.update()
 
 
 class LoginErrorBar(QWidget):
