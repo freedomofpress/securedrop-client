@@ -493,10 +493,8 @@ class Controller(QObject):
         """
         Display the updated list of sources with those found in local storage.
         """
-        sources = list(storage.get_local_sources(self.session))
-        if sources:
-            sources.sort(key=lambda x: x.last_updated)
-        self.gui.show_sources(sources)
+        source_uuids = list(storage.get_local_source_uuids(self.session))
+        self.gui.show_sources(source_uuids)
 
     def on_update_star_success(self, result) -> None:
         pass
@@ -837,6 +835,11 @@ class Controller(QObject):
         file = storage.get_file(self.session, file_uuid)
         self.session.refresh(file)
         return file
+
+    def get_source(self, source_uuid: str) -> db.Source:
+        source = storage.get_source(self.session, source_uuid)
+        self.session.refresh(source)
+        return source
 
     def on_logout_success(self, result) -> None:
         logging.info('Client logout successful')

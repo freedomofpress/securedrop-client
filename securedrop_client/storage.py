@@ -48,6 +48,17 @@ def get_local_sources(session: Session) -> List[Source]:
     return session.query(Source).all()
 
 
+def get_local_source_uuids(session: Session) -> List[Source]:
+    """
+    Return all source uuids from the local database in order of oldest to newest.
+    """
+    sources = list(get_local_sources(session))
+    if sources:
+        sources.sort(key=lambda x: x.last_updated)
+
+    return [source.uuid for source in sources]
+
+
 def delete_local_source_by_uuid(session: Session, uuid: str, data_dir: str) -> None:
     """
     Delete the source with the referenced UUID.
@@ -562,6 +573,10 @@ def source_exists(session: Session, source_uuid: str) -> bool:
         return True
     except NoResultFound:
         return False
+
+
+def get_source(session: Session, uuid: str) -> Source:
+    return session.query(Source).filter_by(uuid=uuid).one()
 
 
 def get_file(session: Session, uuid: str) -> File:
