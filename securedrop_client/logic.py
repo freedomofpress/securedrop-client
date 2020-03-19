@@ -677,7 +677,7 @@ class Controller(QObject):
             return
 
         command = "qvm-open-in-vm"
-        args = ['$dispvm:sd-viewer', file.location(self.data_dir)]
+        args = ['--view-only', '$dispvm:sd-viewer', file.location(self.data_dir)]
         process = QProcess(self)
         process.start(command, args)
 
