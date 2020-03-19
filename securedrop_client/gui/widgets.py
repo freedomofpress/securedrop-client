@@ -912,16 +912,26 @@ class SourceList(QListWidget):
 
     def update(self, sources: List[Source]) -> List[str]:
         """
-        Update the list with the passed in list of sources.
+        Update the list with the passed in list of sources and return the list of uuids of sources
+        that were deleted so that later their corresponding conversation widgets can be deleted.
         """
-        # Delete widgets that no longer exist in source list
-        source_uuids = [source.uuid for source in sources]
         deleted_uuids = []
+
+        # Update all existing widgets in case there was an update made via the Journalist
+        # Interface or by another instance of the client.
+        #
+        # Otherwise, delete all existing widgets that are not in the provided `sources` list.
+        source_uuids = [source.uuid for source in sources]
         for i in range(self.count()):
             list_item = self.item(i)
             list_widget = self.itemWidget(list_item)
 
-            if list_widget and list_widget.source_uuid not in source_uuids:
+            if not list_widget:
+                continue
+
+            if list_widget.source_uuid in source_uuids:
+                list_widget.update()
+            else:
                 if list_item.isSelected():
                     self.setCurrentItem(None)
 
@@ -934,24 +944,12 @@ class SourceList(QListWidget):
                 deleted_uuids.append(list_widget.source_uuid)
                 list_widget.deleteLater()
 
-        # Create new widgets for new sources
+        # Create and add new widgets to the source list for new sources.
         widget_uuids = [self.itemWidget(self.item(i)).source_uuid for i in range(self.count())]
-        for source in sources:
-            if source.uuid in widget_uuids:
-                try:
-                    self.source_widgets[source.uuid].update()
-                except sqlalchemy.exc.InvalidRequestError as e:
-                    logger.error(
-                        "Could not update SourceWidget for source %s; deleting it. Error was: %s",
-                        source.uuid,
-                        e
-                    )
-                    deleted_uuids.append(source.uuid)
-                    self.source_widgets[source.uuid].deleteLater()
-                    del self.source_widgets[list_widget.source_uuid]
-            else:
-                new_source = SourceWidget(self.controller, source)
-                self.source_widgets[source.uuid] = new_source
+        for source_uuid in source_uuids:
+            if source_uuid not in widget_uuids:
+                new_source = SourceWidget(self.controller, source_uuid)
+                self.source_widgets[source_uuid] = new_source
 
                 list_item = QListWidgetItem()
                 self.insertItem(0, list_item)
@@ -1157,25 +1155,28 @@ class SourceWidget(QWidget):
 
     def update(self):
         """
-        Updates the displayed values with the current values from self.source.
+        Syncs the source widget with the source stored in the database. If the source in the
+        database no longer exists, then log an error and wait for the next sync to delete this
+        widget.
         """
         try:
-            self.controller.session.refresh(self.source)
-            self.timestamp.setText(_(arrow.get(self.source.last_updated).format('DD MMM')))
-            self.name.setText(self.source.journalist_designation)
+            source = self.controller.get_source(self.source_uuid)
 
-            if not self.source.collection:
-                self.set_snippet(self.source_uuid, '')
+            self.timestamp.setText(_(arrow.get(source.last_updated).format('DD MMM')))
+            self.name.setText(source.journalist_designation)
+
+            if not source.collection:
+                self.set_snippet(source.uuid, '')
             else:
-                last_collection_obj = self.source.collection[-1]
-                self.set_snippet(self.source_uuid, str(last_collection_obj))
+                last_collection_obj = source.collection[-1]
+                self.set_snippet(source.uuid, str(last_collection_obj))
 
-            if self.source.document_count == 0:
+            if source.document_count == 0:
                 self.paperclip.hide()
+
             self.star.update()
         except sqlalchemy.exc.InvalidRequestError as e:
-            logger.error(f"Could not update SourceWidget for source {self.source_uuid}: {e}")
-            raise
+            logger.error(f'Could not update SourceWidget for source {self.source_uuid}: {e}')
 
     def set_snippet(self, source_uuid: str, content: str):
         """
