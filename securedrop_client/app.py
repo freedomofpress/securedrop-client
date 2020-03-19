@@ -94,7 +94,6 @@ def configure_logging(sdc_home: str) -> None:
                                        backupCount=5, delay=False,
                                        encoding=ENCODING)
     handler.setFormatter(formatter)
-    handler.setLevel(logging.DEBUG)
 
     # For rsyslog handler
     if platform.system() != "Linux":  # pragma: no cover
@@ -104,7 +103,6 @@ def configure_logging(sdc_home: str) -> None:
 
     sysloghandler = SysLogHandler(address=syslog_file)
     sysloghandler.setFormatter(formatter)
-    handler.setLevel(logging.DEBUG)
 
     # set up primary log
     log = logging.getLogger()
