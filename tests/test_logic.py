@@ -1301,7 +1301,7 @@ def test_Controller_on_message_downloaded_checksum_failure(mocker, homedir, sess
 
 def test_Controller_on_delete_source_success(mocker, homedir):
     '''
-    Test that on a successful deletion request to the server that we emit a signal back to the gui.
+    Test that on a successful deletion does not delete the source locally (regression).
     '''
     co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
     co.source_deleted = mocker.MagicMock()
@@ -1310,7 +1310,6 @@ def test_Controller_on_delete_source_success(mocker, homedir):
     co.on_delete_source_success('uuid')
 
     storage.delete_local_source_by_uuid.assert_not_called()
-    co.source_deleted.emit.assert_called_once_with('uuid')
 
 
 def test_Controller_on_delete_source_failure(homedir, config, mocker, session_maker):
@@ -1347,15 +1346,13 @@ def test_Controller_delete_source(homedir, config, mocker, session_maker, sessio
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
     co.call_api = mocker.MagicMock()
     co.api = mocker.MagicMock()
+    co.source_deleted = mocker.MagicMock()
 
     mock_success_signal = mocker.MagicMock()
     mock_failure_signal = mocker.MagicMock()
     mock_job = mocker.MagicMock(
-        success_signal=mock_success_signal, failure_signal=mock_failure_signal
-    )
-    mock_job_cls = mocker.patch(
-        "securedrop_client.logic.DeleteSourceJob", return_value=mock_job
-    )
+        success_signal=mock_success_signal, failure_signal=mock_failure_signal)
+    mock_job_cls = mocker.patch("securedrop_client.logic.DeleteSourceJob", return_value=mock_job)
     mock_queue = mocker.patch.object(co, 'api_job_queue')
 
     source = factory.Source()
@@ -1363,14 +1360,14 @@ def test_Controller_delete_source(homedir, config, mocker, session_maker, sessio
     session.commit()
 
     co.delete_source(source)
+
+    co.source_deleted.emit.assert_called_once_with(source.uuid)
     mock_job_cls.assert_called_once_with(source.uuid)
     mock_queue.enqueue.assert_called_once_with(mock_job)
     mock_success_signal.connect.assert_called_once_with(
-        co.on_delete_source_success, type=Qt.QueuedConnection
-    )
+        co.on_delete_source_success, type=Qt.QueuedConnection)
     mock_failure_signal.connect.assert_called_once_with(
-        co.on_delete_source_failure, type=Qt.QueuedConnection
-    )
+        co.on_delete_source_failure, type=Qt.QueuedConnection)
 
 
 def test_Controller_send_reply_success(homedir, config, mocker, session_maker, session,

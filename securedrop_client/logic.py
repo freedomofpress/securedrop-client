@@ -761,7 +761,7 @@ class Controller(QObject):
         """
         Rely on sync to delete the source locally so we know for sure it was deleted
         """
-        self.source_deleted.emit(source_uuid)
+        pass
 
     def on_delete_source_failure(self, e: Exception) -> None:
         if not isinstance(e, (RequestTimeoutError, ServerConnectionError)):
@@ -783,6 +783,7 @@ class Controller(QObject):
         job.failure_signal.connect(self.on_delete_source_failure, type=Qt.QueuedConnection)
 
         self.api_job_queue.enqueue(job)
+        self.source_deleted.emit(source.uuid)
 
     @login_required
     def send_reply(self, source_uuid: str, reply_uuid: str, message: str) -> None:
