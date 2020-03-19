@@ -1236,9 +1236,12 @@ class StarToggleButton(SvgToggleButton):
         self.controller = controller
         self.source_uuid = source.uuid
         self.is_starred = source.is_starred
+        self.pending_count = 0
+        self.wait_until_next_sync = False
 
         self.controller.authentication_state.connect(self.on_authentication_changed)
         self.controller.star_update_failed.connect(self.on_star_update_failed)
+        self.controller.star_update_successful.connect(self.on_star_update_successful)
         self.installEventFilter(self)
 
         self.setObjectName('star_button')
@@ -1304,6 +1307,7 @@ class StarToggleButton(SvgToggleButton):
         event instead of 'toggled' event when not authenticated because toggling will be disabled.
         """
         if authenticated:
+            self.pending_count = 0
             self.enable_toggle()
             self.setChecked(self.is_starred)
         else:
@@ -1316,6 +1320,8 @@ class StarToggleButton(SvgToggleButton):
         """
         self.controller.update_star(self.source_uuid, self.isChecked())
         self.is_starred = not self.is_starred
+        self.pending_count = self.pending_count + 1
+        self.wait_until_next_sync = True
 
     @pyqtSlot()
     def on_pressed_offline(self) -> None:
@@ -1333,6 +1339,16 @@ class StarToggleButton(SvgToggleButton):
         if not self.controller.is_authenticated:
             return
 
+        # Wait until ongoing star jobs are finished before checking if it matches with the server
+        if self.pending_count > 0:
+            return
+
+        # Wait until next sync to avoid the possibility of updating the star with outdated source
+        # information in case the server just received the star request.
+        if self.wait_until_next_sync:
+            self.wait_until_next_sync = False
+            return
+
         if self.is_starred != is_starred:
             self.is_starred = is_starred
             self.setChecked(self.is_starred)
@@ -1345,6 +1361,15 @@ class StarToggleButton(SvgToggleButton):
         if self.source_uuid == source_uuid:
             self.is_starred = is_starred
             self.setChecked(is_starred)
+            self.pending_count = self.pending_count - 1
+
+    @pyqtSlot(str)
+    def on_star_update_successful(self, source_uuid: str) -> None:
+        """
+        If the star update succeeded, set pending to False so the sync can update the star field
+        """
+        if self.source_uuid == source_uuid:
+            self.pending_count = self.pending_count - 1
 
 
 class DeleteSourceMessageBox:

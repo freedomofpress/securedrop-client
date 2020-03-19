@@ -34,14 +34,13 @@ from sqlalchemy.orm.session import sessionmaker
 from securedrop_client import storage
 from securedrop_client import db
 from securedrop_client.api_jobs.base import ApiInaccessibleError
-from securedrop_client.api_jobs.downloads import (
-    DownloadChecksumMismatchException, DownloadDecryptionException, FileDownloadJob,
-    MessageDownloadJob, ReplyDownloadJob,
-)
+from securedrop_client.api_jobs.downloads import DownloadChecksumMismatchException, \
+    DownloadDecryptionException, FileDownloadJob, MessageDownloadJob, ReplyDownloadJob
 from securedrop_client.api_jobs.sources import DeleteSourceJob
 from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobError, \
     SendReplyJobTimeoutError
-from securedrop_client.api_jobs.updatestar import UpdateStarJob, UpdateStarJobException
+from securedrop_client.api_jobs.updatestar import UpdateStarJob, UpdateStarJobError, \
+    UpdateStarJobTimeoutError
 from securedrop_client.crypto import GpgHelper
 from securedrop_client.export import Export
 from securedrop_client.queue import ApiJobQueue
@@ -189,6 +188,14 @@ class Controller(QObject):
         str: the source UUID
     """
     source_deleted = pyqtSignal(str)
+
+    """
+    This signal indicates that a star update request succeeded.
+
+    Emits:
+        str: the source UUID
+    """
+    star_update_successful = pyqtSignal(str)
 
     """
     This signal indicates that a star update request failed.
@@ -506,12 +513,16 @@ class Controller(QObject):
             sources.sort(key=lambda x: x.last_updated)
         self.gui.show_sources(sources)
 
-    def on_update_star_success(self, result) -> None:
-        pass
+    def on_update_star_success(self, source_uuid: str) -> None:
+        self.star_update_successful.emit(source_uuid)
 
-    def on_update_star_failure(self, error: UpdateStarJobException) -> None:
-        self.gui.update_error_status(_('Failed to update star.'))
-        self.gui.star_update_failed.emit(error.source_uuid, error.is_starred)
+    def on_update_star_failure(
+        self,
+        error: Union[UpdateStarJobError, UpdateStarJobTimeoutError]
+    ) -> None:
+        if isinstance(error, UpdateStarJobError):
+            self.gui.update_error_status(_('Failed to update star.'))
+            self.star_update_failed.emit(error.source_uuid, error.is_starred)
 
     @login_required
     def update_star(self, source_uuid: str, is_starred: bool):
@@ -814,12 +825,7 @@ class Controller(QObject):
         self.session.add(draft_reply)
         self.session.commit()
 
-        job = SendReplyJob(
-            source_uuid,
-            reply_uuid,
-            message,
-            self.gpg,
-        )
+        job = SendReplyJob(source_uuid, reply_uuid, message, self.gpg)
         job.success_signal.connect(self.on_reply_success, type=Qt.QueuedConnection)
         job.failure_signal.connect(self.on_reply_failure, type=Qt.QueuedConnection)
 
