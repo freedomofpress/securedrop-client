@@ -833,6 +833,11 @@ class Controller(QObject):
         if isinstance(exception, SendReplyJobError):
             self.reply_failed.emit(exception.reply_uuid)
 
+    def get_source(self, source_uuid: str) -> db.Source:
+        source = storage.get_source(self.session, source_uuid)
+        self.session.refresh(source)
+        return source
+
     def get_file(self, file_uuid: str) -> db.File:
         file = storage.get_file(self.session, file_uuid)
         self.session.refresh(file)

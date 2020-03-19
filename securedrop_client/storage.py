@@ -564,6 +564,10 @@ def source_exists(session: Session, source_uuid: str) -> bool:
         return False
 
 
+def get_source(session: Session, uuid: str) -> Source:
+    return session.query(Source).filter_by(uuid=uuid).one()
+
+
 def get_file(session: Session, uuid: str) -> File:
     return session.query(File).filter_by(uuid=uuid).one()
 

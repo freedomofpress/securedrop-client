@@ -959,10 +959,13 @@ class SourceList(QListWidget):
         return deleted_uuids
 
     def get_current_source(self):
-        source_item = self.currentItem()
-        source_widget = self.itemWidget(source_item)
-        if source_widget and source_exists(self.controller.session, source_widget.source_uuid):
-            return source_widget.source
+        try:
+            source_item = self.currentItem()
+            source_widget = self.itemWidget(source_item)
+            if source_widget:
+                return self.controller.get_source(source_widget.source_uuid)
+        except sqlalchemy.exc.InvalidRequestError:
+            pass
 
     def get_source_widget(self, source_uuid: str) -> QListWidget:
         '''
@@ -1062,16 +1065,14 @@ class SourceWidget(QWidget):
     PREVIEW_WIDTH = 412
     PREVIEW_HEIGHT = 60
 
-    def __init__(self, controller: Controller, source: Source):
+    def __init__(self, controller: Controller, source_uuid: str):
         super().__init__()
 
         self.controller = controller
         self.controller.source_deleted.connect(self._on_source_deleted)
 
-        # Store source
-        self.source_uuid = source.uuid
-        self.source = source
-        self.source_uuid = source.uuid
+        # Store source uuid
+        self.source_uuid = source_uuid
 
         # Set styles
         self.setStyleSheet(self.CSS)
@@ -1097,7 +1098,14 @@ class SourceWidget(QWidget):
         gutter_layout = QVBoxLayout(self.gutter)
         gutter_layout.setContentsMargins(0, 0, 0, 0)
         gutter_layout.setSpacing(0)
-        self.star = StarToggleButton(self.controller, self.source)
+
+        # TODO: No longer pass the source db object to the star toggle button
+        try:
+            source = self.controller.get_source(self.source_uuid)
+            self.star = StarToggleButton(self.controller, source)
+        except sqlalchemy.exc.InvalidRequestError as e:
+            logger.error(f'Cannot update star icon for source: {self.source_uuid}: {e}')
+
         gutter_layout.addWidget(self.star)
         gutter_layout.addStretch()
 
@@ -1192,8 +1200,13 @@ class SourceWidget(QWidget):
             self.controller.on_action_requiring_login()
             return
         else:
-            messagebox = DeleteSourceMessageBox(self.source, self.controller)
-            messagebox.launch()
+            # TODO: No longer pass the source db object to DeleteSourceMessageBox
+            try:
+                source = self.controller.get_source(self.source_uuid)
+                messagebox = DeleteSourceMessageBox(source, self.controller)
+                messagebox.launch()
+            except sqlalchemy.exc.InvalidRequestError as e:
+                logger.error(f'Cannot create messagebox for source: {self.source_uuid}: {e}')
 
     @pyqtSlot(str)
     def _on_source_deleted(self, source_uuid: str):
