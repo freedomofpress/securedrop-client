@@ -1,7 +1,6 @@
 """
 Make sure the UI widgets are configured correctly and work as expected.
 """
-import re
 import pytest
 import arrow
 from datetime import datetime
@@ -950,7 +949,40 @@ def test_SourceList_set_snippet(mocker):
         "a_uuid": mock_widget,
     }
     sl.set_snippet("a_uuid", "msg_uuid", "msg_content")
-    mock_widget.set_snippet.assert_called_once_with("a_uuid", "msg_uuid", "msg_content")
+    mock_widget.set_snippet.assert_called_once_with("a_uuid", "msg_content")
+
+
+def test_SourceList_get_source_widget(mocker):
+    sl = SourceList()
+    sl.controller = mocker.MagicMock()
+    mock_source = factory.Source(uuid='mock_uuid')
+    sl.update([mock_source])
+    sl.source_widgets = {}
+
+    source_widget = sl.get_source_widget('mock_uuid')
+
+    assert source_widget.source_uuid == 'mock_uuid'
+    assert source_widget == sl.itemWidget(sl.item(0))
+
+
+def test_SourceList_get_source_widget_does_not_exist(mocker):
+    sl = SourceList()
+    sl.controller = mocker.MagicMock()
+    mock_source = factory.Source(uuid='mock_uuid')
+    sl.update([mock_source])
+    sl.source_widgets = {}
+
+    source_widget = sl.get_source_widget('uuid_for_source_not_in_list')
+
+    assert source_widget is None
+
+
+def test_SourceList_get_source_widget_if_one_exists_in_cache(mocker):
+    sl = SourceList()
+    mock_source_widget = factory.Source(uuid='mock_uuid')
+    sl.source_widgets = {'mock_uuid': mock_source_widget}
+    source_widget = sl.get_source_widget('mock_uuid')
+    assert source_widget == mock_source_widget
 
 
 def test_SourceWidget_init(mocker):
@@ -1013,29 +1045,19 @@ def test_SourceWidget_set_snippet(mocker, session_maker, session, homedir):
     session.commit()
 
     sw = SourceWidget(controller, source)
-    sw.set_snippet(source.uuid, f.uuid, f.filename)
+    sw.set_snippet(source.uuid, f.filename)
     assert sw.preview.text() == f.filename
 
     # check when a different source is specified
-    sw.set_snippet("not-the-source-uuid", f.uuid, "something new")
+    sw.set_snippet("not-the-source-uuid", "something new")
     assert sw.preview.text() == f.filename
 
-    # check when the source has been deleted
     source_uuid = source.uuid
     session.delete(source)
     session.commit()
-    error_logger = mocker.patch("securedrop_client.gui.widgets.logger.error")
-    sw.set_snippet(source_uuid, "some-uuid", "something new")
-    error_logger.assert_called_once()
-    assert re.match(
-        (
-            f"Could not update snippet for source {source_uuid}: "
-            "Instance '<Source at 0x[0-9a-f]+>' is not persistent within this Session"
-        ),
-        error_logger.call_args_list[0][0][0],
-    )
 
-    assert sw.preview.text() == ""
+    # check when the source has been deleted that it catches sqlalchemy.exc.InvalidRequestError
+    sw.set_snippet(source_uuid, "something new")
 
 
 def test_SourceWidget_update_truncate_latest_msg(mocker):

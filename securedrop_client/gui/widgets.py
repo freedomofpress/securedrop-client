@@ -927,12 +927,12 @@ class SourceList(QListWidget):
 
                 try:
                     del self.source_widgets[list_widget.source_uuid]
-                    deleted_uuids.append(list_widget.source_uuid)
                 except KeyError:
                     pass
-                finally:
-                    self.takeItem(i)
-                    list_widget.deleteLater()
+
+                self.takeItem(i)
+                deleted_uuids.append(list_widget.source_uuid)
+                list_widget.deleteLater()
 
         # Create new widgets for new sources
         widget_uuids = [self.itemWidget(self.item(i)).source_uuid for i in range(self.count())]
@@ -966,15 +966,33 @@ class SourceList(QListWidget):
         if source_widget and source_exists(self.controller.session, source_widget.source_uuid):
             return source_widget.source
 
-    def set_snippet(self, source_uuid, message_uuid, content):
-        """
-        Given a UUID of a source, if the referenced message is the latest
-        message, then update the source's preview snippet to the referenced
-        content.
-        """
-        source_widget = self.source_widgets.get(source_uuid)
+    def get_source_widget(self, source_uuid: str) -> QListWidget:
+        '''
+        First try to get the source widget from the cache, then look for it in the SourceList.
+        '''
+        try:
+            source_widget = self.source_widgets[source_uuid]
+            return source_widget
+        except KeyError:
+            pass
+
+        for i in range(self.count()):
+            list_item = self.item(i)
+            source_widget = self.itemWidget(list_item)
+            if source_widget and source_widget.source_uuid == source_uuid:
+                return source_widget
+
+    @pyqtSlot(str, str, str)
+    def set_snippet(self, source_uuid: str, collection_item_uuid: str, content: str) -> None:
+        '''
+        Set the source widget's preview snippet with the supplied content.
+
+        Note: The signal's `collection_item_uuid` is not needed for setting the preview snippet. It
+        is used by other signal handlers.
+        '''
+        source_widget = self.get_source_widget(source_uuid)
         if source_widget:
-            source_widget.set_snippet(source_uuid, message_uuid, content)
+            source_widget.set_snippet(source_uuid, content)
 
 
 class SourceWidget(QWidget):
@@ -1145,7 +1163,13 @@ class SourceWidget(QWidget):
             self.controller.session.refresh(self.source)
             self.timestamp.setText(_(arrow.get(self.source.last_updated).format('DD MMM')))
             self.name.setText(self.source.journalist_designation)
-            self.set_snippet(self.source.uuid)
+
+            if not self.source.collection:
+                self.set_snippet(self.source_uuid, '')
+            else:
+                last_collection_obj = self.source.collection[-1]
+                self.set_snippet(self.source_uuid, str(last_collection_obj))
+
             if self.source.document_count == 0:
                 self.paperclip.hide()
             self.star.update()
@@ -1153,29 +1177,14 @@ class SourceWidget(QWidget):
             logger.error(f"Could not update SourceWidget for source {self.source_uuid}: {e}")
             raise
 
-    def set_snippet(self, source: str, uuid: str = None, content: str = None):
+    def set_snippet(self, source_uuid: str, content: str):
         """
-        Update the preview snippet only if the new message is for the
-        referenced source and there's a source collection. If a uuid and
-        content are passed then use these, otherwise default to whatever the
-        latest item in the conversation might be.
+        Update the preview snippet if the source_uuid matches our own.
         """
-        if source != self.source_uuid:
+        if source_uuid != self.source_uuid:
             return
 
-        self.preview.setText("")
-
-        try:
-            self.controller.session.refresh(self.source)
-            if not self.source.collection:
-                return
-            last_collection_object = self.source.collection[-1]
-            if uuid == last_collection_object.uuid and content:
-                self.preview.setText(content)
-            else:
-                self.preview.setText(str(last_collection_object))
-        except sqlalchemy.exc.InvalidRequestError as e:
-            logger.error(f"Could not update snippet for source {self.source_uuid}: {e}")
+        self.preview.setText(content)
 
     def delete_source(self, event):
         if self.controller.api is None:
