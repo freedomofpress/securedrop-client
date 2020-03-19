@@ -505,14 +505,12 @@ class Controller(QObject):
         self.gui.update_error_status(_('Failed to update star.'))
 
     @login_required
-    def update_star(self, source_db_object, callback):
+    def update_star(self, source_db_object):
         """
-        Star or unstar. The callback here is the API sync as we first make sure
-        that we apply the change to the server, and then update locally.
+        Star or unstar.
         """
         job = UpdateStarJob(source_db_object.uuid, source_db_object.is_starred)
         job.success_signal.connect(self.on_update_star_success, type=Qt.QueuedConnection)
-        job.success_signal.connect(callback, type=Qt.QueuedConnection)
         job.failure_signal.connect(self.on_update_star_failure, type=Qt.QueuedConnection)
 
         self.api_job_queue.enqueue(job)

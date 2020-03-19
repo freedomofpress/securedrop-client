@@ -1231,10 +1231,7 @@ class StarToggleButton(SvgToggleButton):
     '''
 
     def __init__(self, controller: Controller, source: Source):
-        super().__init__(
-            on='star_on.svg',
-            off='star_off.svg',
-            svg_size=QSize(16, 16))
+        super().__init__(on='star_on.svg', off='star_off.svg', svg_size=QSize(16, 16))
 
         self.controller = controller
         self.source = source
@@ -1328,24 +1325,13 @@ class StarToggleButton(SvgToggleButton):
         Tell the controller to make an API call to update the source's starred field.
         """
         if self.is_api_call_enabled:
-            self.controller.update_star(self.source, self.on_update)
+            self.controller.update_star(self.source)
 
     def on_toggle_offline(self):
         """
         Show error message when not authenticated.
         """
         self.controller.on_action_requiring_login()
-
-    def on_update(self, result):
-        """
-        The result is a uuid for the source and boolean flag for the new state
-        of the star.
-        """
-        enabled = result[1]
-        self.source.is_starred = enabled
-        self.controller.session.commit()
-        self.controller.update_sources()
-        self.setChecked(enabled)
 
     def update(self):
         """
