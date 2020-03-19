@@ -1355,6 +1355,7 @@ class DeleteSourceMessageBox:
 
     def __init__(self, source, controller):
         self.source = source
+        self.source_uuid = source.uuid
         self.controller = controller
 
     def launch(self):
@@ -1370,7 +1371,7 @@ class DeleteSourceMessageBox:
             None, "", _(message), QMessageBox.Cancel | QMessageBox.Yes, QMessageBox.Cancel)
 
         if reply == QMessageBox.Yes:
-            logger.debug("Deleting source %s" % (self.source.uuid,))
+            logger.debug(f'Deleting source {self.source_uuid}')
             self.controller.delete_source(self.source)
 
     def _construct_message(self, source: Source) -> str:
