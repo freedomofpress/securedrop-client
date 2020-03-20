@@ -2233,18 +2233,18 @@ def test_ExportDialog__show_starting_instructions(mocker):
         '<br />' \
         '<span style="font-weight:normal">mock.jpg</span>'
     assert dialog.body.text() == \
-        '<h2>Proceed with caution when exporting files</h2>' \
+        '<h2>Understand the risks before exporting files</h2>' \
         '<b>Malware</b>' \
         '<br />' \
-        'This workstation lets you open documents securely. If you open documents on another ' \
+        'This workstation lets you open files securely. If you open files on another ' \
         'computer, any embedded malware may spread to your computer or network. If you are ' \
-        'unsure how to manage this risk, please print the document, or contact your ' \
+        'unsure how to manage this risk, please print the file, or contact your ' \
         'administrator.' \
         '<br /><br />' \
         '<b>Anonymity</b>' \
         '<br />' \
-        'Documents submitted by sources may contain information or hidden metadata that ' \
-        'identifies who they are. To protect your sources, please consider redacting documents ' \
+        'Files submitted by sources may contain information or hidden metadata that ' \
+        'identifies who they are. To protect your sources, please consider redacting files ' \
         'before working with them on network-connected computers.'
     assert not dialog.header.isHidden()
     assert not dialog.header_line.isHidden()
@@ -2360,7 +2360,7 @@ def test_ExportDialog__show_generic_error_message(mocker):
 
     dialog._show_generic_error_message()
 
-    assert dialog.header.text() == 'Unable to export'
+    assert dialog.header.text() == 'Export failed'
     assert dialog.body.text() == 'mock_error_status: See your administrator for help.'
     assert not dialog.header.isHidden()
     assert not dialog.header_line.isHidden()
@@ -2603,11 +2603,11 @@ def test_PrintDialog__show_starting_instructions(mocker):
         '<span style="font-weight:normal">mock.jpg</span>'
     assert dialog.body.text() == \
         '<h2>Managing printout risks</h2>' \
-        '<b>QR-Codes and visible web addresses</b>' \
+        '<b>QR codes and web addresses</b>' \
         '<br />' \
-        'Never open web addresses or scan QR codes contained in printed documents without ' \
-        'taking security precautions. If you are unsure how to manage this risk, please ' \
-        'contact your administrator.' \
+        'Never type in and open web addresses or scan QR codes contained in printed ' \
+        'documents without taking security precautions. If you are unsure how to ' \
+        'manage this risk, please contact your administrator.' \
         '<br /><br />' \
         '<b>Printer dots</b>' \
         '<br />' \
@@ -2629,7 +2629,7 @@ def test_PrintDialog__show_insert_usb_message(mocker):
 
     dialog._show_insert_usb_message()
 
-    assert dialog.header.text() == 'Insert USB printer'
+    assert dialog.header.text() == 'Connect USB printer'
     assert dialog.body.text() == 'Please connect your printer to a USB port.'
     assert not dialog.header.isHidden()
     assert not dialog.header_line.isHidden()
@@ -2647,7 +2647,7 @@ def test_PrintDialog__show_generic_error_message(mocker):
 
     dialog._show_generic_error_message()
 
-    assert dialog.header.text() == 'Unable to print'
+    assert dialog.header.text() == 'Printing failed'
     assert dialog.body.text() == 'mock_error_status: See your administrator for help.'
     assert not dialog.header.isHidden()
     assert not dialog.header_line.isHidden()
