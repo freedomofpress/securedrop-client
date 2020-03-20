@@ -36,7 +36,6 @@ import sqlalchemy.orm.exc
 
 from securedrop_client import __version__ as sd_version
 from securedrop_client.db import DraftReply, Source, Message, File, Reply, User
-from securedrop_client.storage import source_exists
 from securedrop_client.export import ExportStatus, ExportError
 from securedrop_client.gui import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.logic import Controller
@@ -1103,10 +1102,10 @@ class SourceWidget(QWidget):
         try:
             source = self.controller.get_source(self.source_uuid)
             self.star = StarToggleButton(self.controller, source)
+            gutter_layout.addWidget(self.star)
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.error(f'Cannot update star icon for source: {self.source_uuid}: {e}')
 
-        gutter_layout.addWidget(self.star)
         gutter_layout.addStretch()
 
         # Set up summary

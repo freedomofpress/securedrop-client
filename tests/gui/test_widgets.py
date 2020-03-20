@@ -11,7 +11,8 @@ from PyQt5.QtGui import QFocusEvent, QKeyEvent, QMovie
 from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QMessageBox, QMainWindow, \
     QLineEdit
-import sqlalchemy.orm.exc
+from sqlalchemy.exc import InvalidRequestError
+from sqlalchemy.orm.exc import ObjectDeletedError
 from sqlalchemy.orm import attributes, scoped_session, sessionmaker
 
 from securedrop_client import db, logic
@@ -565,7 +566,6 @@ def test_MainView_on_source_changed(mocker):
     mv.source_list = mocker.MagicMock()
     mv.source_list.get_current_source = mocker.MagicMock(return_value=factory.Source())
     mv.controller = mocker.MagicMock(is_authenticated=True)
-    mocker.patch('securedrop_client.gui.widgets.source_exists', return_value=True)
     scw = mocker.MagicMock()
     mocker.patch('securedrop_client.gui.widgets.SourceConversationWrapper', return_value=scw)
 
@@ -712,19 +712,46 @@ def test_EmptyConversationView_show_no_source_selected_message(mocker):
     assert not ecv.no_source_selected.isHidden()
 
 
-def test_SourceList_get_current_source(mocker):
+def test_SourceList_get_current_source(mocker, session, session_maker, homedir):
     """
     Maintains the selected item if present in new list
     """
     sl = SourceList()
-    sl.controller = mocker.MagicMock()
+    sl.controller = logic.Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
     sources = [factory.Source(), factory.Source()]
+    for source in sources:
+        session.add(source)
+        session.commit()
+
     sl.update(sources)
     sl.setCurrentItem(sl.itemAt(1, 0))  # select source2
 
     current_source = sl.get_current_source()
 
     assert current_source.id == sources[1].id
+
+
+def test_SourceList_get_current_source_when_source_does_not_exist(
+    mocker, session, session_maker, homedir
+):
+    """
+    If the source db object does not exist, get_current_source should return None.
+    """
+    sl = SourceList()
+    sl.controller = logic.Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    source = factory.Source()
+    session.add(source)
+    session.commit()
+
+    sl.update([source])
+    sl.setCurrentItem(sl.itemAt(0, 0))  # set current source widget
+
+    session.delete(source)
+    session.commit()
+
+    current_source = sl.get_current_source()
+
+    assert current_source is None
 
 
 def test_SourceList_update_adds_new_sources(mocker):
@@ -792,12 +819,8 @@ def test_SourceList_update_when_source_deleted(mocker, session, session_maker, h
     session.delete(source)
     session.commit()
 
-    # and finally verify that updating raises an exception, causing
-    # the SourceWidget to be deleted
+    # and finally verify that updating does not raise an exception
     deleted_uuids = sl.update([source])
-    assert len(deleted_uuids) == 1
-    assert source.uuid in deleted_uuids
-    assert len(sl.source_widgets) == 0
 
 
 def test_SourceList_update_when_source_deleted_crash(mocker, session, session_maker, homedir):
@@ -839,103 +862,138 @@ def test_SourceList_update_when_source_deleted_crash(mocker, session, session_ma
     assert sl.count() == 0
 
 
-def test_SourceList_update_maintains_selection(mocker):
+def test_SourceList_update_maintains_selection(mocker, session, session_maker, homedir):
     """
     Maintains the selected item if present in new list
     """
     sl = SourceList()
-    sl.controller = mocker.MagicMock()
+    sl.controller = logic.Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
     sources = [factory.Source(), factory.Source()]
+    for source in sources:
+        session.add(source)
+        session.commit()
     sl.update(sources)
-
-    sl.setCurrentItem(sl.itemAt(0, 0))  # select the first source
-    sl.update(sources)
-
-    assert sl.currentItem()
-    assert sl.itemWidget(sl.currentItem()).source.id == sources[0].id
 
     sl.setCurrentItem(sl.itemAt(1, 0))  # select the second source
     sl.update(sources)
 
     assert sl.currentItem()
-    assert sl.itemWidget(sl.currentItem()).source.id == sources[1].id
+    assert sl.itemWidget(sl.currentItem()).source_uuid == sources[1].uuid
 
 
-def test_SourceList_update_with_pre_selected_source_maintains_selection(mocker):
+def test_SourceList_update_with_pre_selected_source_maintains_selection(
+    mocker, session, session_maker, homedir
+):
     """
     Check that an existing source widget that is selected remains selected.
     """
     sl = SourceList()
-    sl.controller = mocker.MagicMock()
-    sl.update([factory.Source(), factory.Source()])
+    sl.controller = logic.Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    sources = [factory.Source(), factory.Source()]
+    for source in sources:
+        session.add(source)
+        session.commit()
+    sl.update(sources)
+
     second_item = sl.itemAt(1, 0)
     sl.setCurrentItem(second_item)  # select the second source
     mocker.patch.object(second_item, 'isSelected', return_value=True)
 
-    sl.update([factory.Source(), factory.Source()])
+    sl.update(sources)
 
     assert second_item.isSelected() is True
 
 
-def test_SourceList_update_removes_selected_item_results_in_no_current_selection(mocker):
+def test_SourceList_update_removes_selected_item_results_in_no_current_selection(
+    mocker, session, session_maker, homedir
+):
     """
     Check that no items are currently selected if the currently selected item is deleted.
     """
     sl = SourceList()
-    sl.controller = mocker.MagicMock()
-    sl.update([factory.Source(uuid='new'), factory.Source(uuid='newer')])
+    sl.controller = logic.Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    new_source = factory.Source(uuid='new')
+    newer_source = factory.Source(uuid='newer')
+    session.add(new_source)
+    session.commit()
+    session.add(newer_source)
+    session.commit()
+    sl.update([new_source, newer_source])
 
     sl.setCurrentItem(sl.itemAt(0, 0))  # select source with uuid='newer'
-    sl.update([factory.Source(uuid='new')])  # delete source with uuid='newer'
+
+    sl.update([new_source])  # delete source with uuid='newer'
 
     assert not sl.currentItem()
 
 
-def test_SourceList_update_removes_item_from_end_of_list(mocker):
+def test_SourceList_update_removes_item_from_end_of_list(mocker, session, session_maker, homedir):
     """
     Check that the item is removed from the source list and dict if the source no longer exists.
     """
     sl = SourceList()
-    sl.controller = mocker.MagicMock()
-    sl.update([
-        factory.Source(uuid='new'), factory.Source(uuid='newer'), factory.Source(uuid='newest')])
+    sl.controller = logic.Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    sources = [
+        factory.Source(uuid='new'), factory.Source(uuid='newer'), factory.Source(uuid='newest')]
+    for source in sources:
+        session.add(source)
+        session.commit()
+    sl.update(sources)
     assert sl.count() == 3
+
     sl.update([factory.Source(uuid='newer'), factory.Source(uuid='newest')])
+
     assert sl.count() == 2
-    assert sl.itemWidget(sl.item(0)).source.uuid == 'newest'
-    assert sl.itemWidget(sl.item(1)).source.uuid == 'newer'
+    assert sl.itemWidget(sl.item(0)).source_uuid == 'newest'
+    assert sl.itemWidget(sl.item(1)).source_uuid == 'newer'
     assert len(sl.source_widgets) == 2
 
 
-def test_SourceList_update_removes_item_from_middle_of_list(mocker):
+def test_SourceList_update_removes_item_from_middle_of_list(
+    mocker, session, session_maker, homedir
+):
     """
     Check that the item is removed from the source list and dict if the source no longer exists.
     """
     sl = SourceList()
-    sl.controller = mocker.MagicMock()
-    sl.update([
-        factory.Source(uuid='new'), factory.Source(uuid='newer'), factory.Source(uuid='newest')])
+    sl.controller = logic.Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    sources = [
+        factory.Source(uuid='new'), factory.Source(uuid='newer'), factory.Source(uuid='newest')]
+    for source in sources:
+        session.add(source)
+        session.commit()
+    sl.update(sources)
     assert sl.count() == 3
+
     sl.update([factory.Source(uuid='new'), factory.Source(uuid='newest')])
+
     assert sl.count() == 2
-    assert sl.itemWidget(sl.item(0)).source.uuid == 'newest'
-    assert sl.itemWidget(sl.item(1)).source.uuid == 'new'
+    assert sl.itemWidget(sl.item(0)).source_uuid == 'newest'
+    assert sl.itemWidget(sl.item(1)).source_uuid == 'new'
     assert len(sl.source_widgets) == 2
 
 
-def test_SourceList_update_removes_item_from_beginning_of_list(mocker):
+def test_SourceList_update_removes_item_from_beginning_of_list(
+    mocker, session, session_maker, homedir
+):
     """
     Check that the item is removed from the source list and dict if the source no longer exists.
     """
     sl = SourceList()
-    sl.controller = mocker.MagicMock()
-    sl.update([
-        factory.Source(uuid='new'), factory.Source(uuid='newer'), factory.Source(uuid='newest')])
+    sl.controller = logic.Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    sources = [
+        factory.Source(uuid='new'), factory.Source(uuid='newer'), factory.Source(uuid='newest')]
+    for source in sources:
+        session.add(source)
+        session.commit()
+    sl.update(sources)
     assert sl.count() == 3
+
     sl.update([factory.Source(uuid='new'), factory.Source(uuid='newer')])
+
     assert sl.count() == 2
-    assert sl.itemWidget(sl.item(0)).source.uuid == 'newer'
-    assert sl.itemWidget(sl.item(1)).source.uuid == 'new'
+    assert sl.itemWidget(sl.item(0)).source_uuid == 'newer'
+    assert sl.itemWidget(sl.item(1)).source_uuid == 'new'
     assert len(sl.source_widgets) == 2
 
 
@@ -952,10 +1010,12 @@ def test_SourceList_set_snippet(mocker):
     mock_widget.set_snippet.assert_called_once_with("a_uuid", "msg_content")
 
 
-def test_SourceList_get_source_widget(mocker):
+def test_SourceList_get_source_widget(mocker, session, session_maker, homedir):
     sl = SourceList()
-    sl.controller = mocker.MagicMock()
+    sl.controller = logic.Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
     mock_source = factory.Source(uuid='mock_uuid')
+    session.add(mock_source)
+    session.commit()
     sl.update([mock_source])
     sl.source_widgets = {}
 
@@ -965,10 +1025,13 @@ def test_SourceList_get_source_widget(mocker):
     assert source_widget == sl.itemWidget(sl.item(0))
 
 
-def test_SourceList_get_source_widget_does_not_exist(mocker):
+def test_SourceList_get_source_widget_does_not_exist(mocker, session, session_maker, homedir):
     sl = SourceList()
-    sl.controller = mocker.MagicMock()
+    sl.controller = logic.Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
     mock_source = factory.Source(uuid='mock_uuid')
+    session.add(mock_source)
+    session.commit()
+
     sl.update([mock_source])
     sl.source_widgets = {}
 
@@ -992,8 +1055,21 @@ def test_SourceWidget_init(mocker):
     controller = mocker.MagicMock()
     mock_source = mocker.MagicMock()
     mock_source.journalist_designation = 'foo bar baz'
-    sw = SourceWidget(controller, mock_source)
-    assert sw.source == mock_source
+    controller.get_source = mocker.MagicMock(return_value=mock_source)
+    sw = SourceWidget(controller, mock_source.uuid)
+    assert sw.source_uuid == mock_source.uuid
+
+
+def test_SourceWidget_init_source_no_longer_exists(mocker):
+    """
+    The source widget is initialised with the passed-in source.
+    """
+    controller = mocker.MagicMock()
+    mock_source = mocker.MagicMock()
+    mock_source.journalist_designation = 'foo bar baz'
+    controller.get_source = mocker.MagicMock(side_effect=InvalidRequestError())
+    sw = SourceWidget(controller, mock_source.uuid)
+    assert sw.source_uuid == mock_source.uuid
 
 
 def test_SourceWidget_html_init(mocker):
@@ -1004,8 +1080,9 @@ def test_SourceWidget_html_init(mocker):
     controller = mocker.MagicMock()
     mock_source = mocker.MagicMock()
     mock_source.journalist_designation = 'foo <b>bar</b> baz'
+    controller.get_source = mocker.MagicMock(return_value=mock_source)
 
-    sw = SourceWidget(controller, mock_source)
+    sw = SourceWidget(controller, mock_source.uuid)
     sw.name = mocker.MagicMock()
     sw.summary_layout = mocker.MagicMock()
 
@@ -1021,8 +1098,8 @@ def test_SourceWidget_update_attachment_icon(mocker):
     """
     controller = mocker.MagicMock()
     source = factory.Source(document_count=1)
-    sw = SourceWidget(controller, source)
-
+    controller.get_source = mocker.MagicMock(return_value=source)
+    sw = SourceWidget(controller, source.uuid)
     sw.update()
     assert not sw.paperclip.isHidden()
 
@@ -1044,7 +1121,7 @@ def test_SourceWidget_set_snippet(mocker, session_maker, session, homedir):
     session.add(source)
     session.commit()
 
-    sw = SourceWidget(controller, source)
+    sw = SourceWidget(controller, source.uuid)
     sw.set_snippet(source.uuid, f.filename)
     assert sw.preview.text() == f.filename
 
@@ -1068,8 +1145,9 @@ def test_SourceWidget_update_truncate_latest_msg(mocker):
     controller = mocker.MagicMock()
     source = mocker.MagicMock()
     source.journalist_designation = "Testy McTestface"
-    source.collection = [factory.Message(content="a" * 151), ]
-    sw = SourceWidget(controller, source)
+    source.collection = [factory.Message(content="a" * 151)]
+    controller.get_source = mocker.MagicMock(return_value=source)
+    sw = SourceWidget(controller, source.uuid)
 
     sw.update()
     assert sw.preview.text().endswith("...")
@@ -1081,7 +1159,9 @@ def test_SourceWidget_delete_source(mocker, session, source):
     mock_delete_source_message = mocker.MagicMock(
         return_value=mock_delete_source_message_box_object)
 
-    sw = SourceWidget(mock_controller, source['source'])
+    source = source['source']
+    mock_controller.get_source = mocker.MagicMock(return_value=source)
+    sw = SourceWidget(mock_controller, source.uuid)
 
     mocker.patch(
         "securedrop_client.gui.widgets.DeleteSourceMessageBox",
@@ -1090,6 +1170,22 @@ def test_SourceWidget_delete_source(mocker, session, source):
 
     sw.delete_source(None)
     mock_delete_source_message_box_object.launch.assert_called_with()
+
+
+def test_SourceWidget_delete_source_when_source_has_been_deleted_in_db(mocker, session, source):
+    mock_delete_source_message_box_object = mocker.MagicMock(DeleteSourceMessageBox)
+    mock_controller = mocker.MagicMock()
+    mock_delete_source_message = mocker.MagicMock(
+        return_value=mock_delete_source_message_box_object)
+
+    source = source['source']
+    mock_controller.get_source = mocker.MagicMock(side_effect=InvalidRequestError())
+    sw = SourceWidget(mock_controller, source.uuid)
+
+    mocker.patch('securedrop_client.gui.widgets.DeleteSourceMessageBox', mock_delete_source_message)
+
+    sw.delete_source(None)
+    mock_delete_source_message_box_object.launch.assert_not_called()
 
 
 def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker, session, source):
@@ -1104,7 +1200,9 @@ def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker, session, so
     mock_message_box_question.return_value = QMessageBox.Cancel
 
     mock_controller = mocker.MagicMock()
-    sw = SourceWidget(mock_controller, source)
+    mock_controller.get_source = mocker.MagicMock(return_value=source)
+
+    sw = SourceWidget(mock_controller, source.uuid)
 
     mocker.patch(
         "securedrop_client.gui.widgets.QMessageBox.question",
@@ -1116,7 +1214,8 @@ def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker, session, so
 
 def test_SourceWidget__on_source_deleted(mocker, session, source):
     controller = mocker.MagicMock()
-    sw = SourceWidget(controller, factory.Source(uuid='123'))
+    controller.get_source = mocker.MagicMock(return_value=factory.Source(uuid='123'))
+    sw = SourceWidget(controller, '123')
     sw._on_source_deleted('123')
     assert sw.gutter.isHidden()
     assert sw.metadata.isHidden()
@@ -1126,7 +1225,8 @@ def test_SourceWidget__on_source_deleted(mocker, session, source):
 
 def test_SourceWidget__on_source_deleted_wrong_uuid(mocker, session, source):
     controller = mocker.MagicMock()
-    sw = SourceWidget(controller, factory.Source(uuid='123'))
+    controller.get_source = mocker.MagicMock(return_value=factory.Source(uuid='123'))
+    sw = SourceWidget(controller, '123')
     sw._on_source_deleted('321')
     assert not sw.gutter.isHidden()
     assert not sw.metadata.isHidden()
@@ -1140,9 +1240,10 @@ def test_SourceWidget_uses_SecureQLabel(mocker):
     """
     controller = mocker.MagicMock()
     source = mocker.MagicMock()
+    controller.get_source = mocker.MagicMock(return_value=source)
     source.journalist_designation = "Testy McTestface"
     source.collection = [factory.Message(content="a" * 121), ]
-    sw = SourceWidget(controller, source)
+    sw = SourceWidget(controller, source.uuid)
 
     sw.update()
     assert isinstance(sw.preview, SecureQLabel)
@@ -3320,6 +3421,7 @@ def test_DeleteSource_from_source_menu_when_user_is_loggedout(mocker):
 def test_DeleteSource_from_source_widget_when_user_is_loggedout(mocker):
     mock_source = mocker.MagicMock(journalist_designation='mock')
     mock_controller = mocker.MagicMock()
+    mock_controller.get_source = mocker.MagicMock(return_value=mock_source)
     mock_controller.api = None
     mock_event = mocker.MagicMock()
     mock_delete_source_message_box_obj = mocker.MagicMock()
@@ -3332,7 +3434,7 @@ def test_DeleteSource_from_source_widget_when_user_is_loggedout(mocker):
         'securedrop_client.gui.widgets.DeleteSourceMessageBox',
         mock_delete_source_message_box
     ):
-        source_widget = SourceWidget(mock_controller, mock_source)
+        source_widget = SourceWidget(mock_controller, mock_source.uuid)
         source_widget.delete_source(mock_event)
         mock_delete_source_message_box_obj.launch.assert_not_called()
 
@@ -3465,9 +3567,7 @@ def test_ReplyBoxWidget_on_sync_source_deleted(mocker, source):
     error_logger = mocker.patch('securedrop_client.gui.widgets.logger.error')
 
     def pretend_source_was_deleted(self):
-        raise sqlalchemy.orm.exc.ObjectDeletedError(
-            attributes.instance_state(s), None
-        )
+        raise ObjectDeletedError(attributes.instance_state(s), None)
 
     with patch.object(ReplyBoxWidget, 'update_authentication_state') as uas:
         uas.side_effect = pretend_source_was_deleted
@@ -3532,9 +3632,7 @@ def test_ReplyBoxWidget_on_authentication_changed_source_deleted(mocker, source)
     error_logger = mocker.patch('securedrop_client.gui.widgets.logger.error')
 
     def pretend_source_was_deleted(self):
-        raise sqlalchemy.orm.exc.ObjectDeletedError(
-            attributes.instance_state(s), None
-        )
+        raise ObjectDeletedError(attributes.instance_state(s), None)
 
     with patch.object(ReplyBoxWidget, 'update_authentication_state') as uas:
         uas.side_effect = pretend_source_was_deleted
