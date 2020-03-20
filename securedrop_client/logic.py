@@ -768,6 +768,9 @@ class Controller(QObject):
         """
         self.session.commit()
         file_obj = storage.get_file(self.session, uuid)
+        # Let us update the size of the file.
+        storage.update_file_size(uuid, self.data_dir, self.session)
+
         self.file_ready.emit(file_obj.source.uuid, uuid, file_obj.filename)
 
     def on_file_download_failure(self, exception: Exception) -> None:

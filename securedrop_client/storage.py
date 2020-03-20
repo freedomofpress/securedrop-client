@@ -23,6 +23,7 @@ from datetime import datetime
 import logging
 import os
 import shutil
+from pathlib import Path
 from dateutil.parser import parse
 from typing import List, Tuple, Type, Union
 
@@ -491,6 +492,15 @@ def mark_as_downloaded(
     session.add(db_obj)
     session.commit()
 
+def update_file_size(uuid: str, path: str, session: Session) -> None:
+    """
+    Updates file size to the decrypted size
+    """
+    db_obj = session.query(File).filter_by(uuid=uuid).one()
+    stat = Path(db_obj.location(path)).stat()
+    db_obj.size = stat.st_size
+    session.add(db_obj)
+    session.commit()
 
 def mark_as_decrypted(
     model_type: Union[Type[File], Type[Message], Type[Reply]],
