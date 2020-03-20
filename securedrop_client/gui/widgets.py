@@ -2368,10 +2368,10 @@ class FileWidget(QWidget):
         self._set_file_state()
 
 
-class FramelessDialog(QDialog):
+class ModalDialog(QDialog):
 
     CSS = '''
-    #frameless_dialog {
+    #modal {
         min-width: 800px;
         max-width: 800px;
         min-height: 300px;
@@ -2379,14 +2379,7 @@ class FramelessDialog(QDialog):
         background-color: #fff;
         border: 1px solid #2a319d;
     }
-    #close_button {
-        border: none;
-        font-family: 'Source Sans Pro';
-        font-weight: 600;
-        font-size: 12px;
-        color: #2a319d;
-    }
-    #header_icon, #header_spinner {
+    #header_icon {
         min-width: 80px;
         max-width: 80px;
         min-height: 64px;
@@ -2462,27 +2455,9 @@ class FramelessDialog(QDialog):
         #     self.setWindowFlags(Qt.CustomizeWindowHint)
         self.internal_close_event_emitted = False
 
-        self.setObjectName('frameless_dialog')
+        self.setObjectName('modal')
         self.setStyleSheet(self.CSS)
-        self.setWindowFlags(Qt.Popup)
-
-        # Set drop shadow effect
-        effect = QGraphicsDropShadowEffect(self)
-        effect.setOffset(0, 1)
-        effect.setBlurRadius(8)
-        effect.setColor(QColor('#aa000000'))
-        self.setGraphicsEffect(effect)
-        self.update()
-
-        # Custom titlebar for close button
-        titlebar = QWidget()
-        titlebar_layout = QVBoxLayout()
-        titlebar.setLayout(titlebar_layout)
-        close_button = SvgPushButton('delete_close.svg', svg_size=QSize(10, 10))
-        close_button.setObjectName('close_button')
-        close_button.setText('CLOSE')
-        close_button.clicked.connect(self.close)
-        titlebar_layout.addWidget(close_button, alignment=Qt.AlignRight)
+        # self.setWindowFlags(Qt.Popup)
 
         # Header for icon and task title
         header_container = QWidget()
@@ -2544,7 +2519,6 @@ class FramelessDialog(QDialog):
         # Main widget layout
         layout = QVBoxLayout(self)
         self.setLayout(layout)
-        layout.addWidget(titlebar)
         layout.addWidget(header_container)
         layout.addWidget(self.header_line)
         layout.addWidget(self.error_details)
@@ -2562,11 +2536,6 @@ class FramelessDialog(QDialog):
         self.header_animation.setScaledSize(QSize(64, 64))
         self.header_animation.frameChanged.connect(self.animate_header)
 
-    def closeEvent(self, event: QCloseEvent):
-        # ignore any close event that doesn't come from our custom close method
-        if not self.internal_close_event_emitted:
-            event.ignore()
-
     def keyPressEvent(self, event: QKeyEvent):
         # Since the dialog sets the Qt.Popup window flag (in order to achieve a frameless dialog
         # window in Qubes), the default behavior is to close the dialog when the Enter or Return
@@ -2579,22 +2548,6 @@ class FramelessDialog(QDialog):
             return
 
         super().keyPressEvent(event)
-
-    def close(self):
-        self.internal_close_event_emitted = True
-        super().close()
-
-    def center_dialog(self):
-        active_window = QApplication.activeWindow()
-        if not active_window:
-            return
-        application_window_size = active_window.geometry()
-        dialog_size = self.geometry()
-        x = application_window_size.x()
-        y = application_window_size.y()
-        x_center = (application_window_size.width() - dialog_size.width()) / 2
-        y_center = (application_window_size.height() - dialog_size.height()) / 2
-        self.move(x + x_center, y + y_center)
 
     def animate_activestate(self):
         self.continue_button.setIcon(QIcon(self.button_animation.currentPixmap()))
@@ -2637,7 +2590,7 @@ class FramelessDialog(QDialog):
         self.header_animation.stop()
 
 
-class PrintDialog(FramelessDialog):
+class PrintDialog(ModalDialog):
 
     FILENAME_WIDTH_PX = 260
 
@@ -2693,7 +2646,6 @@ class PrintDialog(FramelessDialog):
         self.body.setText(self.starting_message)
         self.error_details.hide()
         self.adjustSize()
-        self.center_dialog()
 
     def _show_insert_usb_message(self):
         self.continue_button.clicked.disconnect()
@@ -2702,7 +2654,6 @@ class PrintDialog(FramelessDialog):
         self.body.setText(self.insert_usb_message)
         self.error_details.hide()
         self.adjustSize()
-        self.center_dialog()
 
     def _show_generic_error_message(self):
         self.continue_button.clicked.disconnect()
@@ -2712,7 +2663,6 @@ class PrintDialog(FramelessDialog):
         self.body.setText('{}: {}'.format(self.error_status, self.generic_error_message))
         self.error_details.hide()
         self.adjustSize()
-        self.center_dialog()
 
     @pyqtSlot()
     def _run_preflight(self):
@@ -2758,7 +2708,7 @@ class PrintDialog(FramelessDialog):
                 self._show_generic_error_message()
 
 
-class ExportDialog(FramelessDialog):
+class ExportDialog(ModalDialog):
 
     PASSPHRASE_FORM_CSS = '''
     #passphrase_form QLabel {
@@ -2872,7 +2822,6 @@ class ExportDialog(FramelessDialog):
         self.header.setText(self.starting_header)
         self.body.setText(self.starting_message)
         self.adjustSize()
-        self.center_dialog()
 
     def _show_passphrase_request_message(self):
         self.continue_button.clicked.disconnect()
@@ -2884,7 +2833,6 @@ class ExportDialog(FramelessDialog):
         self.body.hide()
         self.passphrase_form.show()
         self.adjustSize()
-        self.center_dialog()
 
     def _show_passphrase_request_message_again(self):
         self.continue_button.clicked.disconnect()
@@ -2897,7 +2845,6 @@ class ExportDialog(FramelessDialog):
         self.error_details.show()
         self.passphrase_form.show()
         self.adjustSize()
-        self.center_dialog()
 
     def _show_success_message(self):
         self.continue_button.clicked.disconnect()
@@ -2911,7 +2858,6 @@ class ExportDialog(FramelessDialog):
         self.header_line.show()
         self.body.show()
         self.adjustSize()
-        self.center_dialog()
 
     def _show_insert_usb_message(self):
         self.continue_button.clicked.disconnect()
@@ -2924,7 +2870,6 @@ class ExportDialog(FramelessDialog):
         self.header_line.show()
         self.body.show()
         self.adjustSize()
-        self.center_dialog()
 
     def _show_insert_encrypted_usb_message(self):
         self.continue_button.clicked.disconnect()
@@ -2938,7 +2883,6 @@ class ExportDialog(FramelessDialog):
         self.error_details.show()
         self.body.show()
         self.adjustSize()
-        self.center_dialog()
 
     def _show_generic_error_message(self):
         self.continue_button.clicked.disconnect()
@@ -2951,7 +2895,6 @@ class ExportDialog(FramelessDialog):
         self.header_line.show()
         self.body.show()
         self.adjustSize()
-        self.center_dialog()
 
     @pyqtSlot()
     def _run_preflight(self):
