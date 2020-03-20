@@ -2244,6 +2244,9 @@ class FileWidget(QWidget):
         file_ready_signal.connect(self._on_file_downloaded, type=Qt.QueuedConnection)
         file_missing.connect(self._on_file_missing, type=Qt.QueuedConnection)
 
+    def update_file_size(self):
+        self.file_size.setText(humanize_filesize(self.file.size))
+
     def eventFilter(self, obj, event):
         t = event.type()
         if t == QEvent.MouseButtonPress:
@@ -2267,6 +2270,7 @@ class FileWidget(QWidget):
             self.middot.show()
             self.print_button.show()
             self.file_name.show()
+            self.update_file_size()
         else:
             logger.debug('Changing file {} state to not downloaded'.format(self.uuid))
             self.download_button.setText(_('DOWNLOAD'))
