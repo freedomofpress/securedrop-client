@@ -2377,9 +2377,8 @@ class ModalDialog(QDialog):
         min-height: 300px;
         max-height: 800px;
         background-color: #fff;
-        border: 1px solid #2a319d;
     }
-    #header_icon {
+    #header_icon, #header_spinner {
         min-width: 80px;
         max-width: 80px;
         min-height: 64px;
@@ -2445,19 +2444,9 @@ class ModalDialog(QDialog):
     def __init__(self):
         parent = QApplication.activeWindow()
         super().__init__(parent)
-
-        # Used to determine whether or not the popup is being closed from our own internal close
-        # method or from clicking outside of the popup.
-        #
-        # This is a workaround for for frameless
-        # modals not working as expected on QubesOS, i.e. the following flags are ignored in Qubes:
-        #     self.setWindowFlags(Qt.FramelessWindowHint)
-        #     self.setWindowFlags(Qt.CustomizeWindowHint)
-        self.internal_close_event_emitted = False
-
         self.setObjectName('modal')
         self.setStyleSheet(self.CSS)
-        # self.setWindowFlags(Qt.Popup)
+        self.setModal(True)
 
         # Header for icon and task title
         header_container = QWidget()
@@ -2505,14 +2494,15 @@ class ModalDialog(QDialog):
         window_buttons.setLayout(button_layout)
         self.cancel_button = QPushButton(_('CANCEL'))
         self.cancel_button.clicked.connect(self.close)
+        self.cancel_button.setAutoDefault(False)
         self.continue_button = QPushButton(_('CONTINUE'))
         self.continue_button.setObjectName('primary_button')
         self.continue_button.setDefault(True)
         self.continue_button.setIconSize(QSize(21, 21))
         button_box = QDialogButtonBox(Qt.Horizontal)
         button_box.setObjectName('button_box')
-        button_box.addButton(self.cancel_button, QDialogButtonBox.ActionRole)
         button_box.addButton(self.continue_button, QDialogButtonBox.ActionRole)
+        button_box.addButton(self.cancel_button, QDialogButtonBox.ActionRole)
         button_layout.addWidget(button_box, alignment=Qt.AlignRight)
         button_layout.setContentsMargins(self.NO_MARGIN, self.NO_MARGIN, self.MARGIN, self.MARGIN)
 
@@ -2537,15 +2527,12 @@ class ModalDialog(QDialog):
         self.header_animation.frameChanged.connect(self.animate_header)
 
     def keyPressEvent(self, event: QKeyEvent):
-        # Since the dialog sets the Qt.Popup window flag (in order to achieve a frameless dialog
-        # window in Qubes), the default behavior is to close the dialog when the Enter or Return
-        # key is clicked, which we override here.
         if (event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return):
             if self.cancel_button.hasFocus():
                 self.cancel_button.click()
             else:
                 self.continue_button.click()
-            return
+            event.ignore()  # Don't allow Enter to close dialog
 
         super().keyPressEvent(event)
 
@@ -2609,6 +2596,7 @@ class PrintDialog(ModalDialog):
 
         # Connect parent signals to slots
         self.continue_button.setEnabled(False)
+        self.continue_button.clicked.connect(self._run_preflight)
 
         # Dialog content
         self.starting_header = _(
@@ -2748,6 +2736,7 @@ class ExportDialog(ModalDialog):
 
         # Connect parent signals to slots
         self.continue_button.setEnabled(False)
+        self.continue_button.clicked.connect(self._run_preflight)
 
         # Dialog content
         self.starting_header = _(

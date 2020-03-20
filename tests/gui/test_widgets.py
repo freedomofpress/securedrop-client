@@ -2442,15 +2442,8 @@ def test_ModalDialog_keyPressEvent_does_not_close_for_other_keys(mocker, key):
     dialog.close.assert_not_called()
 
 
-def test_ModalDialog_close(mocker):
+def test_ModalDialog_animation_of_activestate(mocker):
     dialog = ModalDialog()
-    assert dialog.internal_close_event_emitted is False
-    dialog.close()
-    assert dialog.internal_close_event_emitted is True
-
-
-def test_FramelessDialog_animation_of_activestate(mocker):
-    dialog = FramelessDialog()
     assert dialog.button_animation
     dialog.button_animation.start = mocker.MagicMock()
     dialog.button_animation.stop = mocker.MagicMock()
@@ -2478,8 +2471,8 @@ def test_FramelessDialog_animation_of_activestate(mocker):
     assert dialog.continue_button.setStyleSheet.call_count == 1
 
 
-def test_FramelessDialog_animation_of_header(mocker):
-    dialog = FramelessDialog()
+def test_ModalDialog_animation_of_header(mocker):
+    dialog = ModalDialog()
     assert dialog.header_animation
     dialog.header_animation.start = mocker.MagicMock()
     dialog.header_animation.stop = mocker.MagicMock()
