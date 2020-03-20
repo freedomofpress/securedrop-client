@@ -1352,14 +1352,14 @@ class StarToggleButton(SvgToggleButton):
             self.is_starred = is_starred
             self.setChecked(self.is_starred)
 
-    @pyqtSlot(str)
+    @pyqtSlot(str, bool)
     def on_star_update_failed(self, source_uuid: str, is_starred: bool) -> None:
         """
         If the star update failed to update on the server, toggle back to previous state.
         """
         if self.source_uuid == source_uuid:
             self.is_starred = is_starred
-            self.setChecked(is_starred)
+            self.setChecked(self.is_starred)
             self.pending_count = self.pending_count - 1
 
     @pyqtSlot(str)

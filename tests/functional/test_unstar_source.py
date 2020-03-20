@@ -34,4 +34,4 @@ def test_unstar_source(qtbot, mocker):
     qtbot.mouseClick(first_source_widget.star, Qt.LeftButton)
     qtbot.wait(1000)
     # Check the source isn't checked once more.
-    assert first_source_widget.star.source.is_starred is False
+    assert first_source_widget.star.is_starred is False

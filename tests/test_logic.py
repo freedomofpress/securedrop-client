@@ -584,11 +584,13 @@ def test_Controller_on_update_star_failed(homedir, config, mocker):
     gui = mocker.MagicMock()
     co = Controller('http://localhost', gui, mocker.MagicMock(), homedir)
     co.star_update_failed = mocker.MagicMock()
+    source = factory.Source()
+    co.session.query().filter_by().one.return_value = source
 
-    error = UpdateStarJobError('mock_message', 'mock_uuid', True)
+    error = UpdateStarJobError('mock_message', source.uuid)
     co.on_update_star_failure(error)
 
-    co.star_update_failed.emit.assert_called_once_with(error.source_uuid, error.is_starred)
+    co.star_update_failed.emit.assert_called_once_with(source.uuid, source.is_starred)
     gui.update_error_status.assert_called_once_with('Failed to update star.')
 
 
@@ -601,7 +603,7 @@ def test_Controller_on_update_star_failed_due_to_timeout(homedir, config, mocker
     co = Controller('http://localhost', gui, mocker.MagicMock(), homedir)
     co.star_update_failed = mocker.MagicMock()
 
-    error = UpdateStarJobTimeoutError('mock_message', 'mock_uuid', True)
+    error = UpdateStarJobTimeoutError('mock_message', 'mock_uuid')
     co.on_update_star_failure(error)
 
     co.star_update_failed.emit.assert_not_called()

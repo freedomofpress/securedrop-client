@@ -36,25 +36,23 @@ class UpdateStarJob(ApiJob):
             return self.source_uuid
         except (RequestTimeoutError, ServerConnectionError) as e:
             error_message = f'Failed to update star on source {self.source_uuid} due to error: {e}'
-            raise UpdateStarJobTimeoutError(error_message, self.source_uuid, self.is_starred)
+            raise UpdateStarJobTimeoutError(error_message, self.source_uuid)
         except Exception as e:
             error_message = f'Failed to update star on source {self.source_uuid} due to {e}'
-            raise UpdateStarJobError(error_message, self.source_uuid, self.is_starred)
+            raise UpdateStarJobError(error_message, self.source_uuid)
 
 
 class UpdateStarJobError(Exception):
-    def __init__(self, message: str, source_uuid: str, is_starred: bool) -> None:
+    def __init__(self, message: str, source_uuid: str) -> None:
         super().__init__(message)
         self.source_uuid = source_uuid
-        self.is_starred = is_starred
 
 
 class UpdateStarJobTimeoutError(RequestTimeoutError):
-    def __init__(self, message: str, source_uuid: str, is_starred: bool) -> None:
+    def __init__(self, message: str, source_uuid: str) -> None:
         super().__init__()
         self.message = message
         self.source_uuid = source_uuid
-        self.is_starred = is_starred
 
     def __str__(self) -> str:
         return self.message

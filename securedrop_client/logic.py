@@ -202,8 +202,9 @@ class Controller(QObject):
 
     Emits:
         str: the source UUID
+        bool: is_starred
     """
-    star_update_failed = pyqtSignal(str)
+    star_update_failed = pyqtSignal(str, bool)
 
     def __init__(self, hostname: str, gui, session_maker: sessionmaker,
                  home: str, proxy: bool = True, qubes: bool = True) -> None:
@@ -522,7 +523,8 @@ class Controller(QObject):
     ) -> None:
         if isinstance(error, UpdateStarJobError):
             self.gui.update_error_status(_('Failed to update star.'))
-            self.star_update_failed.emit(error.source_uuid, error.is_starred)
+            source = self.session.query(db.Source).filter_by(uuid=error.source_uuid).one()
+            self.star_update_failed.emit(error.source_uuid, source.is_starred)
 
     @login_required
     def update_star(self, source_uuid: str, is_starred: bool):
