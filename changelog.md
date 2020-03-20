@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2
+
+  * Update mimetype handling
+
 ## 0.2.1
 
   * Open files in dvm by default
