@@ -28,24 +28,6 @@ def test_SvgToggleButton_init(mocker):
     setIconSize_fn.assert_called_once_with(svg_size)
 
 
-def test_SvgToggleButton_enable(mocker):
-    """
-    Ensure enable.
-    """
-    stb = SvgToggleButton(on='mock_on', off='mock_off')
-    stb.enable()
-    assert stb.isEnabled() is True
-
-
-def test_SvgToggleButton_disable(mocker):
-    """
-    Ensure disable.
-    """
-    stb = SvgToggleButton(on='mock_on', off='mock_off')
-    stb.disable()
-    assert stb.isEnabled() is False
-
-
 def test_SvgToggleButton_toggle(mocker):
     """
     Make sure we're not calling this a toggle button for no reason.
@@ -93,24 +75,6 @@ def test_SvgPushButton_init(mocker):
         normal='mock1', disabled='mock2', active='mock3', selected='mock4', disabled_off='mock2')
     setIcon_fn.assert_called_once_with(icon)
     setIconSize_fn.assert_called_once_with(svg_size)
-
-
-def test_SvgPushButton_enable(mocker):
-    """
-    Ensure enable.
-    """
-    spb = SvgPushButton(normal='mock1', disabled='mock2', active='mock3', selected='mock4')
-    spb.enable()
-    assert spb.isEnabled() is True
-
-
-def test_SvgPushButton_disable(mocker):
-    """
-    Ensure disable.
-    """
-    spb = SvgPushButton(normal='mock1', disabled='mock2', active='mock3', selected='mock4')
-    spb.disable()
-    assert spb.isEnabled() is False
 
 
 def test_SvgLabel_init(mocker):

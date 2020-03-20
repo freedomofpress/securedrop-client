@@ -1089,7 +1089,6 @@ class SourceWidget(QWidget):
         # Store source
         self.source_uuid = source.uuid
         self.source = source
-        self.source_uuid = source.uuid
 
         # Set styles
         self.setStyleSheet(self.CSS)
@@ -1115,7 +1114,7 @@ class SourceWidget(QWidget):
         gutter_layout = QVBoxLayout(self.gutter)
         gutter_layout.setContentsMargins(0, 0, 0, 0)
         gutter_layout.setSpacing(0)
-        self.star = StarToggleButton(self.controller, self.source)
+        self.star = StarToggleButton(self.controller, self.source_uuid, source.is_starred)
         gutter_layout.addWidget(self.star)
         gutter_layout.addStretch()
 
@@ -1230,12 +1229,12 @@ class StarToggleButton(SvgToggleButton):
     }
     '''
 
-    def __init__(self, controller: Controller, source: Source):
+    def __init__(self, controller: Controller, source_uuid: str, is_starred: bool):
         super().__init__(on='star_on.svg', off='star_off.svg', svg_size=QSize(16, 16))
 
         self.controller = controller
-        self.source_uuid = source.uuid
-        self.is_starred = source.is_starred
+        self.source_uuid = source_uuid
+        self.is_starred = is_starred
         self.pending_count = 0
         self.wait_until_next_sync = False
 

@@ -35,7 +35,7 @@ class UpdateStarJob(ApiJob):
 
             return self.source_uuid
         except (RequestTimeoutError, ServerConnectionError) as e:
-            error_message = f'Failed to update star on source {self.source_uuid} due to {e}'
+            error_message = f'Failed to update star on source {self.source_uuid} due to error: {e}'
             raise UpdateStarJobTimeoutError(error_message, self.source_uuid, self.is_starred)
         except Exception as e:
             error_message = f'Failed to update star on source {self.source_uuid} due to {e}'

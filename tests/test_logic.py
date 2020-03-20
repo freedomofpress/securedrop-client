@@ -13,9 +13,9 @@ from tests import factory
 from securedrop_client import db
 from securedrop_client.logic import APICallRunner, Controller, TIME_BETWEEN_SHOWING_LAST_SYNC_MS
 from securedrop_client.api_jobs.base import ApiInaccessibleError
-from securedrop_client.api_jobs.downloads import (
-    DownloadChecksumMismatchException, DownloadDecryptionException, DownloadException
-)
+from securedrop_client.api_jobs.downloads import DownloadChecksumMismatchException, \
+    DownloadDecryptionException, DownloadException
+from securedrop_client.api_jobs.updatestar import UpdateStarJobError, UpdateStarJobTimeoutError
 from securedrop_client.api_jobs.uploads import SendReplyJobError, SendReplyJobTimeoutError
 
 with open(os.path.join(os.path.dirname(__file__), 'files', 'test-key.gpg.pub.asc')) as f:
@@ -571,23 +571,41 @@ def test_Controller_on_update_star_success(homedir, config, mocker, session_make
     """
     mock_gui = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
-    result = True
-    co.call_reset = mocker.MagicMock()
-    co.on_update_star_success(result)
+    co.star_update_failed = mocker.MagicMock()
+
+    co.on_update_star_success('mock_uuid')
 
 
-def test_Controller_on_update_star_failed(homedir, config, mocker, session_maker):
+def test_Controller_on_update_star_failed(homedir, config, mocker):
     """
-    If the starring does not occur properly, then an error should appear
-    on the error status sidebar, and a sync will not occur.
-    Using the `config` fixture to ensure the config is written to disk.
+    Check that if starring fails then the failure signal is emitted and the error bar is updated
+    with a failure message.
     """
-    mock_gui = mocker.MagicMock()
-    co = Controller('http://localhost', mock_gui, session_maker, homedir)
-    result = Exception('boom')
-    co.call_reset = mocker.MagicMock()
-    co.on_update_star_failure(result)
-    mock_gui.update_error_status.assert_called_once_with('Failed to update star.')
+    gui = mocker.MagicMock()
+    co = Controller('http://localhost', gui, mocker.MagicMock(), homedir)
+    co.star_update_failed = mocker.MagicMock()
+
+    error = UpdateStarJobError('mock_message', 'mock_uuid', True)
+    co.on_update_star_failure(error)
+
+    co.star_update_failed.emit.assert_called_once_with(error.source_uuid, error.is_starred)
+    gui.update_error_status.assert_called_once_with('Failed to update star.')
+
+
+def test_Controller_on_update_star_failed_due_to_timeout(homedir, config, mocker):
+    """
+    Ensure the failure signal is not emitted and the error bar is not updated if the star fails due
+    to a timeout (regression test).
+    """
+    gui = mocker.MagicMock()
+    co = Controller('http://localhost', gui, mocker.MagicMock(), homedir)
+    co.star_update_failed = mocker.MagicMock()
+
+    error = UpdateStarJobTimeoutError('mock_message', 'mock_uuid', True)
+    co.on_update_star_failure(error)
+
+    co.star_update_failed.emit.assert_not_called()
+    gui.update_error_status.assert_not_called()
 
 
 def test_Controller_invalidate_token(mocker, homedir, session_maker):
@@ -1559,36 +1577,26 @@ def test_Controller_call_update_star_success(homedir, config, mocker, session_ma
     co.call_api = mocker.MagicMock()
     co.api = mocker.MagicMock()
 
-    mock_success_signal = mocker.MagicMock()
-    mock_failure_signal = mocker.MagicMock()
-    mock_job = mocker.MagicMock(success_signal=mock_success_signal,
-                                failure_signal=mock_failure_signal)
-    mock_job_cls = mocker.patch(
-        "securedrop_client.logic.UpdateStarJob", return_value=mock_job)
+    star_update_successful = mocker.MagicMock()
+    star_update_failed = mocker.MagicMock()
+    mock_job = mocker.MagicMock(success_signal=star_update_successful,
+                                failure_signal=star_update_failed)
+    mock_job_cls = mocker.patch("securedrop_client.logic.UpdateStarJob", return_value=mock_job)
     mock_queue = mocker.patch.object(co, 'api_job_queue')
 
     source = factory.Source()
     session.add(source)
     session.commit()
 
-    mock_callback = mocker.MagicMock()
+    co.update_star(source.uuid, source.is_starred)
 
-    co.update_star(source, mock_callback)
-
-    mock_job_cls.assert_called_once_with(
-        source.uuid,
-        source.is_starred
-    )
-
+    mock_job_cls.assert_called_once_with(source.uuid, source.is_starred)
     mock_queue.enqueue.assert_called_once_with(mock_job)
-    assert mock_success_signal.connect.call_count == 2
-    cal = mock_success_signal.connect.call_args_list
-    assert cal[0][0][0] == co.on_update_star_success
-    assert cal[0][1]['type'] == Qt.QueuedConnection
-    assert cal[1][0][0] == mock_callback
-    assert cal[1][1]['type'] == Qt.QueuedConnection
-    mock_failure_signal.connect.assert_called_once_with(
+    assert star_update_successful.connect.call_count == 1
+    star_update_failed.connect.assert_called_once_with(
         co.on_update_star_failure, type=Qt.QueuedConnection)
+    star_update_successful.connect.assert_called_once_with(
+        co.on_update_star_success, type=Qt.QueuedConnection)
 
 
 def test_Controller_run_printer_preflight_checks(homedir, mocker, session, source):
