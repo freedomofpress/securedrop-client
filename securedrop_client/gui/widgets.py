@@ -22,7 +22,7 @@ import html
 import sys
 
 from gettext import gettext as _
-from typing import Dict, List, Union  # noqa: F401
+from typing import Dict, List, Union, Optional  # noqa: F401
 from uuid import uuid4
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QEvent, QTimer, QSize, pyqtBoundSignal, \
     QObject, QPoint
@@ -966,7 +966,7 @@ class SourceList(QListWidget):
         if source_widget and source_exists(self.controller.session, source_widget.source_uuid):
             return source_widget.source
 
-    def get_source_widget(self, source_uuid: str) -> QListWidget:
+    def get_source_widget(self, source_uuid: str) -> Optional[QListWidget]:
         '''
         First try to get the source widget from the cache, then look for it in the SourceList.
         '''
@@ -981,6 +981,8 @@ class SourceList(QListWidget):
             source_widget = self.itemWidget(list_item)
             if source_widget and source_widget.source_uuid == source_uuid:
                 return source_widget
+
+        return None
 
     @pyqtSlot(str, str, str)
     def set_snippet(self, source_uuid: str, collection_item_uuid: str, content: str) -> None:
