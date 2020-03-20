@@ -2554,15 +2554,15 @@ class PrintDialog(FramelessDialog):
             'Preparing to print:'
             '<br />'
             '<span style="font-weight:normal">{}</span>'.format(self.file_name))
-        self.insert_usb_header = _('Insert USB printer')
-        self.error_header = _('Unable to print')
+        self.insert_usb_header = _('Connect USB printer')
+        self.error_header = _('Printing failed')
         self.starting_message = _(
             '<h2>Managing printout risks</h2>'
-            '<b>QR-Codes and visible web addresses</b>'
+            '<b>QR codes and web addresses</b>'
             '<br />'
-            'Never open web addresses or scan QR codes contained in printed documents without '
-            'taking security precautions. If you are unsure how to manage this risk, please '
-            'contact your administrator.'
+            'Never type in and open web addresses or scan QR codes contained in printed '
+            'documents without taking security precautions. If you are unsure how to '
+            'manage this risk, please contact your administrator.'
             '<br /><br />'
             '<b>Printer dots</b>'
             '<br />'
@@ -2691,20 +2691,20 @@ class ExportDialog(FramelessDialog):
         self.insert_usb_header = _('Insert encrypted USB drive')
         self.passphrase_header = _('Enter passphrase for USB drive')
         self.success_header = _('Export successful')
-        self.error_header = _('Unable to export')
+        self.error_header = _('Export failed')
         self.starting_message = _(
-            '<h2>Proceed with caution when exporting files</h2>'
+            '<h2>Understand the risks before exporting files</h2>'
             '<b>Malware</b>'
             '<br />'
-            'This workstation lets you open documents securely. If you open documents on another '
+            'This workstation lets you open files securely. If you open files on another '
             'computer, any embedded malware may spread to your computer or network. If you are '
-            'unsure how to manage this risk, please print the document, or contact your '
+            'unsure how to manage this risk, please print the file, or contact your '
             'administrator.'
             '<br /><br />'
             '<b>Anonymity</b>'
             '<br />'
-            'Documents submitted by sources may contain information or hidden metadata that '
-            'identifies who they are. To protect your sources, please consider redacting documents '
+            'Files submitted by sources may contain information or hidden metadata that '
+            'identifies who they are. To protect your sources, please consider redacting files '
             'before working with them on network-connected computers.')
         self.exporting_message = _('Exporting: {}'.format(self.file_name))
         self.insert_usb_message = _(
