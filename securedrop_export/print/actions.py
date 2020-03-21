@@ -197,7 +197,7 @@ class PrintAction(ExportAction):
             )
             file_to_print = converted_path
 
-        logger.info('Sending file to printer {}:{}'.format(self.printer_name, file_to_print))
+        logger.info('Sending file to printer {}'.format(self.printer_name))
         self.submission.safe_check_call(
             command=["xpp", "-P", self.printer_name, file_to_print],
             error_message=ExportStatus.ERROR_PRINT.value
