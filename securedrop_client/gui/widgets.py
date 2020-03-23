@@ -382,6 +382,9 @@ class ErrorStatusBar(QWidget):
         continuously show message.
         """
         self.status_bar.showMessage(message, duration)
+        new_width = self.fontMetrics().horizontalAdvance(message)
+        self.status_bar.setMinimumWidth(new_width)
+        self.status_bar.reformat()
 
         if duration != 0:
             self.status_timer.start(duration)
