@@ -1359,8 +1359,8 @@ class StarToggleButton(SvgToggleButton):
         """
         if self.source_uuid == source_uuid:
             self.is_starred = is_starred
-            self.setChecked(self.is_starred)
             self.pending_count = self.pending_count - 1
+            QTimer.singleShot(250, lambda: self.setChecked(self.is_starred))
 
     @pyqtSlot(str)
     def on_star_update_successful(self, source_uuid: str) -> None:
