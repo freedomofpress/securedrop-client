@@ -570,7 +570,7 @@ def test_MainView_on_source_changed(mocker):
     mv = MainView(None)
     mv.set_conversation = mocker.MagicMock()
     mv.source_list = mocker.MagicMock()
-    mv.source_list.get_current_source = mocker.MagicMock(return_value=factory.Source())
+    mv.source_list.get_selected_source = mocker.MagicMock(return_value=factory.Source())
     mv.controller = mocker.MagicMock(is_authenticated=True)
     mocker.patch('securedrop_client.gui.widgets.source_exists', return_value=True)
     scw = mocker.MagicMock()
@@ -578,7 +578,7 @@ def test_MainView_on_source_changed(mocker):
 
     mv.on_source_changed()
 
-    mv.source_list.get_current_source.assert_called_once_with()
+    mv.source_list.get_selected_source.assert_called_once_with()
     mv.set_conversation.assert_called_once_with(scw)
 
 
@@ -589,11 +589,11 @@ def test_MainView_on_source_changed_when_source_no_longer_exists(mocker):
     mv = MainView(None)
     mv.set_conversation = mocker.MagicMock()
     mv.source_list = mocker.MagicMock()
-    mv.source_list.get_current_source = mocker.MagicMock(return_value=None)
+    mv.source_list.get_selected_source = mocker.MagicMock(return_value=None)
 
     mv.on_source_changed()
 
-    mv.source_list.get_current_source.assert_called_once_with()
+    mv.source_list.get_selected_source.assert_called_once_with()
     mv.set_conversation.assert_not_called()
 
 
@@ -613,7 +613,7 @@ def test_MainView_on_source_changed_updates_conversation_view(mocker, session):
     r = factory.Reply(source=s, filename='0-mock-reply.gpg')
     session.add(r)
     session.commit()
-    mv.source_list.get_current_source = mocker.MagicMock(return_value=s)
+    mv.source_list.get_selected_source = mocker.MagicMock(return_value=s)
     add_message_fn = mocker.patch(
         'securedrop_client.gui.widgets.ConversationView.add_message', new=mocker.Mock())
     add_reply_fn = mocker.patch(
@@ -649,7 +649,7 @@ def test_MainView_on_source_changed_SourceConversationWrapper_is_preserved(mocke
         return_value=None)
 
     # We expect on the first call, SourceConversationWrapper.__init__ should be called.
-    mv.source_list.get_current_source = mocker.MagicMock(return_value=source)
+    mv.source_list.get_selected_source = mocker.MagicMock(return_value=source)
     mv.on_source_changed()
     assert mv.set_conversation.call_count == 1
     assert source_conversation_init.call_count == 1
@@ -661,7 +661,7 @@ def test_MainView_on_source_changed_SourceConversationWrapper_is_preserved(mocke
     # Now click on another source (source2). Since this is the first time we have clicked
     # on source2, we expect on the first call, SourceConversationWrapper.__init__ should be
     # called.
-    mv.source_list.get_current_source = mocker.MagicMock(return_value=source2)
+    mv.source_list.get_selected_source = mocker.MagicMock(return_value=source2)
     mv.on_source_changed()
     assert mv.set_conversation.call_count == 1
     assert source_conversation_init.call_count == 1
@@ -672,7 +672,7 @@ def test_MainView_on_source_changed_SourceConversationWrapper_is_preserved(mocke
 
     # But if we click back (call on_source_changed again) to the source,
     # its SourceConversationWrapper should _not_ be recreated.
-    mv.source_list.get_current_source = mocker.MagicMock(return_value=source)
+    mv.source_list.get_selected_source = mocker.MagicMock(return_value=source)
     conversation_wrapper = mv.source_conversations[source.uuid]
     conversation_wrapper.conversation_view = mocker.MagicMock()
     conversation_wrapper.conversation_view.update_conversation = mocker.MagicMock()
@@ -719,7 +719,7 @@ def test_EmptyConversationView_show_no_source_selected_message(mocker):
     assert not ecv.no_source_selected.isHidden()
 
 
-def test_SourceList_get_current_source(mocker):
+def test_SourceList_get_selected_source(mocker):
     """
     Maintains the selected item if present in new list
     """
@@ -727,9 +727,12 @@ def test_SourceList_get_current_source(mocker):
     sl.controller = mocker.MagicMock()
     sources = [factory.Source(), factory.Source()]
     sl.update(sources)
+
+    assert sl.get_selected_source() is None
+
     sl.setCurrentItem(sl.itemAt(1, 0))  # select source2
 
-    current_source = sl.get_current_source()
+    current_source = sl.get_selected_source()
 
     assert current_source.id == sources[1].id
 
