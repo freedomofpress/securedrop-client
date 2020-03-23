@@ -448,17 +448,20 @@ class UserProfile(QLabel):
         # Login button
         self.login_button = LoginButton()
 
+        # User button
+        self.user_button = UserButton()
+
         # User icon
-        self.user_icon = QLabel()
+        self.user_icon = UserIconLabel()
         self.user_icon.setObjectName('user_icon')  # Set css id
         self.user_icon.setFixedSize(QSize(30, 30))
         self.user_icon.setAlignment(Qt.AlignCenter)
         self.user_icon_font = QFont()
         self.user_icon_font.setLetterSpacing(QFont.AbsoluteSpacing, 0.58)
         self.user_icon.setFont(self.user_icon_font)
-
-        # User button
-        self.user_button = UserButton()
+        self.user_icon.clicked.connect(self.user_button.click)
+        # Set cursor.
+        self.user_icon.setCursor(QCursor(Qt.PointingHandCursor))
 
         # Add widgets to user auth layout
         layout.addWidget(self.login_button, 1)
@@ -486,6 +489,17 @@ class UserProfile(QLabel):
         self.user_icon.hide()
         self.user_button.hide()
         self.login_button.show()
+
+
+class UserIconLabel(QLabel):
+    """
+    Makes a label clickable. (For the label containing the user icon.)
+    """
+
+    clicked = pyqtSignal()
+
+    def mousePressEvent(self, e):
+        self.clicked.emit()
 
 
 class UserButton(SvgPushButton):

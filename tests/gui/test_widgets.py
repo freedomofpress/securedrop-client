@@ -22,7 +22,7 @@ from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, Se
     ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
     ReplyBoxWidget, ReplyTextEdit, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, \
     LoginErrorBar, EmptyConversationView, FramelessDialog, ExportDialog, PrintDialog, \
-    PasswordEdit, SourceProfileShortWidget
+    PasswordEdit, SourceProfileShortWidget, UserIconLabel
 from tests import factory
 
 
@@ -381,6 +381,13 @@ def test_UserProfile_hide(mocker):
     up.user_icon.hide.assert_called_once_with()
     up.user_button.hide.assert_called_once_with()
     up.login_button.show.assert_called_once_with()
+
+
+def test_UserIconLabel_clicks(mocker):
+    uil = UserIconLabel()
+    uil.clicked = mocker.MagicMock()
+    uil.mousePressEvent(None)
+    uil.clicked.emit.assert_called_once_with()
 
 
 def test_UserButton_setup(mocker):
