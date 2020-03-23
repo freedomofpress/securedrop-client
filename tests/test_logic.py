@@ -13,8 +13,10 @@ from tests import factory
 from securedrop_client import db
 from securedrop_client.logic import APICallRunner, Controller, TIME_BETWEEN_SHOWING_LAST_SYNC_MS
 from securedrop_client.api_jobs.base import ApiInaccessibleError
-from securedrop_client.api_jobs.downloads import DownloadChecksumMismatchException, \
-    DownloadDecryptionException, DownloadException
+from securedrop_client.api_jobs.downloads import (
+    DownloadChecksumMismatchException, DownloadDecryptionException, DownloadException
+)
+from securedrop_client.api_jobs.sources import DeleteSourceJobException
 from securedrop_client.api_jobs.updatestar import UpdateStarJobError, UpdateStarJobTimeoutError
 from securedrop_client.api_jobs.uploads import SendReplyJobError, SendReplyJobTimeoutError
 
@@ -1340,7 +1342,7 @@ def test_Controller_on_delete_source_failure(homedir, config, mocker, session_ma
     '''
     mock_gui = mocker.MagicMock()
     co = Controller('http://localhost', mock_gui, session_maker, homedir)
-    co.on_delete_source_failure(Exception())
+    co.on_delete_source_failure(DeleteSourceJobException('weow', 'uuid'))
     co.gui.update_error_status.assert_called_with('Failed to delete source at server')
 
 

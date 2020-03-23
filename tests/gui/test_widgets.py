@@ -1141,6 +1141,32 @@ def test_SourceWidget__on_source_deleted_wrong_uuid(mocker, session, source):
     assert sw.waiting_delete_confirmation.isHidden()
 
 
+def test_SourceWidget__on_source_deletion_failed(mocker, session, source):
+    controller = mocker.MagicMock()
+    sw = SourceWidget(controller, factory.Source(uuid='123'))
+    sw._on_source_deleted('123')
+
+    sw._on_source_deletion_failed('123')
+
+    assert not sw.gutter.isHidden()
+    assert not sw.metadata.isHidden()
+    assert not sw.preview.isHidden()
+    assert sw.waiting_delete_confirmation.isHidden()
+
+
+def test_SourceWidget__on_source_deletion_failed_wrong_uuid(mocker, session, source):
+    controller = mocker.MagicMock()
+    sw = SourceWidget(controller, factory.Source(uuid='123'))
+    sw._on_source_deleted('123')
+
+    sw._on_source_deletion_failed('321')
+
+    assert sw.gutter.isHidden()
+    assert sw.metadata.isHidden()
+    assert sw.preview.isHidden()
+    assert not sw.waiting_delete_confirmation.isHidden()
+
+
 def test_SourceWidget_uses_SecureQLabel(mocker):
     """
     Ensure the source widget preview uses SecureQLabel and is not injectable
@@ -3070,6 +3096,30 @@ def test_SourceConversationWrapper__on_source_deleted_wrong_uuid(mocker):
     assert not scw.conversation_view.isHidden()
     assert not scw.reply_box.isHidden()
     assert scw.waiting_delete_confirmation.isHidden()
+
+
+def test_SourceConversationWrapper__on_source_deletion_failed(mocker):
+    scw = SourceConversationWrapper(factory.Source(uuid='123'), mocker.MagicMock())
+    scw._on_source_deleted('123')
+
+    scw._on_source_deletion_failed('123')
+
+    assert not scw.conversation_title_bar.isHidden()
+    assert not scw.conversation_view.isHidden()
+    assert not scw.reply_box.isHidden()
+    assert scw.waiting_delete_confirmation.isHidden()
+
+
+def test_SourceConversationWrapper__on_source_deletion_failed_wrong_uuid(mocker):
+    scw = SourceConversationWrapper(factory.Source(uuid='123'), mocker.MagicMock())
+    scw._on_source_deleted('123')
+
+    scw._on_source_deletion_failed('321')
+
+    assert scw.conversation_title_bar.isHidden()
+    assert scw.conversation_view.isHidden()
+    assert scw.reply_box.isHidden()
+    assert not scw.waiting_delete_confirmation.isHidden()
 
 
 def test_ConversationView_init(mocker, homedir):

@@ -1085,6 +1085,7 @@ class SourceWidget(QWidget):
 
         self.controller = controller
         self.controller.source_deleted.connect(self._on_source_deleted)
+        self.controller.source_deletion_failed.connect(self._on_source_deletion_failed)
 
         # Store source
         self.source_uuid = source.uuid
@@ -1216,6 +1217,14 @@ class SourceWidget(QWidget):
             self.metadata.hide()
             self.preview.hide()
             self.waiting_delete_confirmation.show()
+
+    @pyqtSlot(str)
+    def _on_source_deletion_failed(self, source_uuid: str):
+        if self.source_uuid == source_uuid:
+            self.waiting_delete_confirmation.hide()
+            self.gutter.show()
+            self.metadata.show()
+            self.preview.show()
 
 
 class StarToggleButton(SvgToggleButton):
@@ -3161,6 +3170,7 @@ class SourceConversationWrapper(QWidget):
 
         self.source_uuid = source.uuid
         controller.source_deleted.connect(self._on_source_deleted)
+        controller.source_deletion_failed.connect(self._on_source_deletion_failed)
 
         # Set layout
         layout = QVBoxLayout()
@@ -3197,6 +3207,14 @@ class SourceConversationWrapper(QWidget):
             self.conversation_view.hide()
             self.reply_box.hide()
             self.waiting_delete_confirmation.show()
+
+    @pyqtSlot(str)
+    def _on_source_deletion_failed(self, source_uuid: str):
+        if self.source_uuid == source_uuid:
+            self.waiting_delete_confirmation.hide()
+            self.conversation_title_bar.show()
+            self.conversation_view.show()
+            self.reply_box.show()
 
 
 class ReplyBoxWidget(QWidget):

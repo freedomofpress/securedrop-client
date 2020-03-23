@@ -34,9 +34,11 @@ from sqlalchemy.orm.session import sessionmaker
 from securedrop_client import storage
 from securedrop_client import db
 from securedrop_client.api_jobs.base import ApiInaccessibleError
-from securedrop_client.api_jobs.downloads import DownloadChecksumMismatchException, \
-    DownloadDecryptionException, FileDownloadJob, MessageDownloadJob, ReplyDownloadJob
-from securedrop_client.api_jobs.sources import DeleteSourceJob
+from securedrop_client.api_jobs.downloads import (
+    DownloadChecksumMismatchException, DownloadDecryptionException, FileDownloadJob,
+    MessageDownloadJob, ReplyDownloadJob,
+)
+from securedrop_client.api_jobs.sources import DeleteSourceJob, DeleteSourceJobException
 from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobError, \
     SendReplyJobTimeoutError
 from securedrop_client.api_jobs.updatestar import UpdateStarJob, UpdateStarJobError, \
@@ -205,6 +207,14 @@ class Controller(QObject):
         bool: is_starred
     """
     star_update_failed = pyqtSignal(str, bool)
+
+    """
+    This signal indicates that a deletion attempt failed at the server.
+
+    Emits:
+        str: the source UUID
+    """
+    source_deletion_failed = pyqtSignal(str)
 
     def __init__(self, hostname: str, gui, session_maker: sessionmaker,
                  home: str, proxy: bool = True, qubes: bool = True) -> None:
@@ -784,9 +794,10 @@ class Controller(QObject):
         pass
 
     def on_delete_source_failure(self, e: Exception) -> None:
-        if not isinstance(e, (RequestTimeoutError, ServerConnectionError)):
+        if isinstance(e, DeleteSourceJobException):
             error = _('Failed to delete source at server')
             self.gui.update_error_status(error)
+            self.source_deletion_failed.emit(e.source_uuid)
 
     @login_required
     def delete_source(self, source: db.Source):
