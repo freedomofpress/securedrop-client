@@ -3462,7 +3462,7 @@ def test_ReplyBoxWidget_on_sync_source_deleted(mocker, source):
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(s, controller)
 
-    error_logger = mocker.patch('securedrop_client.gui.widgets.logger.error')
+    error_logger = mocker.patch('securedrop_client.gui.widgets.logger.debug')
 
     def pretend_source_was_deleted(self):
         raise sqlalchemy.orm.exc.ObjectDeletedError(
@@ -3529,7 +3529,7 @@ def test_ReplyBoxWidget_on_authentication_changed_source_deleted(mocker, source)
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(s, controller)
 
-    error_logger = mocker.patch('securedrop_client.gui.widgets.logger.error')
+    error_logger = mocker.patch('securedrop_client.gui.widgets.logger.debug')
 
     def pretend_source_was_deleted(self):
         raise sqlalchemy.orm.exc.ObjectDeletedError(

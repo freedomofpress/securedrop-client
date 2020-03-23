@@ -3311,7 +3311,7 @@ class ReplyBoxWidget(QWidget):
         try:
             self.update_authentication_state(authenticated)
         except sqlalchemy.orm.exc.ObjectDeletedError:
-            logger.error(
+            logger.debug(
                 "On authentication change, ReplyBoxWidget found its source had been deleted."
             )
             self.destroy()
@@ -3333,7 +3333,7 @@ class ReplyBoxWidget(QWidget):
             else:
                 self.refocus_after_sync = False
         except sqlalchemy.orm.exc.ObjectDeletedError:
-            logger.error("During sync, ReplyBoxWidget found its source had been deleted.")
+            logger.debug("During sync, ReplyBoxWidget found its source had been deleted.")
             self.destroy()
 
 

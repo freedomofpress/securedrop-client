@@ -176,8 +176,8 @@ class DownloadJob(ApiJob):
             mark_as_decrypted(
                 type(db_object), db_object.uuid, session, original_filename=original_filename
             )
-            logger.info("File decrypted: {} (decrypted file: {})".format(
-                os.path.basename(filepath), original_filename)
+            logger.info("File decrypted: {} (decrypted file in: {})".format(
+                os.path.basename(filepath), os.path.dirname(original_filename))
             )
         except CryptoError as e:
             mark_as_decrypted(type(db_object), db_object.uuid, session, is_decrypted=False)
@@ -374,5 +374,6 @@ class FileDownloadJob(DownloadJob):
         original_filename = self.gpg.decrypt_submission_or_reply(
             filepath, plaintext_filepath, is_doc=True
         )
-        logger.info("""Decrypted file "%s" to "%s" """, filepath, original_filename)
+        logger.info("Decrypted file '{}' to folder '{}'".format(
+            filepath, os.path.dirname(original_filename)))
         return original_filename

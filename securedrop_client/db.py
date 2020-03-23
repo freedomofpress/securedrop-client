@@ -46,7 +46,7 @@ class Source(Base):
     last_updated = Column(DateTime)
 
     def __repr__(self) -> str:
-        return '<Source {}>'.format(self.journalist_designation)
+        return '<Source {}: {}>'.format(self.uuid, self.journalist_designation)
 
     @property
     def collection(self) -> List:
@@ -128,7 +128,7 @@ class Message(Base):
             return '<Message not yet available>'
 
     def __repr__(self) -> str:
-        return '<Message {}>'.format(self.filename)
+        return '<Message {}: {}>'.format(self.uuid, self.filename)
 
     def location(self, data_dir: str) -> str:
         '''
@@ -195,7 +195,7 @@ class File(Base):
             return '<Encrypted file on server>'
 
     def __repr__(self) -> str:
-        return '<File {}>'.format(self.filename)
+        return '<File {}>'.format(self.uuid)
 
     def location(self, data_dir: str) -> str:
         '''
@@ -269,7 +269,7 @@ class Reply(Base):
             return '<Reply not yet available>'
 
     def __repr__(self) -> str:
-        return '<Reply {}>'.format(self.filename)
+        return '<Reply {}: {}>'.format(self.uuid, self.filename)
 
     def location(self, data_dir: str) -> str:
         '''

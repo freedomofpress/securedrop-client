@@ -14,7 +14,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <fhttp://www.gnu.org/licenses/>.
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import arrow
 from datetime import datetime
@@ -346,7 +346,7 @@ class Controller(QObject):
         error result from the API. It's up to the handler (user_callback) to
         handle these potential states.
         """
-        logger.info("Completed API call. Cleaning up and running callback.")
+        logger.debug("Completed API call. Cleaning up and running callback.")
         thread_info = self.api_threads.pop(thread_id)
         runner = thread_info['runner']
         result_data = runner.result
@@ -469,7 +469,7 @@ class Controller(QObject):
         a sync fails is ApiInaccessibleError then we need to log the user out for security reasons
         and show them the login window in order to get a new token.
         """
-        logger.error('sync failure: {}'.format(result))
+        logger.warning('sync failure: {}'.format(result))
 
         if isinstance(result, ApiInaccessibleError):
             # Don't show login window if the user is already logged out
@@ -596,11 +596,11 @@ class Controller(QObject):
         """
         Called when a message fails to download.
         """
-        logger.debug('Failed to download message: {}'.format(exception))
+        logger.info('Failed to download message: {}'.format(exception))
 
         # Keep resubmitting the job if the download is corrupted.
         if isinstance(exception, DownloadChecksumMismatchException):
-            logger.debug('Failure due to checksum mismatch, retrying {}'.format(exception.uuid))
+            logger.warning('Failure due to checksum mismatch, retrying {}'.format(exception.uuid))
             self._submit_download_job(exception.object_type, exception.uuid)
 
     def download_new_replies(self) -> None:
@@ -620,11 +620,11 @@ class Controller(QObject):
         """
         Called when a reply fails to download.
         """
-        logger.debug('Failed to download reply: {}'.format(exception))
+        logger.info('Failed to download reply: {}'.format(exception))
 
         # Keep resubmitting the job if the download is corrupted.
         if isinstance(exception, DownloadChecksumMismatchException):
-            logger.debug('Failure due to checksum mismatch, retrying {}'.format(exception.uuid))
+            logger.warning('Failure due to checksum mismatch, retrying {}'.format(exception.uuid))
             self._submit_download_job(exception.object_type, exception.uuid)
 
     def downloaded_file_exists(self, file: db.File) -> bool:
@@ -635,8 +635,8 @@ class Controller(QObject):
         if not os.path.exists(file.location(self.data_dir)):
             self.gui.update_error_status(_(
                 'File does not exist in the data directory. Please try re-downloading.'))
-            logger.debug('Cannot find {} in the data directory. File does not exist.'.format(
-                file.filename))
+            logger.warning('Cannot find file in {}. File does not exist.'.format(
+                os.path.dirname(file.filename)))
             missing_files = storage.update_missing_files(self.data_dir, self.session)
             for f in missing_files:
                 self.file_missing.emit(f.source.uuid, f.uuid, str(f))
@@ -648,7 +648,7 @@ class Controller(QObject):
         Open the file specified by file_uuid. If the file is missing, update the db so that
         is_downloaded is set to False.
         '''
-        logger.info('Opening file "{}".'.format(file.location(self.data_dir)))
+        logger.info('Opening file in "{}".'.format(os.path.dirname(file.location(self.data_dir))))
 
         if not self.downloaded_file_exists(file):
             return
@@ -693,7 +693,7 @@ class Controller(QObject):
         '''
         file = self.get_file(file_uuid)
         file_location = file.location(self.data_dir)
-        logger.info('Exporting file %s', file_location)
+        logger.info('Exporting file in: {}'.format(os.path.dirname(file_location)))
 
         if not self.downloaded_file_exists(file):
             return
@@ -711,7 +711,7 @@ class Controller(QObject):
         '''
         file = self.get_file(file_uuid)
         file_location = file.location(self.data_dir)
-        logger.info('Printing file {}'.format(file_location))
+        logger.info('Printing file in: {}'.format(os.path.dirname(file_location)))
 
         if not self.downloaded_file_exists(file):
             return
@@ -744,11 +744,11 @@ class Controller(QObject):
         """
         Called when a file fails to download.
         """
-        logger.debug('Failed to download file: {}'.format(exception))
+        logger.info('Failed to download file: {}'.format(exception))
 
         # Keep resubmitting the job if the download is corrupted.
         if isinstance(exception, DownloadChecksumMismatchException):
-            logger.debug('Failure due to checksum mismatch, retrying {}'.format(exception.uuid))
+            logger.warning('Failure due to checksum mismatch, retrying {}'.format(exception.uuid))
             self._submit_download_job(exception.object_type, exception.uuid)
         else:
             if isinstance(exception, DownloadDecryptionException):
@@ -819,7 +819,7 @@ class Controller(QObject):
         self.api_job_queue.enqueue(job)
 
     def on_reply_success(self, reply_uuid: str) -> None:
-        logger.debug('{} sent successfully'.format(reply_uuid))
+        logger.info('{} sent successfully'.format(reply_uuid))
         self.session.commit()
         reply = storage.get_reply(self.session, reply_uuid)
         self.reply_succeeded.emit(reply.source.uuid, reply_uuid, reply.content)
