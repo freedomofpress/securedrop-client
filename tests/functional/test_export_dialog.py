@@ -47,7 +47,7 @@ def test_export_dialog(qtbot, mocker):
     # Let us download the file
     qtbot.mouseClick(file_msg.download_button, Qt.LeftButton)
     qtbot.wait(5000)
-    assert file_msg.export_button.isHidden() == False
+    assert file_msg.export_button.isHidden() is False
     assert file_msg.file_name.text() == "hello.txt"
     assert file_msg.file_size.text() == "625B"
 
@@ -63,7 +63,7 @@ def test_export_dialog(qtbot, mocker):
     qtbot.mouseClick(export_dialog.continue_button, Qt.LeftButton)
 
     def check_password_form():
-        assert export_dialog.passphrase_form.isHidden() == False
+        assert export_dialog.passphrase_form.isHidden() is False
 
     qtbot.waitUntil(check_password_form, timeout=2000)
 
