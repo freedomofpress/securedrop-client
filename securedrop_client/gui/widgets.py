@@ -1605,6 +1605,9 @@ class LoginDialog(QDialog):
         self.parent = parent
         super().__init__(self.parent)
 
+        # Set modal
+        self.setModal(True)
+
         # Set css id
         self.setObjectName('login_dialog')
 
