@@ -2330,7 +2330,7 @@ class FileWidget(QWidget):
         if self.file.is_decrypted:
             # Open the already downloaded and decrypted file.
             self.controller.on_file_open(self.file)
-        else:
+        elif not self.downloading:
             if self.controller.api:
                 self.start_button_animation()
             # Download the file.

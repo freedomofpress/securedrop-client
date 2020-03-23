@@ -2092,6 +2092,31 @@ def test_FileWidget_on_left_click_download(mocker, session, source):
         db.File, file_.uuid)
 
 
+def test_FileWidget_on_left_click_downloading_in_progress(mocker, session, source):
+    """
+    Left click on download when file is not downloaded but is in progress
+    downloading should not trigger a download.
+    """
+    file_ = factory.File(source=source['source'],
+                         is_downloaded=False,
+                         is_decrypted=None)
+    session.add(file_)
+    session.commit()
+
+    mock_get_file = mocker.MagicMock(return_value=file_)
+    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+
+    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0)
+    fw.downloading = True
+    fw.download_button = mocker.MagicMock()
+    mock_get_file.assert_called_once_with(file_.uuid)
+    mock_get_file.reset_mock()
+
+    fw._on_left_click()
+    mock_get_file.call_count == 0
+    mock_controller.on_submission_download.call_count == 0
+
+
 def test_FileWidget_start_button_animation(mocker, session, source):
     """
     Ensure widget state is updated when this method is called.
