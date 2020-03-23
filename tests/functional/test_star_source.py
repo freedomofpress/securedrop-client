@@ -34,4 +34,4 @@ def test_star_source(qtbot, mocker):
     qtbot.mouseClick(first_source_widget.star, Qt.LeftButton)
     qtbot.wait(1000)
     # Check the source is now checked.
-    assert first_source_widget.star.source.is_starred is True
+    assert first_source_widget.star.is_starred is True

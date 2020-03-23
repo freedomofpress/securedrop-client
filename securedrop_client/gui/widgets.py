@@ -1089,7 +1089,6 @@ class SourceWidget(QWidget):
         # Store source
         self.source_uuid = source.uuid
         self.source = source
-        self.source_uuid = source.uuid
 
         # Set styles
         self.setStyleSheet(self.CSS)
@@ -1115,7 +1114,7 @@ class SourceWidget(QWidget):
         gutter_layout = QVBoxLayout(self.gutter)
         gutter_layout.setContentsMargins(0, 0, 0, 0)
         gutter_layout.setSpacing(0)
-        self.star = StarToggleButton(self.controller, self.source)
+        self.star = StarToggleButton(self.controller, self.source_uuid, source.is_starred)
         gutter_layout.addWidget(self.star)
         gutter_layout.addStretch()
 
@@ -1188,7 +1187,7 @@ class SourceWidget(QWidget):
 
             if self.source.document_count == 0:
                 self.paperclip.hide()
-            self.star.update()
+            self.star.update(self.source.is_starred)
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.error(f"Could not update SourceWidget for source {self.source_uuid}: {e}")
             raise
@@ -1230,137 +1229,146 @@ class StarToggleButton(SvgToggleButton):
     }
     '''
 
-    def __init__(self, controller: Controller, source: Source):
-        super().__init__(
-            on='star_on.svg',
-            off='star_off.svg',
-            svg_size=QSize(16, 16))
+    def __init__(self, controller: Controller, source_uuid: str, is_starred: bool):
+        super().__init__(on='star_on.svg', off='star_off.svg', svg_size=QSize(16, 16))
 
         self.controller = controller
-        self.source = source
+        self.source_uuid = source_uuid
+        self.is_starred = is_starred
+        self.pending_count = 0
+        self.wait_until_next_sync = False
 
+        self.controller.authentication_state.connect(self.on_authentication_changed)
+        self.controller.star_update_failed.connect(self.on_star_update_failed)
+        self.controller.star_update_successful.connect(self.on_star_update_successful)
         self.installEventFilter(self)
 
         self.setObjectName('star_button')
         self.setStyleSheet(self.css)
         self.setFixedSize(QSize(20, 20))
 
-        self.controller.authentication_state.connect(self.on_authentication_changed)
-        self.on_authentication_changed(self.controller.is_authenticated)
+        self.pressed.connect(self.on_pressed)
+        self.setCheckable(True)
+        self.setChecked(self.is_starred)
 
-    def disable(self):
-        """
-        Disable the widget.
+        if not self.controller.is_authenticated:
+            self.disable_toggle()
 
-        Disable toggle by setting checkable to False. Unfortunately,
-        disabling toggle doesn't freeze state, rather it always
-        displays the off state when a user tries to toggle. In order
-        to save on state we update the icon's off state image to
-        display on (hack).
+    def disable_toggle(self):
         """
-        self.disable_api_call()
-        self.setCheckable(False)
-        if self.source.is_starred:
+        Unset `checkable` so that the star cannot be toggled.
+
+        Disconnect the `pressed` signal from previous handler and connect it to the offline handler.
+        """
+        self.pressed.disconnect()
+        self.pressed.connect(self.on_pressed_offline)
+
+        # If the source is starred, we must update the icon so that the off state continues to show
+        # the source as starred. We could instead disable the button, which will continue to show
+        # the star as checked, but Qt will also gray out the star, which we don't want.
+        if self.is_starred:
             self.set_icon(on='star_on.svg', off='star_on.svg')
+        self.setCheckable(False)
 
-        try:
-            while True:
-                self.pressed.disconnect(self.on_toggle_offline)
-        except Exception as e:
-            logger.warning("Could not disconnect on_toggle_offline from self.pressed: %s", e)
-
-        try:
-            while True:
-                self.toggled.disconnect(self.on_toggle)
-        except Exception as e:
-            logger.warning("Could not disconnect on_toggle from self.toggled: %s", e)
-
-        self.pressed.connect(self.on_toggle_offline)
-
-    def enable(self):
+    def enable_toggle(self):
         """
         Enable the widget.
+
+        Disconnect the pressed signal from previous handler, set checkable so that the star can be
+        toggled, and connect to the online toggle handler.
+
+        Note: We must update the icon in case it was modified after being disabled.
         """
-        self.enable_api_call()
+        self.pressed.disconnect()
+        self.pressed.connect(self.on_pressed)
         self.setCheckable(True)
-        self.set_icon(on='star_on.svg', off='star_off.svg')
-        self.setChecked(self.source.is_starred)
-
-        try:
-            while True:
-                self.toggled.disconnect(self.on_toggle)
-        except Exception:
-            pass
-
-        try:
-            while True:
-                self.pressed.disconnect(self.on_toggle_offline)
-        except Exception:
-            pass
-
-        self.toggled.connect(self.on_toggle)
+        self.set_icon(on='star_on.svg', off='star_off.svg')  # Undo icon change from disable_toggle
 
     def eventFilter(self, obj, event):
-        checkable = self.isCheckable()
+        """
+        If the button is checkable then we show a hover state.
+        """
+        if not self.isCheckable():
+            return QObject.event(obj, event)
+
         t = event.type()
-        if t == QEvent.HoverEnter and checkable:
+        if t == QEvent.HoverEnter:
             self.setIcon(load_icon('star_hover.svg'))
         elif t == QEvent.HoverLeave:
-            if checkable:
-                self.set_icon(on='star_on.svg', off='star_off.svg')
-            else:
-                if self.source.is_starred:
-                    self.set_icon(on='star_on.svg', off='star_on.svg')
+            self.set_icon(on='star_on.svg', off='star_off.svg')
+
         return QObject.event(obj, event)
 
-    def on_authentication_changed(self, authenticated: bool):
+    @pyqtSlot(bool)
+    def on_authentication_changed(self, authenticated: bool) -> None:
         """
         Set up handlers based on whether or not the user is authenticated. Connect to 'pressed'
         event instead of 'toggled' event when not authenticated because toggling will be disabled.
         """
         if authenticated:
-            self.enable()
+            self.pending_count = 0
+            self.enable_toggle()
+            self.setChecked(self.is_starred)
         else:
-            self.disable()
+            self.disable_toggle()
 
-    def on_toggle(self):
+    @pyqtSlot()
+    def on_pressed(self) -> None:
         """
         Tell the controller to make an API call to update the source's starred field.
         """
-        if self.is_api_call_enabled:
-            self.controller.update_star(self.source, self.on_update)
+        self.controller.update_star(self.source_uuid, self.isChecked())
+        self.is_starred = not self.is_starred
+        self.pending_count = self.pending_count + 1
+        self.wait_until_next_sync = True
 
-    def on_toggle_offline(self):
+    @pyqtSlot()
+    def on_pressed_offline(self) -> None:
         """
         Show error message when not authenticated.
         """
         self.controller.on_action_requiring_login()
 
-    def on_update(self, result):
+    @pyqtSlot(bool)
+    def update(self, is_starred: bool) -> None:
         """
-        The result is a uuid for the source and boolean flag for the new state
-        of the star.
+        If star was updated via the Journalist Interface or by another instance of the client, then
+        self.is_starred will not match the server and will need to be updated.
         """
-        enabled = result[1]
-        self.source.is_starred = enabled
-        self.controller.session.commit()
-        self.controller.update_sources()
-        self.setChecked(enabled)
+        if not self.controller.is_authenticated:
+            return
 
-    def update(self):
-        """
-        Update the star to reflect its source's current state.
-        """
-        self.controller.session.refresh(self.source)
-        self.disable_api_call()
-        self.setChecked(self.source.is_starred)
-        self.enable_api_call()
+        # Wait until ongoing star jobs are finished before checking if it matches with the server
+        if self.pending_count > 0:
+            return
 
-    def disable_api_call(self):
-        self.is_api_call_enabled = False
+        # Wait until next sync to avoid the possibility of updating the star with outdated source
+        # information in case the server just received the star request.
+        if self.wait_until_next_sync:
+            self.wait_until_next_sync = False
+            return
 
-    def enable_api_call(self):
-        self.is_api_call_enabled = True
+        if self.is_starred != is_starred:
+            self.is_starred = is_starred
+            self.setChecked(self.is_starred)
+
+    @pyqtSlot(str, bool)
+    def on_star_update_failed(self, source_uuid: str, is_starred: bool) -> None:
+        """
+        If the star update failed to update on the server, toggle back to previous state.
+        """
+        if self.source_uuid == source_uuid:
+            self.is_starred = is_starred
+            self.pending_count = self.pending_count - 1
+            QTimer.singleShot(250, lambda: self.setChecked(self.is_starred))
+
+    @pyqtSlot(str)
+    def on_star_update_successful(self, source_uuid: str) -> None:
+        """
+        If the star update succeeded, set pending to False so the sync can update the star field
+        """
+        if self.source_uuid == source_uuid:
+            self.pending_count = self.pending_count - 1
 
 
 class DeleteSourceMessageBox:
@@ -1368,6 +1376,7 @@ class DeleteSourceMessageBox:
 
     def __init__(self, source, controller):
         self.source = source
+        self.source_uuid = source.uuid
         self.controller = controller
 
     def launch(self):
@@ -1383,7 +1392,7 @@ class DeleteSourceMessageBox:
             None, "", _(message), QMessageBox.Cancel | QMessageBox.Yes, QMessageBox.Cancel)
 
         if reply == QMessageBox.Yes:
-            logger.debug("Deleting source %s" % (self.source.uuid,))
+            logger.debug(f'Deleting source {self.source_uuid}')
             self.controller.delete_source(self.source)
 
     def _construct_message(self, source: Source) -> str:

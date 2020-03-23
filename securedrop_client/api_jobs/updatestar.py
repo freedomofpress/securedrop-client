@@ -1,9 +1,7 @@
 import logging
 import sdclientapi
 
-from typing import Tuple
-
-from sdclientapi import API
+from sdclientapi import API, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm.session import Session
 
 from securedrop_client.api_jobs.base import ApiJob
@@ -12,12 +10,12 @@ logger = logging.getLogger(__name__)
 
 
 class UpdateStarJob(ApiJob):
-    def __init__(self, source_uuid: str, star_status: bool) -> None:
+    def __init__(self, source_uuid: str, is_starred: bool) -> None:
         super().__init__()
         self.source_uuid = source_uuid
-        self.star_status = star_status
+        self.is_starred = is_starred
 
-    def call_api(self, api_client: API, session: Session) -> Tuple[str, bool]:
+    def call_api(self, api_client: API, session: Session) -> str:
         '''
         Override ApiJob.
 
@@ -30,21 +28,31 @@ class UpdateStarJob(ApiJob):
             # want to pass the default request timeout to remove_star and add_star instead of
             # setting it on the api object directly.
             api_client.default_request_timeout = 5
-            if self.star_status:
+            if self.is_starred:
                 api_client.remove_star(source_sdk_object)
             else:
                 api_client.add_star(source_sdk_object)
 
-            # Identify the source and *new* state of the star so the UI can be
-            # updated.
-            return self.source_uuid, not self.star_status
+            return self.source_uuid
+        except (RequestTimeoutError, ServerConnectionError) as e:
+            error_message = f'Failed to update star on source {self.source_uuid} due to error: {e}'
+            raise UpdateStarJobTimeoutError(error_message, self.source_uuid)
         except Exception as e:
-            error_message = "Failed to update star on source {uuid} due to {exception}".format(
-                uuid=self.source_uuid, exception=repr(e))
-            raise UpdateStarJobException(error_message, self.source_uuid)
+            error_message = f'Failed to update star on source {self.source_uuid} due to {e}'
+            raise UpdateStarJobError(error_message, self.source_uuid)
 
 
-class UpdateStarJobException(Exception):
-    def __init__(self, message: str, source_uuid: str):
+class UpdateStarJobError(Exception):
+    def __init__(self, message: str, source_uuid: str) -> None:
         super().__init__(message)
         self.source_uuid = source_uuid
+
+
+class UpdateStarJobTimeoutError(RequestTimeoutError):
+    def __init__(self, message: str, source_uuid: str) -> None:
+        super().__init__()
+        self.message = message
+        self.source_uuid = source_uuid
+
+    def __str__(self) -> str:
+        return self.message

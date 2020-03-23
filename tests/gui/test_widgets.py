@@ -1162,65 +1162,158 @@ def test_SourceWidget_uses_SecureQLabel(mocker):
 
 def test_StarToggleButton_init_source_starred(mocker):
     controller = mocker.MagicMock()
-    source = factory.Source()
-    source.is_starred = True
+    source = factory.Source(is_starred=True)
 
-    stb = StarToggleButton(controller, source)
+    stb = StarToggleButton(controller, source.uuid, source.is_starred)
 
-    assert stb.source == source
+    assert stb.source_uuid == source.uuid
     assert stb.isChecked() is True
 
 
 def test_StarToggleButton_init_source_unstarred(mocker):
     controller = mocker.MagicMock()
-    source = factory.Source()
-    source.is_starred = False
+    source = factory.Source(is_starred=False)
 
-    stb = StarToggleButton(controller, source)
+    stb = StarToggleButton(controller, source.uuid, source.is_starred)
 
-    assert stb.source == source
+    assert stb.source_uuid == source.uuid
     assert stb.isChecked() is False
 
 
-def test_StarToggleButton_eventFilter(mocker):
+def test_StarToggleButton_eventFilter_when_checked(mocker):
     """
-    Ensure the hover events are handled properly.
+    Ensure the hover events are handled properly when star is checked and online.
     """
     controller = mocker.MagicMock()
-    stb = StarToggleButton(controller=controller, source=mocker.MagicMock())
+    controller.is_authenticated = True
+    stb = StarToggleButton(controller, 'mock_uuid', True)
+    stb.pressed = mocker.MagicMock()
     stb.setIcon = mocker.MagicMock()
     stb.set_icon = mocker.MagicMock()
+    load_icon_fn = mocker.patch("securedrop_client.gui.widgets.load_icon")
+
     # Hover enter
     test_event = QEvent(QEvent.HoverEnter)
     stb.eventFilter(stb, test_event)
     assert stb.setIcon.call_count == 1
+    load_icon_fn.assert_called_once_with('star_hover.svg')
+
     # Hover leave
     test_event = QEvent(QEvent.HoverLeave)
     stb.eventFilter(stb, test_event)
     stb.set_icon.assert_called_once_with(on='star_on.svg', off='star_off.svg')
 
-    # Hover leave when disabled
-    stb.disable()
+    # Authentication change
+    stb.on_authentication_changed(authenticated=True)
+    assert stb.isCheckable() is True
+    stb.pressed.disconnect.assert_called_once_with()
+    stb.pressed.connect.assert_called_once_with(stb.on_pressed)
+
+
+def test_StarToggleButton_eventFilter_when_not_checked(mocker):
+    """
+    Ensure the hover events are handled properly when star is checked and online.
+    """
+    controller = mocker.MagicMock()
+    controller.is_authenticated = True
+    stb = StarToggleButton(controller, 'mock_uuid', False)
+    stb.pressed = mocker.MagicMock()
+    stb.setIcon = mocker.MagicMock()
+    stb.set_icon = mocker.MagicMock()
+    load_icon_fn = mocker.patch("securedrop_client.gui.widgets.load_icon")
+
+    # Hover enter
+    test_event = QEvent(QEvent.HoverEnter)
+    stb.eventFilter(stb, test_event)
+    assert stb.setIcon.call_count == 1
+    load_icon_fn.assert_called_once_with('star_hover.svg')
+
+    # Hover leave
     test_event = QEvent(QEvent.HoverLeave)
     stb.eventFilter(stb, test_event)
+    stb.set_icon.assert_called_once_with(on='star_on.svg', off='star_off.svg')
+
+    # Authentication change
+    stb.on_authentication_changed(authenticated=True)
+    assert stb.isCheckable() is True
+    stb.pressed.disconnect.assert_called_once_with()
+    stb.pressed.connect.assert_called_once_with(stb.on_pressed)
+
+
+def test_StarToggleButton_eventFilter_when_checked_and_offline(mocker):
+    """
+    Ensure the hover events do not change the icon when offline and that the star icon is set to
+    off='star_on.svg' when checked and offline.
+    """
+    controller = mocker.MagicMock()
+    stb = StarToggleButton(controller, 'mock_uuid', True)
+    stb.pressed = mocker.MagicMock()
+    stb.setIcon = mocker.MagicMock()
+    stb.set_icon = mocker.MagicMock()
+    load_icon_fn = mocker.patch("securedrop_client.gui.widgets.load_icon")
+
+    # Authentication change
+    stb.on_authentication_changed(authenticated=False)
+    assert stb.isCheckable() is False
     stb.set_icon.assert_called_with(on='star_on.svg', off='star_on.svg')
+    stb.pressed.disconnect.assert_called_once_with()
+    stb.pressed.connect.assert_called_once_with(stb.on_pressed_offline)
+
+    # Hover enter
+    test_event = QEvent(QEvent.HoverEnter)
+    stb.eventFilter(stb, test_event)
+    stb.setIcon.assert_not_called()
+    load_icon_fn.assert_not_called()
+
+    # Hover leave
+    test_event = QEvent(QEvent.HoverLeave)
+    stb.eventFilter(stb, test_event)
+    stb.setIcon.assert_not_called()
+
+
+def test_StarToggleButton_eventFilter_when_not_checked_and_offline(mocker):
+    """
+    Ensure the hover events do not change the icon when offline and that the star icon is set to
+    off='star_on.svg' when unchecked and offline.
+    """
+    controller = mocker.MagicMock()
+    stb = StarToggleButton(controller, 'mock_uuid', False)
+    stb.pressed = mocker.MagicMock()
+    stb.setIcon = mocker.MagicMock()
+    stb.set_icon = mocker.MagicMock()
+    load_icon_fn = mocker.patch("securedrop_client.gui.widgets.load_icon")
+
+    # Authentication change
+    stb.on_authentication_changed(authenticated=False)
+    assert stb.isCheckable() is False
+    stb.pressed.disconnect.assert_called_once_with()
+    stb.pressed.connect.assert_called_once_with(stb.on_pressed_offline)
+
+    # Hover enter
+    test_event = QEvent(QEvent.HoverEnter)
+    stb.eventFilter(stb, test_event)
+    stb.setIcon.assert_not_called()
+    load_icon_fn.assert_not_called()
+
+    # Hover leave
+    test_event = QEvent(QEvent.HoverLeave)
+    stb.eventFilter(stb, test_event)
+    stb.setIcon.assert_not_called()
 
 
 def test_StarToggleButton_on_authentication_changed_while_authenticated_and_checked(mocker):
     """
-    If on_authentication_changed is set up correctly, then calling toggle on a checked button should
-    result in the button being unchecked.
+    If on_authentication_changed is set up correctly, then toggling a checked button should result
+    in the button being unchecked.
     """
     controller = mocker.MagicMock()
-    source = mocker.MagicMock()
-    stb = StarToggleButton(controller, source=source)
-    stb.setChecked(True)
-    stb.on_toggle = mocker.MagicMock()
+    stb = StarToggleButton(controller, 'mock_uuid', True)
+    stb.on_pressed = mocker.MagicMock()
     stb.on_authentication_changed(authenticated=True)
 
-    stb.toggle()
+    stb.click()
 
-    assert stb.on_toggle.called is True
+    stb.on_pressed.assert_called_once_with()
     assert stb.isChecked() is False
 
 
@@ -1230,97 +1323,231 @@ def test_StarToggleButton_on_authentication_changed_while_authenticated_and_not_
     should result in the button being unchecked.
     """
     controller = mocker.MagicMock()
-    source = mocker.MagicMock()
-    source.is_starred = False
-    stb = StarToggleButton(controller, source=source)
-    stb.setChecked(False)
-    stb.on_toggle = mocker.MagicMock()
-    assert stb.isChecked() is False
-
+    stb = StarToggleButton(controller, 'mock_uuid', False)
+    stb.on_pressed = mocker.MagicMock()
     stb.on_authentication_changed(authenticated=True)
-    assert stb.isChecked() is False
 
-    stb.toggle()
+    stb.click()
 
-    assert stb.on_toggle.called is True
+    stb.on_pressed.assert_called_once_with()
     assert stb.isChecked() is True
 
 
-def test_StarToggleButton_on_authentication_changed_while_offline_mode(mocker):
+def test_StarToggleButton_on_authentication_changed_while_offline_mode_and_not_checked(mocker):
     """
     Ensure on_authentication_changed is set up correctly for offline mode.
     """
     controller = mocker.MagicMock()
-    source = mocker.MagicMock()
-    stb = StarToggleButton(controller, source=source)
-    stb.on_toggle_offline = mocker.MagicMock()
-    stb.on_toggle = mocker.MagicMock()
-
+    stb = StarToggleButton(controller, 'mock_uuid', False)
+    stb.on_pressed_offline = mocker.MagicMock()
+    stb.on_pressed = mocker.MagicMock()
     stb.on_authentication_changed(authenticated=False)
+
     stb.click()
 
-    assert stb.on_toggle_offline.called is True
-    assert stb.on_toggle.called is False
+    stb.on_pressed_offline.assert_called_once_with()
+    stb.on_pressed.assert_not_called()
+    assert stb.isChecked() is False
 
 
-def test_StarToggleButton_on_toggle(mocker):
+def test_StarToggleButton_on_authentication_changed_while_offline_mode_and_checked(mocker):
     """
-    Ensure correct star icon images are loaded for the enabled button.
+    Ensure on_authentication_changed is set up correctly for offline mode.
     """
     controller = mocker.MagicMock()
-    source = mocker.MagicMock()
-    stb = StarToggleButton(controller, source)
+    stb = StarToggleButton(controller, 'mock_uuid', True)
+    stb.on_pressed_offline = mocker.MagicMock()
+    stb.on_pressed = mocker.MagicMock()
+    stb.on_authentication_changed(authenticated=False)
 
-    stb.on_toggle()
+    stb.click()
 
-    stb.controller.update_star.assert_called_once_with(source, stb.on_update)
+    stb.on_pressed_offline.assert_called_once_with()
+    stb.on_pressed.assert_not_called()
+    assert stb.isCheckable() is False
+    assert stb.is_starred is True
 
 
-def test_StarToggleButton_on_toggle_offline(mocker):
+def test_StarToggleButton_on_pressed_toggles_to_starred(mocker):
+    """
+    Ensure pressing the star button toggles from unstarred to starred.
+    """
+    controller = mocker.MagicMock()
+    stb = StarToggleButton(controller, 'mock_uuid', False)
+
+    stb.click()
+
+    stb.controller.update_star.assert_called_once_with('mock_uuid', False)
+    assert stb.isChecked()
+
+
+def test_StarToggleButton_on_pressed_toggles_to_unstarred(mocker):
+    """
+    Ensure pressing the star button toggles from starred to unstarred.
+    """
+    controller = mocker.MagicMock()
+    stb = StarToggleButton(controller, 'mock_uuid', True)
+
+    stb.click()
+
+    stb.controller.update_star.assert_called_once_with('mock_uuid', True)
+    assert not stb.isChecked()
+
+
+def test_StarToggleButton_on_pressed_offline(mocker):
     """
     Ensure toggle is disabled when offline.
     """
     controller = mocker.MagicMock()
-    source = mocker.MagicMock()
-    stb = StarToggleButton(controller, source)
+    controller.is_authenticated = False
+    stb = StarToggleButton(controller, 'mock_uuid', True)
 
-    stb.on_toggle_offline()
+    stb.click()
+
     stb.controller.on_action_requiring_login.assert_called_once_with()
 
 
-def test_StarToggleButton_on_toggle_offline_when_checked(mocker):
+def test_StarToggleButton_on_pressed_offline_when_checked(mocker):
     """
     Ensure correct star icon images are loaded for the disabled button.
     """
     controller = mocker.MagicMock()
-    source = mocker.MagicMock()
-    source.is_starred = True
-    stb = StarToggleButton(controller, source)
+    controller.is_authenticated = False
+    source = factory.Source(is_starred=True)
+    stb = StarToggleButton(controller, source.uuid, source.is_starred)
     set_icon_fn = mocker.patch('securedrop_client.gui.SvgToggleButton.set_icon')
 
-    # go offline
     stb.on_authentication_changed(False)
     assert stb.isCheckable() is False
     set_icon_fn.assert_called_with(on='star_on.svg', off='star_on.svg')
 
-    stb.on_toggle_offline()
+    stb.click()
     stb.controller.on_action_requiring_login.assert_called_once_with()
 
 
-def test_StarToggleButton_on_update(mocker):
+def test_StarToggleButton_update(mocker):
     """
-    Ensure the on_update callback updates the state of the source and UI
-    element to the current "enabled" state.
+    Ensure update syncs the star state with the server if there are no pending jobs and we're not
+    waiting until the next sync (in order to avoid the "ghost" issue where update is called with an
+    outdated state between a star job finishing and a sync).
     """
     controller = mocker.MagicMock()
-    source = mocker.MagicMock()
-    source.is_starred = True
-    stb = StarToggleButton(controller, source)
-    stb.setChecked = mocker.MagicMock()
-    stb.on_update(("uuid", False))
-    assert source.is_starred is False
-    stb.controller.update_sources.assert_called_once_with()
-    stb.setChecked.assert_called_once_with(False)
+    controller.is_authenticated = True
+    stb = StarToggleButton(controller, 'mock_uuid', True)
+
+    # Should not change because we wait until next sync
+    stb.pending_count = 0
+    stb.wait_until_next_sync = True
+    stb.update(False)
+    assert stb.isChecked() is True
+    stb.update(True)
+    assert stb.isChecked() is True
+
+    # Should update to match value provided by update because there are no pending star jobs and
+    # wait_until_next_sync is False, meaning a sync already occurred after the star job finished
+    stb.setChecked(True)
+    stb.pending_count = 0
+    stb.wait_until_next_sync = False
+    stb.update(False)
+    assert stb.isChecked() is False
+    stb.update(True)
+    assert stb.isChecked() is True
+
+    # Should not change because there are pending star jobs
+    stb.setChecked(True)
+    stb.pending_count = 1
+    stb.wait_until_next_sync = True
+    stb.update(False)
+    assert stb.isChecked() is True
+    stb.update(True)
+    assert stb.isChecked() is True
+    # Still should not change because there are pending star jobs
+    stb.wait_until_next_sync = False
+    stb.update(False)
+    assert stb.isChecked() is True
+    stb.update(True)
+    assert stb.isChecked() is True
+
+
+def test_StarToggleButton_update_when_not_authenticated(mocker):
+    """
+    Ensure the button state does not change if the user is not authenticated.
+    """
+    controller = mocker.MagicMock()
+    controller.is_authenticated = False
+    source = factory.Source(is_starred=True)
+    stb = StarToggleButton(controller, source.uuid, source.is_starred)
+
+    # Button stays checked
+    stb.update(False)
+    assert stb.is_starred is True
+
+    # Button stays unchecked
+    stb.is_starred = False
+    stb.update(True)
+    assert stb.is_starred is False
+
+
+def test_StarToggleButton_on_star_update_failed(mocker):
+    '''
+    Ensure the button is toggled to the state provided in the failure handler and that the pending
+    count is decremented if the source uuid matches.
+    '''
+    controller = mocker.MagicMock()
+    controller.is_authenticated = True
+    stb = StarToggleButton(controller, 'mock_uuid', False)
+
+    stb.click()
+    assert stb.is_starred is True
+    assert stb.pending_count == 1
+    stb.on_star_update_failed('mock_uuid', is_starred=False)
+    assert stb.is_starred is False
+    assert stb.pending_count == 0
+
+
+def test_StarToggleButton_on_star_update_failed_for_non_matching_source_uuid(mocker):
+    '''
+    Ensure the button is not toggled and that the pending count stays the same if the source uuid
+    does not match.
+    '''
+    controller = mocker.MagicMock()
+    controller.is_authenticated = True
+    stb = StarToggleButton(controller, 'mock_uuid', False)
+
+    stb.click()
+    assert stb.is_starred is True
+    assert stb.pending_count == 1
+    stb.on_star_update_failed('some_other_uuid', is_starred=False)
+    assert stb.is_starred is True
+    assert stb.pending_count == 1
+
+
+def test_StarToggleButton_on_star_update_successful(mocker):
+    '''
+    Ensure that the pending count is decremented if the source uuid matches.
+    '''
+    controller = mocker.MagicMock()
+    controller.is_authenticated = True
+    stb = StarToggleButton(controller, 'mock_uuid', True)
+
+    stb.click()
+    assert stb.pending_count == 1
+    stb.on_star_update_successful('mock_uuid')
+    assert stb.pending_count == 0
+
+
+def test_StarToggleButton_on_star_update_successful_for_non_matching_source_uuid(mocker):
+    '''
+    Ensure that the pending count is not decremented if the source uuid does not match.
+    '''
+    controller = mocker.MagicMock()
+    controller.is_authenticated = True
+    stb = StarToggleButton(controller, 'mock_uuid', True)
+
+    stb.click()
+    assert stb.pending_count == 1
+    stb.on_star_update_successful('some_other_uuid')
+    assert stb.pending_count == 1
 
 
 def test_LoginDialog_setup(mocker, i18n):
