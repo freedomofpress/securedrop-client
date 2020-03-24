@@ -492,6 +492,7 @@ def mark_as_downloaded(
     session.add(db_obj)
     session.commit()
 
+
 def update_file_size(uuid: str, path: str, session: Session) -> None:
     """
     Updates file size to the decrypted size
@@ -501,6 +502,7 @@ def update_file_size(uuid: str, path: str, session: Session) -> None:
     db_obj.size = stat.st_size
     session.add(db_obj)
     session.commit()
+
 
 def mark_as_decrypted(
     model_type: Union[Type[File], Type[Message], Type[Reply]],
