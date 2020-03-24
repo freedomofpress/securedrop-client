@@ -49,7 +49,7 @@ def test_export_dialog(qtbot, mocker):
     qtbot.wait(5000)
     assert file_msg.export_button.isHidden() is False
     assert file_msg.file_name.text() == "hello.txt"
-    assert file_msg.file_size.text() == "625B"
+    assert file_msg.file_size.text() == "9B"
 
     # Let us export
     qtbot.mouseClick(file_msg.export_button, Qt.LeftButton)
