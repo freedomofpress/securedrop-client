@@ -2671,6 +2671,7 @@ class PrintDialog(ModalDialog):
             self.continue_button.clicked.disconnect()
             self.continue_button.clicked.connect(self._print_file)
             self.continue_button.setEnabled(True)
+            self.continue_button.setFocus()
             return
 
         self._print_file()
@@ -2689,6 +2690,7 @@ class PrintDialog(ModalDialog):
                 self.continue_button.clicked.connect(self._show_generic_error_message)
 
             self.continue_button.setEnabled(True)
+            self.continue_button.setFocus()
         else:
             if error.status == ExportStatus.PRINTER_NOT_FOUND.value:
                 self._show_insert_usb_message()
@@ -2905,6 +2907,7 @@ class ExportDialog(ModalDialog):
             self.continue_button.clicked.disconnect()
             self.continue_button.clicked.connect(self._show_passphrase_request_message)
             self.continue_button.setEnabled(True)
+            self.continue_button.setFocus()
             return
 
         self._show_passphrase_request_message()
@@ -2941,6 +2944,7 @@ class ExportDialog(ModalDialog):
                 self.continue_button.clicked.connect(self._show_generic_error_message)
 
             self.continue_button.setEnabled(True)
+            self.continue_button.setFocus()
         else:
             if self.error_status == ExportStatus.BAD_PASSPHRASE.value:
                 self._show_passphrase_request_message_again()
