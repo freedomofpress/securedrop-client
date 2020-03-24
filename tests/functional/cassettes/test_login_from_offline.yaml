@@ -1,0 +1,1184 @@
+interactions:
+- request:
+    body: '{"username": "journalist", "passphrase": "correct horse battery staple
+      profanity oil chewy", "one_time_code": "805168"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '119'
+      User-Agent:
+      - python-requests/2.20.0
+    method: POST
+    uri: http://localhost:8081/api/v1/token
+  response:
+    body:
+      string: "{\n  \"expiration\": \"2020-03-24T20:54:02.756153Z\", \n  \"journalist_first_name\"\
+        : null, \n  \"journalist_last_name\": null, \n  \"journalist_uuid\": \"9bad6f53-b822-4919-a1e6-7a26db7828b0\"\
+        , \n  \"token\": \"eyJleHAiOjE1ODUwODMyNDIsImFsZyI6IkhTMjU2IiwiaWF0IjoxNTg1MDU0NDQyfQ.eyJpZCI6MX0.VdVMC2rpnRQuPjuFYptw8Wo01J1XLZ2hOPEVINzWpjo\"\
+        \n}\n"
+    headers:
+      Content-Length:
+      - '317'
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 24 Mar 2020 12:54:02 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJleHAiOjE1ODUwODMyNDIsImFsZyI6IkhTMjU2IiwiaWF0IjoxNTg1MDU0NDQyfQ.eyJpZCI6MX0.VdVMC2rpnRQuPjuFYptw8Wo01J1XLZ2hOPEVINzWpjo
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/sources
+  response:
+    body:
+      string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/add_star\"\
+        , \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n    \
+        \  \"is_starred\": false, \n      \"journalist_designation\": \"cream-colored\
+        \ masquerade\", \n      \"key\": {\n        \"fingerprint\": \"717BF2F1E7A09C24C916DE8AFC6A8945A5343C69\"\
+        , \n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmQINBFGRfoABEADY4KES6Rq607zmyu6n+Lvsacu0HK+7TzqPwW3GeKk5yitP2kQh\\\
+        nma+iJh5ZXOkp0VdkDter7Nq22jmIKHZgYsux3tIDo7xhYGxvmkxr5BoL9XLvgxHo\\nUBRfDEgJtoLxKwhxN+BP4/VN8VgZYnI6OS3l/lX17Q7VStPfT8sQNrHV6dW3yxNW\\\
+        nLL0yuisPKqgs/C6nSdSlBk3bDbzc45/OrYETimvOUt3tzHizcCQryF6nzzTgvc7g\\nafReSO0++bqGR3hT6F1twB4vw+tgxDgBLknS6gOS2HvKk2OmapscGs6fyN5Q15FQ\\\
+        np2PseJczEz4eez4KbvoXep4hNluaugryngQh1Rg/uuo4o5fQD/eci1+khrLC894l\\nesLphFjujjSAP6Bhp5hnxp1okPqircH6fmbuFadrmJIr5YbYy9pDX0meR022nf4+\\\
+        nwNmzEeaX0pFD3wen0xng9ccDbAY6OT2gWxDoDuuNGd/3Mop/yfdiHew+P89VMKzE\\nqBKGCGs90PLZ8hpUuFFzTZJI8mGuYjP84IMDXmzH2POVmN1HXIt96kW+TvTwX73C\\\
+        nRPXt7ou7f0uQ3wZ04aM/+5/24wInHrb2H3pTgfwHfdPW7DD6EWjkKijtmvzQN0xj\\nK8Jo2Ja3HZ6Rf6qVmlbG0EDQXQNDKlFvdUqg3NLfTMcIriS5j8E9mldtwwARAQAB\\\
+        ntHxBdXRvZ2VuZXJhdGVkIEtleSA8VVpENFpOT0g1N1RLVE5TUzNSSzdTV1RBUENC\\nNzVJQ1U1WkJFSFBCWlZRWUdGWURCVlBBS0pSNEZOWkpHRjRHU082N1hKV1VSN05C\\\
+        nMzNJQzRaNDVHQk02V1BLV1VSVTVHVllURkRVWT0+iQI3BBMBCgAhBQJRkX6AAhsv\\nBQsJCAcCBhUICQoLAgQWAgMBAh4BAheAAAoJEPxqiUWlNDxpn6cP/1RlRgSu6AYi\\\
+        nROvwdIu9bhXaEj+XcCvBEw1lWmv4Eb/pjXa92ZVeURgH+6urJXHWK3WhfGwFpDTj\\naecV16a10h7xLRJzTfsnxhEGl/czRbQ1V5XuTEnMBWPoD/x1z5NPsf950dk4frvx\\\
+        nT0TkoKYhGYhHzjUiQWJJw6o77KfcMQRErmD0dlAEcoDj0spC0VZef8WFz+vc0Syg\\nonMgNqMCtu1AUGAz25o0uby1bhudDHZ7UqGCsioFup+gTXBWVfgftv3GdUMuJryJ\\\
+        nFm/W3SM14JNl6YP6kqezf9DKUPPeJJ9nCvOqQ9JyUOgL50GDBfAanKGxVpZSGo82\\nrekEzYazZtVXTQBtRAcqwC9mAv/hvffX9hBWuQ4OsNXHd+7XsG2XTnDH8W2AZkV+\\\
+        nsplOrwC+dZY3X9/pyCAYItLekgfQ+XoRfl7rmn4ydeO3q6CgNdonqYi1P6uje0qU\\nhL+cgnPB0y1MTOk+po7PDgl+kpgdV8WnoczspsGUcqu/Yx6LxmWMn2+fTK7dYB6K\\\
+        ny82FbW4u4S8TVNVL/D1AZYhdTvnf0dtraO0GY3MozkfvdGFX4csaaSW7CjbYDiZ+\\n0YeDu59H41ZVcyUAfClvrxFZp+bwXCW1mvueCoyt+njVPRGpvuM7Ab3qbOUWgGcn\\\
+        nt9xasj6SehFgNvwJLoCWZZkB+r8Eyn4+\\n=+QhJ\\n-----END PGP PUBLIC KEY BLOCK-----\\\
+        n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\": \"2020-03-24T12:53:06.776780Z\"\
+        , \n      \"number_of_documents\": 0, \n      \"number_of_messages\": 2, \n\
+        \      \"remove_star_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/remove_star\"\
+        , \n      \"replies_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/replies\"\
+        , \n      \"submissions_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/submissions\"\
+        , \n      \"url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff\"\
+        , \n      \"uuid\": \"a6209897-46e8-4c3f-b4f3-b90348662fff\"\n    }, \n  \
+        \  {\n      \"add_star_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/add_star\"\
+        , \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n    \
+        \  \"is_starred\": false, \n      \"journalist_designation\": \"barreled stampede\"\
+        , \n      \"key\": {\n        \"fingerprint\": \"F7DE3D25A6E4A8DAF2D3F24AD80ED2B5392DC020\"\
+        , \n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmQINBFGRfoABEADVrwa6TInAdGZ6zEeJT7RO2liyl7Er1L0IXgwqt8zbrgisLxVU\\\
+        nqaK5/Dxn+GqBcZow+Iw2/bkdAVA/f24a+6qUNQV0T0RR4f3oJ4uI9r0XjDVfaqmp\\n6m3PnZtfRKVFcDEykTxuMZ/QVb2HLwsIyUhZo5u9NJPtsx1hj8/z+zgBw+fVGt/v\\\
+        nHZx/6EESWIVfC026Dk2jzXCY/esTjhWOxcCahknN7bE2jv6rDxXX9H9r2tEnYr2J\\nloCdQ1zptbbQNN1etaFWe5kNKUO63xoVsr/ghFO0VpS/A7hAdr3YIja5TfPwmf2G\\\
+        nIekcaaZFHRlpu+zksExoxxFDcatDuLnLlgn53Esofv0hRsWoHwr8QZxHgHrszYv8\\nOv045ay0S/RMICx0UUoL0fkgHGc+XC0YH+2+HJWCfN77fCzkJhd5B8vLIQsH0nJx\\\
+        nO9V3EUG9K4EQG6igK4bQ8/mBR7hxQkLoxZqbBWkNLpECvKZu62P9Srxf3b6jXFmc\\niwolinwWcHUxFFL5XerMS5cxmmj2MPYsqW+Rc4iZr/lOmEHVgY2zHAPsulMTpafx\\\
+        neRz8giAVOmIVQyAWvoD/g6/rnLQCSbVlUz/kUpIfOzuK5HE1nwJCJWDSImAZrEou\\niUgaLGIz/B2NXWNrf8wrlL7wPV5BXyoycPZRodKA/zl4H2+QPBe9FbDp1wARAQAB\\\
+        ntHxBdXRvZ2VuZXJhdGVkIEtleSA8VFNXVURDNllFUzdEVFZHTldHUlhZQkVITU5D\\nUUpZMkNRWks3WlFRNzNRS1FWTkZCWjdOUFQyQVI2QU1HTDIzWFBRUE1PRkNTMjJN\\\
+        nV1Q0WDdCNEpXWERDSVpZTTZXRUFDS1NNRUdRWT0+iQI3BBMBCgAhBQJRkX6AAhsv\\nBQsJCAcCBhUICQoLAgQWAgMBAh4BAheAAAoJENgO0rU5LcAgBwQP/02Mb0MAd4Uw\\\
+        nQA/znO8DTn/WXUYKabg73zPwEVi0n2jm+RxUo4X/8jAcJz63HTnSsDtjeprc/gRe\\nMaFoSP7v+tDV9wtFPAgfJrP7MQhf//EzHodjY3ZUTMoUv2p7+iGaLW/hk/4isWTT\\\
+        ngQLyR/T0L8AocsSTiAx+7p7eDea9KTTjCe+TL8tB3i10tx2IFj+d0pHvzLM1LXbM\\njfD0IjqwPOLw2507151IeKPQ/gyaJtUxLGSv5MGxqAFCnJIfA9fO1odrNGhRpvdE\\\
+        nI/H/5vCtbgQK0CZ9cIIlKfHtfwEuVVHCPQFSRQsQr1qjohS44KCUhkIPhiDVSdQ7\\n6VoeLWooWdJftlICSnWCrZxbfVVGQofnB/lUFr/FI8c6LGTSSh5BKPVprjaVqClz\\\
+        nOJSPHfavHAHBlKS2TtBUZaKCd4nXgoVS/Hw0yRLrVRNX1lh1xZHQKLrCGpXqsXKW\\nRFdOvww/b/xCTX1TODJ9GIERHQiRWy5qfxuh1zbKrPAmYMu8myM00M8SwVyiZZGp\\\
+        nsbwUpJ2VJN292BbNQsorOODrqWjBWQI9FBynDA+HPH5qfqAniUsrvXdOB0Ml6OJW\\nskJ1GYv/a7MersTyXnC3ud6KjSSlxaIsUnl8Ikz/+IV0oS21MuQ8K8g43Xfx59aF\\\
+        n97NoRaRbPhAMXGI1VOHh+oIjjkP6DBfj\\n=u+fN\\n-----END PGP PUBLIC KEY BLOCK-----\\\
+        n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\": \"2020-03-24T12:53:07.965467Z\"\
+        , \n      \"number_of_documents\": 0, \n      \"number_of_messages\": 2, \n\
+        \      \"remove_star_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/remove_star\"\
+        , \n      \"replies_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/replies\"\
+        , \n      \"submissions_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/submissions\"\
+        , \n      \"url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c\"\
+        , \n      \"uuid\": \"4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c\"\n    }\n  ]\n\
+        }\n"
+    headers:
+      Content-Length:
+      - '5356'
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 24 Mar 2020 12:54:02 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJleHAiOjE1ODUwODMyNDIsImFsZyI6IkhTMjU2IiwiaWF0IjoxNTg1MDU0NDQyfQ.eyJpZCI6MX0.VdVMC2rpnRQuPjuFYptw8Wo01J1XLZ2hOPEVINzWpjo
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/submissions
+  response:
+    body:
+      string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/submissions/f84b8ad2-5ffc-4d4c-8248-c12e590fc5bb/download\"\
+        , \n      \"filename\": \"1-cream-colored_masquerade-msg.gpg\", \n      \"\
+        is_read\": false, \n      \"size\": 627, \n      \"source_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff\"\
+        , \n      \"submission_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/submissions/f84b8ad2-5ffc-4d4c-8248-c12e590fc5bb\"\
+        , \n      \"uuid\": \"f84b8ad2-5ffc-4d4c-8248-c12e590fc5bb\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/submissions/2222c6a2-53a7-4c9c-9e36-e064aca1a22f/download\"\
+        , \n      \"filename\": \"2-cream-colored_masquerade-msg.gpg\", \n      \"\
+        is_read\": false, \n      \"size\": 693, \n      \"source_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff\"\
+        , \n      \"submission_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/submissions/2222c6a2-53a7-4c9c-9e36-e064aca1a22f\"\
+        , \n      \"uuid\": \"2222c6a2-53a7-4c9c-9e36-e064aca1a22f\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/submissions/7b13f1dc-3ad2-489c-9098-ad684574f374/download\"\
+        , \n      \"filename\": \"1-barreled_stampede-msg.gpg\", \n      \"is_read\"\
+        : false, \n      \"size\": 627, \n      \"source_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c\"\
+        , \n      \"submission_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/submissions/7b13f1dc-3ad2-489c-9098-ad684574f374\"\
+        , \n      \"uuid\": \"7b13f1dc-3ad2-489c-9098-ad684574f374\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/submissions/fd197a4b-4bca-4798-b3ca-e5ae3d0287b5/download\"\
+        , \n      \"filename\": \"2-barreled_stampede-msg.gpg\", \n      \"is_read\"\
+        : false, \n      \"size\": 693, \n      \"source_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c\"\
+        , \n      \"submission_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/submissions/fd197a4b-4bca-4798-b3ca-e5ae3d0287b5\"\
+        , \n      \"uuid\": \"fd197a4b-4bca-4798-b3ca-e5ae3d0287b5\"\n    }\n  ]\n\
+        }\n"
+    headers:
+      Content-Length:
+      - '2063'
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 24 Mar 2020 12:54:02 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJleHAiOjE1ODUwODMyNDIsImFsZyI6IkhTMjU2IiwiaWF0IjoxNTg1MDU0NDQyfQ.eyJpZCI6MX0.VdVMC2rpnRQuPjuFYptw8Wo01J1XLZ2hOPEVINzWpjo
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/replies
+  response:
+    body:
+      string: "{\n  \"replies\": [\n    {\n      \"filename\": \"3-cream-colored_masquerade-reply.gpg\"\
+        , \n      \"is_deleted_by_source\": false, \n      \"journalist_first_name\"\
+        : null, \n      \"journalist_last_name\": null, \n      \"journalist_username\"\
+        : \"journalist\", \n      \"journalist_uuid\": \"9bad6f53-b822-4919-a1e6-7a26db7828b0\"\
+        , \n      \"reply_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/replies/44e91bc0-3129-4e2f-a026-7434e2680f91\"\
+        , \n      \"size\": 1149, \n      \"source_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff\"\
+        , \n      \"uuid\": \"44e91bc0-3129-4e2f-a026-7434e2680f91\"\n    }, \n  \
+        \  {\n      \"filename\": \"4-cream-colored_masquerade-reply.gpg\", \n   \
+        \   \"is_deleted_by_source\": false, \n      \"journalist_first_name\": null,\
+        \ \n      \"journalist_last_name\": null, \n      \"journalist_username\"\
+        : \"journalist\", \n      \"journalist_uuid\": \"9bad6f53-b822-4919-a1e6-7a26db7828b0\"\
+        , \n      \"reply_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/replies/e2b11529-db66-428a-8d23-c01063048356\"\
+        , \n      \"size\": 1218, \n      \"source_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff\"\
+        , \n      \"uuid\": \"e2b11529-db66-428a-8d23-c01063048356\"\n    }, \n  \
+        \  {\n      \"filename\": \"3-barreled_stampede-reply.gpg\", \n      \"is_deleted_by_source\"\
+        : false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\"\
+        : null, \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\"\
+        : \"9bad6f53-b822-4919-a1e6-7a26db7828b0\", \n      \"reply_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/replies/83f25d17-d12b-43df-929f-8695b1f329e5\"\
+        , \n      \"size\": 1149, \n      \"source_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c\"\
+        , \n      \"uuid\": \"83f25d17-d12b-43df-929f-8695b1f329e5\"\n    }, \n  \
+        \  {\n      \"filename\": \"4-barreled_stampede-reply.gpg\", \n      \"is_deleted_by_source\"\
+        : false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\"\
+        : null, \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\"\
+        : \"9bad6f53-b822-4919-a1e6-7a26db7828b0\", \n      \"reply_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/replies/9ecd1799-158c-4b77-a828-5f70c9f84177\"\
+        , \n      \"size\": 1218, \n      \"source_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c\"\
+        , \n      \"uuid\": \"9ecd1799-158c-4b77-a828-5f70c9f84177\"\n    }\n  ]\n\
+        }\n"
+    headers:
+      Content-Length:
+      - '2279'
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 24 Mar 2020 12:54:03 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJleHAiOjE1ODUwODMyNDIsImFsZyI6IkhTMjU2IiwiaWF0IjoxNTg1MDU0NDQyfQ.eyJpZCI6MX0.VdVMC2rpnRQuPjuFYptw8Wo01J1XLZ2hOPEVINzWpjo
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/submissions/f84b8ad2-5ffc-4d4c-8248-c12e590fc5bb/download
+  response:
+    body:
+      string: !!binary |
+        hQIMA8PnxMCiIBsqAQ//ZYUacV+i0xHznSzYknx2WK43fTxMHNtnKvp3k6AmtZwPN1Ctl3uHXIWN
+        4PArJ9QAGTmOBaw2pm7nEgQm9AcOLy46G6paeSL8WCdOuchyb3WwHMKS40a1b5Q2bfis2RvW68Wj
+        W5YXcUGCid/SXu2V79WteEK68cnjwKL6mUDNC7IdzXdul49TIh1uqmRCN/rLHlwNVs4LAowIb8gg
+        zWxBAm3GexujUkCfLs9pa+0ZdpAGphpnaCt+33d0edAr9JX9+kByQB+RlB/C1Y/fY5MIWxBfi33U
+        y/j9WG+Nww0bhBbtd9Kzga3dAk7nTw6rH/mlTEgES8dkMmcK0DLfuMOhdJj6shiVTmLqF089S+Mn
+        PzkPeC58TyvEmn8WZBBrmTiMlLrykHKTEM7KFu35g3zANZTpfjyc1wb+NuqkwXD+LzHZezU9WGga
+        d/6eRi+pKDPRbnfC5Qs3eVg7iLYh18a8VKXLc1rR+nTjZ+9eMZW5Ss08ahXBA4JB1by9/zN84O03
+        HdnWScmI/3Rt5pyHQAmHwVfwuankWh8Q24cTDTn6lQv1xfw6Ms8Y5CJpMst1J81z0k32ukTtl7Pz
+        gX3UzHnnh+Lzz0k/KJ6R42Q/xZnUwnrO5NpnfA50Mpy6gIGtxeBp2bj2pC4WKnd+8ohX4RbH6/Cw
+        0Qhf2UOg8kWeyrtlmMXSYgEas+nE4WpG5L3bWh1poNMpO37ctL/1/dlpqR9He6IOJwE+WtpCqGGt
+        JXAgYn0Cdr6GFFdmJfqSJkpUenrTmXL7rQfIGaWvhmIt3+miPPkbWH46NdTg9yr+yfSe5GHAd/AQ
+    headers:
+      Cache-Control:
+      - max-age=43200, public
+      Content-Disposition:
+      - attachment; filename=1-cream-colored_masquerade-msg.gpg
+      Content-Length:
+      - '627'
+      Content-Type:
+      - application/pgp-encrypted
+      Date:
+      - Tue, 24 Mar 2020 12:54:03 GMT
+      Etag:
+      - sha256:9deb05c2c68ce4ea53c4178256e4d849cddf307a0b0596df01fbbc1941cfc42b
+      Expires:
+      - Wed, 25 Mar 2020 00:54:03 GMT
+      Last-Modified:
+      - Tue, 24 Mar 2020 12:53:06 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJleHAiOjE1ODUwODMyNDIsImFsZyI6IkhTMjU2IiwiaWF0IjoxNTg1MDU0NDQyfQ.eyJpZCI6MX0.VdVMC2rpnRQuPjuFYptw8Wo01J1XLZ2hOPEVINzWpjo
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/submissions/2222c6a2-53a7-4c9c-9e36-e064aca1a22f/download
+  response:
+    body:
+      string: !!binary |
+        hQIMA8PnxMCiIBsqARAA65hIsj8FPbejIEn/raPmEdEA0kBeIepp/PjQlkdmdCqhBD4uVR8A15mj
+        WCuUy5BtemHqZPVpq0HeOlM99Cl9FNZJE1GwOiFIctV2hgjRwdO8NsaXlDVjMuiv6X2j6IJLe1DL
+        CVGWG83ToFmob54d/r2CzqJDKE+oV8ezFr319bw6fKupUfsauY6CnFVY6kmtR47xqmVibjr2GXvD
+        1YytRG8ngHhSg5pgwDtttRG6Bcap+obcTq26MA0nefHybpG1Uypql9VSSi0vVo2GJ/BYzvjNPz/A
+        sMKDlFFLmzEtgnp6vb/xITjhnhimy4e61/SKFSFvIHQvoX7QMdj+VlwZJxtUIWgsCAWRCcuQ/P7V
+        xaJzxz8sVbMrk/5c42A2RppfbS0mU6Ow/BPiedhT+XKDBK7Hn8UZi7b7ZYpg4IYfy6ouKdeQ2K2U
+        NXIdvjFDQuaPzRR5BYxH61CyqsB9OfdpIymiYnna626eXnR+8FeqvBLksN4I9JuVp1G81+Qohntm
+        gWiJRDPtqidPuS39nOcj+BAuTBLc0MwLRxL3iSyhT98qPNKeC9matULbWDoJXT5+HK2royNuFfaX
+        PdflLwNAm6kfIOp28wHlTBB4xW2eU7Lmirgq41EhbmXwEHmbUu6QSpnv/zuloFAgYnZIM6rmHm9w
+        ETX2llhm1cw4+fzN797SpAHJu3HgVR8K+XpRN+a7Ozj41fhgYJyrioZLWlcE766XXrUolVy68z4u
+        vec1XO/iexGOxuun8A2a0XKGtO4EP8dT4G3eZum8YpfZxTg+paSb0s8r9gOi2GXGkXpQn6IUSap4
+        +924rz23u7YrUSXYsTEdN9RDpr7S+f0DXM9Y1ghNBCrxDFmCFelwmrT9nlSC+/n/IBtFhXqMd0bK
+        4cWMsSPK2nAT
+    headers:
+      Cache-Control:
+      - max-age=43200, public
+      Content-Disposition:
+      - attachment; filename=2-cream-colored_masquerade-msg.gpg
+      Content-Length:
+      - '693'
+      Content-Type:
+      - application/pgp-encrypted
+      Date:
+      - Tue, 24 Mar 2020 12:54:03 GMT
+      Etag:
+      - sha256:ca054621fe20c159706b1f1619a4c893228e58af97ee5411e009932eb2ce5fa2
+      Expires:
+      - Wed, 25 Mar 2020 00:54:03 GMT
+      Last-Modified:
+      - Tue, 24 Mar 2020 12:53:06 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJleHAiOjE1ODUwODMyNDIsImFsZyI6IkhTMjU2IiwiaWF0IjoxNTg1MDU0NDQyfQ.eyJpZCI6MX0.VdVMC2rpnRQuPjuFYptw8Wo01J1XLZ2hOPEVINzWpjo
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/submissions/7b13f1dc-3ad2-489c-9098-ad684574f374/download
+  response:
+    body:
+      string: !!binary |
+        hQIMA8PnxMCiIBsqAQ/+KrcSnjvSiap4KztYaNQ4eC5cbv9l4GnhvvG/VsXop9/yOTTobsJQxJdo
+        4Bf7qXPtXFh6G4Hkh64grvgJZvBCCz39ndIHY3HtRvkm92A8Zpak+DHOC+p+5/O/2VMvzblOchHc
+        I/Y0n3w0m663x/he7e5NcGgYptwRB2mTZzOz7ApZEK2bZ7oC/BLmrZjRHnFbl34auJl5kB5i6mII
+        N0NYeKXGpkLCG9/yQIowBCtPjhs91jFYtMObeOZNTxhqvBrYcj1l99KzRMJMUNfbCGnIUU5hGp4n
+        p/mollNFwcz4lf4oJ2gDV3jdCZFYr+FM1ez1IRoHdpYhOR1ZosKul8Q0tOOintDBOZI8vZ5P+umI
+        NO2ODXFp/Ve1rPdsvkUNHq3MABO1IknObLreO4B6vX0IFbfad2Y2VyVhXgA1to218ChU78vY0jzE
+        vW7hClklhvyYX6EBjMMfrhzQ+ZIbG1uMBSTgcSn0tdsKHOiAv4SsH6L6+0HjhZ4zgk5d20cBU9vl
+        j1qO9z47bcl2SXTl66oW7DZphy4EZ6OvZqMSICbXqYrSHKA01mko/MoZgey/SZq1lWWyqJKT3Khm
+        o3rh74LNnuq2Hnk9JRQWrd8GzBfki5fkS31HJBMA7hqokelnzOYCjSHnM4uIQSAPP2g885rot4PM
+        QXKY60CGl17qWTFVpGfSYgGb0gfu9QwFVbuSDyzz3zJ3ZjC23yn+z9FL6xf1xGgmnhJHWCTtPPNb
+        SKuZ7VAUBSRZwi7LCbhHrop0GbHcH4lDOgmY4wNxQtB5iA3XPPYW+yBzEBbdhPBPnnvugdzaRfah
+    headers:
+      Cache-Control:
+      - max-age=43200, public
+      Content-Disposition:
+      - attachment; filename=1-barreled_stampede-msg.gpg
+      Content-Length:
+      - '627'
+      Content-Type:
+      - application/pgp-encrypted
+      Date:
+      - Tue, 24 Mar 2020 12:54:03 GMT
+      Etag:
+      - sha256:f076962d0bf1ca4e248caf3e444e81ce1511bfaf06737faff0b3cdb6cc54beb8
+      Expires:
+      - Wed, 25 Mar 2020 00:54:03 GMT
+      Last-Modified:
+      - Tue, 24 Mar 2020 12:53:07 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJleHAiOjE1ODUwODMyNDIsImFsZyI6IkhTMjU2IiwiaWF0IjoxNTg1MDU0NDQyfQ.eyJpZCI6MX0.VdVMC2rpnRQuPjuFYptw8Wo01J1XLZ2hOPEVINzWpjo
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/submissions/fd197a4b-4bca-4798-b3ca-e5ae3d0287b5/download
+  response:
+    body:
+      string: !!binary |
+        hQIMA8PnxMCiIBsqAQ/9EZnwMKxvJo2qAoJk9Q4jdkVktjozrvxE6He+i+6FQrSY5GEJ6EeJppzK
+        dJxjbjIcHCMj+utUus3drccZoRd7Fb+4TmCPFgFTeDzJ8scYhERl9zho8BR05DzO3r/FDe3Oltbg
+        LUsfAiTAjxOR1vhe5vqOvHEy/Kn8PbJ+Lb5qWzCbAGo+1Era9c+tohtuTiZlvpaDMPpMrF/AcWHT
+        BoWOzB59FqXa4QwM17QEeN9FxxoTBwi9Bq9LRgBQdTww4qxVITK9hMrCqPUunHdbOMmE8oEeSPYx
+        gRAMMkvA/ttdu1oeHU/hdAp0EvHfTCjITqHODazPBX8eJHJMqmNm6mFw9wcnkEt4tgZ/RsJ97+0h
+        LLZvSrBJZSNig4X5EFSxQkejP+EXFXLnulhAt94j4BG1InCPZw/BwJo3+R1+PzM6z6C4a79Sllfi
+        4R4qapG+d8GZ+QlQzXVZ9UINVkZQ5RlRs9O6138+I+5h+nIE+ibnajVQ/yeP+1RXJSuxkoChq9L9
+        XFHZiQm3YPqGatSytCSs3tXN6DoWPPRhyeP6ix+R196LyZVZhpdZnKYq4CBvqtDScViTrwSEte5B
+        3PgWDu2bPQpnrjTMpEhvgwKqo8aQeTfBXVk78o/LguCaIb1jgp80VXLiEnHd7WjWd0N5kVAw9lJt
+        Jj/PVlBUfpQ2fWDc6dHSpAH9rXFsLZnNlFQzfwrSvy4WGV5mga4EO2ORJcHgIf5CKGIheTRBnfei
+        brr1T9bTiDlK+4ObOxVKqhfybWHujCzxTbul4UtdYSCevuBmlRG/QY1mPnrtaxNhKXLbzqqL+pIZ
+        rZAD92NAGyEb+KUIwgkajp23HcmmZ9RK6HAZY77MjPKI2/kpAUbzJAa/VmcSSTVBZodIFwKywQtC
+        tCjNfMtCn5Hf
+    headers:
+      Cache-Control:
+      - max-age=43200, public
+      Content-Disposition:
+      - attachment; filename=2-barreled_stampede-msg.gpg
+      Content-Length:
+      - '693'
+      Content-Type:
+      - application/pgp-encrypted
+      Date:
+      - Tue, 24 Mar 2020 12:54:04 GMT
+      Etag:
+      - sha256:9a1bfdaf119e89caf99627f638b19983de766109445046c95ab460fade2f0c21
+      Expires:
+      - Wed, 25 Mar 2020 00:54:04 GMT
+      Last-Modified:
+      - Tue, 24 Mar 2020 12:53:07 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJleHAiOjE1ODUwODMyNDIsImFsZyI6IkhTMjU2IiwiaWF0IjoxNTg1MDU0NDQyfQ.eyJpZCI6MX0.VdVMC2rpnRQuPjuFYptw8Wo01J1XLZ2hOPEVINzWpjo
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/replies/44e91bc0-3129-4e2f-a026-7434e2680f91/download
+  response:
+    body:
+      string: !!binary |
+        hQIMA/xqiUWlNDxpAQ/7BO/G9K7DFXx1aAkI+1svvpHE4tekcmYQiESiu5HYu23oykBWIfvxj//i
+        2rpUgfwIgGkH9eh6vEaaHIRnMny12gEoLR6KeYgGA/Ea2AkKUfYs1KFKoUdBDbVpYXB8u9C5EXzI
+        GFdL+wjBCAZB1T4qGxxAsV3/S9gTT6mKpoGiv1pnKsKB+l9rXoUfwPnFdVhjE//jXzIAt0IU4FIk
+        BO3TXnJH/ZjV08qMk/3yiJXde6nw+n0dKx5cgI9QNmprsvKDP1mbEiA2ZTzaDwCE/breqn2InjhU
+        SbPU/UbMjFZoUDtzQakahlg0JVD+sBYzAVnZiTwGg2iwGBTzgGir4jBcu3Bfj4nfm0wSPcQJ/1PU
+        qrsqUT901w1j9nhwGmrL1eTM4uANtThQ+Rira4uR97Hn6GW9u6gYfDJRN4WzSrdcgokqR9wqiPQd
+        9X90lginOCSn9wa2NZrnxfsrtPZgVl8KVw11K1KjB48EoARgLxyCg5+SK+fEhlVQSInwsf+qXeAg
+        eM8N5p+DhFpgnsjEZKXVUUrXMM9sIgZLbEFJ+FKQ3jqLlnR8Dk9bAhoLqFiY6QvIUAc4NAT8MVPO
+        rEnLJJJiUo6bShaFZ94qdL4s9Cm2Cy5uyIB6g7rU/Zm+OZ0tPlIWB56GG5DfNzh18WzUC/7dFQKD
+        IXS7Kwwg5sojBlNMxxaFAgwDw+fEwKIgGyoBD/9ScD//9wxXpuUtbLdWnZdU0k5D3fU7J1PsvZ9w
+        KYXyYlb7kqapBgPxy1SO51wIv9EWzNRHR/HtQjIqKrNsN+CoifcK3gMLZfJmH4QD53NbNm7Q36Wk
+        SCA3R2nCJso0qSeaHQJs+YbgJ6NV8qR0YbGsJK+PXhYGyiY/xmPBIWVUsYySeGDo6k/3kedp8w5l
+        dACYTF3nLVFThKuldyklT9u/7wQD+OFJ7FZMqVJJJ090Tpypdkle120UKdwEEc4KMh/qPy6+bSYh
+        x8vXDwb2qV/gUlyAjg0SaHl7bkS1QTleWvXBQM4royavTsLhLo55aBq6jkG1RX0sBcv5bsqNg7wO
+        w3xhP5lI+BITdsdqtJ26pO1QfWGbi0beC1/XaZEsH9WYHmkGHggEyKSQXsRmhdiJe4+Uc4hQ7UA6
+        AlrTXkB15aiK5lvfIlVjhMziDXu7Usqga31AiOtUnrCo/z7pA/OnP6nUZsD9er7763GOhnZxG6EJ
+        0Ekm43BDXJla1dJZpWfkoFseL4BzI4ikFsCk4o9J1R2LgnJ0ZKaBa0O8T6dkcZ0z/taBzyB1tPoY
+        oIYaxkWtpjgA/G1xxNjAMwGh5Q4iD7lQ4FxIJlWghAdfT3h7oZS0izCNbgIjuWs5Y6wcpvXxvuII
+        HbqyFRVg567yceF532bBWc2GcIBKvNiK1Imm/tJdAbMVfsiWj4MzRTe+9DqC+JKd7sPjoTbmmxqh
+        ArfG1Qf1sOhyNaqvddW7wi86RzuYfAdRMPbgLFz/WVfHZR1BApaQ8AATppzi77rD1zHAeHERigFy
+        FRBxY6Zzalgt
+    headers:
+      Cache-Control:
+      - max-age=43200, public
+      Content-Disposition:
+      - attachment; filename=3-cream-colored_masquerade-reply.gpg
+      Content-Length:
+      - '1149'
+      Content-Type:
+      - application/pgp-encrypted
+      Date:
+      - Tue, 24 Mar 2020 12:54:04 GMT
+      Etag:
+      - sha256:7aaeca3cbfe31ee01dab7db87c92398e29c7e6227095c2dde1cdcac81601824a
+      Expires:
+      - Wed, 25 Mar 2020 00:54:04 GMT
+      Last-Modified:
+      - Tue, 24 Mar 2020 12:53:06 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJleHAiOjE1ODUwODMyNDIsImFsZyI6IkhTMjU2IiwiaWF0IjoxNTg1MDU0NDQyfQ.eyJpZCI6MX0.VdVMC2rpnRQuPjuFYptw8Wo01J1XLZ2hOPEVINzWpjo
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/replies/e2b11529-db66-428a-8d23-c01063048356/download
+  response:
+    body:
+      string: !!binary |
+        hQIMA/xqiUWlNDxpARAAoXBmNtAeVqU+6xNyr2ZVvvPukJ2gRkeqtcxrCrsEoBZZliLIBbaT6zQk
+        B5ALwr7VK3jj54JrSaLUTdSuln3ons6vu8bwc1C4Zdb47mMjyiwD5U1jGTWoXjzd6orxo9KF+OOR
+        JZClPlwDLVx6LnLRpP3zg9e2t3dl6d79OomtU9oFiDBnAJqSnEKThORhFG4bFLv0O9lMH0anYDXm
+        epbS5KupScTiYCzggQgjTiPb7rCUbBA9MhFW9J73UxpRFxDjrlamn2hTZ5HsfuDhJvioHPaj8axR
+        gJP6yA/Ig9F63E+fIzlv7mne/BSSQTf+E//5VS+v/MLTl3MRw1I9ABBMZtuuiUbExjcVOBrVOL7F
+        C9DrZ2HYP7jxGxG6uO4HpsQn1dTG5a5NFfgMdTu6ohHj+vuGvtm+ENGc3cRr9VfM3BGiGav6KNRT
+        K0PD+ux+0MdWkn+mPMWf9kSX5AriiJA7vy+p29KoO0StjMoUACz6YeJLtZ1wFitZL7I2oHOtRXPS
+        o1JUM+gSgY9Nr7W1PQWqeOQAFFZdwELHWG9JSlumtpOd+WNpLpnkHviTSqcCQt33YGHPLjgFhHXm
+        t1pIge7OVRTbSQSGV6BqN9kwFCe0Hg6/QqNnSyP8c4dBkp0Y8gyik3I2Dut8i3Vivpao/QMTEp6A
+        HvXjxQwORQY2+6T1Gk2FAgwDw+fEwKIgGyoBEADrQC3DF+Wi9AwdgwNJqKkT2DiqhOZQkz/deCNq
+        YI7MtFbK8tySJ55Fzx+SDhrxEjQgJ+4ORWVEAoidaWK9OP1qUx9OYS5Yg9LCwJuy5hWg9fmJP4jl
+        CWl4FgogsxCH1v7kjWRpEzeRlpf0RXNHgIxpOXer2PL9l6FaBQEbAJPIQsh3kFdadois2ltwm8zy
+        mLFPZPS3m2Y7eUaGoaXcsmFGbzF1Jlxfs7/Xk7v7qzrp9NyF3ONzcOcIcR3klY1IBlucJvKWa8vX
+        bhNSeG2KObIj+aUR7wUzhU6Rf9fgXPQifNDr5Xv2L/1hGBKHUCWqSBQtHN5qTcOOfWCR2ETmeXt0
+        ad1OuL6WLy3/9yzHhEibSzD/YRYG4cHkCLonMdwMmzHcfNdjket4KUe8+iA1v4HykU5FuwtZa3IS
+        fUwtsuxqZRG2G75jTVCHo5jnIQJe2YTqc+gEi/3iTcv332JoKcz5u2WjSJD6xVO3okWJxtP7Egwb
+        SSJuxiXKb3/FBcf347kAwj0mrvk8WvX5bGNK+3Q1N2Gw3q22GJ2aZg4fYnem19WVXzeP0M8k4jKX
+        E6FVgcma8Rb9RGtHwLKBAPIfnf3Ptuctlhs74mprYvUPuWHNZG+GWsKU2R2qlMHiE3b+VP4Wnba6
+        KvlD9u9gGRzXw9Kl7oI0OBrmi2wW2jivkA6FI9KiAe+PLOBnJ8toWOA3Bs4FA/pt4sqGcCIp8oIH
+        GZmNYpHW9T5z6CmY3ENsuPbftVHTRC2ZF/0UsdQfBe/Q8tF1owls8mCMqvif251k+fd5+HABYhID
+        J1fTIWSAYAN3PH2zyaqLgQUNEF1Z9yBboERZkp2zOkoF0X5h7CJpLrS2Xph4baycRgoQVYe0Z6BS
+        IZQQpqYxM/W5TqlXREYa5MNeEcxk
+    headers:
+      Cache-Control:
+      - max-age=43200, public
+      Content-Disposition:
+      - attachment; filename=4-cream-colored_masquerade-reply.gpg
+      Content-Length:
+      - '1218'
+      Content-Type:
+      - application/pgp-encrypted
+      Date:
+      - Tue, 24 Mar 2020 12:54:04 GMT
+      Etag:
+      - sha256:385a9051692b8bfdf9c9596d64d9f851c04b40aa6493e8c99bbdf05ef3979a84
+      Expires:
+      - Wed, 25 Mar 2020 00:54:04 GMT
+      Last-Modified:
+      - Tue, 24 Mar 2020 12:53:06 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJleHAiOjE1ODUwODMyNDIsImFsZyI6IkhTMjU2IiwiaWF0IjoxNTg1MDU0NDQyfQ.eyJpZCI6MX0.VdVMC2rpnRQuPjuFYptw8Wo01J1XLZ2hOPEVINzWpjo
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/replies/83f25d17-d12b-43df-929f-8695b1f329e5/download
+  response:
+    body:
+      string: !!binary |
+        hQIMA9gO0rU5LcAgARAAthvizABurOb+JEYPWw/KKs1kzl2gz0/uBjSQPflmbEf84RcWJRqBL9NV
+        FyyHINLWK59vmawjt6YFzMxpi2HnHXZMo/YPcPC/SWaAY3R0CwX6FDZD0nEQHT3jiI2YI0BKBCNj
+        44iqPvzDZ/olp0WxewYf59Lz85N/Z5v432OWc7kAAtLLO6lzzG/4Rb2+FmPxhgL1r86qbdiewZTy
+        xr6URG+rYCPW7BJpHKGrvgm9H0mUlqPlwQXgTBprObo55NlCElMnecpc77RQ/xTTjDGJ2yXuwFd8
+        69Olm9Ayjpyn4mg02lj15b7dqCejrcirP0HXjO0MfuVJlRl+dbzEmkQQPxHpeco5iBmaLVZU2sa0
+        f9Lf46HwLwnagfknV6R0oY+AijPS3iP84kdAFNXtEAdIxfVwYDWfoqi0LZJ6XiE/U3AFHfL94bzi
+        hI984dRlZw8kPyOzzBsrLbEfY6HriBnNWeL0owME76jmRQAjmxQ/feoRNA3Co8Rg0VDFI/feLurK
+        ODW8kabK/GJ+PrpR/CGDRLjB9B2dLggLowVU4rm8Gf4fodhF+4td6yKZURV1o081kL32AxhyuBnu
+        femqjEfKPIo30816xW7u4OuaFt5v61I6BxAW/wY2N4HygahzJKhiXGCIncVtK1JGG1Mjro9rHSnG
+        R4t8cghP+z+Z9JAXBaKFAgwDw+fEwKIgGyoBEADv0UcwPjRy0nnRSyoyvld/29Nx68GMXXWQGSun
+        widpGURheHZP3U4zt14aPO+CrDEsHuXhyl72uIg/3dOec3wmaiZMtCc9bLjoL4cZKRwddZPzL5Of
+        ErPMhx58pW7Is9TW7mB39zfv+51y+tw0EcoQl543IITDl/9IwKHpPuQZETXacnmjn7xfGuQWAxGT
+        +E4O5G3cb+Q4L2Yq7DklQNKFDR7uZi3LXDKv94A/Pyd/LgJPbs0WE2rTljT7TFgD0WxpJ3/P1Cdd
+        zbMVx8yx/gG11CeiqjcF273aK76S74iWzR0DZTBhw8/51pVryLA8XHA3G/2ju8Hn2X5vD4yaaAGb
+        gqUBCuvkBVreZhCyDZPxrd5Ht9KiRnUOiTSh5XDzvrP2txNLXEgKi+IvSZ44adcjY09kk3SVVoDX
+        2+j1c16IRN4ovBH87neu6CmigyGQ/UXH9Ta+O9HG/YUFulWQ7jNcyLkMUgwNZpay7+Oe4MVDf7OK
+        6fzbDc8RqxWp7E1HRB6Ofs1uOU+z8ADOvIfNBIRPt7mdsjRNDMc9yD62EYLX4TczoJKgZrbjmYKX
+        UAfN/QimjKJCvwws1gbBn9AaYnaBqk1TEObPLzUYIy1sg5PlxIT0bYJxUdLWvAjIjtGvkJdyA0qb
+        a5YbEVZyXqj+KMMOp99W1QTxAO4Lkpb+tnvsCNJdAXySnMgOtRQ8Y2kejqWa9Wlzlg2jz2fd/H3T
+        Cq4akD5YpFI/DlfSkOYLVFVKgX+rPGJdJFWcH7QQBuL9ia5wieqBJWsPMy51Xkjs5OMpIPS/EBlV
+        20lPLZ1jTZWD
+    headers:
+      Cache-Control:
+      - max-age=43200, public
+      Content-Disposition:
+      - attachment; filename=3-barreled_stampede-reply.gpg
+      Content-Length:
+      - '1149'
+      Content-Type:
+      - application/pgp-encrypted
+      Date:
+      - Tue, 24 Mar 2020 12:54:04 GMT
+      Etag:
+      - sha256:f41e30218c373f8806f177fcb24e3712cd27284af9bf40d49b853ffb8c450388
+      Expires:
+      - Wed, 25 Mar 2020 00:54:04 GMT
+      Last-Modified:
+      - Tue, 24 Mar 2020 12:53:07 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJleHAiOjE1ODUwODMyNDIsImFsZyI6IkhTMjU2IiwiaWF0IjoxNTg1MDU0NDQyfQ.eyJpZCI6MX0.VdVMC2rpnRQuPjuFYptw8Wo01J1XLZ2hOPEVINzWpjo
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/replies/9ecd1799-158c-4b77-a828-5f70c9f84177/download
+  response:
+    body:
+      string: !!binary |
+        hQIMA9gO0rU5LcAgARAA08CC1w5nRTylLTiZxNN8RTGVySLZmc+EULY+YBVVN9ZP3mJApD/A9VJo
+        LYPwC9qFayUbBC0K0YmhrkIID2Dfp/ShlBB4NPhMwqhpU/0IQj2kx/2RgsL0ySJZJMbDYdDA4ysF
+        rvDcZZYLAvH6a1Bu9ZPlhk1MDU6NGkUg4ZXjRwHBL7DtLtmozWjIrtN0kHJr28z4RB8FC7dlgD5e
+        i1aH+ZT18sTdPA85KvlB6y1YvILSIz0ExoJ1Edi6Zor9li8lfig72H8Wk0qb49fgCkGtO3nlzr7d
+        y3Q8oDc/zq3Rl3wVK1de/X4EB8gohlUwE2RwSk+atQRF0j1WCWQL94GNgvZOJYoiGsNA52JhcyG3
+        ENqhwU+DvxVwvCr1zxxzXpwru07FuJiuV/ZCzn6hGwRXj4GHaeDxgICSYU6J5oGarSkMtMsOYNI8
+        ea2F8KKB21vbEuS+XAaULXxvUZ7z2a+iRFV9x/X5HKkQy2BJHwntpasCB3XvbCpvuy2dWIczSOJX
+        uEN3G0lojvIfA4TzFkQiJ0+fB4YZSQOVYcAwjIpUwGZrvZT83diS4UrO8IZ1NOkO+3axAVbEv3Ca
+        Fx1R/Ts6jk8HUdguJKjCdau2Y0CvKVsnvn+w9qTcW/vOh5dAmvhQyYH4t31PPYvLeTpFm39pIxDj
+        8nQ2dCGMsRYzHDmtpIaFAgwDw+fEwKIgGyoBEADPMmRyfl49Jtd1+3MxcGDgsLIxZw8WFlBMuJLl
+        qkCOw3WRFQJrMmPxIBfRGaKc5VxLvrhzjtKVXc7oYZT6utmaAiIQnfoPJr9BlZLKQxDLsee6YCGM
+        GJFI7mJ0gnUTAHCbUVZgU42kXNlsYB7e8dXYmnN9WeOznSFGBJKgef2ElIuVk32uGShmrlJRHKMJ
+        j9n9m1jxLR+zfWzLxw2+rS1SF8PduhuAzdLaqeMv6zzXS1rjPgthz1F/uqtmaXUYcH5MP1sa+pav
+        Z5ghk4a0dAHmLocsqmqOyKscOJGI4Z68s92insrLbwtnH25lmm6JcJ9W2IqOFuKsPADu/Kss1plL
+        AKNyOA6HG7gqgphFpDULfPQ32lpWJQn/9FDR5wP5XjI/g6jfykkjzqB7VjlD20zB/DZ79vO3XJOj
+        pyXmEmv3mslxjW+rs191ohnVbmQA39qzC+VjcoukkSu3OpfqsQHl4ypofzsSptypJ0+btCo5vldQ
+        fK5k0b5EepLWkCW58XdIa+2jNzmvCMp0lAUSI1owf/6YXAwX91YAG6IDTd8V36e0KYiZA3eocHCs
+        VUAHx3NWBMFLv1ZHQVc2rAj++T3rRHEgoCMCBRczM8RSe+2Gl4VzwtV0SQ3Eaa3vNcDrioNh0Put
+        7tc79pcT7BzFQXsV1VtE8sLsZxSyc9tdj7yr4dKiAWTN/FglD4vsB2L9incGdyCvWyKF+BBEkwwS
+        2b2cZGHCbgVcqHJSyB8pPabOxccC5/k34sM4gbUgLPIvPmwPeLWe1qNvrRIVEgTKQ5yBATsO1xXK
+        q4kiVULOkR/pvhB/zlNG4bvdSTmYZpDDXfBMUQJy2su44lgQ/ER+hSxQGpeKfs2LaOa3cUUUw4Vx
+        gnF0QFJSuVz5X4i4mj4+8qfwZCI2
+    headers:
+      Cache-Control:
+      - max-age=43200, public
+      Content-Disposition:
+      - attachment; filename=4-barreled_stampede-reply.gpg
+      Content-Length:
+      - '1218'
+      Content-Type:
+      - application/pgp-encrypted
+      Date:
+      - Tue, 24 Mar 2020 12:54:04 GMT
+      Etag:
+      - sha256:78946fff4b88762102c9d32c4427c838fd7da95f3a2c7250eee0b037c9f6daf6
+      Expires:
+      - Wed, 25 Mar 2020 00:54:04 GMT
+      Last-Modified:
+      - Tue, 24 Mar 2020 12:53:08 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJleHAiOjE1ODUwODMyNDIsImFsZyI6IkhTMjU2IiwiaWF0IjoxNTg1MDU0NDQyfQ.eyJpZCI6MX0.VdVMC2rpnRQuPjuFYptw8Wo01J1XLZ2hOPEVINzWpjo
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: POST
+    uri: http://localhost:8081/api/v1/logout
+  response:
+    body:
+      string: "{\n  \"message\": \"Your token has been revoked.\"\n}\n"
+    headers:
+      Content-Length:
+      - '48'
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 24 Mar 2020 12:54:08 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"username": "journalist", "passphrase": "correct horse battery staple
+      profanity oil chewy", "one_time_code": "560276"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '119'
+      User-Agent:
+      - python-requests/2.20.0
+    method: POST
+    uri: http://localhost:8081/api/v1/token
+  response:
+    body:
+      string: "{\n  \"expiration\": \"2020-03-24T20:54:26.174225Z\", \n  \"journalist_first_name\"\
+        : null, \n  \"journalist_last_name\": null, \n  \"journalist_uuid\": \"9bad6f53-b822-4919-a1e6-7a26db7828b0\"\
+        , \n  \"token\": \"eyJleHAiOjE1ODUwODMyNjYsImFsZyI6IkhTMjU2IiwiaWF0IjoxNTg1MDU0NDY2fQ.eyJpZCI6MX0.pC45en11F9NvNnvDtuyFDfL0A-ihunKAL9ukTtEe3gk\"\
+        \n}\n"
+    headers:
+      Content-Length:
+      - '317'
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 24 Mar 2020 12:54:26 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJleHAiOjE1ODUwODMyNjYsImFsZyI6IkhTMjU2IiwiaWF0IjoxNTg1MDU0NDY2fQ.eyJpZCI6MX0.pC45en11F9NvNnvDtuyFDfL0A-ihunKAL9ukTtEe3gk
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/sources
+  response:
+    body:
+      string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/add_star\"\
+        , \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n    \
+        \  \"is_starred\": false, \n      \"journalist_designation\": \"cream-colored\
+        \ masquerade\", \n      \"key\": {\n        \"fingerprint\": \"717BF2F1E7A09C24C916DE8AFC6A8945A5343C69\"\
+        , \n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmQINBFGRfoABEADY4KES6Rq607zmyu6n+Lvsacu0HK+7TzqPwW3GeKk5yitP2kQh\\\
+        nma+iJh5ZXOkp0VdkDter7Nq22jmIKHZgYsux3tIDo7xhYGxvmkxr5BoL9XLvgxHo\\nUBRfDEgJtoLxKwhxN+BP4/VN8VgZYnI6OS3l/lX17Q7VStPfT8sQNrHV6dW3yxNW\\\
+        nLL0yuisPKqgs/C6nSdSlBk3bDbzc45/OrYETimvOUt3tzHizcCQryF6nzzTgvc7g\\nafReSO0++bqGR3hT6F1twB4vw+tgxDgBLknS6gOS2HvKk2OmapscGs6fyN5Q15FQ\\\
+        np2PseJczEz4eez4KbvoXep4hNluaugryngQh1Rg/uuo4o5fQD/eci1+khrLC894l\\nesLphFjujjSAP6Bhp5hnxp1okPqircH6fmbuFadrmJIr5YbYy9pDX0meR022nf4+\\\
+        nwNmzEeaX0pFD3wen0xng9ccDbAY6OT2gWxDoDuuNGd/3Mop/yfdiHew+P89VMKzE\\nqBKGCGs90PLZ8hpUuFFzTZJI8mGuYjP84IMDXmzH2POVmN1HXIt96kW+TvTwX73C\\\
+        nRPXt7ou7f0uQ3wZ04aM/+5/24wInHrb2H3pTgfwHfdPW7DD6EWjkKijtmvzQN0xj\\nK8Jo2Ja3HZ6Rf6qVmlbG0EDQXQNDKlFvdUqg3NLfTMcIriS5j8E9mldtwwARAQAB\\\
+        ntHxBdXRvZ2VuZXJhdGVkIEtleSA8VVpENFpOT0g1N1RLVE5TUzNSSzdTV1RBUENC\\nNzVJQ1U1WkJFSFBCWlZRWUdGWURCVlBBS0pSNEZOWkpHRjRHU082N1hKV1VSN05C\\\
+        nMzNJQzRaNDVHQk02V1BLV1VSVTVHVllURkRVWT0+iQI3BBMBCgAhBQJRkX6AAhsv\\nBQsJCAcCBhUICQoLAgQWAgMBAh4BAheAAAoJEPxqiUWlNDxpn6cP/1RlRgSu6AYi\\\
+        nROvwdIu9bhXaEj+XcCvBEw1lWmv4Eb/pjXa92ZVeURgH+6urJXHWK3WhfGwFpDTj\\naecV16a10h7xLRJzTfsnxhEGl/czRbQ1V5XuTEnMBWPoD/x1z5NPsf950dk4frvx\\\
+        nT0TkoKYhGYhHzjUiQWJJw6o77KfcMQRErmD0dlAEcoDj0spC0VZef8WFz+vc0Syg\\nonMgNqMCtu1AUGAz25o0uby1bhudDHZ7UqGCsioFup+gTXBWVfgftv3GdUMuJryJ\\\
+        nFm/W3SM14JNl6YP6kqezf9DKUPPeJJ9nCvOqQ9JyUOgL50GDBfAanKGxVpZSGo82\\nrekEzYazZtVXTQBtRAcqwC9mAv/hvffX9hBWuQ4OsNXHd+7XsG2XTnDH8W2AZkV+\\\
+        nsplOrwC+dZY3X9/pyCAYItLekgfQ+XoRfl7rmn4ydeO3q6CgNdonqYi1P6uje0qU\\nhL+cgnPB0y1MTOk+po7PDgl+kpgdV8WnoczspsGUcqu/Yx6LxmWMn2+fTK7dYB6K\\\
+        ny82FbW4u4S8TVNVL/D1AZYhdTvnf0dtraO0GY3MozkfvdGFX4csaaSW7CjbYDiZ+\\n0YeDu59H41ZVcyUAfClvrxFZp+bwXCW1mvueCoyt+njVPRGpvuM7Ab3qbOUWgGcn\\\
+        nt9xasj6SehFgNvwJLoCWZZkB+r8Eyn4+\\n=+QhJ\\n-----END PGP PUBLIC KEY BLOCK-----\\\
+        n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\": \"2020-03-24T12:53:06.776780Z\"\
+        , \n      \"number_of_documents\": 0, \n      \"number_of_messages\": 2, \n\
+        \      \"remove_star_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/remove_star\"\
+        , \n      \"replies_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/replies\"\
+        , \n      \"submissions_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/submissions\"\
+        , \n      \"url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff\"\
+        , \n      \"uuid\": \"a6209897-46e8-4c3f-b4f3-b90348662fff\"\n    }, \n  \
+        \  {\n      \"add_star_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/add_star\"\
+        , \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n    \
+        \  \"is_starred\": false, \n      \"journalist_designation\": \"barreled stampede\"\
+        , \n      \"key\": {\n        \"fingerprint\": \"F7DE3D25A6E4A8DAF2D3F24AD80ED2B5392DC020\"\
+        , \n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmQINBFGRfoABEADVrwa6TInAdGZ6zEeJT7RO2liyl7Er1L0IXgwqt8zbrgisLxVU\\\
+        nqaK5/Dxn+GqBcZow+Iw2/bkdAVA/f24a+6qUNQV0T0RR4f3oJ4uI9r0XjDVfaqmp\\n6m3PnZtfRKVFcDEykTxuMZ/QVb2HLwsIyUhZo5u9NJPtsx1hj8/z+zgBw+fVGt/v\\\
+        nHZx/6EESWIVfC026Dk2jzXCY/esTjhWOxcCahknN7bE2jv6rDxXX9H9r2tEnYr2J\\nloCdQ1zptbbQNN1etaFWe5kNKUO63xoVsr/ghFO0VpS/A7hAdr3YIja5TfPwmf2G\\\
+        nIekcaaZFHRlpu+zksExoxxFDcatDuLnLlgn53Esofv0hRsWoHwr8QZxHgHrszYv8\\nOv045ay0S/RMICx0UUoL0fkgHGc+XC0YH+2+HJWCfN77fCzkJhd5B8vLIQsH0nJx\\\
+        nO9V3EUG9K4EQG6igK4bQ8/mBR7hxQkLoxZqbBWkNLpECvKZu62P9Srxf3b6jXFmc\\niwolinwWcHUxFFL5XerMS5cxmmj2MPYsqW+Rc4iZr/lOmEHVgY2zHAPsulMTpafx\\\
+        neRz8giAVOmIVQyAWvoD/g6/rnLQCSbVlUz/kUpIfOzuK5HE1nwJCJWDSImAZrEou\\niUgaLGIz/B2NXWNrf8wrlL7wPV5BXyoycPZRodKA/zl4H2+QPBe9FbDp1wARAQAB\\\
+        ntHxBdXRvZ2VuZXJhdGVkIEtleSA8VFNXVURDNllFUzdEVFZHTldHUlhZQkVITU5D\\nUUpZMkNRWks3WlFRNzNRS1FWTkZCWjdOUFQyQVI2QU1HTDIzWFBRUE1PRkNTMjJN\\\
+        nV1Q0WDdCNEpXWERDSVpZTTZXRUFDS1NNRUdRWT0+iQI3BBMBCgAhBQJRkX6AAhsv\\nBQsJCAcCBhUICQoLAgQWAgMBAh4BAheAAAoJENgO0rU5LcAgBwQP/02Mb0MAd4Uw\\\
+        nQA/znO8DTn/WXUYKabg73zPwEVi0n2jm+RxUo4X/8jAcJz63HTnSsDtjeprc/gRe\\nMaFoSP7v+tDV9wtFPAgfJrP7MQhf//EzHodjY3ZUTMoUv2p7+iGaLW/hk/4isWTT\\\
+        ngQLyR/T0L8AocsSTiAx+7p7eDea9KTTjCe+TL8tB3i10tx2IFj+d0pHvzLM1LXbM\\njfD0IjqwPOLw2507151IeKPQ/gyaJtUxLGSv5MGxqAFCnJIfA9fO1odrNGhRpvdE\\\
+        nI/H/5vCtbgQK0CZ9cIIlKfHtfwEuVVHCPQFSRQsQr1qjohS44KCUhkIPhiDVSdQ7\\n6VoeLWooWdJftlICSnWCrZxbfVVGQofnB/lUFr/FI8c6LGTSSh5BKPVprjaVqClz\\\
+        nOJSPHfavHAHBlKS2TtBUZaKCd4nXgoVS/Hw0yRLrVRNX1lh1xZHQKLrCGpXqsXKW\\nRFdOvww/b/xCTX1TODJ9GIERHQiRWy5qfxuh1zbKrPAmYMu8myM00M8SwVyiZZGp\\\
+        nsbwUpJ2VJN292BbNQsorOODrqWjBWQI9FBynDA+HPH5qfqAniUsrvXdOB0Ml6OJW\\nskJ1GYv/a7MersTyXnC3ud6KjSSlxaIsUnl8Ikz/+IV0oS21MuQ8K8g43Xfx59aF\\\
+        n97NoRaRbPhAMXGI1VOHh+oIjjkP6DBfj\\n=u+fN\\n-----END PGP PUBLIC KEY BLOCK-----\\\
+        n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\": \"2020-03-24T12:53:07.965467Z\"\
+        , \n      \"number_of_documents\": 0, \n      \"number_of_messages\": 2, \n\
+        \      \"remove_star_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/remove_star\"\
+        , \n      \"replies_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/replies\"\
+        , \n      \"submissions_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/submissions\"\
+        , \n      \"url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c\"\
+        , \n      \"uuid\": \"4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c\"\n    }\n  ]\n\
+        }\n"
+    headers:
+      Content-Length:
+      - '5356'
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 24 Mar 2020 12:54:26 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJleHAiOjE1ODUwODMyNjYsImFsZyI6IkhTMjU2IiwiaWF0IjoxNTg1MDU0NDY2fQ.eyJpZCI6MX0.pC45en11F9NvNnvDtuyFDfL0A-ihunKAL9ukTtEe3gk
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/submissions
+  response:
+    body:
+      string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/submissions/f84b8ad2-5ffc-4d4c-8248-c12e590fc5bb/download\"\
+        , \n      \"filename\": \"1-cream-colored_masquerade-msg.gpg\", \n      \"\
+        is_read\": true, \n      \"size\": 627, \n      \"source_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff\"\
+        , \n      \"submission_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/submissions/f84b8ad2-5ffc-4d4c-8248-c12e590fc5bb\"\
+        , \n      \"uuid\": \"f84b8ad2-5ffc-4d4c-8248-c12e590fc5bb\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/submissions/2222c6a2-53a7-4c9c-9e36-e064aca1a22f/download\"\
+        , \n      \"filename\": \"2-cream-colored_masquerade-msg.gpg\", \n      \"\
+        is_read\": true, \n      \"size\": 693, \n      \"source_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff\"\
+        , \n      \"submission_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/submissions/2222c6a2-53a7-4c9c-9e36-e064aca1a22f\"\
+        , \n      \"uuid\": \"2222c6a2-53a7-4c9c-9e36-e064aca1a22f\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/submissions/7b13f1dc-3ad2-489c-9098-ad684574f374/download\"\
+        , \n      \"filename\": \"1-barreled_stampede-msg.gpg\", \n      \"is_read\"\
+        : true, \n      \"size\": 627, \n      \"source_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c\"\
+        , \n      \"submission_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/submissions/7b13f1dc-3ad2-489c-9098-ad684574f374\"\
+        , \n      \"uuid\": \"7b13f1dc-3ad2-489c-9098-ad684574f374\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/submissions/fd197a4b-4bca-4798-b3ca-e5ae3d0287b5/download\"\
+        , \n      \"filename\": \"2-barreled_stampede-msg.gpg\", \n      \"is_read\"\
+        : true, \n      \"size\": 693, \n      \"source_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c\"\
+        , \n      \"submission_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/submissions/fd197a4b-4bca-4798-b3ca-e5ae3d0287b5\"\
+        , \n      \"uuid\": \"fd197a4b-4bca-4798-b3ca-e5ae3d0287b5\"\n    }\n  ]\n\
+        }\n"
+    headers:
+      Content-Length:
+      - '2059'
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 24 Mar 2020 12:54:26 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJleHAiOjE1ODUwODMyNjYsImFsZyI6IkhTMjU2IiwiaWF0IjoxNTg1MDU0NDY2fQ.eyJpZCI6MX0.pC45en11F9NvNnvDtuyFDfL0A-ihunKAL9ukTtEe3gk
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/replies
+  response:
+    body:
+      string: "{\n  \"replies\": [\n    {\n      \"filename\": \"3-cream-colored_masquerade-reply.gpg\"\
+        , \n      \"is_deleted_by_source\": false, \n      \"journalist_first_name\"\
+        : null, \n      \"journalist_last_name\": null, \n      \"journalist_username\"\
+        : \"journalist\", \n      \"journalist_uuid\": \"9bad6f53-b822-4919-a1e6-7a26db7828b0\"\
+        , \n      \"reply_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/replies/44e91bc0-3129-4e2f-a026-7434e2680f91\"\
+        , \n      \"size\": 1149, \n      \"source_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff\"\
+        , \n      \"uuid\": \"44e91bc0-3129-4e2f-a026-7434e2680f91\"\n    }, \n  \
+        \  {\n      \"filename\": \"4-cream-colored_masquerade-reply.gpg\", \n   \
+        \   \"is_deleted_by_source\": false, \n      \"journalist_first_name\": null,\
+        \ \n      \"journalist_last_name\": null, \n      \"journalist_username\"\
+        : \"journalist\", \n      \"journalist_uuid\": \"9bad6f53-b822-4919-a1e6-7a26db7828b0\"\
+        , \n      \"reply_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/replies/e2b11529-db66-428a-8d23-c01063048356\"\
+        , \n      \"size\": 1218, \n      \"source_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff\"\
+        , \n      \"uuid\": \"e2b11529-db66-428a-8d23-c01063048356\"\n    }, \n  \
+        \  {\n      \"filename\": \"3-barreled_stampede-reply.gpg\", \n      \"is_deleted_by_source\"\
+        : false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\"\
+        : null, \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\"\
+        : \"9bad6f53-b822-4919-a1e6-7a26db7828b0\", \n      \"reply_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/replies/83f25d17-d12b-43df-929f-8695b1f329e5\"\
+        , \n      \"size\": 1149, \n      \"source_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c\"\
+        , \n      \"uuid\": \"83f25d17-d12b-43df-929f-8695b1f329e5\"\n    }, \n  \
+        \  {\n      \"filename\": \"4-barreled_stampede-reply.gpg\", \n      \"is_deleted_by_source\"\
+        : false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\"\
+        : null, \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\"\
+        : \"9bad6f53-b822-4919-a1e6-7a26db7828b0\", \n      \"reply_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/replies/9ecd1799-158c-4b77-a828-5f70c9f84177\"\
+        , \n      \"size\": 1218, \n      \"source_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c\"\
+        , \n      \"uuid\": \"9ecd1799-158c-4b77-a828-5f70c9f84177\"\n    }\n  ]\n\
+        }\n"
+    headers:
+      Content-Length:
+      - '2279'
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 24 Mar 2020 12:54:26 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJleHAiOjE1ODUwODMyNjYsImFsZyI6IkhTMjU2IiwiaWF0IjoxNTg1MDU0NDY2fQ.eyJpZCI6MX0.pC45en11F9NvNnvDtuyFDfL0A-ihunKAL9ukTtEe3gk
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/sources
+  response:
+    body:
+      string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/add_star\"\
+        , \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n    \
+        \  \"is_starred\": false, \n      \"journalist_designation\": \"cream-colored\
+        \ masquerade\", \n      \"key\": {\n        \"fingerprint\": \"717BF2F1E7A09C24C916DE8AFC6A8945A5343C69\"\
+        , \n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmQINBFGRfoABEADY4KES6Rq607zmyu6n+Lvsacu0HK+7TzqPwW3GeKk5yitP2kQh\\\
+        nma+iJh5ZXOkp0VdkDter7Nq22jmIKHZgYsux3tIDo7xhYGxvmkxr5BoL9XLvgxHo\\nUBRfDEgJtoLxKwhxN+BP4/VN8VgZYnI6OS3l/lX17Q7VStPfT8sQNrHV6dW3yxNW\\\
+        nLL0yuisPKqgs/C6nSdSlBk3bDbzc45/OrYETimvOUt3tzHizcCQryF6nzzTgvc7g\\nafReSO0++bqGR3hT6F1twB4vw+tgxDgBLknS6gOS2HvKk2OmapscGs6fyN5Q15FQ\\\
+        np2PseJczEz4eez4KbvoXep4hNluaugryngQh1Rg/uuo4o5fQD/eci1+khrLC894l\\nesLphFjujjSAP6Bhp5hnxp1okPqircH6fmbuFadrmJIr5YbYy9pDX0meR022nf4+\\\
+        nwNmzEeaX0pFD3wen0xng9ccDbAY6OT2gWxDoDuuNGd/3Mop/yfdiHew+P89VMKzE\\nqBKGCGs90PLZ8hpUuFFzTZJI8mGuYjP84IMDXmzH2POVmN1HXIt96kW+TvTwX73C\\\
+        nRPXt7ou7f0uQ3wZ04aM/+5/24wInHrb2H3pTgfwHfdPW7DD6EWjkKijtmvzQN0xj\\nK8Jo2Ja3HZ6Rf6qVmlbG0EDQXQNDKlFvdUqg3NLfTMcIriS5j8E9mldtwwARAQAB\\\
+        ntHxBdXRvZ2VuZXJhdGVkIEtleSA8VVpENFpOT0g1N1RLVE5TUzNSSzdTV1RBUENC\\nNzVJQ1U1WkJFSFBCWlZRWUdGWURCVlBBS0pSNEZOWkpHRjRHU082N1hKV1VSN05C\\\
+        nMzNJQzRaNDVHQk02V1BLV1VSVTVHVllURkRVWT0+iQI3BBMBCgAhBQJRkX6AAhsv\\nBQsJCAcCBhUICQoLAgQWAgMBAh4BAheAAAoJEPxqiUWlNDxpn6cP/1RlRgSu6AYi\\\
+        nROvwdIu9bhXaEj+XcCvBEw1lWmv4Eb/pjXa92ZVeURgH+6urJXHWK3WhfGwFpDTj\\naecV16a10h7xLRJzTfsnxhEGl/czRbQ1V5XuTEnMBWPoD/x1z5NPsf950dk4frvx\\\
+        nT0TkoKYhGYhHzjUiQWJJw6o77KfcMQRErmD0dlAEcoDj0spC0VZef8WFz+vc0Syg\\nonMgNqMCtu1AUGAz25o0uby1bhudDHZ7UqGCsioFup+gTXBWVfgftv3GdUMuJryJ\\\
+        nFm/W3SM14JNl6YP6kqezf9DKUPPeJJ9nCvOqQ9JyUOgL50GDBfAanKGxVpZSGo82\\nrekEzYazZtVXTQBtRAcqwC9mAv/hvffX9hBWuQ4OsNXHd+7XsG2XTnDH8W2AZkV+\\\
+        nsplOrwC+dZY3X9/pyCAYItLekgfQ+XoRfl7rmn4ydeO3q6CgNdonqYi1P6uje0qU\\nhL+cgnPB0y1MTOk+po7PDgl+kpgdV8WnoczspsGUcqu/Yx6LxmWMn2+fTK7dYB6K\\\
+        ny82FbW4u4S8TVNVL/D1AZYhdTvnf0dtraO0GY3MozkfvdGFX4csaaSW7CjbYDiZ+\\n0YeDu59H41ZVcyUAfClvrxFZp+bwXCW1mvueCoyt+njVPRGpvuM7Ab3qbOUWgGcn\\\
+        nt9xasj6SehFgNvwJLoCWZZkB+r8Eyn4+\\n=+QhJ\\n-----END PGP PUBLIC KEY BLOCK-----\\\
+        n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\": \"2020-03-24T12:53:06.776780Z\"\
+        , \n      \"number_of_documents\": 0, \n      \"number_of_messages\": 2, \n\
+        \      \"remove_star_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/remove_star\"\
+        , \n      \"replies_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/replies\"\
+        , \n      \"submissions_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/submissions\"\
+        , \n      \"url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff\"\
+        , \n      \"uuid\": \"a6209897-46e8-4c3f-b4f3-b90348662fff\"\n    }, \n  \
+        \  {\n      \"add_star_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/add_star\"\
+        , \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n    \
+        \  \"is_starred\": false, \n      \"journalist_designation\": \"barreled stampede\"\
+        , \n      \"key\": {\n        \"fingerprint\": \"F7DE3D25A6E4A8DAF2D3F24AD80ED2B5392DC020\"\
+        , \n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmQINBFGRfoABEADVrwa6TInAdGZ6zEeJT7RO2liyl7Er1L0IXgwqt8zbrgisLxVU\\\
+        nqaK5/Dxn+GqBcZow+Iw2/bkdAVA/f24a+6qUNQV0T0RR4f3oJ4uI9r0XjDVfaqmp\\n6m3PnZtfRKVFcDEykTxuMZ/QVb2HLwsIyUhZo5u9NJPtsx1hj8/z+zgBw+fVGt/v\\\
+        nHZx/6EESWIVfC026Dk2jzXCY/esTjhWOxcCahknN7bE2jv6rDxXX9H9r2tEnYr2J\\nloCdQ1zptbbQNN1etaFWe5kNKUO63xoVsr/ghFO0VpS/A7hAdr3YIja5TfPwmf2G\\\
+        nIekcaaZFHRlpu+zksExoxxFDcatDuLnLlgn53Esofv0hRsWoHwr8QZxHgHrszYv8\\nOv045ay0S/RMICx0UUoL0fkgHGc+XC0YH+2+HJWCfN77fCzkJhd5B8vLIQsH0nJx\\\
+        nO9V3EUG9K4EQG6igK4bQ8/mBR7hxQkLoxZqbBWkNLpECvKZu62P9Srxf3b6jXFmc\\niwolinwWcHUxFFL5XerMS5cxmmj2MPYsqW+Rc4iZr/lOmEHVgY2zHAPsulMTpafx\\\
+        neRz8giAVOmIVQyAWvoD/g6/rnLQCSbVlUz/kUpIfOzuK5HE1nwJCJWDSImAZrEou\\niUgaLGIz/B2NXWNrf8wrlL7wPV5BXyoycPZRodKA/zl4H2+QPBe9FbDp1wARAQAB\\\
+        ntHxBdXRvZ2VuZXJhdGVkIEtleSA8VFNXVURDNllFUzdEVFZHTldHUlhZQkVITU5D\\nUUpZMkNRWks3WlFRNzNRS1FWTkZCWjdOUFQyQVI2QU1HTDIzWFBRUE1PRkNTMjJN\\\
+        nV1Q0WDdCNEpXWERDSVpZTTZXRUFDS1NNRUdRWT0+iQI3BBMBCgAhBQJRkX6AAhsv\\nBQsJCAcCBhUICQoLAgQWAgMBAh4BAheAAAoJENgO0rU5LcAgBwQP/02Mb0MAd4Uw\\\
+        nQA/znO8DTn/WXUYKabg73zPwEVi0n2jm+RxUo4X/8jAcJz63HTnSsDtjeprc/gRe\\nMaFoSP7v+tDV9wtFPAgfJrP7MQhf//EzHodjY3ZUTMoUv2p7+iGaLW/hk/4isWTT\\\
+        ngQLyR/T0L8AocsSTiAx+7p7eDea9KTTjCe+TL8tB3i10tx2IFj+d0pHvzLM1LXbM\\njfD0IjqwPOLw2507151IeKPQ/gyaJtUxLGSv5MGxqAFCnJIfA9fO1odrNGhRpvdE\\\
+        nI/H/5vCtbgQK0CZ9cIIlKfHtfwEuVVHCPQFSRQsQr1qjohS44KCUhkIPhiDVSdQ7\\n6VoeLWooWdJftlICSnWCrZxbfVVGQofnB/lUFr/FI8c6LGTSSh5BKPVprjaVqClz\\\
+        nOJSPHfavHAHBlKS2TtBUZaKCd4nXgoVS/Hw0yRLrVRNX1lh1xZHQKLrCGpXqsXKW\\nRFdOvww/b/xCTX1TODJ9GIERHQiRWy5qfxuh1zbKrPAmYMu8myM00M8SwVyiZZGp\\\
+        nsbwUpJ2VJN292BbNQsorOODrqWjBWQI9FBynDA+HPH5qfqAniUsrvXdOB0Ml6OJW\\nskJ1GYv/a7MersTyXnC3ud6KjSSlxaIsUnl8Ikz/+IV0oS21MuQ8K8g43Xfx59aF\\\
+        n97NoRaRbPhAMXGI1VOHh+oIjjkP6DBfj\\n=u+fN\\n-----END PGP PUBLIC KEY BLOCK-----\\\
+        n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\": \"2020-03-24T12:53:07.965467Z\"\
+        , \n      \"number_of_documents\": 0, \n      \"number_of_messages\": 2, \n\
+        \      \"remove_star_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/remove_star\"\
+        , \n      \"replies_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/replies\"\
+        , \n      \"submissions_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/submissions\"\
+        , \n      \"url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c\"\
+        , \n      \"uuid\": \"4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c\"\n    }\n  ]\n\
+        }\n"
+    headers:
+      Content-Length:
+      - '5356'
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 24 Mar 2020 12:54:26 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJleHAiOjE1ODUwODMyNjYsImFsZyI6IkhTMjU2IiwiaWF0IjoxNTg1MDU0NDY2fQ.eyJpZCI6MX0.pC45en11F9NvNnvDtuyFDfL0A-ihunKAL9ukTtEe3gk
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/submissions
+  response:
+    body:
+      string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/submissions/f84b8ad2-5ffc-4d4c-8248-c12e590fc5bb/download\"\
+        , \n      \"filename\": \"1-cream-colored_masquerade-msg.gpg\", \n      \"\
+        is_read\": true, \n      \"size\": 627, \n      \"source_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff\"\
+        , \n      \"submission_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/submissions/f84b8ad2-5ffc-4d4c-8248-c12e590fc5bb\"\
+        , \n      \"uuid\": \"f84b8ad2-5ffc-4d4c-8248-c12e590fc5bb\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/submissions/2222c6a2-53a7-4c9c-9e36-e064aca1a22f/download\"\
+        , \n      \"filename\": \"2-cream-colored_masquerade-msg.gpg\", \n      \"\
+        is_read\": true, \n      \"size\": 693, \n      \"source_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff\"\
+        , \n      \"submission_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/submissions/2222c6a2-53a7-4c9c-9e36-e064aca1a22f\"\
+        , \n      \"uuid\": \"2222c6a2-53a7-4c9c-9e36-e064aca1a22f\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/submissions/7b13f1dc-3ad2-489c-9098-ad684574f374/download\"\
+        , \n      \"filename\": \"1-barreled_stampede-msg.gpg\", \n      \"is_read\"\
+        : true, \n      \"size\": 627, \n      \"source_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c\"\
+        , \n      \"submission_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/submissions/7b13f1dc-3ad2-489c-9098-ad684574f374\"\
+        , \n      \"uuid\": \"7b13f1dc-3ad2-489c-9098-ad684574f374\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/submissions/fd197a4b-4bca-4798-b3ca-e5ae3d0287b5/download\"\
+        , \n      \"filename\": \"2-barreled_stampede-msg.gpg\", \n      \"is_read\"\
+        : true, \n      \"size\": 693, \n      \"source_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c\"\
+        , \n      \"submission_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/submissions/fd197a4b-4bca-4798-b3ca-e5ae3d0287b5\"\
+        , \n      \"uuid\": \"fd197a4b-4bca-4798-b3ca-e5ae3d0287b5\"\n    }\n  ]\n\
+        }\n"
+    headers:
+      Content-Length:
+      - '2059'
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 24 Mar 2020 12:54:26 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJleHAiOjE1ODUwODMyNjYsImFsZyI6IkhTMjU2IiwiaWF0IjoxNTg1MDU0NDY2fQ.eyJpZCI6MX0.pC45en11F9NvNnvDtuyFDfL0A-ihunKAL9ukTtEe3gk
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/replies
+  response:
+    body:
+      string: "{\n  \"replies\": [\n    {\n      \"filename\": \"3-cream-colored_masquerade-reply.gpg\"\
+        , \n      \"is_deleted_by_source\": false, \n      \"journalist_first_name\"\
+        : null, \n      \"journalist_last_name\": null, \n      \"journalist_username\"\
+        : \"journalist\", \n      \"journalist_uuid\": \"9bad6f53-b822-4919-a1e6-7a26db7828b0\"\
+        , \n      \"reply_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/replies/44e91bc0-3129-4e2f-a026-7434e2680f91\"\
+        , \n      \"size\": 1149, \n      \"source_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff\"\
+        , \n      \"uuid\": \"44e91bc0-3129-4e2f-a026-7434e2680f91\"\n    }, \n  \
+        \  {\n      \"filename\": \"4-cream-colored_masquerade-reply.gpg\", \n   \
+        \   \"is_deleted_by_source\": false, \n      \"journalist_first_name\": null,\
+        \ \n      \"journalist_last_name\": null, \n      \"journalist_username\"\
+        : \"journalist\", \n      \"journalist_uuid\": \"9bad6f53-b822-4919-a1e6-7a26db7828b0\"\
+        , \n      \"reply_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff/replies/e2b11529-db66-428a-8d23-c01063048356\"\
+        , \n      \"size\": 1218, \n      \"source_url\": \"/api/v1/sources/a6209897-46e8-4c3f-b4f3-b90348662fff\"\
+        , \n      \"uuid\": \"e2b11529-db66-428a-8d23-c01063048356\"\n    }, \n  \
+        \  {\n      \"filename\": \"3-barreled_stampede-reply.gpg\", \n      \"is_deleted_by_source\"\
+        : false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\"\
+        : null, \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\"\
+        : \"9bad6f53-b822-4919-a1e6-7a26db7828b0\", \n      \"reply_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/replies/83f25d17-d12b-43df-929f-8695b1f329e5\"\
+        , \n      \"size\": 1149, \n      \"source_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c\"\
+        , \n      \"uuid\": \"83f25d17-d12b-43df-929f-8695b1f329e5\"\n    }, \n  \
+        \  {\n      \"filename\": \"4-barreled_stampede-reply.gpg\", \n      \"is_deleted_by_source\"\
+        : false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\"\
+        : null, \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\"\
+        : \"9bad6f53-b822-4919-a1e6-7a26db7828b0\", \n      \"reply_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c/replies/9ecd1799-158c-4b77-a828-5f70c9f84177\"\
+        , \n      \"size\": 1218, \n      \"source_url\": \"/api/v1/sources/4f59dba4-b7cf-4dc5-bc78-0b6023d1d62c\"\
+        , \n      \"uuid\": \"9ecd1799-158c-4b77-a828-5f70c9f84177\"\n    }\n  ]\n\
+        }\n"
+    headers:
+      Content-Length:
+      - '2279'
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 24 Mar 2020 12:54:26 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJleHAiOjE1ODUwODMyNjYsImFsZyI6IkhTMjU2IiwiaWF0IjoxNTg1MDU0NDY2fQ.eyJpZCI6MX0.pC45en11F9NvNnvDtuyFDfL0A-ihunKAL9ukTtEe3gk
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: POST
+    uri: http://localhost:8081/api/v1/logout
+  response:
+    body:
+      string: "{\n  \"message\": \"Your token has been revoked.\"\n}\n"
+    headers:
+      Content-Length:
+      - '48'
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 24 Mar 2020 12:54:33 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+version: 1
