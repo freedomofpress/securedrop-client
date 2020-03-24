@@ -2245,7 +2245,11 @@ class FileWidget(QWidget):
         file_missing.connect(self._on_file_missing, type=Qt.QueuedConnection)
 
     def update_file_size(self):
-        self.file_size.setText(humanize_filesize(self.file.size))
+        try:
+            self.file_size.setText(humanize_filesize(self.file.size))
+        except Exception as e:
+            logger.error(f"Could not update file size on FileWidget: {e}")
+            self.file_size.setText("")
 
     def eventFilter(self, obj, event):
         t = event.type()

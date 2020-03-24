@@ -2397,6 +2397,26 @@ def test_FileWidget__on_print_clicked_missing_file(mocker, session, source):
     dialog.assert_not_called()
 
 
+def test_FileWidget_update_file_size_with_deleted_file(
+    mocker, homedir, config, session_maker, source
+):
+    mock_gui = mocker.MagicMock()
+    controller = logic.Controller('http://localhost', mock_gui, session_maker, homedir)
+
+    file = factory.File(source=source['source'], is_downloaded=True)
+    controller.session.add(file)
+    controller.session.commit()
+
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
+
+    with mocker.patch(
+        "securedrop_client.gui.widgets.humanize_filesize",
+        side_effect=Exception("boom!")
+    ):
+        fw.update_file_size()
+        assert fw.file_size.text() == ""
+
+
 @pytest.mark.parametrize("key", [Qt.Key_Enter, Qt.Key_Return])
 def test_ModalDialog_keyPressEvent_does_not_close_on_enter_or_return(mocker, key):
     dialog = ModalDialog()
