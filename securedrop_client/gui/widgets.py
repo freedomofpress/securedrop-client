@@ -716,7 +716,7 @@ class MainView(QWidget):
         Show conversation for the currently-selected source if it hasn't been deleted. If the
         current source no longer exists, clear the conversation for that source.
         """
-        source = self.source_list.get_current_source()
+        source = self.source_list.get_selected_source()
 
         if not source:
             return
@@ -974,8 +974,11 @@ class SourceList(QListWidget):
 
         return deleted_uuids
 
-    def get_current_source(self):
-        source_item = self.currentItem()
+    def get_selected_source(self):
+        if not self.selectedItems():
+            return None
+
+        source_item = self.selectedItems()[0]
         source_widget = self.itemWidget(source_item)
         if source_widget and source_exists(self.controller.session, source_widget.source_uuid):
             return source_widget.source
