@@ -2613,6 +2613,7 @@ class FramelessDialog(QDialog):
         padding-right: 20px;
         """
         self.continue_button.setStyleSheet(css)
+        self.error_details.setStyleSheet("color: #ff66C4")
 
     def start_animate_header(self):
         self.header_icon.setVisible(False)
@@ -2625,6 +2626,7 @@ class FramelessDialog(QDialog):
         self.continue_button.setText(_('CONTINUE'))
         css = "background-color: #2a319d; color: #fff; border: 2px solid #2a319d;"
         self.continue_button.setStyleSheet(css)
+        self.error_details.setStyleSheet("color: #ff0064")
 
     def stop_animate_header(self):
         self.header_icon.setVisible(True)
@@ -2955,6 +2957,7 @@ class ExportDialog(FramelessDialog):
     @pyqtSlot()
     def _export_file(self, checked: bool = False):
         self.start_animate_activestate()
+        self.passphrase_field.setDisabled(True)
         self.controller.export_file_to_usb_drive(self.file_uuid, self.passphrase_field.text())
 
     @pyqtSlot()
@@ -2985,6 +2988,7 @@ class ExportDialog(FramelessDialog):
     @pyqtSlot(object)
     def _on_export_failure(self, error: ExportError):
         self.stop_animate_activestate()
+        self.passphrase_field.setDisabled(False)
         self._update_dialog(error.status)
 
     def _update_dialog(self, error_status: str):
