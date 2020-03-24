@@ -909,7 +909,7 @@ class SourceList(QListWidget):
         # Set id and styles.
         self.setObjectName('sourcelist')
         self.setStyleSheet(self.CSS)
-        self.setFixedWidth(525)
+        self.setFixedWidth(540)
         self.setUniformItemSizes(True)
 
         # Set layout.
