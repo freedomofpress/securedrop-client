@@ -49,4 +49,4 @@ def test_download_file(qtbot, mocker):
     qtbot.wait(5000)
     assert file_msg.export_button.isHidden() is False
     assert file_msg.file_name.text() == "hello.txt"
-    assert file_msg.file_size.text() == "625B"
+    assert file_msg.file_size.text() == "9B"
