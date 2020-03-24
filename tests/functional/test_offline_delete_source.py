@@ -9,6 +9,7 @@ from PyQt5.QtCore import Qt
 from .utils import get_safe_tempdir, get_logged_in_test_context
 
 
+@flaky
 @pytest.mark.vcr()
 def test_offline_delete_source_and_their_docs(qtbot, mocker):
     """
