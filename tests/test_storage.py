@@ -21,7 +21,8 @@ from securedrop_client.storage import get_local_sources, get_local_messages, get
     delete_single_submission_or_reply_on_disk, get_local_files, find_new_files, \
     source_exists, set_message_or_reply_content, mark_as_downloaded, mark_as_decrypted, get_file, \
     get_message, get_reply, update_and_get_user, update_missing_files, mark_as_not_downloaded, \
-    mark_all_pending_drafts_as_failed, delete_local_source_by_uuid, update_source_key
+    mark_all_pending_drafts_as_failed, delete_local_source_by_uuid, update_source_key, \
+    update_file_size
 
 from securedrop_client import db
 from tests import factory
@@ -1218,3 +1219,21 @@ def test_pending_replies_are_marked_as_failed_on_logout_login(mocker, session,
 
     for draft in session.query(db.DraftReply).all():
         assert draft.send_status == failed_status
+
+
+def test_update_file_size(homedir, session):
+    source = factory.Source()
+    f = factory.File(source=source)
+    session.add(f)
+    session.commit()
+
+    real_size = 2112
+    data_dir = os.path.join(homedir, 'data')
+    file_location = f.location(data_dir)
+
+    os.makedirs(os.path.dirname(file_location), mode=0o700, exist_ok=True)
+    with open(file_location, mode='w') as f1:
+        f1.write("x" * real_size)
+    update_file_size(f.uuid, data_dir, session)
+
+    assert f.size == real_size
