@@ -21,7 +21,7 @@ from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, Se
     DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, LeftPane, SyncIcon, \
     ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
     ReplyBoxWidget, ReplyTextEdit, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, \
-    LoginErrorBar, EmptyConversationView, FramelessDialog, ExportDialog, PrintDialog, \
+    LoginErrorBar, EmptyConversationView, ModalDialog, ExportDialog, PrintDialog, \
     PasswordEdit, SourceProfileShortWidget, UserIconLabel
 from tests import factory
 
@@ -2397,36 +2397,9 @@ def test_FileWidget__on_print_clicked_missing_file(mocker, session, source):
     dialog.assert_not_called()
 
 
-def test_FramelessDialog_closeEvent(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
-    dialog = FramelessDialog()
-    dialog.internal_close_event_emitted = True
-    close_event = QEvent(QEvent.Close)
-    close_event.ignore = mocker.MagicMock()
-
-    dialog.closeEvent(close_event)
-
-    close_event.ignore.assert_not_called()
-
-
-def test_FramelessDialog_closeEvent_ignored_if_not_a_close_event_from_custom_close_buttons(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
-    dialog = FramelessDialog()
-    close_event = QEvent(QEvent.Close)
-    close_event.ignore = mocker.MagicMock()
-
-    dialog.closeEvent(close_event)
-
-    close_event.ignore.assert_called_once_with()
-
-
 @pytest.mark.parametrize("key", [Qt.Key_Enter, Qt.Key_Return])
-def test_FramelessDialog_keyPressEvent_does_not_close_on_enter_or_return(mocker, key):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
-    dialog = FramelessDialog()
+def test_ModalDialog_keyPressEvent_does_not_close_on_enter_or_return(mocker, key):
+    dialog = ModalDialog()
     dialog.close = mocker.MagicMock()
 
     event = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
@@ -2436,10 +2409,8 @@ def test_FramelessDialog_keyPressEvent_does_not_close_on_enter_or_return(mocker,
 
 
 @pytest.mark.parametrize("key", [Qt.Key_Enter, Qt.Key_Return])
-def test_FramelessDialog_keyPressEvent_cancel_on_enter_when_focused(mocker, key):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
-    dialog = FramelessDialog()
+def test_ModalDialog_keyPressEvent_cancel_on_enter_when_focused(mocker, key):
+    dialog = ModalDialog()
     dialog.cancel_button.click = mocker.MagicMock()
     dialog.cancel_button.hasFocus = mocker.MagicMock(return_value=True)
 
@@ -2450,10 +2421,8 @@ def test_FramelessDialog_keyPressEvent_cancel_on_enter_when_focused(mocker, key)
 
 
 @pytest.mark.parametrize("key", [Qt.Key_Enter, Qt.Key_Return])
-def test_FramelessDialog_keyPressEvent_continue_on_enter(mocker, key):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
-    dialog = FramelessDialog()
+def test_ModalDialog_keyPressEvent_continue_on_enter(mocker, key):
+    dialog = ModalDialog()
     dialog.continue_button.click = mocker.MagicMock()
 
     event = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
@@ -2463,10 +2432,8 @@ def test_FramelessDialog_keyPressEvent_continue_on_enter(mocker, key):
 
 
 @pytest.mark.parametrize("key", [Qt.Key_Alt, Qt.Key_A])
-def test_FramelessDialog_keyPressEvent_does_not_close_for_other_keys(mocker, key):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
-    dialog = FramelessDialog()
+def test_ModalDialog_keyPressEvent_does_not_close_for_other_keys(mocker, key):
+    dialog = ModalDialog()
     dialog.close = mocker.MagicMock()
 
     event = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
@@ -2475,40 +2442,8 @@ def test_FramelessDialog_keyPressEvent_does_not_close_for_other_keys(mocker, key
     dialog.close.assert_not_called()
 
 
-def test_FramelessDialog_close(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
-    dialog = FramelessDialog()
-
-    assert dialog.internal_close_event_emitted is False
-
-    dialog.close()
-
-    assert dialog.internal_close_event_emitted is True
-
-
-def test_FramelessDialog_center_dialog(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
-    dialog = FramelessDialog()
-    dialog.move = mocker.MagicMock()
-
-    dialog.center_dialog()
-
-    dialog.move.call_count == 1
-
-
-def test_FramelessDialog_center_dialog_with_no_active_window(mocker):
-    dialog = FramelessDialog()
-    dialog.move = mocker.MagicMock()
-
-    dialog.center_dialog()
-
-    dialog.move.assert_not_called()
-
-
-def test_FramelessDialog_animation_of_activestate(mocker):
-    dialog = FramelessDialog()
+def test_ModalDialog_animation_of_activestate(mocker):
+    dialog = ModalDialog()
     assert dialog.button_animation
     dialog.button_animation.start = mocker.MagicMock()
     dialog.button_animation.stop = mocker.MagicMock()
@@ -2536,8 +2471,8 @@ def test_FramelessDialog_animation_of_activestate(mocker):
     assert dialog.continue_button.setStyleSheet.call_count == 1
 
 
-def test_FramelessDialog_animation_of_header(mocker):
-    dialog = FramelessDialog()
+def test_ModalDialog_animation_of_header(mocker):
+    dialog = ModalDialog()
     assert dialog.header_animation
     dialog.header_animation.start = mocker.MagicMock()
     dialog.header_animation.stop = mocker.MagicMock()
@@ -2566,8 +2501,6 @@ def test_FramelessDialog_animation_of_header(mocker):
 
 
 def test_ExportDialog_init(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     _show_starting_instructions_fn = mocker.patch(
         'securedrop_client.gui.widgets.ExportDialog._show_starting_instructions')
 
@@ -2578,8 +2511,6 @@ def test_ExportDialog_init(mocker):
 
 
 def test_ExportDialog_init_sanitizes_filename(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     secure_qlabel = mocker.patch('securedrop_client.gui.widgets.SecureQLabel')
     mocker.patch('securedrop_client.gui.widgets.QVBoxLayout.addWidget')
     filename = '<script>alert("boom!");</script>'
@@ -2590,8 +2521,6 @@ def test_ExportDialog_init_sanitizes_filename(mocker):
 
 
 def test_ExportDialog__show_starting_instructions(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
 
     dialog._show_starting_instructions()
@@ -2624,8 +2553,6 @@ def test_ExportDialog__show_starting_instructions(mocker):
 
 
 def test_ExportDialog___show_passphrase_request_message(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
 
     dialog._show_passphrase_request_message()
@@ -2641,8 +2568,6 @@ def test_ExportDialog___show_passphrase_request_message(mocker):
 
 
 def test_ExportDialog__show_passphrase_request_message_again(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
 
     dialog._show_passphrase_request_message_again()
@@ -2660,8 +2585,6 @@ def test_ExportDialog__show_passphrase_request_message_again(mocker):
 
 
 def test_ExportDialog__show_success_message(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
 
     dialog._show_success_message()
@@ -2679,8 +2602,6 @@ def test_ExportDialog__show_success_message(mocker):
 
 
 def test_ExportDialog__show_insert_usb_message(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
 
     dialog._show_insert_usb_message()
@@ -2699,8 +2620,6 @@ def test_ExportDialog__show_insert_usb_message(mocker):
 
 
 def test_ExportDialog__show_insert_encrypted_usb_message(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
 
     dialog._show_insert_encrypted_usb_message()
@@ -2721,8 +2640,6 @@ def test_ExportDialog__show_insert_encrypted_usb_message(mocker):
 
 
 def test_ExportDialog__show_generic_error_message(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
     dialog.error_status = 'mock_error_status'
 
@@ -2740,8 +2657,6 @@ def test_ExportDialog__show_generic_error_message(mocker):
 
 
 def test_ExportDialog__export_file(mocker):
-    mocker.patch(
-        'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     controller = mocker.MagicMock()
     controller.export_file_to_usb_drive = mocker.MagicMock()
     dialog = ExportDialog(controller, 'mock_uuid', 'mock.jpg')
@@ -2753,8 +2668,6 @@ def test_ExportDialog__export_file(mocker):
 
 
 def test_ExportDialog__on_preflight_success(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
     dialog._show_passphrase_request_message = mocker.MagicMock()
     dialog.continue_button = mocker.MagicMock()
@@ -2769,8 +2682,6 @@ def test_ExportDialog__on_preflight_success(mocker):
 
 
 def test_ExportDialog__on_preflight_success_when_continue_enabled(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
     dialog._show_passphrase_request_message = mocker.MagicMock()
     dialog.continue_button.setEnabled(True)
@@ -2781,8 +2692,6 @@ def test_ExportDialog__on_preflight_success_when_continue_enabled(mocker):
 
 
 def test_ExportDialog__on_preflight_success_enabled_after_preflight_success(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
     assert not dialog.continue_button.isEnabled()
     dialog._on_preflight_success()
@@ -2790,8 +2699,6 @@ def test_ExportDialog__on_preflight_success_enabled_after_preflight_success(mock
 
 
 def test_ExportDialog__on_preflight_success_enabled_after_preflight_failure(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
     assert not dialog.continue_button.isEnabled()
     dialog._on_preflight_failure(mocker.MagicMock())
@@ -2799,8 +2706,6 @@ def test_ExportDialog__on_preflight_success_enabled_after_preflight_failure(mock
 
 
 def test_ExportDialog__on_preflight_failure(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
     dialog._update_dialog = mocker.MagicMock()
 
@@ -2811,8 +2716,6 @@ def test_ExportDialog__on_preflight_failure(mocker):
 
 
 def test_ExportDialog__on_export_success(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
     dialog._show_success_message = mocker.MagicMock()
 
@@ -2822,8 +2725,6 @@ def test_ExportDialog__on_export_success(mocker):
 
 
 def test_ExportDialog__on_export_failure(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
     dialog._update_dialog = mocker.MagicMock()
 
@@ -2834,8 +2735,6 @@ def test_ExportDialog__on_export_failure(mocker):
 
 
 def test_ExportDialog__update_dialog_when_status_is_USB_NOT_CONNECTED(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
     dialog._show_insert_usb_message = mocker.MagicMock()
     dialog.continue_button = mocker.MagicMock()
@@ -2853,8 +2752,6 @@ def test_ExportDialog__update_dialog_when_status_is_USB_NOT_CONNECTED(mocker):
 
 
 def test_ExportDialog__update_dialog_when_status_is_BAD_PASSPHRASE(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
     dialog._show_passphrase_request_message_again = mocker.MagicMock()
     dialog.continue_button = mocker.MagicMock()
@@ -2873,8 +2770,6 @@ def test_ExportDialog__update_dialog_when_status_is_BAD_PASSPHRASE(mocker):
 
 
 def test_ExportDialog__update_dialog_when_status_DISK_ENCRYPTION_NOT_SUPPORTED_ERROR(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
     dialog._show_insert_encrypted_usb_message = mocker.MagicMock()
     dialog.continue_button = mocker.MagicMock()
@@ -2893,8 +2788,6 @@ def test_ExportDialog__update_dialog_when_status_DISK_ENCRYPTION_NOT_SUPPORTED_E
 
 
 def test_ExportDialog__update_dialog_when_status_is_CALLED_PROCESS_ERROR(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
     dialog._show_generic_error_message = mocker.MagicMock()
     dialog.continue_button = mocker.MagicMock()
@@ -2915,8 +2808,6 @@ def test_ExportDialog__update_dialog_when_status_is_CALLED_PROCESS_ERROR(mocker)
 
 
 def test_ExportDialog__update_dialog_when_status_is_unknown(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
     dialog._show_generic_error_message = mocker.MagicMock()
     dialog.continue_button = mocker.MagicMock()
@@ -2937,8 +2828,6 @@ def test_ExportDialog__update_dialog_when_status_is_unknown(mocker):
 
 
 def test_PrintDialog_init(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     _show_starting_instructions_fn = mocker.patch(
         'securedrop_client.gui.widgets.PrintDialog._show_starting_instructions')
 
@@ -2948,8 +2837,6 @@ def test_PrintDialog_init(mocker):
 
 
 def test_PrintDialog_init_sanitizes_filename(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     secure_qlabel = mocker.patch('securedrop_client.gui.widgets.SecureQLabel')
     filename = '<script>alert("boom!");</script>'
 
@@ -2959,8 +2846,6 @@ def test_PrintDialog_init_sanitizes_filename(mocker):
 
 
 def test_PrintDialog__show_starting_instructions(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
 
     dialog._show_starting_instructions()
@@ -2991,8 +2876,6 @@ def test_PrintDialog__show_starting_instructions(mocker):
 
 
 def test_PrintDialog__show_insert_usb_message(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
 
     dialog._show_insert_usb_message()
@@ -3008,8 +2891,6 @@ def test_PrintDialog__show_insert_usb_message(mocker):
 
 
 def test_PrintDialog__show_generic_error_message(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
     dialog.error_status = 'mock_error_status'
 
@@ -3026,8 +2907,6 @@ def test_PrintDialog__show_generic_error_message(mocker):
 
 
 def test_PrintDialog__print_file(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
     dialog.close = mocker.MagicMock()
 
@@ -3037,8 +2916,6 @@ def test_PrintDialog__print_file(mocker):
 
 
 def test_PrintDialog__on_preflight_success(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
     dialog._print_file = mocker.MagicMock()
     dialog.continue_button = mocker.MagicMock()
@@ -3052,8 +2929,6 @@ def test_PrintDialog__on_preflight_success(mocker):
 
 
 def test_PrintDialog__on_preflight_success_when_continue_enabled(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
     dialog._print_file = mocker.MagicMock()
     dialog.continue_button.setEnabled(True)
@@ -3064,8 +2939,6 @@ def test_PrintDialog__on_preflight_success_when_continue_enabled(mocker):
 
 
 def test_PrintDialog__on_preflight_success_enabled_after_preflight_success(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
     assert not dialog.continue_button.isEnabled()
     dialog._on_preflight_success()
@@ -3073,8 +2946,6 @@ def test_PrintDialog__on_preflight_success_enabled_after_preflight_success(mocke
 
 
 def test_PrintDialog__on_preflight_success_enabled_after_preflight_failure(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
     assert not dialog.continue_button.isEnabled()
     dialog._on_preflight_failure(mocker.MagicMock())
@@ -3082,8 +2953,6 @@ def test_PrintDialog__on_preflight_success_enabled_after_preflight_failure(mocke
 
 
 def test_PrintDialog__on_preflight_failure_when_status_is_PRINTER_NOT_FOUND(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
     dialog._show_insert_usb_message = mocker.MagicMock()
     dialog.continue_button = mocker.MagicMock()
@@ -3101,8 +2970,6 @@ def test_PrintDialog__on_preflight_failure_when_status_is_PRINTER_NOT_FOUND(mock
 
 
 def test_PrintDialog__on_preflight_failure_when_status_is_MISSING_PRINTER_URI(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
     dialog._show_generic_error_message = mocker.MagicMock()
     dialog.continue_button = mocker.MagicMock()
@@ -3123,8 +2990,6 @@ def test_PrintDialog__on_preflight_failure_when_status_is_MISSING_PRINTER_URI(mo
 
 
 def test_PrintDialog__on_preflight_failure_when_status_is_CALLED_PROCESS_ERROR(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
     dialog._show_generic_error_message = mocker.MagicMock()
     dialog.continue_button = mocker.MagicMock()
@@ -3145,8 +3010,6 @@ def test_PrintDialog__on_preflight_failure_when_status_is_CALLED_PROCESS_ERROR(m
 
 
 def test_PrintDialog__on_preflight_failure_when_status_is_unknown(mocker):
-    mocker.patch(
-         'securedrop_client.gui.widgets.QApplication.activeWindow', return_value=QMainWindow())
     dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
     dialog._show_generic_error_message = mocker.MagicMock()
     dialog.continue_button = mocker.MagicMock()
