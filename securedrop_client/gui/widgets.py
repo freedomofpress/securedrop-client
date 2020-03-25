@@ -2946,6 +2946,7 @@ class ExportDialog(ModalDialog):
     @pyqtSlot()
     def _export_file(self, checked: bool = False):
         self.start_animate_activestate()
+        self.cancel_button.setEnabled(False)
         self.passphrase_field.setDisabled(True)
         self.controller.export_file_to_usb_drive(self.file_uuid, self.passphrase_field.text())
 
@@ -2978,6 +2979,7 @@ class ExportDialog(ModalDialog):
     @pyqtSlot(object)
     def _on_export_failure(self, error: ExportError):
         self.stop_animate_activestate()
+        self.cancel_button.setEnabled(True)
         self.passphrase_field.setDisabled(False)
         self._update_dialog(error.status)
 
