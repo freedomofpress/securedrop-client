@@ -1175,7 +1175,7 @@ class SourceWidget(QWidget):
         summary_layout.setSpacing(0)
         self.name = QLabel()
         self.name.setObjectName('source_name')
-        self.preview = SecureQLabel(max_length=self.PREVIEW_WIDTH)
+        self.preview = SecureQLabel(max_length=self.PREVIEW_WIDTH, with_tooltip=False)
         self.preview.setObjectName('preview')
         self.preview.setFixedSize(QSize(self.PREVIEW_WIDTH, self.PREVIEW_HEIGHT))
         self.waiting_delete_confirmation = QLabel('Deletion in progress')
