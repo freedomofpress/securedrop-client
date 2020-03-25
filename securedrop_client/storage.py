@@ -27,7 +27,7 @@ from pathlib import Path
 from dateutil.parser import parse
 from typing import List, Tuple, Type, Union
 
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, desc, or_
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.session import Session
 
@@ -44,9 +44,9 @@ logger = logging.getLogger(__name__)
 
 def get_local_sources(session: Session) -> List[Source]:
     """
-    Return all source objects from the local database.
+    Return all source objects from the local database, newest first.
     """
-    return session.query(Source).all()
+    return session.query(Source).order_by(desc(Source.last_updated)).all()
 
 
 def delete_local_source_by_uuid(session: Session, uuid: str, data_dir: str) -> None:

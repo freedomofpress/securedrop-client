@@ -709,10 +709,15 @@ class MainView(QWidget):
             self.empty_conversation_view.show_no_sources_message()
             self.empty_conversation_view.show()
 
-        deleted_sources = self.source_list.update(sources)
-        for source_uuid in deleted_sources:
-            # Then call the function to remove the wrapper and its children.
-            self.delete_conversation(source_uuid)
+        if self.source_list.source_widgets:
+            # The source list already contains sources.
+            deleted_sources = self.source_list.update(sources)
+            for source_uuid in deleted_sources:
+                # Then call the function to remove the wrapper and its children.
+                self.delete_conversation(source_uuid)
+        else:
+            # We have an empty source list, so do an initial update.
+            self.source_list.initial_update(sources)
 
     def on_source_changed(self):
         """
@@ -976,6 +981,43 @@ class SourceList(QListWidget):
                 self.setItemWidget(list_item, new_source)
 
         return deleted_uuids
+
+    def initial_update(self, sources: List[Source]):
+        """
+        Initialise the list with the passed in list of sources.
+        """
+        self.add_source(sources)
+
+    def add_source(self, sources, slice_size=1):
+        """
+        Add a slice of sources, and if necessary, reschedule the addition of
+        more sources.
+        """
+
+        def schedule_source_management(slice_size=slice_size):
+            if not sources:
+                # Nothing more to do.
+                return
+            # Process the remaining "slice_size" number of sources.
+            sources_slice = sources[:slice_size]
+            for source in sources_slice:
+                new_source = SourceWidget(self.controller, source)
+                self.source_widgets[source.uuid] = new_source
+                list_item = QListWidgetItem(self)
+                list_item.setSizeHint(new_source.sizeHint())
+
+                self.insertItem(0, list_item)
+                self.setItemWidget(list_item, new_source)
+            # ATTENTION! 32 is an arbitrary number arrived at via
+            # experimentation. It adds plenty of sources, but doesn't block
+            # for a noticable amount of time.
+            new_slice_size = min(32, slice_size * 2)
+            # Call add_source again for the remaining sources.
+            self.add_source(sources[slice_size:], new_slice_size)
+
+        # Schedule the closure defined above in the next iteration of the
+        # Qt event loop (thus unblocking the UI).
+        QTimer.singleShot(1, schedule_source_management)
 
     def get_selected_source(self):
         if not self.selectedItems():

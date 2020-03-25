@@ -520,8 +520,6 @@ class Controller(QObject):
         Display the updated list of sources with those found in local storage.
         """
         sources = list(storage.get_local_sources(self.session))
-        if sources:
-            sources.sort(key=lambda x: x.last_updated)
         self.gui.show_sources(sources)
 
     def on_update_star_success(self, source_uuid: str) -> None:
