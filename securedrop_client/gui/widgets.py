@@ -2509,8 +2509,8 @@ class ModalDialog(QDialog):
         self.continue_button.setIconSize(QSize(21, 21))
         button_box = QDialogButtonBox(Qt.Horizontal)
         button_box.setObjectName('button_box')
-        button_box.addButton(self.continue_button, QDialogButtonBox.ActionRole)
         button_box.addButton(self.cancel_button, QDialogButtonBox.ActionRole)
+        button_box.addButton(self.continue_button, QDialogButtonBox.ActionRole)
         button_layout.addWidget(button_box, alignment=Qt.AlignRight)
         button_layout.setContentsMargins(self.NO_MARGIN, self.NO_MARGIN, self.MARGIN, self.MARGIN)
 
