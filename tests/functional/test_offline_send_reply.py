@@ -5,10 +5,12 @@ tests are based upon the client testing descriptions here:
 https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-testing
 """
 import pytest
+from flaky import flaky
 from PyQt5.QtCore import Qt
 from .utils import get_safe_tempdir, get_logged_in_test_context
 
 
+@flaky
 @pytest.mark.vcr()
 def test_offline_send_reply_to_source(qtbot, mocker):
     """
