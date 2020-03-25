@@ -28,7 +28,7 @@ def test_download_file(qtbot, mocker):
 
     qtbot.waitUntil(check_for_sources, timeout=10000)
     source_ids = list(gui.main_view.source_list.source_widgets.keys())
-    first_source_id = source_ids[2]
+    first_source_id = source_ids[0]
     first_source_widget = gui.main_view.source_list.source_widgets[first_source_id]
     qtbot.mouseClick(first_source_widget, Qt.LeftButton)
 
