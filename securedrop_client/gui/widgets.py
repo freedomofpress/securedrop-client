@@ -2876,6 +2876,7 @@ class ExportDialog(ModalDialog):
         self.header_line.hide()
         self.error_details.hide()
         self.body.hide()
+        self.passphrase_field.setFocus()
         self.passphrase_form.show()
         self.adjustSize()
 
@@ -2888,6 +2889,7 @@ class ExportDialog(ModalDialog):
         self.header_line.hide()
         self.body.hide()
         self.error_details.show()
+        self.passphrase_field.setFocus()
         self.passphrase_form.show()
         self.adjustSize()
 
