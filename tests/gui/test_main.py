@@ -109,7 +109,7 @@ def test_show_login(mocker):
 
     mock_ld.assert_called_once_with(w)
     w.login_dialog.reset.assert_called_once_with()
-    w.login_dialog.exec.assert_called_once_with()
+    w.login_dialog.show.assert_called_once_with()
 
 
 def test_show_login_with_error_message(mocker):
@@ -124,7 +124,7 @@ def test_show_login_with_error_message(mocker):
 
     mock_ld.assert_called_once_with(w)
     w.login_dialog.reset.assert_called_once_with()
-    w.login_dialog.exec.assert_called_once_with()
+    w.login_dialog.show.assert_called_once_with()
     w.login_dialog.error.assert_called_once_with('this-is-an-error-message-to-show-on-login-window')
 
 

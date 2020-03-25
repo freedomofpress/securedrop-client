@@ -1,6 +1,9 @@
 import pytest
 
-from securedrop_client.api_jobs.updatestar import UpdateStarJob, UpdateStarJobException
+from securedrop_client.api_jobs.updatestar import UpdateStarJob, UpdateStarJobError, \
+    UpdateStarJobTimeoutError
+from sdclientapi import RequestTimeoutError, ServerConnectionError
+
 from tests import factory
 
 
@@ -61,9 +64,9 @@ def test_unstar_if_star(homedir, mocker, session, session_maker):
     api_client.remove_star.assert_called_once_with(mock_sdk_source)
 
 
-def test_failure_to_star(homedir, mocker, session, session_maker):
+def test_call_api_raises_UpdateStarJobError(homedir, mocker, session, session_maker):
     '''
-    Check if we call remove_star method if a source is stared.
+    Check that UpdateStarJobError is raised if remove_star fails due to an exception.
     '''
     source = factory.Source()
     source.is_starred = True
@@ -80,5 +83,26 @@ def test_failure_to_star(homedir, mocker, session, session_maker):
         source.is_starred
     )
 
-    with pytest.raises(UpdateStarJobException):
+    with pytest.raises(UpdateStarJobError):
+        job.call_api(api_client, session)
+
+
+@pytest.mark.parametrize("exception", [RequestTimeoutError, ServerConnectionError])
+def test_call_api_raises_UpdateStarJobTimeoutError(mocker, session, exception):
+    '''
+    Check that UpdateStarJobTimeoutError is raised if remove_star fails due to a timeout.
+    '''
+    source = factory.Source()
+    source.is_starred = True
+    session.add(source)
+    session.commit()
+
+    api_client = mocker.MagicMock()
+    api_client.remove_star = mocker.MagicMock()
+    api_client.remove_star.side_effect = exception()
+
+    job = UpdateStarJob(source.uuid, source.is_starred)
+
+    error = f'Failed to update star on source {source.uuid} due to error'
+    with pytest.raises(UpdateStarJobTimeoutError, match=error):
         job.call_api(api_client, session)

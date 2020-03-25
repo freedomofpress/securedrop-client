@@ -58,12 +58,6 @@ class SvgToggleButton(QPushButton):
         # Make this a toggle button
         self.setCheckable(True)
 
-    def enable(self) -> None:
-        self.setEnabled(True)
-
-    def disable(self) -> None:
-        self.setEnabled(False)
-
     def set_icon(self, on: str, off: str) -> None:
         self.icon = load_icon(normal=on, normal_off=off)
         self.setIcon(self.icon)
@@ -115,12 +109,6 @@ class SvgPushButton(QPushButton):
             disabled_off=disabled)
         self.setIcon(self.icon)
         self.setIconSize(svg_size) if svg_size else self.setIconSize(QSize())
-
-    def enable(self) -> None:
-        self.setEnabled(True)
-
-    def disable(self) -> None:
-        self.setEnabled(False)
 
 
 class SvgLabel(QLabel):

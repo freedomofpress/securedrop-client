@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-set -e
+
+set -eo pipefail
 
 while [ -n "$1" ]; do
   param="$1"
@@ -19,22 +20,22 @@ SDC_HOME=${SDC_HOME:-$(mktemp -d)}
 
 export SDC_HOME
 
-GPG_HOME="$SDC_HOME/gpg"
-mkdir -p "$GPG_HOME"
-chmod 0700 "$SDC_HOME" "$GPG_HOME"
+GNUPGHOME="$SDC_HOME/gpg"
+export GNUPGHOME
+mkdir -p "$GNUPGHOME"
+chmod 0700 "$SDC_HOME" "$GNUPGHOME"
 
 function cleanup {
-  PID=$(ps -ef | grep gpg-agent | grep "$GPG_HOME" | grep -v grep | awk '{print $2}')
-  if [ "$PID" ]; then
-    kill "$PID"
-  fi
+    gpgconf --kill gpg-agent
 }
 trap cleanup EXIT
 
 echo "Running app with home directory: $SDC_HOME"
 echo ""
 
-gpg --homedir "$GPG_HOME" --allow-secret-key-import --import tests/files/securedrop.gpg.asc &
+cleanup
+
+gpg --allow-secret-key-import --import tests/files/securedrop.gpg.asc &
 
 # create the database and config for local testing
 ./create_dev_data.py "$SDC_HOME" &
@@ -60,4 +61,4 @@ fi
 
 wait
 
-exec python -m securedrop_client --sdc-home "$SDC_HOME" --no-proxy "$qubes_flag" $@
+python -m securedrop_client --sdc-home "$SDC_HOME" --no-proxy "$qubes_flag" "$@"

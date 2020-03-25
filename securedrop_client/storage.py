@@ -21,9 +21,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from datetime import datetime
 import logging
-import glob
 import os
 import shutil
+from pathlib import Path
 from dateutil.parser import parse
 from typing import List, Tuple, Type, Union
 
@@ -207,10 +207,7 @@ def update_sources(gpg: GpgHelper, remote_sources: List[SDKSource],
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
     for deleted_source in local_sources_by_uuid.values():
-        for document in deleted_source.collection:
-            if isinstance(document, (Message, File, Reply)):
-                delete_single_submission_or_reply_on_disk(document, data_dir)
-
+        delete_source_collection(deleted_source.journalist_filename, data_dir)
         session.delete(deleted_source)
         logger.debug('Deleted source {}'.format(deleted_source.uuid))
 
@@ -496,6 +493,17 @@ def mark_as_downloaded(
     session.commit()
 
 
+def update_file_size(uuid: str, path: str, session: Session) -> None:
+    """
+    Updates file size to the decrypted size
+    """
+    db_obj = session.query(File).filter_by(uuid=uuid).one()
+    stat = Path(db_obj.location(path)).stat()
+    db_obj.size = stat.st_size
+    session.add(db_obj)
+    session.commit()
+
+
 def mark_as_decrypted(
     model_type: Union[Type[File], Type[Message], Type[Reply]],
     uuid: str,
@@ -544,21 +552,20 @@ def delete_source_collection(journalist_filename: str, data_dir: str) -> None:
 def delete_single_submission_or_reply_on_disk(obj_db: Union[File, Message, Reply],
                                               data_dir: str) -> None:
     """
-    Delete on disk a single submission or reply.
+    Delete on disk any files associated with a single submission or reply.
     """
-    files_to_delete = []
-    filename_without_extensions = obj_db.filename.split('.')[0]
-    file_glob_pattern = os.path.join(
-        data_dir,
-        '{}*'.format(filename_without_extensions)
-    )
-    files_to_delete.extend(glob.glob(file_glob_pattern))
 
-    for file_to_delete in files_to_delete:
+    try:
+        os.remove(obj_db.location(data_dir))
+    except FileNotFoundError:
+        logging.info('Object %s already deleted, skipping', obj_db.location(data_dir))
+
+    if isinstance(obj_db, File):
+        # Also delete the file's enclosing folder.
         try:
-            os.remove(file_to_delete)
+            shutil.rmtree(os.path.dirname(obj_db.location(data_dir)))
         except FileNotFoundError:
-            logging.info('File %s already deleted, skipping', file_to_delete)
+            pass
 
 
 def source_exists(session: Session, source_uuid: str) -> bool:

@@ -21,7 +21,8 @@ from securedrop_client.storage import get_local_sources, get_local_messages, get
     delete_single_submission_or_reply_on_disk, get_local_files, find_new_files, \
     source_exists, set_message_or_reply_content, mark_as_downloaded, mark_as_decrypted, get_file, \
     get_message, get_reply, update_and_get_user, update_missing_files, mark_as_not_downloaded, \
-    mark_all_pending_drafts_as_failed, delete_local_source_by_uuid, update_source_key
+    mark_all_pending_drafts_as_failed, delete_local_source_by_uuid, update_source_key, \
+    update_file_size
 
 from securedrop_client import db
 from tests import factory
@@ -300,8 +301,6 @@ def test_update_sources(homedir, mocker, session_maker, session):
     * New sources have an entry in the local database.
     * Local sources not returned by the remote server are deleted from the
       local database.
-    * We don't attempt to delete the (non-existent) files associated with
-      draft replies.
     """
     # This remote source exists locally and will be updated.
     source_update = factory.RemoteSource(journalist_designation="source update")
@@ -319,20 +318,16 @@ def test_update_sources(homedir, mocker, session_maker, session):
 
     # This local source does not exist in the API results and will be
     # deleted from the local database.
-    local_source2 = factory.Source()
-
-    # This reply exists just to prove a negative.
-    draft_reply = factory.DraftReply(source_id=local_source2.uuid)
+    local_source2 = factory.Source(journalist_designation="beep_boop")
 
     session.add(local_source1)
     session.add(local_source2)
-    session.add(draft_reply)
     session.commit()
 
     local_sources = [local_source1, local_source2]
 
     file_delete_fcn = mocker.patch(
-        'securedrop_client.storage.delete_single_submission_or_reply_on_disk')
+        'securedrop_client.storage.delete_source_collection')
 
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
 
@@ -365,9 +360,9 @@ def test_update_sources(homedir, mocker, session_maker, session):
     with pytest.raises(NoResultFound):
         session.query(db.Source).filter_by(uuid=local_source2.uuid).one()
 
-    # Ensure that we didn't attempt to delete files associated with draft replies,
-    # as they don't have files (content stored directly in the database).
-    assert file_delete_fcn.call_count == 0
+    # Ensure that we called the method to delete the source collection.
+    # This will delete any content in that source's data directory.
+    assert file_delete_fcn.call_count == 1
 
 
 def test_update_source_key_without_fingerprint(mocker, session):
@@ -448,10 +443,12 @@ def test_update_submissions_deletes_files_associated_with_the_submission(
     local_submission = mocker.MagicMock()
     local_submission.uuid = 'test-uuid'
     local_submission.filename = server_filename
-    abs_server_filename = add_test_file_to_temp_dir(
-        homedir, server_filename)
+    local_submission_source_journalist_filename = "pericardial_surfacing"
+    source_directory = os.path.join(homedir, local_submission_source_journalist_filename)
+    local_submission.location = mocker.MagicMock(
+        return_value=os.path.join(source_directory, local_filename_when_decrypted))
     abs_local_filename = add_test_file_to_temp_dir(
-        homedir, local_filename_when_decrypted)
+        source_directory, local_filename_when_decrypted)
     local_submissions = [local_submission]
 
     # There needs to be a corresponding local_source.
@@ -462,7 +459,6 @@ def test_update_submissions_deletes_files_associated_with_the_submission(
     update_files(remote_submissions, local_submissions, mock_session, homedir)
 
     # Ensure the files associated with the submission are deleted on disk.
-    assert not os.path.exists(abs_server_filename)
     assert not os.path.exists(abs_local_filename)
 
     # Ensure the record for the local submission is gone.
@@ -493,10 +489,12 @@ def test_update_replies_deletes_files_associated_with_the_reply(
     local_reply = mocker.MagicMock()
     local_reply.uuid = 'test-uuid'
     local_reply.filename = server_filename
-    abs_server_filename = add_test_file_to_temp_dir(
-        homedir, server_filename)
+    local_reply_source_journalist_filename = "pericardial_surfacing"
+    source_directory = os.path.join(homedir, local_reply_source_journalist_filename)
+    local_reply.location = mocker.MagicMock(
+        return_value=os.path.join(source_directory, local_filename_when_decrypted))
     abs_local_filename = add_test_file_to_temp_dir(
-        homedir, local_filename_when_decrypted)
+        source_directory, local_filename_when_decrypted)
     local_replies = [local_reply]
 
     # There needs to be a corresponding local_source.
@@ -506,8 +504,7 @@ def test_update_replies_deletes_files_associated_with_the_reply(
     mock_session.query().filter_by.return_value = [local_source, ]
     update_replies(remote_replies, local_replies, mock_session, homedir)
 
-    # Ensure the files associated with the reply are deleted on disk.
-    assert not os.path.exists(abs_server_filename)
+    # Ensure the file associated with the reply are deleted on disk.
     assert not os.path.exists(abs_local_filename)
 
     # Ensure the record for the local reply is gone.
@@ -547,7 +544,7 @@ def test_update_sources_deletes_files_associated_with_the_source(
     reply_local_filename_decrypted = '1-pericardial-surfacing-reply'
 
     # Here we're not mocking out the models use so that we can use the collection attribute.
-    local_source = factory.Source()
+    local_source = factory.Source(journalist_designation="beep_boop")
     file_submission = db.File(
         source=local_source, uuid="test", size=123, filename=file_server_filename,
         download_url='http://test/test')
@@ -563,12 +560,13 @@ def test_update_sources_deletes_files_associated_with_the_source(
 
     # Make the test files on disk in tmpdir so we can check they get deleted.
     test_filename_absolute_paths = []
+    sourcedir = os.path.join(homedir, local_source.journalist_filename)
     for test_filename in [msg_server_filename, msg_local_filename_decrypted,
                           file_server_filename, file_local_filename_decompressed,
                           file_local_filename_decrypted, reply_server_filename,
                           reply_local_filename_decrypted]:
         abs_server_filename = add_test_file_to_temp_dir(
-            homedir, test_filename)
+            sourcedir, test_filename)
         test_filename_absolute_paths.append(abs_server_filename)
 
     local_sources = [local_source]
@@ -627,6 +625,8 @@ def test_update_files(homedir, mocker):
     local_source.uuid = source.uuid
     local_source.id = 666  # };-)
     mock_session.query().filter_by().first.return_value = local_source
+    mock_delete_submission_files = mocker.patch(
+        'securedrop_client.storage.delete_single_submission_or_reply_on_disk')
 
     update_files(remote_submissions, local_submissions, mock_session, data_dir)
 
@@ -646,6 +646,7 @@ def test_update_files(homedir, mocker):
     # Ensure the record for the local source that is missing from the results
     # of the API is deleted.
     mock_session.delete.assert_called_once_with(local_sub_delete)
+    mock_delete_submission_files.assert_called_once_with(local_sub_delete, data_dir)
     # Session is committed to database.
     assert mock_session.commit.call_count == 1
 
@@ -692,6 +693,8 @@ def test_update_messages(homedir, mocker):
     mock_session.query().filter_by().first.return_value = local_source
     mock_focu = mocker.MagicMock(return_value=local_user)
     mocker.patch('securedrop_client.storage.find_or_create_user', mock_focu)
+    mock_delete_submission_files = mocker.patch(
+        'securedrop_client.storage.delete_single_submission_or_reply_on_disk')
 
     update_messages(remote_messages, local_messages, mock_session, data_dir)
 
@@ -711,6 +714,7 @@ def test_update_messages(homedir, mocker):
     # Ensure the record for the local source that is missing from the results
     # of the API is deleted.
     mock_session.delete.assert_called_once_with(local_message_delete)
+    mock_delete_submission_files.assert_called_once_with(local_message_delete, data_dir)
     # Session is committed to database.
     assert mock_session.commit.call_count == 1
 
@@ -730,6 +734,7 @@ def test_update_replies(homedir, mocker):
     # Source object related to the submissions.
     source = mocker.MagicMock()
     source.uuid = str(uuid.uuid4())
+    source.journalist_filename = 'test'
     # Some remote reply objects from the API, one of which will exist in the
     # local database, the other will NOT exist in the local database
     # (this will be added to the database)
@@ -748,6 +753,9 @@ def test_update_replies(homedir, mocker):
     local_reply_delete.uuid = str(uuid.uuid4())
     local_reply_delete.filename = "local_reply_delete.filename"
     local_reply_delete.journalist_uuid = str(uuid.uuid4())
+    local_reply_delete_source_dir = os.path.join(homedir, source.journalist_filename)
+    local_reply_delete.location = mocker.MagicMock(
+        return_value=os.path.join(local_reply_delete_source_dir, local_reply_delete.filename))
     local_replies = [local_reply_update, local_reply_delete]
     # There needs to be a corresponding local_source and local_user
     local_source = mocker.MagicMock()
@@ -1092,6 +1100,53 @@ def test_delete_single_submission_or_reply_race_guard(homedir, mocker):
     mock_remove.call_count == 1
 
 
+def test_delete_single_submission_or_reply_single_file(homedir, mocker):
+    """
+    This test checks that calling the delete_single_submission_or_reply
+    method deletes the file as well as the folder it's inside.
+    """
+
+    source = factory.Source(journalist_designation="dissolved-steak")
+    file_server_filename = '1-dissolved-steak-msg.gpg'
+    test_obj = db.File(
+        source=source, uuid="test", size=123, filename=file_server_filename,
+        download_url='http://test/test')
+    source_directory = os.path.dirname(test_obj.location(homedir))
+    add_test_file_to_temp_dir(source_directory, file_server_filename)
+
+    delete_single_submission_or_reply_on_disk(test_obj, homedir)
+
+    # Ensure both file and its containing folder are gone.
+    with pytest.raises(FileNotFoundError):
+        open(os.path.join(source_directory, file_server_filename), 'r')
+
+    with pytest.raises(FileNotFoundError):
+        open(source_directory, 'r')
+
+
+def test_delete_single_submission_or_reply_single_file_no_folder(homedir, mocker):
+    """
+    This test checks that calling the delete_single_submission_or_reply
+    method deletes the file even if its not in a per-document folder.
+    """
+
+    source = factory.Source(journalist_designation="dissolved-steak")
+    file_server_filename = '1-dissolved-steak-msg.gpg'
+    test_obj = db.File(
+        source=source, uuid="test", size=123, filename=file_server_filename,
+        download_url='http://test/test')
+    original_location = test_obj.location
+    test_obj.location = mocker.MagicMock(
+        side_effect=[os.path.join(homedir, file_server_filename),
+                     original_location(homedir)])
+    add_test_file_to_temp_dir(homedir, file_server_filename)
+
+    delete_single_submission_or_reply_on_disk(test_obj, homedir)
+
+    with pytest.raises(FileNotFoundError):
+        open(os.path.join(homedir, file_server_filename), 'r')
+
+
 def test_source_exists_true(homedir, mocker):
     '''
     Check that method returns True if a source is return from the query.
@@ -1164,3 +1219,21 @@ def test_pending_replies_are_marked_as_failed_on_logout_login(mocker, session,
 
     for draft in session.query(db.DraftReply).all():
         assert draft.send_status == failed_status
+
+
+def test_update_file_size(homedir, session):
+    source = factory.Source()
+    f = factory.File(source=source)
+    session.add(f)
+    session.commit()
+
+    real_size = 2112
+    data_dir = os.path.join(homedir, 'data')
+    file_location = f.location(data_dir)
+
+    os.makedirs(os.path.dirname(file_location), mode=0o700, exist_ok=True)
+    with open(file_location, mode='w') as f1:
+        f1.write("x" * real_size)
+    update_file_size(f.uuid, data_dir, session)
+
+    assert f.size == real_size

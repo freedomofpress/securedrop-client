@@ -126,7 +126,7 @@ class Window(QMainWindow):
         self.login_dialog.reset()
         if error:
             self.login_dialog.error(error)
-        self.login_dialog.exec()
+        self.login_dialog.show()
 
     def show_login_error(self, error):
         """
