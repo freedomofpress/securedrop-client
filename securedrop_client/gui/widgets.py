@@ -1351,7 +1351,7 @@ class StarToggleButton(SvgToggleButton):
         t = event.type()
         if t == QEvent.HoverEnter:
             self.setIcon(load_icon('star_hover.svg'))
-        elif t == QEvent.HoverLeave:
+        elif t == QEvent.HoverLeave or t == QEvent.MouseButtonPress:
             self.set_icon(on='star_on.svg', off='star_off.svg')
 
         return QObject.event(obj, event)
