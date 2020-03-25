@@ -22,12 +22,12 @@ import html
 import sys
 
 from gettext import gettext as _
-from typing import Dict, List, Union  # noqa: F401
+from typing import Dict, List, Union, Optional  # noqa: F401
 from uuid import uuid4
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QEvent, QTimer, QSize, pyqtBoundSignal, \
     QObject, QPoint
 from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient, QKeySequence, \
-    QCursor, QKeyEvent, QCloseEvent
+    QCursor, QKeyEvent, QPixmap
 from PyQt5.QtWidgets import QApplication, QListWidget, QLabel, QWidget, QListWidgetItem, \
     QHBoxLayout, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
     QToolButton, QSizePolicy, QPlainTextEdit, QStatusBar, QGraphicsDropShadowEffect, QPushButton, \
@@ -382,6 +382,9 @@ class ErrorStatusBar(QWidget):
         continuously show message.
         """
         self.status_bar.showMessage(message, duration)
+        new_width = self.fontMetrics().horizontalAdvance(message)
+        self.status_bar.setMinimumWidth(new_width)
+        self.status_bar.reformat()
 
         if duration != 0:
             self.status_timer.start(duration)
@@ -448,17 +451,20 @@ class UserProfile(QLabel):
         # Login button
         self.login_button = LoginButton()
 
+        # User button
+        self.user_button = UserButton()
+
         # User icon
-        self.user_icon = QLabel()
+        self.user_icon = UserIconLabel()
         self.user_icon.setObjectName('user_icon')  # Set css id
         self.user_icon.setFixedSize(QSize(30, 30))
         self.user_icon.setAlignment(Qt.AlignCenter)
         self.user_icon_font = QFont()
         self.user_icon_font.setLetterSpacing(QFont.AbsoluteSpacing, 0.58)
         self.user_icon.setFont(self.user_icon_font)
-
-        # User button
-        self.user_button = UserButton()
+        self.user_icon.clicked.connect(self.user_button.click)
+        # Set cursor.
+        self.user_icon.setCursor(QCursor(Qt.PointingHandCursor))
 
         # Add widgets to user auth layout
         layout.addWidget(self.login_button, 1)
@@ -486,6 +492,17 @@ class UserProfile(QLabel):
         self.user_icon.hide()
         self.user_button.hide()
         self.login_button.show()
+
+
+class UserIconLabel(QLabel):
+    """
+    Makes a label clickable. (For the label containing the user icon.)
+    """
+
+    clicked = pyqtSignal()
+
+    def mousePressEvent(self, e):
+        self.clicked.emit()
 
 
 class UserButton(SvgPushButton):
@@ -692,14 +709,23 @@ class MainView(QWidget):
         else:
             self.empty_conversation_view.show_no_sources_message()
             self.empty_conversation_view.show()
-        self.source_list.update(sources)
+
+        if self.source_list.source_widgets:
+            # The source list already contains sources.
+            deleted_sources = self.source_list.update(sources)
+            for source_uuid in deleted_sources:
+                # Then call the function to remove the wrapper and its children.
+                self.delete_conversation(source_uuid)
+        else:
+            # We have an empty source list, so do an initial update.
+            self.source_list.initial_update(sources)
 
     def on_source_changed(self):
         """
         Show conversation for the currently-selected source if it hasn't been deleted. If the
         current source no longer exists, clear the conversation for that source.
         """
-        source = self.source_list.get_current_source()
+        source = self.source_list.get_selected_source()
 
         if not source:
             return
@@ -726,6 +752,8 @@ class MainView(QWidget):
         """
         try:
             logger.debug('Deleting SourceConversationWrapper for {}'.format(source_uuid))
+            conversation_wrapper = self.source_conversations[source_uuid]
+            conversation_wrapper.deleteLater()
             del self.source_conversations[source_uuid]
         except KeyError:
             logger.debug('No SourceConversationWrapper for {} to delete'.format(source_uuid))
@@ -889,7 +917,7 @@ class SourceList(QListWidget):
         # Set id and styles.
         self.setObjectName('sourcelist')
         self.setStyleSheet(self.CSS)
-        self.setFixedWidth(525)
+        self.setFixedWidth(540)
         self.setUniformItemSizes(True)
 
         # Set layout.
@@ -907,49 +935,71 @@ class SourceList(QListWidget):
         self.controller.file_ready.connect(self.set_snippet)
         self.controller.file_missing.connect(self.set_snippet)
 
-    def update(self, sources: List[Source]):
+    def update(self, sources: List[Source]) -> List[str]:
         """
-        Reset and update the list with the passed in list of sources.
+        Update the list with the passed in list of sources.
         """
-        # A flag to show if a source is currently selected (the current source
-        # doesn't have to be selected in a QListWidget -- it appears to default
-        # to whatever is in row 0, whether it's selected or not).
-        has_source_selected = False
-        if self.currentRow() > -1:
-            has_source_selected = self.item(self.currentRow()).isSelected()
-        current_source = self.get_current_source()
-        current_source_id = current_source and current_source.id
-        # Make a copy of the source_widgets that are currently displayed
-        # so that we can compare which widgets were removed. This means that
-        # the source was deleted, and we'll return this so we can also
-        # delete the corresponding SourceConversationWrapper.
-        existing_source_widgets = self.source_widgets.copy()
+        # Delete widgets that no longer exist in source list
+        source_uuids = [source.uuid for source in sources]
+        deleted_uuids = []
+        for i in range(self.count()):
+            list_item = self.item(i)
+            list_widget = self.itemWidget(list_item)
 
-        # When we call clear() to delete all SourceWidgets, we should
-        # also clear the source_widgets dict.
-        self.clear()
-        self.source_widgets = {}
+            if list_widget and list_widget.source_uuid not in source_uuids:
+                if list_item.isSelected():
+                    self.setCurrentItem(None)
+
+                try:
+                    del self.source_widgets[list_widget.source_uuid]
+                except KeyError:
+                    pass
+
+                self.takeItem(i)
+                deleted_uuids.append(list_widget.source_uuid)
+                list_widget.deleteLater()
+
+        # Create new widgets for new sources
+        widget_uuids = [self.itemWidget(self.item(i)).source_uuid for i in range(self.count())]
+        for source in sources:
+            if source.uuid in widget_uuids:
+                try:
+                    self.source_widgets[source.uuid].update()
+                except sqlalchemy.exc.InvalidRequestError as e:
+                    logger.error(
+                        "Could not update SourceWidget for source %s; deleting it. Error was: %s",
+                        source.uuid,
+                        e
+                    )
+                    deleted_uuids.append(source.uuid)
+                    self.source_widgets[source.uuid].deleteLater()
+                    del self.source_widgets[list_widget.source_uuid]
+            else:
+                new_source = SourceWidget(self.controller, source)
+                self.source_widgets[source.uuid] = new_source
+
+                list_item = QListWidgetItem()
+                self.insertItem(0, list_item)
+                list_item.setSizeHint(new_source.sizeHint())
+                self.setItemWidget(list_item, new_source)
+
+        return deleted_uuids
+
+    def initial_update(self, sources: List[Source]):
+        """
+        Initialise the list with the passed in list of sources.
+        """
         sources.reverse()
-        self.add_source(existing_source_widgets, sources, current_source_id,
-                        has_source_selected)
+        self.add_source(sources)
 
-    def add_source(self, existing_source_widgets, sources, current_source_id,
-                   has_source_selected, slice_size=1):
+    def add_source(self, sources, slice_size=1):
         """
-        Add a slice of sources, ensure the currently selected source is
-        retained and, if necessary, reschedule the addition of more sources.
-        If no more sources are left, work out the deleted sources and emit
-        deletion signal for each source to delete.
+        Add a slice of sources, and if necessary, reschedule the addition of
+        more sources.
         """
 
         def schedule_source_management(slice_size=slice_size):
             if not sources:
-                # No more sources to add, discover the deleted sources and
-                # delete them.
-                deleted_uuids = list(set(existing_source_widgets.keys()) -
-                                     set(self.source_widgets.keys()))
-                for source_uuid in deleted_uuids:
-                    self.delete_source_by_uuid.emit(source_uuid)
                 # Nothing more to do.
                 return
             # Process the remaining "slice_size" number of sources.
@@ -962,37 +1012,55 @@ class SourceList(QListWidget):
 
                 self.addItem(list_item)
                 self.setItemWidget(list_item, new_source)
-
-                if source.id == current_source_id and has_source_selected:
-                    self.setCurrentItem(list_item)
             # ATTENTION! 32 is an arbitrary number arrived at via
             # experimentation. It adds plenty of sources, but doesn't block
             # for a noticable amount of time.
             new_slice_size = min(32, slice_size * 2)
             # Call add_source again for the remaining sources.
-            self.add_source(existing_source_widgets, sources[slice_size:],
-                            current_source_id, has_source_selected,
-                            new_slice_size)
+            self.add_source(sources[slice_size:], new_slice_size)
 
         # Schedule the closure defined above in the next iteration of the
         # Qt event loop (thus unblocking the UI).
         QTimer.singleShot(1, schedule_source_management)
 
-    def get_current_source(self):
-        source_item = self.currentItem()
+    def get_selected_source(self):
+        if not self.selectedItems():
+            return None
+
+        source_item = self.selectedItems()[0]
         source_widget = self.itemWidget(source_item)
-        if source_widget and source_exists(self.controller.session, source_widget.source.uuid):
+        if source_widget and source_exists(self.controller.session, source_widget.source_uuid):
             return source_widget.source
 
-    def set_snippet(self, source_uuid, message_uuid, content):
-        """
-        Given a UUID of a source, if the referenced message is the latest
-        message, then update the source's preview snippet to the referenced
-        content.
-        """
-        source_widget = self.source_widgets.get(source_uuid)
+    def get_source_widget(self, source_uuid: str) -> Optional[QListWidget]:
+        '''
+        First try to get the source widget from the cache, then look for it in the SourceList.
+        '''
+        try:
+            source_widget = self.source_widgets[source_uuid]
+            return source_widget
+        except KeyError:
+            pass
+
+        for i in range(self.count()):
+            list_item = self.item(i)
+            source_widget = self.itemWidget(list_item)
+            if source_widget and source_widget.source_uuid == source_uuid:
+                return source_widget
+
+        return None
+
+    @pyqtSlot(str, str, str)
+    def set_snippet(self, source_uuid: str, collection_item_uuid: str, content: str) -> None:
+        '''
+        Set the source widget's preview snippet with the supplied content.
+
+        Note: The signal's `collection_item_uuid` is not needed for setting the preview snippet. It
+        is used by other signal handlers.
+        '''
+        source_widget = self.get_source_widget(source_uuid)
         if source_widget:
-            source_widget.set_snippet(source_uuid, message_uuid, content)
+            source_widget.set_snippet(source_uuid, content)
 
 
 class SourceWidget(QWidget):
@@ -1069,11 +1137,11 @@ class SourceWidget(QWidget):
 
         self.controller = controller
         self.controller.source_deleted.connect(self._on_source_deleted)
+        self.controller.source_deletion_failed.connect(self._on_source_deletion_failed)
 
         # Store source
         self.source_uuid = source.uuid
         self.source = source
-        self.source_uuid = source.uuid
 
         # Set styles
         self.setStyleSheet(self.CSS)
@@ -1099,7 +1167,7 @@ class SourceWidget(QWidget):
         gutter_layout = QVBoxLayout(self.gutter)
         gutter_layout.setContentsMargins(0, 0, 0, 0)
         gutter_layout.setSpacing(0)
-        self.star = StarToggleButton(self.controller, self.source)
+        self.star = StarToggleButton(self.controller, self.source_uuid, source.is_starred)
         gutter_layout.addWidget(self.star)
         gutter_layout.addStretch()
 
@@ -1163,31 +1231,28 @@ class SourceWidget(QWidget):
             self.controller.session.refresh(self.source)
             self.timestamp.setText(_(arrow.get(self.source.last_updated).format('DD MMM')))
             self.name.setText(self.source.journalist_designation)
-            self.set_snippet(self.source.uuid)
+
+            if not self.source.collection:
+                self.set_snippet(self.source_uuid, '')
+            else:
+                last_collection_obj = self.source.collection[-1]
+                self.set_snippet(self.source_uuid, str(last_collection_obj))
+
             if self.source.document_count == 0:
                 self.paperclip.hide()
-            self.star.update()
+            self.star.update(self.source.is_starred)
         except sqlalchemy.exc.InvalidRequestError as e:
-            logger.error(
-                "Could not update SourceWidget for source %s: %s",
-                self.source.uuid,
-                e
-            )
+            logger.error(f"Could not update SourceWidget for source {self.source_uuid}: {e}")
             raise
 
-    def set_snippet(self, source, uuid=None, content=None):
+    def set_snippet(self, source_uuid: str, content: str):
         """
-        Update the preview snippet only if the new message is for the
-        referenced source and there's a source collection. If a uuid and
-        content are passed then use these, otherwise default to whatever the
-        latest item in the conversation might be.
+        Update the preview snippet if the source_uuid matches our own.
         """
-        if source == self.source.uuid and self.source.collection:
-            last_collection_object = self.source.collection[-1]
-            if uuid and uuid == last_collection_object.uuid and content:
-                self.preview.setText(content)
-            else:
-                self.preview.setText(str(last_collection_object))
+        if source_uuid != self.source_uuid:
+            return
+
+        self.preview.setText(content)
 
     def delete_source(self, event):
         if self.controller.api is None:
@@ -1205,6 +1270,14 @@ class SourceWidget(QWidget):
             self.preview.hide()
             self.waiting_delete_confirmation.show()
 
+    @pyqtSlot(str)
+    def _on_source_deletion_failed(self, source_uuid: str):
+        if self.source_uuid == source_uuid:
+            self.waiting_delete_confirmation.hide()
+            self.gutter.show()
+            self.metadata.show()
+            self.preview.show()
+
 
 class StarToggleButton(SvgToggleButton):
     """
@@ -1217,137 +1290,146 @@ class StarToggleButton(SvgToggleButton):
     }
     '''
 
-    def __init__(self, controller: Controller, source: Source):
-        super().__init__(
-            on='star_on.svg',
-            off='star_off.svg',
-            svg_size=QSize(16, 16))
+    def __init__(self, controller: Controller, source_uuid: str, is_starred: bool):
+        super().__init__(on='star_on.svg', off='star_off.svg', svg_size=QSize(16, 16))
 
         self.controller = controller
-        self.source = source
+        self.source_uuid = source_uuid
+        self.is_starred = is_starred
+        self.pending_count = 0
+        self.wait_until_next_sync = False
 
+        self.controller.authentication_state.connect(self.on_authentication_changed)
+        self.controller.star_update_failed.connect(self.on_star_update_failed)
+        self.controller.star_update_successful.connect(self.on_star_update_successful)
         self.installEventFilter(self)
 
         self.setObjectName('star_button')
         self.setStyleSheet(self.css)
         self.setFixedSize(QSize(20, 20))
 
-        self.controller.authentication_state.connect(self.on_authentication_changed)
-        self.on_authentication_changed(self.controller.is_authenticated)
+        self.pressed.connect(self.on_pressed)
+        self.setCheckable(True)
+        self.setChecked(self.is_starred)
 
-    def disable(self):
-        """
-        Disable the widget.
+        if not self.controller.is_authenticated:
+            self.disable_toggle()
 
-        Disable toggle by setting checkable to False. Unfortunately,
-        disabling toggle doesn't freeze state, rather it always
-        displays the off state when a user tries to toggle. In order
-        to save on state we update the icon's off state image to
-        display on (hack).
+    def disable_toggle(self):
         """
-        self.disable_api_call()
-        self.setCheckable(False)
-        if self.source.is_starred:
+        Unset `checkable` so that the star cannot be toggled.
+
+        Disconnect the `pressed` signal from previous handler and connect it to the offline handler.
+        """
+        self.pressed.disconnect()
+        self.pressed.connect(self.on_pressed_offline)
+
+        # If the source is starred, we must update the icon so that the off state continues to show
+        # the source as starred. We could instead disable the button, which will continue to show
+        # the star as checked, but Qt will also gray out the star, which we don't want.
+        if self.is_starred:
             self.set_icon(on='star_on.svg', off='star_on.svg')
+        self.setCheckable(False)
 
-        try:
-            while True:
-                self.pressed.disconnect(self.on_toggle_offline)
-        except Exception as e:
-            logger.warning("Could not disconnect on_toggle_offline from self.pressed: %s", e)
-
-        try:
-            while True:
-                self.toggled.disconnect(self.on_toggle)
-        except Exception as e:
-            logger.warning("Could not disconnect on_toggle from self.toggled: %s", e)
-
-        self.pressed.connect(self.on_toggle_offline)
-
-    def enable(self):
+    def enable_toggle(self):
         """
         Enable the widget.
+
+        Disconnect the pressed signal from previous handler, set checkable so that the star can be
+        toggled, and connect to the online toggle handler.
+
+        Note: We must update the icon in case it was modified after being disabled.
         """
-        self.enable_api_call()
+        self.pressed.disconnect()
+        self.pressed.connect(self.on_pressed)
         self.setCheckable(True)
-        self.set_icon(on='star_on.svg', off='star_off.svg')
-        self.setChecked(self.source.is_starred)
-
-        try:
-            while True:
-                self.toggled.disconnect(self.on_toggle)
-        except Exception:
-            pass
-
-        try:
-            while True:
-                self.pressed.disconnect(self.on_toggle_offline)
-        except Exception:
-            pass
-
-        self.toggled.connect(self.on_toggle)
+        self.set_icon(on='star_on.svg', off='star_off.svg')  # Undo icon change from disable_toggle
 
     def eventFilter(self, obj, event):
-        checkable = self.isCheckable()
+        """
+        If the button is checkable then we show a hover state.
+        """
+        if not self.isCheckable():
+            return QObject.event(obj, event)
+
         t = event.type()
-        if t == QEvent.HoverEnter and checkable:
+        if t == QEvent.HoverEnter:
             self.setIcon(load_icon('star_hover.svg'))
         elif t == QEvent.HoverLeave:
-            if checkable:
-                self.set_icon(on='star_on.svg', off='star_off.svg')
-            else:
-                if self.source.is_starred:
-                    self.set_icon(on='star_on.svg', off='star_on.svg')
+            self.set_icon(on='star_on.svg', off='star_off.svg')
+
         return QObject.event(obj, event)
 
-    def on_authentication_changed(self, authenticated: bool):
+    @pyqtSlot(bool)
+    def on_authentication_changed(self, authenticated: bool) -> None:
         """
         Set up handlers based on whether or not the user is authenticated. Connect to 'pressed'
         event instead of 'toggled' event when not authenticated because toggling will be disabled.
         """
         if authenticated:
-            self.enable()
+            self.pending_count = 0
+            self.enable_toggle()
+            self.setChecked(self.is_starred)
         else:
-            self.disable()
+            self.disable_toggle()
 
-    def on_toggle(self):
+    @pyqtSlot()
+    def on_pressed(self) -> None:
         """
         Tell the controller to make an API call to update the source's starred field.
         """
-        if self.is_api_call_enabled:
-            self.controller.update_star(self.source, self.on_update)
+        self.controller.update_star(self.source_uuid, self.isChecked())
+        self.is_starred = not self.is_starred
+        self.pending_count = self.pending_count + 1
+        self.wait_until_next_sync = True
 
-    def on_toggle_offline(self):
+    @pyqtSlot()
+    def on_pressed_offline(self) -> None:
         """
         Show error message when not authenticated.
         """
         self.controller.on_action_requiring_login()
 
-    def on_update(self, result):
+    @pyqtSlot(bool)
+    def update(self, is_starred: bool) -> None:
         """
-        The result is a uuid for the source and boolean flag for the new state
-        of the star.
+        If star was updated via the Journalist Interface or by another instance of the client, then
+        self.is_starred will not match the server and will need to be updated.
         """
-        enabled = result[1]
-        self.source.is_starred = enabled
-        self.controller.session.commit()
-        self.controller.update_sources()
-        self.setChecked(enabled)
+        if not self.controller.is_authenticated:
+            return
 
-    def update(self):
-        """
-        Update the star to reflect its source's current state.
-        """
-        self.controller.session.refresh(self.source)
-        self.disable_api_call()
-        self.setChecked(self.source.is_starred)
-        self.enable_api_call()
+        # Wait until ongoing star jobs are finished before checking if it matches with the server
+        if self.pending_count > 0:
+            return
 
-    def disable_api_call(self):
-        self.is_api_call_enabled = False
+        # Wait until next sync to avoid the possibility of updating the star with outdated source
+        # information in case the server just received the star request.
+        if self.wait_until_next_sync:
+            self.wait_until_next_sync = False
+            return
 
-    def enable_api_call(self):
-        self.is_api_call_enabled = True
+        if self.is_starred != is_starred:
+            self.is_starred = is_starred
+            self.setChecked(self.is_starred)
+
+    @pyqtSlot(str, bool)
+    def on_star_update_failed(self, source_uuid: str, is_starred: bool) -> None:
+        """
+        If the star update failed to update on the server, toggle back to previous state.
+        """
+        if self.source_uuid == source_uuid:
+            self.is_starred = is_starred
+            self.pending_count = self.pending_count - 1
+            QTimer.singleShot(250, lambda: self.setChecked(self.is_starred))
+
+    @pyqtSlot(str)
+    def on_star_update_successful(self, source_uuid: str) -> None:
+        """
+        If the star update succeeded, set pending to False so the sync can update the star field
+        """
+        if self.source_uuid == source_uuid:
+            self.pending_count = self.pending_count - 1
 
 
 class DeleteSourceMessageBox:
@@ -1355,6 +1437,7 @@ class DeleteSourceMessageBox:
 
     def __init__(self, source, controller):
         self.source = source
+        self.source_uuid = source.uuid
         self.controller = controller
 
     def launch(self):
@@ -1370,7 +1453,7 @@ class DeleteSourceMessageBox:
             None, "", _(message), QMessageBox.Cancel | QMessageBox.Yes, QMessageBox.Cancel)
 
         if reply == QMessageBox.Yes:
-            logger.debug("Deleting source %s" % (self.source.uuid,))
+            logger.debug(f'Deleting source {self.source_uuid}')
             self.controller.delete_source(self.source)
 
     def _construct_message(self, source: Source) -> str:
@@ -1605,6 +1688,9 @@ class LoginDialog(QDialog):
     def __init__(self, parent):
         self.parent = parent
         super().__init__(self.parent)
+
+        # Set modal
+        self.setModal(True)
 
         # Set css id
         self.setObjectName('login_dialog')
@@ -2204,6 +2290,13 @@ class FileWidget(QWidget):
         file_ready_signal.connect(self._on_file_downloaded, type=Qt.QueuedConnection)
         file_missing.connect(self._on_file_missing, type=Qt.QueuedConnection)
 
+    def update_file_size(self):
+        try:
+            self.file_size.setText(humanize_filesize(self.file.size))
+        except Exception as e:
+            logger.error(f"Could not update file size on FileWidget: {e}")
+            self.file_size.setText("")
+
     def eventFilter(self, obj, event):
         t = event.type()
         if t == QEvent.MouseButtonPress:
@@ -2227,6 +2320,7 @@ class FileWidget(QWidget):
             self.middot.show()
             self.print_button.show()
             self.file_name.show()
+            self.update_file_size()
         else:
             logger.debug('Changing file {} state to not downloaded'.format(self.uuid))
             self.download_button.setText(_('DOWNLOAD'))
@@ -2271,8 +2365,8 @@ class FileWidget(QWidget):
         if not self.controller.downloaded_file_exists(self.file):
             return
 
-        dialog = ExportDialog(self.controller, self.uuid, self.file.filename)
-        dialog.exec()
+        self.export_dialog = ExportDialog(self.controller, self.uuid, self.file.filename)
+        self.export_dialog.show()
 
     @pyqtSlot()
     def _on_print_clicked(self):
@@ -2296,7 +2390,7 @@ class FileWidget(QWidget):
         if self.file.is_decrypted:
             # Open the already downloaded and decrypted file.
             self.controller.on_file_open(self.file)
-        else:
+        elif not self.downloading:
             if self.controller.api:
                 self.start_button_animation()
             # Download the file.
@@ -2328,25 +2422,17 @@ class FileWidget(QWidget):
         self._set_file_state()
 
 
-class FramelessDialog(QDialog):
+class ModalDialog(QDialog):
 
     CSS = '''
-    #frameless_dialog {
+    #modal {
         min-width: 800px;
         max-width: 800px;
         min-height: 300px;
         max-height: 800px;
         background-color: #fff;
-        border: 1px solid #2a319d;
     }
-    #close_button {
-        border: none;
-        font-family: 'Source Sans Pro';
-        font-weight: 600;
-        font-size: 12px;
-        color: #2a319d;
-    }
-    #header_icon {
+    #header_icon, #header_spinner {
         min-width: 80px;
         max-width: 80px;
         min-height: 64px;
@@ -2412,37 +2498,9 @@ class FramelessDialog(QDialog):
     def __init__(self):
         parent = QApplication.activeWindow()
         super().__init__(parent)
-
-        # Used to determine whether or not the popup is being closed from our own internal close
-        # method or from clicking outside of the popup.
-        #
-        # This is a workaround for for frameless
-        # modals not working as expected on QubesOS, i.e. the following flags are ignored in Qubes:
-        #     self.setWindowFlags(Qt.FramelessWindowHint)
-        #     self.setWindowFlags(Qt.CustomizeWindowHint)
-        self.internal_close_event_emitted = False
-
-        self.setObjectName('frameless_dialog')
+        self.setObjectName('modal')
         self.setStyleSheet(self.CSS)
-        self.setWindowFlags(Qt.Popup)
-
-        # Set drop shadow effect
-        effect = QGraphicsDropShadowEffect(self)
-        effect.setOffset(0, 1)
-        effect.setBlurRadius(8)
-        effect.setColor(QColor('#aa000000'))
-        self.setGraphicsEffect(effect)
-        self.update()
-
-        # Custom titlebar for close button
-        titlebar = QWidget()
-        titlebar_layout = QVBoxLayout()
-        titlebar.setLayout(titlebar_layout)
-        close_button = SvgPushButton('delete_close.svg', svg_size=QSize(10, 10))
-        close_button.setObjectName('close_button')
-        close_button.setText('CLOSE')
-        close_button.clicked.connect(self.close)
-        titlebar_layout.addWidget(close_button, alignment=Qt.AlignRight)
+        self.setModal(True)
 
         # Header for icon and task title
         header_container = QWidget()
@@ -2450,9 +2508,16 @@ class FramelessDialog(QDialog):
         header_container.setLayout(header_container_layout)
         self.header_icon = SvgLabel('blank.svg', svg_size=QSize(64, 64))
         self.header_icon.setObjectName('header_icon')
+        self.header_spinner = QPixmap()
+        self.header_spinner_label = QLabel()
+        self.header_spinner_label.setObjectName("header_spinner")
+        self.header_spinner_label.setMinimumSize(64, 64)
+        self.header_spinner_label.setVisible(False)
+        self.header_spinner_label.setPixmap(self.header_spinner)
         self.header = QLabel()
         self.header.setObjectName('header')
         header_container_layout.addWidget(self.header_icon)
+        header_container_layout.addWidget(self.header_spinner_label)
         header_container_layout.addWidget(self.header, alignment=Qt.AlignCenter)
         header_container_layout.addStretch()
 
@@ -2483,9 +2548,11 @@ class FramelessDialog(QDialog):
         window_buttons.setLayout(button_layout)
         self.cancel_button = QPushButton(_('CANCEL'))
         self.cancel_button.clicked.connect(self.close)
+        self.cancel_button.setAutoDefault(False)
         self.continue_button = QPushButton(_('CONTINUE'))
         self.continue_button.setObjectName('primary_button')
         self.continue_button.setDefault(True)
+        self.continue_button.setIconSize(QSize(21, 21))
         button_box = QDialogButtonBox(Qt.Horizontal)
         button_box.setObjectName('button_box')
         button_box.addButton(self.cancel_button, QDialogButtonBox.ActionRole)
@@ -2496,7 +2563,6 @@ class FramelessDialog(QDialog):
         # Main widget layout
         layout = QVBoxLayout(self)
         self.setLayout(layout)
-        layout.addWidget(titlebar)
         layout.addWidget(header_container)
         layout.addWidget(self.header_line)
         layout.addWidget(self.error_details)
@@ -2504,42 +2570,68 @@ class FramelessDialog(QDialog):
         layout.addStretch()
         layout.addWidget(window_buttons)
 
-    def closeEvent(self, event: QCloseEvent):
-        # ignore any close event that doesn't come from our custom close method
-        if not self.internal_close_event_emitted:
-            event.ignore()
+        # Activestate animation.
+        self.button_animation = load_movie("activestate-wide.gif")
+        self.button_animation.setScaledSize(QSize(32, 32))
+        self.button_animation.frameChanged.connect(self.animate_activestate)
+
+        # Header animation.
+        self.header_animation = load_movie("header_animation.gif")
+        self.header_animation.setScaledSize(QSize(64, 64))
+        self.header_animation.frameChanged.connect(self.animate_header)
 
     def keyPressEvent(self, event: QKeyEvent):
-        # Since the dialog sets the Qt.Popup window flag (in order to achieve a frameless dialog
-        # window in Qubes), the default behavior is to close the dialog when the Enter or Return
-        # key is clicked, which we override here.
         if (event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return):
             if self.cancel_button.hasFocus():
                 self.cancel_button.click()
             else:
                 self.continue_button.click()
-            return
+            event.ignore()  # Don't allow Enter to close dialog
 
         super().keyPressEvent(event)
 
-    def close(self):
-        self.internal_close_event_emitted = True
-        super().close()
+    def animate_activestate(self):
+        self.continue_button.setIcon(QIcon(self.button_animation.currentPixmap()))
 
-    def center_dialog(self):
-        active_window = QApplication.activeWindow()
-        if not active_window:
-            return
-        application_window_size = active_window.geometry()
-        dialog_size = self.geometry()
-        x = application_window_size.x()
-        y = application_window_size.y()
-        x_center = (application_window_size.width() - dialog_size.width()) / 2
-        y_center = (application_window_size.height() - dialog_size.height()) / 2
-        self.move(x + x_center, y + y_center)
+    def animate_header(self):
+        self.header_spinner_label.setPixmap(self.header_animation.currentPixmap())
+
+    def start_animate_activestate(self):
+        self.button_animation.start()
+        self.continue_button.setText("")
+        self.continue_button.setMinimumSize(QSize(142, 43))
+        css = """
+        background-color: #f1f1f6;
+        color: #fff;
+        border: 2px solid #f1f1f6;
+        margin: 0px 0px 0px 12px;
+        height: 40px;
+        padding-left: 20px;
+        padding-right: 20px;
+        """
+        self.continue_button.setStyleSheet(css)
+        self.error_details.setStyleSheet("color: #ff66C4")
+
+    def start_animate_header(self):
+        self.header_icon.setVisible(False)
+        self.header_spinner_label.setVisible(True)
+        self.header_animation.start()
+
+    def stop_animate_activestate(self):
+        self.continue_button.setIcon(QIcon())
+        self.button_animation.stop()
+        self.continue_button.setText(_('CONTINUE'))
+        css = "background-color: #2a319d; color: #fff; border: 2px solid #2a319d;"
+        self.continue_button.setStyleSheet(css)
+        self.error_details.setStyleSheet("color: #ff0064")
+
+    def stop_animate_header(self):
+        self.header_icon.setVisible(True)
+        self.header_spinner_label.setVisible(False)
+        self.header_animation.stop()
 
 
-class PrintDialog(FramelessDialog):
+class PrintDialog(ModalDialog):
 
     FILENAME_WIDTH_PX = 260
 
@@ -2558,23 +2650,26 @@ class PrintDialog(FramelessDialog):
 
         # Connect parent signals to slots
         self.continue_button.setEnabled(False)
-
-        self.header_icon.update_image('printer.svg', svg_size=QSize(64, 64))
+        self.continue_button.clicked.connect(self._run_preflight)
 
         # Dialog content
         self.starting_header = _(
             'Preparing to print:'
             '<br />'
             '<span style="font-weight:normal">{}</span>'.format(self.file_name))
-        self.insert_usb_header = _('Insert USB printer')
-        self.error_header = _('Unable to print')
+        self.ready_header = _(
+            'Ready to print:'
+            '<br />'
+            '<span style="font-weight:normal">{}</span>'.format(self.file_name))
+        self.insert_usb_header = _('Connect USB printer')
+        self.error_header = _('Printing failed')
         self.starting_message = _(
             '<h2>Managing printout risks</h2>'
-            '<b>QR-Codes and visible web addresses</b>'
+            '<b>QR codes and web addresses</b>'
             '<br />'
-            'Never open web addresses or scan QR codes contained in printed documents without '
-            'taking security precautions. If you are unsure how to manage this risk, please '
-            'contact your administrator.'
+            'Never type in and open web addresses or scan QR codes contained in printed '
+            'documents without taking security precautions. If you are unsure how to '
+            'manage this risk, please contact your administrator.'
             '<br /><br />'
             '<b>Printer dots</b>'
             '<br />'
@@ -2585,6 +2680,7 @@ class PrintDialog(FramelessDialog):
         self.generic_error_message = _('See your administrator for help.')
 
         self._show_starting_instructions()
+        self.start_animate_header()
         self._run_preflight()
 
     def _show_starting_instructions(self):
@@ -2592,7 +2688,6 @@ class PrintDialog(FramelessDialog):
         self.body.setText(self.starting_message)
         self.error_details.hide()
         self.adjustSize()
-        self.center_dialog()
 
     def _show_insert_usb_message(self):
         self.continue_button.clicked.disconnect()
@@ -2601,7 +2696,6 @@ class PrintDialog(FramelessDialog):
         self.body.setText(self.insert_usb_message)
         self.error_details.hide()
         self.adjustSize()
-        self.center_dialog()
 
     def _show_generic_error_message(self):
         self.continue_button.clicked.disconnect()
@@ -2611,7 +2705,6 @@ class PrintDialog(FramelessDialog):
         self.body.setText('{}: {}'.format(self.error_status, self.generic_error_message))
         self.error_details.hide()
         self.adjustSize()
-        self.center_dialog()
 
     @pyqtSlot()
     def _run_preflight(self):
@@ -2625,16 +2718,22 @@ class PrintDialog(FramelessDialog):
     @pyqtSlot()
     def _on_preflight_success(self):
         # If the continue button is disabled then this is the result of a background preflight check
+        self.stop_animate_header()
+        self.header_icon.update_image('printer.svg', svg_size=QSize(64, 64))
+        self.header.setText(self.ready_header)
         if not self.continue_button.isEnabled():
             self.continue_button.clicked.disconnect()
             self.continue_button.clicked.connect(self._print_file)
             self.continue_button.setEnabled(True)
+            self.continue_button.setFocus()
             return
 
         self._print_file()
 
     @pyqtSlot(object)
     def _on_preflight_failure(self, error: ExportError):
+        self.stop_animate_header()
+        self.header_icon.update_image('printer.svg', svg_size=QSize(64, 64))
         self.error_status = error.status
         # If the continue button is disabled then this is the result of a background preflight check
         if not self.continue_button.isEnabled():
@@ -2645,6 +2744,7 @@ class PrintDialog(FramelessDialog):
                 self.continue_button.clicked.connect(self._show_generic_error_message)
 
             self.continue_button.setEnabled(True)
+            self.continue_button.setFocus()
         else:
             if error.status == ExportStatus.PRINTER_NOT_FOUND.value:
                 self._show_insert_usb_message()
@@ -2652,7 +2752,7 @@ class PrintDialog(FramelessDialog):
                 self._show_generic_error_message()
 
 
-class ExportDialog(FramelessDialog):
+class ExportDialog(ModalDialog):
 
     PASSPHRASE_FORM_CSS = '''
     #passphrase_form QLabel {
@@ -2692,31 +2792,34 @@ class ExportDialog(FramelessDialog):
 
         # Connect parent signals to slots
         self.continue_button.setEnabled(False)
-
-        self.header_icon.update_image('savetodisk.svg', QSize(64, 64))
+        self.continue_button.clicked.connect(self._run_preflight)
 
         # Dialog content
         self.starting_header = _(
             'Preparing to export:'
             '<br />'
             '<span style="font-weight:normal">{}</span>'.format(self.file_name))
+        self.ready_header = _(
+            'Ready to export:'
+            '<br />'
+            '<span style="font-weight:normal">{}</span>'.format(self.file_name))
         self.insert_usb_header = _('Insert encrypted USB drive')
         self.passphrase_header = _('Enter passphrase for USB drive')
         self.success_header = _('Export successful')
-        self.error_header = _('Unable to export')
+        self.error_header = _('Export failed')
         self.starting_message = _(
-            '<h2>Proceed with caution when exporting files</h2>'
+            '<h2>Understand the risks before exporting files</h2>'
             '<b>Malware</b>'
             '<br />'
-            'This workstation lets you open documents securely. If you open documents on another '
+            'This workstation lets you open files securely. If you open files on another '
             'computer, any embedded malware may spread to your computer or network. If you are '
-            'unsure how to manage this risk, please print the document, or contact your '
+            'unsure how to manage this risk, please print the file, or contact your '
             'administrator.'
             '<br /><br />'
             '<b>Anonymity</b>'
             '<br />'
-            'Documents submitted by sources may contain information or hidden metadata that '
-            'identifies who they are. To protect your sources, please consider redacting documents '
+            'Files submitted by sources may contain information or hidden metadata that '
+            'identifies who they are. To protect your sources, please consider redacting files '
             'before working with them on network-connected computers.')
         self.exporting_message = _('Exporting: {}'.format(self.file_name))
         self.insert_usb_message = _(
@@ -2757,13 +2860,13 @@ class ExportDialog(FramelessDialog):
         self.passphrase_form.hide()
 
         self._show_starting_instructions()
+        self.start_animate_header()
         self._run_preflight()
 
     def _show_starting_instructions(self):
         self.header.setText(self.starting_header)
         self.body.setText(self.starting_message)
         self.adjustSize()
-        self.center_dialog()
 
     def _show_passphrase_request_message(self):
         self.continue_button.clicked.disconnect()
@@ -2775,7 +2878,6 @@ class ExportDialog(FramelessDialog):
         self.body.hide()
         self.passphrase_form.show()
         self.adjustSize()
-        self.center_dialog()
 
     def _show_passphrase_request_message_again(self):
         self.continue_button.clicked.disconnect()
@@ -2788,7 +2890,6 @@ class ExportDialog(FramelessDialog):
         self.error_details.show()
         self.passphrase_form.show()
         self.adjustSize()
-        self.center_dialog()
 
     def _show_success_message(self):
         self.continue_button.clicked.disconnect()
@@ -2802,7 +2903,6 @@ class ExportDialog(FramelessDialog):
         self.header_line.show()
         self.body.show()
         self.adjustSize()
-        self.center_dialog()
 
     def _show_insert_usb_message(self):
         self.continue_button.clicked.disconnect()
@@ -2815,7 +2915,6 @@ class ExportDialog(FramelessDialog):
         self.header_line.show()
         self.body.show()
         self.adjustSize()
-        self.center_dialog()
 
     def _show_insert_encrypted_usb_message(self):
         self.continue_button.clicked.disconnect()
@@ -2829,7 +2928,6 @@ class ExportDialog(FramelessDialog):
         self.error_details.show()
         self.body.show()
         self.adjustSize()
-        self.center_dialog()
 
     def _show_generic_error_message(self):
         self.continue_button.clicked.disconnect()
@@ -2842,7 +2940,6 @@ class ExportDialog(FramelessDialog):
         self.header_line.show()
         self.body.show()
         self.adjustSize()
-        self.center_dialog()
 
     @pyqtSlot()
     def _run_preflight(self):
@@ -2850,29 +2947,40 @@ class ExportDialog(FramelessDialog):
 
     @pyqtSlot()
     def _export_file(self, checked: bool = False):
+        self.start_animate_activestate()
+        self.passphrase_field.setDisabled(True)
         self.controller.export_file_to_usb_drive(self.file_uuid, self.passphrase_field.text())
 
     @pyqtSlot()
     def _on_preflight_success(self):
         # If the continue button is disabled then this is the result of a background preflight check
+        self.stop_animate_header()
+        self.header_icon.update_image('savetodisk.svg', QSize(64, 64))
+        self.header.setText(self.ready_header)
         if not self.continue_button.isEnabled():
             self.continue_button.clicked.disconnect()
             self.continue_button.clicked.connect(self._show_passphrase_request_message)
             self.continue_button.setEnabled(True)
+            self.continue_button.setFocus()
             return
 
         self._show_passphrase_request_message()
 
     @pyqtSlot(object)
     def _on_preflight_failure(self, error: ExportError):
+        self.stop_animate_header()
+        self.header_icon.update_image('savetodisk.svg', QSize(64, 64))
         self._update_dialog(error.status)
 
     @pyqtSlot()
     def _on_export_success(self):
+        self.stop_animate_activestate()
         self._show_success_message()
 
     @pyqtSlot(object)
     def _on_export_failure(self, error: ExportError):
+        self.stop_animate_activestate()
+        self.passphrase_field.setDisabled(False)
         self._update_dialog(error.status)
 
     def _update_dialog(self, error_status: str):
@@ -2890,6 +2998,7 @@ class ExportDialog(FramelessDialog):
                 self.continue_button.clicked.connect(self._show_generic_error_message)
 
             self.continue_button.setEnabled(True)
+            self.continue_button.setFocus()
         else:
             if self.error_status == ExportStatus.BAD_PASSPHRASE.value:
                 self._show_passphrase_request_message_again()
@@ -3136,6 +3245,7 @@ class SourceConversationWrapper(QWidget):
 
         self.source_uuid = source.uuid
         controller.source_deleted.connect(self._on_source_deleted)
+        controller.source_deletion_failed.connect(self._on_source_deletion_failed)
 
         # Set layout
         layout = QVBoxLayout()
@@ -3172,6 +3282,14 @@ class SourceConversationWrapper(QWidget):
             self.conversation_view.hide()
             self.reply_box.hide()
             self.waiting_delete_confirmation.show()
+
+    @pyqtSlot(str)
+    def _on_source_deletion_failed(self, source_uuid: str):
+        if self.source_uuid == source_uuid:
+            self.waiting_delete_confirmation.hide()
+            self.conversation_title_bar.show()
+            self.conversation_view.show()
+            self.reply_box.show()
 
 
 class ReplyBoxWidget(QWidget):
@@ -3309,7 +3427,7 @@ class ReplyBoxWidget(QWidget):
         try:
             self.update_authentication_state(authenticated)
         except sqlalchemy.orm.exc.ObjectDeletedError:
-            logger.error(
+            logger.debug(
                 "On authentication change, ReplyBoxWidget found its source had been deleted."
             )
             self.destroy()
@@ -3331,7 +3449,7 @@ class ReplyBoxWidget(QWidget):
             else:
                 self.refocus_after_sync = False
         except sqlalchemy.orm.exc.ObjectDeletedError:
-            logger.error("During sync, ReplyBoxWidget found its source had been deleted.")
+            logger.debug("During sync, ReplyBoxWidget found its source had been deleted.")
             self.destroy()
 
 
