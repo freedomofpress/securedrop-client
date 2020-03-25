@@ -5,6 +5,7 @@ are based upon the client testing descriptions here:
 https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-testing
 """
 import pytest
+from flaky import flaky
 from PyQt5.QtCore import Qt
 from .utils import get_safe_tempdir, get_test_context, USERNAME, PASSWORD
 from securedrop_client.gui.main import Window
@@ -26,6 +27,7 @@ def test_login_ensure_errors_displayed(qtbot, mocker):
     assert actual == expected
 
 
+@flaky
 @pytest.mark.vcr()  # Ensure any API network traffic is recorded/replayed.
 def test_login_as_journalist(qtbot, mocker):
     """

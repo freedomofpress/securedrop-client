@@ -2,10 +2,12 @@
 Functional test for logging out and then login again from offline mode.
 """
 import pytest
+from flaky import flaky
 from PyQt5.QtCore import Qt
 from .utils import get_safe_tempdir, get_logged_in_test_context, USERNAME, PASSWORD
 
 
+@flaky
 @pytest.mark.vcr()
 def test_login_from_offline(qtbot, mocker):
     """
