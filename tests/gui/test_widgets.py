@@ -11,6 +11,7 @@ from PyQt5.QtGui import QFocusEvent, QKeyEvent, QMovie
 from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QMessageBox, QMainWindow, \
     QLineEdit
+import sqlalchemy
 import sqlalchemy.orm.exc
 from sqlalchemy.orm import attributes, scoped_session, sessionmaker
 
@@ -479,6 +480,7 @@ def test_MainView_setup(mocker):
 
     assert mv.controller == controller
     mv.source_list.setup.assert_called_once_with(controller)
+    mv.source_list.delete_source_by_uuid.connect.assert_called_once_with(mv.delete_conversation)
 
 
 def test_MainView_show_sources_with_none_selected(mocker):
@@ -770,6 +772,25 @@ def test_SourceList_update_adds_new_sources(mocker):
     mock_sw.deleteLater.assert_not_called()
 
 
+def test_SourceList_initial_update_adds_new_sources(mocker):
+    """
+    Check a new SourceWidget for each passed-in source is created and no widgets are cleared or
+    removed.
+    """
+    sl = SourceList()
+
+    sl.clear = mocker.MagicMock()
+    sl.add_source = mocker.MagicMock()
+    sl.setItemWidget = mocker.MagicMock()
+    sl.currentRow = mocker.MagicMock(return_value=0)
+    sl.item = mocker.MagicMock()
+    sl.item().isSelected.return_value = True
+    sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), ]
+    sl.initial_update(sources)
+    sl.clear.assert_called_once_with()
+    sl.add_source.assert_called_once_with({}, sources, None, True)
+
+
 def test_SourceList_update_when_source_deleted(mocker, session, session_maker, homedir):
     """
     Test that SourceWidget.update raises an exception when its source has been deleted.
@@ -808,6 +829,19 @@ def test_SourceList_update_when_source_deleted(mocker, session, session_maker, h
     assert len(deleted_uuids) == 1
     assert source.uuid in deleted_uuids
     assert len(sl.source_widgets) == 0
+
+
+def test_SourceList_add_source_starts_timer(mocker, session_maker, homedir):
+    """
+    When the add_source method is called it schedules the addition of a source
+    to the source list via a single-shot QTimer.
+    """
+    sl = SourceList()
+    sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), ]
+    mock_timer = mocker.MagicMock()
+    with mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer):
+        sl.add_source({}, sources, None, False)
+    assert mock_timer.singleShot.call_count == 1
 
 
 def test_SourceList_update_when_source_deleted_crash(mocker, session, session_maker, homedir):
@@ -949,6 +983,110 @@ def test_SourceList_update_removes_item_from_beginning_of_list(mocker):
     assert len(sl.source_widgets) == 2
 
 
+def test_SourceList_add_source_closure_adds_sources(mocker):
+    """
+    The closure (function created within the add_source function) behaves in
+    the expected way given the context of the call to add_source.
+    """
+    sl = SourceList()
+    sl.controller = mocker.MagicMock()
+    sl.addItem = mocker.MagicMock()
+    sl.setItemWidget = mocker.MagicMock()
+    sl.setCurrentItem = mocker.MagicMock()
+
+    mock_sw = mocker.MagicMock()
+    mock_lwi = mocker.MagicMock()
+    mocker.patch('securedrop_client.gui.widgets.SourceWidget', mock_sw)
+    mocker.patch('securedrop_client.gui.widgets.QListWidgetItem', mock_lwi)
+    sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), ]
+    mock_timer = mocker.MagicMock()
+    with mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer):
+        sl.add_source({}, sources, 1, False)
+        # Now grab the function created within add_source:
+        inner_fn = mock_timer.singleShot.call_args_list[0][0][1]
+        # Ensure add_source is mocked to avoid recursion in the test and so we
+        # can spy on how it's called.
+        sl.add_source = mocker.MagicMock()
+        # Call the inner function (as if the timer had completed).
+        inner_fn()
+        assert mock_sw.call_count == 1
+        assert mock_lwi.call_count == 1
+        assert sl.addItem.call_count == 1
+        assert sl.setItemWidget.call_count == 1
+        assert len(sl.source_widgets) == 1
+        assert sl.setCurrentItem.call_count == 0
+        sl.add_source.assert_called_once_with({}, sources[1:], 1, False, 2)
+
+
+def test_SourceList_add_source_closure_sets_current_item(mocker):
+    """
+    The closure (function created within the add_source function) ensures that
+    if an item being added to the UI is the currently selected item and is
+    already selected in the UI, it is marked as such.
+    """
+    sl = SourceList()
+    sl.controller = mocker.MagicMock()
+    sl.addItem = mocker.MagicMock()
+    sl.setItemWidget = mocker.MagicMock()
+    sl.setCurrentItem = mocker.MagicMock()
+
+    mock_sw = mocker.MagicMock()
+    mock_lwi = mocker.MagicMock()
+    mocker.patch('securedrop_client.gui.widgets.SourceWidget', mock_sw)
+    mocker.patch('securedrop_client.gui.widgets.QListWidgetItem', mock_lwi)
+    mock_source = mocker.MagicMock()
+    mock_source.id = 1
+    sources = [mock_source, mocker.MagicMock(), mocker.MagicMock(), ]
+    mock_timer = mocker.MagicMock()
+    with mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer):
+        sl.add_source({}, sources, 1, True)
+        # Now grab the function created within add_source:
+        inner_fn = mock_timer.singleShot.call_args_list[0][0][1]
+        # Ensure add_source is mocked to avoid recursion in the test and so we
+        # can spy on how it's called.
+        sl.add_source = mocker.MagicMock()
+        # Call the inner function (as if the timer had completed).
+        inner_fn()
+        assert sl.setCurrentItem.call_count == 1
+
+
+def test_SourceList_add_source_closure_deletes_sources_when_finished(mocker):
+    """
+    The closure (function created within the add_source function) ensures that
+    if an item being added to the UI is the currently selected item and is
+    already selected in the UI, it is marked as such.
+    """
+    sl = SourceList()
+    sl.controller = mocker.MagicMock()
+    sl.addItem = mocker.MagicMock()
+    sl.setItemWidget = mocker.MagicMock()
+    sl.setCurrentItem = mocker.MagicMock()
+
+    sl.setCurrentItem(sl.itemAt(0, 0))  # select source with uuid='newer'
+    sl.update([factory.Source(uuid='new')])  # delete source with uuid='newer'
+    existing_sources = {
+        "uuid1": mocker.MagicMock()
+    }
+
+    sl.source_widgets = {
+        "uuid2": mocker.MagicMock()
+    }
+
+    sl.delete_source_by_uuid = mocker.MagicMock()
+
+    mock_timer = mocker.MagicMock()
+    with mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer):
+        sl.add_source(existing_sources, [], 1, True)
+        # Now grab the function created within add_source:
+        inner_fn = mock_timer.singleShot.call_args_list[0][0][1]
+        # Ensure add_source is mocked to avoid recursion in the test and so we
+        # can spy on how it's called.
+        sl.add_source = mocker.MagicMock()
+        # Call the inner function (as if the timer had completed).
+        inner_fn()
+        sl.delete_source_by_uuid.emit.assert_called_once_with("uuid1")
+
+
 def test_SourceList_set_snippet(mocker):
     """
     Handle the emitted event in the expected manner.
@@ -1040,6 +1178,26 @@ def test_SourceWidget_update_attachment_icon(mocker):
 
     sw.update()
     assert sw.paperclip.isHidden()
+
+
+def test_SourceWidget_update_raises_InvalidRequestError(mocker):
+    """
+    If the source no longer exists in the local data store, ensure the expected
+    exception is logged and re-raised.
+    """
+    controller = mocker.MagicMock()
+    source = factory.Source(document_count=1)
+    sw = SourceWidget(controller, source)
+    ex = sqlalchemy.exc.InvalidRequestError()
+    controller.session.refresh.side_effect = ex
+    mock_logger = mocker.MagicMock()
+    mocker.patch(
+        "securedrop_client.gui.widgets.logger",
+        mock_logger,
+    )
+    with pytest.raises(sqlalchemy.exc.InvalidRequestError):
+        sw.update()
+        assert mock_logger.error.call_count == 1
 
 
 def test_SourceWidget_set_snippet(mocker, session_maker, session, homedir):

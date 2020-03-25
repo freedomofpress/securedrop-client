@@ -696,6 +696,7 @@ class MainView(QWidget):
         """
         self.controller = controller
         self.source_list.setup(controller)
+        self.source_list.delete_source_by_uuid.connect(self.delete_conversation)
 
     def show_sources(self, sources: List[Source]):
         """
@@ -708,11 +709,7 @@ class MainView(QWidget):
         else:
             self.empty_conversation_view.show_no_sources_message()
             self.empty_conversation_view.show()
-
-        deleted_sources = self.source_list.update(sources)
-        for source_uuid in deleted_sources:
-            # Then call the function to remove the wrapper and its children.
-            self.delete_conversation(source_uuid)
+        self.source_list.update(sources)
 
     def on_source_changed(self):
         """
@@ -746,8 +743,6 @@ class MainView(QWidget):
         """
         try:
             logger.debug('Deleting SourceConversationWrapper for {}'.format(source_uuid))
-            conversation_wrapper = self.source_conversations[source_uuid]
-            conversation_wrapper.deleteLater()
             del self.source_conversations[source_uuid]
         except KeyError:
             logger.debug('No SourceConversationWrapper for {} to delete'.format(source_uuid))
@@ -903,6 +898,8 @@ class SourceList(QListWidget):
     }
     '''
 
+    delete_source_by_uuid = pyqtSignal(str)
+
     def __init__(self):
         super().__init__()
 
@@ -976,6 +973,77 @@ class SourceList(QListWidget):
                 self.setItemWidget(list_item, new_source)
 
         return deleted_uuids
+
+    def initial_update(self, sources: List[Source]):
+        """
+        Reset and update the list with the passed in list of sources.
+        """
+        # A flag to show if a source is currently selected (the current source
+        # doesn't have to be selected in a QListWidget -- it appears to default
+        # to whatever is in row 0, whether it's selected or not).
+        has_source_selected = False
+        if self.currentRow() > -1:
+            has_source_selected = self.item(self.currentRow()).isSelected()
+        current_source = self.get_current_source()
+        current_source_id = current_source and current_source.id
+        # Make a copy of the source_widgets that are currently displayed
+        # so that we can compare which widgets were removed. This means that
+        # the source was deleted, and we'll return this so we can also
+        # delete the corresponding SourceConversationWrapper.
+        existing_source_widgets = self.source_widgets.copy()
+
+        # When we call clear() to delete all SourceWidgets, we should
+        # also clear the source_widgets dict.
+        self.clear()
+        self.source_widgets = {}
+        sources.reverse()
+        self.add_source(existing_source_widgets, sources, current_source_id,
+                        has_source_selected)
+
+    def add_source(self, existing_source_widgets, sources, current_source_id,
+                   has_source_selected, slice_size=1):
+        """
+        Add a slice of sources, ensure the currently selected source is
+        retained and, if necessary, reschedule the addition of more sources.
+        If no more sources are left, work out the deleted sources and emit
+        deletion signal for each source to delete.
+        """
+
+        def schedule_source_management(slice_size=slice_size):
+            if not sources:
+                # No more sources to add, discover the deleted sources and
+                # delete them.
+                deleted_uuids = list(set(existing_source_widgets.keys()) -
+                                     set(self.source_widgets.keys()))
+                for source_uuid in deleted_uuids:
+                    self.delete_source_by_uuid.emit(source_uuid)
+                # Nothing more to do.
+                return
+            # Process the remaining "slice_size" number of sources.
+            sources_slice = sources[:slice_size]
+            for source in sources_slice:
+                new_source = SourceWidget(self.controller, source)
+                self.source_widgets[source.uuid] = new_source
+                list_item = QListWidgetItem(self)
+                list_item.setSizeHint(new_source.sizeHint())
+
+                self.addItem(list_item)
+                self.setItemWidget(list_item, new_source)
+
+                if source.id == current_source_id and has_source_selected:
+                    self.setCurrentItem(list_item)
+            # ATTENTION! 32 is an arbitrary number arrived at via
+            # experimentation. It adds plenty of sources, but doesn't block
+            # for a noticable amount of time.
+            new_slice_size = min(32, slice_size * 2)
+            # Call add_source again for the remaining sources.
+            self.add_source(existing_source_widgets, sources[slice_size:],
+                            current_source_id, has_source_selected,
+                            new_slice_size)
+
+        # Schedule the closure defined above in the next iteration of the
+        # Qt event loop (thus unblocking the UI).
+        QTimer.singleShot(1, schedule_source_management)
 
     def get_selected_source(self):
         if not self.selectedItems():
