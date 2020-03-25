@@ -696,7 +696,6 @@ class MainView(QWidget):
         """
         self.controller = controller
         self.source_list.setup(controller)
-        self.source_list.delete_source_by_uuid.connect(self.delete_conversation)
 
     def show_sources(self, sources: List[Source]):
         """
@@ -909,8 +908,6 @@ class SourceList(QListWidget):
     }
     '''
 
-    delete_source_by_uuid = pyqtSignal(str)
-
     def __init__(self):
         super().__init__()
 
@@ -989,7 +986,6 @@ class SourceList(QListWidget):
         """
         Initialise the list with the passed in list of sources.
         """
-        sources.reverse()
         self.add_source(sources)
 
     def add_source(self, sources, slice_size=1):
@@ -1010,7 +1006,7 @@ class SourceList(QListWidget):
                 list_item = QListWidgetItem(self)
                 list_item.setSizeHint(new_source.sizeHint())
 
-                self.addItem(list_item)
+                self.insertItem(0, list_item)
                 self.setItemWidget(list_item, new_source)
             # ATTENTION! 32 is an arbitrary number arrived at via
             # experimentation. It adds plenty of sources, but doesn't block

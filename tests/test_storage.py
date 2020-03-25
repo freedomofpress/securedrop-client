@@ -203,7 +203,9 @@ def test_update_local_storage(homedir, mocker, session_maker):
     local_reply = mocker.MagicMock()
     mock_session.query().all = mocker.Mock()
     mock_session.query().all.side_effect = [
-        [local_source], [local_file], [local_message], [local_reply]]
+        [local_file], [local_message], [local_reply]]
+    mock_session.query().order_by().all = mocker.Mock()
+    mock_session.query().order_by().all.side_effect = [[local_source]]
     src_fn = mocker.patch('securedrop_client.storage.update_sources')
     rpl_fn = mocker.patch('securedrop_client.storage.update_replies')
     file_fn = mocker.patch('securedrop_client.storage.update_files')

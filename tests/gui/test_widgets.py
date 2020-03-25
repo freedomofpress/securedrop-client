@@ -480,7 +480,6 @@ def test_MainView_setup(mocker):
 
     assert mv.controller == controller
     mv.source_list.setup.assert_called_once_with(controller)
-    mv.source_list.delete_source_by_uuid.connect.assert_called_once_with(mv.delete_conversation)
 
 
 def test_MainView_show_sources_with_none_selected(mocker):
@@ -1003,7 +1002,7 @@ def test_SourceList_add_source_closure_adds_sources(mocker):
     """
     sl = SourceList()
     sl.controller = mocker.MagicMock()
-    sl.addItem = mocker.MagicMock()
+    sl.insertItem = mocker.MagicMock()
     sl.setItemWidget = mocker.MagicMock()
     sl.setCurrentItem = mocker.MagicMock()
 
@@ -1024,7 +1023,7 @@ def test_SourceList_add_source_closure_adds_sources(mocker):
         inner_fn()
         assert mock_sw.call_count == 1
         assert mock_lwi.call_count == 1
-        assert sl.addItem.call_count == 1
+        assert sl.insertItem.call_count == 1
         assert sl.setItemWidget.call_count == 1
         assert len(sl.source_widgets) == 1
         assert sl.setCurrentItem.call_count == 0
