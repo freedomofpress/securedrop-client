@@ -1178,6 +1178,25 @@ def test_SourceWidget_update_raises_InvalidRequestError(mocker):
         assert mock_logger.error.call_count == 1
 
 
+def test_SourceWidget_set_snippet_draft_only(mocker, session_maker, session, homedir):
+    """
+    Snippets/previews do not include draft messages.
+    """
+    mock_gui = mocker.MagicMock()
+    controller = logic.Controller('http://localhost', mock_gui, session_maker, homedir)
+    source = factory.Source(document_count=1)
+    f = factory.File(source=source)
+    reply = factory.DraftReply(source=source)
+    session.add(f)
+    session.add(source)
+    session.add(reply)
+    session.commit()
+
+    sw = SourceWidget(controller, source)
+    sw.set_snippet(source.uuid, f.filename)
+    assert sw.preview.text() == f.filename
+
+
 def test_SourceWidget_set_snippet(mocker, session_maker, session, homedir):
     """
     Snippets are set as expected.

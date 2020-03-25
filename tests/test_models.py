@@ -142,6 +142,33 @@ def test_source_collection():
     assert source.collection[2] == message
 
 
+def test_source_server_collection():
+    # Create some test submissions and replies
+    source = factory.Source()
+    file_ = File(source=source, uuid="test", size=123, filename="2-test.doc.gpg",
+                 download_url='http://test/test')
+    message = Message(source=source, uuid="test", size=123, filename="3-test.doc.gpg",
+                      download_url='http://test/test')
+    user = User(username='hehe')
+    reply = Reply(source=source, journalist=user, filename="1-reply.gpg",
+                  size=1234, uuid='test')
+    draft_reply = DraftReply(source=source, journalist=user,
+                             uuid='test',
+                             timestamp=datetime.datetime(2002, 6, 6, 6, 0))
+    source.files = [file_]
+    source.messages = [message]
+    source.replies = [reply]
+    source.draftreplies = [draft_reply]
+
+    # Now these items should be in the source collection in the proper order
+    assert source.server_collection[0] == reply
+    assert source.server_collection[1] == file_
+    assert source.server_collection[2] == message
+
+    # Drafts do not appear in the server_collection, they are local only.
+    assert draft_reply not in source.server_collection
+
+
 def test_source_collection_ordering_with_multiple_draft_replies():
     # Create some test submissions, replies, and draft replies.
     source = factory.Source()
