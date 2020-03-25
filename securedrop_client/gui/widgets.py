@@ -1228,10 +1228,10 @@ class SourceWidget(QWidget):
             self.timestamp.setText(_(arrow.get(self.source.last_updated).format('DD MMM')))
             self.name.setText(self.source.journalist_designation)
 
-            if not self.source.collection:
+            if not self.source.server_collection:
                 self.set_snippet(self.source_uuid, '')
             else:
-                last_collection_obj = self.source.collection[-1]
+                last_collection_obj = self.source.server_collection[-1]
                 self.set_snippet(self.source_uuid, str(last_collection_obj))
 
             if self.source.document_count == 0:

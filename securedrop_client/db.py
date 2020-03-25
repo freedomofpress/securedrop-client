@@ -50,8 +50,8 @@ class Source(Base):
 
     @property
     def collection(self) -> List:
-        """Return the list of submissions and replies for this source, sorted
-        in ascending order by the filename/interaction count."""
+        """Return the list of submissions, replies, messages, and drafts for this
+        source, sorted in ascending order by the filename/interaction count."""
         collection = []  # type: List
         collection.extend(self.messages)
         collection.extend(self.files)
@@ -61,6 +61,18 @@ class Source(Base):
         collection.sort(key=lambda x: (x.file_counter,
                                        getattr(x, "timestamp",
                                                datetime.datetime(datetime.MINYEAR, 1, 1))))
+        return collection
+
+    @property
+    def server_collection(self) -> List:
+        """Return the list of submissions, replies, and messages for this source.
+        These are the items that have been either successfully sent to the server,
+        or they have been retrieved from the server."""
+        collection = []  # type: List
+        collection.extend(self.messages)
+        collection.extend(self.files)
+        collection.extend(self.replies)
+        collection.sort(key=lambda x: x.file_counter)
         return collection
 
     @property
