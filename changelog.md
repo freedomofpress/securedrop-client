@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.1.4
+
+* Use `--view-only` when opening files in a DVM, update `mimeapps.list` (#972).
+* Add user icon to clickable area for logout (#976).
+* Animate active state on frameless dialog boxes (#940).
+* String updates to print/export dialogs (#968).
+* Automatically resize status bar to width of error message string (#977).
+* Clean up cleanup in run.sh (#949).
+* Make `LoginDialog` a modal (#978).
+* Make `ExportDialog`, `PrintDialog` modals (#970).
+* Switch button order in `ExportDialog`, `PrintDialog` (#989).
+* Focus passphrase field in `ExportDialog` (#994).
+* Disable cancel button before exporting a file (#1011).
+* Ensure logging does not log sensitive info (#965).
+* Reset source pending status upon unexpected error when deleting sources (#979).
+* Fix star hover state (#1003).
+* No longer show drafts in preview snippets (#1002).
+* No longer access source database object in snippet (#964).
+* Resolve blocked UI on client start for a large number of sources (#944).
+* Add functional tests (#788, #957, #983, #1001).
+* Bug fix: Show pending deletion status right after deletion job enqueued (#955).
+* Bug fix: Fix starring behavior (#952).
+* Bug fix: Prevent duplicate file downloads at the UI level (#974).
+* Bug fix: Stop selecting a source on sync (#981).
+* Bug fix: Fix horizontal scrollbar in source list (#982).
+* Bug fix: Update filesize after download and decryption (#969).
+* Bug fix: Prevent tooltips on source preview labels (#1006).
+
 ## 0.1.3
 
 * Update login UI messages (#903).
