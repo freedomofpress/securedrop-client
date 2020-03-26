@@ -1175,7 +1175,7 @@ class SourceWidget(QWidget):
         summary_layout.setSpacing(0)
         self.name = QLabel()
         self.name.setObjectName('source_name')
-        self.preview = SecureQLabel(max_length=self.PREVIEW_WIDTH, with_tooltip=False)
+        self.preview = SecureQLabel(max_length=self.PREVIEW_WIDTH)
         self.preview.setObjectName('preview')
         self.preview.setFixedSize(QSize(self.PREVIEW_WIDTH, self.PREVIEW_HEIGHT))
         self.waiting_delete_confirmation = QLabel('Deletion in progress')
@@ -2248,7 +2248,9 @@ class FileWidget(QWidget):
         self.export_button.clicked.connect(self._on_export_clicked)
         self.print_button.clicked.connect(self._on_print_clicked)
 
-        self.file_name = SecureQLabel(wordwrap=False, max_length=self.FILENAME_WIDTH_PX)
+        self.file_name = SecureQLabel(
+            wordwrap=False, max_length=self.FILENAME_WIDTH_PX, with_tooltip=True
+        )
         self.file_name.setObjectName('file_name')
         self.file_name.installEventFilter(self)
         self.file_name.setCursor(QCursor(Qt.PointingHandCursor))

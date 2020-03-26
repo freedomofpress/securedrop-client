@@ -2373,6 +2373,29 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_matches(mocker, sou
     assert not fw.file_name.isHidden()
 
 
+def test_FileWidget_filename_truncation(mocker, source, session):
+    """
+    FileWidget should truncate long filenames.
+
+    The full filename should be available in the tooltip.
+    """
+    filename = "1-{}".format("x" * 1000)
+    file = factory.File(source=source['source'], filename=filename)
+    session.add(file)
+    session.commit()
+
+    get_file = mocker.MagicMock(return_value=file)
+    controller = mocker.MagicMock(get_file=get_file)
+
+    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
+    fw.update = mocker.MagicMock()
+
+    fw._on_file_downloaded(file.source.uuid, file.uuid, str(file))
+
+    assert fw.file_name.text().endswith("...")
+    assert fw.file_name.toolTip() == filename
+
+
 def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(
     mocker, homedir, session, source,
 ):
