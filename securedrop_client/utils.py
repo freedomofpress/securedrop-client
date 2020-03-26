@@ -1,5 +1,10 @@
-import os
+import logging
 import math
+import os
+import time
+
+from contextlib import contextmanager
+from typing import Generator
 
 
 def safe_mkdir(sdc_home: str, relative_path: str = None) -> None:
@@ -67,3 +72,12 @@ def humanize_filesize(filesize: int) -> str:
         return '{}KB'.format(math.floor(filesize / 1024))
     else:
         return '{}MB'.format(math.floor(filesize / 1024 ** 2))
+
+
+@contextmanager
+def chronometer(logger: logging.Logger, description: str) -> Generator:
+    start = time.perf_counter()
+    yield
+    elapsed = time.perf_counter() - start
+
+    logger.debug(f"{description} duration: {elapsed:.4f}s")
