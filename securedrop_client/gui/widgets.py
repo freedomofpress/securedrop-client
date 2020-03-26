@@ -3095,6 +3095,7 @@ class ConversationView(QWidget):
         passed into this method in case of a mismatch between where the widget
         has been and now is in terms of its index in the conversation.
         """
+        self.setUpdatesEnabled(False)
         self.controller.session.refresh(self.source)
 
         # Keep a temporary copy of the current conversation so we can delete any
@@ -3141,6 +3142,8 @@ class ConversationView(QWidget):
             self.current_messages.pop(item_widget.uuid)
             item_widget.deleteLater()
             self.conversation_layout.removeWidget(item_widget)
+
+        self.setUpdatesEnabled(True)
 
     def add_file(self, file: File, index):
         """
