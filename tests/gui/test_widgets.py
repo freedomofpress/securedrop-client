@@ -769,7 +769,7 @@ def test_SourceList_update_adds_new_sources(mocker):
     mock_sw = mocker.MagicMock()
     mock_lwi = mocker.MagicMock()
     mocker.patch('securedrop_client.gui.widgets.SourceWidget', mock_sw)
-    mocker.patch('securedrop_client.gui.widgets.QListWidgetItem', mock_lwi)
+    mocker.patch('securedrop_client.gui.widgets.SourceListWidgetItem', mock_lwi)
 
     sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), ]
     sl.update(sources)
@@ -1009,7 +1009,7 @@ def test_SourceList_add_source_closure_adds_sources(mocker):
     mock_sw = mocker.MagicMock()
     mock_lwi = mocker.MagicMock()
     mocker.patch('securedrop_client.gui.widgets.SourceWidget', mock_sw)
-    mocker.patch('securedrop_client.gui.widgets.QListWidgetItem', mock_lwi)
+    mocker.patch('securedrop_client.gui.widgets.SourceListWidgetItem', mock_lwi)
     sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), ]
     mock_timer = mocker.MagicMock()
     with mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer):
@@ -1044,7 +1044,7 @@ def test_SourceList_add_source_closure_exits_on_no_more_sources(mocker):
     mock_sw = mocker.MagicMock()
     mock_lwi = mocker.MagicMock()
     mocker.patch('securedrop_client.gui.widgets.SourceWidget', mock_sw)
-    mocker.patch('securedrop_client.gui.widgets.QListWidgetItem', mock_lwi)
+    mocker.patch('securedrop_client.gui.widgets.SourceListWidgetItem', mock_lwi)
     sources = []
     mock_timer = mocker.MagicMock()
     with mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer):
