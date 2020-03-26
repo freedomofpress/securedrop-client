@@ -889,6 +889,22 @@ class EmptyConversationView(QWidget):
         self.no_source_selected.show()
 
 
+class SourceListWidgetItem(QListWidgetItem):
+
+    def __lt__(self, other):
+        """
+        Used for ordering widgets by timestamp of last interaction.
+        """
+        lw = self.listWidget()
+        me = lw.itemWidget(self)
+        them = lw.itemWidget(other)
+        if me and them:
+            my_ts = arrow.get(me.source.last_updated)
+            other_ts = arrow.get(them.source.last_updated)
+            return my_ts < other_ts
+        return True
+
+
 class SourceList(QListWidget):
     """
     Displays the list of sources.
@@ -920,6 +936,9 @@ class SourceList(QListWidget):
         # Set layout.
         layout = QVBoxLayout(self)
         self.setLayout(layout)
+
+        # Enable ordering.
+        self.setSortingEnabled(True)
 
         # To hold references to SourceWidget instances indexed by source UUID.
         self.source_widgets = {}
@@ -975,11 +994,13 @@ class SourceList(QListWidget):
                 new_source = SourceWidget(self.controller, source)
                 self.source_widgets[source.uuid] = new_source
 
-                list_item = QListWidgetItem()
+                list_item = SourceListWidgetItem()
                 self.insertItem(0, list_item)
                 list_item.setSizeHint(new_source.sizeHint())
                 self.setItemWidget(list_item, new_source)
 
+        # Sort..!
+        self.sortItems(Qt.DescendingOrder)
         return deleted_uuids
 
     def initial_update(self, sources: List[Source]):
@@ -1003,7 +1024,7 @@ class SourceList(QListWidget):
             for source in sources_slice:
                 new_source = SourceWidget(self.controller, source)
                 self.source_widgets[source.uuid] = new_source
-                list_item = QListWidgetItem(self)
+                list_item = SourceListWidgetItem(self)
                 list_item.setSizeHint(new_source.sizeHint())
 
                 self.insertItem(0, list_item)
