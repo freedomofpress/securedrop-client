@@ -154,7 +154,7 @@ class SecureQLabel(QLabel):
         flags: Union[Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags(),
         wordwrap: bool = True,
         max_length: int = 0,
-        with_tooltip: bool = True,
+        with_tooltip: bool = False,
     ):
         super().__init__(parent, flags)
         self.wordwrap = wordwrap
@@ -166,11 +166,11 @@ class SecureQLabel(QLabel):
 
     def setText(self, text: str) -> None:
         self.setTextFormat(Qt.PlainText)
-        if self.with_tooltip:
-            tooltip_label = SecureQLabel(text, with_tooltip=False)
-            self.setToolTip(tooltip_label.text())
         elided_text = self.get_elided_text(text)
         self.elided = True if elided_text != text else False
+        if self.elided and self.with_tooltip:
+            tooltip_label = SecureQLabel(text)
+            self.setToolTip(tooltip_label.text())
         super().setText(elided_text)
 
     def get_elided_text(self, full_text: str) -> str:
