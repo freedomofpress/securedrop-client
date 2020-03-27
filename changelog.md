@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.3
+
+  * Adds gnome-disks to sd-devices
+  * Documentation updates
+
 ## 0.2.2
 
   * Update mimetype handling
