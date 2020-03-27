@@ -1,0 +1,928 @@
+interactions:
+- request:
+    body: '{"username": "journalist", "passphrase": "correct horse battery staple
+      profanity oil chewy", "one_time_code": "079978"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '119'
+      User-Agent:
+      - python-requests/2.20.0
+    method: POST
+    uri: http://localhost:8081/api/v1/token
+  response:
+    body:
+      string: "{\n  \"expiration\": \"2020-03-27T16:55:59.423617Z\", \n  \"journalist_first_name\"\
+        : null, \n  \"journalist_last_name\": null, \n  \"journalist_uuid\": \"6c1a2399-d2ff-4197-a5b1-9abcf8a0cac8\"\
+        , \n  \"token\": \"eyJpYXQiOjE1ODUyOTkzNTksImFsZyI6IkhTMjU2IiwiZXhwIjoxNTg1MzI4MTU5fQ.eyJpZCI6MX0.PfR7DLvYiRtdjPkhCWhrDniPY6OG3AMvwT9ylP9zksg\"\
+        \n}\n"
+    headers:
+      Content-Length:
+      - '317'
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 27 Mar 2020 08:55:59 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJpYXQiOjE1ODUyOTkzNTksImFsZyI6IkhTMjU2IiwiZXhwIjoxNTg1MzI4MTU5fQ.eyJpZCI6MX0.PfR7DLvYiRtdjPkhCWhrDniPY6OG3AMvwT9ylP9zksg
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/sources
+  response:
+    body:
+      string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/add_star\"\
+        , \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n    \
+        \  \"is_starred\": false, \n      \"journalist_designation\": \"roughshod\
+        \ constructivism\", \n      \"key\": {\n        \"fingerprint\": \"DD8C1EFFC19BFC3F32CC0A5189AC3263F4EE1851\"\
+        , \n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmQINBFGRfoABEADI7Y920jwWYgNdAr/okN/geYvoJw2CH9FiZfuSsBeW93EYcp2i\\\
+        nxWcJ5L4yZTEqewY9HKsyndwbQORzgUYDRUOVaHJVCFAn1iBD6GuAUnGhHNvHHe7h\\nFTh+SM9hZgzcPHLWJJqfY7dvYfPkuw+E+/SleREPo2ubXHVIF1/lnQwGWP6sqCPt\\\
+        n0XLdzo9X0IBHawkHPVsYjSMbiv5yhGnMLm9l0oOhe9ABAiiwAr43KF8c3vZq3NYj\\nnYufIwYkPibnqIiF8GCXky06rO689laqj+6gthSDNhmWrqIuWTgiBvVhVq7ewF12\\\
+        nBUdWICRiA5m1GM06Whdph0c0+kHgot0tPYvZgTcgwtG+w8DAgBmH8cS0BSuTcTz+\\n0Q0d9sZWFxpqiZzRaGq+NA03gHFP23gzX/UD/qO7l68cnH//d2z8ONKq1TpEnB43\\\
+        njbXRQYK7PbKuCK76HFUa738I86D/GKERYOwhHIL/acJVYyiV9VjRI1owW5VS5koJ\\nhrFCDmfB+dS0rhomUIsznbtFq3p5QdBLCBuCH1PIP/KIvdh2ee8c2fFEf13n7aA2\\\
+        nZ1Z5DyO+yVdTgD/TCriJStBcKgNjz3pyzzk1NPiLDo2eNc0TF7/Ywr64Ei1nb4lQ\\nOur4D2msRS0NfF+uPcX5exATrLvwtHNdCud9a1ed8w+yF9juhU79XcVmiQARAQAB\\\
+        ntHxBdXRvZ2VuZXJhdGVkIEtleSA8TjVPN1ZJN1dUU0ZRVVozVUJLNUZERFlDNlc2\\nT1ZXTkpRRVVMTUFPUkNDSFM1T0pMWVVWQ0lNNE9YVFFZRUZXWUxYT1NEV0JEWk1E\\\
+        nT0hBT0hINEtRQkJHTVpWQldRSE41VjREWVRIUT0+iQI3BBMBCgAhBQJRkX6AAhsv\\nBQsJCAcCBhUICQoLAgQWAgMBAh4BAheAAAoJEImsMmP07hhRnIQQAIOnWIUhxtfT\\\
+        n9DqPpkSLEbkvjOUDkJNGd0MkBK2reO7PnXirzivx77jNqAx4QL7xqjDSWMxN8zcd\\nRHWGLxm6JWgfKJiOVlcFiRm4MdcFgy2JhlmpOy1DUZsVG/J2ZuAPXilPmWBuKGvj\\\
+        nBjsXhbxRte4GWS2Uupb2orWumVtrw6QV3WaFVxy3xwQFlAi9tTzK8LrZKv7cqwOq\\nMZP+tIYa8opp8koqKEEmackwFk9esSOApW56DhiYzyUoMffsjmljo3DtlqqCbt7q\\\
+        nhdcqoj1CWib/k4hwGWBhJaa9GPI+5CjwRXYxmYXxfQcEm471u1s/cDEjzlaoXCkp\\n9yxwjRTRv9HD0xgza9uLp4w0QS0LPkj/XNnNJwrUrQtvsHs2YGuwFlpr1VEJmUkn\\\
+        nFXb7xnDfNeldJL2DUM4Bl0b6DqTb4uAUrA6MFtBySW1IHC2P2y9BHN+aFrVmSBxs\\nGSgHrPG9ZNjgkVRRwAshVZtkBVCMk8TJzKE8tDexvWB0tZpiKAbbUrsOd3/OcI5J\\\
+        n+jiU+lFyZyyPFSndgolqJ9u4NVLY1O00d3I0QTD1DJOdGH4IKdndz+oVlb38tw5a\\nJqiQGVdChJCMWS5UTt1w5pt9VQyXqyuCIjF8IL4w3pDAhpZofRJkiAV0vR0K+KRI\\\
+        nuXowq42FcM4JdnxQintAXP6qiExJOgW/\\n=QZDE\\n-----END PGP PUBLIC KEY BLOCK-----\\\
+        n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\": \"2020-03-27T08:54:40.168833Z\"\
+        , \n      \"number_of_documents\": 0, \n      \"number_of_messages\": 2, \n\
+        \      \"remove_star_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/remove_star\"\
+        , \n      \"replies_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/replies\"\
+        , \n      \"submissions_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/submissions\"\
+        , \n      \"url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2\"\
+        , \n      \"uuid\": \"383dc7f6-2591-4a7c-9c7e-4fca375b2bc2\"\n    }, \n  \
+        \  {\n      \"add_star_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/add_star\"\
+        , \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n    \
+        \  \"is_starred\": false, \n      \"journalist_designation\": \"addictive\
+        \ granddaughter\", \n      \"key\": {\n        \"fingerprint\": \"C2A2FF145A20816F4A041A5558227BDEC51347AB\"\
+        , \n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmQINBFGRfoABEAC67oL1cT6gV9YT+nqVkznK0LsOqx3cwDuFMtF7hJHANLHeYQAo\\\
+        norfoqav3TUXgIewfvOu7nTBBSUX9pJeRwV9epPNp4eCBVXzIa9FzKW9DbbtbEfdz\\ndCMbRmfpJJlu/8jOaVja2rz1ZGeoG/xk/LUP7eiGNOU9s5KeGtlnTvB/cLdmWxep\\\
+        ni2WHVRJb6dALrZyvy7ocxmt9Ms6z4zTzPiM1BP7LOkM/b3PwF1wEWZMWEIVCPPRx\\nQO+dnCn1lIgoF+a1dEcK/qF+DfawHm41X6H0BsD1ob/ZVC8a4RRrWMy3m2Vl807L\\\
+        ndHvWwyOkIvW0E9RD4EUQZXWR3Fh5ZoHhWPNb4dj93pUCtlzBBGCxHVNWhHEKyMG4\\nZT6bGjNdATPg4TTGBr6i9EV8HLxE8AMoGlWTC9Sn8+XCfwrBxjSUienMj4QSjcXp\\\
+        nVF68mpkRoBsdF62daTwtY9sVIbKisGfPLI3/c2eLDwZLFzYRDUnSbHaYHDbZSnbv\\nIXGcocUjzreu7u74w/2/b6SpjhrXO1iA4comqDG/W2amnKeucbZO8qYDVD038+Gf\\\
+        nhpYHtdKnKzF5cbIhHw5KLDQG9Qn9dz685PXfD99Gkju1UQh5NK0S8X5hKnlc8Yn3\\nGuH2seBsIMQzgItqVB5t7tT/T+5P4MAapfyXRfgkvVb6LJUWo78zVM/ILwARAQAB\\\
+        ntHxBdXRvZ2VuZXJhdGVkIEtleSA8TjZNRkUzRUFGWkVQUllXVVNBRFNMTUpKV0dD\\nM1pDVkpZRFJNT1lBVFJNVUFKUE5YNDVQMzdWVVozSlRTNlZZWkE1MlJTSkc2Mk41\\\
+        nNE1ZR1k2RkRLV1pEMjZHSkYyWlFSQlBHWkhaUT0+iQI3BBMBCgAhBQJRkX6AAhsv\\nBQsJCAcCBhUICQoLAgQWAgMBAh4BAheAAAoJEFgie97FE0ersS8P/R/IcARdct4W\\\
+        nI5tV89f1b5l8MUhnIRlcrRsG0TBuVdMTJ/pETf5Y8wL1nJcOWG+GnjLwtxICJl+T\\n98Ya3eVFcBG3UVKGXtDxEEIzmYP5l8YUlgBIlQcCNKxo1kSx/98uENlIo8SYk1wm\\\
+        nAvU5pU0VoWnmYvMGXGG06V1mh3t2Jx073WLmIjtVuwFAMahVYV1yMIPS7yjIcXSv\\nyJ9GtWDPZR3+8Sbri4zQ2ocxOjrYfo2KyR5wW1I7N6vpyabkGNQWqraP6Jiol3OP\\\
+        npT9wnXV5BmmDjavNQFiYSLaTOPvAth9pqqVFdIQNpKz5Y2OCZUlYuHYh11iGkwIf\\nBkbWTaieBxe+az7gTsrjW4wb4quRcoeXjmv+Anvh5rYZ/205eJSzdOubRmxZP0Hn\\\
+        n+qXRNqIsknbAoIjmWX/pbeVDjy8cmIRrajdU0feU0aJ8qYhfGr8T/A6yA+pJEZk5\\ncoY0+ljfsM/lg3/CuZ+89Gzow3311WPpHf6cdHg69cRiYoXN+40dCaBg9Gux8p2H\\\
+        nob0kvPITyx7SbYdxYDXjOnuNJ5tQDyq2utiuYNEOV/XNnH6w5/Q5k2/CdBeUiDk/\\n/vEtCSK3JYJLgjr0K5xDyJqb2vWrgjInxqqRdWB20tLzyl9j+378RtVoCv7BOdLe\\\
+        n0AGDwB8IQgm8HW6GQCTStNSUT5i78V96\\n=LTVZ\\n-----END PGP PUBLIC KEY BLOCK-----\\\
+        n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\": \"2020-03-27T08:54:43.111572Z\"\
+        , \n      \"number_of_documents\": 0, \n      \"number_of_messages\": 2, \n\
+        \      \"remove_star_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/remove_star\"\
+        , \n      \"replies_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/replies\"\
+        , \n      \"submissions_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/submissions\"\
+        , \n      \"url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7\"\
+        , \n      \"uuid\": \"afac0867-ec17-49cf-83dd-afdeab89a5d7\"\n    }\n  ]\n\
+        }\n"
+    headers:
+      Content-Length:
+      - '5362'
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 27 Mar 2020 08:55:59 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJpYXQiOjE1ODUyOTkzNTksImFsZyI6IkhTMjU2IiwiZXhwIjoxNTg1MzI4MTU5fQ.eyJpZCI6MX0.PfR7DLvYiRtdjPkhCWhrDniPY6OG3AMvwT9ylP9zksg
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/submissions
+  response:
+    body:
+      string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/submissions/67350497-9063-4dac-b494-91ce30efdf4a/download\"\
+        , \n      \"filename\": \"1-roughshod_constructivism-msg.gpg\", \n      \"\
+        is_read\": false, \n      \"size\": 627, \n      \"source_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2\"\
+        , \n      \"submission_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/submissions/67350497-9063-4dac-b494-91ce30efdf4a\"\
+        , \n      \"uuid\": \"67350497-9063-4dac-b494-91ce30efdf4a\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/submissions/2c7bd005-1fce-4b92-8928-ae9c72900d2e/download\"\
+        , \n      \"filename\": \"2-roughshod_constructivism-msg.gpg\", \n      \"\
+        is_read\": false, \n      \"size\": 694, \n      \"source_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2\"\
+        , \n      \"submission_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/submissions/2c7bd005-1fce-4b92-8928-ae9c72900d2e\"\
+        , \n      \"uuid\": \"2c7bd005-1fce-4b92-8928-ae9c72900d2e\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/submissions/3f806820-4ec9-44b0-ba84-d04a4ac3757a/download\"\
+        , \n      \"filename\": \"1-addictive_granddaughter-msg.gpg\", \n      \"\
+        is_read\": false, \n      \"size\": 627, \n      \"source_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7\"\
+        , \n      \"submission_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/submissions/3f806820-4ec9-44b0-ba84-d04a4ac3757a\"\
+        , \n      \"uuid\": \"3f806820-4ec9-44b0-ba84-d04a4ac3757a\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/submissions/eef5f551-2757-4e46-b243-cc0be9199daa/download\"\
+        , \n      \"filename\": \"2-addictive_granddaughter-msg.gpg\", \n      \"\
+        is_read\": false, \n      \"size\": 694, \n      \"source_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7\"\
+        , \n      \"submission_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/submissions/eef5f551-2757-4e46-b243-cc0be9199daa\"\
+        , \n      \"uuid\": \"eef5f551-2757-4e46-b243-cc0be9199daa\"\n    }\n  ]\n\
+        }\n"
+    headers:
+      Content-Length:
+      - '2075'
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 27 Mar 2020 08:55:59 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJpYXQiOjE1ODUyOTkzNTksImFsZyI6IkhTMjU2IiwiZXhwIjoxNTg1MzI4MTU5fQ.eyJpZCI6MX0.PfR7DLvYiRtdjPkhCWhrDniPY6OG3AMvwT9ylP9zksg
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/replies
+  response:
+    body:
+      string: "{\n  \"replies\": [\n    {\n      \"filename\": \"3-roughshod_constructivism-reply.gpg\"\
+        , \n      \"is_deleted_by_source\": false, \n      \"journalist_first_name\"\
+        : null, \n      \"journalist_last_name\": null, \n      \"journalist_username\"\
+        : \"journalist\", \n      \"journalist_uuid\": \"6c1a2399-d2ff-4197-a5b1-9abcf8a0cac8\"\
+        , \n      \"reply_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/replies/c7f65bdf-e682-4994-b4e0-55288308f05e\"\
+        , \n      \"size\": 1149, \n      \"source_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2\"\
+        , \n      \"uuid\": \"c7f65bdf-e682-4994-b4e0-55288308f05e\"\n    }, \n  \
+        \  {\n      \"filename\": \"4-roughshod_constructivism-reply.gpg\", \n   \
+        \   \"is_deleted_by_source\": false, \n      \"journalist_first_name\": null,\
+        \ \n      \"journalist_last_name\": null, \n      \"journalist_username\"\
+        : \"journalist\", \n      \"journalist_uuid\": \"6c1a2399-d2ff-4197-a5b1-9abcf8a0cac8\"\
+        , \n      \"reply_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/replies/79c368ac-6057-4a25-9fe2-8b982b73a543\"\
+        , \n      \"size\": 1218, \n      \"source_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2\"\
+        , \n      \"uuid\": \"79c368ac-6057-4a25-9fe2-8b982b73a543\"\n    }, \n  \
+        \  {\n      \"filename\": \"3-addictive_granddaughter-reply.gpg\", \n    \
+        \  \"is_deleted_by_source\": false, \n      \"journalist_first_name\": null,\
+        \ \n      \"journalist_last_name\": null, \n      \"journalist_username\"\
+        : \"journalist\", \n      \"journalist_uuid\": \"6c1a2399-d2ff-4197-a5b1-9abcf8a0cac8\"\
+        , \n      \"reply_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/replies/67156c2a-51a0-4854-a33e-057c20d7e7d6\"\
+        , \n      \"size\": 1149, \n      \"source_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7\"\
+        , \n      \"uuid\": \"67156c2a-51a0-4854-a33e-057c20d7e7d6\"\n    }, \n  \
+        \  {\n      \"filename\": \"4-addictive_granddaughter-reply.gpg\", \n    \
+        \  \"is_deleted_by_source\": false, \n      \"journalist_first_name\": null,\
+        \ \n      \"journalist_last_name\": null, \n      \"journalist_username\"\
+        : \"journalist\", \n      \"journalist_uuid\": \"6c1a2399-d2ff-4197-a5b1-9abcf8a0cac8\"\
+        , \n      \"reply_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/replies/b9f3768d-5972-4649-96ef-1a79ac39e71c\"\
+        , \n      \"size\": 1217, \n      \"source_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7\"\
+        , \n      \"uuid\": \"b9f3768d-5972-4649-96ef-1a79ac39e71c\"\n    }\n  ]\n\
+        }\n"
+    headers:
+      Content-Length:
+      - '2291'
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 27 Mar 2020 08:55:59 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJpYXQiOjE1ODUyOTkzNTksImFsZyI6IkhTMjU2IiwiZXhwIjoxNTg1MzI4MTU5fQ.eyJpZCI6MX0.PfR7DLvYiRtdjPkhCWhrDniPY6OG3AMvwT9ylP9zksg
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/submissions/67350497-9063-4dac-b494-91ce30efdf4a/download
+  response:
+    body:
+      string: !!binary |
+        hQIMA8PnxMCiIBsqAQ//WBjRc+cH3emeul85iNUh4DGc0N0T5duDB5cKb/VMGDwU3FmWJqUtz6eQ
+        vsl+ooABvMEoWTM6MHNUSDQObMbqlHwuPLpbwwl9/gR6mQAOXWKRLXZgBX2ziwEn9Q5Ac+YAqOGi
+        FT0n2pQd7D3fFGgY4AUqBiZTzI1hb5CAXpmZGiQp6uk4pQRBWQ2qv8l5SdI5DR1DJaqz2H8hMzuD
+        gGSljUh8MNGgFh28x0ALEZu1VYL2japrtvZ0at8AzTKHTLCwrNHM33wgciTOj1QyxpbJXRWV4z6/
+        D875COPf5RDd2v8KDLuSCDD6Zc9egod/SmwHL61kKs4ujGDAAxHea4df8Ejb/gr5/nPE+7OLy/y9
+        JCGdNu7puo5awkMBu+gTjJvLtZmg4Q/J+/+CA6NtG/J+FY9kHllcsId9fFQz+kmkM8+T0somjLOi
+        xdjiGGQCvQxpB4N03RXj42/yKr/sQrSymzkR9xu+/GgHw2zY770v+4wf8N45T5jV2FurJWypQn2v
+        9pZ6EoYMH6cJhIbT5PSC5nraWCpQ0iQL9glkAcJI+UsQ1Szm1YcM/nv3QYfb61X7KulKhQ3xM+kn
+        +6xzPmH1wmW3txhge4WdxIxUxVSg/XXGNsPN9Os3+BPBee87jDlrIR9c7x/kAJrppvPvRNWC9Dzo
+        pbt5bcgWFTh9N8D4FjXSYgGb/7l/rD2R3PuSVoUFqUlNwk/e2EAPqF1TBCk8vDZKUc92gtbbnX7p
+        7RVsHrnnYVVN2DIuNX8hxhKp33XUSUv7zh5lQiX13kK/R3vplsVlCoYtVO6DmQ+X5HZ2eG2/gSyp
+    headers:
+      Cache-Control:
+      - max-age=43200, public
+      Content-Disposition:
+      - attachment; filename=1-roughshod_constructivism-msg.gpg
+      Content-Length:
+      - '627'
+      Content-Type:
+      - application/pgp-encrypted
+      Date:
+      - Fri, 27 Mar 2020 08:56:00 GMT
+      Etag:
+      - sha256:0e37a2bee5fb28673ae7e274d5c1230b2b67f0c3668b6a8e63f6fef82f60fc06
+      Expires:
+      - Fri, 27 Mar 2020 20:56:00 GMT
+      Last-Modified:
+      - Fri, 27 Mar 2020 08:54:40 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJpYXQiOjE1ODUyOTkzNTksImFsZyI6IkhTMjU2IiwiZXhwIjoxNTg1MzI4MTU5fQ.eyJpZCI6MX0.PfR7DLvYiRtdjPkhCWhrDniPY6OG3AMvwT9ylP9zksg
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/submissions/2c7bd005-1fce-4b92-8928-ae9c72900d2e/download
+  response:
+    body:
+      string: !!binary |
+        hQIMA8PnxMCiIBsqARAA8W3OvHfv+gqGlkAfFKb6M0nuPZ5kpcJ1QLxcFYFfD/oba8WLaWpe9Z41
+        0yQnoSS97k1Gru2K6/PBDymN79TSp6L9b0mZ/Q0KTTwK+8VKx+fiNMGWridcsvIkiM+5iuArHieY
+        SNZpGwvOgjnot+OJQSZgB6x4/AHv8AcFuY5sl1CuJGOtQ00APiOoxe7erY24GRkRpto3Aif1mZco
+        aJj7oPRUY0Ll4UrgJOqsS9sY4rFx8FDcoLpkxYMqhX3aWUWZlvOqVi/7Bo8Hoij9t+4lGQj2IvMP
+        D9DsRbCZ5LA/KKjtS6//z2M4XIsYG3TASibswybNoP+6cyR3W46mSrnq5JbFlpUtmf0oXbqPe//T
+        t8rqIhdUpPuAlBwDTr5QhX686eunmTKs0+tAJCdXMJXJLarS6CD68vJPPXx0Oh0G82gvljkHt6i4
+        X7EK6DcFaVaabLsp/LN6VB9UgmgPahspe+u7U39lEDlAo4TVZMkiLOguG+FXwNGzV3IAFxmxZKVl
+        wragF70sXC5nogab7buH44PUA6oMyfc8SjsKsnVQ49863WL9X5RrWvPx8JbuysAtsxAsatEQe8Xp
+        QBtBkpYCkSnYo4y5cVWMiwraQFlmkZVDH1EmiKZKDNI/NyvWz+UNuU1BpqGid4+GVfcgkpbi4VZL
+        izJBPMkN6RFdJv9SRtPSpQFi8I2z9x2c4JGGftvIayuDPyNtXQxym0sVo1lBcuNsxhI6kvGtxF2J
+        y4lm2uwp2EfBxpk03vkXZ9W5ggEYuqPf+btl6Za6I6s4V+pBACxDdlVCscNEUWmJWoqtPc1lXBJA
+        ZAAb9YIlEmRJorm9WVTXombqjiV8xwOYvZviz/Z15hxXmZyNOn5rtqgnNUMdQ+UZwoFw7HNPXWUf
+        1JlhIpdZAOWGsg==
+    headers:
+      Cache-Control:
+      - max-age=43200, public
+      Content-Disposition:
+      - attachment; filename=2-roughshod_constructivism-msg.gpg
+      Content-Length:
+      - '694'
+      Content-Type:
+      - application/pgp-encrypted
+      Date:
+      - Fri, 27 Mar 2020 08:56:00 GMT
+      Etag:
+      - sha256:08ea60d4d1a7f0c2c25477183382bbeea115311192567374db9dda9af5b071b5
+      Expires:
+      - Fri, 27 Mar 2020 20:56:00 GMT
+      Last-Modified:
+      - Fri, 27 Mar 2020 08:54:40 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJpYXQiOjE1ODUyOTkzNTksImFsZyI6IkhTMjU2IiwiZXhwIjoxNTg1MzI4MTU5fQ.eyJpZCI6MX0.PfR7DLvYiRtdjPkhCWhrDniPY6OG3AMvwT9ylP9zksg
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/submissions/3f806820-4ec9-44b0-ba84-d04a4ac3757a/download
+  response:
+    body:
+      string: !!binary |
+        hQIMA8PnxMCiIBsqARAAvAJco2fwCRCT06wVKBs2YFKhVbk9Cbf98Nbbt6wwJOE89cQlw8zyKQYk
+        Pmq2B1kU1foKRG/10nWU83548wqR4ypH7MVmbghhSQyXULnoFjCarruEwcJB7h4YMWBQu5nSMq7a
+        qWgKLXwxRKNaeBR4rVP0h1PVQqlmhekZu8maD61WVL8HHU+PKEqtB10yI85T2b98oJD5ISuDMsjg
+        Dr/CAbvPqEgpyLv7xSCbjiaDSOlpqNnZ+ggBESKzbHbiCZXvNe7Anq2GX7FMvc45Lu8JP+qqmHOE
+        xuA/U2vEoVKAVjjZqLWYgVJ3KxpYkhDFFymAzZg6QBY3IRTibses9s8w2iSbyYiuB11ILVkiO4Kz
+        7Y1a+Pilq0kKxzkKN24eOg3TuwSpHjNR8Hf1AmUtY21A3+i+XzF+gX6GsQAumbf1D6eBfv/nKvo4
+        V0S4dcZkqS4U7kP58wgjN0K8CP0RyegGIte+jpFkQUxZW8VmWK92pd3WhAgPLU5EIUz8XZBbwptz
+        8sMHrE5Iu8Ndyf/Y0dPudC3ofaMvaS1ZSbM3211+uHXtoh6lqkeu83KsTkTzLuEm4xY5hcokTbAk
+        2EiryEOCl0UGGHiXGzBsozHO6spiTA+lzkbf0hEL7FXre760QppsMnsfF8tnRMYAVIX9eeUv09Uc
+        4HYuQbIMvlzm2P80FbvSYgGAPNlqEUTpSvtcHY8RzPfiO9mgG0Rcd7iQNA3h/thTo6I4H39Efixg
+        pGRQeEF+MJ7mDwnV5VwHBw4CvP73PIGcfsbkPH/anzDWAOhPkLNYR1twk7bjgx+n35pEyW5sLEas
+    headers:
+      Cache-Control:
+      - max-age=43200, public
+      Content-Disposition:
+      - attachment; filename=1-addictive_granddaughter-msg.gpg
+      Content-Length:
+      - '627'
+      Content-Type:
+      - application/pgp-encrypted
+      Date:
+      - Fri, 27 Mar 2020 08:56:00 GMT
+      Etag:
+      - sha256:aad3bcc2bb27709607f42c09bbdbcd11606e3a8122a3248d203cc963fa72ca10
+      Expires:
+      - Fri, 27 Mar 2020 20:56:00 GMT
+      Last-Modified:
+      - Fri, 27 Mar 2020 08:54:43 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJpYXQiOjE1ODUyOTkzNTksImFsZyI6IkhTMjU2IiwiZXhwIjoxNTg1MzI4MTU5fQ.eyJpZCI6MX0.PfR7DLvYiRtdjPkhCWhrDniPY6OG3AMvwT9ylP9zksg
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/submissions/eef5f551-2757-4e46-b243-cc0be9199daa/download
+  response:
+    body:
+      string: !!binary |
+        hQIMA8PnxMCiIBsqARAA0EP2rAltCKhm/yHdLtRyTPiiT2gl5TV40GmZxAiHkY76J7AyXMP/bqC6
+        RlNwalbuW8nzWEXx5Q59GcdMo8Eq1ULIE/1mu00Fgq42Tt/YM4ampQDucMDfmUjLRsCV+yE++kY8
+        osP74ZZe7EjBeUAxrzOUyAxdM/+nRkj7UEqACqHkCRx4mV7SyZR3WNZh/Msejwy0Ax/XdWo/BN+L
+        AMsHnT1NCrncc7XEUQGA9AOEv72FpqBh4ySH5uB6GnIIkB8kNy9oquLcLDbcsNE3QGZDJQxxRayu
+        wT3T6onNlcwmY7kJHgGdXW8309PIvStB2IOA3kXm4wC+r4sypttyYt3fO2+PkWghyiqnIE7ty2oL
+        UKmUK3AFrksW2b9slYk5ZRcM6oQwzp6pHMWN4YUJZh2pezpTaBinaAn/WroLX++6+QGdgTgUf0gI
+        rBvWebWHwL6LSfRagFVEXurcPEuaZjoi0D5B+s52cHBZiwKIFhP/4DGpVDqNn3Fd1ouJT9uw5S18
+        cn9X/4ySJ/m9lrE8PfYdVlAbPJiI3j89HExdxoYt5OcMoWHf8r5ccPTxx0YIq/9oasUHxE1IQw+l
+        gBf/9wEZcM09PXwIm4GzO3ZXYC75UyuVx1hYQUyUMLc1V2uu6MF01hInI0NFJzRl8xPJpemhGo3Q
+        kNMwTGaSt4Ppgvyrn6PSpQES27XdW7lCuJTo0xcj3DpfBNuwtVp6CUu2YOFX6qzRgzs64YEf4toN
+        wWcZwmM09VqBiNqOM9gI9KvtJLzhb8s/EHNmADDY4oTPvYf7c74z5qLNFuKUJ+mIYNgY2FS3zTjp
+        j4qZcjxMDUDMonjcRg2XD8GGaGxCu4rGGQwY8gsUDR5SZkGWu9vTc+kbZ5RjFkqOeHesi8OqfBTC
+        /IPq8ZwYy0qJaw==
+    headers:
+      Cache-Control:
+      - max-age=43200, public
+      Content-Disposition:
+      - attachment; filename=2-addictive_granddaughter-msg.gpg
+      Content-Length:
+      - '694'
+      Content-Type:
+      - application/pgp-encrypted
+      Date:
+      - Fri, 27 Mar 2020 08:56:00 GMT
+      Etag:
+      - sha256:c98583c563d2a6a09748924f601f63c3c105bda917c367611795799ac00c3a88
+      Expires:
+      - Fri, 27 Mar 2020 20:56:00 GMT
+      Last-Modified:
+      - Fri, 27 Mar 2020 08:54:43 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJpYXQiOjE1ODUyOTkzNTksImFsZyI6IkhTMjU2IiwiZXhwIjoxNTg1MzI4MTU5fQ.eyJpZCI6MX0.PfR7DLvYiRtdjPkhCWhrDniPY6OG3AMvwT9ylP9zksg
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/replies/c7f65bdf-e682-4994-b4e0-55288308f05e/download
+  response:
+    body:
+      string: !!binary |
+        hQIMA4msMmP07hhRARAAjklqtD7rqR61OMLqoKlyaKOWzZiQS486zOr5ImWrWDnWNxvWAs6USi2v
+        jxRK92YyxZlF8jhPfPTG54Gu3mxD5Yw0CSTFdDWTKUOfVpzzAMs6gDGxYjUODsRpAy8/SYaeBB7R
+        3EWYRvUUH0A0fOWNvrkkf0n0GoiHvDKD+mQ+1q4/6kM3SQdo0b/n9HWbYVfk1oe0XuGnYyCTMHBd
+        r5cxxodFfDXkqT/zGL+TMwZ55XN383tNPu2S9bKTKEBRZh1Dty7FFWVxLTAQzHvvHjT/yKbj26X1
+        rLPlMGvZ5qxaWNQbqD0XDot9ZqdQ2WvCisEJV3UISBapWYzgDIVTBn+tbhmClNRTajiblUgq9ue8
+        zZPKi2uQzzhHV0pm4mCVpr3JnjF2y27AHhmaeAe3X8SAHzfQHSxaQWW+x/HrI/qGtwehxzRg935P
+        jg50YH67CWRC2raVUeEOh9KxhPJZWncpp7n52ORzWKqNMXaBQY4x17sR7KHReOAsP7VTTJUnML4Z
+        5Jp/HhgHPaojPu5M2QoscjK49ZVfJDIyMAz1EhUyIR9pc5wXjmNwM7BI9+5gOAfctfci0OsZzK7v
+        xHxA5f0pJ5Rs8Zx7ML3sAKQqJN1PUQOeiLGzzCO2oEYGFeL0sFeHyJ4Tqsm0DsK/ld+AfaGo54Es
+        Q6PsyJdNZsf6LKL94reFAgwDw+fEwKIgGyoBEADihceLRWh+9fcoTu3P3x8ArP5XNGniGG5tOmFJ
+        oYFwn2GZ2wOUEgXttJeNqtiKv3hvoAQXs4TsKwC84BrU8f5/sMiF6mxSSoVveLi8bwBibhpG7Eu8
+        AwvQLDTRw4GmhQO0ISuDn5UcsDrwkg4+433Y84yhWtjYCPVYhp0U1OqHgMzZVY2DbAF9LSWlLCcM
+        P+zlifVUMXuQPgJKuqAtNPUMSgDX/lY7aUXXlu3YsLMX608dDUXlBRdeXnALqxUM0D/X9LZP8L30
+        CkUQCpK0omz/OAEqdKTow6jCda6zs/UpbwXD03N98MqzXjYa1UcvZVnS9bWLktQbnNV2N8mI72ww
+        3lQHBlAYQ9eE8wSVtKVK4OzU1f17RzG42x3N3mhfoKlepWGmSrPWiGsrVdvRJzG0mQmNE8iW5EeW
+        IVBS5cviS2vx0y4+dG9bcfT7tlqnE6ormylfw91rMKOCuJ6dGc25HeBQ9hqHAtdKleJDeRiNUsWl
+        Pp2Dq0bgUKyK5gAkmbBphJ0OQZDta/DCI5wdE2fyXRBimoOfG48B/NPQ1dN/zuwDOrUuWIo5RGWY
+        DIIv/hTuJrzzyLTcM9fxj7e/qgQVwkC6mwPxgxp4mTIGh1IU5UcUJbiLlvzof+pgEoKaqIVr8fba
+        VlkTSPcJ138PL//ezKyQrvab4SUrPXktFRvNa9JdAQvMGVWM69sC8dDTjtsixcIIkPyiExn69JfC
+        mk92mzbAT7Me92BWc9z61K8F14VVTbQb/2Lr8lh9ruVG7TOOu7OoDL7JbH+X+vbUHbIYiBDkKVB6
+        0mYtE2RgRxO7
+    headers:
+      Cache-Control:
+      - max-age=43200, public
+      Content-Disposition:
+      - attachment; filename=3-roughshod_constructivism-reply.gpg
+      Content-Length:
+      - '1149'
+      Content-Type:
+      - application/pgp-encrypted
+      Date:
+      - Fri, 27 Mar 2020 08:56:01 GMT
+      Etag:
+      - sha256:62a75f9c18bc7610bf0f756bef105eb8e0fc1d0466a880513dfb17c9fff1b9b7
+      Expires:
+      - Fri, 27 Mar 2020 20:56:01 GMT
+      Last-Modified:
+      - Fri, 27 Mar 2020 08:54:40 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJpYXQiOjE1ODUyOTkzNTksImFsZyI6IkhTMjU2IiwiZXhwIjoxNTg1MzI4MTU5fQ.eyJpZCI6MX0.PfR7DLvYiRtdjPkhCWhrDniPY6OG3AMvwT9ylP9zksg
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/replies/79c368ac-6057-4a25-9fe2-8b982b73a543/download
+  response:
+    body:
+      string: !!binary |
+        hQIMA4msMmP07hhRARAAqnjmA3NXeiV0LmJr1VOROqpw0ujoh+k2EUSR0fFn+4osdMzL9B2oFAu0
+        rJe8IWNI5aeI4caIh5Mb4h7egjEkEkobqE7hewJoQ0t/PwM3Css2LRl3jtnalMsYAjPlypQKLRxW
+        IGuf4GVlaW4VR3Ye7x7diAAi6rBUxJJJT09lC7Lm0iqfUR/DU3yQYHPkgCBS7pVkeh7Bug/9N9M/
+        Ek8jXUFUojpS1Q2FyAteeSkcoe+gKQVuqs9Gh8ja4rVugkCP08lvG+mtbxzyuGQfn9t9PDc2257F
+        QgjkJj4ag/gvpNVYMG/YHLofnhb2os9CQNZgcPrFuh5K8gSGjhCGXY3WCQOPQ6jsNnKZpCQWo0nf
+        S0sJTrTQWi/8l7Bxr4N5erT/YSUnRfn3QuLgwJuB5o7MpQTB/UsAHjf/rMZ3qZG88/jk+1r8Y7mt
+        QlWxWnRBhOfFEKaq4sKDLkv6D/Gd0Gzz/NWjCjNrcn7SfS3c+4Fdc3jQbcV/biydTXAflp86I56E
+        mJolUfN4pFqyjes5IzWHNcUXpoX9eTaRHQfwdgr2FvHD2CQuCfnamT8ho/RmUUixJk68VKT/oLin
+        Un5s3uf1APNmODSLIKthjgKQS5iuFThcLMndOhYATkjJV1knVuqBbuVd1sewjGX51P7rqMQfRzK/
+        QtTcx7FlM47bpZ8lcgWFAgwDw+fEwKIgGyoBEADi44WLsP3nHEKXe/1GZLW0kxed1qkk3AEi/AzE
+        EuM177r+jO2r56nGpt1JGwPyo15zQ1dPM0LKqHszIBz3x3fUYtF+yKHZOTn2MaoJ3/yfU9pz3uyG
+        EJjg2BeOgEYT73NrHUdYkeBB/w/wExs8fDsc+yUlhJQYWR+mB6g3WEVBnSTJXLsXW3wAGFpuMPnx
+        alVhDmMnKZEuf13ucVgoksuTZlPu1GknbrvmRq0aOd2QDSE6PrM2uXKZ+H+uxNP1tfKx7gbYrsiE
+        /PGWxzGegGIXrxpj/hFa3enDFf4Uryzs0g+OohBD8IAb15zVlouAv8zyMHqACCsgBrb8WIjY7Csq
+        xkX0QwasFhpnW5eUPkmMtNP0TlTqeHIobq35veef2hVy/whwB5DwCB4mc6tEFLGBRXEwdcrkKFk/
+        Ddu98Fs2B1hFVjXnaFCswDWVCHZ0O3cG6tKVScuBOrAYUUSo5YErUB8H3yU+rsM95pyy5kuIqJtl
+        zLQOK9A159qGC+qkV6r6/VjTYPxtLei/XRTriS2QjJDTWuO6P9cR2MCLfUfslZw3GNa7RQQ/iIWl
+        qojZZm09fo7eKZitgIVNPgDGmfiV5FaFL/DgpxBw8yCrQej11k7cayegpb+oJvqKT7nfEk7G0I8E
+        uOv/2UCWjhGFtHJdOWR/7iUco7s6kn5k4QZBztKiARrP6QLyqqGQ0krPwgGWMOBjMdfwcmUm/X/7
+        n24VcvuFkF1zEQIdaBeHCgUREZCXvuY0FY1lgq8bLcBoufTeBr94llnijA0jJL7dbbQBAfI1Ug92
+        O6E2RfhqaQf7RQGJFPOQ9u6TCCDxOtTqFuHL1ZTmRSJEGhFkiFQWMzedRcWJBECYLiNpdPQAZHQN
+        kAHqdaZYRGpMPbC0NGnamyVW3PLB
+    headers:
+      Cache-Control:
+      - max-age=43200, public
+      Content-Disposition:
+      - attachment; filename=4-roughshod_constructivism-reply.gpg
+      Content-Length:
+      - '1218'
+      Content-Type:
+      - application/pgp-encrypted
+      Date:
+      - Fri, 27 Mar 2020 08:56:01 GMT
+      Etag:
+      - sha256:d8e1ba5cd372af9b2e9b1d586ec8c174ea18f420db70049993f7f1d1ee7853f8
+      Expires:
+      - Fri, 27 Mar 2020 20:56:01 GMT
+      Last-Modified:
+      - Fri, 27 Mar 2020 08:54:40 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJpYXQiOjE1ODUyOTkzNTksImFsZyI6IkhTMjU2IiwiZXhwIjoxNTg1MzI4MTU5fQ.eyJpZCI6MX0.PfR7DLvYiRtdjPkhCWhrDniPY6OG3AMvwT9ylP9zksg
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/replies/67156c2a-51a0-4854-a33e-057c20d7e7d6/download
+  response:
+    body:
+      string: !!binary |
+        hQIMA1gie97FE0erARAAk43tincHtzjZiGdq+Z9AvvwM9HzaOz5CxNIrLC/KFP04jotGAPnmcFxl
+        sUaiPwCBcbxmNSMPQPEaTICegyWlkbABk/7B/tlvHqqWT7gFcl8L08kaqINxD0R6WmouCotqbufx
+        pNYTZWq1TPFVK8T/iyfXbx0YrIEIri8+BHgwmWu4ZKXYb96w9WnbVzV9peKs00dw9Y7ug9fEYQXF
+        5nqy4+QvYijWYIfUnq2cGnZQA4aRmeI18ooPBzp+sOCIolAer+OxuXfhWbQHe9/zgGitbmvY4OoP
+        iDaU4f2T8JNRA3mCexGFIWpq14hkOpZxrr9V4+ZyLfNkMGBD793AjzPrh7eiVg/fEc82uBUEAjAl
+        lSNF/zHeOe9cG9HfVKZyj3veleK7FDN5rWS5lv3+UVFMVEzvwWsx+qGBls7xcbN/EEflV/nI4riZ
+        gMlIZfE42Igh3XXoGoBjo+FZMzVoPmflowI2OyqpNGKiGS+dy5y9T/IT8yWu62ELamijYpyGkT69
+        FKrw4q8PxCNIx2TLlkiFfp5POdUeRw3hpl4Gd7a7po4rHB7oqeBE9tG09ygPYAONJC28G30wPPGF
+        vbkUjsePNlsf9fPHT7yamkKCYdQrCuBg7/04KriC2QoRC7uTCf0JNappStLI0+oYDprA5Y584PFX
+        3KzFUF9tc+3fjg+CthSFAgwDw+fEwKIgGyoBD/91t/NcCJNoPicuDEb+4CU6ciHYgOja7rf5dExr
+        iEV/0UyDiyf994xZpy9iXd8lPhviQWLkGNKPDkDCNJ47l+Kchc1m5ImYb6xOpP2NRiNaDBrcIZs6
+        rl/phYSTmUtWTb6AwlM/mMg8QXhyyteRSdI+WbIlp/PbB09vFuIKNtwXfLXsFHyE0YLL1IgdE7zB
+        iIEIoIYAwEPTRX/VYySS7vcyFguBfWKLTQEeWwLDp5j7LQNjgZp3Dm9yzx6o5YsKmnc7BEXJunxb
+        lnth6cDdhqrUzspgIhnN7a3dCK0XGslfJ01sDf8z9k9VBxp+lZCK92fRmJ3rbQ1w5ZyLmVnYuYIP
+        pL0S8Qg3DAiXncVxK0MWAlOjqvv9W/rV/ZK2+ksU9kUiofydqe/F7LLoewOj6oFP5fRXEVrD6NXZ
+        uEmZpyyx4wtaHoKCQVqFqkHt4NzzXIxkp3diJ9PcHg3i6mR9lG7YmUamxhfPV1ekvSY0AJkA7nvy
+        W/r/YqsPtQKjWHoitF7bvYytm+CVUnRBKrIb24fBa0A7VGSaVYsAVAczxRjLgmn39xGw5XNppj3x
+        gf3eerNqj4iR5wY2wd0753PhIyBu/K3SyPvY1qSF3YorBysKH0H6wW0aY8NdjaZ7UEv0kl39P40n
+        mj4kJ/vF3VPLwo++G8dMIBoj4s1oNuX/4ZIePdJdAQXBzScspCXHgMzeFReAF9Z+qhg5NO7HrQ7/
+        BcGPn+3AHoffpah7X2M70IM1K7FS+7Gz1mQF0F8lMI1P5EKt1eKVW8afRPeD9l1RMzW1QE371fkL
+        ajBJ7+dPSndY
+    headers:
+      Cache-Control:
+      - max-age=43200, public
+      Content-Disposition:
+      - attachment; filename=3-addictive_granddaughter-reply.gpg
+      Content-Length:
+      - '1149'
+      Content-Type:
+      - application/pgp-encrypted
+      Date:
+      - Fri, 27 Mar 2020 08:56:01 GMT
+      Etag:
+      - sha256:03000e78344ae25d504ded078f13b70824c08c9192feae8ecbcc005d32ee199b
+      Expires:
+      - Fri, 27 Mar 2020 20:56:01 GMT
+      Last-Modified:
+      - Fri, 27 Mar 2020 08:54:43 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJpYXQiOjE1ODUyOTkzNTksImFsZyI6IkhTMjU2IiwiZXhwIjoxNTg1MzI4MTU5fQ.eyJpZCI6MX0.PfR7DLvYiRtdjPkhCWhrDniPY6OG3AMvwT9ylP9zksg
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/replies/b9f3768d-5972-4649-96ef-1a79ac39e71c/download
+  response:
+    body:
+      string: !!binary |
+        hQIMA1gie97FE0erAQ//eG8XYEU+lyT/pBjYurmBzIM1gu7fTasFExgAv5xeNPYUa7bd8RoDWe4S
+        giHstOWCFLB4FnMqD5Bflx5O6El17NBBH/WIqIYkhjUKDboXzrTXK7Is6aFj0phCS8WfrfIANnoO
+        UUIFwDO9RoxeeeXZRoX7aVMaP33JbMq0M/KxUz9+CSQYaYsHzdM7daWYFVxdHjqJeNKQKrtZNg3z
+        E+CCneOpDkacW31qeGBBQc+B7twlSR2PJ7DREibI9rqQAHvt0RcGN3smCnwUrF0eW4J/2L1Dh+Kl
+        r23VsLx7rUS+4M4Zq3egZlsdp+zrFV2W7zrJxaCiFQ4wjdrjQWJpz29/jEK4brICoCR/th8br+m2
+        rOAHMW40Trqr33yOoElQV4iNp2PN6Vz5We6O8BQkXGhM7DO5fxcTDKxbtWPJtqcQayDjhz5JwBbT
+        sVpAasrwPufGhLPBnujfmROAtMCvswmMvKlIV8KacXhvKT1hqdi7I+Zakf+G4nJcLJoP8cYfE+p6
+        XEmVz2JVV377EPdwDHuP1gTrXqryrJwDtYp401529L1w7YQgdz7M1kLQoC9INhbiAQWuZM+PeJMX
+        WU2pfP6+r15qcJwT/4E9Pv50DXoCI3XY1na2BlKrfqrzssSS7rHwZ/g2eNZTreFQ+ovBwf2VocJX
+        qhsQvMjncb9WhYBcSrWFAgwDw+fEwKIgGyoBD/4t2wx4egHE3O7MU0tsAhG+psr+04DdvWlOREXE
+        WiUXMvmd2A42zcL4DDvBKmE0HpfK3Ll/vik0BftDP9UZmVsQmn1k8DR9TrnCXqbYqbWgdfEIpVW8
+        5RADfRlsevTKVIEQFwhJXqJcoWxfK0rs+tnJhPbVOzpwFa8tMr09fYbwepjTrQWxX6E7ahph0f9G
+        ywtufKrSkGyXjVH1vum1B8AkmIHZ8+CgKTh9HPuEsp9S6uLt87URqP7KHoL5cPTLDSzLDZjM2HmR
+        P3+TDoI20TA4yoQiwVRXIaqGev1n/VSYstS/+8tDx0zXbOIS80McbjTcxfSKUfAu6ZyhvlvvLSyn
+        STou0ekxj/Pag/iFbb5wB7St03Yo9sLAZwsPq4GN4w0Pf9cp7kM4cT/d9T8UfV1SL9x1OOyMdkWz
+        0NPgqX7W/8ByxNp35N8KAV6rFX818JGU2cvmk9pCiTfL3VMMBLXkWZEcXL3WWEBJwhJk1vjHwwqX
+        jbkNGURGhISAOu7/UhDDrutU9TZ6hd7/HGkG5HVUlkHWkI5xZwGYHPRX5nAWls/fnCwTfYhModSF
+        uIiJnOU6mWEPPiUNoDm5BoINgzoHFLTXIW5dMJMIMTiBpQQ72fdXFjDhWAozS5LC9wPwbJDYyhJ1
+        2idBIgZ4rb2IJJoDt02XkbJfG3T5VOZWwpMTBdKhAZI3iE5oUOJWDTp2B9STb8shuEDrl05TEOyA
+        a+fRdfbeyJbFsy8sToeAyn2JHgbiVN2h/6aqPfKeYhUNjWJlKaTFO9W8iFoMzxwpXgH1ssLLM3R7
+        ffbkjQyBoOurHI0lbTrNPsKDGVpSxpHc3mqYlDVtZoVQFhWbACuSqwLKxWZ3FFtBEJw8Vvy8HQr/
+        +k99nf3xtdqlTIJwBWeY9KzsDSA=
+    headers:
+      Cache-Control:
+      - max-age=43200, public
+      Content-Disposition:
+      - attachment; filename=4-addictive_granddaughter-reply.gpg
+      Content-Length:
+      - '1217'
+      Content-Type:
+      - application/pgp-encrypted
+      Date:
+      - Fri, 27 Mar 2020 08:56:01 GMT
+      Etag:
+      - sha256:a87a91ae2d106ad106e6f3e6cb4f6cd0e92b0ed894f359bddd9c49701c6e3990
+      Expires:
+      - Fri, 27 Mar 2020 20:56:01 GMT
+      Last-Modified:
+      - Fri, 27 Mar 2020 08:54:43 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJpYXQiOjE1ODUyOTkzNTksImFsZyI6IkhTMjU2IiwiZXhwIjoxNTg1MzI4MTU5fQ.eyJpZCI6MX0.PfR7DLvYiRtdjPkhCWhrDniPY6OG3AMvwT9ylP9zksg
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/sources
+  response:
+    body:
+      string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/add_star\"\
+        , \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n    \
+        \  \"is_starred\": false, \n      \"journalist_designation\": \"roughshod\
+        \ constructivism\", \n      \"key\": {\n        \"fingerprint\": \"DD8C1EFFC19BFC3F32CC0A5189AC3263F4EE1851\"\
+        , \n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmQINBFGRfoABEADI7Y920jwWYgNdAr/okN/geYvoJw2CH9FiZfuSsBeW93EYcp2i\\\
+        nxWcJ5L4yZTEqewY9HKsyndwbQORzgUYDRUOVaHJVCFAn1iBD6GuAUnGhHNvHHe7h\\nFTh+SM9hZgzcPHLWJJqfY7dvYfPkuw+E+/SleREPo2ubXHVIF1/lnQwGWP6sqCPt\\\
+        n0XLdzo9X0IBHawkHPVsYjSMbiv5yhGnMLm9l0oOhe9ABAiiwAr43KF8c3vZq3NYj\\nnYufIwYkPibnqIiF8GCXky06rO689laqj+6gthSDNhmWrqIuWTgiBvVhVq7ewF12\\\
+        nBUdWICRiA5m1GM06Whdph0c0+kHgot0tPYvZgTcgwtG+w8DAgBmH8cS0BSuTcTz+\\n0Q0d9sZWFxpqiZzRaGq+NA03gHFP23gzX/UD/qO7l68cnH//d2z8ONKq1TpEnB43\\\
+        njbXRQYK7PbKuCK76HFUa738I86D/GKERYOwhHIL/acJVYyiV9VjRI1owW5VS5koJ\\nhrFCDmfB+dS0rhomUIsznbtFq3p5QdBLCBuCH1PIP/KIvdh2ee8c2fFEf13n7aA2\\\
+        nZ1Z5DyO+yVdTgD/TCriJStBcKgNjz3pyzzk1NPiLDo2eNc0TF7/Ywr64Ei1nb4lQ\\nOur4D2msRS0NfF+uPcX5exATrLvwtHNdCud9a1ed8w+yF9juhU79XcVmiQARAQAB\\\
+        ntHxBdXRvZ2VuZXJhdGVkIEtleSA8TjVPN1ZJN1dUU0ZRVVozVUJLNUZERFlDNlc2\\nT1ZXTkpRRVVMTUFPUkNDSFM1T0pMWVVWQ0lNNE9YVFFZRUZXWUxYT1NEV0JEWk1E\\\
+        nT0hBT0hINEtRQkJHTVpWQldRSE41VjREWVRIUT0+iQI3BBMBCgAhBQJRkX6AAhsv\\nBQsJCAcCBhUICQoLAgQWAgMBAh4BAheAAAoJEImsMmP07hhRnIQQAIOnWIUhxtfT\\\
+        n9DqPpkSLEbkvjOUDkJNGd0MkBK2reO7PnXirzivx77jNqAx4QL7xqjDSWMxN8zcd\\nRHWGLxm6JWgfKJiOVlcFiRm4MdcFgy2JhlmpOy1DUZsVG/J2ZuAPXilPmWBuKGvj\\\
+        nBjsXhbxRte4GWS2Uupb2orWumVtrw6QV3WaFVxy3xwQFlAi9tTzK8LrZKv7cqwOq\\nMZP+tIYa8opp8koqKEEmackwFk9esSOApW56DhiYzyUoMffsjmljo3DtlqqCbt7q\\\
+        nhdcqoj1CWib/k4hwGWBhJaa9GPI+5CjwRXYxmYXxfQcEm471u1s/cDEjzlaoXCkp\\n9yxwjRTRv9HD0xgza9uLp4w0QS0LPkj/XNnNJwrUrQtvsHs2YGuwFlpr1VEJmUkn\\\
+        nFXb7xnDfNeldJL2DUM4Bl0b6DqTb4uAUrA6MFtBySW1IHC2P2y9BHN+aFrVmSBxs\\nGSgHrPG9ZNjgkVRRwAshVZtkBVCMk8TJzKE8tDexvWB0tZpiKAbbUrsOd3/OcI5J\\\
+        n+jiU+lFyZyyPFSndgolqJ9u4NVLY1O00d3I0QTD1DJOdGH4IKdndz+oVlb38tw5a\\nJqiQGVdChJCMWS5UTt1w5pt9VQyXqyuCIjF8IL4w3pDAhpZofRJkiAV0vR0K+KRI\\\
+        nuXowq42FcM4JdnxQintAXP6qiExJOgW/\\n=QZDE\\n-----END PGP PUBLIC KEY BLOCK-----\\\
+        n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\": \"2020-03-27T08:54:40.168833Z\"\
+        , \n      \"number_of_documents\": 0, \n      \"number_of_messages\": 2, \n\
+        \      \"remove_star_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/remove_star\"\
+        , \n      \"replies_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/replies\"\
+        , \n      \"submissions_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/submissions\"\
+        , \n      \"url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2\"\
+        , \n      \"uuid\": \"383dc7f6-2591-4a7c-9c7e-4fca375b2bc2\"\n    }, \n  \
+        \  {\n      \"add_star_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/add_star\"\
+        , \n      \"interaction_count\": 4, \n      \"is_flagged\": false, \n    \
+        \  \"is_starred\": false, \n      \"journalist_designation\": \"addictive\
+        \ granddaughter\", \n      \"key\": {\n        \"fingerprint\": \"C2A2FF145A20816F4A041A5558227BDEC51347AB\"\
+        , \n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmQINBFGRfoABEAC67oL1cT6gV9YT+nqVkznK0LsOqx3cwDuFMtF7hJHANLHeYQAo\\\
+        norfoqav3TUXgIewfvOu7nTBBSUX9pJeRwV9epPNp4eCBVXzIa9FzKW9DbbtbEfdz\\ndCMbRmfpJJlu/8jOaVja2rz1ZGeoG/xk/LUP7eiGNOU9s5KeGtlnTvB/cLdmWxep\\\
+        ni2WHVRJb6dALrZyvy7ocxmt9Ms6z4zTzPiM1BP7LOkM/b3PwF1wEWZMWEIVCPPRx\\nQO+dnCn1lIgoF+a1dEcK/qF+DfawHm41X6H0BsD1ob/ZVC8a4RRrWMy3m2Vl807L\\\
+        ndHvWwyOkIvW0E9RD4EUQZXWR3Fh5ZoHhWPNb4dj93pUCtlzBBGCxHVNWhHEKyMG4\\nZT6bGjNdATPg4TTGBr6i9EV8HLxE8AMoGlWTC9Sn8+XCfwrBxjSUienMj4QSjcXp\\\
+        nVF68mpkRoBsdF62daTwtY9sVIbKisGfPLI3/c2eLDwZLFzYRDUnSbHaYHDbZSnbv\\nIXGcocUjzreu7u74w/2/b6SpjhrXO1iA4comqDG/W2amnKeucbZO8qYDVD038+Gf\\\
+        nhpYHtdKnKzF5cbIhHw5KLDQG9Qn9dz685PXfD99Gkju1UQh5NK0S8X5hKnlc8Yn3\\nGuH2seBsIMQzgItqVB5t7tT/T+5P4MAapfyXRfgkvVb6LJUWo78zVM/ILwARAQAB\\\
+        ntHxBdXRvZ2VuZXJhdGVkIEtleSA8TjZNRkUzRUFGWkVQUllXVVNBRFNMTUpKV0dD\\nM1pDVkpZRFJNT1lBVFJNVUFKUE5YNDVQMzdWVVozSlRTNlZZWkE1MlJTSkc2Mk41\\\
+        nNE1ZR1k2RkRLV1pEMjZHSkYyWlFSQlBHWkhaUT0+iQI3BBMBCgAhBQJRkX6AAhsv\\nBQsJCAcCBhUICQoLAgQWAgMBAh4BAheAAAoJEFgie97FE0ersS8P/R/IcARdct4W\\\
+        nI5tV89f1b5l8MUhnIRlcrRsG0TBuVdMTJ/pETf5Y8wL1nJcOWG+GnjLwtxICJl+T\\n98Ya3eVFcBG3UVKGXtDxEEIzmYP5l8YUlgBIlQcCNKxo1kSx/98uENlIo8SYk1wm\\\
+        nAvU5pU0VoWnmYvMGXGG06V1mh3t2Jx073WLmIjtVuwFAMahVYV1yMIPS7yjIcXSv\\nyJ9GtWDPZR3+8Sbri4zQ2ocxOjrYfo2KyR5wW1I7N6vpyabkGNQWqraP6Jiol3OP\\\
+        npT9wnXV5BmmDjavNQFiYSLaTOPvAth9pqqVFdIQNpKz5Y2OCZUlYuHYh11iGkwIf\\nBkbWTaieBxe+az7gTsrjW4wb4quRcoeXjmv+Anvh5rYZ/205eJSzdOubRmxZP0Hn\\\
+        n+qXRNqIsknbAoIjmWX/pbeVDjy8cmIRrajdU0feU0aJ8qYhfGr8T/A6yA+pJEZk5\\ncoY0+ljfsM/lg3/CuZ+89Gzow3311WPpHf6cdHg69cRiYoXN+40dCaBg9Gux8p2H\\\
+        nob0kvPITyx7SbYdxYDXjOnuNJ5tQDyq2utiuYNEOV/XNnH6w5/Q5k2/CdBeUiDk/\\n/vEtCSK3JYJLgjr0K5xDyJqb2vWrgjInxqqRdWB20tLzyl9j+378RtVoCv7BOdLe\\\
+        n0AGDwB8IQgm8HW6GQCTStNSUT5i78V96\\n=LTVZ\\n-----END PGP PUBLIC KEY BLOCK-----\\\
+        n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\": \"2020-03-27T08:54:43.111572Z\"\
+        , \n      \"number_of_documents\": 0, \n      \"number_of_messages\": 2, \n\
+        \      \"remove_star_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/remove_star\"\
+        , \n      \"replies_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/replies\"\
+        , \n      \"submissions_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/submissions\"\
+        , \n      \"url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7\"\
+        , \n      \"uuid\": \"afac0867-ec17-49cf-83dd-afdeab89a5d7\"\n    }\n  ]\n\
+        }\n"
+    headers:
+      Content-Length:
+      - '5362'
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 27 Mar 2020 08:56:14 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJpYXQiOjE1ODUyOTkzNTksImFsZyI6IkhTMjU2IiwiZXhwIjoxNTg1MzI4MTU5fQ.eyJpZCI6MX0.PfR7DLvYiRtdjPkhCWhrDniPY6OG3AMvwT9ylP9zksg
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/submissions
+  response:
+    body:
+      string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/submissions/67350497-9063-4dac-b494-91ce30efdf4a/download\"\
+        , \n      \"filename\": \"1-roughshod_constructivism-msg.gpg\", \n      \"\
+        is_read\": true, \n      \"size\": 627, \n      \"source_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2\"\
+        , \n      \"submission_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/submissions/67350497-9063-4dac-b494-91ce30efdf4a\"\
+        , \n      \"uuid\": \"67350497-9063-4dac-b494-91ce30efdf4a\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/submissions/2c7bd005-1fce-4b92-8928-ae9c72900d2e/download\"\
+        , \n      \"filename\": \"2-roughshod_constructivism-msg.gpg\", \n      \"\
+        is_read\": true, \n      \"size\": 694, \n      \"source_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2\"\
+        , \n      \"submission_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/submissions/2c7bd005-1fce-4b92-8928-ae9c72900d2e\"\
+        , \n      \"uuid\": \"2c7bd005-1fce-4b92-8928-ae9c72900d2e\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/submissions/3f806820-4ec9-44b0-ba84-d04a4ac3757a/download\"\
+        , \n      \"filename\": \"1-addictive_granddaughter-msg.gpg\", \n      \"\
+        is_read\": true, \n      \"size\": 627, \n      \"source_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7\"\
+        , \n      \"submission_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/submissions/3f806820-4ec9-44b0-ba84-d04a4ac3757a\"\
+        , \n      \"uuid\": \"3f806820-4ec9-44b0-ba84-d04a4ac3757a\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/submissions/eef5f551-2757-4e46-b243-cc0be9199daa/download\"\
+        , \n      \"filename\": \"2-addictive_granddaughter-msg.gpg\", \n      \"\
+        is_read\": true, \n      \"size\": 694, \n      \"source_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7\"\
+        , \n      \"submission_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/submissions/eef5f551-2757-4e46-b243-cc0be9199daa\"\
+        , \n      \"uuid\": \"eef5f551-2757-4e46-b243-cc0be9199daa\"\n    }\n  ]\n\
+        }\n"
+    headers:
+      Content-Length:
+      - '2071'
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 27 Mar 2020 08:56:14 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJpYXQiOjE1ODUyOTkzNTksImFsZyI6IkhTMjU2IiwiZXhwIjoxNTg1MzI4MTU5fQ.eyJpZCI6MX0.PfR7DLvYiRtdjPkhCWhrDniPY6OG3AMvwT9ylP9zksg
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: GET
+    uri: http://localhost:8081/api/v1/replies
+  response:
+    body:
+      string: "{\n  \"replies\": [\n    {\n      \"filename\": \"3-roughshod_constructivism-reply.gpg\"\
+        , \n      \"is_deleted_by_source\": false, \n      \"journalist_first_name\"\
+        : null, \n      \"journalist_last_name\": null, \n      \"journalist_username\"\
+        : \"journalist\", \n      \"journalist_uuid\": \"6c1a2399-d2ff-4197-a5b1-9abcf8a0cac8\"\
+        , \n      \"reply_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/replies/c7f65bdf-e682-4994-b4e0-55288308f05e\"\
+        , \n      \"size\": 1149, \n      \"source_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2\"\
+        , \n      \"uuid\": \"c7f65bdf-e682-4994-b4e0-55288308f05e\"\n    }, \n  \
+        \  {\n      \"filename\": \"4-roughshod_constructivism-reply.gpg\", \n   \
+        \   \"is_deleted_by_source\": false, \n      \"journalist_first_name\": null,\
+        \ \n      \"journalist_last_name\": null, \n      \"journalist_username\"\
+        : \"journalist\", \n      \"journalist_uuid\": \"6c1a2399-d2ff-4197-a5b1-9abcf8a0cac8\"\
+        , \n      \"reply_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2/replies/79c368ac-6057-4a25-9fe2-8b982b73a543\"\
+        , \n      \"size\": 1218, \n      \"source_url\": \"/api/v1/sources/383dc7f6-2591-4a7c-9c7e-4fca375b2bc2\"\
+        , \n      \"uuid\": \"79c368ac-6057-4a25-9fe2-8b982b73a543\"\n    }, \n  \
+        \  {\n      \"filename\": \"3-addictive_granddaughter-reply.gpg\", \n    \
+        \  \"is_deleted_by_source\": false, \n      \"journalist_first_name\": null,\
+        \ \n      \"journalist_last_name\": null, \n      \"journalist_username\"\
+        : \"journalist\", \n      \"journalist_uuid\": \"6c1a2399-d2ff-4197-a5b1-9abcf8a0cac8\"\
+        , \n      \"reply_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/replies/67156c2a-51a0-4854-a33e-057c20d7e7d6\"\
+        , \n      \"size\": 1149, \n      \"source_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7\"\
+        , \n      \"uuid\": \"67156c2a-51a0-4854-a33e-057c20d7e7d6\"\n    }, \n  \
+        \  {\n      \"filename\": \"4-addictive_granddaughter-reply.gpg\", \n    \
+        \  \"is_deleted_by_source\": false, \n      \"journalist_first_name\": null,\
+        \ \n      \"journalist_last_name\": null, \n      \"journalist_username\"\
+        : \"journalist\", \n      \"journalist_uuid\": \"6c1a2399-d2ff-4197-a5b1-9abcf8a0cac8\"\
+        , \n      \"reply_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7/replies/b9f3768d-5972-4649-96ef-1a79ac39e71c\"\
+        , \n      \"size\": 1217, \n      \"source_url\": \"/api/v1/sources/afac0867-ec17-49cf-83dd-afdeab89a5d7\"\
+        , \n      \"uuid\": \"b9f3768d-5972-4649-96ef-1a79ac39e71c\"\n    }\n  ]\n\
+        }\n"
+    headers:
+      Content-Length:
+      - '2291'
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 27 Mar 2020 08:56:14 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJpYXQiOjE1ODUyOTkzNTksImFsZyI6IkhTMjU2IiwiZXhwIjoxNTg1MzI4MTU5fQ.eyJpZCI6MX0.PfR7DLvYiRtdjPkhCWhrDniPY6OG3AMvwT9ylP9zksg
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.20.0
+    method: POST
+    uri: http://localhost:8081/api/v1/logout
+  response:
+    body:
+      string: "{\n  \"message\": \"Your token has been revoked.\"\n}\n"
+    headers:
+      Content-Length:
+      - '48'
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 27 Mar 2020 08:56:19 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+version: 1
