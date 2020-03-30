@@ -21,6 +21,13 @@ make test
 
 We cover all the API calls supported by the SecureDrop Journalist Interface API.
 
+To install the SDK into your `virtualenv` for testing purposes:
+
+```
+pip uninstall securedrop-sdk
+pip install git+https://github.com/freedomofpress/securedrop-sdk@my_branch#egg=securedrop-sdk
+```
+
 ## Testing
 
 The tests are located in the `tests` directory. This project uses [vcrpy](http://vcrpy.readthedocs.io/en/latest/) to record and then reply the API calls so that
