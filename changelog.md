@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.5
+
+* Update source list ordering when conversation is updated (#1013).
+* Do not show tooltips on short strings (#1016).
+
 ## 0.1.4
 
 * Use `--view-only` when opening files in a DVM, update `mimeapps.list` (#972).
