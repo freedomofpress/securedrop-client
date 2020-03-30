@@ -55,6 +55,48 @@ class TestMain(unittest.TestCase):
         for item in json.loads(response["body"]):
             self.assertEqual(item["userId"], 1)
 
+    @vcr.use_cassette("fixtures/main_json_response_with_timeout.yaml")
+    def test_json_response_with_timeout(self):
+        test_input_json = """{ "method": "GET",
+                            "path_query": "/posts?userId=1",
+                            "timeout": 40.0 }"""
+
+        req = proxy.Req()
+        req.method = "GET"
+        req.path_query = ""
+        req.headers = {"Accept": "application/json"}
+
+        # Use custom callbacks
+        def on_save(self, fh, res):
+            pass
+
+        def on_done(self):
+            assert self.res.status == http.HTTPStatus.OK
+            print(json.dumps(self.res.__dict__))
+
+        self.p = proxy.Proxy(self.conf_path, req)
+
+        # Patching on_save and on_done
+
+        self.p.on_done = types.MethodType(on_done, self.p)
+        self.p.on_save = types.MethodType(on_save, self.p)
+
+        saved_stdout = sys.stdout
+        try:
+            out = StringIO()
+            sys.stdout = out
+            main.__main__(test_input_json, self.p)
+            output = out.getvalue().strip()
+        finally:
+            sys.stdout = saved_stdout
+
+        # Test that the right timeout was set in proxy object
+        assert self.p.timeout == 40.0
+
+        response = json.loads(output)
+        for item in json.loads(response["body"]):
+            self.assertEqual(item["userId"], 1)
+
     @vcr.use_cassette("fixtures/main_non_json_response.yaml")
     def test_non_json_response(self):
         test_input_json = """{ "method": "GET",

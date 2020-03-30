@@ -42,4 +42,7 @@ def __main__(incoming: str, p: Proxy) -> None:
 
     p.req = req
 
+    if "timeout" in client_req:
+        p.timeout = client_req["timeout"]
+
     p.proxy()
