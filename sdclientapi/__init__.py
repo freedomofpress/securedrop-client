@@ -191,6 +191,9 @@ class API:
         if headers is not None and headers:
             data["headers"] = headers
 
+        if timeout:
+            data["timeout"] = timeout
+
         data_str = json.dumps(data)
 
         try:
