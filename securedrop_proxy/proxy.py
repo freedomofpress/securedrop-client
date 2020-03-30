@@ -46,7 +46,7 @@ class Response:
 
 class Proxy:
     def __init__(
-        self, conf_path: str, req: Req = Req(), timeout: float = 10.0
+        self, conf_path: str, req: Req = Req(), timeout: float = 120.0
     ) -> None:
         # The configuration path for Proxy is a must.
         self.read_conf(conf_path)
