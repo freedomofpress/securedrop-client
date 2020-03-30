@@ -10,8 +10,8 @@ import unittest
 import pyotp
 import vcr
 from requests.exceptions import ConnectTimeout, ReadTimeout
-from utils import load_auth
-from utils import save_auth
+from utils import load_auth_for_http
+from utils import save_auth_for_http
 
 from sdclientapi import API, RequestTimeoutError
 from sdclientapi.sdlocalobjects import AuthError
@@ -37,14 +37,14 @@ class TestAPI(unittest.TestCase):
             try:
                 self.api.authenticate()
             except BaseError:
-                token = load_auth()
+                token = load_auth_for_http()
                 if token:
                     self.api.token = token
                     self.api.update_auth_header()
                     break
                 time.sleep(31)
 
-            save_auth(self.api.token)
+            save_auth_for_http(self.api.token)
             break
 
     @vcr.use_cassette("data/test-baduser.yml")
@@ -229,7 +229,7 @@ class TestAPI(unittest.TestCase):
         with self.assertRaises(ReplyError) as err:
             self.api.reply_source(s, "hello")
 
-        self.assertEqual(err.exception.msg, "You must encrypt replies client side")
+        self.assertEqual(err.exception.msg, "bad request")
 
     @vcr.use_cassette("data/test-reply-source.yml")
     def test_reply_source(self):

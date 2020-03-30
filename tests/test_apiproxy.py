@@ -35,21 +35,36 @@ class TestAPIProxy(unittest.TestCase):
         self.api = API(
             self.server, self.username, self.password, str(self.totp.now()), proxy=True
         )
+
         for i in range(3):
-            try:
-                self.api.authenticate()
-            except BaseError:
+            if os.path.exists("testtoken.json"):
                 token = load_auth()
-                if token:
-                    self.api.token = token
-                    self.api.update_auth_header()
-                    break
+                self.api.token = token
+                self.api.update_auth_header()
+                break
+
+            # The following is True when we did a logout
+            if os.path.exists("logout.txt"):
+                os.unlink("logout.txt")
                 time.sleep(31)
+            # Now let us try to login
+            try:
+                self.api = API(
+                    self.server, self.username, self.password, str(self.totp.now()), proxy=True
+                )
+                self.api.authenticate()
+                with open("login.txt", "w") as fobj:
+                    fobj.write("in")
+            except Exception as err:
+                print(err)
+                time.sleep(31)
+                continue
 
             save_auth(self.api.token)
             break
 
     def test_api_auth(self):
+
         self.assertTrue(isinstance(self.api.token, str))
         self.assertTrue(isinstance(self.api.token_expiration, datetime.datetime))
         self.assertTrue(isinstance(self.api.token_journalist_uuid, str))
@@ -213,7 +228,7 @@ class TestAPIProxy(unittest.TestCase):
         with self.assertRaises(ReplyError) as err:
             self.api.reply_source(s, "hello")
 
-        self.assertEqual(err.exception.msg, "You must encrypt replies client side")
+        self.assertEqual(err.exception.msg, "bad request")
 
     @dastollervey_datasaver
     def test_reply_source(self):
@@ -319,6 +334,12 @@ class TestAPIProxy(unittest.TestCase):
     def test_logout(self):
         r = self.api.logout()
         self.assertTrue(r)
+        if os.path.exists("login.txt"):
+            os.unlink("login.txt")
+        if os.path.exists("testtoken.json"):
+            os.unlink("testtoken.json")
+        with open("logout.txt", "w") as fobj:
+            fobj.write("out")
 
 
 def test_request_timeout(mocker):
