@@ -209,6 +209,8 @@ class API:
             raise ServerConnectionError
         elif "error" in data and result["status"] == http.HTTPStatus.FORBIDDEN:
             raise AuthError(data["error"])
+        elif "error" in data and result["status"] == http.HTTPStatus.BAD_REQUEST:
+            raise ReplyError(data["message"])
         elif "error" in data and result["status"] != http.HTTPStatus.NOT_FOUND:
             # We exclude 404 since if we encounter a 404, it means that an
             # item is missing. In that case we return to the caller to
@@ -667,8 +669,6 @@ class API:
             timeout=self.default_request_timeout,
         )
 
-        if status_code == 400:
-            raise ReplyError(data["message"])
 
         if "message" in data and data["message"] == "Your reply has been stored":
             return Reply(uuid=data["uuid"], filename=data["filename"])
