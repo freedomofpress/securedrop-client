@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+
+  * Increase default timeout to 120s from 10s (#70)
+
 ## 0.2.0
 
   * Initial beta release.
