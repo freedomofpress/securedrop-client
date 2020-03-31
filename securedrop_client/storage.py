@@ -34,6 +34,8 @@ from sqlalchemy.orm.session import Session
 from securedrop_client.crypto import CryptoError, GpgHelper
 from securedrop_client.db import (DraftReply, Source, Message, File, Reply, ReplySendStatus,
                                   ReplySendStatusCodes, User)
+from securedrop_client.utils import chronometer
+
 from sdclientapi import API
 from sdclientapi import Source as SDKSource
 from sdclientapi import Submission as SDKSubmission
@@ -120,10 +122,17 @@ def update_local_storage(session: Session,
     # The following update_* functions may change the database state.
     # Because of that, each get_local_* function needs to be called just before
     # its respective update_* function.
-    update_sources(gpg, remote_sources, get_local_sources(session), session, data_dir)
-    update_files(remote_files, get_local_files(session), session, data_dir)
-    update_messages(remote_messages, get_local_messages(session), session, data_dir)
-    update_replies(remote_replies, get_local_replies(session), session, data_dir)
+    with chronometer(logger, "update_sources"):
+        update_sources(gpg, remote_sources, get_local_sources(session), session, data_dir)
+
+    with chronometer(logger, "update_files"):
+        update_files(remote_files, get_local_files(session), session, data_dir)
+
+    with chronometer(logger, "update_messages"):
+        update_messages(remote_messages, get_local_messages(session), session, data_dir)
+
+    with chronometer(logger, "update_replies"):
+        update_replies(remote_replies, get_local_replies(session), session, data_dir)
 
 
 def update_source_key(gpg: GpgHelper, local_source: Source, remote_source: SDKSource) -> None:
