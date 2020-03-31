@@ -1888,11 +1888,8 @@ class SpeechBubble(QWidget):
         min-width: 540px;
         max-width: 540px;
         background-color: #fff;
-        padding: 16px;
     }
     #message {
-        min-width: 540px;
-        max-width: 540px;
         font-family: 'Source Sans Pro';
         font-weight: 400;
         font-size: 15px;
@@ -1904,8 +1901,6 @@ class SpeechBubble(QWidget):
         max-height: 5px;
         background-color: #102781;
         border: 0px;
-        min-width: 590px;
-        max-width: 590px;
     }
     '''
 
@@ -1918,7 +1913,6 @@ class SpeechBubble(QWidget):
         self.index = index
 
         # Set styles
-        self.setObjectName('speech_bubble')
         self.setStyleSheet(self.CSS)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
@@ -1940,10 +1934,12 @@ class SpeechBubble(QWidget):
 
         # Speech bubble
         speech_bubble = QWidget()
+        speech_bubble.setObjectName('speech_bubble')
         speech_bubble_layout = QVBoxLayout()
         speech_bubble.setLayout(speech_bubble_layout)
         speech_bubble_layout.addWidget(self.message)
         speech_bubble_layout.addWidget(self.color_bar)
+        speech_bubble_layout.setContentsMargins(0, 0, 0, 0)
         speech_bubble_layout.setSpacing(0)
 
         # Bubble area includes speech bubble plus error message if there is an error
@@ -1985,8 +1981,6 @@ class ReplyWidget(SpeechBubble):
     """
 
     CSS_MESSAGE_REPLY_FAILED = '''
-        min-width: 540px;
-        max-width: 540px;
         font-family: 'Source Sans Pro';
         font-weight: 400;
         font-size: 15px;
@@ -2010,8 +2004,6 @@ class ReplyWidget(SpeechBubble):
     '''
 
     CSS_MESSAGE_REPLY_SUCCEEDED = '''
-        min-width: 540px;
-        max-width: 540px;
         font-family: 'Source Sans Pro';
         font-weight: 400;
         font-size: 15px;
@@ -2028,8 +2020,6 @@ class ReplyWidget(SpeechBubble):
     '''
 
     CSS_MESSAGE_REPLY_PENDING = '''
-        min-width: 540px;
-        max-width: 540px;
         font-family: 'Source Sans Pro';
         font-weight: 400;
         font-size: 15px;
@@ -2123,14 +2113,12 @@ class FileWidget(QWidget):
     #file_widget {
         min-width: 540px;
         max-width: 540px;
-        padding: 16px;
     }
     #file_options {
         min-width: 137px;
     }
     QPushButton#export_print {
         border: none;
-        padding: 0px 8px;
         font-family: 'Source Sans Pro';
         font-weight: 500;
         font-size: 13px;
@@ -2150,7 +2138,6 @@ class FileWidget(QWidget):
         color: #05a6fe;
     }
     QLabel#file_name {
-        padding-bottom: 2px;
         font-family: 'Source Sans Pro';
         font-weight: 600;
         font-size: 13px;
@@ -2194,7 +2181,8 @@ class FileWidget(QWidget):
     }
     """
 
-    VERTICAL_MARGIN = 10
+    TOP_MARGIN = 4
+    BOTTOM_MARGIN = 14
     FILE_FONT_SPACING = 2
     FILE_OPTIONS_FONT_SPACING = 1.6
     FILENAME_WIDTH_PX = 360
@@ -2232,7 +2220,7 @@ class FileWidget(QWidget):
         self.setLayout(layout)
 
         # Set margins and spacing
-        layout.setContentsMargins(0, self.VERTICAL_MARGIN, 0, self.VERTICAL_MARGIN)
+        layout.setContentsMargins(0, self.TOP_MARGIN, 0, self.BOTTOM_MARGIN)
         layout.setSpacing(0)
 
         # File options: download, export, print
@@ -2241,7 +2229,7 @@ class FileWidget(QWidget):
         file_options_layout = QHBoxLayout()
         self.file_options.setLayout(file_options_layout)
         file_options_layout.setContentsMargins(0, 0, 0, 0)
-        file_options_layout.setSpacing(0)
+        file_options_layout.setSpacing(8)
         file_options_layout.setAlignment(Qt.AlignLeft)
         self.download_button = QPushButton(_(' DOWNLOAD'))
         self.download_button.setObjectName('download_button')
