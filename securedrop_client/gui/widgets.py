@@ -2119,7 +2119,6 @@ class FileWidget(QWidget):
     }
     QPushButton#export_print {
         border: none;
-        padding: 0px 8px;
         font-family: 'Source Sans Pro';
         font-weight: 500;
         font-size: 13px;
@@ -2139,7 +2138,6 @@ class FileWidget(QWidget):
         color: #05a6fe;
     }
     QLabel#file_name {
-        padding-bottom: 2px;
         font-family: 'Source Sans Pro';
         font-weight: 600;
         font-size: 13px;
@@ -2231,7 +2229,7 @@ class FileWidget(QWidget):
         file_options_layout = QHBoxLayout()
         self.file_options.setLayout(file_options_layout)
         file_options_layout.setContentsMargins(0, 0, 0, 0)
-        file_options_layout.setSpacing(0)
+        file_options_layout.setSpacing(8)
         file_options_layout.setAlignment(Qt.AlignLeft)
         self.download_button = QPushButton(_(' DOWNLOAD'))
         self.download_button.setObjectName('download_button')
