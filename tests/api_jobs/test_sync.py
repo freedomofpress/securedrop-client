@@ -136,5 +136,5 @@ def test_MetadataSyncJob_only_import_new_source_keys(mocker, homedir, session, s
 
     assert mock_get_remote_data.call_count == 2
 
-    log_msg = storage_logger.debug.call_args_list[1][0][0]
+    log_msg = storage_logger.debug.call_args_list[5][0][0]
     assert log_msg == 'Source key data is unchanged'
