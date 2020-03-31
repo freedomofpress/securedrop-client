@@ -6,7 +6,7 @@ import tempfile
 import pytest
 
 from securedrop_client.crypto import GpgHelper, CryptoError, read_gzip_header_filename
-from securedrop_client.db import Source
+from tests import factory
 
 with open(os.path.join(os.path.dirname(__file__), 'files', 'test-key.gpg.pub.asc')) as f:
     PUB_KEY = f.read()
@@ -139,13 +139,24 @@ def test_subprocess_raises_exception(homedir, config, mocker, session_maker):
     assert mock_unlink.call_count == 1
 
 
-def test_import_key(homedir, config, source, session_maker):
+def test_import_key(homedir, config, session_maker):
     '''
     Check the happy path that we can import a single PGP key.
     Using the `config` fixture to ensure the config is written to disk.
     '''
+    source = factory.Source()
     helper = GpgHelper(homedir, session_maker, is_qubes=False)
-    helper.import_key(source['uuid'], source['public_key'], source['fingerprint'])
+    helper.import_key(source)
+
+
+def test_import_nonexistent_key(homedir, config, session_maker):
+    '''
+    Check failure handling when a source has no key.
+    '''
+    source = factory.Source(public_key=None)
+    helper = GpgHelper(homedir, session_maker, is_qubes=False)
+    with pytest.raises(CryptoError):
+        helper.import_key(source)
 
 
 def test_import_key_gpg_call_fail(homedir, config, mocker, session_maker):
@@ -154,12 +165,16 @@ def test_import_key_gpg_call_fail(homedir, config, mocker, session_maker):
     Using the `config` fixture to ensure the config is written to disk.
     '''
     helper = GpgHelper(homedir, session_maker, is_qubes=False)
+    source = factory.Source()
     err = subprocess.CalledProcessError(cmd=['foo'], returncode=1)
     mock_call = mocker.patch('securedrop_client.crypto.subprocess.check_call',
                              side_effect=err)
 
-    with pytest.raises(CryptoError, match='Could not import key\\.'):
-        helper._import(PUB_KEY)
+    with pytest.raises(
+            CryptoError,
+            match=f'Could not import key.'
+    ):
+        helper.import_key(source)
 
     # ensure the mock was used
     assert mock_call.called
@@ -200,45 +215,45 @@ def test_encrypt(homedir, source, config, mocker, session_maker):
     assert decrypted == plaintext
 
 
-def test_encrypt_fail(homedir, source, config, mocker, session_maker):
+def test_encrypt_fail(homedir, config, mocker, session_maker, session):
     '''
     Check that a `CryptoError` is raised if the call to `gpg` fails.
     Using the `config` fixture to ensure the config is written to disk.
     '''
     helper = GpgHelper(homedir, session_maker, is_qubes=False)
 
-    # first we have to ensure the pubkeys are available
-    helper._import(PUB_KEY)
+    source = factory.Source(public_key="iwillbreakyou")
+    session.add(source)
 
     plaintext = 'bueller?'
 
-    err = subprocess.CalledProcessError(cmd=['foo'], returncode=1)
-    mock_gpg = mocker.patch('securedrop_client.crypto.subprocess.check_call',
-                            side_effect=err)
+    # skip the import in encrypt_to_source, so encryption will fail
+    helper.import_key = mocker.MagicMock(return_value=None)
 
     with pytest.raises(CryptoError):
-        helper.encrypt_to_source(source['uuid'], plaintext)
+        helper.encrypt_to_source(source.uuid, plaintext)
 
-    # check mock called to prevent "dead code"
-    assert mock_gpg.called
+    assert helper.import_key.call_count == 1
 
 
-def test_encrypt_fail_if_source_fingerprint_missing(homedir, source, config, mocker, session_maker):
+def test_encrypt_fail_if_source_key_missing(homedir, config, mocker, session_maker, session):
     '''
-    Check that a `CryptoError` is raised before making a call to `gpg` if source fingerprint is
+    Check that a `CryptoError` is raised before making a call to `gpg` if source key is
     missing.
     '''
     helper = GpgHelper(homedir, session_maker, is_qubes=False)
-    session = helper.session_maker()
-    db_source = session.query(Source).filter_by(uuid=source['uuid']).one()
-    db_source.fingerprint = None
+
+    source = factory.Source(public_key=None)
+    session.add(source)
     session.commit()
+
     check_call_fn = mocker.patch('securedrop_client.crypto.subprocess.check_call')
 
-    with pytest.raises(CryptoError,
-                       match=r'Could not encrypt reply due to missing fingerprint for source: {}'.
-                       format(source['uuid'])):
-        helper.encrypt_to_source(source['uuid'], 'mock')
+    with pytest.raises(
+            CryptoError,
+            match=f"Could not encrypt reply: no key for source {source.uuid}"
+    ):
+        helper.encrypt_to_source(source.uuid, 'mock')
 
     check_call_fn.assert_not_called()
 
@@ -257,3 +272,19 @@ def test_encrypt_fail_if_journo_fingerprint_missing(homedir, source, config, moc
         helper.encrypt_to_source(source['uuid'], 'mock')
 
     check_call_fn.assert_not_called()
+
+
+def test_import_key_failure_in_encrypt_to_source(homedir, config, mocker, session_maker, session):
+    '''
+    Confirm handling of key import failure.
+    '''
+    helper = GpgHelper(homedir, session_maker, is_qubes=False)
+
+    source = factory.Source(public_key="iwillbreakyou")
+    session.add(source)
+
+    plaintext = 'bueller?'
+
+    with pytest.raises(CryptoError,
+                       match=r'Could not import key before encrypting reply:'):
+        helper.encrypt_to_source(source.uuid, plaintext)
