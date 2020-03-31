@@ -25,7 +25,7 @@ import os
 import shutil
 from pathlib import Path
 from dateutil.parser import parse
-from typing import List, Tuple, Type, Union
+from typing import Any, List, Tuple, Type, Union
 
 from sqlalchemy import and_, desc, or_
 from sqlalchemy.orm.exc import NoResultFound
@@ -133,8 +133,21 @@ def update_local_storage(session: Session,
         update_replies(remote_replies, get_local_replies(session), session, data_dir)
 
 
-def update_sources(remote_sources: List[SDKSource], local_sources:
-                   List[Source], session: Session, data_dir: str) -> None:
+def lazy_setattr(o: Any, a: str, v: Any) -> None:
+    """
+    Only assign v to o.a if they differ.
+
+    Intended to avoid unnecessarily dirtying SQLAlchemy objects during
+    sync.
+    """
+    if getattr(o, a) != v:
+        setattr(o, a, v)
+
+
+def update_sources(
+        remote_sources: List[SDKSource], local_sources: List[Source],
+        session: Session, data_dir: str
+) -> None:
     """
     Given collections of remote sources, the current local sources and a
     session to the local database, ensure the state of the local database
@@ -150,15 +163,13 @@ def update_sources(remote_sources: List[SDKSource], local_sources:
         if source.uuid in local_sources_by_uuid:
             # Update an existing record.
             local_source = local_sources_by_uuid[source.uuid]
-            local_source.journalist_designation = source.journalist_designation
-            local_source.is_flagged = source.is_flagged
-            local_source.interaction_count = source.interaction_count
-            local_source.document_count = source.number_of_documents
-            local_source.is_starred = source.is_starred
-            local_source.last_updated = parse(source.last_updated)
-            local_source.public_key = source.key['public']
-            local_source.fingerprint = source.key['fingerprint']
-            session.commit()
+            lazy_setattr(local_source, "journalist_designation", source.journalist_designation)
+            lazy_setattr(local_source, "is_flagged", source.is_flagged)
+            lazy_setattr(local_source, "interaction_count", source.interaction_count)
+            lazy_setattr(local_source, "document_count", source.number_of_documents)
+            lazy_setattr(local_source, "is_starred", source.is_starred)
+            lazy_setattr(local_source, "last_updated", parse(source.last_updated))
+            lazy_setattr(local_source, "public_key", source.key['public'])
 
             # Removing the UUID from local_sources_by_uuid ensures
             # this record won't be deleted at the end of this
@@ -179,7 +190,6 @@ def update_sources(remote_sources: List[SDKSource], local_sources:
                 fingerprint=source.key['fingerprint'],
             )
             session.add(ns)
-            session.commit()
 
             logger.debug('Added new source {}'.format(source.uuid))
 
@@ -222,9 +232,9 @@ def __update_submissions(model: Union[Type[File], Type[Message]],
             local_submission = [s for s in local_submissions
                                 if s.uuid == submission.uuid][0]
 
-            local_submission.size = submission.size
-            local_submission.is_read = submission.is_read
-            local_submission.download_url = submission.download_url
+            lazy_setattr(local_submission, "size", submission.size)
+            lazy_setattr(local_submission, "is_read", submission.is_read)
+            lazy_setattr(local_submission, "download_url", submission.download_url)
 
             # Removing the UUID from local_uuids ensures this record won't be
             # deleted at the end of this function.
@@ -268,8 +278,9 @@ def update_replies(remote_replies: List[SDKReply], local_replies: List[Reply],
             local_reply = [r for r in local_replies if r.uuid == reply.uuid][0]
 
             user = find_or_create_user(reply.journalist_uuid, reply.journalist_username, session)
-            local_reply.journalist_id = user.id
-            local_reply.size = reply.size
+            lazy_setattr(local_reply, "journalist_id", user.id)
+            lazy_setattr(local_reply, "size", reply.size)
+            lazy_setattr(local_reply, "filename", reply.filename)
 
             local_uuids.remove(reply.uuid)
             logger.debug('Updated reply {}'.format(reply.uuid))
@@ -375,8 +386,11 @@ def update_missing_files(data_dir: str, session: Session) -> List[File]:
     return files_that_are_missing
 
 
-def update_draft_replies(session: Session, source_id: int, timestamp: datetime,
-                         old_file_counter: int, new_file_counter: int) -> None:
+def update_draft_replies(
+        session: Session, source_id: int, timestamp: datetime,
+        old_file_counter: int, new_file_counter: int,
+        commit: bool = True
+) -> None:
     """
     When we confirm a sent reply R, if there are drafts that were sent after it,
     we need to reposition them to ensure that they appear _after_ the confirmed
@@ -410,7 +424,8 @@ def update_draft_replies(session: Session, source_id: int, timestamp: datetime,
                               .all():
         draft_reply.file_counter = new_file_counter
         session.add(draft_reply)
-    session.commit()
+    if commit:
+        session.commit()
 
 
 def find_new_files(session: Session) -> List[File]:

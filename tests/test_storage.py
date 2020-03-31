@@ -668,7 +668,7 @@ def test_update_messages(homedir, mocker):
     assert mock_session.commit.call_count == 1
 
 
-def test_update_replies(homedir, mocker):
+def test_update_replies(homedir, mocker, session):
     """
     Check that:
 
@@ -679,67 +679,61 @@ def test_update_replies(homedir, mocker):
     * References to journalist's usernames are correctly handled.
     """
     data_dir = os.path.join(homedir, 'data')
-    mock_session = mocker.MagicMock()
-    # Source object related to the submissions.
-    source = mocker.MagicMock()
-    source.uuid = str(uuid.uuid4())
-    source.journalist_filename = 'test'
+
+    journalist = factory.User(id=1)
+    session.add(journalist)
+
+    source = factory.Source()
+    session.add(source)
+
     # Some remote reply objects from the API, one of which will exist in the
     # local database, the other will NOT exist in the local database
     # (this will be added to the database)
-    remote_reply_update = make_remote_reply(source.uuid)
-    remote_reply_create = make_remote_reply(source.uuid, 'unknownuser')
+    remote_reply_update = make_remote_reply(source.uuid, journalist.uuid)
+    remote_reply_create = make_remote_reply(source.uuid, journalist.uuid)
+    remote_reply_create.file_counter = 3
+    remote_reply_create.filename = "3-reply.gpg"
+
     remote_replies = [remote_reply_update, remote_reply_create]
+
     # Some local reply objects. One already exists in the API results
     # (this will be updated), one does NOT exist in the API results (this will
     # be deleted from the local database).
-    local_reply_update = mocker.MagicMock()
-    local_reply_update.uuid = remote_reply_update.uuid
-    local_filename = "originalsubmissionname.txt"
-    local_reply_update.filename = local_filename
-    local_reply_update.journalist_uuid = str(uuid.uuid4())
-    local_reply_delete = mocker.MagicMock()
-    local_reply_delete.uuid = str(uuid.uuid4())
-    local_reply_delete.filename = "local_reply_delete.filename"
-    local_reply_delete.journalist_uuid = str(uuid.uuid4())
-    local_reply_delete_source_dir = os.path.join(homedir, source.journalist_filename)
-    local_reply_delete.location = mocker.MagicMock(
-        return_value=os.path.join(local_reply_delete_source_dir, local_reply_delete.filename))
-    local_replies = [local_reply_update, local_reply_delete]
-    # There needs to be a corresponding local_source and local_user
-    local_source = mocker.MagicMock()
-    local_source.uuid = source.uuid
-    local_source.id = 666  # };-)
-    local_user = mocker.MagicMock()
-    local_user.username = remote_reply_create.journalist_username
-    local_user.id = 42
-    mock_session.query().filter_by.side_effect = [[local_source, ],
-                                                  NoResultFound()]
-    mock_focu = mocker.MagicMock(return_value=local_user)
-    mocker.patch('securedrop_client.storage.find_or_create_user', mock_focu)
+    local_reply_update = factory.Reply(
+        uuid=remote_reply_update.uuid,
+        source_id=source.id,
+        source=source,
+        journalist_id=journalist.id,
+        filename="1-original-reply.gpg.",
+        size=2,
+    )
+    session.add(local_reply_update)
 
-    update_replies(remote_replies, local_replies, mock_session, data_dir)
+    local_reply_delete = factory.Reply(
+        source_id=source.id,
+        source=source,
+    )
+    session.add(local_reply_delete)
+
+    local_replies = [local_reply_update, local_reply_delete]
+
+    update_replies(remote_replies, local_replies, session, data_dir)
+    session.commit()
 
     # Check the expected local reply object has been updated with values
     # from the API.
-    assert local_reply_update.journalist_id == local_user.id
-    assert local_reply_update.filename == local_filename
+    assert local_reply_update.journalist_id == journalist.id
     assert local_reply_update.size == remote_reply_update.size
+    assert local_reply_update.filename == remote_reply_update.filename
 
-    # Check the expected local source object has been created with values from
-    # the API.
-    assert mock_session.add.call_count == 1
-    new_reply = mock_session.add.call_args_list[0][0][0]
-    assert new_reply.uuid == remote_reply_create.uuid
-    assert new_reply.source_id == local_source.id
-    assert new_reply.journalist_id == local_user.id
+    new_reply = session.query(db.Reply).filter_by(uuid=remote_reply_create.uuid).one()
+    assert new_reply.source_id == source.id
+    assert new_reply.journalist_id == journalist.id
     assert new_reply.size == remote_reply_create.size
     assert new_reply.filename == remote_reply_create.filename
-    # Ensure the record for the local source that is missing from the results
-    # of the API is deleted.
-    mock_session.delete.assert_called_once_with(local_reply_delete)
-    # Session is committed to database.
-    assert mock_session.commit.call_count == 1
+
+    # Ensure the local reply that is not in the API results is deleted.
+    assert session.query(db.Reply).filter_by(uuid=local_reply_delete.uuid).count() == 0
 
 
 def test_update_replies_cleanup_drafts(homedir, mocker, session):
