@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.6
+
+* Fix truncation and alignment issues in conversation view (#1029).
+
 ## 0.1.5
 
 * Update source list ordering when conversation is updated (#1013).
