@@ -21,8 +21,7 @@ from securedrop_client.storage import get_local_sources, get_local_messages, get
     delete_single_submission_or_reply_on_disk, get_local_files, find_new_files, \
     source_exists, set_message_or_reply_content, mark_as_downloaded, mark_as_decrypted, get_file, \
     get_message, get_reply, update_and_get_user, update_missing_files, mark_as_not_downloaded, \
-    mark_all_pending_drafts_as_failed, delete_local_source_by_uuid, update_source_key, \
-    update_file_size
+    mark_all_pending_drafts_as_failed, delete_local_source_by_uuid, update_file_size
 
 from securedrop_client import db
 from tests import factory
@@ -365,50 +364,6 @@ def test_update_sources(homedir, mocker, session_maker, session):
     # Ensure that we called the method to delete the source collection.
     # This will delete any content in that source's data directory.
     assert file_delete_fcn.call_count == 1
-
-
-def test_update_source_key_without_fingerprint(mocker, session):
-    """
-    Checks handling of a source from the API that lacks a fingerprint.
-    """
-
-    error_logger = mocker.patch('securedrop_client.storage.logger.error')
-
-    local_source = factory.Source(public_key=None, fingerprint=None)
-    session.add(local_source)
-
-    remote_source = factory.RemoteSource()
-    remote_source.key = {}
-
-    update_source_key(None, local_source, remote_source)
-
-    error_logger.assert_called_once_with("New source data lacks key fingerprint")
-
-    local_source2 = session.query(db.Source).filter_by(uuid=local_source.uuid).one()
-    assert not local_source2.fingerprint
-    assert not local_source2.public_key
-
-
-def test_update_source_key_without_key(mocker, session):
-    """
-    Checks handling of a source from the API that lacks a public key.
-    """
-
-    error_logger = mocker.patch('securedrop_client.storage.logger.error')
-
-    local_source = factory.Source(public_key=None, fingerprint=None)
-    session.add(local_source)
-
-    remote_source = factory.RemoteSource()
-    del remote_source.key["public"]
-
-    update_source_key(None, local_source, remote_source)
-
-    error_logger.assert_called_once_with("New source data lacks public key")
-
-    local_source2 = session.query(db.Source).filter_by(uuid=local_source.uuid).one()
-    assert not local_source2.fingerprint
-    assert not local_source2.public_key
 
 
 def add_test_file_to_temp_dir(home_dir, filename):

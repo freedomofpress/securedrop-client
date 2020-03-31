@@ -24,7 +24,6 @@ import subprocess
 import tempfile
 
 from sqlalchemy.orm import scoped_session
-from uuid import UUID
 
 from securedrop_client.config import Config
 from securedrop_client.db import Source
@@ -145,17 +144,14 @@ class GpgHelper:
         cmd.extend(['--trust-model', 'always'])
         return cmd
 
-    def import_key(self, source_uuid: UUID, key_data: str, fingerprint: str) -> None:
-        session = self.session_maker()
-        local_source = session.query(Source).filter_by(uuid=source_uuid).one()
-
-        logger.debug("Importing key with fingerprint %s", fingerprint)
-        self._import(key_data)
-
-        local_source.fingerprint = fingerprint
-        local_source.public_key = key_data
-        session.add(local_source)
-        session.commit()
+    def import_key(self, source: Source) -> None:
+        """
+        Imports a Source's GPG key.
+        """
+        logger.debug("Importing key for source %s", source.uuid)
+        if not source.public_key:
+            raise CryptoError(f"Could not import key: source {source.uuid} has no key")
+        self._import(source.public_key)
 
     def _import(self, key_data: str) -> None:
         '''Wrapper for `gpg --import-keys`'''
@@ -187,15 +183,18 @@ class GpgHelper:
         session = self.session_maker()
         source = session.query(Source).filter_by(uuid=source_uuid).one()
 
-        # do not attempt to encrypt if the source key is missing
-        if source.fingerprint is None:
-            raise CryptoError(
-                'Could not encrypt reply due to missing fingerprint for source: {}'.format(
-                    source_uuid))
-
         # do not attempt to encrypt if the journalist key is missing
-        if self.journalist_key_fingerprint is None:
+        if not self.journalist_key_fingerprint:
             raise CryptoError('Could not encrypt reply due to missing fingerprint for journalist')
+
+        # do not attempt to encrypt if the source key is missing
+        if not (source.fingerprint and source.public_key):
+            raise CryptoError(f'Could not encrypt reply: no key for source {source_uuid}')
+
+        try:
+            self.import_key(source)
+        except CryptoError as e:
+            raise CryptoError("Could not import key before encrypting reply: {e}") from e
 
         cmd = self._gpg_cmd_base()
 

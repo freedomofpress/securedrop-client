@@ -37,14 +37,18 @@ def User(**attrs):
 
 
 def Source(**attrs):
+
+    with open(os.path.join(os.path.dirname(__file__), 'files', 'test-key.gpg.pub.asc')) as f:
+        pub_key = f.read()
+
     global SOURCE_COUNT
     SOURCE_COUNT += 1
     defaults = dict(
         uuid='source-uuid-{}'.format(SOURCE_COUNT),
         journalist_designation='testy-mctestface',
         is_flagged=False,
-        public_key='mah pub key',
-        fingerprint='mah fingerprint',
+        public_key=pub_key,
+        fingerprint='B2FF7FB28EED8CABEBC5FB6C6179D97BCFA52E5F',
         interaction_count=0,
         is_starred=False,
         last_updated=datetime.now(),

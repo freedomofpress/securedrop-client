@@ -31,7 +31,7 @@ from sqlalchemy import and_, desc, or_
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.session import Session
 
-from securedrop_client.crypto import CryptoError, GpgHelper
+from securedrop_client.crypto import GpgHelper
 from securedrop_client.db import (DraftReply, Source, Message, File, Reply, ReplySendStatus,
                                   ReplySendStatusCodes, User)
 from securedrop_client.utils import chronometer
@@ -135,36 +135,6 @@ def update_local_storage(session: Session,
         update_replies(remote_replies, get_local_replies(session), session, data_dir)
 
 
-def update_source_key(gpg: GpgHelper, local_source: Source, remote_source: SDKSource) -> None:
-    """
-    Updates a source's GPG key.
-    """
-    if not remote_source.key.get("fingerprint"):
-        logger.error("New source data lacks key fingerprint")
-        return
-
-    if not remote_source.key.get("public"):
-        logger.error("New source data lacks public key")
-        return
-
-    if (
-        local_source.fingerprint == remote_source.key['fingerprint'] and
-        local_source.public_key == remote_source.key['public']
-    ):
-        logger.debug("Source key data is unchanged")
-        return
-
-    try:
-        # import_key updates the source's key and fingerprint, and commits
-        gpg.import_key(
-            remote_source.uuid,
-            remote_source.key['public'],
-            remote_source.key['fingerprint']
-        )
-    except CryptoError:
-        logger.error('Failed to update key information for source %s', remote_source.uuid)
-
-
 def update_sources(gpg: GpgHelper, remote_sources: List[SDKSource],
                    local_sources: List[Source], session: Session, data_dir: str) -> None:
     """
@@ -188,9 +158,9 @@ def update_sources(gpg: GpgHelper, remote_sources: List[SDKSource],
             local_source.document_count = source.number_of_documents
             local_source.is_starred = source.is_starred
             local_source.last_updated = parse(source.last_updated)
+            local_source.public_key = source.key['public']
+            local_source.fingerprint = source.key['fingerprint']
             session.commit()
-
-            update_source_key(gpg, local_source, source)
 
             # Removing the UUID from local_sources_by_uuid ensures
             # this record won't be deleted at the end of this
@@ -199,17 +169,19 @@ def update_sources(gpg: GpgHelper, remote_sources: List[SDKSource],
             logger.debug('Updated source {}'.format(source.uuid))
         else:
             # A new source to be added to the database.
-            ns = Source(uuid=source.uuid,
-                        journalist_designation=source.journalist_designation,
-                        is_flagged=source.is_flagged,
-                        interaction_count=source.interaction_count,
-                        is_starred=source.is_starred,
-                        last_updated=parse(source.last_updated),
-                        document_count=source.number_of_documents)
+            ns = Source(
+                uuid=source.uuid,
+                journalist_designation=source.journalist_designation,
+                is_flagged=source.is_flagged,
+                interaction_count=source.interaction_count,
+                is_starred=source.is_starred,
+                last_updated=parse(source.last_updated),
+                document_count=source.number_of_documents,
+                public_key=source.key['public'],
+                fingerprint=source.key['fingerprint'],
+            )
             session.add(ns)
             session.commit()
-
-            update_source_key(gpg, ns, source)
 
             logger.debug('Added new source {}'.format(source.uuid))
 
