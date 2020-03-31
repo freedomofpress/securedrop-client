@@ -782,6 +782,32 @@ def test_update_replies_cleanup_drafts(homedir, mocker, session):
     assert new_draft_replies[0].uuid == draft_reply_new.uuid
 
 
+def test_update_replies_missing_source(homedir, mocker, session):
+    """
+    Verify that a reply to an invalid source is handled.
+    """
+    data_dir = os.path.join(homedir, 'data')
+
+    journalist = factory.User(id=1)
+    session.add(journalist)
+
+    source = factory.Source()
+    session.add(source)
+
+    # Some remote reply objects from the API, one of which will exist in the
+    # local database, the other will NOT exist in the local database
+    # (this will be added to the database)
+    remote_reply = make_remote_reply("nonexistent-source", journalist.uuid)
+    remote_replies = [remote_reply]
+    local_replies = []
+
+    error_logger = mocker.patch('securedrop_client.storage.logger.error')
+
+    update_replies(remote_replies, local_replies, session, data_dir)
+
+    error_logger.assert_called_once_with(f"No source found for reply {remote_reply.uuid}")
+
+
 def test_find_or_create_user_existing_uuid(mocker):
     """
     Return an existing user object with the referenced uuid.

@@ -25,7 +25,7 @@ import os
 import shutil
 from pathlib import Path
 from dateutil.parser import parse
-from typing import Any, List, Tuple, Type, Union
+from typing import Any, Dict, List, Tuple, Type, Union
 
 from sqlalchemy import and_, desc, or_
 from sqlalchemy.orm.exc import NoResultFound
@@ -33,7 +33,7 @@ from sqlalchemy.orm.session import Session
 
 from securedrop_client.db import (DraftReply, Source, Message, File, Reply, ReplySendStatus,
                                   ReplySendStatusCodes, User)
-from securedrop_client.utils import chronometer
+from securedrop_client.utils import SourceCache, chronometer
 
 from sdclientapi import API
 from sdclientapi import Source as SDKSource
@@ -226,37 +226,34 @@ def __update_submissions(model: Union[Type[File], Type[Message]],
     * Local submissions not returned in the remote submissions are deleted
       from the local database.
     """
-    local_uuids = {submission.uuid for submission in local_submissions}
+    local_submissions_by_uuid = {s.uuid: s for s in local_submissions}
+    source_cache = SourceCache(session)
     for submission in remote_submissions:
-        if submission.uuid in local_uuids:
-            local_submission = [s for s in local_submissions
-                                if s.uuid == submission.uuid][0]
-
+        local_submission = local_submissions_by_uuid.get(submission.uuid)
+        if local_submission:
             lazy_setattr(local_submission, "size", submission.size)
             lazy_setattr(local_submission, "is_read", submission.is_read)
             lazy_setattr(local_submission, "download_url", submission.download_url)
 
             # Removing the UUID from local_uuids ensures this record won't be
             # deleted at the end of this function.
-            local_uuids.remove(submission.uuid)
-            logger.debug('Updated submission {}'.format(submission.uuid))
+            del local_submissions_by_uuid[submission.uuid]
+            logger.debug(f"Updated {model.__name__} {submission.uuid}")
         else:
             # A new submission to be added to the database.
-            _, source_uuid = submission.source_url.rsplit('/', 1)
-            source = session.query(Source).filter_by(uuid=source_uuid).first()
+            source = source_cache.get(submission.source_uuid)
             if source:
                 ns = model(source_id=source.id, uuid=submission.uuid, size=submission.size,
                            filename=submission.filename, download_url=submission.download_url)
                 session.add(ns)
-                logger.debug('Added new submission {}'.format(submission.uuid))
+                logger.debug(f"Added {model.__name__} {submission.uuid}")
 
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
-    for deleted_submission in [s for s in local_submissions
-                               if s.uuid in local_uuids]:
+    for deleted_submission in local_submissions_by_uuid.values():
         delete_single_submission_or_reply_on_disk(deleted_submission, data_dir)
         session.delete(deleted_submission)
-        logger.debug('Deleted submission {}'.format(deleted_submission.uuid))
+        logger.debug(f"Deleted {model.__name__} {deleted_submission.uuid}")
 
     session.commit()
 
@@ -272,26 +269,31 @@ def update_replies(remote_replies: List[SDKReply], local_replies: List[Reply],
     If a reply references a new journalist username, add them to the database
     as a new user.
     """
-    local_uuids = {reply.uuid for reply in local_replies}
+    local_replies_by_uuid = {r.uuid: r for r in local_replies}
+    users: Dict[str, User] = {}
+    source_cache = SourceCache(session)
     for reply in remote_replies:
-        if reply.uuid in local_uuids:
-            local_reply = [r for r in local_replies if r.uuid == reply.uuid][0]
+        user = users.get(reply.journalist_uuid)
+        if not user:
+            user = find_or_create_user(
+                reply.journalist_uuid, reply.journalist_username, session
+            )
+            users[reply.journalist_uuid] = user
 
-            user = find_or_create_user(reply.journalist_uuid, reply.journalist_username, session)
+        local_reply = local_replies_by_uuid.get(reply.uuid)
+        if local_reply:
             lazy_setattr(local_reply, "journalist_id", user.id)
             lazy_setattr(local_reply, "size", reply.size)
             lazy_setattr(local_reply, "filename", reply.filename)
 
-            local_uuids.remove(reply.uuid)
+            del local_replies_by_uuid[reply.uuid]
             logger.debug('Updated reply {}'.format(reply.uuid))
         else:
             # A new reply to be added to the database.
-            source_uuid = reply.source_uuid
-            source = session.query(Source).filter_by(uuid=source_uuid)[0]
-            user = find_or_create_user(
-                reply.journalist_uuid,
-                reply.journalist_username,
-                session)
+            source = source_cache.get(reply.source_uuid)
+            if not source:
+                logger.error(f"No source found for reply {reply.uuid}")
+                continue
 
             nr = Reply(uuid=reply.uuid,
                        journalist_id=user.id,
@@ -309,7 +311,7 @@ def update_replies(remote_replies: List[SDKReply], local_replies: List[Reply],
                 update_draft_replies(session, draft_reply_db_object.source.id,
                                      draft_reply_db_object.timestamp,
                                      draft_reply_db_object.file_counter,
-                                     nr.file_counter)
+                                     nr.file_counter, commit=False)
                 session.delete(draft_reply_db_object)
 
             except NoResultFound:
@@ -319,8 +321,7 @@ def update_replies(remote_replies: List[SDKReply], local_replies: List[Reply],
 
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
-    replies_to_delete = [r for r in local_replies if r.uuid in local_uuids]
-    for deleted_reply in replies_to_delete:
+    for deleted_reply in local_replies_by_uuid.values():
         delete_single_submission_or_reply_on_disk(deleted_reply, data_dir)
         session.delete(deleted_reply)
         logger.debug('Deleted reply {}'.format(deleted_reply.uuid))

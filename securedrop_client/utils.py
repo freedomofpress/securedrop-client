@@ -4,7 +4,11 @@ import os
 import time
 
 from contextlib import contextmanager
-from typing import Generator
+from typing import Dict, Generator, Optional
+
+from sqlalchemy.orm.session import Session
+
+from securedrop_client import db
 
 
 def safe_mkdir(sdc_home: str, relative_path: str = None) -> None:
@@ -85,3 +89,20 @@ def chronometer(logger: logging.Logger, description: str) -> Generator:
     finally:
         elapsed = time.perf_counter() - start
         logger.debug(f"{description} duration: {elapsed:.4f}s")
+
+
+class SourceCache(object):
+    """
+    Caches Sources by UUID.
+    """
+
+    def __init__(self, session: Session) -> None:
+        super().__init__()
+        self.cache: Dict[str, db.Source] = {}
+        self.session = session
+
+    def get(self, source_uuid: str) -> Optional[db.Source]:
+        if source_uuid not in self.cache:
+            source = self.session.query(db.Source).filter_by(uuid=source_uuid).first()
+            self.cache[source_uuid] = source
+        return self.cache.get(source_uuid)
