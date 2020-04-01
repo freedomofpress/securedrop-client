@@ -5,7 +5,6 @@ from sdclientapi import API
 from sqlalchemy.orm.session import Session
 
 from securedrop_client.api_jobs.base import ApiJob
-from securedrop_client.crypto import GpgHelper
 from securedrop_client.storage import get_remote_data, update_local_storage
 
 
@@ -19,10 +18,9 @@ class MetadataSyncJob(ApiJob):
 
     NUMBER_OF_TIMES_TO_RETRY_AN_API_CALL = 2
 
-    def __init__(self, data_dir: str, gpg: GpgHelper) -> None:
+    def __init__(self, data_dir: str) -> None:
         super().__init__(remaining_attempts=self.NUMBER_OF_TIMES_TO_RETRY_AN_API_CALL)
         self.data_dir = data_dir
-        self.gpg = gpg
 
     def call_api(self, api_client: API, session: Session) -> Any:
         '''
@@ -40,7 +38,6 @@ class MetadataSyncJob(ApiJob):
         remote_sources, remote_submissions, remote_replies = get_remote_data(api_client)
 
         update_local_storage(session,
-                             self.gpg,
                              remote_sources,
                              remote_submissions,
                              remote_replies,

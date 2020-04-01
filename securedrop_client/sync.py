@@ -103,7 +103,7 @@ class ApiSyncBackgroundTask(QObject):
         self.on_sync_success = on_sync_success
         self.on_sync_failure = on_sync_failure
 
-        self.job = MetadataSyncJob(self.data_dir, self.gpg)
+        self.job = MetadataSyncJob(self.data_dir)
         self.job.success_signal.connect(self.on_sync_success, type=Qt.QueuedConnection)
         self.job.failure_signal.connect(self.on_sync_failure, type=Qt.QueuedConnection)
 

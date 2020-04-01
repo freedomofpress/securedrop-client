@@ -1,7 +1,6 @@
 import os
 
 from securedrop_client.api_jobs.sync import MetadataSyncJob
-from securedrop_client.crypto import GpgHelper
 
 from tests import factory
 
@@ -11,8 +10,7 @@ with open(os.path.join(os.path.dirname(__file__), '..', 'files', 'test-key.gpg.p
 
 
 def test_MetadataSyncJob_success(mocker, homedir, session, session_maker):
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
-    job = MetadataSyncJob(homedir, gpg)
+    job = MetadataSyncJob(homedir)
 
     mock_source = factory.RemoteSource(
         key={
@@ -39,8 +37,7 @@ def test_MetadataSyncJob_success_with_missing_key(mocker, homedir, session, sess
     """
     Check that we can gracefully handle missing source keys.
     """
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
-    job = MetadataSyncJob(homedir, gpg)
+    job = MetadataSyncJob(homedir)
 
     mock_source = factory.RemoteSource(
         key={
@@ -50,7 +47,6 @@ def test_MetadataSyncJob_success_with_missing_key(mocker, homedir, session, sess
         }
     )
 
-    mock_key_import = mocker.patch.object(job.gpg, 'import_key')
     mock_get_remote_data = mocker.patch(
         'securedrop_client.api_jobs.sync.get_remote_data',
         return_value=([mock_source], [], []))
@@ -60,5 +56,4 @@ def test_MetadataSyncJob_success_with_missing_key(mocker, homedir, session, sess
 
     job.call_api(api_client, session)
 
-    assert mock_key_import.call_count == 0
     assert mock_get_remote_data.call_count == 1
