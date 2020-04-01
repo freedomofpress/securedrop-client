@@ -76,8 +76,8 @@ check: clean bandit lint mypy test-random test-functional ## Run the full CI tes
 
 .PHONY: update-pip-requirements
 update-pip-requirements: ## Updates all Python requirements files via pip-compile.
-	pip-compile --generate-hashes --allow-unsafe --output-file dev-requirements.txt requirements.in dev-requirements.in
-	pip-compile --generate-hashes --output-file requirements.txt requirements.in
+	pip-compile --verbose --rebuild --generate-hashes --annotate --allow-unsafe --output-file dev-requirements.txt requirements.in dev-requirements.in
+	pip-compile --verbose --rebuild --generate-hashes --annotate --output-file requirements.txt requirements.in
 
 # Explaination of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##
