@@ -429,7 +429,9 @@ def update_draft_replies(
 
 
 def find_new_files(session: Session) -> List[File]:
-    return session.query(File).filter_by(is_downloaded=False).all()
+    q = session.query(File).join(Source).filter_by(is_downloaded=False)
+    q = q.order_by(desc(Source.last_updated))
+    return q.all()
 
 
 def find_new_messages(session: Session) -> List[Message]:
@@ -441,10 +443,15 @@ def find_new_messages(session: Session) -> List[Message]:
     * The message has not yet had decryption attempted.
     * Decryption previously failed on a message.
     """
-    return session.query(Message).filter(
-        or_(Message.is_downloaded == False,
+    q = session.query(Message).join(Source).filter(
+        or_(
+            Message.is_downloaded == False,
             Message.is_decrypted == False,
-            Message.is_decrypted == None)).all()  # noqa: E711
+            Message.is_decrypted == None
+        )
+    )  # noqa: E712
+    q = q.order_by(desc(Source.last_updated))
+    return q.all()
 
 
 def find_new_replies(session: Session) -> List[Reply]:
@@ -456,10 +463,15 @@ def find_new_replies(session: Session) -> List[Reply]:
     * The reply has not yet had decryption attempted.
     * Decryption previously failed on a reply.
     """
-    return session.query(Reply).filter(
-        or_(Reply.is_downloaded == False,
+    q = session.query(Reply).join(Source).filter(
+        or_(
+            Reply.is_downloaded == False,
             Reply.is_decrypted == False,
-            Reply.is_decrypted == None)).all()  # noqa: E711
+            Reply.is_decrypted == None
+        )
+    )  # noqa: E712
+    q = q.order_by(desc(Source.last_updated))
+    return q.all()
 
 
 def mark_as_not_downloaded(uuid: str, session: Session) -> None:
