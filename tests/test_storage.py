@@ -14,7 +14,6 @@ from sqlalchemy.orm.exc import NoResultFound
 from PyQt5.QtCore import QThread
 
 import securedrop_client.db
-from securedrop_client.crypto import GpgHelper
 from securedrop_client.storage import get_local_sources, get_local_messages, get_local_replies, \
     get_remote_data, update_local_storage, update_sources, update_files, update_messages, \
     update_replies, find_or_create_user, find_new_messages, find_new_replies, \
@@ -210,12 +209,10 @@ def test_update_local_storage(homedir, mocker, session_maker):
     file_fn = mocker.patch('securedrop_client.storage.update_files')
     msg_fn = mocker.patch('securedrop_client.storage.update_messages')
 
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
-
     update_local_storage(
-        mock_session, gpg, [remote_source], remote_submissions, [remote_reply], homedir
+        mock_session, [remote_source], remote_submissions, [remote_reply], homedir
     )
-    src_fn.assert_called_once_with(gpg, [remote_source], [local_source], mock_session, homedir)
+    src_fn.assert_called_once_with([remote_source], [local_source], mock_session, homedir)
     rpl_fn.assert_called_once_with([remote_reply], [local_reply], mock_session, homedir)
     file_fn.assert_called_once_with([remote_file], [local_file], mock_session, homedir)
     msg_fn.assert_called_once_with([remote_message], [local_message], mock_session, homedir)
@@ -244,8 +241,7 @@ def test_sync_delete_race(homedir, mocker, session_maker, session):
     submissions = [message1]
     replies = []
 
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
-    update_local_storage(session, gpg, sources, submissions, replies, homedir)
+    update_local_storage(session, sources, submissions, replies, homedir)
 
     assert source_exists(session, source.uuid)
     get_message(session, message1.uuid)
@@ -282,7 +278,7 @@ def test_sync_delete_race(homedir, mocker, session_maker, session):
     mocker.patch('securedrop_client.storage.update_messages', delayed_update_messages)
 
     # simulate update_local_storage being called as part of the sync operation
-    update_local_storage(session, gpg, sources, [message1, message2], [], homedir)
+    update_local_storage(session, sources, [message1, message2], [], homedir)
 
     assert source_exists(session, source.uuid) is False
     with pytest.raises(NoResultFound):
@@ -330,9 +326,7 @@ def test_update_sources(homedir, mocker, session_maker, session):
     file_delete_fcn = mocker.patch(
         'securedrop_client.storage.delete_source_collection')
 
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
-
-    update_sources(gpg, remote_sources, local_sources, session, homedir)
+    update_sources(remote_sources, local_sources, session, homedir)
 
     # Check the expected local source object has been updated with values from
     # the API.
@@ -528,9 +522,7 @@ def test_update_sources_deletes_files_associated_with_the_source(
 
     local_sources = [local_source]
 
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
-
-    update_sources(gpg, remote_sources, local_sources, mock_session, homedir)
+    update_sources(remote_sources, local_sources, mock_session, homedir)
 
     # Ensure the files associated with the reply are deleted on disk.
     for test_filename in test_filename_absolute_paths:

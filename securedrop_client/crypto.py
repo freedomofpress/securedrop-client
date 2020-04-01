@@ -154,7 +154,7 @@ class GpgHelper:
         self._import(source.public_key)
 
     def _import(self, key_data: str) -> None:
-        '''Wrapper for `gpg --import-keys`'''
+        """Imports a key to the client GnuPG keyring."""
 
         with tempfile.NamedTemporaryFile('w+') as temp_key, \
                 tempfile.NamedTemporaryFile('w+') as stdout, \

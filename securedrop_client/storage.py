@@ -31,7 +31,6 @@ from sqlalchemy import and_, desc, or_
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.session import Session
 
-from securedrop_client.crypto import GpgHelper
 from securedrop_client.db import (DraftReply, Source, Message, File, Reply, ReplySendStatus,
                                   ReplySendStatusCodes, User)
 from securedrop_client.utils import chronometer
@@ -105,7 +104,6 @@ def get_remote_data(api: API) -> Tuple[List[SDKSource], List[SDKSubmission], Lis
 
 
 def update_local_storage(session: Session,
-                         gpg: GpgHelper,
                          remote_sources: List[SDKSource],
                          remote_submissions: List[SDKSubmission],
                          remote_replies: List[SDKReply],
@@ -123,7 +121,7 @@ def update_local_storage(session: Session,
     # Because of that, each get_local_* function needs to be called just before
     # its respective update_* function.
     with chronometer(logger, "update_sources"):
-        update_sources(gpg, remote_sources, get_local_sources(session), session, data_dir)
+        update_sources(remote_sources, get_local_sources(session), session, data_dir)
 
     with chronometer(logger, "update_files"):
         update_files(remote_files, get_local_files(session), session, data_dir)
@@ -135,8 +133,8 @@ def update_local_storage(session: Session,
         update_replies(remote_replies, get_local_replies(session), session, data_dir)
 
 
-def update_sources(gpg: GpgHelper, remote_sources: List[SDKSource],
-                   local_sources: List[Source], session: Session, data_dir: str) -> None:
+def update_sources(remote_sources: List[SDKSource], local_sources:
+                   List[Source], session: Session, data_dir: str) -> None:
     """
     Given collections of remote sources, the current local sources and a
     session to the local database, ensure the state of the local database
