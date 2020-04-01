@@ -903,7 +903,7 @@ def test_find_new_files(mocker, session):
     mock_submission = mocker.MagicMock()
     mock_submission.is_downloaded = False
     mock_submissions = [mock_submission]
-    mock_session.query().filter_by().all.return_value = mock_submissions
+    mock_session.query().join().filter_by().order_by().all.return_value = mock_submissions
     submissions = find_new_files(mock_session)
     assert submissions[0].is_downloaded is False
 
