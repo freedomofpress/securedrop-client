@@ -2157,7 +2157,7 @@ class FileWidget(QWidget):
         max-width: 48px;
         font-family: 'Source Sans Pro';
         font-weight: 400;
-        font-size: 14px;
+        font-size: 13px;
         color: #2a319d;
     }
     QWidget#horizontal_line {
@@ -2186,6 +2186,7 @@ class FileWidget(QWidget):
     FILE_FONT_SPACING = 2
     FILE_OPTIONS_FONT_SPACING = 1.6
     FILENAME_WIDTH_PX = 360
+    FILE_OPTIONS_LAYOUT_SPACING = 8
 
     def __init__(
         self,
@@ -2229,7 +2230,7 @@ class FileWidget(QWidget):
         file_options_layout = QHBoxLayout()
         self.file_options.setLayout(file_options_layout)
         file_options_layout.setContentsMargins(0, 0, 0, 0)
-        file_options_layout.setSpacing(8)
+        file_options_layout.setSpacing(self.FILE_OPTIONS_LAYOUT_SPACING)
         file_options_layout.setAlignment(Qt.AlignLeft)
         self.download_button = QPushButton(_(' DOWNLOAD'))
         self.download_button.setObjectName('download_button')
