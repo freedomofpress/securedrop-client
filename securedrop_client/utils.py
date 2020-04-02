@@ -88,7 +88,7 @@ def chronometer(logger: logging.Logger, description: str) -> Generator:
         yield
     finally:
         elapsed = time.perf_counter() - start
-        logger.debug(f"{description} duration: {elapsed:.4f}s")
+        logger.info(f"{description} duration: {elapsed:.4f}s")
 
 
 class SourceCache(object):

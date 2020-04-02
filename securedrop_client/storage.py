@@ -329,9 +329,7 @@ def update_replies(remote_replies: List[SDKReply], local_replies: List[Reply],
     session.commit()
 
 
-def find_or_create_user(uuid: str,
-                        username: str,
-                        session: Session) -> User:
+def find_or_create_user(uuid: str, username: str, session: Session, commit: bool = True) -> User:
     """
     Returns a user object representing the referenced journalist UUID.
     If the user does not already exist in the data, a new instance is created.
@@ -343,12 +341,14 @@ def find_or_create_user(uuid: str,
         new_user = User(username=username)
         new_user.uuid = uuid
         session.add(new_user)
-        session.commit()
+        if commit:
+            session.commit()
         return new_user
 
     if user.username != username:
         user.username = username
-        session.commit()
+        if commit:
+            session.commit()
 
     return user
 
