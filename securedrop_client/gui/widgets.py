@@ -1134,7 +1134,6 @@ class SourceWidget(QWidget):
         font-weight: 500;
         font-size: 13px;
         color: #383838;
-        padding-top: 2px;
     }
     QLabel#timestamp {
         font-family: 'Montserrat';
