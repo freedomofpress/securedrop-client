@@ -20,7 +20,8 @@ from securedrop_client.storage import get_local_sources, get_local_messages, get
     delete_single_submission_or_reply_on_disk, get_local_files, find_new_files, \
     source_exists, set_message_or_reply_content, mark_as_downloaded, mark_as_decrypted, get_file, \
     get_message, get_reply, update_and_get_user, update_missing_files, mark_as_not_downloaded, \
-    mark_all_pending_drafts_as_failed, delete_local_source_by_uuid, update_file_size
+    mark_all_pending_drafts_as_failed, delete_local_source_by_uuid, update_file_size, \
+    update_draft_replies
 
 from securedrop_client import db
 from tests import factory
@@ -1206,3 +1207,16 @@ def test_update_file_size(homedir, session):
     update_file_size(f.uuid, data_dir, session)
 
     assert f.size == real_size
+
+
+def test_update_draft_replies_commit(mocker, session):
+    """
+    Tests the commit argument of storage.update_draft_replies.
+    """
+    session.commit = mocker.MagicMock()
+
+    update_draft_replies(session, "notreal", datetime.datetime.now(), 1, 2, commit=False)
+    assert session.commit.call_count == 0
+
+    update_draft_replies(session, "notreal", datetime.datetime.now(), 1, 2)
+    assert session.commit.call_count == 1
