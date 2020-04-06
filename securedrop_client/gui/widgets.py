@@ -3112,46 +3112,74 @@ class ConversationView(QWidget):
         # items corresponding to deleted items in the source collection.
         current_conversation = self.current_messages.copy()
 
-        for index, conversation_item in enumerate(collection):
-            item_widget = current_conversation.get(conversation_item.uuid)
-            if item_widget:
-                current_conversation.pop(conversation_item.uuid)
-                if item_widget.index != index:
-                    # The existing widget is out of order.
-                    # Remove / re-add it and update index details.
-                    self.conversation_layout.removeWidget(item_widget)
-                    item_widget.index = index
-                    if isinstance(item_widget, ReplyWidget):
-                        self.conversation_layout.insertWidget(index, item_widget,
-                                                              alignment=Qt.AlignRight)
-                    else:
-                        self.conversation_layout.insertWidget(index, item_widget,
-                                                              alignment=Qt.AlignLeft)
-                # Check if text in item has changed, then update the
-                # widget to reflect this change.
-                if not isinstance(item_widget, FileWidget):
-                    if (item_widget.message.text() != conversation_item.content) and \
-                            conversation_item.content:
-                        item_widget.message.setText(conversation_item.content)
-            else:
-                # add a new item to be displayed.
-                if isinstance(conversation_item, Message):
-                    self.add_message(conversation_item, index)
-                elif isinstance(conversation_item, (DraftReply, Reply)):
-                    self.add_reply(conversation_item, index)
-                else:
-                    self.add_file(conversation_item, index)
+        conversations = []
 
-        # If any items remain in current_conversation, they are no longer in the
-        # source collection and should be removed from both the layout and the conversation
-        # dict. Note that an item may be removed from the source collection if it is deleted
-        # by another user (a journalist using the Web UI is able to delete individual
-        # submissions).
-        for item_widget in current_conversation.values():
-            logger.debug('Deleting item: {}'.format(item_widget.uuid))
-            self.current_messages.pop(item_widget.uuid)
-            item_widget.deleteLater()
-            self.conversation_layout.removeWidget(item_widget)
+        for index, conversation_item in enumerate(collection):
+            conversations.append((index, conversation_item))
+
+        def _remove_conversation(current_conversations):
+            # If any items remain in current_conversation, they are no longer in the
+            # source collection and should be removed from both the layout and the conversation
+            # dict. Note that an item may be removed from the source collection if it is deleted
+            # by another user (a journalist using the Web UI is able to delete individual
+            # submissions).
+            for item_widget in current_conversation.values():
+                logger.debug('Deleting item: {}'.format(item_widget.uuid))
+                self.current_messages.pop(item_widget.uuid)
+                item_widget.deleteLater()
+                self.conversation_layout.removeWidget(item_widget)
+
+        def _add_conversation(conversations, slice_size=1):
+
+            def schedule_conversation_management(slize_size=slice_size):
+                if not conversations:
+                    # Nothing more to do
+                    # Let us remove any deleted one
+                    _remove_conversation(current_conversation)
+                    return
+                conversations_slice = conversations[:slice_size]
+                for index, conversation_item in conversations_slice:
+                    item_widget = current_conversation.get(conversation_item.uuid)
+                    if item_widget:
+                        current_conversation.pop(conversation_item.uuid)
+                        if item_widget.index != index:
+                            # The existing widget is out of order.
+                            # Remove / re-add it and update index details.
+                            self.conversation_layout.removeWidget(item_widget)
+                            item_widget.index = index
+                            if isinstance(item_widget, ReplyWidget):
+                                self.conversation_layout.insertWidget(index, item_widget,
+                                                                    alignment=Qt.AlignRight)
+                            else:
+                                self.conversation_layout.insertWidget(index, item_widget,
+                                                                    alignment=Qt.AlignLeft)
+                        # Check if text in item has changed, then update the
+                        # widget to reflect this change.
+                        if not isinstance(item_widget, FileWidget):
+                            if (item_widget.message.text() != conversation_item.content) and \
+                                    conversation_item.content:
+                                item_widget.message.setText(conversation_item.content)
+                    else:
+                        # add a new item to be displayed.
+                        if isinstance(conversation_item, Message):
+                            self.add_message(conversation_item, index)
+                        elif isinstance(conversation_item, (DraftReply, Reply)):
+                            self.add_reply(conversation_item, index)
+                        else:
+                            self.add_file(conversation_item, index)
+                # ATTENTION! 16 is an arbitrary number arrived at via
+                # experimentation. It adds plenty of sources, but doesn't block
+                # for a noticable amount of time.
+                new_slice_size = min(16, slice_size * 2)
+                _add_conversation(conversations[slice_size:], new_slice_size)
+
+            # Schedule the closure defined above in the next iteration of the
+            # Qt event loop (thus unblocking the UI).
+            QTimer.singleShot(1, schedule_conversation_management)
+
+        _add_conversation(conversations)
+
+
 
     def add_file(self, file: File, index):
         """

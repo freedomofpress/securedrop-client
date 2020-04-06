@@ -1,6 +1,7 @@
 """
 Functional test for logging out and then login again from offline mode.
 """
+import time
 import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
@@ -19,6 +20,7 @@ def test_login_from_offline(qtbot, mocker):
 
     A journalist can successfully log out of the application.
     """
+    time.sleep(10)
     totp = "805168"
     tempdir = get_safe_tempdir()
     gui, controller = get_logged_in_test_context(tempdir, qtbot, totp)

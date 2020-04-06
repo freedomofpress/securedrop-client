@@ -4245,6 +4245,8 @@ def test_update_conversation_does_remove_successful_draft_items(mocker, session)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
     cv = ConversationView(source, mock_controller)
+    import time
+    time.sleep(10)
     assert cv.conversation_layout.count() == 3  # precondition with draft
 
     # add the new message and persist

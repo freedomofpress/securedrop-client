@@ -4,6 +4,7 @@ tests are based upon the client testing descriptions here:
 
 https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-testing
 """
+import time
 import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
@@ -18,6 +19,7 @@ def test_export_dialog(qtbot, mocker):
     We will download a file received from the source
     the conversation window.
     """
+    time.sleep(5)
     totp = "353061"
     tempdir = get_safe_tempdir()
     gui, controller = get_logged_in_test_context(tempdir, qtbot, totp)
