@@ -148,7 +148,8 @@ def test_RunnableQueue_resubmitted_jobs(mocker):
     assert queue.queue.get(block=True) == (1, job1)
 
     # Now resubmit job1 via put_nowait. It should execute prior to job2-4.
-    queue.re_add_job(job1)
+    with queue.condition_add_or_remove_job:
+        queue.re_add_job(job1)
     assert queue.queue.get(block=True) == (1, job1)
     assert queue.queue.get(block=True) == (1, job3)
     assert queue.queue.get(block=True) == (2, job2)
@@ -188,7 +189,8 @@ def test_RunnableQueue_duplicate_jobs(mocker):
 
     # Ensure that using re_add_job in the case of a timeout won't allow duplicate
     # jobs to be added.
-    queue.re_add_job(msg_dl_job)
+    with queue.condition_add_or_remove_job:
+        queue.re_add_job(msg_dl_job)
     assert len(queue.queue.queue) == 2
 
 
