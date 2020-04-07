@@ -72,7 +72,7 @@ class RunnableQueue(QObject):
         self.current_job = None  # type: Optional[ApiJob]
 
         # Hold when reading/writing self.current_job or mutating queue state
-        self.mutex = threading.Lock()
+        self.condition_add_or_remove_job = threading.Condition()
 
         self.resume.connect(self.process)
 
@@ -92,7 +92,7 @@ class RunnableQueue(QObject):
         '''
         Add the job with its priority to the queue after assigning it the next order_number.
         '''
-        with self.mutex:
+        with self.condition_add_or_remove_job:
             if self._check_for_duplicate_jobs(job):
                 return
 
@@ -101,6 +101,7 @@ class RunnableQueue(QObject):
             job.order_number = current_order_number
             priority = self.JOB_PRIORITIES[type(job)]
             self.queue.put_nowait((priority, job))
+            self.condition_add_or_remove_job.notify()
 
     def re_add_job(self, job: ApiJob) -> None:
         '''
@@ -114,6 +115,7 @@ class RunnableQueue(QObject):
         job.remaining_attempts = DEFAULT_NUM_ATTEMPTS
         priority = self.JOB_PRIORITIES[type(job)]
         self.queue.put_nowait((priority, job))
+        self.condition_add_or_remove_job.notify()
 
     @pyqtSlot()
     def process(self) -> None:
@@ -136,15 +138,13 @@ class RunnableQueue(QObject):
         Note: Generic exceptions are handled in _do_call_api.
         '''
         while True:
-            if not self.queue.empty():
-                with self.mutex:
-                    priority, self.current_job = self.queue.get(block=False)
-            else:
-                continue
+            with self.condition_add_or_remove_job:
+                self.condition_add_or_remove_job.wait_for(lambda: not self.queue.empty())
+                priority, self.current_job = self.queue.get(block=False)
 
             if isinstance(self.current_job, PauseQueueJob):
                 self.paused.emit()
-                with self.mutex:
+                with self.condition_add_or_remove_job:
                     self.current_job = None
                 return
 
@@ -154,20 +154,20 @@ class RunnableQueue(QObject):
             except ApiInaccessibleError as e:
                 logger.debug('{}: {}'.format(type(e).__name__, e))
                 self.api_client = None
-                with self.mutex:
+                with self.condition_add_or_remove_job:
                     self.current_job = None
                 return
             except (RequestTimeoutError, ServerConnectionError) as e:
                 logger.debug('{}: {}'.format(type(e).__name__, e))
                 self.add_job(PauseQueueJob())
-                with self.mutex:
+                with self.condition_add_or_remove_job:
                     job, self.current_job = self.current_job, None
                     self.re_add_job(job)
             except Exception as e:
                 logger.error('{}: {}'.format(type(e).__name__, e))
                 logger.debug('Skipping job')
             finally:
-                with self.mutex:
+                with self.condition_add_or_remove_job:
                     self.current_job = None
                 session.close()
 
