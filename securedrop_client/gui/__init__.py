@@ -16,6 +16,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import textwrap
 from typing import Union
 
 from PyQt5.QtWidgets import QLabel, QHBoxLayout, QPushButton, QWidget
@@ -170,8 +171,13 @@ class SecureQLabel(QLabel):
         self.elided = True if elided_text != text else False
         if self.elided and self.with_tooltip:
             tooltip_label = SecureQLabel(text)
-            self.setToolTip(tooltip_label.text())
-        super().setText(elided_text)
+            tooltip_text = tooltip_label.text()
+            if tooltip_text.find("\n") != -1:
+                tooltip_text = "".join(tooltip_text.split("\n"))
+            self.setToolTip(tooltip_text)
+
+        wrapped = "\n".join(textwrap.wrap(elided_text))
+        super().setText(wrapped)
 
     def get_elided_text(self, full_text: str) -> str:
         if not self.max_length:
