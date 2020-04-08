@@ -231,6 +231,11 @@ class SyncIcon(QLabel):
             self.sync_animation.setScaledSize(QSize(24, 20))
             self.setMovie(self.sync_animation)
             self.sync_animation.start()
+        elif data == 'synced':
+            self.sync_animation = load_movie("sync.gif")
+            self.sync_animation.setScaledSize(QSize(24, 20))
+            self.setMovie(self.sync_animation)
+            self.sync_animation.start()
 
     def enable(self):
         self.sync_animation = load_movie("sync.gif")
