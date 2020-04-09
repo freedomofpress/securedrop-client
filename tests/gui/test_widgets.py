@@ -234,9 +234,9 @@ def test_SyncIcon_disable_starts_animiation(mocker):
     sync_icon.sync_animation.start.assert_called_with()
 
 
-def test_SyncIcon__on_sync(mocker):
+def test_SyncIcon__on_sync_syncing(mocker):
     '''
-    Sync icon becomes active when it receives the syncing sync signal.
+    Sync icon becomes active when it receives the `syncing` signal.
     '''
     sync_icon = SyncIcon()
 
@@ -245,6 +245,19 @@ def test_SyncIcon__on_sync(mocker):
     file_path = sync_icon.sync_animation.fileName()
     filename = file_path[file_path.rfind('/') + 1:]
     assert filename == 'sync_active.gif'
+
+
+def test_SyncIcon__on_sync_synced(mocker):
+    '''
+    Sync icon becomes "inactive" when it receives the `synced` signal.
+    '''
+    sync_icon = SyncIcon()
+
+    sync_icon._on_sync('synced')
+
+    file_path = sync_icon.sync_animation.fileName()
+    filename = file_path[file_path.rfind('/') + 1:]
+    assert filename == 'sync.gif'
 
 
 def test_SyncIcon___on_sync_with_data_not_equal_to_syncing(mocker):
