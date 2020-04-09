@@ -22,11 +22,6 @@ class DeleteSourceJob(ApiJob):
         '''
         try:
             source_sdk_object = sdclientapi.Source(uuid=self.source_uuid)
-
-            # TODO: After https://github.com/freedomofpress/securedrop-client/issues/648 is
-            # merged, we will want to pass the timeout to delete_source instead of setting
-            # it on the api object
-            api_client.default_request_timeout = 5
             api_client.delete_source(source_sdk_object)
 
             return self.source_uuid
