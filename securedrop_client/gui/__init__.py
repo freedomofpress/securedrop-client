@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import textwrap
 from typing import Union
 
-from PyQt5.QtWidgets import QLabel, QHBoxLayout, QPushButton, QWidget
+from PyQt5.QtWidgets import QPlainTextEdit, QHBoxLayout, QPushButton, QWidget, QLabel
 from PyQt5.QtCore import QSize, Qt
 
 from securedrop_client.resources import load_svg, load_icon
@@ -147,7 +147,7 @@ class SvgLabel(QLabel):
         self.layout().addWidget(self.svg)
 
 
-class SecureQLabel(QLabel):
+class SecureQLabel(QPlainTextEdit):
     def __init__(
         self,
         text: str = "",
@@ -157,27 +157,27 @@ class SecureQLabel(QLabel):
         max_length: int = 0,
         with_tooltip: bool = False,
     ):
-        super().__init__(parent, flags)
+        super().__init__(parent)
         self.wordwrap = wordwrap
         self.max_length = max_length
-        self.setWordWrap(wordwrap)  # If True, wraps text at default of 70 characters
         self.with_tooltip = with_tooltip
+        self.setReadOnly(True)
         self.setText(text)
-        self.elided = True if self.text() != text else False
+        self.elided = True if self.toPlainText() != text else False
+        self.setStyleSheet("SecureQLabel { border: none; } ")
+        policy = self.sizePolicy()
+        policy.setVerticalStretch(1)
+        self.setSizePolicy(policy)
 
     def setText(self, text: str) -> None:
-        self.setTextFormat(Qt.PlainText)
         elided_text = self.get_elided_text(text)
         self.elided = True if elided_text != text else False
         if self.elided and self.with_tooltip:
             tooltip_label = SecureQLabel(text)
-            tooltip_text = tooltip_label.text()
-            if tooltip_text.find("\n") != -1:
-                tooltip_text = "".join(tooltip_text.split("\n"))
+            tooltip_text = tooltip_label.plainText()
             self.setToolTip(tooltip_text)
 
-        wrapped = "\n".join(textwrap.wrap(elided_text))
-        super().setText(wrapped)
+        super().setPlainText(elided_text)
 
     def get_elided_text(self, full_text: str) -> str:
         if not self.max_length:
@@ -201,3 +201,6 @@ class SecureQLabel(QLabel):
 
     def is_elided(self) -> bool:
         return self.elided
+
+    def text(self) -> str:
+        return self.toPlainText()

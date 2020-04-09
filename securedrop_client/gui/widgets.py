@@ -1918,7 +1918,7 @@ class SpeechBubble(QWidget):
 
         # Set styles
         self.setStyleSheet(self.CSS)
-        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
 
         # Set layout
         layout = QVBoxLayout()
