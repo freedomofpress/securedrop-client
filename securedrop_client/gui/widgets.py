@@ -38,7 +38,8 @@ from securedrop_client import __version__ as sd_version
 from securedrop_client.db import DraftReply, Source, Message, File, Reply, User
 from securedrop_client.storage import source_exists
 from securedrop_client.export import ExportStatus, ExportError
-from securedrop_client.gui import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
+from securedrop_client.gui import SecureQLabel, SecureQPlainTextEdit, SvgLabel, SvgPushButton, \
+    SvgToggleButton
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_icon, load_image, load_movie
 from securedrop_client.utils import humanize_filesize
@@ -1899,6 +1900,7 @@ class SpeechBubble(QWidget):
         font-size: 15px;
         background-color: #fff;
         padding: 16px;
+        border: none;
     }
     #color_bar {
         min-height: 5px;
@@ -1929,7 +1931,7 @@ class SpeechBubble(QWidget):
         layout.setSpacing(0)
 
         # Message box
-        self.message = SecureQLabel(text)
+        self.message = SecureQPlainTextEdit(text)
         self.message.setObjectName('message')
 
         # Color bar
@@ -3135,7 +3137,7 @@ class ConversationView(QWidget):
                 # Check if text in item has changed, then update the
                 # widget to reflect this change.
                 if not isinstance(item_widget, FileWidget):
-                    if (item_widget.message.text() != conversation_item.content) and \
+                    if (item_widget.message.toPlainText() != conversation_item.content) and \
                             conversation_item.content:
                         item_widget.message.setText(conversation_item.content)
             else:
