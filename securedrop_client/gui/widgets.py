@@ -955,6 +955,8 @@ class SourceList(QListWidget):
         self.controller.reply_ready.connect(self.set_snippet)
         self.controller.file_ready.connect(self.set_snippet)
         self.controller.file_missing.connect(self.set_snippet)
+        self.controller.message_download_failed.connect(self.set_snippet)
+        self.controller.reply_download_failed.connect(self.set_snippet)
 
     def update(self, sources: List[Source]) -> List[str]:
         """
@@ -1887,38 +1889,57 @@ class SpeechBubble(QWidget):
     and journalist.
     """
 
-    CSS = '''
-    #speech_bubble {
-        min-width: 540px;
-        max-width: 540px;
-        background-color: #fff;
+    CSS = {
+        "speech_bubble": """
+            min-width: 540px;
+            max-width: 540px;
+            background-color: #fff;
+        """,
+        "message": """
+            font-family: 'Source Sans Pro';
+            font-weight: 400;
+            font-size: 15px;
+            background-color: #fff;
+            padding: 16px;
+        """,
+        "color_bar": """
+            min-height: 5px;
+            max-height: 5px;
+            background-color: #102781;
+            border: 0px;
+        """
     }
-    #message {
-        font-family: 'Source Sans Pro';
-        font-weight: 400;
-        font-size: 15px;
-        background-color: #fff;
-        padding: 16px;
+
+    CSS_ERROR = {
+        "speech_bubble": """
+            min-width: 540px;
+            max-width: 540px;
+            background-color: #fff;
+        """,
+        "message": """
+            font-family: 'Source Sans Pro';
+            font-weight: 400;
+            font-size: 15px;
+            font-style: italic;
+            background-color: rgba(255, 255, 255, 0.6);
+            padding: 16px;
+        """,
+        "color_bar": """
+            min-height: 5px;
+            max-height: 5px;
+            background-color: #BCBFCD;
+            border: 0px;
+        """
     }
-    #color_bar {
-        min-height: 5px;
-        max-height: 5px;
-        background-color: #102781;
-        border: 0px;
-    }
-    '''
 
     TOP_MARGIN = 28
     BOTTOM_MARGIN = 10
 
-    def __init__(self, message_uuid: str, text: str, update_signal, index: int) -> None:
+    def __init__(self, message_uuid: str, text: str, update_signal,
+                 download_error_signal, index: int, error: bool = False) -> None:
         super().__init__()
         self.uuid = message_uuid
         self.index = index
-
-        # Set styles
-        self.setStyleSheet(self.CSS)
-        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         # Set layout
         layout = QVBoxLayout()
@@ -1937,10 +1958,10 @@ class SpeechBubble(QWidget):
         self.color_bar.setObjectName('color_bar')
 
         # Speech bubble
-        speech_bubble = QWidget()
-        speech_bubble.setObjectName('speech_bubble')
+        self.speech_bubble = QWidget()
+        self.speech_bubble.setObjectName('speech_bubble')
         speech_bubble_layout = QVBoxLayout()
-        speech_bubble.setLayout(speech_bubble_layout)
+        self.speech_bubble.setLayout(speech_bubble_layout)
         speech_bubble_layout.addWidget(self.message)
         speech_bubble_layout.addWidget(self.color_bar)
         speech_bubble_layout.setContentsMargins(0, 0, 0, 0)
@@ -1952,7 +1973,7 @@ class SpeechBubble(QWidget):
         self.bubble_area_layout = QHBoxLayout()
         self.bubble_area_layout.setContentsMargins(0, self.TOP_MARGIN, 0, self.BOTTOM_MARGIN)
         bubble_area.setLayout(self.bubble_area_layout)
-        self.bubble_area_layout.addWidget(speech_bubble)
+        self.bubble_area_layout.addWidget(self.speech_bubble)
 
         # Add widget to layout
         layout.addWidget(bubble_area)
@@ -1961,8 +1982,16 @@ class SpeechBubble(QWidget):
         self.message.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.message.setContextMenuPolicy(Qt.NoContextMenu)
 
+        # Set styles
+        if error:
+            self.set_error_styles()
+        else:
+            self.set_normal_styles()
+        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
         # Connect signals to slots
         update_signal.connect(self._update_text)
+        download_error_signal.connect(self.set_error)
 
     @pyqtSlot(str, str, str)
     def _update_text(self, source_id: str, message_uuid: str, text: str) -> None:
@@ -1972,6 +2001,26 @@ class SpeechBubble(QWidget):
         """
         if message_uuid == self.uuid:
             self.message.setText(text)
+        self.set_normal_styles()
+
+    @pyqtSlot(str, str, str)
+    def set_error(self, source_uuid: str, uuid: str, text: str):
+        """
+        Adjust style and text to indicate an error.
+        """
+        if uuid == self.uuid:
+            self.message.setText(text)
+            self.set_error_styles()
+
+    def set_normal_styles(self):
+        self.speech_bubble.setStyleSheet(self.CSS["speech_bubble"])
+        self.message.setStyleSheet(self.CSS["message"])
+        self.color_bar.setStyleSheet(self.CSS["color_bar"])
+
+    def set_error_styles(self):
+        self.speech_bubble.setStyleSheet(self.CSS_ERROR["speech_bubble"])
+        self.message.setStyleSheet(self.CSS_ERROR["message"])
+        self.color_bar.setStyleSheet(self.CSS_ERROR["color_bar"])
 
 
 class MessageWidget(SpeechBubble):
@@ -1979,8 +2028,9 @@ class MessageWidget(SpeechBubble):
     Represents an incoming message from the source.
     """
 
-    def __init__(self, message_uuid: str, message: str, update_signal, index: int) -> None:
-        super().__init__(message_uuid, message, update_signal, index)
+    def __init__(self, message_uuid: str, message: str, update_signal,
+                 download_error_signal, index: int, error: bool = False) -> None:
+        super().__init__(message_uuid, message, update_signal, download_error_signal, index, error)
 
 
 class ReplyWidget(SpeechBubble):
@@ -1988,60 +2038,78 @@ class ReplyWidget(SpeechBubble):
     Represents a reply to a source.
     """
 
-    CSS_MESSAGE_REPLY_FAILED = '''
-        font-family: 'Source Sans Pro';
-        font-weight: 400;
-        font-size: 15px;
-        background-color: #fff;
-        color: #3b3b3b;
-        padding: 16px;
-    '''
+    CSS = {
+        "color_bar": """
+            min-height: 5px;
+            max-height: 5px;
+            background-color: #0065db;
+            border: 0px;
+        """,
+        "message": """
+            font-family: 'Source Sans Pro';
+            font-weight: 400;
+            font-size: 15px;
+            background-color: #fff;
+            color: #3b3b3b;
+            padding: 16px;
+        """,
+        "speech_bubble": """
+            min-width: 540px;
+            max-width: 540px;
+            background-color: #fff;
+        """,
+    }
 
-    CSS_COLOR_BAR_REPLY_FAILED = '''
-        min-height: 5px;
-        max-height: 5px;
-        background-color: #ff3366;
-        border: 0px;
-    '''
-
-    CSS_ERROR_MESSAGE_REPLY_FAILED = '''
+    CSS_ERROR_MESSAGE = """
         font-family: 'Source Sans Pro';
         font-weight: 500;
         font-size: 13px;
         color: #ff3366;
-    '''
+    """
 
-    CSS_MESSAGE_REPLY_SUCCEEDED = '''
-        font-family: 'Source Sans Pro';
-        font-weight: 400;
-        font-size: 15px;
-        background-color: #fff;
-        color: #3b3b3b;
-        padding: 16px;
-    '''
+    CSS_REPLY_FAILED = {
+        "color_bar": """
+            min-height: 5px;
+            max-height: 5px;
+            background-color: #ff3366;
+            border: 0px;
+        """,
+        "message": """
+            font-family: 'Source Sans Pro';
+            font-weight: 400;
+            font-size: 15px;
+            background-color: #fff;
+            color: #3b3b3b;
+            padding: 16px;
+        """,
+        "speech_bubble": """
+            min-width: 540px;
+            max-width: 540px;
+            background-color: #fff;
+        """,
+    }
 
-    CSS_COLOR_BAR_REPLY_SUCCEEDED = '''
-        min-height: 5px;
-        max-height: 5px;
-        background-color: #0065db;
-        border: 0px;
-    '''
-
-    CSS_MESSAGE_REPLY_PENDING = '''
-        font-family: 'Source Sans Pro';
-        font-weight: 400;
-        font-size: 15px;
-        color: #A9AAAD;
-        background-color: #F7F8FC;
-        padding: 16px;
-    '''
-
-    CSS_COLOR_BAR_REPLY_PENDING = '''
-        min-height: 5px;
-        max-height: 5px;
-        background-color: #0065db;
-        border: 0px;
-    '''
+    CSS_REPLY_PENDING = {
+        "color_bar": """
+            min-height: 5px;
+            max-height: 5px;
+            background-color: #0065db;
+            border: 0px;
+        """,
+        "message": """
+            font-family: 'Source Sans Pro';
+            font-weight: 400;
+            font-size: 15px;
+            color: #A9AAAD;
+            background-color: #F7F8FC;
+            padding: 16px;
+        """,
+        "speech_bubble": """
+            min-width: 540px;
+            max-width: 540px;
+            background-color: #fff;
+        """,
+    }
 
     def __init__(
         self,
@@ -2049,11 +2117,13 @@ class ReplyWidget(SpeechBubble):
         message: str,
         reply_status: str,
         update_signal,
+        download_error_signal,
         message_succeeded_signal,
         message_failed_signal,
         index: int,
+        error: bool = False,
     ) -> None:
-        super().__init__(message_uuid, message, update_signal, index)
+        super().__init__(message_uuid, message, update_signal, download_error_signal, index, error)
         self.uuid = message_uuid
 
         error_icon = SvgLabel('error_icon.svg', svg_size=QSize(12, 12))
@@ -2061,7 +2131,7 @@ class ReplyWidget(SpeechBubble):
         error_icon.setFixedWidth(12)
         error_message = SecureQLabel('Failed to send', wordwrap=False)
         error_message.setObjectName('error_message')
-        error_message.setStyleSheet(self.CSS_ERROR_MESSAGE_REPLY_FAILED)
+        error_message.setStyleSheet(self.CSS_ERROR_MESSAGE)
 
         self.error = QWidget()
         error_layout = QHBoxLayout()
@@ -2078,20 +2148,21 @@ class ReplyWidget(SpeechBubble):
         message_failed_signal.connect(self._on_reply_failure)
 
         # Set styles
-        self._set_reply_state(reply_status)
+        if error:
+            self.set_error_styles()
+        else:
+            self._set_reply_state(reply_status)
 
     def _set_reply_state(self, status: str) -> None:
+        logger.debug("Setting ReplyWidget state: %s", status)
         if status == 'SUCCEEDED':
-            self.message.setStyleSheet(self.CSS_MESSAGE_REPLY_SUCCEEDED)
-            self.color_bar.setStyleSheet(self.CSS_COLOR_BAR_REPLY_SUCCEEDED)
+            self.set_normal_styles()
             self.error.hide()
         elif status == 'FAILED':
-            self.message.setStyleSheet(self.CSS_MESSAGE_REPLY_FAILED)
-            self.color_bar.setStyleSheet(self.CSS_COLOR_BAR_REPLY_FAILED)
+            self.set_failed_styles()
             self.error.show()
         elif status == 'PENDING':
-            self.message.setStyleSheet(self.CSS_MESSAGE_REPLY_PENDING)
-            self.color_bar.setStyleSheet(self.CSS_COLOR_BAR_REPLY_PENDING)
+            self.set_pending_styles()
 
     @pyqtSlot(str, str, str)
     def _on_reply_success(self, source_id: str, message_uuid: str, content: str) -> None:
@@ -2110,6 +2181,16 @@ class ReplyWidget(SpeechBubble):
         """
         if message_uuid == self.uuid:
             self._set_reply_state('FAILED')
+
+    def set_failed_styles(self):
+        self.speech_bubble.setStyleSheet(self.CSS_REPLY_FAILED["speech_bubble"])
+        self.message.setStyleSheet(self.CSS_REPLY_FAILED["message"])
+        self.color_bar.setStyleSheet(self.CSS_REPLY_FAILED["color_bar"])
+
+    def set_pending_styles(self):
+        self.speech_bubble.setStyleSheet(self.CSS_REPLY_PENDING["speech_bubble"])
+        self.message.setStyleSheet(self.CSS_REPLY_PENDING["message"])
+        self.color_bar.setStyleSheet(self.CSS_REPLY_PENDING["color_bar"])
 
 
 class FileWidget(QWidget):
@@ -3171,7 +3252,8 @@ class ConversationView(QWidget):
             self.controller,
             self.controller.file_ready,
             self.controller.file_missing,
-            index)
+            index,
+        )
         self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignLeft)
         self.current_messages[file.uuid] = conversation_item
         self.conversation_updated.emit()
@@ -3190,7 +3272,13 @@ class ConversationView(QWidget):
         Add a message from the source.
         """
         conversation_item = MessageWidget(
-            message.uuid, str(message), self.controller.message_ready, index)
+            message.uuid,
+            str(message),
+            self.controller.message_ready,
+            self.controller.message_download_failed,
+            index,
+            message.download_error is not None,
+        )
         self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignLeft)
         self.current_messages[message.uuid] = conversation_item
         self.conversation_updated.emit()
@@ -3210,9 +3298,12 @@ class ConversationView(QWidget):
             str(reply),
             send_status,
             self.controller.reply_ready,
+            self.controller.reply_download_failed,
             self.controller.reply_succeeded,
             self.controller.reply_failed,
-            index)
+            index,
+            getattr(reply, "download_error", None) is not None,
+        )
         self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignRight)
         self.current_messages[reply.uuid] = conversation_item
 
@@ -3226,6 +3317,7 @@ class ConversationView(QWidget):
             content,
             'PENDING',
             self.controller.reply_ready,
+            self.controller.reply_download_failed,
             self.controller.reply_succeeded,
             self.controller.reply_failed,
             index)

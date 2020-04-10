@@ -15,7 +15,7 @@ from sqlalchemy.orm.session import Session
 
 from securedrop_client.api_jobs.base import ApiJob
 from securedrop_client.crypto import GpgHelper, CryptoError
-from securedrop_client.db import File, Message, Reply
+from securedrop_client.db import DownloadError, DownloadErrorCodes, File, Message, Reply
 from securedrop_client.storage import mark_as_decrypted, mark_as_downloaded, \
     set_message_or_reply_content
 
@@ -147,6 +147,11 @@ class DownloadJob(ApiJob):
             etag, download_path = self.call_download_api(api, db_object)
 
             if not self._check_file_integrity(etag, download_path):
+                download_error = session.query(DownloadError).filter_by(
+                    name=DownloadErrorCodes.CHECKSUM_ERROR.name
+                ).one()
+                db_object.download_error = download_error
+                session.commit()
                 exception = DownloadChecksumMismatchException(
                     'Downloaded file had an invalid checksum.',
                     type(db_object),
@@ -157,6 +162,7 @@ class DownloadJob(ApiJob):
             destination = db_object.location(self.data_dir)
             os.makedirs(os.path.dirname(destination), mode=0o700, exist_ok=True)
             shutil.move(download_path, destination)
+            db_object.download_error = None
             mark_as_downloaded(type(db_object), db_object.uuid, session)
             logger.info("File downloaded to {}".format(destination))
             return destination
@@ -173,6 +179,7 @@ class DownloadJob(ApiJob):
         '''
         try:
             original_filename = self.call_decrypt(filepath, session)
+            db_object.download_error = None
             mark_as_decrypted(
                 type(db_object), db_object.uuid, session, original_filename=original_filename
             )
@@ -181,6 +188,11 @@ class DownloadJob(ApiJob):
             )
         except CryptoError as e:
             mark_as_decrypted(type(db_object), db_object.uuid, session, is_decrypted=False)
+            download_error = session.query(DownloadError).filter_by(
+                name=DownloadErrorCodes.DECRYPTION_ERROR.name
+            ).one()
+            db_object.download_error = download_error
+            session.commit()
             logger.debug("Failed to decrypt file: {}".format(os.path.basename(filepath)))
             raise DownloadDecryptionException(
                 "Downloaded file could not be decrypted.",

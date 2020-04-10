@@ -3,6 +3,8 @@ Make sure the Controller object, containing the application logic, behaves as
 expected.
 """
 import arrow
+import datetime
+import logging
 import os
 import pytest
 
@@ -19,6 +21,7 @@ from securedrop_client.api_jobs.downloads import (
 from securedrop_client.api_jobs.sources import DeleteSourceJobException
 from securedrop_client.api_jobs.updatestar import UpdateStarJobError, UpdateStarJobTimeoutError
 from securedrop_client.api_jobs.uploads import SendReplyJobError, SendReplyJobTimeoutError
+
 
 with open(os.path.join(os.path.dirname(__file__), 'files', 'test-key.gpg.pub.asc')) as f:
     PUB_KEY = f.read()
@@ -1170,7 +1173,7 @@ def test_Controller_on_reply_downloaded_success(mocker, homedir, session_maker):
 
     co.on_reply_download_success(reply.uuid)
 
-    reply_ready.emit.assert_called_once_with(reply.source.uuid, reply.uuid, reply.content)
+    reply_ready.emit.assert_called_once_with(reply.source.uuid, reply.uuid, str(reply))
 
 
 def test_Controller_on_reply_downloaded_failure(mocker, homedir, session_maker):
@@ -1184,7 +1187,7 @@ def test_Controller_on_reply_downloaded_failure(mocker, homedir, session_maker):
     info_logger = mocker.patch('securedrop_client.logic.logger.info')
     co._submit_download_job = mocker.MagicMock()
 
-    co.on_reply_download_failure('mock_exception')
+    co.on_reply_download_failure(Exception('mock_exception'))
 
     info_logger.assert_called_once_with('Failed to download reply: mock_exception')
     reply_ready.emit.assert_not_called()
@@ -1215,6 +1218,25 @@ def test_Controller_on_reply_downloaded_checksum_failure(mocker, homedir, sessio
     co._submit_download_job.call_count == 1
     warning_logger.call_args_list[0][0][0] == \
         'Failure due to checksum mismatch, retrying {}'.format(reply.uuid)
+
+
+def test_Controller_on_reply_downloaded_decryption_failure(mocker, homedir, session_maker):
+    """
+    Check that a failed download due to a decryption error informs the user.
+    """
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    reply_ready = mocker.patch.object(co, 'reply_ready')
+    reply_download_failed = mocker.patch.object(co, 'reply_download_failed')
+    reply = factory.Reply(source=factory.Source())
+    mocker.patch('securedrop_client.storage.get_reply', return_value=reply)
+    info_logger = mocker.patch('securedrop_client.logic.logger.info')
+
+    decryption_exception = DownloadDecryptionException('bang!', type(reply), reply.uuid)
+    co.on_reply_download_failure(decryption_exception)
+
+    info_logger.call_args_list[0][0][0] == 'Failed to download reply: bang!'
+    reply_ready.emit.assert_not_called()
+    reply_download_failed.emit.assert_called_with(reply.source.uuid, reply.uuid, str(reply))
 
 
 def test_Controller_download_new_messages_with_new_message(mocker, session, session_maker, homedir):
@@ -1265,6 +1287,88 @@ def test_Controller_download_new_messages_without_messages(mocker, session, sess
     set_status.assert_not_called()
 
 
+def test_Controller_download_new_messages_skips_recent_failures(
+        mocker, session, session_maker, homedir, download_error_codes
+):
+    """
+    Test that `download_new_messages` skips recently failed downloads.
+    """
+    co = Controller(
+        "http://localhost", mocker.MagicMock(), session_maker, homedir,
+        download_failure_retry_interval=datetime.timedelta(hours=1)
+    )
+    co.api = "Api token has a value"
+
+    # record the download failures
+    download_error = session.query(db.DownloadError).filter_by(
+        name=db.DownloadErrorCodes.DECRYPTION_ERROR.name
+    ).one()
+
+    message = factory.Message(source=factory.Source())
+    message.download_error = download_error
+    message.last_updated = datetime.datetime.utcnow()
+    session.commit()
+
+    mocker.patch("securedrop_client.storage.find_new_messages", return_value=[message])
+    api_job_queue = mocker.patch.object(co, "api_job_queue")
+    mocker.patch("securedrop_client.logic.logger.isEnabledFor", return_value=logging.DEBUG)
+    debug_logger = mocker.patch("securedrop_client.logic.logger.debug")
+
+    co.download_new_messages()
+
+    api_job_queue.enqueue.assert_not_called()
+    debug_logger.call_args_list[0][0][0] == (
+        f"Download of message {message.uuid} failed recently; not retrying yet."
+    )
+
+    message.last_updated = (datetime.datetime.utcnow() - co.download_failure_retry_interval * 2)
+    session.commit()
+
+    co.download_new_messages()
+    api_job_queue.enqueue.assert_called_once()
+
+
+def test_Controller_download_new_replies_skips_recent_failures(
+        mocker, session, session_maker, homedir, download_error_codes
+):
+    """
+    Test that `download_new_replies` skips recently failed downloads.
+    """
+    co = Controller(
+        "http://localhost", mocker.MagicMock(), session_maker, homedir,
+        download_failure_retry_interval=datetime.timedelta(hours=1)
+    )
+    co.api = "Api token has a value"
+
+    # record the download failures
+    download_error = session.query(db.DownloadError).filter_by(
+        name=db.DownloadErrorCodes.DECRYPTION_ERROR.name
+    ).one()
+
+    reply = factory.Reply(source=factory.Source())
+    reply.download_error = download_error
+    reply.last_updated = datetime.datetime.utcnow()
+    session.commit()
+
+    mocker.patch("securedrop_client.storage.find_new_replies", return_value=[reply])
+    api_job_queue = mocker.patch.object(co, "api_job_queue")
+    mocker.patch("securedrop_client.logic.logger.isEnabledFor", return_value=logging.DEBUG)
+    debug_logger = mocker.patch("securedrop_client.logic.logger.debug")
+
+    co.download_new_replies()
+
+    api_job_queue.enqueue.assert_not_called()
+    debug_logger.call_args_list[0][0][0] == (
+        f"Download of reply {reply.uuid} failed recently; not retrying yet."
+    )
+
+    reply.last_updated = (datetime.datetime.utcnow() - co.download_failure_retry_interval * 2)
+    session.commit()
+
+    co.download_new_replies()
+    api_job_queue.enqueue.assert_called_once()
+
+
 def test_Controller_on_message_downloaded_success(mocker, homedir, session_maker):
     """
     Check that a successful download emits proper signal.
@@ -1276,7 +1380,7 @@ def test_Controller_on_message_downloaded_success(mocker, homedir, session_maker
 
     co.on_message_download_success(message.uuid)
 
-    message_ready.emit.assert_called_once_with(message.source.uuid, message.uuid, message.content)
+    message_ready.emit.assert_called_once_with(message.source.uuid, message.uuid, str(message))
 
 
 def test_Controller_on_message_downloaded_failure(mocker, homedir, session_maker):
@@ -1290,7 +1394,7 @@ def test_Controller_on_message_downloaded_failure(mocker, homedir, session_maker
     co._submit_download_job = mocker.MagicMock()
     info_logger = mocker.patch('securedrop_client.logic.logger.info')
 
-    co.on_message_download_failure('mock_exception')
+    co.on_message_download_failure(Exception('mock_exception'))
 
     info_logger.assert_called_once_with('Failed to download message: mock_exception')
     message_ready.emit.assert_not_called()
@@ -1321,6 +1425,25 @@ def test_Controller_on_message_downloaded_checksum_failure(mocker, homedir, sess
     co._submit_download_job.call_count == 1
     warning_logger.call_args_list[0][0][0] == \
         'Failure due to checksum mismatch, retrying {}'.format(message.uuid)
+
+
+def test_Controller_on_message_downloaded_decryption_failure(mocker, homedir, session_maker):
+    """
+    Check that a failed download due to a decryption error informs the user.
+    """
+    co = Controller('http://localhost', mocker.MagicMock(), session_maker, homedir)
+    message_ready = mocker.patch.object(co, 'message_ready')
+    message_download_failed = mocker.patch.object(co, 'message_download_failed')
+    message = factory.Message(source=factory.Source())
+    mocker.patch('securedrop_client.storage.get_message', return_value=message)
+    info_logger = mocker.patch('securedrop_client.logic.logger.info')
+
+    decryption_exception = DownloadDecryptionException('bang!', type(message), message.uuid)
+    co.on_message_download_failure(decryption_exception)
+
+    info_logger.call_args_list[0][0][0] == 'Failed to download message: bang!'
+    message_ready.emit.assert_not_called()
+    message_download_failed.emit.assert_called_with(message.source.uuid, message.uuid, str(message))
 
 
 def test_Controller_on_delete_source_success(mocker, homedir):

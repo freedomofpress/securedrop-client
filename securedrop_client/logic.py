@@ -17,7 +17,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import arrow
-from datetime import datetime
+import datetime
 import functools
 import inspect
 import logging
@@ -35,8 +35,8 @@ from securedrop_client import storage
 from securedrop_client import db
 from securedrop_client.api_jobs.base import ApiInaccessibleError
 from securedrop_client.api_jobs.downloads import (
-    DownloadChecksumMismatchException, DownloadDecryptionException, FileDownloadJob,
-    MessageDownloadJob, ReplyDownloadJob,
+    DownloadChecksumMismatchException, DownloadDecryptionException, DownloadException,
+    FileDownloadJob, MessageDownloadJob, ReplyDownloadJob,
 )
 from securedrop_client.api_jobs.sources import DeleteSourceJob, DeleteSourceJobException
 from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobError, \
@@ -156,6 +156,16 @@ class Controller(QObject):
     reply_ready = pyqtSignal(str, str, str)
 
     """
+    This signal indicates an error while downloading a reply.
+
+    Emits:
+        str: the reply's source UUID
+        str: the reply UUID
+        str: the content of the reply
+    """
+    reply_download_failed = pyqtSignal(str, str, str)
+
+    """
     This signal indicates that a message has been successfully downloaded.
 
     Emits:
@@ -164,6 +174,16 @@ class Controller(QObject):
         str: the content of the message
     """
     message_ready = pyqtSignal(str, str, str)
+
+    """
+    This signal indicates an error while downloading a message.
+
+    Emits:
+        str: the message's source UUID
+        str: the message UUID
+        str: the content of the message
+    """
+    message_download_failed = pyqtSignal(str, str, str)
 
     """
     This signal indicates that a file has been successfully downloaded.
@@ -216,8 +236,14 @@ class Controller(QObject):
     """
     source_deletion_failed = pyqtSignal(str)
 
-    def __init__(self, hostname: str, gui, session_maker: sessionmaker,
-                 home: str, proxy: bool = True, qubes: bool = True) -> None:
+    # if a download fails, it won't be retried for this long
+    download_failure_retry_interval = datetime.timedelta(minutes=10)
+
+    def __init__(
+        self, hostname: str, gui, session_maker: sessionmaker,
+        home: str, proxy: bool = True, qubes: bool = True,
+        download_failure_retry_interval: datetime.timedelta = None
+    ) -> None:
         """
         The hostname, gui and session objects are used to coordinate with the
         various other layers of the application: the location of the SecureDrop
@@ -278,6 +304,13 @@ class Controller(QObject):
 
         # Path to the file containing the timestamp since the last sync with the server
         self.last_sync_filepath = os.path.join(home, 'sync_flag')
+
+        if isinstance(download_failure_retry_interval, datetime.timedelta):
+            self.download_failure_retry_interval = download_failure_retry_interval
+
+        logger.info(
+            f"Controller download failure retry interval is {self.download_failure_retry_interval}"
+        )
 
     @property
     def is_authenticated(self) -> bool:
@@ -604,13 +637,19 @@ class Controller(QObject):
         self.api_job_queue.enqueue(job)
 
     def download_new_messages(self) -> None:
-        messages = storage.find_new_messages(self.session)
-
-        if len(messages) > 0:
+        new_messages = storage.find_new_messages(self.session)
+        new_message_count = len(new_messages)
+        if new_message_count > 0:
             self.set_status(_('Retrieving new messages'), 2500)
 
-        for message in messages:
-            self._submit_download_job(type(message), message.uuid)
+        for message in new_messages:
+            if message.download_failed_since(self.download_failure_retry_interval):
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(
+                        f"Download of message {message.uuid} failed recently; not retrying yet."
+                    )
+            else:
+                self._submit_download_job(type(message), message.uuid)
 
     def on_message_download_success(self, uuid: str) -> None:
         """
@@ -620,21 +659,34 @@ class Controller(QObject):
         message = storage.get_message(self.session, uuid)
         self.message_ready.emit(message.source.uuid, message.uuid, message.content)
 
-    def on_message_download_failure(self, exception: Exception) -> None:
+    def on_message_download_failure(self, exception: DownloadException) -> None:
         """
         Called when a message fails to download.
         """
         logger.info('Failed to download message: {}'.format(exception))
 
-        # Keep resubmitting the job if the download is corrupted.
         if isinstance(exception, DownloadChecksumMismatchException):
+            # Keep resubmitting the job if the download is corrupted.
             logger.warning('Failure due to checksum mismatch, retrying {}'.format(exception.uuid))
             self._submit_download_job(exception.object_type, exception.uuid)
+
+        self.session.commit()
+        try:
+            message = storage.get_message(self.session, exception.uuid)
+            self.message_download_failed.emit(message.source.uuid, message.uuid, str(message))
+        except Exception as e:
+            logger.error(f"Could not emit message_download_failed: {e}")
 
     def download_new_replies(self) -> None:
         replies = storage.find_new_replies(self.session)
         for reply in replies:
-            self._submit_download_job(type(reply), reply.uuid)
+            if reply.download_failed_since(self.download_failure_retry_interval):
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(
+                        f"Download of reply {reply.uuid} failed recently; not retrying yet."
+                    )
+            else:
+                self._submit_download_job(type(reply), reply.uuid)
 
     def on_reply_download_success(self, uuid: str) -> None:
         """
@@ -644,16 +696,23 @@ class Controller(QObject):
         reply = storage.get_reply(self.session, uuid)
         self.reply_ready.emit(reply.source.uuid, reply.uuid, reply.content)
 
-    def on_reply_download_failure(self, exception: Exception) -> None:
+    def on_reply_download_failure(self, exception: DownloadException) -> None:
         """
         Called when a reply fails to download.
         """
         logger.info('Failed to download reply: {}'.format(exception))
 
-        # Keep resubmitting the job if the download is corrupted.
         if isinstance(exception, DownloadChecksumMismatchException):
+            # Keep resubmitting the job if the download is corrupted.
             logger.warning('Failure due to checksum mismatch, retrying {}'.format(exception.uuid))
             self._submit_download_job(exception.object_type, exception.uuid)
+
+        self.session.commit()
+        try:
+            reply = storage.get_reply(self.session, exception.uuid)
+            self.reply_download_failed.emit(reply.source.uuid, reply.uuid, str(reply))
+        except Exception as e:
+            logger.error(f"Could not emit reply_download_failed: {e}")
 
     def downloaded_file_exists(self, file: db.File) -> bool:
         '''
@@ -766,7 +825,7 @@ class Controller(QObject):
         """
         self.session.commit()
         file_obj = storage.get_file(self.session, uuid)
-        # Let us update the size of the file.
+        file_obj.download_error = None
         storage.update_file_size(uuid, self.data_dir, self.session)
 
         self.file_ready.emit(file_obj.source.uuid, uuid, file_obj.filename)
@@ -829,7 +888,7 @@ class Controller(QObject):
             name=db.ReplySendStatusCodes.PENDING.value).one()
         draft_reply = db.DraftReply(
             uuid=reply_uuid,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.datetime.utcnow(),
             source_id=source.id,
             journalist_id=self.api.token_journalist_uuid,
             file_counter=source.interaction_count,
