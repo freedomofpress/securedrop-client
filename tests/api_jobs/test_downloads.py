@@ -166,7 +166,9 @@ def test_MessageDownloadJob_no_download_or_decrypt(mocker, homedir, session, ses
     assert message_is_decrypted_none.is_decrypted is True
 
 
-def test_MessageDownloadJob_message_already_decrypted(mocker, homedir, session, session_maker):
+def test_MessageDownloadJob_message_already_decrypted(
+        mocker, homedir, session, session_maker, download_error_codes
+):
     """
     Test that call_api just returns uuid if already decrypted.
     """
@@ -187,7 +189,9 @@ def test_MessageDownloadJob_message_already_decrypted(mocker, homedir, session, 
     download_fn.assert_not_called()
 
 
-def test_MessageDownloadJob_message_already_downloaded(mocker, homedir, session, session_maker):
+def test_MessageDownloadJob_message_already_downloaded(
+        mocker, homedir, session, session_maker, download_error_codes
+):
     """
     Test that call_api just decrypts and returns uuid if already downloaded.
     """
@@ -256,7 +260,9 @@ def test_MessageDownloadJob_with_base_error(mocker, homedir, session, session_ma
     decrypt_fn.assert_not_called()
 
 
-def test_MessageDownloadJob_with_crypto_error(mocker, homedir, session, session_maker):
+def test_MessageDownloadJob_with_crypto_error(
+        mocker, homedir, session, session_maker, download_error_codes
+):
     """
     Test when a message successfully downloads, but does not successfully decrypt. Use the `homedir`
     fixture to get a GPG keyring.
@@ -363,7 +369,9 @@ def test_FileDownloadJob_happy_path_no_etag(mocker, homedir, session, session_ma
     assert mock_decrypt.called
 
 
-def test_FileDownloadJob_happy_path_sha256_etag(mocker, homedir, session, session_maker):
+def test_FileDownloadJob_happy_path_sha256_etag(
+        mocker, homedir, session, session_maker, download_error_codes
+):
     source = factory.Source()
     file_ = factory.File(source=source, is_downloaded=None, is_decrypted=None)
     session.add(source)
@@ -401,7 +409,9 @@ def test_FileDownloadJob_happy_path_sha256_etag(mocker, homedir, session, sessio
     assert mock_decrypt.called
 
 
-def test_FileDownloadJob_bad_sha256_etag(mocker, homedir, session, session_maker):
+def test_FileDownloadJob_bad_sha256_etag(
+        mocker, homedir, session, session_maker, download_error_codes
+):
     source = factory.Source()
     file_ = factory.File(source=source, is_downloaded=None, is_decrypted=None)
     session.add(source)
@@ -476,7 +486,9 @@ def test_FileDownloadJob_happy_path_unknown_etag(mocker, homedir, session, sessi
     assert mock_decrypt.called
 
 
-def test_FileDownloadJob_decryption_error(mocker, homedir, session, session_maker):
+def test_FileDownloadJob_decryption_error(
+        mocker, homedir, session, session_maker, download_error_codes
+):
     source = factory.Source()
     file_ = factory.File(source=source, is_downloaded=None, is_decrypted=None)
     session.add(source)

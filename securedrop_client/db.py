@@ -107,6 +107,12 @@ class Message(Base):
         nullable=True,
     )
 
+    download_error_id = Column(
+        Integer,
+        ForeignKey('downloaderrors.id')
+    )
+    download_error = relationship("DownloadError")
+
     # This reflects read status stored on the server.
     is_read = Column(Boolean(name='is_read'), nullable=False, server_default=text("0"))
 
@@ -123,6 +129,13 @@ class Message(Base):
                                           cascade="delete"),
                           lazy="joined")
 
+    last_updated = Column(
+        DateTime,
+        nullable=False,
+        default=datetime.datetime.utcnow,
+        onupdate=datetime.datetime.utcnow,
+    )
+
     def __init__(self, **kwargs: Any) -> None:
         if 'file_counter' in kwargs:
             raise TypeError('Cannot manually set file_counter')
@@ -137,10 +150,20 @@ class Message(Base):
         if self.content is not None:
             return self.content
         else:
+            if self.download_error is not None:
+                return self.download_error.explain(self.__class__.__name__)
             return '<Message not yet available>'
 
     def __repr__(self) -> str:
         return '<Message {}: {}>'.format(self.uuid, self.filename)
+
+    def download_failed_since(self, interval: datetime.timedelta) -> bool:
+        """
+        Returns True if the message has a download error and was updated since `interval` ago.
+        """
+        return (
+            self.download_error and self.last_updated > (datetime.datetime.utcnow() - interval)
+        )
 
     def location(self, data_dir: str) -> str:
         '''
@@ -181,6 +204,12 @@ class File(Base):
         nullable=True,
     )
 
+    download_error_id = Column(
+        Integer,
+        ForeignKey('downloaderrors.id')
+    )
+    download_error = relationship("DownloadError")
+
     # This reflects read status stored on the server.
     is_read = Column(Boolean(name='is_read'), nullable=False, server_default=text("0"))
 
@@ -189,6 +218,13 @@ class File(Base):
                           backref=backref("files", order_by=id,
                                           cascade="delete"),
                           lazy="joined")
+
+    last_updated = Column(
+        DateTime,
+        nullable=False,
+        default=datetime.datetime.utcnow,
+        onupdate=datetime.datetime.utcnow,
+    )
 
     def __init__(self, **kwargs: Any) -> None:
         if 'file_counter' in kwargs:
@@ -202,6 +238,8 @@ class File(Base):
         Return something that's a useful string representation of the file.
         """
         if self.is_downloaded:
+            if self.download_error is not None:
+                return self.download_error.explain(self.__class__.__name__)
             return "File: {}".format(self.filename)
         else:
             return '<Encrypted file on server>'
@@ -264,6 +302,19 @@ class Reply(Base):
         nullable=True,
     )
 
+    download_error_id = Column(
+        Integer,
+        ForeignKey('downloaderrors.id')
+    )
+    download_error = relationship("DownloadError")
+
+    last_updated = Column(
+        DateTime,
+        nullable=False,
+        default=datetime.datetime.utcnow,
+        onupdate=datetime.datetime.utcnow,
+    )
+
     def __init__(self, **kwargs: Any) -> None:
         if 'file_counter' in kwargs:
             raise TypeError('Cannot manually set file_counter')
@@ -278,10 +329,20 @@ class Reply(Base):
         if self.content is not None:
             return self.content
         else:
+            if self.download_error is not None:
+                return self.download_error.explain(self.__class__.__name__)
             return '<Reply not yet available>'
 
     def __repr__(self) -> str:
         return '<Reply {}: {}>'.format(self.uuid, self.filename)
+
+    def download_failed_since(self, interval: datetime.timedelta) -> bool:
+        """
+        Returns True if the reply has a download error and was updated since `interval` ago.
+        """
+        return (
+            self.download_error and self.last_updated > (datetime.datetime.utcnow() - interval)
+        )
 
     def location(self, data_dir: str) -> str:
         '''
@@ -294,6 +355,42 @@ class Reply(Base):
                 os.path.splitext(self.filename)[0] + '.txt'
             )
         )
+
+
+class DownloadErrorCodes(Enum):
+    """
+    Enumerated download failure modes, with explanation templates as values.
+
+    The explanation templates are intended to be formatted with the
+    class name of a downloadable item.
+    """
+    CHECKSUM_ERROR = "Downloaded {object_type} was incomplete; it will be retried."
+    DECRYPTION_ERROR = (
+        "Downloaded {object_type} could not be decrypted. Administrator action is needed."
+    )
+
+
+class DownloadError(Base):
+    """
+    Table of errors that can occur with downloadable items: File, Message, Reply.
+    """
+    __tablename__ = 'downloaderrors'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(36), unique=True, nullable=False)
+
+    def __init__(self, name: str) -> None:
+        super().__init__()
+        self.name = name
+
+    def __repr__(self) -> str:
+        return "<Download error {}>".format(self.name)
+
+    def explain(self, classname: str) -> str:
+        """
+        Formats the explanation type with the supplied class name.
+        """
+        return DownloadErrorCodes[self.name].value.format(object_type=classname.lower())
 
 
 class DraftReply(Base):
