@@ -204,7 +204,7 @@ class SecureQPlainTextEdit(QPlainTextEdit):
     HEIGHT_BASE = 60
     LINE_HEIGHT = 20
 
-    def __init__(self, text: str = ""):
+    def __init__(self, text: str = '') -> None:
         super().__init__()
         self.setReadOnly(True)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -212,7 +212,7 @@ class SecureQPlainTextEdit(QPlainTextEdit):
         self.height = self.HEIGHT_BASE
         self.setPlainText(text)
 
-    def setPlainText(self, text):
+    def setPlainText(self, text: str) -> None:
         super().setPlainText(text)
 
         total_line_count = 0

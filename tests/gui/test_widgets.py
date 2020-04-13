@@ -2031,7 +2031,7 @@ def test_SpeechBubble_init(mocker):
     sb = SpeechBubble('mock id', 'hello', mock_signal, 0)
     ss = sb.styleSheet()
 
-    sb.message.text() == 'hello'
+    sb.message.toPlainText() == 'hello'
     assert mock_connect.called
     assert 'background-color' in ss
 
@@ -2047,11 +2047,11 @@ def test_SpeechBubble_update_text(mocker):
 
     new_msg = 'new message'
     sb._update_text('mock_source_uuid', msg_id, new_msg)
-    assert sb.message.text() == new_msg
+    assert sb.message.toPlainText() == new_msg
 
     newer_msg = 'an even newer message'
     sb._update_text('mock_source_uuid', msg_id + 'xxxxx', newer_msg)
-    assert sb.message.text() == new_msg
+    assert sb.message.toPlainText() == new_msg
 
 
 def test_SpeechBubble_html_init(mocker):
@@ -2062,7 +2062,7 @@ def test_SpeechBubble_html_init(mocker):
     mock_signal = mocker.MagicMock()
 
     bubble = SpeechBubble('mock id', '<b>hello</b>', mock_signal, 0)
-    assert bubble.message.text() == '<b>hello</b>'
+    assert bubble.message.toPlainText() == '<b>hello</b>'
 
 
 def test_SpeechBubble_with_apostrophe_in_text(mocker):
@@ -2071,7 +2071,7 @@ def test_SpeechBubble_with_apostrophe_in_text(mocker):
 
     message = "I'm sure, you are reading my message."
     bubble = SpeechBubble('mock id', message, mock_signal, 0)
-    assert bubble.message.text() == message
+    assert bubble.message.toPlainText() == message
 
 
 def test_MessageWidget_init(mocker):
