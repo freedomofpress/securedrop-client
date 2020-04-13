@@ -201,7 +201,7 @@ class SecureQLabel(QLabel):
 class SecureQPlainTextEdit(QPlainTextEdit):
     MAX_TEXT_WIDTH = 75
     MAX_NATURAL_TEXT_WIDTH = 650
-    HEIGHT_BASE = 40
+    HEIGHT_BASE = 60
     LINE_HEIGHT = 20
 
     def __init__(self, text: str = ""):
@@ -209,20 +209,16 @@ class SecureQPlainTextEdit(QPlainTextEdit):
         self.setReadOnly(True)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.document().setTextWidth(self.MAX_TEXT_WIDTH)
+        self.height = self.HEIGHT_BASE
         self.setPlainText(text)
 
     def setPlainText(self, text):
         super().setPlainText(text)
+
         total_line_count = 0
         for block_num in range(0, self.blockCount()):
             block = self.document().findBlockByNumber(block_num)
-            line_count = 0
-            line_count = line_count + math.ceil(block.length() / self.document().idealWidth())
-            text_layout = block.layout()
-            for line_num in range(0, text_layout.lineCount()):
-                line = text_layout.lineAt(line_num)
-                line_wrap_count = math.floor(line.naturalTextWidth() / self.MAX_NATURAL_TEXT_WIDTH)
-                line_count = line_count + line_wrap_count
+            line_count = math.ceil(block.length() / self.document().idealWidth())
             total_line_count = total_line_count + line_count
 
         self.height = self.HEIGHT_BASE + (total_line_count * self.LINE_HEIGHT)
