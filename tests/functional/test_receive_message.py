@@ -44,4 +44,4 @@ def test_receive_message_from_source(qtbot, mocker):
     # We see the source's message.
     last_msg_id = list(conversation.conversation_view.current_messages.keys())[-2]
     last_msg = conversation.conversation_view.current_messages[last_msg_id]
-    assert last_msg.message.text() == message
+    assert last_msg.message.toPlainText() == message

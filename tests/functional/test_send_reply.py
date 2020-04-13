@@ -47,4 +47,4 @@ def test_send_reply_to_source(qtbot, mocker):
     # just typed.
     last_msg_id = list(conversation.conversation_view.current_messages.keys())[-1]
     last_msg = conversation.conversation_view.current_messages[last_msg_id]
-    assert last_msg.message.text() == message
+    assert last_msg.message.toPlainText() == message
