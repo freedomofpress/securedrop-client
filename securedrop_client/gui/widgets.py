@@ -1939,14 +1939,16 @@ class SpeechBubble(QWidget):
         self.color_bar.setObjectName('color_bar')
 
         # Speech bubble
-        speech_bubble = QWidget()
-        speech_bubble.setObjectName('speech_bubble')
+        self.speech_bubble = QWidget()
+        self.speech_bubble.setObjectName('speech_bubble')
         speech_bubble_layout = QVBoxLayout()
-        speech_bubble.setLayout(speech_bubble_layout)
+        self.speech_bubble.setLayout(speech_bubble_layout)
         speech_bubble_layout.addWidget(self.message)
         speech_bubble_layout.addWidget(self.color_bar)
         speech_bubble_layout.setContentsMargins(0, 0, 0, 0)
         speech_bubble_layout.setSpacing(0)
+        # self.speech_bubble.setFixedHeight(self.message.height)
+        self.speech_bubble.adjustSize()
 
         # Bubble area includes speech bubble plus error message if there is an error
         bubble_area = QWidget()
@@ -1954,7 +1956,7 @@ class SpeechBubble(QWidget):
         self.bubble_area_layout = QHBoxLayout()
         self.bubble_area_layout.setContentsMargins(0, self.TOP_MARGIN, 0, self.BOTTOM_MARGIN)
         bubble_area.setLayout(self.bubble_area_layout)
-        self.bubble_area_layout.addWidget(speech_bubble)
+        self.bubble_area_layout.addWidget(self.speech_bubble)
 
         # Add widget to layout
         layout.addWidget(bubble_area)
@@ -1969,7 +1971,9 @@ class SpeechBubble(QWidget):
         signal matches the uuid of this speech bubble.
         """
         if message_uuid == self.uuid:
-            self.message.setText(text)
+            self.message.setPlainText(text)
+            # self.speech_bubble.setFixedHeight(self.message.height)
+            self.speech_bubble.adjustSize()
 
 
 class MessageWidget(SpeechBubble):
