@@ -185,3 +185,9 @@ def test_SecureQLabel_get_elided_text_only_returns_oneline_elided(mocker):
 def test_SecureQLabel_quotes_not_escaped_for_readability():
     sl = SecureQLabel("'hello'")
     assert sl.text() == "'hello'"
+
+
+def test_SecureQLabel_trims_leading_and_trailing_whitespace():
+    string_with_whitespace = ('\n \n this is a string with leading and trailing whitespace \n')
+    sl = SecureQLabel(string_with_whitespace)
+    assert sl.text() == "this is a string with leading and trailing whitespace"

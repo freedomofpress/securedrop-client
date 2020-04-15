@@ -165,6 +165,7 @@ class SecureQLabel(QLabel):
         self.elided = True if self.text() != text else False
 
     def setText(self, text: str) -> None:
+        text = text.strip()
         self.setTextFormat(Qt.PlainText)
         elided_text = self.get_elided_text(text)
         self.elided = True if elided_text != text else False
