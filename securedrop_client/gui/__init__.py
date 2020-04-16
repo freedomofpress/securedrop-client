@@ -212,6 +212,9 @@ class SecureQPlainTextEdit(QPlainTextEdit):
         self.height = self.HEIGHT_BASE
         self.setPlainText(text)
 
+        # Disable copy/paste context menu
+        self.setContextMenuPolicy(Qt.NoContextMenu)
+
     def setPlainText(self, text: str) -> None:
         super().setPlainText(text)
 
