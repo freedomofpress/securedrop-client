@@ -202,7 +202,7 @@ class SecureQPlainTextEdit(QPlainTextEdit):
     MAX_TEXT_WIDTH = 75
     MAX_NATURAL_TEXT_WIDTH = 650
     HEIGHT_BASE = 60
-    LINE_HEIGHT = 20
+    LINE_HEIGHT = 9
 
     def __init__(self, text: str = '') -> None:
         super().__init__()
@@ -214,12 +214,19 @@ class SecureQPlainTextEdit(QPlainTextEdit):
 
     def setPlainText(self, text: str) -> None:
         super().setPlainText(text)
+        self.setAttribute(103)
+        self.show()
+        # total_line_count = 0
+        # for block_num in range(0, self.blockCount()):
+        #     block = self.document().findBlockByNumber(block_num)
+        #     line_count = math.ceil(block.length() / self.document().idealWidth())
+        #     total_line_count = total_line_count + line_count
 
-        total_line_count = 0
-        for block_num in range(0, self.blockCount()):
-            block = self.document().findBlockByNumber(block_num)
-            line_count = math.ceil(block.length() / self.document().idealWidth())
-            total_line_count = total_line_count + line_count
+        self.height = self.HEIGHT_BASE + (self.document().lineCount() * self.LINE_HEIGHT)
+        #self.height = super().document().size().height() + 10
+        #self.setFixedHeight(400)
 
-        self.height = self.HEIGHT_BASE + (total_line_count * self.LINE_HEIGHT)
         self.setFixedHeight(self.height)
+
+
+        print(f"HEIGHT {self.height}")
