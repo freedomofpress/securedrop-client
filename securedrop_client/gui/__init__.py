@@ -223,3 +223,13 @@ class SecureQPlainTextEdit(QPlainTextEdit):
 
         self.height = self.HEIGHT_BASE + (total_line_count * self.LINE_HEIGHT)
         self.setFixedHeight(self.height)
+
+    def mouseReleaseEvent(self, event):
+        self.setFocus()
+        super().mouseReleaseEvent(event)
+
+    def focusOutEvent(self, event):
+        clear_text_cursor = self.textCursor()
+        clear_text_cursor.clearSelection()
+        self.setTextCursor(clear_text_cursor)
+        super().focusOutEvent(event)
