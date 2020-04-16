@@ -1931,6 +1931,7 @@ class SpeechBubble(QWidget):
         # Message box
         self.message = SecureQLabel(text)
         self.message.setObjectName('message')
+        self.message.setTextInteractionFlags(Qt.TextSelectableByMouse)  # Allow copy
 
         # Color bar
         self.color_bar = QWidget()
