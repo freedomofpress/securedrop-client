@@ -21,6 +21,7 @@ import math
 
 from PyQt5.QtWidgets import QLabel, QHBoxLayout, QPlainTextEdit, QPushButton, QWidget
 from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtGui import QFont
 
 from securedrop_client.resources import load_svg, load_icon
 
@@ -199,32 +200,48 @@ class SecureQLabel(QLabel):
 
 
 class SecureQPlainTextEdit(QPlainTextEdit):
-    MAX_TEXT_WIDTH = 75
-    MAX_NATURAL_TEXT_WIDTH = 650
+    '''
+    This is a resizeable widget used to display read-only plain text content.
+
+    Like `SecureQLabel`, this widget wraps lines of text. Unlike `SecureQLabel`, this also supports
+    wrapping text which contains no spaces or dashes and is longer than the width of the widget.
+
+    Like `SecureQLabel`, this automatically resizes the widget height to fit its content. Since this
+    is not a supported Qt feature for QPlainTextEdit (`self.size().height()` returns a fixed
+    default pixel height instead of a content-fitted height no matter what our sizePolicy is, and
+    `self.document().size().height()` returns the number of blocks in the document), we calculate
+    and set the height when `setPlainText` is called.
+    '''
     HEIGHT_BASE = 60
     LINE_HEIGHT = 20
+    FONT_NAME = 'Source Sans Pro'
+    FONT_SIZE = 15
 
     def __init__(self, text: str = '') -> None:
         super().__init__()
-        self.setReadOnly(True)
+        self.setReadOnly(True)  # Do not allow SecureQPlainTextEdit to be editable
+        self.setContextMenuPolicy(Qt.NoContextMenu)  # Disable copy/paste context menu
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.document().setTextWidth(self.MAX_TEXT_WIDTH)
+        self.setFont(QFont(self.FONT_NAME, self.FONT_SIZE))
         self.height = self.HEIGHT_BASE
         self.setPlainText(text)
-
-        # Disable copy/paste context menu
-        self.setContextMenuPolicy(Qt.NoContextMenu)
 
     def setPlainText(self, text: str) -> None:
         super().setPlainText(text)
 
-        total_line_count = 0
+        # Resize widget height to fit text
+        document_lines = 0
+        fm = self.fontMetrics()
+        max_line_width = self.size().width() + 4
         for block_num in range(0, self.blockCount()):
             block = self.document().findBlockByNumber(block_num)
-            line_count = math.ceil(block.length() / self.document().idealWidth())
-            total_line_count = total_line_count + line_count
+            block_length = fm.horizontalAdvance(block.text())
+            # Calculate the number of lines in the block. If the block_length is zero because it is
+            # a blank line, then the line count should be 1 .
+            block_lines = max(math.ceil(block_length / max_line_width), 1)
+            document_lines = document_lines + block_lines
 
-        self.height = self.HEIGHT_BASE + (total_line_count * self.LINE_HEIGHT)
+        self.height = self.HEIGHT_BASE + (document_lines * self.LINE_HEIGHT)
         self.setFixedHeight(self.height)
 
     def mouseReleaseEvent(self, event):
