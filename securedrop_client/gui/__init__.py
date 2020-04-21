@@ -232,7 +232,7 @@ class SecureQPlainTextEdit(QPlainTextEdit):
         # Resize widget height to fit text
         document_lines = 0
         fm = self.fontMetrics()
-        max_line_width = self.size().width() + 4
+        max_line_width = self.size().width() + self.document().documentMargin()
         for block_num in range(0, self.blockCount()):
             block = self.document().findBlockByNumber(block_num)
             block_length = fm.horizontalAdvance(block.text())
