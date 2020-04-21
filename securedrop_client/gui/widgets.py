@@ -1899,7 +1899,7 @@ class SpeechBubble(QWidget):
         font-weight: 400;
         font-size: 15px;
         background-color: #fff;
-        padding: 16px;
+        padding: 24px;
         border: none;
     }
     #color_bar {
@@ -1996,7 +1996,7 @@ class ReplyWidget(SpeechBubble):
         font-size: 15px;
         background-color: #fff;
         color: #3b3b3b;
-        padding: 16px;
+        padding: 24px;
     '''
 
     CSS_COLOR_BAR_REPLY_FAILED = '''
@@ -2019,7 +2019,7 @@ class ReplyWidget(SpeechBubble):
         font-size: 15px;
         background-color: #fff;
         color: #3b3b3b;
-        padding: 16px;
+        padding: 24px;
     '''
 
     CSS_COLOR_BAR_REPLY_SUCCEEDED = '''
@@ -2035,7 +2035,7 @@ class ReplyWidget(SpeechBubble):
         font-size: 15px;
         color: #A9AAAD;
         background-color: #F7F8FC;
-        padding: 16px;
+        padding: 24px;
     '''
 
     CSS_COLOR_BAR_REPLY_PENDING = '''
