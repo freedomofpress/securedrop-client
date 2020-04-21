@@ -611,3 +611,13 @@ def mark_all_pending_drafts_as_failed(session: Session) -> List[DraftReply]:
     session.commit()
 
     return pending_drafts
+
+
+def clear_download_errors(session: Session) -> None:
+    """
+    Clears all File, Message, or Reply download errors.
+    """
+    session.execute("""UPDATE files SET download_error_id = null;""")
+    session.execute("""UPDATE messages SET download_error_id = null;""")
+    session.execute("""UPDATE replies SET download_error_id = null;""")
+    session.commit()

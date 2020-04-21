@@ -157,14 +157,6 @@ class Message(Base):
     def __repr__(self) -> str:
         return '<Message {}: {}>'.format(self.uuid, self.filename)
 
-    def download_failed_since(self, interval: datetime.timedelta) -> bool:
-        """
-        Returns True if the message has a download error and was updated since `interval` ago.
-        """
-        return (
-            self.download_error and self.last_updated > (datetime.datetime.utcnow() - interval)
-        )
-
     def location(self, data_dir: str) -> str:
         '''
         Return the full path to the Message's file.
@@ -335,14 +327,6 @@ class Reply(Base):
 
     def __repr__(self) -> str:
         return '<Reply {}: {}>'.format(self.uuid, self.filename)
-
-    def download_failed_since(self, interval: datetime.timedelta) -> bool:
-        """
-        Returns True if the reply has a download error and was updated since `interval` ago.
-        """
-        return (
-            self.download_error and self.last_updated > (datetime.datetime.utcnow() - interval)
-        )
 
     def location(self, data_dir: str) -> str:
         '''

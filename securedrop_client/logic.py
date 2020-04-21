@@ -236,13 +236,9 @@ class Controller(QObject):
     """
     source_deletion_failed = pyqtSignal(str)
 
-    # if a download fails, it won't be retried for this long
-    download_failure_retry_interval = datetime.timedelta(minutes=10)
-
     def __init__(
         self, hostname: str, gui, session_maker: sessionmaker,
-        home: str, proxy: bool = True, qubes: bool = True,
-        download_failure_retry_interval: datetime.timedelta = None
+        home: str, proxy: bool = True, qubes: bool = True
     ) -> None:
         """
         The hostname, gui and session objects are used to coordinate with the
@@ -305,13 +301,6 @@ class Controller(QObject):
         # Path to the file containing the timestamp since the last sync with the server
         self.last_sync_filepath = os.path.join(home, 'sync_flag')
 
-        if isinstance(download_failure_retry_interval, datetime.timedelta):
-            self.download_failure_retry_interval = download_failure_retry_interval
-
-        logger.info(
-            f"Controller download failure retry interval is {self.download_failure_retry_interval}"
-        )
-
     @property
     def is_authenticated(self) -> bool:
         return self.__is_authenticated
@@ -346,6 +335,8 @@ class Controller(QObject):
         self.export_thread = QThread()
         self.export.moveToThread(self.export_thread)
         self.export_thread.start()
+
+        storage.clear_download_errors(self.session)
 
     def call_api(self,
                  api_call_func,
@@ -643,11 +634,10 @@ class Controller(QObject):
             self.set_status(_('Retrieving new messages'), 2500)
 
         for message in new_messages:
-            if message.download_failed_since(self.download_failure_retry_interval):
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug(
-                        f"Download of message {message.uuid} failed recently; not retrying yet."
-                    )
+            if message.download_error:
+                logger.info(
+                    f"Download of message {message.uuid} failed since client start; not retrying."
+                )
             else:
                 self._submit_download_job(type(message), message.uuid)
 
@@ -680,11 +670,10 @@ class Controller(QObject):
     def download_new_replies(self) -> None:
         replies = storage.find_new_replies(self.session)
         for reply in replies:
-            if reply.download_failed_since(self.download_failure_retry_interval):
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug(
-                        f"Download of reply {reply.uuid} failed recently; not retrying yet."
-                    )
+            if reply.download_error:
+                logger.info(
+                    f"Download of reply {reply.uuid} failed since client start; not retrying."
+                )
             else:
                 self._submit_download_job(type(reply), reply.uuid)
 
