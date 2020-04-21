@@ -1969,6 +1969,10 @@ class SpeechBubble(QWidget):
         if message_uuid == self.uuid:
             self.message.setText(text)
 
+    def mousePressEvent(self, e):
+        clippy = QApplication.clipboard()
+        clippy.setText(self.message.text())
+
 
 class MessageWidget(SpeechBubble):
     """
