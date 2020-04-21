@@ -85,7 +85,7 @@ def test_Controller_init(homedir, config, mocker, session_maker):
     assert co.api_threads == {}
 
 
-def test_Controller_setup(homedir, config, mocker, session_maker):
+def test_Controller_setup(homedir, config, mocker, session_maker, session):
     """
     Ensure the application is set up with the following default state:
     Using the `config` fixture to ensure the config is written to disk.
@@ -1293,10 +1293,7 @@ def test_Controller_download_new_messages_skips_recent_failures(
     """
     Test that `download_new_messages` skips recently failed downloads.
     """
-    co = Controller(
-        "http://localhost", mocker.MagicMock(), session_maker, homedir,
-        download_failure_retry_interval=datetime.timedelta(hours=1)
-    )
+    co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
     co.api = "Api token has a value"
 
     # record the download failures
@@ -1306,26 +1303,19 @@ def test_Controller_download_new_messages_skips_recent_failures(
 
     message = factory.Message(source=factory.Source())
     message.download_error = download_error
-    message.last_updated = datetime.datetime.utcnow()
     session.commit()
 
     mocker.patch("securedrop_client.storage.find_new_messages", return_value=[message])
     api_job_queue = mocker.patch.object(co, "api_job_queue")
     mocker.patch("securedrop_client.logic.logger.isEnabledFor", return_value=logging.DEBUG)
-    debug_logger = mocker.patch("securedrop_client.logic.logger.debug")
+    info_logger = mocker.patch("securedrop_client.logic.logger.info")
 
     co.download_new_messages()
 
     api_job_queue.enqueue.assert_not_called()
-    debug_logger.call_args_list[0][0][0] == (
-        f"Download of message {message.uuid} failed recently; not retrying yet."
+    info_logger.call_args_list[0][0][0] == (
+        f"Download of message {message.uuid} failed since client start; not retrying."
     )
-
-    message.last_updated = (datetime.datetime.utcnow() - co.download_failure_retry_interval * 2)
-    session.commit()
-
-    co.download_new_messages()
-    api_job_queue.enqueue.assert_called_once()
 
 
 def test_Controller_download_new_replies_skips_recent_failures(
@@ -1334,10 +1324,7 @@ def test_Controller_download_new_replies_skips_recent_failures(
     """
     Test that `download_new_replies` skips recently failed downloads.
     """
-    co = Controller(
-        "http://localhost", mocker.MagicMock(), session_maker, homedir,
-        download_failure_retry_interval=datetime.timedelta(hours=1)
-    )
+    co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
     co.api = "Api token has a value"
 
     # record the download failures
@@ -1353,20 +1340,14 @@ def test_Controller_download_new_replies_skips_recent_failures(
     mocker.patch("securedrop_client.storage.find_new_replies", return_value=[reply])
     api_job_queue = mocker.patch.object(co, "api_job_queue")
     mocker.patch("securedrop_client.logic.logger.isEnabledFor", return_value=logging.DEBUG)
-    debug_logger = mocker.patch("securedrop_client.logic.logger.debug")
+    info_logger = mocker.patch("securedrop_client.logic.logger.info")
 
     co.download_new_replies()
 
     api_job_queue.enqueue.assert_not_called()
-    debug_logger.call_args_list[0][0][0] == (
-        f"Download of reply {reply.uuid} failed recently; not retrying yet."
+    info_logger.call_args_list[0][0][0] == (
+        f"Download of reply {reply.uuid} failed since client start; not retrying."
     )
-
-    reply.last_updated = (datetime.datetime.utcnow() - co.download_failure_retry_interval * 2)
-    session.commit()
-
-    co.download_new_replies()
-    api_job_queue.enqueue.assert_called_once()
 
 
 def test_Controller_on_message_downloaded_success(mocker, homedir, session_maker):
