@@ -1,10 +1,12 @@
 """
 Tests for the gui helper functions in __init__.py
 """
-from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtCore import QSize, Qt, QEvent, QPoint
+from PyQt5.QtGui import QFocusEvent, QMouseEvent
 from PyQt5.QtWidgets import QApplication
 
-from securedrop_client.gui import SecureQLabel, SvgPushButton, SvgLabel, SvgToggleButton
+from securedrop_client.gui import (SecureQLabel, SecureQPlainTextEdit,
+                                   SvgPushButton, SvgLabel, SvgToggleButton)
 
 app = QApplication([])
 
@@ -185,3 +187,47 @@ def test_SecureQLabel_get_elided_text_only_returns_oneline_elided(mocker):
 def test_SecureQLabel_quotes_not_escaped_for_readability():
     sl = SecureQLabel("'hello'")
     assert sl.text() == "'hello'"
+
+
+def test_SecureQPlainTextEdit_init():
+    label_text = '<script>alert("hi!");</script>'
+    sl = SecureQPlainTextEdit(label_text)
+    assert sl.toPlainText() == label_text
+
+
+def test_SecureQPlainTextEdit_quotes_not_escaped_for_readability():
+    label_text = "'hello'"
+    sl = SecureQPlainTextEdit(label_text)
+    assert sl.toPlainText() == label_text
+
+
+def test_SecureQPlainTextEdit_init_wordwrap():
+    '''
+    Regression test to make sure we don't remove newlines.
+    '''
+    long_string = ('1234567890123456789012345678901234567890123456789012345678901234567890\n'
+                   '12345678901')
+    sl = SecureQPlainTextEdit(long_string)
+    assert sl.toPlainText() == long_string
+
+
+def test_SecureQPlainTextEdit_mouse_release_event_sets_focus(mocker):
+    dummy_number = 1
+    test_event = QMouseEvent(QEvent.MouseButtonRelease, QPoint(dummy_number, dummy_number),
+                             Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
+    sl = SecureQPlainTextEdit("foo")
+    sl.setFocus = mocker.MagicMock()
+
+    sl.mouseReleaseEvent(test_event)
+
+    assert sl.setFocus.call_count == 1
+
+
+def test_SecureQPlainTextEdit_focus_out_removes_text_selection(mocker):
+    focus_out_event = QFocusEvent(QEvent.FocusOut)
+    sl = SecureQPlainTextEdit("foo")
+    sl.setTextCursor = mocker.MagicMock()
+
+    sl.focusOutEvent(focus_out_event)
+
+    assert sl.setTextCursor.call_count == 1
