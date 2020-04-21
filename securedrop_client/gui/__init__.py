@@ -21,7 +21,7 @@ import math
 
 from PyQt5.QtWidgets import QLabel, QHBoxLayout, QPlainTextEdit, QPushButton, QWidget
 from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFocusEvent, QFont, QMouseEvent
 
 from securedrop_client.resources import load_svg, load_icon
 
@@ -244,11 +244,11 @@ class SecureQPlainTextEdit(QPlainTextEdit):
         self.height = self.HEIGHT_BASE + (document_lines * self.LINE_HEIGHT)
         self.setFixedHeight(self.height)
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         self.setFocus()
         super().mouseReleaseEvent(event)
 
-    def focusOutEvent(self, event):
+    def focusOutEvent(self, event: QFocusEvent) -> None:
         clear_text_cursor = self.textCursor()
         clear_text_cursor.clearSelection()
         self.setTextCursor(clear_text_cursor)
