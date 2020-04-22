@@ -1957,6 +1957,9 @@ class SpeechBubble(QWidget):
         # Add widget to layout
         layout.addWidget(bubble_area)
 
+        # Make text selectable
+        self.message.setTextInteractionFlags(Qt.TextSelectableByMouse)
+
         # Connect signals to slots
         update_signal.connect(self._update_text)
 
@@ -3057,7 +3060,7 @@ class ConversationView(QWidget):
         self.current_messages = {}  # type: Dict[str, QWidget]
 
         # Set styles
-        self.setStyleSheet(self.CSS)
+        # self.setStyleSheet(self.CSS)
 
         # Set layout
         main_layout = QVBoxLayout()
