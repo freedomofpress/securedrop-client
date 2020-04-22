@@ -3034,15 +3034,15 @@ class ConversationView(QWidget):
     Renders a conversation.
     """
 
-    CSS = '''
-    #container {
-        background: #f3f5f9;
+    CSS = {
+        'container': '''
+            background: #f3f5f9;
+        ''',
+        'scroll': '''
+            border: 0;
+            background: #f3f5f9;
+        '''
     }
-    #scroll {
-        border: 0;
-        background: #f3f5f9;
-    }
-    '''
 
     conversation_updated = pyqtSignal()
 
@@ -3059,9 +3059,6 @@ class ConversationView(QWidget):
         # To hold currently displayed messages.
         self.current_messages = {}  # type: Dict[str, QWidget]
 
-        # Set styles
-        # self.setStyleSheet(self.CSS)
-
         # Set layout
         main_layout = QVBoxLayout()
         self.setLayout(main_layout)
@@ -3077,12 +3074,14 @@ class ConversationView(QWidget):
         self.conversation_layout.setContentsMargins(self.MARGIN_LEFT, 0, self.MARGIN_RIGHT, 0)
         self.conversation_layout.setSpacing(0)
         self.container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.container.setStyleSheet(self.CSS['container'])
 
         self.scroll = QScrollArea()
         self.scroll.setObjectName('scroll')
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll.setWidget(self.container)
         self.scroll.setWidgetResizable(True)
+        self.scroll.setStyleSheet(self.CSS['scroll'])
 
         # Flag to show if the current user has sent a reply. See issue #61.
         self.reply_flag = False
