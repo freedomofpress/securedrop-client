@@ -1957,8 +1957,9 @@ class SpeechBubble(QWidget):
         # Add widget to layout
         layout.addWidget(bubble_area)
 
-        # Make text selectable
+        # Make text selectable but disable the context menu
         self.message.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.message.setContextMenuPolicy(Qt.NoContextMenu)
 
         # Connect signals to slots
         update_signal.connect(self._update_text)
