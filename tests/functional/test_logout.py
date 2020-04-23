@@ -6,12 +6,11 @@ https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-
 """
 import pytest
 from flaky import flaky
-from .utils import get_safe_tempdir, get_logged_in_test_context
 
 
 @flaky
 @pytest.mark.vcr()
-def test_logout_as_journalist(qtbot, mocker):
+def test_logout_as_journalist(functional_test_logged_in_context, qtbot, mocker):
     """
     WARNING: THIS TEST CAUSES SUBSEQUENT TESTS TO CRASH WITH A CORE DUMP!
 
@@ -21,9 +20,7 @@ def test_logout_as_journalist(qtbot, mocker):
 
     A journalist can successfully log out of the application.
     """
-    totp = "333598"
-    tempdir = get_safe_tempdir()
-    gui, controller = get_logged_in_test_context(tempdir, qtbot, totp)
+    gui, controller, tempdir = functional_test_logged_in_context
 
     def check_login_button():
         assert gui.left_pane.user_profile.login_button.isVisible()

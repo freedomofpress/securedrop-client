@@ -2,9 +2,15 @@ import json
 import os
 import tempfile
 import pytest
+import subprocess
 
 from configparser import ConfigParser
 from datetime import datetime
+
+from PyQt5.QtCore import Qt
+
+from securedrop_client.gui.main import Window
+from securedrop_client.logic import Controller
 from securedrop_client.config import Config
 from securedrop_client.app import configure_locale_and_language
 from securedrop_client.db import (
@@ -16,6 +22,16 @@ from uuid import uuid4
 
 with open(os.path.join(os.path.dirname(__file__), 'files', 'test-key.gpg.pub.asc')) as f:
     PUB_KEY = f.read()
+
+
+HOSTNAME = "http://localhost:8081/"
+USERNAME = "journalist"
+PASSWORD = "correct horse battery staple profanity oil chewy"
+
+# Modify cassettes to use the following TOTP code. For developing new tests,
+# you can modify this so you don't need to keep editing cassettes during
+# development.
+TOTP = "994892"
 
 
 @pytest.fixture(scope='function')
@@ -48,6 +64,51 @@ def homedir(i18n):
         os.chmod(dir_, 0o0700)
 
     yield tmpdir
+
+
+@pytest.fixture(scope='function')
+def functional_test_logged_out_context(homedir, reply_status_codes, session, config):
+    '''
+    Returns a tuple containing a Window instance and a Controller instance that
+    have been correctly set up and isolated from any other instances of the
+    application to be run in the test suite.
+    '''
+
+    gui = Window()
+    # Configure test keys.
+    create_gpg_test_context(homedir)
+
+    # Configure and create the database.
+    session_maker = make_session_maker(homedir)
+
+    # Create the controller.
+    controller = Controller(HOSTNAME, gui, session_maker, homedir,
+                            False, False)
+    # Link the gui and controller together.
+    gui.controller = controller
+    # Et Voila...
+    return (gui, controller, homedir)
+
+
+@pytest.fixture(scope='function')
+def functional_test_logged_in_context(functional_test_logged_out_context, qtbot):
+    """
+    Returns a tuple containing a Window and Controller instance that have been
+    correctly configured to work together, isolated from other runs of the
+    test suite and in a logged in state.
+    """
+    gui, controller, tempdir = functional_test_logged_out_context
+    gui.setup(controller)
+    qtbot.keyClicks(gui.login_dialog.username_field, USERNAME)
+    qtbot.keyClicks(gui.login_dialog.password_field, PASSWORD)
+    qtbot.keyClicks(gui.login_dialog.tfa_field, TOTP)
+    qtbot.mouseClick(gui.login_dialog.submit, Qt.LeftButton)
+
+    def wait_for_login():
+        assert gui.login_dialog is None
+
+    qtbot.waitUntil(wait_for_login, timeout=10000)
+    return (gui, controller, homedir)
 
 
 @pytest.fixture(scope='function')
@@ -90,7 +151,7 @@ def session_maker(homedir):
 
 @pytest.fixture(scope='function')
 def session(session_maker):
-    sess = session_maker()
+    sess = session_maker
     Base.metadata.create_all(bind=sess.get_bind(), checkfirst=False)
     yield sess
     sess.close()
@@ -133,3 +194,29 @@ def source(session) -> dict:
     args['id'] = source.id
     args['source'] = source
     return args
+
+
+def create_gpg_test_context(sdc_home):
+    """
+    Ensures the correct key is in the $sdc_home/gpg directory. Needs the
+    gpg command to be installed for this to work.
+    """
+    gpg_home = os.path.join(sdc_home, "gpg")
+    func_test_path = os.path.dirname(os.path.abspath(__file__))
+    key_file = os.path.join(func_test_path, "files",
+                            "securedrop.gpg.asc")
+    cmd = [
+        'gpg',
+        '--homedir',
+        gpg_home,
+        '--allow-secret-key-import',
+        '--import',
+        os.path.abspath(key_file),
+    ]
+    result = subprocess.run(cmd)
+    if result.returncode != 0:
+        raise RuntimeError(
+            "Unable to import test GPG key. STDOUT: {} STDERR: {}".format(
+                result.stdout, result.stderr
+            )
+        )
