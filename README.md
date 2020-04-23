@@ -144,6 +144,20 @@ make check
 
 To individually run the unit tests, run `make test` to run the suite in parallel (fast), or run `make test-random` to run the tests in random order (slower, but this is what `make check` runs and what runs in CI).
 
+### Functional Tests
+
+Functional tests are run alone using `make test-functional` and otherwise will be ran along with `make check`.
+
+Some of the tests appear to get into a state that reliably causes subsequent tests to crash. Such tests have been isolated and are clearly marked. The Makefile is used to ensure we exercise them in a completely new process.
+Use the `qtbot` object to drive the UI. This is part of the [pytest-qt](https://pytest-qt.readthedocs.io/en/latest/) package.
+
+When writing tests that require the user to log in, on first run of the test
+you must make sure the TOTP value in `conftest.py` is correct for the time at which the test is run.
+For any further run of the test, this doesn't need to be the case since [vcrpy](https://vcrpy.readthedocs.io/en/latest/)
+will replay the original response from the test server. These responses are
+stored in the cassettes directory and should be committed to the git
+repository. Before committing, set the TOTP value in the cassette back to the value we use across all functional tests: `994892`.
+
 ## Environments
 
 The quickest way to get started with running the client is to use the [developer environment](#developer-environment) that [runs against a test server running in a local docker container](#running-against-a-test-server). This differs from a staging or production environment where the client receives and sends requests over Tor. Things are a lot snappier in the developer environment and can sometimes lead to a much different user experience, which is why it is important to do end-to-end testing in Qubes using the [staging environment](#staging-environment), especially if you are modifying code paths involving how we handle server requests and responses.
