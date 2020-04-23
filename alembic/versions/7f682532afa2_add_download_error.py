@@ -29,7 +29,7 @@ CREATE_TABLE_FILES_NEW = """
         download_error_id INTEGER,
         is_read BOOLEAN DEFAULT 0 NOT NULL,
         source_id INTEGER NOT NULL,
-        last_updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        last_updated DATETIME NOT NULL,
         CONSTRAINT pk_files PRIMARY KEY (id),
         CONSTRAINT uq_messages_source_id_file_counter UNIQUE (source_id, file_counter),
         CONSTRAINT uq_files_uuid UNIQUE (uuid),
@@ -80,7 +80,7 @@ CREATE_TABLE_MESSAGES_NEW = """
         is_read BOOLEAN DEFAULT 0 NOT NULL,
         content TEXT CONSTRAINT ck_message_compare_download_vs_content CHECK (CASE WHEN is_downloaded = 0 THEN content IS NULL ELSE 1 END),
         source_id INTEGER NOT NULL,
-        last_updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        last_updated DATETIME NOT NULL,
         CONSTRAINT pk_messages PRIMARY KEY (id),
         CONSTRAINT uq_messages_source_id_file_counter UNIQUE (source_id, file_counter),
         CONSTRAINT uq_messages_uuid UNIQUE (uuid),
@@ -133,7 +133,7 @@ CREATE_TABLE_REPLIES_NEW = """
         is_downloaded BOOLEAN,
         download_error_id INTEGER,
         journalist_id INTEGER,
-        last_updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        last_updated DATETIME NOT NULL,
         CONSTRAINT pk_replies PRIMARY KEY (id),
         CONSTRAINT uq_messages_source_id_file_counter UNIQUE (source_id, file_counter),
         CONSTRAINT uq_replies_uuid UNIQUE (uuid),
@@ -201,26 +201,35 @@ def upgrade():
 
     conn.execute("""
         INSERT INTO files
-        (id, uuid, filename, file_counter, size, download_url,
-               is_downloaded, is_read, is_decrypted, download_error_id, source_id)
+        (
+            id, uuid, filename, file_counter, size, download_url,
+            is_downloaded, is_read, is_decrypted, download_error_id, source_id,
+            last_updated
+        )
         SELECT id, uuid, filename, file_counter, size, download_url,
-               is_downloaded, is_read, is_decrypted, NULL, source_id
+               is_downloaded, is_read, is_decrypted, NULL, source_id, CURRENT_TIMESTAMP
         FROM files_tmp
     """)
+
     conn.execute("""
         INSERT INTO messages
-        (id, uuid, source_id, filename, file_counter, size, content, is_decrypted,
-         is_downloaded, is_read, download_error_id, download_url)
+        (
+            id, uuid, source_id, filename, file_counter, size, content, is_decrypted,
+            is_downloaded, is_read, download_error_id, download_url, last_updated
+        )
         SELECT id, uuid, source_id, filename, file_counter, size, content, is_decrypted,
-               is_downloaded, is_read, NULL, download_url
+               is_downloaded, is_read, NULL, download_url, CURRENT_TIMESTAMP
         FROM messages_tmp
     """)
+
     conn.execute("""
         INSERT INTO replies
-        (id, uuid, source_id, filename, file_counter, size, content, is_decrypted,
-         is_downloaded, download_error_id, journalist_id)
+        (
+            id, uuid, source_id, filename, file_counter, size, content, is_decrypted,
+            is_downloaded, download_error_id, journalist_id, last_updated
+        )
         SELECT id, uuid, source_id, filename, file_counter, size, content, is_decrypted,
-              is_downloaded, NULL, journalist_id
+              is_downloaded, NULL, journalist_id, CURRENT_TIMESTAMP
         FROM replies_tmp
     """)
 
