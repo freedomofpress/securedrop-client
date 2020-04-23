@@ -7,7 +7,7 @@ import os
 from typing import List
 import uuid
 
-from sdclientapi import Source as SDKSource
+from sdclientapi import Reply as SDKReply, Source as SDKSource
 
 from securedrop_client import db
 from securedrop_client.api_jobs.base import ApiJob
@@ -195,3 +195,23 @@ def RemoteSource(**attrs):
     defaults.update(attrs)
 
     return SDKSource(**defaults)
+
+
+def RemoteReply(**attrs):
+
+    source_url = "/api/v1/sources/{}".format(str(uuid.uuid4()))
+    defaults = dict(
+        filename="1-reply.filename",
+        journalist_uuid=str(uuid.uuid4()),
+        journalist_username="test",
+        file_counter=1,
+        is_deleted_by_source=False,
+        reply_url="test",
+        size=1234,
+        uuid=str(uuid.uuid4()),
+        source_url=source_url,
+    )
+
+    defaults.update(attrs)
+
+    return SDKReply(**defaults)

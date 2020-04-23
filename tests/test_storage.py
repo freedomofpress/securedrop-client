@@ -687,21 +687,10 @@ def test_update_replies(homedir, mocker, session):
     source = factory.Source()
     session.add(source)
 
-    # Some remote reply objects from the API, one of which will exist in the
-    # local database, the other will NOT exist in the local database
-    # (this will be added to the database)
-    remote_reply_update = make_remote_reply(source.uuid, journalist.uuid)
-    remote_reply_create = make_remote_reply(source.uuid, journalist.uuid)
-    remote_reply_create.file_counter = 3
-    remote_reply_create.filename = "3-reply.gpg"
-
-    remote_replies = [remote_reply_update, remote_reply_create]
-
     # Some local reply objects. One already exists in the API results
     # (this will be updated), one does NOT exist in the API results (this will
     # be deleted from the local database).
     local_reply_update = factory.Reply(
-        uuid=remote_reply_update.uuid,
         source_id=source.id,
         source=source,
         journalist_id=journalist.id,
@@ -717,7 +706,27 @@ def test_update_replies(homedir, mocker, session):
     session.add(local_reply_delete)
 
     local_replies = [local_reply_update, local_reply_delete]
+    # Some remote reply objects from the API, one of which will exist in the
+    # local database, the other will NOT exist in the local database
+    # (this will be added to the database)
+    remote_reply_update = factory.RemoteReply(
+        journalist_uuid=journalist.uuid,
+        uuid=local_reply_update.uuid,
+        source_url="/api/v1/sources/{}".format(source.uuid),
+        file_counter=local_reply_update.file_counter,
+        filename=local_reply_update.filename,
+    )
 
+    remote_reply_create = factory.RemoteReply(
+        journalist_uuid=journalist.uuid,
+        source_url="/api/v1/sources/{}".format(source.uuid),
+        file_counter=factory.REPLY_COUNT + 1,
+        filename="{}-filename.gpg".format(factory.REPLY_COUNT + 1),
+    )
+
+    remote_replies = [remote_reply_update, remote_reply_create]
+
+    session.commit()
     update_replies(remote_replies, local_replies, session, data_dir)
     session.commit()
 
