@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.1.0
+-----
+
+* Pass timeout value to the proxy (#117).
+* Update PyYAML to 5.3.1 (#120).
+
 0.0.13
 ------
 

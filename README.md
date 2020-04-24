@@ -6,8 +6,6 @@ This SDK provides a convenient Python interface to the [SecureDrop Journalist In
 
 The SDK is currently used by the [SecureDrop Client](https://github.com/freedomofpress/securedrop-client) that is a component of the SecureDrop Workstation. When used in Qubes OS, the SDK uses the [securedrop-proxy](https://github.com/freedomofpress/securedrop-proxy) service, as the VM which runs the client does not have network access by design.
 
-**IMPORTANT:** This project is still under active development. We do not recommend using it in any production context.
-
 # Development
 
 ## Quick Start
@@ -112,7 +110,7 @@ To make a release, you should:
 4. Create a PR and get the PR reviewed and merged into ``master``.
 5. ``git tag $new_version_number`` and push the new tag.
 6. Checkout the new tag locally.
-7. Push the new release source tarball to the PSF's PyPI [following this documentation](https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives).
+7. Push the new release source tarball to the PSF's PyPI [following this documentation](https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives). Do not upload the wheel (by deleting it from your `dist/` directory prior to upload).
 8. If you want to publish the new SDK release to the FPF PyPI mirror, Hop over to the the `securedrop-debian-packaging` repo and follow the [build-a-package](https://github.com/freedomofpress/securedrop-debian-packaging/blob/master/README.md#build-a-package) instructions to push the package up to our PyPI mirror: https://pypi.org/simple
 
 # Contributing
