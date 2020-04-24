@@ -1896,8 +1896,8 @@ class SpeechBubble(QWidget):
             background-color: #fff;
         """,
         "message": """
-            min-width: 520px;
-            max-width: 520px;
+            min-width: 500px;
+            max-width: 500px;
             font-family: 'Source Sans Pro';
             font-weight: 400;
             font-size: 15px;
@@ -1919,8 +1919,8 @@ class SpeechBubble(QWidget):
             background-color: #fff;
         """,
         "message": """
-            min-width: 520px;
-            max-width: 520px;
+            min-width: 500px;
+            max-width: 500px;
             font-family: 'Source Sans Pro';
             font-weight: 400;
             font-size: 15px;
@@ -2050,8 +2050,8 @@ class ReplyWidget(SpeechBubble):
             border: 0px;
         """,
         "message": """
-            min-width: 520px;
-            max-width: 520px;
+            min-width: 500px;
+            max-width: 500px;
             font-family: 'Source Sans Pro';
             font-weight: 400;
             font-size: 15px;
@@ -2081,8 +2081,8 @@ class ReplyWidget(SpeechBubble):
             border: 0px;
         """,
         "message": """
-            min-width: 520px;
-            max-width: 520px;
+            min-width: 500px;
+            max-width: 500px;
             font-family: 'Source Sans Pro';
             font-weight: 400;
             font-size: 15px;
