@@ -1896,6 +1896,8 @@ class SpeechBubble(QWidget):
             background-color: #fff;
         """,
         "message": """
+            min-width: 520px;
+            max-width: 520px;
             font-family: 'Source Sans Pro';
             font-weight: 400;
             font-size: 15px;
@@ -1917,6 +1919,8 @@ class SpeechBubble(QWidget):
             background-color: #fff;
         """,
         "message": """
+            min-width: 520px;
+            max-width: 520px;
             font-family: 'Source Sans Pro';
             font-weight: 400;
             font-size: 15px;
@@ -2001,7 +2005,7 @@ class SpeechBubble(QWidget):
         """
         if message_uuid == self.uuid:
             self.message.setText(text)
-        self.set_normal_styles()
+            self.set_normal_styles()
 
     @pyqtSlot(str, str, str)
     def set_error(self, source_uuid: str, uuid: str, text: str):
@@ -2046,6 +2050,8 @@ class ReplyWidget(SpeechBubble):
             border: 0px;
         """,
         "message": """
+            min-width: 520px;
+            max-width: 520px;
             font-family: 'Source Sans Pro';
             font-weight: 400;
             font-size: 15px;
@@ -2075,6 +2081,8 @@ class ReplyWidget(SpeechBubble):
             border: 0px;
         """,
         "message": """
+            min-width: 520px;
+            max-width: 520px;
             font-family: 'Source Sans Pro';
             font-weight: 400;
             font-size: 15px;

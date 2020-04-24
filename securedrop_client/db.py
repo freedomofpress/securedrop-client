@@ -343,15 +343,13 @@ class Reply(Base):
 
 class DownloadErrorCodes(Enum):
     """
-    Enumerated download failure modes, with explanation templates as values.
+    Enumerated download failure modes, with templates as values.
 
-    The explanation templates are intended to be formatted with the
-    class name of a downloadable item.
+    The templates are intended to be formatted with the class name of
+    a downloadable item.
     """
-    CHECKSUM_ERROR = "Downloaded {object_type} was incomplete; it will be retried."
-    DECRYPTION_ERROR = (
-        "Downloaded {object_type} could not be decrypted. Administrator action is needed."
-    )
+    CHECKSUM_ERROR = "cannot download {object_type}"
+    DECRYPTION_ERROR = "cannot decrypt {object_type}"
 
 
 class DownloadError(Base):
