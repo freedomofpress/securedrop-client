@@ -257,7 +257,7 @@ def test_file_with_download_error(session, download_error_codes):
     session.commit()
 
     classname = f.__class__.__name__.lower()
-    assert str(f) == f"Downloaded {classname} was incomplete; it will be retried."
+    assert str(f) == f"cannot download {classname}"
 
 
 def test_message_with_download_error(session, download_error_codes):
@@ -269,9 +269,7 @@ def test_message_with_download_error(session, download_error_codes):
     session.commit()
 
     classname = m.__class__.__name__.lower()
-    assert str(m) == (
-        f"Downloaded {classname} could not be decrypted. Administrator action is needed."
-    )
+    assert str(m) == f"cannot decrypt {classname}"
 
 
 def test_reply_with_download_error(session, download_error_codes):
@@ -283,6 +281,4 @@ def test_reply_with_download_error(session, download_error_codes):
     session.commit()
 
     classname = r.__class__.__name__.lower()
-    assert str(r) == (
-        f"Downloaded {classname} could not be decrypted. Administrator action is needed."
-    )
+    assert str(r) == f"cannot decrypt {classname}"
