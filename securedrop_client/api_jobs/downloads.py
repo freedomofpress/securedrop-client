@@ -177,7 +177,7 @@ class DownloadJob(ApiJob):
                 type(db_object), db_object.uuid, session, original_filename=original_filename
             )
             logger.info("File decrypted: {} (decrypted file in: {})".format(
-                os.path.basename(filepath), os.path.dirname(original_filename))
+                os.path.basename(filepath), os.path.dirname(filepath))
             )
         except CryptoError as e:
             mark_as_decrypted(type(db_object), db_object.uuid, session, is_decrypted=False)
@@ -375,5 +375,5 @@ class FileDownloadJob(DownloadJob):
             filepath, plaintext_filepath, is_doc=True
         )
         logger.info("Decrypted file '{}' to folder '{}'".format(
-            filepath, os.path.dirname(original_filename)))
+            os.path.basename(filepath), os.path.dirname(filepath)))
         return original_filename
