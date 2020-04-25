@@ -23,7 +23,8 @@ import logging
 
 from gettext import gettext as _
 from typing import Dict, List, Optional  # noqa: F401
-from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QDesktopWidget
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, \
+    QVBoxLayout, QDesktopWidget
 
 from securedrop_client import __version__
 from securedrop_client.db import Source, User
@@ -197,3 +198,10 @@ class Window(QMainWindow):
         Clear any message currently in the error status bar.
         """
         self.top_pane.clear_error_status()
+
+    def clear_clipboard(self):
+        """
+        Purge any clipboard contents.
+        """
+        cb = QApplication.clipboard()
+        cb.clear()
