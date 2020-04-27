@@ -18,8 +18,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from typing import Union
 import math
+import html
+import sys
 
-from PyQt5.QtWidgets import QLabel, QHBoxLayout, QPlainTextEdit, QPushButton, QWidget
+from PyQt5.QtWidgets import QLabel, QHBoxLayout, QPushButton, QWidget
+from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QFocusEvent, QFont, QMouseEvent
 
@@ -199,7 +202,7 @@ class SecureQLabel(QLabel):
         return self.elided
 
 
-class SecureQPlainTextEdit(QPlainTextEdit):
+class SecureQPlainTextEdit(QWebEngineView):
     '''
     This is a resizeable widget used to display read-only plain text content.
 
@@ -216,33 +219,68 @@ class SecureQPlainTextEdit(QPlainTextEdit):
     LINE_HEIGHT = 20
     FONT_NAME = 'Source Sans Pro'
     FONT_SIZE = 15
+    TEMPLATE_START = """<html>
+    <head>
+        <style>
+            .container {
+                width: 515px;
+                background-color: white;
+                white-space: normal;
+                overflow-wrap: break-word;
+                word-wrap: break-word;
+                word-break: break-word;
+                -ms-word-break: break-all;
+                -ms-hyphens: auto;
+                -moz-hyphens: auto;
+                -webkit-hyphens: auto;
+                hyphens: auto;
+                white-space: pre-line;
+            }
+        </style>
+
+    </head>
+    <body>
+        <div    class="container">
+"""
+    TEMPLATE_END = """
+        </div>
+    </body>
+</html>"""
 
     def __init__(self, text: str = '') -> None:
         super().__init__()
-        self.setReadOnly(True)  # Do not allow SecureQPlainTextEdit to be editable
+        #self.setReadOnly(True)  # Do not allow SecureQPlainTextEdit to be editable
         self.setContextMenuPolicy(Qt.NoContextMenu)  # Disable copy/paste context menu
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        #self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setFont(QFont(self.FONT_NAME, self.FONT_SIZE))
-        self.height = self.HEIGHT_BASE
+        #self.height = self.HEIGHT_BASE
+        self.iText = ""
+        self.resize(580, 100)
         self.setPlainText(text)
 
+    def setText(self, text):
+        self.setPlainText(text)
+
+    def toPlainText(self):
+        return self.iText
+
     def setPlainText(self, text: str) -> None:
-        super().setPlainText(text)
+        self.iText = text
+        settings = self.settings()
+        settings.setAttribute(QWebEngineSettings.JavascriptEnabled, False)
+        settings.setAttribute(QWebEngineSettings.AutoLoadImages, False)
 
-        # Resize widget height to fit text
-        document_lines = 0
-        fm = self.fontMetrics()
-        max_line_width = self.size().width() + self.document().documentMargin()
-        for block_num in range(0, self.blockCount()):
-            block = self.document().findBlockByNumber(block_num)
-            block_length = fm.horizontalAdvance(block.text())
-            # Calculate the number of lines in the block. If the block_length is zero because it is
-            # a blank line, then the line count should be 1 .
-            block_lines = max(math.ceil(block_length / max_line_width), 1)
-            document_lines = document_lines + block_lines
+        escaped = html.escape(text)
+        # replace tab char with 8 spaces because HTML
+        escaped = escaped.replace("\t", "&nbsp;" * 8)
+        super().setHtml(self.TEMPLATE_START + escaped + self.TEMPLATE_END)
+        page = self.page()
+        size = page.contentsSize()
+        page.contentsSizeChanged.connect(self.calculate)
 
-        self.height = self.HEIGHT_BASE + (document_lines * self.LINE_HEIGHT)
-        self.setFixedHeight(self.height)
+
+    def calculate(self, size):
+        self.setFixedHeight(size.height())
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         self.setFocus()
