@@ -7,9 +7,11 @@ https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-
 import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
-from .utils import get_safe_tempdir, get_test_context, USERNAME, PASSWORD
+
 from securedrop_client.gui.main import Window
 from securedrop_client.gui.widgets import LoginDialog
+
+from tests.conftest import USERNAME, PASSWORD
 
 
 def test_login_ensure_errors_displayed(qtbot, mocker):
@@ -29,14 +31,11 @@ def test_login_ensure_errors_displayed(qtbot, mocker):
 
 @flaky
 @pytest.mark.vcr()  # Ensure any API network traffic is recorded/replayed.
-def test_login_as_journalist(qtbot, mocker):
+def test_login_as_journalist(functional_test_logged_out_context, qtbot, mocker):
     """
     The app is visible if the user logs in with apparently correct credentials.
     """
-    # Once out of scope, is deleted.
-    tempdir = get_safe_tempdir()
-    # Create a clean context.
-    gui, controller = get_test_context(tempdir)
+    gui, controller, tempdir = functional_test_logged_out_context
     gui.setup(controller)
     # Fill in UI with good credentials.
     qtbot.keyClicks(gui.login_dialog.username_field, USERNAME)

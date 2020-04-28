@@ -8,19 +8,16 @@ import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
 from securedrop_client.gui.widgets import FileWidget
-from .utils import get_safe_tempdir, get_logged_in_test_context
 
 
 @flaky
 @pytest.mark.vcr()
-def test_download_file(qtbot, mocker):
+def test_download_file(functional_test_logged_in_context, qtbot, mocker):
     """
     We will download a file received from the source
     the conversation window.
     """
-    totp = "353061"
-    tempdir = get_safe_tempdir()
-    gui, controller = get_logged_in_test_context(tempdir, qtbot, totp)
+    gui, controller, tempdir = functional_test_logged_in_context
     qtbot.wait(1000)
 
     def check_for_sources():
