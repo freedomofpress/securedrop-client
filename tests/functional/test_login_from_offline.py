@@ -5,7 +5,8 @@ import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
 
-from tests.conftest import USERNAME, PASSWORD
+from tests.conftest import (TIME_APP_START, TIME_RENDER_CONV_VIEW,
+                            PASSWORD, USERNAME)
 
 
 @flaky
@@ -21,8 +22,7 @@ def test_login_from_offline(functional_test_logged_in_context, qtbot, mocker):
     A journalist can successfully log out of the application.
     """
     gui, controller, tempdir = functional_test_logged_in_context
-
-    qtbot.wait(2000)
+    qtbot.wait(TIME_APP_START)
 
     def check_login_button():
         assert gui.left_pane.user_profile.login_button.isVisible()
@@ -32,13 +32,13 @@ def test_login_from_offline(functional_test_logged_in_context, qtbot, mocker):
     # rather than pretend some sort of user interaction via the qtbot.
     gui.left_pane.user_profile.user_button.menu.logout.trigger()
     # Wait until the logout button is pressed.
-    qtbot.waitUntil(check_login_button, timeout=10000)
+    qtbot.waitUntil(check_login_button, timeout=TIME_RENDER_CONV_VIEW)
 
     def check_login_dialog():
         assert gui.login_dialog
 
     qtbot.mouseClick(gui.left_pane.user_profile.login_button, Qt.LeftButton)
-    qtbot.waitUntil(check_login_dialog, timeout=10000)
+    qtbot.waitUntil(check_login_dialog, timeout=TIME_RENDER_CONV_VIEW)
 
     qtbot.keyClicks(gui.login_dialog.username_field, USERNAME)
     qtbot.keyClicks(gui.login_dialog.password_field, PASSWORD)
@@ -49,4 +49,4 @@ def test_login_from_offline(functional_test_logged_in_context, qtbot, mocker):
     def wait_for_login():
         assert gui.login_dialog is None
 
-    qtbot.waitUntil(wait_for_login, timeout=10000)
+    qtbot.waitUntil(wait_for_login, timeout=TIME_RENDER_CONV_VIEW)
