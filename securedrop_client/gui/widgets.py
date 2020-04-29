@@ -3128,7 +3128,7 @@ class ConversationScrollArea(QScrollArea):
         border: 0;
         background: #f3f5f9;
     }
-    #ConversationScrollArea_container {
+    #ConversationScrollArea_conversation {
         background: #f3f5f9;
     }
     '''
@@ -3146,15 +3146,31 @@ class ConversationScrollArea(QScrollArea):
         self.setObjectName('ConversationScrollArea')
         self.setStyleSheet(self.CSS)
 
-        container = QWidget()
-        container.setObjectName('ConversationScrollArea_container')
+        # Create the scroll area's widget
+        conversation = QWidget()
+        conversation.setObjectName('ConversationScrollArea_conversation')
+        conversation.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.conversation_layout = QVBoxLayout()
-        container.setLayout(self.conversation_layout)
+        conversation.setLayout(self.conversation_layout)
         self.conversation_layout.setContentsMargins(self.MARGIN_LEFT, 0, self.MARGIN_RIGHT, 0)
         self.conversation_layout.setSpacing(0)
-        container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
-        self.setWidget(container)
+        # `conversation` is a child of this scroll area
+        self.setWidget(conversation)
+
+    def add_widget_to_conversation(
+        self, index: int, widget: QWidget, alignment_flag: Qt.AlignmentFlag
+    ) -> None:
+        '''
+        Add `widget` to the scroll area's widget layout.
+        '''
+        self.conversation_layout.insertWidget(index, widget, alignment=alignment_flag)
+
+    def remove_widget_from_conversation(self, widget: QWidget) -> None:
+        '''
+        Remove `widget` from the scroll area's widget layout.
+        '''
+        self.conversation_layout.removeWidget(widget)
 
 
 class ConversationView(QWidget):
@@ -3227,14 +3243,12 @@ class ConversationView(QWidget):
                 if item_widget.index != index:
                     # The existing widget is out of order.
                     # Remove / re-add it and update index details.
-                    self.scroll.conversation_layout.removeWidget(item_widget)
+                    self.scroll.remove_widget_from_conversation(item_widget)
                     item_widget.index = index
                     if isinstance(item_widget, ReplyWidget):
-                        self.scroll.conversation_layout.insertWidget(index, item_widget,
-                                                              alignment=Qt.AlignRight)
+                        self.scroll.add_widget_to_conversation(index, item_widget, Qt.AlignRight)
                     else:
-                        self.scroll.conversation_layout.insertWidget(index, item_widget,
-                                                              alignment=Qt.AlignLeft)
+                        self.scroll.add_widget_to_conversation(index, item_widget, Qt.AlignLeft)
                 # Check if text in item has changed, then update the
                 # widget to reflect this change.
                 if not isinstance(item_widget, FileWidget):
@@ -3259,7 +3273,7 @@ class ConversationView(QWidget):
             logger.debug('Deleting item: {}'.format(item_widget.uuid))
             self.current_messages.pop(item_widget.uuid)
             item_widget.deleteLater()
-            self.scroll.conversation_layout.removeWidget(item_widget)
+            self.scroll.remove_widget_from_conversation(item_widget)
 
     def add_file(self, file: File, index):
         """
@@ -3273,7 +3287,7 @@ class ConversationView(QWidget):
             self.controller.file_missing,
             index,
         )
-        self.scroll.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignLeft)
+        self.scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignLeft)
         self.current_messages[file.uuid] = conversation_item
         self.conversation_updated.emit()
 
@@ -3298,7 +3312,7 @@ class ConversationView(QWidget):
             index,
             message.download_error is not None,
         )
-        self.scroll.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignLeft)
+        self.scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignLeft)
         self.current_messages[message.uuid] = conversation_item
         self.conversation_updated.emit()
 
@@ -3323,7 +3337,7 @@ class ConversationView(QWidget):
             index,
             getattr(reply, "download_error", None) is not None,
         )
-        self.scroll.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignRight)
+        self.scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignRight)
         self.current_messages[reply.uuid] = conversation_item
 
     def add_reply_from_reply_box(self, uuid: str, content: str) -> None:
@@ -3340,7 +3354,7 @@ class ConversationView(QWidget):
             self.controller.reply_succeeded,
             self.controller.reply_failed,
             index)
-        self.scroll.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignRight)
+        self.scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignRight)
         self.current_messages[uuid] = conversation_item
 
     def on_reply_sent(self, source_uuid: str, reply_uuid: str, reply_text: str) -> None:
