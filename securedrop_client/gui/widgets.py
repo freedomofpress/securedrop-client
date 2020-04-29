@@ -201,7 +201,7 @@ class SyncIcon(QLabel):
     """
 
     CSS = '''
-    #sync_icon {
+    #SyncIcon {
         border: none;
         color: #fff;
     }
@@ -210,7 +210,7 @@ class SyncIcon(QLabel):
     def __init__(self):
         # Add svg images to button
         super().__init__()
-        self.setObjectName('sync_icon')
+        self.setObjectName('SyncIcon')
         self.setStyleSheet(self.CSS)
         self.setFixedSize(QSize(24, 20))
         self.sync_animation = load_movie("sync_disabled.gif")
@@ -257,7 +257,7 @@ class ActivityStatusBar(QStatusBar):
     """
 
     CSS = '''
-    #activity_status_bar {
+    #ActivityStatusBar {
         font-family: 'Source Sans Pro';
         font-weight: 600;
         font-size: 12px;
@@ -269,7 +269,7 @@ class ActivityStatusBar(QStatusBar):
         super().__init__()
 
         # Set css id
-        self.setObjectName('activity_status_bar')
+        self.setObjectName('ActivityStatusBar')
 
         # Set styles
         self.setStyleSheet(self.CSS)
@@ -291,10 +291,10 @@ class ErrorStatusBar(QWidget):
     """
 
     CSS = '''
-    #error_vertical_bar {
+    #ErrorStatusBar_vertical_bar {
         background-color: #ff3366;
     }
-    #error_icon {
+    #ErrorStatusBar_icon {
         background-color: qlineargradient(
             x1: 0,
             y1: 0,
@@ -305,7 +305,7 @@ class ErrorStatusBar(QWidget):
             stop: 1 #fff
         );
     }
-    #error_status_bar {
+    #ErrorStatusBar_status_bar {
         background-color: qlineargradient(
             x1: 0,
             y1: 0,
@@ -338,17 +338,17 @@ class ErrorStatusBar(QWidget):
 
         # Error vertical bar
         self.vertical_bar = QWidget()
-        self.vertical_bar.setObjectName('error_vertical_bar')  # Set css id
+        self.vertical_bar.setObjectName('ErrorStatusBar_vertical_bar')  # Set css id
         self.vertical_bar.setFixedWidth(10)
 
         # Error icon
         self.label = SvgLabel('error_icon.svg', svg_size=QSize(20, 20))
-        self.label.setObjectName('error_icon')  # Set css id
+        self.label.setObjectName('ErrorStatusBar_icon')  # Set css id
         self.label.setFixedWidth(42)
 
         # Error status bar
         self.status_bar = QStatusBar()
-        self.status_bar.setObjectName('error_status_bar')  # Set css id
+        self.status_bar.setObjectName('ErrorStatusBar_status_bar')  # Set css id
         self.status_bar.setSizeGripEnabled(False)
 
         # Add widgets to layout
@@ -413,10 +413,10 @@ class UserProfile(QLabel):
     """
 
     CSS = '''
-    QLabel#user_profile {
+    #UserProfile {
         padding: 15px;
     }
-    QLabel#user_icon {
+    #UserProfile_icon {
         border: none;
         background-color: #9211ff;
         padding-left: 3px;
@@ -432,7 +432,7 @@ class UserProfile(QLabel):
         super().__init__()
 
         # Set css id
-        self.setObjectName('user_profile')
+        self.setObjectName('UserProfile')
 
         # Set styles
         self.setStyleSheet(self.CSS)
@@ -461,7 +461,7 @@ class UserProfile(QLabel):
 
         # User icon
         self.user_icon = UserIconLabel()
-        self.user_icon.setObjectName('user_icon')  # Set css id
+        self.user_icon.setObjectName('UserProfile_icon')  # Set css id
         self.user_icon.setFixedSize(QSize(30, 30))
         self.user_icon.setAlignment(Qt.AlignCenter)
         self.user_icon_font = QFont()
@@ -517,10 +517,7 @@ class UserButton(SvgPushButton):
     """
 
     CSS = '''
-    SvgPushButton:focus {
-        outline: none;
-    }
-    SvgPushButton#user_button {
+    #UserButton {
         border: none;
         font-family: 'Source Sans Pro';
         font-weight: 700;
@@ -528,7 +525,10 @@ class UserButton(SvgPushButton):
         color: #fff;
         text-align: left;
     }
-    SvgPushButton::menu-indicator {
+    #UserButton:focus {
+        outline: none;
+    }
+    #UserButton::menu-indicator {
         image: none;
     }
     '''
@@ -537,7 +537,7 @@ class UserButton(SvgPushButton):
         super().__init__('dropdown_arrow.svg', svg_size=QSize(9, 6))
 
         # Set css id
-        self.setObjectName('user_button')
+        self.setObjectName('UserButton')
 
         # Set styles
         self.setStyleSheet(self.CSS)
@@ -595,7 +595,7 @@ class LoginButton(QPushButton):
     """
 
     CSS = '''
-    #login {
+    #LoginButton {
         border: none;
         background-color: #05edfe;
         font-family: 'Montserrat';
@@ -603,7 +603,7 @@ class LoginButton(QPushButton):
         font-size: 14px;
         color: #2a319d;
     }
-    #login:pressed {
+    #LoginButton:pressed {
         background-color: #85f6fe;
     }
     '''
@@ -612,7 +612,7 @@ class LoginButton(QPushButton):
         super().__init__(_('SIGN IN'))
 
         # Set css id
-        self.setObjectName('login')
+        self.setObjectName('LoginButton')
 
         # Set styles
         self.setStyleSheet(self.CSS)
@@ -641,20 +641,13 @@ class MainView(QWidget):
     """
 
     CSS = '''
-    #main_view {
+    #MainView {
         min-height: 558;
     }
-    #view_holder {
+    #MainView_view_holder {
         min-width: 667;
         border: none;
         background-color: #f3f5f9;
-    }
-    QLabel#no-source {
-        font-family: Montserrat-Regular;
-        font-size: 35px;
-        color: #a5b3e9;
-        padding: 100px;
-        qproperty-alignment: AlignLeft;
     }
     '''
 
@@ -662,7 +655,7 @@ class MainView(QWidget):
         super().__init__(parent)
 
         # Set id and styles
-        self.setObjectName('main_view')
+        self.setObjectName('MainView')
         self.setStyleSheet(self.CSS)
 
         # Set layout
@@ -679,7 +672,7 @@ class MainView(QWidget):
 
         # Create widgets
         self.view_holder = QWidget()
-        self.view_holder.setObjectName('view_holder')
+        self.view_holder.setObjectName('MainView_view_holder')
         self.view_layout = QVBoxLayout()
         self.view_holder.setLayout(self.view_layout)
         self.view_layout.setContentsMargins(0, 0, 0, 0)
@@ -779,29 +772,27 @@ class MainView(QWidget):
 class EmptyConversationView(QWidget):
 
     CSS = '''
-    #bullet {
-        margin: 4px 0px 0px 0px;
-        font-size: 35px;
-        font-weight: 600;
-    }
-    #no_sources {
-        min-width: 520px;
-        max-width: 600px;
-        text-align: left;
-    }
-    #no_source_selected {
-        min-width: 520px;
-        max-width: 520px;
-        text-align: left;
-    }
-    QLabel {
+    #EmptyConversationView QLabel {
         font-family: Montserrat;
         font-weight: 400;
         font-size: 35px;
         color: #a5b3e9;
     }
-    #instructions {
+    #EmptyConversationView QLabel#EmptyConversationView_instructions {
         font-weight: 500;
+    }
+    #EmptyConversationView QLabel#EmptyConversationView_bullet {
+        margin: 4px 0px 0px 0px;
+        font-size: 35px;
+        font-weight: 600;
+    }
+    #EmptyConversationView_no_sources {
+        min-width: 520px;
+        max-width: 600px;
+    }
+    #EmptyConversationView_no_source_selected {
+        min-width: 520px;
+        max-width: 520px;
     }
     '''
 
@@ -812,7 +803,7 @@ class EmptyConversationView(QWidget):
         super().__init__()
 
         # Set id and styles
-        self.setObjectName('view')
+        self.setObjectName('EmptyConversationView')
         self.setStyleSheet(self.CSS)
 
         # Set layout
@@ -822,11 +813,11 @@ class EmptyConversationView(QWidget):
 
         # Create widgets
         self.no_sources = QWidget()
-        self.no_sources.setObjectName('no_sources')
+        self.no_sources.setObjectName('EmptyConversationView_no_sources')
         no_sources_layout = QVBoxLayout()
         self.no_sources.setLayout(no_sources_layout)
         no_sources_instructions = QLabel(_('Nothing to see just yet!'))
-        no_sources_instructions.setObjectName('instructions')
+        no_sources_instructions.setObjectName('EmptyConversationView_instructions')
         no_sources_instructions.setWordWrap(True)
         no_sources_instruction_details1 = QLabel(
             _('Source submissions will be listed to the left, once downloaded and decrypted.'))
@@ -841,18 +832,18 @@ class EmptyConversationView(QWidget):
         no_sources_layout.addWidget(no_sources_instruction_details2)
 
         self.no_source_selected = QWidget()
-        self.no_sources.setObjectName('no_sources')
+        self.no_source_selected.setObjectName('EmptyConversationView_no_source_selected')
         no_source_selected_layout = QVBoxLayout()
         self.no_source_selected.setLayout(no_source_selected_layout)
         no_source_selected_instructions = QLabel(_('Select a source from the list, to:'))
-        no_source_selected_instructions.setObjectName('instructions')
+        no_source_selected_instructions.setObjectName('EmptyConversationView_instructions')
         no_source_selected_instructions.setWordWrap(True)
         bullet1 = QWidget()
         bullet1_layout = QHBoxLayout()
         bullet1_layout.setContentsMargins(0, 0, 0, 0)
         bullet1.setLayout(bullet1_layout)
         bullet1_bullet = QLabel('·')
-        bullet1_bullet.setObjectName('bullet')
+        bullet1_bullet.setObjectName('EmptyConversationView_bullet')
         bullet1_layout.addWidget(bullet1_bullet)
         bullet1_layout.addWidget(QLabel(_('Read a conversation')))
         bullet1_layout.addStretch()
@@ -861,7 +852,7 @@ class EmptyConversationView(QWidget):
         bullet2_layout.setContentsMargins(0, 0, 0, 0)
         bullet2.setLayout(bullet2_layout)
         bullet2_bullet = QLabel('·')
-        bullet2_bullet.setObjectName('bullet')
+        bullet2_bullet.setObjectName('EmptyConversationView_bullet')
         bullet2_layout.addWidget(bullet2_bullet)
         bullet2_layout.addWidget(QLabel(_('View or retrieve files')))
         bullet2_layout.addStretch()
@@ -870,7 +861,7 @@ class EmptyConversationView(QWidget):
         bullet3_layout.setContentsMargins(0, 0, 0, 0)
         bullet3.setLayout(bullet3_layout)
         bullet3_bullet = QLabel('·')
-        bullet3_bullet.setObjectName('bullet')
+        bullet3_bullet.setObjectName('EmptyConversationView_bullet')
         bullet3_layout.addWidget(bullet3_bullet)
         bullet3_layout.addWidget(QLabel(_('Send a response')))
         bullet3_layout.addStretch()
@@ -916,15 +907,15 @@ class SourceList(QListWidget):
     """
 
     CSS = '''
-    QListView {
+    QListView#SourceList {
         border: none;
         show-decoration-selected: 0;
         border-right: 3px solid #f3f5f9;
     }
-    QListView::item:selected {
+    QListView#SourceList::item:selected {
         background-color: #f3f5f9;
     }
-    QListView::item:hover{
+    QListView#SourceList::item:hover{
         border: 500px solid #f9f9f9;
     }
     '''
@@ -933,7 +924,7 @@ class SourceList(QListWidget):
         super().__init__()
 
         # Set id and styles.
-        self.setObjectName('sourcelist')
+        self.setObjectName('SourceList')
         self.setStyleSheet(self.CSS)
         self.setFixedWidth(540)
         self.setUniformItemSizes(True)
@@ -1114,35 +1105,35 @@ class SourceWidget(QWidget):
     """
 
     CSS = '''
-    QWidget#source_widget {
+    #SourceWidget_container {
         border-bottom: 1px solid #9b9b9b;
     }
-    QWidget#gutter {
+    #SourceWidget_gutter {
         min-width: 40px;
         max-width: 40px;
     }
-    QWidget#metadata {
+    #SourceWidget_metadata {
         max-width: 60px;
     }
-    QLabel#preview {
+    #SourceWidget_preview {
         font-family: 'Source Sans Pro';
         font-weight: 400;
         font-size: 13px;
         color: #383838;
     }
-    #source_deleted {
+    #SourceWidget_source_deleted {
         font-family: 'Source Sans Pro';
         font-weight: 400;
         font-size: 13px;
         color: #ff3366;
     }
-    QLabel#source_name {
+    #SourceWidget_name {
         font-family: 'Montserrat';
         font-weight: 500;
         font-size: 13px;
         color: #383838;
     }
-    QLabel#timestamp {
+    #SourceWidget_timestamp {
         font-family: 'Montserrat';
         font-weight: 500;
         font-size: 13px;
@@ -1185,7 +1176,7 @@ class SourceWidget(QWidget):
 
         # Set up gutter
         self.gutter = QWidget()
-        self.gutter.setObjectName('gutter')
+        self.gutter.setObjectName('SourceWidget_gutter')
         self.gutter.setSizePolicy(retain_space)
         gutter_layout = QVBoxLayout(self.gutter)
         gutter_layout.setContentsMargins(0, 0, 0, 0)
@@ -1196,17 +1187,17 @@ class SourceWidget(QWidget):
 
         # Set up summary
         self.summary = QWidget()
-        self.summary.setObjectName('summary')
+        self.summary.setObjectName('SourceWidget_summary')
         summary_layout = QVBoxLayout(self.summary)
         summary_layout.setContentsMargins(0, 0, 0, 0)
         summary_layout.setSpacing(0)
         self.name = QLabel()
-        self.name.setObjectName('source_name')
+        self.name.setObjectName('SourceWidget_name')
         self.preview = SecureQLabel(max_length=self.PREVIEW_WIDTH)
-        self.preview.setObjectName('preview')
+        self.preview.setObjectName('SourceWidget_preview')
         self.preview.setFixedSize(QSize(self.PREVIEW_WIDTH, self.PREVIEW_HEIGHT))
         self.waiting_delete_confirmation = QLabel('Deletion in progress')
-        self.waiting_delete_confirmation.setObjectName('source_deleted')
+        self.waiting_delete_confirmation.setObjectName('SourceWidget_source_deleted')
         self.waiting_delete_confirmation.setFixedSize(
             QSize(self.PREVIEW_WIDTH, self.PREVIEW_HEIGHT))
         self.waiting_delete_confirmation.hide()
@@ -1216,23 +1207,23 @@ class SourceWidget(QWidget):
 
         # Set up metadata
         self.metadata = QWidget()
-        self.metadata.setObjectName('metadata')
+        self.metadata.setObjectName('SourceWidget_metadata')
         self.metadata.setSizePolicy(retain_space)
         metadata_layout = QVBoxLayout(self.metadata)
         metadata_layout.setContentsMargins(0, 0, 0, 0)
         metadata_layout.setSpacing(0)
         self.paperclip = SvgLabel('paperclip.svg', QSize(18, 18))  # Set to size provided in the svg
-        self.paperclip.setObjectName('paperclip')
+        self.paperclip.setObjectName('SourceWidget_paperclip')
         self.paperclip.setFixedSize(QSize(22, 22))
         self.timestamp = QLabel()
-        self.timestamp.setObjectName('timestamp')
+        self.timestamp.setObjectName('SourceWidget_timestamp')
         metadata_layout.addWidget(self.paperclip, 0, Qt.AlignRight)
         metadata_layout.addWidget(self.timestamp, 0, Qt.AlignRight)
         metadata_layout.addStretch()
 
         # Set up a source_widget
         self.source_widget = QWidget()
-        self.source_widget.setObjectName('source_widget')
+        self.source_widget.setObjectName('SourceWidget_container')
         source_widget_layout = QHBoxLayout(self.source_widget)
         source_widget_layout.setContentsMargins(
             0, self.SOURCE_WIDGET_VERTICAL_MARGIN, 0, self.SOURCE_WIDGET_VERTICAL_MARGIN)
@@ -1308,7 +1299,7 @@ class StarToggleButton(SvgToggleButton):
     """
 
     css = '''
-    #star_button {
+    #StarToggleButton {
         border: none;
     }
     '''
@@ -1327,7 +1318,7 @@ class StarToggleButton(SvgToggleButton):
         self.controller.star_update_successful.connect(self.on_star_update_successful)
         self.installEventFilter(self)
 
-        self.setObjectName('star_button')
+        self.setObjectName('StarToggleButton')
         self.setStyleSheet(self.css)
         self.setFixedSize(QSize(20, 20))
 
@@ -1511,7 +1502,7 @@ class LoginOfflineLink(QLabel):
     clicked = pyqtSignal()
 
     CSS = '''
-    #offline_mode {
+    #LoginOfflineLink {
         border: none;
         color: #fff;
         text-decoration: underline;
@@ -1523,7 +1514,7 @@ class LoginOfflineLink(QLabel):
         super().__init__()
 
         # Set css id
-        self.setObjectName('offline_mode')
+        self.setObjectName('LoginOfflineLink')
 
         # Set styles
         self.setStyleSheet(self.CSS)
@@ -1541,7 +1532,7 @@ class SignInButton(QPushButton):
     """
 
     CSS = '''
-    #login {
+    #SignInButton {
         border: none;
         background-color: #05edfe;
         font-family: 'Montserrat';
@@ -1549,7 +1540,7 @@ class SignInButton(QPushButton):
         font-size: 14px;
         color: #2a319d;
     }
-    #login:pressed {
+    #SignInButton:pressed {
         background-color: #85f6fe;
     }
     '''
@@ -1558,7 +1549,7 @@ class SignInButton(QPushButton):
         super().__init__(_('SIGN IN'))
 
         # Set css id
-        self.setObjectName('login')
+        self.setObjectName('SignInButton')
 
         # Set styles
         self.setStyleSheet(self.CSS)
@@ -1583,13 +1574,13 @@ class LoginErrorBar(QWidget):
     """
 
     CSS = '''
-    QWidget {
+    #LoginErrorBar QWidget {
         background-color: #ce0083;
     }
-    #error_icon {
+    #LoginErrorBar_icon {
         color: #fff;
     }
-    #error_status_bar {
+    #LoginErrorBar_status_bar {
         font-family: 'Montserrat';
         font-weight: 500;
         font-size: 12px;
@@ -1600,7 +1591,7 @@ class LoginErrorBar(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.setObjectName('error_bar')
+        self.setObjectName('LoginErrorBar')
 
         # Set styles
         self.setStyleSheet(self.CSS)
@@ -1620,12 +1611,12 @@ class LoginErrorBar(QWidget):
 
         # Error icon
         self.error_icon = SvgLabel('error_icon_white.svg', svg_size=QSize(18, 18))
-        self.error_icon.setObjectName('error_icon')
+        self.error_icon.setObjectName('LoginErrorBar_icon')
         self.error_icon.setFixedWidth(42)
 
         # Error status bar
         self.error_status_bar = SecureQLabel(wordwrap=False)
-        self.error_status_bar.setObjectName('error_status_bar')
+        self.error_status_bar.setObjectName('LoginErrorBar_status_bar')
         self.setFixedHeight(42)
 
         # Create space ths size of the error icon to keep the error message centered
@@ -1651,19 +1642,10 @@ class PasswordEdit(QLineEdit):
     """
     A LineEdit with icons to show/hide password entries
     """
-    CSS = '''QLineEdit {
-        border-radius: 0px;
-        height: 30px;
-        margin: 0px 0px 0px 0px;
-    }
-    '''
 
     def __init__(self, parent):
         self.parent = parent
         super().__init__(self.parent)
-
-        # Set styles
-        self.setStyleSheet(self.CSS)
 
         self.visibleIcon = load_icon("eye_visible.svg")
         self.hiddenIcon = load_icon("eye_hidden.svg")
@@ -1690,13 +1672,13 @@ class LoginDialog(QDialog):
     """
 
     CSS = '''
-    #login_form QLabel {
+    #LoginDialog_form QLabel {
         color: #fff;
         font-family: 'Montserrat';
         font-weight: 500;
         font-size: 13px;
     }
-    #login_form QLineEdit {
+    #LoginDialog_form QLineEdit {
         border-radius: 0px;
         height: 30px;
         margin: 0px 0px 0px 0px;
@@ -1714,9 +1696,6 @@ class LoginDialog(QDialog):
 
         # Set modal
         self.setModal(True)
-
-        # Set css id
-        self.setObjectName('login_dialog')
 
         # Set styles
         self.setStyleSheet(self.CSS)
@@ -1743,7 +1722,7 @@ class LoginDialog(QDialog):
         # Create form widget
         form = QWidget()
 
-        form.setObjectName('login_form')
+        form.setObjectName('LoginDialog_form')
 
         form_layout = QVBoxLayout()
         form.setLayout(form_layout)
@@ -1889,52 +1868,99 @@ class SpeechBubble(QWidget):
     and journalist.
     """
 
-    CSS = {
-        "speech_bubble": """
-            min-width: 540px;
-            max-width: 540px;
-            background-color: #fff;
-        """,
-        "message": """
-            min-width: 508px;
-            max-width: 508px;
-            font-family: 'Source Sans Pro';
-            font-weight: 400;
-            font-size: 15px;
-            background-color: #fff;
-            padding: 16px;
-        """,
-        "color_bar": """
-            min-height: 5px;
-            max-height: 5px;
-            background-color: #102781;
-            border: 0px;
-        """
+    CSS = '''
+    #SpeechBubble_container {
+        min-width: 540px;
+        max-width: 540px;
+        background-color: #fff;
     }
-
-    CSS_ERROR = {
-        "speech_bubble": """
-            min-width: 540px;
-            max-width: 540px;
-            background-color: #fff;
-        """,
-        "message": """
-            min-width: 508px;
-            max-width: 508px;
-            font-family: 'Source Sans Pro';
-            font-weight: 400;
-            font-size: 15px;
-            font-style: italic;
-            background-color: rgba(255, 255, 255, 0.6);
-            padding: 16px;
-        """,
-        "color_bar": """
-            min-height: 5px;
-            max-height: 5px;
-            background-color: #BCBFCD;
-            border: 0px;
-        """
+    #SpeechBubble_message {
+        min-width: 508px;
+        max-width: 508px;
+        font-family: 'Source Sans Pro';
+        font-weight: 400;
+        font-size: 15px;
+        background-color: #fff;
+        color: #3b3b3b;
+        padding: 16px;
     }
+    #SpeechBubble_status_bar {
+        min-height: 5px;
+        max-height: 5px;
+        background-color: #102781;
+        border: 0px;
+    }
+    #SpeechBubble_message_decryption_error {
+        min-width: 508px;
+        max-width: 508px;
+        font-family: 'Source Sans Pro';
+        font-weight: 400;
+        font-size: 15px;
+        font-style: italic;
+        background-color: rgba(255, 255, 255, 0.6);
+        padding: 16px;
+    }
+    #SpeechBubble_status_bar_decryption_error {
+        min-height: 5px;
+        max-height: 5px;
+        background-color: #bcbfcd;
+        border: 0px;
+    }
+    #ReplyWidget_message {
+        min-width: 508px;
+        max-width: 508px;
+        font-family: 'Source Sans Pro';
+        font-weight: 400;
+        font-size: 15px;
+        background-color: #fff;
+        color: #3b3b3b;
+        padding: 16px;
+    }
+    #ReplyWidget_status_bar {
+        min-height: 5px;
+        max-height: 5px;
+        background-color: #0065db;
+        border: 0px;
+    }
+    #ReplyWidget_failed_to_send_text {
+        font-family: 'Source Sans Pro';
+        font-weight: 500;
+        font-size: 13px;
+        color: #ff3366;
+    }
+    #ReplyWidget_message_failed {
+        min-width: 508px;
+        max-width: 508px;
+        font-family: 'Source Sans Pro';
+        font-weight: 400;
+        font-size: 15px;
+        background-color: #fff;
+        color: #3b3b3b;
+        padding: 16px;
+    }
+    #ReplyWidget_status_bar_failed {
+        min-height: 5px;
+        max-height: 5px;
+        background-color: #ff3366;
+        border: 0px;
+    }
+    #ReplyWidget_message_pending {
+        min-width: 508px;
+        max-width: 508px;
+        font-family: 'Source Sans Pro';
+        font-weight: 400;
+        font-size: 15px;
+        color: #a9aaad;
+        background-color: #F7F8FC;
+        padding: 16px;
+    }
+    #ReplyWidget_status_bar_pending {
+        min-height: 5px;
+        max-height: 5px;
+        background-color: #0065db;
+        border: 0px;
+    }
+    '''
 
     TOP_MARGIN = 28
     BOTTOM_MARGIN = 10
@@ -1953,17 +1979,20 @@ class SpeechBubble(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
+        # Set styles
+        self.setStyleSheet(self.CSS)
+
         # Message box
         self.message = SecureQLabel(text)
-        self.message.setObjectName('message')
+        self.message.setObjectName('SpeechBubble_message')
 
         # Color bar
         self.color_bar = QWidget()
-        self.color_bar.setObjectName('color_bar')
+        self.color_bar.setObjectName('SpeechBubble_status_bar')
 
         # Speech bubble
         self.speech_bubble = QWidget()
-        self.speech_bubble.setObjectName('speech_bubble')
+        self.speech_bubble.setObjectName('SpeechBubble_container')
         speech_bubble_layout = QVBoxLayout()
         self.speech_bubble.setLayout(speech_bubble_layout)
         speech_bubble_layout.addWidget(self.message)
@@ -1986,11 +2015,9 @@ class SpeechBubble(QWidget):
         self.message.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.message.setContextMenuPolicy(Qt.NoContextMenu)
 
-        # Set styles
         if error:
             self.set_error_styles()
-        else:
-            self.set_normal_styles()
+
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         # Connect signals to slots
@@ -2017,14 +2044,16 @@ class SpeechBubble(QWidget):
             self.set_error_styles()
 
     def set_normal_styles(self):
-        self.speech_bubble.setStyleSheet(self.CSS["speech_bubble"])
-        self.message.setStyleSheet(self.CSS["message"])
-        self.color_bar.setStyleSheet(self.CSS["color_bar"])
+        self.setStyleSheet('')
+        self.message.setObjectName('SpeechBubble_message')
+        self.color_bar.setObjectName('SpeechBubble_status_bar')
+        self.setStyleSheet(self.CSS)
 
     def set_error_styles(self):
-        self.speech_bubble.setStyleSheet(self.CSS_ERROR["speech_bubble"])
-        self.message.setStyleSheet(self.CSS_ERROR["message"])
-        self.color_bar.setStyleSheet(self.CSS_ERROR["color_bar"])
+        self.setStyleSheet('')
+        self.message.setObjectName('SpeechBubble_message_decryption_error')
+        self.color_bar.setObjectName('SpeechBubble_status_bar_decryption_error')
+        self.setStyleSheet(self.CSS)
 
 
 class MessageWidget(SpeechBubble):
@@ -2042,85 +2071,6 @@ class ReplyWidget(SpeechBubble):
     Represents a reply to a source.
     """
 
-    CSS = {
-        "color_bar": """
-            min-height: 5px;
-            max-height: 5px;
-            background-color: #0065db;
-            border: 0px;
-        """,
-        "message": """
-            min-width: 508px;
-            max-width: 508px;
-            font-family: 'Source Sans Pro';
-            font-weight: 400;
-            font-size: 15px;
-            background-color: #fff;
-            color: #3b3b3b;
-            padding: 16px;
-        """,
-        "speech_bubble": """
-            min-width: 540px;
-            max-width: 540px;
-            background-color: #fff;
-        """,
-    }
-
-    CSS_ERROR_MESSAGE = """
-        font-family: 'Source Sans Pro';
-        font-weight: 500;
-        font-size: 13px;
-        color: #ff3366;
-    """
-
-    CSS_REPLY_FAILED = {
-        "color_bar": """
-            min-height: 5px;
-            max-height: 5px;
-            background-color: #ff3366;
-            border: 0px;
-        """,
-        "message": """
-            min-width: 508px;
-            max-width: 508px;
-            font-family: 'Source Sans Pro';
-            font-weight: 400;
-            font-size: 15px;
-            background-color: #fff;
-            color: #3b3b3b;
-            padding: 16px;
-        """,
-        "speech_bubble": """
-            min-width: 540px;
-            max-width: 540px;
-            background-color: #fff;
-        """,
-    }
-
-    CSS_REPLY_PENDING = {
-        "color_bar": """
-            min-height: 5px;
-            max-height: 5px;
-            background-color: #0065db;
-            border: 0px;
-        """,
-        "message": """
-            min-width: 508px;
-            max-width: 508px;
-            font-family: 'Source Sans Pro';
-            font-weight: 400;
-            font-size: 15px;
-            color: #A9AAAD;
-            background-color: #F7F8FC;
-            padding: 16px;
-        """,
-        "speech_bubble": """
-            min-width: 540px;
-            max-width: 540px;
-            background-color: #fff;
-        """,
-    }
-
     def __init__(
         self,
         message_uuid: str,
@@ -2136,35 +2086,29 @@ class ReplyWidget(SpeechBubble):
         super().__init__(message_uuid, message, update_signal, download_error_signal, index, error)
         self.uuid = message_uuid
 
-        error_icon = SvgLabel('error_icon.svg', svg_size=QSize(12, 12))
-        error_icon.setObjectName('error_icon')  # Set css id
-        error_icon.setFixedWidth(12)
-        error_message = SecureQLabel('Failed to send', wordwrap=False)
-        error_message.setObjectName('error_message')
-        error_message.setStyleSheet(self.CSS_ERROR_MESSAGE)
-
         self.error = QWidget()
         error_layout = QHBoxLayout()
         error_layout.setContentsMargins(0, 0, 0, 0)
         error_layout.setSpacing(4)
         self.error.setLayout(error_layout)
+        error_message = SecureQLabel('Failed to send', wordwrap=False)
+        error_message.setObjectName('ReplyWidget_failed_to_send_text')
+        error_icon = SvgLabel('error_icon.svg', svg_size=QSize(12, 12))
+        error_icon.setFixedWidth(12)
         error_layout.addWidget(error_message)
         error_layout.addWidget(error_icon)
-
         self.error.hide()
+
         self.bubble_area_layout.addWidget(self.error)
 
         message_succeeded_signal.connect(self._on_reply_success)
         message_failed_signal.connect(self._on_reply_failure)
 
-        # Set styles
-        if error:
-            self.set_error_styles()
-        else:
-            self._set_reply_state(reply_status)
+        self._set_reply_state(reply_status)
 
     def _set_reply_state(self, status: str) -> None:
-        logger.debug("Setting ReplyWidget state: %s", status)
+        logger.debug(f'Setting ReplyWidget state: {status}')
+
         if status == 'SUCCEEDED':
             self.set_normal_styles()
             self.error.hide()
@@ -2192,15 +2136,23 @@ class ReplyWidget(SpeechBubble):
         if message_uuid == self.uuid:
             self._set_reply_state('FAILED')
 
+    def set_normal_styles(self):
+        self.setStyleSheet('')
+        self.message.setObjectName('ReplyWidget_message')
+        self.color_bar.setObjectName('ReplyWidget_status_bar')
+        self.setStyleSheet(self.CSS)
+
     def set_failed_styles(self):
-        self.speech_bubble.setStyleSheet(self.CSS_REPLY_FAILED["speech_bubble"])
-        self.message.setStyleSheet(self.CSS_REPLY_FAILED["message"])
-        self.color_bar.setStyleSheet(self.CSS_REPLY_FAILED["color_bar"])
+        self.setStyleSheet('')
+        self.message.setObjectName('ReplyWidget_message_failed')
+        self.color_bar.setObjectName('ReplyWidget_status_bar_failed')
+        self.setStyleSheet(self.CSS)
 
     def set_pending_styles(self):
-        self.speech_bubble.setStyleSheet(self.CSS_REPLY_PENDING["speech_bubble"])
-        self.message.setStyleSheet(self.CSS_REPLY_PENDING["message"])
-        self.color_bar.setStyleSheet(self.CSS_REPLY_PENDING["color_bar"])
+        self.setStyleSheet('')
+        self.message.setObjectName('ReplyWidget_message_pending')
+        self.color_bar.setObjectName('ReplyWidget_status_bar_pending')
+        self.setStyleSheet(self.CSS)
 
 
 class FileWidget(QWidget):
@@ -2209,49 +2161,59 @@ class FileWidget(QWidget):
     """
 
     CSS = '''
-    #file_widget {
+    #FileWidget {
         min-width: 540px;
         max-width: 540px;
     }
-    #file_options {
+    #FileWidget_file_options {
         min-width: 137px;
     }
-    QPushButton#export_print {
+    QPushButton#FileWidget_export_print {
         border: none;
         font-family: 'Source Sans Pro';
         font-weight: 500;
         font-size: 13px;
         color: #2A319D;
     }
-    QPushButton#export_print:hover {
+    QPushButton#FileWidget_export_print:hover {
         color: #05a6fe;
     }
-    QPushButton#download_button {
+    QPushButton#FileWidget_download_button {
         border: none;
         font-family: 'Source Sans Pro';
         font-weight: 600;
         font-size: 13px;
         color: #2a319d;
     }
-    QPushButton#download_button:hover {
+    QPushButton#FileWidget_download_button:hover {
         color: #05a6fe;
     }
-    QLabel#file_name {
+    QPushButton#FileWidget_download_button_animating {
+        border: none;
+        font-family: 'Source Sans Pro';
+        font-weight: 600;
+        font-size: 13px;
+        color: #05a6fe;
+    }
+    QPushButton#FileWidget_download_button_animating:hover {
+        color: #05a6fe;
+    }
+    QLabel#FileWidget_file_name {
         font-family: 'Source Sans Pro';
         font-weight: 600;
         font-size: 13px;
         color: #2a319d;
     }
-    QLabel#file_name:hover {
+    QLabel#FileWidget_file_name:hover {
         color: #05a6fe;
     }
-    QLabel#no_file_name {
+    QLabel#FileWidget_no_file_name {
         font-family: 'Source Sans Pro';
         font-weight: 300;
         font-size: 13px;
         color: #a5b3e9;
     }
-    QLabel#file_size {
+    QLabel#FileWidget_file_size {
         min-width: 48px;
         max-width: 48px;
         font-family: 'Source Sans Pro';
@@ -2259,26 +2221,13 @@ class FileWidget(QWidget):
         font-size: 13px;
         color: #2a319d;
     }
-    QWidget#horizontal_line {
+    QWidget#FileWidget_horizontal_line {
         min-height: 2px;
         max-height: 2px;
         background-color: rgba(211, 216, 234, 0.45);
         margin: 0px 8px 0px 8px;
     }
     '''
-
-    download_button_css = """
-    QPushButton#download_button {
-        border: none;
-        font-family: 'Source Sans Pro';
-        font-weight: 600;
-        font-size: 13px;
-        color: #2a319d;
-    }
-    QPushButton#download_button:hover {
-        color: #05a6fe;
-    }
-    """
 
     TOP_MARGIN = 4
     BOTTOM_MARGIN = 14
@@ -2307,7 +2256,7 @@ class FileWidget(QWidget):
         self.downloading = False
 
         # Set styles
-        self.setObjectName('file_widget')
+        self.setObjectName('FileWidget')
         self.setStyleSheet(self.CSS)
         file_description_font = QFont()
         file_description_font.setLetterSpacing(QFont.AbsoluteSpacing, self.FILE_FONT_SPACING)
@@ -2325,27 +2274,26 @@ class FileWidget(QWidget):
 
         # File options: download, export, print
         self.file_options = QWidget()
-        self.file_options.setObjectName('file_options')
+        self.file_options.setObjectName('FileWidget_file_options')
         file_options_layout = QHBoxLayout()
         self.file_options.setLayout(file_options_layout)
         file_options_layout.setContentsMargins(0, 0, 0, 0)
         file_options_layout.setSpacing(self.FILE_OPTIONS_LAYOUT_SPACING)
         file_options_layout.setAlignment(Qt.AlignLeft)
         self.download_button = QPushButton(_(' DOWNLOAD'))
-        self.download_button.setObjectName('download_button')
+        self.download_button.setObjectName('FileWidget_download_button')
         self.download_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.download_button.setIcon(load_icon('download_file.svg'))
         self.download_button.setFont(self.file_buttons_font)
         self.download_button.setCursor(QCursor(Qt.PointingHandCursor))
-        self.download_button.setStyleSheet(self.download_button_css)
         self.download_animation = load_movie("download_file.gif")
         self.export_button = QPushButton(_('EXPORT'))
-        self.export_button.setObjectName('export_print')
+        self.export_button.setObjectName('FileWidget_export_print')
         self.export_button.setFont(self.file_buttons_font)
         self.export_button.setCursor(QCursor(Qt.PointingHandCursor))
         self.middot = QLabel("·")
         self.print_button = QPushButton(_('PRINT'))
-        self.print_button.setObjectName('export_print')
+        self.print_button.setObjectName('FileWidget_export_print')
         self.print_button.setFont(self.file_buttons_font)
         self.print_button.setCursor(QCursor(Qt.PointingHandCursor))
         file_options_layout.addWidget(self.download_button)
@@ -2360,16 +2308,16 @@ class FileWidget(QWidget):
         self.file_name = SecureQLabel(
             wordwrap=False, max_length=self.FILENAME_WIDTH_PX, with_tooltip=True
         )
-        self.file_name.setObjectName('file_name')
+        self.file_name.setObjectName('FileWidget_file_name')
         self.file_name.installEventFilter(self)
         self.file_name.setCursor(QCursor(Qt.PointingHandCursor))
         self.no_file_name = SecureQLabel('ENCRYPTED FILE ON SERVER', wordwrap=False)
-        self.no_file_name.setObjectName('no_file_name')
+        self.no_file_name.setObjectName('FileWidget_no_file_name')
         self.no_file_name.setFont(file_description_font)
 
         # Line between file name and file size
         self.horizontal_line = QWidget()
-        self.horizontal_line.setObjectName('horizontal_line')
+        self.horizontal_line.setObjectName('FileWidget_horizontal_line')
         self.horizontal_line.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         # Space between elided file name and file size when horizontal line is hidden
@@ -2379,7 +2327,7 @@ class FileWidget(QWidget):
 
         # File size
         self.file_size = SecureQLabel(humanize_filesize(self.file.size))
-        self.file_size.setObjectName('file_size')
+        self.file_size.setObjectName('FileWidget_file_size')
         self.file_size.setAlignment(Qt.AlignRight)
 
         # Decide what to show or hide based on whether or not the file's been downloaded
@@ -2431,14 +2379,21 @@ class FileWidget(QWidget):
         else:
             logger.debug('Changing file {} state to not downloaded'.format(self.uuid))
             self.download_button.setText(_('DOWNLOAD'))
+
             # Ensure correct icon depending on mouse hover state.
             if self.download_button.underMouse():
                 self.download_button.setIcon(load_icon('download_file_hover.svg'))
             else:
                 self.download_button.setIcon(load_icon('download_file.svg'))
+
             self.download_button.setFont(self.file_buttons_font)
             self.download_button.show()
-            self.download_button.setStyleSheet(self.download_button_css)
+
+            # Reset stylesheet
+            self.setStyleSheet('')
+            self.download_button.setObjectName('FileWidget_download_button')
+            self.setStyleSheet(self.CSS)
+
             self.no_file_name.hide()
             self.export_button.hide()
             self.middot.hide()
@@ -2511,7 +2466,11 @@ class FileWidget(QWidget):
         self.download_animation.frameChanged.connect(self.set_button_animation_frame)
         self.download_animation.start()
         self.download_button.setText(_(" DOWNLOADING "))
-        self.download_button.setStyleSheet("color: #05a6fe")
+
+        # Reset stylesheet with new state so that the active color stays the same
+        self.setStyleSheet('')
+        self.download_button.setObjectName('FileWidget_download_button_animating')
+        self.setStyleSheet(self.CSS)
 
     def set_button_animation_frame(self, frame_number):
         """
@@ -2532,21 +2491,21 @@ class FileWidget(QWidget):
 class ModalDialog(QDialog):
 
     CSS = '''
-    #modal {
+    #ModalDialog {
         min-width: 800px;
         max-width: 800px;
         min-height: 300px;
         max-height: 800px;
         background-color: #fff;
     }
-    #header_icon, #header_spinner {
+    #ModalDialog_header_icon, #ModalDialog_header_spinner {
         min-width: 80px;
         max-width: 80px;
         min-height: 64px;
         max-height: 64px;
         margin: 0px 0px 0px 30px;
     }
-    #header {
+    #ModalDialog_header {
         min-height: 68px;
         max-height: 68px;
         margin: 0px 0px 0px 4px;
@@ -2555,25 +2514,25 @@ class ModalDialog(QDialog):
         font-weight: 600;
         color: #2a319d;
     }
-    #header_line {
+    #ModalDialog_header_line {
         margin: 0px 40px 20px 40px;
         min-height: 2px;
         max-height: 2px;
         background-color: rgba(42, 49, 157, 0.15);
         border: none;
     }
-    #error_details {
+    #ModalDialog_error_details {
         margin: 0px 40px 0px 36px;
         font-family: 'Montserrat';
         font-size: 16px;
         color: #ff0064;
     }
-    #body {
+    #ModalDialog_body {
         font-family: 'Montserrat';
         font-size: 16px;
         color: #302aa3;
     }
-    #button_box QPushButton {
+    #ModalDialog_button_box QPushButton {
         margin: 0px 0px 0px 12px;
         height: 40px;
         padding-left: 20px;
@@ -2584,15 +2543,15 @@ class ModalDialog(QDialog):
         font-size: 15px;
         color: #2a319d;
     }
-    #button_box QPushButton::disabled {
+    #ModalDialog_button_box QPushButton::disabled {
         border: 2px solid rgba(42, 49, 157, 0.4);
         color: rgba(42, 49, 157, 0.4);
     }
-    #button_box QPushButton#primary_button {
+    #ModalDialog_button_box QPushButton#ModalDialog_primary_button {
         background-color: #2a319d;
         color: #fff;
     }
-    #button_box QPushButton#primary_button::disabled {
+    #ModalDialog_button_box QPushButton#ModalDialog_primary_button::disabled {
         border: 2px solid #C2C4E3;
         background-color: #C2C4E3;
         color: #E1E2F1;
@@ -2605,7 +2564,7 @@ class ModalDialog(QDialog):
     def __init__(self):
         parent = QApplication.activeWindow()
         super().__init__(parent)
-        self.setObjectName('modal')
+        self.setObjectName('ModalDialog')
         self.setStyleSheet(self.CSS)
         self.setModal(True)
 
@@ -2614,32 +2573,32 @@ class ModalDialog(QDialog):
         header_container_layout = QHBoxLayout()
         header_container.setLayout(header_container_layout)
         self.header_icon = SvgLabel('blank.svg', svg_size=QSize(64, 64))
-        self.header_icon.setObjectName('header_icon')
+        self.header_icon.setObjectName('ModalDialog_header_icon')
         self.header_spinner = QPixmap()
         self.header_spinner_label = QLabel()
-        self.header_spinner_label.setObjectName("header_spinner")
+        self.header_spinner_label.setObjectName("ModalDialog_header_spinner")
         self.header_spinner_label.setMinimumSize(64, 64)
         self.header_spinner_label.setVisible(False)
         self.header_spinner_label.setPixmap(self.header_spinner)
         self.header = QLabel()
-        self.header.setObjectName('header')
+        self.header.setObjectName('ModalDialog_header')
         header_container_layout.addWidget(self.header_icon)
         header_container_layout.addWidget(self.header_spinner_label)
         header_container_layout.addWidget(self.header, alignment=Qt.AlignCenter)
         header_container_layout.addStretch()
 
         self.header_line = QWidget()
-        self.header_line.setObjectName('header_line')
+        self.header_line.setObjectName('ModalDialog_header_line')
 
         # Widget for displaying error messages
         self.error_details = QLabel()
-        self.error_details.setObjectName('error_details')
+        self.error_details.setObjectName('ModalDialog_error_details')
         self.error_details.setWordWrap(True)
         self.error_details.hide()
 
         # Body to display instructions and forms
         self.body = QLabel()
-        self.body.setObjectName('body')
+        self.body.setObjectName('ModalDialog_body')
         self.body.setWordWrap(True)
         self.body.setScaledContents(True)
         body_container = QWidget()
@@ -2650,18 +2609,18 @@ class ModalDialog(QDialog):
 
         # Buttons to continue and cancel
         window_buttons = QWidget()
-        window_buttons.setObjectName('window_buttons')
+        window_buttons.setObjectName('ModalDialog_window_buttons')
         button_layout = QVBoxLayout()
         window_buttons.setLayout(button_layout)
         self.cancel_button = QPushButton(_('CANCEL'))
         self.cancel_button.clicked.connect(self.close)
         self.cancel_button.setAutoDefault(False)
         self.continue_button = QPushButton(_('CONTINUE'))
-        self.continue_button.setObjectName('primary_button')
+        self.continue_button.setObjectName('ModalDialog_primary_button')
         self.continue_button.setDefault(True)
         self.continue_button.setIconSize(QSize(21, 21))
         button_box = QDialogButtonBox(Qt.Horizontal)
-        button_box.setObjectName('button_box')
+        button_box.setObjectName('ModalDialog_button_box')
         button_box.addButton(self.cancel_button, QDialogButtonBox.ActionRole)
         button_box.addButton(self.continue_button, QDialogButtonBox.ActionRole)
         button_layout.addWidget(button_box, alignment=Qt.AlignRight)
@@ -3121,25 +3080,64 @@ class ExportDialog(ModalDialog):
                 self._show_generic_error_message()
 
 
+class ConversationScrollArea(QScrollArea):
+
+    CSS = '''
+    #ConversationScrollArea {
+        border: 0;
+        background: #f3f5f9;
+    }
+    #ConversationScrollArea_conversation {
+        background: #f3f5f9;
+    }
+    '''
+
+    MARGIN_LEFT = 38
+    MARGIN_RIGHT = 20
+
+    def __init__(self):
+        super().__init__()
+
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setWidgetResizable(True)
+
+        # Set styles
+        self.setObjectName('ConversationScrollArea')
+        self.setStyleSheet(self.CSS)
+
+        # Create the scroll area's widget
+        conversation = QWidget()
+        conversation.setObjectName('ConversationScrollArea_conversation')
+        conversation.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.conversation_layout = QVBoxLayout()
+        conversation.setLayout(self.conversation_layout)
+        self.conversation_layout.setContentsMargins(self.MARGIN_LEFT, 0, self.MARGIN_RIGHT, 0)
+        self.conversation_layout.setSpacing(0)
+
+        # `conversation` is a child of this scroll area
+        self.setWidget(conversation)
+
+    def add_widget_to_conversation(
+        self, index: int, widget: QWidget, alignment_flag: Qt.AlignmentFlag
+    ) -> None:
+        '''
+        Add `widget` to the scroll area's widget layout.
+        '''
+        self.conversation_layout.insertWidget(index, widget, alignment=alignment_flag)
+
+    def remove_widget_from_conversation(self, widget: QWidget) -> None:
+        '''
+        Remove `widget` from the scroll area's widget layout.
+        '''
+        self.conversation_layout.removeWidget(widget)
+
+
 class ConversationView(QWidget):
     """
     Renders a conversation.
     """
 
-    CSS = {
-        'container': '''
-            background: #f3f5f9;
-        ''',
-        'scroll': '''
-            border: 0;
-            background: #f3f5f9;
-        '''
-    }
-
     conversation_updated = pyqtSignal()
-
-    MARGIN_LEFT = 38
-    MARGIN_RIGHT = 20
 
     def __init__(self, source_db_object: Source, controller: Controller):
         super().__init__()
@@ -3159,21 +3157,7 @@ class ConversationView(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        self.container = QWidget()
-        self.container.setObjectName('container')
-        self.conversation_layout = QVBoxLayout()
-        self.container.setLayout(self.conversation_layout)
-        self.conversation_layout.setContentsMargins(self.MARGIN_LEFT, 0, self.MARGIN_RIGHT, 0)
-        self.conversation_layout.setSpacing(0)
-        self.container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.container.setStyleSheet(self.CSS['container'])
-
-        self.scroll = QScrollArea()
-        self.scroll.setObjectName('scroll')
-        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.scroll.setWidget(self.container)
-        self.scroll.setWidgetResizable(True)
-        self.scroll.setStyleSheet(self.CSS['scroll'])
+        self.scroll = ConversationScrollArea()
 
         # Flag to show if the current user has sent a reply. See issue #61.
         self.reply_flag = False
@@ -3218,14 +3202,12 @@ class ConversationView(QWidget):
                 if item_widget.index != index:
                     # The existing widget is out of order.
                     # Remove / re-add it and update index details.
-                    self.conversation_layout.removeWidget(item_widget)
+                    self.scroll.remove_widget_from_conversation(item_widget)
                     item_widget.index = index
                     if isinstance(item_widget, ReplyWidget):
-                        self.conversation_layout.insertWidget(index, item_widget,
-                                                              alignment=Qt.AlignRight)
+                        self.scroll.add_widget_to_conversation(index, item_widget, Qt.AlignRight)
                     else:
-                        self.conversation_layout.insertWidget(index, item_widget,
-                                                              alignment=Qt.AlignLeft)
+                        self.scroll.add_widget_to_conversation(index, item_widget, Qt.AlignLeft)
                 # Check if text in item has changed, then update the
                 # widget to reflect this change.
                 if not isinstance(item_widget, FileWidget):
@@ -3250,7 +3232,7 @@ class ConversationView(QWidget):
             logger.debug('Deleting item: {}'.format(item_widget.uuid))
             self.current_messages.pop(item_widget.uuid)
             item_widget.deleteLater()
-            self.conversation_layout.removeWidget(item_widget)
+            self.scroll.remove_widget_from_conversation(item_widget)
 
     def add_file(self, file: File, index):
         """
@@ -3264,7 +3246,7 @@ class ConversationView(QWidget):
             self.controller.file_missing,
             index,
         )
-        self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignLeft)
+        self.scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignLeft)
         self.current_messages[file.uuid] = conversation_item
         self.conversation_updated.emit()
 
@@ -3289,7 +3271,7 @@ class ConversationView(QWidget):
             index,
             message.download_error is not None,
         )
-        self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignLeft)
+        self.scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignLeft)
         self.current_messages[message.uuid] = conversation_item
         self.conversation_updated.emit()
 
@@ -3314,7 +3296,7 @@ class ConversationView(QWidget):
             index,
             getattr(reply, "download_error", None) is not None,
         )
-        self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignRight)
+        self.scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignRight)
         self.current_messages[reply.uuid] = conversation_item
 
     def add_reply_from_reply_box(self, uuid: str, content: str) -> None:
@@ -3331,7 +3313,7 @@ class ConversationView(QWidget):
             self.controller.reply_succeeded,
             self.controller.reply_failed,
             index)
-        self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignRight)
+        self.scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignRight)
         self.current_messages[uuid] = conversation_item
 
     def on_reply_sent(self, source_uuid: str, reply_uuid: str, reply_text: str) -> None:
