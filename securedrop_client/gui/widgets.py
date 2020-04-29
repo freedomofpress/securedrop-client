@@ -3121,25 +3121,48 @@ class ExportDialog(ModalDialog):
                 self._show_generic_error_message()
 
 
+class ConversationScrollArea(QScrollArea):
+
+    CSS = '''
+    #ConversationScrollArea {
+        border: 0;
+        background: #f3f5f9;
+    }
+    #ConversationScrollArea_container {
+        background: #f3f5f9;
+    }
+    '''
+
+    MARGIN_LEFT = 38
+    MARGIN_RIGHT = 20
+
+    def __init__(self):
+        super().__init__()
+
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setWidgetResizable(True)
+
+        # Set styles
+        self.setObjectName('ConversationScrollArea')
+        self.setStyleSheet(self.CSS)
+
+        container = QWidget()
+        container.setObjectName('ConversationScrollArea_container')
+        self.conversation_layout = QVBoxLayout()
+        container.setLayout(self.conversation_layout)
+        self.conversation_layout.setContentsMargins(self.MARGIN_LEFT, 0, self.MARGIN_RIGHT, 0)
+        self.conversation_layout.setSpacing(0)
+        container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        self.setWidget(container)
+
+
 class ConversationView(QWidget):
     """
     Renders a conversation.
     """
 
-    CSS = {
-        'container': '''
-            background: #f3f5f9;
-        ''',
-        'scroll': '''
-            border: 0;
-            background: #f3f5f9;
-        '''
-    }
-
     conversation_updated = pyqtSignal()
-
-    MARGIN_LEFT = 38
-    MARGIN_RIGHT = 20
 
     def __init__(self, source_db_object: Source, controller: Controller):
         super().__init__()
@@ -3159,21 +3182,7 @@ class ConversationView(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        self.container = QWidget()
-        self.container.setObjectName('container')
-        self.conversation_layout = QVBoxLayout()
-        self.container.setLayout(self.conversation_layout)
-        self.conversation_layout.setContentsMargins(self.MARGIN_LEFT, 0, self.MARGIN_RIGHT, 0)
-        self.conversation_layout.setSpacing(0)
-        self.container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.container.setStyleSheet(self.CSS['container'])
-
-        self.scroll = QScrollArea()
-        self.scroll.setObjectName('scroll')
-        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.scroll.setWidget(self.container)
-        self.scroll.setWidgetResizable(True)
-        self.scroll.setStyleSheet(self.CSS['scroll'])
+        self.scroll = ConversationScrollArea()
 
         # Flag to show if the current user has sent a reply. See issue #61.
         self.reply_flag = False
@@ -3218,13 +3227,13 @@ class ConversationView(QWidget):
                 if item_widget.index != index:
                     # The existing widget is out of order.
                     # Remove / re-add it and update index details.
-                    self.conversation_layout.removeWidget(item_widget)
+                    self.scroll.conversation_layout.removeWidget(item_widget)
                     item_widget.index = index
                     if isinstance(item_widget, ReplyWidget):
-                        self.conversation_layout.insertWidget(index, item_widget,
+                        self.scroll.conversation_layout.insertWidget(index, item_widget,
                                                               alignment=Qt.AlignRight)
                     else:
-                        self.conversation_layout.insertWidget(index, item_widget,
+                        self.scroll.conversation_layout.insertWidget(index, item_widget,
                                                               alignment=Qt.AlignLeft)
                 # Check if text in item has changed, then update the
                 # widget to reflect this change.
@@ -3250,7 +3259,7 @@ class ConversationView(QWidget):
             logger.debug('Deleting item: {}'.format(item_widget.uuid))
             self.current_messages.pop(item_widget.uuid)
             item_widget.deleteLater()
-            self.conversation_layout.removeWidget(item_widget)
+            self.scroll.conversation_layout.removeWidget(item_widget)
 
     def add_file(self, file: File, index):
         """
@@ -3264,7 +3273,7 @@ class ConversationView(QWidget):
             self.controller.file_missing,
             index,
         )
-        self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignLeft)
+        self.scroll.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignLeft)
         self.current_messages[file.uuid] = conversation_item
         self.conversation_updated.emit()
 
@@ -3289,7 +3298,7 @@ class ConversationView(QWidget):
             index,
             message.download_error is not None,
         )
-        self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignLeft)
+        self.scroll.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignLeft)
         self.current_messages[message.uuid] = conversation_item
         self.conversation_updated.emit()
 
@@ -3314,7 +3323,7 @@ class ConversationView(QWidget):
             index,
             getattr(reply, "download_error", None) is not None,
         )
-        self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignRight)
+        self.scroll.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignRight)
         self.current_messages[reply.uuid] = conversation_item
 
     def add_reply_from_reply_box(self, uuid: str, content: str) -> None:
@@ -3331,7 +3340,7 @@ class ConversationView(QWidget):
             self.controller.reply_succeeded,
             self.controller.reply_failed,
             index)
-        self.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignRight)
+        self.scroll.conversation_layout.insertWidget(index, conversation_item, alignment=Qt.AlignRight)
         self.current_messages[uuid] = conversation_item
 
     def on_reply_sent(self, source_uuid: str, reply_uuid: str, reply_text: str) -> None:
