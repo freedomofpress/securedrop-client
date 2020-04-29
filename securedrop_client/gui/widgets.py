@@ -2236,6 +2236,16 @@ class FileWidget(QWidget):
     QPushButton#download_button:hover {
         color: #05a6fe;
     }
+    QPushButton#download_button_animating {
+        border: none;
+        font-family: 'Source Sans Pro';
+        font-weight: 600;
+        font-size: 13px;
+        color: #05a6fe;
+    }
+    QPushButton#download_button_animating:hover {
+        color: #05a6fe;
+    }
     QLabel#file_name {
         font-family: 'Source Sans Pro';
         font-weight: 600;
@@ -2266,19 +2276,6 @@ class FileWidget(QWidget):
         margin: 0px 8px 0px 8px;
     }
     '''
-
-    download_button_css = """
-    QPushButton#download_button {
-        border: none;
-        font-family: 'Source Sans Pro';
-        font-weight: 600;
-        font-size: 13px;
-        color: #2a319d;
-    }
-    QPushButton#download_button:hover {
-        color: #05a6fe;
-    }
-    """
 
     TOP_MARGIN = 4
     BOTTOM_MARGIN = 14
@@ -2337,7 +2334,6 @@ class FileWidget(QWidget):
         self.download_button.setIcon(load_icon('download_file.svg'))
         self.download_button.setFont(self.file_buttons_font)
         self.download_button.setCursor(QCursor(Qt.PointingHandCursor))
-        self.download_button.setStyleSheet(self.download_button_css)
         self.download_animation = load_movie("download_file.gif")
         self.export_button = QPushButton(_('EXPORT'))
         self.export_button.setObjectName('export_print')
@@ -2431,14 +2427,21 @@ class FileWidget(QWidget):
         else:
             logger.debug('Changing file {} state to not downloaded'.format(self.uuid))
             self.download_button.setText(_('DOWNLOAD'))
+
             # Ensure correct icon depending on mouse hover state.
             if self.download_button.underMouse():
                 self.download_button.setIcon(load_icon('download_file_hover.svg'))
             else:
                 self.download_button.setIcon(load_icon('download_file.svg'))
+
             self.download_button.setFont(self.file_buttons_font)
             self.download_button.show()
-            self.download_button.setStyleSheet(self.download_button_css)
+
+            # Reset stylesheet
+            self.setStyleSheet('')
+            self.download_button.setObjectName('download_button')
+            self.setStyleSheet(self.CSS)
+
             self.no_file_name.hide()
             self.export_button.hide()
             self.middot.hide()
@@ -2511,7 +2514,11 @@ class FileWidget(QWidget):
         self.download_animation.frameChanged.connect(self.set_button_animation_frame)
         self.download_animation.start()
         self.download_button.setText(_(" DOWNLOADING "))
-        self.download_button.setStyleSheet("color: #05a6fe")
+
+        # Reset stylesheet with new state so that the active color stays the same
+        self.setStyleSheet('')
+        self.download_button.setObjectName('download_button_animating')
+        self.setStyleSheet(self.CSS)
 
     def set_button_animation_frame(self, frame_number):
         """
