@@ -11,6 +11,7 @@ import pytest
 from PyQt5.QtCore import Qt
 from sdclientapi import RequestTimeoutError, ServerConnectionError
 from tests import factory
+from unittest.mock import call
 
 from securedrop_client import db
 from securedrop_client.logic import APICallRunner, Controller, TIME_BETWEEN_SHOWING_LAST_SYNC_MS
@@ -157,8 +158,8 @@ def test_Controller_login(homedir, config, mocker, session_maker):
 
 def test_Controller_login_offline_mode(homedir, config, mocker):
     """
-    Ensures user is not authenticated when logging in in offline mode and that the correct windows
-    are displayed.
+    Ensures user is not authenticated when logging in in offline mode, that the system
+    clipboard is cleared, and that the correct windows are subsequently displayed.
     """
     co = Controller('http://localhost', mocker.MagicMock(), mocker.MagicMock(), homedir)
     co.call_api = mocker.MagicMock()
@@ -172,7 +173,7 @@ def test_Controller_login_offline_mode(homedir, config, mocker):
 
     assert co.call_api.called is False
     assert co.is_authenticated is False
-    co.gui.show_main_window.assert_called_once_with()
+    co.gui.assert_has_calls([call.clear_clipboard(), call.show_main_window()])
     co.gui.hide_login.assert_called_once_with()
     co.update_sources.assert_called_once_with()
     co.show_last_sync_timer.start.assert_called_once_with(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
@@ -202,7 +203,9 @@ def test_Controller_on_authenticate_failure(homedir, config, mocker, session_mak
 def test_Controller_on_authenticate_success(homedir, config, mocker, session_maker,
                                             session):
     """
-    Ensure the client syncs when the user successfully logs in.
+    Ensure the client syncs when the user successfully logs in, and that the
+    system clipboard is cleared prior to display of the main window.
+
     Using the `config` fixture to ensure the config is written to disk.
     """
     user = factory.User()
@@ -221,7 +224,7 @@ def test_Controller_on_authenticate_success(homedir, config, mocker, session_mak
     co.resume_queues = mocker.MagicMock()
 
     co.on_authenticate_success(True)
-
+    co.gui.assert_has_calls([call.clear_clipboard(), call.show_main_window(user)])
     co.api_sync.start.assert_called_once_with(co.api)
     co.api_job_queue.start.assert_called_once_with(co.api)
     assert co.is_authenticated

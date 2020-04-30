@@ -437,6 +437,8 @@ class Controller(QObject):
             self.api.journalist_first_name,
             self.api.journalist_last_name,
             self.session)
+        # Clear clipboard contents in case of previously pasted creds
+        self.gui.clear_clipboard()
         self.gui.show_main_window(user)
         self.update_sources()
         self.api_job_queue.start(self.api)
@@ -456,6 +458,9 @@ class Controller(QObject):
         Allow user to view in offline mode without authentication.
         """
         self.gui.hide_login()
+        # Clear clipboard contents in case of previously pasted creds (user
+        # may have attempted online mode login, then switched to offline)
+        self.gui.clear_clipboard()
         self.gui.show_main_window()
         storage.mark_all_pending_drafts_as_failed(self.session)
         self.is_authenticated = False
