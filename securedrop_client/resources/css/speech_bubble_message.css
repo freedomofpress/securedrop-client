@@ -1,0 +1,21 @@
+#SpeechBubble_message {
+    min-width: 508px;
+    max-width: 508px;
+    font-family: 'Source Sans Pro';
+    font-weight: 400;
+    font-size: 15px;
+    background-color: #fff;
+    color: #3b3b3b;
+    padding: 16px;
+}
+
+#SpeechBubble_message_decryption_error {
+    min-width: 508px;
+    max-width: 508px;
+    font-family: 'Source Sans Pro';
+    font-weight: 400;
+    font-size: 15px;
+    font-style: italic;
+    background-color: rgba(255, 255, 255, 0.6);
+    padding: 16px;
+}

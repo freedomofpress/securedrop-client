@@ -1,0 +1,23 @@
+QPushButton#FileWidget_download_button {
+    border: none;
+    font-family: 'Source Sans Pro';
+    font-weight: 600;
+    font-size: 13px;
+    color: #2a319d;
+}
+
+QPushButton#FileWidget_download_button:hover {
+    color: #05a6fe;
+}
+
+QPushButton#FileWidget_download_button_animating {
+    border: none;
+    font-family: 'Source Sans Pro';
+    font-weight: 600;
+    font-size: 13px;
+    color: #05a6fe;
+}
+
+QPushButton#FileWidget_download_button_animating:hover {
+    color: #05a6fe;
+}

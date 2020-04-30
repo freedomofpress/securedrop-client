@@ -1595,6 +1595,9 @@ class SpeechBubble(QWidget):
     and journalist.
     """
 
+    MESSAGE_CSS = load_css('speech_bubble_message.css')
+    STATUS_BAR_CSS = load_css('speech_bubble_status_bar.css')
+
     TOP_MARGIN = 28
     BOTTOM_MARGIN = 10
 
@@ -1615,10 +1618,12 @@ class SpeechBubble(QWidget):
         # Message box
         self.message = SecureQLabel(text)
         self.message.setObjectName('SpeechBubble_message')
+        self.message.setStyleSheet(self.MESSAGE_CSS)
 
         # Color bar
         self.color_bar = QWidget()
         self.color_bar.setObjectName('SpeechBubble_status_bar')
+        self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
 
         # Speech bubble
         self.speech_bubble = QWidget()
@@ -1674,16 +1679,20 @@ class SpeechBubble(QWidget):
             self.set_error_styles()
 
     def set_normal_styles(self):
-        self.setStyleSheet('')
+        self.message.setStyleSheet('')
         self.message.setObjectName('SpeechBubble_message')
+        self.message.setStyleSheet(self.MESSAGE_CSS)
+        self.color_bar.setStyleSheet('')
         self.color_bar.setObjectName('SpeechBubble_status_bar')
-        self.setStyleSheet(load_css('sdclient.css'))
+        self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
 
     def set_error_styles(self):
-        self.setStyleSheet('')
+        self.message.setStyleSheet('')
         self.message.setObjectName('SpeechBubble_message_decryption_error')
+        self.message.setStyleSheet(self.MESSAGE_CSS)
+        self.color_bar.setStyleSheet('')
         self.color_bar.setObjectName('SpeechBubble_status_bar_decryption_error')
-        self.setStyleSheet(load_css('sdclient.css'))
+        self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
 
 
 class MessageWidget(SpeechBubble):
@@ -1700,6 +1709,9 @@ class ReplyWidget(SpeechBubble):
     """
     Represents a reply to a source.
     """
+
+    MESSAGE_CSS = load_css('reply_message.css')
+    STATUS_BAR_CSS = load_css('reply_status_bar.css')
 
     def __init__(
         self,
@@ -1767,28 +1779,36 @@ class ReplyWidget(SpeechBubble):
             self._set_reply_state('FAILED')
 
     def set_normal_styles(self):
-        self.setStyleSheet('')
+        self.message.setStyleSheet('')
         self.message.setObjectName('ReplyWidget_message')
+        self.message.setStyleSheet(self.MESSAGE_CSS)
+        self.color_bar.setStyleSheet('')
         self.color_bar.setObjectName('ReplyWidget_status_bar')
-        self.setStyleSheet(load_css('sdclient.css'))
+        self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
 
     def set_failed_styles(self):
-        self.setStyleSheet('')
+        self.message.setStyleSheet('')
         self.message.setObjectName('ReplyWidget_message_failed')
+        self.message.setStyleSheet(self.MESSAGE_CSS)
+        self.color_bar.setStyleSheet('')
         self.color_bar.setObjectName('ReplyWidget_status_bar_failed')
-        self.setStyleSheet(load_css('sdclient.css'))
+        self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
 
     def set_pending_styles(self):
-        self.setStyleSheet('')
+        self.message.setStyleSheet('')
         self.message.setObjectName('ReplyWidget_message_pending')
+        self.message.setStyleSheet(self.MESSAGE_CSS)
+        self.color_bar.setStyleSheet('')
         self.color_bar.setObjectName('ReplyWidget_status_bar_pending')
-        self.setStyleSheet(load_css('sdclient.css'))
+        self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
 
 
 class FileWidget(QWidget):
     """
     Represents a file.
     """
+
+    DOWNLOAD_BUTTON_CSS = load_css('file_download_button.css')
 
     TOP_MARGIN = 4
     BOTTOM_MARGIN = 14
@@ -1841,6 +1861,7 @@ class FileWidget(QWidget):
         file_options_layout.setAlignment(Qt.AlignLeft)
         self.download_button = QPushButton(_(' DOWNLOAD'))
         self.download_button.setObjectName('FileWidget_download_button')
+        self.download_button.setStyleSheet(self.DOWNLOAD_BUTTON_CSS)
         self.download_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.download_button.setIcon(load_icon('download_file.svg'))
         self.download_button.setFont(self.file_buttons_font)
@@ -1949,9 +1970,9 @@ class FileWidget(QWidget):
             self.download_button.show()
 
             # Reset stylesheet
-            self.setStyleSheet('')
+            self.download_button.setStyleSheet('')
             self.download_button.setObjectName('FileWidget_download_button')
-            self.setStyleSheet(load_css('sdclient.css'))
+            self.download_button.setStyleSheet(self.DOWNLOAD_BUTTON_CSS)
 
             self.no_file_name.hide()
             self.export_button.hide()
@@ -2026,10 +2047,10 @@ class FileWidget(QWidget):
         self.download_animation.start()
         self.download_button.setText(_(" DOWNLOADING "))
 
-        # Reset stylesheet with new state so that the active color stays the same
-        self.setStyleSheet('')
+        # Reset widget stylesheet
+        self.download_button.setStyleSheet('')
         self.download_button.setObjectName('FileWidget_download_button_animating')
-        self.setStyleSheet(load_css('sdclient.css'))
+        self.download_button.setStyleSheet(self.DOWNLOAD_BUTTON_CSS)
 
     def set_button_animation_frame(self, frame_number):
         """
@@ -2049,6 +2070,9 @@ class FileWidget(QWidget):
 
 class ModalDialog(QDialog):
 
+    CONTINUE_BUTTON_CSS = load_css('modal_dialog_button.css')
+    ERROR_DETAILS_CSS = load_css('modal_dialog_error_details.css')
+
     MARGIN = 40
     NO_MARGIN = 0
 
@@ -2056,7 +2080,6 @@ class ModalDialog(QDialog):
         parent = QApplication.activeWindow()
         super().__init__(parent)
         self.setObjectName('ModalDialog')
-        self.setStyleSheet(load_css('sdclient.css'))
         self.setModal(True)
 
         # Header for icon and task title
@@ -2084,6 +2107,7 @@ class ModalDialog(QDialog):
         # Widget for displaying error messages
         self.error_details = QLabel()
         self.error_details.setObjectName('ModalDialog_error_details')
+        self.error_details.setStyleSheet(self.ERROR_DETAILS_CSS)
         self.error_details.setWordWrap(True)
         self.error_details.hide()
 
@@ -2108,6 +2132,7 @@ class ModalDialog(QDialog):
         self.cancel_button.setAutoDefault(False)
         self.continue_button = QPushButton(_('CONTINUE'))
         self.continue_button.setObjectName('ModalDialog_primary_button')
+        self.continue_button.setStyleSheet(self.CONTINUE_BUTTON_CSS)
         self.continue_button.setDefault(True)
         self.continue_button.setIconSize(QSize(21, 21))
         button_box = QDialogButtonBox(Qt.Horizontal)
@@ -2157,11 +2182,13 @@ class ModalDialog(QDialog):
         self.button_animation.start()
         self.continue_button.setText("")
         self.continue_button.setMinimumSize(QSize(142, 43))
-        # Reset stylesheet
-        self.setStyleSheet('')
+        # Reset widget stylesheets
+        self.continue_button.setStyleSheet('')
         self.continue_button.setObjectName('ModalDialog_primary_button_active')
+        self.continue_button.setStyleSheet(self.CONTINUE_BUTTON_CSS)
+        self.error_details.setStyleSheet('')
         self.error_details.setObjectName('ModalDialog_error_details_active')
-        self.setStyleSheet(load_css('sdclient.css'))
+        self.error_details.setStyleSheet(self.ERROR_DETAILS_CSS)
 
     def start_animate_header(self):
         self.header_icon.setVisible(False)
@@ -2172,11 +2199,13 @@ class ModalDialog(QDialog):
         self.continue_button.setIcon(QIcon())
         self.button_animation.stop()
         self.continue_button.setText(_('CONTINUE'))
-        # Reset stylesheet
-        self.setStyleSheet('')
+        # Reset widget stylesheets
+        self.continue_button.setStyleSheet('')
         self.continue_button.setObjectName('ModalDialog_primary_button')
+        self.continue_button.setStyleSheet(self.CONTINUE_BUTTON_CSS)
+        self.error_details.setStyleSheet('')
         self.error_details.setObjectName('ModalDialog_error_details')
-        self.setStyleSheet(load_css('sdclient.css'))
+        self.error_details.setStyleSheet(self.ERROR_DETAILS_CSS)
 
     def stop_animate_header(self):
         self.header_icon.setVisible(True)

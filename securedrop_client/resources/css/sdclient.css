@@ -241,101 +241,11 @@ QListView#SourceList::item:hover{
     background-color: #fff;
 }
 
-#SpeechBubble_message {
-    min-width: 508px;
-    max-width: 508px;
-    font-family: 'Source Sans Pro';
-    font-weight: 400;
-    font-size: 15px;
-    background-color: #fff;
-    color: #3b3b3b;
-    padding: 16px;
-}
-
-#SpeechBubble_status_bar {
-    min-height: 5px;
-    max-height: 5px;
-    background-color: #102781;
-    border: 0px;
-}
-
-#SpeechBubble_message_decryption_error {
-    min-width: 508px;
-    max-width: 508px;
-    font-family: 'Source Sans Pro';
-    font-weight: 400;
-    font-size: 15px;
-    font-style: italic;
-    background-color: rgba(255, 255, 255, 0.6);
-    padding: 16px;
-}
-
-#SpeechBubble_status_bar_decryption_error {
-    min-height: 5px;
-    max-height: 5px;
-    background-color: #bcbfcd;
-    border: 0px;
-}
-
-#ReplyWidget_message {
-    min-width: 508px;
-    max-width: 508px;
-    font-family: 'Source Sans Pro';
-    font-weight: 400;
-    font-size: 15px;
-    background-color: #fff;
-    color: #3b3b3b;
-    padding: 16px;
-}
-
-#ReplyWidget_status_bar {
-    min-height: 5px;
-    max-height: 5px;
-    background-color: #0065db;
-    border: 0px;
-}
-
 #ReplyWidget_failed_to_send_text {
     font-family: 'Source Sans Pro';
     font-weight: 500;
     font-size: 13px;
     color: #ff3366;
-}
-
-#ReplyWidget_message_failed {
-    min-width: 508px;
-    max-width: 508px;
-    font-family: 'Source Sans Pro';
-    font-weight: 400;
-    font-size: 15px;
-    background-color: #fff;
-    color: #3b3b3b;
-    padding: 16px;
-}
-
-#ReplyWidget_status_bar_failed {
-    min-height: 5px;
-    max-height: 5px;
-    background-color: #ff3366;
-    border: 0px;
-}
-
-#ReplyWidget_message_pending {
-    min-width: 508px;
-    max-width: 508px;
-    font-family: 'Source Sans Pro';
-    font-weight: 400;
-    font-size: 15px;
-    color: #a9aaad;
-    background-color: #F7F8FC;
-    padding: 16px;
-}
-
-#ReplyWidget_status_bar_pending {
-    min-height: 5px;
-    max-height: 5px;
-    background-color: #0065db;
-    border: 0px;
 }
 
 #FileWidget {
@@ -356,30 +266,6 @@ QPushButton#FileWidget_export_print {
 }
 
 QPushButton#FileWidget_export_print:hover {
-    color: #05a6fe;
-}
-
-QPushButton#FileWidget_download_button {
-    border: none;
-    font-family: 'Source Sans Pro';
-    font-weight: 600;
-    font-size: 13px;
-    color: #2a319d;
-}
-
-QPushButton#FileWidget_download_button:hover {
-    color: #05a6fe;
-}
-
-QPushButton#FileWidget_download_button_animating {
-    border: none;
-    font-family: 'Source Sans Pro';
-    font-weight: 600;
-    font-size: 13px;
-    color: #05a6fe;
-}
-
-QPushButton#FileWidget_download_button_animating:hover {
     color: #05a6fe;
 }
 
@@ -451,17 +337,6 @@ QWidget#FileWidget_horizontal_line {
     border: none;
 }
 
-#ModalDialog_error_details {
-    margin: 0px 40px 0px 36px;
-    font-family: 'Montserrat';
-    font-size: 16px;
-    color: #ff0064;
-}
-
-#ModalDialog_error_details_active {
-    color: #ff66C4;
-}
-
 #ModalDialog_body {
     font-family: 'Montserrat';
     font-size: 16px;
@@ -483,27 +358,6 @@ QWidget#FileWidget_horizontal_line {
 #ModalDialog_button_box QPushButton::disabled {
     border: 2px solid rgba(42, 49, 157, 0.4);
     color: rgba(42, 49, 157, 0.4);
-}
-
-#ModalDialog_button_box QPushButton#ModalDialog_primary_button {
-    background-color: #2a319d;
-    color: #fff;
-}
-
-#ModalDialog_button_box QPushButton#ModalDialog_primary_button::disabled {
-    border: 2px solid #C2C4E3;
-    background-color: #C2C4E3;
-    color: #E1E2F1;
-}
-
-#ModalDialog_button_box QPushButton#ModalDialog_primary_button_active {
-    background-color: #f1f1f6;
-    color: #fff;
-    border: 2px solid #f1f1f6;
-    margin: 0px 0px 0px 12px;
-    height: 40px;
-    padding-left: 20px;
-    padding-right: 20px;
 }
 
 #passphrase_form QLabel {
@@ -589,13 +443,13 @@ QWidget#ReplyBoxWidget_horizontal_line {
     color: rgba(42, 49, 157, 0.6);
 }
 
-#SourceMenuButton_ellipsis_button {
+#SourceMenuButton {
     border: none;
     margin: 5px 0px 0px 0px;
     padding-left: 8px;
 }
 
-#SourceMenuButton QToolButton::menu-indicator {
+QToolButton#SourceMenuButton::menu-indicator {
     image: none;
 }
 
