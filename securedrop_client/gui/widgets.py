@@ -2527,6 +2527,9 @@ class ModalDialog(QDialog):
         font-size: 16px;
         color: #ff0064;
     }
+    #ModalDialog_error_details_active {
+        color: #ff66C4;
+    }
     #ModalDialog_body {
         font-family: 'Montserrat';
         font-size: 16px;
@@ -2555,6 +2558,15 @@ class ModalDialog(QDialog):
         border: 2px solid #C2C4E3;
         background-color: #C2C4E3;
         color: #E1E2F1;
+    }
+    #ModalDialog_button_box QPushButton#ModalDialog_primary_button_active {
+        background-color: #f1f1f6;
+        color: #fff;
+        border: 2px solid #f1f1f6;
+        margin: 0px 0px 0px 12px;
+        height: 40px;
+        padding-left: 20px;
+        padding-right: 20px;
     }
     '''
 
@@ -2666,17 +2678,11 @@ class ModalDialog(QDialog):
         self.button_animation.start()
         self.continue_button.setText("")
         self.continue_button.setMinimumSize(QSize(142, 43))
-        css = """
-        background-color: #f1f1f6;
-        color: #fff;
-        border: 2px solid #f1f1f6;
-        margin: 0px 0px 0px 12px;
-        height: 40px;
-        padding-left: 20px;
-        padding-right: 20px;
-        """
-        self.continue_button.setStyleSheet(css)
-        self.error_details.setStyleSheet("color: #ff66C4")
+        # Reset stylesheet
+        self.setStyleSheet('')
+        self.continue_button.setObjectName('ModalDialog_primary_button_active')
+        self.error_details.setObjectName('ModalDialog_error_details_active')
+        self.setStyleSheet(self.CSS)
 
     def start_animate_header(self):
         self.header_icon.setVisible(False)
@@ -2687,9 +2693,11 @@ class ModalDialog(QDialog):
         self.continue_button.setIcon(QIcon())
         self.button_animation.stop()
         self.continue_button.setText(_('CONTINUE'))
-        css = "background-color: #2a319d; color: #fff; border: 2px solid #2a319d;"
-        self.continue_button.setStyleSheet(css)
-        self.error_details.setStyleSheet("color: #ff0064")
+        # Reset stylesheet
+        self.setStyleSheet('')
+        self.continue_button.setObjectName('ModalDialog_primary_button')
+        self.error_details.setObjectName('ModalDialog_error_details')
+        self.setStyleSheet(self.CSS)
 
     def stop_animate_header(self):
         self.header_icon.setVisible(True)
@@ -3332,7 +3340,7 @@ class SourceConversationWrapper(QWidget):
     """
 
     SOURCE_DELETED_CSS = '''
-    #source_deleted {
+    #SourceConversationWrapper_source_deleted {
         text-align: left;
         font-family: 'Montserrat';
         font-weight: 500;
@@ -3363,7 +3371,7 @@ class SourceConversationWrapper(QWidget):
         self.conversation_view = ConversationView(source, controller)
         self.reply_box = ReplyBoxWidget(source, controller)
         self.waiting_delete_confirmation = QLabel('Deleting...')
-        self.waiting_delete_confirmation.setObjectName('source_deleted')
+        self.waiting_delete_confirmation.setObjectName('SourceConversationWrapper_source_deleted')
         self.waiting_delete_confirmation.setStyleSheet(self.SOURCE_DELETED_CSS)
         self.waiting_delete_confirmation.hide()
 
@@ -3401,24 +3409,24 @@ class ReplyBoxWidget(QWidget):
     """
 
     CSS = '''
-    #replybox_holder {
+    #ReplyBoxWidget {
         min-height: 173px;
         max-height: 173px;
     }
-    #replybox {
+    #ReplyBoxWidget_replybox {
         background-color: #ffffff;
     }
-    #replybox::disabled {
+    #ReplyBoxWidget_replybox::disabled {
         background-color: #efefef;
     }
-    QPushButton {
+    #ReplyBoxWidget QPushButton {
         border: none;
     }
-    QPushButton:hover {
+    #ReplyBoxWidget QPushButton:hover {
         background: #D3D8EA;
         border-radius: 8px;
     }
-    QWidget#horizontal_line {
+    QWidget#ReplyBoxWidget_horizontal_line {
         min-height: 2px;
         max-height: 2px;
         background-color: rgba(42, 49, 157, 0.15);
@@ -3435,7 +3443,7 @@ class ReplyBoxWidget(QWidget):
         self.controller = controller
 
         # Set css id
-        self.setObjectName('replybox_holder')
+        self.setObjectName('ReplyBoxWidget')
 
         # Set styles
         self.setStyleSheet(self.CSS)
@@ -3450,11 +3458,11 @@ class ReplyBoxWidget(QWidget):
 
         # Create top horizontal line
         horizontal_line = QWidget()
-        horizontal_line.setObjectName('horizontal_line')
+        horizontal_line.setObjectName('ReplyBoxWidget_horizontal_line')
 
         # Create replybox
         self.replybox = QWidget()
-        self.replybox.setObjectName('replybox')
+        self.replybox.setObjectName('ReplyBoxWidget_replybox')
         replybox_layout = QHBoxLayout(self.replybox)
         replybox_layout.setContentsMargins(32.6, 19, 27.3, 18)
         replybox_layout.setSpacing(0)
@@ -3563,20 +3571,20 @@ class ReplyTextEdit(QPlainTextEdit):
     """
 
     CSS = '''
-    #reply_textedit {
+    #ReplyTextEdit {
         font-family: 'Montserrat';
         font-weight: 400;
         font-size: 18px;
         border: none;
         margin-right: 30.2px;
     }
-    #reply_placeholder {
+    #ReplyTextEdit_placeholder {
         font-family: 'Montserrat';
         font-weight: 400;
         font-size: 18px;
         color: #404040;
     }
-    #reply_placeholder::disabled {
+    #ReplyTextEdit_placeholder::disabled {
         color: rgba(42, 49, 157, 0.6);
     }
     '''
@@ -3586,13 +3594,13 @@ class ReplyTextEdit(QPlainTextEdit):
         self.controller = controller
         self.source = source
 
-        self.setObjectName('reply_textedit')
+        self.setObjectName('ReplyTextEdit')
         self.setStyleSheet(self.CSS)
 
         self.setTabChangesFocus(True)  # Needed so we can TAB to send button.
 
         self.placeholder = QLabel()
-        self.placeholder.setObjectName("reply_placeholder")
+        self.placeholder.setObjectName("ReplyTextEdit_placeholder")
         self.placeholder.setParent(self)
         self.placeholder.move(QPoint(3, 4))  # make label match text below
         self.set_logged_in()
@@ -3686,12 +3694,12 @@ class SourceMenuButton(QToolButton):
     """
 
     CSS = '''
-    #ellipsis_button {
+    #SourceMenuButton_ellipsis_button {
         border: none;
         margin: 5px 0px 0px 0px;
         padding-left: 8px;
     }
-    QToolButton::menu-indicator {
+    #SourceMenuButton QToolButton::menu-indicator {
         image: none;
     }
     '''
@@ -3701,7 +3709,7 @@ class SourceMenuButton(QToolButton):
         self.controller = controller
         self.source = source
 
-        self.setObjectName('ellipsis_button')
+        self.setObjectName('SourceMenuButton')
         self.setStyleSheet(self.CSS)
 
         self.setIcon(load_icon("ellipsis.svg"))
@@ -3719,7 +3727,7 @@ class TitleLabel(QLabel):
     """The title for a conversation."""
 
     CSS = '''
-    #conversation-title-source-name {
+    #TitleLabel {
         font-family: 'Montserrat';
         font-weight: 400;
         font-size: 24px;
@@ -3732,7 +3740,7 @@ class TitleLabel(QLabel):
         super().__init__(_(text))
 
         # Set css id
-        self.setObjectName('conversation-title-source-name')
+        self.setObjectName('TitleLabel')
 
         # Set styles
         self.setStyleSheet(self.CSS)
@@ -3742,7 +3750,7 @@ class LastUpdatedLabel(QLabel):
     """Time the conversation was last updated."""
 
     CSS = '''
-    #conversation-title-date {
+    #LastUpdatedLabel {
         font-family: 'Montserrat';
         font-weight: 200;
         font-size: 24px;
@@ -3754,7 +3762,7 @@ class LastUpdatedLabel(QLabel):
         super().__init__(last_updated)
 
         # Set css id
-        self.setObjectName('conversation-title-date')
+        self.setObjectName('LastUpdatedLabel')
 
         # Set styles
         self.setStyleSheet(self.CSS)
@@ -3769,7 +3777,7 @@ class SourceProfileShortWidget(QWidget):
     """
 
     CSS = '''
-    QWidget#horizontal_line {
+    QWidget#SourceProfileShortWidget_horizontal_line {
         min-height: 2px;
         max-height: 2px;
         background-color: rgba(42, 49, 157, 0.15);
@@ -3810,7 +3818,7 @@ class SourceProfileShortWidget(QWidget):
 
         # Create horizontal line
         horizontal_line = QWidget()
-        horizontal_line.setObjectName('horizontal_line')
+        horizontal_line.setObjectName('SourceProfileShortWidget_horizontal_line')
         horizontal_line.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         # Add widgets
