@@ -283,3 +283,15 @@ def test_logout(mocker):
 
     w.left_pane.set_logged_out.assert_called_once_with()
     w.top_pane.set_logged_out.assert_called_once_with()
+
+
+def test_clear_clipboard(mocker):
+    """
+    Ensure we are clearing the system-level clipboard in the expected manner.
+    """
+    mock_clipboard = mocker.MagicMock()
+    mocker.patch('securedrop_client.gui.main.QApplication.clipboard',
+                 return_value=mock_clipboard)
+    w = Window()
+    w.clear_clipboard()
+    mock_clipboard.clear.assert_called_once_with()
