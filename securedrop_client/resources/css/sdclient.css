@@ -1,7 +1,623 @@
-QLabel#error_label {
-    color: #FF0000;
+#SyncIcon {
+    border: none;
+    color: #fff;
 }
 
-ConversationView {
-    background-color: white;
+#ActivityStatusBar {
+    font-family: 'Source Sans Pro';
+    font-weight: 600;
+    font-size: 12px;
+    color: #d3d8ea;
+}
+
+#ErrorStatusBar_vertical_bar {
+    background-color: #ff3366;
+}
+
+#ErrorStatusBar_icon {
+    background-color: qlineargradient(
+        x1: 0,
+        y1: 0,
+        x2: 0,
+        y2: 1,
+        stop: 0 #fff,
+        stop: 0.2 #fff,
+        stop: 1 #fff
+    );
+}
+
+#ErrorStatusBar_status_bar {
+    background-color: qlineargradient(
+        x1: 0,
+        y1: 0,
+        x2: 0,
+        y2: 1,
+        stop: 0 #fff,
+        stop: 0.2 #fff,
+        stop: 1 #fff
+    );
+    font-family: 'Source Sans Pro';
+    font-weight: 400;
+    font-size: 14px;
+    color: #0c3e75;
+}
+
+#UserProfile {
+    padding: 15px;
+}
+
+#UserProfile_icon {
+    border: none;
+    background-color: #9211ff;
+    padding-left: 3px;
+    padding-bottom: 4px;
+    font-family: 'Source Sans Pro';
+    font-weight: 600;
+    font-size: 15px;
+    color: #fff;
+}
+
+#UserButton {
+    border: none;
+    font-family: 'Source Sans Pro';
+    font-weight: 700;
+    font-size: 12px;
+    color: #fff;
+    text-align: left;
+}
+
+#UserButton:focus {
+    outline: none;
+}
+
+#UserButton::menu-indicator {
+    image: none;
+}
+
+#LoginButton {
+    border: none;
+    background-color: #05edfe;
+    font-family: 'Montserrat';
+    font-weight: 600;
+    font-size: 14px;
+    color: #2a319d;
+}
+
+#LoginButton:pressed {
+    background-color: #85f6fe;
+}
+
+#MainView {
+    min-height: 558;
+}
+
+#MainView_view_holder {
+    min-width: 667;
+    border: none;
+    background-color: #f3f5f9;
+}
+
+#EmptyConversationView QLabel {
+    font-family: Montserrat;
+    font-weight: 400;
+    font-size: 35px;
+    color: #a5b3e9;
+}
+
+#EmptyConversationView QLabel#EmptyConversationView_instructions {
+    font-weight: 500;
+}
+
+#EmptyConversationView QLabel#EmptyConversationView_bullet {
+    margin: 4px 0px 0px 0px;
+    font-size: 35px;
+    font-weight: 600;
+}
+
+#EmptyConversationView_no_sources {
+    min-width: 520px;
+    max-width: 600px;
+}
+
+#EmptyConversationView_no_source_selected {
+    min-width: 520px;
+    max-width: 520px;
+}
+
+QListView#SourceList {
+    border: none;
+    show-decoration-selected: 0;
+    border-right: 3px solid #f3f5f9;
+}
+
+QListView#SourceList::item:selected {
+    background-color: #f3f5f9;
+}
+
+QListView#SourceList::item:hover{
+    border: 500px solid #f9f9f9;
+}
+
+#SourceWidget_container {
+    border-bottom: 1px solid #9b9b9b;
+}
+
+#SourceWidget_gutter {
+    min-width: 40px;
+    max-width: 40px;
+}
+
+#SourceWidget_metadata {
+    max-width: 60px;
+}
+
+#SourceWidget_preview {
+    font-family: 'Source Sans Pro';
+    font-weight: 400;
+    font-size: 13px;
+    color: #383838;
+}
+
+#SourceWidget_source_deleted {
+    font-family: 'Source Sans Pro';
+    font-weight: 400;
+    font-size: 13px;
+    color: #ff3366;
+}
+
+#SourceWidget_name {
+    font-family: 'Montserrat';
+    font-weight: 500;
+    font-size: 13px;
+    color: #383838;
+}
+
+#SourceWidget_timestamp {
+    font-family: 'Montserrat';
+    font-weight: 500;
+    font-size: 13px;
+    color: #383838;
+}
+
+#StarToggleButton {
+    border: none;
+}
+
+#LoginOfflineLink {
+    border: none;
+    color: #fff;
+    text-decoration: underline;
+}
+
+#SignInButton {
+    border: none;
+    background-color: #05edfe;
+    font-family: 'Montserrat';
+    font-weight: 600;
+    font-size: 14px;
+    color: #2a319d;
+}
+
+#SignInButton:pressed {
+    background-color: #85f6fe;
+}
+
+#LoginErrorBar QWidget {
+    background-color: #ce0083;
+}
+
+#LoginErrorBar_icon {
+    color: #fff;
+}
+
+#LoginErrorBar_status_bar {
+    font-family: 'Montserrat';
+    font-weight: 500;
+    font-size: 12px;
+    color: #fff;
+}
+
+#LoginDialog_form QLabel {
+    color: #fff;
+    font-family: 'Montserrat';
+    font-weight: 500;
+    font-size: 13px;
+}
+
+#LoginDialog_form QLineEdit {
+    border-radius: 0px;
+    height: 30px;
+    margin: 0px 0px 0px 0px;
+    padding-left: 5px;
+}
+
+#LoginDialog_app_version_label {
+    color: #9fddff;
+}
+
+#SpeechBubble_container {
+    min-width: 540px;
+    max-width: 540px;
+    background-color: #fff;
+}
+
+#SpeechBubble_message {
+    min-width: 508px;
+    max-width: 508px;
+    font-family: 'Source Sans Pro';
+    font-weight: 400;
+    font-size: 15px;
+    background-color: #fff;
+    color: #3b3b3b;
+    padding: 16px;
+}
+
+#SpeechBubble_status_bar {
+    min-height: 5px;
+    max-height: 5px;
+    background-color: #102781;
+    border: 0px;
+}
+
+#SpeechBubble_message_decryption_error {
+    min-width: 508px;
+    max-width: 508px;
+    font-family: 'Source Sans Pro';
+    font-weight: 400;
+    font-size: 15px;
+    font-style: italic;
+    background-color: rgba(255, 255, 255, 0.6);
+    padding: 16px;
+}
+
+#SpeechBubble_status_bar_decryption_error {
+    min-height: 5px;
+    max-height: 5px;
+    background-color: #bcbfcd;
+    border: 0px;
+}
+
+#ReplyWidget_message {
+    min-width: 508px;
+    max-width: 508px;
+    font-family: 'Source Sans Pro';
+    font-weight: 400;
+    font-size: 15px;
+    background-color: #fff;
+    color: #3b3b3b;
+    padding: 16px;
+}
+
+#ReplyWidget_status_bar {
+    min-height: 5px;
+    max-height: 5px;
+    background-color: #0065db;
+    border: 0px;
+}
+
+#ReplyWidget_failed_to_send_text {
+    font-family: 'Source Sans Pro';
+    font-weight: 500;
+    font-size: 13px;
+    color: #ff3366;
+}
+
+#ReplyWidget_message_failed {
+    min-width: 508px;
+    max-width: 508px;
+    font-family: 'Source Sans Pro';
+    font-weight: 400;
+    font-size: 15px;
+    background-color: #fff;
+    color: #3b3b3b;
+    padding: 16px;
+}
+
+#ReplyWidget_status_bar_failed {
+    min-height: 5px;
+    max-height: 5px;
+    background-color: #ff3366;
+    border: 0px;
+}
+
+#ReplyWidget_message_pending {
+    min-width: 508px;
+    max-width: 508px;
+    font-family: 'Source Sans Pro';
+    font-weight: 400;
+    font-size: 15px;
+    color: #a9aaad;
+    background-color: #F7F8FC;
+    padding: 16px;
+}
+
+#ReplyWidget_status_bar_pending {
+    min-height: 5px;
+    max-height: 5px;
+    background-color: #0065db;
+    border: 0px;
+}
+
+#FileWidget {
+    min-width: 540px;
+    max-width: 540px;
+}
+
+#FileWidget_file_options {
+    min-width: 137px;
+}
+
+QPushButton#FileWidget_export_print {
+    border: none;
+    font-family: 'Source Sans Pro';
+    font-weight: 500;
+    font-size: 13px;
+    color: #2A319D;
+}
+
+QPushButton#FileWidget_export_print:hover {
+    color: #05a6fe;
+}
+
+QPushButton#FileWidget_download_button {
+    border: none;
+    font-family: 'Source Sans Pro';
+    font-weight: 600;
+    font-size: 13px;
+    color: #2a319d;
+}
+
+QPushButton#FileWidget_download_button:hover {
+    color: #05a6fe;
+}
+
+QPushButton#FileWidget_download_button_animating {
+    border: none;
+    font-family: 'Source Sans Pro';
+    font-weight: 600;
+    font-size: 13px;
+    color: #05a6fe;
+}
+
+QPushButton#FileWidget_download_button_animating:hover {
+    color: #05a6fe;
+}
+
+QLabel#FileWidget_file_name {
+    font-family: 'Source Sans Pro';
+    font-weight: 600;
+    font-size: 13px;
+    color: #2a319d;
+}
+
+QLabel#FileWidget_file_name:hover {
+    color: #05a6fe;
+}
+
+QLabel#FileWidget_no_file_name {
+    font-family: 'Source Sans Pro';
+    font-weight: 300;
+    font-size: 13px;
+    color: #a5b3e9;
+}
+
+QLabel#FileWidget_file_size {
+    min-width: 48px;
+    max-width: 48px;
+    font-family: 'Source Sans Pro';
+    font-weight: 400;
+    font-size: 13px;
+    color: #2a319d;
+}
+
+QWidget#FileWidget_horizontal_line {
+    min-height: 2px;
+    max-height: 2px;
+    background-color: rgba(211, 216, 234, 0.45);
+    margin: 0px 8px 0px 8px;
+}
+
+#ModalDialog {
+    min-width: 800px;
+    max-width: 800px;
+    min-height: 300px;
+    max-height: 800px;
+    background-color: #fff;
+}
+
+#ModalDialog_header_icon, #ModalDialog_header_spinner {
+    min-width: 80px;
+    max-width: 80px;
+    min-height: 64px;
+    max-height: 64px;
+    margin: 0px 0px 0px 30px;
+}
+
+#ModalDialog_header {
+    min-height: 68px;
+    max-height: 68px;
+    margin: 0px 0px 0px 4px;
+    font-family: 'Montserrat';
+    font-size: 24px;
+    font-weight: 600;
+    color: #2a319d;
+}
+
+#ModalDialog_header_line {
+    margin: 0px 40px 20px 40px;
+    min-height: 2px;
+    max-height: 2px;
+    background-color: rgba(42, 49, 157, 0.15);
+    border: none;
+}
+
+#ModalDialog_error_details {
+    margin: 0px 40px 0px 36px;
+    font-family: 'Montserrat';
+    font-size: 16px;
+    color: #ff0064;
+}
+
+#ModalDialog_error_details_active {
+    color: #ff66C4;
+}
+
+#ModalDialog_body {
+    font-family: 'Montserrat';
+    font-size: 16px;
+    color: #302aa3;
+}
+
+#ModalDialog_button_box QPushButton {
+    margin: 0px 0px 0px 12px;
+    height: 40px;
+    padding-left: 20px;
+    padding-right: 20px;
+    border: 2px solid #2a319d;
+    font-family: 'Montserrat';
+    font-weight: 500;
+    font-size: 15px;
+    color: #2a319d;
+}
+
+#ModalDialog_button_box QPushButton::disabled {
+    border: 2px solid rgba(42, 49, 157, 0.4);
+    color: rgba(42, 49, 157, 0.4);
+}
+
+#ModalDialog_button_box QPushButton#ModalDialog_primary_button {
+    background-color: #2a319d;
+    color: #fff;
+}
+
+#ModalDialog_button_box QPushButton#ModalDialog_primary_button::disabled {
+    border: 2px solid #C2C4E3;
+    background-color: #C2C4E3;
+    color: #E1E2F1;
+}
+
+#ModalDialog_button_box QPushButton#ModalDialog_primary_button_active {
+    background-color: #f1f1f6;
+    color: #fff;
+    border: 2px solid #f1f1f6;
+    margin: 0px 0px 0px 12px;
+    height: 40px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+#passphrase_form QLabel {
+    font-family: 'Montserrat';
+    font-weight: 500;
+    font-size: 12px;
+    color: #2a319d;
+    padding-top: 6px;
+}
+
+#passphrase_form QLineEdit {
+    border-radius: 0px;
+    min-height: 30px;
+    max-height: 30px;
+    background-color: #f8f8f8;
+    padding-bottom: 2px;
+}
+
+#ConversationScrollArea {
+    border: 0;
+    background: #f3f5f9;
+}
+
+#ConversationScrollArea_conversation {
+    background: #f3f5f9;
+}
+
+#SourceConversationWrapper_source_deleted {
+    text-align: left;
+    font-family: 'Montserrat';
+    font-weight: 500;
+    font-size: 40px;
+    color: #a5b3e9;
+    padding-bottom: 264px;
+    padding-right: 195px;
+}
+
+#ReplyBoxWidget {
+    min-height: 173px;
+    max-height: 173px;
+}
+
+#ReplyBoxWidget_replybox {
+    background-color: #ffffff;
+}
+
+#ReplyBoxWidget_replybox::disabled {
+    background-color: #efefef;
+}
+
+#ReplyBoxWidget QPushButton {
+    border: none;
+}
+
+#ReplyBoxWidget QPushButton:hover {
+    background: #D3D8EA;
+    border-radius: 8px;
+}
+
+QWidget#ReplyBoxWidget_horizontal_line {
+    min-height: 2px;
+    max-height: 2px;
+    background-color: rgba(42, 49, 157, 0.15);
+    border: none;
+}
+
+#ReplyTextEdit {
+    font-family: 'Montserrat';
+    font-weight: 400;
+    font-size: 18px;
+    border: none;
+    margin-right: 30.2px;
+}
+
+#ReplyTextEdit_placeholder {
+    font-family: 'Montserrat';
+    font-weight: 400;
+    font-size: 18px;
+    color: #404040;
+}
+
+#ReplyTextEdit_placeholder::disabled {
+    color: rgba(42, 49, 157, 0.6);
+}
+
+#SourceMenuButton_ellipsis_button {
+    border: none;
+    margin: 5px 0px 0px 0px;
+    padding-left: 8px;
+}
+
+#SourceMenuButton QToolButton::menu-indicator {
+    image: none;
+}
+
+#TitleLabel {
+    font-family: 'Montserrat';
+    font-weight: 400;
+    font-size: 24px;
+    color: #2a319d;
+    padding-left: 4px;
+}
+
+#LastUpdatedLabel {
+    font-family: 'Montserrat';
+    font-weight: 200;
+    font-size: 24px;
+    color: #2a319d;
+}
+
+QWidget#SourceProfileShortWidget_horizontal_line {
+    min-height: 2px;
+    max-height: 2px;
+    background-color: rgba(42, 49, 157, 0.15);
+    padding-left: 12px;
+    padding-right: 12px;
 }
