@@ -40,7 +40,7 @@ from securedrop_client.storage import source_exists
 from securedrop_client.export import ExportStatus, ExportError
 from securedrop_client.gui import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.logic import Controller
-from securedrop_client.resources import load_icon, load_image, load_movie
+from securedrop_client.resources import load_css, load_icon, load_image, load_movie
 from securedrop_client.utils import humanize_filesize
 
 logger = logging.getLogger(__name__)
@@ -200,18 +200,10 @@ class SyncIcon(QLabel):
     An icon that shows sync state.
     """
 
-    CSS = '''
-    #SyncIcon {
-        border: none;
-        color: #fff;
-    }
-    '''
-
     def __init__(self):
         # Add svg images to button
         super().__init__()
         self.setObjectName('SyncIcon')
-        self.setStyleSheet(self.CSS)
         self.setFixedSize(QSize(24, 20))
         self.sync_animation = load_movie("sync_disabled.gif")
         self.sync_animation.setScaledSize(QSize(24, 20))
@@ -256,23 +248,11 @@ class ActivityStatusBar(QStatusBar):
     displayed for a given duration or until the message updated with a new message.
     """
 
-    CSS = '''
-    #ActivityStatusBar {
-        font-family: 'Source Sans Pro';
-        font-weight: 600;
-        font-size: 12px;
-        color: #d3d8ea;
-    }
-    '''
-
     def __init__(self):
         super().__init__()
 
         # Set css id
         self.setObjectName('ActivityStatusBar')
-
-        # Set styles
-        self.setStyleSheet(self.CSS)
 
         # Remove grip image at bottom right-hand corner
         self.setSizeGripEnabled(False)
@@ -290,43 +270,8 @@ class ErrorStatusBar(QWidget):
     be displayed for a given duration or until the message is cleared or updated with a new message.
     """
 
-    CSS = '''
-    #ErrorStatusBar_vertical_bar {
-        background-color: #ff3366;
-    }
-    #ErrorStatusBar_icon {
-        background-color: qlineargradient(
-            x1: 0,
-            y1: 0,
-            x2: 0,
-            y2: 1,
-            stop: 0 #fff,
-            stop: 0.2 #fff,
-            stop: 1 #fff
-        );
-    }
-    #ErrorStatusBar_status_bar {
-        background-color: qlineargradient(
-            x1: 0,
-            y1: 0,
-            x2: 0,
-            y2: 1,
-            stop: 0 #fff,
-            stop: 0.2 #fff,
-            stop: 1 #fff
-        );
-        font-family: 'Source Sans Pro';
-        font-weight: 400;
-        font-size: 14px;
-        color: #0c3e75;
-    }
-    '''
-
     def __init__(self):
         super().__init__()
-
-        # Set styles
-        self.setStyleSheet(self.CSS)
 
         # Set layout
         layout = QHBoxLayout(self)
@@ -412,30 +357,11 @@ class UserProfile(QLabel):
     button if the user is logged out.
     """
 
-    CSS = '''
-    #UserProfile {
-        padding: 15px;
-    }
-    #UserProfile_icon {
-        border: none;
-        background-color: #9211ff;
-        padding-left: 3px;
-        padding-bottom: 4px;
-        font-family: 'Source Sans Pro';
-        font-weight: 600;
-        font-size: 15px;
-        color: #fff;
-    }
-    '''
-
     def __init__(self):
         super().__init__()
 
         # Set css id
         self.setObjectName('UserProfile')
-
-        # Set styles
-        self.setStyleSheet(self.CSS)
 
         # Set background
         palette = QPalette()
@@ -516,31 +442,12 @@ class UserButton(SvgPushButton):
     This button is responsible for launching the journalist menu on click.
     """
 
-    CSS = '''
-    #UserButton {
-        border: none;
-        font-family: 'Source Sans Pro';
-        font-weight: 700;
-        font-size: 12px;
-        color: #fff;
-        text-align: left;
-    }
-    #UserButton:focus {
-        outline: none;
-    }
-    #UserButton::menu-indicator {
-        image: none;
-    }
-    '''
-
     def __init__(self):
         super().__init__('dropdown_arrow.svg', svg_size=QSize(9, 6))
 
         # Set css id
         self.setObjectName('UserButton')
 
-        # Set styles
-        self.setStyleSheet(self.CSS)
         self.setFixedHeight(30)
 
         self.setLayoutDirection(Qt.RightToLeft)
@@ -594,28 +501,12 @@ class LoginButton(QPushButton):
     A button that opens a login dialog when clicked.
     """
 
-    CSS = '''
-    #LoginButton {
-        border: none;
-        background-color: #05edfe;
-        font-family: 'Montserrat';
-        font-weight: 600;
-        font-size: 14px;
-        color: #2a319d;
-    }
-    #LoginButton:pressed {
-        background-color: #85f6fe;
-    }
-    '''
-
     def __init__(self):
         super().__init__(_('SIGN IN'))
 
         # Set css id
         self.setObjectName('LoginButton')
 
-        # Set styles
-        self.setStyleSheet(self.CSS)
         self.setFixedHeight(40)
 
         # Set click handler
@@ -640,23 +531,11 @@ class MainView(QWidget):
     and main context view).
     """
 
-    CSS = '''
-    #MainView {
-        min-height: 558;
-    }
-    #MainView_view_holder {
-        min-width: 667;
-        border: none;
-        background-color: #f3f5f9;
-    }
-    '''
-
     def __init__(self, parent: QObject):
         super().__init__(parent)
 
         # Set id and styles
         self.setObjectName('MainView')
-        self.setStyleSheet(self.CSS)
 
         # Set layout
         self.layout = QHBoxLayout(self)
@@ -771,40 +650,13 @@ class MainView(QWidget):
 
 class EmptyConversationView(QWidget):
 
-    CSS = '''
-    #EmptyConversationView QLabel {
-        font-family: Montserrat;
-        font-weight: 400;
-        font-size: 35px;
-        color: #a5b3e9;
-    }
-    #EmptyConversationView QLabel#EmptyConversationView_instructions {
-        font-weight: 500;
-    }
-    #EmptyConversationView QLabel#EmptyConversationView_bullet {
-        margin: 4px 0px 0px 0px;
-        font-size: 35px;
-        font-weight: 600;
-    }
-    #EmptyConversationView_no_sources {
-        min-width: 520px;
-        max-width: 600px;
-    }
-    #EmptyConversationView_no_source_selected {
-        min-width: 520px;
-        max-width: 520px;
-    }
-    '''
-
     MARGIN = 30
     NEWLINE_HEIGHT_PX = 35
 
     def __init__(self):
         super().__init__()
 
-        # Set id and styles
         self.setObjectName('EmptyConversationView')
-        self.setStyleSheet(self.CSS)
 
         # Set layout
         layout = QHBoxLayout()
@@ -906,26 +758,10 @@ class SourceList(QListWidget):
     Displays the list of sources.
     """
 
-    CSS = '''
-    QListView#SourceList {
-        border: none;
-        show-decoration-selected: 0;
-        border-right: 3px solid #f3f5f9;
-    }
-    QListView#SourceList::item:selected {
-        background-color: #f3f5f9;
-    }
-    QListView#SourceList::item:hover{
-        border: 500px solid #f9f9f9;
-    }
-    '''
-
     def __init__(self):
         super().__init__()
 
-        # Set id and styles.
         self.setObjectName('SourceList')
-        self.setStyleSheet(self.CSS)
         self.setFixedWidth(540)
         self.setUniformItemSizes(True)
 
@@ -1104,43 +940,6 @@ class SourceWidget(QWidget):
     -----------------------------------------------------------------------------
     """
 
-    CSS = '''
-    #SourceWidget_container {
-        border-bottom: 1px solid #9b9b9b;
-    }
-    #SourceWidget_gutter {
-        min-width: 40px;
-        max-width: 40px;
-    }
-    #SourceWidget_metadata {
-        max-width: 60px;
-    }
-    #SourceWidget_preview {
-        font-family: 'Source Sans Pro';
-        font-weight: 400;
-        font-size: 13px;
-        color: #383838;
-    }
-    #SourceWidget_source_deleted {
-        font-family: 'Source Sans Pro';
-        font-weight: 400;
-        font-size: 13px;
-        color: #ff3366;
-    }
-    #SourceWidget_name {
-        font-family: 'Montserrat';
-        font-weight: 500;
-        font-size: 13px;
-        color: #383838;
-    }
-    #SourceWidget_timestamp {
-        font-family: 'Montserrat';
-        font-weight: 500;
-        font-size: 13px;
-        color: #383838;
-    }
-    '''
-
     SIDE_MARGIN = 10
     SOURCE_WIDGET_VERTICAL_MARGIN = 10
     PREVIEW_WIDTH = 412
@@ -1156,9 +955,6 @@ class SourceWidget(QWidget):
         # Store source
         self.source_uuid = source.uuid
         self.source = source
-
-        # Set styles
-        self.setStyleSheet(self.CSS)
 
         # Set layout
         layout = QHBoxLayout(self)
@@ -1298,12 +1094,6 @@ class StarToggleButton(SvgToggleButton):
     A button that shows whether or not a source is starred
     """
 
-    css = '''
-    #StarToggleButton {
-        border: none;
-    }
-    '''
-
     def __init__(self, controller: Controller, source_uuid: str, is_starred: bool):
         super().__init__(on='star_on.svg', off='star_off.svg', svg_size=QSize(16, 16))
 
@@ -1319,7 +1109,6 @@ class StarToggleButton(SvgToggleButton):
         self.installEventFilter(self)
 
         self.setObjectName('StarToggleButton')
-        self.setStyleSheet(self.css)
         self.setFixedSize(QSize(20, 20))
 
         self.pressed.connect(self.on_pressed)
@@ -1501,14 +1290,6 @@ class LoginOfflineLink(QLabel):
 
     clicked = pyqtSignal()
 
-    CSS = '''
-    #LoginOfflineLink {
-        border: none;
-        color: #fff;
-        text-decoration: underline;
-    }
-    '''
-
     def __init__(self):
         # Add svg images to button
         super().__init__()
@@ -1516,8 +1297,6 @@ class LoginOfflineLink(QLabel):
         # Set css id
         self.setObjectName('LoginOfflineLink')
 
-        # Set styles
-        self.setStyleSheet(self.CSS)
         self.setFixedSize(QSize(120, 22))
 
         self.setText(_('USE OFFLINE'))
@@ -1531,28 +1310,12 @@ class SignInButton(QPushButton):
     A button that logs the user into application when clicked.
     """
 
-    CSS = '''
-    #SignInButton {
-        border: none;
-        background-color: #05edfe;
-        font-family: 'Montserrat';
-        font-weight: 600;
-        font-size: 14px;
-        color: #2a319d;
-    }
-    #SignInButton:pressed {
-        background-color: #85f6fe;
-    }
-    '''
-
     def __init__(self):
         super().__init__(_('SIGN IN'))
 
         # Set css id
         self.setObjectName('SignInButton')
 
-        # Set styles
-        self.setStyleSheet(self.CSS)
         self.setFixedHeight(40)
         self.setFixedWidth(140)
 
@@ -1573,28 +1336,10 @@ class LoginErrorBar(QWidget):
     A bar widget for displaying messages about login errors to the user.
     """
 
-    CSS = '''
-    #LoginErrorBar QWidget {
-        background-color: #ce0083;
-    }
-    #LoginErrorBar_icon {
-        color: #fff;
-    }
-    #LoginErrorBar_status_bar {
-        font-family: 'Montserrat';
-        font-weight: 500;
-        font-size: 12px;
-        color: #fff;
-    }
-    '''
-
     def __init__(self):
         super().__init__()
 
         self.setObjectName('LoginErrorBar')
-
-        # Set styles
-        self.setStyleSheet(self.CSS)
 
         # Set layout
         layout = QHBoxLayout(self)
@@ -1671,21 +1416,6 @@ class LoginDialog(QDialog):
     A dialog to display the login form.
     """
 
-    CSS = '''
-    #LoginDialog_form QLabel {
-        color: #fff;
-        font-family: 'Montserrat';
-        font-weight: 500;
-        font-size: 13px;
-    }
-    #LoginDialog_form QLineEdit {
-        border-radius: 0px;
-        height: 30px;
-        margin: 0px 0px 0px 0px;
-        padding-left: 5px;
-    }
-    '''
-
     MIN_PASSWORD_LEN = 14  # Journalist.MIN_PASSWORD_LEN on server
     MAX_PASSWORD_LEN = 128  # Journalist.MAX_PASSWORD_LEN on server
     MIN_JOURNALIST_USERNAME = 3  # Journalist.MIN_USERNAME_LEN on server
@@ -1696,9 +1426,6 @@ class LoginDialog(QDialog):
 
         # Set modal
         self.setModal(True)
-
-        # Set styles
-        self.setStyleSheet(self.CSS)
 
         # Set layout
         layout = QVBoxLayout(self)
@@ -1766,7 +1493,7 @@ class LoginDialog(QDialog):
         application_version.setLayout(application_version_layout)
         application_version_label = QLabel(_("SecureDrop Client v") + sd_version)
         application_version_label.setAlignment(Qt.AlignHCenter)
-        application_version_label.setStyleSheet("QLabel {color: #9fddff;}")
+        application_version_label.setObjectName('LoginDialog_app_version_label')
         application_version_layout.addWidget(application_version_label)
 
         # Add widgets
@@ -1868,100 +1595,6 @@ class SpeechBubble(QWidget):
     and journalist.
     """
 
-    CSS = '''
-    #SpeechBubble_container {
-        min-width: 540px;
-        max-width: 540px;
-        background-color: #fff;
-    }
-    #SpeechBubble_message {
-        min-width: 508px;
-        max-width: 508px;
-        font-family: 'Source Sans Pro';
-        font-weight: 400;
-        font-size: 15px;
-        background-color: #fff;
-        color: #3b3b3b;
-        padding: 16px;
-    }
-    #SpeechBubble_status_bar {
-        min-height: 5px;
-        max-height: 5px;
-        background-color: #102781;
-        border: 0px;
-    }
-    #SpeechBubble_message_decryption_error {
-        min-width: 508px;
-        max-width: 508px;
-        font-family: 'Source Sans Pro';
-        font-weight: 400;
-        font-size: 15px;
-        font-style: italic;
-        background-color: rgba(255, 255, 255, 0.6);
-        padding: 16px;
-    }
-    #SpeechBubble_status_bar_decryption_error {
-        min-height: 5px;
-        max-height: 5px;
-        background-color: #bcbfcd;
-        border: 0px;
-    }
-    #ReplyWidget_message {
-        min-width: 508px;
-        max-width: 508px;
-        font-family: 'Source Sans Pro';
-        font-weight: 400;
-        font-size: 15px;
-        background-color: #fff;
-        color: #3b3b3b;
-        padding: 16px;
-    }
-    #ReplyWidget_status_bar {
-        min-height: 5px;
-        max-height: 5px;
-        background-color: #0065db;
-        border: 0px;
-    }
-    #ReplyWidget_failed_to_send_text {
-        font-family: 'Source Sans Pro';
-        font-weight: 500;
-        font-size: 13px;
-        color: #ff3366;
-    }
-    #ReplyWidget_message_failed {
-        min-width: 508px;
-        max-width: 508px;
-        font-family: 'Source Sans Pro';
-        font-weight: 400;
-        font-size: 15px;
-        background-color: #fff;
-        color: #3b3b3b;
-        padding: 16px;
-    }
-    #ReplyWidget_status_bar_failed {
-        min-height: 5px;
-        max-height: 5px;
-        background-color: #ff3366;
-        border: 0px;
-    }
-    #ReplyWidget_message_pending {
-        min-width: 508px;
-        max-width: 508px;
-        font-family: 'Source Sans Pro';
-        font-weight: 400;
-        font-size: 15px;
-        color: #a9aaad;
-        background-color: #F7F8FC;
-        padding: 16px;
-    }
-    #ReplyWidget_status_bar_pending {
-        min-height: 5px;
-        max-height: 5px;
-        background-color: #0065db;
-        border: 0px;
-    }
-    '''
-
     TOP_MARGIN = 28
     BOTTOM_MARGIN = 10
 
@@ -1978,9 +1611,6 @@ class SpeechBubble(QWidget):
         # Set margins and spacing
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-
-        # Set styles
-        self.setStyleSheet(self.CSS)
 
         # Message box
         self.message = SecureQLabel(text)
@@ -2047,13 +1677,13 @@ class SpeechBubble(QWidget):
         self.setStyleSheet('')
         self.message.setObjectName('SpeechBubble_message')
         self.color_bar.setObjectName('SpeechBubble_status_bar')
-        self.setStyleSheet(self.CSS)
+        self.setStyleSheet(load_css('sdclient.css'))
 
     def set_error_styles(self):
         self.setStyleSheet('')
         self.message.setObjectName('SpeechBubble_message_decryption_error')
         self.color_bar.setObjectName('SpeechBubble_status_bar_decryption_error')
-        self.setStyleSheet(self.CSS)
+        self.setStyleSheet(load_css('sdclient.css'))
 
 
 class MessageWidget(SpeechBubble):
@@ -2140,94 +1770,25 @@ class ReplyWidget(SpeechBubble):
         self.setStyleSheet('')
         self.message.setObjectName('ReplyWidget_message')
         self.color_bar.setObjectName('ReplyWidget_status_bar')
-        self.setStyleSheet(self.CSS)
+        self.setStyleSheet(load_css('sdclient.css'))
 
     def set_failed_styles(self):
         self.setStyleSheet('')
         self.message.setObjectName('ReplyWidget_message_failed')
         self.color_bar.setObjectName('ReplyWidget_status_bar_failed')
-        self.setStyleSheet(self.CSS)
+        self.setStyleSheet(load_css('sdclient.css'))
 
     def set_pending_styles(self):
         self.setStyleSheet('')
         self.message.setObjectName('ReplyWidget_message_pending')
         self.color_bar.setObjectName('ReplyWidget_status_bar_pending')
-        self.setStyleSheet(self.CSS)
+        self.setStyleSheet(load_css('sdclient.css'))
 
 
 class FileWidget(QWidget):
     """
     Represents a file.
     """
-
-    CSS = '''
-    #FileWidget {
-        min-width: 540px;
-        max-width: 540px;
-    }
-    #FileWidget_file_options {
-        min-width: 137px;
-    }
-    QPushButton#FileWidget_export_print {
-        border: none;
-        font-family: 'Source Sans Pro';
-        font-weight: 500;
-        font-size: 13px;
-        color: #2A319D;
-    }
-    QPushButton#FileWidget_export_print:hover {
-        color: #05a6fe;
-    }
-    QPushButton#FileWidget_download_button {
-        border: none;
-        font-family: 'Source Sans Pro';
-        font-weight: 600;
-        font-size: 13px;
-        color: #2a319d;
-    }
-    QPushButton#FileWidget_download_button:hover {
-        color: #05a6fe;
-    }
-    QPushButton#FileWidget_download_button_animating {
-        border: none;
-        font-family: 'Source Sans Pro';
-        font-weight: 600;
-        font-size: 13px;
-        color: #05a6fe;
-    }
-    QPushButton#FileWidget_download_button_animating:hover {
-        color: #05a6fe;
-    }
-    QLabel#FileWidget_file_name {
-        font-family: 'Source Sans Pro';
-        font-weight: 600;
-        font-size: 13px;
-        color: #2a319d;
-    }
-    QLabel#FileWidget_file_name:hover {
-        color: #05a6fe;
-    }
-    QLabel#FileWidget_no_file_name {
-        font-family: 'Source Sans Pro';
-        font-weight: 300;
-        font-size: 13px;
-        color: #a5b3e9;
-    }
-    QLabel#FileWidget_file_size {
-        min-width: 48px;
-        max-width: 48px;
-        font-family: 'Source Sans Pro';
-        font-weight: 400;
-        font-size: 13px;
-        color: #2a319d;
-    }
-    QWidget#FileWidget_horizontal_line {
-        min-height: 2px;
-        max-height: 2px;
-        background-color: rgba(211, 216, 234, 0.45);
-        margin: 0px 8px 0px 8px;
-    }
-    '''
 
     TOP_MARGIN = 4
     BOTTOM_MARGIN = 14
@@ -2255,9 +1816,7 @@ class FileWidget(QWidget):
         self.index = index
         self.downloading = False
 
-        # Set styles
         self.setObjectName('FileWidget')
-        self.setStyleSheet(self.CSS)
         file_description_font = QFont()
         file_description_font.setLetterSpacing(QFont.AbsoluteSpacing, self.FILE_FONT_SPACING)
         self.file_buttons_font = QFont()
@@ -2392,7 +1951,7 @@ class FileWidget(QWidget):
             # Reset stylesheet
             self.setStyleSheet('')
             self.download_button.setObjectName('FileWidget_download_button')
-            self.setStyleSheet(self.CSS)
+            self.setStyleSheet(load_css('sdclient.css'))
 
             self.no_file_name.hide()
             self.export_button.hide()
@@ -2470,7 +2029,7 @@ class FileWidget(QWidget):
         # Reset stylesheet with new state so that the active color stays the same
         self.setStyleSheet('')
         self.download_button.setObjectName('FileWidget_download_button_animating')
-        self.setStyleSheet(self.CSS)
+        self.setStyleSheet(load_css('sdclient.css'))
 
     def set_button_animation_frame(self, frame_number):
         """
@@ -2490,86 +2049,6 @@ class FileWidget(QWidget):
 
 class ModalDialog(QDialog):
 
-    CSS = '''
-    #ModalDialog {
-        min-width: 800px;
-        max-width: 800px;
-        min-height: 300px;
-        max-height: 800px;
-        background-color: #fff;
-    }
-    #ModalDialog_header_icon, #ModalDialog_header_spinner {
-        min-width: 80px;
-        max-width: 80px;
-        min-height: 64px;
-        max-height: 64px;
-        margin: 0px 0px 0px 30px;
-    }
-    #ModalDialog_header {
-        min-height: 68px;
-        max-height: 68px;
-        margin: 0px 0px 0px 4px;
-        font-family: 'Montserrat';
-        font-size: 24px;
-        font-weight: 600;
-        color: #2a319d;
-    }
-    #ModalDialog_header_line {
-        margin: 0px 40px 20px 40px;
-        min-height: 2px;
-        max-height: 2px;
-        background-color: rgba(42, 49, 157, 0.15);
-        border: none;
-    }
-    #ModalDialog_error_details {
-        margin: 0px 40px 0px 36px;
-        font-family: 'Montserrat';
-        font-size: 16px;
-        color: #ff0064;
-    }
-    #ModalDialog_error_details_active {
-        color: #ff66C4;
-    }
-    #ModalDialog_body {
-        font-family: 'Montserrat';
-        font-size: 16px;
-        color: #302aa3;
-    }
-    #ModalDialog_button_box QPushButton {
-        margin: 0px 0px 0px 12px;
-        height: 40px;
-        padding-left: 20px;
-        padding-right: 20px;
-        border: 2px solid #2a319d;
-        font-family: 'Montserrat';
-        font-weight: 500;
-        font-size: 15px;
-        color: #2a319d;
-    }
-    #ModalDialog_button_box QPushButton::disabled {
-        border: 2px solid rgba(42, 49, 157, 0.4);
-        color: rgba(42, 49, 157, 0.4);
-    }
-    #ModalDialog_button_box QPushButton#ModalDialog_primary_button {
-        background-color: #2a319d;
-        color: #fff;
-    }
-    #ModalDialog_button_box QPushButton#ModalDialog_primary_button::disabled {
-        border: 2px solid #C2C4E3;
-        background-color: #C2C4E3;
-        color: #E1E2F1;
-    }
-    #ModalDialog_button_box QPushButton#ModalDialog_primary_button_active {
-        background-color: #f1f1f6;
-        color: #fff;
-        border: 2px solid #f1f1f6;
-        margin: 0px 0px 0px 12px;
-        height: 40px;
-        padding-left: 20px;
-        padding-right: 20px;
-    }
-    '''
-
     MARGIN = 40
     NO_MARGIN = 0
 
@@ -2577,7 +2056,7 @@ class ModalDialog(QDialog):
         parent = QApplication.activeWindow()
         super().__init__(parent)
         self.setObjectName('ModalDialog')
-        self.setStyleSheet(self.CSS)
+        self.setStyleSheet(load_css('sdclient.css'))
         self.setModal(True)
 
         # Header for icon and task title
@@ -2682,7 +2161,7 @@ class ModalDialog(QDialog):
         self.setStyleSheet('')
         self.continue_button.setObjectName('ModalDialog_primary_button_active')
         self.error_details.setObjectName('ModalDialog_error_details_active')
-        self.setStyleSheet(self.CSS)
+        self.setStyleSheet(load_css('sdclient.css'))
 
     def start_animate_header(self):
         self.header_icon.setVisible(False)
@@ -2697,7 +2176,7 @@ class ModalDialog(QDialog):
         self.setStyleSheet('')
         self.continue_button.setObjectName('ModalDialog_primary_button')
         self.error_details.setObjectName('ModalDialog_error_details')
-        self.setStyleSheet(self.CSS)
+        self.setStyleSheet(load_css('sdclient.css'))
 
     def stop_animate_header(self):
         self.header_icon.setVisible(True)
@@ -2828,23 +2307,6 @@ class PrintDialog(ModalDialog):
 
 class ExportDialog(ModalDialog):
 
-    PASSPHRASE_FORM_CSS = '''
-    #passphrase_form QLabel {
-        font-family: 'Montserrat';
-        font-weight: 500;
-        font-size: 12px;
-        color: #2a319d;
-        padding-top: 6px;
-    }
-    #passphrase_form QLineEdit {
-        border-radius: 0px;
-        min-height: 30px;
-        max-height: 30px;
-        background-color: #f8f8f8;
-        padding-bottom: 2px;
-    }
-    '''
-
     PASSPHRASE_LABEL_SPACING = 0.5
     NO_MARGIN = 0
     FILENAME_WIDTH_PX = 260
@@ -2910,7 +2372,6 @@ class ExportDialog(ModalDialog):
 
         # Passphrase Form
         self.passphrase_form = QWidget()
-        self.passphrase_form.setStyleSheet(self.PASSPHRASE_FORM_CSS)
         self.passphrase_form.setObjectName('passphrase_form')
         passphrase_form_layout = QVBoxLayout()
         passphrase_form_layout.setContentsMargins(
@@ -3090,16 +2551,6 @@ class ExportDialog(ModalDialog):
 
 class ConversationScrollArea(QScrollArea):
 
-    CSS = '''
-    #ConversationScrollArea {
-        border: 0;
-        background: #f3f5f9;
-    }
-    #ConversationScrollArea_conversation {
-        background: #f3f5f9;
-    }
-    '''
-
     MARGIN_LEFT = 38
     MARGIN_RIGHT = 20
 
@@ -3109,9 +2560,7 @@ class ConversationScrollArea(QScrollArea):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setWidgetResizable(True)
 
-        # Set styles
         self.setObjectName('ConversationScrollArea')
-        self.setStyleSheet(self.CSS)
 
         # Create the scroll area's widget
         conversation = QWidget()
@@ -3339,18 +2788,6 @@ class SourceConversationWrapper(QWidget):
     per-source resources.
     """
 
-    SOURCE_DELETED_CSS = '''
-    #SourceConversationWrapper_source_deleted {
-        text-align: left;
-        font-family: 'Montserrat';
-        font-weight: 500;
-        font-size: 40px;
-        color: #a5b3e9;
-        padding-bottom: 264px;
-        padding-right: 195px;
-    }
-    '''
-
     def __init__(self, source: Source, controller: Controller) -> None:
         super().__init__()
 
@@ -3372,7 +2809,6 @@ class SourceConversationWrapper(QWidget):
         self.reply_box = ReplyBoxWidget(source, controller)
         self.waiting_delete_confirmation = QLabel('Deleting...')
         self.waiting_delete_confirmation.setObjectName('SourceConversationWrapper_source_deleted')
-        self.waiting_delete_confirmation.setStyleSheet(self.SOURCE_DELETED_CSS)
         self.waiting_delete_confirmation.hide()
 
         # Add widgets
@@ -3408,32 +2844,6 @@ class ReplyBoxWidget(QWidget):
     A textbox where a journalist can enter a reply.
     """
 
-    CSS = '''
-    #ReplyBoxWidget {
-        min-height: 173px;
-        max-height: 173px;
-    }
-    #ReplyBoxWidget_replybox {
-        background-color: #ffffff;
-    }
-    #ReplyBoxWidget_replybox::disabled {
-        background-color: #efefef;
-    }
-    #ReplyBoxWidget QPushButton {
-        border: none;
-    }
-    #ReplyBoxWidget QPushButton:hover {
-        background: #D3D8EA;
-        border-radius: 8px;
-    }
-    QWidget#ReplyBoxWidget_horizontal_line {
-        min-height: 2px;
-        max-height: 2px;
-        background-color: rgba(42, 49, 157, 0.15);
-        border: none;
-    }
-    '''
-
     reply_sent = pyqtSignal(str, str, str)
 
     def __init__(self, source: Source, controller: Controller) -> None:
@@ -3444,9 +2854,6 @@ class ReplyBoxWidget(QWidget):
 
         # Set css id
         self.setObjectName('ReplyBoxWidget')
-
-        # Set styles
-        self.setStyleSheet(self.CSS)
 
         # Set layout
         main_layout = QVBoxLayout()
@@ -3570,32 +2977,12 @@ class ReplyTextEdit(QPlainTextEdit):
     a richtext lable on top to replace the placeholder functionality
     """
 
-    CSS = '''
-    #ReplyTextEdit {
-        font-family: 'Montserrat';
-        font-weight: 400;
-        font-size: 18px;
-        border: none;
-        margin-right: 30.2px;
-    }
-    #ReplyTextEdit_placeholder {
-        font-family: 'Montserrat';
-        font-weight: 400;
-        font-size: 18px;
-        color: #404040;
-    }
-    #ReplyTextEdit_placeholder::disabled {
-        color: rgba(42, 49, 157, 0.6);
-    }
-    '''
-
     def __init__(self, source, controller):
         super().__init__()
         self.controller = controller
         self.source = source
 
         self.setObjectName('ReplyTextEdit')
-        self.setStyleSheet(self.CSS)
 
         self.setTabChangesFocus(True)  # Needed so we can TAB to send button.
 
@@ -3693,24 +3080,12 @@ class SourceMenuButton(QToolButton):
     This button is responsible for launching the source menu on click.
     """
 
-    CSS = '''
-    #SourceMenuButton_ellipsis_button {
-        border: none;
-        margin: 5px 0px 0px 0px;
-        padding-left: 8px;
-    }
-    #SourceMenuButton QToolButton::menu-indicator {
-        image: none;
-    }
-    '''
-
     def __init__(self, source, controller):
         super().__init__()
         self.controller = controller
         self.source = source
 
         self.setObjectName('SourceMenuButton')
-        self.setStyleSheet(self.CSS)
 
         self.setIcon(load_icon("ellipsis.svg"))
         self.setIconSize(QSize(22, 4))  # Set to the size of the svg viewBox
@@ -3726,46 +3101,21 @@ class SourceMenuButton(QToolButton):
 class TitleLabel(QLabel):
     """The title for a conversation."""
 
-    CSS = '''
-    #TitleLabel {
-        font-family: 'Montserrat';
-        font-weight: 400;
-        font-size: 24px;
-        color: #2a319d;
-        padding-left: 4px;
-    }
-    '''
-
     def __init__(self, text):
         super().__init__(_(text))
 
         # Set css id
         self.setObjectName('TitleLabel')
 
-        # Set styles
-        self.setStyleSheet(self.CSS)
-
 
 class LastUpdatedLabel(QLabel):
     """Time the conversation was last updated."""
-
-    CSS = '''
-    #LastUpdatedLabel {
-        font-family: 'Montserrat';
-        font-weight: 200;
-        font-size: 24px;
-        color: #2a319d;
-    }
-    '''
 
     def __init__(self, last_updated):
         super().__init__(last_updated)
 
         # Set css id
         self.setObjectName('LastUpdatedLabel')
-
-        # Set styles
-        self.setStyleSheet(self.CSS)
 
 
 class SourceProfileShortWidget(QWidget):
@@ -3776,16 +3126,6 @@ class SourceProfileShortWidget(QWidget):
     2. A menu to perform various operations on Source.
     """
 
-    CSS = '''
-    QWidget#SourceProfileShortWidget_horizontal_line {
-        min-height: 2px;
-        max-height: 2px;
-        background-color: rgba(42, 49, 157, 0.15);
-        padding-left: 12px;
-        padding-right: 12px;
-    }
-    '''
-
     MARGIN_LEFT = 25
     MARGIN_RIGHT = 17
     VERTICAL_MARGIN = 14
@@ -3795,9 +3135,6 @@ class SourceProfileShortWidget(QWidget):
 
         self.source = source
         self.controller = controller
-
-        # Set styles
-        self.setStyleSheet(self.CSS)
 
         # Set layout
         layout = QVBoxLayout()
