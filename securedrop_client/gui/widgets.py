@@ -2532,21 +2532,21 @@ class FileWidget(QWidget):
 class ModalDialog(QDialog):
 
     CSS = '''
-    #modal {
+    #ModalDialog {
         min-width: 800px;
         max-width: 800px;
         min-height: 300px;
         max-height: 800px;
         background-color: #fff;
     }
-    #header_icon, #header_spinner {
+    #ModalDialog_header_icon, #ModalDialog_header_spinner {
         min-width: 80px;
         max-width: 80px;
         min-height: 64px;
         max-height: 64px;
         margin: 0px 0px 0px 30px;
     }
-    #header {
+    #ModalDialog_header {
         min-height: 68px;
         max-height: 68px;
         margin: 0px 0px 0px 4px;
@@ -2555,25 +2555,28 @@ class ModalDialog(QDialog):
         font-weight: 600;
         color: #2a319d;
     }
-    #header_line {
+    #ModalDialog_header_line {
         margin: 0px 40px 20px 40px;
         min-height: 2px;
         max-height: 2px;
         background-color: rgba(42, 49, 157, 0.15);
         border: none;
     }
-    #error_details {
+    #ModalDialog_error_details {
         margin: 0px 40px 0px 36px;
         font-family: 'Montserrat';
         font-size: 16px;
         color: #ff0064;
     }
-    #body {
+    #ModalDialog_error_details_active {
+        color: #ff66C4;
+    }
+    #ModalDialog_body {
         font-family: 'Montserrat';
         font-size: 16px;
         color: #302aa3;
     }
-    #button_box QPushButton {
+    #ModalDialog_button_box QPushButton {
         margin: 0px 0px 0px 12px;
         height: 40px;
         padding-left: 20px;
@@ -2584,18 +2587,27 @@ class ModalDialog(QDialog):
         font-size: 15px;
         color: #2a319d;
     }
-    #button_box QPushButton::disabled {
+    #ModalDialog_button_box QPushButton::disabled {
         border: 2px solid rgba(42, 49, 157, 0.4);
         color: rgba(42, 49, 157, 0.4);
     }
-    #button_box QPushButton#primary_button {
+    #ModalDialog_button_box QPushButton#ModalDialog_primary_button {
         background-color: #2a319d;
         color: #fff;
     }
-    #button_box QPushButton#primary_button::disabled {
+    #ModalDialog_button_box QPushButton#ModalDialog_primary_button::disabled {
         border: 2px solid #C2C4E3;
         background-color: #C2C4E3;
         color: #E1E2F1;
+    }
+    #ModalDialog_button_box QPushButton#ModalDialog_primary_button_active {
+        background-color: #f1f1f6;
+        color: #fff;
+        border: 2px solid #f1f1f6;
+        margin: 0px 0px 0px 12px;
+        height: 40px;
+        padding-left: 20px;
+        padding-right: 20px;
     }
     '''
 
@@ -2605,7 +2617,7 @@ class ModalDialog(QDialog):
     def __init__(self):
         parent = QApplication.activeWindow()
         super().__init__(parent)
-        self.setObjectName('modal')
+        self.setObjectName('ModalDialog')
         self.setStyleSheet(self.CSS)
         self.setModal(True)
 
@@ -2614,32 +2626,32 @@ class ModalDialog(QDialog):
         header_container_layout = QHBoxLayout()
         header_container.setLayout(header_container_layout)
         self.header_icon = SvgLabel('blank.svg', svg_size=QSize(64, 64))
-        self.header_icon.setObjectName('header_icon')
+        self.header_icon.setObjectName('ModalDialog_header_icon')
         self.header_spinner = QPixmap()
         self.header_spinner_label = QLabel()
-        self.header_spinner_label.setObjectName("header_spinner")
+        self.header_spinner_label.setObjectName("ModalDialog_header_spinner")
         self.header_spinner_label.setMinimumSize(64, 64)
         self.header_spinner_label.setVisible(False)
         self.header_spinner_label.setPixmap(self.header_spinner)
         self.header = QLabel()
-        self.header.setObjectName('header')
+        self.header.setObjectName('ModalDialog_header')
         header_container_layout.addWidget(self.header_icon)
         header_container_layout.addWidget(self.header_spinner_label)
         header_container_layout.addWidget(self.header, alignment=Qt.AlignCenter)
         header_container_layout.addStretch()
 
         self.header_line = QWidget()
-        self.header_line.setObjectName('header_line')
+        self.header_line.setObjectName('ModalDialog_header_line')
 
         # Widget for displaying error messages
         self.error_details = QLabel()
-        self.error_details.setObjectName('error_details')
+        self.error_details.setObjectName('ModalDialog_error_details')
         self.error_details.setWordWrap(True)
         self.error_details.hide()
 
         # Body to display instructions and forms
         self.body = QLabel()
-        self.body.setObjectName('body')
+        self.body.setObjectName('ModalDialog_body')
         self.body.setWordWrap(True)
         self.body.setScaledContents(True)
         body_container = QWidget()
@@ -2650,18 +2662,18 @@ class ModalDialog(QDialog):
 
         # Buttons to continue and cancel
         window_buttons = QWidget()
-        window_buttons.setObjectName('window_buttons')
+        window_buttons.setObjectName('ModalDialog_window_buttons')
         button_layout = QVBoxLayout()
         window_buttons.setLayout(button_layout)
         self.cancel_button = QPushButton(_('CANCEL'))
         self.cancel_button.clicked.connect(self.close)
         self.cancel_button.setAutoDefault(False)
         self.continue_button = QPushButton(_('CONTINUE'))
-        self.continue_button.setObjectName('primary_button')
+        self.continue_button.setObjectName('ModalDialog_primary_button')
         self.continue_button.setDefault(True)
         self.continue_button.setIconSize(QSize(21, 21))
         button_box = QDialogButtonBox(Qt.Horizontal)
-        button_box.setObjectName('button_box')
+        button_box.setObjectName('ModalDialog_button_box')
         button_box.addButton(self.cancel_button, QDialogButtonBox.ActionRole)
         button_box.addButton(self.continue_button, QDialogButtonBox.ActionRole)
         button_layout.addWidget(button_box, alignment=Qt.AlignRight)
@@ -2707,17 +2719,11 @@ class ModalDialog(QDialog):
         self.button_animation.start()
         self.continue_button.setText("")
         self.continue_button.setMinimumSize(QSize(142, 43))
-        css = """
-        background-color: #f1f1f6;
-        color: #fff;
-        border: 2px solid #f1f1f6;
-        margin: 0px 0px 0px 12px;
-        height: 40px;
-        padding-left: 20px;
-        padding-right: 20px;
-        """
-        self.continue_button.setStyleSheet(css)
-        self.error_details.setStyleSheet("color: #ff66C4")
+        # Reset stylesheet
+        self.setStyleSheet('')
+        self.continue_button.setObjectName('ModalDialog_primary_button_active')
+        self.error_details.setObjectName('ModalDialog_error_details_active')
+        self.setStyleSheet(self.CSS)
 
     def start_animate_header(self):
         self.header_icon.setVisible(False)
@@ -2728,9 +2734,11 @@ class ModalDialog(QDialog):
         self.continue_button.setIcon(QIcon())
         self.button_animation.stop()
         self.continue_button.setText(_('CONTINUE'))
-        css = "background-color: #2a319d; color: #fff; border: 2px solid #2a319d;"
-        self.continue_button.setStyleSheet(css)
-        self.error_details.setStyleSheet("color: #ff0064")
+        # Reset stylesheet
+        self.setStyleSheet('')
+        self.continue_button.setObjectName('ModalDialog_primary_button')
+        self.error_details.setObjectName('ModalDialog_error_details')
+        self.setStyleSheet(self.CSS)
 
     def stop_animate_header(self):
         self.header_icon.setVisible(True)
