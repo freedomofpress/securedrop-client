@@ -1,0 +1,10 @@
+#ModalDialog_error_details {
+    margin: 0px 40px 0px 36px;
+    font-family: 'Montserrat';
+    font-size: 16px;
+    color: #ff0064;
+}
+
+#ModalDialog_error_details_active {
+    color: #ff66C4;
+}

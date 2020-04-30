@@ -1,0 +1,32 @@
+#ReplyWidget_message {
+    min-width: 508px;
+    max-width: 508px;
+    font-family: 'Source Sans Pro';
+    font-weight: 400;
+    font-size: 15px;
+    background-color: #fff;
+    color: #3b3b3b;
+    padding: 16px;
+}
+
+#ReplyWidget_message_pending {
+    min-width: 508px;
+    max-width: 508px;
+    font-family: 'Source Sans Pro';
+    font-weight: 400;
+    font-size: 15px;
+    color: #a9aaad;
+    background-color: #F7F8FC;
+    padding: 16px;
+}
+
+#ReplyWidget_message_failed {
+    min-width: 508px;
+    max-width: 508px;
+    font-family: 'Source Sans Pro';
+    font-weight: 400;
+    font-size: 15px;
+    background-color: #fff;
+    color: #3b3b3b;
+    padding: 16px;
+}
