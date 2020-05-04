@@ -7,18 +7,16 @@ https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-
 import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
-from .utils import get_safe_tempdir, get_logged_in_test_context
 
 
 @flaky
 @pytest.mark.vcr()
-def test_offline_star_source(qtbot, mocker):
+def test_offline_star_source(functional_test_logged_in_context, qtbot):
     """
     It's NOT possible to star a source when the client is offline.
     """
-    totp = "994892"
-    tempdir = get_safe_tempdir()
-    gui, controller = get_logged_in_test_context(tempdir, qtbot, totp)
+
+    gui, controller, homedir = functional_test_logged_in_context
     qtbot.wait(1000)
 
     def check_for_sources():

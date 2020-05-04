@@ -53,7 +53,7 @@ pip install --require-hashes -r dev-requirements.txt
 
 ## Updating dependencies
 
-We have several dependency files: `dev-requirements.txt` and `requirements.txt` point to python software foundation hashes, and `build-requirements.txt` points to our builds of the wheels from our own pip mirror. Whenever a dependency in `build-requirements.txt` changes, our team needs to manually review the code in the dependency diff with a focus on spotting vulnerabilities.
+We have several dependency files: `dev-requirements.txt` and `requirements.txt` point to python software foundation hashes, and `build-requirements.txt` points to our builds of the wheels from our own pip mirror (https://pypi.securedrop.org/). Whenever a dependency in `build-requirements.txt` changes, our team needs to manually review the code in the dependency diff with a focus on spotting vulnerabilities.
 
 If you're adding or updating a dependency, you need to:
 
@@ -143,6 +143,20 @@ make check
 ```
 
 To individually run the unit tests, run `make test` to run the suite in parallel (fast), or run `make test-random` to run the tests in random order (slower, but this is what `make check` runs and what runs in CI).
+
+### Functional Tests
+
+Functional tests are run alone using `make test-functional` and otherwise will be ran along with `make check`.
+
+Some of the tests appear to get into a state that reliably causes subsequent tests to crash. Such tests have been isolated and are clearly marked. The Makefile is used to ensure we exercise them in a completely new process.
+Use the `qtbot` object to drive the UI. This is part of the [pytest-qt](https://pytest-qt.readthedocs.io/en/latest/) package.
+
+When writing tests that require the user to log in, on first run of the test
+you must make sure the TOTP value in `conftest.py` is correct for the time at which the test is run.
+For any further run of the test, this doesn't need to be the case since [vcrpy](https://vcrpy.readthedocs.io/en/latest/)
+will replay the original response from the test server. These responses are
+stored in the cassettes directory and should be committed to the git
+repository. Before committing, set the TOTP value in the cassette back to the value we use across all functional tests: `994892`.
 
 ## Environments
 

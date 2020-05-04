@@ -2,7 +2,9 @@ import datetime
 import pytest
 
 from tests import factory
-from securedrop_client.db import DraftReply, Reply, File, Message, ReplySendStatus, User
+from securedrop_client.db import (
+    DownloadError, DownloadErrorCodes, DraftReply, Reply, File, Message, ReplySendStatus, User
+)
 
 
 def test_user_fullname():
@@ -122,6 +124,11 @@ def test_string_representation_of_send_reply_status():
     reply_status.__repr__()
 
 
+def test_string_representation_of_download_error():
+    e = DownloadError(name="teehee")
+    assert repr(e) == "<Download error teehee>"
+
+
 def test_source_collection():
     # Create some test submissions and replies
     source = factory.Source()
@@ -239,3 +246,39 @@ def test_reply_init():
 
     r = Reply(filename="1-foo")
     assert r.file_counter == 1
+
+
+def test_file_with_download_error(session, download_error_codes):
+    f = factory.File()
+    download_error = session.query(DownloadError).filter_by(
+        name=DownloadErrorCodes.CHECKSUM_ERROR.name
+    ).one()
+    f.download_error = download_error
+    session.commit()
+
+    classname = f.__class__.__name__.lower()
+    assert str(f) == f"cannot download {classname}"
+
+
+def test_message_with_download_error(session, download_error_codes):
+    m = factory.Message(is_decrypted=False, content=None)
+    download_error = session.query(DownloadError).filter_by(
+        name=DownloadErrorCodes.DECRYPTION_ERROR.name
+    ).one()
+    m.download_error = download_error
+    session.commit()
+
+    classname = m.__class__.__name__.lower()
+    assert str(m) == f"cannot decrypt {classname}"
+
+
+def test_reply_with_download_error(session, download_error_codes):
+    r = factory.Reply(is_decrypted=False, content=None)
+    download_error = session.query(DownloadError).filter_by(
+        name=DownloadErrorCodes.DECRYPTION_ERROR.name
+    ).one()
+    r.download_error = download_error
+    session.commit()
+
+    classname = r.__class__.__name__.lower()
+    assert str(r) == f"cannot decrypt {classname}"

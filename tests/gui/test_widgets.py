@@ -2024,16 +2024,45 @@ def test_SpeechBubble_init(mocker):
     Check the speech bubble is configured correctly (there's a label containing
     the passed in text).
     """
-    mock_signal = mocker.Mock()
-    mock_connect = mocker.Mock()
-    mock_signal.connect = mock_connect
+    mock_update_signal = mocker.Mock()
+    mock_update_connect = mocker.Mock()
+    mock_update_signal.connect = mock_update_connect
 
-    sb = SpeechBubble('mock id', 'hello', mock_signal, 0)
-    ss = sb.styleSheet()
+    mock_download_error_signal = mocker.Mock()
+    mock_download_error_connect = mocker.Mock()
+    mock_download_error_signal.connect = mock_download_error_connect
+
+    sb = SpeechBubble('mock id', 'hello', mock_update_signal, mock_download_error_signal, 0)
 
     sb.message.text() == 'hello'
-    assert mock_connect.called
-    assert 'background-color' in ss
+    assert mock_update_connect.called
+    assert mock_download_error_connect.called
+    assert 'background-color: #102781;' in sb.color_bar.styleSheet()
+    assert 'background-color: #fff;' in sb.speech_bubble.styleSheet()
+
+
+def test_SpeechBubble_init_with_error(mocker):
+    """
+    Check the speech bubble is configured correctly when error=True.
+    """
+    mock_update_signal = mocker.Mock()
+    mock_update_connect = mocker.Mock()
+    mock_update_signal.connect = mock_update_connect
+
+    mock_download_error_signal = mocker.Mock()
+    mock_download_error_connect = mocker.Mock()
+    mock_download_error_signal.connect = mock_download_error_connect
+
+    sb = SpeechBubble(
+        'mock id', 'hello', mock_update_signal, mock_download_error_signal, 0, error=True
+    )
+
+    sb.message.text() == 'hello'
+    assert mock_update_connect.called
+    assert mock_download_error_connect.called
+    assert 'background-color: #BCBFCD;' in sb.color_bar.styleSheet()
+    assert 'background-color: rgba(255, 255, 255, 0.6);' in sb.message.styleSheet()
+    assert 'font-style: italic;' in sb.message.styleSheet()
 
 
 def test_SpeechBubble_update_text(mocker):
@@ -2043,7 +2072,7 @@ def test_SpeechBubble_update_text(mocker):
     mock_signal = mocker.MagicMock()
 
     msg_id = 'abc123'
-    sb = SpeechBubble(msg_id, 'hello', mock_signal, 0)
+    sb = SpeechBubble(msg_id, 'hello', mock_signal, mock_signal, 0)
 
     new_msg = 'new message'
     sb._update_text('mock_source_uuid', msg_id, new_msg)
@@ -2061,7 +2090,7 @@ def test_SpeechBubble_html_init(mocker):
     """
     mock_signal = mocker.MagicMock()
 
-    bubble = SpeechBubble('mock id', '<b>hello</b>', mock_signal, 0)
+    bubble = SpeechBubble('mock id', '<b>hello</b>', mock_signal, mock_signal, 0)
     assert bubble.message.text() == '<b>hello</b>'
 
 
@@ -2070,8 +2099,24 @@ def test_SpeechBubble_with_apostrophe_in_text(mocker):
     mock_signal = mocker.MagicMock()
 
     message = "I'm sure, you are reading my message."
-    bubble = SpeechBubble('mock id', message, mock_signal, 0)
+    bubble = SpeechBubble('mock id', message, mock_signal, mock_signal, 0)
     assert bubble.message.text() == message
+
+
+def test_SpeechBubble_set_error(mocker):
+    mock_signal = mocker.MagicMock()
+
+    message_uuid = "mock id"
+    message = "I'm sure, you are reading my message."
+    bubble = SpeechBubble(message_uuid, message, mock_signal, mock_signal, 0)
+    assert bubble.message.text() == message
+
+    error_message = "Oh no."
+    bubble.set_error("source id", message_uuid, error_message)
+    assert bubble.message.text() == error_message
+    assert "font-style: italic;" in bubble.message.styleSheet()
+    assert "background-color: rgba(255, 255, 255, 0.6);" in bubble.message.styleSheet()
+    assert "background-color: #BCBFCD;" in bubble.color_bar.styleSheet()
 
 
 def test_MessageWidget_init(mocker):
@@ -2082,7 +2127,7 @@ def test_MessageWidget_init(mocker):
     mock_connected = mocker.Mock()
     mock_signal.connect = mock_connected
 
-    MessageWidget('mock id', 'hello', mock_signal, 0)
+    MessageWidget('mock id', 'hello', mock_signal, mock_signal, 0)
 
     assert mock_connected.called
 
@@ -2094,6 +2139,10 @@ def test_ReplyWidget_init(mocker):
     mock_update_signal = mocker.Mock()
     mock_update_connected = mocker.Mock()
     mock_update_signal.connect = mock_update_connected
+
+    mock_download_failure_signal = mocker.MagicMock()
+    mock_download_failure_connected = mocker.Mock()
+    mock_download_failure_signal.connect = mock_download_failure_connected
 
     mock_success_signal = mocker.MagicMock()
     mock_success_connected = mocker.Mock()
@@ -2108,14 +2157,56 @@ def test_ReplyWidget_init(mocker):
         'hello',
         'dummy',
         mock_update_signal,
+        mock_download_failure_signal,
         mock_success_signal,
         mock_failure_signal,
         0,
     )
 
     assert mock_update_connected.called
-    assert mock_success_connected.calledd
+    assert mock_success_connected.called
     assert mock_failure_connected.called
+
+
+def test_ReplyWidget_init_with_error(mocker):
+    """
+    Check the CSS is set as expected when error=True.
+    """
+    mock_update_signal = mocker.Mock()
+    mock_update_connected = mocker.Mock()
+    mock_update_signal.connect = mock_update_connected
+
+    mock_download_failure_signal = mocker.MagicMock()
+    mock_download_failure_connected = mocker.Mock()
+    mock_download_failure_signal.connect = mock_download_failure_connected
+
+    mock_success_signal = mocker.MagicMock()
+    mock_success_connected = mocker.Mock()
+    mock_success_signal.connect = mock_success_connected
+
+    mock_failure_signal = mocker.MagicMock()
+    mock_failure_connected = mocker.Mock()
+    mock_failure_signal.connect = mock_failure_connected
+
+    rw = ReplyWidget(
+        'mock id',
+        'hello',
+        'dummy',
+        mock_update_signal,
+        mock_download_failure_signal,
+        mock_success_signal,
+        mock_failure_signal,
+        0,
+        error=True
+    )
+
+    assert mock_update_connected.called
+    assert mock_success_connected.called
+    assert mock_failure_connected.called
+
+    assert "font-style: italic;" in rw.message.styleSheet()
+    assert "background-color: rgba(255, 255, 255, 0.6);" in rw.message.styleSheet()
+    assert "background-color: #BCBFCD;" in rw.color_bar.styleSheet()
 
 
 def test_FileWidget_init_file_not_downloaded(mocker, source, session):
@@ -3342,7 +3433,12 @@ def test_ConversationView_add_message(mocker, session, source):
     source = source['source']  # grab the source from the fixture dict for simplicity
 
     mock_message_ready_signal = mocker.MagicMock()
-    mocked_controller = mocker.MagicMock(session=session, message_ready=mock_message_ready_signal)
+    mock_message_download_failed_signal = mocker.MagicMock()
+    mocked_controller = mocker.MagicMock(
+        session=session,
+        message_ready=mock_message_ready_signal,
+        message_download_failed=mock_message_download_failed_signal,
+    )
 
     content = 'a sea, a bee'
     message = factory.Message(source=source, content=content)
@@ -3361,7 +3457,14 @@ def test_ConversationView_add_message(mocker, session, source):
     cv.add_message(message, 0)
 
     # check that we built the widget was called with the correct args
-    mock_msg_widget.assert_called_once_with(message.uuid, content, mock_message_ready_signal, 0)
+    mock_msg_widget.assert_called_once_with(
+        message.uuid,
+        content,
+        mock_message_ready_signal,
+        mock_message_download_failed_signal,
+        0,
+        False,
+    )
 
     # check that we added the correct widget to the layout
     cv.conversation_layout.insertWidget.assert_called_once_with(
@@ -3381,7 +3484,12 @@ def test_ConversationView_add_message_no_content(mocker, session, source):
     source = source['source']  # grab the source from the fixture dict for simplicity
 
     mock_message_ready_signal = mocker.MagicMock()
-    mocked_controller = mocker.MagicMock(session=session, message_ready=mock_message_ready_signal)
+    mock_message_download_failed_signal = mocker.MagicMock()
+    mocked_controller = mocker.MagicMock(
+        session=session,
+        message_ready=mock_message_ready_signal,
+        message_download_failed=mock_message_download_failed_signal
+    )
 
     message = factory.Message(source=source, is_decrypted=False, content=None)
     session.add(message)
@@ -3399,7 +3507,9 @@ def test_ConversationView_add_message_no_content(mocker, session, source):
 
     # check that we built the widget was called with the correct args
     mock_msg_widget.assert_called_once_with(
-        message.uuid, '<Message not yet available>', mock_message_ready_signal, 0)
+        message.uuid, '<Message not yet available>', mock_message_ready_signal,
+        mock_message_download_failed_signal, 0, False
+    )
 
     # check that we added the correct widget to the layout
     cv.conversation_layout.insertWidget.assert_called_once_with(
@@ -3443,10 +3553,15 @@ def test_ConversationView_add_reply_from_reply_box(mocker):
     """
     source = factory.Source()
     reply_ready = mocker.MagicMock()
+    reply_download_failed = mocker.MagicMock()
     reply_succeeded = mocker.MagicMock()
     reply_failed = mocker.MagicMock()
     controller = mocker.MagicMock(
-        reply_ready=reply_ready, reply_succeeded=reply_succeeded, reply_failed=reply_failed)
+        reply_ready=reply_ready,
+        reply_download_failed=reply_download_failed,
+        reply_succeeded=reply_succeeded,
+        reply_failed=reply_failed
+    )
     cv = ConversationView(source, controller)
     cv.conversation_layout = mocker.MagicMock()
     reply_widget_res = mocker.MagicMock()
@@ -3456,7 +3571,9 @@ def test_ConversationView_add_reply_from_reply_box(mocker):
     cv.add_reply_from_reply_box('abc123', 'test message')
 
     reply_widget.assert_called_once_with(
-        'abc123', 'test message', 'PENDING', reply_ready, reply_succeeded, reply_failed, 0)
+        'abc123', 'test message', 'PENDING', reply_ready, reply_download_failed,
+        reply_succeeded, reply_failed, 0
+    )
     cv.conversation_layout.insertWidget.assert_called_once_with(
         0, reply_widget_res, alignment=Qt.AlignRight)
 
@@ -3468,12 +3585,16 @@ def test_ConversationView_add_reply(mocker, session, source):
     source = source['source']  # grab the source from the fixture dict for simplicity
 
     mock_reply_ready_signal = mocker.MagicMock()
+    mock_reply_download_failed_signal = mocker.MagicMock()
     mock_reply_succeeded_signal = mocker.MagicMock()
     mock_reply_failed_signal = mocker.MagicMock()
-    mocked_controller = mocker.MagicMock(session=session,
-                                         reply_ready=mock_reply_ready_signal,
-                                         reply_succeeded=mock_reply_succeeded_signal,
-                                         reply_failed=mock_reply_failed_signal)
+    mocked_controller = mocker.MagicMock(
+        session=session,
+        reply_ready=mock_reply_ready_signal,
+        reply_download_failed=mock_reply_download_failed_signal,
+        reply_succeeded=mock_reply_succeeded_signal,
+        reply_failed=mock_reply_failed_signal
+    )
 
     content = 'a sea, a bee'
     reply = factory.Reply(source=source, content=content)
@@ -3496,9 +3617,12 @@ def test_ConversationView_add_reply(mocker, session, source):
         content,
         'SUCCEEDED',
         mock_reply_ready_signal,
+        mock_reply_download_failed_signal,
         mock_reply_succeeded_signal,
         mock_reply_failed_signal,
-        0)
+        0,
+        False
+    )
 
     # check that we added the correct widget to the layout
     cv.conversation_layout.insertWidget.assert_called_once_with(
@@ -3514,10 +3638,12 @@ def test_ConversationView_add_reply_no_content(mocker, session, source):
     source = source['source']  # grab the source from the fixture dict for simplicity
 
     mock_reply_ready_signal = mocker.MagicMock()
+    mock_reply_download_failed_signal = mocker.MagicMock()
     mock_reply_succeeded_signal = mocker.MagicMock()
     mock_reply_failed_signal = mocker.MagicMock()
     mocked_controller = mocker.MagicMock(session=session,
                                          reply_ready=mock_reply_ready_signal,
+                                         reply_download_failed=mock_reply_download_failed_signal,
                                          reply_succeeded=mock_reply_succeeded_signal,
                                          reply_failed=mock_reply_failed_signal)
 
@@ -3541,9 +3667,12 @@ def test_ConversationView_add_reply_no_content(mocker, session, source):
         '<Reply not yet available>',
         'SUCCEEDED',
         mock_reply_ready_signal,
+        mock_reply_download_failed_signal,
         mock_reply_succeeded_signal,
         mock_reply_failed_signal,
-        0)
+        0,
+        False
+    )
 
     # check that we added the correct widget to the layout
     cv.conversation_layout.insertWidget.assert_called_once_with(
@@ -3923,6 +4052,7 @@ def test_ReplyBoxWidget_on_sync_source_deleted(mocker, source):
 
 def test_ReplyWidget_success_failure_slots(mocker):
     mock_update_signal = mocker.Mock()
+    mock_download_failed_signal = mocker.Mock()
     mock_success_signal = mocker.Mock()
     mock_failure_signal = mocker.Mock()
     msg_id = 'abc123'
@@ -3931,6 +4061,7 @@ def test_ReplyWidget_success_failure_slots(mocker):
                          'lol',
                          'PENDING',
                          mock_update_signal,
+                         mock_download_failed_signal,
                          mock_success_signal,
                          mock_failure_signal,
                          0)
@@ -3939,6 +4070,7 @@ def test_ReplyWidget_success_failure_slots(mocker):
     mock_success_signal.connect.assert_called_once_with(widget._on_reply_success)
     mock_failure_signal.connect.assert_called_once_with(widget._on_reply_failure)
     assert mock_update_signal.connect.called  # to ensure no stale mocks
+    assert mock_download_failed_signal.connect.called
 
     # check the success slog
     widget._on_reply_success('mock_source_id', msg_id + "x", 'lol')
