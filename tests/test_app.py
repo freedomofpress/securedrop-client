@@ -119,6 +119,7 @@ def test_start_app(homedir, mocker):
     mock_args.sdc_home = str(homedir)
     mock_args.proxy = False
 
+    load_css = mocker.patch('securedrop_client.app.load_css')
     mocker.patch('securedrop_client.app.configure_logging')
     mock_app = mocker.patch('securedrop_client.app.QApplication')
     mock_win = mocker.patch('securedrop_client.app.Window')
@@ -130,6 +131,8 @@ def test_start_app(homedir, mocker):
     mocker.patch('securedrop_client.app.make_session_maker', return_value=mock_session_maker)
 
     start_app(mock_args, mock_qt_args)
+
+    load_css.assert_called_once_with('sdclient.css')
     mock_app.assert_called_once_with(mock_qt_args)
     mock_win.assert_called_once_with()
     mock_controller.assert_called_once_with('http://localhost:8081/',

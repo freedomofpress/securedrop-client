@@ -1,3 +1,7 @@
+/**
+ * The main stylesheet for the SecureDrop Client application
+ */
+
 #SyncIcon {
     border: none;
     color: #fff;
@@ -114,12 +118,12 @@
     font-weight: 600;
 }
 
-#EmptyConversationView_no_sources {
+#EmptyConversationView_no_sources QLabel#EmptyConversationView_instructions {
     min-width: 520px;
     max-width: 600px;
 }
 
-#EmptyConversationView_no_source_selected {
+#EmptyConversationView_no_source_selected QLabel#EmptyConversationView_instructions {
     min-width: 520px;
     max-width: 520px;
 }
