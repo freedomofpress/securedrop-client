@@ -2401,13 +2401,12 @@ class ExportDialog(ModalDialog):
 
         # Passphrase Form
         self.passphrase_form = QWidget()
-        self.passphrase_form.setObjectName('passphrase_form')
+        self.passphrase_form.setObjectName('ExportDialog_passphrase_form')
         passphrase_form_layout = QVBoxLayout()
         passphrase_form_layout.setContentsMargins(
             self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN)
         self.passphrase_form.setLayout(passphrase_form_layout)
         passphrase_label = SecureQLabel(_('Passphrase'))
-        passphrase_label.setObjectName('passphrase_label')
         font = QFont()
         font.setLetterSpacing(QFont.AbsoluteSpacing, self.PASSPHRASE_LABEL_SPACING)
         passphrase_label.setFont(font)

@@ -4,9 +4,9 @@
 }
 
 #ModalDialog_button_box QPushButton#ModalDialog_primary_button::disabled {
-    border: 2px solid #C2C4E3;
-    background-color: #C2C4E3;
-    color: #E1E2F1;
+    border: 2px solid #c2c4e3;
+    background-color: #c2c4e3;
+    color: #e1e2f1;
 }
 
 #ModalDialog_button_box QPushButton#ModalDialog_primary_button_active {

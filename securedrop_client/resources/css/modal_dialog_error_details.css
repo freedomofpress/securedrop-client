@@ -6,5 +6,8 @@
 }
 
 #ModalDialog_error_details_active {
-    color: #ff66C4;
+    margin: 0px 40px 0px 36px;
+    font-family: 'Montserrat';
+    font-size: 16px;
+    color: #ff66c4;
 }

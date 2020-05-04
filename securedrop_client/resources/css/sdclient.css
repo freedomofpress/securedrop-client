@@ -1,3 +1,59 @@
+/**
+ * The main stylesheet for the SecureDrop Client application
+ */
+
+#LoginDialog_form QLabel {
+    color: #fff;
+    font-family: 'Montserrat';
+    font-weight: 500;
+    font-size: 13px;
+}
+
+#LoginDialog_form QLineEdit {
+    border-radius: 0px;
+    height: 30px;
+    margin: 0px 0px 0px 0px;
+    padding-left: 5px;
+}
+
+#LoginDialog_app_version_label {
+    color: #9fddff;
+}
+
+#LoginOfflineLink {
+    border: none;
+    color: #fff;
+    text-decoration: underline;
+}
+
+#SignInButton {
+    border: none;
+    background-color: #05edfe;
+    font-family: 'Montserrat';
+    font-weight: 600;
+    font-size: 14px;
+    color: #2a319d;
+}
+
+#SignInButton:pressed {
+    background-color: #85f6fe;
+}
+
+#LoginErrorBar QWidget {
+    background-color: #ce0083;
+}
+
+#LoginErrorBar_icon {
+    color: #fff;
+}
+
+#LoginErrorBar_status_bar {
+    font-family: 'Montserrat';
+    font-weight: 500;
+    font-size: 12px;
+    color: #fff;
+}
+
 #SyncIcon {
     border: none;
     color: #fff;
@@ -114,12 +170,12 @@
     font-weight: 600;
 }
 
-#EmptyConversationView_no_sources {
+#EmptyConversationView_no_sources QLabel#EmptyConversationView_instructions {
     min-width: 520px;
     max-width: 600px;
 }
 
-#EmptyConversationView_no_source_selected {
+#EmptyConversationView_no_source_selected QLabel#EmptyConversationView_instructions {
     min-width: 520px;
     max-width: 520px;
 }
@@ -183,69 +239,104 @@ QListView#SourceList::item:hover{
     border: none;
 }
 
-#LoginOfflineLink {
-    border: none;
-    color: #fff;
-    text-decoration: underline;
+#SourceConversationWrapper_source_deleted {
+    text-align: left;
+    font-family: 'Montserrat';
+    font-weight: 500;
+    font-size: 40px;
+    color: #a5b3e9;
+    padding-bottom: 264px;
+    padding-right: 195px;
 }
 
-#SignInButton {
+#ReplyBoxWidget {
+    min-height: 173px;
+    max-height: 173px;
+}
+
+#ReplyBoxWidget_replybox {
+    background-color: #ffffff;
+}
+
+#ReplyBoxWidget_replybox::disabled {
+    background-color: #efefef;
+}
+
+#ReplyBoxWidget QPushButton {
     border: none;
-    background-color: #05edfe;
+}
+
+#ReplyBoxWidget QPushButton:hover {
+    background: #D3D8EA;
+    border-radius: 8px;
+}
+
+QWidget#ReplyBoxWidget_horizontal_line {
+    min-height: 2px;
+    max-height: 2px;
+    background-color: rgba(42, 49, 157, 0.15);
+    border: none;
+}
+
+#ReplyTextEdit {
     font-family: 'Montserrat';
-    font-weight: 600;
-    font-size: 14px;
+    font-weight: 400;
+    font-size: 18px;
+    border: none;
+    margin-right: 30.2px;
+}
+
+#ReplyTextEdit_placeholder {
+    font-family: 'Montserrat';
+    font-weight: 400;
+    font-size: 18px;
+    color: #404040;
+}
+
+#ReplyTextEdit_placeholder::disabled {
+    color: rgba(42, 49, 157, 0.6);
+}
+
+QWidget#SourceProfileShortWidget_horizontal_line {
+    min-height: 2px;
+    max-height: 2px;
+    background-color: rgba(42, 49, 157, 0.15);
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+#SourceMenuButton {
+    border: none;
+    margin: 5px 0px 0px 0px;
+    padding-left: 8px;
+}
+
+QToolButton#SourceMenuButton::menu-indicator {
+    image: none;
+}
+
+#LastUpdatedLabel {
+    font-family: 'Montserrat';
+    font-weight: 200;
+    font-size: 24px;
     color: #2a319d;
 }
 
-#SignInButton:pressed {
-    background-color: #85f6fe;
-}
-
-#LoginErrorBar QWidget {
-    background-color: #ce0083;
-}
-
-#LoginErrorBar_icon {
-    color: #fff;
-}
-
-#LoginErrorBar_status_bar {
+#TitleLabel {
     font-family: 'Montserrat';
-    font-weight: 500;
-    font-size: 12px;
-    color: #fff;
+    font-weight: 400;
+    font-size: 24px;
+    color: #2a319d;
+    padding-left: 4px;
 }
 
-#LoginDialog_form QLabel {
-    color: #fff;
-    font-family: 'Montserrat';
-    font-weight: 500;
-    font-size: 13px;
+#ConversationScrollArea {
+    border: 0;
+    background: #f3f5f9;
 }
 
-#LoginDialog_form QLineEdit {
-    border-radius: 0px;
-    height: 30px;
-    margin: 0px 0px 0px 0px;
-    padding-left: 5px;
-}
-
-#LoginDialog_app_version_label {
-    color: #9fddff;
-}
-
-#SpeechBubble_container {
-    min-width: 540px;
-    max-width: 540px;
-    background-color: #fff;
-}
-
-#ReplyWidget_failed_to_send_text {
-    font-family: 'Source Sans Pro';
-    font-weight: 500;
-    font-size: 13px;
-    color: #ff3366;
+#ConversationScrollArea_conversation {
+    background: #f3f5f9;
 }
 
 #FileWidget {
@@ -262,7 +353,7 @@ QPushButton#FileWidget_export_print {
     font-family: 'Source Sans Pro';
     font-weight: 500;
     font-size: 13px;
-    color: #2A319D;
+    color: #2a319d;
 }
 
 QPushButton#FileWidget_export_print:hover {
@@ -301,6 +392,19 @@ QWidget#FileWidget_horizontal_line {
     max-height: 2px;
     background-color: rgba(211, 216, 234, 0.45);
     margin: 0px 8px 0px 8px;
+}
+
+#SpeechBubble_container {
+    min-width: 540px;
+    max-width: 540px;
+    background-color: #fff;
+}
+
+#ReplyWidget_failed_to_send_text {
+    font-family: 'Source Sans Pro';
+    font-weight: 500;
+    font-size: 13px;
+    color: #ff3366;
 }
 
 #ModalDialog {
@@ -360,7 +464,7 @@ QWidget#FileWidget_horizontal_line {
     color: rgba(42, 49, 157, 0.4);
 }
 
-#passphrase_form QLabel {
+#ExportDialog_passphrase_form QLabel {
     font-family: 'Montserrat';
     font-weight: 500;
     font-size: 12px;
@@ -368,110 +472,10 @@ QWidget#FileWidget_horizontal_line {
     padding-top: 6px;
 }
 
-#passphrase_form QLineEdit {
+#ExportDialog_passphrase_form QLineEdit {
     border-radius: 0px;
     min-height: 30px;
     max-height: 30px;
     background-color: #f8f8f8;
     padding-bottom: 2px;
-}
-
-#ConversationScrollArea {
-    border: 0;
-    background: #f3f5f9;
-}
-
-#ConversationScrollArea_conversation {
-    background: #f3f5f9;
-}
-
-#SourceConversationWrapper_source_deleted {
-    text-align: left;
-    font-family: 'Montserrat';
-    font-weight: 500;
-    font-size: 40px;
-    color: #a5b3e9;
-    padding-bottom: 264px;
-    padding-right: 195px;
-}
-
-#ReplyBoxWidget {
-    min-height: 173px;
-    max-height: 173px;
-}
-
-#ReplyBoxWidget_replybox {
-    background-color: #ffffff;
-}
-
-#ReplyBoxWidget_replybox::disabled {
-    background-color: #efefef;
-}
-
-#ReplyBoxWidget QPushButton {
-    border: none;
-}
-
-#ReplyBoxWidget QPushButton:hover {
-    background: #D3D8EA;
-    border-radius: 8px;
-}
-
-QWidget#ReplyBoxWidget_horizontal_line {
-    min-height: 2px;
-    max-height: 2px;
-    background-color: rgba(42, 49, 157, 0.15);
-    border: none;
-}
-
-#ReplyTextEdit {
-    font-family: 'Montserrat';
-    font-weight: 400;
-    font-size: 18px;
-    border: none;
-    margin-right: 30.2px;
-}
-
-#ReplyTextEdit_placeholder {
-    font-family: 'Montserrat';
-    font-weight: 400;
-    font-size: 18px;
-    color: #404040;
-}
-
-#ReplyTextEdit_placeholder::disabled {
-    color: rgba(42, 49, 157, 0.6);
-}
-
-#SourceMenuButton {
-    border: none;
-    margin: 5px 0px 0px 0px;
-    padding-left: 8px;
-}
-
-QToolButton#SourceMenuButton::menu-indicator {
-    image: none;
-}
-
-#TitleLabel {
-    font-family: 'Montserrat';
-    font-weight: 400;
-    font-size: 24px;
-    color: #2a319d;
-    padding-left: 4px;
-}
-
-#LastUpdatedLabel {
-    font-family: 'Montserrat';
-    font-weight: 200;
-    font-size: 24px;
-    color: #2a319d;
-}
-
-QWidget#SourceProfileShortWidget_horizontal_line {
-    min-height: 2px;
-    max-height: 2px;
-    background-color: rgba(42, 49, 157, 0.15);
-    padding-left: 12px;
-    padding-right: 12px;
 }

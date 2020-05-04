@@ -31,7 +31,6 @@ from logging.handlers import TimedRotatingFileHandler, SysLogHandler
 from securedrop_client import __version__
 from securedrop_client.logic import Controller
 from securedrop_client.gui.main import Window
-from securedrop_client.resources import load_icon, load_css, load_font
 from securedrop_client.db import make_session_maker
 from securedrop_client.utils import safe_mkdir
 
@@ -197,17 +196,11 @@ def start_app(args, qt_args) -> None:
     app.setApplicationVersion(__version__)
     app.setAttribute(Qt.AA_UseHighDpiPixmaps)
 
-    load_font('Montserrat')
-    load_font('Source_Sans_Pro')
-
     prevent_second_instance(app, args.sdc_home)
 
     session_maker = make_session_maker(args.sdc_home)
 
     gui = Window()
-
-    app.setWindowIcon(load_icon(gui.icon))
-    app.setStyleSheet(load_css('sdclient.css'))
 
     controller = Controller("http://localhost:8081/", gui, session_maker,
                             args.sdc_home, not args.no_proxy, not args.no_qubes)
