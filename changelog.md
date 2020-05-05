@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0
+
+  * Use incoming timeout value from JSON (#69).
+  * Update PyYaml to 5.3.1 due to CVE-2020-1747 (#73).
+
 ## 0.2.1
 
   * Increase default timeout to 120s from 10s (#70)
