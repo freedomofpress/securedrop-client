@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.2.0
+
+* Improve error handling when conversation items fail to decrypt (#1059).
+* Enable copy/paste in SpeechBubble (#1063).
+* Clear clipboard after login (#1071).
+* Disable context menu on SpeechBubble (#1065).
+* Rely on SDK default for most requests (#1056).
+* Increase metadata sync timeout (#1055).
+* Minimize number of database queries during sync (#1037, #1036).
+* Defer source key import until reply (#1035).
+* Speed up update_replies (#1046).
+* Download items for most recently active sources first (#1043).
+* Align source name and preview (#1044).
+* Align file name and print button (#1045).
+* Add utils.chronometer for measuring block execution time (#1034).
+* Log intended folders instead of empty strings (#1069).
+* Use looping animation for metadata sync (#1057).
+* Use securedrop-sdk version 0.1.0 (#1076).
+* Update PyYAML to 5.3.1 (#1041).
+* Use pytest fixtures for functional tests (#1067).
+* Bugfix: Remove leading and trailing whitespace from messages (#1058).
+
 ## 0.1.6
 
 * Fix truncation and alignment issues in conversation view (#1029).
