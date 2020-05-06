@@ -130,9 +130,12 @@ def test_class_name_matches_css_object_name(homedir, mocker):
     # wrapper.conversation_view.add_message(factory.Message(source=source), 1)
     # wrapper.conversation_view.add_reply(factory.Reply(source=source), 2)
 
+    print('number of items in layout:', conversation_scroll_area.widget().layout().count())
     file_widget = conversation_scroll_area.widget().layout().takeAt(0).widget()
-    message_widget = conversation_scroll_area.widget().layout().takeAt(1).widget()
-    reply_widget = conversation_scroll_area.widget().layout().takeAt(2).widget()
+    print('number of items in layout:', conversation_scroll_area.widget().layout().count())
+    message_widget = conversation_scroll_area.widget().layout().takeAt(0).widget()
+    print('number of items in layout:', conversation_scroll_area.widget().layout().count())
+    reply_widget = conversation_scroll_area.widget().layout().takeAt(0).widget()
 
     assert 'FileWidget' == file_widget.__class__.__name__
     assert 'MessageWidget' == message_widget.__class__.__name__
