@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QApplication, QLabel, QWidget
 from securedrop_client import logic
 from securedrop_client.app import start_app
 from securedrop_client.gui.main import Window
+from tests import factory
 
 
 app = QApplication([])
@@ -20,12 +21,31 @@ def test_class_name_matches_css_object_name(homedir, mocker):
     mocker.patch('securedrop_client.app.QApplication', return_value=app)
     mocker.patch('securedrop_client.app.Controller', return_value=controller)
     mocker.patch('securedrop_client.app.sys.exit')
+
     timer = QTimer()
     timer.start(500)
     timer.timeout.connect(app.exit)
 
     start_app(mock_args, mock_qt_args)
 
+    # Login Dialog
+    login_dialog = gui.login_dialog
+    assert 'LoginDialog' == login_dialog.__class__.__name__
+    form = login_dialog.layout().itemAt(2).widget()
+    assert 'LoginDialog' in form.objectName()
+    app_version_label = login_dialog.layout().itemAt(4).widget().layout().itemAt(0).widget()
+    assert 'LoginDialog' in app_version_label.objectName()
+    login_offline_link = login_dialog.offline_mode
+    assert 'LoginOfflineLink' == login_offline_link.__class__.__name__
+    assert 'LoginOfflineLink' == login_offline_link.objectName()
+    login_button = login_dialog.submit
+    assert 'SignInButton' == login_button.__class__.__name__
+    assert 'SignInButton' in login_button.objectName()
+    login_error_bar = login_dialog.error_bar
+    assert 'LoginErrorBar' == login_error_bar.__class__.__name__
+    assert 'LoginErrorBar' in login_error_bar.objectName()
+
+    # Top Pane
     sync_icon = gui.top_pane.sync_icon
     assert 'SyncIcon' == sync_icon.__class__.__name__
     assert 'SyncIcon' == sync_icon.objectName()
@@ -37,6 +57,8 @@ def test_class_name_matches_css_object_name(homedir, mocker):
     assert 'ErrorStatusBar' in error_status_bar.vertical_bar.objectName()
     assert 'ErrorStatusBar' in error_status_bar.label.objectName()
     assert 'ErrorStatusBar' in error_status_bar.status_bar.objectName()
+
+    # Left Pane
     user_profile = gui.left_pane.user_profile
     assert 'UserProfile' == user_profile.__class__.__name__
     assert 'UserProfile' == user_profile.objectName()
@@ -47,6 +69,8 @@ def test_class_name_matches_css_object_name(homedir, mocker):
     login_button = user_profile.login_button
     assert 'LoginButton' == login_button.__class__.__name__
     assert 'LoginButton' == login_button.objectName()
+
+    # Main View
     main_view = gui.main_view
     assert 'MainView' == main_view.__class__.__name__
     assert 'MainView' == main_view.objectName()
@@ -56,6 +80,79 @@ def test_class_name_matches_css_object_name(homedir, mocker):
     'EmptyConversationView' == empty_conversation_view.objectName()
     'EmptyConversationView' in empty_conversation_view.no_sources.objectName()
     'EmptyConversationView' in empty_conversation_view.no_source_selected.objectName()
+    source_list = main_view.source_list
+    'SourceList' == source_list.__class__.__name__
+    'SourceList' == source_list.objectName()
+
+    # Create a source widget
+    source = factory.Source()
+    source_list.update([source])
+
+    # Source widget
+    source_widget = source_list.itemWidget(source_list.item(0))
+    assert 'SourceWidget' == source_widget.__class__.__name__
+    assert 'SourceWidget' in source_widget.gutter.objectName()
+    assert 'SourceWidget' in source_widget.summary.objectName()
+    assert 'SourceWidget' in source_widget.name.objectName()
+    assert 'SourceWidget' in source_widget.preview.objectName()
+    assert 'SourceWidget' in source_widget.waiting_delete_confirmation.objectName()
+    assert 'SourceWidget' in source_widget.metadata.objectName()
+    assert 'SourceWidget' in source_widget.paperclip.objectName()
+    assert 'SourceWidget' in source_widget.timestamp.objectName()
+    assert 'SourceWidget' in source_widget.source_widget.objectName()
+    star = source_widget.star
+    assert 'StarToggleButton' == star.__class__.__name__
+    assert 'StarToggleButton' in star.objectName()
+
+    # Create a conversation widget
+    source_list.setCurrentItem(source_list.item(0))
+    main_view.on_source_changed()
+
+    # Conversation widget
+    wrapper = main_view.view_layout.takeAt(0).widget()
+    assert 'SourceConversationWrapper' == wrapper.__class__.__name__
+    assert 'SourceConversationWrapper' in wrapper.waiting_delete_confirmation.objectName()
+    conversation_scroll_area = wrapper.conversation_view.scroll
+    assert 'ConversationScrollArea' == conversation_scroll_area.__class__.__name__
+    assert 'ConversationScrollArea' in conversation_scroll_area.widget().objectName()
+
+    # Create file, message, and reply widget
+    mocker.patch('securedrop_client.gui.widgets.humanize_filesize', return_value='100')
+    mocker.patch('securedrop_client.gui.SecureQLabel.get_elided_text', return_value='1-yellow-doc.gz.gpg')
+    wrapper.conversation_view.update_conversation([
+        factory.File(source=source, filename='1-yellow-doc.gz.gpg'),
+        factory.Message(source=source, filename='2-yellow-msg.gpg'),
+        factory.Reply(source=source, filename='3-yellow-reply.gpg')])
+
+    # mocker.patch('securedrop_client.gui.widgets.humanize_filesize', return_value='100')
+    # mocker.patch('securedrop_client.gui.SecureQLabel.get_elided_text', return_value='test')
+    # wrapper.conversation_view.add_file(factory.File(source=source), 0)
+    # wrapper.conversation_view.add_message(factory.Message(source=source), 1)
+    # wrapper.conversation_view.add_reply(factory.Reply(source=source), 2)
+
+    file_widget = conversation_scroll_area.widget().layout().takeAt(0).widget()
+    message_widget = conversation_scroll_area.widget().layout().takeAt(1).widget()
+    reply_widget = conversation_scroll_area.widget().layout().takeAt(2).widget()
+
+    assert 'FileWidget' == file_widget.__class__.__name__
+    assert 'MessageWidget' == message_widget.__class__.__name__
+    assert 'ReplyWidget' == reply_widget.__class__.__name__
+
+
+# #SpeechBubble_container
+# #ReplyWidget_failed_to_send_text
+# #FileWidget {
+# #ModalDialog {
+# #ExportDialog_passphrase_form
+# #ReplyBoxWidget {
+# #ReplyTextEdit {
+# #ReplyTextEdit_placeholder {
+# #ReplyTextEdit_placeholder::disabled {
+# #SourceMenuButton {
+# QToolButton#SourceMenuButton::menu-indicator {
+# #TitleLabel {
+# #LastUpdatedLabel {
+# QWidget#SourceProfileShortWidget_horizontal_line {
 
 
 def test_styles(homedir, mocker):
@@ -68,10 +165,10 @@ def test_styles(homedir, mocker):
     mocker.patch('securedrop_client.app.QApplication', return_value=app)
     mocker.patch('securedrop_client.app.Controller', return_value=controller)
     mocker.patch('securedrop_client.app.sys.exit')
+
     timer = QTimer()
     timer.start(500)
     timer.timeout.connect(app.exit)
-
     start_app(mock_args, mock_qt_args)
 
     sync_icon = gui.top_pane.sync_icon
@@ -191,3 +288,7 @@ def test_styles(homedir, mocker):
     no_source_selected_spacer2 = no_source_selected.layout().itemAt(5)
     assert (35 * 4) == no_source_selected_spacer2.minimumSize().height()
     assert (35 * 4) == no_source_selected_spacer2.maximumSize().height()
+
+    # TODO: Add tests for SourceList
+
+    # TODO: Add tests for 'border-bottom: 1px solid #9b9b9b;' for SourceWidget_container

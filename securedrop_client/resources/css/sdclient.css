@@ -364,7 +364,7 @@ QWidget#FileWidget_horizontal_line {
     color: rgba(42, 49, 157, 0.4);
 }
 
-#passphrase_form QLabel {
+#ExportDialog_passphrase_form QLabel {
     font-family: 'Montserrat';
     font-weight: 500;
     font-size: 12px;
@@ -372,7 +372,7 @@ QWidget#FileWidget_horizontal_line {
     padding-top: 6px;
 }
 
-#passphrase_form QLineEdit {
+#ExportDialog_passphrase_form QLineEdit {
     border-radius: 0px;
     min-height: 30px;
     max-height: 30px;
