@@ -5,7 +5,6 @@ is based upon the client testing descriptions here:
 https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-testing
 """
 import pytest
-import time
 import pyautogui
 
 from .utils import get_safe_tempdir, get_logged_in_test_context
@@ -30,12 +29,26 @@ def test_user_icon_click(qtbot, mocker):
         assert gui.left_pane.user_profile.login_button.isVisible()
 
     qtbot.wait(5000)
+
     # Now instead of clicking via qtbot, we can click via mouse
-    pyautogui.click(25, 70)
-    # # Now we should have the menu open
-    # Also means qtbot if of no use right now
-    time.sleep(0.5)
-    # Let us click on the signout button
-    pyautogui.click(87, 100)
+    user_button_position = gui.left_pane.user_profile.user_button.pos()
+    point = gui.left_pane.user_profile.user_button.mapToGlobal(user_button_position)
+    cursor_x, cursor_y = point.x(), point.y()
+    pyautogui.click(cursor_x, cursor_y)
+
+    # Ensure QMenu is visible after the completed click.
+    def check_menu_appears():
+        assert gui.left_pane.user_profile.user_button.menu.logout.isVisible()
+
+    qtbot.waitUntil(check_menu_appears, timeout=10000)
+
+    button_width = gui.left_pane.user_profile.user_button.width()
+    button_height = gui.left_pane.user_profile.user_button.height()
+
+    # Both Qt and PyAutoGUI use a coordinate system with (0, 0) at the top, left
+    # screen position. Since the sign out menu appears to the lower right of the
+    # button, we want to move in the positive x-direction and positive y-direction.
+    pyautogui.click(cursor_x + button_width / 2, cursor_y + button_height)
+
     # Here the eventloop is back with qtbot
     qtbot.waitUntil(check_login_button, timeout=10000)
