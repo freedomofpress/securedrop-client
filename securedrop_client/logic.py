@@ -658,8 +658,6 @@ class Controller(QObject):
         """
         Called when a message fails to download.
         """
-        logger.info('Failed to download message: {}'.format(exception))
-
         if isinstance(exception, DownloadChecksumMismatchException):
             # Keep resubmitting the job if the download is corrupted.
             logger.warning('Failure due to checksum mismatch, retrying {}'.format(exception.uuid))
@@ -694,8 +692,6 @@ class Controller(QObject):
         """
         Called when a reply fails to download.
         """
-        logger.info('Failed to download reply: {}'.format(exception))
-
         if isinstance(exception, DownloadChecksumMismatchException):
             # Keep resubmitting the job if the download is corrupted.
             logger.warning('Failure due to checksum mismatch, retrying {}'.format(exception.uuid))
@@ -828,8 +824,6 @@ class Controller(QObject):
         """
         Called when a file fails to download.
         """
-        logger.info('Failed to download file: {}'.format(exception))
-
         # Keep resubmitting the job if the download is corrupted.
         if isinstance(exception, DownloadChecksumMismatchException):
             logger.warning('Failure due to checksum mismatch, retrying {}'.format(exception.uuid))
