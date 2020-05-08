@@ -33,6 +33,14 @@ PASSWORD = "correct horse battery staple profanity oil chewy"
 # development.
 TOTP = "994892"
 
+# Time (in milliseconds) to wait for these GUI elements to render.
+TIME_APP_START = 1000
+TIME_CLICK_ACTION = 1000
+TIME_RENDER_SOURCE_LIST = 20000
+TIME_RENDER_CONV_VIEW = 1000
+TIME_SYNC = 10000
+TIME_FILE_DOWNLOAD = 5000
+
 
 @pytest.fixture(scope='function')
 def i18n():

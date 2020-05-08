@@ -8,6 +8,9 @@ import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
 
+from tests.conftest import (TIME_APP_START, TIME_CLICK_ACTION,
+                            TIME_RENDER_SOURCE_LIST)
+
 
 @flaky
 @pytest.mark.vcr()
@@ -16,12 +19,12 @@ def test_star_source(functional_test_logged_in_context, qtbot, mocker):
     It's possible to star a source and see its updated status.
     """
     gui, controller, tempdir = functional_test_logged_in_context
-    qtbot.wait(1000)
+    qtbot.wait(TIME_APP_START)
 
     def check_for_sources():
         assert len(list(gui.main_view.source_list.source_widgets.keys()))
 
-    qtbot.waitUntil(check_for_sources, timeout=10000)
+    qtbot.waitUntil(check_for_sources, timeout=TIME_RENDER_SOURCE_LIST)
     source_ids = list(gui.main_view.source_list.source_widgets.keys())
     first_source_id = source_ids[0]
     first_source_widget = gui.main_view.source_list.source_widgets[first_source_id]
@@ -31,6 +34,6 @@ def test_star_source(functional_test_logged_in_context, qtbot, mocker):
     assert first_source_widget.star.isChecked() is False
     # Click it.
     qtbot.mouseClick(first_source_widget.star, Qt.LeftButton)
-    qtbot.wait(1000)
+    qtbot.wait(TIME_CLICK_ACTION)
     # Check the source is now checked.
     assert first_source_widget.star.is_starred is True

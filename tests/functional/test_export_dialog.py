@@ -9,6 +9,9 @@ from flaky import flaky
 from PyQt5.QtCore import Qt
 from securedrop_client.gui.widgets import FileWidget
 
+from tests.conftest import (TIME_APP_START, TIME_CLICK_ACTION, TIME_FILE_DOWNLOAD,
+                            TIME_RENDER_SOURCE_LIST, TIME_SYNC)
+
 
 @flaky
 @pytest.mark.vcr()
@@ -18,18 +21,18 @@ def test_export_dialog(functional_test_logged_in_context, qtbot, mocker):
     the conversation window.
     """
     gui, controller, tempdir = functional_test_logged_in_context
-    qtbot.wait(1000)
+    qtbot.wait(TIME_APP_START)
 
     def check_for_sources():
         assert len(list(gui.main_view.source_list.source_widgets.keys()))
 
-    qtbot.waitUntil(check_for_sources, timeout=10000)
+    qtbot.waitUntil(check_for_sources, timeout=TIME_RENDER_SOURCE_LIST)
     source_ids = list(gui.main_view.source_list.source_widgets.keys())
     first_source_id = source_ids[0]
     first_source_widget = gui.main_view.source_list.source_widgets[first_source_id]
     qtbot.mouseClick(first_source_widget, Qt.LeftButton)
 
-    qtbot.wait(10000)  # Wait for the client to sync.
+    qtbot.wait(TIME_SYNC)
     # Ensure the last widget in the conversation view contains the expected
     # text from the source.
     conversation = gui.main_view.view_layout.itemAt(0).widget()
@@ -45,7 +48,7 @@ def test_export_dialog(functional_test_logged_in_context, qtbot, mocker):
 
     # Let us download the file
     qtbot.mouseClick(file_msg.download_button, Qt.LeftButton)
-    qtbot.wait(5000)
+    qtbot.wait(TIME_FILE_DOWNLOAD)
     assert file_msg.export_button.isHidden() is False
     assert file_msg.file_name.text() == "hello.txt"
     assert file_msg.file_size.text() == "9B"
@@ -56,7 +59,7 @@ def test_export_dialog(functional_test_logged_in_context, qtbot, mocker):
     def check_for_export_dialog():
         assert file_msg.export_dialog
 
-    qtbot.waitUntil(check_for_export_dialog, timeout=1000)
+    qtbot.waitUntil(check_for_export_dialog, timeout=TIME_CLICK_ACTION)
 
     export_dialog = file_msg.export_dialog
     qtbot.mouseClick(export_dialog.continue_button, Qt.LeftButton)
@@ -64,17 +67,17 @@ def test_export_dialog(functional_test_logged_in_context, qtbot, mocker):
     def check_password_form():
         assert export_dialog.passphrase_form.isHidden() is False
 
-    qtbot.waitUntil(check_password_form, timeout=2000)
+    qtbot.waitUntil(check_password_form, timeout=TIME_CLICK_ACTION)
 
     message = "Use Tor Browser"
     # Focus on passphrase box text entry.
     qtbot.mouseClick(export_dialog.passphrase_field, Qt.LeftButton)
     # Type in a message to the passphrase box.
     qtbot.keyClicks(export_dialog.passphrase_field, message)
-    qtbot.wait(1000)
+    qtbot.wait(TIME_CLICK_ACTION)
 
     # click on the continue button
     qtbot.mouseClick(export_dialog.continue_button, Qt.LeftButton)
-    qtbot.wait(1000)
+    qtbot.wait(TIME_CLICK_ACTION)
 
     assert export_dialog.continue_button.text() == "DONE"
