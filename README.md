@@ -357,6 +357,7 @@ Note: One of the functional tests deletes a source, so you may need to add it ba
 7. Add a detached signature (with the release key) for the source tarball.
 8. Submit the source tarball and signature via PR into this [repository](https://github.com/freedomofpress/securedrop-debian-packaging) along with the debian changelog addition. This tarball and changelog will be used by the package builder.
 
+
 ## Debugging
 
 To use `pdb`, add these lines:
@@ -369,3 +370,66 @@ Then you can use [`pdb` commands](https://docs.python.org/3/library/pdb.html#deb
 
 Logs can be found in the `{sdc-home}/logs`. If you are debugging a version of this application installed from a deb package in Qubes, you can debug issues by looking at the log file in `~/.securedrop_client/logs/client.log`. You can also add additional log lines in the running code in
 `/opt/venvs/securedrop-client/lib/python3.7/site-packages/securedrop_client/`.
+
+Sometimes there is a bug in Qt rather than the client, so it helps to install [a debug version of PyQt5](#build-and-install-a-debug-version-of-pyqt5) which will allow you to see Qt debug symbols in your Python tracebacks. You can use `gdb` to view a traceback as well as a core file, if you're debugging a segfault, but first you must need to install the following some additional packages in order for `gdb` to work with Python programs.
+
+```
+sudo apt install libc6-dbg libpython3-all-dbg libpython3-dbg libpython3.7-dbg python3-dbg python3.7-dbg valgrind-dbg
+```
+
+### Build and install a debug version of PyQt5
+
+1. Build a debug version of Qt 5
+
+Clone the Qt repo and build it from source following these instructions: https://wiki.qt.io/Building_Qt_5_from_Git#Getting_the_source_code. This defaults to creating a 'debug' build and installs the binaries in the current directory, avoiding the need for `make install`. Note that the `-developer-build` option causes more symbols to be exported in order to allow more classes and functions to be unit tested than in a regular Qt build.
+
+```
+git clone https://code.qt.io/qt/qt5.git
+cd qt5
+git checkout v5.14.2                                # or checkout a different version
+git submodule update --init --recursive
+export LLVM_INSTALL_DIR=/usr/llvm
+mkdir ../qt5-build && cd ../qt5-build               # we don't want to build in the source code directory
+../qt5/configure -developer-build -opensource -nomake examples -nomake tests -confirm-license
+make -j 4
+```
+
+2. Prepare to build PyQt5 
+
+We are going to use the client virtual environment to build and install PyQt5. Make sure the client dependencies are installed. This will include `pyqt5-sip` which will be used when we build pyqt5 from source.
+
+If you haven't already, download the client and set up the virtual environment. 
+
+```
+git clone git@github.com:freedomofpress/securedrop-client.git
+cd securedrop-client
+virtualenv --python=python3.7 .venv
+source .venv/bin/activate
+pip install --require-hashes -r dev-requirements.txt
+```
+
+Make sure to uninstall the prepackaged pyqt5 library since we will be using our own.
+
+```
+pip uninstall pyqt5
+```
+
+3. Download the PyQt5 source tarball from PyPi
+
+4. Build and install PyQt5
+
+Make sure you are still in the client virtual environment before building PyQt5.
+
+```
+tar -xzvf PyQt5-5.14.2.tar.gz
+cd PyQt5-5.14.2
+pip install PyQt-builder
+export PATH=~/qt/qt5-build/qtbase/bin:$PATH
+export QT_PLUGIN_PATH=~/qt/qt5-build/qtbase/plugins
+sip-install --debug --qmake ~/qt/qt5-build/qtbase/bin/qmake --confirm-license
+```
+
+### Find/report a Qt bug
+
+1. Create a Qt account: https://login.qt.io/register
+2. Find or report a bug here: https://bugreports.qt.io
