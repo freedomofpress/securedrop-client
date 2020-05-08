@@ -265,21 +265,19 @@ class ReplyDownloadJob(DownloadJob):
         The return value is an empty string; replies have no original filename.
         '''
         with NamedTemporaryFile('w+') as plaintext_file:
-            self.gpg.decrypt_submission_or_reply(filepath, plaintext_file.name, is_doc=False)
             try:
+                self.gpg.decrypt_submission_or_reply(filepath, plaintext_file.name, is_doc=False)
                 set_message_or_reply_content(
                     model_type=Reply,
                     uuid=self.uuid,
                     session=session,
                     content=plaintext_file.read())
             finally:
-                # clean up directory where decryption happened
                 try:
                     os.rmdir(os.path.dirname(filepath))
-                except Exception as e:
-                    logger.warning(
-                        "Error deleting decryption directory of message %s: %s", self.uuid, e
-                    )
+                except OSError:
+                    msg = f'Could not delete decryption directory: {os.path.dirname(filepath)}'
+                    logger.debug(msg)
 
         return ""
 
@@ -330,13 +328,12 @@ class MessageDownloadJob(DownloadJob):
                     session=session,
                     content=plaintext_file.read())
             finally:
-                # clean up directory where decryption happened
                 try:
                     os.rmdir(os.path.dirname(filepath))
-                except Exception as e:
-                    logger.warning(
-                        "Error deleting decryption directory of message %s: %s", self.uuid, e
-                    )
+                except OSError:
+                    msg = f'Could not delete decryption directory: {os.path.dirname(filepath)}'
+                    logger.debug(msg)
+
         return ""
 
 
