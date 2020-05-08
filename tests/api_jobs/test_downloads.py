@@ -520,13 +520,8 @@ def test_FileDownloadJob_decryption_error(
         gpg,
     )
 
-    mock_logger = mocker.patch('securedrop_client.api_jobs.downloads.logger')
-
     with pytest.raises(DownloadDecryptionException):
         job.call_api(api_client, session)
-
-    log_msg = mock_logger.debug.call_args_list[0][0][0]
-    assert log_msg.startswith('Failed to decrypt file')
 
     # ensure mocks aren't stale
     assert mock_decrypt.called
