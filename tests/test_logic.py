@@ -1187,12 +1187,10 @@ def test_Controller_on_reply_downloaded_failure(mocker, homedir, session_maker):
     reply_ready = mocker.patch.object(co, 'reply_ready')
     reply = factory.Reply(source=factory.Source())
     mocker.patch('securedrop_client.storage.get_reply', return_value=reply)
-    info_logger = mocker.patch('securedrop_client.logic.logger.info')
     co._submit_download_job = mocker.MagicMock()
 
     co.on_reply_download_failure(Exception('mock_exception'))
 
-    info_logger.assert_called_once_with('Failed to download reply: mock_exception')
     reply_ready.emit.assert_not_called()
 
     # Job should not get automatically resubmitted if the failure was generic
@@ -1208,13 +1206,11 @@ def test_Controller_on_reply_downloaded_checksum_failure(mocker, homedir, sessio
     reply = factory.Reply(source=factory.Source())
     mocker.patch('securedrop_client.storage.get_reply', return_value=reply)
     warning_logger = mocker.patch('securedrop_client.logic.logger.warning')
-    info_logger = mocker.patch('securedrop_client.logic.logger.info')
     co._submit_download_job = mocker.MagicMock()
 
     co.on_reply_download_failure(DownloadChecksumMismatchException('bang!',
                                  type(reply), reply.uuid))
 
-    info_logger.call_args_list[0][0][0] == 'Failed to download reply: bang!'
     reply_ready.emit.assert_not_called()
 
     # Job should get resubmitted and we should log this is happening
@@ -1232,12 +1228,10 @@ def test_Controller_on_reply_downloaded_decryption_failure(mocker, homedir, sess
     reply_download_failed = mocker.patch.object(co, 'reply_download_failed')
     reply = factory.Reply(source=factory.Source())
     mocker.patch('securedrop_client.storage.get_reply', return_value=reply)
-    info_logger = mocker.patch('securedrop_client.logic.logger.info')
 
     decryption_exception = DownloadDecryptionException('bang!', type(reply), reply.uuid)
     co.on_reply_download_failure(decryption_exception)
 
-    info_logger.call_args_list[0][0][0] == 'Failed to download reply: bang!'
     reply_ready.emit.assert_not_called()
     reply_download_failed.emit.assert_called_with(reply.source.uuid, reply.uuid, str(reply))
 
@@ -1376,11 +1370,9 @@ def test_Controller_on_message_downloaded_failure(mocker, homedir, session_maker
     message = factory.Message(source=factory.Source())
     mocker.patch('securedrop_client.storage.get_message', return_value=message)
     co._submit_download_job = mocker.MagicMock()
-    info_logger = mocker.patch('securedrop_client.logic.logger.info')
 
     co.on_message_download_failure(Exception('mock_exception'))
 
-    info_logger.assert_called_once_with('Failed to download message: mock_exception')
     message_ready.emit.assert_not_called()
 
     # Job should not get automatically resubmitted if the failure was generic
@@ -1396,19 +1388,14 @@ def test_Controller_on_message_downloaded_checksum_failure(mocker, homedir, sess
     message = factory.Message(source=factory.Source())
     mocker.patch('securedrop_client.storage.get_message', return_value=message)
     co._submit_download_job = mocker.MagicMock()
-    warning_logger = mocker.patch('securedrop_client.logic.logger.warning')
-    info_logger = mocker.patch('securedrop_client.logic.logger.info')
 
     co.on_message_download_failure(DownloadChecksumMismatchException('bang!',
                                    type(message), message.uuid))
 
-    info_logger.call_args_list[0][0][0] == 'Failed to download message: bang!'
     message_ready.emit.assert_not_called()
 
     # Job should get resubmitted and we should log this is happening
     co._submit_download_job.call_count == 1
-    warning_logger.call_args_list[0][0][0] == \
-        'Failure due to checksum mismatch, retrying {}'.format(message.uuid)
 
 
 def test_Controller_on_message_downloaded_decryption_failure(mocker, homedir, session_maker):
@@ -1420,12 +1407,10 @@ def test_Controller_on_message_downloaded_decryption_failure(mocker, homedir, se
     message_download_failed = mocker.patch.object(co, 'message_download_failed')
     message = factory.Message(source=factory.Source())
     mocker.patch('securedrop_client.storage.get_message', return_value=message)
-    info_logger = mocker.patch('securedrop_client.logic.logger.info')
 
     decryption_exception = DownloadDecryptionException('bang!', type(message), message.uuid)
     co.on_message_download_failure(decryption_exception)
 
-    info_logger.call_args_list[0][0][0] == 'Failed to download message: bang!'
     message_ready.emit.assert_not_called()
     message_download_failed.emit.assert_called_with(message.source.uuid, message.uuid, str(message))
 
