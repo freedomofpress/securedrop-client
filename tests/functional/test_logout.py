@@ -7,6 +7,8 @@ https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-
 import pytest
 from flaky import flaky
 
+from tests.conftest import TIME_RENDER_CONV_VIEW
+
 
 @flaky
 @pytest.mark.vcr()
@@ -30,4 +32,4 @@ def test_logout_as_journalist(functional_test_logged_in_context, qtbot, mocker):
     # rather than pretend some sort of user interaction via the qtbot.
     gui.left_pane.user_profile.user_button.menu.logout.trigger()
     # Wait until the logout button is pressed.
-    qtbot.waitUntil(check_login_button, timeout=10000)
+    qtbot.waitUntil(check_login_button, timeout=TIME_RENDER_CONV_VIEW)

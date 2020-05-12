@@ -11,7 +11,7 @@ from PyQt5.QtCore import Qt
 from securedrop_client.gui.main import Window
 from securedrop_client.gui.widgets import LoginDialog
 
-from tests.conftest import USERNAME, PASSWORD
+from tests.conftest import USERNAME, PASSWORD, TIME_RENDER_CONV_VIEW
 
 
 def test_login_ensure_errors_displayed(qtbot, mocker):
@@ -45,7 +45,7 @@ def test_login_as_journalist(functional_test_logged_out_context, qtbot, mocker):
     # and then (ultimately) emit the expected signal. This pattern will need to
     # be used with all API calls. For more information about this method, see:
     # https://pytest-qt.readthedocs.io/en/latest/signals.html
-    with qtbot.waitSignal(controller.authentication_state, timeout=10000):
+    with qtbot.waitSignal(controller.authentication_state, timeout=TIME_RENDER_CONV_VIEW):
         qtbot.mouseClick(gui.login_dialog.submit, Qt.LeftButton)
     # The main window is visible (indicating a successful login).
     assert gui.isVisible()
