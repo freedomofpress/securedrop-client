@@ -181,7 +181,7 @@ class DownloadJob(ApiJob):
             db_object.download_error = None
             mark_as_decrypted(
                 type(db_object), db_object.uuid, session, original_filename=original_filename)
-            logger.info(f'File decrypted to {filepath}')
+            logger.info(f'File decrypted to {os.path.dirname(filepath)}')
         except CryptoError as e:
             mark_as_decrypted(type(db_object), db_object.uuid, session, is_decrypted=False)
             download_error = session.query(DownloadError).filter_by(
