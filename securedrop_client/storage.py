@@ -170,6 +170,7 @@ def update_sources(
             lazy_setattr(local_source, "is_starred", source.is_starred)
             lazy_setattr(local_source, "last_updated", parse(source.last_updated))
             lazy_setattr(local_source, "public_key", source.key['public'])
+            lazy_setattr(local_source, "fingerprint", source.key['fingerprint'])
 
             # Removing the UUID from local_sources_by_uuid ensures
             # this record won't be deleted at the end of this

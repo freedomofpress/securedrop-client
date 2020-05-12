@@ -311,7 +311,7 @@ def test_update_sources(homedir, mocker, session_maker, session):
     # This local source already exists in the API results and will be updated.
     local_source1 = factory.Source(
         journalist_designation=source_update.journalist_designation,
-        uuid=source_update.uuid,
+        uuid=source_update.uuid, public_key=None, fingerprint=None
     )
 
     # This local source does not exist in the API results and will be
