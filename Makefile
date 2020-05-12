@@ -75,9 +75,13 @@ bandit: ## Run bandit with medium level excluding test-related folders
 check: clean bandit lint mypy test-random test-functional ## Run the full CI test suite
 
 .PHONY: update-pip-requirements
-update-pip-requirements: ## Updates all Python requirements files via pip-compile.
+update-pip-requirements: ## Updates all Python requirements files via pip-compile for Linux.
 	pip-compile --verbose --rebuild --generate-hashes --annotate --allow-unsafe --output-file dev-requirements.txt requirements.in dev-requirements.in
 	pip-compile --verbose --rebuild --generate-hashes --annotate --output-file requirements.txt requirements.in
+
+.PHONY: update-mac-pip-requirements
+update-mac-pip-requirements: ## Updates only dev Python requirements files via pip-compile for macOS.
+	pip-compile --verbose --rebuild --generate-hashes --annotate --allow-unsafe --output-file mac-dev-requirements.txt requirements.in dev-requirements.in
 
 # Explaination of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##

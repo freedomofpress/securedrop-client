@@ -212,12 +212,12 @@ brew install pip
 pip install virtualenv
 virtualenv --python=python3.7 .venv
 source .venv/bin/activate
-pip install --require-hashes -r dev-requirements.txt
+pip install --require-hashes -r mac-dev-requirements.txt
 ```
 
 ## Updating dependencies
 
-We have several dependency files: `dev-requirements.txt` and `requirements.txt` point to python software foundation hashes, and `build-requirements.txt` points to our builds of the wheels from our own pip mirror (https://pypi.securedrop.org/). Whenever a dependency in `build-requirements.txt` changes, our team needs to manually review the code in the dependency diff with a focus on spotting vulnerabilities.
+We have several dependency files: `dev-requirements.txt` (Linux), `mac-dev-requirements.txt` (macOS) and `requirements.txt` point to python software foundation hashes, and `build-requirements.txt` points to our builds of the wheels from our own pip mirror (https://pypi.securedrop.org/). Whenever a dependency in `build-requirements.txt` changes, our team needs to manually review the code in the dependency diff with a focus on spotting vulnerabilities.
 
 If you're adding or updating a dependency, you need to:
 
