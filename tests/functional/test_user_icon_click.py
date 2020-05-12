@@ -7,11 +7,11 @@ https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-
 import pytest
 import pyautogui
 
-from .utils import get_safe_tempdir, get_logged_in_test_context
+from tests.conftest import TIME_APP_START, TIME_CLICK_ACTION
 
 
 @pytest.mark.vcr()
-def test_user_icon_click(qtbot, mocker):
+def test_user_icon_click(qtbot, mocker, functional_test_logged_in_context):
     """
     WARNING: THIS TEST CAUSES SUBSEQUENT TESTS TO CRASH WITH A CORE DUMP!
 
@@ -21,14 +21,8 @@ def test_user_icon_click(qtbot, mocker):
 
     A journalist can successfully see the logout menu by clicking the user icon.
     """
-    totp = "079978"
-    tempdir = get_safe_tempdir()
-    gui, controller = get_logged_in_test_context(tempdir, qtbot, totp)
-
-    def check_login_button():
-        assert gui.left_pane.user_profile.login_button.isVisible()
-
-    qtbot.wait(5000)
+    gui, controller, tempdir = functional_test_logged_in_context
+    qtbot.wait(TIME_APP_START)
 
     # Now instead of clicking via qtbot, we can click via mouse
     user_button_position = gui.left_pane.user_profile.user_button.pos()
@@ -40,7 +34,7 @@ def test_user_icon_click(qtbot, mocker):
     def check_menu_appears():
         assert gui.left_pane.user_profile.user_button.menu.logout.isVisible()
 
-    qtbot.waitUntil(check_menu_appears, timeout=10000)
+    qtbot.waitUntil(check_menu_appears, timeout=TIME_CLICK_ACTION)
 
     button_width = gui.left_pane.user_profile.user_button.width()
     button_height = gui.left_pane.user_profile.user_button.height()
@@ -51,4 +45,7 @@ def test_user_icon_click(qtbot, mocker):
     pyautogui.click(cursor_x + button_width / 2, cursor_y + button_height)
 
     # Here the eventloop is back with qtbot
-    qtbot.waitUntil(check_login_button, timeout=10000)
+    def check_login_button():
+        assert gui.left_pane.user_profile.login_button.isVisible()
+
+    qtbot.waitUntil(check_login_button, timeout=TIME_CLICK_ACTION)
