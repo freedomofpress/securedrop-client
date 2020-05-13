@@ -15,7 +15,7 @@ import sqlalchemy
 import sqlalchemy.orm.exc
 from sqlalchemy.orm import attributes, scoped_session, sessionmaker
 
-from securedrop_client import db, logic
+from securedrop_client import db, logic, storage
 from securedrop_client.export import ExportError, ExportStatus
 from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, SecureQLabel, \
     LoginDialog, SpeechBubble, MessageWidget, ReplyWidget, FileWidget, ConversationView, \
@@ -4180,6 +4180,40 @@ def test_ReplyBoxWidget_disable(mocker):
     assert rb.text_edit.toPlainText() == ''
     rb.text_edit.set_logged_out.assert_called_once_with()
     rb.send_button.hide.assert_called_once_with()
+
+
+def test_ReplyBoxWidget_enable_after_source_gets_key(mocker, session, session_maker, homedir):
+    """
+    Test that it's enabled when a source that lacked a key now has one.
+    """
+
+    with mocker.patch('sdclientapi.API'):
+        mock_gui = mocker.MagicMock()
+        controller = logic.Controller('http://localhost', mock_gui, session_maker, homedir)
+        controller.is_authenticated = True
+
+        # create source without key or fingerprint
+        source = factory.Source(public_key=None, fingerprint=None)
+        session.add(source)
+        session.commit()
+
+        # when the ReplyBoxWidget is constructed, the source has no key,
+        # so the widget should be disabled
+        rbw = ReplyBoxWidget(source, controller)
+        assert rbw.replybox.isEnabled() is False
+        assert rbw.text_edit.isEnabled() is False
+
+        # now simulate a sync...
+        source_with_key = factory.RemoteSource(uuid=source.uuid)
+        storage.update_sources([source_with_key], [source], session, homedir)
+
+        # ... simulate the ReplyBoxWidget receiving the sync success signal
+        rbw._on_synced("synced")
+
+        # ... and the widget should be enabled
+        assert rbw.source.public_key
+        assert rbw.replybox.isEnabled()
+        assert rbw.text_edit.isEnabled()
 
 
 def test_ReplyTextEdit_focus_change_no_text(mocker):
