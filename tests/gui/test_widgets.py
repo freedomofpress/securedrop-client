@@ -4200,6 +4200,8 @@ def test_ReplyBoxWidget_enable_after_source_gets_key(mocker, session, session_ma
         # when the ReplyBoxWidget is constructed, the source has no key,
         # so the widget should be disabled
         rbw = ReplyBoxWidget(source, controller)
+        assert rbw.source.fingerprint is None
+        assert rbw.source.public_key is None
         assert rbw.replybox.isEnabled() is False
         assert rbw.text_edit.isEnabled() is False
 
@@ -4211,6 +4213,7 @@ def test_ReplyBoxWidget_enable_after_source_gets_key(mocker, session, session_ma
         rbw._on_synced("synced")
 
         # ... and the widget should be enabled
+        assert rbw.source.fingerprint
         assert rbw.source.public_key
         assert rbw.replybox.isEnabled()
         assert rbw.text_edit.isEnabled()
