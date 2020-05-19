@@ -828,7 +828,8 @@ def test_Controller_on_file_download_Submission(homedir, config, session, mocker
                                 failure_signal=mock_failure_signal)
     mock_job_cls = mocker.patch(
         "securedrop_client.logic.FileDownloadJob", return_value=mock_job)
-    mock_queue = mocker.patch.object(co, 'api_job_queue')
+    co.add_job = mocker.MagicMock()
+    co.add_job.emit = mocker.MagicMock()
 
     source = factory.Source()
     file_ = factory.File(is_downloaded=None, is_decrypted=None, source=source)
@@ -843,7 +844,7 @@ def test_Controller_on_file_download_Submission(homedir, config, session, mocker
         co.data_dir,
         co.gpg,
     )
-    mock_queue.enqueue.assert_called_once_with(mock_job)
+    co.add_job.emit.assert_called_once_with(mock_job)
     mock_success_signal.connect.assert_called_once_with(
         co.on_file_download_success, type=Qt.QueuedConnection)
     mock_failure_signal.connect.assert_called_once_with(
@@ -864,7 +865,8 @@ def test_Controller_on_file_download_Submission_no_auth(homedir, config, session
                                 failure_signal=mock_failure_signal)
     mock_job_cls = mocker.patch(
         "securedrop_client.logic.FileDownloadJob", return_value=mock_job)
-    mock_queue = mocker.patch.object(co, 'api_job_queue')
+    co.add_job = mocker.MagicMock()
+    co.add_job.emit = mocker.MagicMock()
 
     source = factory.Source()
     file_ = factory.File(is_downloaded=None, is_decrypted=None, source=source)
@@ -875,7 +877,7 @@ def test_Controller_on_file_download_Submission_no_auth(homedir, config, session
     co.on_submission_download(db.File, file_.uuid)
 
     assert not mock_job_cls.called
-    assert not mock_queue.enqueue.called
+    assert not co.add_job.emit.called
     assert not mock_success_signal.connect.called
     assert not mock_failure_signal.connect.called
     assert co.on_action_requiring_login.called
@@ -1132,11 +1134,12 @@ def test_Controller_download_new_replies_with_new_reply(mocker, session, session
     failure_signal = mocker.MagicMock()
     job = mocker.MagicMock(success_signal=success_signal, failure_signal=failure_signal)
     mocker.patch("securedrop_client.logic.ReplyDownloadJob", return_value=job)
-    api_job_queue = mocker.patch.object(co, 'api_job_queue')
+    co.add_job = mocker.MagicMock()
+    co.add_job.emit = mocker.MagicMock()
 
     co.download_new_replies()
 
-    api_job_queue.enqueue.assert_called_once_with(job)
+    co.add_job.emit.assert_called_once_with(job)
     success_signal.connect.assert_called_once_with(
         co.on_reply_download_success, type=Qt.QueuedConnection)
     failure_signal.connect.assert_called_once_with(
@@ -1154,12 +1157,13 @@ def test_Controller_download_new_replies_without_replies(mocker, session, sessio
     failure_signal = mocker.MagicMock()
     job = mocker.MagicMock(success_signal=success_signal, failure_signal=failure_signal)
     mocker.patch("securedrop_client.logic.ReplyDownloadJob", return_value=job)
-    api_job_queue = mocker.patch.object(co, 'api_job_queue')
+    co.add_job = mocker.MagicMock()
+    co.add_job.emit = mocker.MagicMock()
     set_status = mocker.patch.object(co, 'set_status')
 
     co.download_new_replies()
 
-    api_job_queue.enqueue.assert_not_called()
+    co.add_job.emit.assert_not_called()
     success_signal.connect.assert_not_called()
     failure_signal.connect.assert_not_called()
     set_status.assert_not_called()
@@ -1247,14 +1251,15 @@ def test_Controller_download_new_messages_with_new_message(mocker, session, sess
     mocker.patch('securedrop_client.storage.find_new_messages', return_value=[message])
     success_signal = mocker.MagicMock()
     failure_signal = mocker.MagicMock()
+    co.add_job = mocker.MagicMock()
+    co.add_job.emit = mocker.MagicMock()
     job = mocker.MagicMock(success_signal=success_signal, failure_signal=failure_signal)
     mocker.patch("securedrop_client.logic.MessageDownloadJob", return_value=job)
-    api_job_queue = mocker.patch.object(co, 'api_job_queue')
     set_status = mocker.patch.object(co, 'set_status')
 
     co.download_new_messages()
 
-    api_job_queue.enqueue.assert_called_once_with(job)
+    co.add_job.emit.assert_called_once_with(job)
     success_signal.connect.assert_called_once_with(
         co.on_message_download_success, type=Qt.QueuedConnection)
     failure_signal.connect.assert_called_once_with(
@@ -1273,12 +1278,13 @@ def test_Controller_download_new_messages_without_messages(mocker, session, sess
     failure_signal = mocker.MagicMock()
     job = mocker.MagicMock(success_signal=success_signal, failure_signal=failure_signal)
     mocker.patch("securedrop_client.logic.MessageDownloadJob", return_value=job)
-    api_job_queue = mocker.patch.object(co, 'api_job_queue')
+    co.add_job = mocker.MagicMock()
+    co.add_job.emit = mocker.MagicMock()
     set_status = mocker.patch.object(co, 'set_status')
 
     co.download_new_messages()
 
-    api_job_queue.enqueue.assert_not_called()
+    co.add_job.emit.assert_not_called()
     success_signal.connect.assert_not_called()
     failure_signal.connect.assert_not_called()
     set_status.assert_not_called()
@@ -1292,6 +1298,8 @@ def test_Controller_download_new_messages_skips_recent_failures(
     """
     co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
     co.api = "Api token has a value"
+    co.add_job = mocker.MagicMock()
+    co.add_job.emit = mocker.MagicMock()
 
     # record the download failures
     download_error = session.query(db.DownloadError).filter_by(
@@ -1303,13 +1311,12 @@ def test_Controller_download_new_messages_skips_recent_failures(
     session.commit()
 
     mocker.patch("securedrop_client.storage.find_new_messages", return_value=[message])
-    api_job_queue = mocker.patch.object(co, "api_job_queue")
     mocker.patch("securedrop_client.logic.logger.isEnabledFor", return_value=logging.DEBUG)
     info_logger = mocker.patch("securedrop_client.logic.logger.info")
 
     co.download_new_messages()
 
-    api_job_queue.enqueue.assert_not_called()
+    co.add_job.emit.assert_not_called()
     info_logger.call_args_list[0][0][0] == (
         f"Download of message {message.uuid} failed since client start; not retrying."
     )
@@ -1323,6 +1330,8 @@ def test_Controller_download_new_replies_skips_recent_failures(
     """
     co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
     co.api = "Api token has a value"
+    co.add_job = mocker.MagicMock()
+    co.add_job.emit = mocker.MagicMock()
 
     # record the download failures
     download_error = session.query(db.DownloadError).filter_by(
@@ -1335,13 +1344,12 @@ def test_Controller_download_new_replies_skips_recent_failures(
     session.commit()
 
     mocker.patch("securedrop_client.storage.find_new_replies", return_value=[reply])
-    api_job_queue = mocker.patch.object(co, "api_job_queue")
     mocker.patch("securedrop_client.logic.logger.isEnabledFor", return_value=logging.DEBUG)
     info_logger = mocker.patch("securedrop_client.logic.logger.info")
 
     co.download_new_replies()
 
-    api_job_queue.enqueue.assert_not_called()
+    co.add_job.emit.assert_not_called()
     info_logger.call_args_list[0][0][0] == (
         f"Download of reply {reply.uuid} failed since client start; not retrying."
     )
@@ -1463,13 +1471,14 @@ def test_Controller_delete_source(homedir, config, mocker, session_maker, sessio
     co.call_api = mocker.MagicMock()
     co.api = mocker.MagicMock()
     co.source_deleted = mocker.MagicMock()
+    co.add_job = mocker.MagicMock()
+    co.add_job.emit = mocker.MagicMock()
 
     mock_success_signal = mocker.MagicMock()
     mock_failure_signal = mocker.MagicMock()
     mock_job = mocker.MagicMock(
         success_signal=mock_success_signal, failure_signal=mock_failure_signal)
     mock_job_cls = mocker.patch("securedrop_client.logic.DeleteSourceJob", return_value=mock_job)
-    mock_queue = mocker.patch.object(co, 'api_job_queue')
 
     source = factory.Source()
     session.add(source)
@@ -1479,7 +1488,7 @@ def test_Controller_delete_source(homedir, config, mocker, session_maker, sessio
 
     co.source_deleted.emit.assert_called_once_with(source.uuid)
     mock_job_cls.assert_called_once_with(source.uuid)
-    mock_queue.enqueue.assert_called_once_with(mock_job)
+    co.add_job.emit.assert_called_once_with(mock_job)
     mock_success_signal.connect.assert_called_once_with(
         co.on_delete_source_success, type=Qt.QueuedConnection)
     mock_failure_signal.connect.assert_called_once_with(
@@ -1503,7 +1512,8 @@ def test_Controller_send_reply_success(homedir, config, mocker, session_maker, s
                                 failure_signal=mock_failure_signal)
     mock_job_cls = mocker.patch(
         "securedrop_client.logic.SendReplyJob", return_value=mock_job)
-    mock_queue = mocker.patch.object(co, 'api_job_queue')
+    co.add_job = mocker.MagicMock()
+    co.add_job.emit = mocker.MagicMock()
 
     source = factory.Source()
     session.add(source)
@@ -1518,7 +1528,7 @@ def test_Controller_send_reply_success(homedir, config, mocker, session_maker, s
         co.gpg,
     )
 
-    mock_queue.enqueue.assert_called_once_with(mock_job)
+    co.add_job.emit.assert_called_once_with(mock_job)
     mock_success_signal.connect.assert_called_once_with(
         co.on_reply_success, type=Qt.QueuedConnection)
     mock_failure_signal.connect.assert_called_once_with(
@@ -1678,7 +1688,8 @@ def test_Controller_call_update_star_success(homedir, config, mocker, session_ma
     mock_job = mocker.MagicMock(success_signal=star_update_successful,
                                 failure_signal=star_update_failed)
     mock_job_cls = mocker.patch("securedrop_client.logic.UpdateStarJob", return_value=mock_job)
-    mock_queue = mocker.patch.object(co, 'api_job_queue')
+    co.add_job = mocker.MagicMock()
+    co.add_job.emit = mocker.MagicMock()
 
     source = factory.Source()
     session.add(source)
@@ -1687,7 +1698,7 @@ def test_Controller_call_update_star_success(homedir, config, mocker, session_ma
     co.update_star(source.uuid, source.is_starred)
 
     mock_job_cls.assert_called_once_with(source.uuid, source.is_starred)
-    mock_queue.enqueue.assert_called_once_with(mock_job)
+    co.add_job.emit.assert_called_once_with(mock_job)
     assert star_update_successful.connect.call_count == 1
     star_update_failed.connect.assert_called_once_with(
         co.on_update_star_failure, type=Qt.QueuedConnection)
