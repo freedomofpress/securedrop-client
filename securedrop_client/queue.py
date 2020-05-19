@@ -88,9 +88,12 @@ class RunnableQueue(QObject):
             return True
         return False
 
+    @pyqtSlot()
     def add_job(self, job: ApiJob) -> None:
         '''
         Add the job with its priority to the queue after assigning it the next order_number.
+
+        Can block while waiting to acquire condition_add_or_remove_job.
         '''
         with self.condition_add_or_remove_job:
             if self._check_for_duplicate_jobs(job):
@@ -103,10 +106,12 @@ class RunnableQueue(QObject):
             self.queue.put_nowait((priority, job))
             self.condition_add_or_remove_job.notify()
 
-    def re_add_job(self, job: ApiJob) -> None:
+    def _re_add_job(self, job: ApiJob) -> None:
         '''
         Reset the job's remaining attempts and put it back into the queue in the order in which it
-        was submitted by the user (do not assign it the next order_number).
+        was submitted by the user (do not assign it the next order_number). Used internally.
+
+        When called condition_add_or_remove_job should be held.
         '''
         if self._check_for_duplicate_jobs(job):
             return
@@ -162,7 +167,7 @@ class RunnableQueue(QObject):
                 self.add_job(PauseQueueJob())
                 with self.condition_add_or_remove_job:
                     job, self.current_job = self.current_job, None
-                    self.re_add_job(job)
+                    self._re_add_job(job)
             except Exception as e:
                 logger.error('{}: {}'.format(type(e).__name__, e))
                 logger.debug('Skipping job')
@@ -258,6 +263,7 @@ class ApiJobQueue(QObject):
             logger.debug("Resuming download queue")
             self.download_file_queue.resume.emit()
 
+    @pyqtSlot(object)
     def enqueue(self, job: ApiJob) -> None:
         '''
         Enqueue the supplied job if the queues are running.

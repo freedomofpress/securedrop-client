@@ -236,6 +236,15 @@ class Controller(QObject):
     """
     source_deletion_failed = pyqtSignal(str)
 
+    """
+    This signal lets the queue manager know to add the job to the appropriate
+    network queue.
+
+    Emits:
+        PyQt_PyObject: the ApiJob to be added
+    """
+    add_job = pyqtSignal('PyQt_PyObject')
+
     def __init__(
         self, hostname: str, gui, session_maker: sessionmaker,
         home: str, proxy: bool = True, qubes: bool = True
@@ -277,6 +286,7 @@ class Controller(QObject):
         # Queue that handles running API job
         self.api_job_queue = ApiJobQueue(self.api, self.session_maker)
         self.api_job_queue.paused.connect(self.on_queue_paused)
+        self.add_job.connect(self.api_job_queue.enqueue)
 
         # Contains active threads calling the API.
         self.api_threads = {}  # type: Dict[str, Dict]
@@ -571,8 +581,7 @@ class Controller(QObject):
         job = UpdateStarJob(source_uuid, is_starred)
         job.success_signal.connect(self.on_update_star_success, type=Qt.QueuedConnection)
         job.failure_signal.connect(self.on_update_star_failure, type=Qt.QueuedConnection)
-
-        self.api_job_queue.enqueue(job)
+        self.add_job.emit(job)
 
     def logout(self):
         """
@@ -630,7 +639,7 @@ class Controller(QObject):
             job.success_signal.connect(self.on_file_download_success, type=Qt.QueuedConnection)
             job.failure_signal.connect(self.on_file_download_failure, type=Qt.QueuedConnection)
 
-        self.api_job_queue.enqueue(job)
+        self.add_job.emit(job)
 
     def download_new_messages(self) -> None:
         new_messages = storage.find_new_messages(self.session)
@@ -861,7 +870,7 @@ class Controller(QObject):
         job.success_signal.connect(self.on_delete_source_success, type=Qt.QueuedConnection)
         job.failure_signal.connect(self.on_delete_source_failure, type=Qt.QueuedConnection)
 
-        self.api_job_queue.enqueue(job)
+        self.add_job.emit(job)
         self.source_deleted.emit(source.uuid)
 
     @login_required
@@ -890,7 +899,7 @@ class Controller(QObject):
         job.success_signal.connect(self.on_reply_success, type=Qt.QueuedConnection)
         job.failure_signal.connect(self.on_reply_failure, type=Qt.QueuedConnection)
 
-        self.api_job_queue.enqueue(job)
+        self.add_job.emit(job)
 
     def on_reply_success(self, reply_uuid: str) -> None:
         logger.info('{} sent successfully'.format(reply_uuid))
