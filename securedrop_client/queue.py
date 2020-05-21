@@ -88,7 +88,6 @@ class RunnableQueue(QObject):
             return True
         return False
 
-    @pyqtSlot()
     def add_job(self, job: ApiJob) -> None:
         '''
         Add the job with its priority to the queue after assigning it the next order_number.
