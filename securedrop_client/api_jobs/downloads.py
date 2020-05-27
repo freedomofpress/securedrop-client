@@ -123,9 +123,11 @@ class DownloadJob(SingleObjectApiJob):
         db_object = self.get_db_object(session)
 
         if db_object.is_decrypted:
+            logger.debug(f'item with uuid {self.uuid} already decrypted, returning')
             return db_object.uuid
 
         if db_object.is_downloaded:
+            logger.debug(f'item with uuid {self.uuid} already downloaded, now decrypting')
             self._decrypt(db_object.location(self.data_dir), db_object, session)
             return db_object.uuid
 
