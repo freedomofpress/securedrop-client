@@ -4,14 +4,15 @@ import sdclientapi
 from sdclientapi import API, ServerConnectionError, RequestTimeoutError
 from sqlalchemy.orm.session import Session
 
-from securedrop_client.api_jobs.base import SingleObjectApiJob
+from securedrop_client.api_jobs.base import ApiJob
 
 logger = logging.getLogger(__name__)
 
 
-class DeleteSourceJob(SingleObjectApiJob):
+class DeleteSourceJob(ApiJob):
     def __init__(self, uuid: str) -> None:
-        super().__init__(uuid)
+        super().__init__()
+        self.uuid = uuid
 
     def call_api(self, api_client: API, session: Session) -> str:
         '''
