@@ -3045,13 +3045,11 @@ class ReplyTextEdit(QPlainTextEdit):
             msg = "<strong><font color=\"#24276d\">Awaiting encryption key</font></strong>"
             placeholder = msg + " from the server to enable replies."
         self.placeholder.setText(placeholder)
-        self.placeholder.adjustSize()
 
     def set_logged_out(self):
         text = "<strong><font color=\"#2a319d\">" + _("Sign in") + " </font></strong>" + \
             _("to compose or send a reply")
         self.placeholder.setText(text)
-        self.placeholder.adjustSize()
         self.setEnabled(False)
 
     def setText(self, text):
