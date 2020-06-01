@@ -11,6 +11,7 @@ from securedrop_client.gui.widgets import FileWidget
 
 from tests.conftest import (TIME_APP_START, TIME_CLICK_ACTION, TIME_FILE_DOWNLOAD,
                             TIME_RENDER_SOURCE_LIST, TIME_SYNC)
+import pyautogui
 
 
 @flaky
@@ -61,6 +62,7 @@ def test_export_dialog(functional_test_logged_in_context, qtbot, mocker):
 
     qtbot.waitUntil(check_for_export_dialog, timeout=TIME_CLICK_ACTION)
 
+    pyautogui.screenshot("first.png")
     export_dialog = file_msg.export_dialog
     qtbot.mouseClick(export_dialog.continue_button, Qt.LeftButton)
 
@@ -69,13 +71,18 @@ def test_export_dialog(functional_test_logged_in_context, qtbot, mocker):
 
     qtbot.waitUntil(check_password_form, timeout=TIME_CLICK_ACTION)
 
+    pyautogui.screenshot("second.png")
     message = "Use Tor Browser"
     # Focus on passphrase box text entry.
     qtbot.mouseClick(export_dialog.passphrase_field, Qt.LeftButton)
+
+    pyautogui.screenshot("third-1.png")
     # Type in a message to the passphrase box.
     qtbot.keyClicks(export_dialog.passphrase_field, message)
+    pyautogui.screenshot("third-2.png")
     qtbot.wait(TIME_CLICK_ACTION)
 
+    pyautogui.screenshot("four.png")
     # click on the continue button
     qtbot.mouseClick(export_dialog.continue_button, Qt.LeftButton)
     qtbot.wait(TIME_CLICK_ACTION)
