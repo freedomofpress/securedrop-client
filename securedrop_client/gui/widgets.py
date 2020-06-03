@@ -177,7 +177,6 @@ class LeftPane(QWidget):
         layout.setSpacing(0)
         layout.setAlignment(Qt.AlignBottom)
         self.setFixedWidth(198)
-        self.setMinimumHeight(558)
 
         # Set background image
         self.logo = QWidget()
@@ -190,7 +189,6 @@ class LeftPane(QWidget):
         )
         self.logo.setPalette(self.offline_palette)
         self.logo.setAutoFillBackground(True)
-        self.logo.setMaximumHeight(884)
         self.logo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.logo.setEnabled(False)
 
@@ -396,7 +394,6 @@ class UserProfile(QLabel):
         palette.setBrush(QPalette.Background, QBrush(QColor("#0096DC")))
         self.setPalette(palette)
         self.setAutoFillBackground(True)
-        self.setMinimumHeight(20)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
         # Set layout
@@ -426,13 +423,9 @@ class UserProfile(QLabel):
         self.user_icon.setCursor(QCursor(Qt.PointingHandCursor))
 
         # Add widgets to user auth layout
-        layout.addWidget(self.login_button, 1)
-        layout.addWidget(self.user_icon, 1)
-        layout.addWidget(self.user_button, 4)
-
-        # Align content to the top left
-        layout.addStretch()
-        layout.setAlignment(Qt.AlignTop)
+        layout.addWidget(self.login_button, alignment=Qt.AlignTop)
+        layout.addWidget(self.user_icon, alignment=Qt.AlignTop)
+        layout.addWidget(self.user_button, alignment=Qt.AlignTop)
 
     def setup(self, window, controller):
         self.user_button.setup(controller)
@@ -792,8 +785,7 @@ class SourceList(QListWidget):
     def __init__(self):
         super().__init__()
 
-        self.setObjectName("SourceList")
-        self.setFixedWidth(540)
+        self.setObjectName('SourceList')
         self.setUniformItemSizes(True)
 
         # Set layout.

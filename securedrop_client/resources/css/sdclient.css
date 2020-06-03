@@ -100,6 +100,7 @@
 
 #UserProfile {
     padding: 15px;
+    min-height: 200px
 }
 
 #UserProfile_icon {
@@ -184,6 +185,8 @@ QListView#SourceList {
     border: none;
     show-decoration-selected: 0;
     border-right: 3px solid #f3f5f9;
+    min-width: 540px;
+    max-width: 540px;
 }
 
 QListView#SourceList::item:selected {
