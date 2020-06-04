@@ -74,6 +74,7 @@ target/
 
 # .env
 *.env
+.venv
 
 #VSCode
 .vscode/

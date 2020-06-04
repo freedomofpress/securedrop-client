@@ -1,10 +1,26 @@
 DEFAULT_GOAL: help
 OPEN=$(word 1, $(wildcard /usr/bin/xdg-open /usr/bin/open))
 
-.PHONY: format
-format: ## Run the formatter
-	@docker build -t securedrop-sdk/black:latest -f Dockerfile.black . && \
-		docker run --rm -v $(PWD):/home/kdas/workplace securedrop-sdk/black:latest black .
+.PHONY: venv
+venv:  ## Provision a Python 3 virtualenv for development.
+	python3 -m venv .venv
+	.venv/bin/pip install --require-hashes -r dev-requirements.txt
+
+.PHONY: black
+black: ## Format Python source code with black
+	@black setup.py sdclientapi tests
+
+.PHONY: check-black
+check-black: ## Check Python source code formatting with black
+	@black --check --diff setup.py sdclientapi tests
+
+.PHONY: isort
+isort: ## Run isort to organize Python imports
+	@isort --recursive setup.py sdclientapi tests
+
+.PHONY: check-isort
+check-isort: ## Check Python import organization with isort
+	@isort --check-only --diff --recursive setup.py sdclientapi tests
 
 TESTS ?= tests
 .PHONY: test
@@ -20,7 +36,7 @@ mypy: ## Run the mypy typechecker
 	@mypy sdclientapi
 
 .PHONY: check
-check: lint mypy test safety ## Run all checks and tests
+check: check-black check-isort lint mypy safety test ## Run all checks and tests
 
 .PHONY: safety
 safety: ## Runs `safety check` to check python dependencies for vulnerabilities
