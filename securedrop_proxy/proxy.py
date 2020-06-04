@@ -1,21 +1,20 @@
-import furl
 import http
 import json
 import logging
-import requests
-import tempfile
-import werkzeug
-
 import os
 import subprocess
 import sys
+import tempfile
 import uuid
-import yaml
+from tempfile import _TemporaryFileWrapper  # type: ignore
 from typing import Dict, Optional
 
-import securedrop_proxy.version as version
+import furl
+import requests
+import werkzeug
+import yaml
 
-from tempfile import _TemporaryFileWrapper  # type: ignore
+import securedrop_proxy.version as version
 
 logger = logging.getLogger(__name__)
 
@@ -45,10 +44,7 @@ class Response:
 
 
 class Proxy:
-    def __init__(
-        self, conf_path: str, req: Req = Req(), timeout: float = 120.0
-    ) -> None:
-        # The configuration path for Proxy is a must.
+    def __init__(self, conf_path: str, req: Req = Req(), timeout: float = 10.0) -> None:
         self.read_conf(conf_path)
 
         self.req = req
@@ -75,9 +71,7 @@ class Proxy:
     def read_conf(self, conf_path: str) -> None:
 
         if not os.path.isfile(conf_path):
-            self.simple_error(
-                500, "Configuration file does not exist at {}".format(conf_path)
-            )
+            self.simple_error(500, "Configuration file does not exist at {}".format(conf_path))
             self.err_on_done()
 
         try:
@@ -85,18 +79,12 @@ class Proxy:
                 conf_in = yaml.safe_load(fh)
         except yaml.YAMLError:
             self.simple_error(
-                500,
-                "YAML syntax error while reading configuration file {}".format(
-                    conf_path
-                ),
+                500, "YAML syntax error while reading configuration file {}".format(conf_path),
             )
             self.err_on_done()
         except Exception:
             self.simple_error(
-                500,
-                "Error while opening or reading configuration file {}".format(
-                    conf_path
-                ),
+                500, "Error while opening or reading configuration file {}".format(conf_path),
             )
             self.err_on_done()
 
@@ -266,15 +254,12 @@ class Proxy:
             requests.exceptions.TooManyRedirects,
         ) as e:
             logger.error(e)
-            self.simple_error(
-                http.HTTPStatus.BAD_GATEWAY, "could not connect to server"
-            )
+            self.simple_error(http.HTTPStatus.BAD_GATEWAY, "could not connect to server")
         except requests.exceptions.HTTPError as e:
             logger.error(e)
             try:
                 self.simple_error(
-                    e.response.status_code,
-                    http.HTTPStatus(e.response.status_code).phrase.lower(),
+                    e.response.status_code, http.HTTPStatus(e.response.status_code).phrase.lower(),
                 )
             except ValueError:
                 # Return a generic error message when the response
@@ -282,7 +267,5 @@ class Proxy:
                 self.simple_error(e.response.status_code, "unspecified server error")
         except Exception as e:
             logger.error(e)
-            self.simple_error(
-                http.HTTPStatus.INTERNAL_SERVER_ERROR, "internal proxy error"
-            )
+            self.simple_error(http.HTTPStatus.INTERNAL_SERVER_ERROR, "internal proxy error")
         self.on_done()

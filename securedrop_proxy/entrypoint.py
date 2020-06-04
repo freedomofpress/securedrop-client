@@ -10,15 +10,12 @@ import http
 import json
 import logging
 import os
-import sys
 import platform
+import sys
+from logging.handlers import SysLogHandler, TimedRotatingFileHandler
 
-from logging.handlers import TimedRotatingFileHandler, SysLogHandler
-
-from securedrop_proxy import main
-from securedrop_proxy import proxy
+from securedrop_proxy import main, proxy
 from securedrop_proxy.version import version
-
 
 DEFAULT_HOME = os.path.join(os.path.expanduser("~"), ".securedrop_proxy")
 LOGLEVEL = os.environ.get("LOGLEVEL", "info").upper()
@@ -26,8 +23,8 @@ LOGLEVEL = os.environ.get("LOGLEVEL", "info").upper()
 
 def start() -> None:
     """
-    Set up a new proxy object with an error handler, configuration that we read from  argv[1], and
-    the original user request from STDIN.
+    Set up a new proxy object with an error handler, configuration that we read
+    from  argv[1], and the original user request from STDIN.
     """
     try:
         configure_logging()
@@ -36,9 +33,7 @@ def start() -> None:
 
         # path to config file must be at argv[1]
         if len(sys.argv) != 2:
-            raise ValueError(
-                "sd-proxy script not called with path to configuration file"
-            )
+            raise ValueError("sd-proxy script not called with path to configuration file")
 
         # read config. `read_conf` will call `p.err_on_done` if there is a config
         # problem, and will return a Conf object on success.
@@ -74,9 +69,7 @@ def configure_logging() -> None:
     log_file = os.path.join(home, "logs", "proxy.log")
 
     # set logging format
-    log_fmt = (
-        "%(asctime)s - %(name)s:%(lineno)d(%(funcName)s) %(levelname)s: %(message)s"
-    )
+    log_fmt = "%(asctime)s - %(name)s:%(lineno)d(%(funcName)s) %(levelname)s: %(message)s"
     formatter = logging.Formatter(log_fmt)
 
     # define log handlers such as for rotating log files
