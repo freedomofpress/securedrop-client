@@ -1,10 +1,8 @@
 import json
 import logging
-from typing import Dict, Any
+from typing import Any, Dict
 
 from securedrop_proxy import proxy
-
-
 from securedrop_proxy.proxy import Proxy
 
 logger = logging.getLogger(__name__)

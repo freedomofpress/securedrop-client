@@ -1,16 +1,15 @@
 import http
-from io import StringIO
 import json
 import subprocess
 import sys
+import types
 import unittest
 import uuid
-import types
+from io import StringIO
 
 import vcr
 
-from securedrop_proxy import main
-from securedrop_proxy import proxy
+from securedrop_proxy import main, proxy
 
 
 class TestMain(unittest.TestCase):

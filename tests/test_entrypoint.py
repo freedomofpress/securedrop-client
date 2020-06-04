@@ -9,6 +9,7 @@ import unittest.mock
 from unittest.mock import patch
 
 import vcr
+
 from securedrop_proxy import entrypoint
 
 
@@ -53,7 +54,7 @@ class TestEntrypoint(unittest.TestCase):
     @patch("securedrop_proxy.entrypoint.TimedRotatingFileHandler")
     def test_configure_logging(self, mock_log_conf, mock_log_conf_sys, mock_logging):
         with sdhome() as homedir:
-            mock_log_file = os.path.join(homedir, 'logs', 'proxy.log')
+            mock_log_file = os.path.join(homedir, "logs", "proxy.log")
             entrypoint.configure_logging()
             mock_log_conf.assert_called_once_with(mock_log_file)
             # For rsyslog handler
@@ -71,9 +72,7 @@ class TestEntrypoint(unittest.TestCase):
         output = None
         with sdhome() as home:
             os.chmod(home, 0o0444)
-            with unittest.mock.patch(
-                "sys.stdout", new_callable=io.StringIO
-            ) as mock_stdout:
+            with unittest.mock.patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
                 with self.assertRaises(SystemExit):
                     entrypoint.start()
                 output = mock_stdout.getvalue()

@@ -1,18 +1,17 @@
-import sys
 import http
 import json
+import sys
+import tempfile
+import types
 import unittest
 import uuid
-import types
 from io import StringIO
-import tempfile
 from unittest.mock import patch
 
 import requests
 import vcr
 
-from securedrop_proxy import proxy
-from securedrop_proxy import version
+from securedrop_proxy import proxy, version
 
 
 class TestProxyValidConfig(unittest.TestCase):
@@ -245,9 +244,7 @@ class TestServerErrorHandling(unittest.TestCase):
         self.assertEqual(p.res.status, http.HTTPStatus.INTERNAL_SERVER_ERROR)
         self.assertIn("application/json", p.res.headers["Content-Type"])
         body = json.loads(p.res.body)
-        self.assertEqual(
-            body["error"], http.HTTPStatus.INTERNAL_SERVER_ERROR.phrase.lower()
-        )
+        self.assertEqual(body["error"], http.HTTPStatus.INTERNAL_SERVER_ERROR.phrase.lower())
 
     @vcr.use_cassette("fixtures/proxy_internal_error.yaml")
     def test_internal_error(self):
