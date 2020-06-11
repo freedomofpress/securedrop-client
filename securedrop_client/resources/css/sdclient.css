@@ -283,18 +283,20 @@ QWidget#ReplyBoxWidget_horizontal_line {
     font-weight: 400;
     font-size: 18px;
     border: none;
-    margin-right: 30.2px;
 }
 
-#ReplyTextEdit_placeholder {
+#ReplyTextEditPlaceholder_text {
     font-family: 'Montserrat';
     font-weight: 400;
     font-size: 18px;
     color: #404040;
 }
 
-#ReplyTextEdit_placeholder::disabled {
-    color: rgba(42, 49, 157, 0.6);
+#ReplyTextEditPlaceholder_bold_blue {
+    font-family: 'Montserrat';
+    font-weight: 600;
+    font-size: 18px;
+    color: #2a319d;
 }
 
 QWidget#SourceProfileShortWidget_horizontal_line {

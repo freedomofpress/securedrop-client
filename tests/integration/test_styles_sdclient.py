@@ -95,7 +95,18 @@ def test_class_name_matches_css_object_name(mocker, main_window):
     reply_text_edit = reply_box.text_edit
     assert 'ReplyTextEdit' == reply_text_edit.__class__.__name__
     assert 'ReplyTextEdit' == reply_text_edit.objectName()
-    assert 'ReplyTextEdit' in reply_text_edit.placeholder.objectName()
+    compose_a_reply_to = reply_text_edit.placeholder.signed_in.layout().itemAt(0).widget()
+    source_name = reply_text_edit.placeholder.signed_in.layout().itemAt(1).widget()
+    sign_in = reply_text_edit.placeholder.signed_out.layout().itemAt(0).widget()
+    to_compose_reply = reply_text_edit.placeholder.signed_in.layout().itemAt(1).widget()
+    awaiting_key = reply_text_edit.placeholder.signed_out.layout().itemAt(0).widget()
+    from_server = reply_text_edit.placeholder.signed_in.layout().itemAt(1).widget()
+    assert 'ReplyTextEditPlaceholder' in compose_a_reply_to.objectName()
+    assert 'ReplyTextEditPlaceholder' in source_name.objectName()
+    assert 'ReplyTextEditPlaceholder' in sign_in.objectName()
+    assert 'ReplyTextEditPlaceholder' in to_compose_reply.objectName()
+    assert 'ReplyTextEditPlaceholder' in awaiting_key.objectName()
+    assert 'ReplyTextEditPlaceholder' in from_server.objectName()
     conversation_title_bar = wrapper.conversation_title_bar
     assert 'SourceProfileShortWidget' == conversation_title_bar.__class__.__name__
     horizontal_line = conversation_title_bar.layout().itemAt(1).widget()
@@ -379,18 +390,8 @@ def test_styles_for_conversation_view(mocker, main_window):
     assert QFont.Normal == reply_text_edit.font().weight()
     assert 18 == reply_text_edit.font().pixelSize()
     # assert 'border: none;'
-    assert (0, 0, 30, 0) == reply_text_edit.getContentsMargins()
-    assert 'Montserrat' == reply_text_edit.placeholder.font().family()
-    assert QFont.Normal == reply_text_edit.placeholder.font().weight()
-    assert 18 == reply_text_edit.placeholder.font().pixelSize()
-    '#404040' == reply_text_edit.placeholder.palette().color(QPalette.Foreground).name()
-
-    reply_text_edit.setEnabled(False)
-    assert 153 == math.floor(255 * 0.6)  # sanity check
-    assert 153 == reply_text_edit.placeholder.palette().color(QPalette.Foreground).rgba64().alpha8()
-    assert 42 == reply_text_edit.placeholder.palette().color(QPalette.Foreground).red()
-    assert 49 == reply_text_edit.placeholder.palette().color(QPalette.Foreground).green()
-    assert 157 == reply_text_edit.placeholder.palette().color(QPalette.Foreground).blue()
+    assert (0, 0, 0, 0) == reply_text_edit.getContentsMargins()
+    # See test_placeholder.py for placeholder tests
 
     conversation_title_bar = wrapper.conversation_title_bar
     horizontal_line = conversation_title_bar.layout().itemAt(1).widget()

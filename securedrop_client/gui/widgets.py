@@ -25,7 +25,7 @@ from gettext import gettext as _
 from typing import Dict, List, Union, Optional  # noqa: F401
 from uuid import uuid4
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QEvent, QTimer, QSize, pyqtBoundSignal, \
-    QObject, QPoint
+    QObject
 from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient, QKeySequence, \
     QCursor, QKeyEvent, QPixmap
 from PyQt5.QtWidgets import QApplication, QListWidget, QLabel, QWidget, QListWidgetItem, \
@@ -2904,7 +2904,6 @@ class ReplyBoxWidget(QWidget):
 
         # Create reply text box
         self.text_edit = ReplyTextEdit(self.source, self.controller)
-        self.text_edit.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         # Create reply send button (airplane)
         self.send_button = QPushButton()
@@ -3007,20 +3006,20 @@ class ReplyTextEdit(QPlainTextEdit):
 
     def __init__(self, source, controller):
         super().__init__()
+
         self.controller = controller
         self.source = source
 
         self.setObjectName('ReplyTextEdit')
 
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setTabChangesFocus(True)  # Needed so we can TAB to send button.
-
-        self.placeholder = QLabel()
-        self.placeholder.setObjectName("ReplyTextEdit_placeholder")
-        self.placeholder.setParent(self)
-        self.placeholder.move(QPoint(3, 4))  # make label match text below
-        self.set_logged_in()
-        # Set cursor.
         self.setCursor(QCursor(Qt.IBeamCursor))
+
+        self.placeholder = ReplyTextEditPlaceholder(source.journalist_designation)
+        self.placeholder.setParent(self)
+
+        self.set_logged_in()
 
     def focusInEvent(self, e):
         # override default behavior: when reply text box is focused, the placeholder
@@ -3036,20 +3035,14 @@ class ReplyTextEdit(QPlainTextEdit):
 
     def set_logged_in(self):
         if self.source.public_key:
+            self.placeholder.show_signed_in()
             self.setEnabled(True)
-            source_name = "<strong><font color=\"#24276d\">{}</font></strong>".format(
-                self.source.journalist_designation)
-            placeholder = _("Compose a reply to ") + source_name
         else:
+            self.placeholder.show_signed_in_no_key()
             self.setEnabled(False)
-            msg = "<strong><font color=\"#24276d\">Awaiting encryption key</font></strong>"
-            placeholder = msg + " from the server to enable replies."
-        self.placeholder.setText(placeholder)
 
     def set_logged_out(self):
-        text = "<strong><font color=\"#2a319d\">" + _("Sign in") + " </font></strong>" + \
-            _("to compose or send a reply")
-        self.placeholder.setText(text)
+        self.placeholder.show_signed_out()
         self.setEnabled(False)
 
     def setText(self, text):
@@ -3058,6 +3051,76 @@ class ReplyTextEdit(QPlainTextEdit):
         else:
             self.placeholder.hide()
         super(ReplyTextEdit, self).setPlainText(text)
+
+
+class ReplyTextEditPlaceholder(QWidget):
+    def __init__(self, source_name):
+        super().__init__()
+
+        # Set layout
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        self.setLayout(layout)
+
+        # Signed in
+        compose_a_reply_to = QLabel(_('Compose a reply to '))
+        compose_a_reply_to.setObjectName('ReplyTextEditPlaceholder_text')
+        source_name = SecureQLabel(source_name)
+        source_name.setObjectName('ReplyTextEditPlaceholder_bold_blue')
+        self.signed_in = QWidget()
+        signed_in_layout = QHBoxLayout()
+        signed_in_layout.setSpacing(0)
+        self.signed_in.setLayout(signed_in_layout)
+        signed_in_layout.addWidget(compose_a_reply_to)
+        signed_in_layout.addWidget(source_name)
+        self.signed_in.hide()
+
+        # Awaiting key
+        awaiting_key = QLabel('Awaiting encryption key')
+        awaiting_key.setObjectName('ReplyTextEditPlaceholder_bold_blue')
+        from_server = QLabel(_(' from server to enable replies'))
+        from_server.setObjectName('ReplyTextEditPlaceholder_text')
+        self.signed_in_no_key = QLabel()
+        signed_in_no_key_layout = QHBoxLayout()
+        signed_in_no_key_layout.setSpacing(0)
+        self.signed_in_no_key.setLayout(signed_in_no_key_layout)
+        signed_in_no_key_layout.addWidget(awaiting_key)
+        signed_in_no_key_layout.addWidget(from_server)
+        self.signed_in_no_key.hide()
+
+        # Signed out
+        sign_in = QLabel(_('Sign in'))
+        sign_in.setObjectName('ReplyTextEditPlaceholder_bold_blue')
+        to_compose_reply = QLabel(' to compose or send a reply')
+        to_compose_reply.setObjectName('ReplyTextEditPlaceholder_text')
+        self.signed_out = QLabel()
+        signed_out_layout = QHBoxLayout()
+        signed_out_layout.setSpacing(0)
+        self.signed_out.setLayout(signed_out_layout)
+        signed_out_layout.addWidget(sign_in)
+        signed_out_layout.addWidget(to_compose_reply)
+        signed_out_layout.addStretch()
+        self.signed_out.hide()
+
+        layout.addWidget(self.signed_in)
+        layout.addWidget(self.signed_in_no_key)
+        layout.addWidget(self.signed_out)
+
+    def show_signed_in(self):
+        self.signed_in_no_key.hide()
+        self.signed_in.show()
+        self.signed_out.hide()
+
+    def show_signed_in_no_key(self):
+        self.signed_in_no_key.show()
+        self.signed_in.hide()
+        self.signed_out.hide()
+
+    def show_signed_out(self):
+        self.signed_in_no_key.hide()
+        self.signed_in.hide()
+        self.signed_out.show()
 
 
 class DeleteSourceAction(QAction):

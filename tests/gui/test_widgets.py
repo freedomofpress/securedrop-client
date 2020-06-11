@@ -3900,7 +3900,7 @@ def test_ReplyBoxWidget_init(mocker):
     """
     Ensure reply box set up properly.
     """
-    rb = ReplyBoxWidget(mocker.MagicMock(), mocker.MagicMock())
+    rb = ReplyBoxWidget(factory.Source(), mocker.MagicMock())
     assert rb.text_edit.isEnabled()
     assert not rb.send_button.isHidden()
     assert rb.send_button.isDefault() is True  # Needed for "Enter" to work.
@@ -3913,7 +3913,7 @@ def test_ReplyBoxWidget_init_no_auth(mocker):
     """
     controller = mocker.MagicMock()
     controller.is_authenticated = False
-    rb = ReplyBoxWidget(mocker.MagicMock(), controller)
+    rb = ReplyBoxWidget(factory.Source(), controller)
     assert not rb.text_edit.isEnabled()
     assert rb.send_button.isHidden()
 
@@ -3928,7 +3928,9 @@ def test_ReplyBoxWidget_placeholder_show_currently_selected_source(mocker):
     source.journalist_designation = "source name"
 
     rb = ReplyBoxWidget(source, controller)
-    assert rb.text_edit.placeholder.text().find(source.journalist_designation) != -1
+
+    source_name = rb.text_edit.placeholder.signed_in.layout().itemAt(1).widget()
+    assert -1 != source_name.text()
 
 
 def test_ReplyBoxWidget_send_reply(mocker):
@@ -3936,9 +3938,7 @@ def test_ReplyBoxWidget_send_reply(mocker):
     Ensure sending a reply from the reply box emits signal, clears text box, and sends the reply
     details to the controller.
     """
-    source = mocker.Mock()
-    source.uuid = 'abc123'
-    source.collection = []
+    source = factory.Source(uuid='abc123')
     reply_uuid = '456xyz'
     mocker.patch('securedrop_client.gui.widgets.uuid4', return_value=reply_uuid)
     controller = mocker.MagicMock()
@@ -3980,7 +3980,7 @@ def test_ReplyBoxWidget_send_reply_does_not_send_empty_string(mocker):
     """
     Ensure sending a reply from the reply box does not send empty string.
     """
-    source = mocker.MagicMock()
+    source = factory.Source()
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
     rb.text_edit = ReplyTextEdit(source, controller)
@@ -3999,7 +3999,7 @@ def test_ReplyBoxWidget_send_reply_does_not_send_empty_string(mocker):
 
 
 def test_ReplyBoxWidget_on_synced(mocker):
-    source = mocker.MagicMock()
+    source = factory.Source()
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
     rb.text_edit.hasFocus = mocker.MagicMock(return_value=True)
@@ -4076,7 +4076,7 @@ def test_ReplyBoxWidget__on_authentication_changed(mocker, homedir):
     """
     When the client is authenticated, enable reply box.
     """
-    source = mocker.MagicMock()
+    source = factory.Source()
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
     rb.set_logged_in = mocker.MagicMock()
@@ -4110,7 +4110,7 @@ def test_ReplyBoxWidget__on_authentication_changed_offline(mocker, homedir):
     """
     When the client goes offline, disable reply box.
     """
-    source = mocker.MagicMock()
+    source = factory.Source()
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
     rb.set_logged_out = mocker.MagicMock()
@@ -4124,7 +4124,6 @@ def test_ReplyBoxWidget_auth_signals(mocker, homedir):
     """
     Ensure we connect to the auth signal and set the intial state on update
     """
-    source = mocker.Mock(collection=[])
     connect = mocker.MagicMock()
     signal = mocker.MagicMock(connect=connect)
     controller = mocker.MagicMock(authentication_state=signal)
@@ -4133,13 +4132,13 @@ def test_ReplyBoxWidget_auth_signals(mocker, homedir):
     _on_authentication_changed_fn = mocker.patch.object(
         ReplyBoxWidget, '_on_authentication_changed')
 
-    ReplyBoxWidget(source, controller)
+    ReplyBoxWidget(factory.Source(), controller)
 
     connect.assert_called_once_with(_on_authentication_changed_fn)
 
 
 def test_ReplyBoxWidget_enable(mocker):
-    source = mocker.MagicMock()
+    source = factory.Source()
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
     rb.text_edit = ReplyTextEdit(source, controller)
@@ -4154,7 +4153,7 @@ def test_ReplyBoxWidget_enable(mocker):
 
 
 def test_ReplyBoxWidget_disable(mocker):
-    source = mocker.MagicMock()
+    source = factory.Source()
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
     rb.text_edit = ReplyTextEdit(source, controller)
@@ -4210,7 +4209,7 @@ def test_ReplyTextEdit_focus_change_no_text(mocker):
     Tests if placeholder text in reply box disappears when it's focused (clicked)
     and reappears when it's no longer on focus
     """
-    source = mocker.MagicMock()
+    source = factory.Source()
     controller = mocker.MagicMock()
     rt = ReplyTextEdit(source, controller)
 
@@ -4231,9 +4230,8 @@ def test_ReplyTextEdit_focus_change_with_text_typed(mocker):
     Test that the placeholder does not appear when there is text in the ReplyTextEdit widget and
     that the text remains in the ReplyTextEdit regardless of focus.
     """
-    source = mocker.MagicMock()
     controller = mocker.MagicMock()
-    rt = ReplyTextEdit(source, controller)
+    rt = ReplyTextEdit(factory.Source(), controller)
     reply_text = 'mocked reply text'
     rt.setText(reply_text)
 
@@ -4254,7 +4252,7 @@ def test_ReplyTextEdit_setText(mocker):
     Checks that a non-empty string parameter causes placeholder to hide and that super's
     setPlainText method is called (to ensure cursor is hidden).
     """
-    rt = ReplyTextEdit(mocker.MagicMock(), mocker.MagicMock())
+    rt = ReplyTextEdit(factory.Source(), mocker.MagicMock())
     mocker.patch('securedrop_client.gui.widgets.QPlainTextEdit.setPlainText')
 
     rt.setText('mocked reply text')
@@ -4268,7 +4266,7 @@ def test_ReplyTextEdit_setText_empty_string(mocker):
     Checks that plain string parameter causes placeholder to show and that super's setPlainText
     method is called (to ensure cursor is hidden).
     """
-    rt = ReplyTextEdit(mocker.MagicMock(), mocker.MagicMock())
+    rt = ReplyTextEdit(factory.Source(), mocker.MagicMock())
     mocker.patch('securedrop_client.gui.widgets.QPlainTextEdit.setPlainText')
 
     rt.setText('')
@@ -4281,29 +4279,33 @@ def test_ReplyTextEdit_set_logged_out(mocker):
     """
     Checks the placeholder text for reply box is correct for offline mode
     """
-    source = mocker.MagicMock()
+    source = factory.Source()
     controller = mocker.MagicMock()
     rt = ReplyTextEdit(source, controller)
 
     rt.set_logged_out()
 
-    assert 'Sign in' in rt.placeholder.text()
-    assert 'to compose or send a reply' in rt.placeholder.text()
+    sign_in = rt.placeholder.signed_out.layout().itemAt(0).widget()
+    to_compose_reply = rt.placeholder.signed_out.layout().itemAt(1).widget()
+
+    assert 'Sign in' == sign_in.text()
+    assert ' to compose or send a reply' in to_compose_reply.text()
 
 
 def test_ReplyTextEdit_set_logged_in(mocker):
     """
     Checks the placeholder text for reply box is correct for online mode
     """
-    source = mocker.MagicMock()
-    source.journalist_designation = 'journalist designation'
+    source = factory.Source()
     controller = mocker.MagicMock()
     rt = ReplyTextEdit(source, controller)
 
     rt.set_logged_in()
 
-    assert 'Compose a reply to' in rt.placeholder.text()
-    assert source.journalist_designation in rt.placeholder.text()
+    compose_a_reply_to = rt.placeholder.signed_in.layout().itemAt(0).widget()
+    source_name = rt.placeholder.signed_in.layout().itemAt(1).widget()
+    assert 'Compose a reply to ' == compose_a_reply_to.text()
+    assert source.journalist_designation == source_name.text()
 
 
 def test_ReplyBox_set_logged_in_no_public_key(mocker):
@@ -4311,15 +4313,18 @@ def test_ReplyBox_set_logged_in_no_public_key(mocker):
     If the selected source has no public key, ensure a warning message is
     shown and the user is unable to send a reply.
     """
-    source = mocker.MagicMock()
-    source.journalist_designation = 'journalist designation'
+    source = factory.Source()
     source.public_key = None
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
 
     rb.set_logged_in()
 
-    assert 'Awaiting encryption key' in rb.text_edit.placeholder.text()
+    awaiting_key = rb.text_edit.placeholder.signed_in_no_key.layout().itemAt(0).widget()
+    from_server = rb.text_edit.placeholder.signed_in_no_key.layout().itemAt(1).widget()
+
+    assert 'Awaiting encryption key' == awaiting_key.text()
+    assert ' from server to enable replies' == from_server.text()
 
     # Both the reply box and the text editor must be disabled for the widget
     # to be rendered correctly.
