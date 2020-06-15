@@ -36,7 +36,7 @@ import sqlalchemy.orm.exc
 
 from securedrop_client import __version__ as sd_version
 from securedrop_client.db import DraftReply, Source, Message, File, Reply, User
-from securedrop_client.storage import source_exists
+from securedrop_client.storage import get_source
 from securedrop_client.export import ExportStatus, ExportError
 from securedrop_client.gui import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.logic import Controller
@@ -586,7 +586,7 @@ class MainView(QWidget):
             self.empty_conversation_view.show_no_sources_message()
             self.empty_conversation_view.show()
 
-        if self.source_list.source_widgets:
+        if self.source_list.count():
             # The source list already contains sources.
             deleted_sources = self.source_list.update(sources)
             for source_uuid in deleted_sources:
@@ -747,8 +747,8 @@ class SourceListWidgetItem(QListWidgetItem):
         me = lw.itemWidget(self)
         them = lw.itemWidget(other)
         if me and them:
-            my_ts = arrow.get(me.source.last_updated)
-            other_ts = arrow.get(them.source.last_updated)
+            my_ts = arrow.get(me.last_updated)
+            other_ts = arrow.get(them.last_updated)
             return my_ts < other_ts
         return True
 
@@ -789,52 +789,51 @@ class SourceList(QListWidget):
         """
         Update the list with the passed in list of sources.
         """
-        # Delete widgets that no longer exist in source list
-        source_uuids = [source.uuid for source in sources]
+
+        # Create a map of source uuids to sources that is safe to access during this update method
+        source_map = {}
+        for source in sources:
+            try:
+                source_map[source.uuid] = source
+            except sqlalchemy.exc.InvalidRequestError as e:
+                logger.debug(e)
+                continue
+
+        # Update the source widget if its source is in the supplied list of sources
+        # Otherwise delete the source widget and item
         deleted_uuids = []
         for i in range(self.count()):
-            list_item = self.item(i)
-            list_widget = self.itemWidget(list_item)
+            source_item = self.item(i)
+            source_widget = self.itemWidget(source_item)
+            source_widget_uuid = source_widget.source_uuid
 
-            if list_widget and list_widget.source_uuid not in source_uuids:
-                if list_item.isSelected():
+            if not source_widget:
+                continue
+
+            if source_widget_uuid in source_map:
+                source_widget.update(source_map[source_widget_uuid])
+                del source_map[source_widget_uuid]
+            else:
+                if source_widget.isSelected():
                     self.setCurrentItem(None)
 
+                self.takeItem(i)
+                source_widget.deleteLater()
                 try:
-                    del self.source_widgets[list_widget.source_uuid]
+                    del self.source_widgets[source_widget_uuid]
                 except KeyError:
                     pass
 
-                self.takeItem(i)
-                deleted_uuids.append(list_widget.source_uuid)
-                list_widget.deleteLater()
+                deleted_uuids.append(source_widget_uuid)
 
-        # Create new widgets for new sources
-        widget_uuids = [self.itemWidget(self.item(i)).source_uuid for i in range(self.count())]
-        for source in sources:
-            if source.uuid in widget_uuids:
-                try:
-                    self.source_widgets[source.uuid].update()
-                except sqlalchemy.exc.InvalidRequestError as e:
-                    logger.error(
-                        "Could not update SourceWidget for source %s; deleting it. Error was: %s",
-                        source.uuid,
-                        e
-                    )
-                    deleted_uuids.append(source.uuid)
-                    self.source_widgets[source.uuid].deleteLater()
-                    del self.source_widgets[list_widget.source_uuid]
-            else:
-                new_source = SourceWidget(self.controller, source)
-                self.source_widgets[source.uuid] = new_source
+        # Create new source widgets for the remaining sources
+        self.add_source(list(source_map.values()))
 
-                list_item = SourceListWidgetItem()
-                self.insertItem(0, list_item)
-                list_item.setSizeHint(new_source.sizeHint())
-                self.setItemWidget(list_item, new_source)
-
-        # Sort..!
+        # Re-sort SourceList to make sure the most recently-updated sources appear at the top
         self.sortItems(Qt.DescendingOrder)
+
+        # Return uuids of source widgets that were deleted so we can later delete the corresponding
+        # Conversation widgets
         return deleted_uuids
 
     def initial_update(self, sources: List[Source]):
@@ -843,26 +842,30 @@ class SourceList(QListWidget):
         """
         self.add_source(sources)
 
-    def add_source(self, sources, slice_size=1):
+    def add_source(self, sources: List[Source], slice_size=1):
         """
         Add a slice of sources, and if necessary, reschedule the addition of
         more sources.
         """
 
-        def schedule_source_management(slice_size=slice_size):
+        def schedule_source_management(slice_size: int = slice_size):
             if not sources:
-                # Nothing more to do.
                 return
+
             # Process the remaining "slice_size" number of sources.
             sources_slice = sources[:slice_size]
             for source in sources_slice:
-                new_source = SourceWidget(self.controller, source)
-                self.source_widgets[source.uuid] = new_source
-                list_item = SourceListWidgetItem(self)
-                list_item.setSizeHint(new_source.sizeHint())
+                try:
+                    source_widget = SourceWidget(self.controller, source)
+                    self.source_widgets[source.uuid] = source_widget
+                    list_item = SourceListWidgetItem(self)
+                    self.insertItem(0, list_item)
+                    list_item.setSizeHint(source_widget.sizeHint())
+                    self.setItemWidget(list_item, source_widget)
+                except sqlalchemy.exc.InvalidRequestError as e:
+                    logger.debug(e)
+                    continue
 
-                self.insertItem(0, list_item)
-                self.setItemWidget(list_item, new_source)
             # ATTENTION! 32 is an arbitrary number arrived at via
             # experimentation. It adds plenty of sources, but doesn't block
             # for a noticable amount of time.
@@ -880,8 +883,8 @@ class SourceList(QListWidget):
 
         source_item = self.selectedItems()[0]
         source_widget = self.itemWidget(source_item)
-        if source_widget and source_exists(self.controller.session, source_widget.source_uuid):
-            return source_widget.source
+        if source_widget:
+            return get_source(self.controller.session, source_widget.source_uuid)
 
     def get_source_widget(self, source_uuid: str) -> Optional[QListWidget]:
         '''
@@ -954,7 +957,7 @@ class SourceWidget(QWidget):
 
         # Store source
         self.source_uuid = source.uuid
-        self.source = source
+        self.last_updated = source.last_updated
 
         # Set layout
         layout = QHBoxLayout(self)
@@ -978,6 +981,7 @@ class SourceWidget(QWidget):
         gutter_layout.setContentsMargins(0, 0, 0, 0)
         gutter_layout.setSpacing(0)
         self.star = StarToggleButton(self.controller, self.source_uuid, source.is_starred)
+        self.star.update(source.is_starred)
         gutter_layout.addWidget(self.star)
         gutter_layout.addStretch()
 
@@ -989,9 +993,15 @@ class SourceWidget(QWidget):
         summary_layout.setSpacing(0)
         self.name = QLabel()
         self.name.setObjectName('SourceWidget_name')
+        self.name.setText(source.journalist_designation)
         self.preview = SecureQLabel(max_length=self.PREVIEW_WIDTH)
         self.preview.setObjectName('SourceWidget_preview')
         self.preview.setFixedSize(QSize(self.PREVIEW_WIDTH, self.PREVIEW_HEIGHT))
+        if not source.server_collection:
+            self.preview.setText('')
+        else:
+            last_collection_obj = source.server_collection[-1]
+            self.preview.setText(str(last_collection_obj))
         self.waiting_delete_confirmation = QLabel('Deletion in progress')
         self.waiting_delete_confirmation.setObjectName('SourceWidget_source_deleted')
         self.waiting_delete_confirmation.setFixedSize(
@@ -1011,8 +1021,11 @@ class SourceWidget(QWidget):
         self.paperclip = SvgLabel('paperclip.svg', QSize(18, 18))  # Set to size provided in the svg
         self.paperclip.setObjectName('SourceWidget_paperclip')
         self.paperclip.setFixedSize(QSize(22, 22))
+        if source.document_count == 0:
+            self.paperclip.hide()
         self.timestamp = QLabel()
         self.timestamp.setObjectName('SourceWidget_timestamp')
+        self.timestamp.setText(_(arrow.get(self.last_updated).format('DD MMM')))
         metadata_layout.addWidget(self.paperclip, 0, Qt.AlignRight)
         metadata_layout.addWidget(self.timestamp, 0, Qt.AlignRight)
         metadata_layout.addStretch()
@@ -1031,29 +1044,27 @@ class SourceWidget(QWidget):
         # Add widgets to main layout
         layout.addWidget(self.source_widget)
 
-        self.update()
-
-    def update(self):
+    def update(self, source: Source):
         """
         Updates the displayed values with the current values from self.source.
         """
         try:
-            self.controller.session.refresh(self.source)
-            self.timestamp.setText(_(arrow.get(self.source.last_updated).format('DD MMM')))
-            self.name.setText(self.source.journalist_designation)
+            self.last_updated = source.last_updated
+            self.timestamp.setText(_(arrow.get(self.last_updated).format('DD MMM')))
+            self.name.setText(source.journalist_designation)
 
-            if not self.source.server_collection:
+            if not source.server_collection:
                 self.set_snippet(self.source_uuid, '')
             else:
-                last_collection_obj = self.source.server_collection[-1]
+                last_collection_obj = source.server_collection[-1]
                 self.set_snippet(self.source_uuid, str(last_collection_obj))
 
-            if self.source.document_count == 0:
+            if source.document_count == 0:
                 self.paperclip.hide()
-            self.star.update(self.source.is_starred)
+
+            self.star.update(source.is_starred)
         except sqlalchemy.exc.InvalidRequestError as e:
-            logger.error(f"Could not update SourceWidget for source {self.source_uuid}: {e}")
-            raise
+            logger.debug(f"Could not update SourceWidget for source {self.source_uuid}: {e}")
 
     def set_snippet(self, source_uuid: str, content: str):
         """
@@ -1064,12 +1075,12 @@ class SourceWidget(QWidget):
 
         self.preview.setText(content)
 
-    def delete_source(self, event):
+    def delete_source(self):
         if self.controller.api is None:
             self.controller.on_action_requiring_login()
             return
         else:
-            messagebox = DeleteSourceMessageBox(self.source, self.controller)
+            messagebox = DeleteSourceMessageBox(self.controller, self.source_uuid)
             messagebox.launch()
 
     @pyqtSlot(str)
@@ -1238,10 +1249,9 @@ class StarToggleButton(SvgToggleButton):
 class DeleteSourceMessageBox:
     """Use this to display operation details and confirm user choice."""
 
-    def __init__(self, source, controller):
-        self.source = source
-        self.source_uuid = source.uuid
+    def __init__(self, controller: Controller, source_uuid: str):
         self.controller = controller
+        self.source_uuid = source_uuid
 
     def launch(self):
         """It will launch the message box.
@@ -1257,7 +1267,7 @@ class DeleteSourceMessageBox:
 
         if reply == QMessageBox.Yes:
             logger.debug(f'Deleting source {self.source_uuid}')
-            self.controller.delete_source(self.source)
+            self.controller.delete_source(self.source_uuid)
 
     def _construct_message(self, source: Source) -> str:
         files = 0

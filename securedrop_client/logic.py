@@ -857,7 +857,7 @@ class Controller(QObject):
             self.source_deletion_failed.emit(e.source_uuid)
 
     @login_required
-    def delete_source(self, source: db.Source):
+    def delete_source(self, source_uuid: str):
         """
         Performs a delete operation on source record.
 
@@ -866,12 +866,12 @@ class Controller(QObject):
         synchronize the server records with the local state. If not,
         the failure handler will display an error.
         """
-        job = DeleteSourceJob(source.uuid)
+        job = DeleteSourceJob(source_uuid)
         job.success_signal.connect(self.on_delete_source_success, type=Qt.QueuedConnection)
         job.failure_signal.connect(self.on_delete_source_failure, type=Qt.QueuedConnection)
 
         self.add_job.emit(job)
-        self.source_deleted.emit(source.uuid)
+        self.source_deleted.emit(source_uuid)
 
     @login_required
     def send_reply(self, source_uuid: str, reply_uuid: str, message: str) -> None:

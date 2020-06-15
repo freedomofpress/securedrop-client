@@ -576,12 +576,8 @@ def delete_single_submission_or_reply_on_disk(obj_db: Union[File, Message, Reply
             pass
 
 
-def source_exists(session: Session, source_uuid: str) -> bool:
-    try:
-        session.query(Source).filter_by(uuid=source_uuid).one()
-        return True
-    except NoResultFound:
-        return False
+def get_source(session: Session, uuid: str) -> Source:
+    return session.query(Source).filter_by(uuid=uuid).one_or_none()
 
 
 def get_file(session: Session, uuid: str) -> File:
