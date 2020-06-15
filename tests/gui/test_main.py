@@ -22,6 +22,8 @@ def test_init(mocker):
     mock_mv = mocker.patch('securedrop_client.gui.main.MainView')
     mocker.patch('securedrop_client.gui.main.QHBoxLayout', mock_lo)
     mocker.patch('securedrop_client.gui.main.QMainWindow')
+    mocker.patch('securedrop_client.gui.main.Window.setStyleSheet')
+    load_css = mocker.patch('securedrop_client.gui.main.load_css')
 
     w = Window()
 
@@ -29,6 +31,7 @@ def test_init(mocker):
     mock_lp.assert_called_once_with()
     mock_mv.assert_called_once_with(w.main_pane)
     assert mock_lo().addWidget.call_count == 2
+    load_css.assert_called_once_with('sdclient.css')
 
 
 def test_setup(mocker):

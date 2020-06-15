@@ -1,0 +1,20 @@
+#ReplyWidget_status_bar {
+    min-height: 5px;
+    max-height: 5px;
+    background-color: #0065db;
+    border: 0px;
+}
+
+#ReplyWidget_status_bar_pending {
+    min-height: 5px;
+    max-height: 5px;
+    background-color: #0065db;
+    border: 0px;
+}
+
+#ReplyWidget_status_bar_failed {
+    min-height: 5px;
+    max-height: 5px;
+    background-color: #ff3366;
+    border: 0px;
+}

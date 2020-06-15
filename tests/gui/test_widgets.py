@@ -2037,8 +2037,6 @@ def test_SpeechBubble_init(mocker):
     sb.message.text() == 'hello'
     assert mock_update_connect.called
     assert mock_download_error_connect.called
-    assert 'background-color: #102781;' in sb.color_bar.styleSheet()
-    assert 'background-color: #fff;' in sb.speech_bubble.styleSheet()
 
 
 def test_SpeechBubble_init_with_error(mocker):
@@ -2060,9 +2058,6 @@ def test_SpeechBubble_init_with_error(mocker):
     sb.message.text() == 'hello'
     assert mock_update_connect.called
     assert mock_download_error_connect.called
-    assert 'background-color: #BCBFCD;' in sb.color_bar.styleSheet()
-    assert 'background-color: rgba(255, 255, 255, 0.6);' in sb.message.styleSheet()
-    assert 'font-style: italic;' in sb.message.styleSheet()
 
 
 def test_SpeechBubble_update_text(mocker):
@@ -2114,9 +2109,6 @@ def test_SpeechBubble_set_error(mocker):
     error_message = "Oh no."
     bubble.set_error("source id", message_uuid, error_message)
     assert bubble.message.text() == error_message
-    assert "font-style: italic;" in bubble.message.styleSheet()
-    assert "background-color: rgba(255, 255, 255, 0.6);" in bubble.message.styleSheet()
-    assert "background-color: #BCBFCD;" in bubble.color_bar.styleSheet()
 
 
 def test_MessageWidget_init(mocker):
@@ -2188,7 +2180,7 @@ def test_ReplyWidget_init_with_error(mocker):
     mock_failure_connected = mocker.Mock()
     mock_failure_signal.connect = mock_failure_connected
 
-    rw = ReplyWidget(
+    ReplyWidget(
         'mock id',
         'hello',
         'dummy',
@@ -2203,10 +2195,6 @@ def test_ReplyWidget_init_with_error(mocker):
     assert mock_update_connected.called
     assert mock_success_connected.called
     assert mock_failure_connected.called
-
-    assert "font-style: italic;" in rw.message.styleSheet()
-    assert "background-color: rgba(255, 255, 255, 0.6);" in rw.message.styleSheet()
-    assert "background-color: #BCBFCD;" in rw.color_bar.styleSheet()
 
 
 def test_FileWidget_init_file_not_downloaded(mocker, source, session):
@@ -2395,8 +2383,6 @@ def test_FileWidget_start_button_animation(mocker, session, source):
     fw.start_button_animation()
     # Check indicators of activity have been updated.
     assert fw.download_button.setIcon.call_count == 1
-    fw.download_button.setText.assert_called_once_with(" DOWNLOADING ")
-    fw.download_button.setStyleSheet.assert_called_once_with("color: #05a6fe")
 
 
 def test_FileWidget_on_left_click_open(mocker, session, source):
@@ -2761,7 +2747,7 @@ def test_ModalDialog_animation_of_activestate(mocker):
     dialog.button_animation.start.assert_called_once_with()
     dialog.continue_button.setText.assert_called_once_with("")
     assert dialog.continue_button.setMinimumSize.call_count == 1
-    assert dialog.continue_button.setStyleSheet.call_count == 1
+    assert dialog.continue_button.setStyleSheet.call_count == 2  # also called once for reset
 
     dialog.continue_button.reset_mock()
 
@@ -2770,7 +2756,7 @@ def test_ModalDialog_animation_of_activestate(mocker):
     dialog.button_animation.stop.assert_called_once_with()
     dialog.continue_button.setText.assert_called_once_with("CONTINUE")
     assert dialog.continue_button.setIcon.call_count == 1
-    assert dialog.continue_button.setStyleSheet.call_count == 1
+    assert dialog.continue_button.setStyleSheet.call_count == 2  # also called once for reset
 
 
 def test_ModalDialog_animation_of_header(mocker):
@@ -3380,7 +3366,7 @@ def test_ConversationView_init(mocker, homedir):
     mocked_source = mocker.MagicMock()
     mocked_controller = mocker.MagicMock()
     cv = ConversationView(mocked_source, mocked_controller)
-    assert isinstance(cv.conversation_layout, QVBoxLayout)
+    assert isinstance(cv.scroll.conversation_layout, QVBoxLayout)
 
 
 def test_ConversationView_update_conversation_position_follow(mocker, homedir):
@@ -3446,7 +3432,7 @@ def test_ConversationView_add_message(mocker, session, source):
     session.commit()
 
     cv = ConversationView(source, mocked_controller)
-    cv.conversation_layout = mocker.MagicMock()
+    cv.scroll.conversation_layout = mocker.MagicMock()
     cv.conversation_updated = mocker.MagicMock()
     # this is the MessageWidget that __init__() would return
     mock_msg_widget_res = mocker.MagicMock()
@@ -3467,7 +3453,7 @@ def test_ConversationView_add_message(mocker, session, source):
     )
 
     # check that we added the correct widget to the layout
-    cv.conversation_layout.insertWidget.assert_called_once_with(
+    cv.scroll.conversation_layout.insertWidget.assert_called_once_with(
         0, mock_msg_widget_res, alignment=Qt.AlignLeft)
 
     # Check the signal is emitted to say the message has been added (and thus
@@ -3496,7 +3482,7 @@ def test_ConversationView_add_message_no_content(mocker, session, source):
     session.commit()
 
     cv = ConversationView(source, mocked_controller)
-    cv.conversation_layout = mocker.MagicMock()
+    cv.scroll.conversation_layout = mocker.MagicMock()
     # this is the MessageWidget that __init__() would return
     mock_msg_widget_res = mocker.MagicMock()
     # mock the actual MessageWidget so we can inspect the __init__ call
@@ -3512,7 +3498,7 @@ def test_ConversationView_add_message_no_content(mocker, session, source):
     )
 
     # check that we added the correct widget to the layout
-    cv.conversation_layout.insertWidget.assert_called_once_with(
+    cv.scroll.conversation_layout.insertWidget.assert_called_once_with(
         0, mock_msg_widget_res, alignment=Qt.AlignLeft)
 
 
@@ -3563,7 +3549,7 @@ def test_ConversationView_add_reply_from_reply_box(mocker):
         reply_failed=reply_failed
     )
     cv = ConversationView(source, controller)
-    cv.conversation_layout = mocker.MagicMock()
+    cv.scroll.conversation_layout = mocker.MagicMock()
     reply_widget_res = mocker.MagicMock()
     reply_widget = mocker.patch(
         'securedrop_client.gui.widgets.ReplyWidget', return_value=reply_widget_res)
@@ -3574,7 +3560,7 @@ def test_ConversationView_add_reply_from_reply_box(mocker):
         'abc123', 'test message', 'PENDING', reply_ready, reply_download_failed,
         reply_succeeded, reply_failed, 0
     )
-    cv.conversation_layout.insertWidget.assert_called_once_with(
+    cv.scroll.conversation_layout.insertWidget.assert_called_once_with(
         0, reply_widget_res, alignment=Qt.AlignRight)
 
 
@@ -3602,7 +3588,7 @@ def test_ConversationView_add_reply(mocker, session, source):
     session.commit()
 
     cv = ConversationView(source, mocked_controller)
-    cv.conversation_layout = mocker.MagicMock()
+    cv.scroll.conversation_layout = mocker.MagicMock()
     # this is the Reply that __init__() would return
     reply_widget_res = mocker.MagicMock()
     # mock the actual MessageWidget so we can inspect the __init__ call
@@ -3625,7 +3611,7 @@ def test_ConversationView_add_reply(mocker, session, source):
     )
 
     # check that we added the correct widget to the layout
-    cv.conversation_layout.insertWidget.assert_called_once_with(
+    cv.scroll.conversation_layout.insertWidget.assert_called_once_with(
         0, reply_widget_res, alignment=Qt.AlignRight)
 
 
@@ -3652,7 +3638,7 @@ def test_ConversationView_add_reply_no_content(mocker, session, source):
     session.commit()
 
     cv = ConversationView(source, mocked_controller)
-    cv.conversation_layout = mocker.MagicMock()
+    cv.scroll.conversation_layout = mocker.MagicMock()
     # this is the Reply that __init__() would return
     reply_widget_res = mocker.MagicMock()
     # mock the actual MessageWidget so we can inspect the __init__ call
@@ -3675,7 +3661,7 @@ def test_ConversationView_add_reply_no_content(mocker, session, source):
     )
 
     # check that we added the correct widget to the layout
-    cv.conversation_layout.insertWidget.assert_called_once_with(
+    cv.scroll.conversation_layout.insertWidget.assert_called_once_with(
         0, reply_widget_res, alignment=Qt.AlignRight)
 
 
@@ -3693,7 +3679,7 @@ def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
     mocked_controller = mocker.MagicMock(get_file=mock_get_file)
 
     cv = ConversationView(source['source'], mocked_controller)
-    cv.conversation_layout = mocker.MagicMock()
+    cv.scroll.conversation_layout = mocker.MagicMock()
     cv.conversation_updated = mocker.MagicMock()
 
     mock_label = mocker.patch('securedrop_client.gui.widgets.SecureQLabel')
@@ -3703,10 +3689,10 @@ def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
     cv.add_file(file, 0)
 
     mock_label.assert_called_with('123B')  # default factory filesize
-    assert cv.conversation_layout.insertWidget.call_count == 1
+    assert cv.scroll.conversation_layout.insertWidget.call_count == 1
     assert cv.conversation_updated.emit.call_count == 1
 
-    cal = cv.conversation_layout.insertWidget.call_args_list
+    cal = cv.scroll.conversation_layout.insertWidget.call_args_list
     assert isinstance(cal[0][0][1], FileWidget)
 
 
@@ -3723,15 +3709,15 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, sessi
     mocked_controller = mocker.MagicMock(get_file=mock_get_file)
 
     cv = ConversationView(source['source'], mocked_controller)
-    cv.conversation_layout = mocker.MagicMock()
+    cv.scroll.conversation_layout = mocker.MagicMock()
 
     mocker.patch('securedrop_client.gui.widgets.QHBoxLayout.addWidget')
     mocker.patch('securedrop_client.gui.widgets.FileWidget.setLayout')
 
     cv.add_file(file, 0)
-    assert cv.conversation_layout.insertWidget.call_count == 1
+    assert cv.scroll.conversation_layout.insertWidget.call_count == 1
 
-    cal = cv.conversation_layout.insertWidget.call_args_list
+    cal = cv.scroll.conversation_layout.insertWidget.call_args_list
     assert isinstance(cal[0][0][1], FileWidget)
 
 
@@ -3914,7 +3900,7 @@ def test_ReplyBoxWidget_init(mocker):
     """
     Ensure reply box set up properly.
     """
-    rb = ReplyBoxWidget(mocker.MagicMock(), mocker.MagicMock())
+    rb = ReplyBoxWidget(factory.Source(), mocker.MagicMock())
     assert rb.text_edit.isEnabled()
     assert not rb.send_button.isHidden()
     assert rb.send_button.isDefault() is True  # Needed for "Enter" to work.
@@ -3927,7 +3913,7 @@ def test_ReplyBoxWidget_init_no_auth(mocker):
     """
     controller = mocker.MagicMock()
     controller.is_authenticated = False
-    rb = ReplyBoxWidget(mocker.MagicMock(), controller)
+    rb = ReplyBoxWidget(factory.Source(), controller)
     assert not rb.text_edit.isEnabled()
     assert rb.send_button.isHidden()
 
@@ -3942,7 +3928,9 @@ def test_ReplyBoxWidget_placeholder_show_currently_selected_source(mocker):
     source.journalist_designation = "source name"
 
     rb = ReplyBoxWidget(source, controller)
-    assert rb.text_edit.placeholder.text().find(source.journalist_designation) != -1
+
+    source_name = rb.text_edit.placeholder.signed_in.layout().itemAt(1).widget()
+    assert -1 != source_name.text()
 
 
 def test_ReplyBoxWidget_send_reply(mocker):
@@ -3950,9 +3938,7 @@ def test_ReplyBoxWidget_send_reply(mocker):
     Ensure sending a reply from the reply box emits signal, clears text box, and sends the reply
     details to the controller.
     """
-    source = mocker.Mock()
-    source.uuid = 'abc123'
-    source.collection = []
+    source = factory.Source(uuid='abc123')
     reply_uuid = '456xyz'
     mocker.patch('securedrop_client.gui.widgets.uuid4', return_value=reply_uuid)
     controller = mocker.MagicMock()
@@ -3994,7 +3980,7 @@ def test_ReplyBoxWidget_send_reply_does_not_send_empty_string(mocker):
     """
     Ensure sending a reply from the reply box does not send empty string.
     """
-    source = mocker.MagicMock()
+    source = factory.Source()
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
     rb.text_edit = ReplyTextEdit(source, controller)
@@ -4013,7 +3999,7 @@ def test_ReplyBoxWidget_send_reply_does_not_send_empty_string(mocker):
 
 
 def test_ReplyBoxWidget_on_synced(mocker):
-    source = mocker.MagicMock()
+    source = factory.Source()
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
     rb.text_edit.hasFocus = mocker.MagicMock(return_value=True)
@@ -4090,7 +4076,7 @@ def test_ReplyBoxWidget__on_authentication_changed(mocker, homedir):
     """
     When the client is authenticated, enable reply box.
     """
-    source = mocker.MagicMock()
+    source = factory.Source()
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
     rb.set_logged_in = mocker.MagicMock()
@@ -4124,7 +4110,7 @@ def test_ReplyBoxWidget__on_authentication_changed_offline(mocker, homedir):
     """
     When the client goes offline, disable reply box.
     """
-    source = mocker.MagicMock()
+    source = factory.Source()
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
     rb.set_logged_out = mocker.MagicMock()
@@ -4138,7 +4124,6 @@ def test_ReplyBoxWidget_auth_signals(mocker, homedir):
     """
     Ensure we connect to the auth signal and set the intial state on update
     """
-    source = mocker.Mock(collection=[])
     connect = mocker.MagicMock()
     signal = mocker.MagicMock(connect=connect)
     controller = mocker.MagicMock(authentication_state=signal)
@@ -4147,13 +4132,13 @@ def test_ReplyBoxWidget_auth_signals(mocker, homedir):
     _on_authentication_changed_fn = mocker.patch.object(
         ReplyBoxWidget, '_on_authentication_changed')
 
-    ReplyBoxWidget(source, controller)
+    ReplyBoxWidget(factory.Source(), controller)
 
     connect.assert_called_once_with(_on_authentication_changed_fn)
 
 
 def test_ReplyBoxWidget_enable(mocker):
-    source = mocker.MagicMock()
+    source = factory.Source()
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
     rb.text_edit = ReplyTextEdit(source, controller)
@@ -4168,7 +4153,7 @@ def test_ReplyBoxWidget_enable(mocker):
 
 
 def test_ReplyBoxWidget_disable(mocker):
-    source = mocker.MagicMock()
+    source = factory.Source()
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
     rb.text_edit = ReplyTextEdit(source, controller)
@@ -4224,7 +4209,7 @@ def test_ReplyTextEdit_focus_change_no_text(mocker):
     Tests if placeholder text in reply box disappears when it's focused (clicked)
     and reappears when it's no longer on focus
     """
-    source = mocker.MagicMock()
+    source = factory.Source()
     controller = mocker.MagicMock()
     rt = ReplyTextEdit(source, controller)
 
@@ -4245,9 +4230,8 @@ def test_ReplyTextEdit_focus_change_with_text_typed(mocker):
     Test that the placeholder does not appear when there is text in the ReplyTextEdit widget and
     that the text remains in the ReplyTextEdit regardless of focus.
     """
-    source = mocker.MagicMock()
     controller = mocker.MagicMock()
-    rt = ReplyTextEdit(source, controller)
+    rt = ReplyTextEdit(factory.Source(), controller)
     reply_text = 'mocked reply text'
     rt.setText(reply_text)
 
@@ -4268,7 +4252,7 @@ def test_ReplyTextEdit_setText(mocker):
     Checks that a non-empty string parameter causes placeholder to hide and that super's
     setPlainText method is called (to ensure cursor is hidden).
     """
-    rt = ReplyTextEdit(mocker.MagicMock(), mocker.MagicMock())
+    rt = ReplyTextEdit(factory.Source(), mocker.MagicMock())
     mocker.patch('securedrop_client.gui.widgets.QPlainTextEdit.setPlainText')
 
     rt.setText('mocked reply text')
@@ -4282,7 +4266,7 @@ def test_ReplyTextEdit_setText_empty_string(mocker):
     Checks that plain string parameter causes placeholder to show and that super's setPlainText
     method is called (to ensure cursor is hidden).
     """
-    rt = ReplyTextEdit(mocker.MagicMock(), mocker.MagicMock())
+    rt = ReplyTextEdit(factory.Source(), mocker.MagicMock())
     mocker.patch('securedrop_client.gui.widgets.QPlainTextEdit.setPlainText')
 
     rt.setText('')
@@ -4295,29 +4279,33 @@ def test_ReplyTextEdit_set_logged_out(mocker):
     """
     Checks the placeholder text for reply box is correct for offline mode
     """
-    source = mocker.MagicMock()
+    source = factory.Source()
     controller = mocker.MagicMock()
     rt = ReplyTextEdit(source, controller)
 
     rt.set_logged_out()
 
-    assert 'Sign in' in rt.placeholder.text()
-    assert 'to compose or send a reply' in rt.placeholder.text()
+    sign_in = rt.placeholder.signed_out.layout().itemAt(0).widget()
+    to_compose_reply = rt.placeholder.signed_out.layout().itemAt(1).widget()
+
+    assert 'Sign in' == sign_in.text()
+    assert ' to compose or send a reply' in to_compose_reply.text()
 
 
 def test_ReplyTextEdit_set_logged_in(mocker):
     """
     Checks the placeholder text for reply box is correct for online mode
     """
-    source = mocker.MagicMock()
-    source.journalist_designation = 'journalist designation'
+    source = factory.Source()
     controller = mocker.MagicMock()
     rt = ReplyTextEdit(source, controller)
 
     rt.set_logged_in()
 
-    assert 'Compose a reply to' in rt.placeholder.text()
-    assert source.journalist_designation in rt.placeholder.text()
+    compose_a_reply_to = rt.placeholder.signed_in.layout().itemAt(0).widget()
+    source_name = rt.placeholder.signed_in.layout().itemAt(1).widget()
+    assert 'Compose a reply to ' == compose_a_reply_to.text()
+    assert source.journalist_designation == source_name.text()
 
 
 def test_ReplyBox_set_logged_in_no_public_key(mocker):
@@ -4325,15 +4313,18 @@ def test_ReplyBox_set_logged_in_no_public_key(mocker):
     If the selected source has no public key, ensure a warning message is
     shown and the user is unable to send a reply.
     """
-    source = mocker.MagicMock()
-    source.journalist_designation = 'journalist designation'
+    source = factory.Source()
     source.public_key = None
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
 
     rb.set_logged_in()
 
-    assert 'Awaiting encryption key' in rb.text_edit.placeholder.text()
+    awaiting_key = rb.text_edit.placeholder.signed_in_no_key.layout().itemAt(0).widget()
+    from_server = rb.text_edit.placeholder.signed_in_no_key.layout().itemAt(1).widget()
+
+    assert 'Awaiting encryption key' == awaiting_key.text()
+    assert ' from server to enable replies' == from_server.text()
 
     # Both the reply box and the text editor must be disabled for the widget
     # to be rendered correctly.
@@ -4362,11 +4353,11 @@ def test_update_conversation_maintains_old_items(mocker, session):
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
     cv = ConversationView(source, mock_controller)
-    assert cv.conversation_layout.count() == 3
+    assert cv.scroll.conversation_layout.count() == 3
 
     cv.update_conversation(cv.source.collection)
 
-    assert cv.conversation_layout.count() == 3
+    assert cv.scroll.conversation_layout.count() == 3
 
 
 def test_update_conversation_does_not_remove_pending_draft_items(mocker, session):
@@ -4392,7 +4383,7 @@ def test_update_conversation_does_not_remove_pending_draft_items(mocker, session
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
     cv = ConversationView(source, mock_controller)
-    assert cv.conversation_layout.count() == 3  # precondition with draft
+    assert cv.scroll.conversation_layout.count() == 3  # precondition with draft
 
     # add the new message and persist
     new_message = factory.Message(filename='4-source-msg.gpg', source=source)
@@ -4401,7 +4392,7 @@ def test_update_conversation_does_not_remove_pending_draft_items(mocker, session
 
     # New message added, draft message persists.
     cv.update_conversation(cv.source.collection)
-    assert cv.conversation_layout.count() == 4
+    assert cv.scroll.conversation_layout.count() == 4
 
 
 def test_update_conversation_does_remove_successful_draft_items(mocker, session):
@@ -4427,7 +4418,7 @@ def test_update_conversation_does_remove_successful_draft_items(mocker, session)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
     cv = ConversationView(source, mock_controller)
-    assert cv.conversation_layout.count() == 3  # precondition with draft
+    assert cv.scroll.conversation_layout.count() == 3  # precondition with draft
 
     # add the new message and persist
     new_message = factory.Message(filename='4-source-msg.gpg', source=source)
@@ -4440,7 +4431,7 @@ def test_update_conversation_does_remove_successful_draft_items(mocker, session)
 
     # New message added, draft message is gone.
     cv.update_conversation(cv.source.collection)
-    assert cv.conversation_layout.count() == 3
+    assert cv.scroll.conversation_layout.count() == 3
 
 
 def test_update_conversation_keeps_failed_draft_items(mocker, session):
@@ -4466,7 +4457,7 @@ def test_update_conversation_keeps_failed_draft_items(mocker, session):
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
     cv = ConversationView(source, mock_controller)
-    assert cv.conversation_layout.count() == 3  # precondition with draft
+    assert cv.scroll.conversation_layout.count() == 3  # precondition with draft
 
     # add the new message and persist
     new_message = factory.Message(filename='4-source-msg.gpg', source=source)
@@ -4475,7 +4466,7 @@ def test_update_conversation_keeps_failed_draft_items(mocker, session):
 
     # New message added, draft message retained.
     cv.update_conversation(cv.source.collection)
-    assert cv.conversation_layout.count() == 4
+    assert cv.scroll.conversation_layout.count() == 4
 
 
 def test_update_conversation_adds_new_items(mocker, session):
@@ -4498,7 +4489,7 @@ def test_update_conversation_adds_new_items(mocker, session):
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
     cv = ConversationView(source, mock_controller)
-    assert cv.conversation_layout.count() == 3  # precondition
+    assert cv.scroll.conversation_layout.count() == 3  # precondition
 
     # add the new message and persist
     new_message = factory.Message(filename='4-source-msg.gpg', source=source)
@@ -4506,7 +4497,7 @@ def test_update_conversation_adds_new_items(mocker, session):
     session.commit()
 
     cv.update_conversation(cv.source.collection)
-    assert cv.conversation_layout.count() == 4
+    assert cv.scroll.conversation_layout.count() == 4
 
 
 def test_update_conversation_position_updates(mocker, session):
@@ -4529,7 +4520,7 @@ def test_update_conversation_position_updates(mocker, session):
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
     cv = ConversationView(source, mock_controller)
-    assert cv.conversation_layout.count() == 3  # precondition
+    assert cv.scroll.conversation_layout.count() == 3  # precondition
 
     # Change the position of the Reply.
     reply_widget = cv.current_messages[reply.uuid]
@@ -4541,7 +4532,7 @@ def test_update_conversation_position_updates(mocker, session):
     session.commit()
 
     cv.update_conversation(cv.source.collection)
-    assert cv.conversation_layout.count() == 4
+    assert cv.scroll.conversation_layout.count() == 4
     assert reply_widget.index == 2  # re-ordered.
 
 
@@ -4564,8 +4555,8 @@ def test_update_conversation_content_updates(mocker, session):
     cv = ConversationView(source, mock_controller)
     cv.current_messages = {}  # Reset!
 
-    cv.conversation_layout.insertWidget = mocker.MagicMock()
-    cv.conversation_layout.removeWidget = mocker.MagicMock()
+    cv.scroll.conversation_layout.insertWidget = mocker.MagicMock()
+    cv.scroll.conversation_layout.removeWidget = mocker.MagicMock()
     # this is the MessageWidget that __init__() would return
     mock_msg_widget_res = mocker.MagicMock()
     # mock MessageWidget so we can inspect the __init__ call to see what content

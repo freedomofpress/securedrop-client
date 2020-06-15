@@ -1,0 +1,13 @@
+#SpeechBubble_status_bar {
+    min-height: 5px;
+    max-height: 5px;
+    background-color: #102781;
+    border: 0px;
+}
+
+#SpeechBubble_status_bar_decryption_error {
+    min-height: 5px;
+    max-height: 5px;
+    background-color: #bcbfcd;
+    border: 0px;
+}
