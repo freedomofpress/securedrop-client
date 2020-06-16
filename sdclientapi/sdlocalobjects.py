@@ -6,6 +6,7 @@ if typing.TYPE_CHECKING:
 
 class BaseError(Exception):
     """For generic errors not covered by other exceptions"""
+
     def __init__(self, message: typing.Optional[str] = None) -> None:
         self.msg = message
 

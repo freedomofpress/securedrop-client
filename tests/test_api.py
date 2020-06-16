@@ -1,26 +1,27 @@
 import datetime
 import hashlib
 import os
-import pytest
 import shutil
 import tempfile
 import time
 import unittest
 
 import pyotp
+import pytest
 import vcr
 from requests.exceptions import ConnectTimeout, ReadTimeout
-from utils import load_auth_for_http
-from utils import save_auth_for_http
 
 from sdclientapi import API, RequestTimeoutError
-from sdclientapi.sdlocalobjects import AuthError
-from sdclientapi.sdlocalobjects import BaseError
-from sdclientapi.sdlocalobjects import Reply
-from sdclientapi.sdlocalobjects import ReplyError
-from sdclientapi.sdlocalobjects import Source
-from sdclientapi.sdlocalobjects import Submission
-from sdclientapi.sdlocalobjects import WrongUUIDError
+from sdclientapi.sdlocalobjects import (
+    AuthError,
+    BaseError,
+    Reply,
+    ReplyError,
+    Source,
+    Submission,
+    WrongUUIDError,
+)
+from utils import load_auth_for_http, save_auth_for_http
 
 NUM_REPLIES_PER_SOURCE = 2
 
