@@ -818,12 +818,11 @@ def test_SourceList_initial_update_adds_new_sources(mocker):
 
 def test_SourceList_update_when_source_deleted(mocker, session, session_maker, homedir):
     """
-    Test that SourceWidget.update raises an exception when its source has been deleted.
+    Test that SourceWidget.update gracefully continues when source is deleted during an update.
 
-    When SourceList.update calls SourceWidget.update and that
-    SourceWidget's source has been deleted, SourceList.update should
-    catch the resulting excpetion, delete the SourceWidget and add its
-    source UUID to the list of deleted source UUIDs.
+    When SourceList.update calls SourceWidget.update and that SourceWidget's source has been
+    deleted by another ongoing sync, then SourceList.update should silently continue since the
+    ongoing sync will handle the deletion of the source's widgets.
     """
     mock_gui = mocker.MagicMock()
     controller = logic.Controller('http://localhost', mock_gui, session_maker, homedir)
@@ -844,13 +843,19 @@ def test_SourceList_update_when_source_deleted(mocker, session, session_maker, h
     assert not deleted_uuids
     assert len(sl.source_widgets) == 1
 
-    # now delete it
+    # now delete it to simulate what happens during a sync
     session.delete(source)
     session.commit()
 
-    # and finally verify that updating raises an exception, causing
-    # the SourceWidget to be deleted
+    # now verify that updating does not raise an exception, and that the SourceWidget still exists
+    # since the sync will end up calling update again and delete it
     deleted_uuids = sl.update([source])
+    assert len(deleted_uuids) == 0
+    assert not deleted_uuids
+    assert len(sl.source_widgets) == 1
+
+    # finish sync simulation where a local source is deleted
+    deleted_uuids = sl.update([])
     assert len(deleted_uuids) == 1
     assert source.uuid in deleted_uuids
     assert len(sl.source_widgets) == 0
@@ -1171,10 +1176,10 @@ def test_SourceWidget_update_attachment_icon(mocker):
     assert sw.paperclip.isHidden()
 
 
-def test_SourceWidget_update_raises_InvalidRequestError(mocker):
+def test_SourceWidget_update_does_not_raise_exception(mocker):
     """
-    If the source no longer exists in the local data store, ensure the expected
-    exception is logged and re-raised.
+    If the source no longer exists in the local data store, ensure the SourceWidget just logs and
+    does not raise an exception.
     """
     controller = mocker.MagicMock()
     source = factory.Source(document_count=1)
@@ -1182,13 +1187,9 @@ def test_SourceWidget_update_raises_InvalidRequestError(mocker):
     ex = sqlalchemy.exc.InvalidRequestError()
     controller.session.refresh.side_effect = ex
     mock_logger = mocker.MagicMock()
-    mocker.patch(
-        "securedrop_client.gui.widgets.logger",
-        mock_logger,
-    )
-    with pytest.raises(sqlalchemy.exc.InvalidRequestError):
-        sw.update()
-        assert mock_logger.error.call_count == 1
+    mocker.patch("securedrop_client.gui.widgets.logger", mock_logger)
+    sw.update()
+    assert mock_logger.debug.call_count == 1
 
 
 def test_SourceWidget_set_snippet_draft_only(mocker, session_maker, session, homedir):
