@@ -59,7 +59,7 @@ def read_gzip_header_filename(filename: str) -> str:
             raise OSError("Unknown compression method")
 
         if gzip_header_flags & GZIP_FLAG_EXTRA_FIELDS:
-            extra_len, = struct.unpack("<H", f.read(2))
+            (extra_len,) = struct.unpack("<H", f.read(2))
             f.read(extra_len)
 
         if gzip_header_flags & GZIP_FLAG_FILENAME:
@@ -76,10 +76,10 @@ def read_gzip_header_filename(filename: str) -> str:
 
 class GpgHelper:
     def __init__(self, sdc_home: str, session_maker: scoped_session, is_qubes: bool) -> None:
-        '''
+        """
         :param sdc_home: Home directory for the SecureDrop client
         :param is_qubes: Whether the client is running in Qubes or not
-        '''
+        """
         safe_mkdir(os.path.join(sdc_home), "gpg")
         self.sdc_home = sdc_home
         self.is_qubes = is_qubes
@@ -88,10 +88,9 @@ class GpgHelper:
         config = Config.from_home_dir(self.sdc_home)
         self.journalist_key_fingerprint = config.journalist_key_fingerprint
 
-    def decrypt_submission_or_reply(self,
-                                    filepath: str,
-                                    plaintext_filepath: str,
-                                    is_doc: bool = False) -> str:
+    def decrypt_submission_or_reply(
+        self, filepath: str, plaintext_filepath: str, is_doc: bool = False
+    ) -> str:
 
         original_filename, _ = os.path.splitext(os.path.splitext(os.path.basename(filepath))[0])
 
@@ -124,10 +123,9 @@ class GpgHelper:
             if is_doc:
                 original_filename = read_gzip_header_filename(out.name) or plaintext_filepath
                 decrypt_path = os.path.join(
-                    os.path.dirname(filepath),
-                    os.path.basename(original_filename)
+                    os.path.dirname(filepath), os.path.basename(original_filename)
                 )
-                with gzip.open(out.name, 'rb') as infile, open(decrypt_path, 'wb') as outfile:
+                with gzip.open(out.name, "rb") as infile, open(decrypt_path, "wb") as outfile:
                     shutil.copyfileobj(infile, outfile)
             else:
                 shutil.copy(out.name, plaintext_filepath)
@@ -140,7 +138,7 @@ class GpgHelper:
         else:
             cmd = ["gpg", "--homedir", os.path.join(self.sdc_home, "gpg")]
 
-        cmd.extend(['--trust-model', 'always'])
+        cmd.extend(["--trust-model", "always"])
         return cmd
 
     def import_key(self, source: Source) -> None:
@@ -155,39 +153,39 @@ class GpgHelper:
     def _import(self, key_data: str) -> None:
         """Imports a key to the client GnuPG keyring."""
 
-        with tempfile.NamedTemporaryFile('w+') as temp_key, \
-                tempfile.NamedTemporaryFile('w+') as stdout, \
-                tempfile.NamedTemporaryFile('w+') as stderr:
+        with tempfile.NamedTemporaryFile("w+") as temp_key, tempfile.NamedTemporaryFile(
+            "w+"
+        ) as stdout, tempfile.NamedTemporaryFile("w+") as stderr:
             temp_key.write(key_data)
             temp_key.seek(0)
             if self.is_qubes:  # pragma: no cover
-                cmd = ['qubes-gpg-import-key', temp_key.name]
+                cmd = ["qubes-gpg-import-key", temp_key.name]
             else:
                 cmd = self._gpg_cmd_base()
-                cmd.extend(['--import-options', 'import-show',
-                            '--with-colons', '--import',
-                            temp_key.name])
+                cmd.extend(
+                    ["--import-options", "import-show", "--with-colons", "--import", temp_key.name]
+                )
 
             try:
                 subprocess.check_call(cmd, stdout=stdout, stderr=stderr)
             except subprocess.CalledProcessError as e:
                 stderr.seek(0)
-                raise CryptoError('Could not import key: {}\n{}'.format(e, stderr.read()))
+                raise CryptoError("Could not import key: {}\n{}".format(e, stderr.read()))
 
     def encrypt_to_source(self, source_uuid: str, data: str) -> str:
-        '''
+        """
         :param data: A string of data to encrypt to a source.
-        '''
+        """
         session = self.session_maker()
         source = session.query(Source).filter_by(uuid=source_uuid).one()
 
         # do not attempt to encrypt if the journalist key is missing
         if not self.journalist_key_fingerprint:
-            raise CryptoError('Could not encrypt reply due to missing fingerprint for journalist')
+            raise CryptoError("Could not encrypt reply due to missing fingerprint for journalist")
 
         # do not attempt to encrypt if the source key is missing
         if not (source.fingerprint and source.public_key):
-            raise CryptoError(f'Could not encrypt reply: no key for source {source_uuid}')
+            raise CryptoError(f"Could not encrypt reply: no key for source {source_uuid}")
 
         try:
             self.import_key(source)
@@ -196,22 +194,28 @@ class GpgHelper:
 
         cmd = self._gpg_cmd_base()
 
-        with tempfile.NamedTemporaryFile('w+') as content, \
-                tempfile.NamedTemporaryFile('w+') as stdout, \
-                tempfile.NamedTemporaryFile('w+') as stderr:
+        with tempfile.NamedTemporaryFile("w+") as content, tempfile.NamedTemporaryFile(
+            "w+"
+        ) as stdout, tempfile.NamedTemporaryFile("w+") as stderr:
 
             content.write(data)
             content.seek(0)
 
-            cmd.extend(['--encrypt',
-                        '-r', source.fingerprint,
-                        '-r', self.journalist_key_fingerprint,
-                        '--armor'])
+            cmd.extend(
+                [
+                    "--encrypt",
+                    "-r",
+                    source.fingerprint,
+                    "-r",
+                    self.journalist_key_fingerprint,
+                    "--armor",
+                ]
+            )
             if not self.is_qubes:
                 # In Qubes, the ciphertext will go to stdout.
                 # In addition the option below cannot be passed
                 # through the gpg client wrapper.
-                cmd.extend(['-o-'])  # write to stdout
+                cmd.extend(["-o-"])  # write to stdout
             cmd.extend([content.name])
 
             try:
@@ -219,7 +223,7 @@ class GpgHelper:
             except subprocess.CalledProcessError as e:
                 stderr.seek(0)
                 err = stderr.read()
-                raise CryptoError(f'Could not encrypt to source {source_uuid}: {e}\n{err}')
+                raise CryptoError(f"Could not encrypt to source {source_uuid}: {e}\n{err}")
 
             stdout.seek(0)
             return stdout.read()

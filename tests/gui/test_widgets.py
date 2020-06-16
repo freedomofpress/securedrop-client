@@ -1,31 +1,59 @@
 """
 Make sure the UI widgets are configured correctly and work as expected.
 """
-import pytest
-import arrow
 from datetime import datetime
 from unittest.mock import patch
 
-from PyQt5.QtCore import Qt, QEvent
-from PyQt5.QtGui import QFocusEvent, QKeyEvent, QMovie
-from PyQt5.QtTest import QTest
-from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QMessageBox, QMainWindow, \
-    QLineEdit
+import arrow
+import pytest
 import sqlalchemy
 import sqlalchemy.orm.exc
+from PyQt5.QtCore import QEvent, Qt
+from PyQt5.QtGui import QFocusEvent, QKeyEvent, QMovie
+from PyQt5.QtTest import QTest
+from PyQt5.QtWidgets import QApplication, QLineEdit, QMainWindow, QMessageBox, QVBoxLayout, QWidget
 from sqlalchemy.orm import attributes, scoped_session, sessionmaker
 
 from securedrop_client import db, logic, storage
 from securedrop_client.export import ExportError, ExportStatus
-from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, SecureQLabel, \
-    LoginDialog, SpeechBubble, MessageWidget, ReplyWidget, FileWidget, ConversationView, \
-    DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, TopPane, LeftPane, SyncIcon, \
-    ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
-    ReplyBoxWidget, ReplyTextEdit, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, \
-    LoginErrorBar, EmptyConversationView, ModalDialog, ExportDialog, PrintDialog, \
-    PasswordEdit, SourceProfileShortWidget, UserIconLabel
+from securedrop_client.gui.widgets import (
+    ActivityStatusBar,
+    ConversationView,
+    DeleteSourceAction,
+    DeleteSourceMessageBox,
+    EmptyConversationView,
+    ErrorStatusBar,
+    ExportDialog,
+    FileWidget,
+    LeftPane,
+    LoginButton,
+    LoginDialog,
+    LoginErrorBar,
+    LoginOfflineLink,
+    MainView,
+    MessageWidget,
+    ModalDialog,
+    PasswordEdit,
+    PrintDialog,
+    ReplyBoxWidget,
+    ReplyTextEdit,
+    ReplyWidget,
+    SecureQLabel,
+    SourceConversationWrapper,
+    SourceList,
+    SourceMenu,
+    SourceProfileShortWidget,
+    SourceWidget,
+    SpeechBubble,
+    StarToggleButton,
+    SyncIcon,
+    TopPane,
+    UserButton,
+    UserIconLabel,
+    UserMenu,
+    UserProfile,
+)
 from tests import factory
-
 
 app = QApplication([])
 
@@ -36,8 +64,8 @@ def test_TopPane_init(mocker):
     """
     tp = TopPane()
     file_path = tp.sync_icon.sync_animation.fileName()
-    filename = file_path[file_path.rfind('/') + 1:]
-    assert filename == 'sync_disabled.gif'
+    filename = file_path[file_path.rfind("/") + 1 :]
+    assert filename == "sync_disabled.gif"
 
 
 def test_TopPane_setup(mocker):
@@ -84,9 +112,9 @@ def test_TopPane_update_activity_status(mocker):
     tp = TopPane()
     tp.activity_status_bar = mocker.MagicMock()
 
-    tp.update_activity_status(message='test message', duration=5)
+    tp.update_activity_status(message="test message", duration=5)
 
-    tp.activity_status_bar.update_message.assert_called_once_with('test message', 5)
+    tp.activity_status_bar.update_message.assert_called_once_with("test message", 5)
 
 
 def test_TopPane_update_error_status(mocker):
@@ -96,9 +124,9 @@ def test_TopPane_update_error_status(mocker):
     tp = TopPane()
     tp.error_status_bar = mocker.MagicMock()
 
-    tp.update_error_status(message='test message', duration=5)
+    tp.update_error_status(message="test message", duration=5)
 
-    tp.error_status_bar.update_message.assert_called_once_with('test message', 5)
+    tp.error_status_bar.update_message.assert_called_once_with("test message", 5)
 
 
 def test_TopPane_clear_error_status(mocker):
@@ -165,14 +193,14 @@ def test_LeftPane_set_logged_out(mocker):
 def test_SyncIcon_init(mocker):
     sync_icon = SyncIcon()
     file_path = sync_icon.sync_animation.fileName()
-    filename = file_path[file_path.rfind('/') + 1:]
-    assert filename == 'sync_disabled.gif'
+    filename = file_path[file_path.rfind("/") + 1 :]
+    assert filename == "sync_disabled.gif"
 
 
 def test_SyncIcon_init_starts_animiation(mocker):
     movie = QMovie()
     movie.start = mocker.MagicMock()
-    mocker.patch('securedrop_client.gui.widgets.load_movie', return_value=movie)
+    mocker.patch("securedrop_client.gui.widgets.load_movie", return_value=movie)
 
     sync_icon = SyncIcon()
 
@@ -198,14 +226,14 @@ def test_SyncIcon_enable(mocker):
     sync_icon.enable()
 
     file_path = sync_icon.sync_animation.fileName()
-    filename = file_path[file_path.rfind('/') + 1:]
-    assert filename == 'sync.gif'
+    filename = file_path[file_path.rfind("/") + 1 :]
+    assert filename == "sync.gif"
 
 
 def test_SyncIcon_enable_starts_animiation(mocker):
     movie = QMovie()
     movie.start = mocker.MagicMock()
-    mocker.patch('securedrop_client.gui.widgets.load_movie', return_value=movie)
+    mocker.patch("securedrop_client.gui.widgets.load_movie", return_value=movie)
 
     sync_icon = SyncIcon()
     sync_icon.enable()
@@ -219,14 +247,14 @@ def test_SyncIcon_disable(mocker):
     sync_icon.disable()
 
     file_path = sync_icon.sync_animation.fileName()
-    filename = file_path[file_path.rfind('/') + 1:]
-    assert filename == 'sync_disabled.gif'
+    filename = file_path[file_path.rfind("/") + 1 :]
+    assert filename == "sync_disabled.gif"
 
 
 def test_SyncIcon_disable_starts_animiation(mocker):
     movie = QMovie()
     movie.start = mocker.MagicMock()
-    mocker.patch('securedrop_client.gui.widgets.load_movie', return_value=movie)
+    mocker.patch("securedrop_client.gui.widgets.load_movie", return_value=movie)
 
     sync_icon = SyncIcon()
     sync_icon.disable()
@@ -235,44 +263,44 @@ def test_SyncIcon_disable_starts_animiation(mocker):
 
 
 def test_SyncIcon__on_sync_syncing(mocker):
-    '''
+    """
     Sync icon becomes active when it receives the `syncing` signal.
-    '''
+    """
     sync_icon = SyncIcon()
 
-    sync_icon._on_sync('syncing')
+    sync_icon._on_sync("syncing")
 
     file_path = sync_icon.sync_animation.fileName()
-    filename = file_path[file_path.rfind('/') + 1:]
-    assert filename == 'sync_active.gif'
+    filename = file_path[file_path.rfind("/") + 1 :]
+    assert filename == "sync_active.gif"
 
 
 def test_SyncIcon__on_sync_synced(mocker):
-    '''
+    """
     Sync icon becomes "inactive" when it receives the `synced` signal.
-    '''
+    """
     sync_icon = SyncIcon()
 
-    sync_icon._on_sync('synced')
+    sync_icon._on_sync("synced")
 
     file_path = sync_icon.sync_animation.fileName()
-    filename = file_path[file_path.rfind('/') + 1:]
-    assert filename == 'sync.gif'
+    filename = file_path[file_path.rfind("/") + 1 :]
+    assert filename == "sync.gif"
 
 
 def test_SyncIcon___on_sync_with_data_not_equal_to_syncing(mocker):
-    '''
+    """
     Sync does not because active when the sync signal's data is something other than 'syncing'
-    '''
+    """
     movie = QMovie()
     movie.start = mocker.MagicMock()
-    mocker.patch('securedrop_client.gui.widgets.load_movie', return_value=movie)
+    mocker.patch("securedrop_client.gui.widgets.load_movie", return_value=movie)
     sync_icon = SyncIcon()
 
     # assert that start call count has only been called once
     sync_icon.sync_animation.start.assert_called_once_with()
 
-    sync_icon._on_sync('something other than syncing')
+    sync_icon._on_sync("something other than syncing")
 
     # assert that _on_sync doesn't increase start call count from one
     sync_icon.sync_animation.start.assert_called_once_with()
@@ -299,9 +327,9 @@ def test_ErrorStatusBar_update_message(mocker):
     esb.status_bar = mocker.MagicMock()
     esb.status_timer = mocker.MagicMock()
 
-    esb.update_message(message='test message', duration=123)
+    esb.update_message(message="test message", duration=123)
 
-    esb.status_bar.showMessage.assert_called_once_with('test message', 123)
+    esb.status_bar.showMessage.assert_called_once_with("test message", 123)
     esb.status_timer.start.assert_called_once_with(123)
 
 
@@ -342,8 +370,8 @@ def test_ActivityStatusBar_update_message(mocker):
     Calling update_message updates the message of the QStatusBar.
     """
     asb = ActivityStatusBar()
-    asb.update_message(message='test message', duration=123)
-    assert asb.currentMessage() == 'test message'
+    asb.update_message(message="test message", duration=123)
+    assert asb.currentMessage() == "test message"
 
 
 def test_UserProfile_setup(mocker):
@@ -363,12 +391,12 @@ def test_UserProfile_set_user(mocker):
     up = UserProfile()
     up.user_icon = mocker.MagicMock()
     up.user_button = mocker.MagicMock()
-    user = factory.User(firstname='firstname_mock', lastname='lastname_mock')
+    user = factory.User(firstname="firstname_mock", lastname="lastname_mock")
 
     up.set_user(user)
 
-    up.user_icon.setText.assert_called_with('fl')
-    up.user_button.set_username.assert_called_with('firstname_mock lastname_mock')
+    up.user_icon.setText.assert_called_with("fl")
+    up.user_button.set_username.assert_called_with("firstname_mock lastname_mock")
 
 
 def test_UserProfile_show(mocker):
@@ -416,17 +444,15 @@ def test_UserButton_setup(mocker):
 
 def test_UserButton_set_username():
     ub = UserButton()
-    ub.set_username('test_username')
-    ub.text() == 'test_username'
+    ub.set_username("test_username")
+    ub.text() == "test_username"
 
 
 def test_UserButton_set_long_username(mocker):
     ub = UserButton()
     ub.setToolTip = mocker.MagicMock()
-    ub.set_username('test_username_that_is_very_very_long')
-    ub.setToolTip.assert_called_once_with(
-        'test_username_that_is_very_very_long'
-    )
+    ub.set_username("test_username_that_is_very_very_long")
+    ub.setToolTip.assert_called_once_with("test_username_that_is_very_very_long")
 
 
 def test_UserMenu_setup(mocker):
@@ -458,7 +484,7 @@ def test_UserMenu_on_item_selected(mocker):
 
 def test_LoginButton_init(mocker):
     lb = LoginButton()
-    assert lb.text() == 'SIGN IN'
+    assert lb.text() == "SIGN IN"
 
 
 def test_LoginButton_setup(mocker):
@@ -562,16 +588,16 @@ def test_MainView_delete_conversation_when_conv_wrapper_exists(mocker):
     """
     Ensure SourceConversationWrapper is deleted if it exists.
     """
-    source = factory.Source(uuid='123')
+    source = factory.Source(uuid="123")
     conversation_wrapper = SourceConversationWrapper(source, mocker.MagicMock())
     conversation_wrapper.deleteLater = mocker.MagicMock()
     mock_source_conv_wrapper_widget = mocker.MagicMock()
     mock_source_conv_wrapper_widget.deleteLater = mocker.MagicMock()
     mv = MainView(None)
     mv.source_conversations = {}
-    mv.source_conversations['123'] = conversation_wrapper
+    mv.source_conversations["123"] = conversation_wrapper
 
-    mv.delete_conversation('123')
+    mv.delete_conversation("123")
 
     conversation_wrapper.deleteLater.assert_called_once_with()
     assert mv.source_conversations == {}
@@ -582,7 +608,7 @@ def test_MainView_delete_conversation_when_conv_wrapper_does_not_exist(mocker):
     Ensure that delete_conversation throws no exception if the SourceConversationWrapper
     does not exist.
     """
-    source_uuid = 'foo'
+    source_uuid = "foo"
     mv = MainView(None)
     mv.source_conversations = {}
 
@@ -600,9 +626,9 @@ def test_MainView_on_source_changed(mocker):
     mv.source_list = mocker.MagicMock()
     mv.source_list.get_selected_source = mocker.MagicMock(return_value=factory.Source())
     mv.controller = mocker.MagicMock(is_authenticated=True)
-    mocker.patch('securedrop_client.gui.widgets.source_exists', return_value=True)
+    mocker.patch("securedrop_client.gui.widgets.source_exists", return_value=True)
     scw = mocker.MagicMock()
-    mocker.patch('securedrop_client.gui.widgets.SourceConversationWrapper', return_value=scw)
+    mocker.patch("securedrop_client.gui.widgets.SourceConversationWrapper", return_value=scw)
 
     mv.on_source_changed()
 
@@ -634,20 +660,23 @@ def test_MainView_on_source_changed_updates_conversation_view(mocker, session):
     mv.controller = mocker.MagicMock(is_authenticated=True)
     s = factory.Source()
     session.add(s)
-    f = factory.File(source=s, filename='0-mock-doc.gpg')
+    f = factory.File(source=s, filename="0-mock-doc.gpg")
     session.add(f)
-    m = factory.Message(source=s, filename='0-mock-msg.gpg')
+    m = factory.Message(source=s, filename="0-mock-msg.gpg")
     session.add(m)
-    r = factory.Reply(source=s, filename='0-mock-reply.gpg')
+    r = factory.Reply(source=s, filename="0-mock-reply.gpg")
     session.add(r)
     session.commit()
     mv.source_list.get_selected_source = mocker.MagicMock(return_value=s)
     add_message_fn = mocker.patch(
-        'securedrop_client.gui.widgets.ConversationView.add_message', new=mocker.Mock())
+        "securedrop_client.gui.widgets.ConversationView.add_message", new=mocker.Mock()
+    )
     add_reply_fn = mocker.patch(
-        'securedrop_client.gui.widgets.ConversationView.add_reply', new=mocker.Mock())
+        "securedrop_client.gui.widgets.ConversationView.add_reply", new=mocker.Mock()
+    )
     add_file_fn = mocker.patch(
-        'securedrop_client.gui.widgets.ConversationView.add_file', new=mocker.Mock())
+        "securedrop_client.gui.widgets.ConversationView.add_file", new=mocker.Mock()
+    )
 
     mv.on_source_changed()
 
@@ -673,8 +702,8 @@ def test_MainView_on_source_changed_SourceConversationWrapper_is_preserved(mocke
     session.commit()
 
     source_conversation_init = mocker.patch(
-        'securedrop_client.gui.widgets.SourceConversationWrapper.__init__',
-        return_value=None)
+        "securedrop_client.gui.widgets.SourceConversationWrapper.__init__", return_value=None
+    )
 
     # We expect on the first call, SourceConversationWrapper.__init__ should be called.
     mv.source_list.get_selected_source = mocker.MagicMock(return_value=source)
@@ -781,10 +810,14 @@ def test_SourceList_update_adds_new_sources(mocker):
 
     mock_sw = mocker.MagicMock()
     mock_lwi = mocker.MagicMock()
-    mocker.patch('securedrop_client.gui.widgets.SourceWidget', mock_sw)
-    mocker.patch('securedrop_client.gui.widgets.SourceListWidgetItem', mock_lwi)
+    mocker.patch("securedrop_client.gui.widgets.SourceWidget", mock_sw)
+    mocker.patch("securedrop_client.gui.widgets.SourceListWidgetItem", mock_lwi)
 
-    sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), ]
+    sources = [
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+    ]
     sl.update(sources)
 
     assert mock_sw.call_count == len(sources)
@@ -811,7 +844,11 @@ def test_SourceList_initial_update_adds_new_sources(mocker):
     sl.currentRow = mocker.MagicMock(return_value=0)
     sl.item = mocker.MagicMock()
     sl.item().isSelected.return_value = True
-    sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), ]
+    sources = [
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+    ]
     sl.initial_update(sources)
     sl.add_source.assert_called_once_with(sources)
 
@@ -826,7 +863,7 @@ def test_SourceList_update_when_source_deleted(mocker, session, session_maker, h
     source UUID to the list of deleted source UUIDs.
     """
     mock_gui = mocker.MagicMock()
-    controller = logic.Controller('http://localhost', mock_gui, session_maker, homedir)
+    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir)
 
     # create the source in another session
     source = factory.Source()
@@ -862,7 +899,11 @@ def test_SourceList_add_source_starts_timer(mocker, session_maker, homedir):
     to the source list via a single-shot QTimer.
     """
     sl = SourceList()
-    sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), ]
+    sources = [
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+    ]
     mock_timer = mocker.MagicMock()
     with mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer):
         sl.add_source(sources)
@@ -876,7 +917,7 @@ def test_SourceList_update_when_source_deleted_crash(mocker, session, session_ma
     it should handle the exception and delete the list widget.
     """
     mock_gui = mocker.MagicMock()
-    controller = logic.Controller('http://localhost', mock_gui, session_maker, homedir)
+    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir)
 
     # create the source in another session
     source = factory.Source()
@@ -939,7 +980,7 @@ def test_SourceList_update_with_pre_selected_source_maintains_selection(mocker):
     sl.update([factory.Source(), factory.Source()])
     second_item = sl.itemAt(1, 0)
     sl.setCurrentItem(second_item)  # select the second source
-    mocker.patch.object(second_item, 'isSelected', return_value=True)
+    mocker.patch.object(second_item, "isSelected", return_value=True)
 
     sl.update([factory.Source(), factory.Source()])
 
@@ -952,10 +993,10 @@ def test_SourceList_update_removes_selected_item_results_in_no_current_selection
     """
     sl = SourceList()
     sl.controller = mocker.MagicMock()
-    sl.update([factory.Source(uuid='new'), factory.Source(uuid='newer')])
+    sl.update([factory.Source(uuid="new"), factory.Source(uuid="newer")])
 
     sl.setCurrentItem(sl.itemAt(0, 0))  # select source with uuid='newer'
-    sl.update([factory.Source(uuid='new')])  # delete source with uuid='newer'
+    sl.update([factory.Source(uuid="new")])  # delete source with uuid='newer'
 
     assert not sl.currentItem()
 
@@ -966,13 +1007,14 @@ def test_SourceList_update_removes_item_from_end_of_list(mocker):
     """
     sl = SourceList()
     sl.controller = mocker.MagicMock()
-    sl.update([
-        factory.Source(uuid='new'), factory.Source(uuid='newer'), factory.Source(uuid='newest')])
+    sl.update(
+        [factory.Source(uuid="new"), factory.Source(uuid="newer"), factory.Source(uuid="newest")]
+    )
     assert sl.count() == 3
-    sl.update([factory.Source(uuid='newer'), factory.Source(uuid='newest')])
+    sl.update([factory.Source(uuid="newer"), factory.Source(uuid="newest")])
     assert sl.count() == 2
-    assert sl.itemWidget(sl.item(0)).source.uuid == 'newest'
-    assert sl.itemWidget(sl.item(1)).source.uuid == 'newer'
+    assert sl.itemWidget(sl.item(0)).source.uuid == "newest"
+    assert sl.itemWidget(sl.item(1)).source.uuid == "newer"
     assert len(sl.source_widgets) == 2
 
 
@@ -982,13 +1024,14 @@ def test_SourceList_update_removes_item_from_middle_of_list(mocker):
     """
     sl = SourceList()
     sl.controller = mocker.MagicMock()
-    sl.update([
-        factory.Source(uuid='new'), factory.Source(uuid='newer'), factory.Source(uuid='newest')])
+    sl.update(
+        [factory.Source(uuid="new"), factory.Source(uuid="newer"), factory.Source(uuid="newest")]
+    )
     assert sl.count() == 3
-    sl.update([factory.Source(uuid='new'), factory.Source(uuid='newest')])
+    sl.update([factory.Source(uuid="new"), factory.Source(uuid="newest")])
     assert sl.count() == 2
-    assert sl.itemWidget(sl.item(0)).source.uuid == 'newest'
-    assert sl.itemWidget(sl.item(1)).source.uuid == 'new'
+    assert sl.itemWidget(sl.item(0)).source.uuid == "newest"
+    assert sl.itemWidget(sl.item(1)).source.uuid == "new"
     assert len(sl.source_widgets) == 2
 
 
@@ -998,13 +1041,14 @@ def test_SourceList_update_removes_item_from_beginning_of_list(mocker):
     """
     sl = SourceList()
     sl.controller = mocker.MagicMock()
-    sl.update([
-        factory.Source(uuid='new'), factory.Source(uuid='newer'), factory.Source(uuid='newest')])
+    sl.update(
+        [factory.Source(uuid="new"), factory.Source(uuid="newer"), factory.Source(uuid="newest")]
+    )
     assert sl.count() == 3
-    sl.update([factory.Source(uuid='new'), factory.Source(uuid='newer')])
+    sl.update([factory.Source(uuid="new"), factory.Source(uuid="newer")])
     assert sl.count() == 2
-    assert sl.itemWidget(sl.item(0)).source.uuid == 'newer'
-    assert sl.itemWidget(sl.item(1)).source.uuid == 'new'
+    assert sl.itemWidget(sl.item(0)).source.uuid == "newer"
+    assert sl.itemWidget(sl.item(1)).source.uuid == "new"
     assert len(sl.source_widgets) == 2
 
 
@@ -1021,9 +1065,13 @@ def test_SourceList_add_source_closure_adds_sources(mocker):
 
     mock_sw = mocker.MagicMock()
     mock_lwi = mocker.MagicMock()
-    mocker.patch('securedrop_client.gui.widgets.SourceWidget', mock_sw)
-    mocker.patch('securedrop_client.gui.widgets.SourceListWidgetItem', mock_lwi)
-    sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), ]
+    mocker.patch("securedrop_client.gui.widgets.SourceWidget", mock_sw)
+    mocker.patch("securedrop_client.gui.widgets.SourceListWidgetItem", mock_lwi)
+    sources = [
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+    ]
     mock_timer = mocker.MagicMock()
     with mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer):
         sl.add_source(sources, 1)
@@ -1056,8 +1104,8 @@ def test_SourceList_add_source_closure_exits_on_no_more_sources(mocker):
 
     mock_sw = mocker.MagicMock()
     mock_lwi = mocker.MagicMock()
-    mocker.patch('securedrop_client.gui.widgets.SourceWidget', mock_sw)
-    mocker.patch('securedrop_client.gui.widgets.SourceListWidgetItem', mock_lwi)
+    mocker.patch("securedrop_client.gui.widgets.SourceWidget", mock_sw)
+    mocker.patch("securedrop_client.gui.widgets.SourceListWidgetItem", mock_lwi)
     sources = []
     mock_timer = mocker.MagicMock()
     with mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer):
@@ -1094,33 +1142,33 @@ def test_SourceList_set_snippet(mocker):
 def test_SourceList_get_source_widget(mocker):
     sl = SourceList()
     sl.controller = mocker.MagicMock()
-    mock_source = factory.Source(uuid='mock_uuid')
+    mock_source = factory.Source(uuid="mock_uuid")
     sl.update([mock_source])
     sl.source_widgets = {}
 
-    source_widget = sl.get_source_widget('mock_uuid')
+    source_widget = sl.get_source_widget("mock_uuid")
 
-    assert source_widget.source_uuid == 'mock_uuid'
+    assert source_widget.source_uuid == "mock_uuid"
     assert source_widget == sl.itemWidget(sl.item(0))
 
 
 def test_SourceList_get_source_widget_does_not_exist(mocker):
     sl = SourceList()
     sl.controller = mocker.MagicMock()
-    mock_source = factory.Source(uuid='mock_uuid')
+    mock_source = factory.Source(uuid="mock_uuid")
     sl.update([mock_source])
     sl.source_widgets = {}
 
-    source_widget = sl.get_source_widget('uuid_for_source_not_in_list')
+    source_widget = sl.get_source_widget("uuid_for_source_not_in_list")
 
     assert source_widget is None
 
 
 def test_SourceList_get_source_widget_if_one_exists_in_cache(mocker):
     sl = SourceList()
-    mock_source_widget = factory.Source(uuid='mock_uuid')
-    sl.source_widgets = {'mock_uuid': mock_source_widget}
-    source_widget = sl.get_source_widget('mock_uuid')
+    mock_source_widget = factory.Source(uuid="mock_uuid")
+    sl.source_widgets = {"mock_uuid": mock_source_widget}
+    source_widget = sl.get_source_widget("mock_uuid")
     assert source_widget == mock_source_widget
 
 
@@ -1130,7 +1178,7 @@ def test_SourceWidget_init(mocker):
     """
     controller = mocker.MagicMock()
     mock_source = mocker.MagicMock()
-    mock_source.journalist_designation = 'foo bar baz'
+    mock_source.journalist_designation = "foo bar baz"
     sw = SourceWidget(controller, mock_source)
     assert sw.source == mock_source
 
@@ -1142,16 +1190,16 @@ def test_SourceWidget_html_init(mocker):
     """
     controller = mocker.MagicMock()
     mock_source = mocker.MagicMock()
-    mock_source.journalist_designation = 'foo <b>bar</b> baz'
+    mock_source.journalist_designation = "foo <b>bar</b> baz"
 
     sw = SourceWidget(controller, mock_source)
     sw.name = mocker.MagicMock()
     sw.summary_layout = mocker.MagicMock()
 
-    mocker.patch('securedrop_client.gui.SvgLabel')
+    mocker.patch("securedrop_client.gui.SvgLabel")
     sw.update()
 
-    sw.name.setText.assert_called_once_with('foo <b>bar</b> baz')
+    sw.name.setText.assert_called_once_with("foo <b>bar</b> baz")
 
 
 def test_SourceWidget_update_attachment_icon(mocker):
@@ -1183,8 +1231,7 @@ def test_SourceWidget_update_raises_InvalidRequestError(mocker):
     controller.session.refresh.side_effect = ex
     mock_logger = mocker.MagicMock()
     mocker.patch(
-        "securedrop_client.gui.widgets.logger",
-        mock_logger,
+        "securedrop_client.gui.widgets.logger", mock_logger,
     )
     with pytest.raises(sqlalchemy.exc.InvalidRequestError):
         sw.update()
@@ -1196,7 +1243,7 @@ def test_SourceWidget_set_snippet_draft_only(mocker, session_maker, session, hom
     Snippets/previews do not include draft messages.
     """
     mock_gui = mocker.MagicMock()
-    controller = logic.Controller('http://localhost', mock_gui, session_maker, homedir)
+    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir)
     source = factory.Source(document_count=1)
     f = factory.File(source=source)
     reply = factory.DraftReply(source=source)
@@ -1215,7 +1262,7 @@ def test_SourceWidget_set_snippet(mocker, session_maker, session, homedir):
     Snippets are set as expected.
     """
     mock_gui = mocker.MagicMock()
-    controller = logic.Controller('http://localhost', mock_gui, session_maker, homedir)
+    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir)
     source = factory.Source(document_count=1)
     f = factory.File(source=source)
     session.add(f)
@@ -1246,7 +1293,9 @@ def test_SourceWidget_update_truncate_latest_msg(mocker):
     controller = mocker.MagicMock()
     source = mocker.MagicMock()
     source.journalist_designation = "Testy McTestface"
-    source.collection = [factory.Message(content="a" * 151), ]
+    source.collection = [
+        factory.Message(content="a" * 151),
+    ]
     sw = SourceWidget(controller, source)
 
     sw.update()
@@ -1257,13 +1306,13 @@ def test_SourceWidget_delete_source(mocker, session, source):
     mock_delete_source_message_box_object = mocker.MagicMock(DeleteSourceMessageBox)
     mock_controller = mocker.MagicMock()
     mock_delete_source_message = mocker.MagicMock(
-        return_value=mock_delete_source_message_box_object)
+        return_value=mock_delete_source_message_box_object
+    )
 
-    sw = SourceWidget(mock_controller, source['source'])
+    sw = SourceWidget(mock_controller, source["source"])
 
     mocker.patch(
-        "securedrop_client.gui.widgets.DeleteSourceMessageBox",
-        mock_delete_source_message,
+        "securedrop_client.gui.widgets.DeleteSourceMessageBox", mock_delete_source_message,
     )
 
     sw.delete_source(None)
@@ -1271,7 +1320,7 @@ def test_SourceWidget_delete_source(mocker, session, source):
 
 
 def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker, session, source):
-    source = source['source']  # to get the Source object
+    source = source["source"]  # to get the Source object
     file_ = factory.File(source=source)
     session.add(file_)
     message = factory.Message(source=source)
@@ -1285,8 +1334,7 @@ def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker, session, so
     sw = SourceWidget(mock_controller, source)
 
     mocker.patch(
-        "securedrop_client.gui.widgets.QMessageBox.question",
-        mock_message_box_question,
+        "securedrop_client.gui.widgets.QMessageBox.question", mock_message_box_question,
     )
     sw.delete_source(None)
     sw.controller.delete_source.assert_not_called()
@@ -1294,8 +1342,8 @@ def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker, session, so
 
 def test_SourceWidget__on_source_deleted(mocker, session, source):
     controller = mocker.MagicMock()
-    sw = SourceWidget(controller, factory.Source(uuid='123'))
-    sw._on_source_deleted('123')
+    sw = SourceWidget(controller, factory.Source(uuid="123"))
+    sw._on_source_deleted("123")
     assert sw.gutter.isHidden()
     assert sw.metadata.isHidden()
     assert sw.preview.isHidden()
@@ -1304,8 +1352,8 @@ def test_SourceWidget__on_source_deleted(mocker, session, source):
 
 def test_SourceWidget__on_source_deleted_wrong_uuid(mocker, session, source):
     controller = mocker.MagicMock()
-    sw = SourceWidget(controller, factory.Source(uuid='123'))
-    sw._on_source_deleted('321')
+    sw = SourceWidget(controller, factory.Source(uuid="123"))
+    sw._on_source_deleted("321")
     assert not sw.gutter.isHidden()
     assert not sw.metadata.isHidden()
     assert not sw.preview.isHidden()
@@ -1314,10 +1362,10 @@ def test_SourceWidget__on_source_deleted_wrong_uuid(mocker, session, source):
 
 def test_SourceWidget__on_source_deletion_failed(mocker, session, source):
     controller = mocker.MagicMock()
-    sw = SourceWidget(controller, factory.Source(uuid='123'))
-    sw._on_source_deleted('123')
+    sw = SourceWidget(controller, factory.Source(uuid="123"))
+    sw._on_source_deleted("123")
 
-    sw._on_source_deletion_failed('123')
+    sw._on_source_deletion_failed("123")
 
     assert not sw.gutter.isHidden()
     assert not sw.metadata.isHidden()
@@ -1327,10 +1375,10 @@ def test_SourceWidget__on_source_deletion_failed(mocker, session, source):
 
 def test_SourceWidget__on_source_deletion_failed_wrong_uuid(mocker, session, source):
     controller = mocker.MagicMock()
-    sw = SourceWidget(controller, factory.Source(uuid='123'))
-    sw._on_source_deleted('123')
+    sw = SourceWidget(controller, factory.Source(uuid="123"))
+    sw._on_source_deleted("123")
 
-    sw._on_source_deletion_failed('321')
+    sw._on_source_deletion_failed("321")
 
     assert sw.gutter.isHidden()
     assert sw.metadata.isHidden()
@@ -1345,7 +1393,9 @@ def test_SourceWidget_uses_SecureQLabel(mocker):
     controller = mocker.MagicMock()
     source = mocker.MagicMock()
     source.journalist_designation = "Testy McTestface"
-    source.collection = [factory.Message(content="a" * 121), ]
+    source.collection = [
+        factory.Message(content="a" * 121),
+    ]
     sw = SourceWidget(controller, source)
 
     sw.update()
@@ -1383,7 +1433,7 @@ def test_StarToggleButton_eventFilter_when_checked(mocker):
     """
     controller = mocker.MagicMock()
     controller.is_authenticated = True
-    stb = StarToggleButton(controller, 'mock_uuid', True)
+    stb = StarToggleButton(controller, "mock_uuid", True)
     stb.pressed = mocker.MagicMock()
     stb.setIcon = mocker.MagicMock()
     stb.set_icon = mocker.MagicMock()
@@ -1393,12 +1443,12 @@ def test_StarToggleButton_eventFilter_when_checked(mocker):
     test_event = QEvent(QEvent.HoverEnter)
     stb.eventFilter(stb, test_event)
     assert stb.setIcon.call_count == 1
-    load_icon_fn.assert_called_once_with('star_hover.svg')
+    load_icon_fn.assert_called_once_with("star_hover.svg")
 
     # Hover leave
     test_event = QEvent(QEvent.HoverLeave)
     stb.eventFilter(stb, test_event)
-    stb.set_icon.assert_called_once_with(on='star_on.svg', off='star_off.svg')
+    stb.set_icon.assert_called_once_with(on="star_on.svg", off="star_off.svg")
 
     # Authentication change
     stb.on_authentication_changed(authenticated=True)
@@ -1413,7 +1463,7 @@ def test_StarToggleButton_eventFilter_when_not_checked(mocker):
     """
     controller = mocker.MagicMock()
     controller.is_authenticated = True
-    stb = StarToggleButton(controller, 'mock_uuid', False)
+    stb = StarToggleButton(controller, "mock_uuid", False)
     stb.pressed = mocker.MagicMock()
     stb.setIcon = mocker.MagicMock()
     stb.set_icon = mocker.MagicMock()
@@ -1423,12 +1473,12 @@ def test_StarToggleButton_eventFilter_when_not_checked(mocker):
     test_event = QEvent(QEvent.HoverEnter)
     stb.eventFilter(stb, test_event)
     assert stb.setIcon.call_count == 1
-    load_icon_fn.assert_called_once_with('star_hover.svg')
+    load_icon_fn.assert_called_once_with("star_hover.svg")
 
     # Hover leave
     test_event = QEvent(QEvent.HoverLeave)
     stb.eventFilter(stb, test_event)
-    stb.set_icon.assert_called_once_with(on='star_on.svg', off='star_off.svg')
+    stb.set_icon.assert_called_once_with(on="star_on.svg", off="star_off.svg")
 
     # Authentication change
     stb.on_authentication_changed(authenticated=True)
@@ -1443,7 +1493,7 @@ def test_StarToggleButton_eventFilter_when_checked_and_offline(mocker):
     off='star_on.svg' when checked and offline.
     """
     controller = mocker.MagicMock()
-    stb = StarToggleButton(controller, 'mock_uuid', True)
+    stb = StarToggleButton(controller, "mock_uuid", True)
     stb.pressed = mocker.MagicMock()
     stb.setIcon = mocker.MagicMock()
     stb.set_icon = mocker.MagicMock()
@@ -1452,7 +1502,7 @@ def test_StarToggleButton_eventFilter_when_checked_and_offline(mocker):
     # Authentication change
     stb.on_authentication_changed(authenticated=False)
     assert stb.isCheckable() is False
-    stb.set_icon.assert_called_with(on='star_on.svg', off='star_on.svg')
+    stb.set_icon.assert_called_with(on="star_on.svg", off="star_on.svg")
     stb.pressed.disconnect.assert_called_once_with()
     stb.pressed.connect.assert_called_once_with(stb.on_pressed_offline)
 
@@ -1474,7 +1524,7 @@ def test_StarToggleButton_eventFilter_when_not_checked_and_offline(mocker):
     off='star_on.svg' when unchecked and offline.
     """
     controller = mocker.MagicMock()
-    stb = StarToggleButton(controller, 'mock_uuid', False)
+    stb = StarToggleButton(controller, "mock_uuid", False)
     stb.pressed = mocker.MagicMock()
     stb.setIcon = mocker.MagicMock()
     stb.set_icon = mocker.MagicMock()
@@ -1504,7 +1554,7 @@ def test_StarToggleButton_on_authentication_changed_while_authenticated_and_chec
     in the button being unchecked.
     """
     controller = mocker.MagicMock()
-    stb = StarToggleButton(controller, 'mock_uuid', True)
+    stb = StarToggleButton(controller, "mock_uuid", True)
     stb.on_pressed = mocker.MagicMock()
     stb.on_authentication_changed(authenticated=True)
 
@@ -1520,7 +1570,7 @@ def test_StarToggleButton_on_authentication_changed_while_authenticated_and_not_
     should result in the button being unchecked.
     """
     controller = mocker.MagicMock()
-    stb = StarToggleButton(controller, 'mock_uuid', False)
+    stb = StarToggleButton(controller, "mock_uuid", False)
     stb.on_pressed = mocker.MagicMock()
     stb.on_authentication_changed(authenticated=True)
 
@@ -1535,7 +1585,7 @@ def test_StarToggleButton_on_authentication_changed_while_offline_mode_and_not_c
     Ensure on_authentication_changed is set up correctly for offline mode.
     """
     controller = mocker.MagicMock()
-    stb = StarToggleButton(controller, 'mock_uuid', False)
+    stb = StarToggleButton(controller, "mock_uuid", False)
     stb.on_pressed_offline = mocker.MagicMock()
     stb.on_pressed = mocker.MagicMock()
     stb.on_authentication_changed(authenticated=False)
@@ -1552,7 +1602,7 @@ def test_StarToggleButton_on_authentication_changed_while_offline_mode_and_check
     Ensure on_authentication_changed is set up correctly for offline mode.
     """
     controller = mocker.MagicMock()
-    stb = StarToggleButton(controller, 'mock_uuid', True)
+    stb = StarToggleButton(controller, "mock_uuid", True)
     stb.on_pressed_offline = mocker.MagicMock()
     stb.on_pressed = mocker.MagicMock()
     stb.on_authentication_changed(authenticated=False)
@@ -1570,11 +1620,11 @@ def test_StarToggleButton_on_pressed_toggles_to_starred(mocker):
     Ensure pressing the star button toggles from unstarred to starred.
     """
     controller = mocker.MagicMock()
-    stb = StarToggleButton(controller, 'mock_uuid', False)
+    stb = StarToggleButton(controller, "mock_uuid", False)
 
     stb.click()
 
-    stb.controller.update_star.assert_called_once_with('mock_uuid', False)
+    stb.controller.update_star.assert_called_once_with("mock_uuid", False)
     assert stb.isChecked()
 
 
@@ -1583,11 +1633,11 @@ def test_StarToggleButton_on_pressed_toggles_to_unstarred(mocker):
     Ensure pressing the star button toggles from starred to unstarred.
     """
     controller = mocker.MagicMock()
-    stb = StarToggleButton(controller, 'mock_uuid', True)
+    stb = StarToggleButton(controller, "mock_uuid", True)
 
     stb.click()
 
-    stb.controller.update_star.assert_called_once_with('mock_uuid', True)
+    stb.controller.update_star.assert_called_once_with("mock_uuid", True)
     assert not stb.isChecked()
 
 
@@ -1597,7 +1647,7 @@ def test_StarToggleButton_on_pressed_offline(mocker):
     """
     controller = mocker.MagicMock()
     controller.is_authenticated = False
-    stb = StarToggleButton(controller, 'mock_uuid', True)
+    stb = StarToggleButton(controller, "mock_uuid", True)
 
     stb.click()
 
@@ -1612,11 +1662,11 @@ def test_StarToggleButton_on_pressed_offline_when_checked(mocker):
     controller.is_authenticated = False
     source = factory.Source(is_starred=True)
     stb = StarToggleButton(controller, source.uuid, source.is_starred)
-    set_icon_fn = mocker.patch('securedrop_client.gui.SvgToggleButton.set_icon')
+    set_icon_fn = mocker.patch("securedrop_client.gui.SvgToggleButton.set_icon")
 
     stb.on_authentication_changed(False)
     assert stb.isCheckable() is False
-    set_icon_fn.assert_called_with(on='star_on.svg', off='star_on.svg')
+    set_icon_fn.assert_called_with(on="star_on.svg", off="star_on.svg")
 
     stb.click()
     stb.controller.on_action_requiring_login.assert_called_once_with()
@@ -1630,7 +1680,7 @@ def test_StarToggleButton_update(mocker):
     """
     controller = mocker.MagicMock()
     controller.is_authenticated = True
-    stb = StarToggleButton(controller, 'mock_uuid', True)
+    stb = StarToggleButton(controller, "mock_uuid", True)
 
     # Should not change because we wait until next sync
     stb.pending_count = 0
@@ -1686,64 +1736,64 @@ def test_StarToggleButton_update_when_not_authenticated(mocker):
 
 
 def test_StarToggleButton_on_star_update_failed(mocker):
-    '''
+    """
     Ensure the button is toggled to the state provided in the failure handler and that the pending
     count is decremented if the source uuid matches.
-    '''
+    """
     controller = mocker.MagicMock()
     controller.is_authenticated = True
-    stb = StarToggleButton(controller, 'mock_uuid', False)
+    stb = StarToggleButton(controller, "mock_uuid", False)
 
     stb.click()
     assert stb.is_starred is True
     assert stb.pending_count == 1
-    stb.on_star_update_failed('mock_uuid', is_starred=False)
+    stb.on_star_update_failed("mock_uuid", is_starred=False)
     assert stb.is_starred is False
     assert stb.pending_count == 0
 
 
 def test_StarToggleButton_on_star_update_failed_for_non_matching_source_uuid(mocker):
-    '''
+    """
     Ensure the button is not toggled and that the pending count stays the same if the source uuid
     does not match.
-    '''
+    """
     controller = mocker.MagicMock()
     controller.is_authenticated = True
-    stb = StarToggleButton(controller, 'mock_uuid', False)
+    stb = StarToggleButton(controller, "mock_uuid", False)
 
     stb.click()
     assert stb.is_starred is True
     assert stb.pending_count == 1
-    stb.on_star_update_failed('some_other_uuid', is_starred=False)
+    stb.on_star_update_failed("some_other_uuid", is_starred=False)
     assert stb.is_starred is True
     assert stb.pending_count == 1
 
 
 def test_StarToggleButton_on_star_update_successful(mocker):
-    '''
+    """
     Ensure that the pending count is decremented if the source uuid matches.
-    '''
+    """
     controller = mocker.MagicMock()
     controller.is_authenticated = True
-    stb = StarToggleButton(controller, 'mock_uuid', True)
+    stb = StarToggleButton(controller, "mock_uuid", True)
 
     stb.click()
     assert stb.pending_count == 1
-    stb.on_star_update_successful('mock_uuid')
+    stb.on_star_update_successful("mock_uuid")
     assert stb.pending_count == 0
 
 
 def test_StarToggleButton_on_star_update_successful_for_non_matching_source_uuid(mocker):
-    '''
+    """
     Ensure that the pending count is not decremented if the source uuid does not match.
-    '''
+    """
     controller = mocker.MagicMock()
     controller.is_authenticated = True
-    stb = StarToggleButton(controller, 'mock_uuid', True)
+    stb = StarToggleButton(controller, "mock_uuid", True)
 
     stb.click()
     assert stb.pending_count == 1
-    stb.on_star_update_successful('some_other_uuid')
+    stb.on_star_update_successful("some_other_uuid")
     assert stb.pending_count == 1
 
 
@@ -1777,9 +1827,9 @@ def test_LoginDialog_reset(mocker):
 
     ld.reset()
 
-    ld.username_field.setText.assert_called_once_with('')
-    ld.password_field.setText.assert_called_once_with('')
-    ld.tfa_field.setText.assert_called_once_with('')
+    ld.username_field.setText.assert_called_once_with("")
+    ld.password_field.setText.assert_called_once_with("")
+    ld.tfa_field.setText.assert_called_once_with("")
     ld.setDisabled.assert_called_once_with(False)
     ld.error_bar.clear_message.assert_called_once_with()
 
@@ -1792,8 +1842,8 @@ def test_LoginDialog_error(mocker, i18n):
     ld = LoginDialog(None)
     ld.setup(mock_controller)
     ld.error_bar = mocker.MagicMock()
-    ld.error('foo')
-    ld.error_bar.set_message.assert_called_once_with('foo')
+    ld.error("foo")
+    ld.error_bar.set_message.assert_called_once_with("foo")
 
 
 def test_LoginDialog_validate_no_input(mocker):
@@ -1804,9 +1854,9 @@ def test_LoginDialog_validate_no_input(mocker):
 
     ld = LoginDialog(None)
     ld.setup(mock_controller)
-    ld.username_field.text = mocker.MagicMock(return_value='')
-    ld.password_field.text = mocker.MagicMock(return_value='')
-    ld.tfa_field.text = mocker.MagicMock(return_value='')
+    ld.username_field.text = mocker.MagicMock(return_value="")
+    ld.password_field.text = mocker.MagicMock(return_value="")
+    ld.tfa_field.text = mocker.MagicMock(return_value="")
     ld.setDisabled = mocker.MagicMock()
     ld.error = mocker.MagicMock()
 
@@ -1825,9 +1875,9 @@ def test_LoginDialog_validate_input_non_numeric_2fa(mocker):
 
     ld = LoginDialog(None)
     ld.setup(mock_controller)
-    ld.username_field.text = mocker.MagicMock(return_value='foo')
-    ld.password_field.text = mocker.MagicMock(return_value='nicelongpassword')
-    ld.tfa_field.text = mocker.MagicMock(return_value='baz')
+    ld.username_field.text = mocker.MagicMock(return_value="foo")
+    ld.password_field.text = mocker.MagicMock(return_value="nicelongpassword")
+    ld.tfa_field.text = mocker.MagicMock(return_value="baz")
     ld.setDisabled = mocker.MagicMock()
     ld.error = mocker.MagicMock()
 
@@ -1846,9 +1896,9 @@ def test_LoginDialog_validate_too_short_username(mocker):
 
     ld = LoginDialog(None)
     ld.setup(mock_controller)
-    ld.username_field.text = mocker.MagicMock(return_value='he')
-    ld.password_field.text = mocker.MagicMock(return_value='nicelongpassword')
-    ld.tfa_field.text = mocker.MagicMock(return_value='123456')
+    ld.username_field.text = mocker.MagicMock(return_value="he")
+    ld.password_field.text = mocker.MagicMock(return_value="nicelongpassword")
+    ld.tfa_field.text = mocker.MagicMock(return_value="123456")
     ld.setDisabled = mocker.MagicMock()
     ld.error = mocker.MagicMock()
 
@@ -1867,9 +1917,9 @@ def test_LoginDialog_validate_too_short_password(mocker):
 
     ld = LoginDialog(None)
     ld.setup(mock_controller)
-    ld.username_field.text = mocker.MagicMock(return_value='foo')
-    ld.password_field.text = mocker.MagicMock(return_value='bar')
-    ld.tfa_field.text = mocker.MagicMock(return_value='123456')
+    ld.username_field.text = mocker.MagicMock(return_value="foo")
+    ld.password_field.text = mocker.MagicMock(return_value="bar")
+    ld.tfa_field.text = mocker.MagicMock(return_value="123456")
     ld.setDisabled = mocker.MagicMock()
     ld.error = mocker.MagicMock()
 
@@ -1889,11 +1939,11 @@ def test_LoginDialog_validate_too_long_password(mocker):
     ld.setup(mock_controller)
 
     max_password_len = 128
-    too_long_password = 'a' * (max_password_len + 1)
+    too_long_password = "a" * (max_password_len + 1)
 
-    ld.username_field.text = mocker.MagicMock(return_value='foo')
+    ld.username_field.text = mocker.MagicMock(return_value="foo")
     ld.password_field.text = mocker.MagicMock(return_value=too_long_password)
-    ld.tfa_field.text = mocker.MagicMock(return_value='123456')
+    ld.tfa_field.text = mocker.MagicMock(return_value="123456")
     ld.setDisabled = mocker.MagicMock()
     ld.error = mocker.MagicMock()
 
@@ -1912,9 +1962,9 @@ def test_LoginDialog_validate_input_ok(mocker):
 
     ld = LoginDialog(None)
     ld.setup(mock_controller)
-    ld.username_field.text = mocker.MagicMock(return_value='foo')
-    ld.password_field.text = mocker.MagicMock(return_value='nicelongpassword')
-    ld.tfa_field.text = mocker.MagicMock(return_value='123456')
+    ld.username_field.text = mocker.MagicMock(return_value="foo")
+    ld.password_field.text = mocker.MagicMock(return_value="nicelongpassword")
+    ld.tfa_field.text = mocker.MagicMock(return_value="123456")
     ld.setDisabled = mocker.MagicMock()
     ld.error = mocker.MagicMock()
 
@@ -1922,7 +1972,7 @@ def test_LoginDialog_validate_input_ok(mocker):
 
     assert ld.setDisabled.call_count == 1
     assert ld.error.call_count == 0
-    mock_controller.login.assert_called_once_with('foo', 'nicelongpassword', '123456')
+    mock_controller.login.assert_called_once_with("foo", "nicelongpassword", "123456")
 
 
 def test_LoginDialog_escapeKeyPressEvent(mocker):
@@ -1962,10 +2012,10 @@ def test_LoginDialog_closeEvent_exits(mocker):
     """
     mw = QMainWindow()
     ld = LoginDialog(mw)
-    sys_exit_fn = mocker.patch('securedrop_client.gui.widgets.sys.exit')
+    sys_exit_fn = mocker.patch("securedrop_client.gui.widgets.sys.exit")
     mw.hide()
 
-    ld.closeEvent(event='mock')
+    ld.closeEvent(event="mock")
 
     sys_exit_fn.assert_called_once_with(0)
 
@@ -1973,22 +2023,22 @@ def test_LoginDialog_closeEvent_exits(mocker):
 def test_LoginErrorBar_set_message(mocker):
     error_bar = LoginErrorBar()
     error_bar.error_status_bar = mocker.MagicMock()
-    mocker.patch.object(error_bar, 'show')
+    mocker.patch.object(error_bar, "show")
 
-    error_bar.set_message('mock error')
+    error_bar.set_message("mock error")
 
-    error_bar.error_status_bar.setText.assert_called_with('mock error')
+    error_bar.error_status_bar.setText.assert_called_with("mock error")
     error_bar.show.assert_called_with()
 
 
 def test_LoginErrorBar_clear_message(mocker):
     error_bar = LoginErrorBar()
     error_bar.error_status_bar = mocker.MagicMock()
-    mocker.patch.object(error_bar, 'hide')
+    mocker.patch.object(error_bar, "hide")
 
     error_bar.clear_message()
 
-    error_bar.error_status_bar.setText.assert_called_with('')
+    error_bar.error_status_bar.setText.assert_called_with("")
     error_bar.hide.assert_called_with()
 
 
@@ -2011,10 +2061,10 @@ def test_LoginDialog_closeEvent_does_not_exit_when_main_window_is_visible(mocker
     """
     mw = QMainWindow()
     ld = LoginDialog(mw)
-    sys_exit_fn = mocker.patch('securedrop_client.gui.widgets.sys.exit')
+    sys_exit_fn = mocker.patch("securedrop_client.gui.widgets.sys.exit")
     mw.show()
 
-    ld.closeEvent(event='mock')
+    ld.closeEvent(event="mock")
 
     assert sys_exit_fn.called is False
 
@@ -2032,9 +2082,9 @@ def test_SpeechBubble_init(mocker):
     mock_download_error_connect = mocker.Mock()
     mock_download_error_signal.connect = mock_download_error_connect
 
-    sb = SpeechBubble('mock id', 'hello', mock_update_signal, mock_download_error_signal, 0)
+    sb = SpeechBubble("mock id", "hello", mock_update_signal, mock_download_error_signal, 0)
 
-    sb.message.text() == 'hello'
+    sb.message.text() == "hello"
     assert mock_update_connect.called
     assert mock_download_error_connect.called
 
@@ -2052,10 +2102,10 @@ def test_SpeechBubble_init_with_error(mocker):
     mock_download_error_signal.connect = mock_download_error_connect
 
     sb = SpeechBubble(
-        'mock id', 'hello', mock_update_signal, mock_download_error_signal, 0, error=True
+        "mock id", "hello", mock_update_signal, mock_download_error_signal, 0, error=True
     )
 
-    sb.message.text() == 'hello'
+    sb.message.text() == "hello"
     assert mock_update_connect.called
     assert mock_download_error_connect.called
 
@@ -2066,15 +2116,15 @@ def test_SpeechBubble_update_text(mocker):
     """
     mock_signal = mocker.MagicMock()
 
-    msg_id = 'abc123'
-    sb = SpeechBubble(msg_id, 'hello', mock_signal, mock_signal, 0)
+    msg_id = "abc123"
+    sb = SpeechBubble(msg_id, "hello", mock_signal, mock_signal, 0)
 
-    new_msg = 'new message'
-    sb._update_text('mock_source_uuid', msg_id, new_msg)
+    new_msg = "new message"
+    sb._update_text("mock_source_uuid", msg_id, new_msg)
     assert sb.message.text() == new_msg
 
-    newer_msg = 'an even newer message'
-    sb._update_text('mock_source_uuid', msg_id + 'xxxxx', newer_msg)
+    newer_msg = "an even newer message"
+    sb._update_text("mock_source_uuid", msg_id + "xxxxx", newer_msg)
     assert sb.message.text() == new_msg
 
 
@@ -2085,8 +2135,8 @@ def test_SpeechBubble_html_init(mocker):
     """
     mock_signal = mocker.MagicMock()
 
-    bubble = SpeechBubble('mock id', '<b>hello</b>', mock_signal, mock_signal, 0)
-    assert bubble.message.text() == '<b>hello</b>'
+    bubble = SpeechBubble("mock id", "<b>hello</b>", mock_signal, mock_signal, 0)
+    assert bubble.message.text() == "<b>hello</b>"
 
 
 def test_SpeechBubble_with_apostrophe_in_text(mocker):
@@ -2094,7 +2144,7 @@ def test_SpeechBubble_with_apostrophe_in_text(mocker):
     mock_signal = mocker.MagicMock()
 
     message = "I'm sure, you are reading my message."
-    bubble = SpeechBubble('mock id', message, mock_signal, mock_signal, 0)
+    bubble = SpeechBubble("mock id", message, mock_signal, mock_signal, 0)
     assert bubble.message.text() == message
 
 
@@ -2119,7 +2169,7 @@ def test_MessageWidget_init(mocker):
     mock_connected = mocker.Mock()
     mock_signal.connect = mock_connected
 
-    MessageWidget('mock id', 'hello', mock_signal, mock_signal, 0)
+    MessageWidget("mock id", "hello", mock_signal, mock_signal, 0)
 
     assert mock_connected.called
 
@@ -2145,9 +2195,9 @@ def test_ReplyWidget_init(mocker):
     mock_failure_signal.connect = mock_failure_connected
 
     ReplyWidget(
-        'mock id',
-        'hello',
-        'dummy',
+        "mock id",
+        "hello",
+        "dummy",
         mock_update_signal,
         mock_download_failure_signal,
         mock_success_signal,
@@ -2181,15 +2231,15 @@ def test_ReplyWidget_init_with_error(mocker):
     mock_failure_signal.connect = mock_failure_connected
 
     ReplyWidget(
-        'mock id',
-        'hello',
-        'dummy',
+        "mock id",
+        "hello",
+        "dummy",
         mock_update_signal,
         mock_download_failure_signal,
         mock_success_signal,
         mock_failure_signal,
         0,
-        error=True
+        error=True,
     )
 
     assert mock_update_connected.called
@@ -2201,14 +2251,14 @@ def test_FileWidget_init_file_not_downloaded(mocker, source, session):
     """
     Check the FileWidget is configured correctly when the file is not downloaded.
     """
-    file = factory.File(source=source['source'], is_downloaded=False, is_decrypted=None)
+    file = factory.File(source=source["source"], is_downloaded=False, is_decrypted=None)
     session.add(file)
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget('mock', controller, mocker.MagicMock(), mocker.MagicMock(), 0)
+    fw = FileWidget("mock", controller, mocker.MagicMock(), mocker.MagicMock(), 0)
 
     assert fw.controller == controller
     assert fw.file.is_downloaded is False
@@ -2224,14 +2274,14 @@ def test_FileWidget_init_file_downloaded(mocker, source, session):
     """
     Check the FileWidget is configured correctly when the file is downloaded.
     """
-    file = factory.File(source=source['source'], is_downloaded=True)
+    file = factory.File(source=source["source"], is_downloaded=True)
     session.add(file)
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget('mock', controller, mocker.MagicMock(), mocker.MagicMock(), 0)
+    fw = FileWidget("mock", controller, mocker.MagicMock(), mocker.MagicMock(), 0)
 
     assert fw.controller == controller
     assert fw.file.is_downloaded is True
@@ -2248,9 +2298,7 @@ def test_FileWidget__set_file_state_under_mouse(mocker, source, session):
     If the download_button is under the mouse, it should show the "hover"
     version of the download_file icon.
     """
-    file_ = factory.File(source=source['source'],
-                         is_downloaded=False,
-                         is_decrypted=None)
+    file_ = factory.File(source=source["source"], is_downloaded=False, is_decrypted=None)
     session.add(file_)
     session.commit()
 
@@ -2270,9 +2318,7 @@ def test_FileWidget_event_handler_left_click(mocker, session, source):
     """
     Left click on filename should trigger an open.
     """
-    file_ = factory.File(source=source['source'],
-                         is_downloaded=False,
-                         is_decrypted=None)
+    file_ = factory.File(source=source["source"], is_downloaded=False, is_decrypted=None)
     session.add(file_)
     session.commit()
 
@@ -2293,9 +2339,7 @@ def test_FileWidget_event_handler_hover(mocker, session, source):
     Hover events when the file isn't being downloaded should change the
     widget's icon.
     """
-    file_ = factory.File(source=source['source'],
-                         is_downloaded=False,
-                         is_decrypted=None)
+    file_ = factory.File(source=source["source"], is_downloaded=False, is_decrypted=None)
     session.add(file_)
     session.commit()
 
@@ -2322,9 +2366,7 @@ def test_FileWidget_on_left_click_download(mocker, session, source):
     Left click on download when file is not downloaded should trigger
     a download.
     """
-    file_ = factory.File(source=source['source'],
-                         is_downloaded=False,
-                         is_decrypted=None)
+    file_ = factory.File(source=source["source"], is_downloaded=False, is_decrypted=None)
     session.add(file_)
     session.commit()
 
@@ -2338,8 +2380,7 @@ def test_FileWidget_on_left_click_download(mocker, session, source):
 
     fw._on_left_click()
     mock_get_file.assert_called_once_with(file_.uuid)
-    mock_controller.on_submission_download.assert_called_once_with(
-        db.File, file_.uuid)
+    mock_controller.on_submission_download.assert_called_once_with(db.File, file_.uuid)
 
 
 def test_FileWidget_on_left_click_downloading_in_progress(mocker, session, source):
@@ -2347,9 +2388,7 @@ def test_FileWidget_on_left_click_downloading_in_progress(mocker, session, sourc
     Left click on download when file is not downloaded but is in progress
     downloading should not trigger a download.
     """
-    file_ = factory.File(source=source['source'],
-                         is_downloaded=False,
-                         is_decrypted=None)
+    file_ = factory.File(source=source["source"], is_downloaded=False, is_decrypted=None)
     session.add(file_)
     session.commit()
 
@@ -2371,9 +2410,7 @@ def test_FileWidget_start_button_animation(mocker, session, source):
     """
     Ensure widget state is updated when this method is called.
     """
-    file_ = factory.File(source=source['source'],
-                         is_downloaded=False,
-                         is_decrypted=None)
+    file_ = factory.File(source=source["source"], is_downloaded=False, is_decrypted=None)
     session.add(file_)
     session.commit()
     mock_get_file = mocker.MagicMock(return_value=file_)
@@ -2389,7 +2426,7 @@ def test_FileWidget_on_left_click_open(mocker, session, source):
     """
     Left click on open when file is downloaded should trigger an open.
     """
-    file_ = factory.File(source=source['source'], is_downloaded=True)
+    file_ = factory.File(source=source["source"], is_downloaded=True)
     session.add(file_)
     session.commit()
 
@@ -2406,9 +2443,7 @@ def test_FileWidget_set_button_animation_frame(mocker, session, source):
     Left click on download when file is not downloaded should trigger
     a download.
     """
-    file_ = factory.File(source=source['source'],
-                         is_downloaded=False,
-                         is_decrypted=None)
+    file_ = factory.File(source=source["source"], is_downloaded=False, is_decrypted=None)
     session.add(file_)
     session.commit()
 
@@ -2425,7 +2460,7 @@ def test_FileWidget_update(mocker, session, source):
     """
     The update method should show/hide widgets if file is downloaded
     """
-    file = factory.File(source=source['source'], is_downloaded=True)
+    file = factory.File(source=source["source"], is_downloaded=True)
     session.add(file)
     session.commit()
     get_file = mocker.MagicMock(return_value=file)
@@ -2443,7 +2478,7 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_matches(mocker, sou
     """
     The _on_file_download method should update the FileWidget
     """
-    file = factory.File(source=source['source'], is_downloaded=True)
+    file = factory.File(source=source["source"], is_downloaded=True)
     session.add(file)
     session.commit()
 
@@ -2470,7 +2505,7 @@ def test_FileWidget_filename_truncation(mocker, source, session):
     The full filename should be available in the tooltip.
     """
     filename = "1-{}".format("x" * 1000)
-    file = factory.File(source=source['source'], filename=filename)
+    file = factory.File(source=source["source"], filename=filename)
     session.add(file)
     session.commit()
 
@@ -2492,7 +2527,7 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(
     """
     The _on_file_download method should clear and update the FileWidget
     """
-    file = factory.File(source=source['source'], is_downloaded=True)
+    file = factory.File(source=source["source"], is_downloaded=True)
     session.add(file)
     session.commit()
 
@@ -2503,7 +2538,7 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(
     fw.clear = mocker.MagicMock()
     fw.update = mocker.MagicMock()
 
-    fw._on_file_downloaded('not a matching source uuid', 'not a matching file uuid', 'mock')
+    fw._on_file_downloaded("not a matching source uuid", "not a matching file uuid", "mock")
 
     fw.clear.assert_not_called()
     assert fw.download_button.isHidden()
@@ -2515,25 +2550,19 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(
 
 
 def test_FileWidget_on_file_missing_show_download_button_when_uuid_matches(
-        mocker, source, session, session_maker, homedir
+    mocker, source, session, session_maker, homedir
 ):
     """
     The _on_file_missing method should update the FileWidget when uuid matches.
     """
-    file = factory.File(source=source['source'], is_decrypted=None, is_downloaded=False)
+    file = factory.File(source=source["source"], is_decrypted=None, is_downloaded=False)
     session.add(file)
     session.commit()
 
     mock_gui = mocker.MagicMock()
-    controller = logic.Controller('http://localhost', mock_gui, session_maker, homedir)
+    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir)
 
-    fw = FileWidget(
-        file.uuid,
-        controller,
-        controller.file_ready,
-        controller.file_missing,
-        0
-    )
+    fw = FileWidget(file.uuid, controller, controller.file_ready, controller.file_missing, 0)
     fw._on_file_missing(file.source.uuid, file.uuid, str(file))
 
     # this is necessary for the timer that stops the download
@@ -2555,7 +2584,7 @@ def test_FileWidget_on_file_missing_does_not_show_download_button_when_uuid_does
     """
     The _on_file_missing method should not update the FileWidget when uuid doesn't match.
     """
-    file = factory.File(source=source['source'])
+    file = factory.File(source=source["source"])
     session.add(file)
     session.commit()
 
@@ -2565,7 +2594,7 @@ def test_FileWidget_on_file_missing_does_not_show_download_button_when_uuid_does
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw.download_button.show = mocker.MagicMock()
 
-    fw._on_file_missing('not a matching source uuid', 'not a matching file uuid', 'mock filename')
+    fw._on_file_missing("not a matching source uuid", "not a matching file uuid", "mock filename")
 
     fw.download_button.show.assert_not_called()
 
@@ -2574,7 +2603,7 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
     """
     Ensure preflight checks start when the EXPORT button is clicked and that password is requested
     """
-    file = factory.File(source=source['source'], is_downloaded=True)
+    file = factory.File(source=source["source"], is_downloaded=True)
     session.add(file)
     session.commit()
 
@@ -2583,11 +2612,11 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
 
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw.update = mocker.MagicMock()
-    mocker.patch('securedrop_client.gui.widgets.QDialog.exec')
+    mocker.patch("securedrop_client.gui.widgets.QDialog.exec")
     controller.run_export_preflight_checks = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=True)
 
-    dialog = mocker.patch('securedrop_client.gui.widgets.ExportDialog')
+    dialog = mocker.patch("securedrop_client.gui.widgets.ExportDialog")
 
     fw._on_export_clicked()
     dialog.assert_called_once_with(controller, file.uuid, file.filename)
@@ -2597,7 +2626,7 @@ def test_FileWidget__on_export_clicked_missing_file(mocker, session, source):
     """
     Ensure dialog does not open when the EXPORT button is clicked yet the file to export is missing
     """
-    file = factory.File(source=source['source'], is_downloaded=True)
+    file = factory.File(source=source["source"], is_downloaded=True)
     session.add(file)
     session.commit()
 
@@ -2606,10 +2635,10 @@ def test_FileWidget__on_export_clicked_missing_file(mocker, session, source):
 
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw.update = mocker.MagicMock()
-    mocker.patch('securedrop_client.gui.widgets.QDialog.exec')
+    mocker.patch("securedrop_client.gui.widgets.QDialog.exec")
     controller.run_export_preflight_checks = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=False)
-    dialog = mocker.patch('securedrop_client.gui.widgets.ExportDialog')
+    dialog = mocker.patch("securedrop_client.gui.widgets.ExportDialog")
 
     fw._on_export_clicked()
 
@@ -2621,7 +2650,7 @@ def test_FileWidget__on_print_clicked(mocker, session, source):
     """
     Ensure print_file is called when the PRINT button is clicked
     """
-    file = factory.File(source=source['source'], is_downloaded=True)
+    file = factory.File(source=source["source"], is_downloaded=True)
     session.add(file)
     session.commit()
 
@@ -2630,11 +2659,11 @@ def test_FileWidget__on_print_clicked(mocker, session, source):
 
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw.update = mocker.MagicMock()
-    mocker.patch('securedrop_client.gui.widgets.QDialog.exec')
+    mocker.patch("securedrop_client.gui.widgets.QDialog.exec")
     controller.print_file = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=True)
 
-    dialog = mocker.patch('securedrop_client.gui.widgets.PrintDialog')
+    dialog = mocker.patch("securedrop_client.gui.widgets.PrintDialog")
 
     fw._on_print_clicked()
 
@@ -2645,7 +2674,7 @@ def test_FileWidget__on_print_clicked_missing_file(mocker, session, source):
     """
     Ensure dialog does not open when the EXPORT button is clicked yet the file to export is missing
     """
-    file = factory.File(source=source['source'], is_downloaded=True)
+    file = factory.File(source=source["source"], is_downloaded=True)
     session.add(file)
     session.commit()
 
@@ -2654,10 +2683,10 @@ def test_FileWidget__on_print_clicked_missing_file(mocker, session, source):
 
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
     fw.update = mocker.MagicMock()
-    mocker.patch('securedrop_client.gui.widgets.QDialog.exec')
+    mocker.patch("securedrop_client.gui.widgets.QDialog.exec")
     controller.print_file = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=False)
-    dialog = mocker.patch('securedrop_client.gui.widgets.PrintDialog')
+    dialog = mocker.patch("securedrop_client.gui.widgets.PrintDialog")
 
     fw._on_print_clicked()
 
@@ -2669,17 +2698,16 @@ def test_FileWidget_update_file_size_with_deleted_file(
     mocker, homedir, config, session_maker, source
 ):
     mock_gui = mocker.MagicMock()
-    controller = logic.Controller('http://localhost', mock_gui, session_maker, homedir)
+    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir)
 
-    file = factory.File(source=source['source'], is_downloaded=True)
+    file = factory.File(source=source["source"], is_downloaded=True)
     controller.session.add(file)
     controller.session.commit()
 
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0)
 
     with mocker.patch(
-        "securedrop_client.gui.widgets.humanize_filesize",
-        side_effect=Exception("boom!")
+        "securedrop_client.gui.widgets.humanize_filesize", side_effect=Exception("boom!")
     ):
         fw.update_file_size()
         assert fw.file_size.text() == ""
@@ -2790,47 +2818,50 @@ def test_ModalDialog_animation_of_header(mocker):
 
 def test_ExportDialog_init(mocker):
     _show_starting_instructions_fn = mocker.patch(
-        'securedrop_client.gui.widgets.ExportDialog._show_starting_instructions')
+        "securedrop_client.gui.widgets.ExportDialog._show_starting_instructions"
+    )
 
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
 
     _show_starting_instructions_fn.assert_called_once_with()
     assert dialog.passphrase_form.isHidden()
 
 
 def test_ExportDialog_init_sanitizes_filename(mocker):
-    secure_qlabel = mocker.patch('securedrop_client.gui.widgets.SecureQLabel')
-    mocker.patch('securedrop_client.gui.widgets.QVBoxLayout.addWidget')
+    secure_qlabel = mocker.patch("securedrop_client.gui.widgets.SecureQLabel")
+    mocker.patch("securedrop_client.gui.widgets.QVBoxLayout.addWidget")
     filename = '<script>alert("boom!");</script>'
 
-    ExportDialog(mocker.MagicMock(), 'mock_uuid', filename)
+    ExportDialog(mocker.MagicMock(), "mock_uuid", filename)
 
     secure_qlabel.call_args_list[1].assert_called_with(filename)
 
 
 def test_ExportDialog__show_starting_instructions(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
 
     dialog._show_starting_instructions()
 
-    assert dialog.header.text() == \
-        'Preparing to export:' \
-        '<br />' \
+    assert (
+        dialog.header.text() == "Preparing to export:"
+        "<br />"
         '<span style="font-weight:normal">mock.jpg</span>'
-    assert dialog.body.text() == \
-        '<h2>Understand the risks before exporting files</h2>' \
-        '<b>Malware</b>' \
-        '<br />' \
-        'This workstation lets you open files securely. If you open files on another ' \
-        'computer, any embedded malware may spread to your computer or network. If you are ' \
-        'unsure how to manage this risk, please print the file, or contact your ' \
-        'administrator.' \
-        '<br /><br />' \
-        '<b>Anonymity</b>' \
-        '<br />' \
-        'Files submitted by sources may contain information or hidden metadata that ' \
-        'identifies who they are. To protect your sources, please consider redacting files ' \
-        'before working with them on network-connected computers.'
+    )
+    assert (
+        dialog.body.text() == "<h2>Understand the risks before exporting files</h2>"
+        "<b>Malware</b>"
+        "<br />"
+        "This workstation lets you open files securely. If you open files on another "
+        "computer, any embedded malware may spread to your computer or network. If you are "
+        "unsure how to manage this risk, please print the file, or contact your "
+        "administrator."
+        "<br /><br />"
+        "<b>Anonymity</b>"
+        "<br />"
+        "Files submitted by sources may contain information or hidden metadata that "
+        "identifies who they are. To protect your sources, please consider redacting files "
+        "before working with them on network-connected computers."
+    )
     assert not dialog.header.isHidden()
     assert not dialog.header_line.isHidden()
     assert dialog.error_details.isHidden()
@@ -2841,11 +2872,11 @@ def test_ExportDialog__show_starting_instructions(mocker):
 
 
 def test_ExportDialog___show_passphrase_request_message(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
 
     dialog._show_passphrase_request_message()
 
-    assert dialog.header.text() == 'Enter passphrase for USB drive'
+    assert dialog.header.text() == "Enter passphrase for USB drive"
     assert not dialog.header.isHidden()
     assert dialog.header_line.isHidden()
     assert dialog.error_details.isHidden()
@@ -2856,12 +2887,12 @@ def test_ExportDialog___show_passphrase_request_message(mocker):
 
 
 def test_ExportDialog__show_passphrase_request_message_again(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
 
     dialog._show_passphrase_request_message_again()
 
-    assert dialog.header.text() == 'Enter passphrase for USB drive'
-    assert dialog.error_details.text() == 'The passphrase provided did not work. Please try again.'
+    assert dialog.header.text() == "Enter passphrase for USB drive"
+    assert dialog.error_details.text() == "The passphrase provided did not work. Please try again."
     assert dialog.body.isHidden()
     assert not dialog.header.isHidden()
     assert dialog.header_line.isHidden()
@@ -2873,13 +2904,15 @@ def test_ExportDialog__show_passphrase_request_message_again(mocker):
 
 
 def test_ExportDialog__show_success_message(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
 
     dialog._show_success_message()
 
-    assert dialog.header.text() == 'Export successful'
-    assert dialog.body.text() == \
-        'Remember to be careful when working with files outside of your Workstation machine.'
+    assert dialog.header.text() == "Export successful"
+    assert (
+        dialog.body.text()
+        == "Remember to be careful when working with files outside of your Workstation machine."
+    )
     assert not dialog.header.isHidden()
     assert not dialog.header_line.isHidden()
     assert dialog.error_details.isHidden()
@@ -2890,14 +2923,15 @@ def test_ExportDialog__show_success_message(mocker):
 
 
 def test_ExportDialog__show_insert_usb_message(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
 
     dialog._show_insert_usb_message()
 
-    assert dialog.header.text() == 'Insert encrypted USB drive'
-    assert dialog.body.text() == \
-        'Please insert one of the export drives provisioned specifically ' \
-        'for the SecureDrop Workstation.'
+    assert dialog.header.text() == "Insert encrypted USB drive"
+    assert (
+        dialog.body.text() == "Please insert one of the export drives provisioned specifically "
+        "for the SecureDrop Workstation."
+    )
     assert not dialog.header.isHidden()
     assert not dialog.header_line.isHidden()
     assert dialog.error_details.isHidden()
@@ -2908,16 +2942,20 @@ def test_ExportDialog__show_insert_usb_message(mocker):
 
 
 def test_ExportDialog__show_insert_encrypted_usb_message(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
 
     dialog._show_insert_encrypted_usb_message()
 
-    assert dialog.header.text() == 'Insert encrypted USB drive'
-    assert dialog.error_details.text() == \
-        'Either the drive is not encrypted or there is something else wrong with it.'
-    assert dialog.body.text() == \
-        'Please insert one of the export drives provisioned specifically for the SecureDrop ' \
-        'Workstation.'
+    assert dialog.header.text() == "Insert encrypted USB drive"
+    assert (
+        dialog.error_details.text()
+        == "Either the drive is not encrypted or there is something else wrong with it."
+    )
+    assert (
+        dialog.body.text()
+        == "Please insert one of the export drives provisioned specifically for the SecureDrop "
+        "Workstation."
+    )
     assert not dialog.header.isHidden()
     assert not dialog.header_line.isHidden()
     assert not dialog.error_details.isHidden()
@@ -2928,13 +2966,13 @@ def test_ExportDialog__show_insert_encrypted_usb_message(mocker):
 
 
 def test_ExportDialog__show_generic_error_message(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
-    dialog.error_status = 'mock_error_status'
+    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
+    dialog.error_status = "mock_error_status"
 
     dialog._show_generic_error_message()
 
-    assert dialog.header.text() == 'Export failed'
-    assert dialog.body.text() == 'mock_error_status: See your administrator for help.'
+    assert dialog.header.text() == "Export failed"
+    assert dialog.body.text() == "mock_error_status: See your administrator for help."
     assert not dialog.header.isHidden()
     assert not dialog.header_line.isHidden()
     assert dialog.error_details.isHidden()
@@ -2947,30 +2985,31 @@ def test_ExportDialog__show_generic_error_message(mocker):
 def test_ExportDialog__export_file(mocker):
     controller = mocker.MagicMock()
     controller.export_file_to_usb_drive = mocker.MagicMock()
-    dialog = ExportDialog(controller, 'mock_uuid', 'mock.jpg')
-    dialog.passphrase_field.text = mocker.MagicMock(return_value='mock_passphrase')
+    dialog = ExportDialog(controller, "mock_uuid", "mock.jpg")
+    dialog.passphrase_field.text = mocker.MagicMock(return_value="mock_passphrase")
 
     dialog._export_file()
 
-    controller.export_file_to_usb_drive.assert_called_once_with('mock_uuid', 'mock_passphrase')
+    controller.export_file_to_usb_drive.assert_called_once_with("mock_uuid", "mock_passphrase")
 
 
 def test_ExportDialog__on_preflight_success(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
     dialog._show_passphrase_request_message = mocker.MagicMock()
     dialog.continue_button = mocker.MagicMock()
     dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
+    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=False)
 
     dialog._on_preflight_success()
 
     dialog._show_passphrase_request_message.assert_not_called()
     dialog.continue_button.clicked.connect.assert_called_once_with(
-        dialog._show_passphrase_request_message)
+        dialog._show_passphrase_request_message
+    )
 
 
 def test_ExportDialog__on_preflight_success_when_continue_enabled(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
     dialog._show_passphrase_request_message = mocker.MagicMock()
     dialog.continue_button.setEnabled(True)
 
@@ -2980,31 +3019,31 @@ def test_ExportDialog__on_preflight_success_when_continue_enabled(mocker):
 
 
 def test_ExportDialog__on_preflight_success_enabled_after_preflight_success(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
     assert not dialog.continue_button.isEnabled()
     dialog._on_preflight_success()
     assert dialog.continue_button.isEnabled()
 
 
 def test_ExportDialog__on_preflight_success_enabled_after_preflight_failure(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
     assert not dialog.continue_button.isEnabled()
     dialog._on_preflight_failure(mocker.MagicMock())
     assert dialog.continue_button.isEnabled()
 
 
 def test_ExportDialog__on_preflight_failure(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
     dialog._update_dialog = mocker.MagicMock()
 
-    error = ExportError('mock_error_status')
+    error = ExportError("mock_error_status")
     dialog._on_preflight_failure(error)
 
-    dialog._update_dialog.assert_called_with('mock_error_status')
+    dialog._update_dialog.assert_called_with("mock_error_status")
 
 
 def test_ExportDialog__on_export_success(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
     dialog._show_success_message = mocker.MagicMock()
 
     dialog._on_export_success()
@@ -3013,148 +3052,155 @@ def test_ExportDialog__on_export_success(mocker):
 
 
 def test_ExportDialog__on_export_failure(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
     dialog._update_dialog = mocker.MagicMock()
 
-    error = ExportError('mock_error_status')
+    error = ExportError("mock_error_status")
     dialog._on_export_failure(error)
 
-    dialog._update_dialog.assert_called_with('mock_error_status')
+    dialog._update_dialog.assert_called_with("mock_error_status")
 
 
 def test_ExportDialog__update_dialog_when_status_is_USB_NOT_CONNECTED(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
+    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock_filename")
     dialog._show_insert_usb_message = mocker.MagicMock()
     dialog.continue_button = mocker.MagicMock()
     dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
+    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
     dialog._update_dialog(ExportStatus.USB_NOT_CONNECTED.value)
     dialog.continue_button.clicked.connect.assert_called_once_with(dialog._show_insert_usb_message)
 
     # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
+    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=True)
     dialog._update_dialog(ExportStatus.USB_NOT_CONNECTED.value)
     dialog._show_insert_usb_message.assert_called_once_with()
 
 
 def test_ExportDialog__update_dialog_when_status_is_BAD_PASSPHRASE(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
+    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock_filename")
     dialog._show_passphrase_request_message_again = mocker.MagicMock()
     dialog.continue_button = mocker.MagicMock()
     dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
+    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
     dialog._update_dialog(ExportStatus.BAD_PASSPHRASE.value)
     dialog.continue_button.clicked.connect.assert_called_once_with(
-        dialog._show_passphrase_request_message_again)
+        dialog._show_passphrase_request_message_again
+    )
 
     # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
+    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=True)
     dialog._update_dialog(ExportStatus.BAD_PASSPHRASE.value)
     dialog._show_passphrase_request_message_again.assert_called_once_with()
 
 
 def test_ExportDialog__update_dialog_when_status_DISK_ENCRYPTION_NOT_SUPPORTED_ERROR(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
+    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock_filename")
     dialog._show_insert_encrypted_usb_message = mocker.MagicMock()
     dialog.continue_button = mocker.MagicMock()
     dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
+    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
     dialog._update_dialog(ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value)
     dialog.continue_button.clicked.connect.assert_called_once_with(
-        dialog._show_insert_encrypted_usb_message)
+        dialog._show_insert_encrypted_usb_message
+    )
 
     # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
+    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=True)
     dialog._update_dialog(ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value)
     dialog._show_insert_encrypted_usb_message.assert_called_once_with()
 
 
 def test_ExportDialog__update_dialog_when_status_is_CALLED_PROCESS_ERROR(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
+    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock_filename")
     dialog._show_generic_error_message = mocker.MagicMock()
     dialog.continue_button = mocker.MagicMock()
     dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
+    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
     dialog._update_dialog(ExportStatus.CALLED_PROCESS_ERROR.value)
     dialog.continue_button.clicked.connect.assert_called_once_with(
-        dialog._show_generic_error_message)
+        dialog._show_generic_error_message
+    )
     assert dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR.value
 
     # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
+    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=True)
     dialog._update_dialog(ExportStatus.CALLED_PROCESS_ERROR.value)
     dialog._show_generic_error_message.assert_called_once_with()
     assert dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR.value
 
 
 def test_ExportDialog__update_dialog_when_status_is_unknown(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
+    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock_filename")
     dialog._show_generic_error_message = mocker.MagicMock()
     dialog.continue_button = mocker.MagicMock()
     dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
+    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    dialog._update_dialog('Some Unknown Error Status')
+    dialog._update_dialog("Some Unknown Error Status")
     dialog.continue_button.clicked.connect.assert_called_once_with(
-        dialog._show_generic_error_message)
-    assert dialog.error_status == 'Some Unknown Error Status'
+        dialog._show_generic_error_message
+    )
+    assert dialog.error_status == "Some Unknown Error Status"
 
     # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
-    dialog._update_dialog('Some Unknown Error Status')
+    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=True)
+    dialog._update_dialog("Some Unknown Error Status")
     dialog._show_generic_error_message.assert_called_once_with()
-    assert dialog.error_status == 'Some Unknown Error Status'
+    assert dialog.error_status == "Some Unknown Error Status"
 
 
 def test_PrintDialog_init(mocker):
     _show_starting_instructions_fn = mocker.patch(
-        'securedrop_client.gui.widgets.PrintDialog._show_starting_instructions')
+        "securedrop_client.gui.widgets.PrintDialog._show_starting_instructions"
+    )
 
-    PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    PrintDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
 
     _show_starting_instructions_fn.assert_called_once_with()
 
 
 def test_PrintDialog_init_sanitizes_filename(mocker):
-    secure_qlabel = mocker.patch('securedrop_client.gui.widgets.SecureQLabel')
+    secure_qlabel = mocker.patch("securedrop_client.gui.widgets.SecureQLabel")
     filename = '<script>alert("boom!");</script>'
 
-    PrintDialog(mocker.MagicMock(), 'mock_uuid', filename)
+    PrintDialog(mocker.MagicMock(), "mock_uuid", filename)
 
     secure_qlabel.call_args_list[0].assert_called_with(filename)
 
 
 def test_PrintDialog__show_starting_instructions(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
 
     dialog._show_starting_instructions()
 
-    assert dialog.header.text() == \
-        'Preparing to print:' \
-        '<br />' \
+    assert (
+        dialog.header.text() == "Preparing to print:"
+        "<br />"
         '<span style="font-weight:normal">mock.jpg</span>'
-    assert dialog.body.text() == \
-        '<h2>Managing printout risks</h2>' \
-        '<b>QR codes and web addresses</b>' \
-        '<br />' \
-        'Never type in and open web addresses or scan QR codes contained in printed ' \
-        'documents without taking security precautions. If you are unsure how to ' \
-        'manage this risk, please contact your administrator.' \
-        '<br /><br />' \
-        '<b>Printer dots</b>' \
-        '<br />' \
-        'Any part of a printed page may contain identifying information ' \
-        'invisible to the naked eye, such as printer dots. Please carefully ' \
-        'consider this risk when working with or publishing scanned printouts.'
+    )
+    assert (
+        dialog.body.text() == "<h2>Managing printout risks</h2>"
+        "<b>QR codes and web addresses</b>"
+        "<br />"
+        "Never type in and open web addresses or scan QR codes contained in printed "
+        "documents without taking security precautions. If you are unsure how to "
+        "manage this risk, please contact your administrator."
+        "<br /><br />"
+        "<b>Printer dots</b>"
+        "<br />"
+        "Any part of a printed page may contain identifying information "
+        "invisible to the naked eye, such as printer dots. Please carefully "
+        "consider this risk when working with or publishing scanned printouts."
+    )
     assert not dialog.header.isHidden()
     assert not dialog.header_line.isHidden()
     assert dialog.error_details.isHidden()
@@ -3164,12 +3210,12 @@ def test_PrintDialog__show_starting_instructions(mocker):
 
 
 def test_PrintDialog__show_insert_usb_message(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
+    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock_filename")
 
     dialog._show_insert_usb_message()
 
-    assert dialog.header.text() == 'Connect USB printer'
-    assert dialog.body.text() == 'Please connect your printer to a USB port.'
+    assert dialog.header.text() == "Connect USB printer"
+    assert dialog.body.text() == "Please connect your printer to a USB port."
     assert not dialog.header.isHidden()
     assert not dialog.header_line.isHidden()
     assert dialog.error_details.isHidden()
@@ -3179,13 +3225,13 @@ def test_PrintDialog__show_insert_usb_message(mocker):
 
 
 def test_PrintDialog__show_generic_error_message(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
-    dialog.error_status = 'mock_error_status'
+    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
+    dialog.error_status = "mock_error_status"
 
     dialog._show_generic_error_message()
 
-    assert dialog.header.text() == 'Printing failed'
-    assert dialog.body.text() == 'mock_error_status: See your administrator for help.'
+    assert dialog.header.text() == "Printing failed"
+    assert dialog.body.text() == "mock_error_status: See your administrator for help."
     assert not dialog.header.isHidden()
     assert not dialog.header_line.isHidden()
     assert dialog.error_details.isHidden()
@@ -3195,7 +3241,7 @@ def test_PrintDialog__show_generic_error_message(mocker):
 
 
 def test_PrintDialog__print_file(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
+    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock_filename")
     dialog.close = mocker.MagicMock()
 
     dialog._print_file()
@@ -3204,11 +3250,11 @@ def test_PrintDialog__print_file(mocker):
 
 
 def test_PrintDialog__on_preflight_success(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
     dialog._print_file = mocker.MagicMock()
     dialog.continue_button = mocker.MagicMock()
     dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
+    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=False)
 
     dialog._on_preflight_success()
 
@@ -3217,7 +3263,7 @@ def test_PrintDialog__on_preflight_success(mocker):
 
 
 def test_PrintDialog__on_preflight_success_when_continue_enabled(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
     dialog._print_file = mocker.MagicMock()
     dialog.continue_button.setEnabled(True)
 
@@ -3227,99 +3273,102 @@ def test_PrintDialog__on_preflight_success_when_continue_enabled(mocker):
 
 
 def test_PrintDialog__on_preflight_success_enabled_after_preflight_success(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
     assert not dialog.continue_button.isEnabled()
     dialog._on_preflight_success()
     assert dialog.continue_button.isEnabled()
 
 
 def test_PrintDialog__on_preflight_success_enabled_after_preflight_failure(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock.jpg')
+    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
     assert not dialog.continue_button.isEnabled()
     dialog._on_preflight_failure(mocker.MagicMock())
     assert dialog.continue_button.isEnabled()
 
 
 def test_PrintDialog__on_preflight_failure_when_status_is_PRINTER_NOT_FOUND(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
+    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock_filename")
     dialog._show_insert_usb_message = mocker.MagicMock()
     dialog.continue_button = mocker.MagicMock()
     dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
+    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
     dialog._on_preflight_failure(ExportError(ExportStatus.PRINTER_NOT_FOUND.value))
     dialog.continue_button.clicked.connect.assert_called_once_with(dialog._show_insert_usb_message)
 
     # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
+    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=True)
     dialog._on_preflight_failure(ExportError(ExportStatus.PRINTER_NOT_FOUND.value))
     dialog._show_insert_usb_message.assert_called_once_with()
 
 
 def test_PrintDialog__on_preflight_failure_when_status_is_MISSING_PRINTER_URI(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
+    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock_filename")
     dialog._show_generic_error_message = mocker.MagicMock()
     dialog.continue_button = mocker.MagicMock()
     dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
+    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
     dialog._on_preflight_failure(ExportError(ExportStatus.MISSING_PRINTER_URI.value))
     dialog.continue_button.clicked.connect.assert_called_once_with(
-        dialog._show_generic_error_message)
+        dialog._show_generic_error_message
+    )
     assert dialog.error_status == ExportStatus.MISSING_PRINTER_URI.value
 
     # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
+    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=True)
     dialog._on_preflight_failure(ExportError(ExportStatus.MISSING_PRINTER_URI.value))
     dialog._show_generic_error_message.assert_called_once_with()
     assert dialog.error_status == ExportStatus.MISSING_PRINTER_URI.value
 
 
 def test_PrintDialog__on_preflight_failure_when_status_is_CALLED_PROCESS_ERROR(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
+    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock_filename")
     dialog._show_generic_error_message = mocker.MagicMock()
     dialog.continue_button = mocker.MagicMock()
     dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
+    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
     dialog._on_preflight_failure(ExportError(ExportStatus.CALLED_PROCESS_ERROR.value))
     dialog.continue_button.clicked.connect.assert_called_once_with(
-        dialog._show_generic_error_message)
+        dialog._show_generic_error_message
+    )
     assert dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR.value
 
     # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
+    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=True)
     dialog._on_preflight_failure(ExportError(ExportStatus.CALLED_PROCESS_ERROR.value))
     dialog._show_generic_error_message.assert_called_once_with()
     assert dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR.value
 
 
 def test_PrintDialog__on_preflight_failure_when_status_is_unknown(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), 'mock_uuid', 'mock_filename')
+    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock_filename")
     dialog._show_generic_error_message = mocker.MagicMock()
     dialog.continue_button = mocker.MagicMock()
     dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=False)
+    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    dialog._on_preflight_failure(ExportError('Some Unknown Error Status'))
+    dialog._on_preflight_failure(ExportError("Some Unknown Error Status"))
     dialog.continue_button.clicked.connect.assert_called_once_with(
-        dialog._show_generic_error_message)
-    assert dialog.error_status == 'Some Unknown Error Status'
+        dialog._show_generic_error_message
+    )
+    assert dialog.error_status == "Some Unknown Error Status"
 
     # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(dialog.continue_button, 'isEnabled', return_value=True)
-    dialog._on_preflight_failure(ExportError('Some Unknown Error Status'))
+    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=True)
+    dialog._on_preflight_failure(ExportError("Some Unknown Error Status"))
     dialog._show_generic_error_message.assert_called_once_with()
-    assert dialog.error_status == 'Some Unknown Error Status'
+    assert dialog.error_status == "Some Unknown Error Status"
 
 
 def test_SourceConversationWrapper__on_source_deleted(mocker):
-    scw = SourceConversationWrapper(factory.Source(uuid='123'), mocker.MagicMock())
-    scw._on_source_deleted('123')
+    scw = SourceConversationWrapper(factory.Source(uuid="123"), mocker.MagicMock())
+    scw._on_source_deleted("123")
     assert scw.conversation_title_bar.isHidden()
     assert scw.conversation_view.isHidden()
     assert scw.reply_box.isHidden()
@@ -3327,8 +3376,8 @@ def test_SourceConversationWrapper__on_source_deleted(mocker):
 
 
 def test_SourceConversationWrapper__on_source_deleted_wrong_uuid(mocker):
-    scw = SourceConversationWrapper(factory.Source(uuid='123'), mocker.MagicMock())
-    scw._on_source_deleted('321')
+    scw = SourceConversationWrapper(factory.Source(uuid="123"), mocker.MagicMock())
+    scw._on_source_deleted("321")
     assert not scw.conversation_title_bar.isHidden()
     assert not scw.conversation_view.isHidden()
     assert not scw.reply_box.isHidden()
@@ -3336,10 +3385,10 @@ def test_SourceConversationWrapper__on_source_deleted_wrong_uuid(mocker):
 
 
 def test_SourceConversationWrapper__on_source_deletion_failed(mocker):
-    scw = SourceConversationWrapper(factory.Source(uuid='123'), mocker.MagicMock())
-    scw._on_source_deleted('123')
+    scw = SourceConversationWrapper(factory.Source(uuid="123"), mocker.MagicMock())
+    scw._on_source_deleted("123")
 
-    scw._on_source_deletion_failed('123')
+    scw._on_source_deletion_failed("123")
 
     assert not scw.conversation_title_bar.isHidden()
     assert not scw.conversation_view.isHidden()
@@ -3348,10 +3397,10 @@ def test_SourceConversationWrapper__on_source_deletion_failed(mocker):
 
 
 def test_SourceConversationWrapper__on_source_deletion_failed_wrong_uuid(mocker):
-    scw = SourceConversationWrapper(factory.Source(uuid='123'), mocker.MagicMock())
-    scw._on_source_deleted('123')
+    scw = SourceConversationWrapper(factory.Source(uuid="123"), mocker.MagicMock())
+    scw._on_source_deleted("123")
 
-    scw._on_source_deletion_failed('321')
+    scw._on_source_deletion_failed("321")
 
     assert scw.conversation_title_bar.isHidden()
     assert scw.conversation_view.isHidden()
@@ -3416,7 +3465,7 @@ def test_ConversationView_add_message(mocker, session, source):
     """
     Adding a message results in a new MessageWidget added to the layout.
     """
-    source = source['source']  # grab the source from the fixture dict for simplicity
+    source = source["source"]  # grab the source from the fixture dict for simplicity
 
     mock_message_ready_signal = mocker.MagicMock()
     mock_message_download_failed_signal = mocker.MagicMock()
@@ -3426,7 +3475,7 @@ def test_ConversationView_add_message(mocker, session, source):
         message_download_failed=mock_message_download_failed_signal,
     )
 
-    content = 'a sea, a bee'
+    content = "a sea, a bee"
     message = factory.Message(source=source, content=content)
     session.add(message)
     session.commit()
@@ -3437,8 +3486,9 @@ def test_ConversationView_add_message(mocker, session, source):
     # this is the MessageWidget that __init__() would return
     mock_msg_widget_res = mocker.MagicMock()
     # mock the actual MessageWidget so we can inspect the __init__ call
-    mock_msg_widget = mocker.patch('securedrop_client.gui.widgets.MessageWidget',
-                                   return_value=mock_msg_widget_res)
+    mock_msg_widget = mocker.patch(
+        "securedrop_client.gui.widgets.MessageWidget", return_value=mock_msg_widget_res
+    )
 
     cv.add_message(message, 0)
 
@@ -3454,7 +3504,8 @@ def test_ConversationView_add_message(mocker, session, source):
 
     # check that we added the correct widget to the layout
     cv.scroll.conversation_layout.insertWidget.assert_called_once_with(
-        0, mock_msg_widget_res, alignment=Qt.AlignLeft)
+        0, mock_msg_widget_res, alignment=Qt.AlignLeft
+    )
 
     # Check the signal is emitted to say the message has been added (and thus
     # the timestamps need updating.
@@ -3467,14 +3518,14 @@ def test_ConversationView_add_message_no_content(mocker, session, source):
     checks that if a `Message` has `content = None` that a helpful message is displayed as would
     be the case if download/decryption never occurred or failed.
     """
-    source = source['source']  # grab the source from the fixture dict for simplicity
+    source = source["source"]  # grab the source from the fixture dict for simplicity
 
     mock_message_ready_signal = mocker.MagicMock()
     mock_message_download_failed_signal = mocker.MagicMock()
     mocked_controller = mocker.MagicMock(
         session=session,
         message_ready=mock_message_ready_signal,
-        message_download_failed=mock_message_download_failed_signal
+        message_download_failed=mock_message_download_failed_signal,
     )
 
     message = factory.Message(source=source, is_decrypted=False, content=None)
@@ -3486,20 +3537,26 @@ def test_ConversationView_add_message_no_content(mocker, session, source):
     # this is the MessageWidget that __init__() would return
     mock_msg_widget_res = mocker.MagicMock()
     # mock the actual MessageWidget so we can inspect the __init__ call
-    mock_msg_widget = mocker.patch('securedrop_client.gui.widgets.MessageWidget',
-                                   return_value=mock_msg_widget_res)
+    mock_msg_widget = mocker.patch(
+        "securedrop_client.gui.widgets.MessageWidget", return_value=mock_msg_widget_res
+    )
 
     cv.add_message(message, 0)
 
     # check that we built the widget was called with the correct args
     mock_msg_widget.assert_called_once_with(
-        message.uuid, '<Message not yet available>', mock_message_ready_signal,
-        mock_message_download_failed_signal, 0, False
+        message.uuid,
+        "<Message not yet available>",
+        mock_message_ready_signal,
+        mock_message_download_failed_signal,
+        0,
+        False,
     )
 
     # check that we added the correct widget to the layout
     cv.scroll.conversation_layout.insertWidget.assert_called_once_with(
-        0, mock_msg_widget_res, alignment=Qt.AlignLeft)
+        0, mock_msg_widget_res, alignment=Qt.AlignLeft
+    )
 
 
 def test_ConversationView_on_reply_sent(mocker):
@@ -3512,9 +3569,9 @@ def test_ConversationView_on_reply_sent(mocker):
     cv.add_reply_from_reply_box = mocker.MagicMock()
 
     assert cv.reply_flag is False
-    cv.on_reply_sent(source.uuid, 'abc123', 'test message')
+    cv.on_reply_sent(source.uuid, "abc123", "test message")
 
-    cv.add_reply_from_reply_box.assert_called_with('abc123', 'test message')
+    cv.add_reply_from_reply_box.assert_called_with("abc123", "test message")
     assert cv.reply_flag is True
 
 
@@ -3528,7 +3585,7 @@ def test_ConversationView_on_reply_sent_does_not_add_message_intended_for_differ
     cv = ConversationView(source, controller)
     cv.add_reply = mocker.MagicMock()
 
-    cv.on_reply_sent('different_source_id', 'mock', 'mock')
+    cv.on_reply_sent("different_source_id", "mock", "mock")
 
     assert not cv.add_reply.called
 
@@ -3546,29 +3603,37 @@ def test_ConversationView_add_reply_from_reply_box(mocker):
         reply_ready=reply_ready,
         reply_download_failed=reply_download_failed,
         reply_succeeded=reply_succeeded,
-        reply_failed=reply_failed
+        reply_failed=reply_failed,
     )
     cv = ConversationView(source, controller)
     cv.scroll.conversation_layout = mocker.MagicMock()
     reply_widget_res = mocker.MagicMock()
     reply_widget = mocker.patch(
-        'securedrop_client.gui.widgets.ReplyWidget', return_value=reply_widget_res)
+        "securedrop_client.gui.widgets.ReplyWidget", return_value=reply_widget_res
+    )
 
-    cv.add_reply_from_reply_box('abc123', 'test message')
+    cv.add_reply_from_reply_box("abc123", "test message")
 
     reply_widget.assert_called_once_with(
-        'abc123', 'test message', 'PENDING', reply_ready, reply_download_failed,
-        reply_succeeded, reply_failed, 0
+        "abc123",
+        "test message",
+        "PENDING",
+        reply_ready,
+        reply_download_failed,
+        reply_succeeded,
+        reply_failed,
+        0,
     )
     cv.scroll.conversation_layout.insertWidget.assert_called_once_with(
-        0, reply_widget_res, alignment=Qt.AlignRight)
+        0, reply_widget_res, alignment=Qt.AlignRight
+    )
 
 
 def test_ConversationView_add_reply(mocker, session, source):
     """
     Adding a reply from a source results in a new ReplyWidget added to the layout.
     """
-    source = source['source']  # grab the source from the fixture dict for simplicity
+    source = source["source"]  # grab the source from the fixture dict for simplicity
 
     mock_reply_ready_signal = mocker.MagicMock()
     mock_reply_download_failed_signal = mocker.MagicMock()
@@ -3579,10 +3644,10 @@ def test_ConversationView_add_reply(mocker, session, source):
         reply_ready=mock_reply_ready_signal,
         reply_download_failed=mock_reply_download_failed_signal,
         reply_succeeded=mock_reply_succeeded_signal,
-        reply_failed=mock_reply_failed_signal
+        reply_failed=mock_reply_failed_signal,
     )
 
-    content = 'a sea, a bee'
+    content = "a sea, a bee"
     reply = factory.Reply(source=source, content=content)
     session.add(reply)
     session.commit()
@@ -3592,8 +3657,9 @@ def test_ConversationView_add_reply(mocker, session, source):
     # this is the Reply that __init__() would return
     reply_widget_res = mocker.MagicMock()
     # mock the actual MessageWidget so we can inspect the __init__ call
-    mock_reply_widget = mocker.patch('securedrop_client.gui.widgets.ReplyWidget',
-                                     return_value=reply_widget_res)
+    mock_reply_widget = mocker.patch(
+        "securedrop_client.gui.widgets.ReplyWidget", return_value=reply_widget_res
+    )
 
     cv.add_reply(reply, 0)
 
@@ -3601,18 +3667,19 @@ def test_ConversationView_add_reply(mocker, session, source):
     mock_reply_widget.assert_called_once_with(
         reply.uuid,
         content,
-        'SUCCEEDED',
+        "SUCCEEDED",
         mock_reply_ready_signal,
         mock_reply_download_failed_signal,
         mock_reply_succeeded_signal,
         mock_reply_failed_signal,
         0,
-        False
+        False,
     )
 
     # check that we added the correct widget to the layout
     cv.scroll.conversation_layout.insertWidget.assert_called_once_with(
-        0, reply_widget_res, alignment=Qt.AlignRight)
+        0, reply_widget_res, alignment=Qt.AlignRight
+    )
 
 
 def test_ConversationView_add_reply_no_content(mocker, session, source):
@@ -3621,17 +3688,19 @@ def test_ConversationView_add_reply_no_content(mocker, session, source):
     checks that if a `Reply` has `content = None` that a helpful message is displayed as would
     be the case if download/decryption never occurred or failed.
     """
-    source = source['source']  # grab the source from the fixture dict for simplicity
+    source = source["source"]  # grab the source from the fixture dict for simplicity
 
     mock_reply_ready_signal = mocker.MagicMock()
     mock_reply_download_failed_signal = mocker.MagicMock()
     mock_reply_succeeded_signal = mocker.MagicMock()
     mock_reply_failed_signal = mocker.MagicMock()
-    mocked_controller = mocker.MagicMock(session=session,
-                                         reply_ready=mock_reply_ready_signal,
-                                         reply_download_failed=mock_reply_download_failed_signal,
-                                         reply_succeeded=mock_reply_succeeded_signal,
-                                         reply_failed=mock_reply_failed_signal)
+    mocked_controller = mocker.MagicMock(
+        session=session,
+        reply_ready=mock_reply_ready_signal,
+        reply_download_failed=mock_reply_download_failed_signal,
+        reply_succeeded=mock_reply_succeeded_signal,
+        reply_failed=mock_reply_failed_signal,
+    )
 
     reply = factory.Reply(source=source, is_decrypted=False, content=None)
     session.add(reply)
@@ -3642,27 +3711,29 @@ def test_ConversationView_add_reply_no_content(mocker, session, source):
     # this is the Reply that __init__() would return
     reply_widget_res = mocker.MagicMock()
     # mock the actual MessageWidget so we can inspect the __init__ call
-    mock_reply_widget = mocker.patch('securedrop_client.gui.widgets.ReplyWidget',
-                                     return_value=reply_widget_res)
+    mock_reply_widget = mocker.patch(
+        "securedrop_client.gui.widgets.ReplyWidget", return_value=reply_widget_res
+    )
 
     cv.add_reply(reply, 0)
 
     # check that we built the widget was called with the correct args
     mock_reply_widget.assert_called_once_with(
         reply.uuid,
-        '<Reply not yet available>',
-        'SUCCEEDED',
+        "<Reply not yet available>",
+        "SUCCEEDED",
         mock_reply_ready_signal,
         mock_reply_download_failed_signal,
         mock_reply_succeeded_signal,
         mock_reply_failed_signal,
         0,
-        False
+        False,
     )
 
     # check that we added the correct widget to the layout
     cv.scroll.conversation_layout.insertWidget.assert_called_once_with(
-        0, reply_widget_res, alignment=Qt.AlignRight)
+        0, reply_widget_res, alignment=Qt.AlignRight
+    )
 
 
 def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
@@ -3670,7 +3741,7 @@ def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
     Adding a file results in a new FileWidget added to the layout with the
     proper QLabel.
     """
-    file = factory.File(source=source['source'])
+    file = factory.File(source=source["source"])
     file.is_downloaded = True
     session.add(file)
     session.commit()
@@ -3678,17 +3749,17 @@ def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
     mock_get_file = mocker.MagicMock(return_value=file)
     mocked_controller = mocker.MagicMock(get_file=mock_get_file)
 
-    cv = ConversationView(source['source'], mocked_controller)
+    cv = ConversationView(source["source"], mocked_controller)
     cv.scroll.conversation_layout = mocker.MagicMock()
     cv.conversation_updated = mocker.MagicMock()
 
-    mock_label = mocker.patch('securedrop_client.gui.widgets.SecureQLabel')
-    mocker.patch('securedrop_client.gui.widgets.QHBoxLayout.addWidget')
-    mocker.patch('securedrop_client.gui.widgets.FileWidget.setLayout')
+    mock_label = mocker.patch("securedrop_client.gui.widgets.SecureQLabel")
+    mocker.patch("securedrop_client.gui.widgets.QHBoxLayout.addWidget")
+    mocker.patch("securedrop_client.gui.widgets.FileWidget.setLayout")
 
     cv.add_file(file, 0)
 
-    mock_label.assert_called_with('123B')  # default factory filesize
+    mock_label.assert_called_with("123B")  # default factory filesize
     assert cv.scroll.conversation_layout.insertWidget.call_count == 1
     assert cv.conversation_updated.emit.call_count == 1
 
@@ -3701,18 +3772,18 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, sessi
     Adding a file results in a new FileWidget added to the layout with the
     proper QLabel.
     """
-    file = factory.File(source=source['source'], is_downloaded=False, is_decrypted=None, size=123)
+    file = factory.File(source=source["source"], is_downloaded=False, is_decrypted=None, size=123)
     session.add(file)
     session.commit()
 
     mock_get_file = mocker.MagicMock(return_value=file)
     mocked_controller = mocker.MagicMock(get_file=mock_get_file)
 
-    cv = ConversationView(source['source'], mocked_controller)
+    cv = ConversationView(source["source"], mocked_controller)
     cv.scroll.conversation_layout = mocker.MagicMock()
 
-    mocker.patch('securedrop_client.gui.widgets.QHBoxLayout.addWidget')
-    mocker.patch('securedrop_client.gui.widgets.FileWidget.setLayout')
+    mocker.patch("securedrop_client.gui.widgets.QHBoxLayout.addWidget")
+    mocker.patch("securedrop_client.gui.widgets.FileWidget.setLayout")
 
     cv.add_file(file, 0)
     assert cv.scroll.conversation_layout.insertWidget.call_count == 1
@@ -3723,11 +3794,11 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, sessi
 
 def test_DeleteSourceMessageBox_init(mocker, source):
     mock_controller = mocker.MagicMock()
-    DeleteSourceMessageBox(source['source'], mock_controller)
+    DeleteSourceMessageBox(source["source"], mock_controller)
 
 
 def test_DeleteSourceMessage_launch_when_user_chooses_cancel(mocker, source):
-    source = source['source']  # to get the Source object
+    source = source["source"]  # to get the Source object
 
     mock_message_box_question = mocker.MagicMock(QMessageBox.question)
     mock_message_box_question.return_value = QMessageBox.Cancel
@@ -3736,8 +3807,7 @@ def test_DeleteSourceMessage_launch_when_user_chooses_cancel(mocker, source):
     delete_source_message_box = DeleteSourceMessageBox(source, mock_controller)
 
     mocker.patch(
-        "securedrop_client.gui.widgets.QMessageBox.question",
-        mock_message_box_question,
+        "securedrop_client.gui.widgets.QMessageBox.question", mock_message_box_question,
     )
 
     delete_source_message_box.launch()
@@ -3745,7 +3815,7 @@ def test_DeleteSourceMessage_launch_when_user_chooses_cancel(mocker, source):
 
 
 def test_DeleteSourceMssageBox_launch_when_user_chooses_yes(mocker, source, session):
-    source = source['source']  # to get the Source object
+    source = source["source"]  # to get the Source object
     file_ = factory.File(source=source)
     session.add(file_)
     message = factory.Message(source=source)
@@ -3763,8 +3833,7 @@ def test_DeleteSourceMssageBox_launch_when_user_chooses_yes(mocker, source, sess
     delete_source_message_box = DeleteSourceMessageBox(source, mock_controller)
 
     mocker.patch(
-        "securedrop_client.gui.widgets.QMessageBox.question",
-        mock_message_box_question,
+        "securedrop_client.gui.widgets.QMessageBox.question", mock_message_box_question,
     )
 
     delete_source_message_box.launch()
@@ -3779,16 +3848,12 @@ def test_DeleteSourceMssageBox_launch_when_user_chooses_yes(mocker, source, sess
         "through the log-in tied to this account.</small>"
     ).format(designation=source.journalist_designation, files=1, replies=1, messages=2)
     mock_message_box_question.assert_called_once_with(
-        None,
-        "",
-        message,
-        QMessageBox.Cancel | QMessageBox.Yes,
-        QMessageBox.Cancel
+        None, "", message, QMessageBox.Cancel | QMessageBox.Yes, QMessageBox.Cancel
     )
 
 
 def test_DeleteSourceMessageBox_construct_message(mocker, source, session):
-    source = source['source']  # to get the Source object
+    source = source["source"]  # to get the Source object
     file_ = factory.File(source=source)
     session.add(file_)
     message = factory.Message(source=source)
@@ -3819,11 +3884,7 @@ def test_DeleteSourceMessageBox_construct_message(mocker, source, session):
 def test_DeleteSourceAction_init(mocker):
     mock_controller = mocker.MagicMock()
     mock_source = mocker.MagicMock()
-    DeleteSourceAction(
-        mock_source,
-        None,
-        mock_controller
-    )
+    DeleteSourceAction(mock_source, None, mock_controller)
 
 
 def test_PasswordEdit(mocker):
@@ -3840,19 +3901,12 @@ def test_DeleteSourceAction_trigger(mocker):
     mock_source = mocker.MagicMock()
     mock_delete_source_message_box_obj = mocker.MagicMock()
     mock_delete_source_message_box = mocker.MagicMock()
-    mock_delete_source_message_box.return_value = (
-        mock_delete_source_message_box_obj
-    )
+    mock_delete_source_message_box.return_value = mock_delete_source_message_box_obj
 
     with mocker.patch(
-        'securedrop_client.gui.widgets.DeleteSourceMessageBox',
-        mock_delete_source_message_box
+        "securedrop_client.gui.widgets.DeleteSourceMessageBox", mock_delete_source_message_box
     ):
-        delete_source_action = DeleteSourceAction(
-            mock_source,
-            None,
-            mock_controller
-        )
+        delete_source_action = DeleteSourceAction(mock_source, None, mock_controller)
         delete_source_action.trigger()
         mock_delete_source_message_box_obj.launch.assert_called_once_with()
 
@@ -3863,13 +3917,10 @@ def test_DeleteSource_from_source_menu_when_user_is_loggedout(mocker):
     mock_controller.api = None
     mock_delete_source_message_box_obj = mocker.MagicMock()
     mock_delete_source_message_box = mocker.MagicMock()
-    mock_delete_source_message_box.return_value = (
-        mock_delete_source_message_box_obj
-    )
+    mock_delete_source_message_box.return_value = mock_delete_source_message_box_obj
 
     with mocker.patch(
-        'securedrop_client.gui.widgets.DeleteSourceMessageBox',
-        mock_delete_source_message_box
+        "securedrop_client.gui.widgets.DeleteSourceMessageBox", mock_delete_source_message_box
     ):
         source_menu = SourceMenu(mock_source, mock_controller)
         source_menu.actions()[0].trigger()
@@ -3877,19 +3928,16 @@ def test_DeleteSource_from_source_menu_when_user_is_loggedout(mocker):
 
 
 def test_DeleteSource_from_source_widget_when_user_is_loggedout(mocker):
-    mock_source = mocker.MagicMock(journalist_designation='mock')
+    mock_source = mocker.MagicMock(journalist_designation="mock")
     mock_controller = mocker.MagicMock()
     mock_controller.api = None
     mock_event = mocker.MagicMock()
     mock_delete_source_message_box_obj = mocker.MagicMock()
     mock_delete_source_message_box = mocker.MagicMock()
-    mock_delete_source_message_box.return_value = (
-        mock_delete_source_message_box_obj
-    )
+    mock_delete_source_message_box.return_value = mock_delete_source_message_box_obj
 
     with mocker.patch(
-        'securedrop_client.gui.widgets.DeleteSourceMessageBox',
-        mock_delete_source_message_box
+        "securedrop_client.gui.widgets.DeleteSourceMessageBox", mock_delete_source_message_box
     ):
         source_widget = SourceWidget(mock_controller, mock_source)
         source_widget.delete_source(mock_event)
@@ -3938,25 +3986,25 @@ def test_ReplyBoxWidget_send_reply(mocker):
     Ensure sending a reply from the reply box emits signal, clears text box, and sends the reply
     details to the controller.
     """
-    source = factory.Source(uuid='abc123')
-    reply_uuid = '456xyz'
-    mocker.patch('securedrop_client.gui.widgets.uuid4', return_value=reply_uuid)
+    source = factory.Source(uuid="abc123")
+    reply_uuid = "456xyz"
+    mocker.patch("securedrop_client.gui.widgets.uuid4", return_value=reply_uuid)
     controller = mocker.MagicMock()
-    mocker.patch('securedrop_client.gui.widgets.SourceProfileShortWidget')
-    mocker.patch('securedrop_client.gui.widgets.QVBoxLayout.addWidget')
+    mocker.patch("securedrop_client.gui.widgets.SourceProfileShortWidget")
+    mocker.patch("securedrop_client.gui.widgets.QVBoxLayout.addWidget")
     scw = SourceConversationWrapper(source, controller)
     on_reply_sent_fn = mocker.MagicMock()
     scw.conversation_view.on_reply_sent = on_reply_sent_fn
     scw.reply_box.reply_sent = mocker.MagicMock()
     scw.reply_box.text_edit = ReplyTextEdit(source, controller)
     scw.reply_box.text_edit.setText = mocker.MagicMock()
-    scw.reply_box.text_edit.setPlainText('Alles für Alle')
+    scw.reply_box.text_edit.setPlainText("Alles für Alle")
 
     scw.reply_box.send_reply()
 
-    scw.reply_box.reply_sent.emit.assert_called_once_with('abc123', '456xyz', 'Alles für Alle')
-    scw.reply_box.text_edit.setText.assert_called_once_with('')
-    controller.send_reply.assert_called_once_with('abc123', '456xyz', 'Alles für Alle')
+    scw.reply_box.reply_sent.emit.assert_called_once_with("abc123", "456xyz", "Alles für Alle")
+    scw.reply_box.text_edit.setText.assert_called_once_with("")
+    controller.send_reply.assert_called_once_with("abc123", "456xyz", "Alles für Alle")
 
 
 def test_ReplyBoxWidget_send_reply_calls_setText_after_send(mocker):
@@ -3968,12 +4016,12 @@ def test_ReplyBoxWidget_send_reply_calls_setText_after_send(mocker):
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
     rb.text_edit = ReplyTextEdit(source, controller)
-    setText = mocker.patch.object(rb.text_edit, 'setText')
-    rb.text_edit.setPlainText('Alles für Alle')
+    setText = mocker.patch.object(rb.text_edit, "setText")
+    rb.text_edit.setPlainText("Alles für Alle")
 
     rb.send_reply()
 
-    setText.assert_called_once_with('')
+    setText.assert_called_once_with("")
 
 
 def test_ReplyBoxWidget_send_reply_does_not_send_empty_string(mocker):
@@ -3991,7 +4039,7 @@ def test_ReplyBoxWidget_send_reply_does_not_send_empty_string(mocker):
     assert not controller.send_reply.called
 
     # Also check that we don't send blank space
-    rb.text_edit.setText('  \n\n  ')
+    rb.text_edit.setText("  \n\n  ")
 
     rb.send_reply()
 
@@ -4017,18 +4065,16 @@ def test_ReplyBoxWidget_on_synced(mocker):
 
 
 def test_ReplyBoxWidget_on_sync_source_deleted(mocker, source):
-    s = source['source']
+    s = source["source"]
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(s, controller)
 
-    error_logger = mocker.patch('securedrop_client.gui.widgets.logger.debug')
+    error_logger = mocker.patch("securedrop_client.gui.widgets.logger.debug")
 
     def pretend_source_was_deleted(self):
-        raise sqlalchemy.orm.exc.ObjectDeletedError(
-            attributes.instance_state(s), None
-        )
+        raise sqlalchemy.orm.exc.ObjectDeletedError(attributes.instance_state(s), None)
 
-    with patch.object(ReplyBoxWidget, 'update_authentication_state') as uas:
+    with patch.object(ReplyBoxWidget, "update_authentication_state") as uas:
         uas.side_effect = pretend_source_was_deleted
         rb._on_synced("syncing")
         error_logger.assert_called_once_with(
@@ -4041,16 +4087,18 @@ def test_ReplyWidget_success_failure_slots(mocker):
     mock_download_failed_signal = mocker.Mock()
     mock_success_signal = mocker.Mock()
     mock_failure_signal = mocker.Mock()
-    msg_id = 'abc123'
+    msg_id = "abc123"
 
-    widget = ReplyWidget(msg_id,
-                         'lol',
-                         'PENDING',
-                         mock_update_signal,
-                         mock_download_failed_signal,
-                         mock_success_signal,
-                         mock_failure_signal,
-                         0)
+    widget = ReplyWidget(
+        msg_id,
+        "lol",
+        "PENDING",
+        mock_update_signal,
+        mock_download_failed_signal,
+        mock_success_signal,
+        mock_failure_signal,
+        0,
+    )
 
     # ensure we have connected the slots
     mock_success_signal.connect.assert_called_once_with(widget._on_reply_success)
@@ -4059,9 +4107,9 @@ def test_ReplyWidget_success_failure_slots(mocker):
     assert mock_download_failed_signal.connect.called
 
     # check the success slog
-    widget._on_reply_success('mock_source_id', msg_id + "x", 'lol')
+    widget._on_reply_success("mock_source_id", msg_id + "x", "lol")
     assert widget.error.isHidden()
-    widget._on_reply_success('mock_source_id', msg_id, 'lol')
+    widget._on_reply_success("mock_source_id", msg_id, "lol")
     assert widget.error.isHidden()
 
     # check the failure slot where message id does not match
@@ -4087,18 +4135,16 @@ def test_ReplyBoxWidget__on_authentication_changed(mocker, homedir):
 
 
 def test_ReplyBoxWidget_on_authentication_changed_source_deleted(mocker, source):
-    s = source['source']
+    s = source["source"]
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(s, controller)
 
-    error_logger = mocker.patch('securedrop_client.gui.widgets.logger.debug')
+    error_logger = mocker.patch("securedrop_client.gui.widgets.logger.debug")
 
     def pretend_source_was_deleted(self):
-        raise sqlalchemy.orm.exc.ObjectDeletedError(
-            attributes.instance_state(s), None
-        )
+        raise sqlalchemy.orm.exc.ObjectDeletedError(attributes.instance_state(s), None)
 
-    with patch.object(ReplyBoxWidget, 'update_authentication_state') as uas:
+    with patch.object(ReplyBoxWidget, "update_authentication_state") as uas:
         uas.side_effect = pretend_source_was_deleted
         rb._on_authentication_changed(True)
         error_logger.assert_called_once_with(
@@ -4130,7 +4176,8 @@ def test_ReplyBoxWidget_auth_signals(mocker, homedir):
     controller.is_authenticated = False
 
     _on_authentication_changed_fn = mocker.patch.object(
-        ReplyBoxWidget, '_on_authentication_changed')
+        ReplyBoxWidget, "_on_authentication_changed"
+    )
 
     ReplyBoxWidget(factory.Source(), controller)
 
@@ -4147,7 +4194,7 @@ def test_ReplyBoxWidget_enable(mocker):
 
     rb.set_logged_in()
 
-    assert rb.text_edit.toPlainText() == ''
+    assert rb.text_edit.toPlainText() == ""
     rb.text_edit.set_logged_in.assert_called_once_with()
     rb.send_button.show.assert_called_once_with()
 
@@ -4162,7 +4209,7 @@ def test_ReplyBoxWidget_disable(mocker):
 
     rb.set_logged_out()
 
-    assert rb.text_edit.toPlainText() == ''
+    assert rb.text_edit.toPlainText() == ""
     rb.text_edit.set_logged_out.assert_called_once_with()
     rb.send_button.hide.assert_called_once_with()
 
@@ -4172,9 +4219,9 @@ def test_ReplyBoxWidget_enable_after_source_gets_key(mocker, session, session_ma
     Test that it's enabled when a source that lacked a key now has one.
     """
 
-    with mocker.patch('sdclientapi.API'):
+    with mocker.patch("sdclientapi.API"):
         mock_gui = mocker.MagicMock()
-        controller = logic.Controller('http://localhost', mock_gui, session_maker, homedir)
+        controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir)
         controller.is_authenticated = True
 
         # create source without key or fingerprint
@@ -4218,11 +4265,11 @@ def test_ReplyTextEdit_focus_change_no_text(mocker):
 
     rt.focusInEvent(focus_in_event)
     assert rt.placeholder.isHidden()
-    assert rt.toPlainText() == ''
+    assert rt.toPlainText() == ""
 
     rt.focusOutEvent(focus_out_event)
     assert not rt.placeholder.isHidden()
-    assert rt.toPlainText() == ''
+    assert rt.toPlainText() == ""
 
 
 def test_ReplyTextEdit_focus_change_with_text_typed(mocker):
@@ -4232,7 +4279,7 @@ def test_ReplyTextEdit_focus_change_with_text_typed(mocker):
     """
     controller = mocker.MagicMock()
     rt = ReplyTextEdit(factory.Source(), controller)
-    reply_text = 'mocked reply text'
+    reply_text = "mocked reply text"
     rt.setText(reply_text)
 
     focus_in_event = QFocusEvent(QEvent.FocusIn)
@@ -4253,12 +4300,12 @@ def test_ReplyTextEdit_setText(mocker):
     setPlainText method is called (to ensure cursor is hidden).
     """
     rt = ReplyTextEdit(factory.Source(), mocker.MagicMock())
-    mocker.patch('securedrop_client.gui.widgets.QPlainTextEdit.setPlainText')
+    mocker.patch("securedrop_client.gui.widgets.QPlainTextEdit.setPlainText")
 
-    rt.setText('mocked reply text')
+    rt.setText("mocked reply text")
 
     assert rt.placeholder.isHidden()
-    rt.setPlainText.assert_called_once_with('mocked reply text')
+    rt.setPlainText.assert_called_once_with("mocked reply text")
 
 
 def test_ReplyTextEdit_setText_empty_string(mocker):
@@ -4267,12 +4314,12 @@ def test_ReplyTextEdit_setText_empty_string(mocker):
     method is called (to ensure cursor is hidden).
     """
     rt = ReplyTextEdit(factory.Source(), mocker.MagicMock())
-    mocker.patch('securedrop_client.gui.widgets.QPlainTextEdit.setPlainText')
+    mocker.patch("securedrop_client.gui.widgets.QPlainTextEdit.setPlainText")
 
-    rt.setText('')
+    rt.setText("")
 
     assert not rt.placeholder.isHidden()
-    rt.setPlainText.assert_called_once_with('')
+    rt.setPlainText.assert_called_once_with("")
 
 
 def test_ReplyTextEdit_set_logged_out(mocker):
@@ -4288,8 +4335,8 @@ def test_ReplyTextEdit_set_logged_out(mocker):
     sign_in = rt.placeholder.signed_out.layout().itemAt(0).widget()
     to_compose_reply = rt.placeholder.signed_out.layout().itemAt(1).widget()
 
-    assert 'Sign in' == sign_in.text()
-    assert ' to compose or send a reply' in to_compose_reply.text()
+    assert "Sign in" == sign_in.text()
+    assert " to compose or send a reply" in to_compose_reply.text()
 
 
 def test_ReplyTextEdit_set_logged_in(mocker):
@@ -4304,7 +4351,7 @@ def test_ReplyTextEdit_set_logged_in(mocker):
 
     compose_a_reply_to = rt.placeholder.signed_in.layout().itemAt(0).widget()
     source_name = rt.placeholder.signed_in.layout().itemAt(1).widget()
-    assert 'Compose a reply to ' == compose_a_reply_to.text()
+    assert "Compose a reply to " == compose_a_reply_to.text()
     assert source.journalist_designation == source_name.text()
 
 
@@ -4323,8 +4370,8 @@ def test_ReplyBox_set_logged_in_no_public_key(mocker):
     awaiting_key = rb.text_edit.placeholder.signed_in_no_key.layout().itemAt(0).widget()
     from_server = rb.text_edit.placeholder.signed_in_no_key.layout().itemAt(1).widget()
 
-    assert 'Awaiting encryption key' == awaiting_key.text()
-    assert ' from server to enable replies' == from_server.text()
+    assert "Awaiting encryption key" == awaiting_key.text()
+    assert " from server to enable replies" == from_server.text()
 
     # Both the reply box and the text editor must be disabled for the widget
     # to be rendered correctly.
@@ -4341,11 +4388,11 @@ def test_update_conversation_maintains_old_items(mocker, session):
     session.add(source)
     session.commit()
 
-    file_ = factory.File(filename='1-source-doc.gpg', source=source)
+    file_ = factory.File(filename="1-source-doc.gpg", source=source)
     session.add(file_)
-    message = factory.Message(filename='2-source-msg.gpg', source=source)
+    message = factory.Message(filename="2-source-msg.gpg", source=source)
     session.add(message)
-    reply = factory.Reply(filename='3-source-reply.gpg', source=source)
+    reply = factory.Reply(filename="3-source-reply.gpg", source=source)
     session.add(reply)
     session.commit()
 
@@ -4371,9 +4418,9 @@ def test_update_conversation_does_not_remove_pending_draft_items(mocker, session
     session.add(send_status)
     session.commit()
 
-    file_ = factory.File(filename='1-source-doc.gpg', source=source)
+    file_ = factory.File(filename="1-source-doc.gpg", source=source)
     session.add(file_)
-    message = factory.Message(filename='2-source-msg.gpg', source=source)
+    message = factory.Message(filename="2-source-msg.gpg", source=source)
     session.add(message)
     draft_reply = factory.DraftReply(source=source, send_status=send_status)
     session.add(draft_reply)
@@ -4386,7 +4433,7 @@ def test_update_conversation_does_not_remove_pending_draft_items(mocker, session
     assert cv.scroll.conversation_layout.count() == 3  # precondition with draft
 
     # add the new message and persist
-    new_message = factory.Message(filename='4-source-msg.gpg', source=source)
+    new_message = factory.Message(filename="4-source-msg.gpg", source=source)
     session.add(new_message)
     session.commit()
 
@@ -4406,9 +4453,9 @@ def test_update_conversation_does_remove_successful_draft_items(mocker, session)
     session.add(send_status)
     session.commit()
 
-    file_ = factory.File(filename='1-source-doc.gpg', source=source)
+    file_ = factory.File(filename="1-source-doc.gpg", source=source)
     session.add(file_)
-    message = factory.Message(filename='2-source-msg.gpg', source=source)
+    message = factory.Message(filename="2-source-msg.gpg", source=source)
     session.add(message)
     draft_reply = factory.DraftReply(source=source, send_status=send_status)
     session.add(draft_reply)
@@ -4421,7 +4468,7 @@ def test_update_conversation_does_remove_successful_draft_items(mocker, session)
     assert cv.scroll.conversation_layout.count() == 3  # precondition with draft
 
     # add the new message and persist
-    new_message = factory.Message(filename='4-source-msg.gpg', source=source)
+    new_message = factory.Message(filename="4-source-msg.gpg", source=source)
     session.add(new_message)
     session.commit()
 
@@ -4445,9 +4492,9 @@ def test_update_conversation_keeps_failed_draft_items(mocker, session):
     session.add(send_status)
     session.commit()
 
-    file_ = factory.File(filename='1-source-doc.gpg', source=source)
+    file_ = factory.File(filename="1-source-doc.gpg", source=source)
     session.add(file_)
-    message = factory.Message(filename='2-source-msg.gpg', source=source)
+    message = factory.Message(filename="2-source-msg.gpg", source=source)
     session.add(message)
     draft_reply = factory.DraftReply(source=source, send_status=send_status)
     session.add(draft_reply)
@@ -4460,7 +4507,7 @@ def test_update_conversation_keeps_failed_draft_items(mocker, session):
     assert cv.scroll.conversation_layout.count() == 3  # precondition with draft
 
     # add the new message and persist
-    new_message = factory.Message(filename='4-source-msg.gpg', source=source)
+    new_message = factory.Message(filename="4-source-msg.gpg", source=source)
     session.add(new_message)
     session.commit()
 
@@ -4477,11 +4524,11 @@ def test_update_conversation_adds_new_items(mocker, session):
     session.add(source)
     session.commit()
 
-    file_ = factory.File(filename='1-source-doc.gpg', source=source)
+    file_ = factory.File(filename="1-source-doc.gpg", source=source)
     session.add(file_)
-    message = factory.Message(filename='2-source-msg.gpg', source=source)
+    message = factory.Message(filename="2-source-msg.gpg", source=source)
     session.add(message)
-    reply = factory.Reply(filename='3-source-reply.gpg', source=source)
+    reply = factory.Reply(filename="3-source-reply.gpg", source=source)
     session.add(reply)
     session.commit()
 
@@ -4492,7 +4539,7 @@ def test_update_conversation_adds_new_items(mocker, session):
     assert cv.scroll.conversation_layout.count() == 3  # precondition
 
     # add the new message and persist
-    new_message = factory.Message(filename='4-source-msg.gpg', source=source)
+    new_message = factory.Message(filename="4-source-msg.gpg", source=source)
     session.add(new_message)
     session.commit()
 
@@ -4508,11 +4555,11 @@ def test_update_conversation_position_updates(mocker, session):
     session.add(source)
     session.commit()
 
-    file_ = factory.File(filename='1-source-doc.gpg', source=source)
+    file_ = factory.File(filename="1-source-doc.gpg", source=source)
     session.add(file_)
-    message = factory.Message(filename='2-source-msg.gpg', source=source)
+    message = factory.Message(filename="2-source-msg.gpg", source=source)
     session.add(message)
-    reply = factory.Reply(filename='3-source-reply.gpg', source=source)
+    reply = factory.Reply(filename="3-source-reply.gpg", source=source)
     session.add(reply)
     session.commit()
 
@@ -4527,7 +4574,7 @@ def test_update_conversation_position_updates(mocker, session):
     reply_widget.index = 1
 
     # add the new message and persist
-    new_message = factory.Message(filename='4-source-msg.gpg', source=source)
+    new_message = factory.Message(filename="4-source-msg.gpg", source=source)
     session.add(new_message)
     session.commit()
 
@@ -4548,7 +4595,7 @@ def test_update_conversation_content_updates(mocker, session):
     session.add(source)
     session.commit()
 
-    message = factory.Message(filename='2-source-msg.gpg', source=source, content=None)
+    message = factory.Message(filename="2-source-msg.gpg", source=source, content=None)
     session.add(message)
     session.commit()
 
@@ -4561,21 +4608,22 @@ def test_update_conversation_content_updates(mocker, session):
     mock_msg_widget_res = mocker.MagicMock()
     # mock MessageWidget so we can inspect the __init__ call to see what content
     # is in the widget.
-    mock_msg_widget = mocker.patch('securedrop_client.gui.widgets.MessageWidget',
-                                   return_value=mock_msg_widget_res)
+    mock_msg_widget = mocker.patch(
+        "securedrop_client.gui.widgets.MessageWidget", return_value=mock_msg_widget_res
+    )
 
     # First call of update_conversation: with null content
     cv.update_conversation(cv.source.collection)
 
     # Since the content was None, we should have created the widget
     # with the default message (which is the second call_arg).
-    assert mock_msg_widget.call_args[0][1] == '<Message not yet available>'
+    assert mock_msg_widget.call_args[0][1] == "<Message not yet available>"
 
     # Meanwhile, in another session, we add content to the database for that same message.
     engine = session.get_bind()
     second_session = scoped_session(sessionmaker(bind=engine))
     message = second_session.query(db.Message).one()
-    expected_content = 'now there is content here!'
+    expected_content = "now there is content here!"
     message.content = expected_content
     second_session.add(message)
     second_session.commit()
@@ -4600,4 +4648,5 @@ def test_SourceProfileShortWidget_update_timestamp(mocker):
     spsw.updated = mocker.MagicMock()
     spsw.update_timestamp()
     spsw.updated.setText.assert_called_once_with(
-        arrow.get(mock_source.last_updated).format('DD MMM'))
+        arrow.get(mock_source.last_updated).format("DD MMM")
+    )

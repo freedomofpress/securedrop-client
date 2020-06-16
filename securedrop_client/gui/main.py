@@ -20,16 +20,22 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
-
 from gettext import gettext as _
 from typing import Dict, List, Optional  # noqa: F401
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, \
-    QVBoxLayout, QDesktopWidget
+
+from PyQt5.QtWidgets import (
+    QApplication,
+    QDesktopWidget,
+    QHBoxLayout,
+    QMainWindow,
+    QVBoxLayout,
+    QWidget,
+)
 
 from securedrop_client import __version__
 from securedrop_client.db import Source, User
+from securedrop_client.gui.widgets import LeftPane, LoginDialog, MainView, TopPane
 from securedrop_client.logic import Controller  # noqa: F401
-from securedrop_client.gui.widgets import TopPane, LeftPane, MainView, LoginDialog
 from securedrop_client.resources import load_css, load_font, load_icon
 
 logger = logging.getLogger(__name__)
@@ -41,7 +47,7 @@ class Window(QMainWindow):
     All interactions with the UI go through the object created by this class.
     """
 
-    icon = 'icon.png'
+    icon = "icon.png"
 
     def __init__(self) -> None:
         """
@@ -55,9 +61,9 @@ class Window(QMainWindow):
         """
         super().__init__()
 
-        load_font('Montserrat')
-        load_font('Source_Sans_Pro')
-        self.setStyleSheet(load_css('sdclient.css'))
+        load_font("Montserrat")
+        load_font("Source_Sans_Pro")
+        self.setStyleSheet(load_css("sdclient.css"))
         self.setWindowTitle(_("SecureDrop Client {}").format(__version__))
         self.setWindowIcon(load_icon(self.icon))
 
@@ -114,7 +120,7 @@ class Window(QMainWindow):
         screen = QDesktopWidget().screenGeometry()
         self.resize(screen.width(), screen.height())
 
-    def show_login(self, error: str = ''):
+    def show_login(self, error: str = ""):
         """
         Show the login form.
         """
@@ -164,9 +170,9 @@ class Window(QMainWindow):
         Display a message indicating the time of last sync with the server.
         """
         if updated_on:
-            self.update_activity_status(_('Last Refresh: {}').format(updated_on.humanize()))
+            self.update_activity_status(_("Last Refresh: {}").format(updated_on.humanize()))
         else:
-            self.update_activity_status(_('Last Refresh: never'))
+            self.update_activity_status(_("Last Refresh: never"))
 
     def set_logged_in_as(self, db_user: User):
         """

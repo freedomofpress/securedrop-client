@@ -4,8 +4,8 @@ is based upon the client testing descriptions here:
 
 https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-testing
 """
-import pytest
 import pyautogui
+import pytest
 
 from tests.conftest import TIME_APP_START, TIME_CLICK_ACTION
 

@@ -7,10 +7,15 @@ https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-
 import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
-from securedrop_client.gui.widgets import FileWidget
 
-from tests.conftest import (TIME_APP_START, TIME_CLICK_ACTION, TIME_FILE_DOWNLOAD,
-                            TIME_RENDER_SOURCE_LIST, TIME_SYNC)
+from securedrop_client.gui.widgets import FileWidget
+from tests.conftest import (
+    TIME_APP_START,
+    TIME_CLICK_ACTION,
+    TIME_FILE_DOWNLOAD,
+    TIME_RENDER_SOURCE_LIST,
+    TIME_SYNC,
+)
 
 
 @flaky

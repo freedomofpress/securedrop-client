@@ -20,13 +20,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 
 from pkg_resources import resource_filename, resource_string
-from PyQt5.QtGui import QPixmap, QIcon, QFontDatabase, QMovie
-from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtCore import QDir
+from PyQt5.QtGui import QFontDatabase, QIcon, QMovie, QPixmap
+from PyQt5.QtSvg import QSvgWidget
 
 # Add resource directories to the search path.
-QDir.addSearchPath('images', resource_filename(__name__, 'images'))
-QDir.addSearchPath('css', resource_filename(__name__, 'css'))
+QDir.addSearchPath("images", resource_filename(__name__, "images"))
+QDir.addSearchPath("css", resource_filename(__name__, "css"))
 
 
 def path(name: str, resource_dir: str = "images/") -> str:
@@ -39,10 +39,10 @@ def path(name: str, resource_dir: str = "images/") -> str:
 
 
 def load_font(font_folder_name: str) -> None:
-    directory = resource_filename(__name__, 'fonts/') + font_folder_name
+    directory = resource_filename(__name__, "fonts/") + font_folder_name
     for filename in os.listdir(directory):
         if filename.endswith(".ttf"):
-            QFontDatabase.addApplicationFont(directory + '/' + filename)
+            QFontDatabase.addApplicationFont(directory + "/" + filename)
 
 
 def load_icon(
@@ -132,7 +132,7 @@ def load_css(name: str) -> str:
     """
     Return the contents of the referenced CSS file in the resources.
     """
-    return resource_string(__name__, "css/" + name).decode('utf-8')
+    return resource_string(__name__, "css/" + name).decode("utf-8")
 
 
 def load_movie(name: str) -> QMovie:

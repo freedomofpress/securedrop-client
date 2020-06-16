@@ -8,8 +8,12 @@ import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
 
-from tests.conftest import (TIME_APP_START, TIME_CLICK_ACTION,
-                            TIME_RENDER_CONV_VIEW, TIME_RENDER_SOURCE_LIST)
+from tests.conftest import (
+    TIME_APP_START,
+    TIME_CLICK_ACTION,
+    TIME_RENDER_CONV_VIEW,
+    TIME_RENDER_SOURCE_LIST,
+)
 
 
 @flaky

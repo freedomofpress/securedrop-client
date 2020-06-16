@@ -5,8 +5,7 @@ import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
 
-from tests.conftest import (TIME_APP_START, TIME_RENDER_CONV_VIEW,
-                            PASSWORD, USERNAME)
+from tests.conftest import PASSWORD, TIME_APP_START, TIME_RENDER_CONV_VIEW, USERNAME
 
 
 @flaky
