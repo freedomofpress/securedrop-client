@@ -23,7 +23,7 @@ from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, Se
     ErrorStatusBar, ActivityStatusBar, UserProfile, UserButton, UserMenu, LoginButton, \
     ReplyBoxWidget, ReplyTextEdit, SourceConversationWrapper, StarToggleButton, LoginOfflineLink, \
     LoginErrorBar, EmptyConversationView, ModalDialog, ExportDialog, PrintDialog, \
-    PasswordEdit, SourceProfileShortWidget, UserIconLabel
+    PasswordEdit, SourceProfileShortWidget, SourceListWidgetItem, UserIconLabel
 from tests import factory
 
 
@@ -516,7 +516,7 @@ def test_MainView_show_sources_from_cold_start(mocker):
     """
     mv = MainView(None)
     mv.source_list = mocker.MagicMock()
-    mv.source_list.source_widgets = []
+    mv.source_list.source_items = {}
     mv.empty_conversation_view = mocker.MagicMock()
 
     mv.show_sources([])
@@ -791,7 +791,7 @@ def test_SourceList_update_adds_new_sources(mocker):
     assert mock_lwi.call_count == len(sources)
     assert sl.insertItem.call_count == len(sources)
     assert sl.setItemWidget.call_count == len(sources)
-    assert len(sl.source_widgets) == len(sources)
+    assert len(sl.source_items) == len(sources)
     assert sl.setCurrentItem.call_count == 0
     sl.clear.assert_not_called()
     sl.takeItem.assert_not_called()
@@ -818,12 +818,11 @@ def test_SourceList_initial_update_adds_new_sources(mocker):
 
 def test_SourceList_update_when_source_deleted(mocker, session, session_maker, homedir):
     """
-    Test that SourceWidget.update raises an exception when its source has been deleted.
+    Test that SourceWidget.update gracefully continues when source is deleted during an update.
 
-    When SourceList.update calls SourceWidget.update and that
-    SourceWidget's source has been deleted, SourceList.update should
-    catch the resulting excpetion, delete the SourceWidget and add its
-    source UUID to the list of deleted source UUIDs.
+    When SourceList.update calls SourceWidget.update and that SourceWidget's source has been
+    deleted by another ongoing sync, then SourceList.update should silently continue since the
+    ongoing sync will handle the deletion of the source's widgets.
     """
     mock_gui = mocker.MagicMock()
     controller = logic.Controller('http://localhost', mock_gui, session_maker, homedir)
@@ -842,18 +841,24 @@ def test_SourceList_update_when_source_deleted(mocker, session, session_maker, h
     sl.setup(controller)
     deleted_uuids = sl.update([oss])
     assert not deleted_uuids
-    assert len(sl.source_widgets) == 1
+    assert len(sl.source_items) == 1
 
-    # now delete it
+    # now delete it to simulate what happens during a sync
     session.delete(source)
     session.commit()
 
-    # and finally verify that updating raises an exception, causing
-    # the SourceWidget to be deleted
+    # now verify that updating does not raise an exception, and that the SourceWidget still exists
+    # since the sync will end up calling update again and delete it
     deleted_uuids = sl.update([source])
+    assert len(deleted_uuids) == 0
+    assert not deleted_uuids
+    assert len(sl.source_items) == 1
+
+    # finish sync simulation where a local source is deleted
+    deleted_uuids = sl.update([])
     assert len(deleted_uuids) == 1
     assert source.uuid in deleted_uuids
-    assert len(sl.source_widgets) == 0
+    assert len(sl.source_items) == 0
 
 
 def test_SourceList_add_source_starts_timer(mocker, session_maker, homedir):
@@ -867,45 +872,6 @@ def test_SourceList_add_source_starts_timer(mocker, session_maker, homedir):
     with mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer):
         sl.add_source(sources)
     assert mock_timer.singleShot.call_count == 1
-
-
-def test_SourceList_update_when_source_deleted_crash(mocker, session, session_maker, homedir):
-    """
-    When SourceList.update calls SourceWidget.update and that
-    SourceWidget has been deleted from the dict on the SourceList,
-    it should handle the exception and delete the list widget.
-    """
-    mock_gui = mocker.MagicMock()
-    controller = logic.Controller('http://localhost', mock_gui, session_maker, homedir)
-
-    # create the source in another session
-    source = factory.Source()
-    session.add(source)
-    session.commit()
-
-    # construct the SourceWidget with the source fetched in its
-    # controller's session
-    oss = controller.session.query(db.Source).filter_by(id=source.id).one()
-
-    # add it to the SourceList
-    sl = SourceList()
-    sl.setup(controller)
-    deleted_uuids = sl.update([oss])
-    assert not deleted_uuids
-    assert len(sl.source_widgets) == 1
-    assert sl.count() == 1
-
-    # Remove source_widget from dict
-    sl.source_widgets.pop(oss.uuid)
-
-    # now delete it
-    session.delete(source)
-    session.commit()
-
-    # and finally verify that updating does not throw an exception, and
-    # all widgets are removed from the list view.
-    deleted_uuids = sl.update([])
-    assert sl.count() == 0
 
 
 def test_SourceList_update_maintains_selection(mocker):
@@ -973,7 +939,7 @@ def test_SourceList_update_removes_item_from_end_of_list(mocker):
     assert sl.count() == 2
     assert sl.itemWidget(sl.item(0)).source.uuid == 'newest'
     assert sl.itemWidget(sl.item(1)).source.uuid == 'newer'
-    assert len(sl.source_widgets) == 2
+    assert len(sl.source_items) == 2
 
 
 def test_SourceList_update_removes_item_from_middle_of_list(mocker):
@@ -989,7 +955,7 @@ def test_SourceList_update_removes_item_from_middle_of_list(mocker):
     assert sl.count() == 2
     assert sl.itemWidget(sl.item(0)).source.uuid == 'newest'
     assert sl.itemWidget(sl.item(1)).source.uuid == 'new'
-    assert len(sl.source_widgets) == 2
+    assert len(sl.source_items) == 2
 
 
 def test_SourceList_update_removes_item_from_beginning_of_list(mocker):
@@ -1005,7 +971,7 @@ def test_SourceList_update_removes_item_from_beginning_of_list(mocker):
     assert sl.count() == 2
     assert sl.itemWidget(sl.item(0)).source.uuid == 'newer'
     assert sl.itemWidget(sl.item(1)).source.uuid == 'new'
-    assert len(sl.source_widgets) == 2
+    assert len(sl.source_items) == 2
 
 
 def test_SourceList_add_source_closure_adds_sources(mocker):
@@ -1038,7 +1004,7 @@ def test_SourceList_add_source_closure_adds_sources(mocker):
         assert mock_lwi.call_count == 1
         assert sl.insertItem.call_count == 1
         assert sl.setItemWidget.call_count == 1
-        assert len(sl.source_widgets) == 1
+        assert len(sl.source_items) == 1
         assert sl.setCurrentItem.call_count == 0
         sl.add_source.assert_called_once_with(sources[1:], 2)
 
@@ -1073,7 +1039,7 @@ def test_SourceList_add_source_closure_exits_on_no_more_sources(mocker):
         assert mock_lwi.call_count == 0
         assert sl.addItem.call_count == 0
         assert sl.setItemWidget.call_count == 0
-        assert len(sl.source_widgets) == 0
+        assert len(sl.source_items) == 0
         assert sl.setCurrentItem.call_count == 0
         assert sl.add_source.call_count == 0
 
@@ -1083,20 +1049,22 @@ def test_SourceList_set_snippet(mocker):
     Handle the emitted event in the expected manner.
     """
     sl = SourceList()
-    mock_widget = mocker.MagicMock()
-    sl.source_widgets = {
-        "a_uuid": mock_widget,
-    }
-    sl.set_snippet("a_uuid", "msg_uuid", "msg_content")
-    mock_widget.set_snippet.assert_called_once_with("a_uuid", "msg_content")
+    source_widget = SourceWidget(mocker.MagicMock(), factory.Source(uuid='mock_uuid'))
+    source_widget.set_snippet = mocker.MagicMock()
+    source_item = SourceListWidgetItem(sl)
+    sl.setItemWidget(source_item, source_widget)
+    sl.source_items = {"mock_uuid": source_item}
+
+    sl.set_snippet("mock_uuid", "msg_uuid", "msg_content")
+
+    source_widget.set_snippet.assert_called_once_with("mock_uuid", "msg_content")
 
 
 def test_SourceList_get_source_widget(mocker):
     sl = SourceList()
     sl.controller = mocker.MagicMock()
-    mock_source = factory.Source(uuid='mock_uuid')
-    sl.update([mock_source])
-    sl.source_widgets = {}
+    sl.update([factory.Source(uuid='mock_uuid')])
+    sl.source_items = {}
 
     source_widget = sl.get_source_widget('mock_uuid')
 
@@ -1109,7 +1077,7 @@ def test_SourceList_get_source_widget_does_not_exist(mocker):
     sl.controller = mocker.MagicMock()
     mock_source = factory.Source(uuid='mock_uuid')
     sl.update([mock_source])
-    sl.source_widgets = {}
+    sl.source_items = {}
 
     source_widget = sl.get_source_widget('uuid_for_source_not_in_list')
 
@@ -1118,10 +1086,12 @@ def test_SourceList_get_source_widget_does_not_exist(mocker):
 
 def test_SourceList_get_source_widget_if_one_exists_in_cache(mocker):
     sl = SourceList()
-    mock_source_widget = factory.Source(uuid='mock_uuid')
-    sl.source_widgets = {'mock_uuid': mock_source_widget}
-    source_widget = sl.get_source_widget('mock_uuid')
-    assert source_widget == mock_source_widget
+    source_widget = SourceWidget(mocker.MagicMock(), factory.Source(uuid='mock_uuid'))
+    source_item = SourceListWidgetItem(sl)
+    sl.setItemWidget(source_item, source_widget)
+    sl.source_items['mock_uuid'] = source_item
+
+    assert sl.get_source_widget('mock_uuid') == source_widget
 
 
 def test_SourceWidget_init(mocker):
@@ -1171,10 +1141,10 @@ def test_SourceWidget_update_attachment_icon(mocker):
     assert sw.paperclip.isHidden()
 
 
-def test_SourceWidget_update_raises_InvalidRequestError(mocker):
+def test_SourceWidget_update_does_not_raise_exception(mocker):
     """
-    If the source no longer exists in the local data store, ensure the expected
-    exception is logged and re-raised.
+    If the source no longer exists in the local data store, ensure the SourceWidget just logs and
+    does not raise an exception.
     """
     controller = mocker.MagicMock()
     source = factory.Source(document_count=1)
@@ -1182,13 +1152,9 @@ def test_SourceWidget_update_raises_InvalidRequestError(mocker):
     ex = sqlalchemy.exc.InvalidRequestError()
     controller.session.refresh.side_effect = ex
     mock_logger = mocker.MagicMock()
-    mocker.patch(
-        "securedrop_client.gui.widgets.logger",
-        mock_logger,
-    )
-    with pytest.raises(sqlalchemy.exc.InvalidRequestError):
-        sw.update()
-        assert mock_logger.error.call_count == 1
+    mocker.patch("securedrop_client.gui.widgets.logger", mock_logger)
+    sw.update()
+    assert mock_logger.debug.call_count == 1
 
 
 def test_SourceWidget_set_snippet_draft_only(mocker, session_maker, session, homedir):
