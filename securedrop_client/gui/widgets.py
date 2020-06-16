@@ -3066,7 +3066,7 @@ class ReplyTextEditPlaceholder(QWidget):
         # Signed in
         compose_a_reply_to = QLabel(_('Compose a reply to '))
         compose_a_reply_to.setObjectName('ReplyTextEditPlaceholder_text')
-        source_name = SecureQLabel(source_name)
+        source_name = SecureQLabel(source_name, wordwrap=False)
         source_name.setObjectName('ReplyTextEditPlaceholder_bold_blue')
         self.signed_in = QWidget()
         signed_in_layout = QHBoxLayout()
