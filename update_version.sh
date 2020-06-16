@@ -11,7 +11,7 @@ if [ -z "$NEW_VERSION" ]; then
 fi
 
 # Get the old version from securedrop_client/__init__.py
-old_version_regex="^__version__ = '(.*)'$"
+old_version_regex='^__version__ = "(.*)"$'
 [[ "$(cat securedrop_client/__init__.py)" =~ $old_version_regex ]]
 OLD_VERSION=${BASH_REMATCH[1]}
 
