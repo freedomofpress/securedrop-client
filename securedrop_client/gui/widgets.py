@@ -812,10 +812,8 @@ class SourceList(QListWidget):
             source_widget = self.itemWidget(source_item)
             self.takeItem(self.row(source_item))
             source_widget.deleteLater()
-            try:
+            if source_widget.source_uuid in self.source_items:
                 del self.source_items[source_widget.source_uuid]
-            except KeyError:
-                pass
 
             deleted_uuids.append(source_widget.source_uuid)
 

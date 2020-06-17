@@ -4,7 +4,7 @@ Make sure the UI widgets are configured correctly and work as expected.
 import pytest
 import arrow
 from datetime import datetime
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtGui import QFocusEvent, QKeyEvent, QMovie
@@ -872,6 +872,40 @@ def test_SourceList_add_source_starts_timer(mocker, session_maker, homedir):
     with mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer):
         sl.add_source(sources)
     assert mock_timer.singleShot.call_count == 1
+
+
+class DeletedSource(Mock):
+    @property
+    def uuid(self):
+        raise sqlalchemy.exc.InvalidRequestError()
+
+
+def test_SourceList_initial_update_does_not_raise_exc(mocker):
+    """
+    Check a new SourceWidget for each passed-in source is created and no widgets are cleared or
+    removed.
+    """
+    sl = SourceList()
+    sl.controller = mocker.MagicMock()
+    source = DeletedSource()
+    sl.initial_update([source])
+
+
+def test_SourceList_update_does_not_raise_exc(mocker):
+    sl = SourceList()
+    sl.controller = mocker.MagicMock()
+    source = DeletedSource()
+    sl.update([source])
+
+
+def test_SourceList_update_does_not_raise_exc_when_itemWidget_is_none(mocker):
+    sl = SourceList()
+    sl.controller = mocker.MagicMock()
+    source = factory.Source()
+    sl.update([source])  # first add the source so that the next time the same source is updated
+
+    sl.itemWidget = mocker.MagicMock(return_value=None)
+    sl.update([source])  # does not raise exception
 
 
 def test_SourceList_update_maintains_selection(mocker):
