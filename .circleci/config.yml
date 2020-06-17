@@ -40,6 +40,7 @@ common-steps:
         git config --global --unset url.ssh://git@github.com.insteadof
         git clone https://github.com/freedomofpress/securedrop-debian-packaging.git
         cd securedrop-debian-packaging
+        git checkout no-use-pep517
         make install-deps
         PKG_DIR=~/project make requirements
 
