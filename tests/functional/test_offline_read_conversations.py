@@ -22,12 +22,13 @@ def test_offline_read_conversations(functional_test_logged_in_context, qtbot, mo
     qtbot.wait(TIME_APP_START)
 
     def check_for_sources():
-        assert len(list(gui.main_view.source_list.source_widgets.keys()))
+        assert len(list(gui.main_view.source_list.source_items.keys()))
 
     qtbot.waitUntil(check_for_sources, timeout=TIME_RENDER_SOURCE_LIST)
-    source_ids = list(gui.main_view.source_list.source_widgets.keys())
+    source_ids = list(gui.main_view.source_list.source_items.keys())
     first_source_id = source_ids[0]
-    first_source_widget = gui.main_view.source_list.source_widgets[first_source_id]
+    first_source_item = gui.main_view.source_list.source_items[first_source_id]
+    first_source_widget = gui.main_view.source_list.itemWidget(first_source_item)
     qtbot.mouseClick(first_source_widget, Qt.LeftButton)
 
     # Otherwise our test is running too fast to create all files/directories
@@ -44,7 +45,8 @@ def test_offline_read_conversations(functional_test_logged_in_context, qtbot, mo
     # Ensure that clicking on a source shows a conversation that contains
     # activity.
     second_source_id = source_ids[1]
-    second_source_widget = gui.main_view.source_list.source_widgets[second_source_id]
+    second_source_item = gui.main_view.source_list.source_items[second_source_id]
+    second_source_widget = gui.main_view.source_list.itemWidget(second_source_item)
     qtbot.mouseClick(second_source_widget, Qt.LeftButton)
     conversation = gui.main_view.view_layout.itemAt(0).widget()
     assert len(list(conversation.conversation_view.current_messages.keys())) > 0

@@ -22,12 +22,13 @@ def test_send_reply_to_source(functional_test_logged_in_context, qtbot, mocker):
     qtbot.wait(TIME_APP_START)
 
     def check_for_sources():
-        assert len(list(gui.main_view.source_list.source_widgets.keys()))
+        assert len(list(gui.main_view.source_list.source_items.keys()))
 
     qtbot.waitUntil(check_for_sources, timeout=TIME_RENDER_SOURCE_LIST)
-    source_ids = list(gui.main_view.source_list.source_widgets.keys())
+    source_ids = list(gui.main_view.source_list.source_items.keys())
     first_source_id = source_ids[0]
-    first_source_widget = gui.main_view.source_list.source_widgets[first_source_id]
+    first_source_item = gui.main_view.source_list.source_items[first_source_id]
+    first_source_widget = gui.main_view.source_list.itemWidget(first_source_item)
     qtbot.mouseClick(first_source_widget, Qt.LeftButton)
     # Type something into the reply box and click the send button.
     message = "Hello, world!"
