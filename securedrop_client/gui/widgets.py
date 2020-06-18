@@ -862,12 +862,13 @@ class SourceList(QListWidget):
             sources_slice = sources[:slice_size]
             for source in sources_slice:
                 try:
+                    source_uuid = source.uuid
                     source_widget = SourceWidget(self.controller, source)
                     source_item = SourceListWidgetItem(self)
                     source_item.setSizeHint(source_widget.sizeHint())
                     self.insertItem(0, source_item)
                     self.setItemWidget(source_item, source_widget)
-                    self.source_items[source.uuid] = source_item
+                    self.source_items[source_uuid] = source_item
                 except sqlalchemy.exc.InvalidRequestError as e:
                     logger.debug(e)
 
