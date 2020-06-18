@@ -758,6 +758,8 @@ class SourceList(QListWidget):
     Displays the list of sources.
     """
 
+    NUM_SOURCES_TO_ADD_AT_A_TIME = 32
+
     def __init__(self):
         super().__init__()
 
@@ -811,11 +813,11 @@ class SourceList(QListWidget):
 
             source_widget = self.itemWidget(source_item)
             self.takeItem(self.row(source_item))
-            source_widget.deleteLater()
             if source_widget.source_uuid in self.source_items:
                 del self.source_items[source_widget.source_uuid]
 
             deleted_uuids.append(source_widget.source_uuid)
+            source_widget.deleteLater()
 
         # Update the remaining widgets
         for i in range(self.count()):
@@ -826,17 +828,11 @@ class SourceList(QListWidget):
 
             source_widget.update()
 
-        # Create new source widgets for new sources
-        for source in sources_to_add:
-            source_widget = SourceWidget(self.controller, source)
-            source_item = SourceListWidgetItem(self)
-            source_item.setSizeHint(source_widget.sizeHint())
-            self.insertItem(0, source_item)
-            self.setItemWidget(source_item, source_widget)
-            self.source_items[source.uuid] = source_item
-
         # Re-sort SourceList to make sure the most recently-updated sources appear at the top
         self.sortItems(Qt.DescendingOrder)
+
+        slice_size = min(self.NUM_SOURCES_TO_ADD_AT_A_TIME, len(sources_to_add))
+        self.add_source(sources_to_add, slice_size)
 
         # Return uuids of source widgets that were deleted so we can later delete the corresponding
         # conversation widgets
@@ -862,19 +858,23 @@ class SourceList(QListWidget):
             sources_slice = sources[:slice_size]
             for source in sources_slice:
                 try:
+                    source_uuid = source.uuid
                     source_widget = SourceWidget(self.controller, source)
                     source_item = SourceListWidgetItem(self)
                     source_item.setSizeHint(source_widget.sizeHint())
                     self.insertItem(0, source_item)
                     self.setItemWidget(source_item, source_widget)
-                    self.source_items[source.uuid] = source_item
+                    self.source_items[source_uuid] = source_item
                 except sqlalchemy.exc.InvalidRequestError as e:
                     logger.debug(e)
+
+            # Re-sort SourceList to make sure the most recently-updated sources appear at the top
+            self.sortItems(Qt.DescendingOrder)
 
             # ATTENTION! 32 is an arbitrary number arrived at via
             # experimentation. It adds plenty of sources, but doesn't block
             # for a noticable amount of time.
-            new_slice_size = min(32, slice_size * 2)
+            new_slice_size = min(self.NUM_SOURCES_TO_ADD_AT_A_TIME, slice_size * 2)
             # Call add_source again for the remaining sources.
             self.add_source(sources[slice_size:], new_slice_size)
 
