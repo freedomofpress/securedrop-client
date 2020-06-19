@@ -792,13 +792,13 @@ class SourceList(QListWidget):
         Update the list with the passed in list of sources.
         """
         sources_to_update = []
-        sources_to_add = []
+        sources_to_add = {}
         for source in sources:
             try:
                 if source.uuid in self.source_items:
                     sources_to_update.append(source.uuid)
                 else:
-                    sources_to_add.append(source)
+                    sources_to_add[source.uuid] = source
             except sqlalchemy.exc.InvalidRequestError as e:
                 logger.debug(e)
                 continue
@@ -828,11 +828,17 @@ class SourceList(QListWidget):
 
             source_widget.update()
 
+        # Add widgets for new sources
+        for uuid in sources_to_add:
+            source_widget = SourceWidget(self.controller, sources_to_add[uuid])
+            source_item = SourceListWidgetItem(self)
+            source_item.setSizeHint(source_widget.sizeHint())
+            self.insertItem(0, source_item)
+            self.setItemWidget(source_item, source_widget)
+            self.source_items[uuid] = source_item
+
         # Re-sort SourceList to make sure the most recently-updated sources appear at the top
         self.sortItems(Qt.DescendingOrder)
-
-        slice_size = min(self.NUM_SOURCES_TO_ADD_AT_A_TIME, len(sources_to_add))
-        self.add_source(sources_to_add, slice_size)
 
         # Return uuids of source widgets that were deleted so we can later delete the corresponding
         # conversation widgets
