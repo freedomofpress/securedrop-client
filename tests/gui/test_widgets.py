@@ -880,15 +880,24 @@ class DeletedSource(Mock):
         raise sqlalchemy.exc.InvalidRequestError()
 
 
-def test_SourceList_initial_update_does_not_raise_exc(mocker):
-    """
-    Check a new SourceWidget for each passed-in source is created and no widgets are cleared or
-    removed.
-    """
+def test_SourceList_initial_update_does_not_raise_exc_and_no_widget_created(mocker, qtbot):
+    '''
+    This is a regression test to make sure we raise an exception when adding a new source **before**
+    we add a SourceWidget to the SourceList and try to insert into the source_items map.
+    '''
     sl = SourceList()
     sl.controller = mocker.MagicMock()
+    # Make sure SourceWidget constructor doesn't raise
+    source_widget = SourceWidget(sl.controller, factory.Source())
+    mocker.patch('securedrop_client.gui.widgets.SourceWidget', return_value=source_widget)
     source = DeletedSource()
     sl.initial_update([source])
+
+    def assert_no_source_widget_exists():
+        assert sl.count() == 0
+        assert len(sl.source_items) == 0
+
+    qtbot.waitUntil(assert_no_source_widget_exists, timeout=2)
 
 
 def test_SourceList_update_does_not_raise_exc(mocker):
