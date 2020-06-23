@@ -586,7 +586,7 @@ class MainView(QWidget):
             self.empty_conversation_view.show_no_sources_message()
             self.empty_conversation_view.show()
 
-        if self.source_list.source_widgets:
+        if self.source_list.source_items:
             # The source list already contains sources.
             deleted_sources = self.source_list.update(sources)
             for source_uuid in deleted_sources:
@@ -747,8 +747,8 @@ class SourceListWidgetItem(QListWidgetItem):
         me = lw.itemWidget(self)
         them = lw.itemWidget(other)
         if me and them:
-            my_ts = arrow.get(me.source.last_updated)
-            other_ts = arrow.get(them.source.last_updated)
+            my_ts = arrow.get(me.last_updated)
+            other_ts = arrow.get(them.last_updated)
             return my_ts < other_ts
         return True
 
@@ -757,6 +757,8 @@ class SourceList(QListWidget):
     """
     Displays the list of sources.
     """
+
+    NUM_SOURCES_TO_ADD_AT_A_TIME = 32
 
     def __init__(self):
         super().__init__()
@@ -772,8 +774,8 @@ class SourceList(QListWidget):
         # Enable ordering.
         self.setSortingEnabled(True)
 
-        # To hold references to SourceWidget instances indexed by source UUID.
-        self.source_widgets = {}
+        # To hold references to SourceListWidgetItem instances indexed by source UUID.
+        self.source_items = {}
 
     def setup(self, controller):
         self.controller = controller
@@ -789,52 +791,57 @@ class SourceList(QListWidget):
         """
         Update the list with the passed in list of sources.
         """
-        # Delete widgets that no longer exist in source list
-        source_uuids = [source.uuid for source in sources]
-        deleted_uuids = []
-        for i in range(self.count()):
-            list_item = self.item(i)
-            list_widget = self.itemWidget(list_item)
-
-            if list_widget and list_widget.source_uuid not in source_uuids:
-                if list_item.isSelected():
-                    self.setCurrentItem(None)
-
-                try:
-                    del self.source_widgets[list_widget.source_uuid]
-                except KeyError:
-                    pass
-
-                self.takeItem(i)
-                deleted_uuids.append(list_widget.source_uuid)
-                list_widget.deleteLater()
-
-        # Create new widgets for new sources
-        widget_uuids = [self.itemWidget(self.item(i)).source_uuid for i in range(self.count())]
+        sources_to_update = []
+        sources_to_add = {}
         for source in sources:
-            if source.uuid in widget_uuids:
-                try:
-                    self.source_widgets[source.uuid].update()
-                except sqlalchemy.exc.InvalidRequestError as e:
-                    logger.error(
-                        "Could not update SourceWidget for source %s; deleting it. Error was: %s",
-                        source.uuid,
-                        e
-                    )
-                    deleted_uuids.append(source.uuid)
-                    self.source_widgets[source.uuid].deleteLater()
-                    del self.source_widgets[list_widget.source_uuid]
-            else:
-                new_source = SourceWidget(self.controller, source)
-                self.source_widgets[source.uuid] = new_source
+            try:
+                if source.uuid in self.source_items:
+                    sources_to_update.append(source.uuid)
+                else:
+                    sources_to_add[source.uuid] = source
+            except sqlalchemy.exc.InvalidRequestError as e:
+                logger.debug(e)
+                continue
 
-                list_item = SourceListWidgetItem()
-                self.insertItem(0, list_item)
-                list_item.setSizeHint(new_source.sizeHint())
-                self.setItemWidget(list_item, new_source)
+        # Delete widgets for sources not in the supplied sourcelist
+        deleted_uuids = []
+        sources_to_delete = [self.source_items[uuid] for uuid in self.source_items
+                             if uuid not in sources_to_update]
+        for source_item in sources_to_delete:
+            if source_item.isSelected():
+                self.setCurrentItem(None)
 
-        # Sort..!
+            source_widget = self.itemWidget(source_item)
+            self.takeItem(self.row(source_item))
+            if source_widget.source_uuid in self.source_items:
+                del self.source_items[source_widget.source_uuid]
+
+            deleted_uuids.append(source_widget.source_uuid)
+            source_widget.deleteLater()
+
+        # Update the remaining widgets
+        for i in range(self.count()):
+            source_widget = self.itemWidget(self.item(i))
+
+            if not source_widget:
+                continue
+
+            source_widget.update()
+
+        # Add widgets for new sources
+        for uuid in sources_to_add:
+            source_widget = SourceWidget(self.controller, sources_to_add[uuid])
+            source_item = SourceListWidgetItem(self)
+            source_item.setSizeHint(source_widget.sizeHint())
+            self.insertItem(0, source_item)
+            self.setItemWidget(source_item, source_widget)
+            self.source_items[uuid] = source_item
+
+        # Re-sort SourceList to make sure the most recently-updated sources appear at the top
         self.sortItems(Qt.DescendingOrder)
+
+        # Return uuids of source widgets that were deleted so we can later delete the corresponding
+        # conversation widgets
         return deleted_uuids
 
     def initial_update(self, sources: List[Source]):
@@ -851,22 +858,29 @@ class SourceList(QListWidget):
 
         def schedule_source_management(slice_size=slice_size):
             if not sources:
-                # Nothing more to do.
                 return
+
             # Process the remaining "slice_size" number of sources.
             sources_slice = sources[:slice_size]
             for source in sources_slice:
-                new_source = SourceWidget(self.controller, source)
-                self.source_widgets[source.uuid] = new_source
-                list_item = SourceListWidgetItem(self)
-                list_item.setSizeHint(new_source.sizeHint())
+                try:
+                    source_uuid = source.uuid
+                    source_widget = SourceWidget(self.controller, source)
+                    source_item = SourceListWidgetItem(self)
+                    source_item.setSizeHint(source_widget.sizeHint())
+                    self.insertItem(0, source_item)
+                    self.setItemWidget(source_item, source_widget)
+                    self.source_items[source_uuid] = source_item
+                except sqlalchemy.exc.InvalidRequestError as e:
+                    logger.debug(e)
 
-                self.insertItem(0, list_item)
-                self.setItemWidget(list_item, new_source)
+            # Re-sort SourceList to make sure the most recently-updated sources appear at the top
+            self.sortItems(Qt.DescendingOrder)
+
             # ATTENTION! 32 is an arbitrary number arrived at via
             # experimentation. It adds plenty of sources, but doesn't block
             # for a noticable amount of time.
-            new_slice_size = min(32, slice_size * 2)
+            new_slice_size = min(self.NUM_SOURCES_TO_ADD_AT_A_TIME, slice_size * 2)
             # Call add_source again for the remaining sources.
             self.add_source(sources[slice_size:], new_slice_size)
 
@@ -888,8 +902,8 @@ class SourceList(QListWidget):
         First try to get the source widget from the cache, then look for it in the SourceList.
         '''
         try:
-            source_widget = self.source_widgets[source_uuid]
-            return source_widget
+            source_item = self.source_items[source_uuid]
+            return self.itemWidget(source_item)
         except KeyError:
             pass
 
@@ -954,6 +968,7 @@ class SourceWidget(QWidget):
 
         # Store source
         self.source_uuid = source.uuid
+        self.last_updated = source.last_updated
         self.source = source
 
         # Set layout
@@ -1039,6 +1054,7 @@ class SourceWidget(QWidget):
         """
         try:
             self.controller.session.refresh(self.source)
+            self.last_updated = self.source.last_updated
             self.timestamp.setText(_(arrow.get(self.source.last_updated).format('DD MMM')))
             self.name.setText(self.source.journalist_designation)
 
@@ -1052,8 +1068,7 @@ class SourceWidget(QWidget):
                 self.paperclip.hide()
             self.star.update(self.source.is_starred)
         except sqlalchemy.exc.InvalidRequestError as e:
-            logger.error(f"Could not update SourceWidget for source {self.source_uuid}: {e}")
-            raise
+            logger.debug(f"Could not update SourceWidget for source {self.source_uuid}: {e}")
 
     def set_snippet(self, source_uuid: str, content: str):
         """
