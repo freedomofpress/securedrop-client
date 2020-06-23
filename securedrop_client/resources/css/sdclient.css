@@ -149,7 +149,7 @@
 }
 
 #MainView_view_holder {
-    min-width: 667;
+    min-width: 500;
     border: none;
     background-color: #f3f5f9;
 }
@@ -172,12 +172,10 @@
 }
 
 #EmptyConversationView_no_sources QLabel#EmptyConversationView_instructions {
-    min-width: 520px;
     max-width: 600px;
 }
 
 #EmptyConversationView_no_source_selected QLabel#EmptyConversationView_instructions {
-    min-width: 520px;
     max-width: 520px;
 }
 
@@ -185,7 +183,7 @@ QListView#SourceList {
     border: none;
     show-decoration-selected: 0;
     border-right: 3px solid #f3f5f9;
-    min-width: 540px;
+    min-width: 500px;
     max-width: 540px;
 }
 

@@ -250,7 +250,7 @@ def test_styles_for_left_pane(mocker, main_window):
 def test_styles_for_main_view(mocker, main_window):
     main_view = main_window.main_view
     assert 558 == main_view.height()
-    assert 667 == main_view.view_holder.width()
+    assert 500 == main_view.view_holder.width()
     # assert 'border: none;' for view_holder
     assert "#f3f5f9" == main_view.view_holder.palette().color(QPalette.Background).name()
 
@@ -261,7 +261,6 @@ def test_styles_for_main_view(mocker, main_window):
     assert QFont.DemiBold - 1 == no_sources_instructions.font().weight()
     assert 35 == no_sources_instructions.font().pixelSize()
     assert "#a5b3e9" == no_sources_instructions.palette().color(QPalette.Foreground).name()
-    assert 520 == no_sources_instructions.minimumWidth()
     assert 600 == no_sources_instructions.maximumWidth()
     no_sources_spacer1 = no_sources.layout().itemAt(1)
     assert 35 == no_sources_spacer1.minimumSize().height()
@@ -287,7 +286,6 @@ def test_styles_for_main_view(mocker, main_window):
     assert QFont.DemiBold - 1 == no_source_selected_instructions.font().weight()
     assert 35 == no_source_selected_instructions.font().pixelSize()
     assert "#a5b3e9" == no_source_selected_instructions.palette().color(QPalette.Foreground).name()
-    assert 520 == no_source_selected_instructions.minimumWidth()
     assert 520 == no_source_selected_instructions.maximumWidth()
     no_source_selected_spacer1 = no_source_selected.layout().itemAt(1)
     assert 35 == no_source_selected_spacer1.minimumSize().height()

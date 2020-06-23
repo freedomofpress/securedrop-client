@@ -419,7 +419,6 @@ class UserProfile(QLabel):
         self.user_icon_font.setLetterSpacing(QFont.AbsoluteSpacing, 0.58)
         self.user_icon.setFont(self.user_icon_font)
         self.user_icon.clicked.connect(self.user_button.click)
-        # Set cursor.
         self.user_icon.setCursor(QCursor(Qt.PointingHandCursor))
 
         # Add widgets to user auth layout
@@ -978,7 +977,7 @@ class SourceWidget(QWidget):
 
     SIDE_MARGIN = 10
     SOURCE_WIDGET_VERTICAL_MARGIN = 10
-    PREVIEW_WIDTH = 412
+    PREVIEW_WIDTH = 380
     PREVIEW_HEIGHT = 60
 
     def __init__(self, controller: Controller, source: Source):
@@ -1051,8 +1050,8 @@ class SourceWidget(QWidget):
         self.paperclip.setFixedSize(QSize(22, 22))
         self.timestamp = QLabel()
         self.timestamp.setObjectName("SourceWidget_timestamp")
-        metadata_layout.addWidget(self.paperclip, 0, Qt.AlignRight)
-        metadata_layout.addWidget(self.timestamp, 0, Qt.AlignRight)
+        metadata_layout.addWidget(self.paperclip, alignment=Qt.AlignRight)
+        metadata_layout.addWidget(self.timestamp, alignment=Qt.AlignRight)
         metadata_layout.addStretch()
 
         # Set up a source_widget
