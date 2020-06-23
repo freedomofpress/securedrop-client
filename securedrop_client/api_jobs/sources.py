@@ -1,7 +1,7 @@
 import logging
-import sdclientapi
 
-from sdclientapi import API, ServerConnectionError, RequestTimeoutError
+import sdclientapi
+from sdclientapi import API, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm.session import Session
 
 from securedrop_client.api_jobs.base import ApiJob
@@ -15,11 +15,11 @@ class DeleteSourceJob(ApiJob):
         self.uuid = uuid
 
     def call_api(self, api_client: API, session: Session) -> str:
-        '''
+        """
         Override ApiJob.
 
         Delete a source on the server
-        '''
+        """
         try:
             source_sdk_object = sdclientapi.Source(uuid=self.uuid)
             api_client.delete_source(source_sdk_object)
@@ -29,7 +29,8 @@ class DeleteSourceJob(ApiJob):
             raise
         except Exception as e:
             error_message = "Failed to delete source {uuid} due to {exception}".format(
-                uuid=self.uuid, exception=repr(e))
+                uuid=self.uuid, exception=repr(e)
+            )
             raise DeleteSourceJobException(error_message, self.uuid)
 
 

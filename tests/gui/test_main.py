@@ -6,7 +6,6 @@ from PyQt5.QtWidgets import QApplication, QHBoxLayout
 from securedrop_client.gui.main import Window
 from securedrop_client.resources import load_icon
 
-
 app = QApplication([])
 
 
@@ -14,16 +13,16 @@ def test_init(mocker):
     """
     Ensure the Window instance is setup in the expected manner.
     """
-    mock_li = mocker.MagicMock(return_value=load_icon('icon.png'))
+    mock_li = mocker.MagicMock(return_value=load_icon("icon.png"))
     mock_lo = mocker.MagicMock(return_value=QHBoxLayout())
     mock_lo().addWidget = mocker.MagicMock()
-    mocker.patch('securedrop_client.gui.main.load_icon', mock_li)
-    mock_lp = mocker.patch('securedrop_client.gui.main.LeftPane')
-    mock_mv = mocker.patch('securedrop_client.gui.main.MainView')
-    mocker.patch('securedrop_client.gui.main.QHBoxLayout', mock_lo)
-    mocker.patch('securedrop_client.gui.main.QMainWindow')
-    mocker.patch('securedrop_client.gui.main.Window.setStyleSheet')
-    load_css = mocker.patch('securedrop_client.gui.main.load_css')
+    mocker.patch("securedrop_client.gui.main.load_icon", mock_li)
+    mock_lp = mocker.patch("securedrop_client.gui.main.LeftPane")
+    mock_mv = mocker.patch("securedrop_client.gui.main.MainView")
+    mocker.patch("securedrop_client.gui.main.QHBoxLayout", mock_lo)
+    mocker.patch("securedrop_client.gui.main.QMainWindow")
+    mocker.patch("securedrop_client.gui.main.Window.setStyleSheet")
+    load_css = mocker.patch("securedrop_client.gui.main.load_css")
 
     w = Window()
 
@@ -31,7 +30,7 @@ def test_init(mocker):
     mock_lp.assert_called_once_with()
     mock_mv.assert_called_once_with(w.main_pane)
     assert mock_lo().addWidget.call_count == 2
-    load_css.assert_called_once_with('sdclient.css')
+    load_css.assert_called_once_with("sdclient.css")
 
 
 def test_setup(mocker):
@@ -95,7 +94,7 @@ def test_autosize_window(mocker):
     mock_sg = mocker.MagicMock()
     mock_sg.screenGeometry.return_value = mock_screen
     mock_qdw = mocker.MagicMock(return_value=mock_sg)
-    mocker.patch('securedrop_client.gui.main.QDesktopWidget', mock_qdw)
+    mocker.patch("securedrop_client.gui.main.QDesktopWidget", mock_qdw)
     w.autosize_window()
     w.resize.assert_called_once_with(1024, 768)
 
@@ -106,7 +105,7 @@ def test_show_login(mocker):
     """
     w = Window()
     w.controller = mocker.MagicMock()
-    mock_ld = mocker.patch('securedrop_client.gui.main.LoginDialog')
+    mock_ld = mocker.patch("securedrop_client.gui.main.LoginDialog")
 
     w.show_login()
 
@@ -121,14 +120,14 @@ def test_show_login_with_error_message(mocker):
     """
     w = Window()
     w.controller = mocker.MagicMock()
-    mock_ld = mocker.patch('securedrop_client.gui.main.LoginDialog')
+    mock_ld = mocker.patch("securedrop_client.gui.main.LoginDialog")
 
-    w.show_login('this-is-an-error-message-to-show-on-login-window')
+    w.show_login("this-is-an-error-message-to-show-on-login-window")
 
     mock_ld.assert_called_once_with(w)
     w.login_dialog.reset.assert_called_once_with()
     w.login_dialog.show.assert_called_once_with()
-    w.login_dialog.error.assert_called_once_with('this-is-an-error-message-to-show-on-login-window')
+    w.login_dialog.error.assert_called_once_with("this-is-an-error-message-to-show-on-login-window")
 
 
 def test_show_login_error(mocker):
@@ -140,9 +139,9 @@ def test_show_login_error(mocker):
     w.setup(mocker.MagicMock())
     w.login_dialog = mocker.MagicMock()
 
-    w.show_login_error('boom')
+    w.show_login_error("boom")
 
-    w.login_dialog.error.assert_called_once_with('boom')
+    w.login_dialog.error.assert_called_once_with("boom")
 
 
 def test_hide_login(mocker):
@@ -191,8 +190,8 @@ def test_update_error_status_default(mocker):
     """
     w = Window()
     w.top_pane = mocker.MagicMock()
-    w.update_error_status(message='test error message')
-    w.top_pane.update_error_status.assert_called_once_with('test error message', 10000)
+    w.update_error_status(message="test error message")
+    w.top_pane.update_error_status.assert_called_once_with("test error message", 10000)
 
 
 def test_update_error_status(mocker):
@@ -202,8 +201,8 @@ def test_update_error_status(mocker):
     """
     w = Window()
     w.top_pane = mocker.MagicMock()
-    w.update_error_status(message='test error message', duration=123)
-    w.top_pane.update_error_status.assert_called_once_with('test error message', 123)
+    w.update_error_status(message="test error message", duration=123)
+    w.top_pane.update_error_status.assert_called_once_with("test error message", 123)
 
 
 def test_update_activity_status_default(mocker):
@@ -213,8 +212,8 @@ def test_update_activity_status_default(mocker):
     """
     w = Window()
     w.top_pane = mocker.MagicMock()
-    w.update_activity_status(message='test message')
-    w.top_pane.update_activity_status.assert_called_once_with('test message', 0)
+    w.update_activity_status(message="test message")
+    w.top_pane.update_activity_status.assert_called_once_with("test message", 0)
 
 
 def test_update_activity_status(mocker):
@@ -224,8 +223,8 @@ def test_update_activity_status(mocker):
     """
     w = Window()
     w.top_pane = mocker.MagicMock()
-    w.update_activity_status(message='test message', duration=123)
-    w.top_pane.update_activity_status.assert_called_once_with('test message', 123)
+    w.update_activity_status(message="test message", duration=123)
+    w.top_pane.update_activity_status.assert_called_once_with("test message", 123)
 
 
 def test_clear_error_status(mocker):
@@ -249,7 +248,8 @@ def test_show_last_sync(mocker):
     updated_on = mocker.MagicMock()
     w.show_last_sync(updated_on)
     w.update_activity_status.assert_called_once_with(
-        'Last Refresh: {}'.format(updated_on.humanize()))
+        "Last Refresh: {}".format(updated_on.humanize())
+    )
 
 
 def test_show_last_sync_no_sync(mocker):
@@ -259,7 +259,7 @@ def test_show_last_sync_no_sync(mocker):
     w = Window()
     w.update_activity_status = mocker.MagicMock()
     w.show_last_sync(None)
-    w.update_activity_status.assert_called_once_with('Last Refresh: never')
+    w.update_activity_status.assert_called_once_with("Last Refresh: never")
 
 
 def test_set_logged_in_as(mocker):
@@ -269,9 +269,9 @@ def test_set_logged_in_as(mocker):
     w = Window()
     w.left_pane = mocker.MagicMock()
 
-    w.set_logged_in_as('test')
+    w.set_logged_in_as("test")
 
-    w.left_pane.set_logged_in_as.assert_called_once_with('test')
+    w.left_pane.set_logged_in_as.assert_called_once_with("test")
 
 
 def test_logout(mocker):
@@ -293,8 +293,7 @@ def test_clear_clipboard(mocker):
     Ensure we are clearing the system-level clipboard in the expected manner.
     """
     mock_clipboard = mocker.MagicMock()
-    mocker.patch('securedrop_client.gui.main.QApplication.clipboard',
-                 return_value=mock_clipboard)
+    mocker.patch("securedrop_client.gui.main.QApplication.clipboard", return_value=mock_clipboard)
     w = Window()
     w.clear_clipboard()
     mock_clipboard.clear.assert_called_once_with()

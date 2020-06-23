@@ -10,8 +10,7 @@ from PyQt5.QtCore import Qt
 
 from securedrop_client.gui.main import Window
 from securedrop_client.gui.widgets import LoginDialog
-
-from tests.conftest import USERNAME, PASSWORD, TIME_RENDER_CONV_VIEW
+from tests.conftest import PASSWORD, TIME_RENDER_CONV_VIEW, USERNAME
 
 
 def test_login_ensure_errors_displayed(qtbot, mocker):

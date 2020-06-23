@@ -16,31 +16,58 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import logging
-import arrow
 import html
+import logging
 import sys
-
 from gettext import gettext as _
-from typing import Dict, List, Union, Optional  # noqa: F401
+from typing import Dict, List, Optional, Union  # noqa: F401
 from uuid import uuid4
-from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QEvent, QTimer, QSize, pyqtBoundSignal, \
-    QObject
-from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient, QKeySequence, \
-    QCursor, QKeyEvent, QPixmap
-from PyQt5.QtWidgets import QApplication, QListWidget, QLabel, QWidget, QListWidgetItem, \
-    QHBoxLayout, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
-    QToolButton, QSizePolicy, QPlainTextEdit, QStatusBar, QGraphicsDropShadowEffect, QPushButton, \
-    QDialogButtonBox
+
+import arrow
 import sqlalchemy.orm.exc
+from PyQt5.QtCore import QEvent, QObject, QSize, Qt, QTimer, pyqtBoundSignal, pyqtSignal, pyqtSlot
+from PyQt5.QtGui import (
+    QBrush,
+    QColor,
+    QCursor,
+    QFont,
+    QIcon,
+    QKeyEvent,
+    QKeySequence,
+    QLinearGradient,
+    QPalette,
+    QPixmap,
+)
+from PyQt5.QtWidgets import (
+    QAction,
+    QApplication,
+    QDialog,
+    QDialogButtonBox,
+    QGraphicsDropShadowEffect,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QMenu,
+    QMessageBox,
+    QPlainTextEdit,
+    QPushButton,
+    QScrollArea,
+    QSizePolicy,
+    QStatusBar,
+    QToolButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from securedrop_client import __version__ as sd_version
-from securedrop_client.db import DraftReply, Source, Message, File, Reply, User
-from securedrop_client.storage import source_exists
-from securedrop_client.export import ExportStatus, ExportError
+from securedrop_client.db import DraftReply, File, Message, Reply, Source, User
+from securedrop_client.export import ExportError, ExportStatus
 from securedrop_client.gui import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_css, load_icon, load_image, load_movie
+from securedrop_client.storage import source_exists
 from securedrop_client.utils import humanize_filesize
 
 logger = logging.getLogger(__name__)
@@ -57,16 +84,16 @@ class TopPane(QWidget):
         # Fill the background with a gradient
         self.online_palette = QPalette()
         gradient = QLinearGradient(0, 0, 1553, 0)
-        gradient.setColorAt(0, QColor('#1573d8'))
-        gradient.setColorAt(0.22, QColor('#0060d3'))
-        gradient.setColorAt(1, QColor('#002c53'))
+        gradient.setColorAt(0, QColor("#1573d8"))
+        gradient.setColorAt(0.22, QColor("#0060d3"))
+        gradient.setColorAt(1, QColor("#002c53"))
         self.online_palette.setBrush(QPalette.Background, QBrush(gradient))
 
         self.offline_palette = QPalette()
         gradient = QLinearGradient(0, 0, 1553, 0)
-        gradient.setColorAt(0, QColor('#1e1e1e'))
-        gradient.setColorAt(0.22, QColor('#122d61'))
-        gradient.setColorAt(1, QColor('#0d4a81'))
+        gradient.setColorAt(0, QColor("#1e1e1e"))
+        gradient.setColorAt(0.22, QColor("#122d61"))
+        gradient.setColorAt(1, QColor("#0d4a81"))
         self.offline_palette.setBrush(QPalette.Background, QBrush(gradient))
 
         self.setPalette(self.offline_palette)
@@ -156,10 +183,11 @@ class LeftPane(QWidget):
         self.logo = QWidget()
         self.online_palette = QPalette()
         # the sd logo on the background image becomes more faded in offline mode
-        self.online_palette.setBrush(QPalette.Background, QBrush(load_image('left_pane.svg')))
+        self.online_palette.setBrush(QPalette.Background, QBrush(load_image("left_pane.svg")))
         self.offline_palette = QPalette()
-        self.offline_palette.setBrush(QPalette.Background,
-                                      QBrush(load_image('left_pane_offline.svg')))
+        self.offline_palette.setBrush(
+            QPalette.Background, QBrush(load_image("left_pane_offline.svg"))
+        )
         self.logo.setPalette(self.offline_palette)
         self.logo.setAutoFillBackground(True)
         self.logo.setMaximumHeight(884)
@@ -203,7 +231,7 @@ class SyncIcon(QLabel):
     def __init__(self):
         # Add svg images to button
         super().__init__()
-        self.setObjectName('SyncIcon')
+        self.setObjectName("SyncIcon")
         self.setFixedSize(QSize(24, 20))
         self.sync_animation = load_movie("sync_disabled.gif")
         self.sync_animation.setScaledSize(QSize(24, 20))
@@ -218,12 +246,12 @@ class SyncIcon(QLabel):
         self.controller.sync_events.connect(self._on_sync)
 
     def _on_sync(self, data):
-        if data == 'syncing':
+        if data == "syncing":
             self.sync_animation = load_movie("sync_active.gif")
             self.sync_animation.setScaledSize(QSize(24, 20))
             self.setMovie(self.sync_animation)
             self.sync_animation.start()
-        elif data == 'synced':
+        elif data == "synced":
             self.sync_animation = load_movie("sync.gif")
             self.sync_animation.setScaledSize(QSize(24, 20))
             self.setMovie(self.sync_animation)
@@ -252,7 +280,7 @@ class ActivityStatusBar(QStatusBar):
         super().__init__()
 
         # Set css id
-        self.setObjectName('ActivityStatusBar')
+        self.setObjectName("ActivityStatusBar")
 
         # Remove grip image at bottom right-hand corner
         self.setSizeGripEnabled(False)
@@ -283,17 +311,17 @@ class ErrorStatusBar(QWidget):
 
         # Error vertical bar
         self.vertical_bar = QWidget()
-        self.vertical_bar.setObjectName('ErrorStatusBar_vertical_bar')  # Set css id
+        self.vertical_bar.setObjectName("ErrorStatusBar_vertical_bar")  # Set css id
         self.vertical_bar.setFixedWidth(10)
 
         # Error icon
-        self.label = SvgLabel('error_icon.svg', svg_size=QSize(20, 20))
-        self.label.setObjectName('ErrorStatusBar_icon')  # Set css id
+        self.label = SvgLabel("error_icon.svg", svg_size=QSize(20, 20))
+        self.label.setObjectName("ErrorStatusBar_icon")  # Set css id
         self.label.setFixedWidth(42)
 
         # Error status bar
         self.status_bar = QStatusBar()
-        self.status_bar.setObjectName('ErrorStatusBar_status_bar')  # Set css id
+        self.status_bar.setObjectName("ErrorStatusBar_status_bar")  # Set css id
         self.status_bar.setSizeGripEnabled(False)
 
         # Add widgets to layout
@@ -361,11 +389,11 @@ class UserProfile(QLabel):
         super().__init__()
 
         # Set css id
-        self.setObjectName('UserProfile')
+        self.setObjectName("UserProfile")
 
         # Set background
         palette = QPalette()
-        palette.setBrush(QPalette.Background, QBrush(QColor('#0096DC')))
+        palette.setBrush(QPalette.Background, QBrush(QColor("#0096DC")))
         self.setPalette(palette)
         self.setAutoFillBackground(True)
         self.setMinimumHeight(20)
@@ -387,7 +415,7 @@ class UserProfile(QLabel):
 
         # User icon
         self.user_icon = UserIconLabel()
-        self.user_icon.setObjectName('UserProfile_icon')  # Set css id
+        self.user_icon.setObjectName("UserProfile_icon")  # Set css id
         self.user_icon.setFixedSize(QSize(30, 30))
         self.user_icon.setAlignment(Qt.AlignCenter)
         self.user_icon_font = QFont()
@@ -443,10 +471,10 @@ class UserButton(SvgPushButton):
     """
 
     def __init__(self):
-        super().__init__('dropdown_arrow.svg', svg_size=QSize(9, 6))
+        super().__init__("dropdown_arrow.svg", svg_size=QSize(9, 6))
 
         # Set css id
-        self.setObjectName('UserButton')
+        self.setObjectName("UserButton")
 
         self.setFixedHeight(30)
 
@@ -462,12 +490,12 @@ class UserButton(SvgPushButton):
         self.menu.setup(controller)
 
     def set_username(self, username):
-        formatted_name = _('{}').format(html.escape(username))
+        formatted_name = _("{}").format(html.escape(username))
         self.setText(formatted_name)
         if len(formatted_name) > 21:
             # The name will be truncated, so create a tooltip to display full
             # name if the mouse hovers over the widget.
-            self.setToolTip(_('{}').format(html.escape(username)))
+            self.setToolTip(_("{}").format(html.escape(username)))
 
 
 class UserMenu(QMenu):
@@ -478,7 +506,7 @@ class UserMenu(QMenu):
 
     def __init__(self):
         super().__init__()
-        self.logout = QAction(_('SIGN OUT'))
+        self.logout = QAction(_("SIGN OUT"))
         self.logout.setFont(QFont("OpenSans", 10))
         self.addAction(self.logout)
         self.logout.triggered.connect(self._on_logout_triggered)
@@ -502,10 +530,10 @@ class LoginButton(QPushButton):
     """
 
     def __init__(self):
-        super().__init__(_('SIGN IN'))
+        super().__init__(_("SIGN IN"))
 
         # Set css id
-        self.setObjectName('LoginButton')
+        self.setObjectName("LoginButton")
 
         self.setFixedHeight(40)
 
@@ -535,7 +563,7 @@ class MainView(QWidget):
         super().__init__(parent)
 
         # Set id and styles
-        self.setObjectName('MainView')
+        self.setObjectName("MainView")
 
         # Set layout
         self.layout = QHBoxLayout(self)
@@ -551,7 +579,7 @@ class MainView(QWidget):
 
         # Create widgets
         self.view_holder = QWidget()
-        self.view_holder.setObjectName('MainView_view_holder')
+        self.view_holder.setObjectName("MainView_view_holder")
         self.view_layout = QVBoxLayout()
         self.view_holder.setLayout(self.view_layout)
         self.view_layout.setContentsMargins(0, 0, 0, 0)
@@ -610,7 +638,7 @@ class MainView(QWidget):
         # Try to get the SourceConversationWrapper from the persistent dict,
         # else we create it.
         try:
-            logger.debug('Drawing source conversation for {}'.format(source.uuid))
+            logger.debug("Drawing source conversation for {}".format(source.uuid))
             conversation_wrapper = self.source_conversations[source.uuid]
 
             # Redraw the conversation view such that new messages, replies, files appear.
@@ -627,12 +655,12 @@ class MainView(QWidget):
         and remove the reference to it in self.source_conversations
         """
         try:
-            logger.debug('Deleting SourceConversationWrapper for {}'.format(source_uuid))
+            logger.debug("Deleting SourceConversationWrapper for {}".format(source_uuid))
             conversation_wrapper = self.source_conversations[source_uuid]
             conversation_wrapper.deleteLater()
             del self.source_conversations[source_uuid]
         except KeyError:
-            logger.debug('No SourceConversationWrapper for {} to delete'.format(source_uuid))
+            logger.debug("No SourceConversationWrapper for {} to delete".format(source_uuid))
 
     def set_conversation(self, widget):
         """
@@ -656,7 +684,7 @@ class EmptyConversationView(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.setObjectName('EmptyConversationView')
+        self.setObjectName("EmptyConversationView")
 
         # Set layout
         layout = QHBoxLayout()
@@ -665,17 +693,19 @@ class EmptyConversationView(QWidget):
 
         # Create widgets
         self.no_sources = QWidget()
-        self.no_sources.setObjectName('EmptyConversationView_no_sources')
+        self.no_sources.setObjectName("EmptyConversationView_no_sources")
         no_sources_layout = QVBoxLayout()
         self.no_sources.setLayout(no_sources_layout)
-        no_sources_instructions = QLabel(_('Nothing to see just yet!'))
-        no_sources_instructions.setObjectName('EmptyConversationView_instructions')
+        no_sources_instructions = QLabel(_("Nothing to see just yet!"))
+        no_sources_instructions.setObjectName("EmptyConversationView_instructions")
         no_sources_instructions.setWordWrap(True)
         no_sources_instruction_details1 = QLabel(
-            _('Source submissions will be listed to the left, once downloaded and decrypted.'))
+            _("Source submissions will be listed to the left, once downloaded and decrypted.")
+        )
         no_sources_instruction_details1.setWordWrap(True)
         no_sources_instruction_details2 = QLabel(
-            _('This is where you will read messages, reply to sources, and work with files.'))
+            _("This is where you will read messages, reply to sources, and work with files.")
+        )
         no_sources_instruction_details2.setWordWrap(True)
         no_sources_layout.addWidget(no_sources_instructions)
         no_sources_layout.addSpacing(self.NEWLINE_HEIGHT_PX)
@@ -684,38 +714,38 @@ class EmptyConversationView(QWidget):
         no_sources_layout.addWidget(no_sources_instruction_details2)
 
         self.no_source_selected = QWidget()
-        self.no_source_selected.setObjectName('EmptyConversationView_no_source_selected')
+        self.no_source_selected.setObjectName("EmptyConversationView_no_source_selected")
         no_source_selected_layout = QVBoxLayout()
         self.no_source_selected.setLayout(no_source_selected_layout)
-        no_source_selected_instructions = QLabel(_('Select a source from the list, to:'))
-        no_source_selected_instructions.setObjectName('EmptyConversationView_instructions')
+        no_source_selected_instructions = QLabel(_("Select a source from the list, to:"))
+        no_source_selected_instructions.setObjectName("EmptyConversationView_instructions")
         no_source_selected_instructions.setWordWrap(True)
         bullet1 = QWidget()
         bullet1_layout = QHBoxLayout()
         bullet1_layout.setContentsMargins(0, 0, 0, 0)
         bullet1.setLayout(bullet1_layout)
-        bullet1_bullet = QLabel('·')
-        bullet1_bullet.setObjectName('EmptyConversationView_bullet')
+        bullet1_bullet = QLabel("·")
+        bullet1_bullet.setObjectName("EmptyConversationView_bullet")
         bullet1_layout.addWidget(bullet1_bullet)
-        bullet1_layout.addWidget(QLabel(_('Read a conversation')))
+        bullet1_layout.addWidget(QLabel(_("Read a conversation")))
         bullet1_layout.addStretch()
         bullet2 = QWidget()
         bullet2_layout = QHBoxLayout()
         bullet2_layout.setContentsMargins(0, 0, 0, 0)
         bullet2.setLayout(bullet2_layout)
-        bullet2_bullet = QLabel('·')
-        bullet2_bullet.setObjectName('EmptyConversationView_bullet')
+        bullet2_bullet = QLabel("·")
+        bullet2_bullet.setObjectName("EmptyConversationView_bullet")
         bullet2_layout.addWidget(bullet2_bullet)
-        bullet2_layout.addWidget(QLabel(_('View or retrieve files')))
+        bullet2_layout.addWidget(QLabel(_("View or retrieve files")))
         bullet2_layout.addStretch()
         bullet3 = QWidget()
         bullet3_layout = QHBoxLayout()
         bullet3_layout.setContentsMargins(0, 0, 0, 0)
         bullet3.setLayout(bullet3_layout)
-        bullet3_bullet = QLabel('·')
-        bullet3_bullet.setObjectName('EmptyConversationView_bullet')
+        bullet3_bullet = QLabel("·")
+        bullet3_bullet.setObjectName("EmptyConversationView_bullet")
         bullet3_layout.addWidget(bullet3_bullet)
-        bullet3_layout.addWidget(QLabel(_('Send a response')))
+        bullet3_layout.addWidget(QLabel(_("Send a response")))
         bullet3_layout.addStretch()
         no_source_selected_layout.addWidget(no_source_selected_instructions)
         no_source_selected_layout.addSpacing(self.NEWLINE_HEIGHT_PX)
@@ -738,7 +768,6 @@ class EmptyConversationView(QWidget):
 
 
 class SourceListWidgetItem(QListWidgetItem):
-
     def __lt__(self, other):
         """
         Used for ordering widgets by timestamp of last interaction.
@@ -763,7 +792,7 @@ class SourceList(QListWidget):
     def __init__(self):
         super().__init__()
 
-        self.setObjectName('SourceList')
+        self.setObjectName("SourceList")
         self.setFixedWidth(540)
         self.setUniformItemSizes(True)
 
@@ -805,8 +834,9 @@ class SourceList(QListWidget):
 
         # Delete widgets for sources not in the supplied sourcelist
         deleted_uuids = []
-        sources_to_delete = [self.source_items[uuid] for uuid in self.source_items
-                             if uuid not in sources_to_update]
+        sources_to_delete = [
+            self.source_items[uuid] for uuid in self.source_items if uuid not in sources_to_update
+        ]
         for source_item in sources_to_delete:
             if source_item.isSelected():
                 self.setCurrentItem(None)
@@ -898,9 +928,9 @@ class SourceList(QListWidget):
             return source_widget.source
 
     def get_source_widget(self, source_uuid: str) -> Optional[QListWidget]:
-        '''
+        """
         First try to get the source widget from the cache, then look for it in the SourceList.
-        '''
+        """
         try:
             source_item = self.source_items[source_uuid]
             return self.itemWidget(source_item)
@@ -917,12 +947,12 @@ class SourceList(QListWidget):
 
     @pyqtSlot(str, str, str)
     def set_snippet(self, source_uuid: str, collection_item_uuid: str, content: str) -> None:
-        '''
+        """
         Set the source widget's preview snippet with the supplied content.
 
         Note: The signal's `collection_item_uuid` is not needed for setting the preview snippet. It
         is used by other signal handlers.
-        '''
+        """
         source_widget = self.get_source_widget(source_uuid)
         if source_widget:
             source_widget.set_snippet(source_uuid, content)
@@ -987,7 +1017,7 @@ class SourceWidget(QWidget):
 
         # Set up gutter
         self.gutter = QWidget()
-        self.gutter.setObjectName('SourceWidget_gutter')
+        self.gutter.setObjectName("SourceWidget_gutter")
         self.gutter.setSizePolicy(retain_space)
         gutter_layout = QVBoxLayout(self.gutter)
         gutter_layout.setContentsMargins(0, 0, 0, 0)
@@ -998,19 +1028,20 @@ class SourceWidget(QWidget):
 
         # Set up summary
         self.summary = QWidget()
-        self.summary.setObjectName('SourceWidget_summary')
+        self.summary.setObjectName("SourceWidget_summary")
         summary_layout = QVBoxLayout(self.summary)
         summary_layout.setContentsMargins(0, 0, 0, 0)
         summary_layout.setSpacing(0)
         self.name = QLabel()
-        self.name.setObjectName('SourceWidget_name')
+        self.name.setObjectName("SourceWidget_name")
         self.preview = SecureQLabel(max_length=self.PREVIEW_WIDTH)
-        self.preview.setObjectName('SourceWidget_preview')
+        self.preview.setObjectName("SourceWidget_preview")
         self.preview.setFixedSize(QSize(self.PREVIEW_WIDTH, self.PREVIEW_HEIGHT))
-        self.waiting_delete_confirmation = QLabel('Deletion in progress')
-        self.waiting_delete_confirmation.setObjectName('SourceWidget_source_deleted')
+        self.waiting_delete_confirmation = QLabel("Deletion in progress")
+        self.waiting_delete_confirmation.setObjectName("SourceWidget_source_deleted")
         self.waiting_delete_confirmation.setFixedSize(
-            QSize(self.PREVIEW_WIDTH, self.PREVIEW_HEIGHT))
+            QSize(self.PREVIEW_WIDTH, self.PREVIEW_HEIGHT)
+        )
         self.waiting_delete_confirmation.hide()
         summary_layout.addWidget(self.name)
         summary_layout.addWidget(self.preview)
@@ -1018,26 +1049,27 @@ class SourceWidget(QWidget):
 
         # Set up metadata
         self.metadata = QWidget()
-        self.metadata.setObjectName('SourceWidget_metadata')
+        self.metadata.setObjectName("SourceWidget_metadata")
         self.metadata.setSizePolicy(retain_space)
         metadata_layout = QVBoxLayout(self.metadata)
         metadata_layout.setContentsMargins(0, 0, 0, 0)
         metadata_layout.setSpacing(0)
-        self.paperclip = SvgLabel('paperclip.svg', QSize(18, 18))  # Set to size provided in the svg
-        self.paperclip.setObjectName('SourceWidget_paperclip')
+        self.paperclip = SvgLabel("paperclip.svg", QSize(18, 18))  # Set to size provided in the svg
+        self.paperclip.setObjectName("SourceWidget_paperclip")
         self.paperclip.setFixedSize(QSize(22, 22))
         self.timestamp = QLabel()
-        self.timestamp.setObjectName('SourceWidget_timestamp')
+        self.timestamp.setObjectName("SourceWidget_timestamp")
         metadata_layout.addWidget(self.paperclip, 0, Qt.AlignRight)
         metadata_layout.addWidget(self.timestamp, 0, Qt.AlignRight)
         metadata_layout.addStretch()
 
         # Set up a source_widget
         self.source_widget = QWidget()
-        self.source_widget.setObjectName('SourceWidget_container')
+        self.source_widget.setObjectName("SourceWidget_container")
         source_widget_layout = QHBoxLayout(self.source_widget)
         source_widget_layout.setContentsMargins(
-            0, self.SOURCE_WIDGET_VERTICAL_MARGIN, 0, self.SOURCE_WIDGET_VERTICAL_MARGIN)
+            0, self.SOURCE_WIDGET_VERTICAL_MARGIN, 0, self.SOURCE_WIDGET_VERTICAL_MARGIN
+        )
         source_widget_layout.setSpacing(0)
         source_widget_layout.addWidget(self.gutter)
         source_widget_layout.addWidget(self.summary)
@@ -1055,11 +1087,11 @@ class SourceWidget(QWidget):
         try:
             self.controller.session.refresh(self.source)
             self.last_updated = self.source.last_updated
-            self.timestamp.setText(_(arrow.get(self.source.last_updated).format('DD MMM')))
+            self.timestamp.setText(_(arrow.get(self.source.last_updated).format("DD MMM")))
             self.name.setText(self.source.journalist_designation)
 
             if not self.source.server_collection:
-                self.set_snippet(self.source_uuid, '')
+                self.set_snippet(self.source_uuid, "")
             else:
                 last_collection_obj = self.source.server_collection[-1]
                 self.set_snippet(self.source_uuid, str(last_collection_obj))
@@ -1110,7 +1142,7 @@ class StarToggleButton(SvgToggleButton):
     """
 
     def __init__(self, controller: Controller, source_uuid: str, is_starred: bool):
-        super().__init__(on='star_on.svg', off='star_off.svg', svg_size=QSize(16, 16))
+        super().__init__(on="star_on.svg", off="star_off.svg", svg_size=QSize(16, 16))
 
         self.controller = controller
         self.source_uuid = source_uuid
@@ -1123,7 +1155,7 @@ class StarToggleButton(SvgToggleButton):
         self.controller.star_update_successful.connect(self.on_star_update_successful)
         self.installEventFilter(self)
 
-        self.setObjectName('StarToggleButton')
+        self.setObjectName("StarToggleButton")
         self.setFixedSize(QSize(20, 20))
 
         self.pressed.connect(self.on_pressed)
@@ -1146,7 +1178,7 @@ class StarToggleButton(SvgToggleButton):
         # the source as starred. We could instead disable the button, which will continue to show
         # the star as checked, but Qt will also gray out the star, which we don't want.
         if self.is_starred:
-            self.set_icon(on='star_on.svg', off='star_on.svg')
+            self.set_icon(on="star_on.svg", off="star_on.svg")
         self.setCheckable(False)
 
     def enable_toggle(self):
@@ -1161,7 +1193,7 @@ class StarToggleButton(SvgToggleButton):
         self.pressed.disconnect()
         self.pressed.connect(self.on_pressed)
         self.setCheckable(True)
-        self.set_icon(on='star_on.svg', off='star_off.svg')  # Undo icon change from disable_toggle
+        self.set_icon(on="star_on.svg", off="star_off.svg")  # Undo icon change from disable_toggle
 
     def eventFilter(self, obj, event):
         """
@@ -1172,9 +1204,9 @@ class StarToggleButton(SvgToggleButton):
 
         t = event.type()
         if t == QEvent.HoverEnter:
-            self.setIcon(load_icon('star_hover.svg'))
+            self.setIcon(load_icon("star_hover.svg"))
         elif t == QEvent.HoverLeave or t == QEvent.MouseButtonPress:
-            self.set_icon(on='star_on.svg', off='star_off.svg')
+            self.set_icon(on="star_on.svg", off="star_off.svg")
 
         return QObject.event(obj, event)
 
@@ -1268,10 +1300,11 @@ class DeleteSourceMessageBox:
         """
         message = self._construct_message(self.source)
         reply = QMessageBox.question(
-            None, "", _(message), QMessageBox.Cancel | QMessageBox.Yes, QMessageBox.Cancel)
+            None, "", _(message), QMessageBox.Cancel | QMessageBox.Yes, QMessageBox.Cancel
+        )
 
         if reply == QMessageBox.Yes:
-            logger.debug(f'Deleting source {self.source_uuid}')
+            logger.debug(f"Deleting source {self.source_uuid}")
             self.controller.delete_source(self.source)
 
     def _construct_message(self, source: Source) -> str:
@@ -1294,7 +1327,7 @@ class DeleteSourceMessageBox:
             "<small>This Source will no longer be able to correspond",
             "through the log-in tied to this account.</small>",
         )
-        message = ' '.join(message_tuple)
+        message = " ".join(message_tuple)
         return message
 
 
@@ -1310,11 +1343,11 @@ class LoginOfflineLink(QLabel):
         super().__init__()
 
         # Set css id
-        self.setObjectName('LoginOfflineLink')
+        self.setObjectName("LoginOfflineLink")
 
         self.setFixedSize(QSize(120, 22))
 
-        self.setText(_('USE OFFLINE'))
+        self.setText(_("USE OFFLINE"))
 
     def mouseReleaseEvent(self, event):
         self.clicked.emit()
@@ -1326,10 +1359,10 @@ class SignInButton(QPushButton):
     """
 
     def __init__(self):
-        super().__init__(_('SIGN IN'))
+        super().__init__(_("SIGN IN"))
 
         # Set css id
-        self.setObjectName('SignInButton')
+        self.setObjectName("SignInButton")
 
         self.setFixedHeight(40)
         self.setFixedWidth(140)
@@ -1341,7 +1374,7 @@ class SignInButton(QPushButton):
         effect = QGraphicsDropShadowEffect(self)
         effect.setOffset(0, 1)
         effect.setBlurRadius(8)
-        effect.setColor(QColor('#aa000000'))
+        effect.setColor(QColor("#aa000000"))
         self.setGraphicsEffect(effect)
         self.update()
 
@@ -1354,7 +1387,7 @@ class LoginErrorBar(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.setObjectName('LoginErrorBar')
+        self.setObjectName("LoginErrorBar")
 
         # Set layout
         layout = QHBoxLayout(self)
@@ -1370,13 +1403,13 @@ class LoginErrorBar(QWidget):
         self.setSizePolicy(retain_space)
 
         # Error icon
-        self.error_icon = SvgLabel('error_icon_white.svg', svg_size=QSize(18, 18))
-        self.error_icon.setObjectName('LoginErrorBar_icon')
+        self.error_icon = SvgLabel("error_icon_white.svg", svg_size=QSize(18, 18))
+        self.error_icon.setObjectName("LoginErrorBar_icon")
         self.error_icon.setFixedWidth(42)
 
         # Error status bar
         self.error_status_bar = SecureQLabel(wordwrap=False)
-        self.error_status_bar.setObjectName('LoginErrorBar_status_bar')
+        self.error_status_bar.setObjectName("LoginErrorBar_status_bar")
         self.setFixedHeight(42)
 
         # Create space ths size of the error icon to keep the error message centered
@@ -1394,7 +1427,7 @@ class LoginErrorBar(QWidget):
         self.error_status_bar.setText(message)
 
     def clear_message(self):
-        self.error_status_bar.setText('')
+        self.error_status_bar.setText("")
         self.hide()
 
 
@@ -1453,7 +1486,7 @@ class LoginDialog(QDialog):
         # Set background
         self.setAutoFillBackground(True)
         palette = QPalette()
-        palette.setBrush(QPalette.Background, QBrush(load_image('login_bg.svg')))
+        palette.setBrush(QPalette.Background, QBrush(load_image("login_bg.svg")))
         self.setPalette(palette)
         self.setFixedSize(QSize(596, 671))  # Set to size provided in the login_bg.svg file
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
@@ -1464,7 +1497,7 @@ class LoginDialog(QDialog):
         # Create form widget
         form = QWidget()
 
-        form.setObjectName('LoginDialog_form')
+        form.setObjectName("LoginDialog_form")
 
         form_layout = QVBoxLayout()
         form.setLayout(form_layout)
@@ -1472,13 +1505,13 @@ class LoginDialog(QDialog):
         form_layout.setContentsMargins(80, 0, 80, 0)
         form_layout.setSpacing(8)
 
-        self.username_label = QLabel(_('Username'))
+        self.username_label = QLabel(_("Username"))
         self.username_field = QLineEdit()
 
-        self.password_label = QLabel(_('Passphrase'))
+        self.password_label = QLabel(_("Passphrase"))
         self.password_field = PasswordEdit(self)
 
-        self.tfa_label = QLabel(_('Two-Factor Code'))
+        self.tfa_label = QLabel(_("Two-Factor Code"))
         self.tfa_field = QLineEdit()
 
         buttons = QWidget()
@@ -1508,7 +1541,7 @@ class LoginDialog(QDialog):
         application_version.setLayout(application_version_layout)
         application_version_label = QLabel(_("SecureDrop Client v") + sd_version)
         application_version_label.setAlignment(Qt.AlignHCenter)
-        application_version_label.setObjectName('LoginDialog_app_version_label')
+        application_version_label.setObjectName("LoginDialog_app_version_label")
         application_version_layout.addWidget(application_version_label)
 
         # Add widgets
@@ -1546,10 +1579,10 @@ class LoginDialog(QDialog):
         """
         Resets the login form to the default state.
         """
-        self.username_field.setText('')
+        self.username_field.setText("")
         self.username_field.setFocus()
-        self.password_field.setText('')
-        self.tfa_field.setText('')
+        self.password_field.setText("")
+        self.tfa_field.setText("")
         self.setDisabled(False)
         self.error_bar.clear_message()
 
@@ -1572,20 +1605,25 @@ class LoginDialog(QDialog):
         self.setDisabled(True)
         username = self.username_field.text()
         password = self.password_field.text()
-        tfa_token = self.tfa_field.text().replace(' ', '')
+        tfa_token = self.tfa_field.text().replace(" ", "")
         if username and password and tfa_token:
             # Validate username
             if len(username) < self.MIN_JOURNALIST_USERNAME:
                 self.setDisabled(False)
-                self.error(_('That username won\'t work.\n'
-                             'It should be at least 3 characters long.'))
+                self.error(
+                    _("That username won't work.\n" "It should be at least 3 characters long.")
+                )
                 return
 
             # Validate password
             if len(password) < self.MIN_PASSWORD_LEN or len(password) > self.MAX_PASSWORD_LEN:
                 self.setDisabled(False)
-                self.error(_('That passphrase won\'t work.\n'
-                             'It should be between 14 and 128 characters long.'))
+                self.error(
+                    _(
+                        "That passphrase won't work.\n"
+                        "It should be between 14 and 128 characters long."
+                    )
+                )
                 return
 
             # Validate 2FA token
@@ -1593,15 +1631,15 @@ class LoginDialog(QDialog):
                 int(tfa_token)
             except ValueError:
                 self.setDisabled(False)
-                self.error(_('That two-factor code won\'t work.\n'
-                             'It should only contain numerals.'))
+                self.error(
+                    _("That two-factor code won't work.\n" "It should only contain numerals.")
+                )
                 return
             self.submit.setText(_("SIGNING IN"))
             self.controller.login(username, password, tfa_token)
         else:
             self.setDisabled(False)
-            self.error(_('Please enter a username, passphrase and '
-                         'two-factor code.'))
+            self.error(_("Please enter a username, passphrase and " "two-factor code."))
 
 
 class SpeechBubble(QWidget):
@@ -1610,14 +1648,21 @@ class SpeechBubble(QWidget):
     and journalist.
     """
 
-    MESSAGE_CSS = load_css('speech_bubble_message.css')
-    STATUS_BAR_CSS = load_css('speech_bubble_status_bar.css')
+    MESSAGE_CSS = load_css("speech_bubble_message.css")
+    STATUS_BAR_CSS = load_css("speech_bubble_status_bar.css")
 
     TOP_MARGIN = 28
     BOTTOM_MARGIN = 10
 
-    def __init__(self, message_uuid: str, text: str, update_signal,
-                 download_error_signal, index: int, error: bool = False) -> None:
+    def __init__(
+        self,
+        message_uuid: str,
+        text: str,
+        update_signal,
+        download_error_signal,
+        index: int,
+        error: bool = False,
+    ) -> None:
         super().__init__()
         self.uuid = message_uuid
         self.index = index
@@ -1632,17 +1677,17 @@ class SpeechBubble(QWidget):
 
         # Message box
         self.message = SecureQLabel(text)
-        self.message.setObjectName('SpeechBubble_message')
+        self.message.setObjectName("SpeechBubble_message")
         self.message.setStyleSheet(self.MESSAGE_CSS)
 
         # Color bar
         self.color_bar = QWidget()
-        self.color_bar.setObjectName('SpeechBubble_status_bar')
+        self.color_bar.setObjectName("SpeechBubble_status_bar")
         self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
 
         # Speech bubble
         self.speech_bubble = QWidget()
-        self.speech_bubble.setObjectName('SpeechBubble_container')
+        self.speech_bubble.setObjectName("SpeechBubble_container")
         speech_bubble_layout = QVBoxLayout()
         self.speech_bubble.setLayout(speech_bubble_layout)
         speech_bubble_layout.addWidget(self.message)
@@ -1694,19 +1739,19 @@ class SpeechBubble(QWidget):
             self.set_error_styles()
 
     def set_normal_styles(self):
-        self.message.setStyleSheet('')
-        self.message.setObjectName('SpeechBubble_message')
+        self.message.setStyleSheet("")
+        self.message.setObjectName("SpeechBubble_message")
         self.message.setStyleSheet(self.MESSAGE_CSS)
-        self.color_bar.setStyleSheet('')
-        self.color_bar.setObjectName('SpeechBubble_status_bar')
+        self.color_bar.setStyleSheet("")
+        self.color_bar.setObjectName("SpeechBubble_status_bar")
         self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
 
     def set_error_styles(self):
-        self.message.setStyleSheet('')
-        self.message.setObjectName('SpeechBubble_message_decryption_error')
+        self.message.setStyleSheet("")
+        self.message.setObjectName("SpeechBubble_message_decryption_error")
         self.message.setStyleSheet(self.MESSAGE_CSS)
-        self.color_bar.setStyleSheet('')
-        self.color_bar.setObjectName('SpeechBubble_status_bar_decryption_error')
+        self.color_bar.setStyleSheet("")
+        self.color_bar.setObjectName("SpeechBubble_status_bar_decryption_error")
         self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
 
 
@@ -1715,8 +1760,15 @@ class MessageWidget(SpeechBubble):
     Represents an incoming message from the source.
     """
 
-    def __init__(self, message_uuid: str, message: str, update_signal,
-                 download_error_signal, index: int, error: bool = False) -> None:
+    def __init__(
+        self,
+        message_uuid: str,
+        message: str,
+        update_signal,
+        download_error_signal,
+        index: int,
+        error: bool = False,
+    ) -> None:
         super().__init__(message_uuid, message, update_signal, download_error_signal, index, error)
 
 
@@ -1725,8 +1777,8 @@ class ReplyWidget(SpeechBubble):
     Represents a reply to a source.
     """
 
-    MESSAGE_CSS = load_css('reply_message.css')
-    STATUS_BAR_CSS = load_css('reply_status_bar.css')
+    MESSAGE_CSS = load_css("reply_message.css")
+    STATUS_BAR_CSS = load_css("reply_status_bar.css")
 
     def __init__(
         self,
@@ -1748,9 +1800,9 @@ class ReplyWidget(SpeechBubble):
         error_layout.setContentsMargins(0, 0, 0, 0)
         error_layout.setSpacing(4)
         self.error.setLayout(error_layout)
-        error_message = SecureQLabel('Failed to send', wordwrap=False)
-        error_message.setObjectName('ReplyWidget_failed_to_send_text')
-        error_icon = SvgLabel('error_icon.svg', svg_size=QSize(12, 12))
+        error_message = SecureQLabel("Failed to send", wordwrap=False)
+        error_message.setObjectName("ReplyWidget_failed_to_send_text")
+        error_icon = SvgLabel("error_icon.svg", svg_size=QSize(12, 12))
         error_icon.setFixedWidth(12)
         error_layout.addWidget(error_message)
         error_layout.addWidget(error_icon)
@@ -1764,15 +1816,15 @@ class ReplyWidget(SpeechBubble):
         self._set_reply_state(reply_status)
 
     def _set_reply_state(self, status: str) -> None:
-        logger.debug(f'Setting ReplyWidget state: {status}')
+        logger.debug(f"Setting ReplyWidget state: {status}")
 
-        if status == 'SUCCEEDED':
+        if status == "SUCCEEDED":
             self.set_normal_styles()
             self.error.hide()
-        elif status == 'FAILED':
+        elif status == "FAILED":
             self.set_failed_styles()
             self.error.show()
-        elif status == 'PENDING':
+        elif status == "PENDING":
             self.set_pending_styles()
 
     @pyqtSlot(str, str, str)
@@ -1782,7 +1834,7 @@ class ReplyWidget(SpeechBubble):
         signal matches the uuid of this widget.
         """
         if message_uuid == self.uuid:
-            self._set_reply_state('SUCCEEDED')
+            self._set_reply_state("SUCCEEDED")
 
     @pyqtSlot(str)
     def _on_reply_failure(self, message_uuid: str) -> None:
@@ -1791,30 +1843,30 @@ class ReplyWidget(SpeechBubble):
         signal matches the uuid of this widget.
         """
         if message_uuid == self.uuid:
-            self._set_reply_state('FAILED')
+            self._set_reply_state("FAILED")
 
     def set_normal_styles(self):
-        self.message.setStyleSheet('')
-        self.message.setObjectName('ReplyWidget_message')
+        self.message.setStyleSheet("")
+        self.message.setObjectName("ReplyWidget_message")
         self.message.setStyleSheet(self.MESSAGE_CSS)
-        self.color_bar.setStyleSheet('')
-        self.color_bar.setObjectName('ReplyWidget_status_bar')
+        self.color_bar.setStyleSheet("")
+        self.color_bar.setObjectName("ReplyWidget_status_bar")
         self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
 
     def set_failed_styles(self):
-        self.message.setStyleSheet('')
-        self.message.setObjectName('ReplyWidget_message_failed')
+        self.message.setStyleSheet("")
+        self.message.setObjectName("ReplyWidget_message_failed")
         self.message.setStyleSheet(self.MESSAGE_CSS)
-        self.color_bar.setStyleSheet('')
-        self.color_bar.setObjectName('ReplyWidget_status_bar_failed')
+        self.color_bar.setStyleSheet("")
+        self.color_bar.setObjectName("ReplyWidget_status_bar_failed")
         self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
 
     def set_pending_styles(self):
-        self.message.setStyleSheet('')
-        self.message.setObjectName('ReplyWidget_message_pending')
+        self.message.setStyleSheet("")
+        self.message.setObjectName("ReplyWidget_message_pending")
         self.message.setStyleSheet(self.MESSAGE_CSS)
-        self.color_bar.setStyleSheet('')
-        self.color_bar.setObjectName('ReplyWidget_status_bar_pending')
+        self.color_bar.setStyleSheet("")
+        self.color_bar.setObjectName("ReplyWidget_status_bar_pending")
         self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
 
 
@@ -1823,7 +1875,7 @@ class FileWidget(QWidget):
     Represents a file.
     """
 
-    DOWNLOAD_BUTTON_CSS = load_css('file_download_button.css')
+    DOWNLOAD_BUTTON_CSS = load_css("file_download_button.css")
 
     TOP_MARGIN = 4
     BOTTOM_MARGIN = 14
@@ -1851,12 +1903,13 @@ class FileWidget(QWidget):
         self.index = index
         self.downloading = False
 
-        self.setObjectName('FileWidget')
+        self.setObjectName("FileWidget")
         file_description_font = QFont()
         file_description_font.setLetterSpacing(QFont.AbsoluteSpacing, self.FILE_FONT_SPACING)
         self.file_buttons_font = QFont()
         self.file_buttons_font.setLetterSpacing(
-            QFont.AbsoluteSpacing, self.FILE_OPTIONS_FONT_SPACING)
+            QFont.AbsoluteSpacing, self.FILE_OPTIONS_FONT_SPACING
+        )
 
         # Set layout
         layout = QHBoxLayout()
@@ -1868,27 +1921,27 @@ class FileWidget(QWidget):
 
         # File options: download, export, print
         self.file_options = QWidget()
-        self.file_options.setObjectName('FileWidget_file_options')
+        self.file_options.setObjectName("FileWidget_file_options")
         file_options_layout = QHBoxLayout()
         self.file_options.setLayout(file_options_layout)
         file_options_layout.setContentsMargins(0, 0, 0, 0)
         file_options_layout.setSpacing(self.FILE_OPTIONS_LAYOUT_SPACING)
         file_options_layout.setAlignment(Qt.AlignLeft)
-        self.download_button = QPushButton(_(' DOWNLOAD'))
-        self.download_button.setObjectName('FileWidget_download_button')
+        self.download_button = QPushButton(_(" DOWNLOAD"))
+        self.download_button.setObjectName("FileWidget_download_button")
         self.download_button.setStyleSheet(self.DOWNLOAD_BUTTON_CSS)
         self.download_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        self.download_button.setIcon(load_icon('download_file.svg'))
+        self.download_button.setIcon(load_icon("download_file.svg"))
         self.download_button.setFont(self.file_buttons_font)
         self.download_button.setCursor(QCursor(Qt.PointingHandCursor))
         self.download_animation = load_movie("download_file.gif")
-        self.export_button = QPushButton(_('EXPORT'))
-        self.export_button.setObjectName('FileWidget_export_print')
+        self.export_button = QPushButton(_("EXPORT"))
+        self.export_button.setObjectName("FileWidget_export_print")
         self.export_button.setFont(self.file_buttons_font)
         self.export_button.setCursor(QCursor(Qt.PointingHandCursor))
         self.middot = QLabel("·")
-        self.print_button = QPushButton(_('PRINT'))
-        self.print_button.setObjectName('FileWidget_export_print')
+        self.print_button = QPushButton(_("PRINT"))
+        self.print_button.setObjectName("FileWidget_export_print")
         self.print_button.setFont(self.file_buttons_font)
         self.print_button.setCursor(QCursor(Qt.PointingHandCursor))
         file_options_layout.addWidget(self.download_button)
@@ -1903,16 +1956,16 @@ class FileWidget(QWidget):
         self.file_name = SecureQLabel(
             wordwrap=False, max_length=self.FILENAME_WIDTH_PX, with_tooltip=True
         )
-        self.file_name.setObjectName('FileWidget_file_name')
+        self.file_name.setObjectName("FileWidget_file_name")
         self.file_name.installEventFilter(self)
         self.file_name.setCursor(QCursor(Qt.PointingHandCursor))
-        self.no_file_name = SecureQLabel('ENCRYPTED FILE ON SERVER', wordwrap=False)
-        self.no_file_name.setObjectName('FileWidget_no_file_name')
+        self.no_file_name = SecureQLabel("ENCRYPTED FILE ON SERVER", wordwrap=False)
+        self.no_file_name.setObjectName("FileWidget_no_file_name")
         self.no_file_name.setFont(file_description_font)
 
         # Line between file name and file size
         self.horizontal_line = QWidget()
-        self.horizontal_line.setObjectName('FileWidget_horizontal_line')
+        self.horizontal_line.setObjectName("FileWidget_horizontal_line")
         self.horizontal_line.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         # Space between elided file name and file size when horizontal line is hidden
@@ -1922,7 +1975,7 @@ class FileWidget(QWidget):
 
         # File size
         self.file_size = SecureQLabel(humanize_filesize(self.file.size))
-        self.file_size.setObjectName('FileWidget_file_size')
+        self.file_size.setObjectName("FileWidget_file_size")
         self.file_size.setAlignment(Qt.AlignRight)
 
         # Decide what to show or hide based on whether or not the file's been downloaded
@@ -1955,14 +2008,14 @@ class FileWidget(QWidget):
         # See https://github.com/freedomofpress/securedrop-client/issues/835
         # for context on code below.
         if t == QEvent.HoverEnter and not self.downloading:
-            self.download_button.setIcon(load_icon('download_file_hover.svg'))
+            self.download_button.setIcon(load_icon("download_file_hover.svg"))
         elif t == QEvent.HoverLeave and not self.downloading:
-            self.download_button.setIcon(load_icon('download_file.svg'))
+            self.download_button.setIcon(load_icon("download_file.svg"))
         return QObject.event(obj, event)
 
     def _set_file_state(self):
         if self.file.is_decrypted:
-            logger.debug('Changing file {} state to decrypted/downloaded'.format(self.uuid))
+            logger.debug("Changing file {} state to decrypted/downloaded".format(self.uuid))
             self._set_file_name()
             self.download_button.hide()
             self.no_file_name.hide()
@@ -1972,21 +2025,21 @@ class FileWidget(QWidget):
             self.file_name.show()
             self.update_file_size()
         else:
-            logger.debug('Changing file {} state to not downloaded'.format(self.uuid))
-            self.download_button.setText(_('DOWNLOAD'))
+            logger.debug("Changing file {} state to not downloaded".format(self.uuid))
+            self.download_button.setText(_("DOWNLOAD"))
 
             # Ensure correct icon depending on mouse hover state.
             if self.download_button.underMouse():
-                self.download_button.setIcon(load_icon('download_file_hover.svg'))
+                self.download_button.setIcon(load_icon("download_file_hover.svg"))
             else:
-                self.download_button.setIcon(load_icon('download_file.svg'))
+                self.download_button.setIcon(load_icon("download_file.svg"))
 
             self.download_button.setFont(self.file_buttons_font)
             self.download_button.show()
 
             # Reset stylesheet
-            self.download_button.setStyleSheet('')
-            self.download_button.setObjectName('FileWidget_download_button')
+            self.download_button.setStyleSheet("")
+            self.download_button.setObjectName("FileWidget_download_button")
             self.download_button.setStyleSheet(self.DOWNLOAD_BUTTON_CSS)
 
             self.no_file_name.hide()
@@ -2063,8 +2116,8 @@ class FileWidget(QWidget):
         self.download_button.setText(_(" DOWNLOADING "))
 
         # Reset widget stylesheet
-        self.download_button.setStyleSheet('')
-        self.download_button.setObjectName('FileWidget_download_button_animating')
+        self.download_button.setStyleSheet("")
+        self.download_button.setObjectName("FileWidget_download_button_animating")
         self.download_button.setStyleSheet(self.DOWNLOAD_BUTTON_CSS)
 
     def set_button_animation_frame(self, frame_number):
@@ -2085,8 +2138,8 @@ class FileWidget(QWidget):
 
 class ModalDialog(QDialog):
 
-    CONTINUE_BUTTON_CSS = load_css('modal_dialog_button.css')
-    ERROR_DETAILS_CSS = load_css('modal_dialog_error_details.css')
+    CONTINUE_BUTTON_CSS = load_css("modal_dialog_button.css")
+    ERROR_DETAILS_CSS = load_css("modal_dialog_error_details.css")
 
     MARGIN = 40
     NO_MARGIN = 0
@@ -2094,15 +2147,15 @@ class ModalDialog(QDialog):
     def __init__(self):
         parent = QApplication.activeWindow()
         super().__init__(parent)
-        self.setObjectName('ModalDialog')
+        self.setObjectName("ModalDialog")
         self.setModal(True)
 
         # Header for icon and task title
         header_container = QWidget()
         header_container_layout = QHBoxLayout()
         header_container.setLayout(header_container_layout)
-        self.header_icon = SvgLabel('blank.svg', svg_size=QSize(64, 64))
-        self.header_icon.setObjectName('ModalDialog_header_icon')
+        self.header_icon = SvgLabel("blank.svg", svg_size=QSize(64, 64))
+        self.header_icon.setObjectName("ModalDialog_header_icon")
         self.header_spinner = QPixmap()
         self.header_spinner_label = QLabel()
         self.header_spinner_label.setObjectName("ModalDialog_header_spinner")
@@ -2110,25 +2163,25 @@ class ModalDialog(QDialog):
         self.header_spinner_label.setVisible(False)
         self.header_spinner_label.setPixmap(self.header_spinner)
         self.header = QLabel()
-        self.header.setObjectName('ModalDialog_header')
+        self.header.setObjectName("ModalDialog_header")
         header_container_layout.addWidget(self.header_icon)
         header_container_layout.addWidget(self.header_spinner_label)
         header_container_layout.addWidget(self.header, alignment=Qt.AlignCenter)
         header_container_layout.addStretch()
 
         self.header_line = QWidget()
-        self.header_line.setObjectName('ModalDialog_header_line')
+        self.header_line.setObjectName("ModalDialog_header_line")
 
         # Widget for displaying error messages
         self.error_details = QLabel()
-        self.error_details.setObjectName('ModalDialog_error_details')
+        self.error_details.setObjectName("ModalDialog_error_details")
         self.error_details.setStyleSheet(self.ERROR_DETAILS_CSS)
         self.error_details.setWordWrap(True)
         self.error_details.hide()
 
         # Body to display instructions and forms
         self.body = QLabel()
-        self.body.setObjectName('ModalDialog_body')
+        self.body.setObjectName("ModalDialog_body")
         self.body.setWordWrap(True)
         self.body.setScaledContents(True)
         body_container = QWidget()
@@ -2139,19 +2192,19 @@ class ModalDialog(QDialog):
 
         # Buttons to continue and cancel
         window_buttons = QWidget()
-        window_buttons.setObjectName('ModalDialog_window_buttons')
+        window_buttons.setObjectName("ModalDialog_window_buttons")
         button_layout = QVBoxLayout()
         window_buttons.setLayout(button_layout)
-        self.cancel_button = QPushButton(_('CANCEL'))
+        self.cancel_button = QPushButton(_("CANCEL"))
         self.cancel_button.clicked.connect(self.close)
         self.cancel_button.setAutoDefault(False)
-        self.continue_button = QPushButton(_('CONTINUE'))
-        self.continue_button.setObjectName('ModalDialog_primary_button')
+        self.continue_button = QPushButton(_("CONTINUE"))
+        self.continue_button.setObjectName("ModalDialog_primary_button")
         self.continue_button.setStyleSheet(self.CONTINUE_BUTTON_CSS)
         self.continue_button.setDefault(True)
         self.continue_button.setIconSize(QSize(21, 21))
         button_box = QDialogButtonBox(Qt.Horizontal)
-        button_box.setObjectName('ModalDialog_button_box')
+        button_box.setObjectName("ModalDialog_button_box")
         button_box.addButton(self.cancel_button, QDialogButtonBox.ActionRole)
         button_box.addButton(self.continue_button, QDialogButtonBox.ActionRole)
         button_layout.addWidget(button_box, alignment=Qt.AlignRight)
@@ -2178,7 +2231,7 @@ class ModalDialog(QDialog):
         self.header_animation.frameChanged.connect(self.animate_header)
 
     def keyPressEvent(self, event: QKeyEvent):
-        if (event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return):
+        if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
             if self.cancel_button.hasFocus():
                 self.cancel_button.click()
             else:
@@ -2198,11 +2251,11 @@ class ModalDialog(QDialog):
         self.continue_button.setText("")
         self.continue_button.setMinimumSize(QSize(142, 43))
         # Reset widget stylesheets
-        self.continue_button.setStyleSheet('')
-        self.continue_button.setObjectName('ModalDialog_primary_button_active')
+        self.continue_button.setStyleSheet("")
+        self.continue_button.setObjectName("ModalDialog_primary_button_active")
         self.continue_button.setStyleSheet(self.CONTINUE_BUTTON_CSS)
-        self.error_details.setStyleSheet('')
-        self.error_details.setObjectName('ModalDialog_error_details_active')
+        self.error_details.setStyleSheet("")
+        self.error_details.setObjectName("ModalDialog_error_details_active")
         self.error_details.setStyleSheet(self.ERROR_DETAILS_CSS)
 
     def start_animate_header(self):
@@ -2213,13 +2266,13 @@ class ModalDialog(QDialog):
     def stop_animate_activestate(self):
         self.continue_button.setIcon(QIcon())
         self.button_animation.stop()
-        self.continue_button.setText(_('CONTINUE'))
+        self.continue_button.setText(_("CONTINUE"))
         # Reset widget stylesheets
-        self.continue_button.setStyleSheet('')
-        self.continue_button.setObjectName('ModalDialog_primary_button')
+        self.continue_button.setStyleSheet("")
+        self.continue_button.setObjectName("ModalDialog_primary_button")
         self.continue_button.setStyleSheet(self.CONTINUE_BUTTON_CSS)
-        self.error_details.setStyleSheet('')
-        self.error_details.setObjectName('ModalDialog_error_details')
+        self.error_details.setStyleSheet("")
+        self.error_details.setObjectName("ModalDialog_error_details")
         self.error_details.setStyleSheet(self.ERROR_DETAILS_CSS)
 
     def stop_animate_header(self):
@@ -2238,8 +2291,9 @@ class PrintDialog(ModalDialog):
         self.controller = controller
         self.file_uuid = file_uuid
         self.file_name = SecureQLabel(
-            file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX).text()
-        self.error_status = ''  # Hold onto the error status we receive from the Export VM
+            file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
+        ).text()
+        self.error_status = ""  # Hold onto the error status we receive from the Export VM
 
         # Connect controller signals to slots
         self.controller.export.printer_preflight_success.connect(self._on_preflight_success)
@@ -2251,30 +2305,33 @@ class PrintDialog(ModalDialog):
 
         # Dialog content
         self.starting_header = _(
-            'Preparing to print:'
-            '<br />'
-            '<span style="font-weight:normal">{}</span>'.format(self.file_name))
+            "Preparing to print:"
+            "<br />"
+            '<span style="font-weight:normal">{}</span>'.format(self.file_name)
+        )
         self.ready_header = _(
-            'Ready to print:'
-            '<br />'
-            '<span style="font-weight:normal">{}</span>'.format(self.file_name))
-        self.insert_usb_header = _('Connect USB printer')
-        self.error_header = _('Printing failed')
+            "Ready to print:"
+            "<br />"
+            '<span style="font-weight:normal">{}</span>'.format(self.file_name)
+        )
+        self.insert_usb_header = _("Connect USB printer")
+        self.error_header = _("Printing failed")
         self.starting_message = _(
-            '<h2>Managing printout risks</h2>'
-            '<b>QR codes and web addresses</b>'
-            '<br />'
-            'Never type in and open web addresses or scan QR codes contained in printed '
-            'documents without taking security precautions. If you are unsure how to '
-            'manage this risk, please contact your administrator.'
-            '<br /><br />'
-            '<b>Printer dots</b>'
-            '<br />'
-            'Any part of a printed page may contain identifying information '
-            'invisible to the naked eye, such as printer dots. Please carefully '
-            'consider this risk when working with or publishing scanned printouts.')
-        self.insert_usb_message = _('Please connect your printer to a USB port.')
-        self.generic_error_message = _('See your administrator for help.')
+            "<h2>Managing printout risks</h2>"
+            "<b>QR codes and web addresses</b>"
+            "<br />"
+            "Never type in and open web addresses or scan QR codes contained in printed "
+            "documents without taking security precautions. If you are unsure how to "
+            "manage this risk, please contact your administrator."
+            "<br /><br />"
+            "<b>Printer dots</b>"
+            "<br />"
+            "Any part of a printed page may contain identifying information "
+            "invisible to the naked eye, such as printer dots. Please carefully "
+            "consider this risk when working with or publishing scanned printouts."
+        )
+        self.insert_usb_message = _("Please connect your printer to a USB port.")
+        self.generic_error_message = _("See your administrator for help.")
 
         self._show_starting_instructions()
         self.start_animate_header()
@@ -2297,9 +2354,9 @@ class PrintDialog(ModalDialog):
     def _show_generic_error_message(self):
         self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self.close)
-        self.continue_button.setText('DONE')
+        self.continue_button.setText("DONE")
         self.header.setText(self.error_header)
-        self.body.setText('{}: {}'.format(self.error_status, self.generic_error_message))
+        self.body.setText("{}: {}".format(self.error_status, self.generic_error_message))
         self.error_details.hide()
         self.adjustSize()
 
@@ -2316,7 +2373,7 @@ class PrintDialog(ModalDialog):
     def _on_preflight_success(self):
         # If the continue button is disabled then this is the result of a background preflight check
         self.stop_animate_header()
-        self.header_icon.update_image('printer.svg', svg_size=QSize(64, 64))
+        self.header_icon.update_image("printer.svg", svg_size=QSize(64, 64))
         self.header.setText(self.ready_header)
         if not self.continue_button.isEnabled():
             self.continue_button.clicked.disconnect()
@@ -2330,7 +2387,7 @@ class PrintDialog(ModalDialog):
     @pyqtSlot(object)
     def _on_preflight_failure(self, error: ExportError):
         self.stop_animate_header()
-        self.header_icon.update_image('printer.svg', svg_size=QSize(64, 64))
+        self.header_icon.update_image("printer.svg", svg_size=QSize(64, 64))
         self.error_status = error.status
         # If the continue button is disabled then this is the result of a background preflight check
         if not self.continue_button.isEnabled():
@@ -2361,8 +2418,9 @@ class ExportDialog(ModalDialog):
         self.controller = controller
         self.file_uuid = file_uuid
         self.file_name = SecureQLabel(
-            file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX).text()
-        self.error_status = ''  # Hold onto the error status we receive from the Export VM
+            file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
+        ).text()
+        self.error_status = ""  # Hold onto the error status we receive from the Export VM
 
         # Connect controller signals to slots
         self.controller.export.preflight_check_call_success.connect(self._on_preflight_success)
@@ -2376,52 +2434,60 @@ class ExportDialog(ModalDialog):
 
         # Dialog content
         self.starting_header = _(
-            'Preparing to export:'
-            '<br />'
-            '<span style="font-weight:normal">{}</span>'.format(self.file_name))
+            "Preparing to export:"
+            "<br />"
+            '<span style="font-weight:normal">{}</span>'.format(self.file_name)
+        )
         self.ready_header = _(
-            'Ready to export:'
-            '<br />'
-            '<span style="font-weight:normal">{}</span>'.format(self.file_name))
-        self.insert_usb_header = _('Insert encrypted USB drive')
-        self.passphrase_header = _('Enter passphrase for USB drive')
-        self.success_header = _('Export successful')
-        self.error_header = _('Export failed')
+            "Ready to export:"
+            "<br />"
+            '<span style="font-weight:normal">{}</span>'.format(self.file_name)
+        )
+        self.insert_usb_header = _("Insert encrypted USB drive")
+        self.passphrase_header = _("Enter passphrase for USB drive")
+        self.success_header = _("Export successful")
+        self.error_header = _("Export failed")
         self.starting_message = _(
-            '<h2>Understand the risks before exporting files</h2>'
-            '<b>Malware</b>'
-            '<br />'
-            'This workstation lets you open files securely. If you open files on another '
-            'computer, any embedded malware may spread to your computer or network. If you are '
-            'unsure how to manage this risk, please print the file, or contact your '
-            'administrator.'
-            '<br /><br />'
-            '<b>Anonymity</b>'
-            '<br />'
-            'Files submitted by sources may contain information or hidden metadata that '
-            'identifies who they are. To protect your sources, please consider redacting files '
-            'before working with them on network-connected computers.')
-        self.exporting_message = _('Exporting: {}'.format(self.file_name))
+            "<h2>Understand the risks before exporting files</h2>"
+            "<b>Malware</b>"
+            "<br />"
+            "This workstation lets you open files securely. If you open files on another "
+            "computer, any embedded malware may spread to your computer or network. If you are "
+            "unsure how to manage this risk, please print the file, or contact your "
+            "administrator."
+            "<br /><br />"
+            "<b>Anonymity</b>"
+            "<br />"
+            "Files submitted by sources may contain information or hidden metadata that "
+            "identifies who they are. To protect your sources, please consider redacting files "
+            "before working with them on network-connected computers."
+        )
+        self.exporting_message = _("Exporting: {}".format(self.file_name))
         self.insert_usb_message = _(
-            'Please insert one of the export drives provisioned specifically '
-            'for the SecureDrop Workstation.')
+            "Please insert one of the export drives provisioned specifically "
+            "for the SecureDrop Workstation."
+        )
         self.usb_error_message = _(
-            'Either the drive is not encrypted or there is something else wrong with it.')
-        self.passphrase_error_message = _('The passphrase provided did not work. Please try again.')
-        self.generic_error_message = _('See your administrator for help.')
+            "Either the drive is not encrypted or there is something else wrong with it."
+        )
+        self.passphrase_error_message = _("The passphrase provided did not work. Please try again.")
+        self.generic_error_message = _("See your administrator for help.")
         self.continue_disabled_message = _(
-            'The CONTINUE button will be disabled until the Export VM is ready')
+            "The CONTINUE button will be disabled until the Export VM is ready"
+        )
         self.success_message = _(
-            'Remember to be careful when working with files outside of your Workstation machine.')
+            "Remember to be careful when working with files outside of your Workstation machine."
+        )
 
         # Passphrase Form
         self.passphrase_form = QWidget()
-        self.passphrase_form.setObjectName('ExportDialog_passphrase_form')
+        self.passphrase_form.setObjectName("ExportDialog_passphrase_form")
         passphrase_form_layout = QVBoxLayout()
         passphrase_form_layout.setContentsMargins(
-            self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN)
+            self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN
+        )
         self.passphrase_form.setLayout(passphrase_form_layout)
-        passphrase_label = SecureQLabel(_('Passphrase'))
+        passphrase_label = SecureQLabel(_("Passphrase"))
         font = QFont()
         font.setLetterSpacing(QFont.AbsoluteSpacing, self.PASSPHRASE_LABEL_SPACING)
         passphrase_label.setFont(font)
@@ -2430,7 +2496,7 @@ class ExportDialog(ModalDialog):
         effect = QGraphicsDropShadowEffect(self)
         effect.setOffset(0, -1)
         effect.setBlurRadius(4)
-        effect.setColor(QColor('#aaa'))
+        effect.setColor(QColor("#aaa"))
         self.passphrase_field.setGraphicsEffect(effect)
         passphrase_form_layout.addWidget(passphrase_label)
         passphrase_form_layout.addWidget(self.passphrase_field)
@@ -2450,7 +2516,7 @@ class ExportDialog(ModalDialog):
         self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self._export_file)
         self.header.setText(self.passphrase_header)
-        self.continue_button.setText('SUBMIT')
+        self.continue_button.setText("SUBMIT")
         self.header_line.hide()
         self.error_details.hide()
         self.body.hide()
@@ -2463,7 +2529,7 @@ class ExportDialog(ModalDialog):
         self.continue_button.clicked.connect(self._export_file)
         self.header.setText(self.passphrase_header)
         self.error_details.setText(self.passphrase_error_message)
-        self.continue_button.setText('SUBMIT')
+        self.continue_button.setText("SUBMIT")
         self.header_line.hide()
         self.body.hide()
         self.error_details.show()
@@ -2475,7 +2541,7 @@ class ExportDialog(ModalDialog):
         self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self.close)
         self.header.setText(self.success_header)
-        self.continue_button.setText('DONE')
+        self.continue_button.setText("DONE")
         self.body.setText(self.success_message)
         self.cancel_button.hide()
         self.error_details.hide()
@@ -2488,7 +2554,7 @@ class ExportDialog(ModalDialog):
         self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self._run_preflight)
         self.header.setText(self.insert_usb_header)
-        self.continue_button.setText('CONTINUE')
+        self.continue_button.setText("CONTINUE")
         self.body.setText(self.insert_usb_message)
         self.error_details.hide()
         self.passphrase_form.hide()
@@ -2501,7 +2567,7 @@ class ExportDialog(ModalDialog):
         self.continue_button.clicked.connect(self._run_preflight)
         self.header.setText(self.insert_usb_header)
         self.error_details.setText(self.usb_error_message)
-        self.continue_button.setText('CONTINUE')
+        self.continue_button.setText("CONTINUE")
         self.body.setText(self.insert_usb_message)
         self.passphrase_form.hide()
         self.header_line.show()
@@ -2512,9 +2578,9 @@ class ExportDialog(ModalDialog):
     def _show_generic_error_message(self):
         self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self.close)
-        self.continue_button.setText('DONE')
+        self.continue_button.setText("DONE")
         self.header.setText(self.error_header)
-        self.body.setText('{}: {}'.format(self.error_status, self.generic_error_message))
+        self.body.setText("{}: {}".format(self.error_status, self.generic_error_message))
         self.error_details.hide()
         self.passphrase_form.hide()
         self.header_line.show()
@@ -2536,7 +2602,7 @@ class ExportDialog(ModalDialog):
     def _on_preflight_success(self):
         # If the continue button is disabled then this is the result of a background preflight check
         self.stop_animate_header()
-        self.header_icon.update_image('savetodisk.svg', QSize(64, 64))
+        self.header_icon.update_image("savetodisk.svg", QSize(64, 64))
         self.header.setText(self.ready_header)
         if not self.continue_button.isEnabled():
             self.continue_button.clicked.disconnect()
@@ -2550,7 +2616,7 @@ class ExportDialog(ModalDialog):
     @pyqtSlot(object)
     def _on_preflight_failure(self, error: ExportError):
         self.stop_animate_header()
-        self.header_icon.update_image('savetodisk.svg', QSize(64, 64))
+        self.header_icon.update_image("savetodisk.svg", QSize(64, 64))
         self._update_dialog(error.status)
 
     @pyqtSlot()
@@ -2603,11 +2669,11 @@ class ConversationScrollArea(QScrollArea):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setWidgetResizable(True)
 
-        self.setObjectName('ConversationScrollArea')
+        self.setObjectName("ConversationScrollArea")
 
         # Create the scroll area's widget
         conversation = QWidget()
-        conversation.setObjectName('ConversationScrollArea_conversation')
+        conversation.setObjectName("ConversationScrollArea_conversation")
         conversation.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.conversation_layout = QVBoxLayout()
         conversation.setLayout(self.conversation_layout)
@@ -2620,15 +2686,15 @@ class ConversationScrollArea(QScrollArea):
     def add_widget_to_conversation(
         self, index: int, widget: QWidget, alignment_flag: Qt.AlignmentFlag
     ) -> None:
-        '''
+        """
         Add `widget` to the scroll area's widget layout.
-        '''
+        """
         self.conversation_layout.insertWidget(index, widget, alignment=alignment_flag)
 
     def remove_widget_from_conversation(self, widget: QWidget) -> None:
-        '''
+        """
         Remove `widget` from the scroll area's widget layout.
-        '''
+        """
         self.conversation_layout.removeWidget(widget)
 
 
@@ -2711,8 +2777,9 @@ class ConversationView(QWidget):
                 # Check if text in item has changed, then update the
                 # widget to reflect this change.
                 if not isinstance(item_widget, FileWidget):
-                    if (item_widget.message.text() != conversation_item.content) and \
-                            conversation_item.content:
+                    if (
+                        item_widget.message.text() != conversation_item.content
+                    ) and conversation_item.content:
                         item_widget.message.setText(conversation_item.content)
             else:
                 # add a new item to be displayed.
@@ -2729,7 +2796,7 @@ class ConversationView(QWidget):
         # by another user (a journalist using the Web UI is able to delete individual
         # submissions).
         for item_widget in current_conversation.values():
-            logger.debug('Deleting item: {}'.format(item_widget.uuid))
+            logger.debug("Deleting item: {}".format(item_widget.uuid))
             self.current_messages.pop(item_widget.uuid)
             item_widget.deleteLater()
             self.scroll.remove_widget_from_conversation(item_widget)
@@ -2738,7 +2805,7 @@ class ConversationView(QWidget):
         """
         Add a file from the source.
         """
-        logger.debug('Adding file for {}'.format(file.uuid))
+        logger.debug("Adding file for {}".format(file.uuid))
         conversation_item = FileWidget(
             file.uuid,
             self.controller,
@@ -2782,9 +2849,9 @@ class ConversationView(QWidget):
         try:
             send_status = reply.send_status.name
         except AttributeError:
-            send_status = 'SUCCEEDED'
+            send_status = "SUCCEEDED"
 
-        logger.debug('adding reply: with status {}'.format(send_status))
+        logger.debug("adding reply: with status {}".format(send_status))
         conversation_item = ReplyWidget(
             reply.uuid,
             str(reply),
@@ -2807,12 +2874,13 @@ class ConversationView(QWidget):
         conversation_item = ReplyWidget(
             uuid,
             content,
-            'PENDING',
+            "PENDING",
             self.controller.reply_ready,
             self.controller.reply_download_failed,
             self.controller.reply_succeeded,
             self.controller.reply_failed,
-            index)
+            index,
+        )
         self.scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignRight)
         self.current_messages[uuid] = conversation_item
 
@@ -2850,8 +2918,8 @@ class SourceConversationWrapper(QWidget):
         self.conversation_title_bar = SourceProfileShortWidget(source, controller)
         self.conversation_view = ConversationView(source, controller)
         self.reply_box = ReplyBoxWidget(source, controller)
-        self.waiting_delete_confirmation = QLabel('Deleting...')
-        self.waiting_delete_confirmation.setObjectName('SourceConversationWrapper_source_deleted')
+        self.waiting_delete_confirmation = QLabel("Deleting...")
+        self.waiting_delete_confirmation.setObjectName("SourceConversationWrapper_source_deleted")
         self.waiting_delete_confirmation.hide()
 
         # Add widgets
@@ -2863,7 +2931,8 @@ class SourceConversationWrapper(QWidget):
         # Connect reply_box to conversation_view
         self.reply_box.reply_sent.connect(self.conversation_view.on_reply_sent)
         self.conversation_view.conversation_updated.connect(
-            self.conversation_title_bar.update_timestamp)
+            self.conversation_title_bar.update_timestamp
+        )
 
     @pyqtSlot(str)
     def _on_source_deleted(self, source_uuid: str):
@@ -2896,7 +2965,7 @@ class ReplyBoxWidget(QWidget):
         self.controller = controller
 
         # Set css id
-        self.setObjectName('ReplyBoxWidget')
+        self.setObjectName("ReplyBoxWidget")
 
         # Set layout
         main_layout = QVBoxLayout()
@@ -2908,11 +2977,11 @@ class ReplyBoxWidget(QWidget):
 
         # Create top horizontal line
         horizontal_line = QWidget()
-        horizontal_line.setObjectName('ReplyBoxWidget_horizontal_line')
+        horizontal_line.setObjectName("ReplyBoxWidget_horizontal_line")
 
         # Create replybox
         self.replybox = QWidget()
-        self.replybox.setObjectName('ReplyBoxWidget_replybox')
+        self.replybox.setObjectName("ReplyBoxWidget_replybox")
         replybox_layout = QHBoxLayout(self.replybox)
         replybox_layout.setContentsMargins(32.6, 19, 27.3, 18)
         replybox_layout.setSpacing(0)
@@ -2923,7 +2992,7 @@ class ReplyBoxWidget(QWidget):
         # Create reply send button (airplane)
         self.send_button = QPushButton()
         self.send_button.clicked.connect(self.send_reply)
-        button_pixmap = load_image('send.svg')
+        button_pixmap = load_image("send.svg")
         button_icon = QIcon(button_pixmap)
         self.send_button.setIcon(button_icon)
         self.send_button.setIconSize(QSize(56.5, 47))
@@ -2978,7 +3047,7 @@ class ReplyBoxWidget(QWidget):
         reply_text = self.text_edit.toPlainText().strip()
         if reply_text:
             self.text_edit.clearFocus()  # Fixes #691
-            self.text_edit.setText('')
+            self.text_edit.setText("")
             reply_uuid = str(uuid4())
             self.controller.send_reply(self.source.uuid, reply_uuid, reply_text)
             self.reply_sent.emit(self.source.uuid, reply_uuid, reply_text)
@@ -3002,9 +3071,9 @@ class ReplyBoxWidget(QWidget):
         try:
             self.update_authentication_state(self.controller.is_authenticated)
 
-            if data == 'syncing' and self.text_edit.hasFocus():
+            if data == "syncing" and self.text_edit.hasFocus():
                 self.refocus_after_sync = True
-            elif data == 'synced' and self.refocus_after_sync:
+            elif data == "synced" and self.refocus_after_sync:
                 self.text_edit.setFocus()
             else:
                 self.refocus_after_sync = False
@@ -3025,7 +3094,7 @@ class ReplyTextEdit(QPlainTextEdit):
         self.controller = controller
         self.source = source
 
-        self.setObjectName('ReplyTextEdit')
+        self.setObjectName("ReplyTextEdit")
 
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setTabChangesFocus(True)  # Needed so we can TAB to send button.
@@ -3079,10 +3148,10 @@ class ReplyTextEditPlaceholder(QWidget):
         self.setLayout(layout)
 
         # Signed in
-        compose_a_reply_to = QLabel(_('Compose a reply to '))
-        compose_a_reply_to.setObjectName('ReplyTextEditPlaceholder_text')
+        compose_a_reply_to = QLabel(_("Compose a reply to "))
+        compose_a_reply_to.setObjectName("ReplyTextEditPlaceholder_text")
         source_name = SecureQLabel(source_name, wordwrap=False)
-        source_name.setObjectName('ReplyTextEditPlaceholder_bold_blue')
+        source_name.setObjectName("ReplyTextEditPlaceholder_bold_blue")
         self.signed_in = QWidget()
         signed_in_layout = QHBoxLayout()
         signed_in_layout.setSpacing(0)
@@ -3092,10 +3161,10 @@ class ReplyTextEditPlaceholder(QWidget):
         self.signed_in.hide()
 
         # Awaiting key
-        awaiting_key = QLabel('Awaiting encryption key')
-        awaiting_key.setObjectName('ReplyTextEditPlaceholder_bold_blue')
-        from_server = QLabel(_(' from server to enable replies'))
-        from_server.setObjectName('ReplyTextEditPlaceholder_text')
+        awaiting_key = QLabel("Awaiting encryption key")
+        awaiting_key.setObjectName("ReplyTextEditPlaceholder_bold_blue")
+        from_server = QLabel(_(" from server to enable replies"))
+        from_server.setObjectName("ReplyTextEditPlaceholder_text")
         self.signed_in_no_key = QWidget()
         signed_in_no_key_layout = QHBoxLayout()
         signed_in_no_key_layout.setSpacing(0)
@@ -3105,10 +3174,10 @@ class ReplyTextEditPlaceholder(QWidget):
         self.signed_in_no_key.hide()
 
         # Signed out
-        sign_in = QLabel(_('Sign in'))
-        sign_in.setObjectName('ReplyTextEditPlaceholder_bold_blue')
-        to_compose_reply = QLabel(' to compose or send a reply')
-        to_compose_reply.setObjectName('ReplyTextEditPlaceholder_text')
+        sign_in = QLabel(_("Sign in"))
+        sign_in.setObjectName("ReplyTextEditPlaceholder_bold_blue")
+        to_compose_reply = QLabel(" to compose or send a reply")
+        to_compose_reply.setObjectName("ReplyTextEditPlaceholder_text")
         self.signed_out = QWidget()
         signed_out_layout = QHBoxLayout()
         signed_out_layout.setSpacing(0)
@@ -3189,7 +3258,7 @@ class SourceMenuButton(QToolButton):
         self.controller = controller
         self.source = source
 
-        self.setObjectName('SourceMenuButton')
+        self.setObjectName("SourceMenuButton")
 
         self.setIcon(load_icon("ellipsis.svg"))
         self.setIconSize(QSize(22, 4))  # Set to the size of the svg viewBox
@@ -3209,7 +3278,7 @@ class TitleLabel(QLabel):
         super().__init__(_(text))
 
         # Set css id
-        self.setObjectName('TitleLabel')
+        self.setObjectName("TitleLabel")
 
 
 class LastUpdatedLabel(QLabel):
@@ -3219,7 +3288,7 @@ class LastUpdatedLabel(QLabel):
         super().__init__(last_updated)
 
         # Set css id
-        self.setObjectName('LastUpdatedLabel')
+        self.setObjectName("LastUpdatedLabel")
 
 
 class SourceProfileShortWidget(QWidget):
@@ -3248,9 +3317,10 @@ class SourceProfileShortWidget(QWidget):
         header = QWidget()
         header_layout = QHBoxLayout(header)
         header_layout.setContentsMargins(
-            self.MARGIN_LEFT, self.VERTICAL_MARGIN, self.MARGIN_RIGHT, self.VERTICAL_MARGIN)
+            self.MARGIN_LEFT, self.VERTICAL_MARGIN, self.MARGIN_RIGHT, self.VERTICAL_MARGIN
+        )
         title = TitleLabel(self.source.journalist_designation)
-        self.updated = LastUpdatedLabel(_(arrow.get(self.source.last_updated).format('DD MMM')))
+        self.updated = LastUpdatedLabel(_(arrow.get(self.source.last_updated).format("DD MMM")))
         menu = SourceMenuButton(self.source, self.controller)
         header_layout.addWidget(title, alignment=Qt.AlignLeft)
         header_layout.addStretch()
@@ -3259,7 +3329,7 @@ class SourceProfileShortWidget(QWidget):
 
         # Create horizontal line
         horizontal_line = QWidget()
-        horizontal_line.setObjectName('SourceProfileShortWidget_horizontal_line')
+        horizontal_line.setObjectName("SourceProfileShortWidget_horizontal_line")
         horizontal_line.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         # Add widgets
@@ -3271,4 +3341,4 @@ class SourceProfileShortWidget(QWidget):
         Ensure the timestamp is always kept up to date with the latest activity
         from the source.
         """
-        self.updated.setText(_(arrow.get(self.source.last_updated).format('DD MMM')))
+        self.updated.setText(_(arrow.get(self.source.last_updated).format("DD MMM")))

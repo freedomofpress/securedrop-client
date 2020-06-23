@@ -8,8 +8,12 @@ import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
 
-from tests.conftest import (TIME_APP_START, TIME_CLICK_ACTION,
-                            TIME_RENDER_CONV_VIEW, TIME_RENDER_SOURCE_LIST)
+from tests.conftest import (
+    TIME_APP_START,
+    TIME_CLICK_ACTION,
+    TIME_RENDER_CONV_VIEW,
+    TIME_RENDER_SOURCE_LIST,
+)
 
 
 @flaky
@@ -50,6 +54,6 @@ def test_offline_delete_source_and_their_docs(functional_test_logged_in_context,
     def check_for_error():
         # Confirm the user interface is showing a sign-in error.
         msg = gui.top_pane.error_status_bar.status_bar.currentMessage()
-        assert msg == 'You must sign in to perform this action.'
+        assert msg == "You must sign in to perform this action."
 
     qtbot.waitUntil(check_for_error, timeout=TIME_CLICK_ACTION)

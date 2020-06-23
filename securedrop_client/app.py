@@ -16,32 +16,34 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import logging
-import os
 import gettext
 import locale
+import logging
+import os
 import platform
 import signal
-import sys
 import socket
+import sys
 from argparse import ArgumentParser
-from PyQt5.QtWidgets import QApplication, QMessageBox
+from logging.handlers import SysLogHandler, TimedRotatingFileHandler
+
 from PyQt5.QtCore import Qt, QTimer
-from logging.handlers import TimedRotatingFileHandler, SysLogHandler
+from PyQt5.QtWidgets import QApplication, QMessageBox
+
 from securedrop_client import __version__
-from securedrop_client.logic import Controller
-from securedrop_client.gui.main import Window
 from securedrop_client.db import make_session_maker
+from securedrop_client.gui.main import Window
+from securedrop_client.logic import Controller
 from securedrop_client.utils import safe_mkdir
 
-DEFAULT_SDC_HOME = '~/.securedrop_client'
-ENCODING = 'utf-8'
-LOGLEVEL = os.environ.get('LOGLEVEL', 'info').upper()
+DEFAULT_SDC_HOME = "~/.securedrop_client"
+ENCODING = "utf-8"
+LOGLEVEL = os.environ.get("LOGLEVEL", "info").upper()
 
 
 def init(sdc_home: str) -> None:
     safe_mkdir(sdc_home)
-    safe_mkdir(sdc_home, 'data')
+    safe_mkdir(sdc_home, "data")
 
 
 def excepthook(*exc_args):
@@ -49,30 +51,31 @@ def excepthook(*exc_args):
     This function is called in the event of a catastrophic failure.
     Log exception and exit cleanly.
     """
-    logging.error('Unrecoverable error', exc_info=(exc_args))
+    logging.error("Unrecoverable error", exc_info=(exc_args))
     sys.__excepthook__(*exc_args)
-    print('')  # force terminal prompt on to a new line
+    print("")  # force terminal prompt on to a new line
     sys.exit(1)
 
 
 def configure_locale_and_language() -> str:
     # Configure locale and language.
     # Define where the translation assets are to be found.
-    localedir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'locale'))
+    localedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "locale"))
     try:
         # Use the operating system's locale.
         current_locale, encoding = locale.getdefaultlocale()
         # Get the language code.
         if current_locale is None:
-            language_code = 'en'
+            language_code = "en"
         else:
             language_code = current_locale[:2]
     except ValueError:  # pragma: no cover
-        language_code = 'en'  # pragma: no cover
+        language_code = "en"  # pragma: no cover
     # DEBUG/TRANSLATE: override the language code here (e.g. to Chinese).
     # language_code = 'zh'
-    gettext.translation('securedrop_client', localedir=localedir,
-                        languages=[language_code], fallback=True).install()
+    gettext.translation(
+        "securedrop_client", localedir=localedir, languages=[language_code], fallback=True
+    ).install()
     return language_code
 
 
@@ -80,18 +83,17 @@ def configure_logging(sdc_home: str) -> None:
     """
     All logging related settings are set up by this function.
     """
-    safe_mkdir(sdc_home, 'logs')
-    log_file = os.path.join(sdc_home, 'logs', 'client.log')
+    safe_mkdir(sdc_home, "logs")
+    log_file = os.path.join(sdc_home, "logs", "client.log")
 
     # set logging format
-    log_fmt = ('%(asctime)s - %(name)s:%(lineno)d(%(funcName)s) '
-               '%(levelname)s: %(message)s')
+    log_fmt = "%(asctime)s - %(name)s:%(lineno)d(%(funcName)s) " "%(levelname)s: %(message)s"
     formatter = logging.Formatter(log_fmt)
 
     # define log handlers such as for rotating log files
-    handler = TimedRotatingFileHandler(log_file, when='midnight',
-                                       backupCount=5, delay=False,
-                                       encoding=ENCODING)
+    handler = TimedRotatingFileHandler(
+        log_file, when="midnight", backupCount=5, delay=False, encoding=ENCODING
+    )
     handler.setFormatter(formatter)
 
     # For rsyslog handler
@@ -124,38 +126,41 @@ def configure_signal_handlers(app) -> None:
 
 
 def expand_to_absolute(value: str) -> str:
-    '''
+    """
     Helper that expands a path to the absolute path so users can provide
     arguments in the form ``~/my/dir/``.
-    '''
+    """
     return os.path.abspath(os.path.expanduser(value))
 
 
 def arg_parser() -> ArgumentParser:
-    parser = ArgumentParser('securedrop-client',
-                            description='SecureDrop Journalist GUI')
+    parser = ArgumentParser("securedrop-client", description="SecureDrop Journalist GUI")
     parser.add_argument(
-        '-H', '--sdc-home',
+        "-H",
+        "--sdc-home",
         default=DEFAULT_SDC_HOME,
         type=expand_to_absolute,
-        help=('SecureDrop Client home directory for storing files and state. '
-              '(Default {})'.format(DEFAULT_SDC_HOME)))
+        help=(
+            "SecureDrop Client home directory for storing files and state. "
+            "(Default {})".format(DEFAULT_SDC_HOME)
+        ),
+    )
     parser.add_argument(
-        '--no-proxy', action='store_true',
-        help='Use proxy AppVM name to connect to server.')
+        "--no-proxy", action="store_true", help="Use proxy AppVM name to connect to server."
+    )
     parser.add_argument(
-        '--no-qubes', action='store_true',
-        help='Disable opening submissions in DispVMs')
+        "--no-qubes", action="store_true", help="Disable opening submissions in DispVMs"
+    )
     return parser
 
 
 def prevent_second_instance(app: QApplication, unique_name: str) -> None:
     # This function is only necessary on Qubes, so we can skip it on other platforms to help devs
-    if platform.system() != 'Linux':  # pragma: no cover
+    if platform.system() != "Linux":  # pragma: no cover
         return
 
     # Null byte triggers abstract namespace
-    IDENTIFIER = '\0' + app.applicationName() + unique_name
+    IDENTIFIER = "\0" + app.applicationName() + unique_name
     ALREADY_BOUND_ERRNO = 98
 
     app.instance_binding = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
@@ -164,7 +169,7 @@ def prevent_second_instance(app: QApplication, unique_name: str) -> None:
     except OSError as e:
         if e.errno == ALREADY_BOUND_ERRNO:
             err_dialog = QMessageBox()
-            err_dialog.setText(app.applicationName() + ' is already running.')
+            err_dialog.setText(app.applicationName() + " is already running.")
             err_dialog.exec()
             sys.exit()
         else:
@@ -188,11 +193,11 @@ def start_app(args, qt_args) -> None:
     configure_locale_and_language()
     init(args.sdc_home)
     configure_logging(args.sdc_home)
-    logging.info('Starting SecureDrop Client {}'.format(__version__))
+    logging.info("Starting SecureDrop Client {}".format(__version__))
 
     app = QApplication(qt_args)
-    app.setApplicationName('SecureDrop Client')
-    app.setDesktopFileName('org.freedomofthepress.securedrop.client')
+    app.setApplicationName("SecureDrop Client")
+    app.setDesktopFileName("org.freedomofthepress.securedrop.client")
     app.setApplicationVersion(__version__)
     app.setAttribute(Qt.AA_UseHighDpiPixmaps)
 
@@ -202,8 +207,14 @@ def start_app(args, qt_args) -> None:
 
     gui = Window()
 
-    controller = Controller("http://localhost:8081/", gui, session_maker,
-                            args.sdc_home, not args.no_proxy, not args.no_qubes)
+    controller = Controller(
+        "http://localhost:8081/",
+        gui,
+        session_maker,
+        args.sdc_home,
+        not args.no_proxy,
+        not args.no_qubes,
+    )
     controller.setup()
 
     configure_signal_handlers(app)
@@ -217,5 +228,5 @@ def start_app(args, qt_args) -> None:
 def run() -> None:
     args, qt_args = arg_parser().parse_known_args()
     # reinsert the program's name
-    qt_args.insert(0, 'securedrop-client')
+    qt_args.insert(0, "securedrop-client")
     start_app(args, qt_args)

@@ -1,21 +1,20 @@
 import pytest
 from PyQt5.QtWidgets import QApplication
 
-from securedrop_client.logic import Controller
 from securedrop_client.gui.main import Window
 from securedrop_client.gui.widgets import ExportDialog, ModalDialog, PrintDialog
-
+from securedrop_client.logic import Controller
 from tests import factory
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def main_window(mocker, homedir):
     # Setup
     app = QApplication([])
     gui = Window()
     app.setActiveWindow(gui)
     gui.show()
-    controller = Controller('http://localhost', gui, mocker.MagicMock(), homedir, proxy=False)
+    controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, proxy=False)
     controller.qubes = False
     gui.setup(controller)
 
@@ -25,13 +24,17 @@ def main_window(mocker, homedir):
     source_list.update([source])
 
     # Create a file widget, message widget, and reply widget
-    mocker.patch('securedrop_client.gui.widgets.humanize_filesize', return_value='100')
+    mocker.patch("securedrop_client.gui.widgets.humanize_filesize", return_value="100")
     mocker.patch(
-        'securedrop_client.gui.SecureQLabel.get_elided_text', return_value='1-yellow-doc.gz.gpg')
-    source.collection.append([
-        factory.File(source=source, filename='1-yellow-doc.gz.gpg'),
-        factory.Message(source=source, filename='2-yellow-msg.gpg'),
-        factory.Reply(source=source, filename='3-yellow-reply.gpg')])
+        "securedrop_client.gui.SecureQLabel.get_elided_text", return_value="1-yellow-doc.gz.gpg"
+    )
+    source.collection.append(
+        [
+            factory.File(source=source, filename="1-yellow-doc.gz.gpg"),
+            factory.Message(source=source, filename="2-yellow-msg.gpg"),
+            factory.Reply(source=source, filename="3-yellow-reply.gpg"),
+        ]
+    )
     source_list.setCurrentItem(source_list.item(0))
     gui.main_view.on_source_changed()
 
@@ -42,14 +45,14 @@ def main_window(mocker, homedir):
     app.exit()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def main_window_no_key(mocker, homedir):
     # Setup
     app = QApplication([])
     gui = Window()
     app.setActiveWindow(gui)
     gui.show()
-    controller = Controller('http://localhost', gui, mocker.MagicMock(), homedir, proxy=False)
+    controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, proxy=False)
     controller.qubes = False
     gui.setup(controller)
 
@@ -59,13 +62,17 @@ def main_window_no_key(mocker, homedir):
     source_list.update([source])
 
     # Create a file widget, message widget, and reply widget
-    mocker.patch('securedrop_client.gui.widgets.humanize_filesize', return_value='100')
+    mocker.patch("securedrop_client.gui.widgets.humanize_filesize", return_value="100")
     mocker.patch(
-        'securedrop_client.gui.SecureQLabel.get_elided_text', return_value='1-yellow-doc.gz.gpg')
-    source.collection.append([
-        factory.File(source=source, filename='1-yellow-doc.gz.gpg'),
-        factory.Message(source=source, filename='2-yellow-msg.gpg'),
-        factory.Reply(source=source, filename='3-yellow-reply.gpg')])
+        "securedrop_client.gui.SecureQLabel.get_elided_text", return_value="1-yellow-doc.gz.gpg"
+    )
+    source.collection.append(
+        [
+            factory.File(source=source, filename="1-yellow-doc.gz.gpg"),
+            factory.Message(source=source, filename="2-yellow-msg.gpg"),
+            factory.Reply(source=source, filename="3-yellow-reply.gpg"),
+        ]
+    )
     source_list.setCurrentItem(source_list.item(0))
     gui.main_view.on_source_changed()
 
@@ -76,12 +83,12 @@ def main_window_no_key(mocker, homedir):
     app.exit()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def modal_dialog(mocker, homedir):
     app = QApplication([])
     gui = Window()
     gui.show()
-    controller = Controller('http://localhost', gui, mocker.MagicMock(), homedir, proxy=False)
+    controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, proxy=False)
     controller.qubes = False
     gui.setup(controller)
     gui.login_dialog.close()
@@ -94,17 +101,17 @@ def modal_dialog(mocker, homedir):
     app.exit()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def print_dialog(mocker, homedir):
     app = QApplication([])
     gui = Window()
     gui.show()
-    controller = Controller('http://localhost', gui, mocker.MagicMock(), homedir, proxy=False)
+    controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, proxy=False)
     controller.qubes = False
     gui.setup(controller)
     gui.login_dialog.close()
     app.setActiveWindow(gui)
-    dialog = PrintDialog(controller, 'file_uuid', 'file_name')
+    dialog = PrintDialog(controller, "file_uuid", "file_name")
 
     yield dialog
 
@@ -112,17 +119,17 @@ def print_dialog(mocker, homedir):
     app.exit()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def export_dialog(mocker, homedir):
     app = QApplication([])
     gui = Window()
     gui.show()
-    controller = Controller('http://localhost', gui, mocker.MagicMock(), homedir, proxy=False)
+    controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, proxy=False)
     controller.qubes = False
     gui.setup(controller)
     gui.login_dialog.close()
     app.setActiveWindow(gui)
-    dialog = ExportDialog(controller, 'file_uuid', 'file_name')
+    dialog = ExportDialog(controller, "file_uuid", "file_name")
     dialog.show()
 
     yield dialog

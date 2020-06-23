@@ -1,4 +1,5 @@
 import os
+
 import setuptools
 
 with open("README.md", "r") as fh:
@@ -8,9 +9,8 @@ with open("README.md", "r") as fh:
 package_resources = ["securedrop_client/resources/css/sdclient.css"]
 
 # All other graphics used in the client
-for name in os.listdir('./securedrop_client/resources/images/'):
-    package_resources.append(os.path.join(
-        "./securedrop_client/resources/images", name))
+for name in os.listdir("./securedrop_client/resources/images/"):
+    package_resources.append(os.path.join("./securedrop_client/resources/images", name))
 
 setuptools.setup(
     name="securedrop-client",
@@ -21,12 +21,10 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="GPLv3+",
-    install_requires=["SQLALchemy", "alembic", "securedrop-sdk",
-                      "python-dateutil", "arrow"],
+    install_requires=["SQLALchemy", "alembic", "securedrop-sdk", "python-dateutil", "arrow"],
     python_requires=">=3.5",
     url="https://github.com/freedomofpress/securedrop-proxy",
-    packages=["securedrop_client", "securedrop_client.gui",
-              "securedrop_client.resources"],
+    packages=["securedrop_client", "securedrop_client.gui", "securedrop_client.resources"],
     include_package_data=True,
     classifiers=(
         "Development Status :: 3 - Alpha",
@@ -36,9 +34,5 @@ setuptools.setup(
         "Intended Audience :: Developers",
         "Operating System :: OS Independent",
     ),
-    entry_points={
-        'console_scripts': [
-            'sd-client = securedrop_client.app:run',
-        ],
-    },
+    entry_points={"console_scripts": ["sd-client = securedrop_client.app:run",],},
 )
