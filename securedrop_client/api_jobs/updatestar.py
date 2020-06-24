@@ -1,6 +1,6 @@
 import logging
-import sdclientapi
 
+import sdclientapi
 from sdclientapi import API, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm.session import Session
 
@@ -15,11 +15,11 @@ class UpdateStarJob(SingleObjectApiJob):
         self.is_starred = is_starred
 
     def call_api(self, api_client: API, session: Session) -> str:
-        '''
+        """
         Override ApiJob.
 
         Star or Unstar an user on the server
-        '''
+        """
         try:
             source_sdk_object = sdclientapi.Source(uuid=self.uuid)
 
@@ -30,10 +30,10 @@ class UpdateStarJob(SingleObjectApiJob):
 
             return self.uuid
         except (RequestTimeoutError, ServerConnectionError) as e:
-            error_message = f'Failed to update star on source {self.uuid} due to error: {e}'
+            error_message = f"Failed to update star on source {self.uuid} due to error: {e}"
             raise UpdateStarJobTimeoutError(error_message, self.uuid)
         except Exception as e:
-            error_message = f'Failed to update star on source {self.uuid} due to {e}'
+            error_message = f"Failed to update star on source {self.uuid} due to {e}"
             raise UpdateStarJobError(error_message, self.uuid)
 
 

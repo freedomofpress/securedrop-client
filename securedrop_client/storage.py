@@ -19,26 +19,33 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from datetime import datetime
 import logging
 import os
 import shutil
+from datetime import datetime
 from pathlib import Path
-from dateutil.parser import parse
 from typing import Any, Dict, List, Tuple, Type, Union
 
+from dateutil.parser import parse
+from sdclientapi import API
+from sdclientapi import Reply as SDKReply
+from sdclientapi import Source as SDKSource
+from sdclientapi import Submission as SDKSubmission
 from sqlalchemy import and_, desc, or_
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.session import Session
 
-from securedrop_client.db import (DraftReply, Source, Message, File, Reply, ReplySendStatus,
-                                  ReplySendStatusCodes, User)
+from securedrop_client.db import (
+    DraftReply,
+    File,
+    Message,
+    Reply,
+    ReplySendStatus,
+    ReplySendStatusCodes,
+    Source,
+    User,
+)
 from securedrop_client.utils import SourceCache, chronometer
-
-from sdclientapi import API
-from sdclientapi import Source as SDKSource
-from sdclientapi import Submission as SDKSubmission
-from sdclientapi import Reply as SDKReply
 
 logger = logging.getLogger(__name__)
 
@@ -95,27 +102,28 @@ def get_remote_data(api: API) -> Tuple[List[SDKSource], List[SDKSubmission], Lis
     remote_submissions = api.get_all_submissions()
     remote_replies = api.get_all_replies()
 
-    logger.info('Fetched {} remote sources.'.format(len(remote_sources)))
-    logger.info('Fetched {} remote submissions.'.format(
-        len(remote_submissions)))
-    logger.info('Fetched {} remote replies.'.format(len(remote_replies)))
+    logger.info("Fetched {} remote sources.".format(len(remote_sources)))
+    logger.info("Fetched {} remote submissions.".format(len(remote_submissions)))
+    logger.info("Fetched {} remote replies.".format(len(remote_replies)))
 
     return (remote_sources, remote_submissions, remote_replies)
 
 
-def update_local_storage(session: Session,
-                         remote_sources: List[SDKSource],
-                         remote_submissions: List[SDKSubmission],
-                         remote_replies: List[SDKReply],
-                         data_dir: str) -> None:
+def update_local_storage(
+    session: Session,
+    remote_sources: List[SDKSource],
+    remote_submissions: List[SDKSubmission],
+    remote_replies: List[SDKReply],
+    data_dir: str,
+) -> None:
     """
     Given a database session and collections of remote sources, submissions and
     replies from the SecureDrop API, ensures the local database is updated
     with this data.
     """
 
-    remote_messages = [x for x in remote_submissions if x.filename.endswith('msg.gpg')]
-    remote_files = [x for x in remote_submissions if not x.filename.endswith('msg.gpg')]
+    remote_messages = [x for x in remote_submissions if x.filename.endswith("msg.gpg")]
+    remote_files = [x for x in remote_submissions if not x.filename.endswith("msg.gpg")]
 
     # The following update_* functions may change the database state.
     # Because of that, each get_local_* function needs to be called just before
@@ -145,8 +153,7 @@ def lazy_setattr(o: Any, a: str, v: Any) -> None:
 
 
 def update_sources(
-        remote_sources: List[SDKSource], local_sources: List[Source],
-        session: Session, data_dir: str
+    remote_sources: List[SDKSource], local_sources: List[Source], session: Session, data_dir: str
 ) -> None:
     """
     Given collections of remote sources, the current local sources and a
@@ -169,14 +176,14 @@ def update_sources(
             lazy_setattr(local_source, "document_count", source.number_of_documents)
             lazy_setattr(local_source, "is_starred", source.is_starred)
             lazy_setattr(local_source, "last_updated", parse(source.last_updated))
-            lazy_setattr(local_source, "public_key", source.key['public'])
-            lazy_setattr(local_source, "fingerprint", source.key['fingerprint'])
+            lazy_setattr(local_source, "public_key", source.key["public"])
+            lazy_setattr(local_source, "fingerprint", source.key["fingerprint"])
 
             # Removing the UUID from local_sources_by_uuid ensures
             # this record won't be deleted at the end of this
             # function.
             del local_sources_by_uuid[source.uuid]
-            logger.debug('Updated source {}'.format(source.uuid))
+            logger.debug("Updated source {}".format(source.uuid))
         else:
             # A new source to be added to the database.
             ns = Source(
@@ -187,37 +194,48 @@ def update_sources(
                 is_starred=source.is_starred,
                 last_updated=parse(source.last_updated),
                 document_count=source.number_of_documents,
-                public_key=source.key['public'],
-                fingerprint=source.key['fingerprint'],
+                public_key=source.key["public"],
+                fingerprint=source.key["fingerprint"],
             )
             session.add(ns)
 
-            logger.debug('Added new source {}'.format(source.uuid))
+            logger.debug("Added new source {}".format(source.uuid))
 
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
     for deleted_source in local_sources_by_uuid.values():
         delete_source_collection(deleted_source.journalist_filename, data_dir)
         session.delete(deleted_source)
-        logger.debug('Deleted source {}'.format(deleted_source.uuid))
+        logger.debug("Deleted source {}".format(deleted_source.uuid))
 
     session.commit()
 
 
-def update_files(remote_submissions: List[SDKSubmission], local_submissions: List[File],
-                 session: Session, data_dir: str) -> None:
+def update_files(
+    remote_submissions: List[SDKSubmission],
+    local_submissions: List[File],
+    session: Session,
+    data_dir: str,
+) -> None:
     __update_submissions(File, remote_submissions, local_submissions, session, data_dir)
 
 
-def update_messages(remote_submissions: List[SDKSubmission], local_submissions: List[Message],
-                    session: Session, data_dir: str) -> None:
+def update_messages(
+    remote_submissions: List[SDKSubmission],
+    local_submissions: List[Message],
+    session: Session,
+    data_dir: str,
+) -> None:
     __update_submissions(Message, remote_submissions, local_submissions, session, data_dir)
 
 
-def __update_submissions(model: Union[Type[File], Type[Message]],
-                         remote_submissions: List[SDKSubmission],
-                         local_submissions: Union[List[Message], List[File]],
-                         session: Session, data_dir: str) -> None:
+def __update_submissions(
+    model: Union[Type[File], Type[Message]],
+    remote_submissions: List[SDKSubmission],
+    local_submissions: Union[List[Message], List[File]],
+    session: Session,
+    data_dir: str,
+) -> None:
     """
     The logic for updating files and messages is effectively the same, so this function is somewhat
     overloaded to allow us to do both in a DRY way.
@@ -244,8 +262,13 @@ def __update_submissions(model: Union[Type[File], Type[Message]],
             # A new submission to be added to the database.
             source = source_cache.get(submission.source_uuid)
             if source:
-                ns = model(source_id=source.id, uuid=submission.uuid, size=submission.size,
-                           filename=submission.filename, download_url=submission.download_url)
+                ns = model(
+                    source_id=source.id,
+                    uuid=submission.uuid,
+                    size=submission.size,
+                    filename=submission.filename,
+                    download_url=submission.download_url,
+                )
                 session.add(ns)
                 logger.debug(f"Added {model.__name__} {submission.uuid}")
 
@@ -259,8 +282,9 @@ def __update_submissions(model: Union[Type[File], Type[Message]],
     session.commit()
 
 
-def update_replies(remote_replies: List[SDKReply], local_replies: List[Reply],
-                   session: Session, data_dir: str) -> None:
+def update_replies(
+    remote_replies: List[SDKReply], local_replies: List[Reply], session: Session, data_dir: str
+) -> None:
     """
     * Existing replies are updated in the local database.
     * New replies have an entry created in the local database.
@@ -276,9 +300,7 @@ def update_replies(remote_replies: List[SDKReply], local_replies: List[Reply],
     for reply in remote_replies:
         user = users.get(reply.journalist_uuid)
         if not user:
-            user = find_or_create_user(
-                reply.journalist_uuid, reply.journalist_username, session
-            )
+            user = find_or_create_user(reply.journalist_uuid, reply.journalist_username, session)
             users[reply.journalist_uuid] = user
 
         local_reply = local_replies_by_uuid.get(reply.uuid)
@@ -288,7 +310,7 @@ def update_replies(remote_replies: List[SDKReply], local_replies: List[Reply],
             lazy_setattr(local_reply, "filename", reply.filename)
 
             del local_replies_by_uuid[reply.uuid]
-            logger.debug('Updated reply {}'.format(reply.uuid))
+            logger.debug("Updated reply {}".format(reply.uuid))
         else:
             # A new reply to be added to the database.
             source = source_cache.get(reply.source_uuid)
@@ -296,36 +318,41 @@ def update_replies(remote_replies: List[SDKReply], local_replies: List[Reply],
                 logger.error(f"No source found for reply {reply.uuid}")
                 continue
 
-            nr = Reply(uuid=reply.uuid,
-                       journalist_id=user.id,
-                       source_id=source.id,
-                       filename=reply.filename,
-                       size=reply.size)
+            nr = Reply(
+                uuid=reply.uuid,
+                journalist_id=user.id,
+                source_id=source.id,
+                filename=reply.filename,
+                size=reply.size,
+            )
             session.add(nr)
 
             # All replies fetched from the server have succeeded in being sent,
             # so we should delete the corresponding draft locally if it exists.
             try:
-                draft_reply_db_object = session.query(DraftReply).filter_by(
-                    uuid=reply.uuid).one()
+                draft_reply_db_object = session.query(DraftReply).filter_by(uuid=reply.uuid).one()
 
-                update_draft_replies(session, draft_reply_db_object.source.id,
-                                     draft_reply_db_object.timestamp,
-                                     draft_reply_db_object.file_counter,
-                                     nr.file_counter, commit=False)
+                update_draft_replies(
+                    session,
+                    draft_reply_db_object.source.id,
+                    draft_reply_db_object.timestamp,
+                    draft_reply_db_object.file_counter,
+                    nr.file_counter,
+                    commit=False,
+                )
                 session.delete(draft_reply_db_object)
 
             except NoResultFound:
                 pass  # No draft locally stored corresponding to this reply.
 
-            logger.debug('Added new reply {}'.format(reply.uuid))
+            logger.debug("Added new reply {}".format(reply.uuid))
 
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
     for deleted_reply in local_replies_by_uuid.values():
         delete_single_submission_or_reply_on_disk(deleted_reply, data_dir)
         session.delete(deleted_reply)
-        logger.debug('Deleted reply {}'.format(deleted_reply.uuid))
+        logger.debug("Deleted reply {}".format(deleted_reply.uuid))
 
     session.commit()
 
@@ -354,11 +381,9 @@ def find_or_create_user(uuid: str, username: str, session: Session, commit: bool
     return user
 
 
-def update_and_get_user(uuid: str,
-                        username: str,
-                        firstname: str,
-                        lastname: str,
-                        session: Session) -> User:
+def update_and_get_user(
+    uuid: str, username: str, firstname: str, lastname: str, session: Session
+) -> User:
     """
     Returns a user object representing the referenced journalist UUID.
     If user fields have changed, the db is updated.
@@ -376,9 +401,9 @@ def update_and_get_user(uuid: str,
 
 
 def update_missing_files(data_dir: str, session: Session) -> List[File]:
-    '''
+    """
     Update files that are marked as downloaded yet missing from the filesystem.
-    '''
+    """
     files_that_have_been_downloaded = session.query(File).filter_by(is_downloaded=True).all()
     files_that_are_missing = []
     for f in files_that_have_been_downloaded:
@@ -389,9 +414,12 @@ def update_missing_files(data_dir: str, session: Session) -> List[File]:
 
 
 def update_draft_replies(
-        session: Session, source_id: int, timestamp: datetime,
-        old_file_counter: int, new_file_counter: int,
-        commit: bool = True
+    session: Session,
+    source_id: int,
+    timestamp: datetime,
+    old_file_counter: int,
+    new_file_counter: int,
+    commit: bool = True,
 ) -> None:
     """
     When we confirm a sent reply R, if there are drafts that were sent after it,
@@ -419,11 +447,17 @@ def update_draft_replies(
         new_file_counter (int): this is the file_counter of the reply R confirmed
             as successfully sent from the server.
     """
-    for draft_reply in session.query(DraftReply) \
-                              .filter(and_(DraftReply.source_id == source_id,
-                                           DraftReply.timestamp > timestamp,
-                                           DraftReply.file_counter == old_file_counter)) \
-                              .all():
+    for draft_reply in (
+        session.query(DraftReply)
+        .filter(
+            and_(
+                DraftReply.source_id == source_id,
+                DraftReply.timestamp > timestamp,
+                DraftReply.file_counter == old_file_counter,
+            )
+        )
+        .all()
+    ):
         draft_reply.file_counter = new_file_counter
         session.add(draft_reply)
     if commit:
@@ -445,11 +479,15 @@ def find_new_messages(session: Session) -> List[Message]:
     * The message has not yet had decryption attempted.
     * Decryption previously failed on a message.
     """
-    q = session.query(Message).join(Source).filter(
-        or_(
-            Message.is_downloaded == False,
-            Message.is_decrypted == False,
-            Message.is_decrypted == None
+    q = (
+        session.query(Message)
+        .join(Source)
+        .filter(
+            or_(
+                Message.is_downloaded == False,
+                Message.is_decrypted == False,
+                Message.is_decrypted == None,
+            )
         )
     )  # noqa: E712
     q = q.order_by(desc(Source.last_updated))
@@ -465,11 +503,15 @@ def find_new_replies(session: Session) -> List[Reply]:
     * The reply has not yet had decryption attempted.
     * Decryption previously failed on a reply.
     """
-    q = session.query(Reply).join(Source).filter(
-        or_(
-            Reply.is_downloaded == False,
-            Reply.is_decrypted == False,
-            Reply.is_decrypted == None
+    q = (
+        session.query(Reply)
+        .join(Source)
+        .filter(
+            or_(
+                Reply.is_downloaded == False,
+                Reply.is_decrypted == False,
+                Reply.is_decrypted == None,
+            )
         )
     )  # noqa: E712
     q = q.order_by(desc(Source.last_updated))
@@ -488,9 +530,7 @@ def mark_as_not_downloaded(uuid: str, session: Session) -> None:
 
 
 def mark_as_downloaded(
-    model_type: Union[Type[File], Type[Message], Type[Reply]],
-    uuid: str,
-    session: Session
+    model_type: Union[Type[File], Type[Message], Type[Reply]], uuid: str, session: Session
 ) -> None:
     """
     Mark object as downloaded in the database.
@@ -517,7 +557,7 @@ def mark_as_decrypted(
     uuid: str,
     session: Session,
     is_decrypted: bool = True,
-    original_filename: str = None
+    original_filename: str = None,
 ) -> None:
     """
     Mark object as downloaded in the database.
@@ -533,10 +573,7 @@ def mark_as_decrypted(
 
 
 def set_message_or_reply_content(
-    model_type: Union[Type[Message], Type[Reply]],
-    uuid: str,
-    content: str,
-    session: Session
+    model_type: Union[Type[Message], Type[Reply]], uuid: str, content: str, session: Session
 ) -> None:
     """
     Mark whether or not the object is decrypted. If it's not decrypted, do not set content. If the
@@ -552,13 +589,14 @@ def delete_source_collection(journalist_filename: str, data_dir: str) -> None:
     source_folder = os.path.join(data_dir, journalist_filename)
     try:
         shutil.rmtree(source_folder)
-        logging.info('Source documents for {} deleted'.format(journalist_filename))
+        logging.info("Source documents for {} deleted".format(journalist_filename))
     except FileNotFoundError:
-        logging.info('No source documents for {} to delete'.format(journalist_filename))
+        logging.info("No source documents for {} to delete".format(journalist_filename))
 
 
-def delete_single_submission_or_reply_on_disk(obj_db: Union[File, Message, Reply],
-                                              data_dir: str) -> None:
+def delete_single_submission_or_reply_on_disk(
+    obj_db: Union[File, Message, Reply], data_dir: str
+) -> None:
     """
     Delete on disk any files associated with a single submission or reply.
     """
@@ -566,7 +604,7 @@ def delete_single_submission_or_reply_on_disk(obj_db: Union[File, Message, Reply
     try:
         os.remove(obj_db.location(data_dir))
     except FileNotFoundError:
-        logging.info('Object %s already deleted, skipping', obj_db.location(data_dir))
+        logging.info("Object %s already deleted, skipping", obj_db.location(data_dir))
 
     if isinstance(obj_db, File):
         # Also delete the file's enclosing folder.
@@ -600,10 +638,12 @@ def mark_all_pending_drafts_as_failed(session: Session) -> List[DraftReply]:
     """
     When we login (offline or online) or logout, we need to set all the pending replies as failed.
     """
-    pending_status = session.query(ReplySendStatus).filter_by(
-        name=ReplySendStatusCodes.PENDING.value).one()
-    failed_status = session.query(ReplySendStatus).filter_by(
-        name=ReplySendStatusCodes.FAILED.value).one()
+    pending_status = (
+        session.query(ReplySendStatus).filter_by(name=ReplySendStatusCodes.PENDING.value).one()
+    )
+    failed_status = (
+        session.query(ReplySendStatus).filter_by(name=ReplySendStatusCodes.FAILED.value).one()
+    )
 
     pending_drafts = session.query(DraftReply).filter_by(send_status=pending_status).all()
     for pending_draft in pending_drafts:

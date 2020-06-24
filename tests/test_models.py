@@ -1,49 +1,57 @@
 import datetime
+
 import pytest
 
-from tests import factory
 from securedrop_client.db import (
-    DownloadError, DownloadErrorCodes, DraftReply, Reply, File, Message, ReplySendStatus, User
+    DownloadError,
+    DownloadErrorCodes,
+    DraftReply,
+    File,
+    Message,
+    Reply,
+    ReplySendStatus,
+    User,
 )
+from tests import factory
 
 
 def test_user_fullname():
-    user1 = User(username='username_mock', firstname='firstname_mock', lastname='lastname_mock')
-    user2 = User(username='username_mock', firstname='firstname_mock')
-    user3 = User(username='username_mock', lastname='lastname_mock')
-    user4 = User(username='username_mock')
-    assert user1.fullname == 'firstname_mock lastname_mock'
-    assert user2.fullname == 'firstname_mock'
-    assert user3.fullname == 'lastname_mock'
-    assert user4.fullname == 'username_mock'
+    user1 = User(username="username_mock", firstname="firstname_mock", lastname="lastname_mock")
+    user2 = User(username="username_mock", firstname="firstname_mock")
+    user3 = User(username="username_mock", lastname="lastname_mock")
+    user4 = User(username="username_mock")
+    assert user1.fullname == "firstname_mock lastname_mock"
+    assert user2.fullname == "firstname_mock"
+    assert user3.fullname == "lastname_mock"
+    assert user4.fullname == "username_mock"
 
     user1.__repr__()
 
 
 def test_user_initials():
     # initials should be first char of firstname followed by first char of last name
-    user1 = User(username='username_mock', firstname='firstname_mock', lastname='lastname_mock')
-    user2 = User(username='username_mock', firstname='firstname_mock', lastname='l')
-    user3 = User(username='username_mock', firstname='f', lastname='lastname_mock')
-    user4 = User(username='username_mock', firstname='f', lastname='l')
-    assert user1.initials == 'fl'
-    assert user2.initials == 'fl'
-    assert user3.initials == 'fl'
-    assert user4.initials == 'fl'
+    user1 = User(username="username_mock", firstname="firstname_mock", lastname="lastname_mock")
+    user2 = User(username="username_mock", firstname="firstname_mock", lastname="l")
+    user3 = User(username="username_mock", firstname="f", lastname="lastname_mock")
+    user4 = User(username="username_mock", firstname="f", lastname="l")
+    assert user1.initials == "fl"
+    assert user2.initials == "fl"
+    assert user3.initials == "fl"
+    assert user4.initials == "fl"
 
     # initials should be first two chars of username
-    user5 = User(username='username_mock')
-    user6 = User(username='username_mock', firstname='f')
-    user7 = User(username='username_mock', lastname='l')
-    assert user5.initials == 'us'
-    assert user6.initials == 'us'
-    assert user7.initials == 'us'
+    user5 = User(username="username_mock")
+    user6 = User(username="username_mock", firstname="f")
+    user7 = User(username="username_mock", lastname="l")
+    assert user5.initials == "us"
+    assert user6.initials == "us"
+    assert user7.initials == "us"
 
     # initials should be first two chars of firstname or lastname
-    user8 = User(username='username_mock', firstname='firstname_mock')
-    user9 = User(username='username_mock', lastname='lastname_mock')
-    assert user8.initials == 'fi'
-    assert user9.initials == 'la'
+    user8 = User(username="username_mock", firstname="firstname_mock")
+    user9 = User(username="username_mock", lastname="lastname_mock")
+    assert user8.initials == "fi"
+    assert user9.initials == "la"
 
     user1.__repr__()
 
@@ -55,37 +63,51 @@ def test_string_representation_of_source():
 
 def test_repr_representation_of_message():
     source = factory.Source()
-    msg = Message(source=source, uuid="test", size=123, filename="1-test.docx",
-                  download_url='http://test/test')
+    msg = Message(
+        source=source,
+        uuid="test",
+        size=123,
+        filename="1-test.docx",
+        download_url="http://test/test",
+    )
     msg.__repr__()
 
 
 def test_repr_representation_of_file():
     source = factory.Source()
-    file_ = File(source=source, uuid="test", size=123, filename="1-test.docx",
-                 download_url='http://test/test')
+    file_ = File(
+        source=source,
+        uuid="test",
+        size=123,
+        filename="1-test.docx",
+        download_url="http://test/test",
+    )
     file_.__repr__()
 
 
 def test_repr_representation_of_reply():
-    user = User(username='hehe')
+    user = User(username="hehe")
     source = factory.Source()
-    reply = Reply(source=source, journalist=user, filename="1-reply.gpg",
-                  size=1234, uuid='test')
+    reply = Reply(source=source, journalist=user, filename="1-reply.gpg", size=1234, uuid="test")
     reply.__repr__()
 
 
 def test_repr_representation_of_draft_reply():
-    user = User(username='hehe')
+    user = User(username="hehe")
     source = factory.Source()
-    draft_reply = DraftReply(source=source, journalist=user, uuid='test')
+    draft_reply = DraftReply(source=source, journalist=user, uuid="test")
     draft_reply.__repr__()
 
 
 def test_string_representation_of_message():
     source = factory.Source()
-    msg = Message(source=source, uuid="test", size=123, filename="1-test.docx",
-                  download_url='http://test/test')
+    msg = Message(
+        source=source,
+        uuid="test",
+        size=123,
+        filename="1-test.docx",
+        download_url="http://test/test",
+    )
     msg.__str__()
     msg.content = "hello"
     msg.__str__()
@@ -93,34 +115,38 @@ def test_string_representation_of_message():
 
 def test_string_representation_of_file():
     source = factory.Source()
-    file_ = File(source=source, uuid="test", size=123, filename="1-test.docx",
-                 download_url='http://test/test')
+    file_ = File(
+        source=source,
+        uuid="test",
+        size=123,
+        filename="1-test.docx",
+        download_url="http://test/test",
+    )
     file_.__str__()
     file_.is_downloaded = True
     file_.__str__()
 
 
 def test_string_representation_of_reply():
-    user = User(username='hehe')
+    user = User(username="hehe")
     source = factory.Source()
-    reply = Reply(source=source, journalist=user, filename="1-reply.gpg",
-                  size=1234, uuid='test')
+    reply = Reply(source=source, journalist=user, filename="1-reply.gpg", size=1234, uuid="test")
     reply.__str__()
     reply.content = "hello"
     reply.__str__()
 
 
 def test_string_representation_of_draft_reply():
-    user = User(username='hehe')
+    user = User(username="hehe")
     source = factory.Source()
-    draft_reply = DraftReply(source=source, journalist=user, uuid='test')
+    draft_reply = DraftReply(source=source, journalist=user, uuid="test")
     draft_reply.__str__()
     draft_reply.content = "hello"
     draft_reply.__str__()
 
 
 def test_string_representation_of_send_reply_status():
-    reply_status = ReplySendStatus(name='teehee')
+    reply_status = ReplySendStatus(name="teehee")
     reply_status.__repr__()
 
 
@@ -132,13 +158,22 @@ def test_string_representation_of_download_error():
 def test_source_collection():
     # Create some test submissions and replies
     source = factory.Source()
-    file_ = File(source=source, uuid="test", size=123, filename="2-test.doc.gpg",
-                 download_url='http://test/test')
-    message = Message(source=source, uuid="test", size=123, filename="3-test.doc.gpg",
-                      download_url='http://test/test')
-    user = User(username='hehe')
-    reply = Reply(source=source, journalist=user, filename="1-reply.gpg",
-                  size=1234, uuid='test')
+    file_ = File(
+        source=source,
+        uuid="test",
+        size=123,
+        filename="2-test.doc.gpg",
+        download_url="http://test/test",
+    )
+    message = Message(
+        source=source,
+        uuid="test",
+        size=123,
+        filename="3-test.doc.gpg",
+        download_url="http://test/test",
+    )
+    user = User(username="hehe")
+    reply = Reply(source=source, journalist=user, filename="1-reply.gpg", size=1234, uuid="test")
     source.files = [file_]
     source.messages = [message]
     source.replies = [reply]
@@ -152,16 +187,25 @@ def test_source_collection():
 def test_source_server_collection():
     # Create some test submissions and replies
     source = factory.Source()
-    file_ = File(source=source, uuid="test", size=123, filename="2-test.doc.gpg",
-                 download_url='http://test/test')
-    message = Message(source=source, uuid="test", size=123, filename="3-test.doc.gpg",
-                      download_url='http://test/test')
-    user = User(username='hehe')
-    reply = Reply(source=source, journalist=user, filename="1-reply.gpg",
-                  size=1234, uuid='test')
-    draft_reply = DraftReply(source=source, journalist=user,
-                             uuid='test',
-                             timestamp=datetime.datetime(2002, 6, 6, 6, 0))
+    file_ = File(
+        source=source,
+        uuid="test",
+        size=123,
+        filename="2-test.doc.gpg",
+        download_url="http://test/test",
+    )
+    message = Message(
+        source=source,
+        uuid="test",
+        size=123,
+        filename="3-test.doc.gpg",
+        download_url="http://test/test",
+    )
+    user = User(username="hehe")
+    reply = Reply(source=source, journalist=user, filename="1-reply.gpg", size=1234, uuid="test")
+    draft_reply = DraftReply(
+        source=source, journalist=user, uuid="test", timestamp=datetime.datetime(2002, 6, 6, 6, 0)
+    )
     source.files = [file_]
     source.messages = [message]
     source.replies = [reply]
@@ -179,21 +223,44 @@ def test_source_server_collection():
 def test_source_collection_ordering_with_multiple_draft_replies():
     # Create some test submissions, replies, and draft replies.
     source = factory.Source()
-    file_1 = File(source=source, uuid="test", size=123, filename="1-test.doc.gpg",
-                  download_url='http://test/test')
-    message_2 = Message(source=source, uuid="test", size=123, filename="2-test.doc.gpg",
-                        download_url='http://test/test')
-    user = User(username='hehe')
-    reply_3 = Reply(source=source, journalist=user, filename="3-reply.gpg",
-                    size=1234, uuid='test')
-    draft_reply_4 = DraftReply(uuid='4', source=source, journalist=user, file_counter=3,
-                               timestamp=datetime.datetime(2000, 6, 6, 6, 0))
-    draft_reply_5 = DraftReply(uuid='5', source=source, journalist=user, file_counter=3,
-                               timestamp=datetime.datetime(2001, 6, 6, 6, 0))
-    reply_6 = Reply(source=source, journalist=user, filename="4-reply.gpg",
-                    size=1234, uuid='test2')
-    draft_reply_7 = DraftReply(uuid='6', source=source, journalist=user, file_counter=4,
-                               timestamp=datetime.datetime(2002, 6, 6, 6, 0))
+    file_1 = File(
+        source=source,
+        uuid="test",
+        size=123,
+        filename="1-test.doc.gpg",
+        download_url="http://test/test",
+    )
+    message_2 = Message(
+        source=source,
+        uuid="test",
+        size=123,
+        filename="2-test.doc.gpg",
+        download_url="http://test/test",
+    )
+    user = User(username="hehe")
+    reply_3 = Reply(source=source, journalist=user, filename="3-reply.gpg", size=1234, uuid="test")
+    draft_reply_4 = DraftReply(
+        uuid="4",
+        source=source,
+        journalist=user,
+        file_counter=3,
+        timestamp=datetime.datetime(2000, 6, 6, 6, 0),
+    )
+    draft_reply_5 = DraftReply(
+        uuid="5",
+        source=source,
+        journalist=user,
+        file_counter=3,
+        timestamp=datetime.datetime(2001, 6, 6, 6, 0),
+    )
+    reply_6 = Reply(source=source, journalist=user, filename="4-reply.gpg", size=1234, uuid="test2")
+    draft_reply_7 = DraftReply(
+        uuid="6",
+        source=source,
+        journalist=user,
+        file_counter=4,
+        timestamp=datetime.datetime(2002, 6, 6, 6, 0),
+    )
     source.files = [file_1]
     source.messages = [message_2]
     source.replies = [reply_3, reply_6]
@@ -210,11 +277,11 @@ def test_source_collection_ordering_with_multiple_draft_replies():
 
 
 def test_file_init():
-    '''
+    """
     Check that:
       - We can't pass the file_counter attribute
       - The file_counter attribute is see correctly based off the filename
-    '''
+    """
     with pytest.raises(TypeError):
         File(file_counter=1)
 
@@ -223,11 +290,11 @@ def test_file_init():
 
 
 def test_message_init():
-    '''
+    """
     Check that:
       - We can't pass the file_counter attribute
       - The file_counter attribute is see correctly based off the filename
-    '''
+    """
     with pytest.raises(TypeError):
         Message(file_counter=1)
 
@@ -236,11 +303,11 @@ def test_message_init():
 
 
 def test_reply_init():
-    '''
+    """
     Check that:
       - We can't pass the file_counter attribute
       - The file_counter attribute is see correctly based off the filename
-    '''
+    """
     with pytest.raises(TypeError):
         Reply(file_counter=1)
 
@@ -250,9 +317,9 @@ def test_reply_init():
 
 def test_file_with_download_error(session, download_error_codes):
     f = factory.File()
-    download_error = session.query(DownloadError).filter_by(
-        name=DownloadErrorCodes.CHECKSUM_ERROR.name
-    ).one()
+    download_error = (
+        session.query(DownloadError).filter_by(name=DownloadErrorCodes.CHECKSUM_ERROR.name).one()
+    )
     f.download_error = download_error
     session.commit()
 
@@ -262,9 +329,9 @@ def test_file_with_download_error(session, download_error_codes):
 
 def test_message_with_download_error(session, download_error_codes):
     m = factory.Message(is_decrypted=False, content=None)
-    download_error = session.query(DownloadError).filter_by(
-        name=DownloadErrorCodes.DECRYPTION_ERROR.name
-    ).one()
+    download_error = (
+        session.query(DownloadError).filter_by(name=DownloadErrorCodes.DECRYPTION_ERROR.name).one()
+    )
     m.download_error = download_error
     session.commit()
 
@@ -274,9 +341,9 @@ def test_message_with_download_error(session, download_error_codes):
 
 def test_reply_with_download_error(session, download_error_codes):
     r = factory.Reply(is_decrypted=False, content=None)
-    download_error = session.query(DownloadError).filter_by(
-        name=DownloadErrorCodes.DECRYPTION_ERROR.name
-    ).one()
+    download_error = (
+        session.query(DownloadError).filter_by(name=DownloadErrorCodes.DECRYPTION_ERROR.name).one()
+    )
     r.download_error = download_error
     session.commit()
 

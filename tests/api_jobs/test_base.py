@@ -1,20 +1,18 @@
 import pytest
-
 from sdclientapi import AuthError, RequestTimeoutError, ServerConnectionError
 
-from securedrop_client.api_jobs.base import (ApiInaccessibleError, ApiJob,
-                                             SingleObjectApiJob)
+from securedrop_client.api_jobs.base import ApiInaccessibleError, ApiJob, SingleObjectApiJob
 from tests.factory import dummy_job_factory
 
 
 def test_ApiInaccessibleError_init():
     # check default value
     err = ApiInaccessibleError()
-    assert str(err).startswith('API is inaccessible')
+    assert str(err).startswith("API is inaccessible")
     assert isinstance(err, Exception)
 
     # check custom
-    msg = 'foo'
+    msg = "foo"
     err = ApiInaccessibleError(msg)
     assert str(err) == msg
 
@@ -27,7 +25,7 @@ def test_ApiJob_raises_NotImplemetedError():
 
 
 def test_ApiJob_no_api(mocker):
-    return_value = 'wat'
+    return_value = "wat"
     api_job_cls = dummy_job_factory(mocker, return_value)
     api_job = api_job_cls()
 
@@ -41,7 +39,7 @@ def test_ApiJob_no_api(mocker):
 
 
 def test_ApiJob_success(mocker):
-    return_value = 'wat'
+    return_value = "wat"
     api_job_cls = dummy_job_factory(mocker, return_value)
     api_job = api_job_cls()
 
@@ -55,7 +53,7 @@ def test_ApiJob_success(mocker):
 
 
 def test_ApiJob_auth_error(mocker):
-    return_value = AuthError('oh no')
+    return_value = AuthError("oh no")
     api_job_cls = dummy_job_factory(mocker, return_value)
     api_job = api_job_cls()
 
@@ -107,10 +105,9 @@ def test_ApiJob_retry_suceeds_after_failed_attempt(mocker, exception):
     """Retry logic: after failed attempt should succeed"""
 
     number_of_attempts = 5
-    success_return_value = 'now works'
+    success_return_value = "now works"
     return_values = [exception(), success_return_value]
-    api_job_cls = dummy_job_factory(mocker, return_values,
-                                    remaining_attempts=number_of_attempts)
+    api_job_cls = dummy_job_factory(mocker, return_values, remaining_attempts=number_of_attempts)
     api_job = api_job_cls()
 
     mock_api_client = mocker.MagicMock()
@@ -129,10 +126,9 @@ def test_ApiJob_retry_exactly_n_attempts_times(mocker, exception):
     """Retry logic: boundary value case - 5th attempt should succeed"""
 
     number_of_attempts = 5
-    success_return_value = 'now works'
+    success_return_value = "now works"
     return_values = [exception()] * (number_of_attempts - 1) + [success_return_value]
-    api_job_cls = dummy_job_factory(mocker, return_values,
-                                    remaining_attempts=number_of_attempts)
+    api_job_cls = dummy_job_factory(mocker, return_values, remaining_attempts=number_of_attempts)
     api_job = api_job_cls()
 
     mock_api_client = mocker.MagicMock()
@@ -152,8 +148,7 @@ def test_ApiJob_retry_timeout(mocker, exception):
 
     number_of_attempts = 5
     return_values = [exception()] * (number_of_attempts + 1)
-    api_job_cls = dummy_job_factory(mocker, return_values,
-                                    remaining_attempts=number_of_attempts)
+    api_job_cls = dummy_job_factory(mocker, return_values, remaining_attempts=number_of_attempts)
     api_job = api_job_cls()
 
     mock_api_client = mocker.MagicMock()
@@ -169,7 +164,7 @@ def test_ApiJob_retry_timeout(mocker, exception):
 
 
 def test_ApiJob_comparison(mocker):
-    return_value = 'wat'
+    return_value = "wat"
     api_job_cls = dummy_job_factory(mocker, return_value)
     api_job_1 = api_job_cls()
     api_job_1.order_number = 1
@@ -181,7 +176,7 @@ def test_ApiJob_comparison(mocker):
 
 
 def test_ApiJob_order_number_unset(mocker):
-    return_value = 'wat'
+    return_value = "wat"
     api_job_cls = dummy_job_factory(mocker, return_value)
     api_job_1 = api_job_cls()
     api_job_2 = api_job_cls()
@@ -191,14 +186,14 @@ def test_ApiJob_order_number_unset(mocker):
 
 
 def test_SingleObjectApiJob_comparison_obj_without_uuid_attr(mocker):
-    test_job_with_uuid = SingleObjectApiJob('uuid1')
+    test_job_with_uuid = SingleObjectApiJob("uuid1")
     test_job_without_uuid = ApiJob()
 
     assert test_job_with_uuid != test_job_without_uuid
 
 
 def test_SingleObjectApiJob_comparison_obj_with_uuid_attr(mocker):
-    test_job_with_uuid = SingleObjectApiJob('uuid1')
-    test_job_with_uuid_2 = SingleObjectApiJob('uuid1')
+    test_job_with_uuid = SingleObjectApiJob("uuid1")
+    test_job_with_uuid_2 = SingleObjectApiJob("uuid1")
 
     assert test_job_with_uuid == test_job_with_uuid_2

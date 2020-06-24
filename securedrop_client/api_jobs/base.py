@@ -1,23 +1,24 @@
 import logging
+from typing import Any, Optional, TypeVar
 
 from PyQt5.QtCore import QObject, pyqtSignal
 from sdclientapi import API, AuthError, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm.session import Session
-from typing import Any, Optional, TypeVar
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_NUM_ATTEMPTS = 5
 
-QueueJobType = TypeVar('QueueJobType', bound='QueueJob')
+QueueJobType = TypeVar("QueueJobType", bound="QueueJob")
 
 
 class ApiInaccessibleError(Exception):
-
     def __init__(self, message: Optional[str] = None) -> None:
         if not message:
-            message = ('API is inaccessible either because there is no client or because the '
-                       'client is not properly authenticated.')
+            message = (
+                "API is inaccessible either because there is no client or because the "
+                "client is not properly authenticated."
+            )
         super().__init__(message)
 
 
@@ -27,15 +28,15 @@ class QueueJob(QObject):
         self.order_number = None  # type: Optional[int]
 
     def __lt__(self, other: QueueJobType) -> bool:
-        '''
+        """
         Python's PriorityQueue requires that QueueJobs are sortable as it
         retrieves the next job using sorted(list(entries))[0].
 
         For QueueJobs that have equal priority, we need to use the order_number key
         to break ties to ensure that objects are retrieved in FIFO order.
-        '''
+        """
         if self.order_number is None or other.order_number is None:
-            raise ValueError('cannot compare jobs without order_number!')
+            raise ValueError("cannot compare jobs without order_number!")
 
         return self.order_number < other.order_number
 
@@ -47,14 +48,15 @@ class PauseQueueJob(QueueJob):
 
 class ApiJob(QueueJob):
 
-    '''
+    """
     Signal that is emitted after an job finishes successfully.
-    '''
-    success_signal = pyqtSignal('PyQt_PyObject')
+    """
 
-    '''
+    success_signal = pyqtSignal("PyQt_PyObject")
+
+    """
     Signal that is emitted if there is a failure during the job.
-    '''
+    """
     failure_signal = pyqtSignal(Exception)
 
     def __init__(self, remaining_attempts: int = DEFAULT_NUM_ATTEMPTS) -> None:
@@ -83,23 +85,23 @@ class ApiJob(QueueJob):
                 break
 
     def call_api(self, api_client: API, session: Session) -> Any:
-        '''
+        """
         Method for making the actual API call and handling the result.
 
         This MUST resturn a value if the API call and other tasks were successful and MUST raise
         an exception if and only if the tasks failed. Presence of a raise exception indicates a
         failure.
-        '''
+        """
         raise NotImplementedError
 
 
 class SingleObjectApiJob(ApiJob):
     def __init__(self, uuid: str, remaining_attempts: int = DEFAULT_NUM_ATTEMPTS) -> None:
         super().__init__(remaining_attempts)
-        '''
+        """
         UUID of the item (source, reply, submission, etc.) that this item
         corresponds to. We track this to prevent the addition of duplicate jobs.
-        '''
+        """
         self.uuid = uuid
 
     def __repr__(self) -> str:
@@ -107,7 +109,7 @@ class SingleObjectApiJob(ApiJob):
 
     def __eq__(self, other: Any) -> bool:  # type: ignore[override]
         # https://github.com/python/mypy/issues/2783
-        if self.uuid == getattr(other, 'uuid', None) and type(self) == type(other):
+        if self.uuid == getattr(other, "uuid", None) and type(self) == type(other):
             return True
         else:
             return False

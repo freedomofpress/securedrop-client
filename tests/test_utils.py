@@ -1,12 +1,13 @@
 import pytest
-from securedrop_client.utils import safe_mkdir, humanize_filesize
+
+from securedrop_client.utils import humanize_filesize, safe_mkdir
 
 
 def test_safe_makedirs_non_absolute(homedir):
     with pytest.raises(ValueError) as e_info:
-        safe_mkdir(homedir, '..')
+        safe_mkdir(homedir, "..")
 
-    assert 'not absolute' in str(e_info.value)
+    assert "not absolute" in str(e_info.value)
 
 
 def test_humanize_file_size_bytes():

@@ -1,13 +1,14 @@
 """Create models with a set of default valid properties, to avoid
 changes forcing an update of all test code.
 """
+import os
+import uuid
 from datetime import datetime
 from itertools import cycle
-import os
 from typing import List
-import uuid
 
-from sdclientapi import Reply as SDKReply, Source as SDKSource
+from sdclientapi import Reply as SDKReply
+from sdclientapi import Source as SDKSource
 
 from securedrop_client import db
 from securedrop_client.api_jobs.base import ApiJob
@@ -25,10 +26,10 @@ def User(**attrs):
     global USER_COUNT
     USER_COUNT += 1
     defaults = dict(
-        uuid='user-uuid-{}'.format(USER_COUNT),
-        username='test-user-id-{}'.format(USER_COUNT),
-        firstname='slim',
-        lastname='shady'
+        uuid="user-uuid-{}".format(USER_COUNT),
+        username="test-user-id-{}".format(USER_COUNT),
+        firstname="slim",
+        lastname="shady",
     )
 
     defaults.update(attrs)
@@ -38,21 +39,21 @@ def User(**attrs):
 
 def Source(**attrs):
 
-    with open(os.path.join(os.path.dirname(__file__), 'files', 'test-key.gpg.pub.asc')) as f:
+    with open(os.path.join(os.path.dirname(__file__), "files", "test-key.gpg.pub.asc")) as f:
         pub_key = f.read()
 
     global SOURCE_COUNT
     SOURCE_COUNT += 1
     defaults = dict(
-        uuid='source-uuid-{}'.format(SOURCE_COUNT),
-        journalist_designation='testy-mctestface',
+        uuid="source-uuid-{}".format(SOURCE_COUNT),
+        journalist_designation="testy-mctestface",
         is_flagged=False,
         public_key=pub_key,
-        fingerprint='B2FF7FB28EED8CABEBC5FB6C6179D97BCFA52E5F',
+        fingerprint="B2FF7FB28EED8CABEBC5FB6C6179D97BCFA52E5F",
         interaction_count=0,
         is_starred=False,
         last_updated=datetime.now(),
-        document_count=0
+        document_count=0,
     )
 
     defaults.update(attrs)
@@ -64,13 +65,13 @@ def Message(**attrs):
     global MESSAGE_COUNT
     MESSAGE_COUNT += 1
     defaults = dict(
-        uuid='msg-uuid-{}'.format(MESSAGE_COUNT),
-        filename='{}-msg.gpg'.format(MESSAGE_COUNT),
+        uuid="msg-uuid-{}".format(MESSAGE_COUNT),
+        filename="{}-msg.gpg".format(MESSAGE_COUNT),
         size=123,
-        download_url='http://wat.onion/abc',
+        download_url="http://wat.onion/abc",
         is_decrypted=True,
         is_downloaded=True,
-        content='content',
+        content="content",
     )
 
     defaults.update(attrs)
@@ -82,12 +83,12 @@ def Reply(**attrs):
     global REPLY_COUNT
     REPLY_COUNT += 1
     defaults = dict(
-        uuid='reply-uuid-{}'.format(REPLY_COUNT),
-        filename='{}-reply.gpg'.format(REPLY_COUNT),
+        uuid="reply-uuid-{}".format(REPLY_COUNT),
+        filename="{}-reply.gpg".format(REPLY_COUNT),
         size=123,
         is_decrypted=True,
         is_downloaded=True,
-        content='content',
+        content="content",
     )
 
     defaults.update(attrs)
@@ -103,8 +104,8 @@ def DraftReply(**attrs):
         source_id=1,
         journalist_id=1,
         file_counter=1,
-        uuid='draft-reply-uuid-{}'.format(REPLY_COUNT),
-        content='content',
+        uuid="draft-reply-uuid-{}".format(REPLY_COUNT),
+        content="content",
         send_status_id=1,
     )
 
@@ -116,9 +117,7 @@ def DraftReply(**attrs):
 def ReplySendStatus(**attrs):
     global REPLY_SEND_STATUS_COUNT
     REPLY_SEND_STATUS_COUNT += 1
-    defaults = dict(
-        name=db.ReplySendStatusCodes.PENDING.value,
-    )
+    defaults = dict(name=db.ReplySendStatusCodes.PENDING.value,)
 
     defaults.update(attrs)
 
@@ -129,10 +128,10 @@ def File(**attrs):
     global FILE_COUNT
     FILE_COUNT += 1
     defaults = dict(
-        uuid='file-uuid-{}'.format(FILE_COUNT),
-        filename='{}-doc.gz.gpg'.format(FILE_COUNT),
+        uuid="file-uuid-{}".format(FILE_COUNT),
+        filename="{}-doc.gz.gpg".format(FILE_COUNT),
         size=123,
-        download_url='http://wat.onion/abc',
+        download_url="http://wat.onion/abc",
         is_decrypted=True,
         is_downloaded=True,
     )
@@ -143,9 +142,10 @@ def File(**attrs):
 
 
 def dummy_job_factory(mocker, return_value, **kwargs):
-    '''
+    """
     Factory that creates dummy `ApiJob`s to DRY up test code.
-    '''
+    """
+
     class DummyApiJob(ApiJob):
         success_signal = mocker.MagicMock()
         failure_signal = mocker.MagicMock()
@@ -169,27 +169,24 @@ def dummy_job_factory(mocker, return_value, **kwargs):
 
 def RemoteSource(**attrs):
 
-    with open(os.path.join(os.path.dirname(__file__), 'files', 'test-key.gpg.pub.asc')) as f:
+    with open(os.path.join(os.path.dirname(__file__), "files", "test-key.gpg.pub.asc")) as f:
         pub_key = f.read()
 
     defaults = dict(
-        add_star_url='foo',
+        add_star_url="foo",
         interaction_count=0,
         is_flagged=False,
         is_starred=True,
-        journalist_designation='testy-mctestface',
-        key={
-            'public': pub_key,
-            'fingerprint': 'B2FF7FB28EED8CABEBC5FB6C6179D97BCFA52E5F'
-        },
+        journalist_designation="testy-mctestface",
+        key={"public": pub_key, "fingerprint": "B2FF7FB28EED8CABEBC5FB6C6179D97BCFA52E5F"},
         last_updated=datetime.now().isoformat(),
         number_of_documents=0,
         number_of_messages=0,
-        remove_star_url='baz',
-        replies_url='qux',
-        submissions_url='wibble',
-        url='url',
-        uuid=str(uuid.uuid4())
+        remove_star_url="baz",
+        replies_url="qux",
+        submissions_url="wibble",
+        url="url",
+        uuid=str(uuid.uuid4()),
     )
 
     defaults.update(attrs)

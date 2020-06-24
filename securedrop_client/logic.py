@@ -16,33 +16,42 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import arrow
 import datetime
 import functools
 import inspect
 import logging
 import os
-import sdclientapi
 import uuid
-from typing import Dict, Tuple, Union, Any, List, Type  # noqa: F401
-
 from gettext import gettext as _
-from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess, Qt
+from typing import Any, Dict, List, Tuple, Type, Union  # noqa: F401
+
+import arrow
+import sdclientapi
+from PyQt5.QtCore import QObject, QProcess, Qt, QThread, QTimer, pyqtSignal
 from sdclientapi import RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm.session import sessionmaker
 
-from securedrop_client import storage
-from securedrop_client import db
+from securedrop_client import db, storage
 from securedrop_client.api_jobs.base import ApiInaccessibleError
 from securedrop_client.api_jobs.downloads import (
-    DownloadChecksumMismatchException, DownloadDecryptionException, DownloadException,
-    FileDownloadJob, MessageDownloadJob, ReplyDownloadJob,
+    DownloadChecksumMismatchException,
+    DownloadDecryptionException,
+    DownloadException,
+    FileDownloadJob,
+    MessageDownloadJob,
+    ReplyDownloadJob,
 )
 from securedrop_client.api_jobs.sources import DeleteSourceJob, DeleteSourceJobException
-from securedrop_client.api_jobs.uploads import SendReplyJob, SendReplyJobError, \
-    SendReplyJobTimeoutError
-from securedrop_client.api_jobs.updatestar import UpdateStarJob, UpdateStarJobError, \
-    UpdateStarJobTimeoutError
+from securedrop_client.api_jobs.updatestar import (
+    UpdateStarJob,
+    UpdateStarJobError,
+    UpdateStarJobTimeoutError,
+)
+from securedrop_client.api_jobs.uploads import (
+    SendReplyJob,
+    SendReplyJobError,
+    SendReplyJobTimeoutError,
+)
 from securedrop_client.crypto import GpgHelper
 from securedrop_client.export import Export
 from securedrop_client.queue import ApiJobQueue
@@ -243,11 +252,16 @@ class Controller(QObject):
     Emits:
         PyQt_PyObject: the ApiJob to be added
     """
-    add_job = pyqtSignal('PyQt_PyObject')
+    add_job = pyqtSignal("PyQt_PyObject")
 
     def __init__(
-        self, hostname: str, gui, session_maker: sessionmaker,
-        home: str, proxy: bool = True, qubes: bool = True
+        self,
+        hostname: str,
+        gui,
+        session_maker: sessionmaker,
+        home: str,
+        proxy: bool = True,
+        qubes: bool = True,
     ) -> None:
         """
         The hostname, gui and session objects are used to coordinate with the
@@ -296,7 +310,7 @@ class Controller(QObject):
         self.export = Export()
 
         # File data.
-        self.data_dir = os.path.join(self.home, 'data')
+        self.data_dir = os.path.join(self.home, "data")
 
         # Background sync to keep client up-to-date with server changes
         self.api_sync = ApiSync(self.api, self.session_maker, self.gpg, self.data_dir)
@@ -309,7 +323,7 @@ class Controller(QObject):
         self.show_last_sync_timer.timeout.connect(self.show_last_sync)
 
         # Path to the file containing the timestamp since the last sync with the server
-        self.last_sync_filepath = os.path.join(home, 'sync_flag')
+        self.last_sync_filepath = os.path.join(home, "sync_flag")
 
     @property
     def is_authenticated(self) -> bool:
@@ -323,7 +337,7 @@ class Controller(QObject):
 
     @is_authenticated.deleter
     def is_authenticated(self) -> None:
-        raise AttributeError('Cannot delete is_authenticated')
+        raise AttributeError("Cannot delete is_authenticated")
 
     def setup(self):
         """
@@ -348,13 +362,15 @@ class Controller(QObject):
 
         storage.clear_download_errors(self.session)
 
-    def call_api(self,
-                 api_call_func,
-                 success_callback,
-                 failure_callback,
-                 *args,
-                 current_object=None,
-                 **kwargs):
+    def call_api(
+        self,
+        api_call_func,
+        success_callback,
+        failure_callback,
+        *args,
+        current_object=None,
+        **kwargs,
+    ):
         """
         Calls the function in a non-blocking manner. Upon completion calls the
         callback with the result. Calls timeout if the timer associated with
@@ -364,25 +380,26 @@ class Controller(QObject):
         new_thread_id = str(uuid.uuid4())  # Uniquely id the new thread.
 
         new_api_thread = QThread(self.gui)
-        new_api_runner = APICallRunner(api_call_func, current_object, *args,
-                                       **kwargs)
+        new_api_runner = APICallRunner(api_call_func, current_object, *args, **kwargs)
         new_api_runner.moveToThread(new_api_thread)
 
         # handle completed call: copy response data, reset the
         # client, give the user-provided callback the response
         # data
         new_api_runner.call_succeeded.connect(
-            lambda: self.completed_api_call(new_thread_id, success_callback))
+            lambda: self.completed_api_call(new_thread_id, success_callback)
+        )
         new_api_runner.call_failed.connect(
-            lambda: self.completed_api_call(new_thread_id, failure_callback))
+            lambda: self.completed_api_call(new_thread_id, failure_callback)
+        )
 
         # when the thread starts, we want to run `call_api` on `api_runner`
         new_api_thread.started.connect(new_api_runner.call_api)
 
         # Add the thread related objects to the api_threads dictionary.
         self.api_threads[new_thread_id] = {
-            'thread': new_api_thread,
-            'runner': new_api_runner,
+            "thread": new_api_thread,
+            "runner": new_api_runner,
         }
 
         # Start the thread and related activity.
@@ -390,7 +407,8 @@ class Controller(QObject):
 
     def on_queue_paused(self) -> None:
         self.gui.update_error_status(
-            _('The SecureDrop server cannot be reached. Trying to reconnect...'), duration=0)
+            _("The SecureDrop server cannot be reached. Trying to reconnect..."), duration=0
+        )
         self.show_last_sync_timer.start(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
 
     def resume_queues(self) -> None:
@@ -408,11 +426,11 @@ class Controller(QObject):
         """
         logger.debug("Completed API call. Cleaning up and running callback.")
         thread_info = self.api_threads.pop(thread_id)
-        runner = thread_info['runner']
+        runner = thread_info["runner"]
         result_data = runner.result
 
         arg_spec = inspect.getfullargspec(user_callback)
-        if 'current_object' in arg_spec.args:
+        if "current_object" in arg_spec.args:
             user_callback(result_data, current_object=runner.current_object)
         else:
             user_callback(result_data)
@@ -428,25 +446,27 @@ class Controller(QObject):
         """
         storage.mark_all_pending_drafts_as_failed(self.session)
         self.api = sdclientapi.API(
-            self.hostname, username, password, totp, self.proxy, default_request_timeout=60)
-        self.call_api(self.api.authenticate,
-                      self.on_authenticate_success,
-                      self.on_authenticate_failure)
+            self.hostname, username, password, totp, self.proxy, default_request_timeout=60
+        )
+        self.call_api(
+            self.api.authenticate, self.on_authenticate_success, self.on_authenticate_failure
+        )
         self.show_last_sync_timer.stop()
-        self.set_status('')
+        self.set_status("")
 
     def on_authenticate_success(self, result):
         """
         Handles a successful authentication call against the API.
         """
-        logger.info('{} successfully logged in'.format(self.api.username))
+        logger.info("{} successfully logged in".format(self.api.username))
         self.gui.hide_login()
         user = storage.update_and_get_user(
             self.api.token_journalist_uuid,
             self.api.username,
             self.api.journalist_first_name,
             self.api.journalist_last_name,
-            self.session)
+            self.session,
+        )
         # Clear clipboard contents in case of previously pasted creds
         self.gui.clear_clipboard()
         self.gui.show_main_window(user)
@@ -458,8 +478,10 @@ class Controller(QObject):
     def on_authenticate_failure(self, result: Exception) -> None:
         # Failed to authenticate. Reset state with failure message.
         self.invalidate_token()
-        error = _('That didn\'t work. Please check everything and try again.\n'
-                  'Make sure to use a new two-factor code.')
+        error = _(
+            "That didn't work. Please check everything and try again.\n"
+            "Make sure to use a new two-factor code."
+        )
         self.gui.show_login_error(error=error)
         self.api_sync.stop()
 
@@ -482,7 +504,7 @@ class Controller(QObject):
         """
         Indicate that a user needs to login to perform the specified action.
         """
-        error = _('You must sign in to perform this action.')
+        error = _("You must sign in to perform this action.")
         self.gui.update_error_status(error)
 
     def authenticated(self):
@@ -503,7 +525,7 @@ class Controller(QObject):
             return None
 
     def on_sync_started(self) -> None:
-        self.sync_events.emit('syncing')
+        self.sync_events.emit("syncing")
 
     def on_sync_success(self) -> None:
         """
@@ -514,18 +536,17 @@ class Controller(QObject):
             * Download new messages and replies
             * Update missing files so that they can be re-downloaded
         """
-        with open(self.last_sync_filepath, 'w') as f:
+        with open(self.last_sync_filepath, "w") as f:
             f.write(arrow.now().format())
 
         missing_files = storage.update_missing_files(self.data_dir, self.session)
         for missed_file in missing_files:
-            self.file_missing.emit(missed_file.source.uuid, missed_file.uuid,
-                                   str(missed_file))
+            self.file_missing.emit(missed_file.source.uuid, missed_file.uuid, str(missed_file))
         self.update_sources()
         self.gui.refresh_current_source_conversation()
         self.download_new_messages()
         self.download_new_replies()
-        self.sync_events.emit('synced')
+        self.sync_events.emit("synced")
         self.resume_queues()
 
     def on_sync_failure(self, result: Exception) -> None:
@@ -534,7 +555,7 @@ class Controller(QObject):
         a sync fails is ApiInaccessibleError then we need to log the user out for security reasons
         and show them the login window in order to get a new token.
         """
-        logger.warning('sync failure: {}'.format(result))
+        logger.warning("sync failure: {}".format(result))
 
         if isinstance(result, ApiInaccessibleError):
             # Don't show login window if the user is already logged out
@@ -543,10 +564,11 @@ class Controller(QObject):
 
             self.invalidate_token()
             self.logout()
-            self.gui.show_login(error=_('Your session expired. Please log in again.'))
+            self.gui.show_login(error=_("Your session expired. Please log in again."))
         elif isinstance(result, (RequestTimeoutError, ServerConnectionError)):
             self.gui.update_error_status(
-                _('The SecureDrop server cannot be reached. Trying to reconnect...'), duration=0)
+                _("The SecureDrop server cannot be reached. Trying to reconnect..."), duration=0
+            )
 
     def show_last_sync(self):
         """
@@ -565,11 +587,10 @@ class Controller(QObject):
         self.star_update_successful.emit(source_uuid)
 
     def on_update_star_failure(
-        self,
-        error: Union[UpdateStarJobError, UpdateStarJobTimeoutError]
+        self, error: Union[UpdateStarJobError, UpdateStarJobTimeoutError]
     ) -> None:
         if isinstance(error, UpdateStarJobError):
-            self.gui.update_error_status(_('Failed to update star.'))
+            self.gui.update_error_status(_("Failed to update star."))
             source = self.session.query(db.Source).filter_by(uuid=error.source_uuid).one()
             self.star_update_failed.emit(error.source_uuid, source.is_starred)
 
@@ -620,9 +641,9 @@ class Controller(QObject):
         self.gui.update_activity_status(message, duration)
 
     @login_required
-    def _submit_download_job(self,
-                             object_type: Union[Type[db.Reply], Type[db.Message], Type[db.File]],
-                             uuid: str) -> None:
+    def _submit_download_job(
+        self, object_type: Union[Type[db.Reply], Type[db.Message], Type[db.File]], uuid: str
+    ) -> None:
 
         if object_type == db.Reply:
             job = ReplyDownloadJob(
@@ -645,7 +666,7 @@ class Controller(QObject):
         new_messages = storage.find_new_messages(self.session)
         new_message_count = len(new_messages)
         if new_message_count > 0:
-            self.set_status(_('Retrieving new messages'), 2500)
+            self.set_status(_("Retrieving new messages"), 2500)
 
         for message in new_messages:
             if message.download_error:
@@ -669,7 +690,7 @@ class Controller(QObject):
         """
         if isinstance(exception, DownloadChecksumMismatchException):
             # Keep resubmitting the job if the download is corrupted.
-            logger.warning('Failure due to checksum mismatch, retrying {}'.format(exception.uuid))
+            logger.warning("Failure due to checksum mismatch, retrying {}".format(exception.uuid))
             self._submit_download_job(exception.object_type, exception.uuid)
 
         self.session.commit()
@@ -703,7 +724,7 @@ class Controller(QObject):
         """
         if isinstance(exception, DownloadChecksumMismatchException):
             # Keep resubmitting the job if the download is corrupted.
-            logger.warning('Failure due to checksum mismatch, retrying {}'.format(exception.uuid))
+            logger.warning("Failure due to checksum mismatch, retrying {}".format(exception.uuid))
             self._submit_download_job(exception.object_type, exception.uuid)
 
         self.session.commit()
@@ -714,15 +735,19 @@ class Controller(QObject):
             logger.error(f"Could not emit reply_download_failed: {e}")
 
     def downloaded_file_exists(self, file: db.File) -> bool:
-        '''
+        """
         Check if the file specified by file_uuid exists. If it doesn't update the local db and
         GUI to show the file as not downloaded.
-        '''
+        """
         if not os.path.exists(file.location(self.data_dir)):
-            self.gui.update_error_status(_(
-                'File does not exist in the data directory. Please try re-downloading.'))
-            logger.warning('Cannot find file in {}. File does not exist.'.format(
-                os.path.dirname(file.filename)))
+            self.gui.update_error_status(
+                _("File does not exist in the data directory. Please try re-downloading.")
+            )
+            logger.warning(
+                "Cannot find file in {}. File does not exist.".format(
+                    os.path.dirname(file.filename)
+                )
+            )
             missing_files = storage.update_missing_files(self.data_dir, self.session)
             for f in missing_files:
                 self.file_missing.emit(f.source.uuid, f.uuid, str(f))
@@ -730,10 +755,10 @@ class Controller(QObject):
         return True
 
     def on_file_open(self, file: db.File) -> None:
-        '''
+        """
         Open the file specified by file_uuid. If the file is missing, update the db so that
         is_downloaded is set to False.
-        '''
+        """
         logger.info('Opening file in "{}".'.format(os.path.dirname(file.location(self.data_dir))))
 
         if not self.downloaded_file_exists(file):
@@ -743,15 +768,15 @@ class Controller(QObject):
             return
 
         command = "qvm-open-in-vm"
-        args = ['--view-only', '$dispvm:sd-viewer', file.location(self.data_dir)]
+        args = ["--view-only", "$dispvm:sd-viewer", file.location(self.data_dir)]
         process = QProcess(self)
         process.start(command, args)
 
     def run_printer_preflight_checks(self):
-        '''
+        """
         Run preflight checks to make sure the Export VM is configured correctly.
-        '''
-        logger.info('Running printer preflight check')
+        """
+        logger.info("Running printer preflight check")
 
         if not self.qubes:
             self.export.printer_preflight_success.emit()
@@ -760,10 +785,10 @@ class Controller(QObject):
         self.export.begin_printer_preflight.emit()
 
     def run_export_preflight_checks(self):
-        '''
+        """
         Run preflight checks to make sure the Export VM is configured correctly.
-        '''
-        logger.info('Running export preflight check')
+        """
+        logger.info("Running export preflight check")
 
         if not self.qubes:
             self.export.preflight_check_call_success.emit()
@@ -772,14 +797,14 @@ class Controller(QObject):
         self.export.begin_preflight_check.emit()
 
     def export_file_to_usb_drive(self, file_uuid: str, passphrase: str) -> None:
-        '''
+        """
         Send the file specified by file_uuid to the Export VM with the user-provided passphrase for
         unlocking the attached transfer device.  If the file is missing, update the db so that
         is_downloaded is set to False.
-        '''
+        """
         file = self.get_file(file_uuid)
         file_location = file.location(self.data_dir)
-        logger.info('Exporting file in: {}'.format(os.path.dirname(file_location)))
+        logger.info("Exporting file in: {}".format(os.path.dirname(file_location)))
 
         if not self.downloaded_file_exists(file):
             return
@@ -791,13 +816,13 @@ class Controller(QObject):
         self.export.begin_usb_export.emit([file_location], passphrase)
 
     def print_file(self, file_uuid: str) -> None:
-        '''
+        """
         Send the file specified by file_uuid to the Export VM. If the file is missing, update the db
         so that is_downloaded is set to False.
-        '''
+        """
         file = self.get_file(file_uuid)
         file_location = file.location(self.data_dir)
-        logger.info('Printing file in: {}'.format(os.path.dirname(file_location)))
+        logger.info("Printing file in: {}".format(os.path.dirname(file_location)))
 
         if not self.downloaded_file_exists(file):
             return
@@ -809,9 +834,7 @@ class Controller(QObject):
 
     @login_required
     def on_submission_download(
-        self,
-        submission_type: Union[Type[db.File], Type[db.Message]],
-        submission_uuid: str,
+        self, submission_type: Union[Type[db.File], Type[db.Message]], submission_uuid: str,
     ) -> None:
         """
         Download the file associated with the Submission (which may be a File or Message).
@@ -835,14 +858,14 @@ class Controller(QObject):
         """
         # Keep resubmitting the job if the download is corrupted.
         if isinstance(exception, DownloadChecksumMismatchException):
-            logger.warning('Failure due to checksum mismatch, retrying {}'.format(exception.uuid))
+            logger.warning("Failure due to checksum mismatch, retrying {}".format(exception.uuid))
             self._submit_download_job(exception.object_type, exception.uuid)
         else:
             if isinstance(exception, DownloadDecryptionException):
                 logger.error("Failed to decrypt %s", exception.uuid)
                 f = self.get_file(exception.uuid)
                 self.file_missing.emit(f.source.uuid, f.uuid, str(f))
-            self.gui.update_error_status(_('The file download failed. Please try again.'))
+            self.gui.update_error_status(_("The file download failed. Please try again."))
 
     def on_delete_source_success(self, source_uuid: str) -> None:
         """
@@ -852,7 +875,7 @@ class Controller(QObject):
 
     def on_delete_source_failure(self, e: Exception) -> None:
         if isinstance(e, DeleteSourceJobException):
-            error = _('Failed to delete source at server')
+            error = _("Failed to delete source at server")
             self.gui.update_error_status(error)
             self.source_deletion_failed.emit(e.source_uuid)
 
@@ -881,8 +904,11 @@ class Controller(QObject):
         # Before we send the reply, add the draft to the database with a PENDING
         # reply send status.
         source = self.session.query(db.Source).filter_by(uuid=source_uuid).one()
-        reply_status = self.session.query(db.ReplySendStatus).filter_by(
-            name=db.ReplySendStatusCodes.PENDING.value).one()
+        reply_status = (
+            self.session.query(db.ReplySendStatus)
+            .filter_by(name=db.ReplySendStatusCodes.PENDING.value)
+            .one()
+        )
         draft_reply = db.DraftReply(
             uuid=reply_uuid,
             timestamp=datetime.datetime.utcnow(),
@@ -902,16 +928,15 @@ class Controller(QObject):
         self.add_job.emit(job)
 
     def on_reply_success(self, reply_uuid: str) -> None:
-        logger.info('{} sent successfully'.format(reply_uuid))
+        logger.info("{} sent successfully".format(reply_uuid))
         self.session.commit()
         reply = storage.get_reply(self.session, reply_uuid)
         self.reply_succeeded.emit(reply.source.uuid, reply_uuid, reply.content)
 
     def on_reply_failure(
-        self,
-        exception: Union[SendReplyJobError, SendReplyJobTimeoutError]
+        self, exception: Union[SendReplyJobError, SendReplyJobTimeoutError]
     ) -> None:
-        logger.debug('{} failed to send'.format(exception.reply_uuid))
+        logger.debug("{} failed to send".format(exception.reply_uuid))
 
         # only emit failure signal for non-timeout errors
         if isinstance(exception, SendReplyJobError):
@@ -923,7 +948,7 @@ class Controller(QObject):
         return file
 
     def on_logout_success(self, result) -> None:
-        logging.info('Client logout successful')
+        logging.info("Client logout successful")
 
     def on_logout_failure(self, result: Exception) -> None:
-        logging.info('Client logout failure')
+        logging.info("Client logout failure")

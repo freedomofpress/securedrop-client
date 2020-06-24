@@ -18,10 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from typing import Union
 
-from PyQt5.QtWidgets import QLabel, QHBoxLayout, QPushButton, QWidget
 from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
 
-from securedrop_client.resources import load_svg, load_icon
+from securedrop_client.resources import load_icon, load_svg
 
 
 class SvgToggleButton(QPushButton):
@@ -106,7 +106,8 @@ class SvgPushButton(QPushButton):
             disabled=disabled,
             active=active,
             selected=selected,
-            disabled_off=disabled)
+            disabled_off=disabled,
+        )
         self.setIcon(self.icon)
         self.setIconSize(svg_size) if svg_size else self.setIconSize(QSize())
 
@@ -179,16 +180,16 @@ class SecureQLabel(QLabel):
             return full_text
 
         # Only allow one line of elided text
-        if '\n' in full_text:
-            full_text = full_text.split('\n', 1)[0]
+        if "\n" in full_text:
+            full_text = full_text.split("\n", 1)[0]
 
         fm = self.fontMetrics()
         filename_width = fm.horizontalAdvance(full_text)
         if filename_width > self.max_length:
-            elided_text = ''
+            elided_text = ""
             for c in full_text:
                 if fm.horizontalAdvance(elided_text) > self.max_length:
-                    elided_text = elided_text[:-3] + '...'
+                    elided_text = elided_text[:-3] + "..."
                     return elided_text
                 elided_text = elided_text + c
 

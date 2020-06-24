@@ -1,6 +1,27 @@
 DEFAULT_GOAL: help
 SHELL := /bin/bash
 
+.PHONY: venv
+venv:  ## Provision a Python 3 virtualenv for development.
+	python3 -m venv .venv
+	.venv/bin/pip install --require-hashes -r dev-requirements.txt
+
+.PHONY: black
+black: ## Format Python source code with black
+	@black setup.py securedrop_client tests
+
+.PHONY: check-black
+check-black: ## Check Python source code formatting with black
+	@black --check --diff setup.py securedrop_client tests
+
+.PHONY: isort
+isort: ## Run isort to organize Python imports
+	@isort --recursive setup.py securedrop_client tests
+
+.PHONY: check-isort
+check-isort: ## Check Python import organization with isort
+	@isort --check-only --diff --recursive setup.py securedrop_client tests
+
 .PHONY: mypy
 mypy: ## Run static type checker
 	@mypy --ignore-missing-imports securedrop_client
@@ -80,7 +101,7 @@ bandit: ## Run bandit with medium level excluding test-related folders
 	bandit -ll --recursive . --exclude ./tests,./.venv
 
 .PHONY: check
-check: clean bandit lint mypy test-random test-integration test-functional ## Run the full CI test suite
+check: clean check-black check-isort bandit lint mypy test-random test-integration test-functional ## Run the full CI test suite
 
 .PHONY: update-pip-requirements
 update-pip-requirements: ## Updates all Python requirements files via pip-compile for Linux.

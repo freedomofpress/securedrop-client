@@ -2,7 +2,6 @@ import logging
 import math
 import os
 import time
-
 from contextlib import contextmanager
 from typing import Dict, Generator, Optional
 
@@ -12,9 +11,9 @@ from securedrop_client import db
 
 
 def safe_mkdir(sdc_home: str, relative_path: str = None) -> None:
-    '''
+    """
     Safely create directories while checking permissions along the way.
-    '''
+    """
 
     if relative_path:
         full_path = os.path.join(sdc_home, relative_path)
@@ -22,7 +21,7 @@ def safe_mkdir(sdc_home: str, relative_path: str = None) -> None:
         full_path = sdc_home
 
     if not full_path == os.path.abspath(full_path):
-        raise ValueError('Path is not absolute: {}'.format(full_path))
+        raise ValueError("Path is not absolute: {}".format(full_path))
 
     if not os.path.exists(sdc_home):
         os.makedirs(sdc_home, 0o700)
@@ -42,16 +41,15 @@ def safe_mkdir(sdc_home: str, relative_path: str = None) -> None:
 
 
 def check_dir_permissions(dir_path: str) -> None:
-    '''
+    """
     Check that a directory has ``700`` as the final 3 bytes. Raises a
     ``RuntimeError`` otherwise.
-    '''
+    """
     if os.path.exists(dir_path):
         stat_res = os.stat(dir_path).st_mode
         masked = stat_res & 0o777
         if masked & 0o077:
-            raise RuntimeError('Unsafe permissions ({}) on {}'
-                               .format(oct(stat_res), dir_path))
+            raise RuntimeError("Unsafe permissions ({}) on {}".format(oct(stat_res), dir_path))
 
 
 def split_path(path: str) -> list:
@@ -71,11 +69,11 @@ def humanize_filesize(filesize: int) -> str:
     (with an input unit of bytes)
     """
     if filesize < 1024:
-        return '{}B'.format(str(filesize))
+        return "{}B".format(str(filesize))
     elif filesize < 1024 * 1024:
-        return '{}KB'.format(math.floor(filesize / 1024))
+        return "{}KB".format(math.floor(filesize / 1024))
     else:
-        return '{}MB'.format(math.floor(filesize / 1024 ** 2))
+        return "{}MB".format(math.floor(filesize / 1024 ** 2))
 
 
 @contextmanager
