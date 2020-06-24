@@ -2,25 +2,25 @@ import datetime
 import http
 import json
 import os
-import pyotp
-import pytest
-import time
 import shutil
 import tempfile
+import time
 import unittest
-
 from subprocess import TimeoutExpired
+
+import pyotp
+import pytest
 
 from sdclientapi import API, RequestTimeoutError
 from sdclientapi.sdlocalobjects import (
     BaseError,
-    WrongUUIDError,
-    ReplyError,
     Reply,
+    ReplyError,
     Source,
     Submission,
+    WrongUUIDError,
 )
-from utils import load_auth, save_auth, dastollervey_datasaver
+from utils import dastollervey_datasaver, load_auth, save_auth
 
 NUM_REPLIES_PER_SOURCE = 2
 
@@ -32,9 +32,7 @@ class TestAPIProxy(unittest.TestCase):
         self.username = "journalist"
         self.password = "correct horse battery staple profanity oil chewy"
         self.server = "http://localhost:8081/"
-        self.api = API(
-            self.server, self.username, self.password, str(self.totp.now()), proxy=True
-        )
+        self.api = API(self.server, self.username, self.password, str(self.totp.now()), proxy=True)
 
         for i in range(3):
             if os.path.exists("testtoken.json"):
@@ -389,11 +387,18 @@ def test_download_submission_timeout(mocker):
 
 def test_download_get_sources_error_request_timeout(mocker):
     api = API("mock", "mock", "mock", "mock", True)
-    mocker.patch("sdclientapi.json_query",
-                 return_value=(
-                    json.dumps({"body": json.dumps({"error": "wah"}),
-                                "status": http.HTTPStatus.GATEWAY_TIMEOUT,
-                                "headers": "foo"})))
+    mocker.patch(
+        "sdclientapi.json_query",
+        return_value=(
+            json.dumps(
+                {
+                    "body": json.dumps({"error": "wah"}),
+                    "status": http.HTTPStatus.GATEWAY_TIMEOUT,
+                    "headers": "foo",
+                }
+            )
+        ),
+    )
     with pytest.raises(RequestTimeoutError):
         api.get_sources()
 
@@ -401,10 +406,11 @@ def test_download_get_sources_error_request_timeout(mocker):
 def test_filename_key_not_in_download_response(mocker):
     api = API("mock", "mock", "mock", "mock", True)
     s = Submission(uuid="foobar")
-    mocker.patch("sdclientapi.json_query",
-                 return_value=(
-                    json.dumps({"body": json.dumps({"error": "wah"}),
-                                "status": 200,
-                                "headers": "foo"})))
+    mocker.patch(
+        "sdclientapi.json_query",
+        return_value=(
+            json.dumps({"body": json.dumps({"error": "wah"}), "status": 200, "headers": "foo"})
+        ),
+    )
     with pytest.raises(BaseError):
         api.download_submission(s)

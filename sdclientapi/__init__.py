@@ -2,26 +2,22 @@ import configparser
 import http
 import json
 import os
-import requests
 from datetime import datetime
-from requests.exceptions import (
-    ConnectTimeout,
-    ReadTimeout,
-    ConnectionError,
-    TooManyRedirects
-)
 from subprocess import PIPE, Popen, TimeoutExpired
-from typing import List, Tuple, Dict, Optional, Any
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urljoin
 
+import requests
+from requests.exceptions import ConnectionError, ConnectTimeout, ReadTimeout, TooManyRedirects
+
 from .sdlocalobjects import (
-    BaseError,
-    WrongUUIDError,
     AuthError,
+    BaseError,
+    Reply,
     ReplyError,
     Source,
-    Reply,
     Submission,
+    WrongUUIDError,
 )
 
 DEFAULT_PROXY_VM_NAME = "sd-proxy"
@@ -111,12 +107,8 @@ class API:
         self.journalist_last_name = None  # type: Optional[str]
         self.req_headers = dict()  # type: Dict[str, str]
         self.proxy = proxy  # type: bool
-        self.default_request_timeout = (
-            default_request_timeout or DEFAULT_REQUEST_TIMEOUT
-        )
-        self.default_download_timeout = (
-            default_download_timeout or DEFAULT_DOWNLOAD_TIMEOUT
-        )
+        self.default_request_timeout = default_request_timeout or DEFAULT_REQUEST_TIMEOUT
+        self.default_download_timeout = default_download_timeout or DEFAULT_DOWNLOAD_TIMEOUT
 
         self.proxy_vm_name = DEFAULT_PROXY_VM_NAME
         config = configparser.ConfigParser()
@@ -250,9 +242,7 @@ class API:
             raise AuthError("Authentication error")
 
         self.token = token_data["token"]
-        self.token_expiration = datetime.strptime(
-            token_data["expiration"], "%Y-%m-%dT%H:%M:%S.%fZ"
-        )
+        self.token_expiration = datetime.strptime(token_data["expiration"], "%Y-%m-%dT%H:%M:%S.%fZ")
         self.token_journalist_uuid = token_data["journalist_uuid"]
         self.journalist_first_name = token_data["journalist_first_name"]
         self.journalist_last_name = token_data["journalist_last_name"]
@@ -279,10 +269,7 @@ class API:
         method = "GET"
 
         data, status_code, headers = self._send_json_request(
-            method,
-            path_query,
-            headers=self.req_headers,
-            timeout=self.default_request_timeout,
+            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
         )
 
         sources = data["sources"]
@@ -305,10 +292,7 @@ class API:
         method = "GET"
 
         data, status_code, headers = self._send_json_request(
-            method,
-            path_query,
-            headers=self.req_headers,
-            timeout=self.default_request_timeout,
+            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
         )
 
         if status_code == 404:
@@ -339,10 +323,7 @@ class API:
         method = "DELETE"
 
         data, status_code, headers = self._send_json_request(
-            method,
-            path_query,
-            headers=self.req_headers,
-            timeout=self.default_request_timeout,
+            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
         )
 
         if status_code == 404:
@@ -377,10 +358,7 @@ class API:
         method = "POST"
 
         data, status_code, headers = self._send_json_request(
-            method,
-            path_query,
-            headers=self.req_headers,
-            timeout=self.default_request_timeout,
+            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
         )
         if status_code == 404:
             raise WrongUUIDError("Missing source {}".format(source.uuid))
@@ -400,10 +378,7 @@ class API:
         method = "DELETE"
 
         data, status_code, headers = self._send_json_request(
-            method,
-            path_query,
-            headers=self.req_headers,
-            timeout=self.default_request_timeout,
+            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
         )
         if status_code == 404:
             raise WrongUUIDError("Missing source {}".format(source.uuid))
@@ -424,10 +399,7 @@ class API:
         method = "GET"
 
         data, status_code, headers = self._send_json_request(
-            method,
-            path_query,
-            headers=self.req_headers,
-            timeout=self.default_request_timeout,
+            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
         )
 
         if status_code == 404:
@@ -455,10 +427,7 @@ class API:
         method = "GET"
 
         data, status_code, headers = self._send_json_request(
-            method,
-            path_query,
-            headers=self.req_headers,
-            timeout=self.default_request_timeout,
+            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
         )
 
         if status_code == 404:
@@ -488,10 +457,7 @@ class API:
         method = "GET"
 
         data, status_code, headers = self._send_json_request(
-            method,
-            path_query,
-            headers=self.req_headers,
-            timeout=self.default_request_timeout,
+            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
         )
 
         result = []  # type: List[Submission]
@@ -519,10 +485,7 @@ class API:
         method = "DELETE"
 
         data, status_code, headers = self._send_json_request(
-            method,
-            path_query,
-            headers=self.req_headers,
-            timeout=self.default_request_timeout,
+            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
         )
 
         if status_code == 404:
@@ -584,9 +547,7 @@ class API:
             # This is where we will save our downloaded file
             filepath = os.path.join(path, submission.filename)
             with open(filepath, "wb") as fobj:
-                for chunk in data.iter_content(
-                    chunk_size=1024
-                ):  # Getting 1024 in each chunk
+                for chunk in data.iter_content(chunk_size=1024):  # Getting 1024 in each chunk
                     if chunk:
                         fobj.write(chunk)
 
@@ -595,7 +556,7 @@ class API:
                 "/home/user/QubesIncoming/", self.proxy_vm_name, data["filename"]
             )
 
-        return headers['Etag'].strip('\"'), filepath
+        return headers["Etag"].strip('"'), filepath
 
     def flag_source(self, source: Source) -> bool:
         """
@@ -608,10 +569,7 @@ class API:
         method = "POST"
 
         data, status_code, headers = self._send_json_request(
-            method,
-            path_query,
-            headers=self.req_headers,
-            timeout=self.default_request_timeout,
+            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
         )
 
         if status_code == 404:
@@ -635,17 +593,12 @@ class API:
         method = "GET"
 
         data, status_code, headers = self._send_json_request(
-            method,
-            path_query,
-            headers=self.req_headers,
-            timeout=self.default_request_timeout,
+            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
         )
 
         return data
 
-    def reply_source(
-        self, source: Source, msg: str, reply_uuid: Optional[str] = None
-    ) -> Reply:
+    def reply_source(self, source: Source, msg: str, reply_uuid: Optional[str] = None) -> Reply:
         """
         This method is used to reply to a given source. The message should be preencrypted with the
         source's GPG public key.
@@ -685,10 +638,7 @@ class API:
         method = "GET"
 
         data, status_code, headers = self._send_json_request(
-            method,
-            path_query,
-            headers=self.req_headers,
-            timeout=self.default_request_timeout,
+            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
         )
 
         if status_code == 404:
@@ -713,10 +663,7 @@ class API:
         method = "GET"
 
         data, status_code, headers = self._send_json_request(
-            method,
-            path_query,
-            headers=self.req_headers,
-            timeout=self.default_request_timeout,
+            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
         )
 
         if status_code == 404:
@@ -736,10 +683,7 @@ class API:
         method = "GET"
 
         data, status_code, headers = self._send_json_request(
-            method,
-            path_query,
-            headers=self.req_headers,
-            timeout=self.default_request_timeout,
+            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
         )
 
         result = []
@@ -760,9 +704,7 @@ class API:
 
         :returns: Tuple of etag and path of the saved Reply.
         """
-        path_query = "api/v1/sources/{}/replies/{}/download".format(
-            reply.source_uuid, reply.uuid
-        )
+        path_query = "api/v1/sources/{}/replies/{}/download".format(reply.source_uuid, reply.uuid)
 
         method = "GET"
 
@@ -771,10 +713,7 @@ class API:
                 raise BaseError("Please provide a valid directory to save.")
 
         data, status_code, headers = self._send_json_request(
-            method,
-            path_query,
-            headers=self.req_headers,
-            timeout=self.default_request_timeout,
+            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
         )
 
         if status_code == 404:
@@ -787,9 +726,7 @@ class API:
             # This is where we will save our downloaded file
             filepath = os.path.join(path, reply.filename)
             with open(filepath, "wb") as fobj:
-                for chunk in data.iter_content(
-                    chunk_size=1024
-                ):  # Getting 1024 in each chunk
+                for chunk in data.iter_content(chunk_size=1024):  # Getting 1024 in each chunk
                     if chunk:
                         fobj.write(chunk)
 
@@ -798,7 +735,7 @@ class API:
                 "/home/user/QubesIncoming/", self.proxy_vm_name, data["filename"]
             )
 
-        return headers['Etag'].strip('\"'), filepath
+        return headers["Etag"].strip('"'), filepath
 
     def delete_reply(self, reply: Reply) -> bool:
         """
@@ -810,17 +747,12 @@ class API:
         # Not using direct URL because this helps to use the same method
         # from local reply (not fetched from server) objects.
         # See the *from_string for an example.
-        path_query = "api/v1/sources/{}/replies/{}".format(
-            reply.source_uuid, reply.uuid
-        )
+        path_query = "api/v1/sources/{}/replies/{}".format(reply.source_uuid, reply.uuid)
 
         method = "DELETE"
 
         data, status_code, headers = self._send_json_request(
-            method,
-            path_query,
-            headers=self.req_headers,
-            timeout=self.default_request_timeout,
+            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
         )
 
         if status_code == 404:
@@ -839,10 +771,7 @@ class API:
         method = "POST"
 
         data, status_code, headers = self._send_json_request(
-            method,
-            path_query,
-            headers=self.req_headers,
-            timeout=self.default_request_timeout,
+            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
         )
 
         if "message" in data and data["message"] == "Your token has been revoked.":
