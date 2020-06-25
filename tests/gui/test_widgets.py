@@ -814,11 +814,7 @@ def test_SourceList_update_adds_new_sources(mocker):
     mocker.patch("securedrop_client.gui.widgets.SourceWidget", mock_sw)
     mocker.patch("securedrop_client.gui.widgets.SourceListWidgetItem", mock_lwi)
 
-    sources = [
-        mocker.MagicMock(),
-        mocker.MagicMock(),
-        mocker.MagicMock(),
-    ]
+    sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock()]
     sl.update(sources)
 
     assert mock_sw.call_count == len(sources)
@@ -845,11 +841,7 @@ def test_SourceList_initial_update_adds_new_sources(mocker):
     sl.currentRow = mocker.MagicMock(return_value=0)
     sl.item = mocker.MagicMock()
     sl.item().isSelected.return_value = True
-    sources = [
-        mocker.MagicMock(),
-        mocker.MagicMock(),
-        mocker.MagicMock(),
-    ]
+    sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock()]
     sl.initial_update(sources)
     sl.add_source.assert_called_once_with(sources)
 
@@ -905,11 +897,7 @@ def test_SourceList_add_source_starts_timer(mocker, session_maker, homedir):
     to the source list via a single-shot QTimer.
     """
     sl = SourceList()
-    sources = [
-        mocker.MagicMock(),
-        mocker.MagicMock(),
-        mocker.MagicMock(),
-    ]
+    sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock()]
     mock_timer = mocker.MagicMock()
     with mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer):
         sl.add_source(sources)
@@ -1077,11 +1065,7 @@ def test_SourceList_add_source_closure_adds_sources(mocker):
     mock_lwi = mocker.MagicMock()
     mocker.patch("securedrop_client.gui.widgets.SourceWidget", mock_sw)
     mocker.patch("securedrop_client.gui.widgets.SourceListWidgetItem", mock_lwi)
-    sources = [
-        mocker.MagicMock(),
-        mocker.MagicMock(),
-        mocker.MagicMock(),
-    ]
+    sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock()]
     mock_timer = mocker.MagicMock()
     with mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer):
         sl.add_source(sources, 1)
@@ -1304,9 +1288,7 @@ def test_SourceWidget_update_truncate_latest_msg(mocker):
     controller = mocker.MagicMock()
     source = mocker.MagicMock()
     source.journalist_designation = "Testy McTestface"
-    source.collection = [
-        factory.Message(content="a" * 151),
-    ]
+    source.collection = [factory.Message(content="a" * 151)]
     sw = SourceWidget(controller, source)
 
     sw.update()
@@ -1322,9 +1304,7 @@ def test_SourceWidget_delete_source(mocker, session, source):
 
     sw = SourceWidget(mock_controller, source["source"])
 
-    mocker.patch(
-        "securedrop_client.gui.widgets.DeleteSourceMessageBox", mock_delete_source_message,
-    )
+    mocker.patch("securedrop_client.gui.widgets.DeleteSourceMessageBox", mock_delete_source_message)
 
     sw.delete_source(None)
     mock_delete_source_message_box_object.launch.assert_called_with()
@@ -1344,9 +1324,7 @@ def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker, session, so
     mock_controller = mocker.MagicMock()
     sw = SourceWidget(mock_controller, source)
 
-    mocker.patch(
-        "securedrop_client.gui.widgets.QMessageBox.question", mock_message_box_question,
-    )
+    mocker.patch("securedrop_client.gui.widgets.QMessageBox.question", mock_message_box_question)
     sw.delete_source(None)
     sw.controller.delete_source.assert_not_called()
 
@@ -1404,9 +1382,7 @@ def test_SourceWidget_uses_SecureQLabel(mocker):
     controller = mocker.MagicMock()
     source = mocker.MagicMock()
     source.journalist_designation = "Testy McTestface"
-    source.collection = [
-        factory.Message(content="a" * 121),
-    ]
+    source.collection = [factory.Message(content="a" * 121)]
     sw = SourceWidget(controller, source)
 
     sw.update()
@@ -2533,7 +2509,7 @@ def test_FileWidget_filename_truncation(mocker, source, session):
 
 
 def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(
-    mocker, homedir, session, source,
+    mocker, homedir, session, source
 ):
     """
     The _on_file_download method should clear and update the FileWidget
@@ -2590,7 +2566,7 @@ def test_FileWidget_on_file_missing_show_download_button_when_uuid_matches(
 
 
 def test_FileWidget_on_file_missing_does_not_show_download_button_when_uuid_does_not_match(
-    mocker, homedir, session, source,
+    mocker, homedir, session, source
 ):
     """
     The _on_file_missing method should not update the FileWidget when uuid doesn't match.
@@ -3817,9 +3793,7 @@ def test_DeleteSourceMessage_launch_when_user_chooses_cancel(mocker, source):
 
     delete_source_message_box = DeleteSourceMessageBox(source, mock_controller)
 
-    mocker.patch(
-        "securedrop_client.gui.widgets.QMessageBox.question", mock_message_box_question,
-    )
+    mocker.patch("securedrop_client.gui.widgets.QMessageBox.question", mock_message_box_question)
 
     delete_source_message_box.launch()
     mock_controller.delete_source.assert_not_called()
@@ -3843,9 +3817,7 @@ def test_DeleteSourceMssageBox_launch_when_user_chooses_yes(mocker, source, sess
 
     delete_source_message_box = DeleteSourceMessageBox(source, mock_controller)
 
-    mocker.patch(
-        "securedrop_client.gui.widgets.QMessageBox.question", mock_message_box_question,
-    )
+    mocker.patch("securedrop_client.gui.widgets.QMessageBox.question", mock_message_box_question)
 
     delete_source_message_box.launch()
     mock_controller.delete_source.assert_called_once_with(source)

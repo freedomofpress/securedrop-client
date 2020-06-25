@@ -83,7 +83,7 @@ class DownloadJob(SingleObjectApiJob):
 
         * Minimum timeout allowed is 25 seconds
         """
-        TIMEOUT_BYTES_PER_SECOND = 100000.0
+        TIMEOUT_BYTES_PER_SECOND = 100_000.0
         TIMEOUT_ADJUSTMENT_FACTOR = 1.5
         TIMEOUT_BASE = 25
         timeout = math.ceil((size_in_bytes / TIMEOUT_BYTES_PER_SECOND) * TIMEOUT_ADJUSTMENT_FACTOR)

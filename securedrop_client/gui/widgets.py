@@ -784,7 +784,7 @@ class SourceList(QListWidget):
     def __init__(self):
         super().__init__()
 
-        self.setObjectName('SourceList')
+        self.setObjectName("SourceList")
         self.setUniformItemSizes(True)
 
         # Set layout.
@@ -1312,7 +1312,7 @@ class DeleteSourceMessageBox:
 
         message_tuple = (
             "<big>Deleting the Source account for",
-            "<b>{}</b> will also".format(source.journalist_designation,),
+            "<b>{}</b> will also".format(source.journalist_designation),
             "delete {} files, {} replies, and {} messages.</big>".format(files, replies, messages),
             "<br>",
             "<small>This Source will no longer be able to correspond",

@@ -364,7 +364,7 @@ def test_FileDownloadJob_happy_path_no_etag(mocker, homedir, session, session_ma
     api_client.default_request_timeout = mocker.MagicMock()
     api_client.download_submission = fake_download
 
-    job = FileDownloadJob(file_.uuid, os.path.join(homedir, "data"), gpg,)
+    job = FileDownloadJob(file_.uuid, os.path.join(homedir, "data"), gpg)
 
     mock_logger = mocker.patch("securedrop_client.api_jobs.downloads.logger")
 
@@ -407,7 +407,7 @@ def test_FileDownloadJob_happy_path_sha256_etag(
     api_client.default_request_timeout = mocker.MagicMock()
     api_client.download_submission = fake_download
 
-    job = FileDownloadJob(file_.uuid, os.path.join(homedir, "data"), gpg,)
+    job = FileDownloadJob(file_.uuid, os.path.join(homedir, "data"), gpg)
 
     job.call_api(api_client, session)
 
@@ -440,7 +440,7 @@ def test_FileDownloadJob_bad_sha256_etag(
     api_client.default_request_timeout = mocker.MagicMock()
     api_client.download_submission = fake_download
 
-    job = FileDownloadJob(file_.uuid, os.path.join(homedir, "data"), gpg,)
+    job = FileDownloadJob(file_.uuid, os.path.join(homedir, "data"), gpg)
 
     with pytest.raises(DownloadChecksumMismatchException):
         job.call_api(api_client, session)
@@ -468,7 +468,7 @@ def test_FileDownloadJob_happy_path_unknown_etag(mocker, homedir, session, sessi
     api_client.default_request_timeout = mocker.MagicMock()
     api_client.download_submission = fake_download
 
-    job = FileDownloadJob(file_.uuid, os.path.join(homedir, "data"), gpg,)
+    job = FileDownloadJob(file_.uuid, os.path.join(homedir, "data"), gpg)
 
     mock_decrypt = patch_decrypt(mocker, homedir, gpg, file_.filename)
     mock_logger = mocker.patch("securedrop_client.api_jobs.downloads.logger")
@@ -512,7 +512,7 @@ def test_FileDownloadJob_decryption_error(
     api_client.default_request_timeout = mocker.MagicMock()
     api_client.download_submission = fake_download
 
-    job = FileDownloadJob(file_.uuid, os.path.join(homedir, "data"), gpg,)
+    job = FileDownloadJob(file_.uuid, os.path.join(homedir, "data"), gpg)
 
     with pytest.raises(DownloadDecryptionException):
         job.call_api(api_client, session)

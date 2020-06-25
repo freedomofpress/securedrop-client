@@ -27,7 +27,7 @@ class Config:
             logger.error("Error opening config file at {}: {}".format(full_path, e))
             json_config = {}
 
-        return cls(journalist_key_fingerprint=json_config.get("journalist_key_fingerprint", None),)
+        return cls(journalist_key_fingerprint=json_config.get("journalist_key_fingerprint", None))
 
     @property
     def is_valid(self) -> bool:

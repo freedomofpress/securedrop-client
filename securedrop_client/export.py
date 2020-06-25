@@ -59,9 +59,7 @@ class Export(QObject):
     DISK_TEST_METADATA = {"device": "disk-test"}
 
     PRINT_FN = "print_archive.sd-export"
-    PRINT_METADATA = {
-        "device": "printer",
-    }
+    PRINT_METADATA = {"device": "printer"}
 
     DISK_FN = "archive.sd-export"
     DISK_METADATA = {"device": "disk", "encryption_method": "luks"}

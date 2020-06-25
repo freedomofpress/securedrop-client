@@ -397,10 +397,7 @@ class Controller(QObject):
         new_api_thread.started.connect(new_api_runner.call_api)
 
         # Add the thread related objects to the api_threads dictionary.
-        self.api_threads[new_thread_id] = {
-            "thread": new_api_thread,
-            "runner": new_api_runner,
-        }
+        self.api_threads[new_thread_id] = {"thread": new_api_thread, "runner": new_api_runner}
 
         # Start the thread and related activity.
         new_api_thread.start()
@@ -834,7 +831,7 @@ class Controller(QObject):
 
     @login_required
     def on_submission_download(
-        self, submission_type: Union[Type[db.File], Type[db.Message]], submission_uuid: str,
+        self, submission_type: Union[Type[db.File], Type[db.Message]], submission_uuid: str
     ) -> None:
         """
         Download the file associated with the Submission (which may be a File or Message).

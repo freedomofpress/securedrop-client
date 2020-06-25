@@ -39,9 +39,7 @@ def test_APICallRunner_init(mocker):
     assert cr.api_call == mock_api_call
     assert cr.current_object == mock_current_object
     assert cr.args == ("foo",)
-    assert cr.kwargs == {
-        "bar": "baz",
-    }
+    assert cr.kwargs == {"bar": "baz"}
 
 
 def test_APICallRunner_call_api(mocker):
@@ -233,7 +231,7 @@ def test_Controller_on_authenticate_success(homedir, config, mocker, session_mak
 
 
 def test_Controller_completed_api_call_without_current_object(
-    homedir, config, mocker, session_maker,
+    homedir, config, mocker, session_maker
 ):
     """
     Ensure that cleanup is performed if an API call returns in the expected
@@ -250,7 +248,7 @@ def test_Controller_completed_api_call_without_current_object(
     mock_runner = mocker.MagicMock()
     mock_runner.result = result
     mock_runner.current_object = None
-    co.api_threads = {"thread_uuid": {"thread": mock_thread, "runner": mock_runner,}}
+    co.api_threads = {"thread_uuid": {"thread": mock_thread, "runner": mock_runner}}
     mock_user_callback = mocker.MagicMock()
 
     co.completed_api_call("thread_uuid", mock_user_callback)
@@ -275,7 +273,7 @@ def test_Controller_completed_api_call_with_current_object(homedir, config, mock
     mock_runner = mocker.MagicMock()
     mock_runner.result = result
     mock_runner.current_object = current_object
-    co.api_threads = {"thread_uuid": {"thread": mock_thread, "runner": mock_runner,}}
+    co.api_threads = {"thread_uuid": {"thread": mock_thread, "runner": mock_runner}}
     mock_user_callback = mocker.MagicMock()
 
     mock_arg_spec = mocker.MagicMock(args=["foo", "current_object"])
@@ -491,9 +489,7 @@ def test_Controller_on_sync_success(homedir, config, mocker):
     mock_storage = mocker.patch("securedrop_client.logic.storage")
     source = factory.Source()
     missing = factory.File(is_downloaded=None, is_decrypted=None, source=source)
-    mock_storage.update_missing_files.return_value = [
-        missing,
-    ]
+    mock_storage.update_missing_files.return_value = [missing]
 
     co.on_sync_success()
 
@@ -743,10 +739,10 @@ def test_Controller_set_activity_status(homedir, config, mocker, session_maker):
 
 
 PERMISSIONS_CASES = [
-    {"should_pass": True, "home_perms": None,},
-    {"should_pass": True, "home_perms": 0o0700,},
-    {"should_pass": False, "home_perms": 0o0740,},
-    {"should_pass": False, "home_perms": 0o0704,},
+    {"should_pass": True, "home_perms": None},
+    {"should_pass": True, "home_perms": 0o0700},
+    {"should_pass": False, "home_perms": 0o0740},
+    {"should_pass": False, "home_perms": 0o0704},
 ]
 
 
@@ -811,9 +807,7 @@ def test_Controller_on_file_download_Submission(homedir, config, session, mocker
 
     co.on_submission_download(db.File, file_.uuid)
 
-    mock_job_cls.assert_called_once_with(
-        file_.uuid, co.data_dir, co.gpg,
-    )
+    mock_job_cls.assert_called_once_with(file_.uuid, co.data_dir, co.gpg)
     co.add_job.emit.assert_called_once_with(mock_job)
     mock_success_signal.connect.assert_called_once_with(
         co.on_file_download_success, type=Qt.QueuedConnection
@@ -1506,9 +1500,7 @@ def test_Controller_send_reply_success(
 
     co.send_reply(source.uuid, "mock_user_uuid", "mock_msg")
 
-    mock_job_cls.assert_called_once_with(
-        source.uuid, "mock_user_uuid", "mock_msg", co.gpg,
-    )
+    mock_job_cls.assert_called_once_with(source.uuid, "mock_user_uuid", "mock_msg", co.gpg)
 
     co.add_job.emit.assert_called_once_with(mock_job)
     mock_success_signal.connect.assert_called_once_with(
