@@ -48,7 +48,7 @@ def test_send_reply_success(homedir, mocker, session, session_maker, reply_statu
         "securedrop_client.logic.sdclientapi.Source", return_value=mock_sdk_source
     )
 
-    job = SendReplyJob(source.uuid, msg_uuid, msg, gpg,)
+    job = SendReplyJob(source.uuid, msg_uuid, msg, gpg)
 
     job.call_api(api_client, session)
 
@@ -114,7 +114,7 @@ def test_drafts_ordering(homedir, mocker, session, session_maker, reply_status_c
         "securedrop_client.logic.sdclientapi.Source", return_value=mock_sdk_source
     )
 
-    job = SendReplyJob(source.uuid, msg_uuid, msg, gpg,)
+    job = SendReplyJob(source.uuid, msg_uuid, msg, gpg)
 
     job.call_api(api_client, session)
 
@@ -175,7 +175,7 @@ def test_send_reply_failure_gpg_error(homedir, mocker, session, session_maker, r
         "securedrop_client.logic.sdclientapi.Source", return_value=mock_sdk_source
     )
 
-    job = SendReplyJob(source.uuid, msg_uuid, msg, gpg,)
+    job = SendReplyJob(source.uuid, msg_uuid, msg, gpg)
 
     with pytest.raises(SendReplyJobError):
         job.call_api(api_client, session)

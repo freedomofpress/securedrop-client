@@ -117,7 +117,7 @@ def DraftReply(**attrs):
 def ReplySendStatus(**attrs):
     global REPLY_SEND_STATUS_COUNT
     REPLY_SEND_STATUS_COUNT += 1
-    defaults = dict(name=db.ReplySendStatusCodes.PENDING.value,)
+    defaults = dict(name=db.ReplySendStatusCodes.PENDING.value)
 
     defaults.update(attrs)
 

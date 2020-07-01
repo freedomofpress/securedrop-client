@@ -177,7 +177,6 @@ class LeftPane(QWidget):
         layout.setSpacing(0)
         layout.setAlignment(Qt.AlignBottom)
         self.setFixedWidth(198)
-        self.setMinimumHeight(558)
 
         # Set background image
         self.logo = QWidget()
@@ -190,7 +189,6 @@ class LeftPane(QWidget):
         )
         self.logo.setPalette(self.offline_palette)
         self.logo.setAutoFillBackground(True)
-        self.logo.setMaximumHeight(884)
         self.logo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.logo.setEnabled(False)
 
@@ -396,7 +394,6 @@ class UserProfile(QLabel):
         palette.setBrush(QPalette.Background, QBrush(QColor("#0096DC")))
         self.setPalette(palette)
         self.setAutoFillBackground(True)
-        self.setMinimumHeight(20)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
         # Set layout
@@ -422,17 +419,12 @@ class UserProfile(QLabel):
         self.user_icon_font.setLetterSpacing(QFont.AbsoluteSpacing, 0.58)
         self.user_icon.setFont(self.user_icon_font)
         self.user_icon.clicked.connect(self.user_button.click)
-        # Set cursor.
         self.user_icon.setCursor(QCursor(Qt.PointingHandCursor))
 
         # Add widgets to user auth layout
-        layout.addWidget(self.login_button, 1)
-        layout.addWidget(self.user_icon, 1)
-        layout.addWidget(self.user_button, 4)
-
-        # Align content to the top left
-        layout.addStretch()
-        layout.setAlignment(Qt.AlignTop)
+        layout.addWidget(self.login_button, alignment=Qt.AlignTop)
+        layout.addWidget(self.user_icon, alignment=Qt.AlignTop)
+        layout.addWidget(self.user_button, alignment=Qt.AlignTop)
 
     def setup(self, window, controller):
         self.user_button.setup(controller)
@@ -793,7 +785,6 @@ class SourceList(QListWidget):
         super().__init__()
 
         self.setObjectName("SourceList")
-        self.setFixedWidth(540)
         self.setUniformItemSizes(True)
 
         # Set layout.
@@ -986,7 +977,7 @@ class SourceWidget(QWidget):
 
     SIDE_MARGIN = 10
     SOURCE_WIDGET_VERTICAL_MARGIN = 10
-    PREVIEW_WIDTH = 412
+    PREVIEW_WIDTH = 380
     PREVIEW_HEIGHT = 60
 
     def __init__(self, controller: Controller, source: Source):
@@ -1059,8 +1050,8 @@ class SourceWidget(QWidget):
         self.paperclip.setFixedSize(QSize(22, 22))
         self.timestamp = QLabel()
         self.timestamp.setObjectName("SourceWidget_timestamp")
-        metadata_layout.addWidget(self.paperclip, 0, Qt.AlignRight)
-        metadata_layout.addWidget(self.timestamp, 0, Qt.AlignRight)
+        metadata_layout.addWidget(self.paperclip, alignment=Qt.AlignRight)
+        metadata_layout.addWidget(self.timestamp, alignment=Qt.AlignRight)
         metadata_layout.addStretch()
 
         # Set up a source_widget
@@ -1321,7 +1312,7 @@ class DeleteSourceMessageBox:
 
         message_tuple = (
             "<big>Deleting the Source account for",
-            "<b>{}</b> will also".format(source.journalist_designation,),
+            "<b>{}</b> will also".format(source.journalist_designation),
             "delete {} files, {} replies, and {} messages.</big>".format(files, replies, messages),
             "<br>",
             "<small>This Source will no longer be able to correspond",

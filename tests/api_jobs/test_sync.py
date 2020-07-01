@@ -11,7 +11,7 @@ def test_MetadataSyncJob_success(mocker, homedir, session, session_maker):
     job = MetadataSyncJob(homedir)
 
     mock_source = factory.RemoteSource(
-        key={"type": "PGP", "public": PUB_KEY, "fingerprint": "123456ABC",}
+        key={"type": "PGP", "public": PUB_KEY, "fingerprint": "123456ABC"}
     )
 
     mock_get_remote_data = mocker.patch(
@@ -33,7 +33,7 @@ def test_MetadataSyncJob_success_with_missing_key(mocker, homedir, session, sess
     """
     job = MetadataSyncJob(homedir)
 
-    mock_source = factory.RemoteSource(key={"type": "PGP", "public": "", "fingerprint": "",})
+    mock_source = factory.RemoteSource(key={"type": "PGP", "public": "", "fingerprint": ""})
 
     mock_get_remote_data = mocker.patch(
         "securedrop_client.api_jobs.sync.get_remote_data", return_value=([mock_source], [], [])

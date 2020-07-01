@@ -34,5 +34,5 @@ setuptools.setup(
         "Intended Audience :: Developers",
         "Operating System :: OS Independent",
     ),
-    entry_points={"console_scripts": ["sd-client = securedrop_client.app:run",],},
+    entry_points={"console_scripts": ["sd-client = securedrop_client.app:run"]},
 )

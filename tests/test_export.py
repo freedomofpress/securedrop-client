@@ -136,7 +136,7 @@ def test__run_print(mocker):
 
     export._export_archive.assert_called_once_with("mock_archive_path")
     export._create_archive.assert_called_once_with(
-        "mock_archive_dir", "print_archive.sd-export", {"device": "printer",}, ["mock_filepath"]
+        "mock_archive_dir", "print_archive.sd-export", {"device": "printer"}, ["mock_filepath"]
     )
 
 

@@ -126,7 +126,7 @@ def config(homedir) -> str:
     full_path = os.path.join(homedir, Config.CONFIG_NAME)
     with open(full_path, "w") as f:
         f.write(
-            json.dumps({"journalist_key_fingerprint": "65A1B5FF195B56353CC63DFFCC40EF1228271441",})
+            json.dumps({"journalist_key_fingerprint": "65A1B5FF195B56353CC63DFFCC40EF1228271441"})
         )
     return full_path
 
@@ -186,10 +186,7 @@ def download_error_codes(session) -> None:
 
 @pytest.fixture(scope="function")
 def source(session) -> dict:
-    args = {
-        "uuid": str(uuid4()),
-        "public_key": PUB_KEY,
-    }
+    args = {"uuid": str(uuid4()), "public_key": PUB_KEY}
     source = Source(
         journalist_designation="foo-bar",
         is_flagged=False,

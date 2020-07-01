@@ -149,12 +149,12 @@ def test_start_app(homedir, mocker):
 
 
 PERMISSIONS_CASES = [
-    {"should_pass": True, "home_perms": None, "sub_dirs": [],},
-    {"should_pass": True, "home_perms": 0o0700, "sub_dirs": [],},
-    {"should_pass": False, "home_perms": 0o0740, "sub_dirs": [],},
-    {"should_pass": False, "home_perms": 0o0704, "sub_dirs": [],},
-    {"should_pass": True, "home_perms": 0o0700, "sub_dirs": [("logs", 0o0700)],},
-    {"should_pass": False, "home_perms": 0o0700, "sub_dirs": [("logs", 0o0740)],},
+    {"should_pass": True, "home_perms": None, "sub_dirs": []},
+    {"should_pass": True, "home_perms": 0o0700, "sub_dirs": []},
+    {"should_pass": False, "home_perms": 0o0740, "sub_dirs": []},
+    {"should_pass": False, "home_perms": 0o0704, "sub_dirs": []},
+    {"should_pass": True, "home_perms": 0o0700, "sub_dirs": [("logs", 0o0700)]},
+    {"should_pass": False, "home_perms": 0o0700, "sub_dirs": [("logs", 0o0740)]},
 ]
 
 

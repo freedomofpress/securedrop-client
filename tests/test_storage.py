@@ -211,27 +211,15 @@ def test_get_remote_data(mocker):
     # Some source, submission and reply objects from the API.
     mock_api = mocker.MagicMock()
     source = factory.RemoteSource()
-    mock_api.get_sources.return_value = [
-        source,
-    ]
+    mock_api.get_sources.return_value = [source]
     submission = mocker.MagicMock()
-    mock_api.get_all_submissions.return_value = [
-        submission,
-    ]
+    mock_api.get_all_submissions.return_value = [submission]
     reply = mocker.MagicMock()
-    mock_api.get_all_replies.return_value = [
-        reply,
-    ]
+    mock_api.get_all_replies.return_value = [reply]
     sources, submissions, replies = get_remote_data(mock_api)
-    assert sources == [
-        source,
-    ]
-    assert submissions == [
-        submission,
-    ]
-    assert replies == [
-        reply,
-    ]
+    assert sources == [source]
+    assert submissions == [submission]
+    assert replies == [reply]
 
 
 def test_update_local_storage(homedir, mocker, session_maker):
@@ -453,9 +441,7 @@ def test_update_submissions_deletes_files_associated_with_the_submission(homedir
     local_source = mocker.MagicMock()
     local_source.uuid = "test-source-uuid"
     local_source.id = 666
-    mock_session.query().filter_by.return_value = [
-        local_source,
-    ]
+    mock_session.query().filter_by.return_value = [local_source]
     update_files(remote_submissions, local_submissions, mock_session, homedir)
 
     # Ensure the files associated with the submission are deleted on disk.
@@ -499,9 +485,7 @@ def test_update_replies_deletes_files_associated_with_the_reply(homedir, mocker)
     local_source = mocker.MagicMock()
     local_source.uuid = "test-source-uuid"
     local_source.id = 666
-    mock_session.query().filter_by.return_value = [
-        local_source,
-    ]
+    mock_session.query().filter_by.return_value = [local_source]
     update_replies(remote_replies, local_replies, mock_session, homedir)
 
     # Ensure the file associated with the reply are deleted on disk.
@@ -757,7 +741,7 @@ def test_update_replies(homedir, mocker, session):
     )
     session.add(local_reply_update)
 
-    local_reply_delete = factory.Reply(source_id=source.id, source=source,)
+    local_reply_delete = factory.Reply(source_id=source.id, source=source)
     session.add(local_reply_delete)
 
     local_replies = [local_reply_update, local_reply_delete]

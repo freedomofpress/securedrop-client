@@ -78,8 +78,8 @@ class Window(QMainWindow):
         self.main_pane.setLayout(layout)
         self.left_pane = LeftPane()
         self.main_view = MainView(self.main_pane)
-        layout.addWidget(self.left_pane, 1)
-        layout.addWidget(self.main_view, 8)
+        layout.addWidget(self.left_pane)
+        layout.addWidget(self.main_view)
 
         # Set the main window's central widget to show Top Pane and Main Pane
         self.central_widget = QWidget()
