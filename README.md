@@ -145,7 +145,7 @@ vi config.json
 securedrop-client
 ```
 
-Or [manually initialize](https://github.com/freedomofpress/securedrop-client/blob/master/files/securedrop-client) the SecureDrop Client database.
+Or [manually initialize](https://github.com/freedomofpress/securedrop-client/blob/HEAD/files/securedrop-client) the SecureDrop Client database.
 
 8. To run a different version of the client, first add a NetVM (`sys-firewall`) to `sd-app` via its Qubes Settings so you can clone the client repository, and then follow these steps:
 
