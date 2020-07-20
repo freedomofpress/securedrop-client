@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1
+
+* Reformat the code with black and isort (#1115)
+* Support multi-source deletions in one sync (#1114)
+* Support more screen resolutions (#1103)
+* Move CSS strings to CSS files and add new CSS tests (#1082)
+* Prevent addition of duplicated API jobs (#975)
+
 ## 0.2.0
 
 * Improve error handling when conversation items fail to decrypt (#1059).
