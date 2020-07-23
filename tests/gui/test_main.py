@@ -57,46 +57,25 @@ def test_setup(mocker):
 
 def test_show_main_window(mocker):
     w = Window()
-    w.autosize_window = mocker.MagicMock()
     w.show = mocker.MagicMock()
     w.set_logged_in_as = mocker.MagicMock()
     user = mocker.MagicMock()
 
     w.show_main_window(db_user=user)
 
-    w.autosize_window.assert_called_once_with()
     w.show.assert_called_once_with()
     w.set_logged_in_as.assert_called_once_with(user)
 
 
 def test_show_main_window_without_username(mocker):
     w = Window()
-    w.autosize_window = mocker.MagicMock()
     w.show = mocker.MagicMock()
     w.set_logged_in_as = mocker.MagicMock()
 
     w.show_main_window()
 
-    w.autosize_window.assert_called_once_with()
     w.show.assert_called_once_with()
     w.set_logged_in_as.called is False
-
-
-def test_autosize_window(mocker):
-    """
-    Check the autosizing fits to the full screen size.
-    """
-    w = Window()
-    w.resize = mocker.MagicMock()
-    mock_screen = mocker.MagicMock()
-    mock_screen.width.return_value = 1024
-    mock_screen.height.return_value = 768
-    mock_sg = mocker.MagicMock()
-    mock_sg.screenGeometry.return_value = mock_screen
-    mock_qdw = mocker.MagicMock(return_value=mock_sg)
-    mocker.patch("securedrop_client.gui.main.QDesktopWidget", mock_qdw)
-    w.autosize_window()
-    w.resize.assert_called_once_with(1024, 768)
 
 
 def test_show_login(mocker):

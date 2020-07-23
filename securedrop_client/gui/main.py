@@ -23,14 +23,9 @@ import logging
 from gettext import gettext as _
 from typing import Dict, List, Optional  # noqa: F401
 
-from PyQt5.QtWidgets import (
-    QApplication,
-    QDesktopWidget,
-    QHBoxLayout,
-    QMainWindow,
-    QVBoxLayout,
-    QWidget,
-)
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QGuiApplication
+from PyQt5.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QVBoxLayout, QWidget
 
 from securedrop_client import __version__
 from securedrop_client.db import Source, User
@@ -106,19 +101,11 @@ class Window(QMainWindow):
         """
         Show main application window.
         """
-        self.autosize_window()
+        self.setWindowState(Qt.WindowFullScreen)
         self.show()
 
         if db_user:
             self.set_logged_in_as(db_user)
-
-    def autosize_window(self):
-        """
-        Ensure the application window takes up 100% of the available screen
-        (i.e. the whole of the virtualised desktop in Qubes dom)
-        """
-        screen = QDesktopWidget().screenGeometry()
-        self.resize(screen.width(), screen.height())
 
     def show_login(self, error: str = ""):
         """
@@ -127,7 +114,7 @@ class Window(QMainWindow):
         self.login_dialog = LoginDialog(self)
 
         # Always display the login dialog centered in the screen.
-        screen_size = QDesktopWidget().screenGeometry()
+        screen_size = QGuiApplication.primaryScreen().availableGeometry()
         login_dialog_size = self.login_dialog.geometry()
         x_center = (screen_size.width() - login_dialog_size.width()) / 2
         y_center = (screen_size.height() - login_dialog_size.height()) / 2
