@@ -160,13 +160,26 @@ class SecureQLabel(QLabel):
         super().__init__(parent, flags)
         self.wordwrap = wordwrap
         self.max_length = max_length
-        self.setWordWrap(wordwrap)  # If True, wraps text at default of 70 characters
+        self.setWordWrap(wordwrap)
         self.with_tooltip = with_tooltip
         self.setText(text)
         self.elided = True if self.text() != text else False
 
     def setText(self, text: str) -> None:
-        text = text.strip()
+        max_chars = 40
+        formatted_lines = []
+        lines = text.splitlines(keepends=True)
+        for line in lines:
+            formatted_words = []
+            words = line.split(' ')
+            for word in words:
+                if word.endswith('\n'):
+                    max_chars = max_chars + 2
+                formatted_words.append(
+                    '\n'.join(word[i: i + max_chars] for i in range(0, len(word), max_chars)))
+            formatted_lines.append(' '.join(formatted_words))
+        text = ''.join(formatted_lines).strip()
+
         self.setTextFormat(Qt.PlainText)
         elided_text = self.get_elided_text(text)
         self.elided = True if elided_text != text else False
