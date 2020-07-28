@@ -2657,7 +2657,7 @@ class ConversationScrollArea(QScrollArea):
     def __init__(self):
         super().__init__()
 
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        # self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setWidgetResizable(True)
 
         self.setObjectName("ConversationScrollArea")
