@@ -1133,7 +1133,7 @@ def test_SourceList_set_snippet(mocker):
 
     sl.set_snippet("mock_uuid", "msg_uuid", "msg_content")
 
-    source_widget.set_snippet.assert_called_once_with("mock_uuid", "msg_content")
+    source_widget.set_snippet.assert_called_once_with("mock_uuid", "msg_uuid", "msg_content")
 
 
 def test_SourceList_get_source_widget(mocker):
@@ -1248,8 +1248,8 @@ def test_SourceWidget_set_snippet_draft_only(mocker, session_maker, session, hom
     session.commit()
 
     sw = SourceWidget(controller, source)
-    sw.set_snippet(source.uuid, f.filename)
-    assert sw.preview.text() == f.filename
+    sw.set_snippet(source.uuid, reply.uuid, f.filename)
+    assert sw.preview.text() == "File: " + f.filename
 
 
 def test_SourceWidget_set_snippet(mocker, session_maker, session, homedir):
@@ -1265,19 +1265,19 @@ def test_SourceWidget_set_snippet(mocker, session_maker, session, homedir):
     session.commit()
 
     sw = SourceWidget(controller, source)
-    sw.set_snippet(source.uuid, f.filename)
-    assert sw.preview.text() == f.filename
+    sw.set_snippet(source.uuid, "mock_file_uuid", f.filename)
+    assert sw.preview.text() == "File: " + f.filename
 
     # check when a different source is specified
-    sw.set_snippet("not-the-source-uuid", "something new")
-    assert sw.preview.text() == f.filename
+    sw.set_snippet("not-the-source-uuid", "mock_file_uuid", "something new")
+    assert sw.preview.text() == "File: " + f.filename
 
     source_uuid = source.uuid
     session.delete(source)
     session.commit()
 
     # check when the source has been deleted that it catches sqlalchemy.exc.InvalidRequestError
-    sw.set_snippet(source_uuid, "something new")
+    sw.set_snippet(source_uuid, "mock_file_uuid", "something new")
 
 
 def test_SourceWidget_update_truncate_latest_msg(mocker):
