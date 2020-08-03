@@ -12,7 +12,7 @@ common-steps:
         set -e
         virtualenv .venv
         source .venv/bin/activate
-        pip install --require-hashes -r dev-requirements.txt
+        pip install --require-hashes -r requirements/dev-requirements.txt
         export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
         make check --keep-going
 

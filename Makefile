@@ -4,7 +4,7 @@ SHELL := /bin/bash
 .PHONY: venv
 venv:  ## Provision a Python 3 virtualenv for development.
 	python3 -m venv .venv
-	.venv/bin/pip install --require-hashes -r dev-requirements.txt
+	.venv/bin/pip install --require-hashes -r "requirements/dev-requirements.txt"
 
 .PHONY: black
 black: ## Format Python source code with black
@@ -85,7 +85,7 @@ lint: ## Run the linters
 .PHONY: safety
 safety: ## Runs `safety check` to check python dependencies for vulnerabilities
 	pip install --upgrade safety && \
-		for req_file in `find . -type f -name '*requirements.txt'`; do \
+		for req_file in `find . -type f -wholename 'requirements/*requirements.txt'`; do \
 			echo "Checking file $$req_file" \
 			&& safety check --full-report -r $$req_file \
 			&& echo -e '\n' \
@@ -105,12 +105,12 @@ check: clean check-black check-isort bandit lint mypy test-random test-integrati
 
 .PHONY: update-pip-requirements
 update-pip-requirements: ## Updates all Python requirements files via pip-compile for Linux.
-	pip-compile --verbose --rebuild --generate-hashes --annotate --allow-unsafe --output-file dev-requirements.txt requirements.in dev-requirements.in
-	pip-compile --verbose --rebuild --generate-hashes --annotate --output-file requirements.txt requirements.in
+	pip-compile --verbose --rebuild --generate-hashes --annotate --allow-unsafe --output-file "requirements/dev-requirements.txt" "requirements/requirements.in" "requirements/dev-requirements.in"
+	pip-compile --verbose --rebuild --generate-hashes --annotate --output-file "requirements/requirements.txt" "requirements/requirements.in"
 
 .PHONY: update-mac-pip-requirements
 update-mac-pip-requirements: ## Updates only dev Python requirements files via pip-compile for macOS.
-	pip-compile --verbose --rebuild --generate-hashes --annotate --allow-unsafe --output-file mac-dev-requirements.txt requirements.in dev-requirements.in
+	pip-compile --verbose --rebuild --generate-hashes --annotate --allow-unsafe --output-file "requirements/dev-mac-requirements.txt" "requirements/requirements.in" "requirements/dev-requirements.in"
 
 # Explaination of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##

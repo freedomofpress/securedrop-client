@@ -1,5 +1,5 @@
-include build-requirements.txt
-include requirements.txt
+include requirements/build-requirements.txt
+include requirements/requirements.txt
 include README.md
 include LICENSE
 include changelog.md
