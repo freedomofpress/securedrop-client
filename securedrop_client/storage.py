@@ -299,8 +299,28 @@ def update_replies(
     source_cache = SourceCache(session)
     for reply in remote_replies:
         user = users.get(reply.journalist_uuid)
+
         if not user:
-            user = find_or_create_user(reply.journalist_uuid, reply.journalist_username, session)
+            user = create_or_update_user(
+                reply.journalist_uuid,
+                reply.journalist_username,
+                reply.journalist_first_name,
+                reply.journalist_last_name,
+                session,
+            )
+            users[reply.journalist_uuid] = user
+        elif (
+            user.username != reply.journalist_username
+            or user.firstname != reply.journalist_first_name
+            or user.lastname != reply.journalist_last_name
+        ):
+            user = create_or_update_user(
+                reply.journalist_uuid,
+                reply.journalist_username,
+                reply.journalist_first_name,
+                reply.journalist_last_name,
+                session,
+            )
             users[reply.journalist_uuid] = user
 
         local_reply = local_replies_by_uuid.get(reply.uuid)
@@ -357,7 +377,9 @@ def update_replies(
     session.commit()
 
 
-def find_or_create_user(uuid: str, username: str, session: Session, commit: bool = True) -> User:
+def create_or_update_user(
+    uuid: str, username: str, firstname: str, lastname: str, session: Session
+) -> User:
     """
     Returns a user object representing the referenced journalist UUID.
     If the user does not already exist in the data, a new instance is created.
@@ -366,30 +388,15 @@ def find_or_create_user(uuid: str, username: str, session: Session, commit: bool
     user = session.query(User).filter_by(uuid=uuid).one_or_none()
 
     if not user:
-        new_user = User(username=username)
+        new_user = User(username=username, firstname=firstname, lastname=lastname)
         new_user.uuid = uuid
         session.add(new_user)
-        if commit:
-            session.commit()
+        session.commit()
         return new_user
 
     if user.username != username:
         user.username = username
-        if commit:
-            session.commit()
-
-    return user
-
-
-def update_and_get_user(
-    uuid: str, username: str, firstname: str, lastname: str, session: Session
-) -> User:
-    """
-    Returns a user object representing the referenced journalist UUID.
-    If user fields have changed, the db is updated.
-    """
-    user = find_or_create_user(uuid, username, session)
-
+        session.commit()
     if user.firstname != firstname:
         user.firstname = firstname
         session.commit()

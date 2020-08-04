@@ -5,7 +5,7 @@ from sdclientapi import API
 from sqlalchemy.orm.session import Session
 
 from securedrop_client.api_jobs.base import ApiJob
-from securedrop_client.storage import get_remote_data, update_local_storage
+from securedrop_client.storage import get_remote_data, update_local_storage, create_or_update_user
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +37,15 @@ class MetadataSyncJob(ApiJob):
         # This timeout is used for 3 different requests: `get_sources`, `get_all_submissions`, and
         # `get_all_replies`
         api_client.default_request_timeout = 60
-        remote_sources, remote_submissions, remote_replies = get_remote_data(api_client)
+        sources, submissions, replies = get_remote_data(api_client)
 
-        update_local_storage(
-            session, remote_sources, remote_submissions, remote_replies, self.data_dir
-        )
+        update_local_storage(session, sources, submissions, replies, self.data_dir)
+        user = api_client.get_current_user()
+        if 'uuid' in user and 'username' in user and 'first_name' in user and 'last_name' in user:
+            create_or_update_user(
+                user['uuid'],
+                user['username'],
+                user['first_name'],
+                user['last_name'],
+                session,
+            )
