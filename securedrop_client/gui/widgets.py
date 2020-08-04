@@ -946,7 +946,7 @@ class SourceList(QListWidget):
         """
         source_widget = self.get_source_widget(source_uuid)
         if source_widget:
-            source_widget.set_snippet(source_uuid, content)
+            source_widget.set_snippet(source_uuid, collection_item_uuid, content)
 
 
 class SourceWidget(QWidget):
@@ -1081,11 +1081,7 @@ class SourceWidget(QWidget):
             self.timestamp.setText(_(arrow.get(self.source.last_updated).format("DD MMM")))
             self.name.setText(self.source.journalist_designation)
 
-            if not self.source.server_collection:
-                self.set_snippet(self.source_uuid, "")
-            else:
-                last_collection_obj = self.source.server_collection[-1]
-                self.set_snippet(self.source_uuid, str(last_collection_obj))
+            self.set_snippet(self.source_uuid)
 
             if self.source.document_count == 0:
                 self.paperclip.hide()
@@ -1093,12 +1089,22 @@ class SourceWidget(QWidget):
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.debug(f"Could not update SourceWidget for source {self.source_uuid}: {e}")
 
-    def set_snippet(self, source_uuid: str, content: str):
+    def set_snippet(self, source_uuid: str, collection_uuid: str = None, content: str = None):
         """
         Update the preview snippet if the source_uuid matches our own.
         """
         if source_uuid != self.source_uuid:
             return
+
+        if not self.source.server_collection:
+            return
+
+        last_activity = self.source.server_collection[-1]
+        if collection_uuid and collection_uuid != last_activity.uuid:
+            return
+
+        if not content:
+            content = str(last_activity)
 
         self.preview.setText(content)
 
