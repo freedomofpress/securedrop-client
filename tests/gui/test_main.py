@@ -4,6 +4,7 @@ Check the core Window UI class works as expected.
 from PyQt5.QtWidgets import QApplication, QHBoxLayout
 
 from securedrop_client.gui.main import Window
+from securedrop_client.logic import Controller
 from securedrop_client.resources import load_icon
 
 app = QApplication([])
@@ -33,48 +34,79 @@ def test_init(mocker):
     load_css.assert_called_once_with("sdclient.css")
 
 
-def test_setup(mocker):
+def test_setup(mocker, homedir, session_maker):
     """
     Ensure the passed in controller is referenced and the various views are
     instantiated as expected.
     """
-    mock_controller = mocker.MagicMock()
-
     w = Window()
     w.show_login = mocker.MagicMock()
     w.top_pane = mocker.MagicMock()
     w.left_pane = mocker.MagicMock()
     w.main_view = mocker.MagicMock()
+    controller = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
 
-    w.setup(mock_controller)
+    w.setup(controller)
 
-    assert w.controller == mock_controller
-    w.top_pane.setup.assert_called_once_with(mock_controller)
-    w.left_pane.setup.assert_called_once_with(w, mock_controller)
-    w.main_view.setup.assert_called_once_with(mock_controller)
+    assert w.controller == controller
+    w.top_pane.setup.assert_called_once_with(controller)
+    w.left_pane.setup.assert_called_once_with(w, controller)
+    w.main_view.setup.assert_called_once_with(controller)
     w.show_login.assert_called_once_with()
 
 
-def test_show_main_window(mocker):
+def test_show_main_window(mocker, homedir, session_maker):
     w = Window()
+    controller = Controller("http://localhost", w, session_maker, homedir)
+    w.setup(controller)
     w.show = mocker.MagicMock()
+    w.showMaximized = mocker.MagicMock()
     w.set_logged_in_as = mocker.MagicMock()
     user = mocker.MagicMock()
 
     w.show_main_window(db_user=user)
 
     w.show.assert_called_once_with()
+    w.showMaximized.assert_not_called()
+    w.set_logged_in_as.assert_called_once_with(user)
+
+    controller.qubes = False
+    w.setup(controller)
+    w.show.reset_mock()
+    w.showMaximized.reset_mock()
+    w.set_logged_in_as.reset_mock()
+
+    w.show_main_window(db_user=user)
+
+    w.show.assert_not_called()
+    w.showMaximized.assert_called_once_with()
     w.set_logged_in_as.assert_called_once_with(user)
 
 
-def test_show_main_window_without_username(mocker):
+def test_show_main_window_without_username(mocker, homedir, session_maker):
     w = Window()
+    controller = Controller("http://localhost", w, session_maker, homedir)
+    w.setup(controller)
     w.show = mocker.MagicMock()
+    w.showMaximized = mocker.MagicMock()
     w.set_logged_in_as = mocker.MagicMock()
 
     w.show_main_window()
 
     w.show.assert_called_once_with()
+    w.showMaximized.assert_not_called()
+    w.set_logged_in_as.called is False
+
+    controller.qubes = False
+    w.setup(controller)
+    w.show.reset_mock()
+    w.showMaximized.reset_mock()
+    w.set_logged_in_as.reset_mock()
+
+    w.show_main_window()
+
+    w.show.assert_not_called()
+    w.showMaximized.assert_called_once_with()
     w.set_logged_in_as.called is False
 
 
