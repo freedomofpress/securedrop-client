@@ -2,25 +2,35 @@ interactions:
 - request:
     body: null
     headers:
-      Accept: [application/json]
-      Accept-Encoding: ['gzip, deflate']
-      Authorization: [Token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU0MDI3NjkxOCwiaWF0IjoxNTQwMjQ4MTE4fQ.eyJpZCI6MX0.fygpQy3CxB1ulUWLFz2UdrtcBKHz-fk5gyRxbcSY720]
-      Connection: [keep-alive]
-      Content-Type: [application/json]
-      User-Agent: [python-requests/2.20.0]
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU5ODkyOTYxNywiaWF0IjoxNTk4OTAwODE3fQ.eyJpZCI6MX0.RXCqanRX2A_p7vQfzb9bmcthdcd38TTMNPqsMQnX_sY
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.22.0
     method: GET
     uri: http://127.0.0.1:8081/api/v1/sources/not%20there
   response:
-    body: {string: "{\n  \"error\": \"Not Found\", \n  \"message\": \"The requested
-        URL was not found on the server.  If you entered the URL manually please check
-        your spelling and try again.\"\n}\n"}
+    body:
+      string: "{\n  \"error\": \"Not Found\", \n  \"message\": \"The requested URL\
+        \ was not found on the server. If you entered the URL manually please check\
+        \ your spelling and try again.\"\n}\n"
     headers:
-      Content-Length: ['166']
-      Content-Type: [application/json]
-      Date: ['Mon, 22 Oct 2018 22:43:50 GMT']
-      Server: [Werkzeug/0.14.1 Python/2.7.6]
-      Set-Cookie: [js=eyJleHBpcmVzIjp7IiBkIjoiVHVlLCAyMyBPY3QgMjAxOCAwMDo0Mzo0OSBHTVQifX0.Dq_kJg.-zvE2PBta07XHKi7rmXFI3v6o6o;
-          HttpOnly; Path=/]
-      Vary: [Cookie]
-    status: {code: 404, message: NOT FOUND}
+      Content-Length:
+      - '165'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 31 Aug 2020 19:06:58 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 404
+      message: NOT FOUND
 version: 1

@@ -2,23 +2,36 @@ interactions:
 - request:
     body: null
     headers:
-      Accept: [application/json]
-      Accept-Encoding: ['gzip, deflate']
-      Authorization: [Token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU2MDQ2OTgwMywiaWF0IjoxNTYwNDQxMDAzfQ.eyJpZCI6MX0.3iyw2GfggT1pOe-Offan7HKYo86L4JpmoTgaUuy9Sm0]
-      Connection: [keep-alive]
-      Content-Type: [application/json]
-      User-Agent: [python-requests/2.20.0]
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU5ODkyOTYxNywiaWF0IjoxNTk4OTAwODE3fQ.eyJpZCI6MX0.RXCqanRX2A_p7vQfzb9bmcthdcd38TTMNPqsMQnX_sY
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.22.0
     method: GET
     uri: http://127.0.0.1:8081/api/v1/user
   response:
-    body: {string: "{\n  \"first_name\": null, \n  \"is_admin\": true, \n  \"last_login\"\
-        : \"2019-06-13T15:50:03.679186Z\", \n  \"last_name\": null, \n  \"username\"\
-        : \"journalist\", \n  \"uuid\": \"e56c08ab-811d-4fdb-ad26-87da555b6858\"\n\
-        }\n"}
+    body:
+      string: "{\n  \"first_name\": \"\", \n  \"is_admin\": true, \n  \"last_login\"\
+        : \"2020-08-31T19:06:57.032162Z\", \n  \"last_name\": \"\", \n  \"username\"\
+        : \"journalist\", \n  \"uuid\": \"f9e1600b-4a77-40c4-a4fc-e68259df7adc\"\n\
+        }\n"
     headers:
-      Content-Length: ['196']
-      Content-Type: [application/json]
-      Date: ['Thu, 13 Jun 2019 15:50:03 GMT']
-      Server: [Werkzeug/0.14.1 Python/2.7.12]
-    status: {code: 200, message: OK}
+      Content-Length:
+      - '192'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 31 Aug 2020 19:06:59 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
 version: 1
