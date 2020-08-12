@@ -1,51 +1,50 @@
 """
-Functional tests for sending messages in the SecureDrop client application. The
-tests are based upon the client testing descriptions here:
+Functional tests for starring sources in offline mode in the SecureDrop client.
 
+The tests are based upon the client testing descriptions here:
 https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-testing
 """
 import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
 
-from tests.conftest import TIME_APP_START, TIME_RENDER_CONV_VIEW, TIME_RENDER_SOURCE_LIST
+from tests.conftest import TIME_CLICK_ACTION, TIME_RENDER_CONV_VIEW, TIME_RENDER_SOURCE_LIST
 
 
 @flaky
 @pytest.mark.vcr()
-def test_offline_star_source(functional_test_logged_in_context, qtbot):
+def test_offline_star_source(functional_test_offline_context, qtbot):
     """
-    It's NOT possible to star a source when the client is offline.
+    Verify that starring while in offline mode results in no state change with the star and that
+    the expected error appears.
     """
 
-    gui, controller, homedir = functional_test_logged_in_context
-    qtbot.wait(TIME_APP_START)
+    gui, controller = functional_test_offline_context
 
     def check_for_sources():
         assert len(list(gui.main_view.source_list.source_items.keys()))
 
+    # Select the first source in the source list
     qtbot.waitUntil(check_for_sources, timeout=TIME_RENDER_SOURCE_LIST)
     source_ids = list(gui.main_view.source_list.source_items.keys())
-    first_source_id = source_ids[0]
-    first_source_item = gui.main_view.source_list.source_items[first_source_id]
+    first_source_item = gui.main_view.source_list.source_items[source_ids[0]]
     first_source_widget = gui.main_view.source_list.itemWidget(first_source_item)
     qtbot.mouseClick(first_source_widget, Qt.LeftButton)
+    qtbot.wait(TIME_CLICK_ACTION)
 
-    # Now logout.
-    def check_login_button():
-        assert gui.left_pane.user_profile.login_button.isVisible()
+    # Store state before attempting to star
+    is_starred = first_source_widget.star.is_starred
+    is_checked = first_source_widget.star.isChecked()
 
-    gui.left_pane.user_profile.user_button.menu.logout.trigger()
-    qtbot.waitUntil(check_login_button, timeout=TIME_RENDER_CONV_VIEW)
-
-    # Check the source isn't checked.
-    assert first_source_widget.star.isChecked() is False
-    # Click it.
+    # Attempt to star the source
     qtbot.mouseClick(first_source_widget.star, Qt.LeftButton)
 
-    def check_for_error():
-        # Confirm the user interface is showing a sign-in error.
+    def sign_in_required_error():
         msg = gui.top_pane.error_status_bar.status_bar.currentMessage()
         assert msg == "You must sign in to perform this action."
 
-    qtbot.waitUntil(check_for_error, timeout=TIME_RENDER_CONV_VIEW)
+    qtbot.waitUntil(sign_in_required_error, timeout=TIME_RENDER_CONV_VIEW)
+
+    # Verify that star state did not change
+    assert first_source_widget.star.is_starred == is_starred
+    assert first_source_widget.star.isChecked() == is_checked

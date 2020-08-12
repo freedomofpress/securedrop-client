@@ -34,14 +34,17 @@ PASSWORD = "correct horse battery staple profanity oil chewy"
 # Modify cassettes to use the following TOTP code. For developing new tests,
 # you can modify this so you don't need to keep editing cassettes during
 # development.
-TOTP = "994892"
+TOTP = "123456"
 
 # Time (in milliseconds) to wait for these GUI elements to render.
 TIME_APP_START = 1000
+TIME_LOGIN = 10000
+TIME_LOGOUT = 10000
+TIME_SYNC = 10000
 TIME_CLICK_ACTION = 1000
 TIME_RENDER_SOURCE_LIST = 20000
 TIME_RENDER_CONV_VIEW = 1000
-TIME_SYNC = 10000
+TIME_RENDER_EXPORT_DIALOG = 1000
 TIME_FILE_DOWNLOAD = 5000
 
 
@@ -78,47 +81,75 @@ def homedir(i18n):
 
 
 @pytest.fixture(scope="function")
-def functional_test_logged_out_context(homedir, reply_status_codes, session, config):
+def functional_test_app_started_context(homedir, reply_status_codes, session, config, qtbot):
     """
-    Returns a tuple containing a Window instance and a Controller instance that
-    have been correctly set up and isolated from any other instances of the
-    application to be run in the test suite.
+    Returns a tuple containing the gui window and controller of a configured client. This should be
+    used to for tests that need to start from the login dialog before the main application window
+    is visible.
     """
-
     gui = Window()
-    # Configure test keys.
-    create_gpg_test_context(homedir)
-
-    # Configure and create the database.
-    session_maker = make_session_maker(homedir)
-
-    # Create the controller.
+    create_gpg_test_context(homedir)  # Configure test keys
+    session_maker = make_session_maker(homedir)  # Configure and create the database
     controller = Controller(HOSTNAME, gui, session_maker, homedir, False, False)
-    # Link the gui and controller together.
-    gui.controller = controller
-    # Et Voila...
-    return (gui, controller, homedir)
+    gui.setup(controller)  # Connect the gui to the controller
+
+    def login_dialog_is_visible():
+        assert gui.login_dialog is not None
+
+    qtbot.waitUntil(login_dialog_is_visible, timeout=TIME_APP_START)
+
+    return (gui, controller)
 
 
 @pytest.fixture(scope="function")
-def functional_test_logged_in_context(functional_test_logged_out_context, qtbot):
+def functional_test_logged_in_context(functional_test_app_started_context, qtbot):
     """
-    Returns a tuple containing a Window and Controller instance that have been
-    correctly configured to work together, isolated from other runs of the
-    test suite and in a logged in state.
+    Returns a tuple containing the gui window and controller of a configured client after logging in
+    with our test user account.
     """
-    gui, controller, tempdir = functional_test_logged_out_context
-    gui.setup(controller)
+    gui, controller = functional_test_app_started_context
+
+    # Authenticate our test account and login in
     qtbot.keyClicks(gui.login_dialog.username_field, USERNAME)
+    qtbot.wait(TIME_CLICK_ACTION)
     qtbot.keyClicks(gui.login_dialog.password_field, PASSWORD)
     qtbot.keyClicks(gui.login_dialog.tfa_field, TOTP)
     qtbot.mouseClick(gui.login_dialog.submit, Qt.LeftButton)
+    qtbot.wait(TIME_CLICK_ACTION)
 
-    def wait_for_login():
+    def logged_in():
         assert gui.login_dialog is None
+        assert gui.isVisible()
 
-    qtbot.waitUntil(wait_for_login, timeout=10000)
-    return (gui, controller, homedir)
+    qtbot.waitUntil(logged_in, timeout=TIME_LOGIN)
+
+    return (gui, controller)
+
+
+@pytest.fixture(scope="function")
+def functional_test_offline_context(functional_test_logged_in_context, qtbot):
+    """
+    Returns a tuple containing the gui window and controller of a configured client after making
+    sure we have sources from a sync before switching to offline mode.
+    """
+    gui, controller = functional_test_logged_in_context
+
+    # The controller begins a sync as soon as the user authentication is successful so we just
+    # need to wait for the length of a sync to ensure the local db is up to date with the server
+    qtbot.wait(TIME_SYNC)
+
+    # Trigger log out
+    # Note: The qtbot object cannot interact with QAction items (as used in the logout button/menu),
+    # so we programatically logout rather than using the GUI via qtbot
+    gui.left_pane.user_profile.user_button.menu.logout.trigger()
+
+    def check_login_button():
+        assert gui.left_pane.user_profile.login_button.isVisible()
+
+    # When the login button appears then we know we're now in offline mode
+    qtbot.waitUntil(check_login_button, timeout=TIME_LOGOUT)
+
+    return (gui, controller)
 
 
 @pytest.fixture(scope="function")
