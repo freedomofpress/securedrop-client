@@ -42,14 +42,14 @@ def test_export_dialog(functional_test_logged_in_context, qtbot, mocker):
         assert gui.main_view.view_layout.itemAt(0)
         conversation = gui.main_view.view_layout.itemAt(0).widget()
         assert conversation
-        file_id = list(conversation.conversation_view.current_messages.keys())[-1]
+        file_id = list(conversation.conversation_view.current_messages.keys())[1]
         file_widget = conversation.conversation_view.current_messages[file_id]
         assert isinstance(file_widget, FileWidget)
 
     # Get the selected source conversation that contains a file attachment
     qtbot.waitUntil(conversation_with_file_is_rendered, timeout=TIME_RENDER_CONV_VIEW)
     conversation = gui.main_view.view_layout.itemAt(0).widget()
-    file_id = list(conversation.conversation_view.current_messages.keys())[-1]
+    file_id = list(conversation.conversation_view.current_messages.keys())[1]
     file_widget = conversation.conversation_view.current_messages[file_id]
 
     # If the file is not downloaded, click on the download button

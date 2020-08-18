@@ -322,11 +322,11 @@ To generate new cassettes, follow these instructions:
        ```
 2. Start the dev server: `NUM_SOURCES=0 make dev`
 3. Set up the dev server with data required for functional tests to pass and run in any order:
-    - Create 5 new sources, each with one submission that contains both a file and a message. The message should be set to `this is the message`. The file should be called `hello.txt` and contain a single line of text: `hello`.
+    - Create two new sources, each with one submission that contains both a file and a message. The message should be set to `this is the message`. The file should be called `hello.txt` and contain a single line of text: `hello`.
 3. Delete all the old cassettes by running `rm -r tests/functional/cassettes` or just delete the cassettes you wish to regenerate.
 4. Run `make test-functional` which will regenerate cassettes for any that are missing in the `tests/functional/cassettes` folder.
 
-Note: After generating new cassettes, the test server will be in a state with only 3 sources. If for some reason you need to try again, make sure the server has the expected 5 sources, each with one submission that contains both the expected file and message before repeating the process of deleting cassettes and regenerating them.
+Note: One of the functional tests deletes a source, so you may need to add it back in between test runs where you are generating new cassettes.
 
 ## Making a Release
 

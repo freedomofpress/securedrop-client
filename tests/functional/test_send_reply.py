@@ -22,12 +22,12 @@ def test_send_reply_to_source(functional_test_logged_in_context, qtbot, mocker):
     def check_for_sources():
         assert len(list(gui.main_view.source_list.source_items.keys()))
 
-    # Select the first source in the source list
+    # Select the last source in the source list
     qtbot.waitUntil(check_for_sources, timeout=TIME_RENDER_SOURCE_LIST)
     source_ids = list(gui.main_view.source_list.source_items.keys())
-    first_source_item = gui.main_view.source_list.source_items[source_ids[0]]
-    first_source_widget = gui.main_view.source_list.itemWidget(first_source_item)
-    qtbot.mouseClick(first_source_widget, Qt.LeftButton)
+    last_source_item = gui.main_view.source_list.source_items[source_ids[0]]
+    last_source_widget = gui.main_view.source_list.itemWidget(last_source_item)
+    qtbot.mouseClick(last_source_widget, Qt.LeftButton)
     qtbot.wait(TIME_CLICK_ACTION)
 
     def check_for_conversation():
@@ -37,6 +37,7 @@ def test_send_reply_to_source(functional_test_logged_in_context, qtbot, mocker):
     # Get the selected source conversation
     qtbot.waitUntil(check_for_conversation, timeout=TIME_RENDER_CONV_VIEW)
     conversation = gui.main_view.view_layout.itemAt(0).widget()
+    item_count = len(list(conversation.conversation_view.current_messages.keys()))
 
     # Focus on the reply box and type a message
     qtbot.mouseClick(conversation.reply_box.text_edit, Qt.LeftButton)
@@ -49,6 +50,7 @@ def test_send_reply_to_source(functional_test_logged_in_context, qtbot, mocker):
         qtbot.wait(TIME_CLICK_ACTION)
 
     # Ensure the last widget in the conversation view contains the text we just typed
-    last_msg_id = list(conversation.conversation_view.current_messages.keys())[-1]
-    last_msg = conversation.conversation_view.current_messages[last_msg_id]
-    assert last_msg.message.text() == "Hello, world!"
+    assert len(list(conversation.conversation_view.current_messages.keys())) == item_count + 1
+    reply_id = list(conversation.conversation_view.current_messages.keys())[-1]
+    reply = conversation.conversation_view.current_messages[reply_id]
+    assert reply.message.text() == "Hello, world!"

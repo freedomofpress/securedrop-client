@@ -22,12 +22,12 @@ def test_delete_source(functional_test_logged_in_context, qtbot, mocker):
     def check_for_sources():
         assert len(list(gui.main_view.source_list.source_items.keys()))
 
-    # Select the last source in the source list
+    # Select the first source in the source list
     qtbot.waitUntil(check_for_sources, timeout=TIME_RENDER_SOURCE_LIST)
     source_ids = list(gui.main_view.source_list.source_items.keys())
-    last_source_item = gui.main_view.source_list.source_items[source_ids[-1]]
-    last_source_widget = gui.main_view.source_list.itemWidget(last_source_item)
-    qtbot.mouseClick(last_source_widget, Qt.LeftButton)
+    first_source_item = gui.main_view.source_list.source_items[source_ids[-1]]
+    first_source_widget = gui.main_view.source_list.itemWidget(first_source_item)
+    qtbot.mouseClick(first_source_widget, Qt.LeftButton)
     qtbot.wait(TIME_CLICK_ACTION)
 
     def check_for_conversation():
