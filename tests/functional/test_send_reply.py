@@ -52,13 +52,3 @@ def test_send_reply_to_source(functional_test_logged_in_context, qtbot, mocker):
     last_msg_id = list(conversation.conversation_view.current_messages.keys())[-1]
     last_msg = conversation.conversation_view.current_messages[last_msg_id]
     assert last_msg.message.text() == "Hello, world!"
-
-    # Clean up: delete the last source with the reply
-    source_count = gui.main_view.source_list.count()
-    controller.delete_source(conversation.conversation_title_bar.source)
-
-    def check_source_list():
-        # Confirm there is now only one source in the client list.
-        assert gui.main_view.source_list.count() == source_count - 1
-
-    qtbot.waitUntil(check_source_list, timeout=TIME_RENDER_SOURCE_LIST)
