@@ -292,16 +292,41 @@ To individually run the unit tests, run `make test` to run the suite in parallel
 
 Functional tests are run alone using `make test-functional` and otherwise will be ran along with `make check`.
 
-Some of the tests appear to get into a state that reliably causes subsequent tests to crash. Such tests have been isolated and are clearly marked. The Makefile is used to ensure we exercise them in a completely new process.
-Use the `qtbot` object to drive the UI. This is part of the [pytest-qt](https://pytest-qt.readthedocs.io/en/latest/) package.
+We use `qtbot`, bundled with the [pytest-qt](https://pytest-qt.readthedocs.io/en/latest/) package, for UI interaction within our functional tests. We use [vcrpy](https://vcrpy.readthedocs.io/en/latest/) to replay the original response from the test server. These responses are stored in the `tests/functional/cassettes` directory. Our test TOTP is set to `994892` and stored in casettes.
 
-When writing tests that require the user to log in, on first run of the test
-you must make sure the TOTP value in `conftest.py` is correct for the time at which the test is run.
-For any further run of the test, this doesn't need to be the case since [vcrpy](https://vcrpy.readthedocs.io/en/latest/)
-will replay the original response from the test server. These responses are
-stored in the cassettes directory and should be committed to the git
-repository. Before committing, set the TOTP value in the cassette back to the value we use across all functional tests: `994892`.
+#### Generating new cassettes
 
+Some changes may require generating new cassettes, such as modifications to API endpoints. If you see the following warning, you may need to generate a new cassette or all new cassettes, depending on the change you made:
+
+```
+Can't overwrite existing cassette ('<path-to-cassette-for-a-functional-test>') in your current record mode ('once').
+```
+
+To generate new cassettes, follow these instructions:
+
+1. Before generating new cassettes that will be used to replay server interaction, bypass TOTP verification so that we can use the hard-coded value of `123456` in `tests/conftest.py`. You can do this by applying the following diff to the securedrop server, which you will be running in the next step:
+       ```diff
+       diff --git a/securedrop/models.py b/securedrop/models.py
+       index dcd26bbaf..50bc491b4 100644
+       --- a/securedrop/models.py
+       +++ b/securedrop/models.py
+       @@ -649,6 +649,7 @@ class Journalist(db.Model):
+
+                try:
+                    user = Journalist.query.filter_by(username=username).one()
+       +            return user
+                except NoResultFound:
+                    raise InvalidUsernameException(
+                        "invalid username '{}'".format(username))
+       (END)
+       ```
+2. Start the dev server: `NUM_SOURCES=0 make dev`
+3. Set up the dev server with data required for functional tests to pass and run in any order:
+    - Create two new sources, each with one submission that contains both a file and a message. The message should be set to `this is the message`. The file should be called `hello.txt` and contain a single line of text: `hello`.
+3. Delete all the old cassettes by running `rm -r tests/functional/cassettes` or just delete the cassettes you wish to regenerate.
+4. Run `make test-functional` which will regenerate cassettes for any that are missing in the `tests/functional/cassettes` folder.
+
+Note: One of the functional tests deletes a source, so you may need to add it back in between test runs where you are generating new cassettes.
 
 ## Making a Release
 

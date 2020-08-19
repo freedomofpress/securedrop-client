@@ -1,50 +1,56 @@
 """
-Functional tests for sending messages in the SecureDrop client application. The
-tests are based upon the client testing descriptions here:
+Functional tests for sending replies in the SecureDrop client.
 
+The tests are based upon the client testing descriptions here:
 https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-testing
 """
 import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
 
-from tests.conftest import TIME_APP_START, TIME_CLICK_ACTION, TIME_RENDER_SOURCE_LIST
+from tests.conftest import TIME_CLICK_ACTION, TIME_RENDER_CONV_VIEW, TIME_RENDER_SOURCE_LIST
 
 
 @flaky
 @pytest.mark.vcr()
 def test_send_reply_to_source(functional_test_logged_in_context, qtbot, mocker):
     """
-    It's possible to send a reply to a source and see it show up in the
-    conversation window.
+    Verify that a reply shows up in the conversation view when a reply is sent.
     """
-    gui, controller, tempdir = functional_test_logged_in_context
-    qtbot.wait(TIME_APP_START)
+    gui, controller = functional_test_logged_in_context
 
     def check_for_sources():
         assert len(list(gui.main_view.source_list.source_items.keys()))
 
+    # Select the last source in the source list
     qtbot.waitUntil(check_for_sources, timeout=TIME_RENDER_SOURCE_LIST)
     source_ids = list(gui.main_view.source_list.source_items.keys())
-    first_source_id = source_ids[0]
-    first_source_item = gui.main_view.source_list.source_items[first_source_id]
-    first_source_widget = gui.main_view.source_list.itemWidget(first_source_item)
-    qtbot.mouseClick(first_source_widget, Qt.LeftButton)
-    # Type something into the reply box and click the send button.
-    message = "Hello, world!"
-    conversation = gui.main_view.view_layout.itemAt(0).widget()
-    # Focus on reply box text entry.
-    qtbot.mouseClick(conversation.reply_box.text_edit, Qt.LeftButton)
-    # Type in a message to the reply box.
-    qtbot.keyClicks(conversation.reply_box.text_edit, message)
+    last_source_item = gui.main_view.source_list.source_items[source_ids[0]]
+    last_source_widget = gui.main_view.source_list.itemWidget(last_source_item)
+    qtbot.mouseClick(last_source_widget, Qt.LeftButton)
     qtbot.wait(TIME_CLICK_ACTION)
-    # Wait until the result of the click on the send button has caused the
-    # reply_sent signal to trigger.
+
+    def check_for_conversation():
+        assert gui.main_view.view_layout.itemAt(0)
+        assert gui.main_view.view_layout.itemAt(0).widget()
+
+    # Get the selected source conversation
+    qtbot.waitUntil(check_for_conversation, timeout=TIME_RENDER_CONV_VIEW)
+    conversation = gui.main_view.view_layout.itemAt(0).widget()
+    item_count = len(list(conversation.conversation_view.current_messages.keys()))
+
+    # Focus on the reply box and type a message
+    qtbot.mouseClick(conversation.reply_box.text_edit, Qt.LeftButton)
+    qtbot.wait(TIME_CLICK_ACTION)
+    qtbot.keyClicks(conversation.reply_box.text_edit, "Hello, world!")
+
+    # Send the reply and wait until `reply_sent` signal is triggered
     with qtbot.waitSignal(conversation.reply_box.reply_sent):
         qtbot.mouseClick(conversation.reply_box.send_button, Qt.LeftButton)
-    qtbot.wait(TIME_CLICK_ACTION)
-    # Ensure the last widget in the conversation view contains the text we
-    # just typed.
-    last_msg_id = list(conversation.conversation_view.current_messages.keys())[-1]
-    last_msg = conversation.conversation_view.current_messages[last_msg_id]
-    assert last_msg.message.text() == message
+        qtbot.wait(TIME_CLICK_ACTION)
+
+    # Ensure the last widget in the conversation view contains the text we just typed
+    assert len(list(conversation.conversation_view.current_messages.keys())) == item_count + 1
+    reply_id = list(conversation.conversation_view.current_messages.keys())[-1]
+    reply = conversation.conversation_view.current_messages[reply_id]
+    assert reply.message.text() == "Hello, world!"

@@ -1,5 +1,5 @@
 """
-Functional tests for attempting to delete a source while offline in the SecureDrop client.
+Functional tests for reading conversations in offline mode in the SecureDrop client.
 
 The tests are based upon the client testing descriptions here:
 https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-testing
@@ -13,10 +13,9 @@ from tests.conftest import TIME_CLICK_ACTION, TIME_RENDER_CONV_VIEW, TIME_RENDER
 
 @flaky
 @pytest.mark.vcr()
-def test_offline_delete_source_attempt(functional_test_offline_context, qtbot, mocker):
+def test_offline_read_conversation(functional_test_offline_context, qtbot, mocker):
     """
-    Verify that attempting to delete a source in offline mode results in the expected error message
-    in the error status bar.
+    Verify that previously-downloaded conversations are visible when offline.
     """
     gui, controller = functional_test_offline_context
 
@@ -39,13 +38,5 @@ def test_offline_delete_source_attempt(functional_test_offline_context, qtbot, m
     qtbot.waitUntil(check_for_conversation, timeout=TIME_RENDER_CONV_VIEW)
     conversation = gui.main_view.view_layout.itemAt(0).widget()
 
-    # Attempt to delete the selected source
-    # Note: The qtbot object cannot interact with QAction items (as used in the delete button/menu)
-    # so we programatically attempt to delete the source rather than using the GUI via qtbot
-    controller.delete_source(conversation.conversation_title_bar.source)
-
-    def check_for_error():
-        msg = gui.top_pane.error_status_bar.status_bar.currentMessage()
-        assert msg == "You must sign in to perform this action."
-
-    qtbot.waitUntil(check_for_error, timeout=TIME_CLICK_ACTION)
+    # Verify that the conversation widgets exist
+    assert len(list(conversation.conversation_view.current_messages.keys())) > 0

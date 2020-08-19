@@ -1,52 +1,51 @@
 """
-Functional tests for logging into the SecureDrop client application. The tests
-are based upon the client testing descriptions here:
+Functional tests for logging into the SecureDrop client.
 
+The tests are based upon the client testing descriptions here:
 https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-testing
 """
 import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
 
-from securedrop_client.gui.main import Window
-from securedrop_client.gui.widgets import LoginDialog
-from tests.conftest import PASSWORD, TIME_RENDER_CONV_VIEW, USERNAME
+from tests.conftest import PASSWORD, TIME_CLICK_ACTION, TIME_RENDER_CONV_VIEW, TOTP, USERNAME
 
 
-def test_login_ensure_errors_displayed(qtbot, mocker):
+def test_login_ensure_errors_displayed(functional_test_app_started_context, qtbot, mocker):
     """
-    We see an error if incomplete credentials are supplied to the login dialog.
+    Verify the error message in the error status bar when incomplete credentials are submitted via
+    the login dialog.
     """
-    w = Window()
-    login_dialog = LoginDialog(w)
-    login_dialog.show()
-    assert login_dialog.error_bar.error_status_bar.text() == ""
-    qtbot.keyClicks(login_dialog.username_field, "journalist")
-    qtbot.mouseClick(login_dialog.submit, Qt.LeftButton)
-    expected = "Please enter a username, passphrase and two-factor code."
-    actual = login_dialog.error_bar.error_status_bar.text()
-    assert actual == expected
+    gui, controller = functional_test_app_started_context
+
+    assert gui.login_dialog.error_bar.error_status_bar.text() == ""
+
+    qtbot.keyClicks(gui.login_dialog.username_field, "journalist")
+    qtbot.mouseClick(gui.login_dialog.submit, Qt.LeftButton)
+    qtbot.wait(TIME_CLICK_ACTION)
+
+    error_status_msg = gui.login_dialog.error_bar.error_status_bar.text()
+    assert error_status_msg == "Please enter a username, passphrase and two-factor code."
 
 
 @flaky
-@pytest.mark.vcr()  # Ensure any API network traffic is recorded/replayed.
-def test_login_as_journalist(functional_test_logged_out_context, qtbot, mocker):
+@pytest.mark.vcr()
+def test_login_as_journalist(functional_test_app_started_context, qtbot, mocker):
     """
-    The app is visible if the user logs in with apparently correct credentials.
+    Log in from the login dialog with credentials and verify that the login was successful by
+    checking that the login dialog is closed and the main window is visible.
     """
-    gui, controller, tempdir = functional_test_logged_out_context
-    gui.setup(controller)
-    # Fill in UI with good credentials.
+    gui, controller = functional_test_app_started_context
+
+    # Log in from the login dialog and wait for the authentication_state signal from the controller
+    # to be emitted, which indicates the user authentication state has changed successfully
     qtbot.keyClicks(gui.login_dialog.username_field, USERNAME)
     qtbot.keyClicks(gui.login_dialog.password_field, PASSWORD)
-    qtbot.keyClicks(gui.login_dialog.tfa_field, "493941")
-    # The waitSignal context handler is used to allow the API thread to call
-    # and then (ultimately) emit the expected signal. This pattern will need to
-    # be used with all API calls. For more information about this method, see:
-    # https://pytest-qt.readthedocs.io/en/latest/signals.html
+    qtbot.keyClicks(gui.login_dialog.tfa_field, TOTP)
     with qtbot.waitSignal(controller.authentication_state, timeout=TIME_RENDER_CONV_VIEW):
         qtbot.mouseClick(gui.login_dialog.submit, Qt.LeftButton)
-    # The main window is visible (indicating a successful login).
+        qtbot.wait(TIME_CLICK_ACTION)
+
+    # When the main window is visible and the login dialog is closed then we know login is complete
     assert gui.isVisible()
-    # The login box no longer exists.
     assert gui.login_dialog is None
