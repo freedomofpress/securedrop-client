@@ -91,12 +91,41 @@ sd-svs sd-journalist allow
 @anyvm @anyvm deny
 ```
 
-The above mentioned setup can also be created using `securedrop-workstation` project.
+Now, first we have to verify that this setup works. For that, comment out the
+`@dastollervey_datasaver` decorator in the setup method of `test_apiproxy.py`.
+By commenting out that python decorator we make sure that our tests will do
+real call to the proxy VM. You can do `journalctl -f` in `dom0` to see the log
+entry that `sd-svs` is making a call to the `sd-journalist` vm, and then run
+one initial test.
 
-Now, delete any related JSON file under `data/` directory, or remove all of
-them, and then execute ``make test TEST=tests/test_apiproxy.py``. This is
-command will generate the new data files, which can be used in CI or any other
-system.
+```
+make test TESTS=tests/test_apiproxy.py::TestAPIProxy::test_api_auth
+```
+
+Remember to check the logs in `dom0`, you should see an entry like below.
+
+
+```
+Aug 28 15:45:13 dom0 qrexec[1474]: securedrop.Proxy: sd-svs -> sd-journalist: allowed to sd-journalist
+```
+
+If the setup is good, we should see the test passing.
+
+## Changing a test or adding a new test in test_apiproxy.py
+
+Say we are modifying the `test_get_sources`, now to regenerate proper test data
+for the same, we should first comment out the `dastollervey_datasaver`
+decorator from both `setUp` and `test_get_sources` methods. Then also remove
+the `setUp.json` and `test_get_sources.json` files from `data/` directory. Now,
+when we will run that one test case, it will connect to the server and fetch
+real data. If you wait for 60 seconds for the next call but this time uncomment
+the `dastollervey_datasaver` decorators in those two methods, it will now again
+connect to the server, and also create fresh JSON data files which you can then
+commit to the repository. The same steps has to be taken for any new test case
+you are adding.
+
+If your test is modifying any state in the server, then before you rerun the
+test for fresh test data, you should restart the server.
 
 **Note:** Remember that file download checks don't read actual file path in the `APIProxy` tests as it requires QubesOS setup. You can manually uncomment those lines to execute them on QubesOS setup.
 
