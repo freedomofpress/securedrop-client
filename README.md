@@ -6,9 +6,7 @@ This SDK provides a convenient Python interface to the [SecureDrop Journalist In
 
 The SDK is currently used by the [SecureDrop Client](https://github.com/freedomofpress/securedrop-client) that is a component of the SecureDrop Workstation. When used in Qubes OS, the SDK uses the [securedrop-proxy](https://github.com/freedomofpress/securedrop-proxy) service, as the VM which runs the client does not have network access by design.
 
-# Development
-
-## Quick Start
+# Quick Start
 
 ```bash
 virtualenv --python=python3 .venv
@@ -26,108 +24,180 @@ pip uninstall securedrop-sdk
 pip install git+https://github.com/freedomofpress/securedrop-sdk@my_branch#egg=securedrop-sdk
 ```
 
-## Testing
+# Running tests
 
-The tests are located in the `tests` directory. This project uses [vcrpy](http://vcrpy.readthedocs.io/en/latest/) to record and then reply the API calls so that
-developers will have repeatable results so that they may work offline. `vcrpy` stores YAML
-recordings of the API calls in the `data` directory.
+To run all tests and checks, run:
 
-To run all the test cases, use the following command.
+```bash
+make check
+```
+
+To run all tests, run:
 
 ```bash
 make test
 ```
 
-To run a single test, use this following command, replace the test case name at the end.
+To run all tests that make API calls over HTTP, run:
 
 ```bash
-make test TESTS=tests/test_api.py::TestAPI::test_error_unencrypted_reply
+make test TESTS=tests/test_api.py
 ```
 
-To test against a live development server, you will need to run the SecureDrop
-developent container from the main SecureDrop repository on your host. This
-can be done via `NUM_SOURCES=5 make -C securedrop dev`.
+To run all tests that make API calls over qrexec, run:
 
-In this repo, comment out the `@vcr` decorator of the `setUp` method in
-`test_api.py` and execute which ever tests you want to run. If you want to
-re-run all tests against the API, remove all the `.yml` files in the
-`data` directory.
-
-## Generating test data for `APIProxy`
-
-To test or to generate new test data file for the `APIProxy` class in
-`test_apiproxy.py` file, you will have to setup
-[QubesOS](https://qubes-os.org) system.
-
-There should be one VM (let us call it `sd-journalist`), where we can run
-latest securedrop server code from the development branch using
-``NUM_SOURCES=5 make -C securedrop dev`` command. The same VM should also have
-`securedrop-proxy` project installed, either from the source by hand or using
-the latest Debian package from the FPF repository.
-
-Below is an example configuration for proxy `/etc/sd-proxy.yaml`:
-
-```
-host: 127.0.0.1
-scheme: http
-port: 8081
-target_vm: sd-svs
-dev: False
+```bash
+make test TESTS=tests/test_apiproxy.py
 ```
 
-Then we can create our second developent VM called `sd-svs`, in which we can checkout/develop
-the `securedrop-sdk` project. The required configuration file is at `/etc/sd-sdk.conf`
+To run a single test, specify file name, class name, and test name, e.g.:
+
+```bash
+make test TESTS=tests/test_api.py::TestAPI::test_get_sources
+```
+
+# Creating and updating tests
+
+When tests are run, they replay recorded API request and response data instead of making actual API calls to a server. This is why tests can pass even when there is no server running. If the server ever changes its API or you want to add new tests that make API calls, then you'll need to record new request and response data by following the steps outlined below.
+
+**Note:** We have a CI test that does not use the recorded API request and response data in order to make sure we are testing the latest changes to the SDK against the latest server API (see `test-against-latest-api` in https://github.com/freedomofpress/securedrop-sdk/blob/main/.circleci/config.yml).
+
+We use [vcrpy](https://vcrpy.readthedocs.io/en/latest/) to record and replay API calls made over HTTP and a decorator called `@dastollervey_datasaver` to record and replay API calls made over qrexec. Each request made from a test and its response from the server is stored in a "cassette" in the `data` directory. Tests replay these cassettes instead of making actual API calls to a server.
+
+If you run the tests and see the following vcrpy warning, then you'll need to re-record cassettes because none of the existing cassettes contain the expected API call and we don't allow existing cassettes to be overwritten:
+
+```
+Can't overwrite existing cassette ('<path-to-cassette-for-a-functional-test>') in your current record mode ('once').
+```
+
+The steps to generate new cassettes are split into two sections based on communication protocol: [Generating cassettes for API calls over HTTP](#generating-cassettes-for-api-calls-over-http) and [Generating cassettes for API calls over qrexec](#generating-cassettes-for-api-calls-over-qrexec).
+
+## Generating cassettes for API calls over HTTP
+
+1. Start the server in a docker container by running:
+
+    ```bash
+    NUM_SOURCES=5 make dev
+    ```
+
+2. [Skip if adding a new test] Delete the cassettes you wish to regenerate or just delete all yaml files by running:
+
+    ```bash
+    rm data/*.yml
+    ```
+
+3. Generate new cassettes that make API calls over HTTP by running:
+
+    ```bash
+    make test TESTS=tests/test_api.py
+    ```
+Note: Some tests alter source and conversation data on the server so you may need to restart the server in between test runs.
+
+## Generating cassettes for API calls over qrexec
+
+In order to generate cassettes for tests that make API calls over qrexec, you'll need to run the server and proxy on a separate VM. If this is the first time you are generating cassettes, first follow the steps outlined in the [Test setup for qrexec communication](#test-setup-for-qrexec-communication) section, which will help you set up a new VM called `sd-dev-proxy`.
+
+Once your proxy are set up, follow these steps:
+
+1. Start the server in a docker container on `sd-dev-proxy` by running:
+
+    ```bash
+    NUM_SOURCES=5 make dev
+    ```
+
+2. [Skip if adding a new test] Delete the cassettes you wish to regenerate or just delete all json files by running:
+
+    ```bash
+    rm data/*.json
+    ```
+
+3. Comment out the `@dastollervey_datasaver` decorator above the test you want to generate a new cassette for or just generate all new cassettes by commenting out the decorator above all methods in the `test_apiproxy.py::TestAPIProxy` class.
+
+4. Make qrexec calls to the server and collect real response data:
+
+    ```bash
+    make test TESTS=tests/test_apiproxy.py
+    ```
+
+5. Uncomment the `@dastollervey_datasaver` decorator wherever you commented it out.
+6. Record new cassettes from the response data collected in step 4:
+
+    ```bash
+    make test TESTS=tests/test_apiproxy.py
+    ```
+
+**Note:** If you get a 403 error it's becuase the test is trying to reuse an old TOTP code, so wait for 60 seconds and try again. Some tests alter source and conversation data on the server so you should restart the server in between test runs.
+
+## Test setup for qrexec communication
+
+If this is the first time you are generating new cassettes that make API calls over qrexec, then you'll need to set up a new VM for running the server and proxy following these steps:
+
+1. Create a new AppVM based on the **debian-10** template called **sd-dev-proxy**.
+2. Install the lastest proxy package:
+
+    ```bash
+    wget https://apt.freedom.press/pool/main/s/securedrop-proxy/<latest-package>.deb
+    dpkg -i <latest-package>.deb
+    ```
+
+3. Create `/etc/sd-proxy.yaml` with the following contents (assuming the VM you'll be running the SDK tests from is called **sd-dev**):
+
+    ```
+    host: 127.0.0.1
+    scheme: http
+    port: 8081
+    target_vm: sd-dev
+    dev: False
+    ```
+
+4. Install Docker.
+5. Clone `securedrop` on **sd-dev-proxy** and run the server in a Docker container:
+
+    ```bash
+    git clone https://github.com/freedomofpress/securedrop
+    virtualenv .venv --python=python3
+    source .venv/bin/activate
+    pip install -r securedrop/requirements/python3/develop-requirements.txt
+    NUM_SOURCES=5 make dev
+    ```
+
+6. Open a terminal in **sd-dev** and create `/etc/sd-sdk.conf` with the following contents:
 
 ```
 [proxy]
-name=sd-journalist
+name=sd-dev-proxy
 ```
 
-We should also add a corresponding entry in `/etc/qubes-rpc/policy/securedrop.Proxy` file
-in **dom0**.
+7. Modify `/etc/qubes-rpc/policy/securedrop.Proxy` in **dom0** by adding the following line to the top of the file so that the sdk tests can make calls to the proxy:
 
 ```
-sd-svs sd-journalist allow
-@anyvm @anyvm deny
+sd-dev sd-dev-proxy allow
 ```
 
-Now, first we have to verify that this setup works. For that, comment out the
-`@dastollervey_datasaver` decorator in the setup method of `test_apiproxy.py`.
-By commenting out that python decorator we make sure that our tests will do
-real call to the proxy VM. You can do `journalctl -f` in `dom0` to see the log
-entry that `sd-svs` is making a call to the `sd-journalist` vm, and then run
-one initial test.
+8. Modify `/etc/qubes-rpc/qubes.Filecopy` in **dom0** by adding the following line so that the proxy can send files over qrexec to the sdk:
 
 ```
-make test TESTS=tests/test_apiproxy.py::TestAPIProxy::test_api_auth
+sd-dev-proxy sd-dev allow
 ```
 
-Remember to check the logs in `dom0`, you should see an entry like below.
+9. Verify qrexec communication between `sd-dev-proxy` and `sd-dev` is set up properly.
+    a. Run the server on `sd-dev-proxy` if it isn't already running:
 
+        ```bash
+        NUM_SOURCES=5 make dev
+        ```
+    b. With the main branch of this repo checked out on `sd-dev`, comment out the `@dastollervey_datasaver` decorator above the `test_apiproxy.py::TestAPIProxy::setUp` method so that `test_api_auth` makes an actual API call over qrexec.
+    c. Run `test_api_auth`:
 
-```
-Aug 28 15:45:13 dom0 qrexec[1474]: securedrop.Proxy: sd-svs -> sd-journalist: allowed to sd-journalist
-```
+        ```bash
+        make test TESTS=tests/test_apiproxy.py::TestAPIProxy::test_api_auth
+        ```
 
-If the setup is good, we should see the test passing.
+    **Note:** If the test fails, run `journalctl -f` in **dom0** before trying again to see if communication between `sd-dev` and `sd-dev-proxy` is being denied. A successful log looks like this:
 
-## Changing a test or adding a new test in test_apiproxy.py
-
-Say we are modifying the `test_get_sources`, now to regenerate proper test data
-for the same, we should first comment out the `dastollervey_datasaver`
-decorator from both `setUp` and `test_get_sources` methods. Then also remove
-the `setUp.json` and `test_get_sources.json` files from `data/` directory. Now,
-when we will run that one test case, it will connect to the server and fetch
-real data. If you wait for 60 seconds for the next call but this time uncomment
-the `dastollervey_datasaver` decorators in those two methods, it will now again
-connect to the server, and also create fresh JSON data files which you can then
-commit to the repository. The same steps has to be taken for any new test case
-you are adding.
-
-If your test is modifying any state in the server, then before you rerun the
-test for fresh test data, you should restart the server.
-
-**Note:** Remember that file download checks don't read actual file path in the `APIProxy` tests as it requires QubesOS setup. You can manually uncomment those lines to execute them on QubesOS setup.
+        ```
+        Aug 28 15:45:13 dom0 qrexec[1474]: securedrop.Proxy: sd-dev -> sd-dev-proxy: allowed to sd-dev-proxy
+        ```
 
 # Releasing
 
