@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="securedrop-sdk",
-    version="0.1.0",
+    version="0.1.1",
     author="Freedom of the Press Foundation",
     author_email="securedrop@freedom.press",
     description="Python client API to access SecureDrop Journalist REST API",

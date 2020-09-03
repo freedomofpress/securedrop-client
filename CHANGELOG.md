@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.1.1
+-----
+
+* Add journalist name to Reply object (#125).
+
 0.1.0
 -----
 
