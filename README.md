@@ -276,55 +276,80 @@ An AppArmor profile is available for mandatory access control. When installing s
 
 4. Once you've made all the changes necessary (e.g.: no apparmor errors in `/var/log/syslog`) you can copy `/etc/apparmor.d/usr.bin.securedrop-client` into `files/usr.bin.securedrop-client` in this repository and commit the changes.
 
-## Run the tests and checks
+## Running tests and checks
 
 In order to run the test suite you should also install the `xvfb` package (to make the `xvfb-run` command available): `apt install xvfb`. You may also need to install the `sqlite3` command: `apt install sqlite3`.
 
-To run everything, run:
+To run all tests and checks, run:
 
 ```bash
 make check
 ```
 
-To individually run the unit tests, run `make test` to run the suite in parallel (fast), or run `make test-random` to run the tests in random order (slower, but this is what `make check` runs and what runs in CI).
+To only run unit tests, run:
+
+```bash
+make test
+```
+
+To run unit tests in random order, run:
+
+```bash
+make test-random
+```
+
+To only run integration tests, run:
+
+```bash
+make test-integration
+```
+
+To only run functional tests, run:
+
+```bash
+make test-functional
+```
 
 ### Functional Tests
 
-Functional tests are run alone using `make test-functional` and otherwise will be ran along with `make check`.
+When functional tests are run, they replay recorded API request and response data instead of making actual API calls to a server. This is why tests can pass even when there is no server running. If you want to add new tests that make API calls or if the SDK ever changes its API, then you'll need to record new request and response data by following the steps outlined in [Generating new cassettes](#generating-new-cassettes).
 
-We use `qtbot`, bundled with the [pytest-qt](https://pytest-qt.readthedocs.io/en/latest/) package, for UI interaction within our functional tests. We use [vcrpy](https://vcrpy.readthedocs.io/en/latest/) to replay the original response from the test server. These responses are stored in the `tests/functional/cassettes` directory. Our test TOTP is set to `994892` and stored in casettes.
+We use `qtbot`, bundled with the [pytest-qt](https://pytest-qt.readthedocs.io/en/latest/) package, for UI interaction within our functional tests.
 
 #### Generating new cassettes
 
-Some changes may require generating new cassettes, such as modifications to API endpoints. If you see the following warning, you may need to generate a new cassette or all new cassettes, depending on the change you made:
+We use [vcrpy](https://vcrpy.readthedocs.io/en/latest/) to record and replay API calls. Each request made from a test and response from the server is stored in a "cassette" yaml file in the `tests/functional/cassettes` directory.
+
+If the SDK changes its API, then you'll see the following warning indicating that a request failed to be found in an existing cassette and that you'll need to regenerate cassettes:
 
 ```
 Can't overwrite existing cassette ('<path-to-cassette-for-a-functional-test>') in your current record mode ('once').
 ```
 
-To generate new cassettes, follow these instructions:
+To set up a local dev server and generate cassettes, follow these steps:
 
-1. Before generating new cassettes that will be used to replay server interaction, bypass TOTP verification so that we can use the hard-coded value of `123456` in `tests/conftest.py`. You can do this by applying the following diff to the securedrop server, which you will be running in the next step:
-       ```diff
-       diff --git a/securedrop/models.py b/securedrop/models.py
-       index dcd26bbaf..50bc491b4 100644
-       --- a/securedrop/models.py
-       +++ b/securedrop/models.py
-       @@ -649,6 +649,7 @@ class Journalist(db.Model):
+1. Bypass TOTP verification so that we can use the TOTP value of `123456` hard-coded in `tests/conftest.py`. You can do this by applying the following patch to the server code:
 
-                try:
-                    user = Journalist.query.filter_by(username=username).one()
-       +            return user
-                except NoResultFound:
-                    raise InvalidUsernameException(
-                        "invalid username '{}'".format(username))
-       (END)
-       ```
-2. Start the dev server: `NUM_SOURCES=0 make dev`
-3. Set up the dev server with data required for functional tests to pass and run in any order:
-    - Create two new sources, each with one submission that contains both a file and a message. The message should be set to `this is the message`. The file should be called `hello.txt` and contain a single line of text: `hello`.
-3. Delete all the old cassettes by running `rm -r tests/functional/cassettes` or just delete the cassettes you wish to regenerate.
-4. Run `make test-functional` which will regenerate cassettes for any that are missing in the `tests/functional/cassettes` folder.
+https://gist.github.com/creviera/8793d5ec4d28f034f2c1e8320a93866a
+
+2. Start the server in a docker container by running:
+
+    ```bash
+    NUM_SOURCES=0 make dev
+    ```
+
+3. Create two new sources, each with one submission that contains both a file and a message. The message should be set to `this is the message`. The file should be called `hello.txt` and contain a single line of text: `hello`.
+4. Delete the cassettes you wish to regenerate or just delete the entire directory by running:
+
+    ```bash
+    rm -r tests/functional/cassettes
+    ```
+
+5. Regenerate cassettes by running:
+
+    ```bash
+    make test-functional
+    ```
 
 Note: One of the functional tests deletes a source, so you may need to add it back in between test runs where you are generating new cassettes.
 
