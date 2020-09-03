@@ -70,8 +70,8 @@ class TestAPI(unittest.TestCase):
         self.assertTrue(isinstance(self.api.token, str))
         self.assertTrue(isinstance(self.api.token_expiration, datetime.datetime))
         self.assertTrue(isinstance(self.api.token_journalist_uuid, str))
-        self.assertTrue(isinstance(self.api.journalist_first_name, (str, type(None))))
-        self.assertTrue(isinstance(self.api.journalist_last_name, (str, type(None))))
+        self.assertTrue(isinstance(self.api.first_name, (str, type(None))))
+        self.assertTrue(isinstance(self.api.last_name, (str, type(None))))
 
     @vcr.use_cassette("data/test-get-sources.yml")
     def test_get_sources(self):

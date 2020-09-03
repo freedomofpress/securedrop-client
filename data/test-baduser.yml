@@ -1,21 +1,34 @@
 interactions:
 - request:
-    body: '{"one_time_code": "278592", "passphrase": "correct horse battery staple
-      profanity oil chewy", "username": "no"}'
+    body: '{"username": "no", "passphrase": "correct horse battery staple profanity
+      oil chewy", "one_time_code": "205004"}'
     headers:
-      Accept: ['*/*']
-      Accept-Encoding: ['gzip, deflate']
-      Connection: [keep-alive]
-      Content-Length: ['119']
-      User-Agent: [python-requests/2.20.0]
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '111'
+      User-Agent:
+      - python-requests/2.22.0
     method: POST
     uri: http://127.0.0.1:8081/api/v1/token
   response:
-    body: {string: "{\n  \"error\": \"Forbidden\",\n  \"message\": \"Token authentication failed.\"\n}\n"}
+    body:
+      string: "{\n  \"error\": \"Forbidden\", \n  \"message\": \"Token authentication\
+        \ failed.\"\n}\n"
     headers:
-      Content-Length: ['73']
-      Content-Type: [application/json]
-      Date: ['Tue, 19 Mar 2019 18:56:30 GMT']
-      Server: [Werkzeug/0.14.1 Python/2.7.12]
-    status: {code: 403, message: FORBIDDEN}
+      Content-Length:
+      - '73'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 31 Aug 2020 19:06:57 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 403
+      message: FORBIDDEN
 version: 1
