@@ -3133,8 +3133,25 @@ class ReplyTextEdit(QPlainTextEdit):
             self.placeholder.hide()
         super(ReplyTextEdit, self).setPlainText(text)
 
+    def resizeEvent(self, event):
+        # Adjust available source label width to elide text when necessary
+        self.placeholder.update_label_width(event.size().width())
+        super().resizeEvent(event)
+
 
 class ReplyTextEditPlaceholder(QWidget):
+
+    # These values are used to determine the width that can be taken up by
+    # the source designation as the widget is initialized or the window is
+    # resized.
+    INITIAL_MAX_WIDTH = 150
+    RESERVED_WIDTH = 250
+
+    # We allocate a fixed with to the source designation because its text is
+    # dynamically resized, which otherwise causes Qt's layout engine to
+    # incorrectly reposition it
+    FIXED_LABEL_WIDTH = 800
+
     def __init__(self, source_name):
         super().__init__()
 
@@ -3147,14 +3164,18 @@ class ReplyTextEditPlaceholder(QWidget):
         # Signed in
         compose_a_reply_to = QLabel(_("Compose a reply to "))
         compose_a_reply_to.setObjectName("ReplyTextEditPlaceholder_text")
-        source_name = SecureQLabel(source_name, wordwrap=False)
-        source_name.setObjectName("ReplyTextEditPlaceholder_bold_blue")
+        self.source_name = source_name
+        self.source_name_label = SecureQLabel(
+            source_name, wordwrap=False, max_length=self.INITIAL_MAX_WIDTH
+        )
+        self.source_name_label.setObjectName("ReplyTextEditPlaceholder_bold_blue")
+        self.source_name_label.setFixedWidth(self.FIXED_LABEL_WIDTH)
         self.signed_in = QWidget()
         signed_in_layout = QHBoxLayout()
         signed_in_layout.setSpacing(0)
         self.signed_in.setLayout(signed_in_layout)
         signed_in_layout.addWidget(compose_a_reply_to)
-        signed_in_layout.addWidget(source_name)
+        signed_in_layout.addWidget(self.source_name_label)
         self.signed_in.hide()
 
         # Awaiting key
@@ -3202,6 +3223,13 @@ class ReplyTextEditPlaceholder(QWidget):
         self.signed_in_no_key.hide()
         self.signed_in.hide()
         self.signed_out.show()
+
+    def update_label_width(self, width):
+        if width > self.RESERVED_WIDTH:
+            # Ensure source designations are elided with "..." if needed per
+            # current container size
+            self.source_name_label.max_length = width - self.RESERVED_WIDTH
+            self.source_name_label.setText(self.source_name)
 
 
 class DeleteSourceAction(QAction):
