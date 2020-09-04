@@ -184,8 +184,8 @@ class SecureQLabel(QLabel):
             full_text = full_text.split("\n", 1)[0]
 
         fm = self.fontMetrics()
-        filename_width = fm.horizontalAdvance(full_text)
-        if filename_width > self.max_length:
+        px_width = fm.horizontalAdvance(full_text)
+        if px_width > self.max_length:
             elided_text = ""
             for c in full_text:
                 if fm.horizontalAdvance(elided_text) > self.max_length:
