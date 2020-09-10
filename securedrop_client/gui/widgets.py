@@ -55,6 +55,7 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QScrollArea,
     QSizePolicy,
+    QStackedLayout,
     QStatusBar,
     QToolButton,
     QVBoxLayout,
@@ -3139,10 +3140,8 @@ class ReplyTextEditPlaceholder(QWidget):
         super().__init__()
 
         # Set layout
-        layout = QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-        self.setLayout(layout)
+        self.layout = QStackedLayout()
+        self.setLayout(self.layout)
 
         # Signed in
         compose_a_reply_to = QLabel(_("Compose a reply to "))
@@ -3152,10 +3151,10 @@ class ReplyTextEditPlaceholder(QWidget):
         self.signed_in = QWidget()
         signed_in_layout = QHBoxLayout()
         signed_in_layout.setSpacing(0)
+        signed_in_layout.setAlignment(Qt.AlignLeft)
         self.signed_in.setLayout(signed_in_layout)
         signed_in_layout.addWidget(compose_a_reply_to)
         signed_in_layout.addWidget(source_name)
-        self.signed_in.hide()
 
         # Awaiting key
         awaiting_key = QLabel("Awaiting encryption key")
@@ -3168,7 +3167,6 @@ class ReplyTextEditPlaceholder(QWidget):
         self.signed_in_no_key.setLayout(signed_in_no_key_layout)
         signed_in_no_key_layout.addWidget(awaiting_key)
         signed_in_no_key_layout.addWidget(from_server)
-        self.signed_in_no_key.hide()
 
         # Signed out
         sign_in = QLabel(_("Sign in"))
@@ -3182,26 +3180,19 @@ class ReplyTextEditPlaceholder(QWidget):
         signed_out_layout.addWidget(sign_in)
         signed_out_layout.addWidget(to_compose_reply)
         signed_out_layout.addStretch()
-        self.signed_out.hide()
 
-        layout.addWidget(self.signed_in)
-        layout.addWidget(self.signed_in_no_key)
-        layout.addWidget(self.signed_out)
+        self.layout.addWidget(self.signed_in)
+        self.layout.addWidget(self.signed_in_no_key)
+        self.layout.addWidget(self.signed_out)
 
     def show_signed_in(self):
-        self.signed_in_no_key.hide()
-        self.signed_in.show()
-        self.signed_out.hide()
+        self.layout.setCurrentIndex(0)
 
     def show_signed_in_no_key(self):
-        self.signed_in_no_key.show()
-        self.signed_in.hide()
-        self.signed_out.hide()
+        self.layout.setCurrentIndex(1)
 
     def show_signed_out(self):
-        self.signed_in_no_key.hide()
-        self.signed_in.hide()
-        self.signed_out.show()
+        self.layout.setCurrentIndex(2)
 
 
 class DeleteSourceAction(QAction):
