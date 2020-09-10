@@ -457,11 +457,11 @@ class Controller(QObject):
         """
         logger.info("{} successfully logged in".format(self.api.username))
         self.gui.hide_login()
-        user = storage.update_and_get_user(
+        user = storage.create_or_update_user(
             self.api.token_journalist_uuid,
             self.api.username,
-            self.api.journalist_first_name,
-            self.api.journalist_last_name,
+            self.api.first_name,
+            self.api.last_name,
             self.session,
         )
         # Clear clipboard contents in case of previously pasted creds

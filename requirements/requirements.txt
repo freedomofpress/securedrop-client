@@ -75,8 +75,8 @@ requests==2.20.0 \
     --hash=sha256:99dcfdaaeb17caf6e526f32b6a7b780461512ab3f1d992187801694cba42770c \
     --hash=sha256:a84b8c9ab6239b578f22d1c21d51b696dcfe004032bb80ea832398d6909d7279 \
     # via -r requirements/requirements.in, securedrop-sdk
-securedrop-sdk==0.1.0 \
-    --hash=sha256:970fde25e6238e1808ac120951ee972549f4cd7952966dfe29f731bb308cc0d8 \
+securedrop-sdk==0.1.1 \
+    --hash=sha256:138ce7a717db519c3c8d19b9475d7660fb7095d7608e8802723e682a7415e677 \
     # via -r requirements/requirements.in
 six==1.11.0 \
     --hash=sha256:70e8a77beed4562e7f14fe23a786b54f6296e34344c23bc42f07b15018ff98e9 \

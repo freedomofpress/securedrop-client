@@ -5,7 +5,7 @@ from sdclientapi import API
 from sqlalchemy.orm.session import Session
 
 from securedrop_client.api_jobs.base import ApiJob
-from securedrop_client.storage import get_remote_data, update_and_get_user, update_local_storage
+from securedrop_client.storage import create_or_update_user, get_remote_data, update_local_storage
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +42,6 @@ class MetadataSyncJob(ApiJob):
         update_local_storage(session, sources, submissions, replies, self.data_dir)
         user = api_client.get_current_user()
         if "uuid" in user and "username" in user and "first_name" in user and "last_name" in user:
-            update_and_get_user(
-                user["uuid"], user["username"], user["first_name"], user["last_name"], session,
+            create_or_update_user(
+                user["uuid"], user["username"], user["first_name"], user["last_name"], session
             )

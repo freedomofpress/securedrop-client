@@ -219,8 +219,8 @@ def test_Controller_on_authenticate_success(homedir, config, mocker, session_mak
     co.api = mocker.MagicMock()
     co.api.token_journalist_uuid = user.uuid
     co.api.username = user.username
-    co.api.journalist_first_name = user.firstname
-    co.api.journalist_last_name = user.lastname
+    co.api.first_name = user.firstname
+    co.api.last_name = user.lastname
     co.resume_queues = mocker.MagicMock()
 
     co.on_authenticate_success(True)

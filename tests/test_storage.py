@@ -15,12 +15,12 @@ from sqlalchemy.orm.exc import NoResultFound
 import securedrop_client.db
 from securedrop_client import db
 from securedrop_client.storage import (
+    create_or_update_user,
     delete_local_source_by_uuid,
     delete_single_submission_or_reply_on_disk,
     find_new_files,
     find_new_messages,
     find_new_replies,
-    find_or_create_user,
     get_file,
     get_local_files,
     get_local_messages,
@@ -35,7 +35,6 @@ from securedrop_client.storage import (
     mark_as_not_downloaded,
     set_message_or_reply_content,
     source_exists,
-    update_and_get_user,
     update_draft_replies,
     update_file_size,
     update_files,
@@ -95,6 +94,8 @@ def make_remote_reply(source_uuid, journalist_uuid="testymctestface"):
         filename="1-reply.filename",
         journalist_uuid=journalist_uuid,
         journalist_username="test",
+        journalist_first_name="test",
+        journalist_last_name="test",
         file_counter=1,
         is_deleted_by_source=False,
         reply_url="test",
@@ -683,7 +684,7 @@ def test_update_messages(homedir, mocker):
     local_user.id = 42
     mock_session.query().filter_by().first.return_value = local_source
     mock_focu = mocker.MagicMock(return_value=local_user)
-    mocker.patch("securedrop_client.storage.find_or_create_user", mock_focu)
+    mocker.patch("securedrop_client.storage.create_or_update_user", mock_focu)
     mock_delete_submission_files = mocker.patch(
         "securedrop_client.storage.delete_single_submission_or_reply_on_disk"
     )
@@ -749,8 +750,10 @@ def test_update_replies(homedir, mocker, session):
     # local database, the other will NOT exist in the local database
     # (this will be added to the database)
     remote_reply_update = factory.RemoteReply(
-        journalist_uuid=journalist.uuid,
         uuid=local_reply_update.uuid,
+        journalist_uuid=journalist.uuid,
+        journalist_first_name="new_name",
+        journalist_last_name="new_name",
         source_url="/api/v1/sources/{}".format(source.uuid),
         file_counter=local_reply_update.file_counter,
         filename=local_reply_update.filename,
@@ -761,6 +764,8 @@ def test_update_replies(homedir, mocker, session):
         source_url="/api/v1/sources/{}".format(source.uuid),
         file_counter=factory.REPLY_COUNT + 1,
         filename="{}-filename.gpg".format(factory.REPLY_COUNT + 1),
+        journalist_first_name="",
+        journalist_last_name="",
     )
 
     remote_replies = [remote_reply_update, remote_reply_create]
@@ -867,58 +872,59 @@ def test_update_replies_missing_source(homedir, mocker, session):
     error_logger.assert_called_once_with(f"No source found for reply {remote_reply.uuid}")
 
 
-def test_find_or_create_user_existing_uuid(mocker):
+def test_create_or_update_user_existing_uuid(mocker):
     """
     Return an existing user object with the referenced uuid.
     """
     mock_session = mocker.MagicMock()
     mock_user = mocker.MagicMock()
     mock_user.username = "foobar"
+    mock_user.firstname = "foobar"
+    mock_user.lastname = "foobar"
     mock_session.query().filter_by().one_or_none.return_value = mock_user
-    assert find_or_create_user("uuid", "foobar", mock_session) == mock_user
+    assert create_or_update_user("uuid", "username", "fn", "ln", mock_session) == mock_user
 
 
-def test_find_or_create_user_update_username(mocker, session):
+def test_create_or_update_user_update_username(mocker, session):
     """
     Return an existing user object with the updated username.
     """
     user = factory.User(uuid="mock_uuid", username="mock_old_username")
     session.add(user)
 
-    actual_user = find_or_create_user("mock_uuid", "mock_username", session)
+    actual_user = create_or_update_user("mock_uuid", "mock_username", "fn", "ln", session)
 
     assert actual_user == user
     assert actual_user.username == "mock_username"
+    assert actual_user.firstname == "fn"
+    assert actual_user.lastname == "ln"
 
 
-def test_find_or_create_user_new(mocker):
+def test_create_or_update_user_new(mocker):
     """
     Create and return a user object for an unknown username.
     """
     mock_session = mocker.MagicMock()
     mock_session.query().filter_by().one_or_none.return_value = None
-    new_user = find_or_create_user("uuid", "unknown", mock_session)
+    new_user = create_or_update_user("uuid", "unknown", "unknown", "unknown", mock_session)
     assert new_user.username == "unknown"
     mock_session.add.assert_called_once_with(new_user)
     mock_session.commit.assert_called_once_with()
 
 
-def test_update_and_get_user(mocker, session):
+def test_create_or_update_user(mocker, session):
     """
-    Return an existing user object with the updated username.
+    Return an existing user object with the updated username, firstname, and lastname.
     """
     user = factory.User(
         uuid="mock_uuid",
-        username="mock_username",  # username is needed for find_or_create_user
+        username="mock_old_username",  # username is needed for create_or_update_user
         firstname="mock_old_firstname",
         lastname="mock_old_lastname",
     )
     session.add(user)
-    find_or_create_user_fn = mocker.patch(
-        "securedrop_client.storage.find_or_create_user", return_value=user
-    )
 
-    actual_user = update_and_get_user(
+    updated_user = create_or_update_user(
         uuid="mock_uuid",
         username="mock_username",
         firstname="mock_firstname",
@@ -926,11 +932,9 @@ def test_update_and_get_user(mocker, session):
         session=session,
     )
 
-    find_or_create_user_fn.assert_called_with("mock_uuid", "mock_username", session)
-    assert actual_user == user
-    assert actual_user.username == "mock_username"
-    assert actual_user.firstname == "mock_firstname"
-    assert actual_user.lastname == "mock_lastname"
+    assert updated_user.username == "mock_username"
+    assert updated_user.firstname == "mock_firstname"
+    assert updated_user.lastname == "mock_lastname"
 
 
 def test_find_new_messages(mocker, session):
