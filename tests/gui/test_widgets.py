@@ -37,6 +37,7 @@ from securedrop_client.gui.widgets import (
     PrintDialog,
     ReplyBoxWidget,
     ReplyTextEdit,
+    ReplyTextEditPlaceholder,
     ReplyWidget,
     SecureQLabel,
     SourceConversationWrapper,
@@ -4360,6 +4361,37 @@ def test_ReplyBox_set_logged_in_no_public_key(mocker):
     # to be rendered correctly.
     assert rb.replybox.isEnabled() is False
     assert rb.text_edit.isEnabled() is False
+
+
+def test_ReplyBox_resize_adjusts_label_width(mocker):
+    """
+    If the reply widget is resized, the source designation's maximum width is
+    updated, and text is elided if necessary.
+    """
+    source = factory.Source()
+    source.journalist_designation = "omniscient hippopotamus"
+    controller = mocker.MagicMock()
+    rb = ReplyBoxWidget(source, controller)
+    rb.set_logged_in()
+
+    # The widget must be displayed for the resize event to be triggered.
+    rb.show()
+
+    # We wrap the update_label_width method so we can verify that it has been
+    # called while preserving its behavior.
+    with patch.object(
+        ReplyTextEditPlaceholder,
+        "update_label_width",
+        wraps=rb.text_edit.placeholder.update_label_width,
+    ) as wrapped_update:
+        rb.resize(1000, rb.height())
+        wrapped_update.assert_called_with(rb.text_edit.width() - 2)
+        assert rb.text_edit.placeholder.source_name_label.elided is False
+        rb.resize(500, rb.height())
+        wrapped_update.assert_called_with(rb.text_edit.width() - 2)
+        assert rb.text_edit.placeholder.source_name_label.elided is True
+
+    rb.hide()
 
 
 def test_update_conversation_maintains_old_items(mocker, session):
