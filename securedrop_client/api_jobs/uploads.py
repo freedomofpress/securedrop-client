@@ -7,7 +7,14 @@ from sqlalchemy.orm.session import Session
 
 from securedrop_client.api_jobs.base import SingleObjectApiJob
 from securedrop_client.crypto import GpgHelper
-from securedrop_client.db import DraftReply, Reply, ReplySendStatus, ReplySendStatusCodes, Source
+from securedrop_client.db import (
+    DraftReply,
+    Reply,
+    ReplySendStatus,
+    ReplySendStatusCodes,
+    Source,
+    User,
+)
 from securedrop_client.storage import update_draft_replies
 
 logger = logging.getLogger(__name__)
@@ -53,6 +60,15 @@ class SendReplyJob(SingleObjectApiJob):
                 session.commit()
                 raise Exception("Source {} does not exists".format(self.source_uuid))
 
+            # If the account of the sender no longer exists then do not send the reply. Keep the
+            # draft reply so that the failed reply associated with the deleted account can be
+            # displayed.
+            sender = (
+                session.query(User).filter_by(uuid=api_client.token_journalist_uuid).one_or_none()
+            )
+            if not sender:
+                raise Exception("Sender of reply {} has been deleted".format(self.reply_uuid))
+
             # Send the draft reply to the source
             encrypted_reply = self.gpg.encrypt_to_source(self.source_uuid, self.message)
             sdk_reply = self._make_call(encrypted_reply, api_client)
@@ -60,11 +76,12 @@ class SendReplyJob(SingleObjectApiJob):
             # Create a new reply object with an updated filename and file counter
             interaction_count = source.interaction_count + 1
             filename = "{}-{}-reply.gpg".format(interaction_count, source.journalist_designation)
+
             reply_db_object = Reply(
                 uuid=self.reply_uuid,
                 source_id=source.id,
                 filename=filename,
-                journalist_id=api_client.token_journalist_uuid,
+                journalist_id=sender.id,
                 content=self.message,
                 is_downloaded=True,
                 is_decrypted=True,

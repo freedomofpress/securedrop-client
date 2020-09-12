@@ -293,6 +293,9 @@ class Controller(QObject):
         # Reference to the API for secure drop proxy.
         self.api = None  # type: sdclientapi.API
 
+        # Store authenticated user
+        self.authenticated_user = None
+
         # Reference to the SqlAlchemy `sessionmaker` and `session`
         self.session_maker = session_maker
         self.session = session_maker()
@@ -464,6 +467,9 @@ class Controller(QObject):
             self.api.last_name,
             self.session,
         )
+
+        self.authenticated_user = user
+
         # Clear clipboard contents in case of previously pasted creds
         self.gui.clear_clipboard()
         self.gui.show_main_window(user)
@@ -475,6 +481,7 @@ class Controller(QObject):
     def on_authenticate_failure(self, result: Exception) -> None:
         # Failed to authenticate. Reset state with failure message.
         self.invalidate_token()
+
         error = _(
             "That didn't work. Please check everything and try again.\n"
             "Make sure to use a new two-factor code."
@@ -629,6 +636,7 @@ class Controller(QObject):
 
     def invalidate_token(self):
         self.api = None
+        self.authenticated_user = None
 
     def set_status(self, message, duration=5000):
         """
@@ -898,6 +906,11 @@ class Controller(QObject):
         """
         Send a reply to a source.
         """
+        # If the user account no longer exists, do not send
+        if not self.authenticated_user:
+            logger.error("Sender of reply {} has been deleted".format(reply_uuid))
+            return
+
         # Before we send the reply, add the draft to the database with a PENDING
         # reply send status.
         source = self.session.query(db.Source).filter_by(uuid=source_uuid).one()
@@ -910,7 +923,7 @@ class Controller(QObject):
             uuid=reply_uuid,
             timestamp=datetime.datetime.utcnow(),
             source_id=source.id,
-            journalist_id=self.api.token_journalist_uuid,
+            journalist_id=self.authenticated_user.id,
             file_counter=source.interaction_count,
             content=message,
             send_status_id=reply_status.id,
