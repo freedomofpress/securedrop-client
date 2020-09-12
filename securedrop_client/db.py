@@ -18,6 +18,7 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref, relationship, scoped_session, sessionmaker
 
 convention = {
@@ -453,13 +454,51 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
-    uuid = Column(String(36), unique=True, nullable=False)
+    _uuid = Column(String(36), unique=True, nullable=False)
     username = Column(String(255), nullable=False)
     firstname = Column(String(64))
     lastname = Column(String(64))
+    _deleted = Column(Boolean(name="deleted"), nullable=False, server_default=text("0"))
 
     def __repr__(self) -> str:
         return "<Journalist {}: {}>".format(self.uuid, self.username)
+
+    @hybrid_property
+    def uuid(self):
+        return self._uuid
+
+    @uuid.setter
+    def uuid(self, uuid: str):
+        """
+        Mark user as deleted if the uuid is set to the reserved keyword "deleted".
+
+        There is an edge case where a user account does not exist in the local database but a
+        reply comes in from the user after the user has been deleted (this is more likely to happen
+        if there are long gaps between client runs/ syncs). Since there will be no existing account
+        to mark as deleted, we set the reply sender to a global user with the uuid "deleted". This
+        is a temporary solution until we support a way to distinguish bewteen deleted accounts on
+        the server.
+        """
+        self._uuid = uuid
+        if self._uuid == "deleted":
+            self.deleted = True
+
+    @hybrid_property
+    def deleted(self):
+        return self._deleted
+
+    @deleted.setter
+    def deleted(self, deleted: Boolean):
+        """
+        We are not deleting user accounts on the client. Instead we nullify user data and set
+        username to "[DELETED]". This is a temporary solution until we support a way to distinguish
+        bewteen deleted accounts on the server.
+        """
+        self._deleted = deleted
+        if self._deleted:
+            self.username = "[DELETED]"
+            self.firstname = None
+            self.lastname = None
 
     @property
     def fullname(self) -> str:

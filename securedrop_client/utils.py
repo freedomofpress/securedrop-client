@@ -3,7 +3,8 @@ import math
 import os
 import time
 from contextlib import contextmanager
-from typing import Dict, Generator, Optional
+from functools import wraps
+from typing import Dict, Generator, List, Optional
 
 from sqlalchemy.orm.session import Session
 
@@ -101,6 +102,29 @@ class SourceCache(object):
 
     def get(self, source_uuid: str) -> Optional[db.Source]:
         if source_uuid not in self.cache:
-            source = self.session.query(db.Source).filter_by(uuid=source_uuid).first()
+            source = self.session.query(db.Source).filter_by(uuid=source_uuid).one_or_none()
             self.cache[source_uuid] = source
         return self.cache.get(source_uuid)
+
+
+class UserCache(object):
+    """
+    Cache of Users by UUID.
+    """
+
+    def __init__(self, session: Session, users: List[db.User] = []) -> None:
+        """
+        Creates a cache that is initialized with the supplied list of users.
+        """
+        super().__init__()
+
+        self.cache: Dict[str, db.User] = {user.uuid + ":" + user.username + ":" + user.firstname + ":" + user.lastname: user for user in users}
+        self.session = session
+
+    def get(self, uuid: str, username: str, firstname: str, lastname: str) -> Optional[db.User]:
+        key = uuid + ":" + username + ":" + firstname + ":" + lastname
+        if key not in self.cache:
+            user = self.session.query(db.User).filter_by(uuid=uuid).one_or_none()
+            key = uuid + ":" + user.username + ":" + user.firstname + ":" + user.lastname
+            self.cache[key] = user
+        return self.cache.get(uuid)

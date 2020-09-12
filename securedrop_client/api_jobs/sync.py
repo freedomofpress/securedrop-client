@@ -25,21 +25,39 @@ class MetadataSyncJob(ApiJob):
         """
         Override ApiJob.
 
-        Download new metadata, update the local database, import new keys, and
-        then the success signal will let the controller know to add any new download
-        jobs.
+        The metadata sync does the following:
+
+          * Makes an api call to get all sources
+          * Makes an api call to get metadata for all files and messages
+          * Makes an api call to get metadata for all replies
+          * Updates local storage
+              - Deletes local database entries and files on disk for sources, files, messages, and
+                replies not returned by the api calls
+              - Adds new sources to the local database
+              - Adds new entries for files, messages, and replies to the local database (does not
+                download or decrypt them)
+              - Updates existing entries for files, messages, and replies in the local database
+                (does not download or decrypt them)
+          * Updates current user if any user info has changed
+
+        The success signal of the metadata sync job will let the controller know whether or not to
+        add new download jobs for any new messages, or replies (files have to be downloaded by the
+        user)
         """
 
         # TODO: Once https://github.com/freedomofpress/securedrop-client/issues/648, we will want to
         # pass the default request timeout to api calls instead of setting it on the api object
         # directly.
         #
-        # This timeout is used for 3 different requests: `get_sources`, `get_all_submissions`, and
-        # `get_all_replies`
+        # This timeout is used for 3 different api calls made in get_remote_data:
+        #   * get_sources
+        #   * get_all_submissions
+        #   * get_all_replies
         api_client.default_request_timeout = 60
         sources, submissions, replies = get_remote_data(api_client)
 
         update_local_storage(session, sources, submissions, replies, self.data_dir)
+
         user = api_client.get_current_user()
         if "uuid" in user and "username" in user and "first_name" in user and "last_name" in user:
             create_or_update_user(

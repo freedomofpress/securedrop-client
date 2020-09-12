@@ -45,7 +45,7 @@ from securedrop_client.db import (
     Source,
     User,
 )
-from securedrop_client.utils import SourceCache, chronometer
+from securedrop_client.utils import SourceCache, UserCache, chronometer, memoize
 
 logger = logging.getLogger(__name__)
 
@@ -286,93 +286,84 @@ def update_replies(
     remote_replies: List[SDKReply], local_replies: List[Reply], session: Session, data_dir: str
 ) -> None:
     """
-    * Existing replies are updated in the local database.
-    * New replies have an entry created in the local database.
-    * Local replies not returned in the remote replies are deleted from the
-      local database unless they are pending or failed.
-
-    If a reply references a new journalist username, add them to the database
-    as a new user.
+    This method does the following for all replies:
+      * Deletes user info if the user who sent the reply was deleted on the server
+      * Adds reply to the local database if it's new and adds a user account for the sender if
+        one does not exist
+      * Deletes reply if it no longer exists on the server (pending or failed replies have not
+        reached the server so they will continue to exist locally in a separate table called
+        draftreplies)
     """
-    local_replies_by_uuid = {r.uuid: r for r in local_replies}
-    users: Dict[str, User] = {}
+    local_replies_to_process: Dict[str, Reply] = {reply.uuid: reply for reply in local_replies}
     source_cache = SourceCache(session)
-    for reply in remote_replies:
-        user = users.get(reply.journalist_uuid)
+    local_users = session.query(User).all()
+    local_user_cache = UserCache(session, local_users)
 
-        if not user:
-            user = create_or_update_user(
-                reply.journalist_uuid,
-                reply.journalist_username,
-                reply.journalist_first_name,
-                reply.journalist_last_name,
-                session,
-            )
-            users[reply.journalist_uuid] = user
-        elif (
-            user.username != reply.journalist_username
-            or user.firstname != reply.journalist_first_name
-            or user.lastname != reply.journalist_last_name
-        ):
-            user = create_or_update_user(
-                reply.journalist_uuid,
-                reply.journalist_username,
-                reply.journalist_first_name,
-                reply.journalist_last_name,
-                session,
-            )
-            users[reply.journalist_uuid] = user
-
-        local_reply = local_replies_by_uuid.get(reply.uuid)
-        if local_reply:
-            lazy_setattr(local_reply, "journalist_id", user.id)
-            lazy_setattr(local_reply, "size", reply.size)
-            lazy_setattr(local_reply, "filename", reply.filename)
-
-            del local_replies_by_uuid[reply.uuid]
-            logger.debug("Updated reply {}".format(reply.uuid))
+    for remote_reply in remote_replies:
+        key = remote_reply.uuid + ":" + remote_reply.username + ":" + remote_reply.firstname + ":" + remote_reply.lastname
+        if key in local_user_cache:
+            sender = local_user_cache[key]
         else:
-            # A new reply to be added to the database.
-            source = source_cache.get(reply.source_uuid)
-            if not source:
-                logger.error(f"No source found for reply {reply.uuid}")
-                continue
-
-            nr = Reply(
-                uuid=reply.uuid,
-                journalist_id=user.id,
-                source_id=source.id,
-                filename=reply.filename,
-                size=reply.size,
+            sender = create_or_update_user(
+                remote_reply.journalist_uuid,
+                remote_reply.journalist_username,
+                remote_reply.journalist_first_name,
+                remote_reply.journalist_last_name,
+                session,
             )
-            session.add(nr)
+            local_user_cache[sender.uuid + ":" + sender.username + ":" + sender.firstname + ":" + sender.lastname] = sender
 
-            # All replies fetched from the server have succeeded in being sent,
-            # so we should delete the corresponding draft locally if it exists.
-            try:
-                draft_reply_db_object = session.query(DraftReply).filter_by(uuid=reply.uuid).one()
+        local_reply = local_replies_to_process.get(remote_reply.uuid)
+        if local_reply:
+            # Delete reply from dict so later we know which replies do not exist remotely
+            del local_replies_to_process[local_reply.uuid]
 
+            # Delete user info from local storage if the journalist was deleted from the server. We
+            # can infer that the user was deleted from the server when the sender id of an existing
+            # reply no longer matches with the server.
+            local_sender = session.query(User).filter_by(id=local_reply.journalist_id).one_or_none()
+            if local_sender and local_sender.id != sender.id:
+                lazy_setattr(local_sender, "deleted", True)
+                logger.debug(f"Deleted user info for sender of reply {local_reply.uuid}")
+        else:
+            # Create and add new reply
+            source = source_cache.get(remote_reply.source_uuid)
+            if not source:
+                logger.error(f"No source found for reply {remote_reply.uuid}")
+                continue
+            reply = Reply(
+                uuid=remote_reply.uuid,
+                journalist_id=sender.id,
+                source_id=source.id,
+                filename=remote_reply.filename,
+                size=remote_reply.size,
+            )
+            session.add(reply)
+            session.commit()
+            logger.debug(f"Added new reply {reply.uuid}")
+
+            # If we're creating a new reply then we can delete its corresponding draft reply if one
+            # exists. If the new reply was sent from the JI then there will not be a draft reply.
+            draft_reply = session.query(DraftReply).filter_by(uuid=remote_reply.uuid).one_or_none()
+            if draft_reply:
                 update_draft_replies(
                     session,
-                    draft_reply_db_object.source.id,
-                    draft_reply_db_object.timestamp,
-                    draft_reply_db_object.file_counter,
-                    nr.file_counter,
+                    draft_reply.source.id,
+                    draft_reply.timestamp,
+                    draft_reply.file_counter,
+                    reply.file_counter,
                     commit=False,
                 )
-                session.delete(draft_reply_db_object)
+                session.delete(draft_reply)
+                logger.debug("Deleted draft reply {}".format(draft_reply.uuid))
 
-            except NoResultFound:
-                pass  # No draft locally stored corresponding to this reply.
-
-            logger.debug("Added new reply {}".format(reply.uuid))
-
-    # The uuids remaining in local_uuids do not exist on the remote server, so
-    # delete the related records.
-    for deleted_reply in local_replies_by_uuid.values():
-        delete_single_submission_or_reply_on_disk(deleted_reply, data_dir)
-        session.delete(deleted_reply)
-        logger.debug("Deleted reply {}".format(deleted_reply.uuid))
+    # Any local replies that still haven't been processed after iterating through all the
+    # remote replies means they've been deleted from ther server, do make sure to delete them
+    # locally as well
+    for local_reply in local_replies_to_process.values():
+        delete_single_submission_or_reply_on_disk(local_reply, data_dir)
+        session.delete(local_reply)
+        logger.debug("Deleted reply {}".format(local_reply.uuid))
 
     session.commit()
 
@@ -381,9 +372,9 @@ def create_or_update_user(
     uuid: str, username: str, firstname: str, lastname: str, session: Session
 ) -> User:
     """
-    Returns a user object representing the referenced journalist UUID.
-    If the user does not already exist in the data, a new instance is created.
-    If the user exists but user fields have changed, the db is updated.
+    Return a User object with the supplied journalist UUID. Create a new account if no user exists
+    in the local database with that UUID, or update the existing user if username, first name, or
+    last name have changed.
     """
     user = session.query(User).filter_by(uuid=uuid).one_or_none()
 

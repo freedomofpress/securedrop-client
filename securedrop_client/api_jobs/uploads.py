@@ -7,7 +7,14 @@ from sqlalchemy.orm.session import Session
 
 from securedrop_client.api_jobs.base import SingleObjectApiJob
 from securedrop_client.crypto import GpgHelper
-from securedrop_client.db import DraftReply, Reply, ReplySendStatus, ReplySendStatusCodes, Source, User
+from securedrop_client.db import (
+    DraftReply,
+    Reply,
+    ReplySendStatus,
+    ReplySendStatusCodes,
+    Source,
+    User,
+)
 from securedrop_client.storage import update_draft_replies
 
 logger = logging.getLogger(__name__)
@@ -31,7 +38,6 @@ class SendReplyJob(SingleObjectApiJob):
         """
 
         try:
-            raise Exception('testing error state for reply badges')
             # If the reply has already made it to the server but we didn't get a 201 response back,
             # then a reply with self.reply_uuid will exist in the replies table.
             reply_db_object = session.query(Reply).filter_by(uuid=self.reply_uuid).one_or_none()
@@ -57,7 +63,9 @@ class SendReplyJob(SingleObjectApiJob):
             # If the account of the sender no longer exists then do not send the reply. Keep the
             # draft reply so that the failed reply associated with the deleted account can be
             # displayed.
-            sender = session.query(User).filter_by(uuid=api_client.token_journalist_uuid).one_or_none()
+            sender = (
+                session.query(User).filter_by(uuid=api_client.token_journalist_uuid).one_or_none()
+            )
             if not sender:
                 raise Exception("Sender of reply {} has been deleted".format(self.reply_uuid))
 
