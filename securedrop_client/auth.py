@@ -16,47 +16,17 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import datetime
-import functools
 import inspect
 import logging
-import os
 import uuid
 from gettext import gettext as _
 from typing import Any, Dict, List, Tuple, Type, Union  # noqa: F401
 
-import arrow
 import sdclientapi
-from PyQt5.QtCore import QObject, QProcess, Qt, QThread, QTimer, pyqtSignal
+from PyQt5.QtCore import QObject, QThread, pyqtSignal
 from sdclientapi import RequestTimeoutError, ServerConnectionError
-from sqlalchemy.orm.session import sessionmaker
 
 from securedrop_client import db, storage
-from securedrop_client.api_jobs.base import ApiInaccessibleError
-from securedrop_client.api_jobs.downloads import (
-    DownloadChecksumMismatchException,
-    DownloadDecryptionException,
-    DownloadException,
-    FileDownloadJob,
-    MessageDownloadJob,
-    ReplyDownloadJob,
-)
-from securedrop_client.api_jobs.sources import DeleteSourceJob, DeleteSourceJobException
-from securedrop_client.api_jobs.updatestar import (
-    UpdateStarJob,
-    UpdateStarJobError,
-    UpdateStarJobTimeoutError,
-)
-from securedrop_client.api_jobs.uploads import (
-    SendReplyJob,
-    SendReplyJobError,
-    SendReplyJobTimeoutError,
-)
-from securedrop_client.crypto import GpgHelper
-from securedrop_client.export import Export
-from securedrop_client.queue import ApiJobQueue
-from securedrop_client.sync import ApiSync
-from securedrop_client.utils import check_dir_permissions
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +52,8 @@ class APICallRunner(QObject):
         """
         super().__init__()
         self.api_call = api_call
+        # Contains active threads calling the API.
+        self.api_threads = {}  # type: Dict[str, Dict]
         self.current_object = current_object
         self.args = args
         self.kwargs = kwargs
@@ -116,20 +88,23 @@ class UserAuth(QObject):
     authentication_state = pyqtSignal(bool, db.User)
 
     def __init__(self) -> None:
-        self.__is_authenticated = False
-        self.api = None  # type: sdclientapi.API
+        self._authenticated = False
+        self._api = None  # type: sdclientapi.API
+        self.user = None  # type: db.User
 
     @property
-    def is_authenticated(self) -> bool:
-        return self.__is_authenticated
+    def authenticated(self) -> bool:
+        return self._authenticated
 
-    @is_authenticated.setter
-    def is_authenticated(self, is_authenticated: bool) -> None:
-        self.__is_authenticated = is_authenticated
+    @authenticated.setter
+    def authenticated(self, authenticated: bool) -> None:
+        if self._authenticated != authenticated:
+            self._authenticated = authenticated
+            self.authentication_state.emit(authenticated)
 
-    @is_authenticated.deleter
-    def is_authenticated(self) -> None:
-        raise AttributeError("Cannot delete is_authenticated")
+    @authenticated.deleter
+    def authenticated(self) -> None:
+        raise AttributeError("Cannot delete `authenticated`")
 
     def authenticated(self):
         """
@@ -178,8 +153,26 @@ class UserAuth(QObject):
         # Start the thread and related activity.
         new_api_thread.start()
 
+    def completed_api_call(self, thread_id, user_callback):
+        """
+        Manage a completed API call. The actual result *may* be an exception or
+        error result from the API. It's up to the handler (user_callback) to
+        handle these potential states.
+        """
+        logger.debug("Completed API call. Cleaning up and running callback.")
+        thread_info = self.api_threads.pop(thread_id)
+        runner = thread_info["runner"]
+        result_data = runner.result
+
+        arg_spec = inspect.getfullargspec(user_callback)
+        if "current_object" in arg_spec.args:
+            user_callback(result_data, current_object=runner.current_object)
+        else:
+            user_callback(result_data)
+
     def invalidate_token(self):
         self.api = None
+        self.user = None
 
     def authenticate(
         self, hostname: str, proxy: bool, username: str, password: str, totp: str, timeout: int = 60
@@ -202,27 +195,8 @@ class UserAuth(QObject):
         self.set_status("")
 
     def on_authenticate_success(self, result):
-        """
-        Handles a successful authentication call against the API.
-        """
-        logger.info("{} successfully logged in".format(self.api.username))
-        self.gui.hide_login()
-        user = storage.create_or_update_user(
-            self.api.token_journalist_uuid,
-            self.api.username,
-            self.api.first_name,
-            self.api.last_name,
-            self.session,
-        )
-        # Clear clipboard contents in case of previously pasted creds
-        self.gui.clear_clipboard()
-        self.gui.show_main_window(user)
-        self.update_sources()
-        self.api_job_queue.start(self.api)
-        self.api_sync.start(self.api)
-        if not self.is_authenticated:
-            self.is_authenticated = True
-            self.authentication_state.emit(self.is_authenticated, user)
+        self.authenticated = True
+        self.authentication_state.emit(self.authenticated, user)
 
     def on_authenticate_failure(self, result: Exception) -> None:
         # Failed to authenticate. Reset state with failure message.
@@ -234,23 +208,13 @@ class UserAuth(QObject):
         self.gui.show_login_error(error=error)
         self.api_sync.stop()
 
-    def login_offline_mode(self):
-        """
-        Allow user to view in offline mode without authentication.
-        """
-        self.gui.hide_login()
-        # Clear clipboard contents in case of previously pasted creds (user
-        # may have attempted online mode login, then switched to offline)
-        self.gui.clear_clipboard()
-        self.gui.show_main_window()
-        storage.mark_all_pending_drafts_as_failed(self.session)
-        if self.is_authenticated:
-            self.is_authenticated = False
-            self.authentication_state.emit(self.is_authenticated, None)
-
-        self.update_sources()
-        self.show_last_sync()
-        self.show_last_sync_timer.start(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
+    def login(self, username, password, totp):
+        self.api = sdclientapi.API(
+            self.hostname, username, password, totp, self.proxy, default_request_timeout=60
+        )
+        self.call_api(
+            self.api.authenticate, self.on_authenticate_success, self.on_authenticate_failure
+        )
 
     def authenticated(self):
         """
@@ -260,29 +224,10 @@ class UserAuth(QObject):
         return bool(self.api and self.api.token is not None)
 
     def logout(self):
-        """
-        If the token is not already invalid, make an api call to logout and invalidate the token.
-        Then mark all pending draft replies as failed, stop the queues, and show the user as logged
-        out in the GUI.
-        """
-
-        # clear error status in case queue was paused resulting in a permanent error message
-        self.gui.clear_error_status()
-
         if self.api is not None:
             self.call_api(self.api.logout, self.on_logout_success, self.on_logout_failure)
             self.invalidate_token()
 
-        failed_replies = storage.mark_all_pending_drafts_as_failed(self.session)
-        for failed_reply in failed_replies:
-            self.reply_failed.emit(failed_reply.uuid)
-
-        self.api_sync.stop()
-        self.api_job_queue.stop()
-        self.gui.logout()
-
-        self.show_last_sync_timer.start(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
-        self.show_last_sync()
         self.is_authenticated = False
 
     def on_logout_success(self, result) -> None:

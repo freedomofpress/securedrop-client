@@ -18,15 +18,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import datetime
 import functools
-import inspect
 import logging
 import os
-import uuid
 from gettext import gettext as _
 from typing import Any, Dict, List, Tuple, Type, Union  # noqa: F401
 
 import arrow
-import sdclientapi
 from PyQt5.QtCore import QObject, QProcess, Qt, QThread, QTimer, pyqtSignal
 from sdclientapi import RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm.session import sessionmaker
@@ -41,6 +38,7 @@ from securedrop_client.api_jobs.downloads import (
     MessageDownloadJob,
     ReplyDownloadJob,
 )
+from securedrop_client.auth import UserAuth
 from securedrop_client.api_jobs.sources import DeleteSourceJob, DeleteSourceJobException
 from securedrop_client.api_jobs.updatestar import (
     UpdateStarJob,
@@ -67,58 +65,13 @@ TIME_BETWEEN_SHOWING_LAST_SYNC_MS = 1000 * 30
 def login_required(f):
     @functools.wraps(f)
     def decorated_function(self, *args, **kwargs):
-        if not self.api:
+        if not self.auth.authenticated:
             self.on_action_requiring_login()
             return
         else:
             return f(self, *args, **kwargs)
 
     return decorated_function
-
-
-class APICallRunner(QObject):
-    """
-    Used to call the SecureDrop API in a non-blocking manner.
-
-    See the call_api method of the Controller class for how this is
-    done (hint: you should be using the call_api method and not directly
-    using this class).
-    """
-
-    call_succeeded = pyqtSignal()
-    call_failed = pyqtSignal()
-    call_timed_out = pyqtSignal()
-
-    def __init__(self, api_call, current_object=None, *args, **kwargs):
-        """
-        Initialise with the function to call the API and any associated
-        args and kwargs. If current object is passed in, this represents some
-        state which the event handlers may need when they're eventually fired.
-        """
-        super().__init__()
-        self.api_call = api_call
-        self.current_object = current_object
-        self.args = args
-        self.kwargs = kwargs
-        self.result = None
-
-    def call_api(self):
-        """
-        Call the API. Emit a boolean signal to indicate the outcome of the
-        call. Any return value or exception raised is stored in self.result.
-        """
-        # this blocks
-        try:
-            self.result = self.api_call(*self.args, **self.kwargs)
-        except Exception as ex:
-            if isinstance(ex, (RequestTimeoutError, ServerConnectionError)):
-                self.call_timed_out.emit()
-
-            logger.error(ex)
-            self.result = ex
-            self.call_failed.emit()
-        else:
-            self.call_succeeded.emit()
 
 
 class Controller(QObject):
@@ -128,13 +81,6 @@ class Controller(QObject):
     """
 
     sync_events = pyqtSignal(str)
-
-    """
-    A signal that emits a signal when the authentication state changes.
-    - `True` when the client becomes authenticated
-    - `False` when the client becomes unauthenticated
-    """
-    authentication_state = pyqtSignal(bool)
 
     """
     This signal indicates that a reply was successfully sent and received by the server.
@@ -162,7 +108,7 @@ class Controller(QObject):
         str: the reply UUID
         str: the content of the reply
     """
-    reply_ready = pyqtSignal(str, str, str)
+    reply_ready = pyqtSignal(str, str, str, str)
 
     """
     This signal indicates an error while downloading a reply.
@@ -271,8 +217,7 @@ class Controller(QObject):
         check_dir_permissions(home)
         super().__init__()
 
-        # Controller is unauthenticated by default
-        self.__is_authenticated = False
+        self.auth = UserAuth()
 
         # used for finding DB in sync thread
         self.home = home
@@ -290,20 +235,14 @@ class Controller(QObject):
         # Reference to the UI window.
         self.gui = gui
 
-        # Reference to the API for secure drop proxy.
-        self.api = None  # type: sdclientapi.API
-
         # Reference to the SqlAlchemy `sessionmaker` and `session`
         self.session_maker = session_maker
         self.session = session_maker()
 
         # Queue that handles running API job
-        self.api_job_queue = ApiJobQueue(self.api, self.session_maker)
+        self.api_job_queue = ApiJobQueue(self.auth.api, self.session_maker)
         self.api_job_queue.paused.connect(self.on_queue_paused)
         self.add_job.connect(self.api_job_queue.enqueue)
-
-        # Contains active threads calling the API.
-        self.api_threads = {}  # type: Dict[str, Dict]
 
         self.gpg = GpgHelper(home, self.session_maker, proxy)
 
@@ -313,7 +252,7 @@ class Controller(QObject):
         self.data_dir = os.path.join(self.home, "data")
 
         # Background sync to keep client up-to-date with server changes
-        self.api_sync = ApiSync(self.api, self.session_maker, self.gpg, self.data_dir)
+        self.api_sync = ApiSync(self.auth.api, self.session_maker, self.gpg, self.data_dir)
         self.api_sync.sync_started.connect(self.on_sync_started, type=Qt.QueuedConnection)
         self.api_sync.sync_success.connect(self.on_sync_success, type=Qt.QueuedConnection)
         self.api_sync.sync_failure.connect(self.on_sync_failure, type=Qt.QueuedConnection)
@@ -324,20 +263,6 @@ class Controller(QObject):
 
         # Path to the file containing the timestamp since the last sync with the server
         self.last_sync_filepath = os.path.join(home, "sync_flag")
-
-    @property
-    def is_authenticated(self) -> bool:
-        return self.__is_authenticated
-
-    @is_authenticated.setter
-    def is_authenticated(self, is_authenticated: bool) -> None:
-        if self.__is_authenticated != is_authenticated:
-            self.__is_authenticated = is_authenticated
-            self.authentication_state.emit(is_authenticated)
-
-    @is_authenticated.deleter
-    def is_authenticated(self) -> None:
-        raise AttributeError("Cannot delete is_authenticated")
 
     def setup(self):
         """
@@ -362,46 +287,6 @@ class Controller(QObject):
 
         storage.clear_download_errors(self.session)
 
-    def call_api(
-        self,
-        api_call_func,
-        success_callback,
-        failure_callback,
-        *args,
-        current_object=None,
-        **kwargs,
-    ):
-        """
-        Calls the function in a non-blocking manner. Upon completion calls the
-        callback with the result. Calls timeout if the timer associated with
-        the call emits a timeout signal. Any further arguments are passed to
-        the function to be called.
-        """
-        new_thread_id = str(uuid.uuid4())  # Uniquely id the new thread.
-
-        new_api_thread = QThread(self.gui)
-        new_api_runner = APICallRunner(api_call_func, current_object, *args, **kwargs)
-        new_api_runner.moveToThread(new_api_thread)
-
-        # handle completed call: copy response data, reset the
-        # client, give the user-provided callback the response
-        # data
-        new_api_runner.call_succeeded.connect(
-            lambda: self.completed_api_call(new_thread_id, success_callback)
-        )
-        new_api_runner.call_failed.connect(
-            lambda: self.completed_api_call(new_thread_id, failure_callback)
-        )
-
-        # when the thread starts, we want to run `call_api` on `api_runner`
-        new_api_thread.started.connect(new_api_runner.call_api)
-
-        # Add the thread related objects to the api_threads dictionary.
-        self.api_threads[new_thread_id] = {"thread": new_api_thread, "runner": new_api_runner}
-
-        # Start the thread and related activity.
-        new_api_thread.start()
-
     def on_queue_paused(self) -> None:
         self.gui.update_error_status(
             _("The SecureDrop server cannot be reached. Trying to reconnect..."), duration=0
@@ -415,23 +300,6 @@ class Controller(QObject):
         # clear error status in case queue was paused resulting in a permanent error message
         self.gui.clear_error_status()
 
-    def completed_api_call(self, thread_id, user_callback):
-        """
-        Manage a completed API call. The actual result *may* be an exception or
-        error result from the API. It's up to the handler (user_callback) to
-        handle these potential states.
-        """
-        logger.debug("Completed API call. Cleaning up and running callback.")
-        thread_info = self.api_threads.pop(thread_id)
-        runner = thread_info["runner"]
-        result_data = runner.result
-
-        arg_spec = inspect.getfullargspec(user_callback)
-        if "current_object" in arg_spec.args:
-            user_callback(result_data, current_object=runner.current_object)
-        else:
-            user_callback(result_data)
-
     def login(self, username, password, totp):
         """
         Given a username, password and time based one-time-passcode (TOTP), create a new instance
@@ -442,39 +310,20 @@ class Controller(QObject):
         faster.
         """
         storage.mark_all_pending_drafts_as_failed(self.session)
-        self.api = sdclientapi.API(
-            self.hostname, username, password, totp, self.proxy, default_request_timeout=60
-        )
-        self.call_api(
-            self.api.authenticate, self.on_authenticate_success, self.on_authenticate_failure
-        )
+        self.auth.login(username, password, totp)
         self.show_last_sync_timer.stop()
         self.set_status("")
 
-    def on_authenticate_success(self, result):
-        """
-        Handles a successful authentication call against the API.
-        """
-        logger.info("{} successfully logged in".format(self.api.username))
+    def on_login_success(self, result):
+        logger.info("{} successfully logged in".format(self.auth.user.username))
         self.gui.hide_login()
-        user = storage.create_or_update_user(
-            self.api.token_journalist_uuid,
-            self.api.username,
-            self.api.first_name,
-            self.api.last_name,
-            self.session,
-        )
-        # Clear clipboard contents in case of previously pasted creds
-        self.gui.clear_clipboard()
-        self.gui.show_main_window(user)
+        self.gui.clear_clipboard()  # Clear clipboard contents in case of previously pasted creds
+        self.gui.show_main_window(self.auth.user)
         self.update_sources()
-        self.api_job_queue.start(self.api)
-        self.api_sync.start(self.api)
-        self.is_authenticated = True
+        self.api_job_queue.start(self.auth.api)
+        self.api_sync.start(self.auth.api)
 
-    def on_authenticate_failure(self, result: Exception) -> None:
-        # Failed to authenticate. Reset state with failure message.
-        self.invalidate_token()
+    def on_login_failure(self, result: Exception) -> None:
         error = _(
             "That didn't work. Please check everything and try again.\n"
             "Make sure to use a new two-factor code."
@@ -484,15 +333,20 @@ class Controller(QObject):
 
     def login_offline_mode(self):
         """
-        Allow user to view in offline mode without authentication.
+        Allow user to use the client in offline mode without authentication or connection to the
+        server. Also:
+
+        * Clear clipboard contents in case of previously pasted creds (user may have attempted
+          online mode login, then switched to offline)
+        * Mark all pending draft replies as failed
+        * Update the GUI source list with sources found in local storage
+        * Show time since last sync and start the 30-second timer to periodically show how long it's
+          been
         """
         self.gui.hide_login()
-        # Clear clipboard contents in case of previously pasted creds (user
-        # may have attempted online mode login, then switched to offline)
         self.gui.clear_clipboard()
         self.gui.show_main_window()
         storage.mark_all_pending_drafts_as_failed(self.session)
-        self.is_authenticated = False
         self.update_sources()
         self.show_last_sync()
         self.show_last_sync_timer.start(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
@@ -503,13 +357,6 @@ class Controller(QObject):
         """
         error = _("You must sign in to perform this action.")
         self.gui.update_error_status(error)
-
-    def authenticated(self):
-        """
-        Return a boolean indication that the connection to the API is
-        authenticated.
-        """
-        return bool(self.api and self.api.token is not None)
 
     def get_last_sync(self):
         """
@@ -556,11 +403,10 @@ class Controller(QObject):
 
         if isinstance(result, ApiInaccessibleError):
             # Don't show login window if the user is already logged out
-            if not self.is_authenticated or not self.api:
+            if not self.auth.authenticated:
                 return
 
-            self.invalidate_token()
-            self.logout()
+            self.auth.logout()
             self.gui.show_login(error=_("Your session expired. Please log in again."))
         elif isinstance(result, (RequestTimeoutError, ServerConnectionError)):
             self.gui.update_error_status(
@@ -607,13 +453,10 @@ class Controller(QObject):
         Then mark all pending draft replies as failed, stop the queues, and show the user as logged
         out in the GUI.
         """
+        self.auth.logout()
 
         # clear error status in case queue was paused resulting in a permanent error message
         self.gui.clear_error_status()
-
-        if self.api is not None:
-            self.call_api(self.api.logout, self.on_logout_success, self.on_logout_failure)
-            self.invalidate_token()
 
         failed_replies = storage.mark_all_pending_drafts_as_failed(self.session)
         for failed_reply in failed_replies:
@@ -625,10 +468,6 @@ class Controller(QObject):
 
         self.show_last_sync_timer.start(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
         self.show_last_sync()
-        self.is_authenticated = False
-
-    def invalidate_token(self):
-        self.api = None
 
     def set_status(self, message, duration=5000):
         """
@@ -713,7 +552,8 @@ class Controller(QObject):
         """
         self.session.commit()  # Needed to flush stale data.
         reply = storage.get_reply(self.session, uuid)
-        self.reply_ready.emit(reply.source.uuid, reply.uuid, reply.content)
+        # sender = storage.get_user(reply.journalist.uuid)
+        self.reply_ready.emit(reply.source.uuid, reply.uuid, reply.content, reply.sender_initials)
 
     def on_reply_download_failure(self, exception: DownloadException) -> None:
         """
@@ -910,7 +750,7 @@ class Controller(QObject):
             uuid=reply_uuid,
             timestamp=datetime.datetime.utcnow(),
             source_id=source.id,
-            journalist_id=self.api.token_journalist_uuid,
+            journalist_id=self.auth.user.id,
             file_counter=source.interaction_count,
             content=message,
             send_status_id=reply_status.id,
