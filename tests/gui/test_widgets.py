@@ -2162,6 +2162,23 @@ def test_MessageWidget_init(mocker):
     assert mock_connected.called
 
 
+def test_MessageWidget_set_failed_to_decrypt_styles(mocker):
+    """
+    Check the CSS is set as expected when error=True.
+    """
+    message_widget = MessageWidget("mock", "mock", mocker.MagicMock(), mocker.MagicMock(), 0, True)
+
+    message_widget.message = mocker.patch.object(message_widget, "message")
+    message_widget.color_bar = mocker.patch.object(message_widget, "color_bar")
+
+    message_widget.set_failed_to_decrypt_styles()
+
+    message_widget.message.setObjectName.assert_called_with("SpeechBubble_message_decryption_error")
+    message_widget.color_bar.setObjectName.assert_called_with(
+        "SpeechBubble_status_bar_decryption_error"
+    )
+
+
 def test_ReplyWidget_init(mocker):
     """
     Check the CSS is set as expected.
@@ -2198,7 +2215,7 @@ def test_ReplyWidget_init(mocker):
     assert mock_failure_connected.called
 
 
-def test_ReplyWidget_init_with_error(mocker):
+def test_ReplyWidget_init_with_failed_to_send_error(mocker):
     """
     Check the CSS is set as expected when error=True.
     """
@@ -2227,12 +2244,69 @@ def test_ReplyWidget_init_with_error(mocker):
         mock_success_signal,
         mock_failure_signal,
         0,
-        error=True,
+        error=False,
     )
 
     assert mock_update_connected.called
     assert mock_success_connected.called
     assert mock_failure_connected.called
+
+
+def test_ReplyWidget_init_with_failed_to_decrypt_error(mocker):
+    """
+    Check the CSS is set as expected when error=True.
+    """
+    mock_download_failure_signal = mocker.MagicMock()
+    mock_download_failure_connected = mocker.Mock()
+    mock_download_failure_signal.connect = mock_download_failure_connected
+
+    set_failed_to_decrypt_styles = mocker.patch(
+        "securedrop_client.gui.widgets.SpeechBubble.set_failed_to_decrypt_styles"
+    )
+
+    ReplyWidget(
+        "mock id",
+        "hello",
+        "dummy",
+        mocker.MagicMock(),
+        mock_download_failure_signal,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        error=True,
+    )
+
+    set_failed_to_decrypt_styles.assert_called_once_with()
+
+
+def test_ReplyWidget_set_failed_to_decrypt_styles(mocker):
+    """
+    Check the CSS is set as expected when error=True.
+    """
+    mock_download_failure_signal = mocker.MagicMock()
+    mock_download_failure_connected = mocker.Mock()
+    mock_download_failure_signal.connect = mock_download_failure_connected
+    reply_widget = ReplyWidget(
+        "mock id",
+        "hello",
+        "dummy",
+        mocker.MagicMock(),
+        mock_download_failure_signal,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        error=True,
+    )
+
+    reply_widget.message = mocker.patch.object(reply_widget, "message")
+    reply_widget.color_bar = mocker.patch.object(reply_widget, "color_bar")
+
+    reply_widget.set_failed_to_decrypt_styles()
+
+    reply_widget.message.setObjectName.assert_called_with("SpeechBubble_message_decryption_error")
+    reply_widget.color_bar.setObjectName.assert_called_with(
+        "SpeechBubble_status_bar_decryption_error"
+    )
 
 
 def test_FileWidget_init_file_not_downloaded(mocker, source, session):

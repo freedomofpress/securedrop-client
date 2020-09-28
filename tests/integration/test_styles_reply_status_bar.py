@@ -11,16 +11,23 @@ def test_styles(mocker, main_window):
     assert "#0065db" == reply_widget.color_bar.palette().color(QPalette.Background).name()
     # assert border: 0px;
 
-    reply_widget._set_reply_state("PENDING")
+    reply_widget.set_pending_styles()
 
     assert 5 == reply_widget.color_bar.minimumSize().height()
     assert 5 == reply_widget.color_bar.maximumSize().height()
     assert "#0065db" == reply_widget.color_bar.palette().color(QPalette.Background).name()
     # assert border: 0px;
 
-    reply_widget._set_reply_state("FAILED")
+    reply_widget.set_failed_styles()
 
     assert 5 == reply_widget.color_bar.minimumSize().height()
     assert 5 == reply_widget.color_bar.maximumSize().height()
     assert "#ff3366" == reply_widget.color_bar.palette().color(QPalette.Background).name()
+    # assert border: 0px;
+
+    reply_widget.set_error("123", reply_widget.uuid, reply_widget.message.text())
+
+    assert 5 == reply_widget.color_bar.minimumSize().height()
+    assert 5 == reply_widget.color_bar.maximumSize().height()
+    assert "#bcbfcd" == reply_widget.color_bar.palette().color(QPalette.Background).name()
     # assert border: 0px;
