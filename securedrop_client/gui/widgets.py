@@ -1708,7 +1708,7 @@ class SpeechBubble(QWidget):
         self.message.setContextMenuPolicy(Qt.NoContextMenu)
 
         if error:
-            self.set_error_styles()
+            self.set_failed_to_decrypt_styles()
 
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
@@ -1733,7 +1733,7 @@ class SpeechBubble(QWidget):
         """
         if uuid == self.uuid:
             self.message.setText(text)
-            self.set_error_styles()
+            self.set_failed_to_decrypt_styles()
 
     def set_normal_styles(self):
         self.message.setStyleSheet("")
@@ -1743,7 +1743,7 @@ class SpeechBubble(QWidget):
         self.color_bar.setObjectName("SpeechBubble_status_bar")
         self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
 
-    def set_error_styles(self):
+    def set_failed_to_decrypt_styles(self):
         self.message.setStyleSheet("")
         self.message.setObjectName("SpeechBubble_message_decryption_error")
         self.message.setStyleSheet(self.MESSAGE_CSS)
@@ -1774,8 +1774,8 @@ class ReplyWidget(SpeechBubble):
     Represents a reply to a source.
     """
 
-    MESSAGE_CSS = load_css("reply_message.css")
-    STATUS_BAR_CSS = load_css("reply_status_bar.css")
+    MESSAGE_CSS = load_css("speech_bubble_message.css")
+    STATUS_BAR_CSS = load_css("speech_bubble_status_bar.css")
 
     def __init__(
         self,
@@ -1810,18 +1810,13 @@ class ReplyWidget(SpeechBubble):
         message_succeeded_signal.connect(self._on_reply_success)
         message_failed_signal.connect(self._on_reply_failure)
 
-        self._set_reply_state(reply_status)
-
-    def _set_reply_state(self, status: str) -> None:
-        logger.debug(f"Setting ReplyWidget state: {status}")
-
-        if status == "SUCCEEDED":
+        if reply_status == "SUCCEEDED":
             self.set_normal_styles()
             self.error.hide()
-        elif status == "FAILED":
+        elif reply_status == "FAILED":
             self.set_failed_styles()
             self.error.show()
-        elif status == "PENDING":
+        elif reply_status == "PENDING":
             self.set_pending_styles()
 
     @pyqtSlot(str, str, str)
@@ -1831,7 +1826,8 @@ class ReplyWidget(SpeechBubble):
         signal matches the uuid of this widget.
         """
         if message_uuid == self.uuid:
-            self._set_reply_state("SUCCEEDED")
+            self.set_normal_styles()
+            self.error.hide()
 
     @pyqtSlot(str)
     def _on_reply_failure(self, message_uuid: str) -> None:
@@ -1840,11 +1836,12 @@ class ReplyWidget(SpeechBubble):
         signal matches the uuid of this widget.
         """
         if message_uuid == self.uuid:
-            self._set_reply_state("FAILED")
+            self.set_failed_styles()
+            self.error.show()
 
     def set_normal_styles(self):
         self.message.setStyleSheet("")
-        self.message.setObjectName("ReplyWidget_message")
+        self.message.setObjectName("SpeechBubble_message")
         self.message.setStyleSheet(self.MESSAGE_CSS)
         self.color_bar.setStyleSheet("")
         self.color_bar.setObjectName("ReplyWidget_status_bar")
