@@ -15,6 +15,7 @@ def main_window(mocker, homedir):
     app.setActiveWindow(gui)
     gui.show()
     controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, proxy=False)
+    controller.authenticated_user = factory.User()
     controller.qubes = False
     gui.setup(controller)
 
@@ -53,6 +54,7 @@ def main_window_no_key(mocker, homedir):
     app.setActiveWindow(gui)
     gui.show()
     controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, proxy=False)
+    controller.authenticated_user = factory.User()
     controller.qubes = False
     gui.setup(controller)
 
@@ -89,6 +91,7 @@ def modal_dialog(mocker, homedir):
     gui = Window()
     gui.show()
     controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, proxy=False)
+    controller.authenticated_user = factory.User()
     controller.qubes = False
     gui.setup(controller)
     gui.login_dialog.close()
@@ -107,6 +110,7 @@ def print_dialog(mocker, homedir):
     gui = Window()
     gui.show()
     controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, proxy=False)
+    controller.authenticated_user = factory.User()
     controller.qubes = False
     gui.setup(controller)
     gui.login_dialog.close()
@@ -125,6 +129,7 @@ def export_dialog(mocker, homedir):
     gui = Window()
     gui.show()
     controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, proxy=False)
+    controller.authenticated_user = factory.User()
     controller.qubes = False
     gui.setup(controller)
     gui.login_dialog.close()

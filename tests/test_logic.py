@@ -203,31 +203,37 @@ def test_Controller_on_authenticate_failure(homedir, config, mocker, session_mak
 
 def test_Controller_on_authenticate_success(homedir, config, mocker, session_maker, session):
     """
-    Ensure the client syncs when the user successfully logs in, and that the
-    system clipboard is cleared prior to display of the main window.
+    Ensure upon successfully login that the client:
+      * starts the sync
+      * starts the job queues
+      * clears the clipboard
+      * emits the update_authenticated_user signal
 
-    Using the `config` fixture to ensure the config is written to disk.
+    Note: Using the `config` fixture ensure the config is written to disk
     """
-    user = factory.User()
     mock_gui = mocker.MagicMock()
     co = Controller("http://localhost", mock_gui, session_maker, homedir)
+    co.authenticated_user = factory.User()
     co.api_sync.start = mocker.MagicMock()
     co.api_job_queue.start = mocker.MagicMock()
     co.update_sources = mocker.MagicMock()
-    co.session.add(user)
+    co.session.add(co.authenticated_user)
     co.session.commit()
     co.api = mocker.MagicMock()
-    co.api.token_journalist_uuid = user.uuid
-    co.api.username = user.username
-    co.api.first_name = user.firstname
-    co.api.last_name = user.lastname
+    co.api.token_journalist_uuid = co.authenticated_user.uuid
+    co.api.username = co.authenticated_user.username
+    co.api.first_name = co.authenticated_user.firstname
+    co.api.last_name = co.authenticated_user.lastname
     co.resume_queues = mocker.MagicMock()
+    co.update_authenticated_user = mocker.MagicMock()
 
     co.on_authenticate_success(True)
-    co.gui.assert_has_calls([call.clear_clipboard(), call.show_main_window(user)])
+
+    co.gui.assert_has_calls([call.clear_clipboard(), call.show_main_window(co.authenticated_user)])
     co.api_sync.start.assert_called_once_with(co.api)
     co.api_job_queue.start.assert_called_once_with(co.api)
     assert co.is_authenticated
+    co.update_authenticated_user.emit.assert_called_once_with(co.authenticated_user)
 
 
 def test_Controller_completed_api_call_without_current_object(
@@ -480,6 +486,7 @@ def test_Controller_on_sync_success(homedir, config, mocker):
     mock_session_maker = mocker.MagicMock(return_value=mock_session)
 
     co = Controller("http://localhost", mock_gui, mock_session_maker, homedir)
+    co.authenticated_user = factory.User()
     co.update_sources = mocker.MagicMock()
     co.download_new_messages = mocker.MagicMock()
     co.download_new_replies = mocker.MagicMock()
@@ -499,6 +506,69 @@ def test_Controller_on_sync_success(homedir, config, mocker):
     co.download_new_replies.assert_called_once_with()
     co.resume_queues.assert_called_once_with()
     co.file_missing.emit.assert_called_once_with(missing.source.uuid, missing.uuid, str(missing))
+
+
+def test_Controller_on_sync_success_username_change(homedir, session, config, mocker):
+    """
+    If there's a result to syncing, then update local storage.
+    Using the `config` fixture to ensure the config is written to disk.
+    """
+    mock_gui = mocker.MagicMock()
+
+    co = Controller("http://localhost", mock_gui, mocker.MagicMock(), homedir)
+    user = factory.User(uuid="abc123", username="foo")
+    co.authenticated_user = user
+    co.api = mocker.MagicMock(
+        username="imdifferent", first_name=user.firstname, last_name=user.lastname
+    )
+    co.update_authenticated_user = mocker.MagicMock()
+
+    co.on_sync_success()
+
+    co.authenticated_user.username == "baz"
+    co.update_authenticated_user.emit.assert_called_once_with(co.authenticated_user)
+
+
+def test_Controller_on_sync_success_firstname_change(homedir, session, config, mocker):
+    """
+    If there's a result to syncing, then update local storage.
+    Using the `config` fixture to ensure the config is written to disk.
+    """
+    mock_gui = mocker.MagicMock()
+
+    co = Controller("http://localhost", mock_gui, mocker.MagicMock(), homedir)
+    user = factory.User(uuid="abc123", firstname="foo")
+    co.authenticated_user = user
+    co.api = mocker.MagicMock(
+        username=user.username, first_name="imdifferent", last_name=user.lastname
+    )
+    co.update_authenticated_user = mocker.MagicMock()
+
+    co.on_sync_success()
+
+    co.authenticated_user.firstname == "baz"
+    co.update_authenticated_user.emit.assert_called_once_with(co.authenticated_user)
+
+
+def test_Controller_on_sync_success_lastname_change(homedir, session, config, mocker):
+    """
+    If there's a result to syncing, then update local storage.
+    Using the `config` fixture to ensure the config is written to disk.
+    """
+    mock_gui = mocker.MagicMock()
+
+    co = Controller("http://localhost", mock_gui, mocker.MagicMock(), homedir)
+    user = factory.User(uuid="abc123", lastname="foo")
+    co.authenticated_user = user
+    co.api = mocker.MagicMock(
+        username=user.username, first_name=user.firstname, last_name="imdifferent"
+    )
+    co.update_authenticated_user = mocker.MagicMock()
+
+    co.on_sync_success()
+
+    co.authenticated_user.lastname == "baz"
+    co.update_authenticated_user.emit.assert_called_once_with(co.authenticated_user)
 
 
 def test_Controller_show_last_sync(homedir, config, mocker, session_maker):
@@ -1141,7 +1211,7 @@ def test_Controller_on_reply_downloaded_success(mocker, homedir, session_maker):
     """
     co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
     reply_ready = mocker.patch.object(co, "reply_ready")
-    reply = factory.Message(source=factory.Source())
+    reply = factory.Reply(source=factory.Source())
     mocker.patch("securedrop_client.storage.get_reply", return_value=reply)
 
     co.on_reply_download_success(reply.uuid)
@@ -1518,7 +1588,7 @@ def test_Controller_send_reply_does_not_send_if_not_authenticated(
     homedir, mocker, session_maker, session
 ):
     """
-    Check that when the user is not authenicated, the failure signal is emitted.
+    Check that when the user is not authenticated, the failure signal is emitted.
     """
     mock_gui = mocker.MagicMock()
     co = Controller("http://localhost", mock_gui, session_maker, homedir)
@@ -1539,7 +1609,7 @@ def test_Controller_send_reply_does_not_send_if_no_user_account(
     homedir, mocker, session_maker, session
 ):
     """
-    Check that when the user is not authenicated, the failure signal is emitted.
+    Check that when the user is not authenticated, the failure signal is emitted.
     """
     mock_gui = mocker.MagicMock()
     co = Controller("http://localhost", mock_gui, session_maker, homedir)

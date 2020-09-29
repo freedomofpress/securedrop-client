@@ -131,10 +131,19 @@ class Controller(QObject):
 
     """
     A signal that emits a signal when the authentication state changes.
-    - `True` when the client becomes authenticated
-    - `False` when the client becomes unauthenticated
+
+    Emits:
+        bool: is_authenticated
     """
     authentication_state = pyqtSignal(bool)
+
+    """
+    This signal indicates that the authenticated user info has changed.
+
+    Emits:
+       db.User: the authenticated user
+    """
+    update_authenticated_user = pyqtSignal(db.User)
 
     """
     This signal indicates that a reply was successfully sent and received by the server.
@@ -469,6 +478,7 @@ class Controller(QObject):
         )
 
         self.authenticated_user = user
+        self.update_authenticated_user.emit(user)
 
         # Clear clipboard contents in case of previously pasted creds
         self.gui.clear_clipboard()
@@ -539,6 +549,9 @@ class Controller(QObject):
             * Display the last sync time and updated list of sources in GUI
             * Download new messages and replies
             * Update missing files so that they can be re-downloaded
+            * Update authenticated user if name changed
+            * Resume queues if they were paused because of a network error since syncing was
+              successful
         """
         with open(self.last_sync_filepath, "w") as f:
             f.write(arrow.now().format())
@@ -551,6 +564,18 @@ class Controller(QObject):
         self.download_new_messages()
         self.download_new_replies()
         self.sync_events.emit("synced")
+
+        if (
+            self.authenticated_user
+            and self.api
+            and (
+                self.authenticated_user.username != self.api.username
+                or self.authenticated_user.firstname != self.api.first_name
+                or self.authenticated_user.lastname != self.api.last_name
+            )
+        ):
+            self.update_authenticated_user.emit(self.authenticated_user)
+
         self.resume_queues()
 
     def on_sync_failure(self, result: Exception) -> None:

@@ -462,7 +462,13 @@ class User(Base):
         return "<Journalist {}: {}>".format(self.uuid, self.username)
 
     @property
+    def deleted(self) -> bool:
+        return True if self.uuid == "deleted" else False
+
+    @property
     def fullname(self) -> str:
+        if self.deleted:
+            return ""
         if self.firstname and self.lastname:
             return self.firstname + " " + self.lastname
         elif self.firstname:
@@ -474,6 +480,8 @@ class User(Base):
 
     @property
     def initials(self) -> str:
+        if self.deleted:
+            return ""
         if self.firstname and self.lastname:
             return self.firstname[0].lower() + self.lastname[0].lower()
         elif self.firstname and len(self.firstname) >= 2:

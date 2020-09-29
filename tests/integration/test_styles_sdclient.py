@@ -162,7 +162,6 @@ def test_styles_for_login_dialog(mocker, main_window):
     form_children_qlabel = form.findChildren(QLabel)
     for c in form_children_qlabel:
         assert "Montserrat" == c.font().family()
-        # TODO: Figure out why font size is QFont.DemiBold - 1
         assert QFont.DemiBold - 1 == c.font().weight()
         assert 13 == c.font().pixelSize()
         assert "#ffffff" == c.palette().color(QPalette.Foreground).name()
@@ -170,24 +169,18 @@ def test_styles_for_login_dialog(mocker, main_window):
     for c in form_children_qlineedit:
         assert 30 == c.height()  # 30px + 0px margin
         assert (0, 0, 0, 0) == c.getContentsMargins()
-        # assert `border-radius: 0px;`
-        # assert `padding-left: 5px;`
     app_version_label = login_dialog.layout().itemAt(4).widget().layout().itemAt(0).widget()
     assert "#9fddff" == app_version_label.palette().color(QPalette.Foreground).name()
 
     login_offline_link = login_dialog.offline_mode
     assert "#ffffff" == login_offline_link.palette().color(QPalette.Foreground).name()
-    # assert `border: none;`
-    # assert `text-decoration: underline;
 
     login_button = login_dialog.submit
-    # assert `border: none;`
     assert "Montserrat" == login_button.font().family()
     assert QFont.Bold == login_button.font().weight()
     assert 14 == login_button.font().pixelSize()
     assert "#2a319d" == login_button.palette().color(QPalette.Foreground).name()
     assert "#05edfe" == login_button.palette().color(QPalette.Background).name()
-    # assert `background-color: #85f6fe;` when button is pressed
 
     login_error_bar = login_dialog.error_bar
     login_error_bar_children = login_error_bar.findChildren(QWidget)
@@ -200,7 +193,6 @@ def test_styles_for_login_dialog(mocker, main_window):
 def test_styles_for_top_pane(mocker, main_window):
     sync_icon = main_window.top_pane.sync_icon
     assert "#ffffff" == sync_icon.palette().color(QPalette.Base).name()
-    # assert 'border: none;' for sync_icon
     activity_status_bar = main_window.top_pane.activity_status_bar
     assert "Source Sans Pro" == activity_status_bar.font().family()
     assert QFont.Bold == activity_status_bar.font().weight()
@@ -209,8 +201,6 @@ def test_styles_for_top_pane(mocker, main_window):
     assert "#d3d8ea" == activity_status_bar.palette().color(QPalette.Foreground).name()
     error_status_bar = main_window.top_pane.error_status_bar
     assert "#ff3366" == error_status_bar.vertical_bar.palette().color(QPalette.Background).name()
-    # assert 'background-color: qlineargradient(...' for vertical_bar
-    # assert 'background-color: qlineargradient(...'' for status_bar
     assert "Source Sans Pro" == error_status_bar.status_bar.font().family()
     assert QFont.Normal == error_status_bar.status_bar.font().weight()
     assert 14 == error_status_bar.status_bar.font().pixelSize()
@@ -219,39 +209,28 @@ def test_styles_for_top_pane(mocker, main_window):
 
 def test_styles_for_left_pane(mocker, main_window):
     user_profile = main_window.left_pane.user_profile
-    # assert 'padding: 15px;'
     assert "#9211ff" == user_profile.user_icon.palette().color(QPalette.Background).name()
-    # assert 'border: none;' for user_icon
-    # assert 'padding-left: 3px;' for user_icon
-    # assert 'padding-bottom: 4px;' for user_icon
     assert "Source Sans Pro" == user_profile.user_icon.font().family()
     assert QFont.Bold == user_profile.user_icon.font().weight()
     assert 15 == user_profile.user_icon.font().pixelSize()
     assert "#ffffff" == user_profile.user_icon.palette().color(QPalette.Foreground).name()
     user_button = user_profile.user_button
-    # assert 'border: none;'
     assert "Source Sans Pro" == user_button.font().family()
     assert QFont.Black == user_button.font().weight()
     assert 12 == user_button.font().pixelSize()
     assert "#ffffff" == user_button.palette().color(QPalette.Foreground).name()
-    # assert 'text-align: left;'
-    # assert 'outline: none;' for focus
-    # assert 'image: none;' for menu-indicator
     login_button = user_profile.login_button
-    # assert 'border: none;'
     assert "#05edfe" == login_button.palette().color(QPalette.Background).name()
     assert "Montserrat" == login_button.font().family()
     assert QFont.Bold == login_button.font().weight()
     assert 14 == login_button.font().pixelSize()
     assert "#2a319d" == login_button.palette().color(QPalette.Foreground).name()
-    # assert 'background-color: #85f6fe;' for pressed
 
 
 def test_styles_for_main_view(mocker, main_window):
     main_view = main_window.main_view
     assert 558 == main_view.height()
     assert 500 == main_view.view_holder.width()
-    # assert 'border: none;' for view_holder
     assert "#f3f5f9" == main_view.view_holder.palette().color(QPalette.Background).name()
 
     no_sources = main_view.empty_conversation_view.no_sources
@@ -315,15 +294,7 @@ def test_styles_for_main_view(mocker, main_window):
 
 def test_styles_source_list(mocker, main_window):
     source_list = main_window.main_view.source_list
-    # assert 'border: none;'
-    # assert 'show-decoration-selected: 0;'
-    # assert 'border-right: 3px solid #f3f5f9;'
     source_widget = source_list.itemWidget(source_list.item(0))
-    # source_list.setCurrentItem(source_list.item(0))
-    # assert '#f3f5f9' == source_list.item(0).palette().color(QPalette.Background).name()
-    # assert 'border: 500px solid #f9f9f9;' on item hover
-    # assert 'border-bottom: 1px solid #9b9b9b;' on source_widget (SourceWidget_container)
-    # assert 1 == source_widget.frame()
     assert 40 == source_widget.gutter.minimumSize().width()
     assert 40 == source_widget.gutter.maximumSize().width()
     assert 60 == source_widget.metadata.maximumSize().width()
@@ -347,8 +318,6 @@ def test_styles_source_list(mocker, main_window):
     QFont.Normal == timestamp.font().weight()
     13 == timestamp.font().pixelSize()
     assert "#383838" == timestamp.palette().color(QPalette.Foreground).name()
-    # star = source_widget.star
-    # assert 'border: none;'
 
 
 def test_styles_for_conversation_view(mocker, main_window):
@@ -358,9 +327,6 @@ def test_styles_for_conversation_view(mocker, main_window):
     assert QFont.DemiBold - 1 == waiting_delete_confirmation.font().weight()
     assert 40 == waiting_delete_confirmation.font().pixelSize()
     assert "#a5b3e9" == waiting_delete_confirmation.palette().color(QPalette.Foreground).name()
-    # assert 'text-align: left;'
-    # assert 'padding-bottom: 264px;'
-    # assert 'padding-right: 195px;'
     reply_box = wrapper.reply_box
     assert 173 == reply_box.minimumSize().height()
     assert 173 == reply_box.maximumSize().height()
@@ -370,10 +336,7 @@ def test_styles_for_conversation_view(mocker, main_window):
     reply_box_children = reply_box.findChildren(QPushButton)
     hover = QEvent(QEvent.HoverEnter)
     for c in reply_box_children:
-        # assert 'border: none;' for QPushButton
         c.eventFilter(c, hover)
-        # assert '#d3d8ea'== c.palette().color(QPalette.Background).name()
-        # assert 'border-radius: 8px; for QPushButton on hover
     horizontal_line = reply_box.layout().itemAt(0).widget()
     assert 2 == horizontal_line.minimumSize().height()
     assert 2 == horizontal_line.maximumSize().height()
@@ -382,12 +345,10 @@ def test_styles_for_conversation_view(mocker, main_window):
     assert 42 == horizontal_line.palette().color(QPalette.Background).red()
     assert 49 == horizontal_line.palette().color(QPalette.Background).green()
     assert 157 == horizontal_line.palette().color(QPalette.Background).blue()
-    # assert 'border: none;' for horizontal line
     reply_text_edit = reply_box.text_edit
     assert "Montserrat" == reply_text_edit.font().family()
     assert QFont.Normal == reply_text_edit.font().weight()
     assert 18 == reply_text_edit.font().pixelSize()
-    # assert 'border: none;'
     assert (0, 0, 0, 0) == reply_text_edit.getContentsMargins()
     # See test_placeholder.py for placeholder tests
 
@@ -400,13 +361,6 @@ def test_styles_for_conversation_view(mocker, main_window):
     assert 42 == horizontal_line.palette().color(QPalette.Background).red()
     assert 49 == horizontal_line.palette().color(QPalette.Background).green()
     assert 157 == horizontal_line.palette().color(QPalette.Background).blue()
-    # # assert 'padding-left: 12px;'
-    # assert 'padding-right: 12px;'
-    # menu = conversation_title_bar.layout().itemAt(0).widget().layout().itemAt(3).widget()
-    # assert (0, 5, 0, 0) == menu.getContentsMargins()
-    # assert 'border: none;'
-    # assert 'padding-left: 8px;'
-    # assert 'image: none;' for 'menu-indicator'
     last_updated_label = conversation_title_bar.updated
     assert "Montserrat" == last_updated_label.font().family()
     assert QFont.Light == last_updated_label.font().weight()
@@ -418,11 +372,9 @@ def test_styles_for_conversation_view(mocker, main_window):
     assert QFont.Normal == title.font().weight()
     assert 24 == title.font().pixelSize()
     assert "#2a319d" == title.palette().color(QPalette.Foreground).name()
-    # assert 'padding-left: 4px;' for title
 
     conversation_scrollarea = wrapper.conversation_view.scroll
     assert "#f3f5f9" == conversation_scrollarea.palette().color(QPalette.Background).name()
-    # assert 'border: none;' for conversation_scrollarea
     assert "#f3f5f9" == conversation_scrollarea.widget().palette().color(QPalette.Background).name()
     file_widget = conversation_scrollarea.widget().layout().itemAt(0).widget()
     assert 540 == file_widget.minimumSize().width()
@@ -432,16 +384,11 @@ def test_styles_for_conversation_view(mocker, main_window):
     assert QFont.DemiBold - 1 == file_widget.export_button.font().weight()
     assert 13 == file_widget.export_button.font().pixelSize()
     assert "#2a319d" == file_widget.export_button.palette().color(QPalette.Foreground).name()
-    # assert 'border: none;' for export_print
     assert "Source Sans Pro" == file_widget.file_name.font().family()
     assert QFont.Bold == file_widget.file_name.font().weight()
     assert 13 == file_widget.file_name.font().pixelSize()
     assert "#2a319d" == file_widget.file_name.palette().color(QPalette.Foreground).name()
-    # hover = QEvent(QEvent.HoverEnter)
-    # file_widget.file_name.eventFilter(file_widget.file_name, hover)
-    # assert '#05a6fe'== file_widget.file_name.palette().color(QPalette.Foreground).name()
     assert "Source Sans Pro" == file_widget.no_file_name.font().family()
-    # TODO: Figure out why font size is QFont.Light + 12
     assert QFont.Light + 12 == file_widget.no_file_name.font().weight()
     assert 13 == file_widget.no_file_name.font().pixelSize()
     assert "#a5b3e9" == file_widget.no_file_name.palette().color(QPalette.Foreground).name()
@@ -455,7 +402,6 @@ def test_styles_for_conversation_view(mocker, main_window):
 
     assert 2 == file_widget.horizontal_line.minimumSize().height()  # 2px + 0px margin
     assert 2 == file_widget.horizontal_line.maximumSize().height()  # 2px + 0px margin
-    # assert (8, 0, 8, 0) == file_widget.horizontal_line.getContentsMargins()
     assert 114 == math.floor(255 * 0.45)  # sanity check
     assert 114 == file_widget.horizontal_line.palette().color(QPalette.Background).rgba64().alpha8()
     assert 211 == file_widget.horizontal_line.palette().color(QPalette.Background).red()
@@ -500,8 +446,6 @@ def test_styles_for_modal_dialog(modal_dialog):
     assert (4, 0, 0, 0) == modal_dialog.header.getContentsMargins()
     assert 22 == modal_dialog.header_line.minimumSize().height()  # 2px + 20px margin
     assert 22 == modal_dialog.header_line.maximumSize().height()  # 2px + 20px margin
-    # assert (40, 0, 40, 0) == modal_dialog.header_line.getContentsMargins()
-    # assert 'border: none;' for header_line
     assert 38 == math.floor(255 * 0.15)  # sanity check
     assert 38 == modal_dialog.header_line.palette().color(QPalette.Background).rgba64().alpha8()
     assert 42 == modal_dialog.header_line.palette().color(QPalette.Background).red()
@@ -515,10 +459,12 @@ def test_styles_for_modal_dialog(modal_dialog):
     button_box = window_buttons.layout().itemAt(0).widget()
     button_box_children = button_box.findChildren(QPushButton)
     for c in button_box_children:
+        # TODO: Why does the assertion below not work?
         # assert 44 == c.height()  # 40px + 4px of border
         assert "Montserrat" == c.font().family()
         assert QFont.DemiBold - 1 == c.font().weight()
         assert 15 == c.font().pixelSize()
+        # TODO: Why do the assertions below not work?
         # assert '#2a319d' == c.palette().color(QPalette.Foreground).name()
         # assert (12, 0, 0, 0) == c.getContentsMargins()
         # assert 'padding-left: 20px;'
@@ -556,8 +502,6 @@ def test_styles_for_print_dialog(print_dialog):
     assert (4, 0, 0, 0) == print_dialog.header.getContentsMargins()
     assert 22 == print_dialog.header_line.minimumSize().height()  # 2px + 20px margin
     assert 22 == print_dialog.header_line.maximumSize().height()  # 2px + 20px margin
-    # assert (40, 0, 40, 0) == print_dialog.header_line.getContentsMargins()
-    # assert 'border: none;' for header_line
     assert 38 == math.floor(255 * 0.15)  # sanity check
     assert 38 == print_dialog.header_line.palette().color(QPalette.Background).rgba64().alpha8()
     assert 42 == print_dialog.header_line.palette().color(QPalette.Background).red()
@@ -571,22 +515,9 @@ def test_styles_for_print_dialog(print_dialog):
     button_box = window_buttons.layout().itemAt(0).widget()
     button_box_children = button_box.findChildren(QPushButton)
     for c in button_box_children:
-        # assert 44 == c.height()  # 40px + 4px of border
         assert "Montserrat" == c.font().family()
         assert QFont.DemiBold - 1 == c.font().weight()
         assert 15 == c.font().pixelSize()
-        # assert '#2a319d' == c.palette().color(QPalette.Foreground).name()
-        # assert (12, 0, 0, 0) == c.getContentsMargins()
-        # assert 'padding-left: 20px;'
-        # assert 'padding-right: 20px;'
-        # assert 'border: 2px solid #2a319d;'
-        # assert 'border: 2px solid rgba(42, 49, 157, 0.4);' for button_box when disabled
-        # c.setEnabled(False)
-        # assert 102 == math.floor(255 * 0.4)  # sanity check
-        # assert 102 == c.palette().color(QPalette.Background).rgba64().alpha8()
-        # assert 42 == c.palette().color(QPalette.Background).red()
-        # assert 49 == c.palette().color(QPalette.Background).green()
-        # assert 157 == c.palette().color(QPalette.Background).blue()
 
 
 def test_styles_for_export_dialog(export_dialog):
@@ -612,8 +543,6 @@ def test_styles_for_export_dialog(export_dialog):
     assert (4, 0, 0, 0) == export_dialog.header.getContentsMargins()
     assert 22 == export_dialog.header_line.minimumSize().height()  # 2px + 20px margin
     assert 22 == export_dialog.header_line.maximumSize().height()  # 2px + 20px margin
-    # assert (40, 0, 40, 0) == export_dialog.header_line.getContentsMargins()
-    # assert 'border: none;' for header_line
     assert 38 == math.floor(255 * 0.15)  # sanity check
     assert 38 == export_dialog.header_line.palette().color(QPalette.Background).rgba64().alpha8()
     assert 42 == export_dialog.header_line.palette().color(QPalette.Background).red()
@@ -631,18 +560,6 @@ def test_styles_for_export_dialog(export_dialog):
         assert "Montserrat" == c.font().family()
         assert QFont.DemiBold - 1 == c.font().weight()
         assert 15 == c.font().pixelSize()
-        # assert '#2a319d' == c.palette().color(QPalette.Foreground).name()
-        # assert (12, 0, 0, 0) == c.getContentsMargins()
-        # assert 'padding-left: 20px;'
-        # assert 'padding-right: 20px;'
-        # assert 'border: 2px solid #2a319d;'
-        # assert 'border: 2px solid rgba(42, 49, 157, 0.4);' for button_box when disabled
-        # c.setEnabled(False)
-        # assert 102 == math.floor(255 * 0.4)  # sanity check
-        # assert 102 == c.palette().color(QPalette.Background).rgba64().alpha8()
-        # assert 42 == c.palette().color(QPalette.Background).red()
-        # assert 49 == c.palette().color(QPalette.Background).green()
-        # assert 157 == c.palette().color(QPalette.Background).blue()
 
     passphrase_children_qlabel = export_dialog.passphrase_form.findChildren(QLabel)
     for c in passphrase_children_qlabel:
@@ -650,11 +567,9 @@ def test_styles_for_export_dialog(export_dialog):
         assert QFont.DemiBold - 1 == c.font().weight()
         assert 12 == c.font().pixelSize()
         assert "#2a319d" == c.palette().color(QPalette.Foreground).name()
-        # assert 'padding-top: 6px;'
 
     form_children_qlineedit = export_dialog.passphrase_form.findChildren(QLineEdit)
     for c in form_children_qlineedit:
         assert 32 == c.minimumSize().height()  # 30px + 2px padding-bottom
         assert 32 == c.maximumSize().height()  # 30px + 2px padding-bottom
         assert "#f8f8f8" == c.palette().color(QPalette.Background).name()
-        # assert 'border-radius: 0px;'

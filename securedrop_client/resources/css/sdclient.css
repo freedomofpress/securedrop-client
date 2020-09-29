@@ -105,9 +105,8 @@
 
 #UserProfile_icon {
     border: none;
+    padding-left: 1px;
     background-color: #9211ff;
-    padding-left: 3px;
-    padding-bottom: 4px;
     font-family: 'Source Sans Pro';
     font-weight: 600;
     font-size: 15px;
@@ -400,6 +399,7 @@ QWidget#FileWidget_horizontal_line {
 #SpeechBubble_container {
     min-width: 540px;
     max-width: 540px;
+    min-height: 64px;
     background-color: #fff;
 }
 
