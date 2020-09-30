@@ -1,4 +1,4 @@
-# Last Modified: Tue Dec 10 11:57:59 2019
+# Last Modified: Thu Oct  1 17:02:42 2020
 #include <tunables/global>
 
 /usr/bin/securedrop-client {
@@ -37,6 +37,7 @@
   /usr/bin/qrexec-client-vm mrix,
   /usr/bin/qubes-gpg-client mrix,
   /usr/bin/qubes-gpg-import-key mrix,
+  /usr/bin/qubesdb-cmd mrix,
   /usr/bin/qvm-open-in-vm mrix,
   /usr/bin/securedrop-client r,
   /usr/bin/uname mrix,
