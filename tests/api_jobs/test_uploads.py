@@ -34,6 +34,9 @@ def test_send_reply_success(homedir, mocker, session, session_maker, reply_statu
 
     api_client = mocker.MagicMock()
     api_client.token_journalist_uuid = "journalist ID sending the reply"
+    user = factory.User(uuid="journalist ID sending the reply")
+    session.add(user)
+    session.commit()
 
     encrypted_reply = "s3kr1t m3ss1dg3"
     mock_encrypt = mocker.patch.object(gpg, "encrypt_to_source", return_value=encrypted_reply)
@@ -58,7 +61,32 @@ def test_send_reply_success(homedir, mocker, session, session_maker, reply_statu
 
     # assert reply got added to db
     reply = session.query(db.Reply).filter_by(uuid=msg_uuid).one()
-    assert reply.journalist_id == api_client.token_journalist_uuid
+    assert reply.journalist_id == user.id
+
+
+def test_send_reply_fails_when_no_user(homedir, mocker, session, session_maker, reply_status_codes):
+    """
+    Check that an exception is raised when trying to send a reply from a journalist who doesn't
+    exist in the local db.
+    """
+    source = factory.Source()
+    session.add(source)
+    mocker.patch("securedrop_client.logic.sdclientapi.Source", return_value=mocker.Mock())
+
+    draft_reply = factory.DraftReply(uuid="mock_reply_uuid")
+    session.add(draft_reply)
+    session.commit()
+
+    api_client = mocker.MagicMock()
+    api_client.token_journalist_uuid = "UUID for journalist without an account"
+
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    mocker.patch.object(gpg, "encrypt_to_source", return_value="s3kr1t m3ss1dg3")
+
+    job = SendReplyJob(source.uuid, "mock_reply_uuid", "mock_message", gpg)
+    error = "Sender of reply {} has been deleted".format("mock_reply_uuid")
+    with pytest.raises(SendReplyJobError, match=error):
+        job.call_api(api_client, session)
 
 
 def test_drafts_ordering(homedir, mocker, session, session_maker, reply_status_codes):
@@ -100,6 +128,9 @@ def test_drafts_ordering(homedir, mocker, session, session_maker, reply_status_c
 
     api_client = mocker.MagicMock()
     api_client.token_journalist_uuid = "journalist ID sending the reply"
+    user = factory.User(uuid="journalist ID sending the reply")
+    session.add(user)
+    session.commit()
 
     encrypted_reply = "s3kr1t m3ss1dg3"
     mock_encrypt = mocker.patch.object(gpg, "encrypt_to_source", return_value=encrypted_reply)
@@ -124,7 +155,7 @@ def test_drafts_ordering(homedir, mocker, session, session_maker, reply_status_c
 
     # assert reply got added to db
     reply = session.query(db.Reply).filter_by(uuid=msg_uuid).one()
-    assert reply.journalist_id == api_client.token_journalist_uuid
+    assert reply.journalist_id == user.id
 
     # We use the file_counter on each Reply, Message, File, and DraftReply
     # object to order the conversation view. We expect a unique file_counter
@@ -162,6 +193,9 @@ def test_send_reply_failure_gpg_error(homedir, mocker, session, session_maker, r
 
     api_client = mocker.MagicMock()
     api_client.token_journalist_uuid = "journalist ID sending the reply"
+    user = factory.User(uuid="journalist ID sending the reply")
+    session.add(user)
+    session.commit()
 
     mock_encrypt = mocker.patch.object(gpg, "encrypt_to_source", side_effect=CryptoError)
     msg = "wat"
@@ -249,7 +283,13 @@ def test_send_reply_failure_unknown_error(
     draft_reply = factory.DraftReply(uuid="mock_reply_uuid")
     session.add(draft_reply)
     session.commit()
+
     api_client = mocker.MagicMock()
+    api_client.token_journalist_uuid = "journalist ID sending the reply"
+    user = factory.User(uuid="journalist ID sending the reply")
+    session.add(user)
+    session.commit()
+
     mocker.patch.object(api_client, "reply_source", side_effect=Exception)
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
     encrypt_fn = mocker.patch.object(gpg, "encrypt_to_source")
@@ -282,7 +322,13 @@ def test_send_reply_failure_timeout_error(
     draft_reply = factory.DraftReply(uuid="mock_reply_uuid")
     session.add(draft_reply)
     session.commit()
+
     api_client = mocker.MagicMock()
+    api_client.token_journalist_uuid = "journalist ID sending the reply"
+    user = factory.User(uuid="journalist ID sending the reply")
+    session.add(user)
+    session.commit()
+
     mocker.patch.object(api_client, "reply_source", side_effect=exception)
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
     encrypt_fn = mocker.patch.object(gpg, "encrypt_to_source")
@@ -318,7 +364,13 @@ def test_send_reply_failure_when_repr_is_none(
     draft_reply = factory.DraftReply(uuid="mock_reply_uuid")
     session.add(draft_reply)
     session.commit()
+
     api_client = mocker.MagicMock()
+    api_client.token_journalist_uuid = "journalist ID sending the reply"
+    user = factory.User(uuid="journalist ID sending the reply")
+    session.add(user)
+    session.commit()
+
     mocker.patch.object(api_client, "reply_source", side_effect=MockException("mock"))
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
     encrypt_fn = mocker.patch.object(gpg, "encrypt_to_source")

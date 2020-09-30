@@ -1481,9 +1481,12 @@ def test_Controller_send_reply_success(
     """
     mock_gui = mocker.MagicMock()
     co = Controller("http://localhost", mock_gui, session_maker, homedir)
-    co.user = factory.User()
+    co.authenticated_user = factory.User()
     co.api = mocker.MagicMock()
-    co.api.token_journalist_uuid = co.user.uuid
+    co.api.token_journalist_uuid = co.authenticated_user.uuid
+    user = factory.User(uuid=co.authenticated_user.uuid)
+    session.add(user)
+    session.commit()
 
     mock_success_signal = mocker.MagicMock()
     mock_failure_signal = mocker.MagicMock()
@@ -1498,9 +1501,9 @@ def test_Controller_send_reply_success(
     session.add(source)
     session.commit()
 
-    co.send_reply(source.uuid, "mock_user_uuid", "mock_msg")
+    co.send_reply(source.uuid, user.uuid, "mock_msg")
 
-    mock_job_cls.assert_called_once_with(source.uuid, "mock_user_uuid", "mock_msg", co.gpg)
+    mock_job_cls.assert_called_once_with(source.uuid, user.uuid, "mock_msg", co.gpg)
 
     co.add_job.emit.assert_called_once_with(mock_job)
     mock_success_signal.connect.assert_called_once_with(
@@ -1509,6 +1512,49 @@ def test_Controller_send_reply_success(
     mock_failure_signal.connect.assert_called_once_with(
         co.on_reply_failure, type=Qt.QueuedConnection
     )
+
+
+def test_Controller_send_reply_does_not_send_if_not_authenticated(
+    homedir, mocker, session_maker, session
+):
+    """
+    Check that when the user is not authenicated, the failure signal is emitted.
+    """
+    mock_gui = mocker.MagicMock()
+    co = Controller("http://localhost", mock_gui, session_maker, homedir)
+    co.api = None
+
+    mock_job_cls = mocker.patch("securedrop_client.logic.SendReplyJob")
+
+    source = factory.Source()
+    session.add(source)
+    session.commit()
+
+    co.send_reply(source.uuid, "mock_reply_uuid", "mock_msg")
+
+    mock_job_cls.assert_not_called()
+
+
+def test_Controller_send_reply_does_not_send_if_no_user_account(
+    homedir, mocker, session_maker, session
+):
+    """
+    Check that when the user is not authenicated, the failure signal is emitted.
+    """
+    mock_gui = mocker.MagicMock()
+    co = Controller("http://localhost", mock_gui, session_maker, homedir)
+    co.api = mocker.MagicMock()
+    co.authenticated_user = None
+
+    mock_job_cls = mocker.patch("securedrop_client.logic.SendReplyJob")
+
+    source = factory.Source()
+    session.add(source)
+    session.commit()
+
+    co.send_reply(source.uuid, "mock_reply_uuid", "mock_msg")
+
+    mock_job_cls.assert_not_called()
 
 
 def test_Controller_on_reply_success(homedir, mocker, session_maker, session):
