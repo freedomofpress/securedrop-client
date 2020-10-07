@@ -7,7 +7,7 @@ interactions:
       Accept-Encoding:
       - gzip, deflate
       Authorization:
-      - Token eyJhbGciOiJIUzI1NiIsImV4cCI6MTU5ODkyOTYxNywiaWF0IjoxNTk4OTAwODE3fQ.eyJpZCI6MX0.RXCqanRX2A_p7vQfzb9bmcthdcd38TTMNPqsMQnX_sY
+      - Token eyJleHAiOjE2MDI3NDUxOTUsImFsZyI6IkhTMjU2IiwiaWF0IjoxNjAyNzE2Mzk1fQ.eyJpZCI6MX0.1lrA6kdh8XiwEdggOCGwh8d_jNpoUWinYGmSsiDQf-0
       Connection:
       - keep-alive
       Content-Type:
@@ -19,8 +19,8 @@ interactions:
   response:
     body:
       string: "{\n  \"first_name\": \"\", \n  \"is_admin\": true, \n  \"last_login\"\
-        : \"2020-08-31T19:06:57.032162Z\", \n  \"last_name\": \"\", \n  \"username\"\
-        : \"journalist\", \n  \"uuid\": \"f9e1600b-4a77-40c4-a4fc-e68259df7adc\"\n\
+        : \"2020-10-14T22:59:55.614299Z\", \n  \"last_name\": \"\", \n  \"username\"\
+        : \"journalist\", \n  \"uuid\": \"d1a781e9-2e7b-4b12-982e-adbd1e37bc16\"\n\
         }\n"
     headers:
       Content-Length:
@@ -28,7 +28,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Mon, 31 Aug 2020 19:06:59 GMT
+      - Wed, 14 Oct 2020 22:59:58 GMT
       Server:
       - Werkzeug/0.16.0 Python/3.5.2
     status:

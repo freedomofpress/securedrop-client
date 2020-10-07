@@ -7,7 +7,7 @@ interactions:
       Accept-Encoding:
       - gzip, deflate
       Authorization:
-      - Token eyJleHAiOjE2MDI3NDUxOTUsImFsZyI6IkhTMjU2IiwiaWF0IjoxNjAyNzE2Mzk1fQ.eyJpZCI6MX0.1lrA6kdh8XiwEdggOCGwh8d_jNpoUWinYGmSsiDQf-0
+      - Token eyJleHAiOjE2MDI3NDkxNTUsImFsZyI6IkhTMjU2IiwiaWF0IjoxNjAyNzIwMzU1fQ.eyJpZCI6MX0.sgnzWxPG61pXqhhs4YPpR6iNMyCThbEUqFaIMG4fWeM
       Connection:
       - keep-alive
       Content-Type:
@@ -109,7 +109,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Wed, 14 Oct 2020 22:59:59 GMT
+      - Thu, 15 Oct 2020 00:05:55 GMT
       Server:
       - Werkzeug/0.16.0 Python/3.5.2
     status:
@@ -123,7 +123,7 @@ interactions:
       Accept-Encoding:
       - gzip, deflate
       Authorization:
-      - Token eyJleHAiOjE2MDI3NDUxOTUsImFsZyI6IkhTMjU2IiwiaWF0IjoxNjAyNzE2Mzk1fQ.eyJpZCI6MX0.1lrA6kdh8XiwEdggOCGwh8d_jNpoUWinYGmSsiDQf-0
+      - Token eyJleHAiOjE2MDI3NDkxNTUsImFsZyI6IkhTMjU2IiwiaWF0IjoxNjAyNzIwMzU1fQ.eyJpZCI6MX0.sgnzWxPG61pXqhhs4YPpR6iNMyCThbEUqFaIMG4fWeM
       Connection:
       - keep-alive
       Content-Type:
@@ -131,114 +131,138 @@ interactions:
       User-Agent:
       - python-requests/2.22.0
     method: GET
-    uri: http://127.0.0.1:8081/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9
+    uri: http://127.0.0.1:8081/api/v1/replies
   response:
     body:
-      string: "{\n  \"add_star_url\": \"/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9/add_star\"\
-        , \n  \"interaction_count\": 6, \n  \"is_flagged\": true, \n  \"is_starred\"\
-        : false, \n  \"journalist_designation\": \"subsonic discoloration\", \n  \"\
-        key\": {\n    \"fingerprint\": \"3E9C0B5848CDD93C45576F8850A587A44DAA7CC3\"\
-        , \n    \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmI0EUZF+gAEEALuYXA15P8gcN76Zwepnf59oz03sFGdPZgNNMrNgx7iNK8JFTTyg\\\
-        ntv2PZIhZ8mGDlnDW+/8D1NR+myTKdBRSl2EfrGZtzRf/byWmVb9lt9TUa5JBKYV2\\nQnIEAyvnMt92onUIFOAGQzY28gKCKAr/7XDdrIuVK6oNiqbCTWfTSn+XABEBAAG0\\\
-        ndVNvdXJjZSBLZXkgPFc1WlVGV1FOVFBWWEU1UVFJRkdaNUFWRVhYNjIyNUJKV1lF\\nVzZCSVhWWkxKWURBUTNORDY3SkFVWEdRQjNWN0w3UkxURlZaQUQ2TTU3WlpHUDJa\\\
-        nNEFQQ1VEM0JKSEZBVExTSUNDRlE9Poi3BBMBCgAhBQJRkX6AAhsvBQsJCAcCBhUI\\nCQoLAgQWAgMBAh4BAheAAAoJEFClh6RNqnzD9LYD+gORpUW5ynKnwgHmJfLUIpoA\\\
-        nL1aln9IEK6BV5a3ri61ar2iFEb9ynHurzSZ4zp5lWzrFl2KwKxKikTT6ehKmxyNw\\nWpNedXaKtof7TKd14sX9DJaQfkPND/CPYzy13cD8xx4CMAQF2G9rC/w3uPcNzNqz\\\
-        nbAMlsBxnkPBG4WGeQTdJ\\n=XdtX\\n-----END PGP PUBLIC KEY BLOCK-----\\n\", \n\
-        \    \"type\": \"PGP\"\n  }, \n  \"last_updated\": \"2020-10-14T22:59:06.476313Z\"\
-        , \n  \"number_of_documents\": 0, \n  \"number_of_messages\": 2, \n  \"remove_star_url\"\
-        : \"/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9/remove_star\", \n\
-        \  \"replies_url\": \"/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9/replies\"\
-        , \n  \"submissions_url\": \"/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9/submissions\"\
-        , \n  \"url\": \"/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9\", \n\
-        \  \"uuid\": \"cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9\"\n}\n"
-    headers:
-      Content-Length:
-      - '1518'
-      Content-Type:
-      - application/json
-      Date:
-      - Wed, 14 Oct 2020 22:59:59 GMT
-      Server:
-      - Werkzeug/0.16.0 Python/3.5.2
-    status:
-      code: 200
-      message: OK
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Authorization:
-      - Token eyJleHAiOjE2MDI3NDUxOTUsImFsZyI6IkhTMjU2IiwiaWF0IjoxNjAyNzE2Mzk1fQ.eyJpZCI6MX0.1lrA6kdh8XiwEdggOCGwh8d_jNpoUWinYGmSsiDQf-0
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      User-Agent:
-      - python-requests/2.22.0
-    method: GET
-    uri: http://127.0.0.1:8081/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9/submissions
-  response:
-    body:
-      string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9/submissions/0d1a631e-3010-4d96-9169-5b973e308a31/download\"\
-        , \n      \"filename\": \"3-subsonic_discoloration-msg.gpg\", \n      \"is_file\"\
-        : false, \n      \"is_message\": true, \n      \"is_read\": false, \n    \
-        \  \"seen_by\": [], \n      \"size\": 611, \n      \"source_url\": \"/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9\"\
-        , \n      \"submission_url\": \"/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9/submissions/0d1a631e-3010-4d96-9169-5b973e308a31\"\
-        , \n      \"uuid\": \"0d1a631e-3010-4d96-9169-5b973e308a31\"\n    }, \n  \
-        \  {\n      \"download_url\": \"/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9/submissions/2d33d119-9a74-41cb-86cb-313d884b6891/download\"\
-        , \n      \"filename\": \"4-subsonic_discoloration-msg.gpg\", \n      \"is_file\"\
-        : false, \n      \"is_message\": true, \n      \"is_read\": false, \n    \
-        \  \"seen_by\": [], \n      \"size\": 756, \n      \"source_url\": \"/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9\"\
-        , \n      \"submission_url\": \"/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9/submissions/2d33d119-9a74-41cb-86cb-313d884b6891\"\
-        , \n      \"uuid\": \"2d33d119-9a74-41cb-86cb-313d884b6891\"\n    }\n  ]\n\
+      string: "{\n  \"replies\": [\n    {\n      \"filename\": \"5-subsonic_discoloration-reply.gpg\"\
+        , \n      \"is_deleted_by_source\": false, \n      \"journalist_first_name\"\
+        : \"\", \n      \"journalist_last_name\": \"\", \n      \"journalist_username\"\
+        : \"journalist\", \n      \"journalist_uuid\": \"d1a781e9-2e7b-4b12-982e-adbd1e37bc16\"\
+        , \n      \"reply_url\": \"/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9/replies/d565d3eb-e128-4356-8b07-439b2cae9f29\"\
+        , \n      \"seen_by\": [\n        \"d1a781e9-2e7b-4b12-982e-adbd1e37bc16\"\
+        \n      ], \n      \"size\": 753, \n      \"source_url\": \"/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9\"\
+        , \n      \"uuid\": \"d565d3eb-e128-4356-8b07-439b2cae9f29\"\n    }, \n  \
+        \  {\n      \"filename\": \"6-subsonic_discoloration-reply.gpg\", \n     \
+        \ \"is_deleted_by_source\": false, \n      \"journalist_first_name\": \"\"\
+        , \n      \"journalist_last_name\": \"\", \n      \"journalist_username\"\
+        : \"journalist\", \n      \"journalist_uuid\": \"d1a781e9-2e7b-4b12-982e-adbd1e37bc16\"\
+        , \n      \"reply_url\": \"/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9/replies/35dda97c-debb-4d0a-af02-0376aae43f78\"\
+        , \n      \"seen_by\": [\n        \"d1a781e9-2e7b-4b12-982e-adbd1e37bc16\"\
+        \n      ], \n      \"size\": 898, \n      \"source_url\": \"/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9\"\
+        , \n      \"uuid\": \"35dda97c-debb-4d0a-af02-0376aae43f78\"\n    }, \n  \
+        \  {\n      \"filename\": \"5-adulatory_patty-reply.gpg\", \n      \"is_deleted_by_source\"\
+        : false, \n      \"journalist_first_name\": \"\", \n      \"journalist_last_name\"\
+        : \"\", \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\"\
+        : \"d1a781e9-2e7b-4b12-982e-adbd1e37bc16\", \n      \"reply_url\": \"/api/v1/sources/b2e7cc71-d45a-44c6-86f0-7fbfaf5cc36c/replies/d81d63dd-2f6a-4af4-9f47-6454419be092\"\
+        , \n      \"seen_by\": [\n        \"d1a781e9-2e7b-4b12-982e-adbd1e37bc16\"\
+        \n      ], \n      \"size\": 735, \n      \"source_url\": \"/api/v1/sources/b2e7cc71-d45a-44c6-86f0-7fbfaf5cc36c\"\
+        , \n      \"uuid\": \"d81d63dd-2f6a-4af4-9f47-6454419be092\"\n    }, \n  \
+        \  {\n      \"filename\": \"6-adulatory_patty-reply.gpg\", \n      \"is_deleted_by_source\"\
+        : false, \n      \"journalist_first_name\": \"\", \n      \"journalist_last_name\"\
+        : \"\", \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\"\
+        : \"d1a781e9-2e7b-4b12-982e-adbd1e37bc16\", \n      \"reply_url\": \"/api/v1/sources/b2e7cc71-d45a-44c6-86f0-7fbfaf5cc36c/replies/5706c8ff-e86e-4998-a6e1-c6a5b2b9160f\"\
+        , \n      \"seen_by\": [\n        \"d1a781e9-2e7b-4b12-982e-adbd1e37bc16\"\
+        \n      ], \n      \"size\": 737, \n      \"source_url\": \"/api/v1/sources/b2e7cc71-d45a-44c6-86f0-7fbfaf5cc36c\"\
+        , \n      \"uuid\": \"5706c8ff-e86e-4998-a6e1-c6a5b2b9160f\"\n    }, \n  \
+        \  {\n      \"filename\": \"5-totemic_incarnation-reply.gpg\", \n      \"\
+        is_deleted_by_source\": false, \n      \"journalist_first_name\": \"\", \n\
+        \      \"journalist_last_name\": \"\", \n      \"journalist_username\": \"\
+        journalist\", \n      \"journalist_uuid\": \"d1a781e9-2e7b-4b12-982e-adbd1e37bc16\"\
+        , \n      \"reply_url\": \"/api/v1/sources/65f576e1-e185-4d76-a2d7-5c7298bd50e7/replies/5335680f-6f66-474a-bef6-675694557c0c\"\
+        , \n      \"seen_by\": [\n        \"d1a781e9-2e7b-4b12-982e-adbd1e37bc16\"\
+        \n      ], \n      \"size\": 779, \n      \"source_url\": \"/api/v1/sources/65f576e1-e185-4d76-a2d7-5c7298bd50e7\"\
+        , \n      \"uuid\": \"5335680f-6f66-474a-bef6-675694557c0c\"\n    }, \n  \
+        \  {\n      \"filename\": \"6-totemic_incarnation-reply.gpg\", \n      \"\
+        is_deleted_by_source\": false, \n      \"journalist_first_name\": \"\", \n\
+        \      \"journalist_last_name\": \"\", \n      \"journalist_username\": \"\
+        journalist\", \n      \"journalist_uuid\": \"d1a781e9-2e7b-4b12-982e-adbd1e37bc16\"\
+        , \n      \"reply_url\": \"/api/v1/sources/65f576e1-e185-4d76-a2d7-5c7298bd50e7/replies/e12bf324-6710-4228-95e6-b70cb6e16cc2\"\
+        , \n      \"seen_by\": [\n        \"d1a781e9-2e7b-4b12-982e-adbd1e37bc16\"\
+        \n      ], \n      \"size\": 808, \n      \"source_url\": \"/api/v1/sources/65f576e1-e185-4d76-a2d7-5c7298bd50e7\"\
+        , \n      \"uuid\": \"e12bf324-6710-4228-95e6-b70cb6e16cc2\"\n    }, \n  \
+        \  {\n      \"filename\": \"5-charitable_boss-reply.gpg\", \n      \"is_deleted_by_source\"\
+        : false, \n      \"journalist_first_name\": \"\", \n      \"journalist_last_name\"\
+        : \"\", \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\"\
+        : \"d1a781e9-2e7b-4b12-982e-adbd1e37bc16\", \n      \"reply_url\": \"/api/v1/sources/d9f5bb51-8ce3-4424-b5fd-046eb200116b/replies/6df313e4-031e-4a06-b8f2-fe342ce76650\"\
+        , \n      \"seen_by\": [\n        \"d1a781e9-2e7b-4b12-982e-adbd1e37bc16\"\
+        \n      ], \n      \"size\": 733, \n      \"source_url\": \"/api/v1/sources/d9f5bb51-8ce3-4424-b5fd-046eb200116b\"\
+        , \n      \"uuid\": \"6df313e4-031e-4a06-b8f2-fe342ce76650\"\n    }, \n  \
+        \  {\n      \"filename\": \"6-charitable_boss-reply.gpg\", \n      \"is_deleted_by_source\"\
+        : false, \n      \"journalist_first_name\": \"\", \n      \"journalist_last_name\"\
+        : \"\", \n      \"journalist_username\": \"journalist\", \n      \"journalist_uuid\"\
+        : \"d1a781e9-2e7b-4b12-982e-adbd1e37bc16\", \n      \"reply_url\": \"/api/v1/sources/d9f5bb51-8ce3-4424-b5fd-046eb200116b/replies/54afdfd7-f206-4e5c-a06c-1033a6dadeda\"\
+        , \n      \"seen_by\": [\n        \"d1a781e9-2e7b-4b12-982e-adbd1e37bc16\"\
+        \n      ], \n      \"size\": 733, \n      \"source_url\": \"/api/v1/sources/d9f5bb51-8ce3-4424-b5fd-046eb200116b\"\
+        , \n      \"uuid\": \"54afdfd7-f206-4e5c-a06c-1033a6dadeda\"\n    }, \n  \
+        \  {\n      \"filename\": \"7-subsonic_discoloration-reply.gpg\", \n     \
+        \ \"is_deleted_by_source\": false, \n      \"journalist_first_name\": \"\"\
+        , \n      \"journalist_last_name\": \"\", \n      \"journalist_username\"\
+        : \"journalist\", \n      \"journalist_uuid\": \"d1a781e9-2e7b-4b12-982e-adbd1e37bc16\"\
+        , \n      \"reply_url\": \"/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9/replies/63778a9d-5d28-4467-9479-38473e020f4b\"\
+        , \n      \"seen_by\": [\n        \"d1a781e9-2e7b-4b12-982e-adbd1e37bc16\"\
+        \n      ], \n      \"size\": 895, \n      \"source_url\": \"/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9\"\
+        , \n      \"uuid\": \"63778a9d-5d28-4467-9479-38473e020f4b\"\n    }, \n  \
+        \  {\n      \"filename\": \"8-subsonic_discoloration-reply.gpg\", \n     \
+        \ \"is_deleted_by_source\": false, \n      \"journalist_first_name\": \"\"\
+        , \n      \"journalist_last_name\": \"\", \n      \"journalist_username\"\
+        : \"journalist\", \n      \"journalist_uuid\": \"d1a781e9-2e7b-4b12-982e-adbd1e37bc16\"\
+        , \n      \"reply_url\": \"/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9/replies/e467868c-1fbb-4b5e-bca2-87944ea83855\"\
+        , \n      \"seen_by\": [\n        \"d1a781e9-2e7b-4b12-982e-adbd1e37bc16\"\
+        \n      ], \n      \"size\": 895, \n      \"source_url\": \"/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9\"\
+        , \n      \"uuid\": \"e467868c-1fbb-4b5e-bca2-87944ea83855\"\n    }\n  ]\n\
         }\n"
     headers:
       Content-Length:
-      - '1195'
+      - '6357'
       Content-Type:
       - application/json
       Date:
-      - Wed, 14 Oct 2020 22:59:59 GMT
+      - Thu, 15 Oct 2020 00:05:55 GMT
       Server:
       - Werkzeug/0.16.0 Python/3.5.2
     status:
       code: 200
       message: OK
 - request:
-    body: null
+    body: '{"files": ["1c9f78e7-2f3c-495f-aea1-1cdf5668fda0", "8e06b833-1ca6-49f7-af4d-c6024c88a9bc",
+      "7adfa4dd-84a8-459b-8975-908c8c6cbec4", "4a3b9999-2146-4a97-bec6-372a9defb259",
+      "cb2dd23c-0914-4533-ab75-c28b85ef1f69", "7e690293-2783-47a8-9a11-c1668c8438e6"],
+      "messages": ["0d1a631e-3010-4d96-9169-5b973e308a31", "2d33d119-9a74-41cb-86cb-313d884b6891",
+      "194849f8-25e9-4992-9c85-20b1c255764e", "ff6800fc-b88b-418c-8485-d7f29f7cd400",
+      "4058ebd2-f4f6-4ef8-9bf5-3102f004a508", "c8a88b8b-f4a4-4b4e-b37b-f53efad2b90e",
+      "2a4a46b7-d5ba-43d7-808c-986351b8bef1", "3ecbffb5-01e8-4176-8ddd-b9b056c517f6"],
+      "replies": ["d565d3eb-e128-4356-8b07-439b2cae9f29", "35dda97c-debb-4d0a-af02-0376aae43f78",
+      "d81d63dd-2f6a-4af4-9f47-6454419be092", "5706c8ff-e86e-4998-a6e1-c6a5b2b9160f",
+      "5335680f-6f66-474a-bef6-675694557c0c", "e12bf324-6710-4228-95e6-b70cb6e16cc2",
+      "6df313e4-031e-4a06-b8f2-fe342ce76650", "54afdfd7-f206-4e5c-a06c-1033a6dadeda",
+      "63778a9d-5d28-4467-9479-38473e020f4b", "e467868c-1fbb-4b5e-bca2-87944ea83855"]}'
     headers:
       Accept:
       - application/json
       Accept-Encoding:
       - gzip, deflate
       Authorization:
-      - Token eyJleHAiOjE2MDI3NDUxOTUsImFsZyI6IkhTMjU2IiwiaWF0IjoxNjAyNzE2Mzk1fQ.eyJpZCI6MX0.1lrA6kdh8XiwEdggOCGwh8d_jNpoUWinYGmSsiDQf-0
+      - Token eyJleHAiOjE2MDI3NDkxNTUsImFsZyI6IkhTMjU2IiwiaWF0IjoxNjAyNzIwMzU1fQ.eyJpZCI6MX0.sgnzWxPG61pXqhhs4YPpR6iNMyCThbEUqFaIMG4fWeM
       Connection:
       - keep-alive
+      Content-Length:
+      - '998'
       Content-Type:
       - application/json
       User-Agent:
       - python-requests/2.22.0
-    method: GET
-    uri: http://127.0.0.1:8081/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9/submissions/0d1a631e-3010-4d96-9169-5b973e308a31
+    method: POST
+    uri: http://127.0.0.1:8081/api/v1/seen
   response:
     body:
-      string: "{\n  \"download_url\": \"/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9/submissions/0d1a631e-3010-4d96-9169-5b973e308a31/download\"\
-        , \n  \"filename\": \"3-subsonic_discoloration-msg.gpg\", \n  \"is_file\"\
-        : false, \n  \"is_message\": true, \n  \"is_read\": false, \n  \"seen_by\"\
-        : [], \n  \"size\": 611, \n  \"source_url\": \"/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9\"\
-        , \n  \"submission_url\": \"/api/v1/sources/cd1a308d-8bb4-46cd-a0f7-76cdd5f218e9/submissions/0d1a631e-3010-4d96-9169-5b973e308a31\"\
-        , \n  \"uuid\": \"0d1a631e-3010-4d96-9169-5b973e308a31\"\n}\n"
+      string: "{\n  \"message\": \"resources marked seen\"\n}\n"
     headers:
       Content-Length:
-      - '535'
+      - '41'
       Content-Type:
       - application/json
       Date:
-      - Wed, 14 Oct 2020 22:59:59 GMT
+      - Thu, 15 Oct 2020 00:05:55 GMT
       Server:
       - Werkzeug/0.16.0 Python/3.5.2
     status:
