@@ -267,10 +267,10 @@ class TestAPIProxy(unittest.TestCase):
         # with open(filepath, "rb") as fobj:
         #    fobj.read()
 
-        # Now the submission should have is_read as True.
+        # is_read should still be False as of SecureDrop 1.6.0 or later.
 
         s = self.api.get_submission(s)
-        self.assertTrue(s.is_read)
+        self.assertFalse(s.is_read)
 
         # Let us remove the temporary directory
         shutil.rmtree(tmpdir)
