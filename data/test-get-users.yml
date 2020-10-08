@@ -1,0 +1,36 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJleHAiOjE2MDIxNDYxMDIsImFsZyI6IkhTMjU2IiwiaWF0IjoxNjAyMTE3MzAyfQ.eyJpZCI6MX0.z7UGeKx0191qRhU97f0bJJDuY4y4fJi9njDGD0OXrpA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.22.0
+    method: GET
+    uri: http://127.0.0.1:8081/api/v1/users
+  response:
+    body:
+      string: '{"users":[{"first_name":"","last_name":"","username":"journalist","uuid":"0a5db1b6-a003-4aa9-812b-53c6abbf1124"},{"first_name":"","last_name":"","username":"dellsberg","uuid":"3325fde8-a339-4847-aa3e-d2be412fbaf7"}]}
+
+        '
+    headers:
+      Content-Length:
+      - '217'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 08 Oct 2020 00:35:02 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.5.2
+    status:
+      code: 200
+      message: OK
+version: 1

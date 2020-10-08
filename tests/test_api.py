@@ -231,6 +231,20 @@ class TestAPI(unittest.TestCase):
         self.assertTrue("first_name" in user)
         self.assertTrue("last_name" in user)
 
+    @vcr.use_cassette("data/test-get-users.yml")
+    def test_get_users(self):
+        users = self.api.get_users()
+        for user in users:
+            # Assert expected fields are present
+            assert hasattr(user, "first_name")
+            assert hasattr(user, "last_name")
+            # Every user has a non-empty name and UUID
+            assert user.username
+            assert user.uuid
+            # The API should never return these fields
+            assert not hasattr(user, "last_login")
+            assert not hasattr(user, "is_admin")
+
     @vcr.use_cassette("data/test-error-unencrypted-reply.yml")
     def test_error_unencrypted_reply(self):
         s = self.api.get_sources()[0]

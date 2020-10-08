@@ -17,6 +17,7 @@ from .sdlocalobjects import (
     ReplyError,
     Source,
     Submission,
+    User,
     WrongUUIDError,
 )
 
@@ -597,6 +598,29 @@ class API:
         )
 
         return data
+
+    def get_users(self) -> List[User]:
+        """
+        Returns a list of all the journalist and admin users registered on the
+        server.
+
+        :returns: List of User objects.
+        """
+        path_query = "api/v1/users"
+        method = "GET"
+
+        data, status_code, headers = self._send_json_request(
+            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
+        )
+
+        users = data["users"]
+        result = []  # type: List[User]
+
+        for user in users:
+            u = User(**user)
+            result.append(u)
+
+        return result
 
     def reply_source(self, source: Source, msg: str, reply_uuid: Optional[str] = None) -> Reply:
         """

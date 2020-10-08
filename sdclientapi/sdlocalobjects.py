@@ -177,3 +177,26 @@ class Source:
             if key not in kwargs:
                 AttributeError("Missing key {}".format(key))
             setattr(self, key, kwargs[key])
+
+
+class User:
+    """
+    This class represents a user (journalist or admin) of the Journalist
+    Interface.
+    """
+
+    def __init__(self, **kwargs) -> None:  # type: ignore
+        self.first_name = ""  # type: str
+        self.last_name = ""  # type: str
+        self.username = ""  # type: str
+        self.uuid = ""  # type: str
+
+        for key in [
+            "first_name",
+            "last_name",
+            "username",
+            "uuid",
+        ]:
+            if key not in kwargs:
+                AttributeError("Missing key {}".format(key))
+            setattr(self, key, kwargs[key])
