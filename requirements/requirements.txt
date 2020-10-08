@@ -71,9 +71,9 @@ python-dateutil==2.7.5 \
 python-editor==1.0.3 \
     --hash=sha256:a3c066acee22a1c94f63938341d4fb374e3fdd69366ed6603d7b24bed1efc565 \
     # via -r requirements/requirements.in, alembic
-requests==2.20.0 \
-    --hash=sha256:99dcfdaaeb17caf6e526f32b6a7b780461512ab3f1d992187801694cba42770c \
-    --hash=sha256:a84b8c9ab6239b578f22d1c21d51b696dcfe004032bb80ea832398d6909d7279 \
+requests==2.22.0 \
+    --hash=sha256:11e007a8a2aa0323f5a921e9e6a2d7e4e67d9877e85773fba9ba6419025cbeb4 \
+    --hash=sha256:9cf5292fcd0f598c671cfc1e0d7d1a7f13bb8085e9a590f48c010551dc6c4b31 \
     # via -r requirements/requirements.in, securedrop-sdk
 securedrop-sdk==0.1.1 \
     --hash=sha256:138ce7a717db519c3c8d19b9475d7660fb7095d7608e8802723e682a7415e677 \
@@ -85,7 +85,7 @@ six==1.11.0 \
 sqlalchemy==1.3.3 \
     --hash=sha256:91c54ca8345008fceaec987e10924bf07dcab36c442925357e5a467b36a38319 \
     # via -r requirements/requirements.in, alembic
-urllib3==1.24.3 \
-    --hash=sha256:2393a695cd12afedd0dcb26fe5d50d0cf248e5a66f75dbd89a3d4eb333a61af4 \
-    --hash=sha256:a637e5fae88995b256e3409dc4d52c2e2e0ba32c42a6365fee8bbd2238de3cfb \
+urllib3==1.25.10 \
+    --hash=sha256:91056c15fa70756691db97756772bb1eb9678fa585d9184f24534b100dc60f4a \
+    --hash=sha256:e7983572181f5e1522d9c98453462384ee92a0be7fac5f1413a1e35c56cc0461 \
     # via -r requirements/requirements.in, requests, securedrop-sdk
