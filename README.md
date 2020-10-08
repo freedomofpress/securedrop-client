@@ -80,11 +80,22 @@ The steps to generate new cassettes are split into two sections based on communi
     NUM_SOURCES=5 make dev
     ```
 
-2. [Skip if adding a new test] Delete the cassettes you wish to regenerate or just delete all yaml files by running:
+2. Delete the cassettes you wish to regenerate or just delete all yaml files by running:
 
     ```bash
     rm data/*.yml
     ```
+
+   If you are only adding a new test and not modifying existing ones, you can
+   skip this step, but you still need to remove the authentication setup during
+   cassette generation. Otherwise you will get 403 errors for API endpoints that
+   require a valid token. Remove the setup cassette by running:
+
+   ```bash
+   rm data/test-setup.yml
+   ```
+
+   (You can reinstate the unmodified version later.)
 
 3. Generate new cassettes that make API calls over HTTP by running:
 
