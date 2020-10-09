@@ -76,7 +76,8 @@ def onInit():
 
     global process
     if not os.path.exists("/etc/sd-rsyslog.conf"):
-        print("Please create the configuration file at /etc/sd-rsyslog.conf", file=sys.stderr)
+        logging.exception("Please create the configuration file at /etc/sd-rsyslog.conf",
+                          file=sys.stderr)
         sys.exit(1)
     config = configparser.ConfigParser()
     config.read('/etc/sd-rsyslog.conf')
@@ -91,14 +92,14 @@ def onInit():
                                         stdout=PIPE, stderr=PIPE)
             vm_name_output, vm_name_error = get_vm_name_process.communicate()
             if vm_name_error != b"":
-                print("Error obtaining VM name via qubesdb-read:")
-                print(vm_name_error.decode("utf-8").strip())
+                logging.exception("Error obtaining VM name via qubesdb-read:")
+                logging.exception(vm_name_error.decode("utf-8").strip())
                 sys.exit(1)
             localvmname = vm_name_output.decode("utf-8").strip()
         except FileNotFoundError:  # not on Qubes?
-            print("Could not run qubesdb-read command to obtain VM name.")
-            print("Note that sd-rsyslog must be run on Qubes OS if no")
-            print("localvm name is specified in the configuration.")
+            logging.exception("Could not run qubesdb-read command to obtain VM name.")
+            logging.exception("Note that sd-rsyslog must be run on Qubes OS if no "
+                              "localvm name is specified in the configuration.")
             sys.exit(1)
 
     process = Popen(
