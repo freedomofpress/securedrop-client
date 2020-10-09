@@ -30,10 +30,10 @@ import os
 import logging
 import configparser
 from subprocess import Popen, PIPE
-from socket import gethostname
 
 # Global definitions specific to your plugin
 process = None
+
 
 class RecoverableError(Exception):
     """An error that has caused the processing of the current message to
@@ -74,15 +74,33 @@ def onInit():
     # emitted you must set 'level' to logging.DEBUG above.)
     logging.debug("onInit called")
 
-
     global process
     if not os.path.exists("/etc/sd-rsyslog.conf"):
-        print("Please create the configuration file at /etc/sd-rsyslog.conf", file=sys.stderr)
+        logging.exception("Please create the configuration file at /etc/sd-rsyslog.conf")
         sys.exit(1)
     config = configparser.ConfigParser()
     config.read('/etc/sd-rsyslog.conf')
     logvmname = config['sd-rsyslog']['remotevm']
-    localvmname = config['sd-rsyslog'].get('localvm', gethostname())
+    localvmname = config['sd-rsyslog'].get('localvm', None)
+
+    # If no localvm name is specified, it must be supplied by Qubes OS. If this
+    # fails, we exit, to avoid falsely identified logs.
+    if localvmname is None:
+        try:
+            get_vm_name_process = Popen(["/usr/bin/qubesdb-read", "/name"],
+                                        stdout=PIPE, stderr=PIPE)
+            vm_name_output, vm_name_error = get_vm_name_process.communicate()
+            if vm_name_error != b"":
+                logging.exception("Error obtaining VM name via qubesdb-read:")
+                logging.exception(vm_name_error.decode("utf-8").strip())
+                sys.exit(1)
+            localvmname = vm_name_output.decode("utf-8").strip()
+        except FileNotFoundError:  # not on Qubes?
+            logging.exception("Could not run qubesdb-read command to obtain VM name.")
+            logging.exception("Note that sd-rsyslog must be run on Qubes OS if no "
+                              "localvm name is specified in the configuration.")
+            sys.exit(1)
+
     process = Popen(
             ["/usr/lib/qubes/qrexec-client-vm", logvmname, "securedrop.Log"],
             stdin=PIPE,
@@ -144,7 +162,7 @@ via stdout. In most cases, modifying this code should not be necessary.
 """
 try:
     onInit()
-except Exception as e:
+except Exception:
     # If an error occurs during initialization, log it and terminate. The
     # 'omprog' action will eventually restart the program.
     logging.exception("Initialization error, exiting program")
@@ -191,4 +209,3 @@ if endedWithError:
     sys.exit(1)
 else:
     sys.exit(0)
-
