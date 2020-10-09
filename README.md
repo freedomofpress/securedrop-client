@@ -185,7 +185,7 @@ name=sd-dev-proxy
 sd-dev sd-dev-proxy allow
 ```
 
-8. Modify `/etc/qubes-rpc/qubes.Filecopy` in **dom0** by adding the following line so that the proxy can send files over qrexec to the sdk:
+8. Modify `/etc/qubes-rpc/policy/qubes.Filecopy` in **dom0** by adding the following line to the top of the file so that the proxy can send files over qrexec to the sdk:
 
 ```
 sd-dev-proxy sd-dev allow
