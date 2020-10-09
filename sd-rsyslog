@@ -76,8 +76,7 @@ def onInit():
 
     global process
     if not os.path.exists("/etc/sd-rsyslog.conf"):
-        logging.exception("Please create the configuration file at /etc/sd-rsyslog.conf",
-                          file=sys.stderr)
+        logging.exception("Please create the configuration file at /etc/sd-rsyslog.conf")
         sys.exit(1)
     config = configparser.ConfigParser()
     config.read('/etc/sd-rsyslog.conf')
