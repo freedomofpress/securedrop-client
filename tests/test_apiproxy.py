@@ -221,6 +221,20 @@ class TestAPIProxy(unittest.TestCase):
         self.assertTrue("last_name" in user)
 
     @dastollervey_datasaver
+    def test_get_users(self):
+        users = self.api.get_users()
+        for user in users:
+            # Assert expected fields are present
+            assert hasattr(user, "first_name")
+            assert hasattr(user, "last_name")
+            # Every user has a non-empty name and UUID
+            assert user.username
+            assert user.uuid
+            # The API should never return these fields
+            assert not hasattr(user, "last_login")
+            assert not hasattr(user, "is_admin")
+
+    @dastollervey_datasaver
     def test_error_unencrypted_reply(self):
         s = self.api.get_sources()[0]
         with self.assertRaises(ReplyError) as err:
