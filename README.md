@@ -185,6 +185,8 @@ name=sd-dev-proxy
 sd-dev sd-dev-proxy allow
 ```
 
+**NOTE:** You may want to switch back to the RPC configuration files in their as-provisioned state before a `make test` run in `dom0`, as this and the following change to the RPC policies will break the strict validation of the RPC policies that is one of those tests.
+
 8. Modify `/etc/qubes-rpc/policy/qubes.Filecopy` in **dom0** by adding the following line to the top of the file so that the proxy can send files over qrexec to the sdk:
 
 ```
