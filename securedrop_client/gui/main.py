@@ -101,11 +101,8 @@ class Window(QMainWindow):
         """
         Show main application window.
         """
-        if not self.controller.qubes:
-            self.showMaximized()
-        else:
-            self.setWindowState(Qt.WindowFullScreen)
-            self.show()
+        self.setWindowState(Qt.WindowFullScreen)
+        self.show()
 
         if db_user:
             self.set_logged_in_as(db_user)
