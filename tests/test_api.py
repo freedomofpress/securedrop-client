@@ -14,39 +14,46 @@ from requests.exceptions import ConnectTimeout, ReadTimeout
 from sdclientapi import API, RequestTimeoutError
 from sdclientapi.sdlocalobjects import (
     AuthError,
-    BaseError,
     Reply,
     ReplyError,
     Source,
     Submission,
     WrongUUIDError,
 )
-from utils import load_auth_for_http, save_auth_for_http
 
 NUM_REPLIES_PER_SOURCE = 2
 
 
 class TestAPI(unittest.TestCase):
-    @vcr.use_cassette("data/test-setup.yml")
     def setUp(self):
         self.totp = pyotp.TOTP("JHCOGO7VCER3EJ4L")
         self.username = "journalist"
         self.password = "correct horse battery staple profanity oil chewy"
         self.server = "http://127.0.0.1:8081/"
-        self.api = API(self.server, self.username, self.password, str(self.totp.now()))
-        for i in range(3):
-            try:
-                self.api.authenticate()
-            except BaseError:
-                token = load_auth_for_http()
-                if token:
-                    self.api.token = token
-                    self.api.update_auth_header()
-                    break
-                time.sleep(31)
 
-            save_auth_for_http(self.api.token)
-            break
+        # Because we may be using a TOTP code from a previous run that has since
+        # been invalidated (or that may be invalid because of bad timing),
+        # we retry repeatedly to get the token with a new TOTP code.
+        #
+        # It doesn't matter if these intermittent 403s are captured in the
+        # cassette as we ignore them during playback.
+        auth_result = None
+        with vcr.use_cassette("data/test-setup.yml") as cassette:
+            for i in range(3):
+                totp = self.totp.now()
+                self.api = API(self.server, self.username, self.password, str(totp))
+                try:
+                    auth_result = self.api.authenticate()
+                except AuthError:
+                    # Don't sleep on final retry attempt or during playback
+                    if i < 2 and cassette.play_count == 0:
+                        time.sleep(31)
+                    continue
+                # No error, let's move on
+                break
+
+        if auth_result is None:
+            raise AuthError("Could not obtain API token during test setup.")
 
     @vcr.use_cassette("data/test-baduser.yml")
     def test_auth_baduser(self):

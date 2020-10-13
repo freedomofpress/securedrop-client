@@ -123,16 +123,3 @@ def load_auth():
 def save_auth(token):
     with open("testtoken.json", "w") as fobj:
         json.dump(token, fobj)
-
-
-def load_auth_for_http():
-    "Helper function to load token"
-    if os.path.exists("testtoken_http.json"):
-        with open("testtoken_http.json") as fobj:
-            return json.load(fobj)
-    return None
-
-
-def save_auth_for_http(token):
-    with open("testtoken_http.json", "w") as fobj:
-        json.dump(token, fobj)
