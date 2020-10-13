@@ -872,6 +872,16 @@ def test_update_replies_missing_source(homedir, mocker, session):
     error_logger.assert_called_once_with(f"No source found for reply {remote_reply.uuid}")
 
 
+def test_User_deleted(mocker, session):
+    """
+    Test deleted User..
+    """
+    user = create_or_update_user("deleted", "mock", "mock", "mock", session)
+    assert not user.initials
+    assert not user.fullname
+    assert user.deleted
+
+
 def test_create_or_update_user_existing_uuid(mocker):
     """
     Return an existing user object with the referenced uuid.

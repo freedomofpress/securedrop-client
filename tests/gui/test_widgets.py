@@ -1,6 +1,7 @@
 """
 Make sure the UI widgets are configured correctly and work as expected.
 """
+import random
 from datetime import datetime
 from unittest.mock import Mock, patch
 
@@ -40,6 +41,7 @@ from securedrop_client.gui.widgets import (
     ReplyTextEditPlaceholder,
     ReplyWidget,
     SecureQLabel,
+    SenderIcon,
     SourceConversationWrapper,
     SourceList,
     SourceListWidgetItem,
@@ -387,6 +389,19 @@ def test_UserProfile_setup(mocker):
 
     up.user_button.setup.assert_called_once_with(controller)
     up.login_button.setup.assert_called_once_with(window)
+    up.controller.update_authenticated_user.connect.assert_called_once_with(
+        up._on_update_authenticated_user
+    )
+
+
+def test_UserProfile__on_update_authenticated_user(mocker):
+    up = UserProfile()
+    up.set_user = mocker.MagicMock()
+    user = factory.User(firstname="firstname_mock", lastname="lastname_mock")
+
+    up._on_update_authenticated_user(user)
+
+    up.set_user.assert_called_once_with(user)
 
 
 def test_UserProfile_set_user(mocker):
@@ -399,6 +414,18 @@ def test_UserProfile_set_user(mocker):
 
     up.user_icon.setText.assert_called_with("fl")
     up.user_button.set_username.assert_called_with("firstname_mock lastname_mock")
+
+
+def test_UserProfile_set_user_with_only_username(mocker):
+    up = UserProfile()
+    up.user_icon = mocker.MagicMock()
+    up.user_button = mocker.MagicMock()
+    user = factory.User(username="dellsberg", firstname=None, lastname=None)
+
+    up.set_user(user)
+
+    up.user_icon.setText.assert_called_with("de")
+    up.user_button.set_username.assert_called_with("dellsberg")
 
 
 def test_UserProfile_show(mocker):
@@ -1439,7 +1466,7 @@ def test_StarToggleButton_eventFilter_when_checked(mocker):
     stb.set_icon.assert_called_once_with(on="star_on.svg", off="star_off.svg")
 
     # Authentication change
-    stb.on_authentication_changed(authenticated=True)
+    stb.on_authentication_changed(True)
     assert stb.isCheckable() is True
     stb.pressed.disconnect.assert_called_once_with()
     stb.pressed.connect.assert_called_once_with(stb.on_pressed)
@@ -1469,7 +1496,7 @@ def test_StarToggleButton_eventFilter_when_not_checked(mocker):
     stb.set_icon.assert_called_once_with(on="star_on.svg", off="star_off.svg")
 
     # Authentication change
-    stb.on_authentication_changed(authenticated=True)
+    stb.on_authentication_changed(True)
     assert stb.isCheckable() is True
     stb.pressed.disconnect.assert_called_once_with()
     stb.pressed.connect.assert_called_once_with(stb.on_pressed)
@@ -1488,7 +1515,7 @@ def test_StarToggleButton_eventFilter_when_checked_and_offline(mocker):
     load_icon_fn = mocker.patch("securedrop_client.gui.widgets.load_icon")
 
     # Authentication change
-    stb.on_authentication_changed(authenticated=False)
+    stb.on_authentication_changed(False)
     assert stb.isCheckable() is False
     stb.set_icon.assert_called_with(on="star_on.svg", off="star_on.svg")
     stb.pressed.disconnect.assert_called_once_with()
@@ -1519,7 +1546,7 @@ def test_StarToggleButton_eventFilter_when_not_checked_and_offline(mocker):
     load_icon_fn = mocker.patch("securedrop_client.gui.widgets.load_icon")
 
     # Authentication change
-    stb.on_authentication_changed(authenticated=False)
+    stb.on_authentication_changed(False)
     assert stb.isCheckable() is False
     stb.pressed.disconnect.assert_called_once_with()
     stb.pressed.connect.assert_called_once_with(stb.on_pressed_offline)
@@ -1544,7 +1571,7 @@ def test_StarToggleButton_on_authentication_changed_while_authenticated_and_chec
     controller = mocker.MagicMock()
     stb = StarToggleButton(controller, "mock_uuid", True)
     stb.on_pressed = mocker.MagicMock()
-    stb.on_authentication_changed(authenticated=True)
+    stb.on_authentication_changed(True)
 
     stb.click()
 
@@ -1560,7 +1587,7 @@ def test_StarToggleButton_on_authentication_changed_while_authenticated_and_not_
     controller = mocker.MagicMock()
     stb = StarToggleButton(controller, "mock_uuid", False)
     stb.on_pressed = mocker.MagicMock()
-    stb.on_authentication_changed(authenticated=True)
+    stb.on_authentication_changed(True)
 
     stb.click()
 
@@ -1576,7 +1603,7 @@ def test_StarToggleButton_on_authentication_changed_while_offline_mode_and_not_c
     stb = StarToggleButton(controller, "mock_uuid", False)
     stb.on_pressed_offline = mocker.MagicMock()
     stb.on_pressed = mocker.MagicMock()
-    stb.on_authentication_changed(authenticated=False)
+    stb.on_authentication_changed(False)
 
     stb.click()
 
@@ -1593,7 +1620,7 @@ def test_StarToggleButton_on_authentication_changed_while_offline_mode_and_check
     stb = StarToggleButton(controller, "mock_uuid", True)
     stb.on_pressed_offline = mocker.MagicMock()
     stb.on_pressed = mocker.MagicMock()
-    stb.on_authentication_changed(authenticated=False)
+    stb.on_authentication_changed(False)
 
     stb.click()
 
@@ -2079,7 +2106,7 @@ def test_SpeechBubble_init(mocker):
 
 def test_SpeechBubble_init_with_error(mocker):
     """
-    Check the speech bubble is configured correctly when error=True.
+    Check the speech bubble is configured correctly when failed_to_decrypt=True.
     """
     mock_update_signal = mocker.Mock()
     mock_update_connect = mocker.Mock()
@@ -2090,7 +2117,12 @@ def test_SpeechBubble_init_with_error(mocker):
     mock_download_error_signal.connect = mock_download_error_connect
 
     sb = SpeechBubble(
-        "mock id", "hello", mock_update_signal, mock_download_error_signal, 0, error=True
+        "mock id",
+        "hello",
+        mock_update_signal,
+        mock_download_error_signal,
+        0,
+        failed_to_decrypt=True,
     )
 
     sb.message.text() == "hello"
@@ -2136,7 +2168,7 @@ def test_SpeechBubble_with_apostrophe_in_text(mocker):
     assert bubble.message.text() == message
 
 
-def test_SpeechBubble_set_error(mocker):
+def test_SpeechBubble__on_download_error(mocker):
     mock_signal = mocker.MagicMock()
 
     message_uuid = "mock id"
@@ -2145,7 +2177,7 @@ def test_SpeechBubble_set_error(mocker):
     assert bubble.message.text() == message
 
     error_message = "Oh no."
-    bubble.set_error("source id", message_uuid, error_message)
+    bubble._on_download_error("source id", message_uuid, error_message)
     assert bubble.message.text() == error_message
 
 
@@ -2164,7 +2196,7 @@ def test_MessageWidget_init(mocker):
 
 def test_MessageWidget_set_failed_to_decrypt_styles(mocker):
     """
-    Check the CSS is set as expected when error=True.
+    Check the CSS is set as expected when failed_to_decrypt=True.
     """
     message_widget = MessageWidget("mock", "mock", mocker.MagicMock(), mocker.MagicMock(), 0, True)
 
@@ -2199,17 +2231,27 @@ def test_ReplyWidget_init(mocker):
     mock_failure_connected = mocker.Mock()
     mock_failure_signal.connect = mock_failure_connected
 
-    ReplyWidget(
-        "mock id",
-        "hello",
-        "dummy",
-        mock_update_signal,
-        mock_download_failure_signal,
-        mock_success_signal,
-        mock_failure_signal,
-        0,
+    co = mocker.MagicMock(authentication_state=mocker.MagicMock())
+    co.update_authenticated_user = mocker.MagicMock()
+    co.authentication_state = mocker.MagicMock()
+    sender = factory.User()
+    rw = ReplyWidget(
+        controller=co,
+        message_uuid="mock_uuid",
+        message="hello",
+        reply_status="dummy",
+        update_signal=mock_update_signal,
+        download_error_signal=mock_download_failure_signal,
+        message_succeeded_signal=mock_success_signal,
+        message_failed_signal=mock_failure_signal,
+        index=0,
+        sender=sender,
+        sender_is_current_user=False,
+        failed_to_decrypt=False,
     )
 
+    co.update_authenticated_user.connect.assert_called_once_with(rw._on_update_authenticated_user)
+    co.authentication_state.connect.assert_called_once_with(rw._on_authentication_changed)
     assert mock_update_connected.called
     assert mock_success_connected.called
     assert mock_failure_connected.called
@@ -2217,7 +2259,7 @@ def test_ReplyWidget_init(mocker):
 
 def test_ReplyWidget_init_with_failed_to_send_error(mocker):
     """
-    Check the CSS is set as expected when error=True.
+    Check the CSS is set as expected when failed_to_decrypt=True.
     """
     mock_update_signal = mocker.Mock()
     mock_update_connected = mocker.Mock()
@@ -2235,77 +2277,200 @@ def test_ReplyWidget_init_with_failed_to_send_error(mocker):
     mock_failure_connected = mocker.Mock()
     mock_failure_signal.connect = mock_failure_connected
 
-    ReplyWidget(
-        "mock id",
-        "hello",
-        "dummy",
-        mock_update_signal,
-        mock_download_failure_signal,
-        mock_success_signal,
-        mock_failure_signal,
-        0,
-        error=False,
+    co = mocker.MagicMock(authentication_state=mocker.MagicMock())
+    co.update_authenticated_user = mocker.MagicMock()
+    co.authentication_state = mocker.MagicMock()
+    sender = factory.User()
+    rw = ReplyWidget(
+        controller=co,
+        message_uuid="mock_uuid",
+        message="hello",
+        reply_status="dummy",
+        update_signal=mock_update_signal,
+        download_error_signal=mock_download_failure_signal,
+        message_succeeded_signal=mock_success_signal,
+        message_failed_signal=mock_failure_signal,
+        index=0,
+        sender=sender,
+        sender_is_current_user=False,
+        failed_to_decrypt=True,
     )
 
+    co.update_authenticated_user.connect.assert_called_once_with(rw._on_update_authenticated_user)
+    co.authentication_state.connect.assert_called_once_with(rw._on_authentication_changed)
     assert mock_update_connected.called
     assert mock_success_connected.called
     assert mock_failure_connected.called
 
 
-def test_ReplyWidget_init_with_failed_to_decrypt_error(mocker):
-    """
-    Check the CSS is set as expected when error=True.
-    """
-    mock_download_failure_signal = mocker.MagicMock()
-    mock_download_failure_connected = mocker.Mock()
-    mock_download_failure_signal.connect = mock_download_failure_connected
-
-    set_failed_to_decrypt_styles = mocker.patch(
-        "securedrop_client.gui.widgets.SpeechBubble.set_failed_to_decrypt_styles"
-    )
-
-    ReplyWidget(
-        "mock id",
-        "hello",
-        "dummy",
-        mocker.MagicMock(),
-        mock_download_failure_signal,
-        mocker.MagicMock(),
-        mocker.MagicMock(),
-        0,
-        error=True,
-    )
-
-    set_failed_to_decrypt_styles.assert_called_once_with()
-
-
-def test_ReplyWidget_set_failed_to_decrypt_styles(mocker):
-    """
-    Check the CSS is set as expected when error=True.
-    """
-    mock_download_failure_signal = mocker.MagicMock()
-    mock_download_failure_connected = mocker.Mock()
-    mock_download_failure_signal.connect = mock_download_failure_connected
+def test_ReplyBoxWidget__on_authentication_changed_updates_badge_when_switched_to_offline(mocker):
+    controller = mocker.MagicMock(authenticated_user=None)
+    sender = factory.User()
     reply_widget = ReplyWidget(
-        "mock id",
-        "hello",
-        "dummy",
-        mocker.MagicMock(),
-        mock_download_failure_signal,
-        mocker.MagicMock(),
-        mocker.MagicMock(),
-        0,
-        error=True,
+        controller=controller,
+        message_uuid="mock_uuid",
+        message="hello",
+        reply_status="dummy",
+        update_signal=mocker.MagicMock(),
+        download_error_signal=mocker.MagicMock(),
+        message_succeeded_signal=mocker.MagicMock(),
+        message_failed_signal=mocker.MagicMock(),
+        index=0,
+        sender=sender,
+        sender_is_current_user=True,
+        failed_to_decrypt=False,
     )
+    reply_widget._update_styles = mocker.MagicMock()
 
-    reply_widget.message = mocker.patch.object(reply_widget, "message")
-    reply_widget.color_bar = mocker.patch.object(reply_widget, "color_bar")
+    reply_widget._on_authentication_changed(False)
 
-    reply_widget.set_failed_to_decrypt_styles()
+    assert not reply_widget.sender_is_current_user
+    assert not reply_widget.sender_icon.is_current_user
+    reply_widget._update_styles.assert_called_once_with()
 
-    reply_widget.message.setObjectName.assert_called_with("SpeechBubble_message_decryption_error")
-    reply_widget.color_bar.setObjectName.assert_called_with(
-        "SpeechBubble_status_bar_decryption_error"
+
+def test_ReplyBoxWidget__on_authentication_changed_does_nothing_when_authenticated(mocker):
+    authenticated_user = factory.User()
+    controller = mocker.MagicMock(authenticated_user=authenticated_user)
+
+    sender = factory.User()
+    sender_is_current_user = random.choice([True, False])
+    reply_widget = ReplyWidget(
+        controller=controller,
+        message_uuid="mock_uuid",
+        message="hello",
+        reply_status="dummy",
+        update_signal=mocker.MagicMock(),
+        download_error_signal=mocker.MagicMock(),
+        message_succeeded_signal=mocker.MagicMock(),
+        message_failed_signal=mocker.MagicMock(),
+        index=0,
+        sender=sender,
+        sender_is_current_user=sender_is_current_user,
+        failed_to_decrypt=False,
+    )
+    reply_widget._update_styles = mocker.MagicMock()
+
+    reply_widget._on_authentication_changed(True)
+
+    assert reply_widget.sender_is_current_user == sender_is_current_user
+    assert reply_widget.sender_icon.is_current_user == sender_is_current_user
+    reply_widget._update_styles.assert_not_called()
+
+
+def test_ReplyWidget__on_update_authenticated_user_does_nothing_when_not_sender(mocker):
+    authenticated_user = factory.User()
+    controller = mocker.MagicMock(authenticated_user=authenticated_user)
+
+    sender = factory.User()
+    reply_widget = ReplyWidget(
+        controller=controller,
+        message_uuid="mock_uuid",
+        message="hello",
+        reply_status="dummy",
+        update_signal=mocker.MagicMock(),
+        download_error_signal=mocker.MagicMock(),
+        message_succeeded_signal=mocker.MagicMock(),
+        message_failed_signal=mocker.MagicMock(),
+        index=0,
+        sender=sender,
+        sender_is_current_user=False,
+        failed_to_decrypt=False,
+    )
+    reply_widget._update_styles = mocker.MagicMock()
+
+    reply_widget._on_update_authenticated_user(authenticated_user)
+
+    assert not reply_widget.sender_is_current_user
+    assert not reply_widget.sender_icon.is_current_user
+    reply_widget._update_styles.assert_not_called()
+
+
+def test_ReplyWidget__on_update_authenticated_user(mocker):
+    authenticated_user = factory.User()
+    controller = mocker.MagicMock(authenticated_user=authenticated_user)
+
+    reply_widget = ReplyWidget(
+        controller=controller,
+        message_uuid="mock_uuid",
+        message="hello",
+        reply_status="dummy",
+        update_signal=mocker.MagicMock(),
+        download_error_signal=mocker.MagicMock(),
+        message_succeeded_signal=mocker.MagicMock(),
+        message_failed_signal=mocker.MagicMock(),
+        index=0,
+        sender=authenticated_user,
+        sender_is_current_user=False,
+        failed_to_decrypt=False,
+    )
+    reply_widget._update_styles = mocker.MagicMock()
+
+    reply_widget._on_update_authenticated_user(authenticated_user)
+
+    assert reply_widget.sender_is_current_user
+    assert reply_widget.sender_icon.is_current_user
+    reply_widget._update_styles.assert_called_once_with()
+
+
+def test_ReplyWidget__on_update_authenticated_user_updates_sender_when_changed(mocker, homedir):
+    authenticated_user = factory.User()
+    co = mocker.MagicMock(authenticated_user=authenticated_user)
+    co = logic.Controller("http://localhost", mocker.MagicMock(), mocker.MagicMock(), homedir)
+    user = factory.User(uuid="abc123", username="foo")
+    co.authenticated_user = user
+    co.session.refresh = mocker.MagicMock()
+    co.update_authenticated_user = mocker.MagicMock()
+
+    reply_widget = ReplyWidget(
+        controller=co,
+        message_uuid="mock_uuid",
+        message="hello",
+        reply_status="dummy",
+        update_signal=mocker.MagicMock(),
+        download_error_signal=mocker.MagicMock(),
+        message_succeeded_signal=mocker.MagicMock(),
+        message_failed_signal=mocker.MagicMock(),
+        index=0,
+        sender=authenticated_user,
+        sender_is_current_user=False,
+        failed_to_decrypt=False,
+    )
+    reply_widget._update_styles = mocker.MagicMock()
+
+    user = co.session.query(db.User).filter_by(uuid="abc123").one()
+    user.username = "baz"
+    reply_widget._on_update_authenticated_user(authenticated_user)
+
+    reply_widget.sender.username == "baz"
+    assert reply_widget.sender_is_current_user
+    assert reply_widget.sender_icon.is_current_user
+    reply_widget._update_styles.assert_called_once_with()
+
+
+def test_ReplyWidget_sets_pending_status_bar_for_current_user(mocker):
+    controller = mocker.MagicMock(authentication_state=mocker.MagicMock())
+    sender = factory.User()
+    rw = ReplyWidget(
+        controller=controller,
+        message_uuid="mock_uuid",
+        message="hello",
+        reply_status="dummy",
+        update_signal=mocker.MagicMock(),
+        download_error_signal=mocker.MagicMock(),
+        message_succeeded_signal=mocker.MagicMock(),
+        message_failed_signal=mocker.MagicMock(),
+        index=0,
+        sender=sender,
+        sender_is_current_user=True,
+        failed_to_decrypt=True,
+    )
+    rw.color_bar = mocker.MagicMock()
+
+    rw.set_pending_styles()
+
+    rw.color_bar.setObjectName.assert_called_once_with(
+        "ReplyWidget_status_bar_pending_current_user"
     )
 
 
@@ -3627,11 +3792,12 @@ def test_ConversationView_on_reply_sent(mocker):
     """
     source = factory.Source()
     controller = mocker.MagicMock()
+    controller.authenticated_user = factory.User()
     cv = ConversationView(source, controller)
     cv.add_reply_from_reply_box = mocker.MagicMock()
 
     assert cv.reply_flag is False
-    cv.on_reply_sent(source.uuid, "abc123", "test message")
+    cv.on_reply_sent(source_uuid=source.uuid, reply_uuid="abc123", reply_text="test message")
 
     cv.add_reply_from_reply_box.assert_called_with("abc123", "test message")
     assert cv.reply_flag is True
@@ -3666,7 +3832,9 @@ def test_ConversationView_add_reply_from_reply_box(mocker):
         reply_download_failed=reply_download_failed,
         reply_succeeded=reply_succeeded,
         reply_failed=reply_failed,
+        authentication_state=mocker.MagicMock(),
     )
+    controller.authenticated_user = factory.User()
     cv = ConversationView(source, controller)
     cv.scroll.conversation_layout = mocker.MagicMock()
     reply_widget_res = mocker.MagicMock()
@@ -3674,9 +3842,10 @@ def test_ConversationView_add_reply_from_reply_box(mocker):
         "securedrop_client.gui.widgets.ReplyWidget", return_value=reply_widget_res
     )
 
-    cv.add_reply_from_reply_box("abc123", "test message")
+    cv.add_reply_from_reply_box(uuid="abc123", content="test message")
 
     reply_widget.assert_called_once_with(
+        controller,
         "abc123",
         "test message",
         "PENDING",
@@ -3685,10 +3854,41 @@ def test_ConversationView_add_reply_from_reply_box(mocker):
         reply_succeeded,
         reply_failed,
         0,
+        controller.authenticated_user,
+        sender_is_current_user=True,
     )
     cv.scroll.conversation_layout.insertWidget.assert_called_once_with(
         0, reply_widget_res, alignment=Qt.AlignRight
     )
+
+
+def test_ConversationView_add_reply_from_reply_box_does_not_send_when_not_authenticated(mocker):
+    """
+    Ensure we do not send a reply from reply box when the user is no longer authenticated.
+    """
+    source = factory.Source()
+    reply_ready = mocker.MagicMock()
+    reply_download_failed = mocker.MagicMock()
+    reply_succeeded = mocker.MagicMock()
+    reply_failed = mocker.MagicMock()
+    controller = mocker.MagicMock(
+        reply_ready=reply_ready,
+        reply_download_failed=reply_download_failed,
+        reply_succeeded=reply_succeeded,
+        reply_failed=reply_failed,
+    )
+    controller.authenticated_user = None
+    cv = ConversationView(source, controller)
+    cv.scroll.conversation_layout = mocker.MagicMock()
+    reply_widget_res = mocker.MagicMock()
+    reply_widget = mocker.patch(
+        "securedrop_client.gui.widgets.ReplyWidget", return_value=reply_widget_res
+    )
+
+    cv.add_reply_from_reply_box(uuid="abc123", content="test message")
+
+    reply_widget.assert_not_called()
+    cv.scroll.conversation_layout.insertWidget.assert_not_called()
 
 
 def test_ConversationView_add_reply(mocker, session, source):
@@ -3701,12 +3901,13 @@ def test_ConversationView_add_reply(mocker, session, source):
     mock_reply_download_failed_signal = mocker.MagicMock()
     mock_reply_succeeded_signal = mocker.MagicMock()
     mock_reply_failed_signal = mocker.MagicMock()
-    mocked_controller = mocker.MagicMock(
+    controller = mocker.MagicMock(
         session=session,
         reply_ready=mock_reply_ready_signal,
         reply_download_failed=mock_reply_download_failed_signal,
         reply_succeeded=mock_reply_succeeded_signal,
         reply_failed=mock_reply_failed_signal,
+        authentication_state=mocker.MagicMock(),
     )
 
     content = "a sea, a bee"
@@ -3714,7 +3915,7 @@ def test_ConversationView_add_reply(mocker, session, source):
     session.add(reply)
     session.commit()
 
-    cv = ConversationView(source, mocked_controller)
+    cv = ConversationView(source, controller)
     cv.scroll.conversation_layout = mocker.MagicMock()
     # this is the Reply that __init__() would return
     reply_widget_res = mocker.MagicMock()
@@ -3723,10 +3924,13 @@ def test_ConversationView_add_reply(mocker, session, source):
         "securedrop_client.gui.widgets.ReplyWidget", return_value=reply_widget_res
     )
 
-    cv.add_reply(reply, 0)
+    sender = factory.User()
+
+    cv.add_reply(reply=reply, sender=sender, index=0)
 
     # check that we built the widget was called with the correct args
     mock_reply_widget.assert_called_once_with(
+        controller,
         reply.uuid,
         content,
         "SUCCEEDED",
@@ -3735,9 +3939,10 @@ def test_ConversationView_add_reply(mocker, session, source):
         mock_reply_succeeded_signal,
         mock_reply_failed_signal,
         0,
+        sender,
         False,
+        failed_to_decrypt=False,
     )
-
     # check that we added the correct widget to the layout
     cv.scroll.conversation_layout.insertWidget.assert_called_once_with(
         0, reply_widget_res, alignment=Qt.AlignRight
@@ -3756,19 +3961,20 @@ def test_ConversationView_add_reply_no_content(mocker, session, source):
     mock_reply_download_failed_signal = mocker.MagicMock()
     mock_reply_succeeded_signal = mocker.MagicMock()
     mock_reply_failed_signal = mocker.MagicMock()
-    mocked_controller = mocker.MagicMock(
+    controller = mocker.MagicMock(
         session=session,
         reply_ready=mock_reply_ready_signal,
         reply_download_failed=mock_reply_download_failed_signal,
         reply_succeeded=mock_reply_succeeded_signal,
         reply_failed=mock_reply_failed_signal,
+        authentication_state=mocker.MagicMock(),
     )
 
     reply = factory.Reply(source=source, is_decrypted=False, content=None)
     session.add(reply)
     session.commit()
 
-    cv = ConversationView(source, mocked_controller)
+    cv = ConversationView(source, controller)
     cv.scroll.conversation_layout = mocker.MagicMock()
     # this is the Reply that __init__() would return
     reply_widget_res = mocker.MagicMock()
@@ -3777,10 +3983,13 @@ def test_ConversationView_add_reply_no_content(mocker, session, source):
         "securedrop_client.gui.widgets.ReplyWidget", return_value=reply_widget_res
     )
 
-    cv.add_reply(reply, 0)
+    sender = factory.User()
+
+    cv.add_reply(reply=reply, sender=sender, index=0)
 
     # check that we built the widget was called with the correct args
     mock_reply_widget.assert_called_once_with(
+        controller,
         reply.uuid,
         "<Reply not yet available>",
         "SUCCEEDED",
@@ -3789,9 +3998,68 @@ def test_ConversationView_add_reply_no_content(mocker, session, source):
         mock_reply_succeeded_signal,
         mock_reply_failed_signal,
         0,
+        sender,
         False,
+        failed_to_decrypt=False,
     )
 
+    # check that we added the correct widget to the layout
+    cv.scroll.conversation_layout.insertWidget.assert_called_once_with(
+        0, reply_widget_res, alignment=Qt.AlignRight
+    )
+
+
+def test_ConversationView_add_reply_that_has_current_user_as_sender(mocker, session, source):
+    """
+    Adding a reply from a source results in a new ReplyWidget added to the layout.
+    """
+    source = source["source"]  # grab the source from the fixture dict for simplicity
+
+    mock_reply_ready_signal = mocker.MagicMock()
+    mock_reply_download_failed_signal = mocker.MagicMock()
+    mock_reply_succeeded_signal = mocker.MagicMock()
+    mock_reply_failed_signal = mocker.MagicMock()
+    authenticated_user = factory.User()
+    controller = mocker.MagicMock(
+        session=session,
+        reply_ready=mock_reply_ready_signal,
+        reply_download_failed=mock_reply_download_failed_signal,
+        reply_succeeded=mock_reply_succeeded_signal,
+        reply_failed=mock_reply_failed_signal,
+        authenticated_user=authenticated_user,
+        authentication_state=mocker.MagicMock(),
+    )
+
+    reply = factory.Reply(source=source, content=">^..^<")
+    session.add(reply)
+    session.commit()
+
+    cv = ConversationView(source, controller)
+    cv.scroll.conversation_layout = mocker.MagicMock()
+    # this is the Reply that __init__() would return
+    reply_widget_res = mocker.MagicMock()
+    # mock the actual MessageWidget so we can inspect the __init__ call
+    mock_reply_widget = mocker.patch(
+        "securedrop_client.gui.widgets.ReplyWidget", return_value=reply_widget_res
+    )
+
+    cv.add_reply(reply=reply, sender=authenticated_user, index=0)
+
+    # check that we built the widget was called with the correct args
+    mock_reply_widget.assert_called_once_with(
+        controller,
+        reply.uuid,
+        ">^..^<",
+        "SUCCEEDED",
+        mock_reply_ready_signal,
+        mock_reply_download_failed_signal,
+        mock_reply_succeeded_signal,
+        mock_reply_failed_signal,
+        0,
+        authenticated_user,
+        True,
+        failed_to_decrypt=False,
+    )
     # check that we added the correct widget to the layout
     cv.scroll.conversation_layout.insertWidget.assert_called_once_with(
         0, reply_widget_res, alignment=Qt.AlignRight
@@ -4142,39 +4410,43 @@ def test_ReplyBoxWidget_on_sync_source_deleted(mocker, source):
 
 def test_ReplyWidget_success_failure_slots(mocker):
     mock_update_signal = mocker.Mock()
-    mock_download_failed_signal = mocker.Mock()
+    mock_download_failure_signal = mocker.Mock()
     mock_success_signal = mocker.Mock()
     mock_failure_signal = mocker.Mock()
-    msg_id = "abc123"
-
+    controller = mocker.MagicMock(authentication_state=mocker.MagicMock())
+    sender = factory.User()
     widget = ReplyWidget(
-        msg_id,
-        "lol",
-        "PENDING",
-        mock_update_signal,
-        mock_download_failed_signal,
-        mock_success_signal,
-        mock_failure_signal,
-        0,
+        controller=controller,
+        message_uuid="dummy_uuid",
+        message="dummy_message",
+        reply_status="PENDING",
+        update_signal=mock_update_signal,
+        download_error_signal=mock_download_failure_signal,
+        message_succeeded_signal=mock_success_signal,
+        message_failed_signal=mock_failure_signal,
+        index=0,
+        sender=sender,
+        sender_is_current_user=False,
+        failed_to_decrypt=False,
     )
 
     # ensure we have connected the slots
     mock_success_signal.connect.assert_called_once_with(widget._on_reply_success)
     mock_failure_signal.connect.assert_called_once_with(widget._on_reply_failure)
     assert mock_update_signal.connect.called  # to ensure no stale mocks
-    assert mock_download_failed_signal.connect.called
+    assert mock_download_failure_signal.connect.called
 
     # check the success slog
-    widget._on_reply_success("mock_source_id", msg_id + "x", "lol")
+    widget._on_reply_success("mock_source_id", "dummy_uuid" + "x", "dummy_message")
     assert widget.error.isHidden()
-    widget._on_reply_success("mock_source_id", msg_id, "lol")
+    widget._on_reply_success("mock_source_id", "dummy_uuid", "dummy_message")
     assert widget.error.isHidden()
 
     # check the failure slot where message id does not match
-    widget._on_reply_failure(msg_id + "x")
+    widget._on_reply_failure("dummy_uuid" + "x")
     assert widget.error.isHidden()
     # check the failure slot where message id matches
-    widget._on_reply_failure(msg_id)
+    widget._on_reply_failure("dummy_uuid")
     assert not widget.error.isHidden()
 
 
@@ -4194,16 +4466,15 @@ def test_ReplyBoxWidget__on_authentication_changed(mocker, homedir):
 
 def test_ReplyBoxWidget_on_authentication_changed_source_deleted(mocker, source):
     s = source["source"]
-    controller = mocker.MagicMock()
-    rb = ReplyBoxWidget(s, controller)
+    co = mocker.MagicMock()
+    rb = ReplyBoxWidget(s, co)
 
     error_logger = mocker.patch("securedrop_client.gui.widgets.logger.debug")
 
-    def pretend_source_was_deleted(self):
-        raise sqlalchemy.orm.exc.ObjectDeletedError(attributes.instance_state(s), None)
-
-    with patch.object(ReplyBoxWidget, "update_authentication_state") as uas:
-        uas.side_effect = pretend_source_was_deleted
+    with mocker.patch(
+        "securedrop_client.gui.widgets.ReplyBoxWidget.update_authentication_state",
+        side_effect=sqlalchemy.orm.exc.ObjectDeletedError(attributes.instance_state(s), None),
+    ):
         rb._on_authentication_changed(True)
         error_logger.assert_called_once_with(
             "On authentication change, ReplyBoxWidget found its source had been deleted."
@@ -4724,6 +4995,88 @@ def test_update_conversation_content_updates(mocker, session):
     assert mock_msg_widget_res.message.setText.call_args[0][0] == expected_content
 
 
+def test_update_conversation_updates_sender(mocker, homedir, session_maker, session):
+    """
+    Ensure reply sender badge is updated when the sender is not the authenticated user.
+    """
+    source = factory.Source()
+    session.add(source)
+    reply = factory.Reply(filename="3-source-reply.gpg", source=source)
+    reply.journalist = factory.User()
+    session.add(reply.journalist)
+    session.add(reply)
+    session.commit()
+    controller = logic.Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    controller.authenticated_user = factory.User()
+    controller.update_authenticated_user = mocker.MagicMock()
+    cv = ConversationView(source, controller)
+
+    cv.update_conversation(cv.source.collection)
+
+    assert cv.current_messages[reply.uuid].sender == reply.journalist
+    assert cv.current_messages[reply.uuid].sender_icon.initials == reply.journalist.initials
+
+
+def test_update_conversation_calls_updates_sender_for_authenticated_user(
+    mocker, homedir, session_maker, session
+):
+    """
+    Ensure reply sender badge is updated when the sender is the authenticated user.
+    """
+    source = factory.Source()
+    session.add(source)
+    reply = factory.Reply(filename="3-source-reply.gpg", source=source)
+    reply.journalist = factory.User()
+    session.add(reply.journalist)
+    session.add(reply)
+    session.commit()
+    controller = logic.Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    controller.authenticated_user = reply.journalist
+    controller.update_authenticated_user = mocker.MagicMock()
+    cv = ConversationView(source, controller)
+
+    cv.update_conversation(cv.source.collection)
+
+    assert cv.current_messages[reply.uuid].sender == reply.journalist
+    assert cv.current_messages[reply.uuid].sender_icon.initials == reply.journalist.initials
+
+
+def test_update_conversation_updates_sender_when_sender_changes(
+    mocker, homedir, session_maker, session
+):
+    """
+    Ensure reply sender badge is updated when the sender changes due to deletion or is updated.
+    """
+    source = factory.Source()
+    session.add(source)
+    reply = factory.Reply(filename="3-source-reply.gpg", source=source)
+    reply.journalist = factory.User()
+    session.add(reply.journalist)
+    session.add(reply)
+    session.commit()
+    controller = logic.Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    controller.update_authenticated_user = mocker.MagicMock()
+    cv = ConversationView(source, controller)
+    cv.update_conversation(cv.source.collection)
+
+    reply.journalist.firstname = "abc"
+    reply.journalist.lastname = "123"
+    cv.update_conversation(cv.source.collection)
+
+    assert cv.current_messages[reply.uuid].sender == reply.journalist
+    assert cv.current_messages[reply.uuid].sender_icon.initials == "a1"
+
+    deleted_user_account = factory.User(username="xyz", firstname=None, lastname=None)
+    reply.journalist = deleted_user_account
+    session.add(reply)
+    session.commit()
+
+    cv.update_conversation(cv.source.collection)
+
+    assert cv.current_messages[reply.uuid].sender == deleted_user_account
+    assert cv.current_messages[reply.uuid].sender_icon.initials == deleted_user_account.initials
+
+
 def test_SourceProfileShortWidget_update_timestamp(mocker):
     """
     Ensure the update_timestamp slot actually updates the LastUpdatedLabel
@@ -4739,3 +5092,73 @@ def test_SourceProfileShortWidget_update_timestamp(mocker):
     spsw.updated.setText.assert_called_once_with(
         arrow.get(mock_source.last_updated).format("DD MMM")
     )
+
+
+def test_SenderIcon_for_deleted_user(mocker):
+    """
+    Ensure reply sender badge shows image instead of initials for delted user.
+    """
+    sender = factory.User(uuid="deleted")
+    si = SenderIcon()
+    si.label.setPixmap = mocker.MagicMock()
+
+    si.initials = sender.initials
+
+    assert si.label.setPixmap.call_count == 1
+
+
+def test_SenderIcon_sets_text_to_initials(mocker):
+    """
+    Ensure reply sender badge sets label to initials of the sender.
+    """
+    sender = factory.User()
+    si = SenderIcon()
+    si.label.setText = mocker.MagicMock()
+
+    si.initials = sender.initials
+
+    si.label.setText.assert_called_once_with(sender.initials)
+
+
+def test_SenderIcon_sets_text_to_initials_for_authenticated_user(mocker):
+    """
+    Ensure reply sender badge sets label to initials of the sender for authnenticated user.
+    """
+    sender = factory.User()
+    si = SenderIcon()
+    si.label.setText = mocker.MagicMock()
+    si.is_current_user = True
+
+    si.initials = sender.initials
+
+    si.label.setText.assert_called_once_with(sender.initials)
+
+
+def test_SenderIcon_set_pending_styles_purple_for_authenticated_user(mocker):
+    """
+    Ensure reply sender badge is blue when the sender is not the authenticated user.
+    """
+    sender = factory.User()
+    si = SenderIcon()
+    si.setObjectName = mocker.MagicMock()
+    si.is_current_user = True
+    si.initials = sender.initials
+
+    si.set_pending_styles()
+
+    si.setObjectName.assert_called_once_with("SenderIcon_current_user_pending")
+
+
+def test_SenderIcon_set_normal_styles_purple_for_authenticated_user(mocker):
+    """
+    Ensure reply sender badge is purple when the sender is the authenticated user.
+    """
+    sender = factory.User()
+    si = SenderIcon()
+    si.setObjectName = mocker.MagicMock()
+    si.is_current_user = True
+    si.initials = sender.initials
+
+    si.set_normal_styles()
+
+    si.setObjectName.assert_called_once_with("SenderIcon_current_user")

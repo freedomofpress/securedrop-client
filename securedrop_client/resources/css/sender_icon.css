@@ -1,0 +1,59 @@
+#SenderIcon QLabel {
+    border: none;
+    background-color: #0065db;
+    padding-right: 1px;
+    font-family: 'Source Sans Pro';
+    font-weight: 500;
+    font-size: 23px;
+    color: #fff;
+}
+
+#SenderIcon_pending QLabel {
+    border: none;
+    background-color: #0065db;
+    padding-right: 1px;
+    font-family: 'Source Sans Pro';
+    font-weight: 500;
+    font-size: 23px;
+    color: #fff;
+}
+
+#SenderIcon_failed QLabel {
+    border: none;
+    background-color: #ff3366;
+    padding-right: 1px;
+    font-family: 'Source Sans Pro';
+    font-weight: 500;
+    font-size: 23px;
+    color: #fff;
+}
+
+#SenderIcon_failed_to_decrypt QLabel {
+    border: none;
+    background-color: #bcbfcd;
+    padding-right: 1px;
+    font-family: 'Source Sans Pro';
+    font-weight: 500;
+    font-size: 23px;
+    color: #fff;
+}
+
+#SenderIcon_current_user QLabel {
+    border: none;
+    background-color: #9211ff;
+    padding-right: 1px;
+    font-family: 'Source Sans Pro';
+    font-weight: 500;
+    font-size: 23px;
+    color: #fff;
+}
+
+#SenderIcon_current_user_pending QLabel {
+    border: none;
+    background-color: #9211ff;
+    padding-right: 1px;
+    font-family: 'Source Sans Pro';
+    font-weight: 500;
+    font-size: 23px;
+    color: #fff;
+}

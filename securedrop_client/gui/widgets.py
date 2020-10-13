@@ -62,7 +62,15 @@ from PyQt5.QtWidgets import (
 )
 
 from securedrop_client import __version__ as sd_version
-from securedrop_client.db import DraftReply, File, Message, Reply, Source, User
+from securedrop_client.db import (
+    DraftReply,
+    File,
+    Message,
+    Reply,
+    ReplySendStatusCodes,
+    Source,
+    User,
+)
 from securedrop_client.export import ExportError, ExportStatus
 from securedrop_client.gui import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.logic import Controller
@@ -427,12 +435,18 @@ class UserProfile(QLabel):
         layout.addWidget(self.user_button, alignment=Qt.AlignTop)
 
     def setup(self, window, controller):
+        self.controller = controller
+        self.controller.update_authenticated_user.connect(self._on_update_authenticated_user)
         self.user_button.setup(controller)
         self.login_button.setup(window)
 
+    @pyqtSlot(User)
+    def _on_update_authenticated_user(self, db_user: User) -> None:
+        self.set_user(db_user)
+
     def set_user(self, db_user: User):
         self.user_icon.setText(_(db_user.initials))
-        self.user_button.set_username(db_user.fullname)
+        self.user_button.set_username(_(db_user.fullname))
 
     def show(self):
         self.login_button.hide()
@@ -478,10 +492,10 @@ class UserButton(SvgPushButton):
         # Set cursor.
         self.setCursor(QCursor(Qt.PointingHandCursor))
 
-    def setup(self, controller):
+    def setup(self, controller: Controller) -> None:
         self.menu.setup(controller)
 
-    def set_username(self, username):
+    def set_username(self, username: str) -> None:
         formatted_name = _("{}").format(html.escape(username))
         self.setText(formatted_name)
         if len(formatted_name) > 21:
@@ -1639,6 +1653,81 @@ class LoginDialog(QDialog):
             self.error(_("Please enter a username, passphrase and " "two-factor code."))
 
 
+class SenderIcon(QWidget):
+    """
+    Represents a reply to a source.
+    """
+
+    SENDER_ICON_CSS = load_css("sender_icon.css")
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._is_current_user = False
+        self._initials = ""
+        self.setObjectName("SenderIcon")
+        self.setStyleSheet(self.SENDER_ICON_CSS)
+        self.setFixedSize(QSize(48, 48))
+        font = QFont()
+        font.setLetterSpacing(QFont.AbsoluteSpacing, 0.58)
+        self.label = QLabel()
+        self.label.setAlignment(Qt.AlignCenter)
+        self.label.setFont(font)
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(self.label)
+        self.setLayout(layout)
+
+    @property
+    def is_current_user(self) -> bool:
+        return self._is_current_user
+
+    @is_current_user.setter
+    def is_current_user(self, is_current_user: bool) -> None:
+        if self._is_current_user != is_current_user:
+            self._is_current_user = is_current_user
+
+    @property
+    def initials(self) -> str:
+        return self._initials
+
+    @initials.setter
+    def initials(self, initials: str) -> None:
+        if not initials:
+            self.label.setPixmap(load_image("deleted-user.svg"))
+        else:
+            self.label.setText(initials)
+
+        if self._initials != initials:
+            self._initials = initials
+
+    def set_normal_styles(self):
+        self.setStyleSheet("")
+        if self.is_current_user:
+            self.setObjectName("SenderIcon_current_user")
+        else:
+            self.setObjectName("SenderIcon")
+        self.setStyleSheet(self.SENDER_ICON_CSS)
+
+    def set_failed_styles(self):
+        self.setStyleSheet("")
+        self.setObjectName("SenderIcon_failed")
+        self.setStyleSheet(self.SENDER_ICON_CSS)
+
+    def set_pending_styles(self):
+        self.setStyleSheet("")
+        if self.is_current_user:
+            self.setObjectName("SenderIcon_current_user_pending")
+        else:
+            self.setObjectName("SenderIcon_pending")
+        self.setStyleSheet(self.SENDER_ICON_CSS)
+
+    def set_failed_to_decrypt_styles(self):
+        self.setStyleSheet("")
+        self.setObjectName("SenderIcon_failed_to_decrypt")
+        self.setStyleSheet(self.SENDER_ICON_CSS)
+
+
 class SpeechBubble(QWidget):
     """
     Represents a speech bubble that's part of a conversation between a source
@@ -1658,11 +1747,12 @@ class SpeechBubble(QWidget):
         update_signal,
         download_error_signal,
         index: int,
-        error: bool = False,
+        failed_to_decrypt: bool = False,
     ) -> None:
         super().__init__()
         self.uuid = message_uuid
         self.index = index
+        self.failed_to_decrypt = failed_to_decrypt
 
         # Set layout
         layout = QVBoxLayout()
@@ -1682,6 +1772,10 @@ class SpeechBubble(QWidget):
         self.color_bar.setObjectName("SpeechBubble_status_bar")
         self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
 
+        # User icon
+        self.sender_icon = SenderIcon()
+        self.sender_icon.hide()
+
         # Speech bubble
         self.speech_bubble = QWidget()
         self.speech_bubble.setObjectName("SpeechBubble_container")
@@ -1698,6 +1792,7 @@ class SpeechBubble(QWidget):
         self.bubble_area_layout = QHBoxLayout()
         self.bubble_area_layout.setContentsMargins(0, self.TOP_MARGIN, 0, self.BOTTOM_MARGIN)
         bubble_area.setLayout(self.bubble_area_layout)
+        self.bubble_area_layout.addWidget(self.sender_icon, alignment=Qt.AlignBottom)
         self.bubble_area_layout.addWidget(self.speech_bubble)
 
         # Add widget to layout
@@ -1707,32 +1802,33 @@ class SpeechBubble(QWidget):
         self.message.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.message.setContextMenuPolicy(Qt.NoContextMenu)
 
-        if error:
+        if self.failed_to_decrypt:
             self.set_failed_to_decrypt_styles()
 
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         # Connect signals to slots
         update_signal.connect(self._update_text)
-        download_error_signal.connect(self.set_error)
+        download_error_signal.connect(self._on_download_error)
 
     @pyqtSlot(str, str, str)
-    def _update_text(self, source_id: str, message_uuid: str, text: str) -> None:
+    def _update_text(self, source_uuid: str, uuid: str, text: str) -> None:
         """
         Conditionally update this SpeechBubble's text if and only if the message_uuid of the emitted
         signal matches the uuid of this speech bubble.
         """
-        if message_uuid == self.uuid:
+        if self.uuid == uuid:
             self.message.setText(text)
             self.set_normal_styles()
 
     @pyqtSlot(str, str, str)
-    def set_error(self, source_uuid: str, uuid: str, text: str):
+    def _on_download_error(self, source_uuid: str, uuid: str, text: str) -> None:
         """
         Adjust style and text to indicate an error.
         """
-        if uuid == self.uuid:
+        if self.uuid == uuid:
             self.message.setText(text)
+            self.failed_to_decrypt = True
             self.set_failed_to_decrypt_styles()
 
     def set_normal_styles(self):
@@ -1750,6 +1846,7 @@ class SpeechBubble(QWidget):
         self.color_bar.setStyleSheet("")
         self.color_bar.setObjectName("SpeechBubble_status_bar_decryption_error")
         self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
+        self.sender_icon.set_failed_to_decrypt_styles()
 
 
 class MessageWidget(SpeechBubble):
@@ -1764,9 +1861,11 @@ class MessageWidget(SpeechBubble):
         update_signal,
         download_error_signal,
         index: int,
-        error: bool = False,
+        failed_to_decrypt: bool = False,
     ) -> None:
-        super().__init__(message_uuid, message, update_signal, download_error_signal, index, error)
+        super().__init__(
+            message_uuid, message, update_signal, download_error_signal, index, failed_to_decrypt
+        )
 
 
 class ReplyWidget(SpeechBubble):
@@ -1779,6 +1878,7 @@ class ReplyWidget(SpeechBubble):
 
     def __init__(
         self,
+        controller: Controller,
         message_uuid: str,
         message: str,
         reply_status: str,
@@ -1787,10 +1887,19 @@ class ReplyWidget(SpeechBubble):
         message_succeeded_signal,
         message_failed_signal,
         index: int,
-        error: bool = False,
+        sender: User,
+        sender_is_current_user: bool,
+        failed_to_decrypt: bool = False,
     ) -> None:
-        super().__init__(message_uuid, message, update_signal, download_error_signal, index, error)
+        super().__init__(
+            message_uuid, message, update_signal, download_error_signal, index, failed_to_decrypt
+        )
+        self.controller = controller
+        self.status = reply_status
         self.uuid = message_uuid
+        self._sender = sender
+        self._sender_is_current_user = sender_is_current_user
+        self.failed_to_decrypt = failed_to_decrypt
 
         self.error = QWidget()
         error_layout = QHBoxLayout()
@@ -1806,61 +1915,129 @@ class ReplyWidget(SpeechBubble):
         self.error.hide()
 
         self.bubble_area_layout.addWidget(self.error)
+        self.sender_icon.show()
 
         message_succeeded_signal.connect(self._on_reply_success)
         message_failed_signal.connect(self._on_reply_failure)
+        self.controller.update_authenticated_user.connect(self._on_update_authenticated_user)
+        self.controller.authentication_state.connect(self._on_authentication_changed)
 
-        if reply_status == "SUCCEEDED":
-            self.set_normal_styles()
-            self.error.hide()
-        elif reply_status == "FAILED":
-            self.set_failed_styles()
-            self.error.show()
-        elif reply_status == "PENDING":
-            self.set_pending_styles()
+        self.sender_icon.is_current_user = self._sender_is_current_user
+        if self._sender:
+            self.sender_icon.initials = self._sender.initials
+
+        self._update_styles()
+
+    @property
+    def sender_is_current_user(self) -> bool:
+        return self._sender_is_current_user
+
+    @sender_is_current_user.setter
+    def sender_is_current_user(self, sender_is_current_user: bool) -> None:
+        if self._sender_is_current_user != sender_is_current_user:
+            self._sender_is_current_user = sender_is_current_user
+            self.sender_icon.is_current_user = sender_is_current_user
+
+    @property
+    def sender(self) -> User:
+        return self._sender
+
+    @sender.setter
+    def sender(self, sender: User) -> None:
+        if self._sender != sender:
+            self._sender = sender
+
+        if self._sender:
+            self.sender_icon.initials = self._sender.initials
+
+    @pyqtSlot(bool)
+    def _on_authentication_changed(self, authenticated: bool) -> None:
+        """
+        When the user logs out, update the reply badge.
+        """
+        if not authenticated:
+            self.sender_is_current_user = False
+            self._update_styles()
+
+    @pyqtSlot(User)
+    def _on_update_authenticated_user(self, user: User) -> None:
+        """
+        When the user logs in or updates user info, update the reply badge.
+        """
+        if user.uuid == self.sender.uuid:
+            self.sender_is_current_user = True
+            self.sender = user
+            self._update_styles()
 
     @pyqtSlot(str, str, str)
-    def _on_reply_success(self, source_id: str, message_uuid: str, content: str) -> None:
+    def _on_reply_success(self, source_uuid: str, uuid: str, content: str) -> None:
         """
         Conditionally update this ReplyWidget's state if and only if the message_uuid of the emitted
         signal matches the uuid of this widget.
         """
-        if message_uuid == self.uuid:
-            self.set_normal_styles()
-            self.error.hide()
+        if self.uuid == uuid:
+            self.status = "SUCCEEDED"  # TODO: Add and use success status in db.ReplySendStatusCodes
+            self.failed_to_decrypt = False
+            self._update_styles()
 
     @pyqtSlot(str)
-    def _on_reply_failure(self, message_uuid: str) -> None:
+    def _on_reply_failure(self, uuid: str) -> None:
         """
         Conditionally update this ReplyWidget's state if and only if the message_uuid of the emitted
         signal matches the uuid of this widget.
         """
-        if message_uuid == self.uuid:
+        if self.uuid == uuid:
+            self.status = ReplySendStatusCodes.FAILED.value
+            self.failed_to_decrypt = False
+            self._update_styles()
+
+    def _update_styles(self) -> None:
+        if self.failed_to_decrypt:
+            self.set_failed_to_decrypt_styles()
+        elif self.status == ReplySendStatusCodes.PENDING.value:
+            self.set_pending_styles()
+        elif self.status == ReplySendStatusCodes.FAILED.value:
             self.set_failed_styles()
             self.error.show()
+        else:
+            self.set_normal_styles()
+            self.error.hide()
 
     def set_normal_styles(self):
         self.message.setStyleSheet("")
         self.message.setObjectName("SpeechBubble_message")
         self.message.setStyleSheet(self.MESSAGE_CSS)
-        self.color_bar.setStyleSheet("")
-        self.color_bar.setObjectName("ReplyWidget_status_bar")
-        self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
 
-    def set_failed_styles(self):
-        self.message.setStyleSheet("")
-        self.message.setObjectName("ReplyWidget_message_failed")
-        self.message.setStyleSheet(self.MESSAGE_CSS)
+        self.sender_icon.set_normal_styles()
+
         self.color_bar.setStyleSheet("")
-        self.color_bar.setObjectName("ReplyWidget_status_bar_failed")
+        if self.sender_is_current_user:
+            self.color_bar.setObjectName("ReplyWidget_status_bar_current_user")
+        else:
+            self.color_bar.setObjectName("ReplyWidget_status_bar")
         self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
 
     def set_pending_styles(self):
         self.message.setStyleSheet("")
         self.message.setObjectName("ReplyWidget_message_pending")
         self.message.setStyleSheet(self.MESSAGE_CSS)
+
+        self.sender_icon.set_pending_styles()
+
         self.color_bar.setStyleSheet("")
-        self.color_bar.setObjectName("ReplyWidget_status_bar_pending")
+        if self.sender_is_current_user:
+            self.color_bar.setObjectName("ReplyWidget_status_bar_pending_current_user")
+        else:
+            self.color_bar.setObjectName("ReplyWidget_status_bar_pending")
+        self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
+
+    def set_failed_styles(self):
+        self.message.setStyleSheet("")
+        self.message.setObjectName("ReplyWidget_message_failed")
+        self.message.setStyleSheet(self.MESSAGE_CSS)
+        self.sender_icon.set_failed_styles()
+        self.color_bar.setStyleSheet("")
+        self.color_bar.setObjectName("ReplyWidget_status_bar_failed")
         self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
 
 
@@ -2775,12 +2952,19 @@ class ConversationView(QWidget):
                         item_widget.message.text() != conversation_item.content
                     ) and conversation_item.content:
                         item_widget.message.setText(conversation_item.content)
+
+                # TODO: Once the SDK supports the new /users endpoint, this code can be replaced so
+                # that we can also update user accounts in the local db who have not sent replies.
+                if isinstance(item_widget, ReplyWidget):
+                    self.controller.session.refresh(conversation_item)
+                    self.controller.session.refresh(conversation_item.journalist)
+                    item_widget.sender = conversation_item.journalist
             else:
                 # add a new item to be displayed.
                 if isinstance(conversation_item, Message):
                     self.add_message(conversation_item, index)
                 elif isinstance(conversation_item, (DraftReply, Reply)):
-                    self.add_reply(conversation_item, index)
+                    self.add_reply(conversation_item, conversation_item.journalist, index)
                 else:
                     self.add_file(conversation_item, index)
 
@@ -2836,17 +3020,25 @@ class ConversationView(QWidget):
         self.current_messages[message.uuid] = conversation_item
         self.conversation_updated.emit()
 
-    def add_reply(self, reply: Union[DraftReply, Reply], index) -> None:
+    def add_reply(self, reply: Union[DraftReply, Reply], sender: User, index: int) -> None:
         """
         Add a reply from a journalist to the source.
         """
         try:
             send_status = reply.send_status.name
         except AttributeError:
-            send_status = "SUCCEEDED"
+            send_status = "SUCCEEDED"  # TODO: Add and use success status in db.ReplySendStatusCodes
 
-        logger.debug("adding reply: with status {}".format(send_status))
+        if (
+            self.controller.authenticated_user
+            and self.controller.authenticated_user.id == reply.journalist_id
+        ):
+            sender_is_current_user = True
+        else:
+            sender_is_current_user = False
+
         conversation_item = ReplyWidget(
+            self.controller,
             reply.uuid,
             str(reply),
             send_status,
@@ -2855,8 +3047,11 @@ class ConversationView(QWidget):
             self.controller.reply_succeeded,
             self.controller.reply_failed,
             index,
-            getattr(reply, "download_error", None) is not None,
+            sender,
+            sender_is_current_user,
+            failed_to_decrypt=getattr(reply, "download_error", None) is not None,
         )
+
         self.scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignRight)
         self.current_messages[reply.uuid] = conversation_item
 
@@ -2864,8 +3059,13 @@ class ConversationView(QWidget):
         """
         Add a reply from the reply box.
         """
+        if not self.controller.authenticated_user:
+            logger.error("User is no longer authenticated so cannot send reply.")
+            return
+
         index = len(self.current_messages)
         conversation_item = ReplyWidget(
+            self.controller,
             uuid,
             content,
             "PENDING",
@@ -2874,6 +3074,8 @@ class ConversationView(QWidget):
             self.controller.reply_succeeded,
             self.controller.reply_failed,
             index,
+            self.controller.authenticated_user,
+            sender_is_current_user=True,
         )
         self.scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignRight)
         self.current_messages[uuid] = conversation_item
@@ -3046,6 +3248,7 @@ class ReplyBoxWidget(QWidget):
             self.controller.send_reply(self.source.uuid, reply_uuid, reply_text)
             self.reply_sent.emit(self.source.uuid, reply_uuid, reply_text)
 
+    @pyqtSlot(bool)
     def _on_authentication_changed(self, authenticated: bool) -> None:
         try:
             self.update_authentication_state(authenticated)

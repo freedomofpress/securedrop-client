@@ -16,8 +16,3 @@ def test_styles(modal_dialog):
 
     assert "#ffffff" == continue_button.palette().color(QPalette.Foreground).name()
     assert "#f1f1f6" == continue_button.palette().color(QPalette.Background).name()
-    # assert border: 2px solid #f1f1f6;
-    # assert (12, 0, 0, 0) == continue_button.getContentsMargins()
-    # assert 40 == continue_button.height()
-    # assert padding-left: 20px;
-    # assert padding-right: 20px;

@@ -32,3 +32,17 @@
     background-color: #ff3366;
     border: 0px;
 }
+
+#ReplyWidget_status_bar_current_user {
+    min-height: 5px;
+    max-height: 5px;
+    background-color: #9211ff;
+    border: 0px;
+}
+
+#ReplyWidget_status_bar_pending_current_user {
+    min-height: 5px;
+    max-height: 5px;
+    background-color: #9211ff;
+    border: 0px;
+}

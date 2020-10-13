@@ -14,7 +14,7 @@ def test_styles(mocker, main_window):
     assert "#3b3b3b" == speech_bubble.message.palette().color(QPalette.Foreground).name()
     assert "#ffffff" == speech_bubble.message.palette().color(QPalette.Background).name()
 
-    speech_bubble.set_error("123", speech_bubble.uuid, speech_bubble.message.text())
+    speech_bubble._on_download_error("123", speech_bubble.uuid, speech_bubble.message.text())
 
     assert 540 == speech_bubble.speech_bubble.minimumSize().width()
     assert 540 == speech_bubble.speech_bubble.maximumSize().width()
