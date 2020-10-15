@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.4
+  * Removes mimetype associations and open-in-dvm desktop file
+
 ## 0.2.3
 
   * Adds gnome-disks to sd-devices
