@@ -166,6 +166,7 @@ If this is the first time you are generating new cassettes that make API calls o
 
     ```bash
     git clone https://github.com/freedomofpress/securedrop
+    cd securedrop
     virtualenv .venv --python=python3
     source .venv/bin/activate
     pip install -r securedrop/requirements/python3/develop-requirements.txt
@@ -194,23 +195,24 @@ sd-dev-proxy sd-dev allow
 ```
 
 9. Verify qrexec communication between `sd-dev-proxy` and `sd-dev` is set up properly.
+
     a. Run the server on `sd-dev-proxy` if it isn't already running:
 
-        ```bash
-        NUM_SOURCES=5 make dev
-        ```
+    ```bash
+    NUM_SOURCES=5 make dev
+    ```
     b. With the main branch of this repo checked out on `sd-dev`, comment out the `@dastollervey_datasaver` decorator above the `test_apiproxy.py::TestAPIProxy::setUp` method so that `test_api_auth` makes an actual API call over qrexec.
     c. Run `test_api_auth`:
 
-        ```bash
-        make test TESTS=tests/test_apiproxy.py::TestAPIProxy::test_api_auth
-        ```
+    ```bash
+    make test TESTS=tests/test_apiproxy.py::TestAPIProxy::test_api_auth
+    ```
 
     **Note:** If the test fails, run `journalctl -f` in **dom0** before trying again to see if communication between `sd-dev` and `sd-dev-proxy` is being denied. A successful log looks like this:
 
-        ```
-        Aug 28 15:45:13 dom0 qrexec[1474]: securedrop.Proxy: sd-dev -> sd-dev-proxy: allowed to sd-dev-proxy
-        ```
+    ```
+    Aug 28 15:45:13 dom0 qrexec[1474]: securedrop.Proxy: sd-dev -> sd-dev-proxy: allowed to sd-dev-proxy
+    ```
 
 # Releasing
 
