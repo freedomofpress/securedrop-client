@@ -87,6 +87,7 @@ class Reply:
             "size",
             "source_url",
             "uuid",
+            "seen_by",
         ]:
             if key not in kwargs:
                 AttributeError("Missing key {}".format(key))
@@ -125,11 +126,15 @@ class Submission:
             "source_url",
             "submission_url",
             "uuid",
+            "seen_by",
         ]:
             if key not in kwargs:
                 AttributeError("Missing key {}".format(key))
             setattr(self, key, kwargs[key])
         _, self.source_uuid = self.source_url.rsplit("/", 1)
+
+    def is_file(self) -> bool:
+        return self.filename.endswith("doc.gz.gpg") or self.filename.endswith("doc.zip.gpg")
 
 
 class Source:

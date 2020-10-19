@@ -70,6 +70,28 @@ class TestAPIProxy(unittest.TestCase):
         self.assertTrue(isinstance(self.api.last_name, (str, type(None))))
 
     @dastollervey_datasaver
+    def test_seen(self):
+        submissions = self.api.get_all_submissions()
+        replies = self.api.get_all_replies()
+
+        file_uuids = []
+        message_uuids = []
+        reply_uuids = []
+
+        for submission in submissions:
+            if submission.is_file():
+                file_uuids.append(submission.uuid)
+            else:
+                message_uuids.append(submission.uuid)
+
+        for reply in replies:
+            reply_uuids.append(reply.uuid)
+
+        self.assertTrue(
+            self.api.seen(files=file_uuids, messages=message_uuids, replies=reply_uuids)
+        )
+
+    @dastollervey_datasaver
     def test_get_sources(self):
         sources = self.api.get_sources()
         for source in sources:

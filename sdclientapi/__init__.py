@@ -802,3 +802,33 @@ class API:
             return True
         else:
             return False
+
+    def seen(self, files: List[str], messages: List[str], replies: List[str]) -> str:
+        """
+        Mark supplied files, messages, and replies as seen by the current user. The current user
+        will be retrieved from the auth header on the server.
+
+        :param conversation_items: The items to mark as seen by the current user.
+        :param files: list of file uuids to mark as seen
+        :param messages: list of message uuids to mark as seen
+        :param replies: list of reply uuids to mark as seen
+        :returns: Raise exception if 404, else the direct response from the server
+        """
+        method = "POST"
+        path_query = "api/v1/seen"
+        body = json.dumps({"files": files, "messages": messages, "replies": replies})
+
+        data, status_code, headers = self._send_json_request(
+            method,
+            path_query,
+            headers=self.req_headers,
+            body=body,
+            timeout=self.default_request_timeout,
+        )
+
+        data_str = json.dumps(data)
+
+        if status_code == 404:
+            raise WrongUUIDError("{}".format(data_str))
+
+        return data_str
