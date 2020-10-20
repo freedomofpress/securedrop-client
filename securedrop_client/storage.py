@@ -42,6 +42,9 @@ from securedrop_client.db import (
     Reply,
     ReplySendStatus,
     ReplySendStatusCodes,
+    SeenFile,
+    SeenMessage,
+    SeenReply,
     Source,
     User,
 )
@@ -254,6 +257,32 @@ def __update_submissions(
             lazy_setattr(local_submission, "is_read", submission.is_read)
             lazy_setattr(local_submission, "download_url", submission.download_url)
 
+            # Add seen record if one doesn't yet exist
+            for journalist_uuid in submission.seen_by:
+                journalist_id = session.query(User).filter_by(uuid=journalist_uuid)
+                if model == File:
+                    seen_file = (
+                        session.query(SeenFile)
+                        .filter_by(file_id=local_submission.id, journalist_id=journalist_id)
+                        .one_or_none()
+                    )
+                    if not seen_file:
+                        seen_file = SeenFile(
+                            file_id=local_submission.id, journalist_id=journalist_id
+                        )
+                        session.add(seen_file)
+                elif model == Message:
+                    seen_message = (
+                        session.query(SeenMessage)
+                        .filter_by(message_id=local_submission.id, journalist_id=journalist_id)
+                        .one_or_none()
+                    )
+                    if not seen_message:
+                        seen_message = SeenMessage(
+                            message_id=local_submission.id, journalist_id=journalist_id
+                        )
+                        session.add(seen_message)
+
             # Removing the UUID from local_uuids ensures this record won't be
             # deleted at the end of this function.
             del local_submissions_by_uuid[submission.uuid]
@@ -328,6 +357,18 @@ def update_replies(
             lazy_setattr(local_reply, "journalist_id", user.id)
             lazy_setattr(local_reply, "size", reply.size)
             lazy_setattr(local_reply, "filename", reply.filename)
+
+            # Add seen record if one doesn't yet exist
+            for journalist_uuid in reply.seen_by:
+                journalist_id = session.query(User).filter_by(uuid=journalist_uuid)
+                seen_reply = (
+                    session.query(SeenReply)
+                    .filter_by(reply_id=local_reply.id, journalist_id=journalist_id)
+                    .one_or_none()
+                )
+                if not seen_reply:
+                    seen_reply = SeenReply(reply_id=local_reply.id, journalist_id=journalist_id)
+                    session.add(seen_reply)
 
             del local_replies_by_uuid[reply.uuid]
             logger.debug("Updated reply {}".format(reply.uuid))
