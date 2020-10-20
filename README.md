@@ -240,12 +240,6 @@ alembic upgrade head
 alembic revision --autogenerate -m "describe your revision here"
 ```
 
-### Merging Migrations
-
-This project aims to have at most one migration per release. There may be cases where this is not feasible,
-but developers should merge their migration into the latest migration that has been generated since the last
-release. The above mentioned autogenerate command will not do this for you.
-
 ## AppArmor support
 
 An AppArmor profile is available for mandatory access control. When installing securedrop-client from a .deb package, the AppArmor profile will automatically be copied and enforced. Below are instructions to use the profile in non-production scenarios.
