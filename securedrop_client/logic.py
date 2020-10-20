@@ -41,6 +41,7 @@ from securedrop_client.api_jobs.downloads import (
     MessageDownloadJob,
     ReplyDownloadJob,
 )
+from securedrop_client.api_jobs.seen import SeenJob
 from securedrop_client.api_jobs.sources import DeleteSourceJob, DeleteSourceJobException
 from securedrop_client.api_jobs.updatestar import (
     UpdateStarJob,
@@ -612,6 +613,18 @@ class Controller(QObject):
         sources = list(storage.get_local_sources(self.session))
         self.gui.show_sources(sources)
 
+    def mark_seen(self, files: List[str], messages: List[str], replies: List[str]):
+        job = SeenJob(files, messages, replies)
+        job.success_signal.connect(self.on_seen_success, type=Qt.QueuedConnection)
+        job.failure_signal.connect(self.on_seen_failure, type=Qt.QueuedConnection)
+        self.add_job.emit(job)
+
+    def on_seen_success(self) -> None:
+        pass
+
+    def on_seen_failure(self, error: Exception) -> None:
+        logger.debug(error)
+
     def on_update_star_success(self, source_uuid: str) -> None:
         self.star_update_successful.emit(source_uuid)
 
@@ -963,7 +976,7 @@ class Controller(QObject):
         self.add_job.emit(job)
 
     def on_reply_success(self, reply_uuid: str) -> None:
-        logger.info("{} sent successfully".format(reply_uuid))
+        logger.info(f"{reply_uuid} sent successfully")
         self.session.commit()
         reply = storage.get_reply(self.session, reply_uuid)
         self.reply_succeeded.emit(reply.source.uuid, reply_uuid, reply.content)

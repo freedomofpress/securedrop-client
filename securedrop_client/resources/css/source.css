@@ -1,0 +1,61 @@
+#SourceWidget_container {
+    border-bottom: 1px solid #9b9b9b;
+}
+
+#SourceWidget_gutter {
+    min-width: 40px;
+    max-width: 40px;
+}
+
+#SourceWidget_metadata {
+    max-width: 60px;
+}
+
+#SourceWidget_preview {
+    font-family: 'Source Sans Pro';
+    font-weight: 400;
+    font-size: 13px;
+    color: #383838;
+}
+
+#SourceWidget_preview_unread {
+    font-family: 'Source Sans Pro';
+    font-weight: 600;
+    font-size: 13px;
+    color: #000;
+}
+
+#SourceWidget_source_deleted {
+    font-family: 'Source Sans Pro';
+    font-weight: 400;
+    font-size: 13px;
+    color: #ff3366;
+}
+
+#SourceWidget_name {
+    font-family: 'Montserrat';
+    font-weight: 500;
+    font-size: 13px;
+    color: #383838;
+}
+
+#SourceWidget_name_unread {
+    font-family: 'Montserrat';
+    font-weight: 600;
+    font-size: 13px;
+    color: #000;
+}
+
+#SourceWidget_timestamp {
+    font-family: 'Montserrat';
+    font-weight: 500;
+    font-size: 13px;
+    color: #383838;
+}
+
+#SourceWidget_timestamp_unread {
+    font-family: 'Montserrat';
+    font-weight: 600;
+    font-size: 13px;
+    color: #000;
+}

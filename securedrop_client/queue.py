@@ -19,6 +19,7 @@ from securedrop_client.api_jobs.downloads import (
     MessageDownloadJob,
     ReplyDownloadJob,
 )
+from securedrop_client.api_jobs.seen import SeenJob
 from securedrop_client.api_jobs.sources import DeleteSourceJob
 from securedrop_client.api_jobs.updatestar import UpdateStarJob
 from securedrop_client.api_jobs.uploads import SendReplyJob
@@ -58,6 +59,7 @@ class RunnableQueue(QObject):
         UpdateStarJob: 16,
         MessageDownloadJob: 17,
         ReplyDownloadJob: 17,
+        SeenJob: 18,
     }
 
     # Signal that is emitted when processing stops

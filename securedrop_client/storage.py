@@ -259,7 +259,14 @@ def __update_submissions(
 
             # Add seen record if one doesn't yet exist
             for journalist_uuid in submission.seen_by:
-                journalist_id = session.query(User).filter_by(uuid=journalist_uuid)
+                journalist = session.query(User).filter_by(uuid=journalist_uuid).one_or_none()
+
+                # Do not add seen record if journalist is missing from the local db. If the
+                # journalist accont was deleted, wait until the server says so.
+                if not journalist:
+                    return
+
+                journalist_id = journalist.id
                 if model == File:
                     seen_file = (
                         session.query(SeenFile)
@@ -360,7 +367,15 @@ def update_replies(
 
             # Add seen record if one doesn't yet exist
             for journalist_uuid in reply.seen_by:
-                journalist_id = session.query(User).filter_by(uuid=journalist_uuid)
+                journalist = session.query(User).filter_by(uuid=journalist_uuid).one_or_none()
+
+                # Do not add seen record if journalist is missing from the local db. If the
+                # journalist accont was deleted, wait until the server says so.
+                if not journalist:
+                    return
+
+                journalist_id = journalist.id
+
                 seen_reply = (
                     session.query(SeenReply)
                     .filter_by(reply_id=local_reply.id, journalist_id=journalist_id)
