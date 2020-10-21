@@ -1,6 +1,6 @@
 # Python SDK for SecureDrop
 
-[![CircleCI](https://circleci.com/gh/freedomofpress/securedrop-sdk/tree/master.svg?style=svg)](https://circleci.com/gh/freedomofpress/securedrop-sdk/tree/master)
+[![CircleCI](https://circleci.com/gh/freedomofpress/securedrop-sdk/tree/main.svg?style=svg)](https://circleci.com/gh/freedomofpress/securedrop-sdk/tree/main)
 
 This SDK provides a convenient Python interface to the [SecureDrop Journalist Interface API](https://docs.securedrop.org/en/latest/development/journalist_api.html). The development of the SDK was primarily motivated by the creation of the [SecureDrop Workstation](https://github.com/freedomofpress/securedrop-workstation) based on Qubes OS.
 
@@ -221,15 +221,15 @@ To make a release, you should:
 1. Create a branch named `release/$new_version_number`
 2. Update `CHANGELOG.md` and `setup.py`
 3. Commit the changes.
-4. Create a PR and get the PR reviewed and merged into ``master``.
+4. Create a PR and get the PR reviewed and merged into ``main``.
 5. ``git tag $new_version_number`` and push the new tag.
 6. Checkout the new tag locally.
 7. Push the new release source tarball to the PSF's PyPI [following this documentation](https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives). Do not upload the wheel (by deleting it from your `dist/` directory prior to upload).
-8. If you want to publish the new SDK release to the FPF PyPI mirror, Hop over to the the `securedrop-debian-packaging` repo and follow the [build-a-package](https://github.com/freedomofpress/securedrop-debian-packaging/blob/master/README.md#build-a-package) instructions to push the package up to our PyPI mirror: https://pypi.org/simple
+8. If you want to publish the new SDK release to the FPF PyPI mirror, Hop over to the the `securedrop-debian-packaging` repo and follow the [build-a-package](https://github.com/freedomofpress/securedrop-debian-packaging/blob/HEAD/README.md#build-a-package) instructions to push the package up to our PyPI mirror: https://pypi.org/simple
 
 # Contributing
 
-Please read [CONTRIBUTING.md](https://github.com/freedomofpress/securedrop-sdk/blob/master/CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
+Please read [CONTRIBUTING.md](https://github.com/freedomofpress/securedrop-sdk/blob/HEAD/CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
 
 # Versioning
 
