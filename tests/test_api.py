@@ -300,9 +300,17 @@ class TestAPI(unittest.TestCase):
 
     @vcr.use_cassette("data/test-download-submission.yml")
     def test_download_submission(self):
-        s = self.api.get_all_submissions()[0]
+        submissions = self.api.get_all_submissions()
+        unread_submission = None
+        for s in submissions:
+            if not s.is_read:
+                unread_submission = s
+                break
 
-        self.assertFalse(s.is_read)
+        if not unread_submission:
+            self.assertFalse("There must be an unread submission in the db for this test to work.")
+
+        self.assertFalse(unread_submission.is_read)
 
         # We need a temporary directory to download
         tmpdir = tempfile.mkdtemp()
@@ -319,8 +327,8 @@ class TestAPI(unittest.TestCase):
         assert etag == "sha256:{}".format(hasher.hexdigest())
 
         # is_read should still be False as of SecureDrop 1.6.0 or later
-        s = self.api.get_submission(s)
-        self.assertFalse(s.is_read)
+        submission = self.api.get_submission(unread_submission)
+        self.assertFalse(submission.is_read)
 
         # Let us remove the temporary directory
         shutil.rmtree(tmpdir)
