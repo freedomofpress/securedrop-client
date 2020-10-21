@@ -1,6 +1,14 @@
 Changelog
 =========
 
+0.2.0
+-----
+
+* Support "users" endpoint (#134).
+* Update urllib3 from 1.25.8 to 1.25.10 (#136).
+* Support "seen" endpoint (#140).
+* Add "seen_by" as an attribute on the Submission and Reply objects (#140).
+
 0.1.1
 -----
 
