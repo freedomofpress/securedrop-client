@@ -86,6 +86,6 @@ workflows:
           filters:
             branches:
               only:
-                - master
+                - main
     jobs:
       - test-against-latest-api
