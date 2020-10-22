@@ -641,8 +641,9 @@ class MainView(QWidget):
 
             self.controller.session.refresh(source)
 
-            # Mark source as seen
-            self.source_list.mark_seen.emit(source.uuid)
+            # If logged in, mark source as seen
+            if self.controller.authenticated:
+                self.source_list.mark_seen.emit(source.uuid)
 
             # Get or create the SourceConversationWrapper
             if source.uuid in self.source_conversations:
@@ -1008,6 +1009,7 @@ class SourceWidget(QWidget):
         self.controller = controller
         self.controller.source_deleted.connect(self._on_source_deleted)
         self.controller.source_deletion_failed.connect(self._on_source_deletion_failed)
+        self.controller.authentication_state.connect(self._on_authentication_changed)
         mark_seen_signal.connect(self._on_mark_seen)
 
         # Store source
@@ -1111,7 +1113,8 @@ class SourceWidget(QWidget):
                 self.paperclip.hide()
             self.star.update(self.source.is_starred)
 
-            self.seen = self.source.seen
+            # When not authenticated we always show the source as having been seen
+            self.seen = True if not self.controller.is_authenticated else self.source.seen
             self.update_styles()
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.debug(f"Could not update SourceWidget for source {self.source_uuid}: {e}")
@@ -1157,6 +1160,15 @@ class SourceWidget(QWidget):
             self.timestamp.setObjectName("SourceWidget_timestamp_unread")
             self.preview.setObjectName("SourceWidget_preview_unread")
             self.setStyleSheet(self.SOURCE_CSS)
+
+    @pyqtSlot(bool)
+    def _on_authentication_changed(self, authenticated: bool) -> None:
+        """
+        When the user logs out, show source as seen.
+        """
+        if not authenticated:
+            self.seen = True
+            self.update_styles()
 
     @pyqtSlot(str)
     def _on_mark_seen(self, source_uuid: str):
