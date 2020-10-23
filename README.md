@@ -205,10 +205,9 @@ securedrop-client
 brew install pyenv
 # follow step 3 onwards of https://github.com/pyenv/pyenv#basic-github-checkout
 # install and select the latest version of python 3.7.x
-pyenv install 3.7
+pyenv install 3.7.x
 pyenv local 3.7.x
 
-brew install pip
 pip install virtualenv
 virtualenv --python=python3.7 .venv
 source .venv/bin/activate
