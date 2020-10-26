@@ -20,6 +20,8 @@ ALL_MIGRATIONS = [
     x.split(".")[0].split("_")[0] for x in os.listdir(MIGRATION_PATH) if x.endswith(".py")
 ]
 
+DATA_MIGRATIONS = ["a4bf1f58ce69"]
+
 WHITESPACE_REGEX = re.compile(r"\s+")
 
 
@@ -135,6 +137,24 @@ def test_alembic_migration_upgrade(alembic_config, config, migration):
         upgrade(alembic_config, mig)
 
 
+@pytest.mark.parametrize("migration", DATA_MIGRATIONS)
+def test_alembic_migration_upgrade_with_data(alembic_config, config, migration, homedir):
+    """
+    Upgrade to one migration before the target migration, load data, then upgrade in order to test
+    that the upgrade is successful when there is data.
+    """
+    migrations = list_migrations(alembic_config, migration)
+    if len(migrations) == 1:
+        return
+    upgrade(alembic_config, migrations[-2])
+    mod_name = "tests.migrations.test_{}".format(migration)
+    mod = __import__(mod_name, fromlist=["UpgradeTester"])
+    upgrade_tester = mod.UpgradeTester(homedir)
+    upgrade_tester.load_data()
+    upgrade(alembic_config, migration)
+    upgrade_tester.check_upgrade()
+
+
 @pytest.mark.parametrize("migration", ALL_MIGRATIONS)
 def test_alembic_migration_downgrade(alembic_config, config, migration):
     # upgrade to the parameterized test case ("head")
@@ -146,6 +166,21 @@ def test_alembic_migration_downgrade(alembic_config, config, migration):
 
     for mig in migrations:
         downgrade(alembic_config, mig)
+
+
+@pytest.mark.parametrize("migration", DATA_MIGRATIONS)
+def test_alembic_migration_downgrade_with_data(alembic_config, config, migration, homedir):
+    """
+    Upgrade to the target migration, load data, then downgrade in order to test that the downgrade
+    is successful when there is data.
+    """
+    upgrade(alembic_config, migration)
+    mod_name = "tests.migrations.test_{}".format(migration)
+    mod = __import__(mod_name, fromlist=["DowngradeTester"])
+    downgrade_tester = mod.DowngradeTester(homedir)
+    downgrade_tester.load_data()
+    downgrade(alembic_config, "-1")
+    downgrade_tester.check_downgrade()
 
 
 @pytest.mark.parametrize("migration", ALL_MIGRATIONS)
