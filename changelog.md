@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.2.2
+
+* Add sender badge to replies (#1142)
+* Elide source designations at lower width (#1145)
+* Correctly display client maximum window size in Qubes (#1130)
+* Preview only the most recent message/file/reply (#1131)
+* Fix styling for reply decryption errors (#1151)
+* Update reply sender during a sync (#1137)
+* Update info about the current user during a sync (#1135)
+* Fix foreign key for reply attribution (#1147)
+* Add DB migration testing and update incorrect foreign keys (#1162)
+* Update requests and urllib3 requirements (#1155)
+* Disable client and vault config in VMs other than sd-app (#1153)
+* Enforce AppArmor profile in postinst (#1159)
+* Remove MIME type associations from package (#1160)
+* (Dev) Move requirements file to new directory (#1128)
+* (Dev) Make functional test cassettes work in any order (#1138)
+* (Docs) Remove recommendation to merge migrations (#1161)
+* (Docs) Updated documentation for running tests (#1144)
+* (Docs) Incorporate Code of Conduct updates (#1136)
+
 ## 0.2.1
 
 * Reformat the code with black and isort (#1115)
