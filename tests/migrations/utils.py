@@ -84,10 +84,7 @@ def add_user(session: Session, uuid: Optional[str] = None) -> None:
     else:
         journalist_uuid = uuid
 
-    params = {
-        "uuid": journalist_uuid,
-        "username": random_username(),
-    }
+    params = {"uuid": journalist_uuid, "username": random_username()}
     sql = """
     INSERT INTO users (uuid, username)
     VALUES (:uuid, :username)

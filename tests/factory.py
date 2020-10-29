@@ -187,6 +187,7 @@ def RemoteSource(**attrs):
         submissions_url="wibble",
         url="url",
         uuid=str(uuid.uuid4()),
+        seen_by=None,
     )
 
     defaults.update(attrs)
