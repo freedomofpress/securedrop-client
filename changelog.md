@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.2
+## 0.3.0
 
 * Add sender badge to replies (#1142)
 * Elide source designations at lower width (#1145)
