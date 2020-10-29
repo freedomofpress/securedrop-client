@@ -15,7 +15,7 @@ from tests.conftest import TIME_CLICK_ACTION, TIME_RENDER_CONV_VIEW, TIME_RENDER
 @pytest.mark.vcr()
 def test_receive_message_from_source(functional_test_logged_in_context, qtbot, mocker):
     """
-    Verify that a new message with the expected text shows up in the conversation view.
+    Verify that a new message with text shows up in the conversation view.
     """
     gui, controller = functional_test_logged_in_context
 
@@ -24,10 +24,12 @@ def test_receive_message_from_source(functional_test_logged_in_context, qtbot, m
 
     # Select the first source in the source list
     qtbot.waitUntil(check_for_sources, timeout=TIME_RENDER_SOURCE_LIST)
-    source_ids = list(gui.main_view.source_list.source_items.keys())
-    first_source_item = gui.main_view.source_list.source_items[source_ids[0]]
-    first_source_widget = gui.main_view.source_list.itemWidget(first_source_item)
-    qtbot.mouseClick(first_source_widget, Qt.LeftButton)
+
+    # Select the second source in the list to avoid marking unseen sources as seen
+    source_id = list(gui.main_view.source_list.source_items.keys())[1]
+    source_item = gui.main_view.source_list.source_items[source_id]
+    source_widget = gui.main_view.source_list.itemWidget(source_item)
+    qtbot.mouseClick(source_widget, Qt.LeftButton)
     qtbot.wait(TIME_CLICK_ACTION)
 
     def check_for_conversation():
@@ -40,4 +42,4 @@ def test_receive_message_from_source(functional_test_logged_in_context, qtbot, m
     message_id = list(conversation.conversation_view.current_messages.keys())[0]
     message = conversation.conversation_view.current_messages[message_id]
 
-    assert message.message.text() == "this is the message"
+    assert message.message.text()
