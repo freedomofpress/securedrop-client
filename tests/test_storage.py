@@ -62,6 +62,7 @@ def make_remote_message(source_uuid, file_counter=1):
         source_url=source_url,
         submission_url="test",
         uuid=str(uuid.uuid4()),
+        seen_by=None,
     )
 
 
@@ -80,6 +81,7 @@ def make_remote_submission(source_uuid):
         source_url=source_url,
         submission_url="test",
         uuid=str(uuid.uuid4()),
+        seen_by=None,
     )
 
 
@@ -102,6 +104,7 @@ def make_remote_reply(source_uuid, journalist_uuid="testymctestface"):
         size=1234,
         source_url=source_url,
         uuid=str(uuid.uuid4()),
+        seen_by=None,
     )
 
 
@@ -757,6 +760,7 @@ def test_update_replies(homedir, mocker, session):
         source_url="/api/v1/sources/{}".format(source.uuid),
         file_counter=local_reply_update.file_counter,
         filename=local_reply_update.filename,
+        seen_by=None,
     )
 
     remote_reply_create = factory.RemoteReply(
@@ -766,6 +770,7 @@ def test_update_replies(homedir, mocker, session):
         filename="{}-filename.gpg".format(factory.REPLY_COUNT + 1),
         journalist_first_name="",
         journalist_last_name="",
+        seen_by=None,
     )
 
     remote_replies = [remote_reply_update, remote_reply_create]

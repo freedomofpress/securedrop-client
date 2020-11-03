@@ -12,14 +12,14 @@ interactions:
       Content-Length:
       - '119'
       User-Agent:
-      - python-requests/2.20.0
+      - python-requests/2.22.0
     method: POST
     uri: http://localhost:8081/api/v1/token
   response:
     body:
-      string: "{\n  \"expiration\": \"2020-08-26T01:27:43.384481Z\", \n  \"journalist_first_name\"\
-        : \"\", \n  \"journalist_last_name\": \"\", \n  \"journalist_uuid\": \"f668c3f3-7f5c-46d5-91c3-43528ca602ca\"\
-        , \n  \"token\": \"eyJleHAiOjE1OTg0MDUyNjMsImlhdCI6MTU5ODM3NjQ2MywiYWxnIjoiSFMyNTYifQ.eyJpZCI6MX0.HiTmfOpfGz4NZLH8kgtdw-Lu08ZXLUnregghkH0BAfE\"\
+      string: "{\n  \"expiration\": \"2020-10-29T02:35:54.448828Z\", \n  \"journalist_first_name\"\
+        : \"\", \n  \"journalist_last_name\": \"\", \n  \"journalist_uuid\": \"a246a3ab-c30a-46e1-974e-82306abae36f\"\
+        , \n  \"token\": \"eyJpYXQiOjE2MDM5MTAxNTQsImFsZyI6IkhTMjU2IiwiZXhwIjoxNjAzOTM4OTU0fQ.eyJpZCI6MX0.EG-bTxshIdYC6ibFDcYjaS03PpDJiT2_MlFXjPV8nas\"\
         \n}\n"
     headers:
       Content-Length:
@@ -27,7 +27,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Tue, 25 Aug 2020 17:27:43 GMT
+      - Wed, 28 Oct 2020 18:35:54 GMT
       Server:
       - Werkzeug/0.16.0 Python/3.5.2
     status:
@@ -41,59 +41,42 @@ interactions:
       Accept-Encoding:
       - gzip, deflate
       Authorization:
-      - Token eyJleHAiOjE1OTg0MDUyNjMsImlhdCI6MTU5ODM3NjQ2MywiYWxnIjoiSFMyNTYifQ.eyJpZCI6MX0.HiTmfOpfGz4NZLH8kgtdw-Lu08ZXLUnregghkH0BAfE
+      - Token eyJpYXQiOjE2MDM5MTAxNTQsImFsZyI6IkhTMjU2IiwiZXhwIjoxNjAzOTM4OTU0fQ.eyJpZCI6MX0.EG-bTxshIdYC6ibFDcYjaS03PpDJiT2_MlFXjPV8nas
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.20.0
+      - python-requests/2.22.0
     method: GET
     uri: http://localhost:8081/api/v1/sources
   response:
     body:
-      string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/505f62fa-585f-4e95-b8e4-0d2f3b2e7a8f/add_star\"\
-        , \n      \"interaction_count\": 2, \n      \"is_flagged\": false, \n    \
-        \  \"is_starred\": false, \n      \"journalist_designation\": \"pleasant rearguard\"\
-        , \n      \"key\": {\n        \"fingerprint\": \"FF9007318CCAB4DC6149B1B38B7907A15818269D\"\
-        , \n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmI0EUZF+gAEEAM8jaDDbt3lQQVUEk+MduWYmJHa3eME1Y9C4yj+6n9V9Sksakj3B\\\
-        nWcl9uKzXLtZIP1rdvkW+Bg/P64vTgi+I+pcL5+e5gpF/KdNhrksovmhzc/ASgrn7\\nEcNCwIk+Iyym255IOEsZ8j9SvpzG1VyUdJxlK+P6bmbkFgDDwHjF0QzDABEBAAG0\\\
-        ndVNvdXJjZSBLZXkgPEtHQUFQVlNISjJLS0lMV0daTUlBWUFHMlhXU0ZWRlJRQ1pJ\\nNE5QTVBVUEVKNDNIQ1hJVUdPUk9XUEhLUldXRkxRTk5LTko3WEk1Tk9JUkpFTERQ\\\
-        nU0pZN0JMTk9ETk0yTUxNSjRPMkE9Poi3BBMBCgAhBQJRkX6AAhsvBQsJCAcCBhUI\\nCQoLAgQWAgMBAh4BAheAAAoJEIt5B6FYGCadjpUD/1IiTV3TAyduG0UkaxcTT+Bp\\\
-        nKZRsNsK+HhYBCu/VjBcybLkuccDaonnm99OyaWZAZ/F/E/DxRENTxs0OL47GbHG7\\n9hSFWj99MZACMs3aKAmqxZEnQmm0B0xDIlHyd9mQBSieUw6aVMVjxK8p0Z21R7cz\\\
-        nc+DfEuCbShQ6b5+9X308\\n=RU3O\\n-----END PGP PUBLIC KEY BLOCK-----\\n\", \n\
-        \        \"type\": \"PGP\"\n      }, \n      \"last_updated\": \"2020-08-25T17:26:48.423985Z\"\
+      string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/6e4d7c0e-3603-4795-a6cc-ceef62a3de2a/add_star\"\
+        , \n      \"interaction_count\": 3, \n      \"is_flagged\": false, \n    \
+        \  \"is_starred\": false, \n      \"journalist_designation\": \"flameproof\
+        \ boyishness\", \n      \"key\": {\n        \"fingerprint\": \"E305ED4C68CE395173CD0AC8B449FDFB1C2C3263\"\
+        , \n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmI0EUZF+gAEEAJJUqCd8q3t5dcJH+TlgyfASdmVyLFEfXLRiYpFHJVu0WlmEhIy5\\\
+        nifYwFIzVYmCo01WKEmYE8hl3mvTZEjUpm1C/Qxwure/VSCDdO1Hr7SjjJsdiawmB\\ng96lv1GnfevyUnUSEoYfW0WvqNXr2WRNqPkjIAVeSHGTIUPhlW/oQ9VZABEBAAG0\\\
+        ndVNvdXJjZSBLZXkgPEFRWU5HSEdXRERSMkZLUVFNTzNQTkEyVkVIMzRYV0JONlo1\\nMjVUVjJTSzNCVVpRRUpJU1ZGQkFCQVlCWkJIVlM0NUE0U1VQQ1JYUEhES0I0VERE\\\
+        nV1pPNlNRREpOUElRWk40UE1STlE9Poi3BBMBCgAhBQJRkX6AAhsvBQsJCAcCBhUI\\nCQoLAgQWAgMBAh4BAheAAAoJELRJ/fscLDJjf+AD/R/Q5OZrZBbKvHJo63eFG27o\\\
+        ncf112RnG6M3KXL9eZ3qWXz8c1TEUlV+IhyljF4kHrSZFToz1JqYdGMH5PN6VWQPc\\nXrQxJ8T5QP2iAqhLHQ7OFWAD/AzJiR95A8OQTsL++uwUIOrR7pu3TYZoIYcsS0iu\\\
+        nwV4/kzel3MsLmsWSqWkz\\n=a+P6\\n-----END PGP PUBLIC KEY BLOCK-----\\n\", \n\
+        \        \"type\": \"PGP\"\n      }, \n      \"last_updated\": \"2020-10-28T18:33:40.158791Z\"\
         , \n      \"number_of_documents\": 1, \n      \"number_of_messages\": 1, \n\
-        \      \"remove_star_url\": \"/api/v1/sources/505f62fa-585f-4e95-b8e4-0d2f3b2e7a8f/remove_star\"\
-        , \n      \"replies_url\": \"/api/v1/sources/505f62fa-585f-4e95-b8e4-0d2f3b2e7a8f/replies\"\
-        , \n      \"submissions_url\": \"/api/v1/sources/505f62fa-585f-4e95-b8e4-0d2f3b2e7a8f/submissions\"\
-        , \n      \"url\": \"/api/v1/sources/505f62fa-585f-4e95-b8e4-0d2f3b2e7a8f\"\
-        , \n      \"uuid\": \"505f62fa-585f-4e95-b8e4-0d2f3b2e7a8f\"\n    }, \n  \
-        \  {\n      \"add_star_url\": \"/api/v1/sources/f9b4da97-a077-412e-8e54-4ef4984a8540/add_star\"\
-        , \n      \"interaction_count\": 2, \n      \"is_flagged\": false, \n    \
-        \  \"is_starred\": false, \n      \"journalist_designation\": \"unlawful spectrum\"\
-        , \n      \"key\": {\n        \"fingerprint\": \"CE2A06285C9B1FDB43BFEB853EC2D036DDCA8CD4\"\
-        , \n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmI0EUZF+gAEEANJ0h2W7p0bViTLpY9w/PDd8sBHR56OVg+EGdXZ51Wuqt8ZUkF8W\\\
-        njSLrjsiOrcQ1lRFEgERFfIBJvlxfB/EMP4wcTY7vg7WQN/rvSJynBW0T6iHI3Rhi\\n/3v35LEuX9tLU/B1e11mRevgHTLRUms38Y5DBSkWACngvH4jWP+kwylJABEBAAG0\\\
-        ndVNvdXJjZSBLZXkgPDUyNzdCNDVDNExFUFdJWU9NQlY0VE5FVEI1WjdaVFpERTZK\\nQTJSTlhVNE5HM0g3R0NRVEJYRUdVWkdSRkpSRVZGN01BTzZDUUpWWVpBN0NOSEw3\\\
-        nS0JKVzMyS01XNEJaSVROU0dBVkk9Poi3BBMBCgAhBQJRkX6AAhsvBQsJCAcCBhUI\\nCQoLAgQWAgMBAh4BAheAAAoJED7C0DbdyozULzEEALbYIlKPW3wXMi/9V2c/fYJc\\\
-        naX9UE94JwAdfntqAkEF8dL/P6fD5J1BPqQILK4crX6LN6h8g2y1vnrTTg9odsa1L\\nD0JqSpGfIWscGRuzY6b2WngLCgsudMqJgPZUdm/wbxp3Q8Daa8U99mL9jXr9Ia9j\\\
-        n8BFeiB6fb0VoIDgM7UTv\\n=j+JQ\\n-----END PGP PUBLIC KEY BLOCK-----\\n\", \n\
-        \        \"type\": \"PGP\"\n      }, \n      \"last_updated\": \"2020-08-25T17:27:03.031475Z\"\
-        , \n      \"number_of_documents\": 1, \n      \"number_of_messages\": 1, \n\
-        \      \"remove_star_url\": \"/api/v1/sources/f9b4da97-a077-412e-8e54-4ef4984a8540/remove_star\"\
-        , \n      \"replies_url\": \"/api/v1/sources/f9b4da97-a077-412e-8e54-4ef4984a8540/replies\"\
-        , \n      \"submissions_url\": \"/api/v1/sources/f9b4da97-a077-412e-8e54-4ef4984a8540/submissions\"\
-        , \n      \"url\": \"/api/v1/sources/f9b4da97-a077-412e-8e54-4ef4984a8540\"\
-        , \n      \"uuid\": \"f9b4da97-a077-412e-8e54-4ef4984a8540\"\n    }\n  ]\n\
+        \      \"remove_star_url\": \"/api/v1/sources/6e4d7c0e-3603-4795-a6cc-ceef62a3de2a/remove_star\"\
+        , \n      \"replies_url\": \"/api/v1/sources/6e4d7c0e-3603-4795-a6cc-ceef62a3de2a/replies\"\
+        , \n      \"submissions_url\": \"/api/v1/sources/6e4d7c0e-3603-4795-a6cc-ceef62a3de2a/submissions\"\
+        , \n      \"url\": \"/api/v1/sources/6e4d7c0e-3603-4795-a6cc-ceef62a3de2a\"\
+        , \n      \"uuid\": \"6e4d7c0e-3603-4795-a6cc-ceef62a3de2a\"\n    }\n  ]\n\
         }\n"
     headers:
       Content-Length:
-      - '3214'
+      - '1621'
       Content-Type:
       - application/json
       Date:
-      - Tue, 25 Aug 2020 17:27:43 GMT
+      - Wed, 28 Oct 2020 18:35:54 GMT
       Server:
       - Werkzeug/0.16.0 Python/3.5.2
     status:
@@ -107,45 +90,38 @@ interactions:
       Accept-Encoding:
       - gzip, deflate
       Authorization:
-      - Token eyJleHAiOjE1OTg0MDUyNjMsImlhdCI6MTU5ODM3NjQ2MywiYWxnIjoiSFMyNTYifQ.eyJpZCI6MX0.HiTmfOpfGz4NZLH8kgtdw-Lu08ZXLUnregghkH0BAfE
+      - Token eyJpYXQiOjE2MDM5MTAxNTQsImFsZyI6IkhTMjU2IiwiZXhwIjoxNjAzOTM4OTU0fQ.eyJpZCI6MX0.EG-bTxshIdYC6ibFDcYjaS03PpDJiT2_MlFXjPV8nas
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.20.0
+      - python-requests/2.22.0
     method: GET
     uri: http://localhost:8081/api/v1/submissions
   response:
     body:
-      string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/505f62fa-585f-4e95-b8e4-0d2f3b2e7a8f/submissions/bbc25300-917a-4b73-b0f4-10f3d6957442/download\"\
-        , \n      \"filename\": \"1-pleasant_rearguard-msg.gpg\", \n      \"is_read\"\
-        : true, \n      \"size\": 605, \n      \"source_url\": \"/api/v1/sources/505f62fa-585f-4e95-b8e4-0d2f3b2e7a8f\"\
-        , \n      \"submission_url\": \"/api/v1/sources/505f62fa-585f-4e95-b8e4-0d2f3b2e7a8f/submissions/bbc25300-917a-4b73-b0f4-10f3d6957442\"\
-        , \n      \"uuid\": \"bbc25300-917a-4b73-b0f4-10f3d6957442\"\n    }, \n  \
-        \  {\n      \"download_url\": \"/api/v1/sources/505f62fa-585f-4e95-b8e4-0d2f3b2e7a8f/submissions/a8699ca4-55a5-4737-b8f1-c9e170ec8250/download\"\
-        , \n      \"filename\": \"2-pleasant_rearguard-doc.gz.gpg\", \n      \"is_read\"\
-        : false, \n      \"size\": 622, \n      \"source_url\": \"/api/v1/sources/505f62fa-585f-4e95-b8e4-0d2f3b2e7a8f\"\
-        , \n      \"submission_url\": \"/api/v1/sources/505f62fa-585f-4e95-b8e4-0d2f3b2e7a8f/submissions/a8699ca4-55a5-4737-b8f1-c9e170ec8250\"\
-        , \n      \"uuid\": \"a8699ca4-55a5-4737-b8f1-c9e170ec8250\"\n    }, \n  \
-        \  {\n      \"download_url\": \"/api/v1/sources/f9b4da97-a077-412e-8e54-4ef4984a8540/submissions/d03224b2-d0ed-4327-8d5d-313e2bbfbccb/download\"\
-        , \n      \"filename\": \"1-unlawful_spectrum-msg.gpg\", \n      \"is_read\"\
-        : true, \n      \"size\": 605, \n      \"source_url\": \"/api/v1/sources/f9b4da97-a077-412e-8e54-4ef4984a8540\"\
-        , \n      \"submission_url\": \"/api/v1/sources/f9b4da97-a077-412e-8e54-4ef4984a8540/submissions/d03224b2-d0ed-4327-8d5d-313e2bbfbccb\"\
-        , \n      \"uuid\": \"d03224b2-d0ed-4327-8d5d-313e2bbfbccb\"\n    }, \n  \
-        \  {\n      \"download_url\": \"/api/v1/sources/f9b4da97-a077-412e-8e54-4ef4984a8540/submissions/55e459bd-cf4e-45f9-adce-95d79998254a/download\"\
-        , \n      \"filename\": \"2-unlawful_spectrum-doc.gz.gpg\", \n      \"is_read\"\
-        : false, \n      \"size\": 622, \n      \"source_url\": \"/api/v1/sources/f9b4da97-a077-412e-8e54-4ef4984a8540\"\
-        , \n      \"submission_url\": \"/api/v1/sources/f9b4da97-a077-412e-8e54-4ef4984a8540/submissions/55e459bd-cf4e-45f9-adce-95d79998254a\"\
-        , \n      \"uuid\": \"55e459bd-cf4e-45f9-adce-95d79998254a\"\n    }\n  ]\n\
+      string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/6e4d7c0e-3603-4795-a6cc-ceef62a3de2a/submissions/b53d9e8b-6b60-4b8c-8593-6fd009daa9eb/download\"\
+        , \n      \"filename\": \"1-flameproof_boyishness-msg.gpg\", \n      \"is_file\"\
+        : false, \n      \"is_message\": true, \n      \"is_read\": false, \n    \
+        \  \"seen_by\": [], \n      \"size\": 606, \n      \"source_url\": \"/api/v1/sources/6e4d7c0e-3603-4795-a6cc-ceef62a3de2a\"\
+        , \n      \"submission_url\": \"/api/v1/sources/6e4d7c0e-3603-4795-a6cc-ceef62a3de2a/submissions/b53d9e8b-6b60-4b8c-8593-6fd009daa9eb\"\
+        , \n      \"uuid\": \"b53d9e8b-6b60-4b8c-8593-6fd009daa9eb\"\n    }, \n  \
+        \  {\n      \"download_url\": \"/api/v1/sources/6e4d7c0e-3603-4795-a6cc-ceef62a3de2a/submissions/f9a9af80-906d-4ac4-a116-c7c118ce2bef/download\"\
+        , \n      \"filename\": \"2-flameproof_boyishness-doc.gz.gpg\", \n      \"\
+        is_file\": true, \n      \"is_message\": false, \n      \"is_read\": false,\
+        \ \n      \"seen_by\": [], \n      \"size\": 622, \n      \"source_url\":\
+        \ \"/api/v1/sources/6e4d7c0e-3603-4795-a6cc-ceef62a3de2a\", \n      \"submission_url\"\
+        : \"/api/v1/sources/6e4d7c0e-3603-4795-a6cc-ceef62a3de2a/submissions/f9a9af80-906d-4ac4-a116-c7c118ce2bef\"\
+        , \n      \"uuid\": \"f9a9af80-906d-4ac4-a116-c7c118ce2bef\"\n    }\n  ]\n\
         }\n"
     headers:
       Content-Length:
-      - '2055'
+      - '1196'
       Content-Type:
       - application/json
       Date:
-      - Tue, 25 Aug 2020 17:27:43 GMT
+      - Wed, 28 Oct 2020 18:35:54 GMT
       Server:
       - Werkzeug/0.16.0 Python/3.5.2
     status:
@@ -159,25 +135,33 @@ interactions:
       Accept-Encoding:
       - gzip, deflate
       Authorization:
-      - Token eyJleHAiOjE1OTg0MDUyNjMsImlhdCI6MTU5ODM3NjQ2MywiYWxnIjoiSFMyNTYifQ.eyJpZCI6MX0.HiTmfOpfGz4NZLH8kgtdw-Lu08ZXLUnregghkH0BAfE
+      - Token eyJpYXQiOjE2MDM5MTAxNTQsImFsZyI6IkhTMjU2IiwiZXhwIjoxNjAzOTM4OTU0fQ.eyJpZCI6MX0.EG-bTxshIdYC6ibFDcYjaS03PpDJiT2_MlFXjPV8nas
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.20.0
+      - python-requests/2.22.0
     method: GET
     uri: http://localhost:8081/api/v1/replies
   response:
     body:
-      string: "{\n  \"replies\": []\n}\n"
+      string: "{\n  \"replies\": [\n    {\n      \"filename\": \"3-flameproof_boyishness-reply.gpg\"\
+        , \n      \"is_deleted_by_source\": false, \n      \"journalist_first_name\"\
+        : \"\", \n      \"journalist_last_name\": \"\", \n      \"journalist_username\"\
+        : \"journalist\", \n      \"journalist_uuid\": \"a246a3ab-c30a-46e1-974e-82306abae36f\"\
+        , \n      \"reply_url\": \"/api/v1/sources/6e4d7c0e-3603-4795-a6cc-ceef62a3de2a/replies/c2e3bab3-9980-463e-afde-29861f83bbef\"\
+        , \n      \"seen_by\": [\n        \"a246a3ab-c30a-46e1-974e-82306abae36f\"\
+        \n      ], \n      \"size\": 1085, \n      \"source_url\": \"/api/v1/sources/6e4d7c0e-3603-4795-a6cc-ceef62a3de2a\"\
+        , \n      \"uuid\": \"c2e3bab3-9980-463e-afde-29861f83bbef\"\n    }\n  ]\n\
+        }\n"
     headers:
       Content-Length:
-      - '20'
+      - '658'
       Content-Type:
       - application/json
       Date:
-      - Tue, 25 Aug 2020 17:27:43 GMT
+      - Wed, 28 Oct 2020 18:35:54 GMT
       Server:
       - Werkzeug/0.16.0 Python/3.5.2
     status:
@@ -191,20 +175,20 @@ interactions:
       Accept-Encoding:
       - gzip, deflate
       Authorization:
-      - Token eyJleHAiOjE1OTg0MDUyNjMsImlhdCI6MTU5ODM3NjQ2MywiYWxnIjoiSFMyNTYifQ.eyJpZCI6MX0.HiTmfOpfGz4NZLH8kgtdw-Lu08ZXLUnregghkH0BAfE
+      - Token eyJpYXQiOjE2MDM5MTAxNTQsImFsZyI6IkhTMjU2IiwiZXhwIjoxNjAzOTM4OTU0fQ.eyJpZCI6MX0.EG-bTxshIdYC6ibFDcYjaS03PpDJiT2_MlFXjPV8nas
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.20.0
+      - python-requests/2.22.0
     method: GET
     uri: http://localhost:8081/api/v1/user
   response:
     body:
       string: "{\n  \"first_name\": \"\", \n  \"is_admin\": true, \n  \"last_login\"\
-        : \"2020-08-25T17:27:43.384806Z\", \n  \"last_name\": \"\", \n  \"username\"\
-        : \"journalist\", \n  \"uuid\": \"f668c3f3-7f5c-46d5-91c3-43528ca602ca\"\n\
+        : \"2020-10-28T18:35:54.449217Z\", \n  \"last_name\": \"\", \n  \"username\"\
+        : \"journalist\", \n  \"uuid\": \"a246a3ab-c30a-46e1-974e-82306abae36f\"\n\
         }\n"
     headers:
       Content-Length:
@@ -212,7 +196,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Tue, 25 Aug 2020 17:27:43 GMT
+      - Wed, 28 Oct 2020 18:35:54 GMT
       Server:
       - Werkzeug/0.16.0 Python/3.5.2
     status:
@@ -226,46 +210,46 @@ interactions:
       Accept-Encoding:
       - gzip, deflate
       Authorization:
-      - Token eyJleHAiOjE1OTg0MDUyNjMsImlhdCI6MTU5ODM3NjQ2MywiYWxnIjoiSFMyNTYifQ.eyJpZCI6MX0.HiTmfOpfGz4NZLH8kgtdw-Lu08ZXLUnregghkH0BAfE
+      - Token eyJpYXQiOjE2MDM5MTAxNTQsImFsZyI6IkhTMjU2IiwiZXhwIjoxNjAzOTM4OTU0fQ.eyJpZCI6MX0.EG-bTxshIdYC6ibFDcYjaS03PpDJiT2_MlFXjPV8nas
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.20.0
+      - python-requests/2.22.0
     method: GET
-    uri: http://localhost:8081/api/v1/sources/f9b4da97-a077-412e-8e54-4ef4984a8540/submissions/d03224b2-d0ed-4327-8d5d-313e2bbfbccb/download
+    uri: http://localhost:8081/api/v1/sources/6e4d7c0e-3603-4795-a6cc-ceef62a3de2a/submissions/b53d9e8b-6b60-4b8c-8593-6fd009daa9eb/download
   response:
     body:
       string: !!binary |
-        hQIMA8PnxMCiIBsqAQ//Rw1NPH3mwdBg9NnblanYiQgqmPuHTY9ha8sR24r6Cbv4UunDrGcjIMeT
-        qUZfK1zok/ZjbbLMo+yVWG2my899P8meyJS9C9MzmPC/x8hpoSUVdxyRorBDja9qNtZUyhOrm5Dz
-        rsiuEaqB1T5iYPinyCzeOcGKxTlrDJE78s5aHQVGQeBjXN+7BqZXsGCWrUueXTF10QrC8u0T/Fnw
-        T+BLvR8FmCIEilEDQESn653nL2wbkTz/7OMxUJJUDkG9xO6VHsTcH4KAzVsonMaan2RVXarJ1393
-        esjkZJ3vMiKXSMNIdsdDQ8WbP/2JGL8rhdg3WZqRbX7ePEJ5C7moUGiJsXmYwNMDarImp/be0O+1
-        YGk1Bfig2smMD280G8vYNykGvLkiGWJU0tGQQBbc5NeM3WZ8chZsyKofidoc9CIY7NLVHGg5u6zf
-        AEe1bjVuWveL5NaUJUpzWxDQzkIBuvX/E9stjEvqb0fZCRkGqPQLOix/YVUjUzj2i1zGAgL/w3xw
-        jhadu4aN05dbf5cBeKRIUS43HnrDXluA0vq0HbX30xuFpoo/noZUiZ8uNfR2UKLQfIK0gNVH1ydw
-        MhHIDKyiUWm/0YQgzcozy14n9OCGtLCucWfxXy7nozJ7JnVJpSYPgAmozMOoqEiz3C0Dnsax/PRV
-        AvwhOEGda6nAIosZZ6nSTAGpDbf6bksYyI2J4JEtY4b7jBvCz6Qmg+n4ZIIH7IEeIBCkhnUtU8xz
-        JHiwor7B/FnoP6RymaVAKyAPqoKGfrJ/XGbwPXJRvQl2PeM=
+        hQIMA8PnxMCiIBsqARAArmycU4cPsPyLFJ52LAioCI5iV6gE4NWoryJHCmtVaeC9zb19Q1Idrh5L
+        +FnjmE3Za33S7hVDZfZxl/tDGr0p9dzocftwrsDBhnlPnvpBfpycjXhRJ2V+sWUcjdnjlAjz6iqF
+        kmbAL+aobpZ4hBHUZhUi7WgOu5Drv37RPlDqobR5WaL3Ycr1x72Vv52cOiE3Shrut2axMBq9VPID
+        SXYiBIdjMRksDYjgnL365SNgrdnemGgRAyVzm/Up9G1C5DIp0h/+mkUCfMMqjDUAGgTmy6DzLjbf
+        D9vAJFqf6J7uPjbn6lvpVoM8hkDs0ZHryrd07PqGUoSHrHUCWtz880Ysyu55hkSj1dJ3eM0Q3Mqx
+        ViiBXM7bV9lCgwnJIZWRsFVTRv93f8saZiEdL4vnT+ILbpBORyJnsV1/UStmBXdyMuXJkKRNECBf
+        iNZVtywCUAGMAF05ivQCDHMmm4RFSUb2/lEb9Xi5IXtUMa8rHuD7y9q0vTjxFol+dVjFjGjjInGI
+        vNQ/bLCjQ1yTctoJPjgM3KUjIJSnfU4vNmmrt3SX8N/FPNPvNJ+mO9A5JbF9L8S1lCiE8yBAkT5j
+        Ug3zeqWJqCYGD+eYOOgoWwIm7hRuy9XJWhWXl4d0IjIMbmEgc8nihL22y3MQ1e655lf23QF3ZbZq
+        XwcVHctJIVjQtG76JXXSTQGK8k/7FzEWubquU5SSIZl+wgjDC3/KZWdX3SNXN+iRz1PV/xzX5qO+
+        9wlBebksQ4NZLIu/xiwPIBtwhbXn4BeUz+OCh9/LSriFRbMW
     headers:
       Cache-Control:
       - max-age=43200, public
       Content-Disposition:
-      - attachment; filename=1-unlawful_spectrum-msg.gpg
+      - attachment; filename=1-flameproof_boyishness-msg.gpg
       Content-Length:
-      - '605'
+      - '606'
       Content-Type:
       - application/pgp-encrypted
       Date:
-      - Tue, 25 Aug 2020 17:27:43 GMT
+      - Wed, 28 Oct 2020 18:35:54 GMT
       Etag:
-      - sha256:dd82012b8656a3f7175b619f2875895a11071daf681b996cdc2704ddf5388664
+      - sha256:192ad51f502dc32b230097caa26399f43633e34f9cd2c91be35332b076a1a26a
       Expires:
-      - Wed, 26 Aug 2020 05:27:43 GMT
+      - Thu, 29 Oct 2020 06:35:54 GMT
       Last-Modified:
-      - Tue, 25 Aug 2020 17:27:02 GMT
+      - Wed, 28 Oct 2020 18:33:39 GMT
       Server:
       - Werkzeug/0.16.0 Python/3.5.2
     status:
@@ -279,46 +263,74 @@ interactions:
       Accept-Encoding:
       - gzip, deflate
       Authorization:
-      - Token eyJleHAiOjE1OTg0MDUyNjMsImlhdCI6MTU5ODM3NjQ2MywiYWxnIjoiSFMyNTYifQ.eyJpZCI6MX0.HiTmfOpfGz4NZLH8kgtdw-Lu08ZXLUnregghkH0BAfE
+      - Token eyJpYXQiOjE2MDM5MTAxNTQsImFsZyI6IkhTMjU2IiwiZXhwIjoxNjAzOTM4OTU0fQ.eyJpZCI6MX0.EG-bTxshIdYC6ibFDcYjaS03PpDJiT2_MlFXjPV8nas
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.20.0
+      - python-requests/2.22.0
     method: GET
-    uri: http://localhost:8081/api/v1/sources/505f62fa-585f-4e95-b8e4-0d2f3b2e7a8f/submissions/bbc25300-917a-4b73-b0f4-10f3d6957442/download
+    uri: http://localhost:8081/api/v1/sources/6e4d7c0e-3603-4795-a6cc-ceef62a3de2a/replies/c2e3bab3-9980-463e-afde-29861f83bbef/download
   response:
     body:
-      string: !!binary |
-        hQIMA8PnxMCiIBsqAQ//RtWsdfVE8eGi8sFqp1/cmLdkiut2OkXfs7DdjD0CBr6qfYUG8woosTjZ
-        +bdA5IIg1ewECF+eOZbfgW3EGzq/xN9rKaE+yTEbrR2swkoHNv1tUTrBoRGwUfHOYl3LOWlftNHt
-        8HbCVEZ/TAs1NQolRpSXj9o+mR6wjPvXtArQkW0io6D8ah9YO+YkEEkl4B2CwK1BwUQHj4B1TXw+
-        QGubNNIfGeXM9OkSCQMZapmumEt4m+8KImF1ncNMINXO/WV3tbTKDrCO63R/K6ibSuq//vd72Q2z
-        DFalhfcmnu7ksX0/4TFsrsvfuQoppTqepI6YklIKhTRkoRuY5fQeoK2w93qrZh0dmsVvlhx13/xl
-        19wcO1vASiZzfSHT/XDaXoS+3XmgW/xKr+Y0IJq+PZSs/EZ/2mr6zXePR8HtdFuvCnGiNjPFsRsE
-        sRIB1iq6FEV3zKxLU7FI46MTNrBpTYj3xAn2MqGM0UgCvwC1v73s6mMe6njwvYak8V0J/ny3sd/J
-        NHnbftRaGOmlrQbiXhoRIDEV5Kric9qBJG5R12kxDHHqce/viMEnZ1543+2snmsGrmWvX3Kxsbq4
-        cm1rmE/1dwYYtUaTpj1j4HDr7OY0PUN4F2BXK1gOSOONWiKd8hRAbY4Emwv60g+36ZtwY6kQu4v3
-        pQhKYVCTt8xL1gZkYYfSTAFnY4M6ViJKpbRI6FGnAQsYaB74rBUx6FatdEvztAN5VHarQPHN9uDF
-        TLPp+suitZOgA4wsgUWL+sUze53pOc/MCAUfBwrk2YD7hO8=
+      string: '-----BEGIN PGP MESSAGE-----
+
+
+        hIwDtEn9+xwsMmMBA/42vRfKLZGkNarqwiLXrDRBnuaEcWvs5uZfamyJOSA8d4VG
+
+        HosZKWIspZD54bglTzr6hFgXvOva4MdMRT/SvnhtNatX82jALZRpbvGzb1KdE355
+
+        0IQiYLkxpTA44RGGl2Kjypmf/5AnShYicYWpJbCrKIKHwqD8TM6qAPf9YGCnsYUC
+
+        DAPD58TAoiAbKgEP/ilaX5VdTTxigIrm7VT9bdtMrvzPYEqu3BsTf+2HRO4ms/63
+
+        A87YpZY+6lHSNel7Ty2bjO+ALljxgfCLPrRZag9Wy/2tXWs3PIJteL2+deq6cFNu
+
+        R3yubLMQSH9TsaYqRAVJCxBkupkVS+KklUQUjN6FV+Qs8aaDRCtG8spU6pEqUZeU
+
+        Lhc3GJVJpiazRVCW9kphR2c0x+iXcNatleAP+u/nO4KnqNxbWTNebjy6IvK8rrxr
+
+        eflHulCzdqYQjPFJfNQPjsvS458c4tMTw29I1NkCMUUFm523J5hc1eGmGYjiAmoM
+
+        XF5PZHEU7jMGX4YQcs6kE+dk5Npt0fByUalp6wT5NcG+aJKO+Kz9bc9YUoPHT9HR
+
+        65GxKxvjvWKb19z/oVeV4Nvq9HYiBREySy8v2mNd8972zhdKi8ITTq+qGKmK1Qeq
+
+        IqJbd4jD2tN0zzi2qeeyCe574rtqnMYeoLOqqEpakW+seqx7NT4t4uq+jlxfsVXQ
+
+        nBpkprZC5OTWAtm8zrQ23zEX1UGst6OMTssm8KGG/s7Jtal+6i+e5MfuTbyzjdSS
+
+        PVLoKdsOFxVpBuGYGNmZKjwZrJSlyHPLG/S5IiKCw2k6O43kWHkG098QR4nW4pMZ
+
+        CrvU3pSPFNKkd1Pt/QVHF7lCGm4Q7rQLsVzhOGFZ2E4RaspnoaQrti8Hfjml0lMB
+
+        pRSsHyctC4WY1KJ3YKc0wsKn8chGLi7LIdfOlLAqqiiDsZk+Qw9PcFvnfEwiXhFt
+
+        OIGiz/FQj6rNDHWHaMgbWXZDPCvrL9FNh4cv+YIhpWmPZw==
+
+        =Gqd9
+
+        -----END PGP MESSAGE-----
+
+        '
     headers:
       Cache-Control:
       - max-age=43200, public
       Content-Disposition:
-      - attachment; filename=1-pleasant_rearguard-msg.gpg
+      - attachment; filename=3-flameproof_boyishness-reply.gpg
       Content-Length:
-      - '605'
+      - '1085'
       Content-Type:
       - application/pgp-encrypted
       Date:
-      - Tue, 25 Aug 2020 17:27:44 GMT
+      - Wed, 28 Oct 2020 18:35:54 GMT
       Etag:
-      - sha256:cecd2591b0a9a0315f320e9878f68fdaec03c70b286da162c4416fab137ec00e
+      - sha256:286cfbb34b9225d9ad3cd99021f02d17a4707d9cab4a0d1462f5f35ed90f00ab
       Expires:
-      - Wed, 26 Aug 2020 05:27:44 GMT
+      - Thu, 29 Oct 2020 06:35:54 GMT
       Last-Modified:
-      - Tue, 25 Aug 2020 17:26:47 GMT
+      - Wed, 28 Oct 2020 18:35:34 GMT
       Server:
       - Werkzeug/0.16.0 Python/3.5.2
     status:
@@ -332,7 +344,7 @@ interactions:
       Accept-Encoding:
       - gzip, deflate
       Authorization:
-      - Token eyJleHAiOjE1OTg0MDUyNjMsImlhdCI6MTU5ODM3NjQ2MywiYWxnIjoiSFMyNTYifQ.eyJpZCI6MX0.HiTmfOpfGz4NZLH8kgtdw-Lu08ZXLUnregghkH0BAfE
+      - Token eyJpYXQiOjE2MDM5MTAxNTQsImFsZyI6IkhTMjU2IiwiZXhwIjoxNjAzOTM4OTU0fQ.eyJpZCI6MX0.EG-bTxshIdYC6ibFDcYjaS03PpDJiT2_MlFXjPV8nas
       Connection:
       - keep-alive
       Content-Length:
@@ -340,9 +352,9 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.20.0
+      - python-requests/2.22.0
     method: POST
-    uri: http://localhost:8081/api/v1/sources/f9b4da97-a077-412e-8e54-4ef4984a8540/add_star
+    uri: http://localhost:8081/api/v1/sources/6e4d7c0e-3603-4795-a6cc-ceef62a3de2a/add_star
   response:
     body:
       string: "{\n  \"message\": \"Star added\"\n}\n"
@@ -352,7 +364,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Tue, 25 Aug 2020 17:27:45 GMT
+      - Wed, 28 Oct 2020 18:35:56 GMT
       Server:
       - Werkzeug/0.16.0 Python/3.5.2
     status:
@@ -366,7 +378,7 @@ interactions:
       Accept-Encoding:
       - gzip, deflate
       Authorization:
-      - Token eyJleHAiOjE1OTg0MDUyNjMsImlhdCI6MTU5ODM3NjQ2MywiYWxnIjoiSFMyNTYifQ.eyJpZCI6MX0.HiTmfOpfGz4NZLH8kgtdw-Lu08ZXLUnregghkH0BAfE
+      - Token eyJpYXQiOjE2MDM5MTAxNTQsImFsZyI6IkhTMjU2IiwiZXhwIjoxNjAzOTM4OTU0fQ.eyJpZCI6MX0.EG-bTxshIdYC6ibFDcYjaS03PpDJiT2_MlFXjPV8nas
       Connection:
       - keep-alive
       Content-Length:
@@ -374,9 +386,9 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.20.0
+      - python-requests/2.22.0
     method: DELETE
-    uri: http://localhost:8081/api/v1/sources/f9b4da97-a077-412e-8e54-4ef4984a8540/remove_star
+    uri: http://localhost:8081/api/v1/sources/6e4d7c0e-3603-4795-a6cc-ceef62a3de2a/remove_star
   response:
     body:
       string: "{\n  \"message\": \"Star removed\"\n}\n"
@@ -386,7 +398,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Tue, 25 Aug 2020 17:27:46 GMT
+      - Wed, 28 Oct 2020 18:35:57 GMT
       Server:
       - Werkzeug/0.16.0 Python/3.5.2
     status:
