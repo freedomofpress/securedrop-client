@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1
+
+  * Moved proxy configuration to private volume (#79)
+  * Added black and isort checks to standardise code formatting (#61)
+  * Update urllib3 to version 1.25.10, requests to version 2.22.0, due to CVE-2020-26137 (#76).
+
 ## 0.3.0
 
   * Use incoming timeout value from JSON (#69).
