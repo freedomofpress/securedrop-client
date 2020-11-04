@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2
+
+  * Uses Qubes domain name instead of system hostname.
+
 ## 0.1.1
 
   * Infers hostname from system settings, if no config value found.
