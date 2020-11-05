@@ -5,9 +5,9 @@ import random
 import subprocess
 
 from securedrop_client import db
-from securedrop_client.db import Reply, User
+from securedrop_client.db import DraftReply, Reply, User
 
-from .utils import add_reply, add_source, add_user
+from .utils import add_draft_reply, add_reply, add_source, add_user
 
 random.seed("=^..^=..^=..^=")
 
@@ -28,7 +28,8 @@ class UpgradeTester:
 
     def load_data(self):
         """
-        Load data that has the bug where user.uuid is stored in replies.journalist_id.
+        Load data that has the bug where user.uuid is stored in replies.journalist_id and
+        draftreplies.journalist_id.
         """
         for _ in range(self.NUM_SOURCES):
             add_source(self.session)
@@ -57,12 +58,20 @@ class UpgradeTester:
             source_id = random.randint(1, self.NUM_SOURCES)
             add_reply(self.session, journalist.uuid, source_id)
 
+        # Add draft replies from randomly-selected journalists to a randomly-selected sources
+        for _ in range(1, self.NUM_REPLIES):
+            journalist_id = random.randint(1, self.NUM_USERS)
+            journalist = self.session.query(User).filter_by(id=journalist_id).one()
+            source_id = random.randint(1, self.NUM_SOURCES)
+            add_draft_reply(self.session, journalist.uuid, source_id)
+
         self.session.commit()
 
     def check_upgrade(self):
         """
-        Make sure each reply in the replies table has the correct journalist_id stored for the
-        associated journalist by making sure a User account exists with that journalist id.
+        Make sure each reply in the replies and draftreplies tables have the correct journalist_id
+        stored for the associated journalist by making sure a User account exists with that
+        journalist id.
         """
         replies = self.session.query(Reply).all()
         assert len(replies)
@@ -70,6 +79,13 @@ class UpgradeTester:
         for reply in replies:
             # Will fail if User does not exist
             self.session.query(User).filter_by(id=reply.journalist_id).one()
+
+        draftreplies = self.session.query(DraftReply).all()
+        assert len(draftreplies)
+
+        for draftreply in draftreplies:
+            # Will fail if User does not exist
+            self.session.query(User).filter_by(id=draftreply.journalist_id).one()
 
         self.session.close()
 

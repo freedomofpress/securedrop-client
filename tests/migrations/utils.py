@@ -8,7 +8,7 @@ from uuid import uuid4
 from sqlalchemy import text
 from sqlalchemy.orm.session import Session
 
-from securedrop_client.db import DownloadError, Source
+from securedrop_client.db import DownloadError, ReplySendStatus, Source
 
 random.seed("ᕕ( ᐛ )ᕗ")
 
@@ -149,6 +149,51 @@ def add_reply(session: Session, journalist_id: int, source_id: int) -> None:
         :is_decrypted,
         :download_error_id,
         :last_updated
+    )
+    """
+    session.execute(text(sql), params)
+
+
+def add_draft_reply(session: Session, journalist_id: int, source_id: int) -> None:
+    reply_send_statuses = session.query(ReplySendStatus).all()
+    reply_send_status_ids = [reply_send_status.id for reply_send_status in reply_send_statuses]
+
+    content = random_chars(1000)
+
+    source = session.query(Source).filter_by(id=source_id).one()
+
+    file_counter = len(source.collection) + 1
+
+    params = {
+        "uuid": str(uuid4()),
+        "journalist_id": journalist_id,
+        "source_id": source_id,
+        "file_counter": file_counter,
+        "content": content,
+        "send_status_id": random.choice(reply_send_status_ids),
+        "timestamp": random_datetime(),
+    }
+
+    sql = """
+    INSERT INTO draftreplies
+    (
+        uuid,
+        journalist_id,
+        source_id,
+        file_counter,
+        content,
+        send_status_id,
+        timestamp
+    )
+    VALUES
+    (
+        :uuid,
+        :journalist_id,
+        :source_id,
+        :file_counter,
+        :content,
+        :send_status_id,
+        :timestamp
     )
     """
     session.execute(text(sql), params)
