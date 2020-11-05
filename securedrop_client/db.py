@@ -490,3 +490,35 @@ class User(Base):
             return self.lastname[0:2].lower()
         else:
             return self.username[0:2].lower()  # username must be at least 3 characters
+
+
+class SeenFile(Base):
+    __tablename__ = "seen_files"
+    __table_args__ = (UniqueConstraint("file_id", "journalist_id"),)
+    id = Column(Integer, primary_key=True)
+    file_id = Column(Integer, ForeignKey("files.id"), nullable=False)
+    journalist_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    file = relationship("File", backref=backref("seen_files", lazy="dynamic", cascade="all,delete"))
+    journalist = relationship("User", backref=backref("seen_files"))
+
+
+class SeenMessage(Base):
+    __tablename__ = "seen_messages"
+    __table_args__ = (UniqueConstraint("message_id", "journalist_id"),)
+    id = Column(Integer, primary_key=True)
+    message_id = Column(Integer, ForeignKey("messages.id"), nullable=False)
+    journalist_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    message = relationship(
+        "Message", backref=backref("seen_messages", lazy="dynamic", cascade="all,delete")
+    )
+    journalist = relationship("User", backref=backref("seen_messages"))
+
+
+class SeenReply(Base):
+    __tablename__ = "seen_replies"
+    __table_args__ = (UniqueConstraint("reply_id", "journalist_id"),)
+    id = Column(Integer, primary_key=True)
+    reply_id = Column(Integer, ForeignKey("replies.id"), nullable=False)
+    journalist_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    reply = relationship("Reply", backref=backref("seen_replies", cascade="all,delete"))
+    journalist = relationship("User", backref=backref("seen_replies"))

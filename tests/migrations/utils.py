@@ -92,6 +92,111 @@ def add_user(session: Session, uuid: Optional[str] = None) -> None:
     session.execute(text(sql), params)
 
 
+def add_file(session: Session, source_id: int) -> None:
+    is_downloaded = random_bool()
+    is_decrypted = random_bool() if is_downloaded else None
+
+    source = session.query(Source).filter_by(id=source_id).one()
+    file_counter = len(source.collection) + 1
+
+    params = {
+        "uuid": str(uuid4()),
+        "source_id": source_id,
+        "filename": random_chars(50) + "-doc.gz.gpg",
+        "file_counter": file_counter,
+        "size": random.randint(0, 1024 * 1024 * 500),
+        "download_url": random_chars(50),
+        "is_downloaded": is_downloaded,
+        "is_decrypted": is_decrypted,
+        "is_read": random.choice([True, False]),
+        "last_updated": random_datetime(),
+    }
+    sql = """
+    INSERT INTO files
+    (
+        uuid,
+        source_id,
+        filename,
+        file_counter,
+        size,
+        download_url,
+        is_downloaded,
+        is_decrypted,
+        is_read,
+        last_updated
+    )
+    VALUES
+    (
+        :uuid,
+        :source_id,
+        :filename,
+        :file_counter,
+        :size,
+        :download_url,
+        :is_downloaded,
+        :is_decrypted,
+        :is_read,
+        :last_updated
+    )
+    """
+    session.execute(text(sql), params)
+
+
+def add_message(session: Session, source_id: int) -> None:
+    is_downloaded = random_bool()
+    is_decrypted = random_bool() if is_downloaded else None
+
+    content = random_chars(1000) if is_downloaded else None
+
+    source = session.query(Source).filter_by(id=source_id).one()
+    file_counter = len(source.collection) + 1
+
+    params = {
+        "uuid": str(uuid4()),
+        "source_id": source_id,
+        "filename": random_chars(50) + "-doc.gz.gpg",
+        "file_counter": file_counter,
+        "size": random.randint(0, 1024 * 1024 * 500),
+        "content": content,
+        "download_url": random_chars(50),
+        "is_downloaded": is_downloaded,
+        "is_decrypted": is_decrypted,
+        "is_read": random.choice([True, False]),
+        "last_updated": random_datetime(),
+    }
+    sql = """
+    INSERT INTO messages
+    (
+        uuid,
+        source_id,
+        filename,
+        file_counter,
+        size,
+        content,
+        download_url,
+        is_downloaded,
+        is_decrypted,
+        is_read,
+        last_updated
+    )
+    VALUES
+    (
+        :uuid,
+        :source_id,
+        :filename,
+        :file_counter,
+        :size,
+        :content,
+        :download_url,
+        :is_downloaded,
+        :is_decrypted,
+        :is_read,
+        :last_updated
+    )
+    """
+    session.execute(text(sql), params)
+
+
 def add_reply(session: Session, journalist_id: int, source_id: int) -> None:
     is_downloaded = random_bool() if random_bool() else None
     is_decrypted = random_bool() if is_downloaded else None
@@ -102,7 +207,6 @@ def add_reply(session: Session, journalist_id: int, source_id: int) -> None:
     content = random_chars(1000) if is_downloaded else None
 
     source = session.query(Source).filter_by(id=source_id).one()
-
     file_counter = len(source.collection) + 1
 
     params = {
@@ -147,5 +251,41 @@ def add_reply(session: Session, journalist_id: int, source_id: int) -> None:
         :download_error_id,
         :last_updated
     )
+    """
+    session.execute(text(sql), params)
+
+
+def mark_file_as_seen(session: Session, file_id: int, journalist_id: int) -> None:
+    params = {
+        "file_id": file_id,
+        "journalist_id": journalist_id,
+    }
+    sql = """
+    INSERT INTO seen_files (file_id, journalist_id)
+    VALUES (:file_id, :journalist_id)
+    """
+    session.execute(text(sql), params)
+
+
+def mark_message_as_seen(session: Session, message_id: int, journalist_id: int) -> None:
+    params = {
+        "message_id": message_id,
+        "journalist_id": journalist_id,
+    }
+    sql = """
+    INSERT INTO seen_messages (message_id, journalist_id)
+    VALUES (:message_id, :journalist_id)
+    """
+    session.execute(text(sql), params)
+
+
+def mark_reply_as_seen(session: Session, reply_id: int, journalist_id: int):
+    params = {
+        "reply_id": reply_id,
+        "journalist_id": journalist_id,
+    }
+    sql = """
+    INSERT INTO seen_replies (reply_id, journalist_id)
+    VALUES (:reply_id, :journalist_id)
     """
     session.execute(text(sql), params)
