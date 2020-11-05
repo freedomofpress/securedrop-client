@@ -18,7 +18,7 @@ depends_on = None
 def upgrade():
     """
     Fix reply association with journalist by updating journalist uuid to journalist id in the
-    journalist_id column.
+    journalist_id column for the replies and draftreplies tables.
     """
     conn = op.get_bind()
     cursor = conn.execute("""
@@ -28,24 +28,46 @@ def upgrade():
     """)
 
     replies_with_incorrect_associations = cursor.fetchall()
-    if not replies_with_incorrect_associations:
-        return
+    if replies_with_incorrect_associations:
+        conn.execute("""
+            UPDATE replies
+            SET journalist_id=
+            (
+                SELECT users.id
+                FROM users
+                WHERE journalist_id=users.uuid
+            )
+            WHERE exists
+            (
+                SELECT users.id
+                FROM users
+                WHERE journalist_id=users.uuid
+            );
+        """)
 
-    conn.execute("""
-        UPDATE replies
-        SET journalist_id=
-        (
-            SELECT users.id
-            FROM users
-            WHERE journalist_id=users.uuid
-        )
-        WHERE exists
-        (
-            SELECT users.id
-            FROM users
-            WHERE journalist_id=users.uuid
-        );
+    cursor = conn.execute("""
+        SELECT journalist_id
+        FROM draftreplies, users
+        WHERE journalist_id=users.uuid;
     """)
+
+    draftreplies_with_incorrect_associations = cursor.fetchall()
+    if draftreplies_with_incorrect_associations:
+        conn.execute("""
+            UPDATE draftreplies
+            SET journalist_id=
+            (
+                SELECT users.id
+                FROM users
+                WHERE journalist_id=users.uuid
+            )
+            WHERE exists
+            (
+                SELECT users.id
+                FROM users
+                WHERE journalist_id=users.uuid
+            );
+        """)
 
 
 def downgrade():
