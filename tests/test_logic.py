@@ -610,6 +610,41 @@ def test_Controller_update_sources(homedir, config, mocker):
     mock_gui.show_sources.assert_called_once_with(source_list)
 
 
+def test_Controller_mark_seen(homedir, config, source, mocker, session, session_maker):
+    co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    co.add_job = mocker.MagicMock()
+    file = factory.File(id=1, source=source["source"])
+    message = factory.Message(id=2, source=source["source"])
+    reply = factory.Reply(source=factory.Source())
+    session.add(file)
+    session.add(message)
+    session.add(reply)
+
+    job = mocker.MagicMock()
+    job.success_signal = mocker.MagicMock()
+    job.failure_signal = mocker.MagicMock()
+    mocker.patch("securedrop_client.logic.SeenJob", return_value=job)
+
+    co.mark_seen([file], [message], [reply])
+
+    co.add_job.emit.assert_called_once_with(job)
+    job.success_signal.connect.assert_called_once_with(co.on_seen_success, type=Qt.QueuedConnection)
+    job.failure_signal.connect.assert_called_once_with(co.on_seen_failure, type=Qt.QueuedConnection)
+
+
+def test_Controller_on_seen_success(homedir, mocker, session_maker):
+    co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    co.on_seen_success()
+
+
+def test_Controller_on_seen_failure(homedir, mocker, session_maker):
+    co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    debug_logger = mocker.patch("securedrop_client.logic.logger.debug")
+    error = Exception("errorororr")
+    co.on_seen_failure(error)
+    debug_logger.assert_called_once_with(error)
+
+
 def test_Controller_update_star_not_logged_in(homedir, config, mocker, session_maker):
     """
     Ensure that starring/unstarring a source when not logged in calls

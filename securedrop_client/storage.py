@@ -257,38 +257,10 @@ def __update_submissions(
             lazy_setattr(local_submission, "is_read", submission.is_read)
             lazy_setattr(local_submission, "download_url", submission.download_url)
 
-            # Add seen record if one doesn't yet exist
-            for journalist_uuid in submission.seen_by:
-                journalist = session.query(User).filter_by(uuid=journalist_uuid).one_or_none()
-
-                # Do not add seen record if journalist is missing from the local db. If the
-                # journalist accont was deleted, wait until the server says so.
-                if not journalist:
-                    return
-
-                journalist_id = journalist.id
-                if model == File:
-                    seen_file = (
-                        session.query(SeenFile)
-                        .filter_by(file_id=local_submission.id, journalist_id=journalist_id)
-                        .one_or_none()
-                    )
-                    if not seen_file:
-                        seen_file = SeenFile(
-                            file_id=local_submission.id, journalist_id=journalist_id
-                        )
-                        session.add(seen_file)
-                elif model == Message:
-                    seen_message = (
-                        session.query(SeenMessage)
-                        .filter_by(message_id=local_submission.id, journalist_id=journalist_id)
-                        .one_or_none()
-                    )
-                    if not seen_message:
-                        seen_message = SeenMessage(
-                            message_id=local_submission.id, journalist_id=journalist_id
-                        )
-                        session.add(seen_message)
+            if model == File:
+                add_seen_file_records(local_submission.id, submission.seen_by, session)
+            elif model == Message:
+                add_seen_message_records(local_submission.id, submission.seen_by, session)
 
             # Removing the UUID from local_uuids ensures this record won't be
             # deleted at the end of this function.
@@ -306,6 +278,11 @@ def __update_submissions(
                     download_url=submission.download_url,
                 )
                 session.add(ns)
+                session.flush()
+                if model == File:
+                    add_seen_file_records(ns.id, submission.seen_by, session)
+                elif model == Message:
+                    add_seen_message_records(ns.id, submission.seen_by, session)
                 logger.debug(f"Added {model.__name__} {submission.uuid}")
 
     # The uuids remaining in local_uuids do not exist on the remote server, so
@@ -316,6 +293,72 @@ def __update_submissions(
         logger.debug(f"Deleted {model.__name__} {deleted_submission.uuid}")
 
     session.commit()
+
+
+def add_seen_file_records(file_id: int, journalist_uuids: List[str], session: Session) -> None:
+    """
+    Add a seen record for each journalist that saw the file.
+    """
+    for journalist_uuid in journalist_uuids:
+        journalist = session.query(User).filter_by(uuid=journalist_uuid).one_or_none()
+
+        # Do not add seen record if journalist is missing from the local db. If the
+        # journalist account needs to be created or deleted, wait until the server says so.
+        if not journalist:
+            return
+
+        seen_file = (
+            session.query(SeenFile)
+            .filter_by(file_id=file_id, journalist_id=journalist.id)
+            .one_or_none()
+        )
+        if not seen_file:
+            seen_file = SeenFile(file_id=file_id, journalist_id=journalist.id)
+            session.add(seen_file)
+
+
+def add_seen_message_records(msg_id: int, journalist_uuids: List[str], session: Session) -> None:
+    """
+    Add a seen record for each journalist that saw the message.
+    """
+    for journalist_uuid in journalist_uuids:
+        journalist = session.query(User).filter_by(uuid=journalist_uuid).one_or_none()
+
+        # Do not add seen record if journalist is missing from the local db. If the
+        # journalist account needs to be created or deleted, wait until the server says so.
+        if not journalist:
+            return
+
+        seen_message = (
+            session.query(SeenMessage)
+            .filter_by(message_id=msg_id, journalist_id=journalist.id)
+            .one_or_none()
+        )
+        if not seen_message:
+            seen_message = SeenMessage(message_id=msg_id, journalist_id=journalist.id)
+            session.add(seen_message)
+
+
+def add_seen_reply_records(reply_id: int, journalist_uuids: List[str], session: Session) -> None:
+    """
+    Add a seen record for each journalist that saw the reply.
+    """
+    for journalist_uuid in journalist_uuids:
+        journalist = session.query(User).filter_by(uuid=journalist_uuid).one_or_none()
+
+        # Do not add seen record if journalist is missing from the local db. If the
+        # journalist account needs to be created or deleted, wait until the server says so.
+        if not journalist:
+            return
+
+        seen_reply = (
+            session.query(SeenReply)
+            .filter_by(reply_id=reply_id, journalist_id=journalist.id)
+            .one_or_none()
+        )
+        if not seen_reply:
+            seen_reply = SeenReply(reply_id=reply_id, journalist_id=journalist.id)
+            session.add(seen_reply)
 
 
 def update_replies(
@@ -365,25 +408,7 @@ def update_replies(
             lazy_setattr(local_reply, "size", reply.size)
             lazy_setattr(local_reply, "filename", reply.filename)
 
-            # Add seen record if one doesn't yet exist
-            for journalist_uuid in reply.seen_by:
-                journalist = session.query(User).filter_by(uuid=journalist_uuid).one_or_none()
-
-                # Do not add seen record if journalist is missing from the local db. If the
-                # journalist accont was deleted, wait until the server says so.
-                if not journalist:
-                    return
-
-                journalist_id = journalist.id
-
-                seen_reply = (
-                    session.query(SeenReply)
-                    .filter_by(reply_id=local_reply.id, journalist_id=journalist_id)
-                    .one_or_none()
-                )
-                if not seen_reply:
-                    seen_reply = SeenReply(reply_id=local_reply.id, journalist_id=journalist_id)
-                    session.add(seen_reply)
+            add_seen_reply_records(local_reply.id, reply.seen_by, session)
 
             del local_replies_by_uuid[reply.uuid]
             logger.debug("Updated reply {}".format(reply.uuid))
@@ -402,6 +427,9 @@ def update_replies(
                 size=reply.size,
             )
             session.add(nr)
+            session.flush()
+
+            add_seen_reply_records(nr.id, reply.seen_by, session)
 
             # All replies fetched from the server have succeeded in being sent,
             # so we should delete the corresponding draft locally if it exists.

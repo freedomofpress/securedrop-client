@@ -1180,6 +1180,13 @@ class SourceWidget(QWidget):
         if self.source_uuid != source_uuid:
             return
 
+        # Avoid marking as seen when switching to offline mode (this is an edge case since
+        # we do not emit the mark_seen signal from the SourceList if not authenticated)
+        if not self.controller.authenticated_user:
+            return
+        else:
+            journalist_id = self.controller.authenticated_user.id
+
         # immediately update styles to mark as seen
         self.seen = True
         self.update_styles()
@@ -1193,15 +1200,10 @@ class SourceWidget(QWidget):
             replies = []  # type: List[str]
             source_items = self.source.collection
             for item in source_items:
-                # Avoid marking as seen when switching to offline mode (this is an edge case since
-                # we do not emit the mark_seen signal from the SourceList if not authenticated)
-                if not self.controller.authenticated_user:
-                    return
-
-                if item.seen_by(self.controller.authenticated_user.id):
-                    continue
-
                 try:
+                    if item.seen_by(journalist_id):
+                        continue
+
                     if isinstance(item, File):
                         files.append(item.uuid)
                     elif isinstance(item, Message):
