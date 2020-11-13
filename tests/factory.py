@@ -101,11 +101,11 @@ def DraftReply(**attrs):
     global DRAFT_REPLY_COUNT
     DRAFT_REPLY_COUNT += 1
     defaults = dict(
+        uuid="draft-reply-uuid-{}".format(DRAFT_REPLY_COUNT),
         timestamp=datetime.utcnow(),
         source_id=1,
         journalist_id=1,
         file_counter=1,
-        uuid="draft-reply-uuid-{}".format(REPLY_COUNT),
         content="content",
         send_status_id=1,
     )

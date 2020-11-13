@@ -1253,6 +1253,13 @@ def test_SourceWidget_init_for_seen_source(mocker, session):
     session.add(seen_message_for_another_user)
     session.add(seen_reply_for_another_user)
 
+    draft_reply_from_current_user = factory.DraftReply(
+        source=source, journalist_id=controller.authenticated_user.id
+    )
+    draft_reply_from_another_user = factory.DraftReply(source=source, journalist_id=666)
+    session.add(draft_reply_from_current_user)
+    session.add(draft_reply_from_another_user)
+
     session.commit()
 
     session.add(db.SeenFile(file_id=seen_file.id, journalist_id=controller.authenticated_user.id))
@@ -1304,6 +1311,13 @@ def test_SourceWidget_init_for_unseen_source(mocker, session):
     session.add(unseen_message)
     session.add(unseen_reply)
 
+    draft_reply_from_current_user = factory.DraftReply(
+        source=source, journalist_id=controller.authenticated_user.id
+    )
+    draft_reply_from_another_user = factory.DraftReply(source=source, journalist_id=666)
+    session.add(draft_reply_from_current_user)
+    session.add(draft_reply_from_another_user)
+
     session.commit()
 
     session.add(db.SeenFile(file_id=seen_file.id, journalist_id=controller.authenticated_user.id))
@@ -1345,7 +1359,7 @@ def test_SourceWidget_html_init(mocker):
     sw.name.setText.assert_called_once_with("foo <b>bar</b> baz")
 
 
-def test_test_SourceWidget_update_styles_to_read(mocker):
+def test_SourceWidget_update_styles_to_read(mocker):
     """
     Ensure styles are updated so that the source widget appears read when seen is True.
     """
@@ -1419,6 +1433,7 @@ def test_SourceWidget__on_mark_seen(mocker, session):
     unseen_file = factory.File(source=source)
     unseen_message = factory.Message(source=source)
     unseen_reply = factory.Reply(source=source)
+
     session.add(unseen_file)
     session.add(unseen_message)
     session.add(unseen_reply)
@@ -1436,6 +1451,13 @@ def test_SourceWidget__on_mark_seen(mocker, session):
     session.add(unseen_file_for_current_user)
     session.add(unseen_message_for_current_user)
     session.add(unseen_reply_for_current_user)
+
+    draft_reply_from_current_user = factory.DraftReply(
+        source=source, journalist_id=controller.authenticated_user.id
+    )
+    draft_reply_from_another_user = factory.DraftReply(source=source, journalist_id=666)
+    session.add(draft_reply_from_current_user)
+    session.add(draft_reply_from_another_user)
 
     session.commit()
 

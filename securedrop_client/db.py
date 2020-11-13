@@ -490,6 +490,12 @@ class DraftReply(Base):
         """
         return True
 
+    def seen_by(self, journalist_id: int) -> bool:
+        """
+        A draft reply is considered seen by everyone (we don't track who sees draft replies).
+        """
+        return True
+
 
 class ReplySendStatus(Base):
 
