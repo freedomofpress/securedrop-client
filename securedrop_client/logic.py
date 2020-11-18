@@ -27,6 +27,7 @@ from typing import Any, Dict, List, Tuple, Type, Union  # noqa: F401
 
 import arrow
 import sdclientapi
+import sqlalchemy.orm.exc
 from PyQt5.QtCore import QObject, QProcess, Qt, QThread, QTimer, pyqtSignal
 from sdclientapi import RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm.session import sessionmaker
@@ -613,11 +614,50 @@ class Controller(QObject):
         sources = list(storage.get_local_sources(self.session))
         self.gui.show_sources(sources)
 
-    def mark_seen(self, files: List[str], messages: List[str], replies: List[str]):
-        job = SeenJob(files, messages, replies)
-        job.success_signal.connect(self.on_seen_success, type=Qt.QueuedConnection)
-        job.failure_signal.connect(self.on_seen_failure, type=Qt.QueuedConnection)
-        self.add_job.emit(job)
+    def mark_seen(self, source: db.Source) -> None:
+        """
+        Mark all unseen conversation items of the supplied source as seen by the current
+        authenticated user.
+        """
+        try:
+            # If user is logged out then just return
+            if not self.authenticated_user:
+                return
+
+            # Prepare the lists of uuids to mark as seen by the current user. Continue to process
+            # the next item if the source conversation item has already been seen by the current
+            # user or if it no longer exists (individual conversation items can be deleted via the
+            # web journalist interface).
+            current_user_id = self.authenticated_user.id
+            files = []  # type: List[str]
+            messages = []  # type: List[str]
+            replies = []  # type: List[str]
+            source_items = source.collection
+            for item in source_items:
+                try:
+                    if item.seen_by(current_user_id):
+                        continue
+
+                    if isinstance(item, db.File):
+                        files.append(item.uuid)
+                    elif isinstance(item, db.Message):
+                        messages.append(item.uuid)
+                    elif isinstance(item, db.Reply):
+                        replies.append(item.uuid)
+                except sqlalchemy.exc.InvalidRequestError as e:
+                    logger.debug(e)
+                    continue
+
+            # If there's nothing to be marked as seen, just return.
+            if not files and not messages and not replies:
+                return
+
+            job = SeenJob(files, messages, replies)
+            job.success_signal.connect(self.on_seen_success, type=Qt.QueuedConnection)
+            job.failure_signal.connect(self.on_seen_failure, type=Qt.QueuedConnection)
+            self.add_job.emit(job)
+        except sqlalchemy.exc.InvalidRequestError as e:
+            logger.debug(e)
 
     def on_seen_success(self) -> None:
         pass

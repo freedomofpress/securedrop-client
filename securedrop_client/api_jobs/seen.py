@@ -17,6 +17,10 @@ class SeenJob(ApiJob):
         """
         Override ApiJob.
 
-        Mark files, messages, and replies as seen
+        Mark files, messages, and replies as seen. Do not make the request if there are no items to
+        be marked as seen.
         """
+        if not self.files and not self.messages and not self.replies:
+            return
+
         api_client.seen(self.files, self.messages, self.replies)

@@ -3,7 +3,6 @@ Make sure the UI widgets are configured correctly and work as expected.
 """
 import random
 from datetime import datetime
-from typing import Type
 from unittest.mock import Mock, patch
 
 import arrow
@@ -710,18 +709,21 @@ def test_MainView_on_source_changed_updates_conversation_view(mocker, session):
     Test that the source collection is displayed in the conversation view.
     """
     mv = MainView(None)
-    mv.source_list = mocker.MagicMock()
+    # mv.source_list = mocker.MagicMock()
     mv.controller = mocker.MagicMock(is_authenticated=True)
-    s = factory.Source()
-    session.add(s)
-    f = factory.File(source=s, filename="0-mock-doc.gpg")
-    session.add(f)
-    m = factory.Message(source=s, filename="0-mock-msg.gpg")
-    session.add(m)
-    r = factory.Reply(source=s, filename="0-mock-reply.gpg")
-    session.add(r)
+    source = factory.Source()
+    session.add(source)
+    file = factory.File(source=source, filename="0-mock-doc.gpg")
+    message = factory.Message(source=source, filename="0-mock-msg.gpg")
+    reply = factory.Reply(source=source, filename="0-mock-reply.gpg")
+    session.add(file)
+    session.add(message)
+    session.add(reply)
     session.commit()
-    mv.source_list.get_selected_source = mocker.MagicMock(return_value=s)
+    source_selected = mocker.patch("securedrop_client.gui.widgets.SourceList.source_selected")
+    mocker.patch(
+        "securedrop_client.gui.widgets.SourceList.get_selected_source", return_value=source
+    )
     add_message_fn = mocker.patch(
         "securedrop_client.gui.widgets.ConversationView.add_message", new=mocker.Mock()
     )
@@ -734,6 +736,8 @@ def test_MainView_on_source_changed_updates_conversation_view(mocker, session):
 
     mv.on_source_changed()
 
+    source_selected.emit.assert_called_once_with(source.uuid)
+    mv.controller.mark_seen.assert_called_once_with(source)
     assert add_message_fn.call_count == 1
     assert add_reply_fn.call_count == 1
     assert add_file_fn.call_count == 1
@@ -746,8 +750,8 @@ def test_MainView_on_source_changed_SourceConversationWrapper_is_preserved(mocke
     first time, and then it should persist.
     """
     mv = MainView(None)
-    mv.source_list = mocker.MagicMock()
     mv.set_conversation = mocker.MagicMock()
+    source_selected = mocker.patch("securedrop_client.gui.widgets.SourceList.source_selected")
     mv.controller = mocker.MagicMock(is_authenticated=True)
     source = factory.Source()
     source2 = factory.Source()
@@ -760,30 +764,40 @@ def test_MainView_on_source_changed_SourceConversationWrapper_is_preserved(mocke
     )
 
     # We expect on the first call, SourceConversationWrapper.__init__ should be called.
-    mv.source_list.get_selected_source = mocker.MagicMock(return_value=source)
+    mocker.patch(
+        "securedrop_client.gui.widgets.SourceList.get_selected_source", return_value=source
+    )
     mv.on_source_changed()
     assert mv.set_conversation.call_count == 1
     assert source_conversation_init.call_count == 1
+    source_selected.emit.assert_called_once_with(source.uuid)
 
-    # Reset mock call counts for next call of on_source_changed.
+    # Reset mocked objects for the next call of on_source_changed.
     source_conversation_init.reset_mock()
     mv.set_conversation.reset_mock()
+    source_selected.reset_mock()
 
     # Now click on another source (source2). Since this is the first time we have clicked
     # on source2, we expect on the first call, SourceConversationWrapper.__init__ should be
     # called.
-    mv.source_list.get_selected_source = mocker.MagicMock(return_value=source2)
+    mocker.patch(
+        "securedrop_client.gui.widgets.SourceList.get_selected_source", return_value=source2
+    )
     mv.on_source_changed()
     assert mv.set_conversation.call_count == 1
     assert source_conversation_init.call_count == 1
+    source_selected.emit.assert_called_once_with(source2.uuid)
 
-    # Reset mock call counts for next call of on_source_changed.
+    # Reset mocked objects for the next call of on_source_changed.
     source_conversation_init.reset_mock()
     mv.set_conversation.reset_mock()
+    source_selected.reset_mock()
 
     # But if we click back (call on_source_changed again) to the source,
     # its SourceConversationWrapper should _not_ be recreated.
-    mv.source_list.get_selected_source = mocker.MagicMock(return_value=source)
+    mocker.patch(
+        "securedrop_client.gui.widgets.SourceList.get_selected_source", return_value=source
+    )
     conversation_wrapper = mv.source_conversations[source.uuid]
     conversation_wrapper.conversation_view = mocker.MagicMock()
     conversation_wrapper.conversation_view.update_conversation = mocker.MagicMock()
@@ -795,6 +809,7 @@ def test_MainView_on_source_changed_SourceConversationWrapper_is_preserved(mocke
     # Conversation should be redrawn even for existing source (bug #467).
     assert conversation_wrapper.conversation_view.update_conversation.call_count == 1
     assert source_conversation_init.call_count == 0
+    source_selected.emit.assert_called_once_with(source.uuid)
 
 
 def test_MainView_set_conversation(mocker):
@@ -1418,16 +1433,12 @@ def test_SourceWidget__on_authentication_changed(mocker):
     assert not sw.seen
 
 
-def test_SourceWidget__on_mark_seen(mocker, session):
+def test_SourceWidget__on_source_selected(mocker, session):
     """
-    Ensure that:
-
-    * The source widget is immediately marked as seen.
-    * All source conversation items that have not been seen by the current user are marked as seen.
+    Ensure that source widget is marked as seen.
     """
     controller = mocker.MagicMock()
     controller.authenticated_user = factory.User(id=1)
-    controller.mark_seen = mocker.MagicMock()
     source = factory.Source()
 
     unseen_file = factory.File(source=source)
@@ -1478,138 +1489,38 @@ def test_SourceWidget__on_mark_seen(mocker, session):
     sw.seen = False
     sw.update_styles = mocker.MagicMock()
 
-    sw._on_mark_seen(source.uuid)
+    sw._on_source_selected(source.uuid)
 
     sw.update_styles.assert_called_once_with()
     assert sw.seen
-    controller.mark_seen.assert_called_once_with(
-        [unseen_file.uuid, unseen_file_for_current_user.uuid],
-        [unseen_message.uuid, unseen_message_for_current_user.uuid],
-        [unseen_reply.uuid, unseen_reply_for_current_user.uuid],
-    )
 
 
-def test_SourceWidget__on_mark_seen_skips_op_if_uuid_does_not_match(mocker):
+def test_SourceWidget__on_source_selected_skips_op_if_uuid_does_not_match(mocker):
     """
-    Ensure the source widget is immediately marked as seen and that all unseen source conversation
-    items are passed to the controller to be marked as seen.
+    Ensure the source widget is unchanged if uuid does not match the selected source.
     """
     controller = mocker.MagicMock()
-    controller.mark_seen = mocker.MagicMock()
     source = factory.Source()
     sw = SourceWidget(controller, source, mocker.MagicMock())
     sw.seen = False
     sw.update_styles = mocker.MagicMock()
 
-    sw._on_mark_seen("some-other-uuid")
+    sw._on_source_selected("some-other-uuid")
 
-    controller.mark_seen.assert_not_called()
     sw.update_styles.assert_not_called()
     assert not sw.seen
 
 
-def test_SourceWidget__on_mark_seen_skips_op_if_user_offline(mocker):
-    """
-    Ensure the source widget is immediately marked as seen and that all unseen source conversation
-    items are passed to the controller to be marked as seen.
-    """
+def test_SourceWidget__on_source_selected_skips_op_if_already_seen(mocker):
     controller = mocker.MagicMock()
-    controller.authenticated_user = None
-    controller.mark_seen = mocker.MagicMock()
     source = factory.Source()
     sw = SourceWidget(controller, source, mocker.MagicMock())
-    sw.seen = False
+    sw.seen = True
     sw.update_styles = mocker.MagicMock()
 
-    sw._on_mark_seen(source.uuid)
+    sw._on_source_selected(source.uuid)
 
-    controller.mark_seen.assert_not_called()
     sw.update_styles.assert_not_called()
-    assert not sw.seen  # Seen will get switched to True in the authentication change handler
-
-
-class DeletedFile(Mock):
-    def __class__(self):
-        return Type(db.File)
-
-    def seen_by(self, journalist_id):
-        raise sqlalchemy.exc.InvalidRequestError()
-
-
-class SourceWithDeletedFile(Mock):
-    @property
-    def collection(self):
-        deleted_file = DeletedFile()
-        return [deleted_file]
-
-
-def test_SourceWidget__on_mark_seen_does_not_raise_InvalidRequestError_if_item_deleted(mocker):
-    """
-    If a source item no longer exists in the local data store, ensure we do not raise an exception.
-    """
-    mocker.patch("securedrop_client.gui.widgets.isinstance", return_value=False)
-    source = SourceWithDeletedFile()
-    source.seen = mocker.MagicMock()
-    source.uuid = mocker.MagicMock()
-    source.last_updated = mocker.MagicMock()
-    source.is_starred = mocker.MagicMock()
-    mocker.patch("securedrop_client.gui.widgets.SourceWidget.update")
-    controller = mocker.MagicMock()
-    controller.mark_seen = mocker.MagicMock()
-    sw = SourceWidget(controller, source, mocker.MagicMock())
-    sw.seen = False
-    sw.update_styles = mocker.MagicMock()
-    debug_logger = mocker.patch("securedrop_client.gui.widgets.logger.debug")
-
-    sw._on_mark_seen(source.uuid)
-
-    sw.update_styles.assert_called_once_with()
-    assert sw.seen
-    controller.mark_seen.assert_called_once_with([], [], [])
-    assert debug_logger.call_count == 1
-
-
-class DeletedSourceWhenAccessingCollection(Mock):
-    @property
-    def collection(self):
-        raise sqlalchemy.exc.InvalidRequestError()
-
-    @property
-    def uuid(self):
-        return "DeletedSourceWhenAccessingCollection_uuid"
-
-    @property
-    def seen(self):
-        return False
-
-    @property
-    def last_updated(self):
-        return datetime.now()
-
-    @property
-    def is_starred(self):
-        return True
-
-
-def test_SourceWidget__on_mark_seen_does_not_raise_InvalidRequestError_if_source_deleted(mocker):
-    """
-    If a source item no longer exists in the local data store, ensure we do not raise an exception.
-    """
-    source = DeletedSourceWhenAccessingCollection()
-    mocker.patch("securedrop_client.gui.widgets.SourceWidget.update")
-    controller = mocker.MagicMock()
-    controller.mark_seen = mocker.MagicMock()
-    sw = SourceWidget(controller, source, mocker.MagicMock())
-    sw.seen = False
-    sw.update_styles = mocker.MagicMock()
-    debug_logger = mocker.patch("securedrop_client.gui.widgets.logger.debug")
-
-    sw._on_mark_seen(source.uuid)
-
-    sw.update_styles.assert_called_once_with()
-    assert sw.seen
-    controller.mark_seen.assert_not_called()
-    assert debug_logger.call_count == 1
 
 
 def test_SourceWidget_update_attachment_icon(mocker):

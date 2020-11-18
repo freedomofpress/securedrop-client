@@ -59,3 +59,11 @@
     font-size: 13px;
     color: #000;
 }
+
+#SourceWidget_container QPushButton {
+    border: none;
+}
+
+#StarToggleButton {
+    border: none;
+}

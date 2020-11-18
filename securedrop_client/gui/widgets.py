@@ -641,9 +641,10 @@ class MainView(QWidget):
 
             self.controller.session.refresh(source)
 
-            # If logged in, mark source as seen
-            if self.controller.authenticated:
-                self.source_list.mark_seen.emit(source.uuid)
+            # Immediately show the selected source as seen in the UI and then make a request to mark
+            # source as seen.
+            self.source_list.source_selected.emit(source.uuid)
+            self.controller.mark_seen(source)
 
             # Get or create the SourceConversationWrapper
             if source.uuid in self.source_conversations:
@@ -800,7 +801,7 @@ class SourceList(QListWidget):
 
     NUM_SOURCES_TO_ADD_AT_A_TIME = 32
 
-    mark_seen = pyqtSignal(str)
+    source_selected = pyqtSignal(str)
 
     def __init__(self):
         super().__init__()
@@ -872,7 +873,9 @@ class SourceList(QListWidget):
 
         # Add widgets for new sources
         for uuid in sources_to_add:
-            source_widget = SourceWidget(self.controller, sources_to_add[uuid], self.mark_seen)
+            source_widget = SourceWidget(
+                self.controller, sources_to_add[uuid], self.source_selected
+            )
             source_item = SourceListWidgetItem(self)
             source_item.setSizeHint(source_widget.sizeHint())
             self.insertItem(0, source_item)
@@ -907,7 +910,7 @@ class SourceList(QListWidget):
             for source in sources_slice:
                 try:
                     source_uuid = source.uuid
-                    source_widget = SourceWidget(self.controller, source, self.mark_seen)
+                    source_widget = SourceWidget(self.controller, source, self.source_selected)
                     source_item = SourceListWidgetItem(self)
                     source_item.setSizeHint(source_widget.sizeHint())
                     self.insertItem(0, source_item)
@@ -1003,14 +1006,14 @@ class SourceWidget(QWidget):
 
     SOURCE_CSS = load_css("source.css")
 
-    def __init__(self, controller: Controller, source: Source, mark_seen_signal: pyqtSignal):
+    def __init__(self, controller: Controller, source: Source, source_selected_signal: pyqtSignal):
         super().__init__()
 
         self.controller = controller
         self.controller.source_deleted.connect(self._on_source_deleted)
         self.controller.source_deletion_failed.connect(self._on_source_deletion_failed)
         self.controller.authentication_state.connect(self._on_authentication_changed)
-        mark_seen_signal.connect(self._on_mark_seen)
+        source_selected_signal.connect(self._on_source_selected)
 
         # Store source
         self.source = source
@@ -1171,52 +1174,18 @@ class SourceWidget(QWidget):
             self.update_styles()
 
     @pyqtSlot(str)
-    def _on_mark_seen(self, source_uuid: str):
+    def _on_source_selected(self, selected_source_uuid: str):
         """
-        Immediately show the source widget as having been seen and tell the controller to make a
-        seen API request to mark all files, messages, and replies as unseen by the current user as
-        seen.
+        Show widget as having been seen.
         """
-        if self.source_uuid != source_uuid:
+        if self.source_uuid != selected_source_uuid:
             return
 
-        # Avoid marking as seen when switching to offline mode (this is an edge case since
-        # we do not emit the mark_seen signal from the SourceList if not authenticated)
-        if not self.controller.authenticated_user:
+        if self.seen:
             return
-        else:
-            journalist_id = self.controller.authenticated_user.id
 
-        # immediately update styles to mark as seen
         self.seen = True
         self.update_styles()
-
-        # Prepare the lists of uuids to mark as seen by the current user. Continue to process the
-        # next item if the source conversation item has already been seen by the current user or if
-        # it no longer exists.
-        try:
-            files = []  # type: List[str]
-            messages = []  # type: List[str]
-            replies = []  # type: List[str]
-            source_items = self.source.collection
-            for item in source_items:
-                try:
-                    if item.seen_by(journalist_id):
-                        continue
-
-                    if isinstance(item, File):
-                        files.append(item.uuid)
-                    elif isinstance(item, Message):
-                        messages.append(item.uuid)
-                    elif isinstance(item, Reply):
-                        replies.append(item.uuid)
-                except sqlalchemy.exc.InvalidRequestError as e:
-                    logger.debug(e)
-                    continue
-
-            self.controller.mark_seen(files, messages, replies)
-        except sqlalchemy.exc.InvalidRequestError as e:
-            logger.debug(e)
 
     @pyqtSlot(str)
     def _on_source_deleted(self, source_uuid: str):
