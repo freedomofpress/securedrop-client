@@ -1391,6 +1391,25 @@ def test_SourceWidget_update_styles_to_read(mocker):
     preview.setObjectName.assert_called_with("SourceWidget_preview")
 
 
+def test_SourceWidget_update_styles_to_read_selected(mocker):
+    """
+    Ensure styles are updated so that the source widget appears read and selected when seen and
+    selected are True.
+    """
+    sw = SourceWidget(mocker.MagicMock(), factory.Source(), mocker.MagicMock())
+    sw.seen = True
+    sw.selected = True
+    name = mocker.patch.object(sw, "name")
+    timestamp = mocker.patch.object(sw, "timestamp")
+    preview = mocker.patch.object(sw, "preview")
+
+    sw.update_styles()
+
+    name.setObjectName.assert_called_with("SourceWidget_name_selected")
+    timestamp.setObjectName.assert_called_with("SourceWidget_timestamp")
+    preview.setObjectName.assert_called_with("SourceWidget_preview")
+
+
 def test_test_SourceWidget_update_styles_to_unread(mocker):
     """
     Ensure styles are updated so that the source widget appears unread when seen is False.
@@ -1435,69 +1454,26 @@ def test_SourceWidget__on_authentication_changed(mocker):
 
 def test_SourceWidget__on_source_selected(mocker, session):
     """
-    Ensure that source widget is marked as seen.
+    Ensure the source widget is selected and seen status updates to True when it's selected.
     """
     controller = mocker.MagicMock()
     controller.authenticated_user = factory.User(id=1)
     source = factory.Source()
-
-    unseen_file = factory.File(source=source)
-    unseen_message = factory.Message(source=source)
-    unseen_reply = factory.Reply(source=source)
-
-    session.add(unseen_file)
-    session.add(unseen_message)
-    session.add(unseen_reply)
-
-    seen_file = factory.File(source=source)
-    seen_message = factory.Message(source=source)
-    seen_reply = factory.Reply(source=source)
-    session.add(seen_file)
-    session.add(seen_message)
-    session.add(seen_reply)
-
-    unseen_file_for_current_user = factory.File(source=source)
-    unseen_message_for_current_user = factory.Message(source=source)
-    unseen_reply_for_current_user = factory.Reply(source=source)
-    session.add(unseen_file_for_current_user)
-    session.add(unseen_message_for_current_user)
-    session.add(unseen_reply_for_current_user)
-
-    draft_reply_from_current_user = factory.DraftReply(
-        source=source, journalist_id=controller.authenticated_user.id
-    )
-    draft_reply_from_another_user = factory.DraftReply(source=source, journalist_id=666)
-    session.add(draft_reply_from_current_user)
-    session.add(draft_reply_from_another_user)
-
-    session.commit()
-
-    session.add(db.SeenFile(file_id=seen_file.id, journalist_id=controller.authenticated_user.id))
-    session.add(
-        db.SeenMessage(message_id=seen_message.id, journalist_id=controller.authenticated_user.id)
-    )
-    session.add(
-        db.SeenReply(reply_id=seen_reply.id, journalist_id=controller.authenticated_user.id)
-    )
-    session.add(db.SeenFile(file_id=unseen_file_for_current_user.id, journalist_id=666))
-    session.add(db.SeenMessage(message_id=unseen_message_for_current_user.id, journalist_id=666))
-    session.add(db.SeenReply(reply_id=unseen_reply_for_current_user.id, journalist_id=666))
-
-    session.commit()
-
     sw = SourceWidget(controller, source, mocker.MagicMock())
     sw.seen = False
     sw.update_styles = mocker.MagicMock()
 
     sw._on_source_selected(source.uuid)
 
-    sw.update_styles.assert_called_once_with()
     assert sw.seen
+    assert sw.selected
+    sw.update_styles.assert_called_once_with()
 
 
 def test_SourceWidget__on_source_selected_skips_op_if_uuid_does_not_match(mocker):
     """
-    Ensure the source widget is unchanged if uuid does not match the selected source.
+    Ensure the source widget is not selected and seen status remains the same if uuid does not match
+    the selected source.
     """
     controller = mocker.MagicMock()
     source = factory.Source()
@@ -1507,8 +1483,9 @@ def test_SourceWidget__on_source_selected_skips_op_if_uuid_does_not_match(mocker
 
     sw._on_source_selected("some-other-uuid")
 
-    sw.update_styles.assert_not_called()
     assert not sw.seen
+    assert not sw.selected
+    sw.update_styles.assert_called_with()
 
 
 def test_SourceWidget__on_source_selected_skips_op_if_already_seen(mocker):
@@ -1520,7 +1497,8 @@ def test_SourceWidget__on_source_selected_skips_op_if_already_seen(mocker):
 
     sw._on_source_selected(source.uuid)
 
-    sw.update_styles.assert_not_called()
+    sw.seen = True
+    sw.update_styles.assert_called_once_with()
 
 
 def test_SourceWidget_update_attachment_icon(mocker):
@@ -1664,21 +1642,27 @@ def test_SourceWidget__on_source_deleted(mocker, session, source):
     mark_seen_signal = mocker.MagicMock()
     sw = SourceWidget(controller, factory.Source(uuid="123"), mark_seen_signal)
     sw._on_source_deleted("123")
-    assert sw.gutter.isHidden()
-    assert sw.metadata.isHidden()
+    assert sw.star.isHidden()
+    assert not sw.name.isHidden()
+    assert sw.paperclip.isHidden()
     assert sw.preview.isHidden()
+    assert sw.timestamp.isHidden()
     assert not sw.waiting_delete_confirmation.isHidden()
 
 
 def test_SourceWidget__on_source_deleted_wrong_uuid(mocker, session, source):
     controller = mocker.MagicMock()
     mark_seen_signal = mocker.MagicMock()
-    sw = SourceWidget(controller, factory.Source(uuid="123"), mark_seen_signal)
+    source = factory.Source(uuid="123")
+    source.document_count = mocker.MagicMock(return_value=1)
+    sw = SourceWidget(controller, source, mark_seen_signal)
     sw._on_source_deleted("321")
-    assert not sw.gutter.isHidden()
-    assert not sw.metadata.isHidden()
+    assert not sw.star.isHidden()
+    assert not sw.name.isHidden()
+    assert not sw.paperclip.isHidden()
     assert not sw.preview.isHidden()
     assert sw.waiting_delete_confirmation.isHidden()
+    assert not sw.timestamp.isHidden()
 
 
 def test_SourceWidget__on_source_deletion_failed(mocker, session, source):
@@ -1689,10 +1673,12 @@ def test_SourceWidget__on_source_deletion_failed(mocker, session, source):
 
     sw._on_source_deletion_failed("123")
 
-    assert not sw.gutter.isHidden()
-    assert not sw.metadata.isHidden()
+    assert not sw.star.isHidden()
+    assert not sw.name.isHidden()
+    assert not sw.paperclip.isHidden()
     assert not sw.preview.isHidden()
     assert sw.waiting_delete_confirmation.isHidden()
+    assert not sw.timestamp.isHidden()
 
 
 def test_SourceWidget__on_source_deletion_failed_wrong_uuid(mocker, session, source):
@@ -1703,10 +1689,12 @@ def test_SourceWidget__on_source_deletion_failed_wrong_uuid(mocker, session, sou
 
     sw._on_source_deletion_failed("321")
 
-    assert sw.gutter.isHidden()
-    assert sw.metadata.isHidden()
+    assert sw.star.isHidden()
+    assert not sw.name.isHidden()
+    assert sw.paperclip.isHidden()
     assert sw.preview.isHidden()
     assert not sw.waiting_delete_confirmation.isHidden()
+    assert sw.timestamp.isHidden()
 
 
 def test_SourceWidget_uses_SecureQLabel(mocker):
@@ -5398,7 +5386,7 @@ def test_SourceProfileShortWidget_update_timestamp(mocker):
     spsw.updated = mocker.MagicMock()
     spsw.update_timestamp()
     spsw.updated.setText.assert_called_once_with(
-        arrow.get(mock_source.last_updated).format("DD MMM")
+        arrow.get(mock_source.last_updated).format("MMM D")
     )
 
 

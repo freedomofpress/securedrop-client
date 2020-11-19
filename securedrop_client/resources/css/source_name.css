@@ -11,3 +11,10 @@
     font-size: 13px;
     color: #000;
 }
+
+#SourceWidget_name_selected {
+    font-family: 'Montserrat';
+    font-weight: 500;
+    font-size: 13px;
+    color: #2a319d;
+}

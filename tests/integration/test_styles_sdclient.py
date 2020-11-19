@@ -70,12 +70,9 @@ def test_class_name_matches_css_object_name(mocker, main_window):
 
     source_widget = source_list.itemWidget(source_list.item(0))
     assert "SourceWidget" == source_widget.__class__.__name__
-    assert "SourceWidget" in source_widget.gutter.objectName()
-    assert "SourceWidget" in source_widget.summary.objectName()
     assert "SourceWidget" in source_widget.name.objectName()
     assert "SourceWidget" in source_widget.preview.objectName()
     assert "SourceWidget" in source_widget.waiting_delete_confirmation.objectName()
-    assert "SourceWidget" in source_widget.metadata.objectName()
     assert "SourceWidget" in source_widget.paperclip.objectName()
     assert "SourceWidget" in source_widget.timestamp.objectName()
     assert "SourceWidget" in source_widget.source_widget.objectName()
@@ -231,7 +228,7 @@ def test_styles_for_main_view(mocker, main_window):
     main_view = main_window.main_view
     assert 558 == main_view.height()
     assert 500 == main_view.view_holder.width()
-    assert "#f3f5f9" == main_view.view_holder.palette().color(QPalette.Background).name()
+    assert "#f9f9ff" == main_view.view_holder.palette().color(QPalette.Background).name()
 
     no_sources = main_view.empty_conversation_view.no_sources
     assert 5 == no_sources.layout().count()
@@ -295,9 +292,6 @@ def test_styles_for_main_view(mocker, main_window):
 def test_styles_source_list(mocker, main_window):
     source_list = main_window.main_view.source_list
     source_widget = source_list.itemWidget(source_list.item(0))
-    assert 40 == source_widget.gutter.minimumSize().width()
-    assert 40 == source_widget.gutter.maximumSize().width()
-    assert 60 == source_widget.metadata.maximumSize().width()
     preview = source_widget.preview
     assert "Source Sans Pro" == preview.font().family()
     QFont.Normal == preview.font().weight()
@@ -312,7 +306,7 @@ def test_styles_source_list(mocker, main_window):
     assert "Montserrat" == name.font().family()
     QFont.Normal == name.font().weight()
     13 == name.font().pixelSize()
-    assert "#383838" == name.palette().color(QPalette.Foreground).name()
+    assert "#2a319d" == name.palette().color(QPalette.Foreground).name()
     timestamp = source_widget.timestamp
     assert "Montserrat" == timestamp.font().family()
     QFont.Normal == timestamp.font().weight()
@@ -330,7 +324,8 @@ def test_styles_for_conversation_view(mocker, main_window):
     reply_box = wrapper.reply_box
     assert 173 == reply_box.minimumSize().height()
     assert 173 == reply_box.maximumSize().height()
-    assert "#efefef" == reply_box.replybox.palette().color(QPalette.Background).name()
+    assert "#ffffff" == reply_box.replybox.palette().color(QPalette.Background).name()
+    assert "#ffffff" == reply_box.text_edit.palette().color(QPalette.Background).name()
     reply_box.set_logged_in()
     assert "#ffffff" == reply_box.replybox.palette().color(QPalette.Background).name()
     reply_box_children = reply_box.findChildren(QPushButton)
@@ -350,6 +345,7 @@ def test_styles_for_conversation_view(mocker, main_window):
     assert QFont.Normal == reply_text_edit.font().weight()
     assert 18 == reply_text_edit.font().pixelSize()
     assert (0, 0, 0, 0) == reply_text_edit.getContentsMargins()
+
     # See test_placeholder.py for placeholder tests
 
     conversation_title_bar = wrapper.conversation_title_bar
@@ -374,8 +370,8 @@ def test_styles_for_conversation_view(mocker, main_window):
     assert "#2a319d" == title.palette().color(QPalette.Foreground).name()
 
     conversation_scrollarea = wrapper.conversation_view.scroll
-    assert "#f3f5f9" == conversation_scrollarea.palette().color(QPalette.Background).name()
-    assert "#f3f5f9" == conversation_scrollarea.widget().palette().color(QPalette.Background).name()
+    assert "#f9f9ff" == conversation_scrollarea.palette().color(QPalette.Background).name()
+    assert "#f9f9ff" == conversation_scrollarea.widget().palette().color(QPalette.Background).name()
     file_widget = conversation_scrollarea.widget().layout().itemAt(0).widget()
     assert 540 == file_widget.minimumSize().width()
     assert 540 == file_widget.maximumSize().width()
@@ -391,7 +387,7 @@ def test_styles_for_conversation_view(mocker, main_window):
     assert "Source Sans Pro" == file_widget.no_file_name.font().family()
     assert QFont.Light + 12 == file_widget.no_file_name.font().weight()
     assert 13 == file_widget.no_file_name.font().pixelSize()
-    assert "#a5b3e9" == file_widget.no_file_name.palette().color(QPalette.Foreground).name()
+    assert "#7481b4" == file_widget.no_file_name.palette().color(QPalette.Foreground).name()
 
     assert 48 == file_widget.file_size.minimumSize().width()
     assert 48 == file_widget.file_size.maximumSize().width()
