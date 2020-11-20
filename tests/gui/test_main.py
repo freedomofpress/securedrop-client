@@ -83,6 +83,38 @@ def test_show_main_window(mocker, homedir, session_maker):
     w.set_logged_in_as.assert_called_once_with(user)
 
 
+def test_show_main_window_when_already_showing(mocker, homedir, session_maker):
+    """
+    Ensure we don't maximize the main window if it's already showing.
+    """
+    w = Window()
+    controller = Controller("http://localhost", w, session_maker, homedir)
+    w.setup(controller)
+    w.show = mocker.MagicMock()
+    w.showMaximized = mocker.MagicMock()
+    w.set_logged_in_as = mocker.MagicMock()
+    user = mocker.MagicMock()
+    w.isHidden = mocker.MagicMock(return_value=False)
+
+    w.show_main_window(db_user=user)
+
+    w.show.assert_not_called()
+    w.showMaximized.assert_not_called()
+    w.set_logged_in_as.assert_called_once_with(user)
+
+    controller.qubes = False
+    w.setup(controller)
+    w.show.reset_mock()
+    w.showMaximized.reset_mock()
+    w.set_logged_in_as.reset_mock()
+
+    w.show_main_window(db_user=user)
+
+    w.show.assert_not_called()
+    w.showMaximized.assert_not_called()
+    w.set_logged_in_as.assert_called_once_with(user)
+
+
 def test_show_main_window_without_username(mocker, homedir, session_maker):
     w = Window()
     controller = Controller("http://localhost", w, session_maker, homedir)
@@ -107,6 +139,34 @@ def test_show_main_window_without_username(mocker, homedir, session_maker):
 
     w.show.assert_not_called()
     w.showMaximized.assert_called_once_with()
+    w.set_logged_in_as.called is False
+
+
+def test_show_main_window_without_username_when_already_showing(mocker, homedir, session_maker):
+    w = Window()
+    controller = Controller("http://localhost", w, session_maker, homedir)
+    w.setup(controller)
+    w.show = mocker.MagicMock()
+    w.showMaximized = mocker.MagicMock()
+    w.set_logged_in_as = mocker.MagicMock()
+    w.isHidden = mocker.MagicMock(return_value=False)
+
+    w.show_main_window()
+
+    w.show.assert_not_called()
+    w.showMaximized.assert_not_called()
+    w.set_logged_in_as.called is False
+
+    controller.qubes = False
+    w.setup(controller)
+    w.show.reset_mock()
+    w.showMaximized.reset_mock()
+    w.set_logged_in_as.reset_mock()
+
+    w.show_main_window()
+
+    w.show.assert_not_called()
+    w.showMaximized.assert_not_called()
     w.set_logged_in_as.called is False
 
 
