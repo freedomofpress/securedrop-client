@@ -84,7 +84,7 @@ def internal_sideeffect(*args, **kwargs):
 def dastollervey_datasaver(func):
     "This is the decorator to save qrexec call data"
 
-    def wrapper(*args, **kwargs):
+    def wrapper(self, *args, **kwargs):
         global CALLNUMBER
         global RES
         # This is the filename to store the results
@@ -93,7 +93,7 @@ def dastollervey_datasaver(func):
         # so, we should do a real login call
         if os.path.exists("logout.txt") and func.__name__ == "setUp":
             if not os.path.exists(filename):
-                return func(*args, **kwargs)
+                return func(self, *args, **kwargs)
 
         if os.path.exists(filename):
             with open(filename) as fobj:
@@ -101,7 +101,7 @@ def dastollervey_datasaver(func):
         mock = MagicMock()
         mock.side_effect = internal_sideeffect
         with patch("sdclientapi.json_query", mock):
-            result = func(*args, **kwargs)
+            result = func(self, *args, **kwargs)
 
         if not os.path.exists(filename):
             with open(filename, "w") as fobj:

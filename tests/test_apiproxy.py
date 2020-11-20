@@ -22,7 +22,7 @@ class TestAPIProxy(TestShared):
     """
 
     @dastollervey_datasaver
-    def setUp(self):
+    def setup_method(self):
         self.totp = pyotp.TOTP("JHCOGO7VCER3EJ4L")
         self.username = "journalist"
         self.password = "correct horse battery staple profanity oil chewy"
@@ -56,6 +56,7 @@ class TestAPIProxy(TestShared):
             save_auth(self.api.token)
             break
 
+    @dastollervey_datasaver
     def test_api_auth(self):
         super().api_auth()
 
@@ -108,22 +109,6 @@ class TestAPIProxy(TestShared):
         super().flag_source()
 
     @dastollervey_datasaver
-    def test_delete_source(self):
-        super().delete_source()
-
-    @dastollervey_datasaver
-    def test_delete_source_from_string(self):
-        super().delete_source(from_string=True)
-
-    @dastollervey_datasaver
-    def test_delete_submission(self):
-        super().delete_submission()
-
-    @dastollervey_datasaver
-    def test_delete_submission_from_string(self):
-        super().delete_submission(from_string=True)
-
-    @dastollervey_datasaver
     def test_get_current_user(self):
         super().get_current_user()
 
@@ -136,14 +121,6 @@ class TestAPIProxy(TestShared):
         super().error_unencrypted_reply()
 
     @dastollervey_datasaver
-    def test_reply_source(self):
-        super().reply_source()
-
-    @dastollervey_datasaver
-    def test_reply_source_with_uuid(self):
-        super().reply_source_with_uuid()
-
-    @dastollervey_datasaver
     def test_get_replies_from_source(self):
         super().get_replies_from_source()
 
@@ -154,10 +131,6 @@ class TestAPIProxy(TestShared):
     @dastollervey_datasaver
     def test_get_all_replies(self):
         super().get_all_replies()
-
-    @dastollervey_datasaver
-    def test_delete_reply(self):
-        super().delete_reply()
 
     @dastollervey_datasaver
     def test_download_reply(self):
@@ -180,7 +153,7 @@ class TestAPIProxy(TestShared):
     def test_download_submission(self):
         s = self.api.get_all_submissions()[0]
 
-        self.assertFalse(s.is_read)
+        assert not s.is_read
 
         # We need a temporary directory to download
         tmpdir = tempfile.mkdtemp()
@@ -195,15 +168,47 @@ class TestAPIProxy(TestShared):
         # is_read should still be False as of SecureDrop 1.6.0 or later.
 
         s = self.api.get_submission(s)
-        self.assertFalse(s.is_read)
+        assert not s.is_read
 
         # Let us remove the temporary directory
         shutil.rmtree(tmpdir)
 
+    # ORDER MATTERS: The following tests add or delete data, and should
+    # not be run before other tests which may rely on the original fixture
+    # state.
+
+    @dastollervey_datasaver
+    def test_reply_source(self):
+        super().reply_source()
+
+    @dastollervey_datasaver
+    def test_reply_source_with_uuid(self):
+        super().reply_source_with_uuid()
+
+    @dastollervey_datasaver
+    def test_delete_source(self):
+        super().delete_source()
+
+    @dastollervey_datasaver
+    def test_delete_source_from_string(self):
+        super().delete_source(from_string=True)
+
+    @dastollervey_datasaver
+    def test_delete_submission(self):
+        super().delete_submission()
+
+    @dastollervey_datasaver
+    def test_delete_submission_from_string(self):
+        super().delete_submission(from_string=True)
+
+    @dastollervey_datasaver
+    def test_delete_reply(self):
+        super().delete_reply()
+
     @dastollervey_datasaver
     def test_logout(self):
         r = self.api.logout()
-        self.assertTrue(r)
+        assert r
         if os.path.exists("login.txt"):
             os.unlink("login.txt")
         if os.path.exists("testtoken.json"):
