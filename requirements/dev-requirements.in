@@ -21,6 +21,7 @@ pyobjc-core==6.2;platform_system=="Darwin"
 pyobjc==6.2;platform_system=="Darwin"
 pyflakes==2.0.0
 PyQt5==5.11.3
+PyQt5-sip==4.19.14
 pytest==5.2.1
 pytest-cov==2.8.1
 pytest-mock==1.10.0
