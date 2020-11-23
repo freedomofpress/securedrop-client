@@ -374,10 +374,12 @@ Logs can be found in the `{sdc-home}/logs`. If you are debugging a version of th
 Sometimes there is a bug in Qt rather than the client, so it helps to install [a debug version of PyQt5](#build-and-install-a-debug-version-of-pyqt5) which will allow you to see Qt debug symbols in your Python tracebacks. You can use `gdb` to view a traceback as well as a core file, if you're debugging a segfault, but first you must need to install the following some additional packages in order for `gdb` to work with Python programs.
 
 ```
-sudo apt install libc6-dbg libpython3-all-dbg libpython3-dbg libpython3.7-dbg python3-dbg python3.7-dbg valgrind-dbg
+sudo apt-get install libclang-dev '^libxcb.*-dev' libx11-xcb-dev libglu1-mesa-dev libxrender-dev libxi-dev libxkbcommon-dev libxkbcommon-x11-dev gperf bison flex libgl1-mesa-dev pkg-config libdbus-1-dev libnss3-dev libfontconfig1-dev libxi-dev libxcomposite-dev libxcursor-dev libxtst-dev python3-sip-dev
 ```
 
 ### Build and install a debug version of PyQt5
+
+Note that the resulting artifacts should not be used in production contexts, and are used to debug issues in development environments only.
 
 1. Build a debug version of Qt 5
 
@@ -386,7 +388,7 @@ Clone the Qt repo and build it from source following these instructions: https:/
 ```
 git clone https://code.qt.io/qt/qt5.git
 cd qt5
-git checkout v5.14.2                                # or checkout a different version
+git checkout v5.11.3                                # or checkout a different version
 git submodule update --init --recursive
 export LLVM_INSTALL_DIR=/usr/llvm
 mkdir ../qt5-build && cd ../qt5-build               # we don't want to build in the source code directory
@@ -414,19 +416,24 @@ Make sure to uninstall the prepackaged pyqt5 library since we will be using our 
 pip uninstall pyqt5
 ```
 
-3. Download the PyQt5 source tarball from PyPi
+3. Download the PyQt5 source tarball
+
+```
+wget http://deb.debian.org/debian/pool/main/p/pyqt5/pyqt5_5.11.3+dfsg.orig.tar.gz
+```
 
 4. Build and install PyQt5
 
 Make sure you are still in the client virtual environment before building PyQt5.
 
 ```
-tar -xzvf PyQt5-5.14.2.tar.gz
-cd PyQt5-5.14.2
+tar -xzvf pyqt5_5.11.3+dfsg.orig.tar.gz
+cd PyQt5_gpl-5.11.3
 pip install PyQt-builder
-export PATH=~/qt/qt5-build/qtbase/bin:$PATH
-export QT_PLUGIN_PATH=~/qt/qt5-build/qtbase/plugins
-sip-install --debug --qmake ~/qt/qt5-build/qtbase/bin/qmake --confirm-license
+export PATH=~/qt5-build/qtbase/bin:$PATH
+export QT_PLUGIN_PATH=~/qt5-build/qtbase/plugins
+python3 configure.py --verbose --qmake=~/qt5-build/qtbase/bin/qmake
+make install
 ```
 
 ### Find/report a Qt bug
