@@ -8,7 +8,7 @@ import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
 
-from securedrop_client.gui.widgets import FileWidget
+from securedrop_client.gui.widgets import FileWidget, SourceConversationWrapper
 from tests.conftest import (
     TIME_CLICK_ACTION,
     TIME_FILE_DOWNLOAD,
@@ -31,24 +31,26 @@ def test_download_file(functional_test_logged_in_context, qtbot, mocker):
 
     # Select the last first in the source list
     qtbot.waitUntil(check_for_sources, timeout=TIME_RENDER_SOURCE_LIST)
-    source_ids = list(gui.main_view.source_list.source_items.keys())
-    first_source_item = gui.main_view.source_list.source_items[source_ids[0]]
-    first_source_widget = gui.main_view.source_list.itemWidget(first_source_item)
-    qtbot.mouseClick(first_source_widget, Qt.LeftButton)
+
+    # Select the second source in the list to avoid marking unseen sources as seen
+    source_id = list(gui.main_view.source_list.source_items.keys())[1]
+    source_item = gui.main_view.source_list.source_items[source_id]
+    source_widget = gui.main_view.source_list.itemWidget(source_item)
+    qtbot.mouseClick(source_widget, Qt.LeftButton)
     qtbot.wait(TIME_CLICK_ACTION)
 
     def conversation_with_file_is_rendered():
         assert gui.main_view.view_layout.itemAt(0)
         conversation = gui.main_view.view_layout.itemAt(0).widget()
-        assert conversation
-        file_id = list(conversation.conversation_view.current_messages.keys())[1]
+        assert isinstance(conversation, SourceConversationWrapper)
+        file_id = list(conversation.conversation_view.current_messages.keys())[2]
         file_widget = conversation.conversation_view.current_messages[file_id]
         assert isinstance(file_widget, FileWidget)
 
     # Get the selected source conversation that contains a file attachment
     qtbot.waitUntil(conversation_with_file_is_rendered, timeout=TIME_RENDER_CONV_VIEW)
     conversation = gui.main_view.view_layout.itemAt(0).widget()
-    file_id = list(conversation.conversation_view.current_messages.keys())[1]
+    file_id = list(conversation.conversation_view.current_messages.keys())[2]
     file_widget = conversation.conversation_view.current_messages[file_id]
 
     # Click on the download button for the file
@@ -58,5 +60,5 @@ def test_download_file(functional_test_logged_in_context, qtbot, mocker):
 
     assert file_widget.export_button.isHidden() is False
     assert file_widget.print_button.isHidden() is False
-    assert file_widget.file_name.text() == "hello.txt"
-    assert file_widget.file_size.text() == "6B"
+    assert file_widget.file_name.text() == "memo.txt"
+    assert file_widget.file_size.text() == "47B"

@@ -5,10 +5,12 @@ expected.
 import datetime
 import logging
 import os
-from unittest.mock import call
+from typing import Type
+from unittest.mock import Mock, call
 
 import arrow
 import pytest
+import sqlalchemy.orm.exc
 from PyQt5.QtCore import Qt
 from sdclientapi import RequestTimeoutError, ServerConnectionError
 
@@ -608,6 +610,273 @@ def test_Controller_update_sources(homedir, config, mocker):
 
     mock_storage.get_local_sources.assert_called_once_with(mock_session)
     mock_gui.show_sources.assert_called_once_with(source_list)
+
+
+def test_Controller_mark_seen(homedir, config, mocker, session, session_maker):
+    co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    co.authenticated_user = factory.User()
+    co.add_job = mocker.MagicMock()
+    source = factory.Source()
+    file = factory.File(source=source)
+    message = factory.Message(source=source)
+    reply = factory.Reply(source=source)
+    session.add(file)
+    session.add(message)
+    session.add(reply)
+
+    job = mocker.MagicMock()
+    job.success_signal = mocker.MagicMock()
+    job.failure_signal = mocker.MagicMock()
+    mocker.patch("securedrop_client.logic.SeenJob", return_value=job)
+
+    co.mark_seen(source)
+
+    co.add_job.emit.assert_called_once_with(job)
+    job.success_signal.connect.assert_called_once_with(co.on_seen_success, type=Qt.QueuedConnection)
+    job.failure_signal.connect.assert_called_once_with(co.on_seen_failure, type=Qt.QueuedConnection)
+
+
+def test_Controller_mark_seen_with_unseen_item_of_each_type(
+    homedir, config, mocker, session, session_maker
+):
+    """
+    Ensure that all source conversation items that have not been seen by the current user are marked
+    as seen.
+    """
+    controller = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    controller.authenticated_user = factory.User(id=1)
+    source = factory.Source()
+
+    unseen_file = factory.File(source=source)
+    unseen_message = factory.Message(source=source)
+    unseen_reply = factory.Reply(source=source)
+
+    session.add(unseen_file)
+    session.add(unseen_message)
+    session.add(unseen_reply)
+
+    seen_file = factory.File(source=source)
+    seen_message = factory.Message(source=source)
+    seen_reply = factory.Reply(source=source)
+    session.add(seen_file)
+    session.add(seen_message)
+    session.add(seen_reply)
+
+    unseen_file_for_current_user = factory.File(source=source)
+    unseen_message_for_current_user = factory.Message(source=source)
+    unseen_reply_for_current_user = factory.Reply(source=source)
+    session.add(unseen_file_for_current_user)
+    session.add(unseen_message_for_current_user)
+    session.add(unseen_reply_for_current_user)
+
+    draft_reply_from_current_user = factory.DraftReply(
+        source=source, journalist_id=controller.authenticated_user.id
+    )
+    draft_reply_from_another_user = factory.DraftReply(source=source, journalist_id=666)
+    session.add(draft_reply_from_current_user)
+    session.add(draft_reply_from_another_user)
+
+    session.commit()
+
+    session.add(db.SeenFile(file_id=seen_file.id, journalist_id=controller.authenticated_user.id))
+    session.add(
+        db.SeenMessage(message_id=seen_message.id, journalist_id=controller.authenticated_user.id)
+    )
+    session.add(
+        db.SeenReply(reply_id=seen_reply.id, journalist_id=controller.authenticated_user.id)
+    )
+    session.add(db.SeenFile(file_id=unseen_file_for_current_user.id, journalist_id=666))
+    session.add(db.SeenMessage(message_id=unseen_message_for_current_user.id, journalist_id=666))
+    session.add(db.SeenReply(reply_id=unseen_reply_for_current_user.id, journalist_id=666))
+
+    session.commit()
+
+    job = mocker.patch("securedrop_client.logic.SeenJob")
+
+    controller.mark_seen(source)
+
+    job.assert_called_once_with(
+        [unseen_file.uuid, unseen_file_for_current_user.uuid],
+        [unseen_message.uuid, unseen_message_for_current_user.uuid],
+        [unseen_reply.uuid, unseen_reply_for_current_user.uuid],
+    )
+
+
+def test_Controller_mark_seen_with_unseen_file_only(
+    homedir, config, mocker, session, session_maker
+):
+    co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    co.authenticated_user = factory.User()
+    co.add_job = mocker.MagicMock()
+    source = factory.Source()
+    file = factory.File(source=source, uuid="file-uuid-1")
+    session.add(file)
+
+    job = mocker.patch("securedrop_client.logic.SeenJob")
+
+    co.mark_seen(source)
+
+    job.assert_called_once_with(["file-uuid-1"], [], [])
+
+
+def test_Controller_mark_seen_with_unseen_message_only(
+    homedir, config, mocker, session, session_maker
+):
+    co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    co.authenticated_user = factory.User()
+    co.add_job = mocker.MagicMock()
+    source = factory.Source()
+    message = factory.Message(source=source, uuid="msg-uuid-1")
+    session.add(message)
+
+    job = mocker.patch("securedrop_client.logic.SeenJob")
+
+    co.mark_seen(source)
+
+    job.assert_called_once_with([], ["msg-uuid-1"], [])
+
+
+def test_Controller_mark_seen_with_unseen_reply_only(
+    homedir, config, mocker, session, session_maker
+):
+    co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    co.authenticated_user = factory.User()
+    co.add_job = mocker.MagicMock()
+    source = factory.Source()
+    reply = factory.Reply(source=source, uuid="reply-uuid-1")
+    session.add(reply)
+
+    job = mocker.patch("securedrop_client.logic.SeenJob")
+
+    co.mark_seen(source)
+
+    job.assert_called_once_with([], [], ["reply-uuid-1"])
+
+
+def test_Controller_mark_seen_skips_if_no_unseen_items(
+    homedir, config, mocker, session, session_maker
+):
+    co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    co.authenticated_user = factory.User()
+    co.add_job = mocker.MagicMock()
+
+    job = mocker.MagicMock()
+    job.success_signal = mocker.MagicMock()
+    job.failure_signal = mocker.MagicMock()
+    mocker.patch("securedrop_client.logic.SeenJob", return_value=job)
+
+    co.mark_seen(factory.Source())
+
+    co.add_job.emit.assert_not_called()
+    job.success_signal.connect.assert_not_called()
+    job.failure_signal.connect.assert_not_called()
+
+
+def test_Controller_mark_seen_skips_op_if_user_offline(
+    homedir, config, mocker, session, session_maker
+):
+    co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    co.authenticated_user = None
+    co.add_job = mocker.MagicMock()
+    source = factory.Source()
+    file = factory.File(source=source)
+    message = factory.Message(source=source)
+    reply = factory.Reply(source=factory.Source())
+    session.add(file)
+    session.add(message)
+    session.add(reply)
+
+    job = mocker.MagicMock()
+    job.success_signal = mocker.MagicMock()
+    job.failure_signal = mocker.MagicMock()
+    mocker.patch("securedrop_client.logic.SeenJob", return_value=job)
+
+    co.mark_seen(source)
+
+    co.add_job.emit.assert_not_called()
+    job.success_signal.connect.assert_not_called()
+    job.failure_signal.connect.assert_not_called()
+
+
+class DeletedFile(Mock):
+    def __class__(self):
+        return Type(db.File)
+
+    def seen_by(self, journalist_id):
+        raise sqlalchemy.exc.InvalidRequestError()
+
+
+class SourceWithDeletedFile(Mock):
+    @property
+    def collection(self):
+        deleted_file = DeletedFile()
+        return [deleted_file]
+
+
+def test_Controller_mark_seen_does_not_raise_InvalidRequestError_if_item_deleted(
+    homedir, config, mocker, session, session_maker
+):
+    """
+    If a source item no longer exists in the local data store, ensure we do not raise an exception.
+    """
+    mocker.patch("securedrop_client.logic.isinstance", return_value=True)
+    debug_logger = mocker.patch("securedrop_client.logic.logger.debug")
+    co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    co.authenticated_user = factory.User()
+
+    co.mark_seen(SourceWithDeletedFile())
+
+    assert debug_logger.call_count == 1
+
+
+class DeletedSourceWhenAccessingCollection(Mock):
+    @property
+    def collection(self):
+        raise sqlalchemy.exc.InvalidRequestError()
+
+    @property
+    def uuid(self):
+        return "DeletedSourceWhenAccessingCollection_uuid"
+
+    @property
+    def seen(self):
+        return False
+
+    @property
+    def last_updated(self):
+        return datetime.now()
+
+    @property
+    def is_starred(self):
+        return True
+
+
+def test_Controller_mark_seen_does_not_raise_InvalidRequestError_if_source_deleted(
+    homedir, config, mocker, session, session_maker
+):
+    """
+    If a source item no longer exists in the local data store, ensure we do not raise an exception.
+    """
+    debug_logger = mocker.patch("securedrop_client.logic.logger.debug")
+    co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    co.authenticated_user = factory.User()
+
+    co.mark_seen(DeletedSourceWhenAccessingCollection())
+
+    assert debug_logger.call_count == 1
+
+
+def test_Controller_on_seen_success(homedir, mocker, session_maker):
+    co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    co.on_seen_success()
+
+
+def test_Controller_on_seen_failure(homedir, mocker, session_maker):
+    co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    debug_logger = mocker.patch("securedrop_client.logic.logger.debug")
+    error = Exception("errorororr")
+    co.on_seen_failure(error)
+    debug_logger.assert_called_once_with(error)
 
 
 def test_Controller_update_star_not_logged_in(homedir, config, mocker, session_maker):

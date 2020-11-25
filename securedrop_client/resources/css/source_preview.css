@@ -1,0 +1,13 @@
+#SourceWidget_preview {
+    font-family: 'Source Sans Pro';
+    font-weight: 400;
+    font-size: 13px;
+    color: #383838;
+}
+
+#SourceWidget_preview_unread {
+    font-family: 'Source Sans Pro';
+    font-weight: 600;
+    font-size: 13px;
+    color: #000;
+}

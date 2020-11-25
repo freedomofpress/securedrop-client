@@ -1,0 +1,13 @@
+#SourceWidget_name {
+    font-family: 'Montserrat';
+    font-weight: 500;
+    font-size: 13px;
+    color: #383838;
+}
+
+#SourceWidget_name_unread {
+    font-family: 'Montserrat';
+    font-weight: 600;
+    font-size: 13px;
+    color: #000;
+}

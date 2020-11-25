@@ -9,6 +9,7 @@ from typing import List
 
 from sdclientapi import Reply as SDKReply
 from sdclientapi import Source as SDKSource
+from sdclientapi import Submission as SDKSubmission
 
 from securedrop_client import db
 from securedrop_client.api_jobs.base import ApiJob
@@ -100,11 +101,11 @@ def DraftReply(**attrs):
     global DRAFT_REPLY_COUNT
     DRAFT_REPLY_COUNT += 1
     defaults = dict(
+        uuid="draft-reply-uuid-{}".format(DRAFT_REPLY_COUNT),
         timestamp=datetime.utcnow(),
         source_id=1,
         journalist_id=1,
         file_counter=1,
-        uuid="draft-reply-uuid-{}".format(REPLY_COUNT),
         content="content",
         send_status_id=1,
     )
@@ -168,7 +169,6 @@ def dummy_job_factory(mocker, return_value, **kwargs):
 
 
 def RemoteSource(**attrs):
-
     with open(os.path.join(os.path.dirname(__file__), "files", "test-key.gpg.pub.asc")) as f:
         pub_key = f.read()
 
@@ -196,20 +196,70 @@ def RemoteSource(**attrs):
 
 
 def RemoteReply(**attrs):
-
     source_url = "/api/v1/sources/{}".format(str(uuid.uuid4()))
     defaults = dict(
         filename="1-reply.filename",
         journalist_uuid=str(uuid.uuid4()),
         journalist_username="test",
+        journalist_first_name="",
+        journalist_last_name="",
         file_counter=1,
         is_deleted_by_source=False,
         reply_url="test",
         size=1234,
         uuid=str(uuid.uuid4()),
         source_url=source_url,
+        seen_by=[],
     )
 
     defaults.update(attrs)
 
     return SDKReply(**defaults)
+
+
+def RemoteFile(**attrs):
+    source_url = "/api/v1/sources/{}".format(str(uuid.uuid4()))
+    defaults = dict(
+        source_uuid="user-uuid-1",
+        download_url="test",
+        submission_url="test",
+        filename="1-submission.filename",
+        is_read=False,
+        file_counter=1,
+        is_deleted_by_source=False,
+        reply_url="test",
+        size=1234,
+        is_decrypted=True,
+        is_downloaded=True,
+        uuid=str(uuid.uuid4()),
+        source_url=source_url,
+        seen_by=[],
+    )
+
+    defaults.update(attrs)
+
+    return SDKSubmission(**defaults)
+
+
+def RemoteMessage(**attrs):
+    source_url = "/api/v1/sources/{}".format(str(uuid.uuid4()))
+    defaults = dict(
+        source_uuid="user-uuid-1",
+        download_url="test",
+        submission_url="test",
+        filename="1-submission.filename",
+        is_read=False,
+        file_counter=1,
+        is_deleted_by_source=False,
+        reply_url="test",
+        size=1234,
+        is_decrypted=True,
+        is_downloaded=True,
+        uuid=str(uuid.uuid4()),
+        source_url=source_url,
+        seen_by=[],
+    )
+
+    defaults.update(attrs)
+
+    return SDKSubmission(**defaults)

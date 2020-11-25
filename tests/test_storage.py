@@ -62,7 +62,7 @@ def make_remote_message(source_uuid, file_counter=1):
         source_url=source_url,
         submission_url="test",
         uuid=str(uuid.uuid4()),
-        seen_by=None,
+        seen_by=[],
     )
 
 
@@ -81,7 +81,7 @@ def make_remote_submission(source_uuid):
         source_url=source_url,
         submission_url="test",
         uuid=str(uuid.uuid4()),
-        seen_by=None,
+        seen_by=[],
     )
 
 
@@ -104,7 +104,7 @@ def make_remote_reply(source_uuid, journalist_uuid="testymctestface"):
         size=1234,
         source_url=source_url,
         uuid=str(uuid.uuid4()),
-        seen_by=None,
+        seen_by=[],
     )
 
 
@@ -646,14 +646,123 @@ def test_update_files(homedir, mocker):
     assert mock_session.commit.call_count == 1
 
 
+def test_update_files_adds_seen_record(homedir, mocker, session):
+    """
+    Check that:
+
+    * A seen record is created for each journalist in the seen_by field for an existing file.
+    * A seen record is created for each journalist in the seen_by field for a new file.
+    * Seen records for a deleted file are also deleted.
+    * No seen record is created for a journalist without an account.
+    """
+    data_dir = os.path.join(homedir, "data")
+
+    journalist_1 = factory.User(id=1)
+    journalist_2 = factory.User(id=2)
+    session.add(journalist_1)
+    session.add(journalist_2)
+
+    source = factory.Source()
+    session.add(source)
+    session.commit()
+
+    # Create a local file that will be updated to match the remote file object with the same uuid.
+    local_file_to_update = factory.File(source_id=source.id, source=source)
+    session.add(local_file_to_update)
+
+    # Create a local file that will be deleted when there is no remote file object with the same
+    # uuid.
+    local_file_to_delete = factory.File(source_id=source.id, source=source)
+    session.add(local_file_to_delete)
+    session.commit()
+    seen_record_to_delete = db.SeenFile(
+        file_id=local_file_to_delete.id, journalist_id=journalist_1.id
+    )
+    session.add(seen_record_to_delete)
+    session.commit()
+
+    local_files = [local_file_to_update, local_file_to_delete]
+
+    # Create a remote file that will be used to update one of the local replies.
+    remote_file_to_update = factory.RemoteFile(
+        uuid=local_file_to_update.uuid,
+        source_uuid=source.uuid,
+        seen_by=[journalist_1.uuid, journalist_2.uuid],
+    )
+
+    # Create a remote file that will be used to create a new local file.
+    remote_file_to_create = factory.RemoteFile(
+        source_uuid=source.uuid,
+        source_url="/api/v1/sources/{}".format(source.uuid),
+        file_counter=factory.FILE_COUNT + 1,
+        filename="{}-doc.gz.gpg".format(factory.FILE_COUNT + 1),
+        seen_by=[journalist_1.uuid, journalist_2.uuid],
+    )
+
+    # Create a remote file that was seen by a journalist without an account.
+    remote_file_to_create_with_unknown_journalist = factory.RemoteFile(
+        source_uuid=source.uuid,
+        source_url="/api/v1/sources/{}".format(source.uuid),
+        file_counter=factory.FILE_COUNT + 2,
+        filename="{}-doc.gz.gpg".format(factory.FILE_COUNT + 2),
+        seen_by=["unknown-journalist-uuid"],
+    )
+
+    remote_files = [
+        remote_file_to_update,
+        remote_file_to_create,
+        remote_file_to_create_with_unknown_journalist,
+    ]
+
+    update_files(remote_files, local_files, session, data_dir)
+
+    assert (
+        session.query(db.SeenFile)
+        .filter_by(file_id=local_file_to_update.id, journalist_id=journalist_1.id)
+        .count()
+        == 1
+    )
+    assert (
+        session.query(db.SeenFile)
+        .filter_by(file_id=local_file_to_update.id, journalist_id=journalist_2.id)
+        .count()
+        == 1
+    )
+
+    new_file = session.query(db.File).filter_by(uuid=remote_file_to_create.uuid).one()
+    assert (
+        session.query(db.SeenFile)
+        .filter_by(file_id=new_file.id, journalist_id=journalist_1.id)
+        .count()
+        == 1
+    )
+    assert (
+        session.query(db.SeenFile)
+        .filter_by(file_id=new_file.id, journalist_id=journalist_2.id)
+        .count()
+        == 1
+    )
+    assert session.query(db.File).filter_by(uuid=local_file_to_delete.uuid).count() == 0
+    assert session.query(db.SeenFile).filter_by(file_id=local_file_to_delete.id).count() == 0
+
+    new_file_seen_by_unknown_journalist = (
+        session.query(db.File)
+        .filter_by(uuid=remote_file_to_create_with_unknown_journalist.uuid)
+        .one()
+    )
+    assert (
+        session.query(db.SeenFile).filter_by(file_id=new_file_seen_by_unknown_journalist.id).count()
+        == 0
+    )
+
+
 def test_update_messages(homedir, mocker):
     """
     Check that:
 
     * Existing messages are updated in the local database.
     * New messages have an entry in the local database.
-    * Local messages not returned by the remote server are deleted from the
-      local database.
+    * Local messages not returned by the remote server are deleted from the local database.
     """
     data_dir = os.path.join(homedir, "data")
     mock_session = mocker.MagicMock()
@@ -715,14 +824,128 @@ def test_update_messages(homedir, mocker):
     assert mock_session.commit.call_count == 1
 
 
+def test_update_messages_adds_seen_record(homedir, mocker, session):
+    """
+    Check that:
+
+    * A seen record is created for each journalist in the seen_by field for an existing message.
+    * A seen record is created for each journalist in the seen_by field for a new message.
+    * Seen records for a deleted message are also deleted.
+    * No seen record is created for a journalist without an account.
+    """
+    data_dir = os.path.join(homedir, "data")
+
+    journalist_1 = factory.User(id=1)
+    journalist_2 = factory.User(id=2)
+    session.add(journalist_1)
+    session.add(journalist_2)
+
+    source = factory.Source()
+    session.add(source)
+    session.commit()
+
+    # Create a local message that will be updated to match the remote message object with the same
+    # uuid.
+    local_message_to_update = factory.Message(source_id=source.id, source=source)
+    session.add(local_message_to_update)
+
+    # Create a local message that will be deleted when there is no remote message object with the
+    # same uuid.
+    local_message_to_delete = factory.Message(source_id=source.id, source=source)
+    session.add(local_message_to_delete)
+    session.commit()
+    seen_record_to_delete = db.SeenMessage(
+        message_id=local_message_to_delete.id, journalist_id=journalist_1.id
+    )
+    session.add(seen_record_to_delete)
+    session.commit()
+
+    local_messages = [local_message_to_update, local_message_to_delete]
+
+    # Create a remote message that will be used to update one of the local replies.
+    remote_message_to_update = factory.RemoteMessage(
+        uuid=local_message_to_update.uuid,
+        source_uuid=source.uuid,
+        seen_by=[journalist_1.uuid, journalist_2.uuid],
+    )
+
+    # Create a remote message that will be used to create a new local message.
+    remote_message_to_create = factory.RemoteMessage(
+        source_uuid=source.uuid,
+        source_url="/api/v1/sources/{}".format(source.uuid),
+        file_counter=factory.MESSAGE_COUNT + 1,
+        filename="{}-msg.gpg".format(factory.MESSAGE_COUNT + 1),
+        seen_by=[journalist_1.uuid, journalist_2.uuid],
+    )
+
+    # Create a remote message that was seen by a journalist without an account.
+    remote_message_t0_create_with_unknown_journalist = factory.RemoteMessage(
+        source_uuid=source.uuid,
+        source_url="/api/v1/sources/{}".format(source.uuid),
+        file_counter=factory.MESSAGE_COUNT + 2,
+        filename="{}-msg.gpg".format(factory.MESSAGE_COUNT + 2),
+        seen_by=["unknown-journalist-uuid"],
+    )
+
+    remote_messages = [
+        remote_message_to_update,
+        remote_message_to_create,
+        remote_message_t0_create_with_unknown_journalist,
+    ]
+
+    update_messages(remote_messages, local_messages, session, data_dir)
+
+    assert (
+        session.query(db.SeenMessage)
+        .filter_by(message_id=local_message_to_update.id, journalist_id=journalist_1.id)
+        .count()
+        == 1
+    )
+    assert (
+        session.query(db.SeenMessage)
+        .filter_by(message_id=local_message_to_update.id, journalist_id=journalist_2.id)
+        .count()
+        == 1
+    )
+
+    new_message = session.query(db.Message).filter_by(uuid=remote_message_to_create.uuid).one()
+    assert (
+        session.query(db.SeenMessage)
+        .filter_by(message_id=new_message.id, journalist_id=journalist_1.id)
+        .count()
+        == 1
+    )
+    assert (
+        session.query(db.SeenMessage)
+        .filter_by(message_id=new_message.id, journalist_id=journalist_2.id)
+        .count()
+        == 1
+    )
+    assert session.query(db.Message).filter_by(uuid=local_message_to_delete.uuid).count() == 0
+    assert (
+        session.query(db.SeenMessage).filter_by(message_id=local_message_to_delete.id).count() == 0
+    )
+
+    new_message_seen_by_unknown_journalist = (
+        session.query(db.Message)
+        .filter_by(uuid=remote_message_t0_create_with_unknown_journalist.uuid)
+        .one()
+    )
+    assert (
+        session.query(db.SeenMessage)
+        .filter_by(message_id=new_message_seen_by_unknown_journalist.id)
+        .count()
+        == 0
+    )
+
+
 def test_update_replies(homedir, mocker, session):
     """
     Check that:
 
     * Existing replies are updated in the local database.
     * New replies have an entry in the local database.
-    * Local replies not returned by the remote server are deleted from the
-      local database.
+    * Local replies not returned by the remote server are deleted from the local database.
     * References to journalist's usernames are correctly handled.
     """
     data_dir = os.path.join(homedir, "data")
@@ -733,25 +956,24 @@ def test_update_replies(homedir, mocker, session):
     source = factory.Source()
     session.add(source)
 
-    # Some local reply objects. One already exists in the API results
-    # (this will be updated), one does NOT exist in the API results (this will
-    # be deleted from the local database).
+    # Create a local reply that will be updated to match the remote reply object with the same uuid.
     local_reply_update = factory.Reply(
         source_id=source.id,
         source=source,
         journalist_id=journalist.id,
-        filename="1-original-reply.gpg.",
+        filename="1-original-reply.gpg",
         size=2,
     )
     session.add(local_reply_update)
 
+    # Create a local reply that will be deleted when there is no remote reply object with the same
+    # uuid.
     local_reply_delete = factory.Reply(source_id=source.id, source=source)
     session.add(local_reply_delete)
 
     local_replies = [local_reply_update, local_reply_delete]
-    # Some remote reply objects from the API, one of which will exist in the
-    # local database, the other will NOT exist in the local database
-    # (this will be added to the database)
+
+    # Create a remote reply that will be used to update one of the local replies.
     remote_reply_update = factory.RemoteReply(
         uuid=local_reply_update.uuid,
         journalist_uuid=journalist.uuid,
@@ -760,9 +982,10 @@ def test_update_replies(homedir, mocker, session):
         source_url="/api/v1/sources/{}".format(source.uuid),
         file_counter=local_reply_update.file_counter,
         filename=local_reply_update.filename,
-        seen_by=None,
+        seen_by=[],
     )
 
+    # Create a remote reply that will be used to create a new local reply.
     remote_reply_create = factory.RemoteReply(
         journalist_uuid=journalist.uuid,
         source_url="/api/v1/sources/{}".format(source.uuid),
@@ -770,14 +993,12 @@ def test_update_replies(homedir, mocker, session):
         filename="{}-filename.gpg".format(factory.REPLY_COUNT + 1),
         journalist_first_name="",
         journalist_last_name="",
-        seen_by=None,
+        seen_by=[],
     )
 
     remote_replies = [remote_reply_update, remote_reply_create]
 
-    session.commit()
     update_replies(remote_replies, local_replies, session, data_dir)
-    session.commit()
 
     # Check the expected local reply object has been updated with values
     # from the API.
@@ -793,6 +1014,117 @@ def test_update_replies(homedir, mocker, session):
 
     # Ensure the local reply that is not in the API results is deleted.
     assert session.query(db.Reply).filter_by(uuid=local_reply_delete.uuid).count() == 0
+
+
+def test_update_replies_adds_seen_record(homedir, mocker, session):
+    """
+    Check that:
+
+    * A seen record is created for each journalist in the seen_by field for an existing reply.
+    * A seen record is created for each journalist in the seen_by field for a new reply.
+    * Seen records for a deleted reply are also deleted.
+    * No seen record is created for a journalist without an account.
+    """
+    data_dir = os.path.join(homedir, "data")
+
+    journalist_1 = factory.User(id=1)
+    journalist_2 = factory.User(id=2)
+    session.add(journalist_1)
+    session.add(journalist_2)
+
+    source = factory.Source()
+    session.add(source)
+
+    # Create a local reply that will be updated to match the remote reply object with the same uuid.
+    local_reply_to_update = factory.Reply(source_id=source.id, source=source)
+    session.add(local_reply_to_update)
+
+    # Create a local reply that will be deleted when there is no remote reply object with the same
+    # uuid.
+    local_reply_to_delete = factory.Reply(source_id=source.id, source=source)
+    session.add(local_reply_to_delete)
+    session.commit()
+    seen_record_to_delete = db.SeenReply(
+        reply_id=local_reply_to_delete.id, journalist_id=journalist_1.id
+    )
+    session.add(seen_record_to_delete)
+    session.commit()
+
+    local_replies = [local_reply_to_update, local_reply_to_delete]
+
+    # Create a remote reply that will be used to update one of the local replies.
+    remote_reply_update = factory.RemoteReply(
+        uuid=local_reply_to_update.uuid,
+        journalist_uuid=journalist_1.uuid,
+        seen_by=[journalist_1.uuid, journalist_2.uuid],
+    )
+
+    # Create a remote reply that will be used to create a new local reply.
+    remote_reply_create = factory.RemoteReply(
+        journalist_uuid=journalist_1.uuid,
+        source_url="/api/v1/sources/{}".format(source.uuid),
+        file_counter=factory.REPLY_COUNT + 1,
+        filename="{}-reply.gpg".format(factory.REPLY_COUNT + 1),
+        seen_by=[journalist_1.uuid, journalist_2.uuid],
+    )
+
+    # Create a remote reply that was seen by a journalist without an account.
+    remote_reply_to_create_with_unknown_journalist = factory.RemoteReply(
+        journalist_uuid=journalist_1.uuid,
+        source_url="/api/v1/sources/{}".format(source.uuid),
+        file_counter=factory.REPLY_COUNT + 2,
+        filename="{}-reply.gpg".format(factory.REPLY_COUNT + 2),
+        seen_by=["unknown-journalist-uuid"],
+    )
+
+    remote_replies = [
+        remote_reply_update,
+        remote_reply_create,
+        remote_reply_to_create_with_unknown_journalist,
+    ]
+
+    update_replies(remote_replies, local_replies, session, data_dir)
+
+    assert (
+        session.query(db.SeenReply)
+        .filter_by(reply_id=local_reply_to_update.id, journalist_id=journalist_1.id)
+        .count()
+        == 1
+    )
+    assert (
+        session.query(db.SeenReply)
+        .filter_by(reply_id=local_reply_to_update.id, journalist_id=journalist_2.id)
+        .count()
+        == 1
+    )
+
+    new_reply = session.query(db.Reply).filter_by(uuid=remote_reply_create.uuid).one()
+    assert (
+        session.query(db.SeenReply)
+        .filter_by(reply_id=new_reply.id, journalist_id=journalist_1.id)
+        .count()
+        == 1
+    )
+    assert (
+        session.query(db.SeenReply)
+        .filter_by(reply_id=new_reply.id, journalist_id=journalist_2.id)
+        .count()
+        == 1
+    )
+    assert session.query(db.Reply).filter_by(uuid=local_reply_to_delete.uuid).count() == 0
+    assert session.query(db.SeenReply).filter_by(reply_id=local_reply_to_delete.id).count() == 0
+
+    new_reply_seen_by_unknown_journalist = (
+        session.query(db.Reply)
+        .filter_by(uuid=remote_reply_to_create_with_unknown_journalist.uuid)
+        .one()
+    )
+    assert (
+        session.query(db.SeenReply)
+        .filter_by(reply_id=new_reply_seen_by_unknown_journalist.id)
+        .count()
+        == 0
+    )
 
 
 def test_update_replies_cleanup_drafts(homedir, mocker, session):

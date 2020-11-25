@@ -95,6 +95,14 @@ class Source(Base):
             [c for c in self.journalist_designation.lower().replace(" ", "_") if c in valid_chars]
         )
 
+    @property
+    def seen(self) -> bool:
+        for item in self.collection:
+            if not item.seen:
+                return False
+
+        return True
+
 
 class Message(Base):
 
@@ -183,6 +191,24 @@ class Message(Base):
             )
         )
 
+    @property
+    def seen(self) -> bool:
+        """
+        If the submission has been downloaded or seen by any journalist, then the submssion is
+        considered seen.
+        """
+        if self.seen_messages.count():
+            return True
+
+        return False
+
+    def seen_by(self, journalist_id: int) -> bool:
+        for seen_message in self.seen_messages:
+            if seen_message.journalist_id == journalist_id:
+                return True
+
+        return False
+
 
 class File(Base):
 
@@ -263,6 +289,24 @@ class File(Base):
                 self.filename,
             )
         )
+
+    @property
+    def seen(self) -> bool:
+        """
+        If the submission has been downloaded or seen by any journalist, then the submssion is
+        considered seen.
+        """
+        if self.seen_files.count():
+            return True
+
+        return False
+
+    def seen_by(self, journalist_id: int) -> bool:
+        for seen_file in self.seen_files:
+            if seen_file.journalist_id == journalist_id:
+                return True
+
+        return False
 
 
 class Reply(Base):
@@ -350,6 +394,20 @@ class Reply(Base):
             )
         )
 
+    @property
+    def seen(self) -> bool:
+        """
+        A reply is always seen in a global inbox.
+        """
+        return True
+
+    def seen_by(self, journalist_id: int) -> bool:
+        for seen_reply in self.seen_replies:
+            if seen_reply.journalist_id == journalist_id:
+                return True
+
+        return False
+
 
 class DownloadErrorCodes(Enum):
     """
@@ -424,6 +482,19 @@ class DraftReply(Base):
 
     def __repr__(self) -> str:
         return "<DraftReply {}>".format(self.uuid)
+
+    @property
+    def seen(self) -> bool:
+        """
+        A draft reply is always seen in a global inbox.
+        """
+        return True
+
+    def seen_by(self, journalist_id: int) -> bool:
+        """
+        A draft reply is considered seen by everyone (we don't track who sees draft replies).
+        """
+        return True
 
 
 class ReplySendStatus(Base):

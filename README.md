@@ -325,26 +325,25 @@ To set up a local dev server and generate cassettes, follow these steps:
 
 https://gist.github.com/creviera/8793d5ec4d28f034f2c1e8320a93866a
 
-2. Start the server in a docker container by running:
+2. Start the server in a docker container and add 5 sources with messages, files, and replies by running:
 
     ```bash
-    NUM_SOURCES=0 make dev
+    NUM_SOURCES=5 make dev
     ```
 
-3. Create two new sources, each with one submission that contains both a file and a message. The message should be set to `this is the message`. The file should be called `hello.txt` and contain a single line of text: `hello`.
-4. Delete the cassettes you wish to regenerate or just delete the entire directory by running:
+3. Delete the cassettes you wish to regenerate or just delete the entire directory by running:
 
     ```bash
     rm -r tests/functional/cassettes
     ```
 
-5. Regenerate cassettes by running:
+4. Regenerate cassettes by running:
 
     ```bash
     make test-functional
     ```
 
-Note: One of the functional tests deletes a source, so you may need to add it back in between test runs where you are generating new cassettes.
+Note: One of the functional tests deletes a source, so you may need to add it back or restart the server in between test runs where you are generating new cassettes.
 
 ## Making a Release
 

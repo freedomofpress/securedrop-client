@@ -632,28 +632,34 @@ class MainView(QWidget):
 
     def on_source_changed(self):
         """
-        Show conversation for the currently-selected source if it hasn't been deleted. If the
-        current source no longer exists, clear the conversation for that source.
+        Show conversation for the selected source.
         """
-        source = self.source_list.get_selected_source()
-
-        if not source:
-            return
-
-        self.controller.session.refresh(source)
-        # Try to get the SourceConversationWrapper from the persistent dict,
-        # else we create it.
         try:
-            logger.debug("Drawing source conversation for {}".format(source.uuid))
-            conversation_wrapper = self.source_conversations[source.uuid]
+            source = self.source_list.get_selected_source()
+            if not source:
+                return
 
-            # Redraw the conversation view such that new messages, replies, files appear.
-            conversation_wrapper.conversation_view.update_conversation(source.collection)
-        except KeyError:
-            conversation_wrapper = SourceConversationWrapper(source, self.controller)
-            self.source_conversations[source.uuid] = conversation_wrapper
+            self.controller.session.refresh(source)
 
-        self.set_conversation(conversation_wrapper)
+            # Immediately show the selected source as seen in the UI and then make a request to mark
+            # source as seen.
+            self.source_list.source_selected.emit(source.uuid)
+            self.controller.mark_seen(source)
+
+            # Get or create the SourceConversationWrapper
+            if source.uuid in self.source_conversations:
+                conversation_wrapper = self.source_conversations[source.uuid]
+                conversation_wrapper.conversation_view.update_conversation(source.collection)
+            else:
+                conversation_wrapper = SourceConversationWrapper(source, self.controller)
+                self.source_conversations[source.uuid] = conversation_wrapper
+
+            self.set_conversation(conversation_wrapper)
+            logger.debug(
+                "Set conversation to the selected source with uuid: {}".format(source.uuid)
+            )
+        except sqlalchemy.exc.InvalidRequestError as e:
+            logger.debug(e)
 
     def delete_conversation(self, source_uuid: str) -> None:
         """
@@ -795,6 +801,8 @@ class SourceList(QListWidget):
 
     NUM_SOURCES_TO_ADD_AT_A_TIME = 32
 
+    source_selected = pyqtSignal(str)
+
     def __init__(self):
         super().__init__()
 
@@ -865,7 +873,9 @@ class SourceList(QListWidget):
 
         # Add widgets for new sources
         for uuid in sources_to_add:
-            source_widget = SourceWidget(self.controller, sources_to_add[uuid])
+            source_widget = SourceWidget(
+                self.controller, sources_to_add[uuid], self.source_selected
+            )
             source_item = SourceListWidgetItem(self)
             source_item.setSizeHint(source_widget.sizeHint())
             self.insertItem(0, source_item)
@@ -900,7 +910,7 @@ class SourceList(QListWidget):
             for source in sources_slice:
                 try:
                     source_uuid = source.uuid
-                    source_widget = SourceWidget(self.controller, source)
+                    source_widget = SourceWidget(self.controller, source, self.source_selected)
                     source_item = SourceListWidgetItem(self)
                     source_item.setSizeHint(source_widget.sizeHint())
                     self.insertItem(0, source_item)
@@ -994,17 +1004,24 @@ class SourceWidget(QWidget):
     PREVIEW_WIDTH = 380
     PREVIEW_HEIGHT = 60
 
-    def __init__(self, controller: Controller, source: Source):
+    SOURCE_NAME_CSS = load_css("source_name.css")
+    SOURCE_PREVIEW_CSS = load_css("source_preview.css")
+    SOURCE_TIMESTAMP_CSS = load_css("source_timestamp.css")
+
+    def __init__(self, controller: Controller, source: Source, source_selected_signal: pyqtSignal):
         super().__init__()
 
         self.controller = controller
         self.controller.source_deleted.connect(self._on_source_deleted)
         self.controller.source_deletion_failed.connect(self._on_source_deletion_failed)
+        self.controller.authentication_state.connect(self._on_authentication_changed)
+        source_selected_signal.connect(self._on_source_selected)
 
         # Store source
-        self.source_uuid = source.uuid
-        self.last_updated = source.last_updated
         self.source = source
+        self.seen = self.source.seen
+        self.source_uuid = self.source.uuid
+        self.last_updated = self.source.last_updated
 
         # Set layout
         layout = QHBoxLayout(self)
@@ -1100,9 +1117,14 @@ class SourceWidget(QWidget):
             if self.source.document_count == 0:
                 self.paperclip.hide()
             self.star.update(self.source.is_starred)
+
+            # When not authenticated we always show the source as having been seen
+            self.seen = True if not self.controller.is_authenticated else self.source.seen
+            self.update_styles()
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.debug(f"Could not update SourceWidget for source {self.source_uuid}: {e}")
 
+    @pyqtSlot(str, str, str)
     def set_snippet(self, source_uuid: str, collection_uuid: str = None, content: str = None):
         """
         Update the preview snippet if the source_uuid matches our own.
@@ -1129,6 +1151,55 @@ class SourceWidget(QWidget):
         else:
             messagebox = DeleteSourceMessageBox(self.source, self.controller)
             messagebox.launch()
+
+    def update_styles(self) -> None:
+        if self.seen:
+            self.name.setStyleSheet("")
+            self.name.setObjectName("SourceWidget_name")
+            self.name.setStyleSheet(self.SOURCE_NAME_CSS)
+
+            self.timestamp.setStyleSheet("")
+            self.timestamp.setObjectName("SourceWidget_timestamp")
+            self.timestamp.setStyleSheet(self.SOURCE_TIMESTAMP_CSS)
+
+            self.preview.setStyleSheet("")
+            self.preview.setObjectName("SourceWidget_preview")
+            self.preview.setStyleSheet(self.SOURCE_PREVIEW_CSS)
+        else:
+            self.name.setStyleSheet("")
+            self.name.setObjectName("SourceWidget_name_unread")
+            self.name.setStyleSheet(self.SOURCE_NAME_CSS)
+
+            self.timestamp.setStyleSheet("")
+            self.timestamp.setObjectName("SourceWidget_timestamp_unread")
+            self.timestamp.setStyleSheet(self.SOURCE_TIMESTAMP_CSS)
+
+            self.preview.setStyleSheet("")
+            self.preview.setObjectName("SourceWidget_preview_unread")
+            self.preview.setStyleSheet(self.SOURCE_PREVIEW_CSS)
+
+    @pyqtSlot(bool)
+    def _on_authentication_changed(self, authenticated: bool) -> None:
+        """
+        When the user logs out, show source as seen.
+        """
+        if not authenticated:
+            self.seen = True
+            self.update_styles()
+
+    @pyqtSlot(str)
+    def _on_source_selected(self, selected_source_uuid: str):
+        """
+        Show widget as having been seen.
+        """
+        if self.source_uuid != selected_source_uuid:
+            return
+
+        if self.seen:
+            return
+
+        self.seen = True
+        self.update_styles()
 
     @pyqtSlot(str)
     def _on_source_deleted(self, source_uuid: str):
