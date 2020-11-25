@@ -1004,7 +1004,9 @@ class SourceWidget(QWidget):
     PREVIEW_WIDTH = 380
     PREVIEW_HEIGHT = 60
 
-    SOURCE_CSS = load_css("source.css")
+    SOURCE_NAME_CSS = load_css("source_name.css")
+    SOURCE_PREVIEW_CSS = load_css("source_preview.css")
+    SOURCE_TIMESTAMP_CSS = load_css("source_timestamp.css")
 
     def __init__(self, controller: Controller, source: Source, source_selected_signal: pyqtSignal):
         super().__init__()
@@ -1152,17 +1154,29 @@ class SourceWidget(QWidget):
 
     def update_styles(self) -> None:
         if self.seen:
-            self.setStyleSheet("")
+            self.name.setStyleSheet("")
             self.name.setObjectName("SourceWidget_name")
+            self.name.setStyleSheet(self.SOURCE_NAME_CSS)
+
+            self.timestamp.setStyleSheet("")
             self.timestamp.setObjectName("SourceWidget_timestamp")
+            self.timestamp.setStyleSheet(self.SOURCE_TIMESTAMP_CSS)
+
+            self.preview.setStyleSheet("")
             self.preview.setObjectName("SourceWidget_preview")
-            self.setStyleSheet(self.SOURCE_CSS)
+            self.preview.setStyleSheet(self.SOURCE_PREVIEW_CSS)
         else:
-            self.setStyleSheet("")
+            self.name.setStyleSheet("")
             self.name.setObjectName("SourceWidget_name_unread")
+            self.name.setStyleSheet(self.SOURCE_NAME_CSS)
+
+            self.timestamp.setStyleSheet("")
             self.timestamp.setObjectName("SourceWidget_timestamp_unread")
+            self.timestamp.setStyleSheet(self.SOURCE_TIMESTAMP_CSS)
+
+            self.preview.setStyleSheet("")
             self.preview.setObjectName("SourceWidget_preview_unread")
-            self.setStyleSheet(self.SOURCE_CSS)
+            self.preview.setStyleSheet(self.SOURCE_PREVIEW_CSS)
 
     @pyqtSlot(bool)
     def _on_authentication_changed(self, authenticated: bool) -> None:

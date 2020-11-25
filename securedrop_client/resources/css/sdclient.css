@@ -194,8 +194,32 @@ QListView#SourceList::item:hover{
     border: 500px solid #f9f9f9;
 }
 
+#SourceWidget_container {
+    border-bottom: 1px solid #9b9b9b;
+}
+
+#SourceWidget_container QPushButton {
+    border: none;
+}
+
 #StarToggleButton {
     border: none;
+}
+
+#SourceWidget_gutter {
+    min-width: 40px;
+    max-width: 40px;
+}
+
+#SourceWidget_metadata {
+    max-width: 60px;
+}
+
+#SourceWidget_source_deleted {
+    font-family: 'Source Sans Pro';
+    font-weight: 400;
+    font-size: 13px;
+    color: #ff3366;
 }
 
 #SourceConversationWrapper_source_deleted {
