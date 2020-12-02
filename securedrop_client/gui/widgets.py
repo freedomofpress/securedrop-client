@@ -1023,12 +1023,14 @@ class SourceWidget(QWidget):
         self.name.setObjectName("SourceWidget_name")
         self.preview = SecureQLabel(max_length=self.PREVIEW_WIDTH)
         self.preview.setObjectName("SourceWidget_preview")
-        self.preview.setFixedSize(QSize(self.PREVIEW_WIDGET_WIDTH, self.PREVIEW_WIDGET_HEIGHT))
+        # self.preview.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.preview.setFixedHeight(self.PREVIEW_WIDGET_HEIGHT)
+        self.preview.setMaximumWidth(self.PREVIEW_WIDGET_WIDTH)
         self.waiting_delete_confirmation = QLabel("Deletion in progress")
         self.waiting_delete_confirmation.setObjectName("SourceWidget_source_deleted")
-        self.waiting_delete_confirmation.setFixedSize(
-            QSize(self.PREVIEW_WIDGET_WIDTH, self.PREVIEW_WIDGET_HEIGHT)
-        )
+        # self.waiting_delete_confirmation.setFixedSize(
+        #     QSize(self.PREVIEW_WIDGET_WIDTH, self.PREVIEW_WIDGET_HEIGHT)
+        # )
         self.waiting_delete_confirmation.hide()
         self.paperclip = SvgLabel("paperclip.svg", QSize(11, 17))  # Set to size provided in the svg
         self.paperclip.setObjectName("SourceWidget_paperclip")
@@ -1060,12 +1062,13 @@ class SourceWidget(QWidget):
         self.spacer_widget.setFixedWidth(self.SPACER)
         source_widget_layout.addWidget(self.spacer_widget, 0, 1, 1, 1)
         source_widget_layout.addWidget(self.name, 0, 2, 1, 1)
-        source_widget_layout.addWidget(self.paperclip, 0, 3, 1, 1)
+        source_widget_layout.addWidget(self.spacer_widget, 0, 3, 1, 1)
+        source_widget_layout.addWidget(self.paperclip, 0, 4, 1, 1)
         source_widget_layout.addWidget(self.preview, 1, 2, 1, 1, alignment=Qt.AlignLeft)
         source_widget_layout.addWidget(
             self.waiting_delete_confirmation, 1, 2, 1, 1, alignment=Qt.AlignLeft
         )
-        source_widget_layout.addWidget(self.timestamp, 1, 3, 1, 1)
+        source_widget_layout.addWidget(self.timestamp, 1, 4, 1, 1)
         source_widget_layout.addItem(QSpacerItem(self.BOTTOM_SPACER, self.BOTTOM_SPACER))
         self.source_widget.setLayout(source_widget_layout)
         layout = QHBoxLayout(self)
@@ -1075,6 +1078,11 @@ class SourceWidget(QWidget):
         layout.addWidget(self.source_widget)
 
         self.update()
+
+    def resizeEvent(self, event):
+        self.preview.max_length = event.size().width() - 160
+        self.preview.setText(str(self.source.server_collection[-1]))
+        self.preview.setFixedWidth(self.preview.max_length + 20)
 
     def update(self):
         """

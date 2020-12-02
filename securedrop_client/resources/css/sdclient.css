@@ -182,7 +182,7 @@ QListView#SourceList {
     border: none;
     show-decoration-selected: 0;
     border-right: 3px solid #f3f5f9;
-    min-width: 500px;
+    min-width: 400px;
     max-width: 540px;
 }
 
