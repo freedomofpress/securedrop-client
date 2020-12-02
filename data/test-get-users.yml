@@ -7,7 +7,7 @@ interactions:
       Accept-Encoding:
       - gzip, deflate
       Authorization:
-      - Token eyJleHAiOjE2MDI3NDUxOTUsImFsZyI6IkhTMjU2IiwiaWF0IjoxNjAyNzE2Mzk1fQ.eyJpZCI6MX0.1lrA6kdh8XiwEdggOCGwh8d_jNpoUWinYGmSsiDQf-0
+      - Token eyJleHAiOjE2MDY4OTkzOTYsImFsZyI6IkhTMjU2IiwiaWF0IjoxNjA2ODcwNTk2fQ.eyJpZCI6MX0.6-NszJpAh76FAsjfR8uo7CpVO9nnxlMtHJZLThWRuZc
       Connection:
       - keep-alive
       Content-Type:
@@ -18,18 +18,18 @@ interactions:
     uri: http://127.0.0.1:8081/api/v1/users
   response:
     body:
-      string: "{\n  \"users\": [\n    {\n      \"first_name\": \"\", \n      \"last_name\"\
-        : \"\", \n      \"username\": \"journalist\", \n      \"uuid\": \"d1a781e9-2e7b-4b12-982e-adbd1e37bc16\"\
-        \n    }, \n    {\n      \"first_name\": \"\", \n      \"last_name\": \"\"\
-        , \n      \"username\": \"dellsberg\", \n      \"uuid\": \"ec48edc1-778f-4320-8720-ff915969911c\"\
+      string: "{\n  \"users\": [\n    {\n      \"first_name\": null, \n      \"last_name\"\
+        : null, \n      \"username\": \"journalist\", \n      \"uuid\": \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
+        \n    }, \n    {\n      \"first_name\": null, \n      \"last_name\": null,\
+        \ \n      \"username\": \"dellsberg\", \n      \"uuid\": \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\
         \n    }\n  ]\n}\n"
     headers:
       Content-Length:
-      - '316'
+      - '324'
       Content-Type:
       - application/json
       Date:
-      - Wed, 14 Oct 2020 22:59:59 GMT
+      - Wed, 02 Dec 2020 00:56:39 GMT
       Server:
       - Werkzeug/0.16.0 Python/3.5.2
     status:
