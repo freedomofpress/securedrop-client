@@ -1,5 +1,6 @@
 import datetime
 import os
+
 import pytest
 
 from sdclientapi.sdlocalobjects import Reply, ReplyError, Source, WrongUUIDError
@@ -7,7 +8,7 @@ from sdclientapi.sdlocalobjects import Reply, ReplyError, Source, WrongUUIDError
 NUM_REPLIES_PER_SOURCE = 2
 
 
-class TestShared():
+class TestShared:
     """
     Base class for test code that is shared by the API and API proxy tests.
     Tests in this file should not be prefixed with test_; they are called
