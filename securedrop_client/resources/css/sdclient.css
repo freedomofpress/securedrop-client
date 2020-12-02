@@ -182,8 +182,7 @@ QListView#SourceList {
     border: none;
     show-decoration-selected: 0;
     border-right: 3px solid #f3f5f9;
-    min-width: 440px;
-    max-width: 540px;
+    min-width: 400px;
 }
 
 QListView#SourceList::item:selected {
@@ -191,7 +190,7 @@ QListView#SourceList::item:selected {
 }
 
 QListView#SourceList::item:hover {
-    border: 500px solid #f9f9ff;
+    background-color: #f9f9ff;
 }
 
 #SourceWidget_container {

@@ -802,14 +802,17 @@ class SourceList(QListWidget):
     """
 
     NUM_SOURCES_TO_ADD_AT_A_TIME = 32
+    INITIAL_UPDATE_SCROLLBAR_WIDTH = 20
 
     source_selected = pyqtSignal(str)
+    adjust_preview_width = pyqtSignal(int)
 
     def __init__(self):
         super().__init__()
 
         self.setObjectName("SourceList")
         self.setUniformItemSizes(True)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         # Set layout.
         layout = QVBoxLayout(self)
@@ -820,6 +823,12 @@ class SourceList(QListWidget):
 
         # To hold references to SourceListWidgetItem instances indexed by source UUID.
         self.source_items = {}
+
+    def resizeEvent(self, event):
+        new_width = event.size().width()
+        if new_width != self.width():
+            self.adjust_preview_width.emit(new_width)
+        super().resizeEvent(event)
 
     def setup(self, controller):
         self.controller = controller
@@ -876,7 +885,10 @@ class SourceList(QListWidget):
         # Add widgets for new sources
         for uuid in sources_to_add:
             source_widget = SourceWidget(
-                self.controller, sources_to_add[uuid], self.source_selected
+                self.controller,
+                sources_to_add[uuid],
+                self.source_selected,
+                self.adjust_preview_width,
             )
             source_item = SourceListWidgetItem(self)
             source_item.setSizeHint(source_widget.sizeHint())
@@ -905,6 +917,7 @@ class SourceList(QListWidget):
 
         def schedule_source_management(slice_size=slice_size):
             if not sources:
+                self.adjust_preview_width.emit(self.width() - self.INITIAL_UPDATE_SCROLLBAR_WIDTH)
                 return
 
             # Process the remaining "slice_size" number of sources.
@@ -912,7 +925,12 @@ class SourceList(QListWidget):
             for source in sources_slice:
                 try:
                     source_uuid = source.uuid
-                    source_widget = SourceWidget(self.controller, source, self.source_selected)
+                    source_widget = SourceWidget(
+                        self.controller,
+                        source,
+                        self.source_selected,
+                        self.adjust_preview_width,
+                    )
                     source_item = SourceListWidgetItem(self)
                     source_item.setSizeHint(source_widget.sizeHint())
                     self.insertItem(0, source_item)
@@ -975,6 +993,17 @@ class SourceList(QListWidget):
             source_widget.set_snippet(source_uuid, collection_item_uuid, content)
 
 
+class SourcePreview(SecureQLabel):
+
+    def __init__(self):
+        super().__init__()
+
+    def adjust_preview(self, width):
+        self.setFixedWidth(width)
+        self.max_length = self.width()
+        self.refresh_preview_text()
+
+
 class SourceWidget(QWidget):
     """
     Used to display summary information about a source in the list view.
@@ -983,9 +1012,7 @@ class SourceWidget(QWidget):
     TOP_MARGIN = 11
     BOTTOM_MARGIN = 7
     SIDE_MARGIN = 10
-    PREVIEW_WIDTH = 300
-    PREVIEW_WIDGET_WIDTH = 310
-    PREVIEW_WIDGET_HEIGHT = 22
+    PREVIEW_WIDTH_DIFFERENCE = 140
     SPACER = 14
     BOTTOM_SPACER = 11
     STAR_WIDTH = 20
@@ -995,7 +1022,13 @@ class SourceWidget(QWidget):
     SOURCE_PREVIEW_CSS = load_css("source_preview.css")
     SOURCE_TIMESTAMP_CSS = load_css("source_timestamp.css")
 
-    def __init__(self, controller: Controller, source: Source, source_selected_signal: pyqtSignal):
+    def __init__(
+        self,
+        controller: Controller,
+        source: Source,
+        source_selected_signal: pyqtSignal,
+        adjust_preview_width: pyqtSignal,
+    ):
         super().__init__()
 
         self.controller = controller
@@ -1003,15 +1036,14 @@ class SourceWidget(QWidget):
         self.controller.source_deletion_failed.connect(self._on_source_deletion_failed)
         self.controller.authentication_state.connect(self._on_authentication_changed)
         source_selected_signal.connect(self._on_source_selected)
+        adjust_preview_width.connect(self._on_adjust_preview_width)
 
-        # Store source
         self.source = source
         self.seen = self.source.seen
         self.source_uuid = self.source.uuid
         self.last_updated = self.source.last_updated
         self.selected = False
 
-        # Set cursor.
         self.setCursor(QCursor(Qt.PointingHandCursor))
 
         retain_space = self.sizePolicy()
@@ -1021,14 +1053,10 @@ class SourceWidget(QWidget):
         self.star.setFixedWidth(self.STAR_WIDTH)
         self.name = QLabel()
         self.name.setObjectName("SourceWidget_name")
-        self.preview = SecureQLabel(max_length=self.PREVIEW_WIDTH)
+        self.preview = SourcePreview()
         self.preview.setObjectName("SourceWidget_preview")
-        self.preview.setFixedSize(QSize(self.PREVIEW_WIDGET_WIDTH, self.PREVIEW_WIDGET_HEIGHT))
         self.waiting_delete_confirmation = QLabel("Deletion in progress")
         self.waiting_delete_confirmation.setObjectName("SourceWidget_source_deleted")
-        self.waiting_delete_confirmation.setFixedSize(
-            QSize(self.PREVIEW_WIDGET_WIDTH, self.PREVIEW_WIDGET_HEIGHT)
-        )
         self.waiting_delete_confirmation.hide()
         self.paperclip = SvgLabel("paperclip.svg", QSize(11, 17))  # Set to size provided in the svg
         self.paperclip.setObjectName("SourceWidget_paperclip")
@@ -1056,9 +1084,9 @@ class SourceWidget(QWidget):
         source_widget_layout.setSpacing(0)
         source_widget_layout.setContentsMargins(0, self.TOP_MARGIN, 0, self.BOTTOM_MARGIN)
         source_widget_layout.addWidget(self.star, 0, 0, 1, 1)
-        self.spacer_widget = QWidget()
-        self.spacer_widget.setFixedWidth(self.SPACER)
-        source_widget_layout.addWidget(self.spacer_widget, 0, 1, 1, 1)
+        self.spacer = QWidget()
+        self.spacer.setFixedWidth(self.SPACER)
+        source_widget_layout.addWidget(self.spacer, 0, 1, 1, 1)
         source_widget_layout.addWidget(self.name, 0, 2, 1, 1)
         source_widget_layout.addWidget(self.paperclip, 0, 3, 1, 1)
         source_widget_layout.addWidget(self.preview, 1, 2, 1, 1, alignment=Qt.AlignLeft)
@@ -1075,6 +1103,19 @@ class SourceWidget(QWidget):
         layout.addWidget(self.source_widget)
 
         self.update()
+
+        self.preview.adjust_preview(self.width() - self.PREVIEW_WIDTH_DIFFERENCE)
+
+    @pyqtSlot(int)
+    def _on_adjust_preview_width(self, width):
+        """
+        This is a workaround to the workaround for https://bugreports.qt.io/browse/QTBUG-85498.
+        Since QLabels containing text with long strings that cannot be wrapped have to have a fixed
+        width in order to fit within the scroll list widget, we have to override the normal resizing
+        logic.
+        """
+        self.setFixedWidth(width)
+        self.preview.adjust_preview(width - self.PREVIEW_WIDTH_DIFFERENCE)
 
     def update(self):
         """
@@ -2940,7 +2981,6 @@ class ConversationScrollArea(QScrollArea):
     def __init__(self):
         super().__init__()
 
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setWidgetResizable(True)
 
         self.setObjectName("ConversationScrollArea")
