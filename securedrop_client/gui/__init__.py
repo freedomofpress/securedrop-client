@@ -148,6 +148,9 @@ class SvgLabel(QLabel):
 
 
 class SecureQLabel(QLabel):
+
+    MAX_PREVIEW_LENGTH = 200
+
     def __init__(
         self,
         text: str = "",
@@ -168,12 +171,16 @@ class SecureQLabel(QLabel):
     def setText(self, text: str) -> None:
         text = text.strip()
         self.setTextFormat(Qt.PlainText)
+        self.preview_text = text[: self.MAX_PREVIEW_LENGTH]
         elided_text = self.get_elided_text(text)
         self.elided = True if elided_text != text else False
         if self.elided and self.with_tooltip:
             tooltip_label = SecureQLabel(text)
             self.setToolTip(tooltip_label.text())
         super().setText(elided_text)
+
+    def refresh_preview_text(self) -> None:
+        self.setText(self.preview_text)
 
     def get_elided_text(self, full_text: str) -> str:
         if not self.max_length:
