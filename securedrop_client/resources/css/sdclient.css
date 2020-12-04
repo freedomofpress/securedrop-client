@@ -150,7 +150,7 @@
 #MainView_view_holder {
     min-width: 500;
     border: none;
-    background-color: #f3f5f9;
+    background-color: #f9f9ff;
 }
 
 #EmptyConversationView QLabel {
@@ -187,11 +187,11 @@ QListView#SourceList {
 }
 
 QListView#SourceList::item:selected {
-    background-color: #f3f5f9;
+    background-color: rgba(244, 245, 255, 0.84);
 }
 
-QListView#SourceList::item:hover{
-    border: 500px solid #f9f9f9;
+QListView#SourceList::item:hover {
+    border: 500px solid #f9f9ff;
 }
 
 #SourceWidget_container {
@@ -204,15 +204,6 @@ QListView#SourceList::item:hover{
 
 #StarToggleButton {
     border: none;
-}
-
-#SourceWidget_gutter {
-    min-width: 40px;
-    max-width: 40px;
-}
-
-#SourceWidget_metadata {
-    max-width: 60px;
 }
 
 #SourceWidget_source_deleted {
@@ -242,7 +233,7 @@ QListView#SourceList::item:hover{
 }
 
 #ReplyBoxWidget_replybox::disabled {
-    background-color: #efefef;
+    background-color: #ffffff;
 }
 
 #ReplyBoxWidget QPushButton {
@@ -266,6 +257,14 @@ QWidget#ReplyBoxWidget_horizontal_line {
     font-weight: 400;
     font-size: 18px;
     border: none;
+}
+
+#ReplyTextEdit::disabled {
+    font-family: 'Montserrat';
+    font-weight: 400;
+    font-size: 18px;
+    border: none;
+    background-color: #ffffff;
 }
 
 #ReplyTextEditPlaceholder_text {
@@ -317,11 +316,11 @@ QToolButton#SourceMenuButton::menu-indicator {
 
 #ConversationScrollArea {
     border: 0;
-    background: #f3f5f9;
+    background: #f9f9ff;
 }
 
 #ConversationScrollArea_conversation {
-    background: #f3f5f9;
+    background: #f9f9ff;
 }
 
 #FileWidget {
@@ -360,7 +359,7 @@ QLabel#FileWidget_no_file_name {
     font-family: 'Source Sans Pro';
     font-weight: 300;
     font-size: 13px;
-    color: #a5b3e9;
+    color: #7481b4;
 }
 
 QLabel#FileWidget_file_size {

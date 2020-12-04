@@ -44,6 +44,7 @@ from PyQt5.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QGraphicsDropShadowEffect,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -55,6 +56,7 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QScrollArea,
     QSizePolicy,
+    QSpacerItem,
     QStatusBar,
     QToolButton,
     QVBoxLayout,
@@ -976,33 +978,18 @@ class SourceList(QListWidget):
 class SourceWidget(QWidget):
     """
     Used to display summary information about a source in the list view.
-
-    -----------------------------------------------------------------------------
-    |                                                                           |
-    |     -----------------------------------------------------------------     |
-    |     |                                                               |     |
-    |     |                                                               |     |
-    |     | ------------- ---------------------------- ------------------ |     |
-    |     | | ------    | | ------                   | |    ----------- | |     |
-    |     | | |star|    | | |name|                   | |    |paperclip| | |     |
-    |     | | ------    | | ------                   | |    ----------- | |     |
-    |     | |           | | ---------                | |    ----------- | |     |
-    |     | |           | | |preview|                | |    |timestamp| | |     |
-    |     | |           | | ---------                | |    ----------- | |     |
-    |     | |           | |                          | |                | |     |
-    |     | |    gutter | |                  summary | |       metadata | |     |
-    |     | ------------- ---------------------------- ------------------ |     |
-    |     |                                                               |     |
-    |     |                                                 source_widget |     |
-    |     -----------------------------------------------------------------     |
-    |                                                              SourceWidget |
-    -----------------------------------------------------------------------------
     """
 
+    TOP_MARGIN = 11
+    BOTTOM_MARGIN = 7
     SIDE_MARGIN = 10
-    SOURCE_WIDGET_VERTICAL_MARGIN = 10
-    PREVIEW_WIDTH = 380
-    PREVIEW_HEIGHT = 60
+    PREVIEW_WIDTH = 360
+    PREVIEW_WIDGET_WIDTH = 380
+    PREVIEW_WIDGET_HEIGHT = 22
+    SPACER = 14
+    BOTTOM_SPACER = 11
+    STAR_WIDTH = 20
+    TIMESTAMP_WIDTH = 60
 
     SOURCE_NAME_CSS = load_css("source_name.css")
     SOURCE_PREVIEW_CSS = load_css("source_preview.css")
@@ -1022,82 +1009,69 @@ class SourceWidget(QWidget):
         self.seen = self.source.seen
         self.source_uuid = self.source.uuid
         self.last_updated = self.source.last_updated
-
-        # Set layout
-        layout = QHBoxLayout(self)
-        self.setLayout(layout)
+        self.selected = False
 
         # Set cursor.
         self.setCursor(QCursor(Qt.PointingHandCursor))
 
-        # Remove margins and spacing
-        layout.setContentsMargins(self.SIDE_MARGIN, 0, self.SIDE_MARGIN, 0)
-        layout.setSpacing(0)
-
         retain_space = self.sizePolicy()
         retain_space.setRetainSizeWhenHidden(True)
-
-        # Set up gutter
-        self.gutter = QWidget()
-        self.gutter.setObjectName("SourceWidget_gutter")
-        self.gutter.setSizePolicy(retain_space)
-        gutter_layout = QVBoxLayout(self.gutter)
-        gutter_layout.setContentsMargins(0, 0, 0, 0)
-        gutter_layout.setSpacing(0)
         self.star = StarToggleButton(self.controller, self.source_uuid, source.is_starred)
-        gutter_layout.addWidget(self.star)
-        gutter_layout.addStretch()
-
-        # Set up summary
-        self.summary = QWidget()
-        self.summary.setObjectName("SourceWidget_summary")
-        summary_layout = QVBoxLayout(self.summary)
-        summary_layout.setContentsMargins(0, 0, 0, 0)
-        summary_layout.setSpacing(0)
+        self.star.setSizePolicy(retain_space)
+        self.star.setFixedWidth(self.STAR_WIDTH)
         self.name = QLabel()
         self.name.setObjectName("SourceWidget_name")
         self.preview = SecureQLabel(max_length=self.PREVIEW_WIDTH)
         self.preview.setObjectName("SourceWidget_preview")
-        self.preview.setFixedSize(QSize(self.PREVIEW_WIDTH, self.PREVIEW_HEIGHT))
+        self.preview.setFixedSize(QSize(self.PREVIEW_WIDGET_WIDTH, self.PREVIEW_WIDGET_HEIGHT))
         self.waiting_delete_confirmation = QLabel("Deletion in progress")
         self.waiting_delete_confirmation.setObjectName("SourceWidget_source_deleted")
         self.waiting_delete_confirmation.setFixedSize(
-            QSize(self.PREVIEW_WIDTH, self.PREVIEW_HEIGHT)
+            QSize(self.PREVIEW_WIDGET_WIDTH, self.PREVIEW_WIDGET_HEIGHT)
         )
         self.waiting_delete_confirmation.hide()
-        summary_layout.addWidget(self.name)
-        summary_layout.addWidget(self.preview)
-        summary_layout.addWidget(self.waiting_delete_confirmation)
-
-        # Set up metadata
-        self.metadata = QWidget()
-        self.metadata.setObjectName("SourceWidget_metadata")
-        self.metadata.setSizePolicy(retain_space)
-        metadata_layout = QVBoxLayout(self.metadata)
-        metadata_layout.setContentsMargins(0, 0, 0, 0)
-        metadata_layout.setSpacing(0)
-        self.paperclip = SvgLabel("paperclip.svg", QSize(18, 18))  # Set to size provided in the svg
+        self.paperclip = SvgLabel("paperclip.svg", QSize(11, 17))  # Set to size provided in the svg
         self.paperclip.setObjectName("SourceWidget_paperclip")
-        self.paperclip.setFixedSize(QSize(22, 22))
+        self.paperclip.setFixedSize(QSize(11, 17))
+        self.paperclip.setSizePolicy(retain_space)
         self.timestamp = QLabel()
+        self.timestamp.setSizePolicy(retain_space)
+        self.timestamp.setFixedWidth(self.TIMESTAMP_WIDTH)
         self.timestamp.setObjectName("SourceWidget_timestamp")
-        metadata_layout.addWidget(self.paperclip, alignment=Qt.AlignRight)
-        metadata_layout.addWidget(self.timestamp, alignment=Qt.AlignRight)
-        metadata_layout.addStretch()
 
-        # Set up a source_widget
+        # Create source_widget:
+        # -------------------------------------------------------------------
+        # | ------ | -------- | ------                   | -----------      |
+        # | |star| | |spacer| | |name|                   | |paperclip|      |
+        # | ------ | -------- | ------                   | -----------      |
+        # -------------------------------------------------------------------
+        # |        |          | ---------                | -----------      |
+        # |        |          | |preview|                | |timestamp|      |
+        # |        |          | ---------                | -----------      |
+        # ------------------------------------------- -----------------------
+        # Column 0, 1, and 3 are fixed. Column 2 stretches.
         self.source_widget = QWidget()
         self.source_widget.setObjectName("SourceWidget_container")
-        source_widget_layout = QHBoxLayout(self.source_widget)
-        source_widget_layout.setContentsMargins(
-            0, self.SOURCE_WIDGET_VERTICAL_MARGIN, 0, self.SOURCE_WIDGET_VERTICAL_MARGIN
-        )
+        source_widget_layout = QGridLayout()
         source_widget_layout.setSpacing(0)
-        source_widget_layout.addWidget(self.gutter)
-        source_widget_layout.addWidget(self.summary)
-        source_widget_layout.addWidget(self.metadata)
-
-        # Add widgets to main layout
+        source_widget_layout.setContentsMargins(0, self.TOP_MARGIN, 0, self.BOTTOM_MARGIN)
+        source_widget_layout.addWidget(self.star, 0, 0, 1, 1)
+        self.spacer_widget = QWidget()
+        self.spacer_widget.setFixedWidth(self.SPACER)
+        source_widget_layout.addWidget(self.spacer_widget, 0, 1, 1, 1)
+        source_widget_layout.addWidget(self.name, 0, 2, 1, 1)
+        source_widget_layout.addWidget(self.paperclip, 0, 3, 1, 1)
+        source_widget_layout.addWidget(self.preview, 1, 2, 1, 1, alignment=Qt.AlignLeft)
+        source_widget_layout.addWidget(
+            self.waiting_delete_confirmation, 1, 2, 1, 1, alignment=Qt.AlignLeft
+        )
+        source_widget_layout.addWidget(self.timestamp, 1, 3, 1, 1)
+        source_widget_layout.addItem(QSpacerItem(self.BOTTOM_SPACER, self.BOTTOM_SPACER))
+        self.source_widget.setLayout(source_widget_layout)
+        layout = QHBoxLayout(self)
+        self.setLayout(layout)
+        layout.setContentsMargins(self.SIDE_MARGIN, 0, self.SIDE_MARGIN, 0)
+        layout.setSpacing(0)
         layout.addWidget(self.source_widget)
 
         self.update()
@@ -1109,7 +1083,7 @@ class SourceWidget(QWidget):
         try:
             self.controller.session.refresh(self.source)
             self.last_updated = self.source.last_updated
-            self.timestamp.setText(_(arrow.get(self.source.last_updated).format("DD MMM")))
+            self.timestamp.setText(_(arrow.get(self.source.last_updated).format("MMM D")))
             self.name.setText(self.source.journalist_designation)
 
             self.set_snippet(self.source_uuid)
@@ -1155,7 +1129,10 @@ class SourceWidget(QWidget):
     def update_styles(self) -> None:
         if self.seen:
             self.name.setStyleSheet("")
-            self.name.setObjectName("SourceWidget_name")
+            if self.selected:
+                self.name.setObjectName("SourceWidget_name_selected")
+            else:
+                self.name.setObjectName("SourceWidget_name")
             self.name.setStyleSheet(self.SOURCE_NAME_CSS)
 
             self.timestamp.setStyleSheet("")
@@ -1190,32 +1167,33 @@ class SourceWidget(QWidget):
     @pyqtSlot(str)
     def _on_source_selected(self, selected_source_uuid: str):
         """
-        Show widget as having been seen.
+        Show selected widget as having been seen.
         """
-        if self.source_uuid != selected_source_uuid:
-            return
-
-        if self.seen:
-            return
-
-        self.seen = True
-        self.update_styles()
+        if self.source_uuid == selected_source_uuid:
+            self.seen = True
+            self.selected = True
+            self.update_styles()
+        else:
+            self.selected = False
+            self.update_styles()
 
     @pyqtSlot(str)
     def _on_source_deleted(self, source_uuid: str):
         if self.source_uuid == source_uuid:
-            self.gutter.hide()
-            self.metadata.hide()
+            self.star.hide()
+            self.paperclip.hide()
             self.preview.hide()
+            self.timestamp.hide()
             self.waiting_delete_confirmation.show()
 
     @pyqtSlot(str)
     def _on_source_deletion_failed(self, source_uuid: str):
         if self.source_uuid == source_uuid:
             self.waiting_delete_confirmation.hide()
-            self.gutter.show()
-            self.metadata.show()
+            self.star.show()
+            self.paperclip.show()
             self.preview.show()
+            self.timestamp.show()
 
 
 class StarToggleButton(SvgToggleButton):
@@ -2076,7 +2054,7 @@ class ReplyWidget(SpeechBubble):
 
     def set_normal_styles(self):
         self.message.setStyleSheet("")
-        self.message.setObjectName("SpeechBubble_message")
+        self.message.setObjectName("SpeechBubble_reply")
         self.message.setStyleSheet(self.MESSAGE_CSS)
 
         self.sender_icon.set_normal_styles()
@@ -3616,7 +3594,7 @@ class SourceProfileShortWidget(QWidget):
             self.MARGIN_LEFT, self.VERTICAL_MARGIN, self.MARGIN_RIGHT, self.VERTICAL_MARGIN
         )
         title = TitleLabel(self.source.journalist_designation)
-        self.updated = LastUpdatedLabel(_(arrow.get(self.source.last_updated).format("DD MMM")))
+        self.updated = LastUpdatedLabel(_(arrow.get(self.source.last_updated).format("MMM D")))
         menu = SourceMenuButton(self.source, self.controller)
         header_layout.addWidget(title, alignment=Qt.AlignLeft)
         header_layout.addStretch()
@@ -3637,4 +3615,4 @@ class SourceProfileShortWidget(QWidget):
         Ensure the timestamp is always kept up to date with the latest activity
         from the source.
         """
-        self.updated.setText(_(arrow.get(self.source.last_updated).format("DD MMM")))
+        self.updated.setText(_(arrow.get(self.source.last_updated).format("MMM D")))
