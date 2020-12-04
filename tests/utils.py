@@ -8,7 +8,7 @@ from sdclientapi import json_query
 # We are making calls to securedrop.Proxy qrexec service
 # in the QubesOS to get the data from the server. This is difficult to test
 # unless we have an easy way to store/cache each function call and returned
-# result. In this file we have a new decorator called `dastollervey_datasaver`.
+# result. In this file we have a new decorator called `qrexec_datasaver`.
 # This decorator checks for each json_query call and related arguments sent
 # to the function, and then stores the result in a json file if required.
 # From the next time, for the same signature, it will serve the result from the
@@ -20,10 +20,12 @@ RES = {}
 CALLNUMBER = 0
 
 
-alternative = json_query
+real_json_query = json_query
 
 
-def internal_sideeffect(*args, **kwargs):
+# This function obtains a JSON query result from the cache object (RES), or
+# otherwise  performs a real query.
+def mocked_json_query(*args, **kwargs):
     global CALLNUMBER
     global RES
     CALLNUMBER += 1
@@ -76,12 +78,12 @@ def internal_sideeffect(*args, **kwargs):
     if not answer:
         # Means it is not in cache.
         # So, execute the real function and store in cache
-        answer = alternative(*args)
+        answer = real_json_query(*args)
         RES[key] = answer
     return answer
 
 
-def dastollervey_datasaver(func):
+def qrexec_datasaver(func):
     "This is the decorator to save qrexec call data"
 
     def wrapper(self, *args, **kwargs):
@@ -89,17 +91,12 @@ def dastollervey_datasaver(func):
         global RES
         # This is the filename to store the results
         filename = os.path.join("data", func.__name__ + ".json")
-        # if the logout.txt file is there, means we have a logout scenario
-        # so, we should do a real login call
-        if os.path.exists("logout.txt") and func.__name__ == "setUp":
-            if not os.path.exists(filename):
-                return func(self, *args, **kwargs)
 
         if os.path.exists(filename):
             with open(filename) as fobj:
                 RES = json.load(fobj)
         mock = MagicMock()
-        mock.side_effect = internal_sideeffect
+        mock.side_effect = mocked_json_query
         with patch("sdclientapi.json_query", mock):
             result = func(self, *args, **kwargs)
 
@@ -110,16 +107,3 @@ def dastollervey_datasaver(func):
         return result
 
     return wrapper
-
-
-def load_auth():
-    "Helper function to load token"
-    if os.path.exists("testtoken.json"):
-        with open("testtoken.json") as fobj:
-            return json.load(fobj)
-    return None
-
-
-def save_auth(token):
-    with open("testtoken.json", "w") as fobj:
-        json.dump(token, fobj)

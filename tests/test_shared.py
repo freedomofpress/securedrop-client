@@ -15,7 +15,7 @@ class TestShared:
     only from subclasses.
     """
 
-    # ---------------- AUTH ----------------
+    # ---------------- AUTH VALIDATION ----------------
 
     def api_auth(self):
         assert isinstance(self.api.token, str)

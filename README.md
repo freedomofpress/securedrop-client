@@ -62,7 +62,7 @@ When tests are run, they replay recorded API request and response data instead o
 
 **Note:** We have a CI test that does not use the recorded API request and response data in order to make sure we are testing the latest changes to the SDK against the latest server API (see `test-against-latest-api` in https://github.com/freedomofpress/securedrop-sdk/blob/main/.circleci/config.yml).
 
-We use [vcrpy](https://vcrpy.readthedocs.io/en/latest/) to record and replay API calls made over HTTP and a decorator called `@dastollervey_datasaver` to record and replay API calls made over qrexec. Each request made from a test and its response from the server is stored in a "cassette" in the `data` directory. Tests replay these cassettes instead of making actual API calls to a server.
+We use [vcrpy](https://vcrpy.readthedocs.io/en/latest/) to record and replay API calls made over HTTP and a decorator called `@qrexec_datasaver` to record and replay API calls made over qrexec. Each request made from a test and its response from the server is stored in a "cassette" in the `data` directory. Tests replay these cassettes instead of making actual API calls to a server.
 
 If you run the tests and see the following vcrpy warning, then you'll need to re-record cassettes because none of the existing cassettes contain the expected API call and we don't allow existing cassettes to be overwritten:
 
@@ -122,7 +122,7 @@ Once your proxy are set up, follow these steps:
     rm data/*.json
     ```
 
-3. Comment out the `@dastollervey_datasaver` decorator above the test you want to generate a new cassette for or just generate all new cassettes by commenting out the decorator above all methods in the `test_apiproxy.py::TestAPIProxy` class.
+3. Comment out the `@qrexec_datasaver` decorator above the test you want to generate a new cassette for or just generate all new cassettes by commenting out the decorator above all methods in the `test_apiproxy.py::TestAPIProxy` class.
 
 4. Make qrexec calls to the server and collect real response data:
 
@@ -130,7 +130,7 @@ Once your proxy are set up, follow these steps:
     make test TESTS=tests/test_apiproxy.py
     ```
 
-5. Uncomment the `@dastollervey_datasaver` decorator wherever you commented it out.
+5. Uncomment the `@qrexec_datasaver` decorator wherever you commented it out.
 6. Record new cassettes from the response data collected in step 4:
 
     ```bash
@@ -151,7 +151,7 @@ If this is the first time you are generating new cassettes that make API calls o
     dpkg -i <latest-package>.deb
     ```
 
-3. Create `/etc/sd-proxy.yaml` with the following contents (assuming the VM you'll be running the SDK tests from is called **sd-dev**):
+3. Create `/home/user/.securedrop_proxy/sd-proxy.yaml` with the following contents (assuming the VM you'll be running the SDK tests from is called **sd-dev**):
 
     ```
     host: 127.0.0.1
@@ -201,7 +201,7 @@ sd-dev-proxy sd-dev allow
     ```bash
     NUM_SOURCES=5 make dev
     ```
-    b. With the main branch of this repo checked out on `sd-dev`, comment out the `@dastollervey_datasaver` decorator above the `test_apiproxy.py::TestAPIProxy::setUp` method so that `test_api_auth` makes an actual API call over qrexec.
+    b. With the main branch of this repo checked out on `sd-dev`, comment out the `@qrexec_datasaver` decorator above the `test_apiproxy.py::TestAPIProxy::setUp` method so that `test_api_auth` makes an actual API call over qrexec.
     c. Run `test_api_auth`:
 
     ```bash

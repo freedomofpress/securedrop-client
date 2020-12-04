@@ -72,7 +72,8 @@ class TestAPI(TestShared):
     def test_api_auth(self):
         super().api_auth()
 
-    # This test is materially different in the API & API Proxy versions.
+    # This test is order-sensitive and must be run before the "seen"
+    # state of files is altered.
     @vcr.use_cassette("data/test-download-submission.yml")
     def test_download_submission(self):
         submissions = self.api.get_all_submissions()

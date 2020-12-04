@@ -1,18 +1,16 @@
 import http
 import json
-import os
 import shutil
 import tempfile
-import time
 from subprocess import TimeoutExpired
 
 import pyotp
 import pytest
 
 from sdclientapi import API, RequestTimeoutError
-from sdclientapi.sdlocalobjects import BaseError, Reply, Submission
+from sdclientapi.sdlocalobjects import AuthError, BaseError, Reply, Submission
 from test_shared import TestShared
-from utils import dastollervey_datasaver, load_auth, save_auth
+from utils import qrexec_datasaver
 
 
 class TestAPIProxy(TestShared):
@@ -21,135 +19,32 @@ class TestAPIProxy(TestShared):
     API and API Proxy tests.
     """
 
-    @dastollervey_datasaver
+    @qrexec_datasaver
     def setup_method(self):
         self.totp = pyotp.TOTP("JHCOGO7VCER3EJ4L")
         self.username = "journalist"
         self.password = "correct horse battery staple profanity oil chewy"
         self.server = "http://localhost:8081/"
         self.api = API(self.server, self.username, self.password, str(self.totp.now()), proxy=True)
+        auth_result = None
+        try:
+            auth_result = self.api.authenticate()
+        except Exception as err:
+            print(err)
 
-        for i in range(3):
-            if os.path.exists("testtoken.json"):
-                token = load_auth()
-                self.api.token = token
-                self.api.update_auth_header()
-                break
+        if auth_result is None:
+            raise AuthError(
+                "Could not obtain API token during test setup. TOTP code may have expired."
+            )
 
-            # The following is True when we did a logout
-            if os.path.exists("logout.txt"):
-                os.unlink("logout.txt")
-                time.sleep(31)
-            # Now let us try to login
-            try:
-                self.api = API(
-                    self.server, self.username, self.password, str(self.totp.now()), proxy=True
-                )
-                self.api.authenticate()
-                with open("login.txt", "w") as fobj:
-                    fobj.write("in")
-            except Exception as err:
-                print(err)
-                time.sleep(31)
-                continue
-
-            save_auth(self.api.token)
-            break
-
-    @dastollervey_datasaver
+    @qrexec_datasaver
     def test_api_auth(self):
         super().api_auth()
 
-    @dastollervey_datasaver
-    def test_seen(self):
-        super().seen()
-
-    @dastollervey_datasaver
-    def test_get_sources(self):
-        super().get_sources()
-
-    @dastollervey_datasaver
-    def test_star_add_remove(self):
-        super().star_add_remove()
-
-    @dastollervey_datasaver
-    def test_get_single_source(self):
-        super().get_single_source()
-
-    @dastollervey_datasaver
-    def test_get_single_source_from_string(self):
-        super().get_single_source(from_string=True)
-
-    @dastollervey_datasaver
-    def test_failed_single_source(self):
-        super().failed_single_source()
-
-    @dastollervey_datasaver
-    def test_get_submissions(self):
-        super().get_submissions()
-
-    @dastollervey_datasaver
-    def test_get_submission(self):
-        super().get_submission()
-
-    @dastollervey_datasaver
-    def test_get_submission_from_string(self):
-        super().get_submission(from_string=True)
-
-    @dastollervey_datasaver
-    def test_get_wrong_submissions(self):
-        super().get_wrong_submissions()
-
-    @dastollervey_datasaver
-    def test_get_all_submissions(self):
-        super().get_all_submissions()
-
-    @dastollervey_datasaver
-    def test_flag_source(self):
-        super().flag_source()
-
-    @dastollervey_datasaver
-    def test_get_current_user(self):
-        super().get_current_user()
-
-    @dastollervey_datasaver
-    def test_get_users(self):
-        super().get_users()
-
-    @dastollervey_datasaver
-    def test_error_unencrypted_reply(self):
-        super().error_unencrypted_reply()
-
-    @dastollervey_datasaver
-    def test_get_replies_from_source(self):
-        super().get_replies_from_source()
-
-    @dastollervey_datasaver
-    def test_get_reply_from_source(self):
-        super().get_reply_from_source()
-
-    @dastollervey_datasaver
-    def test_get_all_replies(self):
-        super().get_all_replies()
-
-    @dastollervey_datasaver
-    def test_download_reply(self):
-        r = self.api.get_all_replies()[0]
-
-        # We need a temporary directory to download
-        tmpdir = tempfile.mkdtemp()
-        _, filepath = self.api.download_reply(r, tmpdir)
-
-        # Uncomment the following part only on QubesOS
-        # for testing against real server.
-        # now let us read the downloaded file
-        # with open(filepath, "rb") as fobj:
-        #     fobj.read()
-
-        # Let us remove the temporary directory
-        shutil.rmtree(tmpdir)
-
-    @dastollervey_datasaver
+    # This test is order-sensitive and must be run before the "seen"
+    # state of files is altered.
+    # This test is materially different in the API & API Proxy versions.
+    @qrexec_datasaver
     def test_download_submission(self):
         s = self.api.get_all_submissions()[0]
 
@@ -173,48 +68,131 @@ class TestAPIProxy(TestShared):
         # Let us remove the temporary directory
         shutil.rmtree(tmpdir)
 
+    @qrexec_datasaver
+    def test_seen(self):
+        super().seen()
+
+    @qrexec_datasaver
+    def test_get_sources(self):
+        super().get_sources()
+
+    @qrexec_datasaver
+    def test_star_add_remove(self):
+        super().star_add_remove()
+
+    @qrexec_datasaver
+    def test_get_single_source(self):
+        super().get_single_source()
+
+    @qrexec_datasaver
+    def test_get_single_source_from_string(self):
+        super().get_single_source(from_string=True)
+
+    @qrexec_datasaver
+    def test_failed_single_source(self):
+        super().failed_single_source()
+
+    @qrexec_datasaver
+    def test_get_submissions(self):
+        super().get_submissions()
+
+    @qrexec_datasaver
+    def test_get_submission(self):
+        super().get_submission()
+
+    @qrexec_datasaver
+    def test_get_submission_from_string(self):
+        super().get_submission(from_string=True)
+
+    @qrexec_datasaver
+    def test_get_wrong_submissions(self):
+        super().get_wrong_submissions()
+
+    @qrexec_datasaver
+    def test_get_all_submissions(self):
+        super().get_all_submissions()
+
+    @qrexec_datasaver
+    def test_flag_source(self):
+        super().flag_source()
+
+    @qrexec_datasaver
+    def test_get_current_user(self):
+        super().get_current_user()
+
+    @qrexec_datasaver
+    def test_get_users(self):
+        super().get_users()
+
+    @qrexec_datasaver
+    def test_error_unencrypted_reply(self):
+        super().error_unencrypted_reply()
+
+    @qrexec_datasaver
+    def test_get_replies_from_source(self):
+        super().get_replies_from_source()
+
+    @qrexec_datasaver
+    def test_get_reply_from_source(self):
+        super().get_reply_from_source()
+
+    @qrexec_datasaver
+    def test_get_all_replies(self):
+        super().get_all_replies()
+
+    @qrexec_datasaver
+    def test_download_reply(self):
+        r = self.api.get_all_replies()[0]
+
+        # We need a temporary directory to download
+        tmpdir = tempfile.mkdtemp()
+        _, filepath = self.api.download_reply(r, tmpdir)
+
+        # Uncomment the following part only on QubesOS
+        # for testing against real server.
+        # now let us read the downloaded file
+        # with open(filepath, "rb") as fobj:
+        #     fobj.read()
+
+        # Let us remove the temporary directory
+        shutil.rmtree(tmpdir)
+
     # ORDER MATTERS: The following tests add or delete data, and should
     # not be run before other tests which may rely on the original fixture
     # state.
 
-    @dastollervey_datasaver
+    @qrexec_datasaver
     def test_reply_source(self):
         super().reply_source()
 
-    @dastollervey_datasaver
+    @qrexec_datasaver
     def test_reply_source_with_uuid(self):
         super().reply_source_with_uuid()
 
-    @dastollervey_datasaver
+    @qrexec_datasaver
     def test_delete_source(self):
         super().delete_source()
 
-    @dastollervey_datasaver
+    @qrexec_datasaver
     def test_delete_source_from_string(self):
         super().delete_source(from_string=True)
 
-    @dastollervey_datasaver
+    @qrexec_datasaver
     def test_delete_submission(self):
         super().delete_submission()
 
-    @dastollervey_datasaver
+    @qrexec_datasaver
     def test_delete_submission_from_string(self):
         super().delete_submission(from_string=True)
 
-    @dastollervey_datasaver
+    @qrexec_datasaver
     def test_delete_reply(self):
         super().delete_reply()
 
-    @dastollervey_datasaver
+    @qrexec_datasaver
     def test_logout(self):
         r = self.api.logout()
         assert r
-        if os.path.exists("login.txt"):
-            os.unlink("login.txt")
-        if os.path.exists("testtoken.json"):
-            os.unlink("testtoken.json")
-        with open("logout.txt", "w") as fobj:
-            fobj.write("out")
 
 
 def test_request_timeout(mocker):
