@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0
+
+* Support read/unread and track who sees a file, message, or reply (#1165)
+* No longer expire source test key (#1180)
+* Restyle source widgets and source selection indicators (#1191)
+* No longer maximize client window if it's already open on login (#1192)
+
 ## 0.3.0
 
 * Add sender badge to replies (#1142)
