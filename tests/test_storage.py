@@ -756,6 +756,55 @@ def test_update_files_adds_seen_record(homedir, mocker, session):
     )
 
 
+def test_update_files_marks_read_files_as_seen_without_seen_records(homedir, mocker, session):
+    """
+    Check that the file submission without a seen record still returns true for "seen" if is_read is
+    set.
+    """
+    data_dir = os.path.join(homedir, "data")
+
+    source = factory.Source()
+    session.add(source)
+    session.commit()
+
+    # Create a local file that will be updated to match the remote file object with the same uuid.
+    local_file_to_update = factory.File(source_id=source.id, source=source)
+    session.add(local_file_to_update)
+    session.commit()
+    local_files = [local_file_to_update]
+
+    # Create a remote file that will be used to update one of the local files.
+    remote_file_to_update = factory.RemoteFile(
+        uuid=local_file_to_update.uuid, source_uuid=source.uuid, is_read=1
+    )
+
+    # Create a remote file that will be used to create a new local file.
+    remote_file_to_create = factory.RemoteFile(
+        source_uuid=source.uuid,
+        source_url="/api/v1/sources/{}".format(source.uuid),
+        file_counter=factory.FILE_COUNT + 1,
+        filename="{}-doc.gz.gpg".format(factory.FILE_COUNT + 1),
+        is_read=1,
+    )
+
+    remote_files = [
+        remote_file_to_update,
+        remote_file_to_create,
+    ]
+
+    update_files(remote_files, local_files, session, data_dir)
+
+    new_local_file = session.query(db.File).filter_by(uuid=remote_file_to_create.uuid).one()
+
+    assert new_local_file.is_read
+    assert new_local_file.seen
+
+    updated_local_file = session.query(db.File).filter_by(uuid=remote_file_to_update.uuid).one()
+
+    assert updated_local_file.is_read
+    assert updated_local_file.seen
+
+
 def test_update_messages(homedir, mocker):
     """
     Check that:
@@ -822,6 +871,59 @@ def test_update_messages(homedir, mocker):
     mock_delete_submission_files.assert_called_once_with(local_message_delete, data_dir)
     # Session is committed to database.
     assert mock_session.commit.call_count == 1
+
+
+def test_update_messages_marks_read_messages_as_seen_without_seen_records(homedir, mocker, session):
+    """
+    Check that the file submission without a seen record still returns true for "seen" if is_read is
+    set.
+    """
+    data_dir = os.path.join(homedir, "data")
+
+    source = factory.Source()
+    session.add(source)
+    session.commit()
+
+    # Create a local message that will be updated to match the remote file object with the same uuid
+    local_message_to_update = factory.Message(source_id=source.id, source=source)
+    session.add(local_message_to_update)
+    session.commit()
+    local_messages = [local_message_to_update]
+
+    # Create a remote file that will be used to update one of the local files.
+    remote_message_to_update = factory.RemoteMessage(
+        uuid=local_message_to_update.uuid, source_uuid=source.uuid, is_read=1
+    )
+
+    # Create a remote file that will be used to create a new local file.
+    remote_message_to_create = factory.RemoteMessage(
+        source_uuid=source.uuid,
+        source_url="/api/v1/sources/{}".format(source.uuid),
+        file_counter=factory.FILE_COUNT + 1,
+        filename="{}-msg.gpg".format(factory.FILE_COUNT + 1),
+        is_read=1,
+    )
+
+    remote_messages = [
+        remote_message_to_update,
+        remote_message_to_create,
+    ]
+
+    update_messages(remote_messages, local_messages, session, data_dir)
+
+    new_local_message = (
+        session.query(db.Message).filter_by(uuid=remote_message_to_create.uuid).one()
+    )
+
+    assert new_local_message.is_read
+    assert new_local_message.seen
+
+    updated_local_message = (
+        session.query(db.Message).filter_by(uuid=remote_message_to_update.uuid).one()
+    )
+
+    assert updated_local_message.is_read
+    assert updated_local_message.seen
 
 
 def test_update_messages_adds_seen_record(homedir, mocker, session):

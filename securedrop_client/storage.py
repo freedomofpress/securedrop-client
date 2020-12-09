@@ -276,6 +276,7 @@ def __update_submissions(
                     size=submission.size,
                     filename=submission.filename,
                     download_url=submission.download_url,
+                    is_read=submission.is_read,
                 )
                 session.add(ns)
                 session.flush()

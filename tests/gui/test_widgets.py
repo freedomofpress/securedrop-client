@@ -1296,9 +1296,111 @@ def test_SourceWidget_init_for_seen_source(mocker, session):
     assert sw.seen
 
 
+def test_SourceWidget_init_for_seen_source_with_legacy_data(mocker, session):
+    """
+    The source widget is properly initialised with the supplied seen source. The source has files,
+    messages, and replies with seen records as well as without seen records, where just the is_read
+    boolean is set to test legacy data as well.
+    """
+    controller = mocker.MagicMock()
+    controller.authenticated_user = factory.User(id=1)
+    controller.mark_seen = mocker.MagicMock()
+    source = factory.Source()
+
+    seen_file = factory.File(source=source)
+    seen_file_legacy_is_read = factory.File(source=source, is_read=1)
+    seen_message = factory.Message(source=source)
+    seen_message_legacy_is_read = factory.Message(source=source, is_read=1)
+    seen_reply = factory.Reply(source=source)
+    session.add(seen_file)
+    session.add(seen_file_legacy_is_read)
+    session.add(seen_message)
+    session.add(seen_message_legacy_is_read)
+    session.add(seen_reply)
+
+    seen_file_for_another_user = factory.File(source=source)
+    seen_file_for_another_user_legacy_is_read = factory.File(source=source, is_read=1)
+    seen_message_for_another_user = factory.Message(source=source)
+    seen_message_for_another_user_legacy_is_read = factory.File(source=source, is_read=1)
+    seen_reply_for_another_user = factory.Reply(source=source)
+    session.add(seen_file_for_another_user)
+    session.add(seen_file_for_another_user_legacy_is_read)
+    session.add(seen_message_for_another_user)
+    session.add(seen_message_for_another_user_legacy_is_read)
+    session.add(seen_reply_for_another_user)
+
+    draft_reply_from_current_user = factory.DraftReply(
+        source=source, journalist_id=controller.authenticated_user.id
+    )
+    draft_reply_from_another_user = factory.DraftReply(source=source, journalist_id=666)
+    session.add(draft_reply_from_current_user)
+    session.add(draft_reply_from_another_user)
+
+    session.commit()
+
+    session.add(db.SeenFile(file_id=seen_file.id, journalist_id=controller.authenticated_user.id))
+    session.add(
+        db.SeenMessage(message_id=seen_message.id, journalist_id=controller.authenticated_user.id)
+    )
+    session.add(
+        db.SeenReply(reply_id=seen_reply.id, journalist_id=controller.authenticated_user.id)
+    )
+    session.add(db.SeenFile(file_id=seen_file_for_another_user.id, journalist_id=666))
+    session.add(db.SeenMessage(message_id=seen_message_for_another_user.id, journalist_id=666))
+    session.add(db.SeenReply(reply_id=seen_reply_for_another_user.id, journalist_id=666))
+
+    session.commit()
+
+    sw = SourceWidget(controller, source, mocker.MagicMock())
+
+    assert sw.source == source
+    assert sw.seen
+
+
+def test_SourceWidget_init_for_seen_source_legacy_only(mocker, session):
+    """
+    The source widget is properly initialised with the supplied seen source. The source has files
+    and messages without seen records where just the is_read boolean is set to test legacy data.
+    """
+    controller = mocker.MagicMock()
+    controller.authenticated_user = factory.User(id=1)
+    controller.mark_seen = mocker.MagicMock()
+    source = factory.Source()
+
+    seen_file = factory.File(source=source, is_read=1)
+    seen_message = factory.Message(source=source, is_read=1)
+    seen_reply = factory.Reply(source=source)
+    session.add(seen_file)
+    session.add(seen_message)
+    session.add(seen_reply)
+
+    seen_file_for_another_user = factory.File(source=source, is_read=1)
+    seen_message_for_another_user = factory.Message(source=source, is_read=1)
+    seen_reply_for_another_user = factory.Reply(source=source)
+    session.add(seen_file_for_another_user)
+    session.add(seen_message_for_another_user)
+    session.add(seen_reply_for_another_user)
+
+    draft_reply_from_current_user = factory.DraftReply(
+        source=source, journalist_id=controller.authenticated_user.id
+    )
+    draft_reply_from_another_user = factory.DraftReply(source=source, journalist_id=666)
+    session.add(draft_reply_from_current_user)
+    session.add(draft_reply_from_another_user)
+
+    session.commit()
+
+    sw = SourceWidget(controller, source, mocker.MagicMock())
+
+    assert sw.source == source
+    assert sw.source.seen
+    assert sw.seen
+
+
 def test_SourceWidget_init_for_unseen_source(mocker, session):
     """
-    The source widget is properly initialised with the supplied unseen source.
+    The source widget is properly initialised with the supplied unseen source. The source has some
+    files and messages with seen records set and some without.
     """
     controller = mocker.MagicMock()
     controller.authenticated_user = factory.User(id=1)
@@ -1345,6 +1447,52 @@ def test_SourceWidget_init_for_unseen_source(mocker, session):
     session.add(db.SeenFile(file_id=seen_file_for_another_user.id, journalist_id=666))
     session.add(db.SeenMessage(message_id=seen_message_for_another_user.id, journalist_id=666))
     session.add(db.SeenReply(reply_id=seen_reply_for_another_user.id, journalist_id=666))
+
+    session.commit()
+
+    sw = SourceWidget(controller, source, mocker.MagicMock())
+
+    assert sw.source == source
+    assert not sw.seen
+
+
+def test_SourceWidget_init_for_unseen_source_legacy_only(mocker, session):
+    """
+    The source widget is properly initialised with the supplied unseen source. The source has some
+    files and messages with is_read set and some without.
+    """
+    controller = mocker.MagicMock()
+    controller.authenticated_user = factory.User(id=1)
+    controller.mark_seen = mocker.MagicMock()
+    source = factory.Source()
+
+    seen_file = factory.File(source=source, is_read=1)
+    seen_message = factory.Message(source=source, is_read=1)
+    seen_reply = factory.Reply(source=source)
+    session.add(seen_file)
+    session.add(seen_message)
+    session.add(seen_reply)
+
+    seen_file_for_another_user = factory.File(source=source, is_read=1)
+    seen_message_for_another_user = factory.Message(source=source, is_read=1)
+    seen_reply_for_another_user = factory.Reply(source=source)
+    session.add(seen_file_for_another_user)
+    session.add(seen_message_for_another_user)
+    session.add(seen_reply_for_another_user)
+
+    unseen_file = factory.File(source=source)
+    unseen_message = factory.Message(source=source)
+    unseen_reply = factory.Reply(source=source)
+    session.add(unseen_file)
+    session.add(unseen_message)
+    session.add(unseen_reply)
+
+    draft_reply_from_current_user = factory.DraftReply(
+        source=source, journalist_id=controller.authenticated_user.id
+    )
+    draft_reply_from_another_user = factory.DraftReply(source=source, journalist_id=666)
+    session.add(draft_reply_from_current_user)
+    session.add(draft_reply_from_another_user)
 
     session.commit()
 
