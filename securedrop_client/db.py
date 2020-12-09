@@ -194,10 +194,12 @@ class Message(Base):
     @property
     def seen(self) -> bool:
         """
-        If the submission has been downloaded or seen by any journalist, then the submssion is
-        considered seen.
+        If the message has seen by any journalist, then the message is considered seen.
+
+        The `is_read` boolean is used in order to recognize messages that have been downloaded
+        before SecureDrop 1.6.0 (before the seen-by feature).
         """
-        if self.seen_messages.count():
+        if self.seen_messages.count() or self.is_read:
             return True
 
         return False
@@ -293,10 +295,12 @@ class File(Base):
     @property
     def seen(self) -> bool:
         """
-        If the submission has been downloaded or seen by any journalist, then the submssion is
-        considered seen.
+        If the file has been seen by any journalist, then the file is considered seen.
+
+        The `is_read` boolean is used in order to recognize files that have been downloaded before
+        SecureDrop 1.6.0 (before the seen-by feature).
         """
-        if self.seen_files.count():
+        if self.seen_files.count() or self.is_read:
             return True
 
         return False
