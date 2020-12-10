@@ -469,6 +469,10 @@ class Controller(QObject):
         """
         Handles a successful authentication call against the API.
         """
+        # First set is_authenticated before calling GUI methods or emitting signals to the GUI
+        # since the GUI has to check authentication state in several places.
+        self.is_authenticated = True
+
         logger.info("{} successfully logged in".format(self.api.username))
         self.gui.hide_login()
         user = storage.create_or_update_user(
@@ -488,7 +492,6 @@ class Controller(QObject):
         self.update_sources()
         self.api_job_queue.start(self.api)
         self.api_sync.start(self.api)
-        self.is_authenticated = True
 
     def on_authenticate_failure(self, result: Exception) -> None:
         # Failed to authenticate. Reset state with failure message.
@@ -505,13 +508,15 @@ class Controller(QObject):
         """
         Allow user to view in offline mode without authentication.
         """
+        # First set is_authenticated before calling GUI methods or emitting signals to the GUI
+        # since the GUI has to check authentication state in several places.
+        self.is_authenticated = False
         self.gui.hide_login()
         # Clear clipboard contents in case of previously pasted creds (user
         # may have attempted online mode login, then switched to offline)
         self.gui.clear_clipboard()
         self.gui.show_main_window()
         storage.mark_all_pending_drafts_as_failed(self.session)
-        self.is_authenticated = False
         self.update_sources()
         self.show_last_sync()
         self.show_last_sync_timer.start(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
