@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0
+
+* Support read/unread and track who sees a file, message, or reply (#1165)
+* No longer expire source test key (#1180)
+* Restyle source widgets and source selection indicators (#1191)
+* No longer maximize client window if it's already open on login (#1192)
+* Update securedrop-sdk version to 0.2.0 (#1172)
+* (Dev) update macOS development requirements (#1183)
+
 ## 0.3.0
 
 * Add sender badge to replies (#1142)
