@@ -108,7 +108,7 @@ Note: Some tests alter source and conversation data on the server so you may nee
 
 In order to generate cassettes for tests that make API calls over qrexec, you'll need to run the server and proxy on a separate VM. If this is the first time you are generating cassettes, first follow the steps outlined in the [Test setup for qrexec communication](#test-setup-for-qrexec-communication) section, which will help you set up a new VM called `sd-dev-proxy`.
 
-Once your proxy are set up, follow these steps:
+Once your proxy VM is set up, follow these steps:
 
 1. Start the server in a docker container on `sd-dev-proxy` by running:
 
@@ -116,28 +116,34 @@ Once your proxy are set up, follow these steps:
     NUM_SOURCES=5 make dev
     ```
 
-2. [Skip if adding a new test] Delete the cassettes you wish to regenerate or just delete all json files by running:
+2. Delete the cassettes you wish to regenerate or just delete all JSON files by running:
 
     ```bash
     rm data/*.json
     ```
 
-3. Comment out the `@qrexec_datasaver` decorator above the test you want to generate a new cassette for or just generate all new cassettes by commenting out the decorator above all methods in the `test_apiproxy.py::TestAPIProxy` class.
+   If you are only adding a new test and not modifying existing ones, you can
+   skip this step, but you still need to remove the authentication setup during
+   cassette generation. Otherwise you will get 403 errors for API endpoints that
+   require a valid token. Remove the setup cassette by running:
 
-4. Make qrexec calls to the server and collect real response data:
+   ```bash
+   rm data/setup_method.json
+   ```
+
+   (You can reinstate the unmodified version later.)
+
+3. Make qrexec calls to the server and collect response data. To run all proxy
+   tests:
 
     ```bash
     make test TESTS=tests/test_apiproxy.py
     ```
 
-5. Uncomment the `@qrexec_datasaver` decorator wherever you commented it out.
-6. Record new cassettes from the response data collected in step 4:
-
-    ```bash
-    make test TESTS=tests/test_apiproxy.py
-    ```
-
-**Note:** If you get a 403 error it's becuase the test is trying to reuse an old TOTP code, so wait for 60 seconds and try again. Some tests alter source and conversation data on the server so you should restart the server in between test runs.
+**Note:** If you get a 403 error it may also be because the test is trying to
+reuse an old TOTP code, so wait for 60 seconds and try again. Some tests alter
+source and conversation data on the server so you should restart the server in
+between test runs.
 
 ## Test setup for qrexec communication
 
