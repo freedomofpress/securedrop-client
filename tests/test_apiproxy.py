@@ -26,15 +26,13 @@ class TestAPIProxy(TestShared):
         self.password = "correct horse battery staple profanity oil chewy"
         self.server = "http://localhost:8081/"
         self.api = API(self.server, self.username, self.password, str(self.totp.now()), proxy=True)
-        auth_result = None
         try:
-            auth_result = self.api.authenticate()
-        except Exception as err:
-            print(err)
-
-        if auth_result is None:
+            self.api.authenticate()
+        except BaseError as err:
             raise AuthError(
-                "Could not obtain API token during test setup. TOTP code may have expired."
+                "Could not obtain API token during test setup. "
+                "TOTP code may have expired or proxy may not be reachable. "
+                "Error was: {}".format(err.msg)
             )
 
     @qrexec_datasaver

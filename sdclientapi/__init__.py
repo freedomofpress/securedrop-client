@@ -189,8 +189,12 @@ class API:
 
         data_str = json.dumps(data)
 
+        json_result = json_query(self.proxy_vm_name, data_str, timeout)
+        if not json_result:
+            raise BaseError("No response from proxy")
+
         try:
-            result = json.loads(json_query(self.proxy_vm_name, data_str, timeout))
+            result = json.loads(json_result)
         except json.decoder.JSONDecodeError:
             raise BaseError("Error in parsing JSON")
 
