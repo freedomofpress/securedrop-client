@@ -596,8 +596,8 @@ class MainView(QWidget):
         self.view_layout.addWidget(self.empty_conversation_view)
 
         # Add widgets to layout
-        self.layout.addWidget(self.source_list)
-        self.layout.addWidget(self.view_holder)
+        self.layout.addWidget(self.source_list, stretch=1)
+        self.layout.addWidget(self.view_holder, stretch=2)
 
         # Note: We should not delete SourceConversationWrapper when its source is unselected. This
         # is a temporary solution to keep copies of our objects since we do delete them.
@@ -983,8 +983,8 @@ class SourceWidget(QWidget):
     TOP_MARGIN = 11
     BOTTOM_MARGIN = 7
     SIDE_MARGIN = 10
-    PREVIEW_WIDTH = 360
-    PREVIEW_WIDGET_WIDTH = 380
+    PREVIEW_WIDTH = 300
+    PREVIEW_WIDGET_WIDTH = 310
     PREVIEW_WIDGET_HEIGHT = 22
     SPACER = 14
     BOTTOM_SPACER = 11
@@ -1786,6 +1786,10 @@ class SpeechBubble(QWidget):
     MESSAGE_CSS = load_css("speech_bubble_message.css")
     STATUS_BAR_CSS = load_css("speech_bubble_status_bar.css")
 
+    WIDTH_TO_CONTAINER_WIDTH_RATIO = 5 / 9
+    MIN_WIDTH = 400
+    MIN_CONTAINER_WIDTH = 750
+
     TOP_MARGIN = 28
     BOTTOM_MARGIN = 10
 
@@ -1796,9 +1800,11 @@ class SpeechBubble(QWidget):
         update_signal,
         download_error_signal,
         index: int,
+        container_width: int,
         failed_to_decrypt: bool = False,
     ) -> None:
         super().__init__()
+
         self.uuid = message_uuid
         self.index = index
         self.failed_to_decrypt = failed_to_decrypt
@@ -1827,7 +1833,6 @@ class SpeechBubble(QWidget):
 
         # Speech bubble
         self.speech_bubble = QWidget()
-        self.speech_bubble.setObjectName("SpeechBubble_container")
         speech_bubble_layout = QVBoxLayout()
         self.speech_bubble.setLayout(speech_bubble_layout)
         speech_bubble_layout.addWidget(self.message)
@@ -1854,11 +1859,23 @@ class SpeechBubble(QWidget):
         if self.failed_to_decrypt:
             self.set_failed_to_decrypt_styles()
 
-        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-
         # Connect signals to slots
         update_signal.connect(self._update_text)
         download_error_signal.connect(self._on_download_error)
+
+        self.adjust_width(container_width)
+
+    def adjust_width(self, container_width):
+        """
+        This is a workaround to the workaround for https://bugreports.qt.io/browse/QTBUG-85498.
+        Since QLabels containing text with long strings that cannot be wrapped have to have a fixed
+        width in order to fit within the scrollarea widget, we have to override the normal resizing
+        logic.
+        """
+        if container_width < self.MIN_CONTAINER_WIDTH:
+            self.speech_bubble.setFixedWidth(self.MIN_WIDTH)
+        else:
+            self.speech_bubble.setFixedWidth(container_width * self.WIDTH_TO_CONTAINER_WIDTH_RATIO)
 
     @pyqtSlot(str, str, str)
     def _update_text(self, source_uuid: str, uuid: str, text: str) -> None:
@@ -1910,10 +1927,17 @@ class MessageWidget(SpeechBubble):
         update_signal,
         download_error_signal,
         index: int,
+        container_width: int,
         failed_to_decrypt: bool = False,
     ) -> None:
         super().__init__(
-            message_uuid, message, update_signal, download_error_signal, index, failed_to_decrypt
+            message_uuid,
+            message,
+            update_signal,
+            download_error_signal,
+            index,
+            container_width,
+            failed_to_decrypt,
         )
 
 
@@ -1924,6 +1948,8 @@ class ReplyWidget(SpeechBubble):
 
     MESSAGE_CSS = load_css("speech_bubble_message.css")
     STATUS_BAR_CSS = load_css("speech_bubble_status_bar.css")
+
+    ERROR_BOTTOM_MARGIN = 20
 
     def __init__(
         self,
@@ -1936,12 +1962,19 @@ class ReplyWidget(SpeechBubble):
         message_succeeded_signal,
         message_failed_signal,
         index: int,
+        container_width: int,
         sender: User,
         sender_is_current_user: bool,
         failed_to_decrypt: bool = False,
     ) -> None:
         super().__init__(
-            message_uuid, message, update_signal, download_error_signal, index, failed_to_decrypt
+            message_uuid,
+            message,
+            update_signal,
+            download_error_signal,
+            index,
+            container_width,
+            failed_to_decrypt,
         )
         self.controller = controller
         self.status = reply_status
@@ -1952,7 +1985,7 @@ class ReplyWidget(SpeechBubble):
 
         self.error = QWidget()
         error_layout = QHBoxLayout()
-        error_layout.setContentsMargins(0, 0, 0, 0)
+        error_layout.setContentsMargins(0, 0, 0, self.ERROR_BOTTOM_MARGIN)
         error_layout.setSpacing(4)
         self.error.setLayout(error_layout)
         error_message = SecureQLabel("Failed to send", wordwrap=False)
@@ -1961,9 +1994,12 @@ class ReplyWidget(SpeechBubble):
         error_icon.setFixedWidth(12)
         error_layout.addWidget(error_message)
         error_layout.addWidget(error_icon)
+        retain_space = self.sizePolicy()
+        retain_space.setRetainSizeWhenHidden(True)
+        self.error.setSizePolicy(retain_space)
         self.error.hide()
 
-        self.bubble_area_layout.addWidget(self.error)
+        self.bubble_area_layout.addWidget(self.error, alignment=Qt.AlignBottom)
         self.sender_icon.show()
 
         message_succeeded_signal.connect(self._on_reply_success)
@@ -2104,6 +2140,10 @@ class FileWidget(QWidget):
     FILENAME_WIDTH_PX = 360
     FILE_OPTIONS_LAYOUT_SPACING = 8
 
+    WIDTH_TO_CONTAINER_WIDTH_RATIO = 5 / 9
+    MIN_CONTAINER_WIDTH = 750
+    MIN_WIDTH = 400
+
     def __init__(
         self,
         file_uuid: str,
@@ -2111,6 +2151,7 @@ class FileWidget(QWidget):
         file_ready_signal: pyqtBoundSignal,
         file_missing: pyqtBoundSignal,
         index: int,
+        container_width: int,
     ) -> None:
         """
         Given some text and a reference to the controller, make something to display a file.
@@ -2122,6 +2163,8 @@ class FileWidget(QWidget):
         self.uuid = file_uuid
         self.index = index
         self.downloading = False
+
+        self.adjust_width(container_width)
 
         self.setObjectName("FileWidget")
         file_description_font = QFont()
@@ -2205,13 +2248,37 @@ class FileWidget(QWidget):
         layout.addWidget(self.file_options)
         layout.addWidget(self.file_name)
         layout.addWidget(self.no_file_name)
-        layout.addWidget(self.horizontal_line)
         layout.addWidget(self.spacer)
+        layout.addWidget(self.horizontal_line)
         layout.addWidget(self.file_size)
 
         # Connect signals to slots
         file_ready_signal.connect(self._on_file_downloaded, type=Qt.QueuedConnection)
         file_missing.connect(self._on_file_missing, type=Qt.QueuedConnection)
+
+        self.installEventFilter(self)
+
+    def adjust_width(self, container_width):
+        """
+        This is a workaround to the workaround for https://bugreports.qt.io/browse/QTBUG-85498.
+        See comment in the adjust_width method for SpeechBubble.
+        """
+        if container_width < self.MIN_CONTAINER_WIDTH:
+            self.setFixedWidth(self.MIN_WIDTH)
+        else:
+            self.setFixedWidth(container_width * self.WIDTH_TO_CONTAINER_WIDTH_RATIO)
+
+    def eventFilter(self, obj, event):
+        t = event.type()
+        if t == QEvent.MouseButtonPress:
+            if event.button() == Qt.LeftButton:
+                self._on_left_click()
+        elif t == QEvent.HoverEnter and not self.downloading:
+            self.download_button.setIcon(load_icon("download_file_hover.svg"))
+        elif t == QEvent.HoverLeave and not self.downloading:
+            self.download_button.setIcon(load_icon("download_file.svg"))
+
+        return QObject.event(obj, event)
 
     def update_file_size(self):
         try:
@@ -2219,19 +2286,6 @@ class FileWidget(QWidget):
         except Exception as e:
             logger.error(f"Could not update file size on FileWidget: {e}")
             self.file_size.setText("")
-
-    def eventFilter(self, obj, event):
-        t = event.type()
-        if t == QEvent.MouseButtonPress:
-            if event.button() == Qt.LeftButton:
-                self._on_left_click()
-        # See https://github.com/freedomofpress/securedrop-client/issues/835
-        # for context on code below.
-        if t == QEvent.HoverEnter and not self.downloading:
-            self.download_button.setIcon(load_icon("download_file_hover.svg"))
-        elif t == QEvent.HoverLeave and not self.downloading:
-            self.download_button.setIcon(load_icon("download_file.svg"))
-        return QObject.event(obj, event)
 
     def _set_file_state(self):
         if self.file.is_decrypted:
@@ -2894,6 +2948,9 @@ class ConversationScrollArea(QScrollArea):
         # Create the scroll area's widget
         conversation = QWidget()
         conversation.setObjectName("ConversationScrollArea_conversation")
+        # The size policy for the scrollarea's widget needs a fixed height so that the speech
+        # bubbles are aligned at the top rather than spreading out to fill the height of the
+        # scrollarea.
         conversation.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.conversation_layout = QVBoxLayout()
         conversation.setLayout(self.conversation_layout)
@@ -2902,6 +2959,20 @@ class ConversationScrollArea(QScrollArea):
 
         # `conversation` is a child of this scroll area
         self.setWidget(conversation)
+
+    def resizeEvent(self, event):
+        """
+        This is a workaround to the workaround for https://bugreports.qt.io/browse/QTBUG-85498.
+        See comment in the adjust_width method for SpeechBubble.
+        """
+        super().resizeEvent(event)
+        self.widget().setFixedWidth(event.size().width())
+
+        for widget in self.findChildren(FileWidget):
+            widget.adjust_width(self.widget().width())
+
+        for widget in self.findChildren(SpeechBubble):
+            widget.adjust_width(self.widget().width())
 
     def add_widget_to_conversation(
         self, index: int, widget: QWidget, alignment_flag: Qt.AlignmentFlag
@@ -2925,6 +2996,8 @@ class ConversationView(QWidget):
 
     conversation_updated = pyqtSignal()
 
+    SCROLL_BAR_WIDTH = 15
+
     def __init__(self, source_db_object: Source, controller: Controller):
         super().__init__()
 
@@ -2934,6 +3007,8 @@ class ConversationView(QWidget):
 
         # To hold currently displayed messages.
         self.current_messages = {}  # type: Dict[str, QWidget]
+
+        self.setObjectName("ConversationView")
 
         # Set layout
         main_layout = QVBoxLayout()
@@ -3039,6 +3114,7 @@ class ConversationView(QWidget):
             self.controller.file_ready,
             self.controller.file_missing,
             index,
+            self.scroll.widget().width(),
         )
         self.scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignLeft)
         self.current_messages[file.uuid] = conversation_item
@@ -3063,6 +3139,7 @@ class ConversationView(QWidget):
             self.controller.message_ready,
             self.controller.message_download_failed,
             index,
+            self.scroll.widget().width(),
             message.download_error is not None,
         )
         self.scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignLeft)
@@ -3096,6 +3173,7 @@ class ConversationView(QWidget):
             self.controller.reply_succeeded,
             self.controller.reply_failed,
             index,
+            self.scroll.widget().width(),
             sender,
             sender_is_current_user,
             failed_to_decrypt=getattr(reply, "download_error", None) is not None,
@@ -3123,8 +3201,9 @@ class ConversationView(QWidget):
             self.controller.reply_succeeded,
             self.controller.reply_failed,
             index,
+            self.scroll.widget().width(),
             self.controller.authenticated_user,
-            sender_is_current_user=True,
+            True,
         )
         self.scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignRight)
         self.current_messages[uuid] = conversation_item

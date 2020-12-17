@@ -6,8 +6,7 @@ def test_styles(mocker, main_window):
     conversation_scrollarea = wrapper.conversation_view.scroll
     speech_bubble = conversation_scrollarea.widget().layout().itemAt(1).widget()
 
-    assert 540 == speech_bubble.speech_bubble.minimumSize().width()
-    assert 540 == speech_bubble.speech_bubble.maximumSize().width()
+    assert 400 == speech_bubble.speech_bubble.minimumSize().width()
     assert "Source Sans Pro" == speech_bubble.message.font().family()
     assert QFont.Normal == speech_bubble.message.font().weight()
     assert 15 == speech_bubble.message.font().pixelSize()
@@ -16,8 +15,7 @@ def test_styles(mocker, main_window):
 
     speech_bubble._on_download_error("123", speech_bubble.uuid, speech_bubble.message.text())
 
-    assert 540 == speech_bubble.speech_bubble.minimumSize().width()
-    assert 540 == speech_bubble.speech_bubble.maximumSize().width()
+    assert 400 == speech_bubble.speech_bubble.minimumSize().width()
     assert "Source Sans Pro" == speech_bubble.message.font().family()
     assert QFont.Normal == speech_bubble.message.font().weight()
     assert 15 == speech_bubble.message.font().pixelSize()

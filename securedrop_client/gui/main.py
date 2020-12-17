@@ -67,6 +67,7 @@ class Window(QMainWindow):
 
         # Main Pane to display everything else
         self.main_pane = QWidget()
+        self.setObjectName("MainWindow")
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)

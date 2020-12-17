@@ -2,6 +2,11 @@
  * The main stylesheet for the SecureDrop Client application
  */
 
+#MainWindow {
+    min-width: 1279px;
+    min-height: 600px;
+}
+
 #LoginDialog_form QLabel {
     color: #fff;
     font-family: 'Montserrat';
@@ -148,9 +153,12 @@
 }
 
 #MainView_view_holder {
-    min-width: 500;
     border: none;
     background-color: #f9f9ff;
+}
+
+#EmptyConversationView {
+    min-width: 640px;
 }
 
 #EmptyConversationView QLabel {
@@ -170,19 +178,11 @@
     font-weight: 600;
 }
 
-#EmptyConversationView_no_sources QLabel#EmptyConversationView_instructions {
-    max-width: 600px;
-}
-
-#EmptyConversationView_no_source_selected QLabel#EmptyConversationView_instructions {
-    max-width: 520px;
-}
-
 QListView#SourceList {
     border: none;
     show-decoration-selected: 0;
     border-right: 3px solid #f3f5f9;
-    min-width: 500px;
+    min-width: 440px;
     max-width: 540px;
 }
 
@@ -323,11 +323,6 @@ QToolButton#SourceMenuButton::menu-indicator {
     background: #f9f9ff;
 }
 
-#FileWidget {
-    min-width: 540px;
-    max-width: 540px;
-}
-
 #FileWidget_file_options {
     min-width: 137px;
 }
@@ -372,17 +367,16 @@ QLabel#FileWidget_file_size {
 }
 
 QWidget#FileWidget_horizontal_line {
+    min-width: 0px;
     min-height: 2px;
     max-height: 2px;
     background-color: rgba(211, 216, 234, 0.45);
     margin: 0px 8px 0px 8px;
 }
 
-#SpeechBubble_container {
-    min-width: 540px;
-    max-width: 540px;
-    min-height: 64px;
-    background-color: #fff;
+#ConversationView {
+    min-width: 640px;
+    background-color: #00ff00;
 }
 
 #ReplyWidget_failed_to_send_text {
