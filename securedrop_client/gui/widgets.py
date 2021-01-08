@@ -178,6 +178,8 @@ class LeftPane(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.setObjectName("LeftPane")
+
         # Set layout
         layout = QVBoxLayout(self)
         self.setLayout(layout)
@@ -186,7 +188,6 @@ class LeftPane(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         layout.setAlignment(Qt.AlignBottom)
-        self.setFixedWidth(198)
 
         # Set background image
         self.logo = QWidget()
@@ -199,7 +200,6 @@ class LeftPane(QWidget):
         )
         self.logo.setPalette(self.offline_palette)
         self.logo.setAutoFillBackground(True)
-        self.logo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.logo.setEnabled(False)
 
         # User profile
@@ -208,9 +208,14 @@ class LeftPane(QWidget):
         # Hide user profile widget until user logs in
         self.user_profile.hide()
 
+        spacer = QWidget()
+        spacer.setObjectName("LeftPane_spacer")
+        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
         # Add widgets to layout
         layout.addWidget(self.user_profile)
-        layout.addWidget(self.logo)
+        layout.addWidget(spacer, stretch=1)
+        layout.addWidget(self.logo, stretch=5)
 
     def setup(self, window, controller):
         self.user_profile.setup(window, controller)
