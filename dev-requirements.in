@@ -3,6 +3,7 @@ coverage
 flake8
 isort
 mypy
+py>=1.10.0
 pyotp
 pytest
 pytest-cov
