@@ -178,6 +178,8 @@ class LeftPane(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.setObjectName("LeftPane")
+
         # Set layout
         layout = QVBoxLayout(self)
         self.setLayout(layout)
@@ -185,24 +187,9 @@ class LeftPane(QWidget):
         # Remove margins and spacing
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-        layout.setAlignment(Qt.AlignBottom)
-        self.setFixedWidth(198)
 
-        # Set background image
-        self.logo = QWidget()
-        self.online_palette = QPalette()
-        # the sd logo on the background image becomes more faded in offline mode
-        self.online_palette.setBrush(QPalette.Background, QBrush(load_image("left_pane.svg")))
-        self.offline_palette = QPalette()
-        self.offline_palette.setBrush(
-            QPalette.Background, QBrush(load_image("left_pane_offline.svg"))
-        )
-        self.logo.setPalette(self.offline_palette)
-        self.logo.setAutoFillBackground(True)
-        self.logo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.logo.setEnabled(False)
-
-        # User profile
+        self.branding_barre = QLabel()
+        self.branding_barre.setPixmap(load_image("left_pane.svg"))
         self.user_profile = UserProfile()
 
         # Hide user profile widget until user logs in
@@ -210,7 +197,7 @@ class LeftPane(QWidget):
 
         # Add widgets to layout
         layout.addWidget(self.user_profile)
-        layout.addWidget(self.logo)
+        layout.addWidget(self.branding_barre)
 
     def setup(self, window, controller):
         self.user_profile.setup(window, controller)
@@ -221,14 +208,14 @@ class LeftPane(QWidget):
         """
         self.user_profile.set_user(db_user)
         self.user_profile.show()
-        self.logo.setPalette(self.online_palette)
+        self.branding_barre.setPixmap(load_image("left_pane.svg"))
 
     def set_logged_out(self):
         """
         Update the UI to a logged out state.
         """
         self.user_profile.hide()
-        self.logo.setPalette(self.offline_palette)
+        self.branding_barre.setPixmap(load_image("left_pane_offline.svg"))
 
 
 class SyncIcon(QLabel):
@@ -401,10 +388,11 @@ class UserProfile(QLabel):
 
         # Set background
         palette = QPalette()
-        palette.setBrush(QPalette.Background, QBrush(QColor("#0096DC")))
+        palette.setBrush(
+            QPalette.Background, QBrush(Qt.NoBrush)
+        )  # This makes the widget transparent
         self.setPalette(palette)
-        self.setAutoFillBackground(True)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         # Set layout
         layout = QHBoxLayout(self)

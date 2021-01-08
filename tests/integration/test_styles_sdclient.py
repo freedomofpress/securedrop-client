@@ -222,7 +222,7 @@ def test_styles_for_left_pane(mocker, main_window):
 
 def test_styles_for_main_view(mocker, main_window):
     main_view = main_window.main_view
-    assert 558 == main_view.height()
+    assert 558 == main_view.minimumSize().height()
     assert "#f9f9ff" == main_view.view_holder.palette().color(QPalette.Background).name()
 
     assert 640 == main_view.empty_conversation_view.minimumSize().width()
