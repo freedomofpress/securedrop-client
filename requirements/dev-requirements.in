@@ -9,12 +9,12 @@ isort==4.3.21
 MarkupSafe>=1.1
 mccabe==0.6.1
 more-itertools==4.3.0
-pip-tools==4.5.1
 mypy==0.761
 mypy-extensions==0.4.3
 pillow==7.1.2
+pip-tools==5.5.0
 pluggy==0.13.0
-py==1.7.0
+py>=1.10.0
 PyAutoGUI==0.9.48
 pycodestyle==2.4.0
 pyobjc-core==6.2;platform_system=="Darwin"
