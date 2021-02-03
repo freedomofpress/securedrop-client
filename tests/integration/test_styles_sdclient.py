@@ -65,8 +65,6 @@ def test_class_name_matches_css_object_name(mocker, main_window):
     "EmptyConversationView" in empty_conversation_view.no_sources.objectName()
     "EmptyConversationView" in empty_conversation_view.no_source_selected.objectName()
     source_list = main_view.source_list
-    "SourceList" == source_list.__class__.__name__
-    "SourceList" == source_list.objectName()
 
     source_widget = source_list.itemWidget(source_list.item(0))
     assert "SourceWidget" == source_widget.__class__.__name__
@@ -121,10 +119,8 @@ def test_class_name_matches_css_object_name(mocker, main_window):
     assert "FileWidget" == file_widget.__class__.__name__
     message_widget = conversation_scroll_area.widget().layout().itemAt(1).widget()
     assert "MessageWidget" == message_widget.__class__.__name__
-    assert "SpeechBubble" in message_widget.speech_bubble.objectName()
     reply_widget = conversation_scroll_area.widget().layout().itemAt(2).widget()
     assert "ReplyWidget" == reply_widget.__class__.__name__
-    assert "SpeechBubble" in reply_widget.speech_bubble.objectName()
     error_message = reply_widget.error.layout().itemAt(0).widget()
     assert "ReplyWidget" in error_message.objectName()
 
@@ -227,9 +223,9 @@ def test_styles_for_left_pane(mocker, main_window):
 def test_styles_for_main_view(mocker, main_window):
     main_view = main_window.main_view
     assert 558 == main_view.height()
-    assert 500 == main_view.view_holder.width()
     assert "#f9f9ff" == main_view.view_holder.palette().color(QPalette.Background).name()
 
+    assert 640 == main_view.empty_conversation_view.minimumSize().width()
     no_sources = main_view.empty_conversation_view.no_sources
     assert 5 == no_sources.layout().count()
     no_sources_instructions = no_sources.layout().itemAt(0).widget()
@@ -237,7 +233,6 @@ def test_styles_for_main_view(mocker, main_window):
     assert QFont.DemiBold - 1 == no_sources_instructions.font().weight()
     assert 35 == no_sources_instructions.font().pixelSize()
     assert "#a5b3e9" == no_sources_instructions.palette().color(QPalette.Foreground).name()
-    assert 600 == no_sources_instructions.maximumWidth()
     no_sources_spacer1 = no_sources.layout().itemAt(1)
     assert 35 == no_sources_spacer1.minimumSize().height()
     assert 35 == no_sources_spacer1.maximumSize().height()
@@ -262,7 +257,6 @@ def test_styles_for_main_view(mocker, main_window):
     assert QFont.DemiBold - 1 == no_source_selected_instructions.font().weight()
     assert 35 == no_source_selected_instructions.font().pixelSize()
     assert "#a5b3e9" == no_source_selected_instructions.palette().color(QPalette.Foreground).name()
-    assert 520 == no_source_selected_instructions.maximumWidth()
     no_source_selected_spacer1 = no_source_selected.layout().itemAt(1)
     assert 35 == no_source_selected_spacer1.minimumSize().height()
     assert 35 == no_source_selected_spacer1.maximumSize().height()
@@ -373,8 +367,7 @@ def test_styles_for_conversation_view(mocker, main_window):
     assert "#f9f9ff" == conversation_scrollarea.palette().color(QPalette.Background).name()
     assert "#f9f9ff" == conversation_scrollarea.widget().palette().color(QPalette.Background).name()
     file_widget = conversation_scrollarea.widget().layout().itemAt(0).widget()
-    assert 540 == file_widget.minimumSize().width()
-    assert 540 == file_widget.maximumSize().width()
+    assert 400 == file_widget.minimumSize().width()
     assert 137 == file_widget.file_options.minimumSize().width()
     assert "Source Sans Pro" == file_widget.export_button.font().family()
     assert QFont.DemiBold - 1 == file_widget.export_button.font().weight()
@@ -405,13 +398,9 @@ def test_styles_for_conversation_view(mocker, main_window):
     assert 234 == file_widget.horizontal_line.palette().color(QPalette.Background).blue()
 
     message_widget = conversation_scrollarea.widget().layout().itemAt(1).widget()
-    assert 540 == message_widget.speech_bubble.minimumSize().width()
-    assert 540 == message_widget.speech_bubble.maximumSize().width()
-    assert "#ffffff" == message_widget.speech_bubble.palette().color(QPalette.Background).name()
+    assert 400 == message_widget.speech_bubble.minimumSize().width()
     reply_widget = conversation_scrollarea.widget().layout().itemAt(2).widget()
-    assert 540 == reply_widget.speech_bubble.minimumSize().width()
-    assert 540 == reply_widget.speech_bubble.maximumSize().width()
-    assert "#ffffff" == reply_widget.speech_bubble.palette().color(QPalette.Background).name()
+    assert 400 == reply_widget.speech_bubble.minimumSize().width()
     reply_widget_error_message = reply_widget.error.layout().itemAt(0).widget()
     assert "Source Sans Pro" == reply_widget_error_message.font().family()
     assert QFont.DemiBold - 1 == reply_widget_error_message.font().weight()
