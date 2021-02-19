@@ -2295,8 +2295,6 @@ class FileWidget(QWidget):
         file_ready_signal.connect(self._on_file_downloaded, type=Qt.QueuedConnection)
         file_missing.connect(self._on_file_missing, type=Qt.QueuedConnection)
 
-        self.installEventFilter(self)
-
     def adjust_width(self, container_width):
         """
         This is a workaround to the workaround for https://bugreports.qt.io/browse/QTBUG-85498.
