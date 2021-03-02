@@ -85,7 +85,7 @@ lint: ## Run the linters
 .PHONY: safety
 safety: ## Runs `safety check` to check python dependencies for vulnerabilities
 	pip install --upgrade safety && \
-		for req_file in `find . -type f -wholename 'requirements/*requirements.txt'`; do \
+		for req_file in `find . -type f -wholename '*requirements.txt'`; do \
 			echo "Checking file $$req_file" \
 			&& safety check --full-report -r $$req_file \
 			&& echo -e '\n' \
