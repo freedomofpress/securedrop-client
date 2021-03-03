@@ -521,6 +521,42 @@ def test_FileDownloadJob_decryption_error(
     assert mock_decrypt.called
 
 
+def test_FileDownloadJob_raises_on_path_traversal_attack(
+    mocker, homedir, session, session_maker, download_error_codes
+):
+    source = factory.Source()
+    file = factory.File(source=source, is_downloaded=None, is_decrypted=None)
+    session.add(source)
+    session.add(file)
+    session.commit()
+
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+    decrypt_fn = mocker.patch.object(gpg, "decrypt_submission_or_reply", side_effect=CryptoError)
+    api_client = mocker.MagicMock()
+    download_fn = mocker.patch.object(api_client, "download_reply")
+
+    def fake_download(sdk_obj: SdkSubmission, timeout: int) -> Tuple[str, str]:
+        """
+        :return: (etag, path-to-download)
+        """
+        full_path = os.path.join(
+            homedir, "data", "1-../../../../../../../../../tmp/INJECTED_dissolved-dandelion-doc.gpg"
+        )
+        return ("", full_path)
+
+    api_client = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
+    api_client.download_submission = fake_download
+
+    job = FileDownloadJob(file.uuid, os.path.join(homedir, "data"), gpg)
+
+    with pytest.raises(DownloadDecryptionException):
+        job.call_api(api_client, session)
+
+    download_fn.assert_not_called()
+    decrypt_fn.assert_not_called()
+
+
 def test_timeout_length_of_file_downloads(mocker, homedir, session, session_maker):
     """
     Ensure that files downloads have timeouts scaled by the size of the file.

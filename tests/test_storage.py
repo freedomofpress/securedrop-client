@@ -235,7 +235,7 @@ def test_update_local_storage(homedir, mocker, session_maker):
     remote_message = mocker.Mock(filename="1-foo.msg.gpg")
     remote_file = mocker.Mock(filename="2-foo.gpg")
     remote_submissions = [remote_message, remote_file]
-    remote_reply = mocker.MagicMock()
+    remote_reply = mocker.MagicMock(filename="3-foo,reply.gpg")
     # Some local source, submission and reply objects from the local database.
     mock_session = mocker.MagicMock()
     local_source = mocker.MagicMock()
@@ -456,6 +456,43 @@ def test_update_submissions_deletes_files_associated_with_the_submission(homedir
 
     # Session is committed to database.
     assert mock_session.commit.call_count == 1
+
+
+def test_update_local_storage_does_not_call_update_functions_w_insecure_filenames(mocker, homedir):
+    """
+    Check that a insecure filename won't be written to the db.
+    """
+    remote_source = factory.RemoteSource(journalist_designation="dissolved-dandelion")
+    remote_message = make_remote_message(remote_source.uuid)
+    remote_message.filename = "1-../../../../../../../../tmp/INJECTED_dissolved-dandelion-msg.gpg"
+    remote_file = make_remote_submission(remote_source.uuid)
+    remote_file.filename = "2-../../../../../../../../../tmp/INJECTED_dissolved-dandelion-doc.gpg"
+    remote_reply = make_remote_reply(remote_source.uuid)
+    remote_reply.filename = "3-../../../../../../../../tmp/INJECTED_dissolved-dandelion-reply.gpg"
+
+    local_file = factory.File()
+    local_message = factory.Message()
+    local_reply = factory.Reply()
+    session = mocker.MagicMock()
+    session.query().all = mocker.Mock()
+    session.query().all.side_effect = [[local_file], [local_message], [local_reply]]
+    session.query().order_by().all = mocker.Mock()
+    local_source = factory.Source()
+    session.query().order_by().all.side_effect = [[local_source]]
+
+    rpl_fn = mocker.patch("securedrop_client.storage.update_replies")
+    file_fn = mocker.patch("securedrop_client.storage.update_files")
+    msg_fn = mocker.patch("securedrop_client.storage.update_messages")
+
+    data_dir = os.path.join(homedir, "data")
+    remote_sources = [remote_source]
+    remote_submissions = [remote_message, remote_file]
+    remote_replies = [remote_reply]
+    update_local_storage(session, remote_sources, remote_submissions, remote_replies, data_dir)
+
+    rpl_fn.assert_called_once_with([], [local_reply], session, data_dir)
+    file_fn.assert_called_once_with([], [local_file], session, data_dir)
+    msg_fn.assert_called_once_with([], [local_message], session, data_dir)
 
 
 def test_update_replies_deletes_files_associated_with_the_reply(homedir, mocker):
@@ -900,7 +937,7 @@ def test_update_messages_marks_read_messages_as_seen_without_seen_records(homedi
         source_uuid=source.uuid,
         source_url="/api/v1/sources/{}".format(source.uuid),
         file_counter=factory.FILE_COUNT + 1,
-        filename="{}-msg.gpg".format(factory.FILE_COUNT + 1),
+        filename="{}-msg.gpg".format(2),
         is_read=1,
     )
 
