@@ -855,9 +855,16 @@ class Controller(QObject):
         if not self.qubes:
             return
 
-        command = "qvm-open-in-vm"
-        args = ["--view-only", "$dispvm:sd-viewer", file.location(self.data_dir)]
+        vm_prep_cmd = "qrexec-client-vm"
+        source_name = file.source.journalist_filename
+        dispvm_name = f"sd-viewer-{source_name}"
+        vm_prep_args = ["dom0", f"securedrop.CreateSourceDispVM+{source_name}"]
         process = QProcess(self)
+        logger.info("Creating DispVM: {}".format(dispvm_name))
+        process.execute(vm_prep_cmd, vm_prep_args)
+        logger.info("Opening file in DispVM: {}".format(dispvm_name))
+        command = "qvm-open-in-vm"
+        args = ["--view-only", f"sd-viewer-{source_name}", file.location(self.data_dir)]
         process.start(command, args)
 
     def run_printer_preflight_checks(self):
