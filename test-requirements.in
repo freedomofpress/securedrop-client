@@ -4,3 +4,4 @@ pip-tools
 pytest
 pytest-cov
 pytest-mock
+semgrep==0.42.0
