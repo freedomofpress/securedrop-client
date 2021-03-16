@@ -8,9 +8,12 @@ from logging.handlers import TimedRotatingFileHandler, SysLogHandler
 from securedrop_export import __version__
 from securedrop_export import export
 from securedrop_export import main
+from securedrop_export.utils import safe_mkdir
 
 CONFIG_PATH = "/etc/sd-export-config.json"
 DEFAULT_HOME = os.path.join(os.path.expanduser("~"), ".securedrop_export")
+LOG_DIR_NAME = "logs"
+EXPORT_LOG_FILENAME = "export.log"
 
 logger = logging.getLogger(__name__)
 
@@ -19,11 +22,10 @@ def configure_logging():
     """
     All logging related settings are set up by this function.
     """
-    log_folder = os.path.join(DEFAULT_HOME, 'logs')
-    if not os.path.exists(log_folder):
-        os.makedirs(log_folder)
+    safe_mkdir(DEFAULT_HOME)
+    safe_mkdir(DEFAULT_HOME, LOG_DIR_NAME)
 
-    log_file = os.path.join(DEFAULT_HOME, 'logs', 'export.log')
+    log_file = os.path.join(DEFAULT_HOME, LOG_DIR_NAME, EXPORT_LOG_FILENAME)
 
     # set logging format
     log_fmt = ('%(asctime)s - %(name)s:%(lineno)d(%(funcName)s) '

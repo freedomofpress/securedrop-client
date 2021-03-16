@@ -8,10 +8,10 @@ import os
 import shutil
 import subprocess
 import sys
-import tarfile
 import tempfile
 
 from securedrop_export.exceptions import ExportStatus
+from securedrop_export.utils import safe_extractall
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +78,7 @@ class Metadata(object):
 
 class SDExport(object):
     def __init__(self, archive, config_path):
+        os.umask(0o077)
         self.archive = archive
         self.submission_dirname = os.path.basename(self.archive).split(".")[0]
         self.target_dirname = "sd-export-{}".format(
@@ -87,10 +88,12 @@ class SDExport(object):
 
     def extract_tarball(self):
         try:
-            logger.info('Extracting tarball {} into {}'.format(self.archive, self.tmpdir))
-            with tarfile.open(self.archive) as tar:
-                tar.extractall(self.tmpdir)
-        except Exception:
+            logger.info(
+                "Extracting tarball {} into {}".format(self.archive, self.tmpdir)
+            )
+            safe_extractall(self.archive, self.tmpdir, self.tmpdir)
+        except Exception as ex:
+            logger.error("Unable to extract tarball: {}".format(ex))
             self.exit_gracefully(ExportStatus.ERROR_EXTRACTION.value)
 
     def exit_gracefully(self, msg, e=False):
