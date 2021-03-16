@@ -1,6 +1,7 @@
 import datetime
 import os
 from enum import Enum
+from pathlib import Path
 from typing import Any, List, Union  # noqa: F401
 
 from sqlalchemy import (
@@ -183,12 +184,12 @@ class Message(Base):
         """
         Return the full path to the Message's file.
         """
-        return os.path.abspath(
-            os.path.join(
-                data_dir,
-                self.source.journalist_filename,
-                os.path.splitext(self.filename)[0] + ".txt",
+        return str(
+            Path(data_dir)
+            .joinpath(
+                Path(self.source.journalist_filename, Path(self.filename).with_suffix(".txt"))
             )
+            .resolve()
         )
 
     @property
@@ -283,13 +284,16 @@ class File(Base):
         """
         Return the full path to the File's file.
         """
-        return os.path.abspath(
-            os.path.join(
-                data_dir,
-                self.source.journalist_filename,
-                "{}-{}-doc".format(self.file_counter, self.source.journalist_filename),
-                self.filename,
+        return str(
+            Path(data_dir)
+            .joinpath(
+                Path(
+                    self.source.journalist_filename,
+                    "{}-{}-doc".format(self.file_counter, self.source.journalist_filename),
+                    self.filename,
+                )
             )
+            .resolve()
         )
 
     @property
@@ -390,12 +394,12 @@ class Reply(Base):
         """
         Return the full path to the Reply's file.
         """
-        return os.path.abspath(
-            os.path.join(
-                data_dir,
-                self.source.journalist_filename,
-                os.path.splitext(self.filename)[0] + ".txt",
+        return str(
+            Path(data_dir)
+            .joinpath(
+                Path(self.source.journalist_filename, Path(self.filename).with_suffix(".txt"))
             )
+            .resolve()
         )
 
     @property

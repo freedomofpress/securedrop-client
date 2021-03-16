@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -eo pipefail
+umask 077
 
 while [ -n "$1" ]; do
   param="$1"

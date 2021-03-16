@@ -1077,14 +1077,6 @@ def test_Controller_set_activity_status(homedir, config, mocker, session_maker):
     mock_gui.update_activity_status.assert_called_once_with("Hello, World!", 1000)
 
 
-PERMISSIONS_CASES = [
-    {"should_pass": True, "home_perms": None},
-    {"should_pass": True, "home_perms": 0o0700},
-    {"should_pass": False, "home_perms": 0o0740},
-    {"should_pass": False, "home_perms": 0o0704},
-]
-
-
 def test_create_client_dir_permissions(tmpdir, mocker, session_maker):
     """
     Check that creating an app behaves appropriately with different
@@ -1098,12 +1090,20 @@ def test_create_client_dir_permissions(tmpdir, mocker, session_maker):
     mock_open = mocker.patch("securedrop_client.config.open")
     mock_json = mocker.patch("securedrop_client.config.json.loads")
 
-    for idx, case in enumerate(PERMISSIONS_CASES):
+    permission_cases = [
+        {"should_pass": True, "home_perms": None},
+        {"should_pass": True, "home_perms": 0o0700},
+        {"should_pass": False, "home_perms": 0o0740},
+        {"should_pass": False, "home_perms": 0o0704},
+    ]
+
+    for idx, case in enumerate(permission_cases):
         sdc_home = os.path.join(str(tmpdir), "case-{}".format(idx))
 
         # optionally create the dir
         if case["home_perms"] is not None:
-            os.mkdir(sdc_home, case["home_perms"])
+            os.mkdir(sdc_home)
+            os.chmod(sdc_home, case["home_perms"])
 
         def func() -> None:
             Controller("http://localhost", mock_gui, session_maker, sdc_home)

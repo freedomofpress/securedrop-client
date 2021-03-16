@@ -189,11 +189,7 @@ def test_create_app_dir_permissions(tmpdir, mocker):
         def func():
             start_app(mock_args, mock_qt_args)
 
-        if case["should_pass"]:
-            func()
-        else:
-            with pytest.raises(RuntimeError):
-                func()
+        func()
 
         # stop all mocks before the next iteration
         mocker.stopall()

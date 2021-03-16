@@ -56,7 +56,7 @@ def make_remote_message(source_uuid, file_counter=1):
     source_url = "/api/v1/sources/{}".format(source_uuid)
     return Submission(
         download_url="test",
-        filename="{}-submission.msg.gpg".format(file_counter),
+        filename="{}-submission-msg.gpg".format(file_counter),
         is_read=False,
         size=123,
         source_url=source_url,
@@ -228,14 +228,13 @@ def test_get_remote_data(mocker):
 
 def test_update_local_storage(homedir, mocker, session_maker):
     """
-    Assuming no errors getting data, check the expected functions to update
-    the state of the local database are called with the necessary data.
+    Check that update functions are called with expected remote sources and submissions.
     """
     remote_source = factory.RemoteSource()
-    remote_message = mocker.Mock(filename="1-foo.msg.gpg")
-    remote_file = mocker.Mock(filename="2-foo.gpg")
+    remote_message = mocker.Mock(filename="1-foo-msg.gpg")
+    remote_file = mocker.Mock(filename="2-foo-doc.gz.gpg")
     remote_submissions = [remote_message, remote_file]
-    remote_reply = mocker.MagicMock(filename="3-foo,reply.gpg")
+    remote_reply = mocker.MagicMock(filename="3-foo-reply.gpg")
     # Some local source, submission and reply objects from the local database.
     mock_session = mocker.MagicMock()
     local_source = mocker.MagicMock()
@@ -252,10 +251,34 @@ def test_update_local_storage(homedir, mocker, session_maker):
     msg_fn = mocker.patch("securedrop_client.storage.update_messages")
 
     update_local_storage(mock_session, [remote_source], remote_submissions, [remote_reply], homedir)
+
     src_fn.assert_called_once_with([remote_source], [local_source], mock_session, homedir)
     rpl_fn.assert_called_once_with([remote_reply], [local_reply], mock_session, homedir)
     file_fn.assert_called_once_with([remote_file], [local_file], mock_session, homedir)
     msg_fn.assert_called_once_with([remote_message], [local_message], mock_session, homedir)
+
+
+def test_update_local_storage_sanitizes_remote_data(mocker, homedir):
+    """
+    Check that sanitize functions are called with expected remote sources and submissions.
+    """
+    remote_source = factory.RemoteSource()
+    remote_message = mocker.Mock(filename="1-foo-msg.gpg")
+    remote_file = mocker.Mock(filename="2-foo-doc.gz.gpg")
+    remote_submissions = [remote_message, remote_file]
+    remote_reply = mocker.MagicMock(filename="3-foo-reply.gpg")
+    sanitize_sources = mocker.patch("securedrop_client.storage.sanitize_sources")
+    sanitize_submissions_or_replies = mocker.patch(
+        "securedrop_client.storage.sanitize_submissions_or_replies"
+    )
+
+    update_local_storage(
+        mocker.MagicMock(), [remote_source], remote_submissions, [remote_reply], homedir
+    )
+
+    sanitize_sources.assert_called_once_with([remote_source])
+    sanitize_submissions_or_replies.call_args_list[0][0][0] == [remote_submissions]
+    sanitize_submissions_or_replies.call_args_list[1][0][0] == [remote_reply]
 
 
 def test_sync_delete_race(homedir, mocker, session_maker, session):
@@ -460,39 +483,41 @@ def test_update_submissions_deletes_files_associated_with_the_submission(homedir
 
 def test_update_local_storage_does_not_call_update_functions_w_insecure_filenames(mocker, homedir):
     """
-    Check that a insecure filename won't be written to the db.
+    Check that a insecure journalist_designation or filename won't be written to the db.
     """
-    remote_source = factory.RemoteSource(journalist_designation="dissolved-dandelion")
-    remote_message = make_remote_message(remote_source.uuid)
-    remote_message.filename = "1-../../../../../../../../tmp/INJECTED_dissolved-dandelion-msg.gpg"
-    remote_file = make_remote_submission(remote_source.uuid)
-    remote_file.filename = "2-../../../../../../../../../tmp/INJECTED_dissolved-dandelion-doc.gpg"
-    remote_reply = make_remote_reply(remote_source.uuid)
-    remote_reply.filename = "3-../../../../../../../../tmp/INJECTED_dissolved-dandelion-reply.gpg"
-
-    local_file = factory.File()
-    local_message = factory.Message()
-    local_reply = factory.Reply()
+    remote_source = factory.RemoteSource(journalist_designation="../../../../../../tmp/INJECTED")
+    remote_message = mocker.Mock(
+        filename="1-../../../../../../../../tmp/INJECTED_dissolved-dandelion-msg.gpg"
+    )
+    remote_file = mocker.Mock(
+        filename="2-../../../../../../../../../tmp/INJECTED_dissolved-dandelion-doc.gz.gpg"
+    )
+    remote_reply = mocker.MagicMock(
+        filename="1-../../../../../../../../tmp/INJECTED_dissolved-dandelion-reply.gpg"
+    )
+    # Some local source, submission and reply objects from the local database.
     session = mocker.MagicMock()
+    local_source = mocker.MagicMock()
+    local_file = mocker.MagicMock()
+    local_message = mocker.MagicMock()
+    local_reply = mocker.MagicMock()
     session.query().all = mocker.Mock()
     session.query().all.side_effect = [[local_file], [local_message], [local_reply]]
     session.query().order_by().all = mocker.Mock()
-    local_source = factory.Source()
     session.query().order_by().all.side_effect = [[local_source]]
-
+    src_fn = mocker.patch("securedrop_client.storage.update_sources")
     rpl_fn = mocker.patch("securedrop_client.storage.update_replies")
     file_fn = mocker.patch("securedrop_client.storage.update_files")
     msg_fn = mocker.patch("securedrop_client.storage.update_messages")
 
-    data_dir = os.path.join(homedir, "data")
-    remote_sources = [remote_source]
-    remote_submissions = [remote_message, remote_file]
-    remote_replies = [remote_reply]
-    update_local_storage(session, remote_sources, remote_submissions, remote_replies, data_dir)
+    update_local_storage(
+        session, [remote_source], [remote_message, remote_file], [remote_reply], homedir
+    )
 
-    rpl_fn.assert_called_once_with([], [local_reply], session, data_dir)
-    file_fn.assert_called_once_with([], [local_file], session, data_dir)
-    msg_fn.assert_called_once_with([], [local_message], session, data_dir)
+    src_fn.assert_called_once_with([], [local_source], session, homedir)
+    rpl_fn.assert_called_once_with([], [local_reply], session, homedir)
+    file_fn.assert_called_once_with([], [local_file], session, homedir)
+    msg_fn.assert_called_once_with([], [local_message], session, homedir)
 
 
 def test_update_replies_deletes_files_associated_with_the_reply(homedir, mocker):
@@ -824,10 +849,7 @@ def test_update_files_marks_read_files_as_seen_without_seen_records(homedir, moc
         is_read=1,
     )
 
-    remote_files = [
-        remote_file_to_update,
-        remote_file_to_create,
-    ]
+    remote_files = [remote_file_to_update, remote_file_to_create]
 
     update_files(remote_files, local_files, session, data_dir)
 
@@ -941,10 +963,7 @@ def test_update_messages_marks_read_messages_as_seen_without_seen_records(homedi
         is_read=1,
     )
 
-    remote_messages = [
-        remote_message_to_update,
-        remote_message_to_create,
-    ]
+    remote_messages = [remote_message_to_update, remote_message_to_create]
 
     update_messages(remote_messages, local_messages, session, data_dir)
 

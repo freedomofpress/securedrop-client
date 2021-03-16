@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 import os
+import re
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -51,6 +52,13 @@ from securedrop_client.db import (
 from securedrop_client.utils import SourceCache, chronometer
 
 logger = logging.getLogger(__name__)
+
+
+VALID_JOURNALIST_DESIGNATION = re.compile(r"^(?P<adjective>[a-z'-]+) (?P<noun>[a-z'-]+)$").match
+
+VALID_FILENAME = re.compile(
+    r"^(?P<index>\d+)\-[a-z0-9-_]*(?P<file_type>msg|doc\.(gz|zip)|reply)\.gpg$"
+).match
 
 
 def get_local_sources(session: Session) -> List[Source]:
@@ -112,6 +120,34 @@ def get_remote_data(api: API) -> Tuple[List[SDKSource], List[SDKSubmission], Lis
     return (remote_sources, remote_submissions, remote_replies)
 
 
+def sanitize_submissions_or_replies(
+    remote_sdk_objects: Union[List[SDKSubmission], List[SDKReply]]
+) -> Union[List[SDKSubmission], List[SDKReply]]:
+    """
+    Return submissions or replies that contain invalid strings, e.g. '1-../../traversed-msg'.
+    """
+    sanitized_sdk_objects = []
+    for obj in remote_sdk_objects:
+        if not VALID_FILENAME(obj.filename):
+            logger.error(f"Malformed filename: {obj.filename}")
+            continue
+        sanitized_sdk_objects.append(obj)
+    return sanitized_sdk_objects
+
+
+def sanitize_sources(remote_sdk_objects: List[SDKSource]) -> List[SDKSource]:
+    """
+    Return sources that contain invalid strings, e.g. '1-../../traversed-msg'.
+    """
+    sanitized_sdk_objects = []
+    for obj in remote_sdk_objects:
+        if not VALID_JOURNALIST_DESIGNATION(obj.journalist_designation):
+            logger.error(f"Malformed journalist_designation: {obj.journalist_designation}")
+            continue
+        sanitized_sdk_objects.append(obj)
+    return sanitized_sdk_objects
+
+
 def update_local_storage(
     session: Session,
     remote_sources: List[SDKSource],
@@ -124,6 +160,9 @@ def update_local_storage(
     replies from the SecureDrop API, ensures the local database is updated
     with this data.
     """
+    remote_sources = sanitize_sources(remote_sources)
+    remote_submissions = sanitize_submissions_or_replies(remote_submissions)
+    remote_replies = sanitize_submissions_or_replies(remote_replies)
 
     remote_messages = [x for x in remote_submissions if x.filename.endswith("msg.gpg")]
     remote_files = [x for x in remote_submissions if not x.filename.endswith("msg.gpg")]

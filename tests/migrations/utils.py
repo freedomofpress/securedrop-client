@@ -256,10 +256,7 @@ def add_reply(session: Session, journalist_id: int, source_id: int) -> None:
 
 
 def mark_file_as_seen(session: Session, file_id: int, journalist_id: int) -> None:
-    params = {
-        "file_id": file_id,
-        "journalist_id": journalist_id,
-    }
+    params = {"file_id": file_id, "journalist_id": journalist_id}
     sql = """
     INSERT INTO seen_files (file_id, journalist_id)
     VALUES (:file_id, :journalist_id)
@@ -268,10 +265,7 @@ def mark_file_as_seen(session: Session, file_id: int, journalist_id: int) -> Non
 
 
 def mark_message_as_seen(session: Session, message_id: int, journalist_id: int) -> None:
-    params = {
-        "message_id": message_id,
-        "journalist_id": journalist_id,
-    }
+    params = {"message_id": message_id, "journalist_id": journalist_id}
     sql = """
     INSERT INTO seen_messages (message_id, journalist_id)
     VALUES (:message_id, :journalist_id)
@@ -280,10 +274,7 @@ def mark_message_as_seen(session: Session, message_id: int, journalist_id: int) 
 
 
 def mark_reply_as_seen(session: Session, reply_id: int, journalist_id: int):
-    params = {
-        "reply_id": reply_id,
-        "journalist_id": journalist_id,
-    }
+    params = {"reply_id": reply_id, "journalist_id": journalist_id}
     sql = """
     INSERT INTO seen_replies (reply_id, journalist_id)
     VALUES (:reply_id, :journalist_id)

@@ -2575,7 +2575,7 @@ def test_SpeechBubble_init(mocker):
     mock_download_error_connect = mocker.Mock()
     mock_download_error_signal.connect = mock_download_error_connect
 
-    sb = SpeechBubble("mock id", "hello", mock_update_signal, mock_download_error_signal, 0, 123,)
+    sb = SpeechBubble("mock id", "hello", mock_update_signal, mock_download_error_signal, 0, 123)
 
     sb.message.text() == "hello"
     assert mock_update_connect.called
