@@ -3,7 +3,6 @@ import hashlib
 import logging
 import math
 import os
-import shutil
 from tempfile import NamedTemporaryFile
 from typing import Any, Tuple, Type, Union
 
@@ -20,6 +19,7 @@ from securedrop_client.storage import (
     mark_as_downloaded,
     set_message_or_reply_content,
 )
+from securedrop_client.utils import safe_move
 
 logger = logging.getLogger(__name__)
 
@@ -161,14 +161,18 @@ class DownloadJob(SingleObjectApiJob):
                 raise exception
 
             destination = db_object.location(self.data_dir)
-            os.makedirs(os.path.dirname(destination), mode=0o700, exist_ok=True)
-            shutil.move(download_path, destination)
+            safe_move(download_path, destination, self.data_dir)
             db_object.download_error = None
             mark_as_downloaded(type(db_object), db_object.uuid, session)
             logger.info("File downloaded to {}".format(destination))
             return destination
         except BaseError as e:
             raise e
+        except (ValueError, FileNotFoundError, RuntimeError) as e:
+            logger.error(e)
+            raise DownloadDecryptionException(
+                f"Failed to download {db_object.uuid}", type(db_object), db_object.uuid
+            ) from e
 
     def _decrypt(
         self, filepath: str, db_object: Union[File, Message, Reply], session: Session
@@ -184,6 +188,7 @@ class DownloadJob(SingleObjectApiJob):
             )
             logger.info(f"File decrypted to {os.path.dirname(filepath)}")
         except CryptoError as e:
+            logger.error(e)
             mark_as_decrypted(type(db_object), db_object.uuid, session, is_decrypted=False)
             download_error = (
                 session.query(DownloadError)

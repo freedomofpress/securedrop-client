@@ -177,7 +177,7 @@ def RemoteSource(**attrs):
         interaction_count=0,
         is_flagged=False,
         is_starred=True,
-        journalist_designation="testy-mctestface",
+        journalist_designation="testerino testy-mctestface",
         key={"public": pub_key, "fingerprint": "B2FF7FB28EED8CABEBC5FB6C6179D97BCFA52E5F"},
         last_updated=datetime.now().isoformat(),
         number_of_documents=0,

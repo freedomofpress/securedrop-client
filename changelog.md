@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.1
+
+* Prevent path traversal in downloaded files (#1226)
+* Scale source list, preview and conversation view on resize (#1211, #1206)
+* (Dev) Add semgrep for static analysis, including an initial ruleset (#1226)
+* (Dev) Remove obsolete MIME setup in run.sh (#1215)
+* (Dev) Switch to using reproducibly built wheels (#1203)
+* (Dev) Update development dependencies (#1208, #1222)
+* (Docs) Incorporate Code of Conduct updates (#1216) 
+
 ## 0.4.0
 
 * Support read/unread and track who sees a file, message, or reply (#1165)

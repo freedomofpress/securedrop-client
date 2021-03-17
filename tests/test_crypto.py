@@ -73,9 +73,6 @@ def test_gzip_header_without_filename(homedir, config, mocker, session_maker):
     gpg._import(JOURNO_KEY)
 
     mocker.patch("os.unlink")
-    mocker.patch("gzip.open")
-    mocker.patch("shutil.copy")
-    mocker.patch("shutil.copyfileobj")
 
     # pretend the gzipped file header lacked the original filename
     mock_read_gzip_header_filename = mocker.patch(

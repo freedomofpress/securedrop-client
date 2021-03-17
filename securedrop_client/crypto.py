@@ -15,19 +15,18 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import gzip
 import logging
 import os
-import shutil
 import struct
 import subprocess
 import tempfile
+from pathlib import Path
 
 from sqlalchemy.orm import scoped_session
 
 from securedrop_client.config import Config
 from securedrop_client.db import Source
-from securedrop_client.utils import safe_mkdir
+from securedrop_client.utils import safe_copy, safe_gzip_extract, safe_mkdir
 
 logger = logging.getLogger(__name__)
 
@@ -75,12 +74,16 @@ def read_gzip_header_filename(filename: str) -> str:
 
 
 class GpgHelper:
+    # We use a hardcoded temporary directory path in sd-app. Since sd-app is not a multi-user
+    # environment, we can safely assume that only the client is managing that filepath.
+    EXTRACTION_PATH = "/tmp"  # nosec
+
     def __init__(self, sdc_home: str, session_maker: scoped_session, is_qubes: bool) -> None:
         """
         :param sdc_home: Home directory for the SecureDrop client
         :param is_qubes: Whether the client is running in Qubes or not
         """
-        safe_mkdir(os.path.join(sdc_home), "gpg")
+        safe_mkdir(sdc_home, "gpg")
         self.sdc_home = sdc_home
         self.is_qubes = is_qubes
         self.session_maker = session_maker
@@ -91,8 +94,13 @@ class GpgHelper:
     def decrypt_submission_or_reply(
         self, filepath: str, plaintext_filepath: str, is_doc: bool = False
     ) -> str:
-
-        original_filename, _ = os.path.splitext(os.path.splitext(os.path.basename(filepath))[0])
+        """
+        Decrypt the file located at the given filepath. If is_doc is False, store the decrypted
+        plaintext contents to plaintext_filepath in /tmp. Otherwise, unzip and extract the document
+        to the parent directory of plaintext_filepath. The document will be saved as the filename
+        in the gzip header if it exists otherwise the plaintext_filepath name will be used.
+        """
+        original_filename = Path(Path(filepath).stem).stem  # Remove one or two suffixes
 
         err = tempfile.NamedTemporaryFile(suffix=".message-error", delete=False)
         with tempfile.NamedTemporaryFile(suffix=".message") as out:
@@ -119,16 +127,20 @@ class GpgHelper:
             # Delete encrypted file now that it's been successfully decrypted
             os.unlink(filepath)
 
-            # Store the plaintext in the file located at the specified plaintext_filepath
+            # If is_doc is True, unzip and extract the document to the parent directory of filepath.
+            # The document will be saved as the filename in the gzip header, which should contain
+            # the name of the original file that was gzipped. If the name is not in the header, use
+            # the filepath name.
+            #
+            # If is_doc is False, store the decrypted plaintext contents to the plaintext_filepath
+            # in /tmp that will automatically be deleted after decryption because it is a named
+            # temporary file.
             if is_doc:
-                original_filename = read_gzip_header_filename(out.name) or plaintext_filepath
-                decrypt_path = os.path.join(
-                    os.path.dirname(filepath), os.path.basename(original_filename)
-                )
-                with gzip.open(out.name, "rb") as infile, open(decrypt_path, "wb") as outfile:
-                    shutil.copyfileobj(infile, outfile)
+                original_filename = read_gzip_header_filename(out.name) or original_filename
+                safe_gzip_extract(out.name, filepath, original_filename, self.sdc_home)
             else:
-                shutil.copy(out.name, plaintext_filepath)
+                # plaintext_filepath is a NamedTemporaryFile in /tmp so the base_dir is /tmp
+                safe_copy(out.name, plaintext_filepath, self.EXTRACTION_PATH)
 
         return original_filename
 
