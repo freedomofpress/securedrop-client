@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.5
+  * Sets restrictive permissions, validates target paths
+
 ## 0.2.4
   * Removes mimetype associations and open-in-dvm desktop file
 
