@@ -77,3 +77,15 @@ workflows:
     jobs:
       - test-buster
       - build-buster
+
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 6 * * *"
+          filters:
+            branches:
+              only:
+                - main
+    jobs:
+      - test-buster
+      - build-buster
