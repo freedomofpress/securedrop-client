@@ -15,6 +15,9 @@ ANOTHER_BAD_TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-con
 
 
 def test_extract_tarball():
+    """
+    Check that we can successfully extract a valid tarball.
+    """
     with tempfile.TemporaryDirectory() as temp_dir:
         archive_path = os.path.join(temp_dir, "archive.sd-export")
         with tarfile.open(archive_path, "w:gz") as archive:
@@ -54,6 +57,9 @@ def test_extract_tarball():
 
 
 def test_extract_tarball_with_symlink():
+    """
+    Check that we can successfully extract a valid tarball that contains a valid symlink.
+    """
     with tempfile.TemporaryDirectory() as temp_dir:
         archive_path = os.path.join(temp_dir, "archive.sd-export")
         with tarfile.open(archive_path, "w:gz") as archive:
@@ -79,6 +85,12 @@ def test_extract_tarball_with_symlink():
 
 
 def test_extract_tarball_raises_if_doing_path_traversal():
+    """
+    Check that we do not allow tarfile member file to do path traversal via TarInfo.name.
+    """
+    if os.path.exists("/tmp/traversed"):
+        os.remove("/tmp/traversed")
+
     with tempfile.TemporaryDirectory() as temp_dir:
         archive_path = os.path.join(temp_dir, "archive.sd-export")
         with tarfile.open(archive_path, "w:gz") as archive:
@@ -100,15 +112,51 @@ def test_extract_tarball_raises_if_doing_path_traversal():
             submission.extract_tarball()
 
         assert not os.path.exists('/tmp/traversed')
-        assert not os.path.exists(os.path.join(submission.tmpdir, "tmp", "traversed"))
+
+
+def test_extract_tarball_raises_if_doing_path_traversal_with_dir():
+    """
+    Check that we do not allow tarfile member directory to do path traversal via TarInfo.name.
+    """
+    if os.path.exists("/tmp/traversed/"):
+        os.rmdir("/tmp/traversed/")
+
+    if os.path.exists("/tmp/traversed"):
+        os.remove("/tmp/traversed")
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        archive_path = os.path.join(temp_dir, "archive.sd-export")
+        with tarfile.open(archive_path, "w:gz") as archive:
+            metadata = {"device": "disk", "encryption_method": "luks", "encryption_key": "test"}
+            metadata_str = json.dumps(metadata)
+            metadata_bytes = BytesIO(metadata_str.encode("utf-8"))
+            metadata_file_info = tarfile.TarInfo("metadata.json")
+            metadata_file_info.size = len(metadata_str)
+            archive.addfile(metadata_file_info, metadata_bytes)
+            dir_info = tarfile.TarInfo("../../../../../../../../../tmp/traversed")
+            dir_info.type = tarfile.DIRTYPE
+            dir_info.mode = 0o777
+            archive.addfile(dir_info)
+            archive.close()
+
+        submission = export.SDExport(archive_path, TEST_CONFIG)
+
+        with pytest.raises(SystemExit):
+            submission.extract_tarball()
+
+        assert not os.path.exists('/tmp/traversed')
 
 
 def test_extract_tarball_raises_if_doing_path_traversal_with_symlink():
     """
-    This is a contrived path-traversal check because /tmp/traversed2 would have to be created as
-    another tafile member, so it would be extracted to the extraction path and not to /tmp.
-    However, it allows us to test that we raise if there is a path traversal attempt via a symlink.
+    Check that we do not allow tarfile member symlink to do path traversal via TarInfo.name.
     """
+    if os.path.exists("/tmp/traversed/"):
+        os.rmdir("/tmp/traversed/")
+
+    if os.path.exists("/tmp/traversed"):
+        os.remove("/tmp/traversed")
+
     with tempfile.TemporaryDirectory() as temp_dir:
         archive_path = os.path.join(temp_dir, "archive.sd-export")
         with tarfile.open(archive_path, "w:gz") as archive:
@@ -122,7 +170,7 @@ def test_extract_tarball_raises_if_doing_path_traversal_with_symlink():
             symlink_info = tarfile.TarInfo("symlink")
             symlink_info.size = len(content)
             symlink_info.type = tarfile.SYMTYPE
-            symlink_info.linkname = "../../../../../../../../../tmp/traversed2"
+            symlink_info.name = "../../../../../../../../../tmp/traversed"
             archive.addfile(symlink_info, BytesIO(content))
             archive.close()
 
@@ -131,7 +179,181 @@ def test_extract_tarball_raises_if_doing_path_traversal_with_symlink():
         with pytest.raises(SystemExit):
             submission.extract_tarball()
 
-        assert not os.path.exists(os.path.join(submission.tmpdir, "symlink"))
+        assert not os.path.exists('/tmp/traversed')
+
+
+def test_extract_tarball_raises_if_doing_path_traversal_with_symlink_linkname():
+    """
+    Check that we do not allow tarfile member symlink to do path traversal via TarInfo.linkname.
+    """
+    if os.path.exists("/tmp/traversed/"):
+        os.rmdir("/tmp/traversed/")
+
+    if os.path.exists("/tmp/traversed"):
+        os.remove("/tmp/traversed")
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        archive_path = os.path.join(temp_dir, "archive.sd-export")
+        with tarfile.open(archive_path, "w:gz") as archive:
+            metadata = {"device": "disk", "encryption_method": "luks", "encryption_key": "test"}
+            metadata_str = json.dumps(metadata)
+            metadata_bytes = BytesIO(metadata_str.encode("utf-8"))
+            metadata_file_info = tarfile.TarInfo("metadata.json")
+            metadata_file_info.size = len(metadata_str)
+            archive.addfile(metadata_file_info, metadata_bytes)
+            content = b"test"
+            symlink_info = tarfile.TarInfo("symlink")
+            symlink_info.size = len(content)
+            symlink_info.type = tarfile.SYMTYPE
+            symlink_info.linkname = "../../../../../../../../../tmp/traversed"
+            archive.addfile(symlink_info, BytesIO(content))
+            archive.close()
+
+        submission = export.SDExport(archive_path, TEST_CONFIG)
+
+        with pytest.raises(SystemExit):
+            submission.extract_tarball()
+
+        assert not os.path.exists('/tmp/traversed')
+
+
+def test_extract_tarball_raises_if_name_has_unsafe_absolute_path():
+    """
+    Check that we do not allow tarfile member file to specify an unsafe absolute path via
+    TarInfo.name.
+    """
+    if os.path.exists("/tmp/unsafe"):
+        os.remove("/tmp/unsafe")
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        archive_path = os.path.join(temp_dir, "archive.sd-export")
+        with tarfile.open(archive_path, "w:gz") as archive:
+            metadata = {"device": "disk", "encryption_method": "luks", "encryption_key": "test"}
+            metadata_str = json.dumps(metadata)
+            metadata_bytes = BytesIO(metadata_str.encode("utf-8"))
+            metadata_file_info = tarfile.TarInfo("metadata.json")
+            metadata_file_info.size = len(metadata_str)
+            archive.addfile(metadata_file_info, metadata_bytes)
+            content = b"test"
+            file_info = tarfile.TarInfo("/tmp/unsafe")
+            file_info.size = len(content)
+            file_info.mode = 0o777
+            archive.addfile(file_info, BytesIO(content))
+            archive.close()
+
+        submission = export.SDExport(archive_path, TEST_CONFIG)
+
+        with pytest.raises(SystemExit):
+            submission.extract_tarball()
+
+        assert not os.path.exists('/tmp/unsafe')
+
+
+def test_extract_tarball_raises_if_name_has_unsafe_absolute_path_with_symlink():
+    """
+    Check that we do not allow tarfile member symlink to specify an unsafe absolute path via
+    TarInfo.name.
+    """
+    if os.path.exists("/tmp/unsafe"):
+        os.remove("/tmp/unsafe")
+
+    tmp = tempfile.gettempdir()
+    with tempfile.TemporaryDirectory() as temp_dir:
+        archive_path = os.path.join(temp_dir, "archive.sd-export")
+        symlink_path = os.path.join(temp_dir, "symlink")
+
+        os.system(f"ln -s {tmp}/unsafe {symlink_path}")  # create symlink to "/tmp/unsafe"
+
+        with tarfile.open(archive_path, "w:gz") as archive:
+            metadata = {"device": "disk", "encryption_method": "luks", "encryption_key": "test"}
+            metadata_str = json.dumps(metadata)
+            metadata_bytes = BytesIO(metadata_str.encode("utf-8"))
+            metadata_file_info = tarfile.TarInfo("metadata.json")
+            metadata_file_info.size = len(metadata_str)
+            archive.addfile(metadata_file_info, metadata_bytes)
+            archive.add(symlink_path, "symlink")
+            archive.close()
+
+        submission = export.SDExport(archive_path, TEST_CONFIG)
+
+        with pytest.raises(SystemExit):
+            submission.extract_tarball()
+
+        assert not os.path.exists('/tmp/unsafe')
+
+
+def test_extract_tarball_raises_if_name_has_unsafe_absolute_path_with_symlink_to_dir():
+    """
+    Check that we do not allow tarfile member symlink to specify an unsafe absolute path via
+    TarInfo.name.
+
+    Note: Same test as `test_extract_tarball_raises_if_name_has_unsafe_absolute_path_with_symlink`
+    but checks that symlinks to absolute directories are also caught.
+    """
+    if os.path.exists("/tmp/unsafe"):
+        os.remove("/tmp/unsafe")
+
+    tmp = tempfile.gettempdir()
+    with tempfile.TemporaryDirectory() as temp_dir:
+        archive_path = os.path.join(temp_dir, "archive.sd-export")
+        symlink_path = os.path.join(temp_dir, "symlink")
+        file_path = os.path.join(temp_dir, "unsafe")
+
+        with open(file_path, "w") as file:
+            file.write("some-content")
+
+        os.system(f"ln -s {tmp} {symlink_path}")  # create symlink to "/tmp"
+
+        with tarfile.open(archive_path, "w:gz") as archive:
+            metadata = {"device": "disk", "encryption_method": "luks", "encryption_key": "test"}
+            metadata_str = json.dumps(metadata)
+            metadata_bytes = BytesIO(metadata_str.encode("utf-8"))
+            metadata_file_info = tarfile.TarInfo("metadata.json")
+            metadata_file_info.size = len(metadata_str)
+            archive.addfile(metadata_file_info, metadata_bytes)
+            archive.add(symlink_path, "symlink")
+            archive.add(file_path, "symlink/unsafe")
+            archive.close()
+
+        submission = export.SDExport(archive_path, TEST_CONFIG)
+
+        with pytest.raises(SystemExit):
+            submission.extract_tarball()
+
+        assert not os.path.exists('/tmp/unsafe')
+
+
+def test_extract_tarball_raises_if_linkname_has_unsafe_absolute_path():
+    """
+    Check that we do not allow tarfile member file to specify an unsafe absolute path via
+    TarInfo.linkname.
+    """
+    if os.path.exists("/tmp/unsafe"):
+        os.remove("/tmp/unsafe")
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        archive_path = os.path.join(temp_dir, "archive.sd-export")
+        with tarfile.open(archive_path, "w:gz") as archive:
+            metadata = {"device": "disk", "encryption_method": "luks", "encryption_key": "test"}
+            metadata_str = json.dumps(metadata)
+            metadata_bytes = BytesIO(metadata_str.encode("utf-8"))
+            metadata_file_info = tarfile.TarInfo("metadata.json")
+            metadata_file_info.size = len(metadata_str)
+            archive.addfile(metadata_file_info, metadata_bytes)
+            content = b"test"
+            symlink_info = tarfile.TarInfo("symlink")
+            symlink_info.size = len(content)
+            symlink_info.type = tarfile.SYMTYPE
+            symlink_info.linkname = "/tmp/unsafe"
+            archive.addfile(symlink_info, BytesIO(content))
+            archive.close()
+
+        submission = export.SDExport(archive_path, TEST_CONFIG)
+
+        with pytest.raises(SystemExit):
+            submission.extract_tarball()
+
+        assert not os.path.exists('/tmp/unsafe')
 
 
 def test_exit_gracefully_no_exception(capsys):
