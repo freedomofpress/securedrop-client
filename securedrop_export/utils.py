@@ -48,12 +48,10 @@ def safe_mkdir(
     check_all_permissions(relative_path, base_path)
 
 
-def safe_extractall(archive_file_path: str, dest_path: str, base_path: str) -> None:
+def safe_extractall(archive_file_path: str, dest_path: str) -> None:
     """
     Safely extract a file specified by archive_file_path to dest_path.
     """
-    safe_mkdir(base_path, dest_path)
-
     with tarfile.open(archive_file_path) as tar:
         # Tarfile types include:
         #
@@ -65,13 +63,19 @@ def safe_extractall(archive_file_path: str, dest_path: str, base_path: str) -> N
         # Block device
         # Character device
         for file_info in tar.getmembers():
-            file_info.mode = 0o600
-            if file_info.isdir():
-                file_info.mode = 0o700
-            elif file_info.islnk() or file_info.issym():
+            file_info.mode = 0o700 if file_info.isdir() else 0o600
+
+            check_path_traversal(file_info.name)
+
+            # If the path is relative then we don't need to check that it resolves to dest_path
+            if Path(file_info.name).is_absolute():
+                relative_filepath(file_info.name, dest_path)
+
+            if file_info.islnk() or file_info.issym():
                 check_path_traversal(file_info.linkname)
-            else:
-                check_path_traversal(file_info.name)
+                # If the path is relative then we don't need to check that it resolves to dest_path
+                if Path(file_info.linkname).is_absolute():
+                    relative_filepath(file_info.linkname, dest_path)
 
         tar.extractall(dest_path)
 

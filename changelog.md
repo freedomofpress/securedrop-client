@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.6
+  * Further validate target paths
+
 ## 0.2.5
   * Sets restrictive permissions, validates target paths
 

@@ -91,7 +91,7 @@ class SDExport(object):
             logger.info(
                 "Extracting tarball {} into {}".format(self.archive, self.tmpdir)
             )
-            safe_extractall(self.archive, self.tmpdir, self.tmpdir)
+            safe_extractall(self.archive, self.tmpdir)
         except Exception as ex:
             logger.error("Unable to extract tarball: {}".format(ex))
             self.exit_gracefully(ExportStatus.ERROR_EXTRACTION.value)
