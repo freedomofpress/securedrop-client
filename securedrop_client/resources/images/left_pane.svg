@@ -7,6 +7,7 @@
         <rect id="path-3" x="3" y="0" width="198" height="884"></rect>
         <linearGradient x1="47.3432051%" y1="0%" x2="52.3914763%" y2="101.180575%" id="linearGradient-5">
             <stop stop-color="#0096DC" offset="0%"></stop>
+            <stop stop-color="#0096DC" offset="30%"></stop>
             <stop stop-color="#005DB7" offset="100%"></stop>
         </linearGradient>
         <linearGradient x1="50%" y1="100%" x2="86.7539209%" y2="0%" id="linearGradient-6">

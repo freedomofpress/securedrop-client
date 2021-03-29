@@ -103,9 +103,15 @@
     color: #0c3e75;
 }
 
+#LeftPane {
+    min-width: 198;
+    max-width: 198;
+}
+
 #UserProfile {
+    background-color: #0096dc;
     padding: 15px;
-    min-height: 200px
+    min-height: 60px
 }
 
 #UserProfile_icon {
