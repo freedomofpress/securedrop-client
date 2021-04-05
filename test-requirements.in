@@ -1,4 +1,5 @@
 flake8
+importlib-metadata  # otherwise introduced unpinned via flake8
 pathlib2  # required by pytest for python 3.5
 pip-tools
 py>=1.9.0
@@ -6,3 +7,5 @@ pytest
 pytest-cov
 pytest-mock
 semgrep==0.42.0
+typing-extensions  # otherwise introduced unpinned via importlib-metadata
+zipp  # otherwise introduced unpinned via pep517 (via pip-tools)
