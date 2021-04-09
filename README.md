@@ -1,10 +1,12 @@
+> By contributing to this project, you agree to abide by our [Code of Conduct](https://github.com/freedomofpress/.github/blob/main/CODE_OF_CONDUCT.md).
+
 # securedrop-log
 
 This is a Python module and qrexec service for logging in Qubes for [SecureDrop](https://securedrop.org).
 
 ## How to use/try this?
 
-In our example, we will use a vm named *logging* for storing logs, and we will use 
+In our example, we will use a vm named *logging* for storing logs, and we will use
 *workvm* to send in logs to the *logging* vm.
 
 ### In dom0
@@ -48,7 +50,7 @@ Put `sd-rsyslog-example.conf` file to `/etc/sd-rsyslog.conf`, make sure update
 it so that is shows the right **localvm** name.
 
 Copy `sd-rsyslog` executable to **/usr/sbin**, and remember to `chmod +x`
-the binary. 
+the binary.
 
 Next, restart the rsyslog service.
 
@@ -81,4 +83,3 @@ Or use the logger command.
 ```
 logger This line should show in the syslog.log file in the sd-log file.
 ```
-
