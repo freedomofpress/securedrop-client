@@ -2540,10 +2540,12 @@ class ModalDialog(QDialog):
         super().keyPressEvent(event)
 
     def animate_activestate(self):
-        self.continue_button.setIcon(QIcon(self.button_animation.currentPixmap()))
+        if self.continue_button.isVisible():
+            self.continue_button.setIcon(QIcon(self.button_animation.currentPixmap()))
 
     def animate_header(self):
-        self.header_spinner_label.setPixmap(self.header_animation.currentPixmap())
+        if self.header_spinner_label.isVisible():
+            self.header_spinner_label.setPixmap(self.header_animation.currentPixmap())
 
     def start_animate_activestate(self):
         self.button_animation.start()

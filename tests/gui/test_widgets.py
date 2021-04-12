@@ -3548,6 +3548,18 @@ def test_ModalDialog_animation_of_activestate(mocker):
     assert dialog.continue_button.setIcon.call_count == 1
     assert dialog.continue_button.setStyleSheet.call_count == 2  # also called once for reset
 
+    dialog.continue_button.reset_mock()
+
+
+def test_ModalDialog_continue_button_does_not_animate(mocker):
+    dialog = ModalDialog()
+    dialog.continue_button = mocker.MagicMock()
+    dialog.continue_button.isVisible = mocker.MagicMock(return_value=False)
+
+    dialog.animate_activestate()
+
+    assert dialog.continue_button.setIcon.call_count == 0
+
 
 def test_ModalDialog_animation_of_header(mocker):
     dialog = ModalDialog()
@@ -3555,8 +3567,9 @@ def test_ModalDialog_animation_of_header(mocker):
     dialog.header_animation.start = mocker.MagicMock()
     dialog.header_animation.stop = mocker.MagicMock()
     dialog.header_icon.setVisible = mocker.MagicMock()
+    dialog.header_spinner_label = mocker.MagicMock()
     dialog.header_spinner_label.setVisible = mocker.MagicMock()
-    dialog.header_spinner_label.setPixmap = mocker.MagicMock()
+    dialog.header_spinner_label.isVisible = mocker.MagicMock(return_value=True)
 
     # Check the animation frame is updated as expected.
     dialog.animate_header()
@@ -3576,6 +3589,16 @@ def test_ModalDialog_animation_of_header(mocker):
     dialog.header_animation.stop.assert_called_once_with()
     dialog.header_icon.setVisible.assert_called_once_with(True)
     dialog.header_spinner_label.setVisible.assert_called_once_with(False)
+
+
+def test_ModalDialog_header_spinner_label_does_not_animate(mocker):
+    dialog = ModalDialog()
+    dialog.header_spinner_label = mocker.MagicMock()
+    dialog.header_spinner_label.isVisible = mocker.MagicMock(return_value=False)
+
+    dialog.animate_header()
+
+    assert dialog.header_spinner_label.setPixmap.call_count == 0
 
 
 def test_ExportDialog_init(mocker):
