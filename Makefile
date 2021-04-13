@@ -116,7 +116,7 @@ bandit: ## Run bandit with medium level excluding test-related folders
 	bandit -ll --recursive . --exclude ./tests,./.venv
 
 .PHONY: check
-check: clean check-black check-isort bandit lint mypy test-random test-integration test-functional ## Run the full CI test suite
+check: clean check-black check-isort bandit lint mypy test test-integration test-functional ## Run the full CI test suite
 
 .PHONY: update-pip-requirements
 update-pip-requirements: ## Updates all Python requirements files via pip-compile for Linux.
