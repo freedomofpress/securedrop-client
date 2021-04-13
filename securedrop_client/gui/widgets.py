@@ -2535,9 +2535,8 @@ class ModalDialog(QDialog):
                 self.cancel_button.click()
             else:
                 self.continue_button.click()
-            event.ignore()  # Don't allow Enter to close dialog
-
-        super().keyPressEvent(event)
+        else:
+            super().keyPressEvent(event)
 
     def animate_activestate(self):
         self.continue_button.setIcon(QIcon(self.button_animation.currentPixmap()))
