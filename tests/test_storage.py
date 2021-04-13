@@ -959,7 +959,7 @@ def test_update_messages_marks_read_messages_as_seen_without_seen_records(homedi
 
     # Create a remote file that will be used to create a new local file.
     remote_message_to_create = factory.RemoteMessage(
-        source_uuid=source.uuid, source_url="/api/v1/sources/{}".format(source.uuid), is_read=1,
+        source_uuid=source.uuid, source_url="/api/v1/sources/{}".format(source.uuid), is_read=1
     )
 
     remote_messages = [remote_message_to_update, remote_message_to_create]
