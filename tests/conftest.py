@@ -21,7 +21,9 @@ from securedrop_client.db import (
     make_session_maker,
 )
 from securedrop_client.gui.main import Window
+from securedrop_client.gui.widgets import ExportDialog, ModalDialog, PrintDialog
 from securedrop_client.logic import Controller
+from tests import factory
 
 with open(os.path.join(os.path.dirname(__file__), "files", "test-key.gpg.pub.asc")) as f:
     PUB_KEY = f.read()
@@ -46,6 +48,49 @@ TIME_RENDER_SOURCE_LIST = 20000
 TIME_RENDER_CONV_VIEW = 1000
 TIME_RENDER_EXPORT_DIALOG = 1000
 TIME_FILE_DOWNLOAD = 5000
+
+
+@pytest.fixture(scope="function")
+def modal_dialog(mocker, homedir):
+    dialog = ModalDialog()
+
+    yield dialog
+
+    # if the dialog has already been closed and deleted, do not attempt to close it
+    if dialog:
+        dialog.close()
+
+
+@pytest.fixture(scope="function")
+def print_dialog(mocker, homedir):
+    file = factory.File(source=factory.Source(), is_downloaded=True)
+    get_file = mocker.MagicMock(return_value=file)
+    controller = mocker.MagicMock(get_file=get_file)
+    controller.qubes = False
+
+    dialog = PrintDialog(controller, file.uuid, "file123.jpg")
+
+    yield dialog
+
+    # if the dialog has already been closed and deleted, do not attempt to close it
+    if dialog:
+        dialog.close()
+
+
+@pytest.fixture(scope="function")
+def export_dialog(mocker, homedir):
+    file = factory.File(source=factory.Source(), is_downloaded=True)
+    get_file = mocker.MagicMock(return_value=file)
+    controller = mocker.MagicMock(get_file=get_file)
+    controller.qubes = False
+
+    dialog = ExportDialog(controller, file.uuid, "file123.jpg")
+
+    yield dialog
+
+    # if the dialog has already been closed and deleted, do not attempt to close it
+    if dialog:
+        dialog.close()
 
 
 @pytest.fixture(scope="function")

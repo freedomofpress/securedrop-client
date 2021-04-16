@@ -34,7 +34,6 @@ from securedrop_client.gui.widgets import (
     LoginOfflineLink,
     MainView,
     MessageWidget,
-    ModalDialog,
     PasswordEdit,
     PrintDialog,
     ReplyBoxWidget,
@@ -3476,106 +3475,100 @@ def test_FileWidget_update_file_size_with_deleted_file(
 
 
 @pytest.mark.parametrize("key", [Qt.Key_Enter, Qt.Key_Return])
-def test_ModalDialog_keyPressEvent_does_not_close_on_enter_or_return(mocker, key):
-    dialog = ModalDialog()
-    dialog.close = mocker.MagicMock()
+def test_ModalDialog_keyPressEvent_does_not_close_on_enter_or_return(mocker, modal_dialog, key):
+    modal_dialog.close = mocker.MagicMock()
 
     event = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
-    dialog.keyPressEvent(event)
+    modal_dialog.keyPressEvent(event)
 
-    dialog.close.assert_not_called()
+    modal_dialog.close.assert_not_called()
 
 
 @pytest.mark.parametrize("key", [Qt.Key_Enter, Qt.Key_Return])
-def test_ModalDialog_keyPressEvent_cancel_on_enter_when_focused(mocker, key):
-    dialog = ModalDialog()
-    dialog.cancel_button.click = mocker.MagicMock()
-    dialog.cancel_button.hasFocus = mocker.MagicMock(return_value=True)
+def test_ModalDialog_keyPressEvent_cancel_on_enter_when_focused(mocker, modal_dialog, key):
+    modal_dialog.cancel_button.click = mocker.MagicMock()
+    modal_dialog.cancel_button.hasFocus = mocker.MagicMock(return_value=True)
 
     event = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
-    dialog.keyPressEvent(event)
+    modal_dialog.keyPressEvent(event)
 
-    dialog.cancel_button.click.assert_called_once_with()
+    modal_dialog.cancel_button.click.assert_called_once_with()
 
 
 @pytest.mark.parametrize("key", [Qt.Key_Enter, Qt.Key_Return])
-def test_ModalDialog_keyPressEvent_continue_on_enter(mocker, key):
-    dialog = ModalDialog()
-    dialog.continue_button.click = mocker.MagicMock()
+def test_ModalDialog_keyPressEvent_continue_on_enter(mocker, modal_dialog, key):
+    modal_dialog.continue_button.click = mocker.MagicMock()
 
     event = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
-    dialog.keyPressEvent(event)
+    modal_dialog.keyPressEvent(event)
 
-    dialog.continue_button.click.assert_called_once_with()
+    modal_dialog.continue_button.click.assert_called_once_with()
 
 
 @pytest.mark.parametrize("key", [Qt.Key_Alt, Qt.Key_A])
-def test_ModalDialog_keyPressEvent_does_not_close_for_other_keys(mocker, key):
-    dialog = ModalDialog()
-    dialog.close = mocker.MagicMock()
+def test_ModalDialog_keyPressEvent_does_not_close_for_other_keys(mocker, modal_dialog, key):
+    modal_dialog.close = mocker.MagicMock()
 
     event = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
-    dialog.keyPressEvent(event)
+    modal_dialog.keyPressEvent(event)
 
-    dialog.close.assert_not_called()
-
-
-def test_ModalDialog_animation_of_activestate(mocker):
-    dialog = ModalDialog()
-    assert dialog.button_animation
-    dialog.button_animation.start = mocker.MagicMock()
-    dialog.button_animation.stop = mocker.MagicMock()
-    dialog.continue_button = mocker.MagicMock()
-
-    # Check the animation frame is updated as expected.
-    dialog.animate_activestate()
-    assert dialog.continue_button.setIcon.call_count == 1
-    dialog.continue_button.reset_mock()
-
-    # Check starting the animated state works as expected.
-    dialog.start_animate_activestate()
-    dialog.button_animation.start.assert_called_once_with()
-    dialog.continue_button.setText.assert_called_once_with("")
-    assert dialog.continue_button.setMinimumSize.call_count == 1
-    assert dialog.continue_button.setStyleSheet.call_count == 2  # also called once for reset
-
-    dialog.continue_button.reset_mock()
-
-    # Check stopping the animated state works as expected.
-    dialog.stop_animate_activestate()
-    dialog.button_animation.stop.assert_called_once_with()
-    dialog.continue_button.setText.assert_called_once_with("CONTINUE")
-    assert dialog.continue_button.setIcon.call_count == 1
-    assert dialog.continue_button.setStyleSheet.call_count == 2  # also called once for reset
+    modal_dialog.close.assert_not_called()
 
 
-def test_ModalDialog_animation_of_header(mocker):
-    dialog = ModalDialog()
-    assert dialog.header_animation
-    dialog.header_animation.start = mocker.MagicMock()
-    dialog.header_animation.stop = mocker.MagicMock()
-    dialog.header_icon.setVisible = mocker.MagicMock()
-    dialog.header_spinner_label.setVisible = mocker.MagicMock()
-    dialog.header_spinner_label.setPixmap = mocker.MagicMock()
+def test_ModalDialog_animation_of_activestate(mocker, modal_dialog):
+    assert modal_dialog.button_animation
+    modal_dialog.button_animation.start = mocker.MagicMock()
+    modal_dialog.button_animation.stop = mocker.MagicMock()
+    modal_dialog.continue_button = mocker.MagicMock()
 
     # Check the animation frame is updated as expected.
-    dialog.animate_header()
-    assert dialog.header_spinner_label.setPixmap.call_count == 1
+    modal_dialog.animate_activestate()
+    assert modal_dialog.continue_button.setIcon.call_count == 1
+    modal_dialog.continue_button.reset_mock()
 
     # Check starting the animated state works as expected.
-    dialog.start_animate_header()
-    dialog.header_animation.start.assert_called_once_with()
-    dialog.header_icon.setVisible.assert_called_once_with(False)
-    dialog.header_spinner_label.setVisible.assert_called_once_with(True)
+    modal_dialog.start_animate_activestate()
+    modal_dialog.button_animation.start.assert_called_once_with()
+    modal_dialog.continue_button.setText.assert_called_once_with("")
+    assert modal_dialog.continue_button.setMinimumSize.call_count == 1
+    assert modal_dialog.continue_button.setStyleSheet.call_count == 2  # also called once for reset
 
-    dialog.header_icon.setVisible.reset_mock()
-    dialog.header_spinner_label.setVisible.reset_mock()
+    modal_dialog.continue_button.reset_mock()
 
     # Check stopping the animated state works as expected.
-    dialog.stop_animate_header()
-    dialog.header_animation.stop.assert_called_once_with()
-    dialog.header_icon.setVisible.assert_called_once_with(True)
-    dialog.header_spinner_label.setVisible.assert_called_once_with(False)
+    modal_dialog.stop_animate_activestate()
+    modal_dialog.button_animation.stop.assert_called_once_with()
+    modal_dialog.continue_button.setText.assert_called_once_with("CONTINUE")
+    assert modal_dialog.continue_button.setIcon.call_count == 1
+    assert modal_dialog.continue_button.setStyleSheet.call_count == 2  # also called once for reset
+
+
+def test_ModalDialog_animation_of_header(mocker, modal_dialog):
+    assert modal_dialog.header_animation
+    modal_dialog.header_animation.start = mocker.MagicMock()
+    modal_dialog.header_animation.stop = mocker.MagicMock()
+    modal_dialog.header_icon.setVisible = mocker.MagicMock()
+    modal_dialog.header_spinner_label.setVisible = mocker.MagicMock()
+    modal_dialog.header_spinner_label.setPixmap = mocker.MagicMock()
+
+    # Check the animation frame is updated as expected.
+    modal_dialog.animate_header()
+    assert modal_dialog.header_spinner_label.setPixmap.call_count == 1
+
+    # Check starting the animated state works as expected.
+    modal_dialog.start_animate_header()
+    modal_dialog.header_animation.start.assert_called_once_with()
+    modal_dialog.header_icon.setVisible.assert_called_once_with(False)
+    modal_dialog.header_spinner_label.setVisible.assert_called_once_with(True)
+
+    modal_dialog.header_icon.setVisible.reset_mock()
+    modal_dialog.header_spinner_label.setVisible.reset_mock()
+
+    # Check stopping the animated state works as expected.
+    modal_dialog.stop_animate_header()
+    modal_dialog.header_animation.stop.assert_called_once_with()
+    modal_dialog.header_icon.setVisible.assert_called_once_with(True)
+    modal_dialog.header_spinner_label.setVisible.assert_called_once_with(False)
 
 
 def test_ExportDialog_init(mocker):
@@ -3583,10 +3576,12 @@ def test_ExportDialog_init(mocker):
         "securedrop_client.gui.widgets.ExportDialog._show_starting_instructions"
     )
 
-    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
+    export_dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
 
     _show_starting_instructions_fn.assert_called_once_with()
-    assert dialog.passphrase_form.isHidden()
+    assert export_dialog.passphrase_form.isHidden()
+
+    export_dialog.close()  # close dialog now that test is finished
 
 
 def test_ExportDialog_init_sanitizes_filename(mocker):
@@ -3594,23 +3589,24 @@ def test_ExportDialog_init_sanitizes_filename(mocker):
     mocker.patch("securedrop_client.gui.widgets.QVBoxLayout.addWidget")
     filename = '<script>alert("boom!");</script>'
 
-    ExportDialog(mocker.MagicMock(), "mock_uuid", filename)
+    export_dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", filename)
 
     secure_qlabel.call_args_list[1].assert_called_with(filename)
 
+    export_dialog.close()  # close dialog now that test is finished
 
-def test_ExportDialog__show_starting_instructions(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
 
-    dialog._show_starting_instructions()
+def test_ExportDialog__show_starting_instructions(mocker, export_dialog):
+    export_dialog._show_starting_instructions()
 
+    # file123.jpg comes from the export_dialog fixture
     assert (
-        dialog.header.text() == "Preparing to export:"
+        export_dialog.header.text() == "Preparing to export:"
         "<br />"
-        '<span style="font-weight:normal">mock.jpg</span>'
+        '<span style="font-weight:normal">file123.jpg</span>'
     )
     assert (
-        dialog.body.text() == "<h2>Understand the risks before exporting files</h2>"
+        export_dialog.body.text() == "<h2>Understand the risks before exporting files</h2>"
         "<b>Malware</b>"
         "<br />"
         "This workstation lets you open files securely. If you open files on another "
@@ -3624,300 +3620,287 @@ def test_ExportDialog__show_starting_instructions(mocker):
         "identifies who they are. To protect your sources, please consider redacting files "
         "before working with them on network-connected computers."
     )
-    assert not dialog.header.isHidden()
-    assert not dialog.header_line.isHidden()
-    assert dialog.error_details.isHidden()
-    assert not dialog.body.isHidden()
-    assert dialog.passphrase_form.isHidden()
-    assert not dialog.continue_button.isHidden()
-    assert not dialog.cancel_button.isHidden()
+    assert not export_dialog.header.isHidden()
+    assert not export_dialog.header_line.isHidden()
+    assert export_dialog.error_details.isHidden()
+    assert not export_dialog.body.isHidden()
+    assert export_dialog.passphrase_form.isHidden()
+    assert not export_dialog.continue_button.isHidden()
+    assert not export_dialog.cancel_button.isHidden()
 
 
-def test_ExportDialog___show_passphrase_request_message(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
+def test_ExportDialog___show_passphrase_request_message(mocker, export_dialog):
+    export_dialog._show_passphrase_request_message()
 
-    dialog._show_passphrase_request_message()
-
-    assert dialog.header.text() == "Enter passphrase for USB drive"
-    assert not dialog.header.isHidden()
-    assert dialog.header_line.isHidden()
-    assert dialog.error_details.isHidden()
-    assert dialog.body.isHidden()
-    assert not dialog.passphrase_form.isHidden()
-    assert not dialog.continue_button.isHidden()
-    assert not dialog.cancel_button.isHidden()
+    assert export_dialog.header.text() == "Enter passphrase for USB drive"
+    assert not export_dialog.header.isHidden()
+    assert export_dialog.header_line.isHidden()
+    assert export_dialog.error_details.isHidden()
+    assert export_dialog.body.isHidden()
+    assert not export_dialog.passphrase_form.isHidden()
+    assert not export_dialog.continue_button.isHidden()
+    assert not export_dialog.cancel_button.isHidden()
 
 
-def test_ExportDialog__show_passphrase_request_message_again(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
+def test_ExportDialog__show_passphrase_request_message_again(mocker, export_dialog):
+    export_dialog._show_passphrase_request_message_again()
 
-    dialog._show_passphrase_request_message_again()
-
-    assert dialog.header.text() == "Enter passphrase for USB drive"
-    assert dialog.error_details.text() == "The passphrase provided did not work. Please try again."
-    assert dialog.body.isHidden()
-    assert not dialog.header.isHidden()
-    assert dialog.header_line.isHidden()
-    assert not dialog.error_details.isHidden()
-    assert dialog.body.isHidden()
-    assert not dialog.passphrase_form.isHidden()
-    assert not dialog.continue_button.isHidden()
-    assert not dialog.cancel_button.isHidden()
-
-
-def test_ExportDialog__show_success_message(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
-
-    dialog._show_success_message()
-
-    assert dialog.header.text() == "Export successful"
+    assert export_dialog.header.text() == "Enter passphrase for USB drive"
     assert (
-        dialog.body.text()
+        export_dialog.error_details.text()
+        == "The passphrase provided did not work. Please try again."
+    )
+    assert export_dialog.body.isHidden()
+    assert not export_dialog.header.isHidden()
+    assert export_dialog.header_line.isHidden()
+    assert not export_dialog.error_details.isHidden()
+    assert export_dialog.body.isHidden()
+    assert not export_dialog.passphrase_form.isHidden()
+    assert not export_dialog.continue_button.isHidden()
+    assert not export_dialog.cancel_button.isHidden()
+
+
+def test_ExportDialog__show_success_message(mocker, export_dialog):
+    export_dialog._show_success_message()
+
+    assert export_dialog.header.text() == "Export successful"
+    assert (
+        export_dialog.body.text()
         == "Remember to be careful when working with files outside of your Workstation machine."
     )
-    assert not dialog.header.isHidden()
-    assert not dialog.header_line.isHidden()
-    assert dialog.error_details.isHidden()
-    assert not dialog.body.isHidden()
-    assert dialog.passphrase_form.isHidden()
-    assert not dialog.continue_button.isHidden()
-    assert dialog.cancel_button.isHidden()
+    assert not export_dialog.header.isHidden()
+    assert not export_dialog.header_line.isHidden()
+    assert export_dialog.error_details.isHidden()
+    assert not export_dialog.body.isHidden()
+    assert export_dialog.passphrase_form.isHidden()
+    assert not export_dialog.continue_button.isHidden()
+    assert export_dialog.cancel_button.isHidden()
 
 
-def test_ExportDialog__show_insert_usb_message(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
+def test_ExportDialog__show_insert_usb_message(mocker, export_dialog):
+    export_dialog._show_insert_usb_message()
 
-    dialog._show_insert_usb_message()
-
-    assert dialog.header.text() == "Insert encrypted USB drive"
+    assert export_dialog.header.text() == "Insert encrypted USB drive"
     assert (
-        dialog.body.text() == "Please insert one of the export drives provisioned specifically "
+        export_dialog.body.text()
+        == "Please insert one of the export drives provisioned specifically "
         "for the SecureDrop Workstation."
     )
-    assert not dialog.header.isHidden()
-    assert not dialog.header_line.isHidden()
-    assert dialog.error_details.isHidden()
-    assert not dialog.body.isHidden()
-    assert dialog.passphrase_form.isHidden()
-    assert not dialog.continue_button.isHidden()
-    assert not dialog.cancel_button.isHidden()
+    assert not export_dialog.header.isHidden()
+    assert not export_dialog.header_line.isHidden()
+    assert export_dialog.error_details.isHidden()
+    assert not export_dialog.body.isHidden()
+    assert export_dialog.passphrase_form.isHidden()
+    assert not export_dialog.continue_button.isHidden()
+    assert not export_dialog.cancel_button.isHidden()
 
 
-def test_ExportDialog__show_insert_encrypted_usb_message(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
+def test_ExportDialog__show_insert_encrypted_usb_message(mocker, export_dialog):
+    export_dialog._show_insert_encrypted_usb_message()
 
-    dialog._show_insert_encrypted_usb_message()
-
-    assert dialog.header.text() == "Insert encrypted USB drive"
+    assert export_dialog.header.text() == "Insert encrypted USB drive"
     assert (
-        dialog.error_details.text()
+        export_dialog.error_details.text()
         == "Either the drive is not encrypted or there is something else wrong with it."
     )
     assert (
-        dialog.body.text()
+        export_dialog.body.text()
         == "Please insert one of the export drives provisioned specifically for the SecureDrop "
         "Workstation."
     )
-    assert not dialog.header.isHidden()
-    assert not dialog.header_line.isHidden()
-    assert not dialog.error_details.isHidden()
-    assert not dialog.body.isHidden()
-    assert dialog.passphrase_form.isHidden()
-    assert not dialog.continue_button.isHidden()
-    assert not dialog.cancel_button.isHidden()
+    assert not export_dialog.header.isHidden()
+    assert not export_dialog.header_line.isHidden()
+    assert not export_dialog.error_details.isHidden()
+    assert not export_dialog.body.isHidden()
+    assert export_dialog.passphrase_form.isHidden()
+    assert not export_dialog.continue_button.isHidden()
+    assert not export_dialog.cancel_button.isHidden()
 
 
-def test_ExportDialog__show_generic_error_message(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
-    dialog.error_status = "mock_error_status"
+def test_ExportDialog__show_generic_error_message(mocker, export_dialog):
+    export_dialog.error_status = "mock_error_status"
 
-    dialog._show_generic_error_message()
+    export_dialog._show_generic_error_message()
 
-    assert dialog.header.text() == "Export failed"
-    assert dialog.body.text() == "mock_error_status: See your administrator for help."
-    assert not dialog.header.isHidden()
-    assert not dialog.header_line.isHidden()
-    assert dialog.error_details.isHidden()
-    assert not dialog.body.isHidden()
-    assert dialog.passphrase_form.isHidden()
-    assert not dialog.continue_button.isHidden()
-    assert not dialog.cancel_button.isHidden()
+    assert export_dialog.header.text() == "Export failed"
+    assert export_dialog.body.text() == "mock_error_status: See your administrator for help."
+    assert not export_dialog.header.isHidden()
+    assert not export_dialog.header_line.isHidden()
+    assert export_dialog.error_details.isHidden()
+    assert not export_dialog.body.isHidden()
+    assert export_dialog.passphrase_form.isHidden()
+    assert not export_dialog.continue_button.isHidden()
+    assert not export_dialog.cancel_button.isHidden()
 
 
-def test_ExportDialog__export_file(mocker):
+def test_ExportDialog__export_file(mocker, export_dialog):
     controller = mocker.MagicMock()
     controller.export_file_to_usb_drive = mocker.MagicMock()
-    dialog = ExportDialog(controller, "mock_uuid", "mock.jpg")
-    dialog.passphrase_field.text = mocker.MagicMock(return_value="mock_passphrase")
+    export_dialog.controller = controller
+    export_dialog.passphrase_field.text = mocker.MagicMock(return_value="mock_passphrase")
 
-    dialog._export_file()
+    export_dialog._export_file()
 
-    controller.export_file_to_usb_drive.assert_called_once_with("mock_uuid", "mock_passphrase")
-
-
-def test_ExportDialog__on_preflight_success(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
-    dialog._show_passphrase_request_message = mocker.MagicMock()
-    dialog.continue_button = mocker.MagicMock()
-    dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=False)
-
-    dialog._on_preflight_success()
-
-    dialog._show_passphrase_request_message.assert_not_called()
-    dialog.continue_button.clicked.connect.assert_called_once_with(
-        dialog._show_passphrase_request_message
+    controller.export_file_to_usb_drive.assert_called_once_with(
+        export_dialog.file_uuid, "mock_passphrase"
     )
 
 
-def test_ExportDialog__on_preflight_success_when_continue_enabled(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
-    dialog._show_passphrase_request_message = mocker.MagicMock()
-    dialog.continue_button.setEnabled(True)
+def test_ExportDialog__on_preflight_success(mocker, export_dialog):
+    export_dialog._show_passphrase_request_message = mocker.MagicMock()
+    export_dialog.continue_button = mocker.MagicMock()
+    export_dialog.continue_button.clicked = mocker.MagicMock()
+    mocker.patch.object(export_dialog.continue_button, "isEnabled", return_value=False)
 
-    dialog._on_preflight_success()
+    export_dialog._on_preflight_success()
 
-    dialog._show_passphrase_request_message.assert_called_once_with()
-
-
-def test_ExportDialog__on_preflight_success_enabled_after_preflight_success(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
-    assert not dialog.continue_button.isEnabled()
-    dialog._on_preflight_success()
-    assert dialog.continue_button.isEnabled()
+    export_dialog._show_passphrase_request_message.assert_not_called()
+    export_dialog.continue_button.clicked.connect.assert_called_once_with(
+        export_dialog._show_passphrase_request_message
+    )
 
 
-def test_ExportDialog__on_preflight_success_enabled_after_preflight_failure(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
-    assert not dialog.continue_button.isEnabled()
-    dialog._on_preflight_failure(mocker.MagicMock())
-    assert dialog.continue_button.isEnabled()
+def test_ExportDialog__on_preflight_success_when_continue_enabled(mocker, export_dialog):
+    export_dialog._show_passphrase_request_message = mocker.MagicMock()
+    export_dialog.continue_button.setEnabled(True)
+
+    export_dialog._on_preflight_success()
+
+    export_dialog._show_passphrase_request_message.assert_called_once_with()
 
 
-def test_ExportDialog__on_preflight_failure(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
-    dialog._update_dialog = mocker.MagicMock()
+def test_ExportDialog__on_preflight_success_enabled_after_preflight_success(mocker, export_dialog):
+    assert not export_dialog.continue_button.isEnabled()
+    export_dialog._on_preflight_success()
+    assert export_dialog.continue_button.isEnabled()
+
+
+def test_ExportDialog__on_preflight_success_enabled_after_preflight_failure(mocker, export_dialog):
+    assert not export_dialog.continue_button.isEnabled()
+    export_dialog._on_preflight_failure(mocker.MagicMock())
+    assert export_dialog.continue_button.isEnabled()
+
+
+def test_ExportDialog__on_preflight_failure(mocker, export_dialog):
+    export_dialog._update_dialog = mocker.MagicMock()
 
     error = ExportError("mock_error_status")
-    dialog._on_preflight_failure(error)
+    export_dialog._on_preflight_failure(error)
 
-    dialog._update_dialog.assert_called_with("mock_error_status")
-
-
-def test_ExportDialog__on_export_success(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
-    dialog._show_success_message = mocker.MagicMock()
-
-    dialog._on_export_success()
-
-    dialog._show_success_message.assert_called_once_with()
+    export_dialog._update_dialog.assert_called_with("mock_error_status")
 
 
-def test_ExportDialog__on_export_failure(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
-    dialog._update_dialog = mocker.MagicMock()
+def test_ExportDialog__on_export_success(mocker, export_dialog):
+    export_dialog._show_success_message = mocker.MagicMock()
+
+    export_dialog._on_export_success()
+
+    export_dialog._show_success_message.assert_called_once_with()
+
+
+def test_ExportDialog__on_export_failure(mocker, export_dialog):
+    export_dialog._update_dialog = mocker.MagicMock()
 
     error = ExportError("mock_error_status")
-    dialog._on_export_failure(error)
+    export_dialog._on_export_failure(error)
 
-    dialog._update_dialog.assert_called_with("mock_error_status")
-
-
-def test_ExportDialog__update_dialog_when_status_is_USB_NOT_CONNECTED(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock_filename")
-    dialog._show_insert_usb_message = mocker.MagicMock()
-    dialog.continue_button = mocker.MagicMock()
-    dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=False)
-
-    # When the continue button is enabled, ensure clicking continue will show next instructions
-    dialog._update_dialog(ExportStatus.USB_NOT_CONNECTED.value)
-    dialog.continue_button.clicked.connect.assert_called_once_with(dialog._show_insert_usb_message)
-
-    # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=True)
-    dialog._update_dialog(ExportStatus.USB_NOT_CONNECTED.value)
-    dialog._show_insert_usb_message.assert_called_once_with()
+    export_dialog._update_dialog.assert_called_with("mock_error_status")
 
 
-def test_ExportDialog__update_dialog_when_status_is_BAD_PASSPHRASE(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock_filename")
-    dialog._show_passphrase_request_message_again = mocker.MagicMock()
-    dialog.continue_button = mocker.MagicMock()
-    dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=False)
+def test_ExportDialog__update_dialog_when_status_is_USB_NOT_CONNECTED(mocker, export_dialog):
+    export_dialog._show_insert_usb_message = mocker.MagicMock()
+    export_dialog.continue_button = mocker.MagicMock()
+    export_dialog.continue_button.clicked = mocker.MagicMock()
+    mocker.patch.object(export_dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    dialog._update_dialog(ExportStatus.BAD_PASSPHRASE.value)
-    dialog.continue_button.clicked.connect.assert_called_once_with(
-        dialog._show_passphrase_request_message_again
+    export_dialog._update_dialog(ExportStatus.USB_NOT_CONNECTED.value)
+    export_dialog.continue_button.clicked.connect.assert_called_once_with(
+        export_dialog._show_insert_usb_message
     )
 
     # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=True)
-    dialog._update_dialog(ExportStatus.BAD_PASSPHRASE.value)
-    dialog._show_passphrase_request_message_again.assert_called_once_with()
+    mocker.patch.object(export_dialog.continue_button, "isEnabled", return_value=True)
+    export_dialog._update_dialog(ExportStatus.USB_NOT_CONNECTED.value)
+    export_dialog._show_insert_usb_message.assert_called_once_with()
 
 
-def test_ExportDialog__update_dialog_when_status_DISK_ENCRYPTION_NOT_SUPPORTED_ERROR(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock_filename")
-    dialog._show_insert_encrypted_usb_message = mocker.MagicMock()
-    dialog.continue_button = mocker.MagicMock()
-    dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=False)
+def test_ExportDialog__update_dialog_when_status_is_BAD_PASSPHRASE(mocker, export_dialog):
+    export_dialog._show_passphrase_request_message_again = mocker.MagicMock()
+    export_dialog.continue_button = mocker.MagicMock()
+    export_dialog.continue_button.clicked = mocker.MagicMock()
+    mocker.patch.object(export_dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    dialog._update_dialog(ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value)
-    dialog.continue_button.clicked.connect.assert_called_once_with(
-        dialog._show_insert_encrypted_usb_message
+    export_dialog._update_dialog(ExportStatus.BAD_PASSPHRASE.value)
+    export_dialog.continue_button.clicked.connect.assert_called_once_with(
+        export_dialog._show_passphrase_request_message_again
     )
 
     # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=True)
-    dialog._update_dialog(ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value)
-    dialog._show_insert_encrypted_usb_message.assert_called_once_with()
+    mocker.patch.object(export_dialog.continue_button, "isEnabled", return_value=True)
+    export_dialog._update_dialog(ExportStatus.BAD_PASSPHRASE.value)
+    export_dialog._show_passphrase_request_message_again.assert_called_once_with()
 
 
-def test_ExportDialog__update_dialog_when_status_is_CALLED_PROCESS_ERROR(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock_filename")
-    dialog._show_generic_error_message = mocker.MagicMock()
-    dialog.continue_button = mocker.MagicMock()
-    dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=False)
-
-    # When the continue button is enabled, ensure clicking continue will show next instructions
-    dialog._update_dialog(ExportStatus.CALLED_PROCESS_ERROR.value)
-    dialog.continue_button.clicked.connect.assert_called_once_with(
-        dialog._show_generic_error_message
-    )
-    assert dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR.value
-
-    # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=True)
-    dialog._update_dialog(ExportStatus.CALLED_PROCESS_ERROR.value)
-    dialog._show_generic_error_message.assert_called_once_with()
-    assert dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR.value
-
-
-def test_ExportDialog__update_dialog_when_status_is_unknown(mocker):
-    dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock_filename")
-    dialog._show_generic_error_message = mocker.MagicMock()
-    dialog.continue_button = mocker.MagicMock()
-    dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=False)
+def test_ExportDialog__update_dialog_when_status_DISK_ENCRYPTION_NOT_SUPPORTED_ERROR(
+    mocker, export_dialog
+):
+    export_dialog._show_insert_encrypted_usb_message = mocker.MagicMock()
+    export_dialog.continue_button = mocker.MagicMock()
+    export_dialog.continue_button.clicked = mocker.MagicMock()
+    mocker.patch.object(export_dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    dialog._update_dialog("Some Unknown Error Status")
-    dialog.continue_button.clicked.connect.assert_called_once_with(
-        dialog._show_generic_error_message
+    export_dialog._update_dialog(ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value)
+    export_dialog.continue_button.clicked.connect.assert_called_once_with(
+        export_dialog._show_insert_encrypted_usb_message
     )
-    assert dialog.error_status == "Some Unknown Error Status"
 
     # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=True)
-    dialog._update_dialog("Some Unknown Error Status")
-    dialog._show_generic_error_message.assert_called_once_with()
-    assert dialog.error_status == "Some Unknown Error Status"
+    mocker.patch.object(export_dialog.continue_button, "isEnabled", return_value=True)
+    export_dialog._update_dialog(ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value)
+    export_dialog._show_insert_encrypted_usb_message.assert_called_once_with()
+
+
+def test_ExportDialog__update_dialog_when_status_is_CALLED_PROCESS_ERROR(mocker, export_dialog):
+    export_dialog._show_generic_error_message = mocker.MagicMock()
+    export_dialog.continue_button = mocker.MagicMock()
+    export_dialog.continue_button.clicked = mocker.MagicMock()
+    mocker.patch.object(export_dialog.continue_button, "isEnabled", return_value=False)
+
+    # When the continue button is enabled, ensure clicking continue will show next instructions
+    export_dialog._update_dialog(ExportStatus.CALLED_PROCESS_ERROR.value)
+    export_dialog.continue_button.clicked.connect.assert_called_once_with(
+        export_dialog._show_generic_error_message
+    )
+    assert export_dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR.value
+
+    # When the continue button is enabled, ensure next instructions are shown
+    mocker.patch.object(export_dialog.continue_button, "isEnabled", return_value=True)
+    export_dialog._update_dialog(ExportStatus.CALLED_PROCESS_ERROR.value)
+    export_dialog._show_generic_error_message.assert_called_once_with()
+    assert export_dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR.value
+
+
+def test_ExportDialog__update_dialog_when_status_is_unknown(mocker, export_dialog):
+    export_dialog._show_generic_error_message = mocker.MagicMock()
+    export_dialog.continue_button = mocker.MagicMock()
+    export_dialog.continue_button.clicked = mocker.MagicMock()
+    mocker.patch.object(export_dialog.continue_button, "isEnabled", return_value=False)
+
+    # When the continue button is enabled, ensure clicking continue will show next instructions
+    export_dialog._update_dialog("Some Unknown Error Status")
+    export_dialog.continue_button.clicked.connect.assert_called_once_with(
+        export_dialog._show_generic_error_message
+    )
+    assert export_dialog.error_status == "Some Unknown Error Status"
+
+    # When the continue button is enabled, ensure next instructions are shown
+    mocker.patch.object(export_dialog.continue_button, "isEnabled", return_value=True)
+    export_dialog._update_dialog("Some Unknown Error Status")
+    export_dialog._show_generic_error_message.assert_called_once_with()
+    assert export_dialog.error_status == "Some Unknown Error Status"
 
 
 def test_PrintDialog_init(mocker):
@@ -3925,32 +3908,35 @@ def test_PrintDialog_init(mocker):
         "securedrop_client.gui.widgets.PrintDialog._show_starting_instructions"
     )
 
-    PrintDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
+    print_dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
 
     _show_starting_instructions_fn.assert_called_once_with()
+
+    print_dialog.close()  # close dialog now that test is finished
 
 
 def test_PrintDialog_init_sanitizes_filename(mocker):
     secure_qlabel = mocker.patch("securedrop_client.gui.widgets.SecureQLabel")
     filename = '<script>alert("boom!");</script>'
 
-    PrintDialog(mocker.MagicMock(), "mock_uuid", filename)
+    print_dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", filename)
 
     secure_qlabel.call_args_list[0].assert_called_with(filename)
 
+    print_dialog.close()  # close dialog now that test is finished
 
-def test_PrintDialog__show_starting_instructions(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
 
-    dialog._show_starting_instructions()
+def test_PrintDialog__show_starting_instructions(mocker, print_dialog):
+    print_dialog._show_starting_instructions()
 
+    # file123.jpg comes from the print_dialog fixture
     assert (
-        dialog.header.text() == "Preparing to print:"
+        print_dialog.header.text() == "Preparing to print:"
         "<br />"
-        '<span style="font-weight:normal">mock.jpg</span>'
+        '<span style="font-weight:normal">file123.jpg</span>'
     )
     assert (
-        dialog.body.text() == "<h2>Managing printout risks</h2>"
+        print_dialog.body.text() == "<h2>Managing printout risks</h2>"
         "<b>QR codes and web addresses</b>"
         "<br />"
         "Never type in and open web addresses or scan QR codes contained in printed "
@@ -3963,169 +3949,161 @@ def test_PrintDialog__show_starting_instructions(mocker):
         "invisible to the naked eye, such as printer dots. Please carefully "
         "consider this risk when working with or publishing scanned printouts."
     )
-    assert not dialog.header.isHidden()
-    assert not dialog.header_line.isHidden()
-    assert dialog.error_details.isHidden()
-    assert not dialog.body.isHidden()
-    assert not dialog.continue_button.isHidden()
-    assert not dialog.cancel_button.isHidden()
+    assert not print_dialog.header.isHidden()
+    assert not print_dialog.header_line.isHidden()
+    assert print_dialog.error_details.isHidden()
+    assert not print_dialog.body.isHidden()
+    assert not print_dialog.continue_button.isHidden()
+    assert not print_dialog.cancel_button.isHidden()
 
 
-def test_PrintDialog__show_insert_usb_message(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock_filename")
+def test_PrintDialog__show_insert_usb_message(mocker, print_dialog):
+    print_dialog._show_insert_usb_message()
 
-    dialog._show_insert_usb_message()
-
-    assert dialog.header.text() == "Connect USB printer"
-    assert dialog.body.text() == "Please connect your printer to a USB port."
-    assert not dialog.header.isHidden()
-    assert not dialog.header_line.isHidden()
-    assert dialog.error_details.isHidden()
-    assert not dialog.body.isHidden()
-    assert not dialog.continue_button.isHidden()
-    assert not dialog.cancel_button.isHidden()
+    assert print_dialog.header.text() == "Connect USB printer"
+    assert print_dialog.body.text() == "Please connect your printer to a USB port."
+    assert not print_dialog.header.isHidden()
+    assert not print_dialog.header_line.isHidden()
+    assert print_dialog.error_details.isHidden()
+    assert not print_dialog.body.isHidden()
+    assert not print_dialog.continue_button.isHidden()
+    assert not print_dialog.cancel_button.isHidden()
 
 
-def test_PrintDialog__show_generic_error_message(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
-    dialog.error_status = "mock_error_status"
+def test_PrintDialog__show_generic_error_message(mocker, print_dialog):
+    print_dialog.error_status = "mock_error_status"
 
-    dialog._show_generic_error_message()
+    print_dialog._show_generic_error_message()
 
-    assert dialog.header.text() == "Printing failed"
-    assert dialog.body.text() == "mock_error_status: See your administrator for help."
-    assert not dialog.header.isHidden()
-    assert not dialog.header_line.isHidden()
-    assert dialog.error_details.isHidden()
-    assert not dialog.body.isHidden()
-    assert not dialog.continue_button.isHidden()
-    assert not dialog.cancel_button.isHidden()
-
-
-def test_PrintDialog__print_file(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock_filename")
-    dialog.close = mocker.MagicMock()
-
-    dialog._print_file()
-
-    dialog.close.assert_called_once_with()
+    assert print_dialog.header.text() == "Printing failed"
+    assert print_dialog.body.text() == "mock_error_status: See your administrator for help."
+    assert not print_dialog.header.isHidden()
+    assert not print_dialog.header_line.isHidden()
+    assert print_dialog.error_details.isHidden()
+    assert not print_dialog.body.isHidden()
+    assert not print_dialog.continue_button.isHidden()
+    assert not print_dialog.cancel_button.isHidden()
 
 
-def test_PrintDialog__on_preflight_success(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
-    dialog._print_file = mocker.MagicMock()
-    dialog.continue_button = mocker.MagicMock()
-    dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=False)
+def test_PrintDialog__print_file(mocker, print_dialog):
+    print_dialog.close = mocker.MagicMock()
 
-    dialog._on_preflight_success()
+    print_dialog._print_file()
 
-    dialog._print_file.assert_not_called()
-    dialog.continue_button.clicked.connect.assert_called_once_with(dialog._print_file)
+    print_dialog.close.assert_called_once_with()
 
 
-def test_PrintDialog__on_preflight_success_when_continue_enabled(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
-    dialog._print_file = mocker.MagicMock()
-    dialog.continue_button.setEnabled(True)
+def test_PrintDialog__on_preflight_success(mocker, print_dialog):
+    print_dialog._print_file = mocker.MagicMock()
+    print_dialog.continue_button = mocker.MagicMock()
+    print_dialog.continue_button.clicked = mocker.MagicMock()
+    mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=False)
 
-    dialog._on_preflight_success()
+    print_dialog._on_preflight_success()
 
-    dialog._print_file.assert_called_once_with()
-
-
-def test_PrintDialog__on_preflight_success_enabled_after_preflight_success(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
-    assert not dialog.continue_button.isEnabled()
-    dialog._on_preflight_success()
-    assert dialog.continue_button.isEnabled()
+    print_dialog._print_file.assert_not_called()
+    print_dialog.continue_button.clicked.connect.assert_called_once_with(print_dialog._print_file)
 
 
-def test_PrintDialog__on_preflight_success_enabled_after_preflight_failure(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
-    assert not dialog.continue_button.isEnabled()
-    dialog._on_preflight_failure(mocker.MagicMock())
-    assert dialog.continue_button.isEnabled()
+def test_PrintDialog__on_preflight_success_when_continue_enabled(mocker, print_dialog):
+    print_dialog._print_file = mocker.MagicMock()
+    print_dialog.continue_button.setEnabled(True)
+
+    print_dialog._on_preflight_success()
+
+    print_dialog._print_file.assert_called_once_with()
 
 
-def test_PrintDialog__on_preflight_failure_when_status_is_PRINTER_NOT_FOUND(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock_filename")
-    dialog._show_insert_usb_message = mocker.MagicMock()
-    dialog.continue_button = mocker.MagicMock()
-    dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=False)
+def test_PrintDialog__on_preflight_success_enabled_after_preflight_success(mocker, print_dialog):
+    assert not print_dialog.continue_button.isEnabled()
+    print_dialog._on_preflight_success()
+    assert print_dialog.continue_button.isEnabled()
+
+
+def test_PrintDialog__on_preflight_success_enabled_after_preflight_failure(mocker, print_dialog):
+    assert not print_dialog.continue_button.isEnabled()
+    print_dialog._on_preflight_failure(mocker.MagicMock())
+    assert print_dialog.continue_button.isEnabled()
+
+
+def test_PrintDialog__on_preflight_failure_when_status_is_PRINTER_NOT_FOUND(mocker, print_dialog):
+    print_dialog._show_insert_usb_message = mocker.MagicMock()
+    print_dialog.continue_button = mocker.MagicMock()
+    print_dialog.continue_button.clicked = mocker.MagicMock()
+    mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    dialog._on_preflight_failure(ExportError(ExportStatus.PRINTER_NOT_FOUND.value))
-    dialog.continue_button.clicked.connect.assert_called_once_with(dialog._show_insert_usb_message)
-
-    # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=True)
-    dialog._on_preflight_failure(ExportError(ExportStatus.PRINTER_NOT_FOUND.value))
-    dialog._show_insert_usb_message.assert_called_once_with()
-
-
-def test_PrintDialog__on_preflight_failure_when_status_is_MISSING_PRINTER_URI(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock_filename")
-    dialog._show_generic_error_message = mocker.MagicMock()
-    dialog.continue_button = mocker.MagicMock()
-    dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=False)
-
-    # When the continue button is enabled, ensure clicking continue will show next instructions
-    dialog._on_preflight_failure(ExportError(ExportStatus.MISSING_PRINTER_URI.value))
-    dialog.continue_button.clicked.connect.assert_called_once_with(
-        dialog._show_generic_error_message
+    print_dialog._on_preflight_failure(ExportError(ExportStatus.PRINTER_NOT_FOUND.value))
+    print_dialog.continue_button.clicked.connect.assert_called_once_with(
+        print_dialog._show_insert_usb_message
     )
-    assert dialog.error_status == ExportStatus.MISSING_PRINTER_URI.value
 
     # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=True)
-    dialog._on_preflight_failure(ExportError(ExportStatus.MISSING_PRINTER_URI.value))
-    dialog._show_generic_error_message.assert_called_once_with()
-    assert dialog.error_status == ExportStatus.MISSING_PRINTER_URI.value
+    mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=True)
+    print_dialog._on_preflight_failure(ExportError(ExportStatus.PRINTER_NOT_FOUND.value))
+    print_dialog._show_insert_usb_message.assert_called_once_with()
 
 
-def test_PrintDialog__on_preflight_failure_when_status_is_CALLED_PROCESS_ERROR(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock_filename")
-    dialog._show_generic_error_message = mocker.MagicMock()
-    dialog.continue_button = mocker.MagicMock()
-    dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=False)
+def test_PrintDialog__on_preflight_failure_when_status_is_MISSING_PRINTER_URI(mocker, print_dialog):
+    print_dialog._show_generic_error_message = mocker.MagicMock()
+    print_dialog.continue_button = mocker.MagicMock()
+    print_dialog.continue_button.clicked = mocker.MagicMock()
+    mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    dialog._on_preflight_failure(ExportError(ExportStatus.CALLED_PROCESS_ERROR.value))
-    dialog.continue_button.clicked.connect.assert_called_once_with(
-        dialog._show_generic_error_message
+    print_dialog._on_preflight_failure(ExportError(ExportStatus.MISSING_PRINTER_URI.value))
+    print_dialog.continue_button.clicked.connect.assert_called_once_with(
+        print_dialog._show_generic_error_message
     )
-    assert dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR.value
+    assert print_dialog.error_status == ExportStatus.MISSING_PRINTER_URI.value
 
     # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=True)
-    dialog._on_preflight_failure(ExportError(ExportStatus.CALLED_PROCESS_ERROR.value))
-    dialog._show_generic_error_message.assert_called_once_with()
-    assert dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR.value
+    mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=True)
+    print_dialog._on_preflight_failure(ExportError(ExportStatus.MISSING_PRINTER_URI.value))
+    print_dialog._show_generic_error_message.assert_called_once_with()
+    assert print_dialog.error_status == ExportStatus.MISSING_PRINTER_URI.value
 
 
-def test_PrintDialog__on_preflight_failure_when_status_is_unknown(mocker):
-    dialog = PrintDialog(mocker.MagicMock(), "mock_uuid", "mock_filename")
-    dialog._show_generic_error_message = mocker.MagicMock()
-    dialog.continue_button = mocker.MagicMock()
-    dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=False)
+def test_PrintDialog__on_preflight_failure_when_status_is_CALLED_PROCESS_ERROR(
+    mocker, print_dialog
+):
+    print_dialog._show_generic_error_message = mocker.MagicMock()
+    print_dialog.continue_button = mocker.MagicMock()
+    print_dialog.continue_button.clicked = mocker.MagicMock()
+    mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    dialog._on_preflight_failure(ExportError("Some Unknown Error Status"))
-    dialog.continue_button.clicked.connect.assert_called_once_with(
-        dialog._show_generic_error_message
+    print_dialog._on_preflight_failure(ExportError(ExportStatus.CALLED_PROCESS_ERROR.value))
+    print_dialog.continue_button.clicked.connect.assert_called_once_with(
+        print_dialog._show_generic_error_message
     )
-    assert dialog.error_status == "Some Unknown Error Status"
+    assert print_dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR.value
 
     # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(dialog.continue_button, "isEnabled", return_value=True)
-    dialog._on_preflight_failure(ExportError("Some Unknown Error Status"))
-    dialog._show_generic_error_message.assert_called_once_with()
-    assert dialog.error_status == "Some Unknown Error Status"
+    mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=True)
+    print_dialog._on_preflight_failure(ExportError(ExportStatus.CALLED_PROCESS_ERROR.value))
+    print_dialog._show_generic_error_message.assert_called_once_with()
+    assert print_dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR.value
+
+
+def test_PrintDialog__on_preflight_failure_when_status_is_unknown(mocker, print_dialog):
+    print_dialog._show_generic_error_message = mocker.MagicMock()
+    print_dialog.continue_button = mocker.MagicMock()
+    print_dialog.continue_button.clicked = mocker.MagicMock()
+    mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=False)
+
+    # When the continue button is enabled, ensure clicking continue will show next instructions
+    print_dialog._on_preflight_failure(ExportError("Some Unknown Error Status"))
+    print_dialog.continue_button.clicked.connect.assert_called_once_with(
+        print_dialog._show_generic_error_message
+    )
+    assert print_dialog.error_status == "Some Unknown Error Status"
+
+    # When the continue button is enabled, ensure next instructions are shown
+    mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=True)
+    print_dialog._on_preflight_failure(ExportError("Some Unknown Error Status"))
+    print_dialog._show_generic_error_message.assert_called_once_with()
+    assert print_dialog.error_status == "Some Unknown Error Status"
 
 
 def test_SourceConversationWrapper__on_source_deleted(mocker):
