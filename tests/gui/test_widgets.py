@@ -1905,7 +1905,7 @@ def test_StarToggleButton_init_source_starred(mocker):
     controller = mocker.MagicMock()
     source = factory.Source(is_starred=True)
 
-    stb = StarToggleButton(controller, source.uuid, source.is_starred)
+    stb = StarToggleButton(controller, source.uuid, source.is_starred, False)
 
     assert stb.source_uuid == source.uuid
     assert stb.isChecked() is True
@@ -1915,7 +1915,7 @@ def test_StarToggleButton_init_source_unstarred(mocker):
     controller = mocker.MagicMock()
     source = factory.Source(is_starred=False)
 
-    stb = StarToggleButton(controller, source.uuid, source.is_starred)
+    stb = StarToggleButton(controller, source.uuid, source.is_starred, False)
 
     assert stb.source_uuid == source.uuid
     assert stb.isChecked() is False
@@ -1927,7 +1927,7 @@ def test_StarToggleButton_eventFilter_when_checked(mocker):
     """
     controller = mocker.MagicMock()
     controller.is_authenticated = True
-    stb = StarToggleButton(controller, "mock_uuid", True)
+    stb = StarToggleButton(controller, "mock_uuid", True, False)
     stb.pressed = mocker.MagicMock()
     stb.setIcon = mocker.MagicMock()
     stb.set_icon = mocker.MagicMock()
@@ -1957,7 +1957,7 @@ def test_StarToggleButton_eventFilter_when_not_checked(mocker):
     """
     controller = mocker.MagicMock()
     controller.is_authenticated = True
-    stb = StarToggleButton(controller, "mock_uuid", False)
+    stb = StarToggleButton(controller, "mock_uuid", False, False)
     stb.pressed = mocker.MagicMock()
     stb.setIcon = mocker.MagicMock()
     stb.set_icon = mocker.MagicMock()
@@ -1981,13 +1981,43 @@ def test_StarToggleButton_eventFilter_when_not_checked(mocker):
     stb.pressed.connect.assert_called_once_with(stb.on_pressed)
 
 
+def test_StarToggleButton_eventFilter_active_when_not_checked_after_hoverleave_event(mocker):
+    """
+    Ensure star_off_active.svg is used for an unchecked star of a selected source.
+    """
+    controller = mocker.MagicMock()
+    controller.is_authenticated = True
+    stb = StarToggleButton(controller, "mock_uuid", False, True)
+    stb.pressed = mocker.MagicMock()
+    stb.setIcon = mocker.MagicMock()
+    stb.set_icon = mocker.MagicMock()
+    load_icon_fn = mocker.patch("securedrop_client.gui.widgets.load_icon")
+
+    # Hover enter
+    test_event = QEvent(QEvent.HoverEnter)
+    stb.eventFilter(stb, test_event)
+    assert stb.setIcon.call_count == 1
+    load_icon_fn.assert_called_once_with("star_hover.svg")
+
+    # Hover leave
+    test_event = QEvent(QEvent.HoverLeave)
+    stb.eventFilter(stb, test_event)
+    stb.set_icon.assert_called_once_with(on="star_on.svg", off="star_off_active.svg")
+
+    # Authentication change
+    stb.on_authentication_changed(True)
+    assert stb.isCheckable() is True
+    stb.pressed.disconnect.assert_called_once_with()
+    stb.pressed.connect.assert_called_once_with(stb.on_pressed)
+
+
 def test_StarToggleButton_eventFilter_when_checked_and_offline(mocker):
     """
     Ensure the hover events do not change the icon when offline and that the star icon is set to
     off='star_on.svg' when checked and offline.
     """
     controller = mocker.MagicMock()
-    stb = StarToggleButton(controller, "mock_uuid", True)
+    stb = StarToggleButton(controller, "mock_uuid", True, False)
     stb.pressed = mocker.MagicMock()
     stb.setIcon = mocker.MagicMock()
     stb.set_icon = mocker.MagicMock()
@@ -2018,7 +2048,7 @@ def test_StarToggleButton_eventFilter_when_not_checked_and_offline(mocker):
     off='star_on.svg' when unchecked and offline.
     """
     controller = mocker.MagicMock()
-    stb = StarToggleButton(controller, "mock_uuid", False)
+    stb = StarToggleButton(controller, "mock_uuid", False, False)
     stb.pressed = mocker.MagicMock()
     stb.setIcon = mocker.MagicMock()
     stb.set_icon = mocker.MagicMock()
@@ -2042,13 +2072,42 @@ def test_StarToggleButton_eventFilter_when_not_checked_and_offline(mocker):
     stb.setIcon.assert_not_called()
 
 
+def test_StarToggleButton_eventFilter_active_when_not_checked_and_offline(mocker):
+    """
+    Ensure star_off_active.svg is used for an unchecked star of a selected source.
+    """
+    controller = mocker.MagicMock()
+    stb = StarToggleButton(controller, "mock_uuid", False, True)
+    stb.pressed = mocker.MagicMock()
+    stb.setIcon = mocker.MagicMock()
+    stb.set_icon = mocker.MagicMock()
+    load_icon_fn = mocker.patch("securedrop_client.gui.widgets.load_icon")
+
+    # Authentication change
+    stb.on_authentication_changed(False)
+    assert stb.isCheckable() is False
+    stb.pressed.disconnect.assert_called_once_with()
+    stb.pressed.connect.assert_called_once_with(stb.on_pressed_offline)
+
+    # Hover enter
+    test_event = QEvent(QEvent.MouseButtonPress)
+    stb.eventFilter(stb, test_event)
+    stb.set_icon.assert_called_once_with(on="star_on.svg", off="star_off_active.svg")
+    load_icon_fn.assert_not_called()
+
+    # Hover leave
+    test_event = QEvent(QEvent.HoverLeave)
+    stb.eventFilter(stb, test_event)
+    stb.set_icon.assert_called_once_with(on="star_on.svg", off="star_off.svg")
+
+
 def test_StarToggleButton_on_authentication_changed_while_authenticated_and_checked(mocker):
     """
     If on_authentication_changed is set up correctly, then toggling a checked button should result
     in the button being unchecked.
     """
     controller = mocker.MagicMock()
-    stb = StarToggleButton(controller, "mock_uuid", True)
+    stb = StarToggleButton(controller, "mock_uuid", True, False)
     stb.on_pressed = mocker.MagicMock()
     stb.on_authentication_changed(True)
 
@@ -2064,7 +2123,7 @@ def test_StarToggleButton_on_authentication_changed_while_authenticated_and_not_
     should result in the button being unchecked.
     """
     controller = mocker.MagicMock()
-    stb = StarToggleButton(controller, "mock_uuid", False)
+    stb = StarToggleButton(controller, "mock_uuid", False, False)
     stb.on_pressed = mocker.MagicMock()
     stb.on_authentication_changed(True)
 
@@ -2079,7 +2138,7 @@ def test_StarToggleButton_on_authentication_changed_while_offline_mode_and_not_c
     Ensure on_authentication_changed is set up correctly for offline mode.
     """
     controller = mocker.MagicMock()
-    stb = StarToggleButton(controller, "mock_uuid", False)
+    stb = StarToggleButton(controller, "mock_uuid", False, False)
     stb.on_pressed_offline = mocker.MagicMock()
     stb.on_pressed = mocker.MagicMock()
     stb.on_authentication_changed(False)
@@ -2096,7 +2155,7 @@ def test_StarToggleButton_on_authentication_changed_while_offline_mode_and_check
     Ensure on_authentication_changed is set up correctly for offline mode.
     """
     controller = mocker.MagicMock()
-    stb = StarToggleButton(controller, "mock_uuid", True)
+    stb = StarToggleButton(controller, "mock_uuid", True, False)
     stb.on_pressed_offline = mocker.MagicMock()
     stb.on_pressed = mocker.MagicMock()
     stb.on_authentication_changed(False)
@@ -2114,7 +2173,7 @@ def test_StarToggleButton_on_pressed_toggles_to_starred(mocker):
     Ensure pressing the star button toggles from unstarred to starred.
     """
     controller = mocker.MagicMock()
-    stb = StarToggleButton(controller, "mock_uuid", False)
+    stb = StarToggleButton(controller, "mock_uuid", False, False)
 
     stb.click()
 
@@ -2127,7 +2186,7 @@ def test_StarToggleButton_on_pressed_toggles_to_unstarred(mocker):
     Ensure pressing the star button toggles from starred to unstarred.
     """
     controller = mocker.MagicMock()
-    stb = StarToggleButton(controller, "mock_uuid", True)
+    stb = StarToggleButton(controller, "mock_uuid", True, False)
 
     stb.click()
 
@@ -2141,7 +2200,7 @@ def test_StarToggleButton_on_pressed_offline(mocker):
     """
     controller = mocker.MagicMock()
     controller.is_authenticated = False
-    stb = StarToggleButton(controller, "mock_uuid", True)
+    stb = StarToggleButton(controller, "mock_uuid", True, False)
 
     stb.click()
 
@@ -2155,7 +2214,7 @@ def test_StarToggleButton_on_pressed_offline_when_checked(mocker):
     controller = mocker.MagicMock()
     controller.is_authenticated = False
     source = factory.Source(is_starred=True)
-    stb = StarToggleButton(controller, source.uuid, source.is_starred)
+    stb = StarToggleButton(controller, source.uuid, source.is_starred, False)
     set_icon_fn = mocker.patch("securedrop_client.gui.SvgToggleButton.set_icon")
 
     stb.on_authentication_changed(False)
@@ -2174,7 +2233,7 @@ def test_StarToggleButton_update(mocker):
     """
     controller = mocker.MagicMock()
     controller.is_authenticated = True
-    stb = StarToggleButton(controller, "mock_uuid", True)
+    stb = StarToggleButton(controller, "mock_uuid", True, False)
 
     # Should not change because we wait until next sync
     stb.pending_count = 0
@@ -2217,7 +2276,7 @@ def test_StarToggleButton_update_when_not_authenticated(mocker):
     controller = mocker.MagicMock()
     controller.is_authenticated = False
     source = factory.Source(is_starred=True)
-    stb = StarToggleButton(controller, source.uuid, source.is_starred)
+    stb = StarToggleButton(controller, source.uuid, source.is_starred, False)
 
     # Button stays checked
     stb.update(False)
@@ -2236,7 +2295,7 @@ def test_StarToggleButton_on_star_update_failed(mocker):
     """
     controller = mocker.MagicMock()
     controller.is_authenticated = True
-    stb = StarToggleButton(controller, "mock_uuid", False)
+    stb = StarToggleButton(controller, "mock_uuid", False, False)
 
     stb.click()
     assert stb.is_starred is True
@@ -2253,7 +2312,7 @@ def test_StarToggleButton_on_star_update_failed_for_non_matching_source_uuid(moc
     """
     controller = mocker.MagicMock()
     controller.is_authenticated = True
-    stb = StarToggleButton(controller, "mock_uuid", False)
+    stb = StarToggleButton(controller, "mock_uuid", False, False)
 
     stb.click()
     assert stb.is_starred is True
@@ -2269,7 +2328,7 @@ def test_StarToggleButton_on_star_update_successful(mocker):
     """
     controller = mocker.MagicMock()
     controller.is_authenticated = True
-    stb = StarToggleButton(controller, "mock_uuid", True)
+    stb = StarToggleButton(controller, "mock_uuid", True, False)
 
     stb.click()
     assert stb.pending_count == 1
@@ -2283,7 +2342,7 @@ def test_StarToggleButton_on_star_update_successful_for_non_matching_source_uuid
     """
     controller = mocker.MagicMock()
     controller.is_authenticated = True
-    stb = StarToggleButton(controller, "mock_uuid", True)
+    stb = StarToggleButton(controller, "mock_uuid", True, False)
 
     stb.click()
     assert stb.pending_count == 1

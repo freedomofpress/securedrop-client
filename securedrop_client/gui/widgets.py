@@ -1041,7 +1041,7 @@ class SourceWidget(QWidget):
 
         retain_space = self.sizePolicy()
         retain_space.setRetainSizeWhenHidden(True)
-        self.star = StarToggleButton(self.controller, self.source_uuid, source.is_starred)
+        self.star = StarToggleButton(self.controller, self.source_uuid, source.is_starred, self.selected)
         self.star.setSizePolicy(retain_space)
         self.star.setFixedWidth(self.STAR_WIDTH)
         self.name = QLabel()
@@ -1182,6 +1182,8 @@ class SourceWidget(QWidget):
             self.preview.setObjectName("SourceWidget_preview_unread")
             self.preview.setStyleSheet(self.SOURCE_PREVIEW_CSS)
 
+        self.star.update_styles(self.selected)
+
     @pyqtSlot(bool)
     def _on_authentication_changed(self, authenticated: bool) -> None:
         """
@@ -1228,12 +1230,13 @@ class StarToggleButton(SvgToggleButton):
     A button that shows whether or not a source is starred
     """
 
-    def __init__(self, controller: Controller, source_uuid: str, is_starred: bool):
+    def __init__(self, controller: Controller, source_uuid: str, is_starred: bool, selected: bool):
         super().__init__(on="star_on.svg", off="star_off.svg", svg_size=QSize(16, 16))
 
         self.controller = controller
         self.source_uuid = source_uuid
         self.is_starred = is_starred
+        self.selected = selected
         self.pending_count = 0
         self.wait_until_next_sync = False
 
@@ -1292,8 +1295,13 @@ class StarToggleButton(SvgToggleButton):
         t = event.type()
         if t == QEvent.HoverEnter:
             self.setIcon(load_icon("star_hover.svg"))
-        elif t == QEvent.HoverLeave or t == QEvent.MouseButtonPress:
+        elif t == QEvent.MouseButtonPress:
             self.set_icon(on="star_on.svg", off="star_off.svg")
+        elif t == QEvent.HoverLeave:
+            if self.selected:
+                self.set_icon(on="star_on.svg", off="star_off_active.svg")
+            else:
+                self.set_icon(on="star_on.svg", off="star_off.svg")
 
         return QObject.event(obj, event)
 
@@ -1367,6 +1375,13 @@ class StarToggleButton(SvgToggleButton):
         """
         if self.source_uuid == source_uuid:
             self.pending_count = self.pending_count - 1
+
+    def update_styles(self, selected: bool) -> None:
+        self.selected = selected
+        if self.selected:
+            self.set_icon(on="star_on.svg", off="star_off_active.svg")
+        else:
+            self.set_icon(on="star_on.svg", off="star_off.svg")
 
 
 class DeleteSourceMessageBox:
