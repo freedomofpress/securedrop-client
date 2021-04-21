@@ -951,16 +951,15 @@ def test_update_messages_marks_read_messages_as_seen_without_seen_records(homedi
 
     # Create a remote file that will be used to update one of the local files.
     remote_message_to_update = factory.RemoteMessage(
-        uuid=local_message_to_update.uuid, source_uuid=source.uuid, is_read=1
+        uuid=local_message_to_update.uuid,
+        source_uuid=source.uuid,
+        source_url="/api/v1/sources/{}".format(source.uuid),
+        is_read=1,
     )
 
     # Create a remote file that will be used to create a new local file.
     remote_message_to_create = factory.RemoteMessage(
-        source_uuid=source.uuid,
-        source_url="/api/v1/sources/{}".format(source.uuid),
-        file_counter=factory.FILE_COUNT + 1,
-        filename="{}-msg.gpg".format(2),
-        is_read=1,
+        source_uuid=source.uuid, source_url="/api/v1/sources/{}".format(source.uuid), is_read=1,
     )
 
     remote_messages = [remote_message_to_update, remote_message_to_create]
@@ -1024,6 +1023,7 @@ def test_update_messages_adds_seen_record(homedir, mocker, session):
     remote_message_to_update = factory.RemoteMessage(
         uuid=local_message_to_update.uuid,
         source_uuid=source.uuid,
+        source_url="/api/v1/sources/{}".format(source.uuid),
         seen_by=[journalist_1.uuid, journalist_2.uuid],
     )
 
@@ -1031,8 +1031,6 @@ def test_update_messages_adds_seen_record(homedir, mocker, session):
     remote_message_to_create = factory.RemoteMessage(
         source_uuid=source.uuid,
         source_url="/api/v1/sources/{}".format(source.uuid),
-        file_counter=factory.MESSAGE_COUNT + 1,
-        filename="{}-msg.gpg".format(factory.MESSAGE_COUNT + 1),
         seen_by=[journalist_1.uuid, journalist_2.uuid],
     )
 
@@ -1040,8 +1038,6 @@ def test_update_messages_adds_seen_record(homedir, mocker, session):
     remote_message_t0_create_with_unknown_journalist = factory.RemoteMessage(
         source_uuid=source.uuid,
         source_url="/api/v1/sources/{}".format(source.uuid),
-        file_counter=factory.MESSAGE_COUNT + 2,
-        filename="{}-msg.gpg".format(factory.MESSAGE_COUNT + 2),
         seen_by=["unknown-journalist-uuid"],
     )
 
