@@ -1,11 +1,17 @@
-> By contributing to this project, you agree to abide by our [Code of Conduct](https://github.com/freedomofpress/.github/blob/main/CODE_OF_CONDUCT.md).
+> [There are many ways to contribute, and we welcome your help!](CONTRIBUTING.md) By contributing to this project, you agree to abide by our [Code of Conduct](https://github.com/freedomofpress/.github/blob/main/CODE_OF_CONDUCT.md).
+
+[![CircleCI](https://circleci.com/gh/freedomofpress/securedrop-client.svg?style=svg)](https://circleci.com/gh/freedomofpress/securedrop-client)
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/freedomofpress/securedrop?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 # securedrop-client
-[![CircleCI](https://circleci.com/gh/freedomofpress/securedrop-client.svg?style=svg)](https://circleci.com/gh/freedomofpress/securedrop-client)
 
-Qt-based client for working with SecureDrop submissions on the SecureDrop Qubes Workstation. In Qubes, this application runs within a VM that has no direct network access, and files open in individual, non-networked, disposable VMs. API requests and responses to and from the SecureDrop application server are sent through an intermediate VM using the [Qubes SecureDrop proxy](https://github.com/freedomofpress/securedrop-proxy). For additional background, see the [main SecureDrop Workstation repository](https://github.com/freedomofpress/securedrop-workstation), and read about the [user research and design work that informs this work](https://github.com/freedomofpress/securedrop-ux/wiki/Qubes-Journalist-Workstation).
+The SecureDrop Client is a desktop application for journalists to communicate with sources and work with SecureDrop submissions on the [SecureDrop Workstation](https://github.com/freedomofpress/securedrop-workstation).
 
-**IMPORTANT:** This project is in alpha and should not be used in production environments. There are known bugs which can be found in this project’s issue tracker.
+The client runs within a [Qubes OS](https://www.qubes-os.org/intro/) VM that has no direct network access and opens files within individual, non-networked, disposable VMs. API requests and responses to and from the [SecureDrop application server](https://docs.securedrop.org/en/stable/glossary.html#application-server) are sent through an intermediate VM using the [SecureDrop Proxy](https://github.com/freedomofpress/securedrop-proxy).
+
+To learn more about architecture and our rationale behind our Qubes OS approach for source communication and handling submissions, see the [SecureDrop Workstation readme](https://github.com/freedomofpress/securedrop-workstation/blob/main/README.md).
+
+**IMPORTANT:** This project is currently undergoing a pilot study and should not be used in production environments.
 
 # Current limitations
 
