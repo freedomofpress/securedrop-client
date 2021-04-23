@@ -218,21 +218,23 @@ def RemoteReply(**attrs):
 
 
 def RemoteFile(**attrs):
-    source_url = "/api/v1/sources/{}".format(str(uuid.uuid4()))
+    global FILE_COUNT
+    FILE_COUNT += 1
+    src_uuid = str(uuid.uuid4())
     defaults = dict(
-        source_uuid="user-uuid-1",
+        uuid="file-uuid-{}".format(FILE_COUNT),
+        filename="{}-doc.gz.gpg".format(FILE_COUNT),
+        source_uuid=src_uuid,
         download_url="test",
         submission_url="test",
-        filename="1-submission.filename",
         is_read=False,
-        file_counter=1,
+        file_counter=FILE_COUNT,
         is_deleted_by_source=False,
         reply_url="test",
         size=1234,
         is_decrypted=True,
         is_downloaded=True,
-        uuid=str(uuid.uuid4()),
-        source_url=source_url,
+        source_url=f"/api/v1/sources/{src_uuid}",
         seen_by=[],
     )
 
@@ -242,21 +244,23 @@ def RemoteFile(**attrs):
 
 
 def RemoteMessage(**attrs):
-    source_url = "/api/v1/sources/{}".format(str(uuid.uuid4()))
+    global MESSAGE_COUNT
+    MESSAGE_COUNT += 1
+    src_uuid = str(uuid.uuid4())
     defaults = dict(
-        source_uuid="user-uuid-1",
+        uuid="msg-uuid-{}".format(MESSAGE_COUNT),
+        filename="{}-msg.gpg".format(MESSAGE_COUNT),
+        source_uuid=src_uuid,
         download_url="test",
         submission_url="test",
-        filename="1-submission.filename",
         is_read=False,
-        file_counter=1,
+        file_counter=MESSAGE_COUNT,
         is_deleted_by_source=False,
         reply_url="test",
         size=1234,
         is_decrypted=True,
         is_downloaded=True,
-        uuid=str(uuid.uuid4()),
-        source_url=source_url,
+        source_url=f"/api/v1/sources/{src_uuid}",
         seen_by=[],
     )
 
