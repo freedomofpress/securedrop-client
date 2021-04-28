@@ -129,10 +129,11 @@ def check_path_traversal(filename_or_filepath: Union[str, Path]) -> None:
     relative paths, and absolute paths.
     """
     filename_or_filepath = Path(filename_or_filepath)
+
     if filename_or_filepath.is_absolute():
         base_path = filename_or_filepath
     else:
-        base_path = Path().resolve()
+        base_path = Path.cwd()  # use cwd so we can next ensure relative path does not traverse up
 
     try:
         relative_path = relative_filepath(filename_or_filepath, base_path)
