@@ -16,7 +16,10 @@ fileConfig(config.config_file_name)
 # add your model's MetaData object here
 # for 'autogenerate' support
 sys.path.insert(0, path.realpath(path.join(path.dirname(__file__), '..')))
-from securedrop_client.db import Base  # noqa
+
+# TODO: Document why this import isn't done at the beginning of this file
+from securedrop_client.db import Base  # isort:skip
+
 target_metadata = Base.metadata
 
 
