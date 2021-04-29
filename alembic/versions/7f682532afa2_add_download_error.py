@@ -5,8 +5,9 @@ Revises: fb657f2ee8a7
 Create Date: 2020-04-15 13:44:21.434312
 
 """
-from alembic import op
 import sqlalchemy as sa
+
+from alembic import op
 from securedrop_client import db
 
 # revision identifiers, used by Alembic.
@@ -199,7 +200,8 @@ def upgrade():
     conn.execute(CREATE_TABLE_MESSAGES_NEW)
     conn.execute(CREATE_TABLE_REPLIES_NEW)
 
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO files
         (
             id, uuid, filename, file_counter, size, download_url,
@@ -209,9 +211,11 @@ def upgrade():
         SELECT id, uuid, filename, file_counter, size, download_url,
                is_downloaded, is_read, is_decrypted, NULL, source_id, CURRENT_TIMESTAMP
         FROM files_tmp
-    """)
+    """
+    )
 
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO messages
         (
             id, uuid, source_id, filename, file_counter, size, content, is_decrypted,
@@ -220,9 +224,11 @@ def upgrade():
         SELECT id, uuid, source_id, filename, file_counter, size, content, is_decrypted,
                is_downloaded, is_read, NULL, download_url, CURRENT_TIMESTAMP
         FROM messages_tmp
-    """)
+    """
+    )
 
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO replies
         (
             id, uuid, source_id, filename, file_counter, size, content, is_decrypted,
@@ -231,7 +237,8 @@ def upgrade():
         SELECT id, uuid, source_id, filename, file_counter, size, content, is_decrypted,
               is_downloaded, NULL, journalist_id, CURRENT_TIMESTAMP
         FROM replies_tmp
-    """)
+    """
+    )
 
     # Delete the old tables.
     op.drop_table("files_tmp")
@@ -253,30 +260,36 @@ def downgrade():
     conn.execute(CREATE_TABLE_MESSAGES_OLD)
     conn.execute(CREATE_TABLE_REPLIES_OLD)
 
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO files
         (id, uuid, filename, file_counter, size, download_url,
                is_downloaded, is_read, is_decrypted, source_id)
         SELECT id, uuid, filename, file_counter, size, download_url,
                is_downloaded, is_read, is_decrypted, source_id
         FROM files_tmp
-    """)
-    conn.execute("""
+    """
+    )
+    conn.execute(
+        """
         INSERT INTO messages
         (id, uuid, source_id, filename, file_counter, size, content, is_decrypted,
          is_downloaded, is_read, download_url)
         SELECT id, uuid, source_id, filename, file_counter, size, content, is_decrypted,
                is_downloaded, is_read, download_url
         FROM messages_tmp
-    """)
-    conn.execute("""
+    """
+    )
+    conn.execute(
+        """
         INSERT INTO replies
         (id, uuid, source_id, filename, file_counter, size, content, is_decrypted,
          is_downloaded, journalist_id)
         SELECT id, uuid, source_id, filename, file_counter, size, content, is_decrypted,
               is_downloaded, journalist_id
         FROM replies_tmp
-    """)
+    """
+    )
 
     # Delete the old tables.
     op.drop_table("files_tmp")
