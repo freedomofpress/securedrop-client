@@ -29,7 +29,7 @@ import arrow
 import sdclientapi
 import sqlalchemy.orm.exc
 from PyQt5.QtCore import QObject, QProcess, Qt, QThread, QTimer, pyqtSignal
-from sdclientapi import RequestTimeoutError, ServerConnectionError
+from sdclientapi import AuthError, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm.session import sessionmaker
 
 from securedrop_client import db, storage
@@ -497,10 +497,19 @@ class Controller(QObject):
         # Failed to authenticate. Reset state with failure message.
         self.invalidate_token()
 
-        error = _(
-            "That didn't work. Please check everything and try again.\n"
-            "Make sure to use a new two-factor code."
-        )
+        if isinstance(result, (RequestTimeoutError, ServerConnectionError)):
+            error = _(
+                "Could not reach the SecureDrop server. Please check your \n"
+                "Internet and Tor connection and try again."
+            )
+        elif isinstance(result, AuthError):
+            error = _(
+                "Those credentials didn't work. Please try again, and \n"
+                "make sure to use a new two-factor code."
+            )
+        else:
+            error = _("That didn't work. Please check everything and try again.")
+
         self.gui.show_login_error(error=error)
         self.api_sync.stop()
 

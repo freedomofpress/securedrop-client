@@ -12,7 +12,7 @@ import arrow
 import pytest
 import sqlalchemy.orm.exc
 from PyQt5.QtCore import Qt
-from sdclientapi import RequestTimeoutError, ServerConnectionError
+from sdclientapi import AuthError, RequestTimeoutError, ServerConnectionError
 
 from securedrop_client import db
 from securedrop_client.api_jobs.base import ApiInaccessibleError
@@ -181,26 +181,36 @@ def test_Controller_login_offline_mode(homedir, config, mocker):
     co.show_last_sync_timer.start.assert_called_once_with(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
 
 
-def test_Controller_on_authenticate_failure(homedir, config, mocker, session_maker):
+@pytest.mark.parametrize(
+    "exception", [AuthError("oh no"), RequestTimeoutError(), ServerConnectionError(), Exception()]
+)
+def test_Controller_on_authenticate_failure(homedir, config, mocker, session_maker, exception):
     """
-    If the server responds with a negative to the request to authenticate, make
-    sure the user knows.
+    If there is any problem authenticating, make sure the user receives an
+    informative error message.
     Using the `config` fixture to ensure the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
 
     co = Controller("http://localhost", mock_gui, session_maker, homedir)
     co.api_sync.stop = mocker.MagicMock()
+    co.on_authenticate_failure(exception)
 
-    result_data = Exception("oh no")
-    co.on_authenticate_failure(result_data)
+    if isinstance(exception, (RequestTimeoutError, ServerConnectionError)):
+        error = _(
+            "Could not reach the SecureDrop server. Please check your \n"
+            "Internet and Tor connection and try again."
+        )
+    elif isinstance(exception, AuthError):
+        error = _(
+            "Those credentials didn't work. Please try again, and \n"
+            "make sure to use a new two-factor code."
+        )
+    else:
+        error = _("That didn't work. Please check everything and try again.")
 
     co.api_sync.stop.assert_called_once_with()
-    mock_gui.show_login_error.assert_called_once_with(
-        error="That didn't work. "
-        "Please check everything and try again.\n"
-        "Make sure to use a new two-factor code."
-    )
+    mock_gui.show_login_error.assert_called_once_with(error=error)
 
 
 def test_Controller_on_authenticate_success(homedir, config, mocker, session_maker, session):
