@@ -23,19 +23,19 @@ semgrep-local:
 
 .PHONY: black
 black: ## Format Python source code with black
-	@black setup.py securedrop_client tests
+	@black ./
 
 .PHONY: check-black
 check-black: ## Check Python source code formatting with black
-	@black --check --diff setup.py securedrop_client tests
+	@black --check --diff ./
 
 .PHONY: isort
 isort: ## Run isort to organize Python imports
-	@isort --recursive setup.py securedrop_client tests
+	@isort --recursive ./
 
 .PHONY: check-isort
 check-isort: ## Check Python import organization with isort
-	@isort --check-only --diff --recursive setup.py securedrop_client tests
+	@isort --check-only --diff --recursive ./
 
 .PHONY: mypy
 mypy: ## Run static type checker
