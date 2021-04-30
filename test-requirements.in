@@ -6,6 +6,6 @@ py>=1.9.0
 pytest
 pytest-cov
 pytest-mock
-semgrep==0.42.0
+semgrep==0.49.0
 typing-extensions  # otherwise introduced unpinned via importlib-metadata
 zipp  # otherwise introduced unpinned via pep517 (via pip-tools)
