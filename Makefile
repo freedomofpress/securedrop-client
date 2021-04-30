@@ -13,7 +13,7 @@ update-pip-requirements: ## Updates all Python requirements files via pip-compil
 	pip-compile --generate-hashes --output-file test-requirements.txt test-requirements.in
 
 .PHONY: check
-check: lint test  ## Run linter and tests
+check: lint semgrep test  ## Run linter and tests
 
 TESTS ?= tests
 .PHONY: test
