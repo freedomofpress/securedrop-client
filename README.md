@@ -279,7 +279,14 @@ An AppArmor profile is available for mandatory access control. When installing s
 
 ## Running tests and checks
 
-In order to run the test suite you should also install the `xvfb` package (to make the `xvfb-run` command available): `apt install xvfb`. You may also need to install the `sqlite3` command: `apt install sqlite3`.
+There are two packages you'll have to install manually in order to run the entire test suite:
+
+`apt install xvfb`
+`apt install sqlite3`
+
+We launch tests via `xvfb-run` on an `xvfb` X server in order to support machines with no display hardware, like we have in CircleCI. Even when running tests on a machine with display hardware, `xvfb` is useful in that it prevents a bunch of windows and dialogs from popping up on your desktop. If you want to run tests without `xfvb` then you can just uninstall it and run thet tests and checks as described below.
+
+NOTE: `xvfb-run` will start and stop `xvfb` for you.
 
 To run all tests and checks, run:
 
