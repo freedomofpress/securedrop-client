@@ -5,9 +5,9 @@ Revises: fecf1191b6f0
 Create Date: 2019-06-24 13:45:47.239212
 
 """
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "bafdcae12f97"
@@ -27,5 +27,5 @@ def upgrade():
 
 
 def downgrade():
-    with op.batch_alter_table('files', schema=None) as batch_op:
-        batch_op.drop_column('original_filename')
+    with op.batch_alter_table("files", schema=None) as batch_op:
+        batch_op.drop_column("original_filename")
