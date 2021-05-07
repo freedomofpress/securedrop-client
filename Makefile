@@ -3,6 +3,14 @@
 .PHONY: all
 all: help
 
+.PHONY: venv
+venv:
+	python3 -m venv .venv
+	## Good idea to upgrade pip and wheel when you create a new virtual environment.
+	## Or you could use the virtualenv command instead.
+	.venv/bin/pip install --upgrade pip wheel
+	.venv/bin/pip install --require-hashes -r "dev-requirements.txt"
+
 .PHONY: bandit
 bandit: ## Run bandit with medium level excluding test-related folders
 	pip install --upgrade pip && \
