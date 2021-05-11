@@ -337,7 +337,13 @@ class Controller(QObject):
         self.show_last_sync_timer.timeout.connect(self.show_last_sync)
 
         # Path to the file containing the timestamp since the last sync with the server
+        # TODO: Remove this code once the sync timestamp is tracked instead in svs.sqlite
         self.last_sync_filepath = os.path.join(home, "sync_flag")
+        if (
+            os.path.exists(self.last_sync_filepath)
+            and oct(os.stat(self.last_sync_filepath).st_mode) != "0o100700"
+        ):
+            os.chmod(self.last_sync_filepath, 0o700)
 
     @property
     def is_authenticated(self) -> bool:

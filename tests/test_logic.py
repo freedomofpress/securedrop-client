@@ -82,11 +82,18 @@ def test_Controller_init(homedir, config, mocker, session_maker):
     """
     mock_gui = mocker.MagicMock()
 
-    co = Controller("http://localhost/", mock_gui, session_maker, homedir)
-    assert co.hostname == "http://localhost/"
-    assert co.gui == mock_gui
-    assert co.session_maker == session_maker
-    assert co.api_threads == {}
+    # Ensure a sync_flag file with insecure perms is updated with the expected perms
+    insecure_sync_flag_path = os.path.join(homedir, "sync_flag")
+    with open(insecure_sync_flag_path, "w"):
+        os.chmod(insecure_sync_flag_path, 0o100644)
+        assert oct(os.stat(insecure_sync_flag_path).st_mode) == "0o100644"  # sanity check
+        co = Controller("http://localhost/", mock_gui, session_maker, homedir)
+        assert co.hostname == "http://localhost/"
+        assert co.gui == mock_gui
+        assert co.session_maker == session_maker
+        assert co.api_threads == {}
+        assert co.last_sync_filepath == insecure_sync_flag_path
+        assert oct(os.stat(co.last_sync_filepath).st_mode) == "0o100700"
 
 
 def test_Controller_setup(homedir, config, mocker, session_maker, session):

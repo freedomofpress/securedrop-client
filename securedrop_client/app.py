@@ -190,6 +190,7 @@ def start_app(args, qt_args) -> None:
     - configure the client (logic) object.
     - ensure the application is setup in the default safe starting state.
     """
+    os.umask(0o077)
     configure_locale_and_language()
     init(args.sdc_home)
     configure_logging(args.sdc_home)
