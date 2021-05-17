@@ -9,7 +9,7 @@ import uuid
 from tempfile import _TemporaryFileWrapper  # type: ignore
 from typing import Dict, Optional
 
-import furl
+import furl  # type: ignore
 import requests
 import werkzeug
 import yaml
@@ -32,14 +32,14 @@ class Req:
         self.method = ""
         self.path_query = ""
         self.body = ""
-        self.headers: Dict[str, str] = {}
+        self.headers = {}  # type: Dict[str, str]
 
 
 class Response:
     def __init__(self, status: int) -> None:
         self.status = status
         self.body = ""
-        self.headers: Dict[str, str] = {}
+        self.headers = {}  # type: Dict[str, str]
         self.version = version.version
 
 
@@ -48,10 +48,10 @@ class Proxy:
         self.read_conf(conf_path)
 
         self.req = req
-        self.res: Optional[Response] = None
+        self.res = None  # type: Optional[Response]
         self.timeout = float(timeout)
 
-        self._prepared_request: Optional[Req] = None
+        self._prepared_request = None  # type: Optional[requests.PreparedRequest]
 
     def on_done(self) -> None:
         print(json.dumps(self.res.__dict__))
@@ -79,12 +79,14 @@ class Proxy:
                 conf_in = yaml.safe_load(fh)
         except yaml.YAMLError:
             self.simple_error(
-                500, "YAML syntax error while reading configuration file {}".format(conf_path),
+                500,
+                "YAML syntax error while reading configuration file {}".format(conf_path),
             )
             self.err_on_done()
         except Exception:
             self.simple_error(
-                500, "Error while opening or reading configuration file {}".format(conf_path),
+                500,
+                "Error while opening or reading configuration file {}".format(conf_path),
             )
             self.err_on_done()
 
@@ -186,7 +188,7 @@ class Proxy:
 
         res = Response(self._presp.status_code)
 
-        res.headers = self._presp.headers
+        res.headers = dict(self._presp.headers)
         res.body = self._presp.content.decode()
 
         self.res = res
@@ -204,7 +206,7 @@ class Proxy:
 
         fh.close()
 
-        res.headers = self._presp.headers
+        res.headers = dict(self._presp.headers)
 
         self.on_save(fh, res)
 
@@ -259,7 +261,8 @@ class Proxy:
             logger.error(e)
             try:
                 self.simple_error(
-                    e.response.status_code, http.HTTPStatus(e.response.status_code).phrase.lower(),
+                    e.response.status_code,
+                    http.HTTPStatus(e.response.status_code).phrase.lower(),
                 )
             except ValueError:
                 # Return a generic error message when the response
