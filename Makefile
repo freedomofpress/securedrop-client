@@ -3,6 +3,14 @@
 .PHONY: all
 all: help
 
+.PHONY: venv
+venv:
+	python3 -m venv .venv
+	## Good idea to upgrade pip and wheel when you create a new virtual environment.
+	## Or you could use the virtualenv command instead.
+	.venv/bin/pip install --upgrade pip wheel
+	.venv/bin/pip install --require-hashes -r "dev-requirements.txt"
+
 .PHONY: bandit
 bandit: ## Run bandit with medium level excluding test-related folders
 	pip install --upgrade pip && \
@@ -20,7 +28,7 @@ safety: ## Runs `safety check` to check python dependencies for vulnerabilities
 		done
 
 .PHONY: lint
-lint: isort black ## Run isort, black and flake8
+lint: isort-check black-check ## Run isort, black and flake8
 	@flake8 securedrop_proxy tests
 
 .PHONY: mypy
@@ -29,15 +37,23 @@ mypy: ## Run mypy static type checker
 
 .PHONY: black
 black: ## Run black for file formatting
-	@black --config ./blackconfig/pyproject.toml --check securedrop_proxy tests
+	@black securedrop_proxy tests
+
+.PHONY: black-check
+black-check: ## Check Python source code formatting with black
+	@black --check --diff securedrop_proxy tests
 
 .PHONY: isort
 isort: ## Run isort for file formatting
-	@isort -c -w 100 securedrop_proxy/*.py tests/*.py --diff
+	@isort securedrop_proxy/*.py tests/*.py
+
+.PHONY: isort-check
+isort-check: ## Check isort for file formatting
+	@isort --check-only --diff securedrop_proxy/*.py tests/*.py
 
 .PHONY: update-pip-requirements
 update-pip-requirements: ## Updates all Python requirements files via pip-compile.
-	pip-compile --allow-unsafe --generate-hashes --output-file dev-requirements.txt dev-requirements.in requirements.in
+	pip-compile --generate-hashes --allow-unsafe --upgrade --output-file dev-requirements.txt dev-requirements.in requirements.in
 	pip-compile --generate-hashes --output-file requirements.txt requirements.in
 
 .PHONY: test
