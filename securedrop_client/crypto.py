@@ -26,7 +26,7 @@ from sqlalchemy.orm import scoped_session
 
 from securedrop_client.config import Config
 from securedrop_client.db import Source
-from securedrop_client.utils import safe_copy, safe_gzip_extract, safe_mkdir
+from securedrop_pathlib import safe_copy, safe_gzip_extract, safe_mkdir
 
 logger = logging.getLogger(__name__)
 

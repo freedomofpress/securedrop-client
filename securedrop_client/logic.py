@@ -58,7 +58,7 @@ from securedrop_client.crypto import GpgHelper
 from securedrop_client.export import Export
 from securedrop_client.queue import ApiJobQueue
 from securedrop_client.sync import ApiSync
-from securedrop_client.utils import check_dir_permissions
+from securedrop_pathlib import check_dir_permissions
 
 logger = logging.getLogger(__name__)
 
