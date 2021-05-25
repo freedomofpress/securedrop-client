@@ -43,7 +43,12 @@ from securedrop_client.api_jobs.downloads import (
     ReplyDownloadJob,
 )
 from securedrop_client.api_jobs.seen import SeenJob
-from securedrop_client.api_jobs.sources import DeleteSourceJob, DeleteSourceJobException
+from securedrop_client.api_jobs.sources import (
+    DeleteConversationJob,
+    DeleteConversationJobException,
+    DeleteSourceJob,
+    DeleteSourceJobException,
+)
 from securedrop_client.api_jobs.updatestar import (
     UpdateStarJob,
     UpdateStarJobError,
@@ -230,6 +235,22 @@ class Controller(QObject):
         str: the source UUID
     """
     source_deleted = pyqtSignal(str)
+
+    """
+    Indicates that a source conversation content deletion request was sent to the server.
+
+    Emits:
+        str: the source UUID
+    """
+    conversation_deleted = pyqtSignal(str)
+
+    """
+    Indicates that a source conversation content deletion attempt failed at the server.
+
+    Emits:
+        str: the source UUID
+    """
+    conversation_deletion_failed = pyqtSignal(str)
 
     """
     This signal indicates that a star update request succeeded.
@@ -970,6 +991,16 @@ class Controller(QObject):
                 self.file_missing.emit(f.source.uuid, f.uuid, str(f))
             self.gui.update_error_status(_("The file download failed. Please try again."))
 
+    def on_delete_conversation_success(self, uuid: str) -> None:
+        logger.info("Conversation %s successfully deleted at server", uuid)
+
+    def on_delete_conversation_failure(self, e: Exception) -> None:
+        if isinstance(e, DeleteConversationJobException):
+            error = _("Failed to delete conversation at server")
+            logger.debug("Failed to delete conversation %s at server", e.source_uuid)
+            self.gui.update_error_status(error)
+            self.conversation_deletion_failed.emit(e.source_uuid)
+
     def on_delete_source_success(self, source_uuid: str) -> None:
         """
         Rely on sync to delete the source locally so we know for sure it was deleted
@@ -998,6 +1029,23 @@ class Controller(QObject):
 
         self.add_job.emit(job)
         self.source_deleted.emit(source.uuid)
+
+    @login_required
+    def delete_conversation(self, source: db.Source):
+        """
+        Deletes the content of a source conversation.
+
+        This method will submit a job to delete the content on the
+        server. If the job succeeds, the next sync will synchronize
+        the server records with the local state. If not, the failure
+        handler will display an error.
+        """
+        job = DeleteConversationJob(source.uuid)
+        job.success_signal.connect(self.on_delete_conversation_success, type=Qt.QueuedConnection)
+        job.failure_signal.connect(self.on_delete_conversation_failure, type=Qt.QueuedConnection)
+
+        self.add_job.emit(job)
+        self.conversation_deleted.emit(source.uuid)
 
     @login_required
     def send_reply(self, source_uuid: str, reply_uuid: str, message: str) -> None:

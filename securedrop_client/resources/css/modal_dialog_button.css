@@ -3,6 +3,17 @@
     color: #fff;
 }
 
+#ModalDialog.dangerous #ModalDialog_button_box QPushButton {
+    border-color: #ff3366;
+    color: #ff3366;
+}
+
+#ModalDialog.dangerous #ModalDialog_button_box QPushButton#ModalDialog_primary_button {
+    background-color: #ff3366;
+    border-color: #ff3366;
+    color: #ffffff;
+}
+
 #ModalDialog_button_box QPushButton#ModalDialog_primary_button::disabled {
     border: 2px solid #c2c4e3;
     background-color: #c2c4e3;
@@ -13,8 +24,6 @@
     background-color: #f1f1f6;
     color: #fff;
     border: 2px solid #f1f1f6;
-    margin: 0px 0px 0px 12px;
+    margin: 0;
     height: 40px;
-    padding-left: 20px;
-    padding-right: 20px;
 }

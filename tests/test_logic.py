@@ -21,7 +21,10 @@ from securedrop_client.api_jobs.downloads import (
     DownloadDecryptionException,
     DownloadException,
 )
-from securedrop_client.api_jobs.sources import DeleteSourceJobException
+from securedrop_client.api_jobs.sources import (
+    DeleteConversationJobException,
+    DeleteSourceJobException,
+)
 from securedrop_client.api_jobs.updatestar import UpdateStarJobError, UpdateStarJobTimeoutError
 from securedrop_client.api_jobs.uploads import SendReplyJobError, SendReplyJobTimeoutError
 from securedrop_client.logic import TIME_BETWEEN_SHOWING_LAST_SYNC_MS, APICallRunner, Controller
@@ -1826,6 +1829,78 @@ def test_Controller_delete_source(homedir, config, mocker, session_maker, sessio
     )
     mock_failure_signal.connect.assert_called_once_with(
         co.on_delete_source_failure, type=Qt.QueuedConnection
+    )
+
+
+def test_Controller_on_delete_conversation_success(mocker, homedir):
+    mocker.patch("securedrop_client.logic.logger.isEnabledFor", return_value=logging.DEBUG)
+    info_logger = mocker.patch("securedrop_client.logic.logger.info")
+
+    co = Controller("http://localhost", mocker.MagicMock(), mocker.MagicMock(), homedir)
+    co.on_delete_conversation_success("uuid-blah")
+    info_logger.assert_called_once_with(
+        "Conversation %s successfully deleted at server", "uuid-blah"
+    )
+
+
+def test_Controller_on_delete_conversation_failure(homedir, config, mocker, session_maker, session):
+    mock_gui = mocker.MagicMock()
+    debug_logger = mocker.patch("securedrop_client.logic.logger.debug")
+
+    co = Controller("http://localhost", mock_gui, session_maker, homedir)
+    co.on_delete_conversation_failure(DeleteConversationJobException("weow", "uuid"))
+    debug_logger.assert_called_once_with("Failed to delete conversation %s at server", "uuid")
+    co.gui.update_error_status.assert_called_with("Failed to delete conversation at server")
+
+
+def test_Controller_delete_conversation_not_logged_in(homedir, config, mocker, session_maker):
+    """
+    Deleting a conversation when not logged in should cause an error.
+    """
+    mock_gui = mocker.MagicMock()
+    co = Controller("http://localhost", mock_gui, session_maker, homedir)
+    source_db_object = mocker.MagicMock()
+    co.on_action_requiring_login = mocker.MagicMock()
+    co.api = None
+    co.delete_conversation(source_db_object)
+    co.on_action_requiring_login.assert_called_with()
+
+
+def test_Controller_delete_conversation(homedir, config, mocker, session_maker, session):
+    """
+    Check that a DeleteConversationJob is submitted when delete_conversation is called.
+    """
+    mock_gui = mocker.MagicMock()
+    co = Controller("http://localhost", mock_gui, session_maker, homedir)
+    co.call_api = mocker.MagicMock()
+    co.api = mocker.MagicMock()
+    co.conversation_deleted = mocker.MagicMock()
+    co.add_job = mocker.MagicMock()
+    co.add_job.emit = mocker.MagicMock()
+
+    mock_success_signal = mocker.MagicMock()
+    mock_failure_signal = mocker.MagicMock()
+    mock_job = mocker.MagicMock(
+        success_signal=mock_success_signal, failure_signal=mock_failure_signal
+    )
+    mock_job_cls = mocker.patch(
+        "securedrop_client.logic.DeleteConversationJob", return_value=mock_job
+    )
+
+    source = factory.Source()
+    session.add(source)
+    session.commit()
+
+    co.delete_conversation(source)
+
+    co.conversation_deleted.emit.assert_called_once_with(source.uuid)
+    mock_job_cls.assert_called_once_with(source.uuid)
+    co.add_job.emit.assert_called_once_with(mock_job)
+    mock_success_signal.connect.assert_called_once_with(
+        co.on_delete_conversation_success, type=Qt.QueuedConnection
+    )
+    mock_failure_signal.connect.assert_called_once_with(
+        co.on_delete_conversation_failure, type=Qt.QueuedConnection
     )
 
 
