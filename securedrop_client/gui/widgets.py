@@ -20,6 +20,7 @@ import html
 import logging
 import sys
 from gettext import gettext as _
+from gettext import ngettext
 from typing import Dict, List, Optional, Union  # noqa: F401
 from uuid import uuid4
 
@@ -51,7 +52,6 @@ from PyQt5.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QMenu,
-    QMessageBox,
     QPlainTextEdit,
     QPushButton,
     QScrollArea,
@@ -651,6 +651,27 @@ class MainView(QWidget):
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.debug(e)
 
+    def refresh_source_conversations(self) -> None:
+        deleting_conversations = [
+            c for c in self.source_conversations.values() if c.deleting_conversation
+        ]
+        for conversation_wrapper in deleting_conversations:
+            conversation_wrapper.end_conversation_deletion()
+
+        source = self.source_list.get_selected_source()
+        if not source:
+            return
+
+        self.on_source_changed()
+        conversation_wrapper = self.source_conversations[source.uuid]
+        source_widget = self.source_list.get_source_widget(source.uuid)
+        if source_widget:
+            source_widget.deletion_indicator.stop()
+        try:
+            conversation_wrapper.conversation_view.update_conversation(source.collection)
+        except sqlalchemy.exc.InvalidRequestError as e:
+            logger.debug("Error refreshing source conversations: %s", e)
+
     def delete_conversation(self, source_uuid: str) -> None:
         """
         When we delete a source, we should delete its SourceConversationWrapper,
@@ -998,6 +1019,125 @@ class SourcePreview(SecureQLabel):
         self.refresh_preview_text()
 
 
+class ConversationDeletionIndicator(QWidget):
+    """
+    Shown when a source's conversation content is being deleted.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+        self.hide()
+
+        self.setObjectName("ConversationDeletionIndicator")
+
+        palette = QPalette()
+        palette.setBrush(QPalette.Background, QBrush(QColor("#9495b9")))
+        palette.setBrush(QPalette.Foreground, QBrush(QColor("#ffffff")))
+        self.setPalette(palette)
+        self.setAutoFillBackground(True)
+
+        deletion_message = QLabel(_("Deleting files and messages..."))
+        deletion_message.setWordWrap(False)
+
+        self.animation = load_movie("loading-cubes.gif")
+        self.animation.setScaledSize(QSize(50, 50))
+
+        spinner = QLabel()
+        spinner.setMovie(self.animation)
+
+        layout = QGridLayout()
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(0)
+        layout.addWidget(deletion_message, 0, 0, Qt.AlignRight | Qt.AlignVCenter)
+        layout.addWidget(spinner, 0, 1, Qt.AlignLeft | Qt.AlignVCenter)
+        layout.setColumnStretch(0, 9)
+        layout.setColumnStretch(1, 7)
+
+        self.setLayout(layout)
+
+    def start(self):
+        self.animation.start()
+        self.show()
+
+    def stop(self):
+        self.animation.stop()
+        self.hide()
+
+
+class SourceDeletionIndicator(QWidget):
+    """
+    Shown when a source is being deleted.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+        self.hide()
+
+        self.setObjectName("SourceDeletionIndicator")
+
+        palette = QPalette()
+        palette.setBrush(QPalette.Background, QBrush(QColor("#9495b9")))
+        palette.setBrush(QPalette.Foreground, QBrush(QColor("#ffffff")))
+        self.setPalette(palette)
+        self.setAutoFillBackground(True)
+
+        self.deletion_message = QLabel(_("Deleting source account..."))
+        self.deletion_message.setWordWrap(False)
+
+        self.animation = load_movie("loading-cubes.gif")
+        self.animation.setScaledSize(QSize(50, 50))
+
+        spinner = QLabel()
+        spinner.setMovie(self.animation)
+
+        layout = QGridLayout()
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(0)
+
+        layout.addWidget(self.deletion_message, 0, 0, Qt.AlignRight | Qt.AlignVCenter)
+        layout.addWidget(spinner, 0, 1, Qt.AlignLeft | Qt.AlignVCenter)
+        layout.setColumnStretch(0, 9)
+        layout.setColumnStretch(1, 7)
+
+        self.setLayout(layout)
+
+    def start(self):
+        self.animation.start()
+        self.show()
+
+    def stop(self):
+        self.animation.stop()
+        self.hide()
+
+
+class SourceWidgetDeletionIndicator(QLabel):
+    """
+    Shown in the source list when a source's conversation content is being deleted.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+        self.hide()
+
+        self.setObjectName("SourceWidgetDeletionIndicator")
+
+        self.animation = load_movie("loading-bar.gif")
+        self.animation.setScaledSize(QSize(200, 11))
+
+        self.setMovie(self.animation)
+
+    def start(self):
+        self.animation.start()
+        self.show()
+
+    def stop(self):
+        self.animation.stop()
+        self.hide()
+
+
 class SourceWidget(QWidget):
     """
     Used to display summary information about a source in the list view.
@@ -1015,6 +1155,8 @@ class SourceWidget(QWidget):
     SOURCE_PREVIEW_CSS = load_css("source_preview.css")
     SOURCE_TIMESTAMP_CSS = load_css("source_timestamp.css")
 
+    deleting = False
+
     def __init__(
         self,
         controller: Controller,
@@ -1025,6 +1167,8 @@ class SourceWidget(QWidget):
         super().__init__()
 
         self.controller = controller
+        self.controller.conversation_deleted.connect(self._on_conversation_deleted)
+        self.controller.conversation_deletion_failed.connect(self._on_conversation_deletion_failed)
         self.controller.source_deleted.connect(self._on_source_deleted)
         self.controller.source_deletion_failed.connect(self._on_source_deletion_failed)
         self.controller.authentication_state.connect(self._on_authentication_changed)
@@ -1048,13 +1192,19 @@ class SourceWidget(QWidget):
         self.name.setObjectName("SourceWidget_name")
         self.preview = SourcePreview()
         self.preview.setObjectName("SourceWidget_preview")
-        self.waiting_delete_confirmation = QLabel("Deletion in progress")
-        self.waiting_delete_confirmation.setObjectName("SourceWidget_source_deleted")
-        self.waiting_delete_confirmation.hide()
+        self.deletion_indicator = SourceWidgetDeletionIndicator()
+
         self.paperclip = SvgLabel("paperclip.svg", QSize(11, 17))  # Set to size provided in the svg
         self.paperclip.setObjectName("SourceWidget_paperclip")
         self.paperclip.setFixedSize(QSize(11, 17))
         self.paperclip.setSizePolicy(retain_space)
+
+        self.paperclip_disabled = SvgLabel("paperclip-disabled.svg", QSize(11, 17))
+        self.paperclip_disabled.setObjectName("SourceWidget_paperclip")
+        self.paperclip_disabled.setFixedSize(QSize(11, 17))
+        self.paperclip_disabled.setSizePolicy(retain_space)
+        self.paperclip_disabled.hide()
+
         self.timestamp = QLabel()
         self.timestamp.setSizePolicy(retain_space)
         self.timestamp.setFixedWidth(self.TIMESTAMP_WIDTH)
@@ -1082,10 +1232,9 @@ class SourceWidget(QWidget):
         source_widget_layout.addWidget(self.spacer, 0, 1, 1, 1)
         source_widget_layout.addWidget(self.name, 0, 2, 1, 1)
         source_widget_layout.addWidget(self.paperclip, 0, 3, 1, 1)
+        source_widget_layout.addWidget(self.paperclip_disabled, 0, 3, 1, 1)
         source_widget_layout.addWidget(self.preview, 1, 2, 1, 1, alignment=Qt.AlignLeft)
-        source_widget_layout.addWidget(
-            self.waiting_delete_confirmation, 1, 2, 1, 1, alignment=Qt.AlignLeft
-        )
+        source_widget_layout.addWidget(self.deletion_indicator, 1, 2, 1, 1)
         source_widget_layout.addWidget(self.timestamp, 1, 3, 1, 1)
         source_widget_layout.addItem(QSpacerItem(self.BOTTOM_SPACER, self.BOTTOM_SPACER))
         self.source_widget.setLayout(source_widget_layout)
@@ -1116,7 +1265,16 @@ class SourceWidget(QWidget):
 
             if self.source.document_count == 0:
                 self.paperclip.hide()
+                self.paperclip_disabled.hide()
+
+            if not self.source.server_collection and self.source.interaction_count > 0:
+                self.preview.setProperty("class", "conversation_deleted")
+            else:
+                self.preview.setProperty("class", "")
+
             self.star.update(self.source.is_starred)
+
+            self.end_deletion()
 
             # When not authenticated we always show the source as having been seen
             self.seen = True if not self.controller.is_authenticated else self.source.seen
@@ -1132,26 +1290,26 @@ class SourceWidget(QWidget):
         if source_uuid != self.source_uuid:
             return
 
-        if not self.source.server_collection:
-            return
+        if self.deleting:
+            content = ""
+        elif not self.source.server_collection:
+            if self.source.interaction_count > 0:
+                # The server only ever increases the interaction
+                # count, so if it's non-zero but the source collection
+                # is empty, we know the conversation has been deleted.
+                content = _("\u2014 All files and messages deleted for this source \u2014")
+            else:
+                content = ""
+        else:
+            last_activity = self.source.server_collection[-1]
+            if collection_uuid and collection_uuid != last_activity.uuid:
+                return
 
-        last_activity = self.source.server_collection[-1]
-        if collection_uuid and collection_uuid != last_activity.uuid:
-            return
-
-        if not content:
-            content = str(last_activity)
+            if not content:
+                content = str(last_activity)
 
         self.preview.setText(content)
         self.preview.adjust_preview(self.width())
-
-    def delete_source(self, event):
-        if self.controller.api is None:
-            self.controller.on_action_requiring_login()
-            return
-        else:
-            messagebox = DeleteSourceMessageBox(self.source, self.controller)
-            messagebox.launch()
 
     def update_styles(self) -> None:
         if self.seen:
@@ -1205,22 +1363,63 @@ class SourceWidget(QWidget):
             self.update_styles()
 
     @pyqtSlot(str)
+    def _on_conversation_deleted(self, source_uuid: str):
+        if self.source_uuid == source_uuid:
+            self.start_conversation_deletion()
+
+    @pyqtSlot(str)
+    def _on_conversation_deletion_failed(self, source_uuid: str):
+        if self.source_uuid == source_uuid:
+            self.end_conversation_deletion()
+
+    @pyqtSlot(str)
     def _on_source_deleted(self, source_uuid: str):
         if self.source_uuid == source_uuid:
-            self.star.hide()
-            self.paperclip.hide()
-            self.preview.hide()
-            self.timestamp.hide()
-            self.waiting_delete_confirmation.show()
+            self.start_account_deletion()
 
     @pyqtSlot(str)
     def _on_source_deletion_failed(self, source_uuid: str):
         if self.source_uuid == source_uuid:
-            self.waiting_delete_confirmation.hide()
-            self.star.show()
+            self.end_account_deletion()
+
+    def end_account_deletion(self):
+        self.end_deletion()
+        self.star.show()
+        self.name.setProperty("class", "")
+        self.timestamp.setProperty("class", "")
+        self.update_styles()
+        self.deleting = False
+
+    def end_conversation_deletion(self):
+        self.end_deletion()
+        self.deleting_conversation = False
+
+    def end_deletion(self):
+        self.deletion_indicator.stop()
+        self.preview.show()
+        self.timestamp.show()
+        self.paperclip_disabled.hide()
+        if self.source.document_count != 0:
             self.paperclip.show()
-            self.preview.show()
-            self.timestamp.show()
+
+    def start_account_deletion(self):
+        self.deleting = True
+        self.start_deletion()
+        self.name.setProperty("class", "deleting")
+        self.timestamp.setProperty("class", "deleting")
+        self.star.hide()
+        self.update_styles()
+
+    def start_conversation_deletion(self):
+        self.deleting_conversation = True
+        self.start_deletion()
+
+    def start_deletion(self):
+        self.preview.hide()
+        self.paperclip.hide()
+        if self.source.document_count != 0:
+            self.paperclip_disabled.show()
+        self.deletion_indicator.start()
 
 
 class StarToggleButton(SvgToggleButton):
@@ -1367,55 +1566,6 @@ class StarToggleButton(SvgToggleButton):
         """
         if self.source_uuid == source_uuid:
             self.pending_count = self.pending_count - 1
-
-
-class DeleteSourceMessageBox:
-    """Use this to display operation details and confirm user choice."""
-
-    def __init__(self, source, controller):
-        self.source = source
-        self.source_uuid = source.uuid
-        self.controller = controller
-
-    def launch(self):
-        """It will launch the message box.
-
-        The Message box will warns the user regarding the severity of the
-        operation. It will confirm the desire to delete the source. On positive
-        answer, it will delete the record of source both from SecureDrop server
-        and local state.
-        """
-        message = self._construct_message(self.source)
-        reply = QMessageBox.question(
-            None, "", _(message), QMessageBox.Cancel | QMessageBox.Yes, QMessageBox.Cancel
-        )
-
-        if reply == QMessageBox.Yes:
-            logger.debug(f"Deleting source {self.source_uuid}")
-            self.controller.delete_source(self.source)
-
-    def _construct_message(self, source: Source) -> str:
-        files = 0
-        messages = 0
-        replies = 0
-        for submission in source.collection:
-            if isinstance(submission, Message):
-                messages += 1
-            if isinstance(submission, Reply):
-                replies += 1
-            elif isinstance(submission, File):
-                files += 1
-
-        message_tuple = (
-            "<big>Deleting the Source account for",
-            "<b>{}</b> will also".format(source.journalist_designation),
-            "delete {} files, {} replies, and {} messages.</big>".format(files, replies, messages),
-            "<br>",
-            "<small>This Source will no longer be able to correspond",
-            "through the log-in tied to this account.</small>",
-        )
-        message = " ".join(message_tuple)
-        return message
 
 
 class LoginOfflineLink(QLabel):
@@ -2437,39 +2587,22 @@ class FileWidget(QWidget):
 
 class ModalDialog(QDialog):
 
-    CONTINUE_BUTTON_CSS = load_css("modal_dialog_button.css")
+    BUTTON_CSS = load_css("modal_dialog_button.css")
     ERROR_DETAILS_CSS = load_css("modal_dialog_error_details.css")
 
     MARGIN = 40
     NO_MARGIN = 0
 
-    def __init__(self):
+    def __init__(self, show_header: bool = True, dangerous: bool = False):
         parent = QApplication.activeWindow()
         super().__init__(parent)
         self.setObjectName("ModalDialog")
         self.setModal(True)
 
-        # Header for icon and task title
-        header_container = QWidget()
-        header_container_layout = QHBoxLayout()
-        header_container.setLayout(header_container_layout)
-        self.header_icon = SvgLabel("blank.svg", svg_size=QSize(64, 64))
-        self.header_icon.setObjectName("ModalDialog_header_icon")
-        self.header_spinner = QPixmap()
-        self.header_spinner_label = QLabel()
-        self.header_spinner_label.setObjectName("ModalDialog_header_spinner")
-        self.header_spinner_label.setMinimumSize(64, 64)
-        self.header_spinner_label.setVisible(False)
-        self.header_spinner_label.setPixmap(self.header_spinner)
-        self.header = QLabel()
-        self.header.setObjectName("ModalDialog_header")
-        header_container_layout.addWidget(self.header_icon)
-        header_container_layout.addWidget(self.header_spinner_label)
-        header_container_layout.addWidget(self.header, alignment=Qt.AlignCenter)
-        header_container_layout.addStretch()
-
-        self.header_line = QWidget()
-        self.header_line.setObjectName("ModalDialog_header_line")
+        self.show_header = show_header
+        self.dangerous = dangerous
+        if self.dangerous:
+            self.setProperty("class", "dangerous")
 
         # Widget for displaying error messages
         self.error_details = QLabel()
@@ -2485,39 +2618,46 @@ class ModalDialog(QDialog):
         self.body.setScaledContents(True)
         body_container = QWidget()
         self.body_layout = QVBoxLayout()
-        self.body_layout.setContentsMargins(self.MARGIN, self.NO_MARGIN, self.MARGIN, self.MARGIN)
+        self.body_layout.setContentsMargins(
+            self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN
+        )
         body_container.setLayout(self.body_layout)
         self.body_layout.addWidget(self.body)
 
-        # Buttons to continue and cancel
-        window_buttons = QWidget()
-        window_buttons.setObjectName("ModalDialog_window_buttons")
-        button_layout = QVBoxLayout()
-        window_buttons.setLayout(button_layout)
-        self.cancel_button = QPushButton(_("CANCEL"))
-        self.cancel_button.clicked.connect(self.close)
-        self.cancel_button.setAutoDefault(False)
-        self.continue_button = QPushButton(_("CONTINUE"))
-        self.continue_button.setObjectName("ModalDialog_primary_button")
-        self.continue_button.setStyleSheet(self.CONTINUE_BUTTON_CSS)
-        self.continue_button.setDefault(True)
-        self.continue_button.setIconSize(QSize(21, 21))
-        button_box = QDialogButtonBox(Qt.Horizontal)
-        button_box.setObjectName("ModalDialog_button_box")
-        button_box.addButton(self.cancel_button, QDialogButtonBox.ActionRole)
-        button_box.addButton(self.continue_button, QDialogButtonBox.ActionRole)
-        button_layout.addWidget(button_box, alignment=Qt.AlignRight)
-        button_layout.setContentsMargins(self.NO_MARGIN, self.NO_MARGIN, self.MARGIN, self.MARGIN)
-
         # Main widget layout
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(self.MARGIN, self.MARGIN, self.MARGIN, self.MARGIN)
         self.setLayout(layout)
-        layout.addWidget(header_container)
-        layout.addWidget(self.header_line)
+
+        if self.show_header:
+            # Header for icon and task title
+            header_container = QWidget()
+            header_container_layout = QHBoxLayout()
+            header_container.setLayout(header_container_layout)
+            self.header_icon = SvgLabel("blank.svg", svg_size=QSize(64, 64))
+            self.header_icon.setObjectName("ModalDialog_header_icon")
+            self.header_spinner = QPixmap()
+            self.header_spinner_label = QLabel()
+            self.header_spinner_label.setObjectName("ModalDialog_header_spinner")
+            self.header_spinner_label.setMinimumSize(64, 64)
+            self.header_spinner_label.setVisible(False)
+            self.header_spinner_label.setPixmap(self.header_spinner)
+            self.header = QLabel()
+            self.header.setObjectName("ModalDialog_header")
+            header_container_layout.addWidget(self.header_icon)
+            header_container_layout.addWidget(self.header_spinner_label)
+            header_container_layout.addWidget(self.header, alignment=Qt.AlignCenter)
+            header_container_layout.addStretch()
+
+            self.header_line = QWidget()
+            self.header_line.setObjectName("ModalDialog_header_line")
+
+            layout.addWidget(header_container)
+            layout.addWidget(self.header_line)
+
         layout.addWidget(self.error_details)
         layout.addWidget(body_container)
-        layout.addStretch()
-        layout.addWidget(window_buttons)
+        layout.addWidget(self.configure_buttons())
 
         # Activestate animation.
         self.button_animation = load_movie("activestate-wide.gif")
@@ -2528,6 +2668,51 @@ class ModalDialog(QDialog):
         self.header_animation = load_movie("header_animation.gif")
         self.header_animation.setScaledSize(QSize(64, 64))
         self.header_animation.frameChanged.connect(self.animate_header)
+
+    def configure_buttons(self):
+        # Buttons to continue and cancel
+        window_buttons = QWidget()
+        window_buttons.setObjectName("ModalDialog_window_buttons")
+
+        button_layout = QVBoxLayout()
+        window_buttons.setLayout(button_layout)
+
+        self.cancel_button = QPushButton(_("CANCEL"))
+        self.cancel_button.setStyleSheet(self.BUTTON_CSS)
+        self.cancel_button.clicked.connect(self.close)
+
+        self.continue_button = QPushButton(_("CONTINUE"))
+        self.continue_button.setStyleSheet(self.BUTTON_CSS)
+        self.continue_button.setIconSize(QSize(21, 21))
+
+        button_box = QDialogButtonBox(Qt.Horizontal)
+        button_box.setObjectName("ModalDialog_button_box")
+
+        if self.dangerous:
+            self.cancel_button.setAutoDefault(True)
+            self.continue_button.setDefault(False)
+            self.cancel_button.setObjectName("ModalDialog_primary_button")
+            self.continue_button.setObjectName("ModalDialog_cancel_button")
+        else:
+            self.cancel_button.setAutoDefault(False)
+            self.continue_button.setDefault(True)
+            self.cancel_button.setObjectName("ModalDialog_cancel_button")
+            self.continue_button.setObjectName("ModalDialog_primary_button")
+
+        button_box.addButton(self.cancel_button, QDialogButtonBox.ActionRole)
+        button_box.addButton(self.continue_button, QDialogButtonBox.ActionRole)
+
+        self.confirmation_label = QLabel()
+        self.confirmation_label.setObjectName("ModalDialogConfirmation")
+        button_layout.addWidget(self.confirmation_label, 0, Qt.AlignLeft | Qt.AlignBottom)
+
+        button_layout.addWidget(button_box, alignment=Qt.AlignLeft)
+
+        button_layout.setContentsMargins(
+            self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN
+        )
+
+        return window_buttons
 
     def keyPressEvent(self, event: QKeyEvent):
         if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
@@ -2551,7 +2736,7 @@ class ModalDialog(QDialog):
         # Reset widget stylesheets
         self.continue_button.setStyleSheet("")
         self.continue_button.setObjectName("ModalDialog_primary_button_active")
-        self.continue_button.setStyleSheet(self.CONTINUE_BUTTON_CSS)
+        self.continue_button.setStyleSheet(self.BUTTON_CSS)
         self.error_details.setStyleSheet("")
         self.error_details.setObjectName("ModalDialog_error_details_active")
         self.error_details.setStyleSheet(self.ERROR_DETAILS_CSS)
@@ -2568,7 +2753,7 @@ class ModalDialog(QDialog):
         # Reset widget stylesheets
         self.continue_button.setStyleSheet("")
         self.continue_button.setObjectName("ModalDialog_primary_button")
-        self.continue_button.setStyleSheet(self.CONTINUE_BUTTON_CSS)
+        self.continue_button.setStyleSheet(self.BUTTON_CSS)
         self.error_details.setStyleSheet("")
         self.error_details.setObjectName("ModalDialog_error_details")
         self.error_details.setStyleSheet(self.ERROR_DETAILS_CSS)
@@ -2956,6 +3141,125 @@ class ExportDialog(ModalDialog):
                 self._show_generic_error_message()
 
 
+class DeleteSourceDialog(ModalDialog):
+    """Used to confirm deletion of source accounts."""
+
+    def __init__(self, source, controller):
+        super().__init__(show_header=False, dangerous=True)
+
+        self.source = source
+        self.controller = controller
+
+        self.body.setText(self.make_body_text())
+
+        self.continue_button.setText(_("YES, DELETE ENTIRE SOURCE ACCOUNT"))
+        self.continue_button.clicked.connect(self.delete_source)
+
+        self.confirmation_label.setText(_("Are you sure this is what you want?"))
+
+        self.adjustSize()
+
+    def make_body_text(self) -> str:
+        message_tuple = (
+            "<style>",
+            "p {{white-space: nowrap;}}",
+            "</style>",
+            "<p><b>",
+            _("When the entire account for a source is deleted:"),
+            "</b></p>",
+            "<p><b>\u2219</b>&nbsp;",
+            _("The source will not be able to log in with their codename again."),
+            "</p>",
+            "<p><b>\u2219</b>&nbsp;",
+            _("Your organization will not be able to send them replies."),
+            "</p>",
+            "<p><b>\u2219</b>&nbsp;",
+            _("All files and messages from that source will also be destroyed."),
+            "</p>",
+            "<p>&nbsp;</p>",
+        )
+
+        return "".join(message_tuple).format(
+            source="<b>{}</b>".format(self.source.journalist_designation)
+        )
+
+    @pyqtSlot()
+    def delete_source(self):
+        self.controller.delete_source(self.source)
+        self.close()
+
+
+class DeleteConversationDialog(ModalDialog):
+    """
+    Shown to confirm deletion of all content in a source conversation.
+    """
+
+    def __init__(self, source, controller):
+        super().__init__(show_header=False, dangerous=False)
+
+        self.source = source
+        self.controller = controller
+
+        self.body.setText(self.make_body_text())
+
+        self.continue_button.setText(_("YES, DELETE FILES AND MESSAGES"))
+        self.continue_button.clicked.connect(self.delete_conversation)
+
+        self.adjustSize()
+
+    def make_body_text(self) -> str:
+        files = 0
+        messages = 0
+        replies = 0
+        for submission in self.source.collection:
+            if isinstance(submission, Message):
+                messages += 1
+            if isinstance(submission, Reply):
+                replies += 1
+            elif isinstance(submission, File):
+                files += 1
+
+        message_tuple = (
+            "<style>li {{line-height: 150%;}}</li></style>",
+            "<p>",
+            _(
+                "You would like to delete {files_to_delete}, {replies_to_delete}, "
+                "{messages_to_delete} from the source account for {source}?"
+            ),
+            "</p>",
+            "<p>",
+            _(
+                "Preserving the account will retain its metadata, and the ability for {source} "
+                "to log in to your SecureDrop again."
+            ),
+            "</p>",
+        )
+
+        files_to_delete = ngettext("one file", "{file_count} files", files).format(file_count=files)
+
+        replies_to_delete = ngettext("one reply", "{reply_count} replies", replies).format(
+            reply_count=replies
+        )
+
+        messages_to_delete = ngettext("one message", "{message_count} messages", messages).format(
+            message_count=messages
+        )
+
+        source = "<b>{}</b>".format(self.source.journalist_designation)
+
+        return "".join(message_tuple).format(
+            files_to_delete=files_to_delete,
+            messages_to_delete=messages_to_delete,
+            replies_to_delete=replies_to_delete,
+            source=source,
+        )
+
+    @pyqtSlot()
+    def delete_conversation(self):
+        self.controller.delete_conversation(self.source)
+        self.close()
+
+
 class ConversationScrollArea(QScrollArea):
 
     MARGIN_LEFT = 38
@@ -3012,6 +3316,77 @@ class ConversationScrollArea(QScrollArea):
         self.conversation_layout.removeWidget(widget)
 
 
+class DeletedConversationItemsMarker(QWidget):
+    """
+    Shown when earlier conversation items have been deleted.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+        self.hide()
+
+        self.setObjectName("DeletedConversationItemsMarker")
+
+        left_tear = SvgLabel("tear-left.svg", svg_size=QSize(196, 15))
+        left_tear.setMinimumWidth(196)
+        left_tear.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        deletion_message = QLabel(_("Earlier files and messages deleted."))
+        deletion_message.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        deletion_message.setWordWrap(False)
+        deletion_message.setObjectName("DeletedConversationItemsMessage")
+
+        right_tear = SvgLabel("tear-right.svg", svg_size=QSize(196, 15))
+        right_tear.setMinimumWidth(196)
+        right_tear.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        layout = QGridLayout()
+        layout.setContentsMargins(0, 30, 0, 0)
+
+        layout.addWidget(left_tear, 0, 0, Qt.AlignRight)
+        layout.addWidget(deletion_message, 0, 1, Qt.AlignCenter)
+        layout.addWidget(right_tear, 0, 2, Qt.AlignLeft)
+
+        layout.setColumnStretch(0, 1)
+        layout.setColumnStretch(1, 0)
+        layout.setColumnStretch(2, 1)
+
+        self.setLayout(layout)
+
+
+class DeletedConversationMarker(QWidget):
+    """
+    Shown when all content in a conversation has been deleted.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+        self.hide()
+
+        self.setObjectName("DeletedConversationMarker")
+
+        deletion_message = QLabel(_("Files and messages deleted\n for this source"))
+        deletion_message.setWordWrap(True)
+        deletion_message.setAlignment(Qt.AlignCenter)
+        deletion_message.setObjectName("DeletedConversationMessage")
+
+        tear = SvgLabel("tear-big.svg", svg_size=QSize(576, 8))
+        tear.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(20)
+
+        layout.addStretch()
+        layout.addWidget(deletion_message)
+        layout.addWidget(tear)
+        layout.addStretch()
+
+        self.setLayout(layout)
+
+
 class ConversationView(QWidget):
     """
     Renders a conversation.
@@ -3025,7 +3400,6 @@ class ConversationView(QWidget):
         super().__init__()
 
         self.source = source_db_object
-        self.source_uuid = self.source.uuid
         self.controller = controller
 
         # To hold currently displayed messages.
@@ -3041,6 +3415,11 @@ class ConversationView(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
+        self.deleted_conversation_items_marker = DeletedConversationItemsMarker()
+        self.deleted_conversation_marker = DeletedConversationMarker()
+        main_layout.addWidget(self.deleted_conversation_items_marker)
+        main_layout.addWidget(self.deleted_conversation_marker)
+
         self.scroll = ConversationScrollArea()
 
         # Flag to show if the current user has sent a reply. See issue #61.
@@ -3052,7 +3431,21 @@ class ConversationView(QWidget):
 
         main_layout.addWidget(self.scroll)
 
-        self.update_conversation(self.source.collection)
+        try:
+            self.update_conversation(self.source.collection)
+        except sqlalchemy.exc.InvalidRequestError as e:
+            logger.debug("Error initializing ConversationView: %s", e)
+
+    def update_deletion_markers(self, collection):
+        if collection:
+            self.scroll.show()
+            if collection[0].file_counter > 1:
+                self.deleted_conversation_marker.hide()
+                self.deleted_conversation_items_marker.show()
+        elif self.source.interaction_count > 0:
+            self.deleted_conversation_items_marker.hide()
+            self.scroll.hide()
+            self.deleted_conversation_marker.show()
 
     def update_conversation(self, collection: list) -> None:
         """
@@ -3125,6 +3518,9 @@ class ConversationView(QWidget):
             self.current_messages.pop(item_widget.uuid)
             item_widget.deleteLater()
             self.scroll.remove_widget_from_conversation(item_widget)
+
+        self.update_deletion_markers(collection)
+        self.conversation_updated.emit()
 
     def add_file(self, file: File, index):
         """
@@ -3238,6 +3634,15 @@ class ConversationView(QWidget):
         self.reply_flag = True
         if source_uuid == self.source.uuid:
             self.add_reply_from_reply_box(reply_uuid, reply_text)
+            try:
+                self.update_deletion_markers(self.source.collection.copy())
+            except sqlalchemy.exc.InvalidRequestError as e:
+                # The only way we should get here is if
+                # source.collection can't be populated, presumably
+                # because it had never been loaded, and the source and
+                # its conversation items were deleted between adding
+                # the reply and updating deletion markers.
+                logger.debug("Error in ConversationView.on_reply_sent: %s", e)
 
 
 class SourceConversationWrapper(QWidget):
@@ -3246,12 +3651,20 @@ class SourceConversationWrapper(QWidget):
     per-source resources.
     """
 
+    deleting_account = False
+    deleting_conversation = False
+
     def __init__(self, source: Source, controller: Controller) -> None:
         super().__init__()
 
+        self.setObjectName("SourceConversationWrapper")
+
+        self.source = source
         self.source_uuid = source.uuid
-        controller.source_deleted.connect(self._on_source_deleted)
-        controller.source_deletion_failed.connect(self._on_source_deletion_failed)
+        controller.conversation_deleted.connect(self.on_conversation_deleted)
+        controller.conversation_deletion_failed.connect(self.on_conversation_deletion_failed)
+        controller.source_deleted.connect(self.on_source_deleted)
+        controller.source_deletion_failed.connect(self.on_source_deletion_failed)
 
         # Set layout
         layout = QVBoxLayout()
@@ -3265,37 +3678,98 @@ class SourceConversationWrapper(QWidget):
         self.conversation_title_bar = SourceProfileShortWidget(source, controller)
         self.conversation_view = ConversationView(source, controller)
         self.reply_box = ReplyBoxWidget(source, controller)
-        self.waiting_delete_confirmation = QLabel("Deleting...")
-        self.waiting_delete_confirmation.setObjectName("SourceConversationWrapper_source_deleted")
-        self.waiting_delete_confirmation.hide()
+        self.deletion_indicator = SourceDeletionIndicator()
+        self.conversation_deletion_indicator = ConversationDeletionIndicator()
 
         # Add widgets
         layout.addWidget(self.conversation_title_bar)
         layout.addWidget(self.conversation_view)
+        layout.addWidget(self.deletion_indicator)
+        layout.addWidget(self.conversation_deletion_indicator)
         layout.addWidget(self.reply_box)
-        layout.addWidget(self.waiting_delete_confirmation, alignment=Qt.AlignCenter)
 
         # Connect reply_box to conversation_view
         self.reply_box.reply_sent.connect(self.conversation_view.on_reply_sent)
-        self.conversation_view.conversation_updated.connect(
-            self.conversation_title_bar.update_timestamp
-        )
+        self.conversation_view.conversation_updated.connect(self.on_conversation_updated)
 
     @pyqtSlot(str)
-    def _on_source_deleted(self, source_uuid: str):
+    def on_conversation_deleted(self, source_uuid: str):
         if self.source_uuid == source_uuid:
-            self.conversation_title_bar.hide()
-            self.conversation_view.hide()
-            self.reply_box.hide()
-            self.waiting_delete_confirmation.show()
+            self.start_conversation_deletion()
 
     @pyqtSlot(str)
-    def _on_source_deletion_failed(self, source_uuid: str):
+    def on_conversation_deletion_failed(self, source_uuid: str):
         if self.source_uuid == source_uuid:
-            self.waiting_delete_confirmation.hide()
-            self.conversation_title_bar.show()
-            self.conversation_view.show()
-            self.reply_box.show()
+            self.end_conversation_deletion()
+
+    @pyqtSlot()
+    def on_conversation_updated(self):
+        self.conversation_title_bar.update_timestamp()
+
+    @pyqtSlot(str)
+    def on_source_deleted(self, source_uuid: str):
+        if self.source_uuid == source_uuid:
+            self.start_account_deletion()
+
+    @pyqtSlot(str)
+    def on_source_deletion_failed(self, source_uuid: str):
+        if self.source_uuid == source_uuid:
+            self.end_account_deletion()
+
+    def start_conversation_deletion(self):
+        self.reply_box.setProperty("class", "deleting_conversation")
+        self.deleting_conversation = True
+        self.start_deletion()
+        self.conversation_deletion_indicator.start()
+        self.deletion_indicator.stop()
+
+    def start_account_deletion(self):
+        self.reply_box.setProperty("class", "deleting")
+        self.deleting_account = True
+        self.reply_box.text_edit.setText("")
+        self.start_deletion()
+
+        palette = QPalette()
+        palette.setBrush(QPalette.Background, QBrush(QColor("#9495b9")))
+        palette.setBrush(QPalette.Foreground, QBrush(QColor("#ffffff")))
+
+        self.conversation_title_bar.setPalette(palette)
+        self.conversation_title_bar.setAutoFillBackground(True)
+
+        self.conversation_deletion_indicator.stop()
+        self.deletion_indicator.start()
+
+    def start_deletion(self):
+        css = load_css("sdclient.css")
+        self.reply_box.setStyleSheet(css)
+        self.setStyleSheet(css)
+
+        self.reply_box.text_edit.setDisabled(True)
+        self.reply_box.send_button.setDisabled(True)
+        self.conversation_title_bar.setDisabled(True)
+        self.conversation_view.hide()
+
+    def end_conversation_deletion(self):
+        self.deleting_conversation = False
+        self.end_deletion()
+
+    def end_account_deletion(self):
+        self.deleting_account = False
+        self.end_deletion()
+
+    def end_deletion(self):
+        self.reply_box.setProperty("class", "")
+        css = load_css("sdclient.css")
+        self.reply_box.setStyleSheet(css)
+        self.setStyleSheet(css)
+
+        self.reply_box.setEnabled(True)
+        self.reply_box.send_button.setEnabled(True)
+        self.conversation_title_bar.setEnabled(True)
+        self.conversation_view.show()
+
+        self.conversation_deletion_indicator.stop()
+        self.deletion_indicator.stop()
 
 
 class ReplyBoxWidget(QWidget):
@@ -3325,6 +3799,7 @@ class ReplyBoxWidget(QWidget):
         # Create top horizontal line
         horizontal_line = QWidget()
         horizontal_line.setObjectName("ReplyBoxWidget_horizontal_line")
+        horizontal_line.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         # Create replybox
         self.replybox = QWidget()
@@ -3338,10 +3813,11 @@ class ReplyBoxWidget(QWidget):
 
         # Create reply send button (airplane)
         self.send_button = QPushButton()
+        self.send_button.setObjectName("ReplyBoxWidget_send_button")
         self.send_button.clicked.connect(self.send_reply)
-        button_pixmap = load_image("send.svg")
-        button_icon = QIcon(button_pixmap)
-        self.send_button.setIcon(button_icon)
+        send_button_icon = QIcon(load_image("send.svg"))
+        send_button_icon.addPixmap(load_image("send-disabled.svg"), QIcon.Disabled)
+        self.send_button.setIcon(send_button_icon)
         self.send_button.setIconSize(QSize(56.5, 47))
         self.send_button.setShortcut(QKeySequence("Ctrl+Return"))
         self.send_button.setDefault(True)
@@ -3589,18 +4065,38 @@ class DeleteSourceAction(QAction):
     def __init__(self, source, parent, controller):
         self.source = source
         self.controller = controller
-        self.text = _("Delete source account")
+        self.text = _("Entire source account")
 
         super().__init__(self.text, parent)
 
-        self.messagebox = DeleteSourceMessageBox(self.source, self.controller)
+        self.confirmation_dialog = DeleteSourceDialog(self.source, self.controller)
         self.triggered.connect(self.trigger)
 
     def trigger(self):
         if self.controller.api is None:
             self.controller.on_action_requiring_login()
         else:
-            self.messagebox.launch()
+            self.confirmation_dialog.exec()
+
+
+class DeleteConversationAction(QAction):
+    """Use this action to delete a source's submissions and replies."""
+
+    def __init__(self, source, parent, controller):
+        self.source = source
+        self.controller = controller
+        self.text = _("Files and messages")
+
+        super().__init__(self.text, parent)
+
+        self.confirmation_dialog = DeleteConversationDialog(self.source, self.controller)
+        self.triggered.connect(self.trigger)
+
+    def trigger(self):
+        if self.controller.api is None:
+            self.controller.on_action_requiring_login()
+        else:
+            self.confirmation_dialog.exec()
 
 
 class SourceMenu(QMenu):
@@ -3613,14 +4109,23 @@ class SourceMenu(QMenu):
     Note: At present this only supports "delete" operation.
     """
 
+    SOURCE_MENU_CSS = load_css("source_menu.css")
+
     def __init__(self, source, controller):
         super().__init__()
         self.source = source
         self.controller = controller
 
-        actions = (DeleteSourceAction(self.source, self, self.controller),)
-        for action in actions:
-            self.addAction(action)
+        self.setStyleSheet(self.SOURCE_MENU_CSS)
+        separator_font = QFont()
+        separator_font.setLetterSpacing(QFont.AbsoluteSpacing, 2)
+        separator_font.setBold(True)
+
+        delete_section = self.addSection(_("DELETE"))
+        delete_section.setFont(separator_font)
+
+        self.addAction(DeleteConversationAction(self.source, self, self.controller))
+        self.addAction(DeleteSourceAction(self.source, self, self.controller))
 
 
 class SourceMenuButton(QToolButton):
@@ -3637,7 +4142,7 @@ class SourceMenuButton(QToolButton):
         self.setObjectName("SourceMenuButton")
 
         self.setIcon(load_icon("ellipsis.svg"))
-        self.setIconSize(QSize(22, 4))  # Set to the size of the svg viewBox
+        self.setIconSize(QSize(22, 33))  # Make it taller than the svg viewBox to increase hitbox
 
         self.menu = SourceMenu(self.source, self.controller)
         self.setMenu(self.menu)
@@ -3682,11 +4187,15 @@ class SourceProfileShortWidget(QWidget):
     def __init__(self, source, controller):
         super().__init__()
 
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
         self.source = source
         self.controller = controller
 
         # Set layout
         layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
         self.setLayout(layout)
 
         # Create header

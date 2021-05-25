@@ -2,6 +2,10 @@
  * The main stylesheet for the SecureDrop Client application
  */
 
+QWidget {
+    font-family: 'Source Sans Pro';
+}
+
 #MainWindow {
     min-width: 1279px;
     min-height: 600px;
@@ -212,21 +216,14 @@ QListView#SourceList::item:hover {
     border: none;
 }
 
-#SourceWidget_source_deleted {
-    font-family: 'Source Sans Pro';
-    font-weight: 400;
-    font-size: 13px;
-    color: #ff3366;
-}
-
-#SourceConversationWrapper_source_deleted {
-    text-align: left;
+#ConversationDeletionIndicator QLabel,
+#SourceDeletionIndicator QLabel {
     font-family: 'Montserrat';
-    font-weight: 500;
-    font-size: 40px;
-    color: #a5b3e9;
-    padding-bottom: 264px;
-    padding-right: 195px;
+    font-weight: normal;
+    font-size: 30px;
+    font-style: italic;
+    background-color: #9495b9;
+    color: #ffffff;
 }
 
 #ReplyBoxWidget {
@@ -251,11 +248,11 @@ QListView#SourceList::item:hover {
     border-radius: 8px;
 }
 
+QWidget#SourceProfileShortWidget_horizontal_line,
 QWidget#ReplyBoxWidget_horizontal_line {
     min-height: 2px;
     max-height: 2px;
     background-color: rgba(42, 49, 157, 0.15);
-    border: none;
 }
 
 #ReplyTextEdit {
@@ -287,12 +284,27 @@ QWidget#ReplyBoxWidget_horizontal_line {
     color: #2a319d;
 }
 
-QWidget#SourceProfileShortWidget_horizontal_line {
-    min-height: 2px;
-    max-height: 2px;
-    background-color: rgba(42, 49, 157, 0.15);
-    padding-left: 12px;
-    padding-right: 12px;
+#ReplyBoxWidget.deleting #ReplyBoxWidget_replybox,
+#ReplyBoxWidget.deleting #ReplyBoxWidget_replybox::disabled,
+#ReplyBoxWidget.deleting #ReplyTextEdit,
+#ReplyBoxWidget.deleting #ReplyTextEdit::disabled {
+    color: #a5a8d8;
+    background-color: #9495b9;
+}
+
+#ReplyBoxWidget.deleting #SourceProfileShortWidget_horizontal_line,
+#ReplyBoxWidget.deleting #ReplyBoxWidget_horizontal_line {
+    background-color: #8788b4;
+}
+
+#ReplyBoxWidget.deleting_conversation #ReplyBoxWidget_replybox,
+#ReplyBoxWidget.deleting_conversation #ReplyBoxWidget_replybox::disabled,
+#ReplyBoxWidget.deleting_conversation #ReplyTextEdit,
+#ReplyBoxWidget.deleting_conversation #ReplyTextEdit::disabled,
+#ReplyBoxWidget.deleting_conversation #ReplyTextEditPlaceholder_text,
+#ReplyBoxWidget.deleting_conversation #ReplyTextEditPlaceholder_bold_blue {
+    color: #a5a8d8;
+    background-color: #f7f7fd;
 }
 
 #SourceMenuButton {
@@ -380,6 +392,20 @@ QWidget#FileWidget_horizontal_line {
     margin: 0px 8px 0px 8px;
 }
 
+#DeletedConversationItemsMessage {
+    font-family: 'Source Sans Pro';
+    font-weight: 600;
+    font-size: 12px;
+    font-style: italic;
+    color: #9092ae;
+}
+
+#DeletedConversationMessage {
+    font-family: 'Montserrat';
+    font-size: 30px;
+    color: #a5b3e9;
+}
+
 #ConversationView {
     min-width: 640px;
     background-color: #00ff00;
@@ -411,7 +437,7 @@ QWidget#FileWidget_horizontal_line {
 #ModalDialog_header {
     min-height: 68px;
     max-height: 68px;
-    margin: 0px 0px 0px 4px;
+    margin: 0;
     font-family: 'Montserrat';
     font-size: 24px;
     font-weight: 600;
@@ -419,7 +445,7 @@ QWidget#FileWidget_horizontal_line {
 }
 
 #ModalDialog_header_line {
-    margin: 0px 40px 20px 40px;
+    margin: 0;
     min-height: 2px;
     max-height: 2px;
     background-color: rgba(42, 49, 157, 0.15);
@@ -430,11 +456,30 @@ QWidget#FileWidget_horizontal_line {
     font-family: 'Montserrat';
     font-size: 16px;
     color: #302aa3;
+    margin: 0;
+    padding: 0;
+}
+
+#ModalDialogConfirmation {
+    font-family: 'Montserrat';
+    font-size: 16px;
+    font-weight: 600;
+    color: #302aa3;
+    margin: 0;
+}
+
+#ModalDialog.dangerous #ModalDialogConfirmation {
+    color: #ff3366;
+}
+
+#ModalDialog_button_box {
+    border: 1px solid #ff0000;
 }
 
 #ModalDialog_button_box QPushButton {
     margin: 0px 0px 0px 12px;
     height: 40px;
+    margin: 0;
     padding-left: 20px;
     padding-right: 20px;
     border: 2px solid #2a319d;

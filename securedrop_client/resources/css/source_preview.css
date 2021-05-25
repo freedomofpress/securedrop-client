@@ -11,3 +11,7 @@
     font-size: 13px;
     color: #000;
 }
+
+#SourceWidget_preview.conversation_deleted {
+    color: #8e8e92;
+}

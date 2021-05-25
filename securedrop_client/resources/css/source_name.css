@@ -18,3 +18,13 @@
     font-size: 13px;
     color: #2a319d;
 }
+
+#SourceWidget_name.deleting {
+    color: #8e8e92;
+    font-style: italic;
+}
+
+#SourceWidget_name_selected.deleting {
+    color: #797fc3;
+    font-style: italic;
+}

@@ -20,7 +20,7 @@ from securedrop_client.api_jobs.downloads import (
     ReplyDownloadJob,
 )
 from securedrop_client.api_jobs.seen import SeenJob
-from securedrop_client.api_jobs.sources import DeleteSourceJob
+from securedrop_client.api_jobs.sources import DeleteConversationJob, DeleteSourceJob
 from securedrop_client.api_jobs.updatestar import UpdateStarJob
 from securedrop_client.api_jobs.uploads import SendReplyJob
 
@@ -55,6 +55,7 @@ class RunnableQueue(QObject):
         PauseQueueJob: 11,
         FileDownloadJob: 13,  # File downloads processed in separate queue
         DeleteSourceJob: 14,
+        DeleteConversationJob: 14,
         SendReplyJob: 15,
         UpdateStarJob: 16,
         MessageDownloadJob: 17,

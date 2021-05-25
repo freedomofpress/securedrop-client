@@ -70,7 +70,7 @@ def test_class_name_matches_css_object_name(mocker, main_window):
     assert "SourceWidget" == source_widget.__class__.__name__
     assert "SourceWidget" in source_widget.name.objectName()
     assert "SourceWidget" in source_widget.preview.objectName()
-    assert "SourceWidget" in source_widget.waiting_delete_confirmation.objectName()
+    assert "SourceWidget" in source_widget.deletion_indicator.objectName()
     assert "SourceWidget" in source_widget.paperclip.objectName()
     assert "SourceWidget" in source_widget.timestamp.objectName()
     assert "SourceWidget" in source_widget.source_widget.objectName()
@@ -80,7 +80,7 @@ def test_class_name_matches_css_object_name(mocker, main_window):
 
     wrapper = main_view.view_layout.itemAt(0).widget()
     assert "SourceConversationWrapper" == wrapper.__class__.__name__
-    assert "SourceConversationWrapper" in wrapper.waiting_delete_confirmation.objectName()
+    assert "SourceDeletionIndicator" == wrapper.deletion_indicator.objectName()
     reply_box = wrapper.reply_box
     assert "ReplyBoxWidget" == reply_box.__class__.__name__
     assert "ReplyBoxWidget" == reply_box.objectName()
@@ -143,9 +143,9 @@ def test_class_name_matches_css_object_name_for_modal_dialog(modal_dialog):
     assert "ModalDialog" in modal_dialog.body.objectName()
     assert "ModalDialog" in modal_dialog.body.objectName()
     assert "ModalDialog" in modal_dialog.continue_button.objectName()
-    window_buttons = modal_dialog.layout().itemAt(5).widget()
+    window_buttons = modal_dialog.layout().itemAt(4).widget()
     assert "ModalDialog" in window_buttons.objectName()
-    button_box = window_buttons.layout().itemAt(0).widget()
+    button_box = window_buttons.layout().itemAt(1).widget()
     assert "ModalDialog" in button_box.objectName()
 
 
@@ -291,11 +291,11 @@ def test_styles_source_list(mocker, main_window):
     QFont.Normal == preview.font().weight()
     13 == preview.font().pixelSize()
     assert "#383838" == preview.palette().color(QPalette.Foreground).name()
-    waiting_delete_confirmation = source_widget.waiting_delete_confirmation
-    assert "Source Sans Pro" == waiting_delete_confirmation.font().family()
-    QFont.Normal == waiting_delete_confirmation.font().weight()
-    13 == waiting_delete_confirmation.font().pixelSize()
-    assert "#ff3366" == waiting_delete_confirmation.palette().color(QPalette.Foreground).name()
+    deletion_indicator = source_widget.deletion_indicator
+    assert "Source Sans Pro" == deletion_indicator.font().family()
+    QFont.Normal == deletion_indicator.font().weight()
+    13 == deletion_indicator.font().pixelSize()
+    assert "#000000" == deletion_indicator.palette().color(QPalette.Foreground).name()
     name = source_widget.name
     assert "Montserrat" == name.font().family()
     QFont.Normal == name.font().weight()
@@ -310,11 +310,13 @@ def test_styles_source_list(mocker, main_window):
 
 def test_styles_for_conversation_view(mocker, main_window):
     wrapper = main_window.main_view.view_layout.itemAt(0).widget()
-    waiting_delete_confirmation = wrapper.waiting_delete_confirmation
-    assert "Montserrat" == waiting_delete_confirmation.font().family()
-    assert QFont.DemiBold - 1 == waiting_delete_confirmation.font().weight()
-    assert 40 == waiting_delete_confirmation.font().pixelSize()
-    assert "#a5b3e9" == waiting_delete_confirmation.palette().color(QPalette.Foreground).name()
+    deletion_indicator = wrapper.deletion_indicator
+    assert "Montserrat" == deletion_indicator.deletion_message.font().family()
+    assert QFont.Normal == deletion_indicator.deletion_message.font().weight()
+    assert 30 == deletion_indicator.deletion_message.font().pixelSize()
+    assert (
+        "#ffffff" == deletion_indicator.deletion_message.palette().color(QPalette.Foreground).name()
+    )
     reply_box = wrapper.reply_box
     assert 173 == reply_box.minimumSize().height()
     assert 173 == reply_box.maximumSize().height()
@@ -428,9 +430,9 @@ def test_styles_for_modal_dialog(modal_dialog):
     assert QFont.Bold == modal_dialog.header.font().weight()
     assert 24 == modal_dialog.header.font().pixelSize()
     assert "#2a319d" == modal_dialog.header.palette().color(QPalette.Foreground).name()
-    assert (4, 0, 0, 0) == modal_dialog.header.getContentsMargins()
-    assert 22 == modal_dialog.header_line.minimumSize().height()  # 2px + 20px margin
-    assert 22 == modal_dialog.header_line.maximumSize().height()  # 2px + 20px margin
+    assert (0, 0, 0, 0) == modal_dialog.header.getContentsMargins()
+    assert 2 == modal_dialog.header_line.minimumSize().height()  # 2px + 20px margin
+    assert 2 == modal_dialog.header_line.maximumSize().height()  # 2px + 20px margin
     assert 38 == math.floor(255 * 0.15)  # sanity check
     assert 38 == modal_dialog.header_line.palette().color(QPalette.Background).rgba64().alpha8()
     assert 42 == modal_dialog.header_line.palette().color(QPalette.Background).red()
@@ -440,7 +442,7 @@ def test_styles_for_modal_dialog(modal_dialog):
     assert "Montserrat" == modal_dialog.body.font().family()
     assert 16 == modal_dialog.body.font().pixelSize()
     assert "#302aa3" == modal_dialog.body.palette().color(QPalette.Foreground).name()
-    window_buttons = modal_dialog.layout().itemAt(5).widget()
+    window_buttons = modal_dialog.layout().itemAt(4).widget()
     button_box = window_buttons.layout().itemAt(0).widget()
     button_box_children = button_box.findChildren(QPushButton)
     for c in button_box_children:
@@ -484,9 +486,9 @@ def test_styles_for_print_dialog(print_dialog):
     assert QFont.Bold == print_dialog.header.font().weight()
     assert 24 == print_dialog.header.font().pixelSize()
     assert "#2a319d" == print_dialog.header.palette().color(QPalette.Foreground).name()
-    assert (4, 0, 0, 0) == print_dialog.header.getContentsMargins()
-    assert 22 == print_dialog.header_line.minimumSize().height()  # 2px + 20px margin
-    assert 22 == print_dialog.header_line.maximumSize().height()  # 2px + 20px margin
+    assert (0, 0, 0, 0) == print_dialog.header.getContentsMargins()
+    assert 2 == print_dialog.header_line.minimumSize().height()  # 2px + 20px margin
+    assert 2 == print_dialog.header_line.maximumSize().height()  # 2px + 20px margin
     assert 38 == math.floor(255 * 0.15)  # sanity check
     assert 38 == print_dialog.header_line.palette().color(QPalette.Background).rgba64().alpha8()
     assert 42 == print_dialog.header_line.palette().color(QPalette.Background).red()
@@ -496,7 +498,7 @@ def test_styles_for_print_dialog(print_dialog):
     assert "Montserrat" == print_dialog.body.font().family()
     assert 16 == print_dialog.body.font().pixelSize()
     assert "#302aa3" == print_dialog.body.palette().color(QPalette.Foreground).name()
-    window_buttons = print_dialog.layout().itemAt(5).widget()
+    window_buttons = print_dialog.layout().itemAt(4).widget()
     button_box = window_buttons.layout().itemAt(0).widget()
     button_box_children = button_box.findChildren(QPushButton)
     for c in button_box_children:
@@ -525,9 +527,9 @@ def test_styles_for_export_dialog(export_dialog):
     assert QFont.Bold == export_dialog.header.font().weight()
     assert 24 == export_dialog.header.font().pixelSize()
     assert "#2a319d" == export_dialog.header.palette().color(QPalette.Foreground).name()
-    assert (4, 0, 0, 0) == export_dialog.header.getContentsMargins()
-    assert 22 == export_dialog.header_line.minimumSize().height()  # 2px + 20px margin
-    assert 22 == export_dialog.header_line.maximumSize().height()  # 2px + 20px margin
+    assert (0, 0, 0, 0) == export_dialog.header.getContentsMargins()
+    assert 2 == export_dialog.header_line.minimumSize().height()  # 2px + 20px margin
+    assert 2 == export_dialog.header_line.maximumSize().height()  # 2px + 20px margin
     assert 38 == math.floor(255 * 0.15)  # sanity check
     assert 38 == export_dialog.header_line.palette().color(QPalette.Background).rgba64().alpha8()
     assert 42 == export_dialog.header_line.palette().color(QPalette.Background).red()
@@ -537,7 +539,7 @@ def test_styles_for_export_dialog(export_dialog):
     assert "Montserrat" == export_dialog.body.font().family()
     assert 16 == export_dialog.body.font().pixelSize()
     assert "#302aa3" == export_dialog.body.palette().color(QPalette.Foreground).name()
-    window_buttons = export_dialog.layout().itemAt(5).widget()
+    window_buttons = export_dialog.layout().itemAt(4).widget()
     button_box = window_buttons.layout().itemAt(0).widget()
     button_box_children = button_box.findChildren(QPushButton)
     for c in button_box_children:

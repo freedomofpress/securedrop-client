@@ -1,0 +1,21 @@
+QMenu {
+    font-family: 'Source Sans Pro';
+    padding: 1em 0.5em;
+    font-size: 16px;
+}
+
+QMenu::separator {
+    padding: 1em 0.25em;
+    font-weight: 900;
+    color: #b8c0de;
+}
+
+QMenu::item {
+    padding: 0.25em 1em 0.25em 1.25em;
+    margin: 0.25em 0 0 0;
+}
+
+QMenu::item:selected {
+    background: darkblue;
+    color: white;
+}

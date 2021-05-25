@@ -241,7 +241,7 @@ def test_refresh_current_source_conversation(mocker):
 
     w.refresh_current_source_conversation()
 
-    w.main_view.on_source_changed.assert_called_once_with()
+    w.main_view.refresh_source_conversations.assert_called_once_with()
 
 
 def test_show_sources(mocker):

@@ -11,3 +11,8 @@
     font-size: 13px;
     color: #000;
 }
+
+#SourceWidget_timestamp.deleting {
+    color: #8e8e92;
+    font-style: italic;
+}

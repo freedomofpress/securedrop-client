@@ -147,7 +147,7 @@ class Window(QMainWindow):
         """
         Update the current conversation if the source collection has changed.
         """
-        self.main_view.on_source_changed()
+        self.main_view.refresh_source_conversations()
 
     def show_sources(self, sources: List[Source]):
         """
