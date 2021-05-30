@@ -16,6 +16,14 @@ common-steps:
         export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
         make check --keep-going
 
+  - &run_lint
+    run:
+      name: Run lint, then static analysis on source code to find security issues
+      command: |
+        set -e
+        source .venv/bin/activate
+        make check-black check-isort lint bandit
+
   - &check_python_dependencies_for_vulns
     run:
       name: Check Python dependencies for known vulnerabilities
@@ -23,14 +31,6 @@ common-steps:
         set -e
         source .venv/bin/activate
         make safety
-
-  - &run_static_analysis
-    run:
-      name: Run static analysis on source code to find security issues
-      command: |
-        set -e
-        source .venv/bin/activate
-        make bandit
 
   - &install_packaging_dependencies
     run:
@@ -89,8 +89,8 @@ jobs:
       - checkout
       - run: sudo apt-get install -y sqlite3 libqt5x11extras5
       - *run_tests
+      - *run_lint
       - *check_python_dependencies_for_vulns
-      - *run_static_analysis
 
 workflows:
   version: 2
