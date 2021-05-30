@@ -3346,15 +3346,15 @@ class ReplyBoxWidget(QWidget):
         self.send_button.setShortcut(QKeySequence("Ctrl+Return"))
         self.send_button.setDefault(True)
 
-        # Ensure TAB order from text edit -> send button
-        self.setTabOrder(self.text_edit, self.send_button)
-
         # Set cursor.
         self.send_button.setCursor(QCursor(Qt.PointingHandCursor))
 
         # Add widgets to replybox
         replybox_layout.addWidget(self.text_edit)
         replybox_layout.addWidget(self.send_button, alignment=Qt.AlignBottom)
+
+        # Ensure TAB order from text edit -> send button
+        self.setTabOrder(self.text_edit, self.send_button)
 
         # Add widgets
         main_layout.addWidget(horizontal_line)
