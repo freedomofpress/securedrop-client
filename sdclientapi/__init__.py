@@ -340,6 +340,31 @@ class API:
         # We should never reach here
         return False
 
+    def delete_conversation(self, uuid: str) -> bool:
+        """
+        This method will delete the source's conversation.
+
+        If the UUID is not found in the server, it will raise WrongUUIDError.
+
+        :param uuid: Source UUID as string.
+        :returns: True if the operation is successful.
+        """
+
+        path_query = "api/v1/sources/{}/conversation".format(uuid)
+        method = "DELETE"
+
+        data, status_code, headers = self._send_json_request(
+            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
+        )
+
+        if status_code == 404:
+            raise WrongUUIDError("Missing source {}".format(uuid))
+
+        if "message" in data and data["message"] == "Source data deleted":
+            return True
+
+        return False
+
     def delete_source_from_string(self, uuid: str) -> bool:
         """
         This method will delete the source and collection. If the UUID

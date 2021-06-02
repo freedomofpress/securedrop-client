@@ -215,6 +215,10 @@ class TestAPI(TestShared):
     def test_reply_source_with_uuid(self):
         super().reply_source_with_uuid()
 
+    @vcr.use_cassette("data/test-delete-conversation.yml")
+    def test_delete_conversation(self):
+        super().delete_conversation()
+
     @vcr.use_cassette("data/test-delete-source.yml")
     def test_delete_source(self):
         super().delete_source()

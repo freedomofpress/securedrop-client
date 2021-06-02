@@ -168,6 +168,10 @@ class TestAPIProxy(TestShared):
         super().reply_source_with_uuid()
 
     @qrexec_datasaver
+    def test_delete_conversation(self):
+        super().delete_conversation()
+
+    @qrexec_datasaver
     def test_delete_source(self):
         super().delete_source()
 
