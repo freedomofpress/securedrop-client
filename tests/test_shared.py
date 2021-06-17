@@ -48,7 +48,7 @@ class TestShared:
         assert self.api.flag_source(s)
         # Now we will try to get the same source again
         s2 = self.api.get_source(s)
-        assert s2.is_flagged
+        assert not s2.is_flagged
 
     def get_single_source(self, from_string=False):
         s = self.api.get_sources()[0]
