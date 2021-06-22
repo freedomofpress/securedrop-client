@@ -7,7 +7,7 @@ interactions:
       Accept-Encoding:
       - gzip, deflate
       Authorization:
-      - Token eyJleHAiOjE2MDY4OTkzOTYsImFsZyI6IkhTMjU2IiwiaWF0IjoxNjA2ODcwNTk2fQ.eyJpZCI6MX0.6-NszJpAh76FAsjfR8uo7CpVO9nnxlMtHJZLThWRuZc
+      - Token eyJhbGciOiJIUzI1NiIsImlhdCI6MTYyMzk0MjczOCwiZXhwIjoxNjIzOTcxNTM4fQ.eyJpZCI6MX0.xNE1oOw5qVbJjX3qZB4dYJW1pnhWHu1pEJ6j7Xoy0do
       Connection:
       - keep-alive
       Content-Type:
@@ -18,84 +18,77 @@ interactions:
     uri: http://127.0.0.1:8081/api/v1/replies
   response:
     body:
-      string: "{\n  \"replies\": [\n    {\n      \"filename\": \"5-port_regularization-reply.gpg\"\
-        , \n      \"is_deleted_by_source\": false, \n      \"journalist_first_name\"\
-        : null, \n      \"journalist_last_name\": null, \n      \"journalist_username\"\
-        : \"dellsberg\", \n      \"journalist_uuid\": \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\
-        , \n      \"reply_url\": \"/api/v1/sources/dda2d844-c819-43cd-a026-b72d670235cb/replies/dfa0e6df-3634-40ea-8fa7-0c4aa8714ec7\"\
-        , \n      \"seen_by\": [\n        \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n        \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\n      ], \n      \"\
-        size\": 753, \n      \"source_url\": \"/api/v1/sources/dda2d844-c819-43cd-a026-b72d670235cb\"\
-        , \n      \"uuid\": \"dfa0e6df-3634-40ea-8fa7-0c4aa8714ec7\"\n    }, \n  \
-        \  {\n      \"filename\": \"6-port_regularization-reply.gpg\", \n      \"\
-        is_deleted_by_source\": false, \n      \"journalist_first_name\": null, \n\
-        \      \"journalist_last_name\": null, \n      \"journalist_username\": \"\
-        dellsberg\", \n      \"journalist_uuid\": \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\
-        , \n      \"reply_url\": \"/api/v1/sources/dda2d844-c819-43cd-a026-b72d670235cb/replies/3d7028c2-b702-4b1a-8461-c36733494e77\"\
-        , \n      \"seen_by\": [\n        \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n        \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\n      ], \n      \"\
-        size\": 901, \n      \"source_url\": \"/api/v1/sources/dda2d844-c819-43cd-a026-b72d670235cb\"\
-        , \n      \"uuid\": \"3d7028c2-b702-4b1a-8461-c36733494e77\"\n    }, \n  \
-        \  {\n      \"filename\": \"5-exhaustive_icing-reply.gpg\", \n      \"is_deleted_by_source\"\
-        : false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\"\
-        : null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\"\
-        : \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\", \n      \"reply_url\": \"/api/v1/sources/5b39f406-4499-4273-8fd6-42360c48fab8/replies/34d13069-0ce8-49ff-a5cb-135e834081d7\"\
-        , \n      \"seen_by\": [\n        \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n        \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\n      ], \n      \"\
-        size\": 735, \n      \"source_url\": \"/api/v1/sources/5b39f406-4499-4273-8fd6-42360c48fab8\"\
-        , \n      \"uuid\": \"34d13069-0ce8-49ff-a5cb-135e834081d7\"\n    }, \n  \
-        \  {\n      \"filename\": \"6-exhaustive_icing-reply.gpg\", \n      \"is_deleted_by_source\"\
-        : false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\"\
-        : null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\"\
-        : \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\", \n      \"reply_url\": \"/api/v1/sources/5b39f406-4499-4273-8fd6-42360c48fab8/replies/37449e40-c9a0-4c84-b582-fc99eaffbb5d\"\
-        , \n      \"seen_by\": [\n        \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n        \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\n      ], \n      \"\
-        size\": 737, \n      \"source_url\": \"/api/v1/sources/5b39f406-4499-4273-8fd6-42360c48fab8\"\
-        , \n      \"uuid\": \"37449e40-c9a0-4c84-b582-fc99eaffbb5d\"\n    }, \n  \
-        \  {\n      \"filename\": \"5-accrued_houseful-reply.gpg\", \n      \"is_deleted_by_source\"\
-        : false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\"\
-        : null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\"\
-        : \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\", \n      \"reply_url\": \"/api/v1/sources/125f04cc-535a-42ac-a3ab-7533ca88d593/replies/ebf85b28-9606-41df-bd3a-ed8c951bbd1e\"\
-        , \n      \"seen_by\": [\n        \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n        \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\n      ], \n      \"\
-        size\": 780, \n      \"source_url\": \"/api/v1/sources/125f04cc-535a-42ac-a3ab-7533ca88d593\"\
-        , \n      \"uuid\": \"ebf85b28-9606-41df-bd3a-ed8c951bbd1e\"\n    }, \n  \
-        \  {\n      \"filename\": \"6-accrued_houseful-reply.gpg\", \n      \"is_deleted_by_source\"\
-        : false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\"\
-        : null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\"\
-        : \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\", \n      \"reply_url\": \"/api/v1/sources/125f04cc-535a-42ac-a3ab-7533ca88d593/replies/1a0f9cf5-d83c-4f97-9491-a2b24f52a761\"\
-        , \n      \"seen_by\": [\n        \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n        \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\n      ], \n      \"\
-        size\": 809, \n      \"source_url\": \"/api/v1/sources/125f04cc-535a-42ac-a3ab-7533ca88d593\"\
-        , \n      \"uuid\": \"1a0f9cf5-d83c-4f97-9491-a2b24f52a761\"\n    }, \n  \
-        \  {\n      \"filename\": \"5-undisciplined_swindler-reply.gpg\", \n     \
-        \ \"is_deleted_by_source\": false, \n      \"journalist_first_name\": null,\
-        \ \n      \"journalist_last_name\": null, \n      \"journalist_username\"\
-        : \"dellsberg\", \n      \"journalist_uuid\": \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\
-        , \n      \"reply_url\": \"/api/v1/sources/fd91c015-8066-435d-8589-65a4da14b335/replies/58f6b1f5-3a00-4fbd-b66d-d1c98243a825\"\
-        , \n      \"seen_by\": [\n        \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n        \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\n      ], \n      \"\
-        size\": 733, \n      \"source_url\": \"/api/v1/sources/fd91c015-8066-435d-8589-65a4da14b335\"\
-        , \n      \"uuid\": \"58f6b1f5-3a00-4fbd-b66d-d1c98243a825\"\n    }, \n  \
-        \  {\n      \"filename\": \"6-undisciplined_swindler-reply.gpg\", \n     \
-        \ \"is_deleted_by_source\": false, \n      \"journalist_first_name\": null,\
-        \ \n      \"journalist_last_name\": null, \n      \"journalist_username\"\
-        : \"dellsberg\", \n      \"journalist_uuid\": \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\
-        , \n      \"reply_url\": \"/api/v1/sources/fd91c015-8066-435d-8589-65a4da14b335/replies/9840f6ca-4e60-493a-9615-d735e98c378c\"\
-        , \n      \"seen_by\": [\n        \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n        \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\n      ], \n      \"\
-        size\": 733, \n      \"source_url\": \"/api/v1/sources/fd91c015-8066-435d-8589-65a4da14b335\"\
-        , \n      \"uuid\": \"9840f6ca-4e60-493a-9615-d735e98c378c\"\n    }\n  ]\n\
-        }\n"
+      string: "{\n  \"replies\": [\n    {\n      \"filename\": \"5-humorless_steelmaker-reply.gpg\",
+        \n      \"is_deleted_by_source\": false, \n      \"journalist_first_name\":
+        null, \n      \"journalist_last_name\": null, \n      \"journalist_username\":
+        \"dellsberg\", \n      \"journalist_uuid\": \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\",
+        \n      \"reply_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/replies/f5fe9fa3-3a17-4cd6-b48e-90257877bb33\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\",
+        \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n      ], \n      \"size\":
+        753, \n      \"source_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2\",
+        \n      \"uuid\": \"f5fe9fa3-3a17-4cd6-b48e-90257877bb33\"\n    }, \n    {\n
+        \     \"filename\": \"6-humorless_steelmaker-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\":
+        null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\":
+        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\", \n      \"reply_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/replies/2387a167-4c3c-4732-a13e-a104b2657b74\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\",
+        \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n      ], \n      \"size\":
+        900, \n      \"source_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2\",
+        \n      \"uuid\": \"2387a167-4c3c-4732-a13e-a104b2657b74\"\n    }, \n    {\n
+        \     \"filename\": \"5-compensable_patchiness-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\":
+        null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\":
+        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\", \n      \"reply_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/replies/9ad0bf31-f920-411b-a0e0-d7d45b5bebd8\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\",
+        \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n      ], \n      \"size\":
+        735, \n      \"source_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c\",
+        \n      \"uuid\": \"9ad0bf31-f920-411b-a0e0-d7d45b5bebd8\"\n    }, \n    {\n
+        \     \"filename\": \"6-compensable_patchiness-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\":
+        null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\":
+        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\", \n      \"reply_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/replies/3154a8e5-2cde-416a-b53d-2168865d70b6\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\",
+        \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n      ], \n      \"size\":
+        737, \n      \"source_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c\",
+        \n      \"uuid\": \"3154a8e5-2cde-416a-b53d-2168865d70b6\"\n    }, \n    {\n
+        \     \"filename\": \"5-elliptic_friar-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": \"\", \n      \"journalist_last_name\":
+        \"\", \n      \"journalist_username\": \"deleted\", \n      \"journalist_uuid\":
+        \"deleted\", \n      \"reply_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/replies/1953dde7-8506-4faf-97cf-e40b7c99391c\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n
+        \     ], \n      \"size\": 779, \n      \"source_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e\",
+        \n      \"uuid\": \"1953dde7-8506-4faf-97cf-e40b7c99391c\"\n    }, \n    {\n
+        \     \"filename\": \"6-elliptic_friar-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": \"\", \n      \"journalist_last_name\":
+        \"\", \n      \"journalist_username\": \"deleted\", \n      \"journalist_uuid\":
+        \"deleted\", \n      \"reply_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/replies/6359a232-cb5d-4fae-b832-409b348124f7\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n
+        \     ], \n      \"size\": 808, \n      \"source_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e\",
+        \n      \"uuid\": \"6359a232-cb5d-4fae-b832-409b348124f7\"\n    }, \n    {\n
+        \     \"filename\": \"5-welcome_nightmare-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\":
+        null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\":
+        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\", \n      \"reply_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/replies/4ff5e1cf-eb2c-44b7-85ca-c47c85dbb363\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\",
+        \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n      ], \n      \"size\":
+        733, \n      \"source_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87\",
+        \n      \"uuid\": \"4ff5e1cf-eb2c-44b7-85ca-c47c85dbb363\"\n    }, \n    {\n
+        \     \"filename\": \"6-welcome_nightmare-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": \"\", \n      \"journalist_last_name\":
+        \"\", \n      \"journalist_username\": \"deleted\", \n      \"journalist_uuid\":
+        \"deleted\", \n      \"reply_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/replies/d3145c36-ea7f-4da5-89b5-c507c473aaa2\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n
+        \     ], \n      \"size\": 733, \n      \"source_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87\",
+        \n      \"uuid\": \"d3145c36-ea7f-4da5-89b5-c507c473aaa2\"\n    }\n  ]\n}\n"
     headers:
       Content-Length:
-      - '5503'
+      - '5251'
       Content-Type:
       - application/json
       Date:
-      - Wed, 02 Dec 2020 00:56:43 GMT
+      - Thu, 17 Jun 2021 15:12:21 GMT
       Server:
-      - Werkzeug/0.16.0 Python/3.5.2
+      - Werkzeug/0.16.0 Python/3.8.5
     status:
       code: 200
       message: OK
@@ -107,7 +100,7 @@ interactions:
       Accept-Encoding:
       - gzip, deflate
       Authorization:
-      - Token eyJleHAiOjE2MDY4OTkzOTYsImFsZyI6IkhTMjU2IiwiaWF0IjoxNjA2ODcwNTk2fQ.eyJpZCI6MX0.6-NszJpAh76FAsjfR8uo7CpVO9nnxlMtHJZLThWRuZc
+      - Token eyJhbGciOiJIUzI1NiIsImlhdCI6MTYyMzk0MjczOCwiZXhwIjoxNjIzOTcxNTM4fQ.eyJpZCI6MX0.xNE1oOw5qVbJjX3qZB4dYJW1pnhWHu1pEJ6j7Xoy0do
       Connection:
       - keep-alive
       Content-Type:
@@ -118,84 +111,77 @@ interactions:
     uri: http://127.0.0.1:8081/api/v1/replies
   response:
     body:
-      string: "{\n  \"replies\": [\n    {\n      \"filename\": \"5-port_regularization-reply.gpg\"\
-        , \n      \"is_deleted_by_source\": false, \n      \"journalist_first_name\"\
-        : null, \n      \"journalist_last_name\": null, \n      \"journalist_username\"\
-        : \"dellsberg\", \n      \"journalist_uuid\": \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\
-        , \n      \"reply_url\": \"/api/v1/sources/dda2d844-c819-43cd-a026-b72d670235cb/replies/dfa0e6df-3634-40ea-8fa7-0c4aa8714ec7\"\
-        , \n      \"seen_by\": [\n        \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n        \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\n      ], \n      \"\
-        size\": 753, \n      \"source_url\": \"/api/v1/sources/dda2d844-c819-43cd-a026-b72d670235cb\"\
-        , \n      \"uuid\": \"dfa0e6df-3634-40ea-8fa7-0c4aa8714ec7\"\n    }, \n  \
-        \  {\n      \"filename\": \"6-port_regularization-reply.gpg\", \n      \"\
-        is_deleted_by_source\": false, \n      \"journalist_first_name\": null, \n\
-        \      \"journalist_last_name\": null, \n      \"journalist_username\": \"\
-        dellsberg\", \n      \"journalist_uuid\": \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\
-        , \n      \"reply_url\": \"/api/v1/sources/dda2d844-c819-43cd-a026-b72d670235cb/replies/3d7028c2-b702-4b1a-8461-c36733494e77\"\
-        , \n      \"seen_by\": [\n        \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n        \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\n      ], \n      \"\
-        size\": 901, \n      \"source_url\": \"/api/v1/sources/dda2d844-c819-43cd-a026-b72d670235cb\"\
-        , \n      \"uuid\": \"3d7028c2-b702-4b1a-8461-c36733494e77\"\n    }, \n  \
-        \  {\n      \"filename\": \"5-exhaustive_icing-reply.gpg\", \n      \"is_deleted_by_source\"\
-        : false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\"\
-        : null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\"\
-        : \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\", \n      \"reply_url\": \"/api/v1/sources/5b39f406-4499-4273-8fd6-42360c48fab8/replies/34d13069-0ce8-49ff-a5cb-135e834081d7\"\
-        , \n      \"seen_by\": [\n        \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n        \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\n      ], \n      \"\
-        size\": 735, \n      \"source_url\": \"/api/v1/sources/5b39f406-4499-4273-8fd6-42360c48fab8\"\
-        , \n      \"uuid\": \"34d13069-0ce8-49ff-a5cb-135e834081d7\"\n    }, \n  \
-        \  {\n      \"filename\": \"6-exhaustive_icing-reply.gpg\", \n      \"is_deleted_by_source\"\
-        : false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\"\
-        : null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\"\
-        : \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\", \n      \"reply_url\": \"/api/v1/sources/5b39f406-4499-4273-8fd6-42360c48fab8/replies/37449e40-c9a0-4c84-b582-fc99eaffbb5d\"\
-        , \n      \"seen_by\": [\n        \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n        \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\n      ], \n      \"\
-        size\": 737, \n      \"source_url\": \"/api/v1/sources/5b39f406-4499-4273-8fd6-42360c48fab8\"\
-        , \n      \"uuid\": \"37449e40-c9a0-4c84-b582-fc99eaffbb5d\"\n    }, \n  \
-        \  {\n      \"filename\": \"5-accrued_houseful-reply.gpg\", \n      \"is_deleted_by_source\"\
-        : false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\"\
-        : null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\"\
-        : \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\", \n      \"reply_url\": \"/api/v1/sources/125f04cc-535a-42ac-a3ab-7533ca88d593/replies/ebf85b28-9606-41df-bd3a-ed8c951bbd1e\"\
-        , \n      \"seen_by\": [\n        \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n        \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\n      ], \n      \"\
-        size\": 780, \n      \"source_url\": \"/api/v1/sources/125f04cc-535a-42ac-a3ab-7533ca88d593\"\
-        , \n      \"uuid\": \"ebf85b28-9606-41df-bd3a-ed8c951bbd1e\"\n    }, \n  \
-        \  {\n      \"filename\": \"6-accrued_houseful-reply.gpg\", \n      \"is_deleted_by_source\"\
-        : false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\"\
-        : null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\"\
-        : \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\", \n      \"reply_url\": \"/api/v1/sources/125f04cc-535a-42ac-a3ab-7533ca88d593/replies/1a0f9cf5-d83c-4f97-9491-a2b24f52a761\"\
-        , \n      \"seen_by\": [\n        \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n        \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\n      ], \n      \"\
-        size\": 809, \n      \"source_url\": \"/api/v1/sources/125f04cc-535a-42ac-a3ab-7533ca88d593\"\
-        , \n      \"uuid\": \"1a0f9cf5-d83c-4f97-9491-a2b24f52a761\"\n    }, \n  \
-        \  {\n      \"filename\": \"5-undisciplined_swindler-reply.gpg\", \n     \
-        \ \"is_deleted_by_source\": false, \n      \"journalist_first_name\": null,\
-        \ \n      \"journalist_last_name\": null, \n      \"journalist_username\"\
-        : \"dellsberg\", \n      \"journalist_uuid\": \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\
-        , \n      \"reply_url\": \"/api/v1/sources/fd91c015-8066-435d-8589-65a4da14b335/replies/58f6b1f5-3a00-4fbd-b66d-d1c98243a825\"\
-        , \n      \"seen_by\": [\n        \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n        \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\n      ], \n      \"\
-        size\": 733, \n      \"source_url\": \"/api/v1/sources/fd91c015-8066-435d-8589-65a4da14b335\"\
-        , \n      \"uuid\": \"58f6b1f5-3a00-4fbd-b66d-d1c98243a825\"\n    }, \n  \
-        \  {\n      \"filename\": \"6-undisciplined_swindler-reply.gpg\", \n     \
-        \ \"is_deleted_by_source\": false, \n      \"journalist_first_name\": null,\
-        \ \n      \"journalist_last_name\": null, \n      \"journalist_username\"\
-        : \"dellsberg\", \n      \"journalist_uuid\": \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\
-        , \n      \"reply_url\": \"/api/v1/sources/fd91c015-8066-435d-8589-65a4da14b335/replies/9840f6ca-4e60-493a-9615-d735e98c378c\"\
-        , \n      \"seen_by\": [\n        \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n        \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\n      ], \n      \"\
-        size\": 733, \n      \"source_url\": \"/api/v1/sources/fd91c015-8066-435d-8589-65a4da14b335\"\
-        , \n      \"uuid\": \"9840f6ca-4e60-493a-9615-d735e98c378c\"\n    }\n  ]\n\
-        }\n"
+      string: "{\n  \"replies\": [\n    {\n      \"filename\": \"5-humorless_steelmaker-reply.gpg\",
+        \n      \"is_deleted_by_source\": false, \n      \"journalist_first_name\":
+        null, \n      \"journalist_last_name\": null, \n      \"journalist_username\":
+        \"dellsberg\", \n      \"journalist_uuid\": \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\",
+        \n      \"reply_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/replies/f5fe9fa3-3a17-4cd6-b48e-90257877bb33\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\",
+        \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n      ], \n      \"size\":
+        753, \n      \"source_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2\",
+        \n      \"uuid\": \"f5fe9fa3-3a17-4cd6-b48e-90257877bb33\"\n    }, \n    {\n
+        \     \"filename\": \"6-humorless_steelmaker-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\":
+        null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\":
+        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\", \n      \"reply_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/replies/2387a167-4c3c-4732-a13e-a104b2657b74\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\",
+        \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n      ], \n      \"size\":
+        900, \n      \"source_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2\",
+        \n      \"uuid\": \"2387a167-4c3c-4732-a13e-a104b2657b74\"\n    }, \n    {\n
+        \     \"filename\": \"5-compensable_patchiness-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\":
+        null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\":
+        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\", \n      \"reply_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/replies/9ad0bf31-f920-411b-a0e0-d7d45b5bebd8\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\",
+        \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n      ], \n      \"size\":
+        735, \n      \"source_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c\",
+        \n      \"uuid\": \"9ad0bf31-f920-411b-a0e0-d7d45b5bebd8\"\n    }, \n    {\n
+        \     \"filename\": \"6-compensable_patchiness-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\":
+        null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\":
+        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\", \n      \"reply_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/replies/3154a8e5-2cde-416a-b53d-2168865d70b6\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\",
+        \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n      ], \n      \"size\":
+        737, \n      \"source_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c\",
+        \n      \"uuid\": \"3154a8e5-2cde-416a-b53d-2168865d70b6\"\n    }, \n    {\n
+        \     \"filename\": \"5-elliptic_friar-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": \"\", \n      \"journalist_last_name\":
+        \"\", \n      \"journalist_username\": \"deleted\", \n      \"journalist_uuid\":
+        \"deleted\", \n      \"reply_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/replies/1953dde7-8506-4faf-97cf-e40b7c99391c\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n
+        \     ], \n      \"size\": 779, \n      \"source_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e\",
+        \n      \"uuid\": \"1953dde7-8506-4faf-97cf-e40b7c99391c\"\n    }, \n    {\n
+        \     \"filename\": \"6-elliptic_friar-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": \"\", \n      \"journalist_last_name\":
+        \"\", \n      \"journalist_username\": \"deleted\", \n      \"journalist_uuid\":
+        \"deleted\", \n      \"reply_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/replies/6359a232-cb5d-4fae-b832-409b348124f7\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n
+        \     ], \n      \"size\": 808, \n      \"source_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e\",
+        \n      \"uuid\": \"6359a232-cb5d-4fae-b832-409b348124f7\"\n    }, \n    {\n
+        \     \"filename\": \"5-welcome_nightmare-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\":
+        null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\":
+        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\", \n      \"reply_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/replies/4ff5e1cf-eb2c-44b7-85ca-c47c85dbb363\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\",
+        \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n      ], \n      \"size\":
+        733, \n      \"source_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87\",
+        \n      \"uuid\": \"4ff5e1cf-eb2c-44b7-85ca-c47c85dbb363\"\n    }, \n    {\n
+        \     \"filename\": \"6-welcome_nightmare-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": \"\", \n      \"journalist_last_name\":
+        \"\", \n      \"journalist_username\": \"deleted\", \n      \"journalist_uuid\":
+        \"deleted\", \n      \"reply_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/replies/d3145c36-ea7f-4da5-89b5-c507c473aaa2\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n
+        \     ], \n      \"size\": 733, \n      \"source_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87\",
+        \n      \"uuid\": \"d3145c36-ea7f-4da5-89b5-c507c473aaa2\"\n    }\n  ]\n}\n"
     headers:
       Content-Length:
-      - '5503'
+      - '5251'
       Content-Type:
       - application/json
       Date:
-      - Wed, 02 Dec 2020 00:56:43 GMT
+      - Thu, 17 Jun 2021 15:12:22 GMT
       Server:
-      - Werkzeug/0.16.0 Python/3.5.2
+      - Werkzeug/0.16.0 Python/3.8.5
     status:
       code: 200
       message: OK
@@ -207,7 +193,7 @@ interactions:
       Accept-Encoding:
       - gzip, deflate
       Authorization:
-      - Token eyJleHAiOjE2MDY4OTkzOTYsImFsZyI6IkhTMjU2IiwiaWF0IjoxNjA2ODcwNTk2fQ.eyJpZCI6MX0.6-NszJpAh76FAsjfR8uo7CpVO9nnxlMtHJZLThWRuZc
+      - Token eyJhbGciOiJIUzI1NiIsImlhdCI6MTYyMzk0MjczOCwiZXhwIjoxNjIzOTcxNTM4fQ.eyJpZCI6MX0.xNE1oOw5qVbJjX3qZB4dYJW1pnhWHu1pEJ6j7Xoy0do
       Connection:
       - keep-alive
       Content-Length:
@@ -217,7 +203,7 @@ interactions:
       User-Agent:
       - python-requests/2.22.0
     method: DELETE
-    uri: http://127.0.0.1:8081/api/v1/sources/dda2d844-c819-43cd-a026-b72d670235cb/replies/dfa0e6df-3634-40ea-8fa7-0c4aa8714ec7
+    uri: http://127.0.0.1:8081/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/replies/f5fe9fa3-3a17-4cd6-b48e-90257877bb33
   response:
     body:
       string: "{\n  \"message\": \"Reply deleted\"\n}\n"
@@ -227,9 +213,9 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Wed, 02 Dec 2020 00:56:43 GMT
+      - Thu, 17 Jun 2021 15:12:22 GMT
       Server:
-      - Werkzeug/0.16.0 Python/3.5.2
+      - Werkzeug/0.16.0 Python/3.8.5
     status:
       code: 200
       message: OK
@@ -241,7 +227,7 @@ interactions:
       Accept-Encoding:
       - gzip, deflate
       Authorization:
-      - Token eyJleHAiOjE2MDY4OTkzOTYsImFsZyI6IkhTMjU2IiwiaWF0IjoxNjA2ODcwNTk2fQ.eyJpZCI6MX0.6-NszJpAh76FAsjfR8uo7CpVO9nnxlMtHJZLThWRuZc
+      - Token eyJhbGciOiJIUzI1NiIsImlhdCI6MTYyMzk0MjczOCwiZXhwIjoxNjIzOTcxNTM4fQ.eyJpZCI6MX0.xNE1oOw5qVbJjX3qZB4dYJW1pnhWHu1pEJ6j7Xoy0do
       Connection:
       - keep-alive
       Content-Type:
@@ -252,75 +238,69 @@ interactions:
     uri: http://127.0.0.1:8081/api/v1/replies
   response:
     body:
-      string: "{\n  \"replies\": [\n    {\n      \"filename\": \"6-port_regularization-reply.gpg\"\
-        , \n      \"is_deleted_by_source\": false, \n      \"journalist_first_name\"\
-        : null, \n      \"journalist_last_name\": null, \n      \"journalist_username\"\
-        : \"dellsberg\", \n      \"journalist_uuid\": \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\
-        , \n      \"reply_url\": \"/api/v1/sources/dda2d844-c819-43cd-a026-b72d670235cb/replies/3d7028c2-b702-4b1a-8461-c36733494e77\"\
-        , \n      \"seen_by\": [\n        \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n        \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\n      ], \n      \"\
-        size\": 901, \n      \"source_url\": \"/api/v1/sources/dda2d844-c819-43cd-a026-b72d670235cb\"\
-        , \n      \"uuid\": \"3d7028c2-b702-4b1a-8461-c36733494e77\"\n    }, \n  \
-        \  {\n      \"filename\": \"5-exhaustive_icing-reply.gpg\", \n      \"is_deleted_by_source\"\
-        : false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\"\
-        : null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\"\
-        : \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\", \n      \"reply_url\": \"/api/v1/sources/5b39f406-4499-4273-8fd6-42360c48fab8/replies/34d13069-0ce8-49ff-a5cb-135e834081d7\"\
-        , \n      \"seen_by\": [\n        \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n        \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\n      ], \n      \"\
-        size\": 735, \n      \"source_url\": \"/api/v1/sources/5b39f406-4499-4273-8fd6-42360c48fab8\"\
-        , \n      \"uuid\": \"34d13069-0ce8-49ff-a5cb-135e834081d7\"\n    }, \n  \
-        \  {\n      \"filename\": \"6-exhaustive_icing-reply.gpg\", \n      \"is_deleted_by_source\"\
-        : false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\"\
-        : null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\"\
-        : \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\", \n      \"reply_url\": \"/api/v1/sources/5b39f406-4499-4273-8fd6-42360c48fab8/replies/37449e40-c9a0-4c84-b582-fc99eaffbb5d\"\
-        , \n      \"seen_by\": [\n        \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n        \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\n      ], \n      \"\
-        size\": 737, \n      \"source_url\": \"/api/v1/sources/5b39f406-4499-4273-8fd6-42360c48fab8\"\
-        , \n      \"uuid\": \"37449e40-c9a0-4c84-b582-fc99eaffbb5d\"\n    }, \n  \
-        \  {\n      \"filename\": \"5-accrued_houseful-reply.gpg\", \n      \"is_deleted_by_source\"\
-        : false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\"\
-        : null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\"\
-        : \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\", \n      \"reply_url\": \"/api/v1/sources/125f04cc-535a-42ac-a3ab-7533ca88d593/replies/ebf85b28-9606-41df-bd3a-ed8c951bbd1e\"\
-        , \n      \"seen_by\": [\n        \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n        \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\n      ], \n      \"\
-        size\": 780, \n      \"source_url\": \"/api/v1/sources/125f04cc-535a-42ac-a3ab-7533ca88d593\"\
-        , \n      \"uuid\": \"ebf85b28-9606-41df-bd3a-ed8c951bbd1e\"\n    }, \n  \
-        \  {\n      \"filename\": \"6-accrued_houseful-reply.gpg\", \n      \"is_deleted_by_source\"\
-        : false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\"\
-        : null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\"\
-        : \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\", \n      \"reply_url\": \"/api/v1/sources/125f04cc-535a-42ac-a3ab-7533ca88d593/replies/1a0f9cf5-d83c-4f97-9491-a2b24f52a761\"\
-        , \n      \"seen_by\": [\n        \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n        \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\n      ], \n      \"\
-        size\": 809, \n      \"source_url\": \"/api/v1/sources/125f04cc-535a-42ac-a3ab-7533ca88d593\"\
-        , \n      \"uuid\": \"1a0f9cf5-d83c-4f97-9491-a2b24f52a761\"\n    }, \n  \
-        \  {\n      \"filename\": \"5-undisciplined_swindler-reply.gpg\", \n     \
-        \ \"is_deleted_by_source\": false, \n      \"journalist_first_name\": null,\
-        \ \n      \"journalist_last_name\": null, \n      \"journalist_username\"\
-        : \"dellsberg\", \n      \"journalist_uuid\": \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\
-        , \n      \"reply_url\": \"/api/v1/sources/fd91c015-8066-435d-8589-65a4da14b335/replies/58f6b1f5-3a00-4fbd-b66d-d1c98243a825\"\
-        , \n      \"seen_by\": [\n        \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n        \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\n      ], \n      \"\
-        size\": 733, \n      \"source_url\": \"/api/v1/sources/fd91c015-8066-435d-8589-65a4da14b335\"\
-        , \n      \"uuid\": \"58f6b1f5-3a00-4fbd-b66d-d1c98243a825\"\n    }, \n  \
-        \  {\n      \"filename\": \"6-undisciplined_swindler-reply.gpg\", \n     \
-        \ \"is_deleted_by_source\": false, \n      \"journalist_first_name\": null,\
-        \ \n      \"journalist_last_name\": null, \n      \"journalist_username\"\
-        : \"dellsberg\", \n      \"journalist_uuid\": \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\
-        , \n      \"reply_url\": \"/api/v1/sources/fd91c015-8066-435d-8589-65a4da14b335/replies/9840f6ca-4e60-493a-9615-d735e98c378c\"\
-        , \n      \"seen_by\": [\n        \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n        \"3cdbbd6a-376b-42af-9e38-1f33141ff04e\"\n      ], \n      \"\
-        size\": 733, \n      \"source_url\": \"/api/v1/sources/fd91c015-8066-435d-8589-65a4da14b335\"\
-        , \n      \"uuid\": \"9840f6ca-4e60-493a-9615-d735e98c378c\"\n    }\n  ]\n\
-        }\n"
+      string: "{\n  \"replies\": [\n    {\n      \"filename\": \"6-humorless_steelmaker-reply.gpg\",
+        \n      \"is_deleted_by_source\": false, \n      \"journalist_first_name\":
+        null, \n      \"journalist_last_name\": null, \n      \"journalist_username\":
+        \"dellsberg\", \n      \"journalist_uuid\": \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\",
+        \n      \"reply_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/replies/2387a167-4c3c-4732-a13e-a104b2657b74\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\",
+        \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n      ], \n      \"size\":
+        900, \n      \"source_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2\",
+        \n      \"uuid\": \"2387a167-4c3c-4732-a13e-a104b2657b74\"\n    }, \n    {\n
+        \     \"filename\": \"5-compensable_patchiness-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\":
+        null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\":
+        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\", \n      \"reply_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/replies/9ad0bf31-f920-411b-a0e0-d7d45b5bebd8\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\",
+        \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n      ], \n      \"size\":
+        735, \n      \"source_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c\",
+        \n      \"uuid\": \"9ad0bf31-f920-411b-a0e0-d7d45b5bebd8\"\n    }, \n    {\n
+        \     \"filename\": \"6-compensable_patchiness-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\":
+        null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\":
+        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\", \n      \"reply_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/replies/3154a8e5-2cde-416a-b53d-2168865d70b6\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\",
+        \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n      ], \n      \"size\":
+        737, \n      \"source_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c\",
+        \n      \"uuid\": \"3154a8e5-2cde-416a-b53d-2168865d70b6\"\n    }, \n    {\n
+        \     \"filename\": \"5-elliptic_friar-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": \"\", \n      \"journalist_last_name\":
+        \"\", \n      \"journalist_username\": \"deleted\", \n      \"journalist_uuid\":
+        \"deleted\", \n      \"reply_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/replies/1953dde7-8506-4faf-97cf-e40b7c99391c\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n
+        \     ], \n      \"size\": 779, \n      \"source_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e\",
+        \n      \"uuid\": \"1953dde7-8506-4faf-97cf-e40b7c99391c\"\n    }, \n    {\n
+        \     \"filename\": \"6-elliptic_friar-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": \"\", \n      \"journalist_last_name\":
+        \"\", \n      \"journalist_username\": \"deleted\", \n      \"journalist_uuid\":
+        \"deleted\", \n      \"reply_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/replies/6359a232-cb5d-4fae-b832-409b348124f7\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n
+        \     ], \n      \"size\": 808, \n      \"source_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e\",
+        \n      \"uuid\": \"6359a232-cb5d-4fae-b832-409b348124f7\"\n    }, \n    {\n
+        \     \"filename\": \"5-welcome_nightmare-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\":
+        null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\":
+        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\", \n      \"reply_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/replies/4ff5e1cf-eb2c-44b7-85ca-c47c85dbb363\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\",
+        \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n      ], \n      \"size\":
+        733, \n      \"source_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87\",
+        \n      \"uuid\": \"4ff5e1cf-eb2c-44b7-85ca-c47c85dbb363\"\n    }, \n    {\n
+        \     \"filename\": \"6-welcome_nightmare-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": \"\", \n      \"journalist_last_name\":
+        \"\", \n      \"journalist_username\": \"deleted\", \n      \"journalist_uuid\":
+        \"deleted\", \n      \"reply_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/replies/d3145c36-ea7f-4da5-89b5-c507c473aaa2\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n
+        \     ], \n      \"size\": 733, \n      \"source_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87\",
+        \n      \"uuid\": \"d3145c36-ea7f-4da5-89b5-c507c473aaa2\"\n    }\n  ]\n}\n"
     headers:
       Content-Length:
-      - '4817'
+      - '4564'
       Content-Type:
       - application/json
       Date:
-      - Wed, 02 Dec 2020 00:56:43 GMT
+      - Thu, 17 Jun 2021 15:12:22 GMT
       Server:
-      - Werkzeug/0.16.0 Python/3.5.2
+      - Werkzeug/0.16.0 Python/3.8.5
     status:
       code: 200
       message: OK

@@ -1,7 +1,7 @@
 interactions:
 - request:
     body: '{"username": "journalist", "passphrase": "correct horse battery staple
-      profanity oil chewy", "one_time_code": "436824"}'
+      profanity oil chewy", "one_time_code": "320603"}'
     headers:
       Accept:
       - '*/*'
@@ -17,19 +17,18 @@ interactions:
     uri: http://127.0.0.1:8081/api/v1/token
   response:
     body:
-      string: "{\n  \"expiration\": \"2020-12-02T08:56:36.660604Z\", \n  \"journalist_first_name\"\
-        : null, \n  \"journalist_last_name\": null, \n  \"journalist_uuid\": \"24653890-bf5f-4399-bec3-4a0d8b973b76\"\
-        , \n  \"token\": \"eyJleHAiOjE2MDY4OTkzOTYsImFsZyI6IkhTMjU2IiwiaWF0IjoxNjA2ODcwNTk2fQ.eyJpZCI6MX0.6-NszJpAh76FAsjfR8uo7CpVO9nnxlMtHJZLThWRuZc\"\
-        \n}\n"
+      string: "{\n  \"expiration\": \"2021-06-17T23:12:18.454912Z\", \n  \"journalist_first_name\":
+        null, \n  \"journalist_last_name\": null, \n  \"journalist_uuid\": \"4333050a-5415-4ef7-bfd6-2152f9743648\",
+        \n  \"token\": \"eyJhbGciOiJIUzI1NiIsImlhdCI6MTYyMzk0MjczOCwiZXhwIjoxNjIzOTcxNTM4fQ.eyJpZCI6MX0.xNE1oOw5qVbJjX3qZB4dYJW1pnhWHu1pEJ6j7Xoy0do\"\n}\n"
     headers:
       Content-Length:
       - '317'
       Content-Type:
       - application/json
       Date:
-      - Wed, 02 Dec 2020 00:56:36 GMT
+      - Thu, 17 Jun 2021 15:12:18 GMT
       Server:
-      - Werkzeug/0.16.0 Python/3.5.2
+      - Werkzeug/0.16.0 Python/3.8.5
     status:
       code: 200
       message: OK
