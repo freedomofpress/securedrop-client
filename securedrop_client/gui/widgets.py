@@ -2890,11 +2890,15 @@ class ExportDialog(ModalDialog):
         self.controller.run_export_preflight_checks()
 
     @pyqtSlot()
-    def _export_file(self, checked: bool = False):
+    def _export_file(self):
         self.start_animate_activestate()
         self.cancel_button.setEnabled(False)
         self.passphrase_field.setDisabled(True)
         self.controller.export_file_to_usb_drive(self.file_uuid, self.passphrase_field.text())
+
+    @pyqtSlot()
+    def _export_file_to_unlocked_device(self):
+        self.controller.export_file_to_usb_drive(self.file_uuid)
 
     @pyqtSlot()
     def _on_preflight_success(self):
@@ -2940,6 +2944,8 @@ class ExportDialog(ModalDialog):
                 self.continue_button.clicked.connect(self._show_insert_usb_message)
             elif self.error_status == ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value:
                 self.continue_button.clicked.connect(self._show_insert_encrypted_usb_message)
+            elif self.error_status == ExportStatus.DISK_DECRYPTED.value:
+                self.continue_button.clicked.connect(self._export_file_to_unlocked_device)
             else:
                 self.continue_button.clicked.connect(self._show_generic_error_message)
 
@@ -2952,6 +2958,8 @@ class ExportDialog(ModalDialog):
                 self._show_insert_usb_message()
             elif self.error_status == ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value:
                 self._show_insert_encrypted_usb_message()
+            elif self.error_status == ExportStatus.DISK_DECRYPTED.value:
+                self._export_file_to_unlocked_device()
             else:
                 self._show_generic_error_message()
 

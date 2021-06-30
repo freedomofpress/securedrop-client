@@ -8,7 +8,7 @@ from enum import Enum
 from io import BytesIO
 from shlex import quote
 from tempfile import TemporaryDirectory
-from typing import List
+from typing import List, Optional
 
 from PyQt5.QtCore import QObject, Qt, pyqtSignal, pyqtSlot
 
@@ -24,6 +24,7 @@ class ExportStatus(Enum):
     # On the way to success
     USB_CONNECTED = "USB_CONNECTED"
     DISK_ENCRYPTED = "USB_ENCRYPTED"
+    DISK_DECRYPTED = "USB_DECRYPTED"
 
     # Not too far from success
     USB_NOT_CONNECTED = "USB_NOT_CONNECTED"
@@ -212,12 +213,13 @@ class Export(QObject):
             archive_dir (str): The path to the directory in which to create the archive.
 
         Raises:
-            ExportError: Raised if the usb-test does not return a DISK_ENCRYPTED status.
+            ExportError: Raised if the usb-test does not return a DISK_ENCRYPTED or DISK_DECRYPTED
+            status.
         """
         archive_path = self._create_archive(archive_dir, self.DISK_TEST_FN, self.DISK_TEST_METADATA)
 
         status = self._export_archive(archive_path)
-        if status != ExportStatus.DISK_ENCRYPTED.value:
+        if status not in (ExportStatus.DISK_ENCRYPTED.value, ExportStatus.DISK_DECRYPTED.value):
             raise ExportError(status)
 
     def _run_disk_export(self, archive_dir: str, filepaths: List[str], passphrase: str) -> None:
@@ -228,7 +230,7 @@ class Export(QObject):
             archive_dir (str): The path to the directory in which to create the archive.
 
         Raises:
-            ExportError: Raised if the usb-test does not return a DISK_ENCRYPTED status.
+            ExportError: Raised if the usb-test returns non-zero.
         """
         metadata = self.DISK_METADATA.copy()
         metadata[self.DISK_ENCRYPTION_KEY_NAME] = passphrase
@@ -286,7 +288,9 @@ class Export(QObject):
                 self.printer_preflight_failure.emit(e)
 
     @pyqtSlot(list, str)
-    def send_file_to_usb_device(self, filepaths: List[str], passphrase: str) -> None:
+    def send_file_to_usb_device(
+        self, filepaths: List[str], passphrase: Optional[str] = None
+    ) -> None:
         """
         Export the file to the luks-encrypted usb disk drive attached to the Export VM.
 
