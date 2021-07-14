@@ -19,7 +19,7 @@ from securedrop_client.storage import (
     mark_as_downloaded,
     set_message_or_reply_content,
 )
-from securedrop_client.utils import safe_move
+from secure_fs import safe_move
 
 logger = logging.getLogger(__name__)
 

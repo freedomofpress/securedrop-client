@@ -515,6 +515,10 @@ ruamel.yaml==0.16.10 \
     --hash=sha256:0962fd7999e064c4865f96fb1e23079075f4a2a14849bcdc5cdba53a24f9759b \
     --hash=sha256:099c644a778bf72ffa00524f78dd0b6476bca94a1da344130f4bf3381ce5b954
     # via semgrep
+secure-fs==0.1.0 \
+    --hash=sha256:2664807074472dfba3f130a24859c648f3031f81da23d4cd9494cb99547232b4 \
+    --hash=sha256:a6c8cff81917d9dd9658c0b2944b4c1032d1892db0856e4953ec8a70667cb8f4
+    # via -r requirements/requirements.in
 securedrop-sdk==0.2.0 \
     --hash=sha256:c4a343077e8c0a38914e17f6369b830f1e361f9d66699b20803c07b39472357f
     # via -r requirements/requirements.in

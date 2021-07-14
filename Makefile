@@ -6,21 +6,6 @@ venv:  ## Provision a Python 3 virtualenv for development.
 	python3 -m venv .venv
 	.venv/bin/pip install --require-hashes -r "requirements/dev-requirements.txt"
 
-SEMGREP_FLAGS := --exclude "tests/" --error --strict --verbose
-
-.PHONY: semgrep
-semgrep:semgrep-community semgrep-local
-
-.PHONY: semgrep-community
-semgrep-community:
-	@echo "Running semgrep with semgrep.dev community rules..."
-	@semgrep $(SEMGREP_FLAGS) --config "p/r2c-security-audit"
-
-.PHONY: semgrep-local
-semgrep-local:
-	@echo "Running semgrep with local rules..."
-	@semgrep $(SEMGREP_FLAGS) --config ".semgrep"
-
 .PHONY: black
 black: ## Format Python source code with black
 	@black ./
@@ -117,7 +102,7 @@ bandit: ## Run bandit with medium level excluding test-related folders
 	bandit -ll --recursive . --exclude ./tests,./.venv
 
 .PHONY: check
-check: clean check-black check-isort semgrep bandit lint mypy test-random test-integration test-functional ## Run the full CI test suite
+check: clean check-black check-isort bandit lint mypy test-random test-integration test-functional ## Run the full CI test suite
 
 .PHONY: update-pip-requirements
 update-pip-requirements: ## Updates all Python requirements files via pip-compile for Linux.

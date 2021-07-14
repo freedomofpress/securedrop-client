@@ -34,7 +34,7 @@ from securedrop_client import __version__
 from securedrop_client.db import make_session_maker
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
-from securedrop_client.utils import safe_mkdir
+from secure_fs import safe_mkdir
 
 DEFAULT_SDC_HOME = "~/.securedrop_client"
 ENCODING = "utf-8"
