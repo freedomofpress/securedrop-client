@@ -205,32 +205,16 @@ Create `sd-journalist.sec` in the `securedrop-workstation` directory in `dom0` a
 securedrop-client
 ```
 
-### OSX
-
-```
-# install Homebrew https://brew.sh/
-
-brew install pyenv
-# follow step 3 onwards of https://github.com/pyenv/pyenv#basic-github-checkout
-# install and select the latest version of python 3.7.x
-pyenv install 3.7.x
-pyenv local 3.7.x
-
-pip install virtualenv
-virtualenv --python=python3.7 .venv
-source .venv/bin/activate
-pip install --require-hashes -r requirements/dev-mac-requirements.txt
-```
-
 ## Updating dependencies
 
-We have several dependency files: `dev-requirements.txt` (Linux), `dev-mac-requirements.txt` (macOS) and `requirements.txt` point to python software foundation hashes, and `build-requirements.txt` points to our builds of the wheels from our own pip mirror (https://pypi.securedrop.org/). Whenever a dependency in `build-requirements.txt` changes, our team needs to manually review the code in the dependency diff with a focus on spotting vulnerabilities.
+`dev-requirements.txt` and `requirements.txt` point to python software foundation hashes, and `build-requirements.txt` points to our builds of the wheels from our own pip mirror (https://pypi.securedrop.org/). Whenever a dependency in `build-requirements.txt` changes, our team needs to manually review the code in the dependency diff with a focus on spotting vulnerabilities.
 
 If you're adding or updating a dependency, you need to:
 
-1. Modify either `requirements.in` or `dev-requirements.in` (depending on whether it is prod or dev only) and then run `make update-pip-requirements`. This will generate `dev-requirements.txt` and `requirements.txt`.
+1. Modify either `requirements.in` or `dev-requirements.in` (depending on whether it is prod or dev only)
+2. Run `make update-pip-requirements`. This will generate `dev-requirements.txt` and `requirements.txt`
 
-2. For building a debian package from this project, we use the requirements in
+For building a debian package from this project, we use the requirements in
 `build-requirements.txt` which uses our pip mirror, i.e. the hashes in that file point to
 wheels on our pip mirror. A maintainer will need to add
 the updated dependency to our pip mirror (you can request this in the PR).
