@@ -3204,6 +3204,7 @@ class DeleteConversationDialog(ModalDialog):
 
         self.continue_button.setText(_("YES, DELETE FILES AND MESSAGES"))
         self.continue_button.clicked.connect(self.delete_conversation)
+        self.continue_button.setFocus()
 
         self.adjustSize()
 
