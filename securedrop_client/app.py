@@ -25,6 +25,7 @@ import signal
 import socket
 import sys
 from argparse import ArgumentParser
+from gettext import gettext as _
 from logging.handlers import SysLogHandler, TimedRotatingFileHandler
 
 from PyQt5.QtCore import Qt, QTimer
@@ -169,7 +170,11 @@ def prevent_second_instance(app: QApplication, unique_name: str) -> None:
     except OSError as e:
         if e.errno == ALREADY_BOUND_ERRNO:
             err_dialog = QMessageBox()
-            err_dialog.setText(app.applicationName() + " is already running.")
+            err_dialog.setText(
+                _("{application_name} is already running").format(
+                    application_name=app.applicationName()
+                )
+            )
             err_dialog.exec()
             sys.exit()
         else:
