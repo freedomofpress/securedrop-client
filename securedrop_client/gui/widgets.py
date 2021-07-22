@@ -747,7 +747,7 @@ class EmptyConversationView(QWidget):
         bullet1_layout = QHBoxLayout()
         bullet1_layout.setContentsMargins(0, 0, 0, 0)
         bullet1.setLayout(bullet1_layout)
-        bullet1_bullet = QLabel("·")
+        bullet1_bullet = QLabel("·")  # nosemgrep: semgrep.untranslated-gui-string
         bullet1_bullet.setObjectName("EmptyConversationView_bullet")
         bullet1_layout.addWidget(bullet1_bullet)
         bullet1_layout.addWidget(QLabel(_("Read a conversation")))
@@ -756,7 +756,7 @@ class EmptyConversationView(QWidget):
         bullet2_layout = QHBoxLayout()
         bullet2_layout.setContentsMargins(0, 0, 0, 0)
         bullet2.setLayout(bullet2_layout)
-        bullet2_bullet = QLabel("·")
+        bullet2_bullet = QLabel("·")  # nosemgrep: semgrep.untranslated-gui-string
         bullet2_bullet.setObjectName("EmptyConversationView_bullet")
         bullet2_layout.addWidget(bullet2_bullet)
         bullet2_layout.addWidget(QLabel(_("View or retrieve files")))
@@ -765,7 +765,7 @@ class EmptyConversationView(QWidget):
         bullet3_layout = QHBoxLayout()
         bullet3_layout.setContentsMargins(0, 0, 0, 0)
         bullet3.setLayout(bullet3_layout)
-        bullet3_bullet = QLabel("·")
+        bullet3_bullet = QLabel("·")  # nosemgrep: semgrep.untranslated-gui-string
         bullet3_bullet.setObjectName("EmptyConversationView_bullet")
         bullet3_layout.addWidget(bullet3_bullet)
         bullet3_layout.addWidget(QLabel(_("Send a response")))
@@ -2379,7 +2379,7 @@ class FileWidget(QWidget):
         self.export_button.setObjectName("FileWidget_export_print")
         self.export_button.setFont(self.file_buttons_font)
         self.export_button.setCursor(QCursor(Qt.PointingHandCursor))
-        self.middot = QLabel("·")
+        self.middot = QLabel("·")  # nosemgrep: semgrep.untranslated-gui-string
         self.print_button = QPushButton(_("PRINT"))
         self.print_button.setObjectName("FileWidget_export_print")
         self.print_button.setFont(self.file_buttons_font)
