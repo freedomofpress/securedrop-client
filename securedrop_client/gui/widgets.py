@@ -2837,9 +2837,11 @@ class PrintDialog(ModalDialog):
     def _show_generic_error_message(self):
         self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self.close)
-        self.continue_button.setText("DONE")
+        self.continue_button.setText(_("DONE"))
         self.header.setText(self.error_header)
-        self.body.setText("{}: {}".format(self.error_status, self.generic_error_message))
+        self.body.setText(  # nosemgrep: semgrep.untranslated-gui-string
+            "{}: {}".format(self.error_status, self.generic_error_message)
+        )
         self.error_details.hide()
         self.adjustSize()
 
@@ -3061,9 +3063,11 @@ class ExportDialog(ModalDialog):
     def _show_generic_error_message(self):
         self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self.close)
-        self.continue_button.setText("DONE")
+        self.continue_button.setText(_("DONE"))
         self.header.setText(self.error_header)
-        self.body.setText("{}: {}".format(self.error_status, self.generic_error_message))
+        self.body.setText(  # nosemgrep: semgrep.untranslated-gui-string
+            "{}: {}".format(self.error_status, self.generic_error_message)
+        )
         self.error_details.hide()
         self.passphrase_form.hide()
         self.header_line.show()
