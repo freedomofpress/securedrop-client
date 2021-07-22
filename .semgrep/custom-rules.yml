@@ -97,3 +97,60 @@ rules:
     - pattern-not-inside: |
         def safe_move(...):
             ...
+
+- id: untranslated-gui-string
+  languages:
+    - python
+  severity: ERROR
+  message: Untranslated GUI string
+  patterns:
+
+    # Exempt empty strings from translation:
+    - pattern-not-regex: |
+        \(""\)
+
+    # Specific cases to check:
+    - pattern-either:
+
+        # Check direct invocations of Qt-widget constructors:
+        - pattern-regex: |
+            Q(?:Action|Label|PushButton)\(\s*".*
+
+        # Check setText() calls:
+        - pattern-regex: |
+            setText\(\s*".*
+
+        # Check Qt-level (as opposed to logged) errors:
+        - pattern-regex: |
+            self\.error\(\s*".*
+
+        # Check errors passed up to the GUI:
+        - pattern-regex: |
+            self\.gui\.update_error_status\(\s*".*
+
+        # Check constructors for subclassed Qt widgets:
+        - patterns:
+            - pattern-either:
+              - pattern-inside: |
+                  class $X(QAction):
+                    ...
+                    def __init__(...):
+                      ...
+                      super().__init__(...)
+                      ...
+              - pattern-inside: |
+                  class $X(QLabel):
+                    ...
+                    def __init__(...):
+                      ...
+                      super().__init__(...)
+                      ...
+              - pattern-inside: |
+                  class $X(QPushButton):
+                    ...
+                    def __init__(...):
+                      ...
+                      super().__init__(...)
+                      ...
+            - pattern-regex: |
+                super\(\).__init__\(\s*".*
