@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.3.0
+-----
+
+* Support "delete_conversation " endpoint (#158)
+
 0.2.0
 -----
 
