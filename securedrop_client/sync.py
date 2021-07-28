@@ -42,11 +42,17 @@ class ApiSync(QObject):
 
         self.sync_thread.started.connect(self.api_sync_bg_task.sync)
 
+        self.timer = QTimer()
+        self.timer.setInterval(self.TIME_BETWEEN_SYNCS_MS)
+        self.timer.timeout.connect(self.sync)
+
     def start(self, api_client: API) -> None:
         """
         Start metadata syncs.
         """
         self.api_client = api_client
+
+        self.timer.start()
 
         if not self.sync_thread.isRunning():
             logger.debug("Starting sync thread")
@@ -68,14 +74,18 @@ class ApiSync(QObject):
         Start another sync on success.
         """
         self.sync_success.emit()
-        QTimer.singleShot(self.TIME_BETWEEN_SYNCS_MS, self.api_sync_bg_task.sync)
 
     def on_sync_failure(self, result: Exception) -> None:
         """
         Only start another sync on failure if the reason is a timeout request.
         """
         self.sync_failure.emit(result)
-        QTimer.singleShot(self.TIME_BETWEEN_SYNCS_MS, self.api_sync_bg_task.sync)
+
+    def sync(self) -> None:
+        """
+        Start an immediate sync.
+        """
+        QTimer.singleShot(1, self.api_sync_bg_task.sync)
 
 
 class ApiSyncBackgroundTask(QObject):

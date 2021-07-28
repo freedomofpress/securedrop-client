@@ -993,6 +993,7 @@ class Controller(QObject):
 
     def on_delete_conversation_success(self, uuid: str) -> None:
         logger.info("Conversation %s successfully deleted at server", uuid)
+        self.api_sync.sync()
 
     def on_delete_conversation_failure(self, e: Exception) -> None:
         if isinstance(e, DeleteConversationJobException):
@@ -1005,7 +1006,8 @@ class Controller(QObject):
         """
         Rely on sync to delete the source locally so we know for sure it was deleted
         """
-        pass
+        logger.info("Source %s successfully deleted at server", source_uuid)
+        self.api_sync.sync()
 
     def on_delete_source_failure(self, e: Exception) -> None:
         if isinstance(e, DeleteSourceJobException):
