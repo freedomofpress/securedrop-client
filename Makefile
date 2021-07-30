@@ -2,8 +2,11 @@ DEFAULT_GOAL: help
 OPEN=$(word 1, $(wildcard /usr/bin/xdg-open /usr/bin/open))
 
 .PHONY: venv
-venv:  ## Provision a Python 3 virtualenv for development.
+venv:  ## Provision a Python 3 virtualenv for **development**
 	python3 -m venv .venv
+	## Good idea to upgrade pip and wheel when you create a new dev virtual environment.
+	## Or you could use the virtualenv command instead.
+	.venv/bin/pip install --upgrade pip wheel
 	.venv/bin/pip install --require-hashes -r dev-requirements.txt
 
 .PHONY: black
