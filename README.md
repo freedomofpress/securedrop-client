@@ -11,9 +11,8 @@ The SDK is currently used by the [SecureDrop Client](https://github.com/freedomo
 # Quick Start
 
 ```bash
-virtualenv --python=python3 .venv
+make venv
 source .venv/bin/activate
-pip install --require-hashes -r dev-requirements.txt
 make test
 ```
 
