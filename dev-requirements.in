@@ -10,4 +10,4 @@ pytest-cov
 vcrpy
 pyyaml>=5.4.1,<6
 pytest-mock
-pip-tools>=5.0.0
+pip-tools
