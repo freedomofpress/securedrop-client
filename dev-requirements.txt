@@ -352,6 +352,14 @@ typed-ast==1.4.3 \
     # via
     #   black
     #   mypy
+types-pyyaml==5.4.3 \
+    --hash=sha256:2e7b81b2b7af751634425107b986086c6ba7cb61270a43a5c290c58be8cdbc3a \
+    --hash=sha256:bca83cbfc0be48600a8abf1e3d87fb762a91e6d35d724029a3321dd2dce2ceb1
+    # via -r dev-requirements.in
+types-requests==2.25.1 \
+    --hash=sha256:2d514ee172088a8fc0d554537d6424bd261c18e63195cfe47c410df0de0ed96f \
+    --hash=sha256:6e9534281fe5d06ba8116807a8de930b90b6f92dff179f8cbfa2dfdd3bd2c465
+    # via -r dev-requirements.in
 typing-extensions==3.10.0.0 \
     --hash=sha256:0ac0f89795dd19de6b97debb0c6af1c70987fd80a2d62d1958f7e56fcc31b497 \
     --hash=sha256:50b6f157849174217d0656f99dc82fe932884fb250826c18350e159ec6cdf342 \
