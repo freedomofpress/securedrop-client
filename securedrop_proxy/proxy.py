@@ -6,8 +6,7 @@ import subprocess
 import sys
 import tempfile
 import uuid
-from tempfile import _TemporaryFileWrapper  # type: ignore
-from typing import Dict, Optional
+from typing import IO, Dict, Optional
 
 import furl  # type: ignore
 import requests
@@ -126,7 +125,7 @@ class Proxy:
     #
     # In any case, this callback mutates the given result object (in
     # `res`) to include the name of the new file, or to indicate errors.
-    def on_save(self, fh: _TemporaryFileWrapper, res: Response) -> None:
+    def on_save(self, fh: IO[bytes], res: Response) -> None:
         fn = str(uuid.uuid4())
 
         try:
