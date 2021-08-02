@@ -11,3 +11,4 @@ vcrpy
 pyyaml>=5.4.1,<6
 pytest-mock
 pip-tools
+types-requests

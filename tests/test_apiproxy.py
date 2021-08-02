@@ -6,11 +6,11 @@ from subprocess import TimeoutExpired
 
 import pyotp
 import pytest
+from test_shared import TestShared
+from utils import qrexec_datasaver
 
 from sdclientapi import API, RequestTimeoutError
 from sdclientapi.sdlocalobjects import AuthError, BaseError, Reply, Submission
-from test_shared import TestShared
-from utils import qrexec_datasaver
 
 
 class TestAPIProxy(TestShared):

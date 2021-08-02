@@ -55,7 +55,8 @@ def json_query(proxy_vm_name: str, data: str, timeout: Optional[int] = None) -> 
         stdout=PIPE,
         stderr=PIPE,
     )
-    p.stdin.write(data.encode("utf-8"))
+    if p.stdin is not None:
+        p.stdin.write(data.encode("utf-8"))
 
     try:
         stdout, _ = p.communicate(timeout=timeout)  # type: (bytes, bytes)
@@ -274,7 +275,10 @@ class API:
         method = "GET"
 
         data, status_code, headers = self._send_json_request(
-            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
         )
 
         sources = data["sources"]
@@ -297,7 +301,10 @@ class API:
         method = "GET"
 
         data, status_code, headers = self._send_json_request(
-            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
         )
 
         if status_code == 404:
@@ -328,7 +335,10 @@ class API:
         method = "DELETE"
 
         data, status_code, headers = self._send_json_request(
-            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
         )
 
         if status_code == 404:
@@ -354,7 +364,10 @@ class API:
         method = "DELETE"
 
         data, status_code, headers = self._send_json_request(
-            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
         )
 
         if status_code == 404:
@@ -388,7 +401,10 @@ class API:
         method = "POST"
 
         data, status_code, headers = self._send_json_request(
-            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
         )
         if status_code == 404:
             raise WrongUUIDError("Missing source {}".format(source.uuid))
@@ -408,7 +424,10 @@ class API:
         method = "DELETE"
 
         data, status_code, headers = self._send_json_request(
-            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
         )
         if status_code == 404:
             raise WrongUUIDError("Missing source {}".format(source.uuid))
@@ -429,7 +448,10 @@ class API:
         method = "GET"
 
         data, status_code, headers = self._send_json_request(
-            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
         )
 
         if status_code == 404:
@@ -457,7 +479,10 @@ class API:
         method = "GET"
 
         data, status_code, headers = self._send_json_request(
-            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
         )
 
         if status_code == 404:
@@ -487,7 +512,10 @@ class API:
         method = "GET"
 
         data, status_code, headers = self._send_json_request(
-            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
         )
 
         result = []  # type: List[Submission]
@@ -515,7 +543,10 @@ class API:
         method = "DELETE"
 
         data, status_code, headers = self._send_json_request(
-            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
         )
 
         if status_code == 404:
@@ -599,7 +630,10 @@ class API:
         method = "POST"
 
         data, status_code, headers = self._send_json_request(
-            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
         )
 
         if status_code == 404:
@@ -623,7 +657,10 @@ class API:
         method = "GET"
 
         data, status_code, headers = self._send_json_request(
-            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
         )
 
         return data
@@ -639,7 +676,10 @@ class API:
         method = "GET"
 
         data, status_code, headers = self._send_json_request(
-            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
         )
 
         users = data["users"]
@@ -691,7 +731,10 @@ class API:
         method = "GET"
 
         data, status_code, headers = self._send_json_request(
-            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
         )
 
         if status_code == 404:
@@ -716,7 +759,10 @@ class API:
         method = "GET"
 
         data, status_code, headers = self._send_json_request(
-            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
         )
 
         if status_code == 404:
@@ -736,7 +782,10 @@ class API:
         method = "GET"
 
         data, status_code, headers = self._send_json_request(
-            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
         )
 
         result = []
@@ -766,7 +815,10 @@ class API:
                 raise BaseError("Please provide a valid directory to save.")
 
         data, status_code, headers = self._send_json_request(
-            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
         )
 
         if status_code == 404:
@@ -805,7 +857,10 @@ class API:
         method = "DELETE"
 
         data, status_code, headers = self._send_json_request(
-            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
         )
 
         if status_code == 404:
@@ -824,7 +879,10 @@ class API:
         method = "POST"
 
         data, status_code, headers = self._send_json_request(
-            method, path_query, headers=self.req_headers, timeout=self.default_request_timeout,
+            method,
+            path_query,
+            headers=self.req_headers,
+            timeout=self.default_request_timeout,
         )
 
         if "message" in data and data["message"] == "Your token has been revoked.":

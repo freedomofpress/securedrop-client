@@ -7,10 +7,10 @@ import pyotp
 import pytest
 import vcr
 from requests.exceptions import ConnectTimeout, ReadTimeout
+from test_shared import TestShared
 
 from sdclientapi import API, RequestTimeoutError
 from sdclientapi.sdlocalobjects import AuthError, Reply, Submission
-from test_shared import TestShared
 
 NUM_REPLIES_PER_SOURCE = 2
 
