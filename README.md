@@ -27,15 +27,15 @@ server's response to STDOUT. For discussion about the shape of the
 request and response objects, see
 https://github.com/freedomofpress/securedrop-workstation/issues/107.
 
-#### Installation Requirements
+#### Quick Start
 
 To try the proxy script, create a virtual environment and install the
 requirements. In the root of the project directory, run
 
 ```
-virtualenv .venv
+make venv
 source .venv/bin/activate
-pip install --require-hashes -r dev-requirements.txt
+make test
 ```
 
 #### Update Dependencies

@@ -9,9 +9,8 @@ common-steps:
     run:
       name: Install requirements and run tests
       command: |
-        virtualenv .venv
+        make venv
         source .venv/bin/activate
-        pip install --require-hashes -r dev-requirements.txt
         make check
 
   - &install_packaging_dependencies

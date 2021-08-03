@@ -9,6 +9,8 @@ mypy-extensions
 pip-tools
 pycodestyle
 pyflakes
+types-PyYAML
+types-requests
 six
 vcrpy
 wrapt
