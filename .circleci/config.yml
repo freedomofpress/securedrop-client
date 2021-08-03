@@ -13,9 +13,8 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            virtualenv --python=python3 .venv
+            make venv
             source .venv/bin/activate
-            pip install --require-hashes -r dev-requirements.txt
       - save_cache:
           key: deps9-{{ .Branch }}-{{ checksum "dev-requirements.txt" }}
           paths:
@@ -41,9 +40,8 @@ jobs:
           name: Install dependencies
           command: |
             pyenv global 3.7.0
-            virtualenv --python=python3 .venv
+            make venv
             source .venv/bin/activate
-            pip install --require-hashes -r dev-requirements.txt
       - run:
           name: Download SecureDrop server code
           command: git clone https://github.com/freedomofpress/securedrop.git
