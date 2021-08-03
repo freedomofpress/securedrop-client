@@ -521,8 +521,8 @@ ruamel.yaml==0.16.10 \
     --hash=sha256:0962fd7999e064c4865f96fb1e23079075f4a2a14849bcdc5cdba53a24f9759b \
     --hash=sha256:099c644a778bf72ffa00524f78dd0b6476bca94a1da344130f4bf3381ce5b954
     # via semgrep
-securedrop-sdk==0.2.0 \
-    --hash=sha256:c4a343077e8c0a38914e17f6369b830f1e361f9d66699b20803c07b39472357f
+securedrop-sdk==0.3.0 \
+    --hash=sha256:8ef2e66d828090cf0d31a8851ae412b71f69bc12f8d9f20d87359df835a07581
     # via -r requirements/requirements.in
 semgrep==0.42.0 \
     --hash=sha256:179741ce6f8f6785d048af5402bb2452a8771d4282f8aa7cb6852a5adad79fe8 \
