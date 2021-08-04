@@ -2947,7 +2947,7 @@ class ExportDialog(ModalDialog):
             "identifies who they are. To protect your sources, please consider redacting files "
             "before working with them on network-connected computers."
         )
-        self.exporting_message = _("Exporting: {}".format(self.file_name))
+        self.exporting_message = _("Exporting: {}").format(self.file_name)
         self.insert_usb_message = _(
             "Please insert one of the export drives provisioned specifically "
             "for the SecureDrop Workstation."
