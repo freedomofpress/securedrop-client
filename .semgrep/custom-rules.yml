@@ -114,19 +114,19 @@ rules:
 
         # Check direct invocations of Qt-widget constructors:
         - pattern-regex: |
-            Q(?:Action|Label|PushButton)\(\s*".*
+            Q(?:Action|Label|PushButton)\(\s*f?".*
 
         # Check setText() calls:
         - pattern-regex: |
-            setText\(\s*".*
+            setText\(\s*f?".*
 
         # Check Qt-level (as opposed to logged) errors:
         - pattern-regex: |
-            self\.error\(\s*".*
+            self\.error\(\s*f?".*
 
         # Check errors passed up to the GUI:
         - pattern-regex: |
-            self\.gui\.update_error_status\(\s*".*
+            self\.gui\.update_error_status\(\s*f?".*
 
         # Check constructors for subclassed Qt widgets:
         - patterns:
@@ -153,7 +153,7 @@ rules:
                       super().__init__(...)
                       ...
             - pattern-regex: |
-                super\(\).__init__\(\s*".*
+                super\(\).__init__\(\s*f?".*
 
 - id: format-before-gettext
   languages:
