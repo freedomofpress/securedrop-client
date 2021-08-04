@@ -154,3 +154,12 @@ rules:
                       ...
             - pattern-regex: |
                 super\(\).__init__\(\s*".*
+
+- id: format-before-gettext
+  languages:
+    - python
+  severity: WARNING
+  message: String formatted before gettext
+  patterns:
+    - pattern-regex: |
+        _\(\s*"(.*)".format\(
