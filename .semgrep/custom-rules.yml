@@ -161,5 +161,8 @@ rules:
   severity: WARNING
   message: String formatted before gettext
   patterns:
-    - pattern-regex: |
-        _\(\s*"(.*)".format\(
+    - pattern-either:
+        - pattern-regex: |
+            _\(\s*"(.*)".format\(
+        - pattern-regex: |
+            _\(\s*f"(.*)
