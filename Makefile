@@ -138,3 +138,58 @@ help: ## Print this message and exit.
 	@awk 'BEGIN {FS = ":.*?## "} /^[0-9a-zA-Z_-]+:.*?## / {printf "\033[36m%s\033[0m : %s\n", $$1, $$2}' $(MAKEFILE_LIST) \
 		| sort \
 		| column -s ':' -t
+
+.PHONY: version
+version:
+	@python -c "import securedrop_client; print(securedrop_client.__version__)"
+
+##############
+#
+# Localization
+#
+##############
+
+LOCALE_DIR=securedrop_client/locale
+POT=${LOCALE_DIR}/messages.pot
+VERSION=$(shell python -c "import securedrop_client; print(securedrop_client.__version__)")
+
+# Update POTs from translated strings in source code and merge into
+# per-locale POs.
+.PHONY: translate
+translate: ${LOCALE_DIR}/*/LC_MESSAGES/messages.po
+	@make --always-make ${POT}
+	@git add --verbose ${POT}
+	@for catalog in $$(find ${LOCALE_DIR} -name "*.po"); do make $${catalog}; git add --verbose $${catalog}; done
+	-git commit --message "l10n: update translation catalogs"
+
+# Derive POT from sources.
+$(POT): securedrop_client
+	@echo "updating catalog template: $@"
+	@mkdir -p ${LOCALE_DIR}
+	@pybabel extract \
+		--charset=utf-8 \
+		--output=${POT} \
+		--project="SecureDrop Client" \
+		--version=${VERSION} \
+		--msgid-bugs-address=securedrop@freedom.press \
+		--copyright-holder="Freedom of the Press Foundation" \
+		--add-comments="Translators:" \
+		--strip-comments \
+		--add-location=never \
+		--no-wrap \
+		$^
+	@sed -i -e '/^"POT-Creation-Date/d' ${POT}
+
+# Merge current POT with a locale's PO.
+#
+# NB. freedomofpress/securedrop/securedrop/i18n_tool.py updates via
+# msgmerge even though pybabel.update() is available.  Here we use
+# "pybabel update" for consistency with "pybabel extract".
+${LOCALE_DIR}/%/LC_MESSAGES/messages.po: ${POT}
+	@pybabel update \
+		--locale $$(echo $@ | grep -Eio "[a-zA-Z_]+/LC_MESSAGES/messages.po" | sed 's/\/LC_MESSAGES\/messages.po//') \
+		--input-file ${POT} \
+		--output-file $@ \
+		--no-wrap \
+		--previous
+	@sed -i -e '/^"POT-Creation-Date/d' $@
