@@ -75,8 +75,8 @@ def configure_locale_and_language() -> str:
     # DEBUG/TRANSLATE: override the language code here (e.g. to Chinese).
     # language_code = 'zh'
     gettext.translation(
-        "securedrop_client", localedir=localedir, languages=[language_code], fallback=True
-    ).install()
+        "messages", localedir=localedir, languages=[language_code], fallback=True
+    ).install("ngettext")
     return language_code
 
 

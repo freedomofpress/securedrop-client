@@ -22,7 +22,6 @@ import inspect
 import logging
 import os
 import uuid
-from gettext import gettext as _
 from typing import Any, Dict, List, Tuple, Type, Union  # noqa: F401
 
 import arrow
