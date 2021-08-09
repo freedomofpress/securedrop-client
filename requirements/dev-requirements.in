@@ -1,5 +1,6 @@
 atomicwrites==1.2.1
 attrs==19.3.0
+babel==2.9.1
 black==19.10b0
 Click==7.0
 coverage==4.5.1
