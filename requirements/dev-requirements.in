@@ -35,3 +35,4 @@ semgrep==0.42.0
 sip==4.19.8
 typed-ast==1.4.1
 vcrpy==4.0.2
+wlc==1.12

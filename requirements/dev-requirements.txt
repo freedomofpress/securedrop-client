@@ -11,6 +11,10 @@ appdirs==1.4.4 \
     --hash=sha256:7d5d0167b2b1ba821647616af46a749d1c653740dd0d2415100fe26e27afdf41 \
     --hash=sha256:a841dacd6b99318a741b166adb07e19ee71a274450e68237b4650ca1055ab128
     # via black
+argcomplete==1.12.3 \
+    --hash=sha256:291f0beca7fd49ce285d2f10e4c1c77e9460cf823eef2de54df0c0fec88b0d81 \
+    --hash=sha256:2c7dbffd8c045ea534921e63b0be6fe65e88599990d8dc408ac8c542b72a5445
+    # via wlc
 arrow==0.12.1 \
     --hash=sha256:a558d3b7b6ce7ffc74206a86c147052de23d3d4ef0e17c210dd478c53575c4cd
     # via -r requirements/requirements.in
@@ -120,6 +124,7 @@ importlib-metadata==4.8.1 \
     --hash=sha256:b618b6d2d5ffa2f16add5697cf57a46c76a56229b0ed1c438322e4e95645bd15 \
     --hash=sha256:f284b3e11256ad1e5d03ab86bb2ccd6f5339688ff17a4d797a0fe7df326f23b1
     # via
+    #   argcomplete
     #   jsonschema
     #   pluggy
     #   pytest
@@ -492,6 +497,7 @@ python-dateutil==2.7.5 \
     #   -r requirements/requirements.in
     #   alembic
     #   arrow
+    #   wlc
 python-editor==1.0.3 \
     --hash=sha256:a3c066acee22a1c94f63938341d4fb374e3fdd69366ed6603d7b24bed1efc565
     # via
@@ -509,6 +515,10 @@ pytz==2021.1 \
     --hash=sha256:83a4a90894bf38e243cf052c8b58f381bfe9a7a483f6a9cab140bc7f702ac4da \
     --hash=sha256:eb10ce3e7736052ed3623d49975ce333bcd712c7bb19a58b9e2089d4057d0798
     # via babel
+pyxdg==0.27 \
+    --hash=sha256:2d6701ab7c74bbab8caa6a95e0a0a129b1643cf6c298bf7c569adec06d0709a0 \
+    --hash=sha256:80bd93aae5ed82435f20462ea0208fb198d8eec262e831ee06ce9ddb6b91c5a5
+    # via wlc
 pyyaml==5.4.1 \
     --hash=sha256:08682f6b72c722394747bddaf0aa62277e02557c0fd1c42cb853016a38f8dedf \
     --hash=sha256:0f5f5786c0e09baddcd8b4b45f20a7b5d61a7e7e99846e3c799b05c7c53fa696 \
@@ -592,6 +602,7 @@ requests==2.26.0 \
     #   -r requirements/requirements.in
     #   securedrop-sdk
     #   semgrep
+    #   wlc
 ruamel.yaml.clib==0.2.6 \
     --hash=sha256:0847201b767447fc33b9c235780d3aa90357d20dd6108b92be544427bea197dd \
     --hash=sha256:1866cf2c284a03b9524a5cc00daca56d80057c5ce3cdc86a52020f4c720856f0 \
@@ -726,6 +737,10 @@ wcwidth==0.2.5 \
     --hash=sha256:beb4802a9cebb9144e99086eff703a642a13d6a0052920003a230f3294bbe784 \
     --hash=sha256:c4d647b99872929fdb7bdcaa4fbe7f01413ed3d98077df798530e5b04f116c83
     # via pytest
+wlc==1.12 \
+    --hash=sha256:3912b4c3c6b71fe920ec633dff68cd40a95678241aaffb32b277f76670c78105 \
+    --hash=sha256:e0a046aec8c1bb199bec20bd73e5b9ea1668d19e72fb6d0349bf7b80032af958
+    # via -r requirements/dev-requirements.in
 wrapt==1.12.1 \
     --hash=sha256:b62ffa81fb85f4332a4f609cab4ac40709470da05643a082ec1eb88e6d9b97d7
     # via vcrpy
