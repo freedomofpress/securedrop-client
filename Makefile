@@ -155,12 +155,17 @@ VERSION=$(shell python -c "import securedrop_client; print(securedrop_client.__v
 
 # Update POTs from translated strings in source code and merge into
 # per-locale POs.
-.PHONY: translate
-translate: ${LOCALE_DIR}/*/LC_MESSAGES/messages.po
+.PHONY: update-translation-catalogs
+update-translation-catalogs:
 	@make --always-make ${POT}
 	@git add --verbose ${POT}
 	@for catalog in $$(find ${LOCALE_DIR} -name "*.po"); do make $${catalog}; git add --verbose $${catalog}; done
 	-git commit --message "l10n: update translation catalogs"
+
+# Compile loadable/packageable MOs.
+.PHONY: compile-translation-catalogs
+compile-translation-catalogs: ${LOCALE_DIR}/*/LC_MESSAGES/messages.mo
+	@for locale in $^; do make $${locale}; done
 
 # Derive POT from sources.
 $(POT): securedrop_client
@@ -193,3 +198,9 @@ ${LOCALE_DIR}/%/LC_MESSAGES/messages.po: ${POT}
 		--no-wrap \
 		--previous
 	@sed -i -e '/^"POT-Creation-Date/d' $@
+
+# Compile a locale's PO to MO for (a) development runtime or (b) packaging.
+${LOCALE_DIR}/%/LC_MESSAGES/messages.mo: ${LOCALE_DIR}/%/LC_MESSAGES/messages.po
+	@pybabel compile \
+		--directory ${LOCALE_DIR} \
+		--statistics
