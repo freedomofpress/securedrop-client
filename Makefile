@@ -151,7 +151,10 @@ version:
 
 LOCALE_DIR=securedrop_client/locale
 POT=${LOCALE_DIR}/messages.pot
+SUPPORTED_LOCALES_LIST=l10n.txt
 VERSION=$(shell python -c "import securedrop_client; print(securedrop_client.__version__)")
+WEBLATE_API=https://weblate.securedrop.org/api/
+WEBLATE_COMPONENT=securedrop  # FIXME: securedrop-client (once unmarked "restricted" in Weblate)
 
 # Update POTs from translated strings in source code and merge into
 # per-locale POs.
@@ -204,3 +207,14 @@ ${LOCALE_DIR}/%/LC_MESSAGES/messages.mo: ${LOCALE_DIR}/%/LC_MESSAGES/messages.po
 	@pybabel compile \
 		--directory ${LOCALE_DIR} \
 		--statistics
+
+# List languages 100% translated in Weblate.
+.PHONY: supported-languages
+supported-languages:
+	@wlc \
+		--format json \
+		--url ${WEBLATE_API} \
+		list-translations \
+		| jq -r 'map(select(.component.slug == "${WEBLATE_COMPONENT}", .translated_percent == 100)) | map("* \(.language.name|tostring) (``\(.language.code|tostring)``)") | join("\n")' \
+		> ${SUPPORTED_LOCALES_LIST}
+	@git add ${SUPPORTED_LOCALES_LIST}
