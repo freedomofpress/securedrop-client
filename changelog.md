@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0
+* Support deletion of conversations (#1263)
+* Speed up deletion of accounts and conversations (#1273)
+* Update securedrop-sdk version to 0.3.0 (#1274)
+* Tighten file permissions (#1256)
+* Fix bug that exports twice on Enter (#1241)
+* Scale left pane background image (#1210)
+
 ## 0.4.1
 
 * Prevent path traversal in downloaded files (#1226)
