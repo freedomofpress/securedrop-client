@@ -25,6 +25,16 @@ pip uninstall securedrop-sdk
 pip install git+https://github.com/freedomofpress/securedrop-sdk@my_branch#egg=securedrop-sdk
 ```
 
+# Upgrading one single dependency
+
+To upgrade one single Python dependency, say `requests`, run the following:
+
+```bash
+PACKAGE=requests make upgrade-pip
+```
+
+This will upgrade both `dev-requirements` and primary `requirements`.
+
 # Running tests
 
 To run all tests and checks, run:

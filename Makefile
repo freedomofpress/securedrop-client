@@ -56,6 +56,12 @@ update-pip-requirements: ## Updates all Python requirements files via pip-compil
 	pip-compile --generate-hashes --output-file dev-requirements.txt requirements.in dev-requirements.in
 	pip-compile --generate-hashes --output-file requirements.txt requirements.in
 
+
+.PHONY: upgrade-pip
+upgrade-pip: ## Upgrade one single package via pip-compile
+	pip-compile --generate-hashes --upgrade-package $(PACKAGE) --output-file dev-requirements.txt requirements.in dev-requirements.in
+	pip-compile --generate-hashes --upgrade-package $(PACKAGE) --output-file requirements.txt requirements.in
+
 .PHONY: open-coverage-report
 open-coverage-report: ## Open the coverage report in your browser
 	@$(OPEN) htmlcov/index.html
