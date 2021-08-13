@@ -4,6 +4,14 @@
 
 This is a Python module and qrexec service for logging in Qubes for [SecureDrop](https://securedrop.org).
 
+## How to upgrade the dependencies?
+
+To upgrade one single Python dependency, say `redis`, run the following:
+
+```bash
+PACKAGE=redis make upgrade-pip
+```
+
 ## How to use/try this?
 
 In our example, we will use a vm named *logging* for storing logs, and we will use

@@ -23,6 +23,9 @@ safety: ## Runs `safety check` to check python dependencies for vulnerabilities
 update-pip-requirements: ## Updates all Python requirements files via pip-compile.
 	pip-compile --generate-hashes --output-file requirements.txt requirements.in
 
+.PHONY: upgrade-pip
+upgrade-pip: ## Upgrade one single package via pip-compile
+	pip-compile --generate-hashes --upgrade-package $(PACKAGE) --output-file requirements.txt requirements.in
 
 # Explaination of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##
