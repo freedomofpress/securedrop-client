@@ -7,7 +7,7 @@ all: help
 venv:
 	python3 -m venv .venv ## Provision a Python 3 virtualenv for **development**
 	.venv/bin/pip install --upgrade pip wheel
-	.venv/bin/pip install --require-hashes -r "dev-requirements.txt"
+	.venv/bin/pip install --require-hashes -r "requirements/dev-requirements.txt"
 
 .PHONY: bandit
 bandit: ## Run bandit with medium level excluding test-related folders
