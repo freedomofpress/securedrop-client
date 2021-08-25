@@ -5,9 +5,7 @@ all: help
 
 .PHONY: venv
 venv:
-	python3 -m venv .venv
-	## Good idea to upgrade pip and wheel when you create a new virtual environment.
-	## Or you could use the virtualenv command instead.
+	python3 -m venv .venv ## Provision a Python 3 virtualenv for **development**
 	.venv/bin/pip install --upgrade pip wheel
 	.venv/bin/pip install --require-hashes -r "dev-requirements.txt"
 
@@ -51,10 +49,27 @@ isort: ## Run isort for file formatting
 isort-check: ## Check isort for file formatting
 	@isort --check-only --diff securedrop_proxy/*.py tests/*.py
 
-.PHONY: update-pip-requirements
-update-pip-requirements: ## Updates all Python requirements files via pip-compile.
-	pip-compile --generate-hashes --allow-unsafe --upgrade --output-file dev-requirements.txt dev-requirements.in requirements.in
-	pip-compile --generate-hashes --output-file requirements.txt requirements.in
+.PHONY: sync-requirements
+sync-requirements:  ## Update dev-requirements.txt to pin to the same versions of prod dependencies
+	rm -r requirements/dev-requirements.txt && cp requirements/requirements.txt requirements/dev-requirements.txt
+	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-requirements.txt requirements/requirements.in requirements/dev-requirements.in
+
+.PHONY: requirements
+requirements:  ## Update *requirements.txt files if pinned versions do not comply with the dependency specifications in *requirements.in
+	pip-compile --generate-hashes --output-file requirements/requirements.txt requirements/requirements.in
+	$(MAKE) sync-requirements
+
+.PHONY: update-dependency
+update-dependency:  ## Add or upgrade a package to the latest version that complies with the dependency specifications in requirements.in
+	pip-compile --generate-hashes --upgrade-package $(PACKAGE) --output-file requirements/requirements.txt requirements/requirements.in
+	$(MAKE) sync-requirements
+
+.PHONY: update-dev-only-dependencies
+update-dev-only-dependencies:  ## Update dev-requirements.txt to pin to the latest versions of dev-only dependencies that comply with the dependency specifications in dev-requirements.in
+	$(MAKE) sync-requirements
+	@while read line; do \
+		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-requirements.txt requirements/requirements.in requirements/dev-requirements.in; \
+	done < 'requirements/dev-requirements.in'
 
 .PHONY: test
 test: clean .coverage ## Runs tests with coverage
