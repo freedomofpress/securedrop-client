@@ -4,7 +4,7 @@ include securedrop_proxy/VERSION
 include changelog.md
 include config-example.yaml
 include qubes/securedrop.Proxy
-include build-requirements.txt
-include requirements.txt
+include requirements/build-requirements.txt
+include requirements/requirements.txt
 include securedrop_proxy/*.py
 include setup.py
