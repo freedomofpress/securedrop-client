@@ -17,7 +17,7 @@ common-steps:
       command: |
         virtualenv .venv
         source .venv/bin/activate
-        pip install --require-hashes -r requirements/test-requirements.txt
+        pip install --require-hashes -r requirements/dev-requirements.txt
         make test
 
   - &install_packaging_dependencies
@@ -69,7 +69,7 @@ jobs:
           command: |
             virtualenv .venv
             source .venv/bin/activate
-            pip install --require-hashes -r requirements/test-requirements.txt
+            pip install --require-hashes -r requirements/dev-requirements.txt
             make lint
       - run:
           name: Check Python dependencies for CVEs
