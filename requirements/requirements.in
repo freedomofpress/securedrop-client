@@ -1,8 +1,8 @@
 alembic==1.0.2
 arrow==0.12.1
-certifi==2018.10.15
+certifi>=2021.5.30
 charset-normalizer>=2.0.4
-idna==2.7
+idna>=2.7
 Mako==1.0.7
 MarkupSafe>=1.1
 pathlib2==2.3.2
