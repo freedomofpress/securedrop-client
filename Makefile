@@ -1,7 +1,11 @@
+.PHONY: all
+all: help
+
 .PHONY: venv
-venv:  ## Provision a Python 3 virtualenv for development.
+venv:  ## Provision a Python 3 virtualenv for **development**
 	python3 -m venv .venv
-	.venv/bin/pip install --require-hashes -r "requirements/test-requirements.txt"
+	.venv/bin/pip install --upgrade pip wheel
+	.venv/bin/pip install --require-hashes -r requirements/dev-requirements.txt
 
 .PHONY: safety
 safety: ## Runs `safety check` to check python dependencies for vulnerabilities
@@ -13,9 +17,27 @@ safety: ## Runs `safety check` to check python dependencies for vulnerabilities
 			|| exit 1; \
 		done
 
-.PHONY: update-pip-requirements
-update-pip-requirements: ## Updates all Python requirements files via pip-compile.
-	pip-compile --allow-unsafe --generate-hashes --output-file requirements/test-requirements.txt requirements/test-requirements.in
+.PHONY: sync-requirements
+sync-requirements:  ## Update dev-requirements.txt to pin to the same versions of prod dependencies
+	rm -r requirements/dev-requirements.txt && cp requirements/requirements.txt requirements/dev-requirements.txt
+	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-requirements.txt requirements/requirements.in requirements/dev-requirements.in
+
+.PHONY: requirements
+requirements:  ## Update *requirements.txt files if pinned versions do not comply with the dependency specifications in *requirements.in
+	pip-compile --generate-hashes --output-file requirements/requirements.txt requirements/requirements.in
+	$(MAKE) sync-requirements
+
+.PHONY: update-dependency
+update-dependency:  ## Add or upgrade a package to the latest version that complies with the dependency specifications in requirements.in
+	pip-compile --generate-hashes --upgrade-package $(PACKAGE) --output-file requirements/requirements.txt requirements/requirements.in
+	$(MAKE) sync-requirements
+
+.PHONY: update-dev-only-dependencies
+update-dev-only-dependencies:  ## Update dev-requirements.txt to pin to the latest versions of dev-only dependencies that comply with the dependency specifications in dev-requirements.in
+	$(MAKE) sync-requirements
+	@while read line; do \
+		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-requirements.txt requirements/requirements.in requirements/dev-requirements.in; \
+	done < 'requirements/dev-requirements.in'
 
 .PHONY: check
 check: lint semgrep test  ## Run linter and tests
@@ -54,7 +76,7 @@ semgrep-local:
 .PHONY: help
 help: ## Print this message and exit.
 	@printf "Makefile for developing and testing the SecureDrop export code.\n"
-	@printf "Subcommands:\n\n"
+	@printf "Subcommands:\n"
 	@awk 'BEGIN {FS = ":.*?## "} /^[0-9a-zA-Z_-]+:.*?## / {printf "\033[36m%s\033[0m : %s\n", $$1, $$2}' $(MAKEFILE_LIST) \
 		| sort \
 | column -s ':' -t
