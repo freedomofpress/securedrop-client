@@ -4,10 +4,8 @@ OPEN=$(word 1, $(wildcard /usr/bin/xdg-open /usr/bin/open))
 .PHONY: venv
 venv:  ## Provision a Python 3 virtualenv for **development**
 	python3 -m venv .venv
-	## Good idea to upgrade pip and wheel when you create a new dev virtual environment.
-	## Or you could use the virtualenv command instead.
 	.venv/bin/pip install --upgrade pip wheel
-	.venv/bin/pip install --require-hashes -r dev-requirements.txt
+	.venv/bin/pip install --require-hashes -r requirements/dev-requirements.txt
 
 .PHONY: black
 black: ## Format Python source code with black
@@ -51,16 +49,27 @@ safety: ## Runs `safety check` to check python dependencies for vulnerabilities
 			|| exit 1; \
 		done
 
-.PHONY: update-pip-requirements
-update-pip-requirements: ## Updates all Python requirements files via pip-compile.
-	pip-compile --generate-hashes --output-file dev-requirements.txt requirements.in dev-requirements.in
-	pip-compile --generate-hashes --output-file requirements.txt requirements.in
+.PHONY: sync-requirements
+sync-requirements:  ## Update dev-requirements.txt to pin to the same versions of prod dependencies
+	rm -r requirements/dev-requirements.txt && cp requirements/requirements.txt requirements/dev-requirements.txt
+	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-requirements.txt requirements/requirements.in requirements/dev-requirements.in
 
+.PHONY: requirements
+requirements:  ## Update *requirements.txt files if pinned versions do not comply with the dependency specifications in *requirements.in
+	pip-compile --generate-hashes --output-file requirements/requirements.txt requirements/requirements.in
+	$(MAKE) sync-requirements
 
-.PHONY: upgrade-pip
-upgrade-pip: ## Upgrade one single package via pip-compile
-	pip-compile --generate-hashes --upgrade-package $(PACKAGE) --output-file dev-requirements.txt requirements.in dev-requirements.in
-	pip-compile --generate-hashes --upgrade-package $(PACKAGE) --output-file requirements.txt requirements.in
+.PHONY: update-dependency
+update-dependency:  ## Add or upgrade a package to the latest version that complies with the dependency specifications in requirements.in
+	pip-compile --generate-hashes --upgrade-package $(PACKAGE) --output-file requirements/requirements.txt requirements/requirements.in
+	$(MAKE) sync-requirements
+
+.PHONY: update-dev-only-dependencies
+update-dev-only-dependencies:  ## Update dev-requirements.txt to pin to the latest versions of dev-only dependencies that comply with the dependency specifications in dev-requirements.in
+	$(MAKE) sync-requirements
+	@while read line; do \
+		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-requirements.txt requirements/requirements.in requirements/dev-requirements.in; \
+	done < 'requirements/dev-requirements.in'
 
 .PHONY: open-coverage-report
 open-coverage-report: ## Open the coverage report in your browser
