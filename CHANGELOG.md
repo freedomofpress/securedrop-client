@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.3.1
+-----
+
+* Update urllib3 to 1.26.6 to address CVE-2021-33503 (#166)
+* Update certifi to 2021.5.30, idna to 2.8, requests to 2.26.0 (#167)
+ 
 0.3.0
 -----
 
