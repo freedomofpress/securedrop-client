@@ -19,6 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import html
 import logging
 import sys
+from gettext import gettext as _
+from gettext import ngettext
 from typing import Dict, List, Optional, Union  # noqa: F401
 from uuid import uuid4
 

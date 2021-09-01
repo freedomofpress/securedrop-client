@@ -5,6 +5,7 @@ expected.
 import datetime
 import logging
 import os
+from gettext import gettext as _
 from typing import Type
 from unittest.mock import Mock, call
 

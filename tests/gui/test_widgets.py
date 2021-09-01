@@ -4,6 +4,7 @@ Make sure the UI widgets are configured correctly and work as expected.
 import math
 import random
 from datetime import datetime
+from gettext import gettext as _
 from unittest.mock import Mock, PropertyMock, patch
 
 import arrow
