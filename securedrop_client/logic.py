@@ -362,9 +362,9 @@ class Controller(QObject):
         self.last_sync_filepath = os.path.join(home, "sync_flag")
         if (
             os.path.exists(self.last_sync_filepath)
-            and oct(os.stat(self.last_sync_filepath).st_mode) != "0o100700"
+            and oct(os.stat(self.last_sync_filepath).st_mode) != "0o100600"
         ):
-            os.chmod(self.last_sync_filepath, 0o700)
+            os.chmod(self.last_sync_filepath, 0o600)
 
     @property
     def is_authenticated(self) -> bool:

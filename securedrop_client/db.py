@@ -37,8 +37,8 @@ Base = declarative_base(metadata=metadata)  # type: Any
 def make_session_maker(home: str) -> scoped_session:
     db_path = os.path.join(home, "svs.sqlite")
     engine = create_engine("sqlite:///{}".format(db_path))
-    if os.path.exists(db_path) and oct(os.stat(db_path).st_mode) != "0o100700":
-        os.chmod(db_path, 0o700)
+    if os.path.exists(db_path) and oct(os.stat(db_path).st_mode) != "0o100600":
+        os.chmod(db_path, 0o600)
     maker = sessionmaker(bind=engine)
     return scoped_session(maker)
 

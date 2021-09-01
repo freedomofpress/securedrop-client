@@ -96,7 +96,7 @@ def test_Controller_init(homedir, config, mocker, session_maker):
         assert co.session_maker == session_maker
         assert co.api_threads == {}
         assert co.last_sync_filepath == insecure_sync_flag_path
-        assert oct(os.stat(co.last_sync_filepath).st_mode) == "0o100700"
+        assert oct(os.stat(co.last_sync_filepath).st_mode) == "0o100600"
 
 
 def test_Controller_setup(homedir, config, mocker, session_maker, session):
