@@ -72,11 +72,8 @@ def configure_locale_and_language() -> str:
             language_code = current_locale[:2]
     except ValueError:  # pragma: no cover
         language_code = "en"  # pragma: no cover
-    # DEBUG/TRANSLATE: override the language code here (e.g. to Chinese).
-    # language_code = 'zh'
-    gettext.translation(
-        "messages", localedir=localedir, languages=[language_code], fallback=True
-    ).install("ngettext")
+    gettext.bindtextdomain("messages", localedir=localedir)
+    gettext.textdomain("messages")
     return language_code
 
 
