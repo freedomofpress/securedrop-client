@@ -173,6 +173,7 @@ version:
 ##############
 
 LOCALE_DIR=securedrop_client/locale
+LOCALES=$(shell find ${LOCALE_DIR} -name "*.po")
 POT=${LOCALE_DIR}/messages.pot
 SUPPORTED_LOCALES_LIST=l10n.txt
 VERSION=$(shell python -c "import securedrop_client; print(securedrop_client.__version__)")
@@ -217,6 +218,9 @@ $(POT): securedrop_client
 # msgmerge even though pybabel.update() is available.  Here we use
 # "pybabel update" for consistency with "pybabel extract".
 ${LOCALE_DIR}/%/LC_MESSAGES/messages.po: ${POT}
+ifeq ($(strip $(LOCALES)),)
+	@echo "no translation catalogs to update"
+else
 	@pybabel update \
 		--locale $$(echo $@ | grep -Eio "[a-zA-Z_]+/LC_MESSAGES/messages.po" | sed 's/\/LC_MESSAGES\/messages.po//') \
 		--input-file ${POT} \
@@ -224,12 +228,17 @@ ${LOCALE_DIR}/%/LC_MESSAGES/messages.po: ${POT}
 		--no-wrap \
 		--previous
 	@sed -i -e '/^"POT-Creation-Date/d' $@
+endif
 
 # Compile a locale's PO to MO for (a) development runtime or (b) packaging.
 ${LOCALE_DIR}/%/LC_MESSAGES/messages.mo: ${LOCALE_DIR}/%/LC_MESSAGES/messages.po
+ifeq ($(strip $(LOCALES)),)
+	@echo "no translation catalogs to compile"
+else
 	@pybabel compile \
 		--directory ${LOCALE_DIR} \
 		--statistics
+endif
 
 # List languages 100% translated in Weblate.
 .PHONY: supported-languages
