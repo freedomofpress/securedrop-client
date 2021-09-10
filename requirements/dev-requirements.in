@@ -1,6 +1,5 @@
 flake8
 pip-tools
-py>=1.9.0
 pytest
 pytest-cov
 pytest-mock
