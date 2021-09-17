@@ -1,8 +1,14 @@
 .PHONY: all
 all: help
 
+.PHONY: venv-debian
+venv-debian: ## Provision a Python 3 virtualenv for development on a prod-like system that has installed dependencies specified in https://github.com/freedomofpress/securedrop-debian-packaging/blob/main/securedrop-client/debian/control
+	python3 -m venv .venv-debian --system-site-packages
+	.venv-debian/bin/pip install --upgrade pip wheel
+	.venv-debian/bin/pip install --require-hashes -r "requirements/dev-requirements-debian.txt"
+
 .PHONY: venv
-venv: ## Provision a Python 3 virtualenv for **development**
+venv: ## Provision a Python 3 virtualenv for development
 	python3 -m venv .venv
 	.venv/bin/pip install --upgrade pip wheel
 	.venv/bin/pip install --require-hashes -r "requirements/dev-requirements.txt"
@@ -32,11 +38,11 @@ check-black: ## Check Python source code formatting with black
 
 .PHONY: isort
 isort: ## Run isort to organize Python imports
-	@isort --recursive ./
+	@isort --skip-glob .venv-debian --recursive ./
 
 .PHONY: check-isort
 check-isort: ## Check Python import organization with isort
-	@isort --check-only --diff --recursive ./
+	@isort --skip-glob .venv-debian --recursive --check-only --diff ./
 
 .PHONY: mypy
 mypy: ## Run static type checker
@@ -115,15 +121,19 @@ safety: ## Runs `safety check` to check python dependencies for vulnerabilities
 bandit: ## Run bandit with medium level excluding test-related folders
 	pip install --upgrade pip && \
 	pip install --upgrade bandit && \
-	bandit -ll --recursive . --exclude ./tests,./.venv
+	bandit -ll --recursive . --exclude ./tests,./.venv,./.venv-debian
 
 .PHONY: check
 check: clean check-black check-isort semgrep bandit lint mypy test-random test-integration test-functional ## Run the full CI test suite
 
 .PHONY: sync-requirements
 sync-requirements:  ## Update dev-requirements.txt to pin to the same versions of prod dependencies
-	rm -r requirements/dev-requirements.txt && cp requirements/requirements.txt requirements/dev-requirements.txt
+	if test -f "requirements/dev-requirements.txt"; then rm -r requirements/dev-requirements.txt; fi
+	if test -f "requirements/dev-requirements-debian.txt"; then rm -r requirements/dev-requirements-debian.txt; fi
+	cp requirements/requirements.txt requirements/dev-requirements.txt
+	cp requirements/requirements.txt requirements/dev-requirements-debian.txt
 	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-requirements.txt requirements/requirements.in requirements/dev-requirements.in
+	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-requirements-debian.txt requirements/requirements.in requirements/dev-requirements-debian.in
 
 .PHONY: requirements
 requirements:  ## Update *requirements.txt files if pinned versions do not comply with the dependency specifications in *requirements.in
@@ -141,11 +151,9 @@ update-dev-only-dependencies:  ## Update dev-requirements.txt to pin to the late
 	@while read line; do \
 		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-requirements.txt requirements/requirements.in requirements/dev-requirements.in; \
 	done < 'requirements/dev-requirements.in'
-
-.PHONY: update-pip-requirements
-update-pip-requirements: ## Updates all Python requirements files via pip-compile for Linux.
-	pip-compile --verbose --rebuild --generate-hashes --annotate --allow-unsafe --output-file "requirements/dev-requirements.txt" "requirements/requirements.in" "requirements/dev-requirements.in"
-	pip-compile --verbose --rebuild --generate-hashes --annotate --output-file "requirements/requirements.txt" "requirements/requirements.in"
+	@while read line; do \
+		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-requirements-debian.txt requirements/requirements.in requirements/dev-requirements-debian.in; \
+	done < 'requirements/dev-requirements-debian.in'
 
 # Explaination of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##

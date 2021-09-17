@@ -10,7 +10,7 @@ common-steps:
       name: Install requirements and run tests
       command: |
         set -e
-        virtualenv .venv
+        make venv
         source .venv/bin/activate
         pip install --require-hashes -r requirements/dev-requirements.txt
         export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
