@@ -224,6 +224,6 @@ supported-languages:
 		--format json \
 		--url ${WEBLATE_API} \
 		list-translations \
-		| jq -r 'map(select(.component.slug == "${WEBLATE_COMPONENT}", .translated_percent == 100)) | map("* \(.language.name|tostring) (``\(.language.code|tostring)``)") | join("\n")' \
+		| jq -r 'map(select(.component.slug == "${WEBLATE_COMPONENT}" and .translated_percent == 100)) | map("* \(.language.name|tostring) (``\(.translated_percent|tostring)``)") | join("\n")' \
 		> ${SUPPORTED_LOCALES_LIST}
 	@git add ${SUPPORTED_LOCALES_LIST}
