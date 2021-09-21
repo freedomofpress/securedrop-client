@@ -178,7 +178,7 @@ POT=${LOCALE_DIR}/messages.pot
 SUPPORTED_LOCALES_LIST=l10n.txt
 VERSION=$(shell python -c "import securedrop_client; print(securedrop_client.__version__)")
 WEBLATE_API=https://weblate.securedrop.org/api/
-WEBLATE_COMPONENT=securedrop  # FIXME: securedrop-client (once unmarked "restricted" in Weblate)
+WEBLATE_COMPONENT=securedrop-client
 
 # Update POTs from translated strings in source code and merge into
 # per-locale POs.
