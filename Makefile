@@ -6,6 +6,10 @@ venv-debian: ## Provision a Python 3 virtualenv for development on a prod-like s
 	python3 -m venv .venv-debian --system-site-packages
 	.venv-debian/bin/pip install --upgrade pip wheel
 	.venv-debian/bin/pip install --require-hashes -r "requirements/dev-requirements-debian.txt"
+	@echo "#################"
+	@echo "Virtualenv with Debian system-packages is complete."
+	@echo "Make sure to install the apt packages for system Qt."
+	@echo "Then run: source .venv-debian/bin/activate"
 
 .PHONY: venv
 venv: ## Provision a Python 3 virtualenv for development
