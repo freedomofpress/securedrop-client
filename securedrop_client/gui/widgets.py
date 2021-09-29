@@ -3750,6 +3750,7 @@ class SourceConversationWrapper(QWidget):
         self.setStyleSheet(css)
 
         self.reply_box.text_edit.setDisabled(True)
+        self.reply_box.text_edit.hide()
         self.reply_box.send_button.setDisabled(True)
         self.conversation_title_bar.setDisabled(True)
         self.conversation_view.hide()
@@ -3768,7 +3769,8 @@ class SourceConversationWrapper(QWidget):
         self.reply_box.setStyleSheet(css)
         self.setStyleSheet(css)
 
-        self.reply_box.setEnabled(True)
+        self.reply_box.text_edit.setEnabled(True)
+        self.reply_box.text_edit.show()
         self.reply_box.send_button.setEnabled(True)
         self.conversation_title_bar.setEnabled(True)
         self.conversation_view.show()
@@ -3924,6 +3926,10 @@ class ReplyTextEdit(QPlainTextEdit):
         self.source = source
 
         self.setObjectName("ReplyTextEdit")
+
+        retain_space = self.sizePolicy()
+        retain_space.setRetainSizeWhenHidden(True)
+        self.setSizePolicy(retain_space)
 
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setTabChangesFocus(True)  # Needed so we can TAB to send button.
