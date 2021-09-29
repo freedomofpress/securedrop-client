@@ -3327,7 +3327,7 @@ class DeletedConversationItemsMarker(QWidget):
     """
 
     TOP_MARGIN = 28
-    BOTTOM_MARGIN = 0
+    BOTTOM_MARGIN = 4  # Add some spacing at the bottom between other widgets during scroll
 
     def __init__(self):
         super().__init__()
