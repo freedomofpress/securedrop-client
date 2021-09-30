@@ -12,6 +12,12 @@ jobs:
     steps:
       - name: Check out securedrop-client
         uses: actions/checkout@v2
+        with:
+          # Expectation: GH_TOKEN belongs to a bot user allowed to push to
+          # "main".  By design, this token will NOT be available to forks,
+          # in which this workflow will fail
+          # (https://docs.github.com/en/actions/security-guides/encrypted-secrets#using-encrypted-secrets-in-a-workflow).
+          token: ${{ secrets.GH_TOKEN }}
       - name: Set Git identity
         run: |
           git config user.name github-actions
