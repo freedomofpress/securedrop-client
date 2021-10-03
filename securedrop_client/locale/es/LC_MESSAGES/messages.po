@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.5.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2021-09-21 21:24+0000\n"
-"Last-Translator: Allie Crevier <creviera@freedom.press>\n"
+"PO-Revision-Date: 2021-10-03 23:42+0000\n"
+"Last-Translator: Zuhualime Akoochimoya <zakooch@protonmail.ch>\n"
 "Language-Team: Spanish <https://weblate.securedrop.org/projects/securedrop/"
 "securedrop-client/es/>\n"
 "Language: es\n"
@@ -20,68 +20,74 @@ msgstr ""
 "Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
-msgstr ""
+msgstr "{application_name} ya se está ejecutando"
 
 msgid "The SecureDrop server cannot be reached. Trying to reconnect..."
-msgstr ""
+msgstr "El servidor SecureDrop no puede ser alcanzado. Intentando reconectar..."
 
 msgid ""
 "Could not reach the SecureDrop server. Please check your \n"
 "Internet and Tor connection and try again."
 msgstr ""
+"No se pudo alcanzar al sevidor SecureDrop. Por favor comprueba tus\n"
+"conexiones a Internet y Tor e inténtalo de nuevo."
 
 msgid ""
 "Those credentials didn't work. Please try again, and \n"
 "make sure to use a new two-factor code."
 msgstr ""
+"Esas credenciales no funcionaron. Por favor inténtalo de nuevo, y \n"
+"asegúrate de usar un nuevo códifo de dos factores."
 
 msgid "That didn't work. Please check everything and try again."
-msgstr ""
+msgstr "Eso no funcionó. Por favor comprueba todo e inténtalo de nuevo."
 
 msgid "You must sign in to perform this action."
-msgstr ""
+msgstr "Debes iniciar sesión para efectuar esta acción."
 
 msgid "Your session expired. Please log in again."
-msgstr ""
+msgstr "Tu sesión expiró. Por favor iníciala de nuevo."
 
 msgid "Failed to update star."
-msgstr ""
+msgstr "Fallo al actualizar estrella."
 
 msgid "Retrieving new messages"
-msgstr ""
+msgstr "Descargando mensajes nuevos"
 
 msgid "File does not exist in the data directory. Please try re-downloading."
 msgstr ""
+"El archivo no existe en el directorio de datos. Por favor, intenta volviendo "
+"a descargarlo."
 
 msgid "The file download failed. Please try again."
-msgstr ""
+msgstr "La descarga del archivo falló. Por favor inténtalo de nuevo."
 
 msgid "Failed to delete conversation at server"
-msgstr ""
+msgstr "Fallo al borrar conversación en el servidor"
 
 msgid "Failed to delete source at server"
-msgstr ""
+msgstr "Fallo al borrar fuente en el servidor"
 
 msgid "SecureDrop Client {}"
-msgstr ""
+msgstr "Cliente SecureDrop {}"
 
 msgid "Last Refresh: {}"
-msgstr ""
+msgstr "Último Refresco: {}"
 
 msgid "Last Refresh: never"
-msgstr ""
+msgstr "Último Refresco: nunca"
 
 msgid "{}"
-msgstr ""
+msgstr "{}"
 
 msgid "SIGN OUT"
-msgstr ""
+msgstr "CERRAR SESIÓN"
 
 msgid "SIGN IN"
-msgstr ""
+msgstr "INICIAR SESIÓN"
 
 msgid "Nothing to see just yet!"
-msgstr ""
+msgstr "¡Nada para mirar por ahora!"
 
 msgid "Source submissions will be listed to the left, once downloaded and decrypted."
 msgstr ""
@@ -311,4 +317,4 @@ msgid "Files and messages"
 msgstr ""
 
 msgid "DELETE"
-msgstr ""
+msgstr "BORRAR"
