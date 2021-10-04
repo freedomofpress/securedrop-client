@@ -1968,7 +1968,7 @@ class SpeechBubble(QWidget):
     MIN_CONTAINER_WIDTH = 750
 
     TOP_MARGIN = 28
-    BOTTOM_MARGIN = 10
+    BOTTOM_MARGIN = 0
 
     def __init__(
         self,
@@ -2310,8 +2310,8 @@ class FileWidget(QWidget):
 
     DOWNLOAD_BUTTON_CSS = load_css("file_download_button.css")
 
-    TOP_MARGIN = 4
-    BOTTOM_MARGIN = 14
+    TOP_MARGIN = 18
+    BOTTOM_MARGIN = 0
     FILE_FONT_SPACING = 2
     FILE_OPTIONS_FONT_SPACING = 1.6
     FILENAME_WIDTH_PX = 360
@@ -3326,6 +3326,9 @@ class DeletedConversationItemsMarker(QWidget):
     Shown when earlier conversation items have been deleted.
     """
 
+    TOP_MARGIN = 28
+    BOTTOM_MARGIN = 4  # Add some spacing at the bottom between other widgets during scroll
+
     def __init__(self):
         super().__init__()
 
@@ -3347,7 +3350,7 @@ class DeletedConversationItemsMarker(QWidget):
         right_tear.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         layout = QGridLayout()
-        layout.setContentsMargins(0, 30, 0, 0)
+        layout.setContentsMargins(0, self.TOP_MARGIN, 0, self.BOTTOM_MARGIN)
 
         layout.addWidget(left_tear, 0, 0, Qt.AlignRight)
         layout.addWidget(deletion_message, 0, 1, Qt.AlignCenter)
