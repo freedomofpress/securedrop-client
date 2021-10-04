@@ -2,7 +2,6 @@ atomicwrites==1.2.1
 attrs==19.3.0
 babel==2.9.1
 black==19.10b0
-Click==7.0
 coverage==4.5.1
 flake8==3.6.0
 flaky==3.6.1
@@ -30,6 +29,6 @@ pytest-random-order==1.0.4
 pytest-vcr==1.0.2
 pytest-xdist==1.30.0
 pyyaml==5.4.1
-semgrep==0.42.0
+semgrep
 typed-ast==1.4.1
 vcrpy==4.0.2
