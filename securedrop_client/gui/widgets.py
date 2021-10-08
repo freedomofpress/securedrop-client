@@ -3259,6 +3259,11 @@ class DeleteConversationDialog(ModalDialog):
             source=source,
         )
 
+    def exec(self):
+        # Refresh counters
+        self.body.setText(self.make_body_text())
+        super().exec()
+
     @pyqtSlot()
     def delete_conversation(self):
         self.controller.delete_conversation(self.source)
