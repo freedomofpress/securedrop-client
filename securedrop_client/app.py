@@ -60,8 +60,7 @@ def excepthook(*exc_args):
 
 
 def configure_locale_and_language() -> str:
-    # Configure locale and language.
-    # Define where the translation assets are to be found.
+    """Configure locale, language and define location of translation assets."""
     localedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "locale"))
     try:
         # Use the operating system's locale.
