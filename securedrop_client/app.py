@@ -109,7 +109,7 @@ def configure_logging(sdc_home: str) -> None:
     log.setLevel(LOGLEVEL)
     log.addHandler(handler)
 
-    # add the secondard logger
+    # add the secondary logger
     log.addHandler(sysloghandler)
 
     # override excepthook to capture a log of catastrophic failures.
