@@ -95,7 +95,7 @@ def configure_logging(sdc_home: str) -> None:
     )
     handler.setFormatter(formatter)
 
-    # For rsyslog handler
+    # For syslog handler
     if platform.system() != "Linux":  # pragma: no cover
         syslog_file = "/var/run/syslog"
     else:
