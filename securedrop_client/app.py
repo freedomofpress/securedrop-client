@@ -39,6 +39,7 @@ from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
 from securedrop_client.utils import safe_mkdir
 
+SDC_NAME = "SecureDrop Client"
 DEFAULT_SDC_HOME = "~/.securedrop_client"
 ENCODING = "utf-8"
 LOGLEVEL = os.environ.get("LOGLEVEL", "info").upper()
@@ -142,8 +143,8 @@ def arg_parser() -> ArgumentParser:
         default=DEFAULT_SDC_HOME,
         type=expand_to_absolute,
         help=(
-            "SecureDrop Client home directory for storing files and state. "
-            "(Default {})".format(DEFAULT_SDC_HOME)
+            f"{SDC_NAME} home directory for storing files and state. "
+            f"(Default {DEFAULT_SDC_HOME})"
         ),
     )
     parser.add_argument(
@@ -199,10 +200,10 @@ def start_app(args, qt_args) -> NoReturn:  # type: ignore [no-untyped-def]
     configure_locale_and_language()
     init(args.sdc_home)
     configure_logging(args.sdc_home)
-    logging.info("Starting SecureDrop Client {}".format(__version__))
+    logging.info(f"Starting {SDC_NAME} {__version__}")
 
     app = QApplication(qt_args)
-    app.setApplicationName("SecureDrop Client")
+    app.setApplicationName(SDC_NAME)
     app.setDesktopFileName("org.freedomofthepress.securedrop.client")
     app.setApplicationVersion(__version__)
     app.setAttribute(Qt.AA_UseHighDpiPixmaps)
