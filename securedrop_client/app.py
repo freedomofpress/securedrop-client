@@ -98,7 +98,7 @@ def configure_logging(sdc_home: Path) -> None:
     )
     handler.setFormatter(formatter)
 
-    # For rsyslog handler
+    # For syslog handler
     if platform.system() != "Linux":  # pragma: no cover
         syslog_file = "/var/run/syslog"
     else:
@@ -112,7 +112,7 @@ def configure_logging(sdc_home: Path) -> None:
     log.setLevel(LOGLEVEL)
     log.addHandler(handler)
 
-    # add the secondard logger
+    # add the secondary logger
     log.addHandler(sysloghandler)
 
     # override excepthook to capture a log of catastrophic failures.
