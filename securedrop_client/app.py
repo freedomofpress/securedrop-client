@@ -27,6 +27,7 @@ import sys
 from argparse import ArgumentParser
 from gettext import gettext as _
 from logging.handlers import SysLogHandler, TimedRotatingFileHandler
+from typing import NewType
 
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QApplication, QMessageBox
@@ -41,6 +42,8 @@ SDC_NAME = "SecureDrop Client"
 DEFAULT_SDC_HOME = "~/.securedrop_client"
 ENCODING = "utf-8"
 LOGLEVEL = os.environ.get("LOGLEVEL", "info").upper()
+
+LanguageCode = NewType("LanguageCode", str)
 
 
 def init(sdc_home: str) -> None:
@@ -59,7 +62,7 @@ def excepthook(*exc_args):
     sys.exit(1)
 
 
-def configure_locale_and_language() -> str:
+def configure_locale_and_language() -> LanguageCode:
     """Configure locale, language and define location of translation assets."""
     localedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "locale"))
     try:
@@ -67,14 +70,14 @@ def configure_locale_and_language() -> str:
         current_locale, encoding = locale.getdefaultlocale()
         # Get the language code.
         if current_locale is None:
-            language_code = "en"
+            code = LanguageCode("en")
         else:
-            language_code = current_locale[:2]
+            code = LanguageCode(current_locale[:2])
     except ValueError:  # pragma: no cover
-        language_code = "en"  # pragma: no cover
+        code = LanguageCode("en")  # pragma: no cover
     gettext.bindtextdomain("messages", localedir=localedir)
     gettext.textdomain("messages")
-    return language_code
+    return code
 
 
 def configure_logging(sdc_home: str) -> None:
