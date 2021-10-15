@@ -28,7 +28,7 @@ from argparse import ArgumentParser
 from gettext import gettext as _
 from logging.handlers import SysLogHandler, TimedRotatingFileHandler
 from pathlib import Path
-from typing import NewType
+from typing import NewType, NoReturn
 
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QApplication, QMessageBox
@@ -181,7 +181,7 @@ def prevent_second_instance(app: QApplication, unique_name: str) -> None:
             raise
 
 
-def start_app(args, qt_args) -> None:
+def start_app(args, qt_args) -> NoReturn:  # type: ignore [no-untyped-def]
     """
     Create all the top-level assets for the application, set things up and
     run the application. Specific tasks include:
@@ -231,7 +231,7 @@ def start_app(args, qt_args) -> None:
     sys.exit(app.exec_())
 
 
-def run() -> None:
+def run() -> NoReturn:
     args, qt_args = arg_parser().parse_known_args()
     # reinsert the program's name
     qt_args.insert(0, "securedrop-client")
