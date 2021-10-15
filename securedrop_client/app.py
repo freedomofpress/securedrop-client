@@ -27,6 +27,7 @@ import sys
 from argparse import ArgumentParser
 from gettext import gettext as _
 from logging.handlers import SysLogHandler, TimedRotatingFileHandler
+from pathlib import Path
 from typing import NewType
 
 from PyQt5.QtCore import Qt, QTimer
@@ -45,7 +46,7 @@ LOGLEVEL = os.environ.get("LOGLEVEL", "info").upper()
 LanguageCode = NewType("LanguageCode", str)
 
 
-def init(sdc_home: str) -> None:
+def init(sdc_home: Path) -> None:
     safe_mkdir(sdc_home)
     safe_mkdir(sdc_home, "data")
 
@@ -79,9 +80,9 @@ def configure_locale_and_language() -> LanguageCode:
     return code
 
 
-def configure_logging(sdc_home: str) -> None:
+def configure_logging(sdc_home: Path) -> None:
     """
-    All logging related settings are set up by this function.
+    Set up all logging.
     """
     safe_mkdir(sdc_home, "logs")
     log_file = os.path.join(sdc_home, "logs", "client.log")
@@ -127,7 +128,7 @@ def configure_signal_handlers(app) -> None:
 
 def expand_to_absolute(value: str) -> str:
     """
-    Helper that expands a path to the absolute path so users can provide
+    Expands a path to the absolute path so users can provide
     arguments in the form ``~/my/dir/``.
     """
     return os.path.abspath(os.path.expanduser(value))
