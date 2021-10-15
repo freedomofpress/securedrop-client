@@ -55,8 +55,10 @@ mypy: ## Run static type checker
 	@mypy --ignore-missing-imports \
 		--disallow-incomplete-defs \
 		--disallow-untyped-defs \
+		--show-error-codes \
 		--warn-unreachable \
 		--warn-unused-ignores \
+		securedrop_client/app.py \
 		securedrop_client/db.py \
 		securedrop_client/crypto.py \
 		securedrop_client/config.py \
