@@ -107,7 +107,7 @@ class SingleObjectApiJob(ApiJob):
     def __repr__(self) -> str:
         return "{}('{}', {})".format(self.__class__.__name__, self.uuid, self.remaining_attempts)
 
-    def __eq__(self, other: Any) -> bool:  # type: ignore[override]
+    def __eq__(self, other: Any) -> bool:
         # https://github.com/python/mypy/issues/2783
         if self.uuid == getattr(other, "uuid", None) and type(self) == type(other):
             return True
