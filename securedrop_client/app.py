@@ -41,11 +41,12 @@ from securedrop_client.utils import safe_mkdir
 
 LanguageCode = NewType("LanguageCode", str)
 
-SDC_NAME = "SecureDrop Client"
-DEFAULT_SDC_HOME = "~/.securedrop_client"
 DEFAULT_LANGUAGE = LanguageCode("en")
+DEFAULT_SDC_HOME = "~/.securedrop_client"
 ENCODING = "utf-8"
+GETTEXT_DOMAIN = "messages"
 LOGLEVEL = os.environ.get("LOGLEVEL", "info").upper()
+SDC_NAME = "SecureDrop Client"
 
 
 def init(sdc_home: Path) -> None:
@@ -77,8 +78,8 @@ def configure_locale_and_language() -> LanguageCode:
             code = LanguageCode(current_locale[:2])
     except ValueError:  # pragma: no cover
         code = DEFAULT_LANGUAGE  # pragma: no cover
-    gettext.bindtextdomain("messages", localedir=localedir)
-    gettext.textdomain("messages")
+    gettext.bindtextdomain(GETTEXT_DOMAIN, localedir=localedir)
+    gettext.textdomain(GETTEXT_DOMAIN)
     return code
 
 
