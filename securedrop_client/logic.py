@@ -23,7 +23,7 @@ import logging
 import os
 import uuid
 from gettext import gettext as _
-from typing import Any, Dict, List, Tuple, Type, Union  # noqa: F401
+from typing import Dict, List, Type, Union  # noqa: F401
 
 import arrow
 import sdclientapi
@@ -71,9 +71,9 @@ logger = logging.getLogger(__name__)
 TIME_BETWEEN_SHOWING_LAST_SYNC_MS = 1000 * 30
 
 
-def login_required(f):
+def login_required(f):  # type: ignore [no-untyped-def]
     @functools.wraps(f)
-    def decorated_function(self, *args, **kwargs):
+    def decorated_function(self, *args, **kwargs):  # type: ignore [no-untyped-def]
         if not self.api:
             self.on_action_requiring_login()
             return
@@ -96,7 +96,9 @@ class APICallRunner(QObject):
     call_failed = pyqtSignal()
     call_timed_out = pyqtSignal()
 
-    def __init__(self, api_call, current_object=None, *args, **kwargs):
+    def __init__(  # type: ignore [no-untyped-def]
+        self, api_call, current_object=None, *args, **kwargs
+    ):
         """
         Initialise with the function to call the API and any associated
         args and kwargs. If current object is passed in, this represents some
@@ -109,7 +111,7 @@ class APICallRunner(QObject):
         self.kwargs = kwargs
         self.result = None
 
-    def call_api(self):
+    def call_api(self) -> None:
         """
         Call the API. Emit a boolean signal to indicate the outcome of the
         call. Any return value or exception raised is stored in self.result.
@@ -286,7 +288,7 @@ class Controller(QObject):
     """
     add_job = pyqtSignal("PyQt_PyObject")
 
-    def __init__(
+    def __init__(  # type: ignore [no-untyped-def]
         self,
         hostname: str,
         gui,
@@ -326,7 +328,7 @@ class Controller(QObject):
         self.api = None  # type: sdclientapi.API
 
         # Store authenticated user
-        self.authenticated_user = None
+        self.authenticated_user: Union[db.User, None] = None
 
         # Reference to the SqlAlchemy `sessionmaker` and `session`
         self.session_maker = session_maker
@@ -380,7 +382,7 @@ class Controller(QObject):
     def is_authenticated(self) -> None:
         raise AttributeError("Cannot delete is_authenticated")
 
-    def setup(self):
+    def setup(self) -> None:
         """
         Setup the application with the default state of:
 
@@ -403,7 +405,7 @@ class Controller(QObject):
 
         storage.clear_download_errors(self.session)
 
-    def call_api(
+    def call_api(  # type: ignore [no-untyped-def]
         self,
         api_call_func,
         success_callback,
@@ -456,7 +458,7 @@ class Controller(QObject):
         # clear error status in case queue was paused resulting in a permanent error message
         self.gui.clear_error_status()
 
-    def completed_api_call(self, thread_id, user_callback):
+    def completed_api_call(self, thread_id, user_callback):  # type: ignore [no-untyped-def]
         """
         Manage a completed API call. The actual result *may* be an exception or
         error result from the API. It's up to the handler (user_callback) to
@@ -473,7 +475,7 @@ class Controller(QObject):
         else:
             user_callback(result_data)
 
-    def login(self, username, password, totp):
+    def login(self, username: str, password: str, totp: str) -> None:
         """
         Given a username, password and time based one-time-passcode (TOTP), create a new instance
         representing the SecureDrop api and authenticate.
@@ -492,7 +494,7 @@ class Controller(QObject):
         self.show_last_sync_timer.stop()
         self.set_status("")
 
-    def on_authenticate_success(self, result):
+    def on_authenticate_success(self, result):  # type: ignore [no-untyped-def]
         """
         Handles a successful authentication call against the API.
         """
@@ -540,7 +542,7 @@ class Controller(QObject):
         self.gui.show_login_error(error=error)
         self.api_sync.stop()
 
-    def login_offline_mode(self):
+    def login_offline_mode(self) -> None:
         """
         Allow user to view in offline mode without authentication.
         """
@@ -557,21 +559,21 @@ class Controller(QObject):
         self.show_last_sync()
         self.show_last_sync_timer.start(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
 
-    def on_action_requiring_login(self):
+    def on_action_requiring_login(self) -> None:
         """
         Indicate that a user needs to login to perform the specified action.
         """
         error = _("You must sign in to perform this action.")
         self.gui.update_error_status(error)
 
-    def authenticated(self):
+    def authenticated(self) -> bool:
         """
         Return a boolean indication that the connection to the API is
         authenticated.
         """
         return bool(self.api and self.api.token is not None)
 
-    def get_last_sync(self):
+    def get_last_sync(self):  # type: ignore [no-untyped-def]
         """
         Returns the time of last synchronisation with the remote SD server.
         """
@@ -642,13 +644,13 @@ class Controller(QObject):
                 _("The SecureDrop server cannot be reached. Trying to reconnect..."), duration=0
             )
 
-    def show_last_sync(self):
+    def show_last_sync(self) -> None:
         """
         Updates the UI to show human time of last sync.
         """
         self.gui.show_last_sync(self.get_last_sync())
 
-    def update_sources(self):
+    def update_sources(self) -> None:
         """
         Display the updated list of sources with those found in local storage.
         """
@@ -718,7 +720,7 @@ class Controller(QObject):
             self.star_update_failed.emit(error.source_uuid, source.is_starred)
 
     @login_required
-    def update_star(self, source_uuid: str, is_starred: bool):
+    def update_star(self, source_uuid: str, is_starred: bool) -> None:
         """
         Star or unstar.
         """
@@ -727,7 +729,7 @@ class Controller(QObject):
         job.failure_signal.connect(self.on_update_star_failure, type=Qt.QueuedConnection)
         self.add_job.emit(job)
 
-    def logout(self):
+    def logout(self) -> None:
         """
         If the token is not already invalid, make an api call to logout and invalidate the token.
         Then mark all pending draft replies as failed, stop the queues, and show the user as logged
@@ -753,11 +755,11 @@ class Controller(QObject):
         self.show_last_sync()
         self.is_authenticated = False
 
-    def invalidate_token(self):
+    def invalidate_token(self) -> None:
         self.api = None
         self.authenticated_user = None
 
-    def set_status(self, message, duration=5000):
+    def set_status(self, message: str, duration: int = 5000) -> None:
         """
         Set a textual status message to be displayed to the user for a certain
         duration.
@@ -896,7 +898,7 @@ class Controller(QObject):
         process = QProcess(self)
         process.start(command, args)
 
-    def run_printer_preflight_checks(self):
+    def run_printer_preflight_checks(self) -> None:
         """
         Run preflight checks to make sure the Export VM is configured correctly.
         """
@@ -908,7 +910,7 @@ class Controller(QObject):
 
         self.export.begin_printer_preflight.emit()
 
-    def run_export_preflight_checks(self):
+    def run_export_preflight_checks(self) -> None:
         """
         Run preflight checks to make sure the Export VM is configured correctly.
         """
@@ -965,7 +967,7 @@ class Controller(QObject):
         """
         self._submit_download_job(submission_type, submission_uuid)
 
-    def on_file_download_success(self, uuid: Any) -> None:
+    def on_file_download_success(self, uuid: str) -> None:
         """
         Called when a file has downloaded.
         """
@@ -1016,7 +1018,7 @@ class Controller(QObject):
             self.source_deletion_failed.emit(e.source_uuid)
 
     @login_required
-    def delete_source(self, source: db.Source):
+    def delete_source(self, source: db.Source) -> None:
         """
         Performs a delete operation on source record.
 
@@ -1033,7 +1035,7 @@ class Controller(QObject):
         self.source_deleted.emit(source.uuid)
 
     @login_required
-    def delete_conversation(self, source: db.Source):
+    def delete_conversation(self, source: db.Source) -> None:
         """
         Deletes the content of a source conversation.
 
@@ -1105,7 +1107,7 @@ class Controller(QObject):
         self.session.refresh(file)
         return file
 
-    def on_logout_success(self, result) -> None:
+    def on_logout_success(self, result: Exception) -> None:
         logging.info("Client logout successful")
 
     def on_logout_failure(self, result: Exception) -> None:

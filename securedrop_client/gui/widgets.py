@@ -29,15 +29,19 @@ import sqlalchemy.orm.exc
 from PyQt5.QtCore import QEvent, QObject, QSize, Qt, QTimer, pyqtBoundSignal, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import (
     QBrush,
+    QCloseEvent,
     QColor,
     QCursor,
+    QFocusEvent,
     QFont,
     QIcon,
     QKeyEvent,
     QKeySequence,
     QLinearGradient,
+    QMouseEvent,
     QPalette,
     QPixmap,
+    QResizeEvent,
 )
 from PyQt5.QtWidgets import (
     QAction,
@@ -88,7 +92,7 @@ class TopPane(QWidget):
     Top pane of the app window.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         # Fill the background with a gradient
@@ -148,25 +152,25 @@ class TopPane(QWidget):
         layout.addWidget(spacer, 1)
         layout.addWidget(spacer2, 1)
 
-    def setup(self, controller):
+    def setup(self, controller: Controller) -> None:
         self.sync_icon.setup(controller)
         self.error_status_bar.setup(controller)
 
-    def set_logged_in(self):
+    def set_logged_in(self) -> None:
         self.sync_icon.enable()
         self.setPalette(self.online_palette)
 
-    def set_logged_out(self):
+    def set_logged_out(self) -> None:
         self.sync_icon.disable()
         self.setPalette(self.offline_palette)
 
-    def update_activity_status(self, message: str, duration: int):
+    def update_activity_status(self, message: str, duration: int) -> None:
         self.activity_status_bar.update_message(message, duration)
 
-    def update_error_status(self, message: str, duration: int):
+    def update_error_status(self, message: str, duration: int) -> None:
         self.error_status_bar.update_message(message, duration)
 
-    def clear_error_status(self):
+    def clear_error_status(self) -> None:
         self.error_status_bar.clear_message()
 
 
@@ -175,7 +179,7 @@ class LeftPane(QWidget):
     Represents the left side pane that contains user authentication actions and information.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.setObjectName("LeftPane")
@@ -199,10 +203,10 @@ class LeftPane(QWidget):
         layout.addWidget(self.user_profile)
         layout.addWidget(self.branding_barre)
 
-    def setup(self, window, controller):
+    def setup(self, window, controller: Controller) -> None:  # type: ignore [no-untyped-def]
         self.user_profile.setup(window, controller)
 
-    def set_logged_in_as(self, db_user: User):
+    def set_logged_in_as(self, db_user: User) -> None:
         """
         Update the UI to reflect that the user is logged in as "username".
         """
@@ -210,7 +214,7 @@ class LeftPane(QWidget):
         self.user_profile.show()
         self.branding_barre.setPixmap(load_image("left_pane.svg"))
 
-    def set_logged_out(self):
+    def set_logged_out(self) -> None:
         """
         Update the UI to a logged out state.
         """
@@ -223,7 +227,7 @@ class SyncIcon(QLabel):
     An icon that shows sync state.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Add svg images to button
         super().__init__()
         self.setObjectName("SyncIcon")
@@ -233,14 +237,14 @@ class SyncIcon(QLabel):
         self.setMovie(self.sync_animation)
         self.sync_animation.start()
 
-    def setup(self, controller):
+    def setup(self, controller: Controller) -> None:
         """
         Assign a controller object (containing the application logic).
         """
         self.controller = controller
         self.controller.sync_events.connect(self._on_sync)
 
-    def _on_sync(self, data):
+    def _on_sync(self, data) -> None:  # type: ignore [no-untyped-def]
         if data == "syncing":
             self.sync_animation = load_movie("sync_active.gif")
             self.sync_animation.setScaledSize(QSize(24, 20))
@@ -252,13 +256,13 @@ class SyncIcon(QLabel):
             self.setMovie(self.sync_animation)
             self.sync_animation.start()
 
-    def enable(self):
+    def enable(self) -> None:
         self.sync_animation = load_movie("sync.gif")
         self.sync_animation.setScaledSize(QSize(24, 20))
         self.setMovie(self.sync_animation)
         self.sync_animation.start()
 
-    def disable(self):
+    def disable(self) -> None:
         self.sync_animation = load_movie("sync_disabled.gif")
         self.sync_animation.setScaledSize(QSize(24, 20))
         self.setMovie(self.sync_animation)
@@ -271,7 +275,7 @@ class ActivityStatusBar(QStatusBar):
     displayed for a given duration or until the message updated with a new message.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         # Set css id
@@ -280,7 +284,7 @@ class ActivityStatusBar(QStatusBar):
         # Remove grip image at bottom right-hand corner
         self.setSizeGripEnabled(False)
 
-    def update_message(self, message: str, duration: int):
+    def update_message(self, message: str, duration: int) -> None:
         """
         Display a status message to the user.
         """
@@ -293,7 +297,7 @@ class ErrorStatusBar(QWidget):
     be displayed for a given duration or until the message is cleared or updated with a new message.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         # Set layout
@@ -333,20 +337,20 @@ class ErrorStatusBar(QWidget):
         self.status_timer = QTimer()
         self.status_timer.timeout.connect(self._on_status_timeout)
 
-    def _hide(self):
+    def _hide(self) -> None:
         self.vertical_bar.hide()
         self.label.hide()
         self.status_bar.hide()
 
-    def _show(self):
+    def _show(self) -> None:
         self.vertical_bar.show()
         self.label.show()
         self.status_bar.show()
 
-    def _on_status_timeout(self):
+    def _on_status_timeout(self) -> None:
         self._hide()
 
-    def setup(self, controller):
+    def setup(self, controller: Controller) -> None:
         self.controller = controller
 
     def update_message(self, message: str, duration: int) -> None:
@@ -364,7 +368,7 @@ class ErrorStatusBar(QWidget):
 
         self._show()
 
-    def clear_message(self):
+    def clear_message(self) -> None:
         """
         Clear any message currently in the status bar.
         """
@@ -380,7 +384,7 @@ class UserProfile(QLabel):
     button if the user is logged out.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         # Set css id
@@ -424,7 +428,7 @@ class UserProfile(QLabel):
         layout.addWidget(self.user_icon, alignment=Qt.AlignTop)
         layout.addWidget(self.user_button, alignment=Qt.AlignTop)
 
-    def setup(self, window, controller):
+    def setup(self, window, controller: Controller) -> None:  # type: ignore [no-untyped-def]
         self.controller = controller
         self.controller.update_authenticated_user.connect(self._on_update_authenticated_user)
         self.user_button.setup(controller)
@@ -434,16 +438,16 @@ class UserProfile(QLabel):
     def _on_update_authenticated_user(self, db_user: User) -> None:
         self.set_user(db_user)
 
-    def set_user(self, db_user: User):
+    def set_user(self, db_user: User) -> None:
         self.user_icon.setText(_(db_user.initials))
         self.user_button.set_username(_(db_user.fullname))
 
-    def show(self):
+    def show(self) -> None:
         self.login_button.hide()
         self.user_icon.show()
         self.user_button.show()
 
-    def hide(self):
+    def hide(self) -> None:
         self.user_icon.hide()
         self.user_button.hide()
         self.login_button.show()
@@ -456,7 +460,7 @@ class UserIconLabel(QLabel):
 
     clicked = pyqtSignal()
 
-    def mousePressEvent(self, e):
+    def mousePressEvent(self, e: QMouseEvent) -> None:
         self.clicked.emit()
 
 
@@ -466,7 +470,7 @@ class UserButton(SvgPushButton):
     This button is responsible for launching the journalist menu on click.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("dropdown_arrow.svg", svg_size=QSize(9, 6))
 
         # Set css id
@@ -500,20 +504,20 @@ class UserMenu(QMenu):
     A menu that provides login options.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.logout = QAction(_("SIGN OUT"))
         self.logout.setFont(QFont("OpenSans", 10))
         self.addAction(self.logout)
         self.logout.triggered.connect(self._on_logout_triggered)
 
-    def setup(self, controller):
+    def setup(self, controller: Controller) -> None:
         """
         Store a reference to the controller (containing the application logic).
         """
         self.controller = controller
 
-    def _on_logout_triggered(self):
+    def _on_logout_triggered(self) -> None:
         """
         Called when the logout button is selected from the menu.
         """
@@ -525,7 +529,7 @@ class LoginButton(QPushButton):
     A button that opens a login dialog when clicked.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(_("SIGN IN"))
 
         # Set css id
@@ -536,13 +540,13 @@ class LoginButton(QPushButton):
         # Set click handler
         self.clicked.connect(self._on_clicked)
 
-    def setup(self, window):
+    def setup(self, window) -> None:  # type: ignore [no-untyped-def]
         """
         Store a reference to the GUI window object.
         """
         self.window = window
 
-    def _on_clicked(self):
+    def _on_clicked(self) -> None:
         """
         Called when the login button is clicked.
         """
@@ -555,7 +559,7 @@ class MainView(QWidget):
     and main context view).
     """
 
-    def __init__(self, parent: QObject):
+    def __init__(self, parent: QObject) -> None:
         super().__init__(parent)
 
         # Set id and styles
@@ -591,14 +595,14 @@ class MainView(QWidget):
         # is a temporary solution to keep copies of our objects since we do delete them.
         self.source_conversations = {}  # type: Dict[str, SourceConversationWrapper]
 
-    def setup(self, controller):
+    def setup(self, controller: Controller) -> None:
         """
         Pass through the controller object to this widget.
         """
         self.controller = controller
         self.source_list.setup(controller)
 
-    def show_sources(self, sources: List[Source]):
+    def show_sources(self, sources: List[Source]) -> None:
         """
         Update the left hand sources list in the UI with the passed in list of
         sources.
@@ -620,7 +624,7 @@ class MainView(QWidget):
             # We have an empty source list, so do an initial update.
             self.source_list.initial_update(sources)
 
-    def on_source_changed(self):
+    def on_source_changed(self) -> None:
         """
         Show conversation for the selected source.
         """
@@ -685,7 +689,7 @@ class MainView(QWidget):
         except KeyError:
             logger.debug("No SourceConversationWrapper for {} to delete".format(source_uuid))
 
-    def set_conversation(self, widget):
+    def set_conversation(self, widget: QWidget) -> None:
         """
         Update the view holder to contain the referenced widget.
         """
@@ -704,7 +708,7 @@ class EmptyConversationView(QWidget):
     MARGIN = 30
     NEWLINE_HEIGHT_PX = 35
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.setObjectName("EmptyConversationView")
@@ -781,17 +785,17 @@ class EmptyConversationView(QWidget):
         layout.addWidget(self.no_sources, alignment=Qt.AlignCenter)
         layout.addWidget(self.no_source_selected, alignment=Qt.AlignCenter)
 
-    def show_no_sources_message(self):
+    def show_no_sources_message(self) -> None:
         self.no_sources.show()
         self.no_source_selected.hide()
 
-    def show_no_source_selected_message(self):
+    def show_no_source_selected_message(self) -> None:
         self.no_sources.hide()
         self.no_source_selected.show()
 
 
 class SourceListWidgetItem(QListWidgetItem):
-    def __lt__(self, other):
+    def __lt__(self, other: "SourceListWidgetItem") -> bool:
         """
         Used for ordering widgets by timestamp of last interaction.
         """
@@ -816,7 +820,7 @@ class SourceList(QListWidget):
     source_selected = pyqtSignal(str)
     adjust_preview = pyqtSignal(int)
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.setObjectName("SourceList")
@@ -833,13 +837,13 @@ class SourceList(QListWidget):
         self.setSortingEnabled(True)
 
         # To hold references to SourceListWidgetItem instances indexed by source UUID.
-        self.source_items = {}
+        self.source_items: Dict[str, SourceListWidgetItem] = {}
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, event: QResizeEvent) -> None:
         self.adjust_preview.emit(event.size().width())
         super().resizeEvent(event)
 
-    def setup(self, controller):
+    def setup(self, controller: Controller) -> None:
         self.controller = controller
         self.controller.reply_succeeded.connect(self.set_snippet)
         self.controller.message_ready.connect(self.set_snippet)
@@ -910,19 +914,19 @@ class SourceList(QListWidget):
         # conversation widgets
         return deleted_uuids
 
-    def initial_update(self, sources: List[Source]):
+    def initial_update(self, sources: List[Source]) -> None:
         """
         Initialise the list with the passed in list of sources.
         """
         self.add_source(sources)
 
-    def add_source(self, sources, slice_size=1):
+    def add_source(self, sources: List[Source], slice_size: int = 1) -> None:
         """
         Add a slice of sources, and if necessary, reschedule the addition of
         more sources.
         """
 
-        def schedule_source_management(slice_size=slice_size):
+        def schedule_source_management(slice_size: int = slice_size) -> None:
             if not sources:
                 self.adjust_preview.emit(self.width() - self.INITIAL_UPDATE_SCROLLBAR_WIDTH)
                 return
@@ -957,7 +961,7 @@ class SourceList(QListWidget):
         # Qt event loop (thus unblocking the UI).
         QTimer.singleShot(1, schedule_source_management)
 
-    def get_selected_source(self):
+    def get_selected_source(self) -> Optional[Source]:
         if not self.selectedItems():
             return None
 
@@ -965,6 +969,7 @@ class SourceList(QListWidget):
         source_widget = self.itemWidget(source_item)
         if source_widget and source_exists(self.controller.session, source_widget.source_uuid):
             return source_widget.source
+        return None  # pragma: nocover
 
     def get_source_widget(self, source_uuid: str) -> Optional[QListWidget]:
         """
@@ -1000,10 +1005,10 @@ class SourceList(QListWidget):
 class SourcePreview(SecureQLabel):
     PREVIEW_WIDTH_DIFFERENCE = 140
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-    def adjust_preview(self, width):
+    def adjust_preview(self, width: int) -> None:
         """
         This is a workaround to the workaround for https://bugreports.qt.io/browse/QTBUG-85498.
         Since QLabels containing text with long strings that cannot be wrapped have to have a fixed
@@ -1024,7 +1029,7 @@ class ConversationDeletionIndicator(QWidget):
     Shown when a source's conversation content is being deleted.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.hide()
@@ -1056,11 +1061,11 @@ class ConversationDeletionIndicator(QWidget):
 
         self.setLayout(layout)
 
-    def start(self):
+    def start(self) -> None:
         self.animation.start()
         self.show()
 
-    def stop(self):
+    def stop(self) -> None:
         self.animation.stop()
         self.hide()
 
@@ -1070,7 +1075,7 @@ class SourceDeletionIndicator(QWidget):
     Shown when a source is being deleted.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.hide()
@@ -1103,11 +1108,11 @@ class SourceDeletionIndicator(QWidget):
 
         self.setLayout(layout)
 
-    def start(self):
+    def start(self) -> None:
         self.animation.start()
         self.show()
 
-    def stop(self):
+    def stop(self) -> None:
         self.animation.stop()
         self.hide()
 
@@ -1117,7 +1122,7 @@ class SourceWidgetDeletionIndicator(QLabel):
     Shown in the source list when a source's conversation content is being deleted.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.hide()
@@ -1129,11 +1134,11 @@ class SourceWidgetDeletionIndicator(QLabel):
 
         self.setMovie(self.animation)
 
-    def start(self):
+    def start(self) -> None:
         self.animation.start()
         self.show()
 
-    def stop(self):
+    def stop(self) -> None:
         self.animation.stop()
         self.hide()
 
@@ -1247,11 +1252,11 @@ class SourceWidget(QWidget):
         self.update()
 
     @pyqtSlot(int)
-    def _on_adjust_preview(self, width):
+    def _on_adjust_preview(self, width: int) -> None:
         self.setFixedWidth(width)
         self.preview.adjust_preview(width)
 
-    def update(self):
+    def update(self) -> None:
         """
         Updates the displayed values with the current values from self.source.
         """
@@ -1283,7 +1288,9 @@ class SourceWidget(QWidget):
             logger.debug(f"Could not update SourceWidget for source {self.source_uuid}: {e}")
 
     @pyqtSlot(str, str, str)
-    def set_snippet(self, source_uuid: str, collection_uuid: str = None, content: str = None):
+    def set_snippet(
+        self, source_uuid: str, collection_uuid: str = None, content: str = None
+    ) -> None:
         """
         Update the preview snippet if the source_uuid matches our own.
         """
@@ -1350,7 +1357,7 @@ class SourceWidget(QWidget):
             self.update_styles()
 
     @pyqtSlot(str)
-    def _on_source_selected(self, selected_source_uuid: str):
+    def _on_source_selected(self, selected_source_uuid: str) -> None:
         """
         Show selected widget as having been seen.
         """
@@ -1363,26 +1370,26 @@ class SourceWidget(QWidget):
             self.update_styles()
 
     @pyqtSlot(str)
-    def _on_conversation_deleted(self, source_uuid: str):
+    def _on_conversation_deleted(self, source_uuid: str) -> None:
         if self.source_uuid == source_uuid:
             self.start_conversation_deletion()
 
     @pyqtSlot(str)
-    def _on_conversation_deletion_failed(self, source_uuid: str):
+    def _on_conversation_deletion_failed(self, source_uuid: str) -> None:
         if self.source_uuid == source_uuid:
             self.end_conversation_deletion()
 
     @pyqtSlot(str)
-    def _on_source_deleted(self, source_uuid: str):
+    def _on_source_deleted(self, source_uuid: str) -> None:
         if self.source_uuid == source_uuid:
             self.start_account_deletion()
 
     @pyqtSlot(str)
-    def _on_source_deletion_failed(self, source_uuid: str):
+    def _on_source_deletion_failed(self, source_uuid: str) -> None:
         if self.source_uuid == source_uuid:
             self.end_account_deletion()
 
-    def end_account_deletion(self):
+    def end_account_deletion(self) -> None:
         self.end_deletion()
         self.star.show()
         self.name.setProperty("class", "")
@@ -1390,11 +1397,11 @@ class SourceWidget(QWidget):
         self.update_styles()
         self.deleting = False
 
-    def end_conversation_deletion(self):
+    def end_conversation_deletion(self) -> None:
         self.end_deletion()
         self.deleting_conversation = False
 
-    def end_deletion(self):
+    def end_deletion(self) -> None:
         self.deletion_indicator.stop()
         self.preview.show()
         self.timestamp.show()
@@ -1402,7 +1409,7 @@ class SourceWidget(QWidget):
         if self.source.document_count != 0:
             self.paperclip.show()
 
-    def start_account_deletion(self):
+    def start_account_deletion(self) -> None:
         self.deleting = True
         self.start_deletion()
         self.name.setProperty("class", "deleting")
@@ -1410,11 +1417,11 @@ class SourceWidget(QWidget):
         self.star.hide()
         self.update_styles()
 
-    def start_conversation_deletion(self):
+    def start_conversation_deletion(self) -> None:
         self.deleting_conversation = True
         self.start_deletion()
 
-    def start_deletion(self):
+    def start_deletion(self) -> None:
         self.preview.hide()
         self.paperclip.hide()
         if self.source.document_count != 0:
@@ -1427,7 +1434,7 @@ class StarToggleButton(SvgToggleButton):
     A button that shows whether or not a source is starred
     """
 
-    def __init__(self, controller: Controller, source_uuid: str, is_starred: bool):
+    def __init__(self, controller: Controller, source_uuid: str, is_starred: bool) -> None:
         super().__init__(on="star_on.svg", off="star_off.svg", svg_size=QSize(16, 16))
 
         self.controller = controller
@@ -1451,7 +1458,7 @@ class StarToggleButton(SvgToggleButton):
         if not self.controller.is_authenticated:
             self.disable_toggle()
 
-    def disable_toggle(self):
+    def disable_toggle(self) -> None:
         """
         Unset `checkable` so that the star cannot be toggled.
 
@@ -1467,7 +1474,7 @@ class StarToggleButton(SvgToggleButton):
             self.set_icon(on="star_on.svg", off="star_on.svg")
         self.setCheckable(False)
 
-    def enable_toggle(self):
+    def enable_toggle(self) -> None:
         """
         Enable the widget.
 
@@ -1481,7 +1488,7 @@ class StarToggleButton(SvgToggleButton):
         self.setCheckable(True)
         self.set_icon(on="star_on.svg", off="star_off.svg")  # Undo icon change from disable_toggle
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self, obj: QObject, event: QEvent) -> None:
         """
         If the button is checkable then we show a hover state.
         """
@@ -1575,7 +1582,7 @@ class LoginOfflineLink(QLabel):
 
     clicked = pyqtSignal()
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Add svg images to button
         super().__init__()
 
@@ -1586,7 +1593,7 @@ class LoginOfflineLink(QLabel):
 
         self.setText(_("USE OFFLINE"))
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         self.clicked.emit()
 
 
@@ -1595,7 +1602,7 @@ class SignInButton(QPushButton):
     A button that logs the user into application when clicked.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(_("SIGN IN"))
 
         # Set css id
@@ -1621,7 +1628,7 @@ class LoginErrorBar(QWidget):
     A bar widget for displaying messages about login errors to the user.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.setObjectName("LoginErrorBar")
@@ -1659,11 +1666,11 @@ class LoginErrorBar(QWidget):
         layout.addWidget(self.error_status_bar)
         layout.addWidget(spacer2)
 
-    def set_message(self, message):
+    def set_message(self, message: str) -> None:
         self.show()
         self.error_status_bar.setText(message)
 
-    def clear_message(self):
+    def clear_message(self) -> None:
         self.error_status_bar.setText("")
         self.hide()
 
@@ -1673,7 +1680,7 @@ class PasswordEdit(QLineEdit):
     A LineEdit with icons to show/hide password entries
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent: QDialog) -> None:
         self.parent = parent
         super().__init__(self.parent)
 
@@ -1685,7 +1692,7 @@ class PasswordEdit(QLineEdit):
         self.togglepasswordAction.triggered.connect(self.on_toggle_password_Action)
         self.password_shown = False
 
-    def on_toggle_password_Action(self):
+    def on_toggle_password_Action(self) -> None:
         if not self.password_shown:
             self.setEchoMode(QLineEdit.Normal)
             self.password_shown = True
@@ -1705,7 +1712,7 @@ class LoginDialog(QDialog):
     MAX_PASSWORD_LEN = 128  # Journalist.MAX_PASSWORD_LEN on server
     MIN_JOURNALIST_USERNAME = 3  # Journalist.MIN_USERNAME_LEN on server
 
-    def __init__(self, parent):
+    def __init__(self, parent) -> None:  # type: ignore [no-untyped-def]
         self.parent = parent
         super().__init__(self.parent)
 
@@ -1788,14 +1795,14 @@ class LoginDialog(QDialog):
         layout.addStretch()
         layout.addWidget(application_version)
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: QCloseEvent) -> None:
         """
         Only exit the application when the main window is not visible.
         """
         if not self.parent.isVisible():
             sys.exit(0)
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event: QKeyEvent) -> None:
         """
         Cutomize keyboard behavior in the login dialog.
 
@@ -1808,11 +1815,11 @@ class LoginDialog(QDialog):
         if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
             self.validate()
 
-    def setup(self, controller):
+    def setup(self, controller: Controller) -> None:
         self.controller = controller
         self.offline_mode.clicked.connect(self.controller.login_offline_mode)
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Resets the login form to the default state.
         """
@@ -1823,7 +1830,7 @@ class LoginDialog(QDialog):
         self.setDisabled(False)
         self.error_bar.clear_message()
 
-    def error(self, message):
+    def error(self, message: str) -> None:
         """
         Ensures the passed in message is displayed as an error message.
         """
@@ -1831,7 +1838,7 @@ class LoginDialog(QDialog):
         self.submit.setText(_("SIGN IN"))
         self.error_bar.set_message(message)
 
-    def validate(self):
+    def validate(self) -> None:
         """
         Validate the user input -- we expect values for:
 
@@ -1927,7 +1934,7 @@ class SenderIcon(QWidget):
         if self._initials != initials:
             self._initials = initials
 
-    def set_normal_styles(self):
+    def set_normal_styles(self) -> None:
         self.setStyleSheet("")
         if self.is_current_user:
             self.setObjectName("SenderIcon_current_user")
@@ -1935,12 +1942,12 @@ class SenderIcon(QWidget):
             self.setObjectName("SenderIcon")
         self.setStyleSheet(self.SENDER_ICON_CSS)
 
-    def set_failed_styles(self):
+    def set_failed_styles(self) -> None:
         self.setStyleSheet("")
         self.setObjectName("SenderIcon_failed")
         self.setStyleSheet(self.SENDER_ICON_CSS)
 
-    def set_pending_styles(self):
+    def set_pending_styles(self) -> None:
         self.setStyleSheet("")
         if self.is_current_user:
             self.setObjectName("SenderIcon_current_user_pending")
@@ -1948,7 +1955,7 @@ class SenderIcon(QWidget):
             self.setObjectName("SenderIcon_pending")
         self.setStyleSheet(self.SENDER_ICON_CSS)
 
-    def set_failed_to_decrypt_styles(self):
+    def set_failed_to_decrypt_styles(self) -> None:
         self.setStyleSheet("")
         self.setObjectName("SenderIcon_failed_to_decrypt")
         self.setStyleSheet(self.SENDER_ICON_CSS)
@@ -1970,7 +1977,7 @@ class SpeechBubble(QWidget):
     TOP_MARGIN = 28
     BOTTOM_MARGIN = 0
 
-    def __init__(
+    def __init__(  # type: ignore [no-untyped-def]
         self,
         message_uuid: str,
         text: str,
@@ -2042,7 +2049,7 @@ class SpeechBubble(QWidget):
 
         self.adjust_width(container_width)
 
-    def adjust_width(self, container_width):
+    def adjust_width(self, container_width: int) -> None:
         """
         This is a workaround to the workaround for https://bugreports.qt.io/browse/QTBUG-85498.
         Since QLabels containing text with long strings that cannot be wrapped have to have a fixed
@@ -2074,7 +2081,7 @@ class SpeechBubble(QWidget):
             self.failed_to_decrypt = True
             self.set_failed_to_decrypt_styles()
 
-    def set_normal_styles(self):
+    def set_normal_styles(self) -> None:
         self.message.setStyleSheet("")
         self.message.setObjectName("SpeechBubble_message")
         self.message.setStyleSheet(self.MESSAGE_CSS)
@@ -2082,7 +2089,7 @@ class SpeechBubble(QWidget):
         self.color_bar.setObjectName("SpeechBubble_status_bar")
         self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
 
-    def set_failed_to_decrypt_styles(self):
+    def set_failed_to_decrypt_styles(self) -> None:
         self.message.setStyleSheet("")
         self.message.setObjectName("SpeechBubble_message_decryption_error")
         self.message.setStyleSheet(self.MESSAGE_CSS)
@@ -2097,7 +2104,7 @@ class MessageWidget(SpeechBubble):
     Represents an incoming message from the source.
     """
 
-    def __init__(
+    def __init__(  # type: ignore [no-untyped-def]
         self,
         message_uuid: str,
         message: str,
@@ -2128,7 +2135,7 @@ class ReplyWidget(SpeechBubble):
 
     ERROR_BOTTOM_MARGIN = 20
 
-    def __init__(
+    def __init__(  # type: ignore [no-untyped-def]
         self,
         controller: Controller,
         message_uuid: str,
@@ -2265,7 +2272,7 @@ class ReplyWidget(SpeechBubble):
             self.set_normal_styles()
             self.error.hide()
 
-    def set_normal_styles(self):
+    def set_normal_styles(self) -> None:
         self.message.setStyleSheet("")
         self.message.setObjectName("SpeechBubble_reply")
         self.message.setStyleSheet(self.MESSAGE_CSS)
@@ -2279,7 +2286,7 @@ class ReplyWidget(SpeechBubble):
             self.color_bar.setObjectName("ReplyWidget_status_bar")
         self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
 
-    def set_pending_styles(self):
+    def set_pending_styles(self) -> None:
         self.message.setStyleSheet("")
         self.message.setObjectName("ReplyWidget_message_pending")
         self.message.setStyleSheet(self.MESSAGE_CSS)
@@ -2293,7 +2300,7 @@ class ReplyWidget(SpeechBubble):
             self.color_bar.setObjectName("ReplyWidget_status_bar_pending")
         self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
 
-    def set_failed_styles(self):
+    def set_failed_styles(self) -> None:
         self.message.setStyleSheet("")
         self.message.setObjectName("ReplyWidget_message_failed")
         self.message.setStyleSheet(self.MESSAGE_CSS)
@@ -2433,7 +2440,7 @@ class FileWidget(QWidget):
         file_ready_signal.connect(self._on_file_downloaded, type=Qt.QueuedConnection)
         file_missing.connect(self._on_file_missing, type=Qt.QueuedConnection)
 
-    def adjust_width(self, container_width):
+    def adjust_width(self, container_width: int) -> None:
         """
         This is a workaround to the workaround for https://bugreports.qt.io/browse/QTBUG-85498.
         See comment in the adjust_width method for SpeechBubble.
@@ -2443,7 +2450,7 @@ class FileWidget(QWidget):
         else:
             self.setFixedWidth(container_width * self.WIDTH_TO_CONTAINER_WIDTH_RATIO)
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self, obj: QObject, event: QEvent) -> None:
         t = event.type()
         if t == QEvent.MouseButtonPress:
             if event.button() == Qt.LeftButton:
@@ -2455,14 +2462,14 @@ class FileWidget(QWidget):
 
         return QObject.event(obj, event)
 
-    def update_file_size(self):
+    def update_file_size(self) -> None:
         try:
             self.file_size.setText(humanize_filesize(self.file.size))
         except Exception as e:
             logger.error(f"Could not update file size on FileWidget: {e}")
             self.file_size.setText("")
 
-    def _set_file_state(self):
+    def _set_file_state(self) -> None:
         if self.file.is_decrypted:
             logger.debug("Changing file {} state to decrypted/downloaded".format(self.uuid))
             self._set_file_name()
@@ -2498,7 +2505,7 @@ class FileWidget(QWidget):
             self.file_name.hide()
             self.no_file_name.show()
 
-    def _set_file_name(self):
+    def _set_file_name(self) -> None:
         self.file_name.setText(self.file.filename)
         if self.file_name.is_elided():
             self.horizontal_line.hide()
@@ -2517,7 +2524,7 @@ class FileWidget(QWidget):
             QTimer.singleShot(300, self.stop_button_animation)
 
     @pyqtSlot()
-    def _on_export_clicked(self):
+    def _on_export_clicked(self) -> None:
         """
         Called when the export button is clicked.
         """
@@ -2528,7 +2535,7 @@ class FileWidget(QWidget):
         self.export_dialog.show()
 
     @pyqtSlot()
-    def _on_print_clicked(self):
+    def _on_print_clicked(self) -> None:
         """
         Called when the print button is clicked.
         """
@@ -2538,7 +2545,7 @@ class FileWidget(QWidget):
         dialog = PrintDialog(self.controller, self.uuid, self.file.filename)
         dialog.exec()
 
-    def _on_left_click(self):
+    def _on_left_click(self) -> None:
         """
         Handle a completed click via the program logic. The download state
         of the file distinguishes which function in the logic layer to call.
@@ -2555,7 +2562,7 @@ class FileWidget(QWidget):
             # Download the file.
             self.controller.on_submission_download(File, self.uuid)
 
-    def start_button_animation(self):
+    def start_button_animation(self) -> None:
         """
         Update the download button to the animated "downloading" state.
         """
@@ -2569,14 +2576,14 @@ class FileWidget(QWidget):
         self.download_button.setObjectName("FileWidget_download_button_animating")
         self.download_button.setStyleSheet(self.DOWNLOAD_BUTTON_CSS)
 
-    def set_button_animation_frame(self, frame_number):
+    def set_button_animation_frame(self, frame_number: int) -> None:
         """
         Sets the download button's icon to the current frame of the spinner
         animation.
         """
         self.download_button.setIcon(QIcon(self.download_animation.currentPixmap()))
 
-    def stop_button_animation(self):
+    def stop_button_animation(self) -> None:
         """
         Stops the download animation and restores the button to its default state.
         """
@@ -2593,7 +2600,7 @@ class ModalDialog(QDialog):
     MARGIN = 40
     NO_MARGIN = 0
 
-    def __init__(self, show_header: bool = True, dangerous: bool = False):
+    def __init__(self, show_header: bool = True, dangerous: bool = False) -> None:
         parent = QApplication.activeWindow()
         super().__init__(parent)
         self.setObjectName("ModalDialog")
@@ -2669,7 +2676,7 @@ class ModalDialog(QDialog):
         self.header_animation.setScaledSize(QSize(64, 64))
         self.header_animation.frameChanged.connect(self.animate_header)
 
-    def configure_buttons(self):
+    def configure_buttons(self) -> QWidget:
         # Buttons to continue and cancel
         window_buttons = QWidget()
         window_buttons.setObjectName("ModalDialog_window_buttons")
@@ -2714,7 +2721,7 @@ class ModalDialog(QDialog):
 
         return window_buttons
 
-    def keyPressEvent(self, event: QKeyEvent):
+    def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
             if self.cancel_button.hasFocus():
                 self.cancel_button.click()
@@ -2723,13 +2730,13 @@ class ModalDialog(QDialog):
         else:
             super().keyPressEvent(event)
 
-    def animate_activestate(self):
+    def animate_activestate(self) -> None:
         self.continue_button.setIcon(QIcon(self.button_animation.currentPixmap()))
 
-    def animate_header(self):
+    def animate_header(self) -> None:
         self.header_spinner_label.setPixmap(self.header_animation.currentPixmap())
 
-    def start_animate_activestate(self):
+    def start_animate_activestate(self) -> None:
         self.button_animation.start()
         self.continue_button.setText("")
         self.continue_button.setMinimumSize(QSize(142, 43))
@@ -2741,12 +2748,12 @@ class ModalDialog(QDialog):
         self.error_details.setObjectName("ModalDialog_error_details_active")
         self.error_details.setStyleSheet(self.ERROR_DETAILS_CSS)
 
-    def start_animate_header(self):
+    def start_animate_header(self) -> None:
         self.header_icon.setVisible(False)
         self.header_spinner_label.setVisible(True)
         self.header_animation.start()
 
-    def stop_animate_activestate(self):
+    def stop_animate_activestate(self) -> None:
         self.continue_button.setIcon(QIcon())
         self.button_animation.stop()
         self.continue_button.setText(_("CONTINUE"))
@@ -2758,7 +2765,7 @@ class ModalDialog(QDialog):
         self.error_details.setObjectName("ModalDialog_error_details")
         self.error_details.setStyleSheet(self.ERROR_DETAILS_CSS)
 
-    def stop_animate_header(self):
+    def stop_animate_header(self) -> None:
         self.header_icon.setVisible(True)
         self.header_spinner_label.setVisible(False)
         self.header_animation.stop()
@@ -2768,7 +2775,7 @@ class PrintDialog(ModalDialog):
 
     FILENAME_WIDTH_PX = 260
 
-    def __init__(self, controller: Controller, file_uuid: str, file_name: str):
+    def __init__(self, controller: Controller, file_uuid: str, file_name: str) -> None:
         super().__init__()
 
         self.controller = controller
@@ -2820,13 +2827,13 @@ class PrintDialog(ModalDialog):
         self.start_animate_header()
         self._run_preflight()
 
-    def _show_starting_instructions(self):
+    def _show_starting_instructions(self) -> None:
         self.header.setText(self.starting_header)
         self.body.setText(self.starting_message)
         self.error_details.hide()
         self.adjustSize()
 
-    def _show_insert_usb_message(self):
+    def _show_insert_usb_message(self) -> None:
         self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self._run_preflight)
         self.header.setText(self.insert_usb_header)
@@ -2834,7 +2841,7 @@ class PrintDialog(ModalDialog):
         self.error_details.hide()
         self.adjustSize()
 
-    def _show_generic_error_message(self):
+    def _show_generic_error_message(self) -> None:
         self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self.close)
         self.continue_button.setText(_("DONE"))
@@ -2846,16 +2853,16 @@ class PrintDialog(ModalDialog):
         self.adjustSize()
 
     @pyqtSlot()
-    def _run_preflight(self):
+    def _run_preflight(self) -> None:
         self.controller.run_printer_preflight_checks()
 
     @pyqtSlot()
-    def _print_file(self):
+    def _print_file(self) -> None:
         self.controller.print_file(self.file_uuid)
         self.close()
 
     @pyqtSlot()
-    def _on_preflight_success(self):
+    def _on_preflight_success(self) -> None:
         # If the continue button is disabled then this is the result of a background preflight check
         self.stop_animate_header()
         self.header_icon.update_image("printer.svg", svg_size=QSize(64, 64))
@@ -2870,7 +2877,7 @@ class PrintDialog(ModalDialog):
         self._print_file()
 
     @pyqtSlot(object)
-    def _on_preflight_failure(self, error: ExportError):
+    def _on_preflight_failure(self, error: ExportError) -> None:
         self.stop_animate_header()
         self.header_icon.update_image("printer.svg", svg_size=QSize(64, 64))
         self.error_status = error.status
@@ -2897,7 +2904,7 @@ class ExportDialog(ModalDialog):
     NO_MARGIN = 0
     FILENAME_WIDTH_PX = 260
 
-    def __init__(self, controller: Controller, file_uuid: str, file_name: str):
+    def __init__(self, controller: Controller, file_uuid: str, file_name: str) -> None:
         super().__init__()
 
         self.controller = controller
@@ -2992,12 +2999,12 @@ class ExportDialog(ModalDialog):
         self.start_animate_header()
         self._run_preflight()
 
-    def _show_starting_instructions(self):
+    def _show_starting_instructions(self) -> None:
         self.header.setText(self.starting_header)
         self.body.setText(self.starting_message)
         self.adjustSize()
 
-    def _show_passphrase_request_message(self):
+    def _show_passphrase_request_message(self) -> None:
         self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self._export_file)
         self.header.setText(self.passphrase_header)
@@ -3009,7 +3016,7 @@ class ExportDialog(ModalDialog):
         self.passphrase_form.show()
         self.adjustSize()
 
-    def _show_passphrase_request_message_again(self):
+    def _show_passphrase_request_message_again(self) -> None:
         self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self._export_file)
         self.header.setText(self.passphrase_header)
@@ -3022,7 +3029,7 @@ class ExportDialog(ModalDialog):
         self.passphrase_form.show()
         self.adjustSize()
 
-    def _show_success_message(self):
+    def _show_success_message(self) -> None:
         self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self.close)
         self.header.setText(self.success_header)
@@ -3035,7 +3042,7 @@ class ExportDialog(ModalDialog):
         self.body.show()
         self.adjustSize()
 
-    def _show_insert_usb_message(self):
+    def _show_insert_usb_message(self) -> None:
         self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self._run_preflight)
         self.header.setText(self.insert_usb_header)
@@ -3047,7 +3054,7 @@ class ExportDialog(ModalDialog):
         self.body.show()
         self.adjustSize()
 
-    def _show_insert_encrypted_usb_message(self):
+    def _show_insert_encrypted_usb_message(self) -> None:
         self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self._run_preflight)
         self.header.setText(self.insert_usb_header)
@@ -3060,7 +3067,7 @@ class ExportDialog(ModalDialog):
         self.body.show()
         self.adjustSize()
 
-    def _show_generic_error_message(self):
+    def _show_generic_error_message(self) -> None:
         self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self.close)
         self.continue_button.setText(_("DONE"))
@@ -3075,18 +3082,18 @@ class ExportDialog(ModalDialog):
         self.adjustSize()
 
     @pyqtSlot()
-    def _run_preflight(self):
+    def _run_preflight(self) -> None:
         self.controller.run_export_preflight_checks()
 
     @pyqtSlot()
-    def _export_file(self, checked: bool = False):
+    def _export_file(self, checked: bool = False) -> None:
         self.start_animate_activestate()
         self.cancel_button.setEnabled(False)
         self.passphrase_field.setDisabled(True)
         self.controller.export_file_to_usb_drive(self.file_uuid, self.passphrase_field.text())
 
     @pyqtSlot()
-    def _on_preflight_success(self):
+    def _on_preflight_success(self) -> None:
         # If the continue button is disabled then this is the result of a background preflight check
         self.stop_animate_header()
         self.header_icon.update_image("savetodisk.svg", QSize(64, 64))
@@ -3101,24 +3108,24 @@ class ExportDialog(ModalDialog):
         self._show_passphrase_request_message()
 
     @pyqtSlot(object)
-    def _on_preflight_failure(self, error: ExportError):
+    def _on_preflight_failure(self, error: ExportError) -> None:
         self.stop_animate_header()
         self.header_icon.update_image("savetodisk.svg", QSize(64, 64))
         self._update_dialog(error.status)
 
     @pyqtSlot()
-    def _on_export_success(self):
+    def _on_export_success(self) -> None:
         self.stop_animate_activestate()
         self._show_success_message()
 
     @pyqtSlot(object)
-    def _on_export_failure(self, error: ExportError):
+    def _on_export_failure(self, error: ExportError) -> None:
         self.stop_animate_activestate()
         self.cancel_button.setEnabled(True)
         self.passphrase_field.setDisabled(False)
         self._update_dialog(error.status)
 
-    def _update_dialog(self, error_status: str):
+    def _update_dialog(self, error_status: str) -> None:
         self.error_status = error_status
         # If the continue button is disabled then this is the result of a background preflight check
         if not self.continue_button.isEnabled():
@@ -3148,7 +3155,7 @@ class ExportDialog(ModalDialog):
 class DeleteSourceDialog(ModalDialog):
     """Used to confirm deletion of source accounts."""
 
-    def __init__(self, source, controller):
+    def __init__(self, source: Source, controller: Controller) -> None:
         super().__init__(show_header=False, dangerous=True)
 
         self.source = source
@@ -3188,7 +3195,7 @@ class DeleteSourceDialog(ModalDialog):
         )
 
     @pyqtSlot()
-    def delete_source(self):
+    def delete_source(self) -> None:
         self.controller.delete_source(self.source)
         self.close()
 
@@ -3198,7 +3205,7 @@ class DeleteConversationDialog(ModalDialog):
     Shown to confirm deletion of all content in a source conversation.
     """
 
-    def __init__(self, source, controller):
+    def __init__(self, source: Source, controller: Controller) -> None:
         super().__init__(show_header=False, dangerous=False)
 
         self.source = source
@@ -3259,13 +3266,13 @@ class DeleteConversationDialog(ModalDialog):
             source=source,
         )
 
-    def exec(self):
+    def exec(self) -> None:
         # Refresh counters
         self.body.setText(self.make_body_text())
         super().exec()
 
     @pyqtSlot()
-    def delete_conversation(self):
+    def delete_conversation(self) -> None:
         self.controller.delete_conversation(self.source)
         self.close()
 
@@ -3275,7 +3282,7 @@ class ConversationScrollArea(QScrollArea):
     MARGIN_LEFT = 38
     MARGIN_RIGHT = 20
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.setWidgetResizable(True)
@@ -3297,7 +3304,7 @@ class ConversationScrollArea(QScrollArea):
         # `conversation` is a child of this scroll area
         self.setWidget(conversation)
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, event: QResizeEvent) -> None:
         """
         This is a workaround to the workaround for https://bugreports.qt.io/browse/QTBUG-85498.
         See comment in the adjust_width method for SpeechBubble.
@@ -3334,7 +3341,7 @@ class DeletedConversationItemsMarker(QWidget):
     TOP_MARGIN = 28
     BOTTOM_MARGIN = 4  # Add some spacing at the bottom between other widgets during scroll
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.hide()
@@ -3373,7 +3380,7 @@ class DeletedConversationMarker(QWidget):
     Shown when all content in a conversation has been deleted.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.hide()
@@ -3409,7 +3416,7 @@ class ConversationView(QWidget):
 
     SCROLL_BAR_WIDTH = 15
 
-    def __init__(self, source_db_object: Source, controller: Controller):
+    def __init__(self, source_db_object: Source, controller: Controller) -> None:
         super().__init__()
 
         self.source = source_db_object
@@ -3449,7 +3456,7 @@ class ConversationView(QWidget):
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.debug("Error initializing ConversationView: %s", e)
 
-    def update_deletion_markers(self, collection):
+    def update_deletion_markers(self, collection: list) -> None:
         if collection:
             self.scroll.show()
             if collection[0].file_counter > 1:
@@ -3535,7 +3542,7 @@ class ConversationView(QWidget):
         self.update_deletion_markers(collection)
         self.conversation_updated.emit()
 
-    def add_file(self, file: File, index):
+    def add_file(self, file: File, index: int) -> None:
         """
         Add a file from the source.
         """
@@ -3552,7 +3559,7 @@ class ConversationView(QWidget):
         self.current_messages[file.uuid] = conversation_item
         self.conversation_updated.emit()
 
-    def update_conversation_position(self, min_val, max_val):
+    def update_conversation_position(self, min_val: int, max_val: int) -> None:
         """
         Handler called when a new item is added to the conversation. Ensures
         it's scrolled to the bottom and thus visible.
@@ -3561,7 +3568,7 @@ class ConversationView(QWidget):
             self.scroll.verticalScrollBar().setValue(max_val)
             self.reply_flag = False
 
-    def add_message(self, message: Message, index) -> None:
+    def add_message(self, message: Message, index: int) -> None:
         """
         Add a message from the source.
         """
@@ -3706,37 +3713,37 @@ class SourceConversationWrapper(QWidget):
         self.conversation_view.conversation_updated.connect(self.on_conversation_updated)
 
     @pyqtSlot(str)
-    def on_conversation_deleted(self, source_uuid: str):
+    def on_conversation_deleted(self, source_uuid: str) -> None:
         if self.source_uuid == source_uuid:
             self.start_conversation_deletion()
 
     @pyqtSlot(str)
-    def on_conversation_deletion_failed(self, source_uuid: str):
+    def on_conversation_deletion_failed(self, source_uuid: str) -> None:
         if self.source_uuid == source_uuid:
             self.end_conversation_deletion()
 
     @pyqtSlot()
-    def on_conversation_updated(self):
+    def on_conversation_updated(self) -> None:
         self.conversation_title_bar.update_timestamp()
 
     @pyqtSlot(str)
-    def on_source_deleted(self, source_uuid: str):
+    def on_source_deleted(self, source_uuid: str) -> None:
         if self.source_uuid == source_uuid:
             self.start_account_deletion()
 
     @pyqtSlot(str)
-    def on_source_deletion_failed(self, source_uuid: str):
+    def on_source_deletion_failed(self, source_uuid: str) -> None:
         if self.source_uuid == source_uuid:
             self.end_account_deletion()
 
-    def start_conversation_deletion(self):
+    def start_conversation_deletion(self) -> None:
         self.reply_box.setProperty("class", "deleting_conversation")
         self.deleting_conversation = True
         self.start_deletion()
         self.conversation_deletion_indicator.start()
         self.deletion_indicator.stop()
 
-    def start_account_deletion(self):
+    def start_account_deletion(self) -> None:
         self.reply_box.setProperty("class", "deleting")
         self.deleting_account = True
         self.reply_box.text_edit.setText("")
@@ -3752,7 +3759,7 @@ class SourceConversationWrapper(QWidget):
         self.conversation_deletion_indicator.stop()
         self.deletion_indicator.start()
 
-    def start_deletion(self):
+    def start_deletion(self) -> None:
         css = load_css("sdclient.css")
         self.reply_box.setStyleSheet(css)
         self.setStyleSheet(css)
@@ -3763,15 +3770,15 @@ class SourceConversationWrapper(QWidget):
         self.conversation_title_bar.setDisabled(True)
         self.conversation_view.hide()
 
-    def end_conversation_deletion(self):
+    def end_conversation_deletion(self) -> None:
         self.deleting_conversation = False
         self.end_deletion()
 
-    def end_account_deletion(self):
+    def end_account_deletion(self) -> None:
         self.deleting_account = False
         self.end_deletion()
 
-    def end_deletion(self):
+    def end_deletion(self) -> None:
         self.reply_box.setProperty("class", "")
         css = load_css("sdclient.css")
         self.reply_box.setStyleSheet(css)
@@ -3861,7 +3868,7 @@ class ReplyBoxWidget(QWidget):
         self.controller.authentication_state.connect(self._on_authentication_changed)
         self.controller.sync_events.connect(self._on_synced)
 
-    def set_logged_in(self):
+    def set_logged_in(self) -> None:
         self.text_edit.set_logged_in()
         # Even if we are logged in, we cannot reply to a source if we do not
         # have a public key for it.
@@ -3872,7 +3879,7 @@ class ReplyBoxWidget(QWidget):
             self.replybox.setEnabled(False)
             self.send_button.hide()
 
-    def set_logged_out(self):
+    def set_logged_out(self) -> None:
         self.text_edit.set_logged_out()
         self.replybox.setEnabled(False)
         self.send_button.hide()
@@ -3927,7 +3934,7 @@ class ReplyTextEdit(QPlainTextEdit):
     a richtext lable on top to replace the placeholder functionality
     """
 
-    def __init__(self, source, controller):
+    def __init__(self, source: Source, controller: Controller) -> None:
         super().__init__()
 
         self.controller = controller
@@ -3948,19 +3955,19 @@ class ReplyTextEdit(QPlainTextEdit):
 
         self.set_logged_in()
 
-    def focusInEvent(self, e):
+    def focusInEvent(self, e: QFocusEvent) -> None:
         # override default behavior: when reply text box is focused, the placeholder
         # disappears instead of only doing so when text is typed
         if self.toPlainText() == "":
             self.placeholder.hide()
         super(ReplyTextEdit, self).focusInEvent(e)
 
-    def focusOutEvent(self, e):
+    def focusOutEvent(self, e: QFocusEvent) -> None:
         if self.toPlainText() == "":
             self.placeholder.show()
         super(ReplyTextEdit, self).focusOutEvent(e)
 
-    def set_logged_in(self):
+    def set_logged_in(self) -> None:
         if self.source.public_key:
             self.placeholder.show_signed_in()
             self.setEnabled(True)
@@ -3968,18 +3975,18 @@ class ReplyTextEdit(QPlainTextEdit):
             self.placeholder.show_signed_in_no_key()
             self.setEnabled(False)
 
-    def set_logged_out(self):
+    def set_logged_out(self) -> None:
         self.placeholder.show_signed_out()
         self.setEnabled(False)
 
-    def setText(self, text):
+    def setText(self, text: str) -> None:
         if text == "":
             self.placeholder.show()
         else:
             self.placeholder.hide()
         super(ReplyTextEdit, self).setPlainText(text)
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, event: QResizeEvent) -> None:
         # Adjust available source label width to elide text when necessary
         self.placeholder.update_label_width(event.size().width())
         super().resizeEvent(event)
@@ -3998,7 +4005,7 @@ class ReplyTextEditPlaceholder(QWidget):
     # incorrectly reposition it
     FIXED_LABEL_WIDTH = 800
 
-    def __init__(self, source_name):
+    def __init__(self, source_name: str) -> None:
         super().__init__()
 
         # Set layout
@@ -4055,67 +4062,27 @@ class ReplyTextEditPlaceholder(QWidget):
         layout.addWidget(self.signed_in_no_key)
         layout.addWidget(self.signed_out)
 
-    def show_signed_in(self):
+    def show_signed_in(self) -> None:
         self.signed_in_no_key.hide()
         self.signed_in.show()
         self.signed_out.hide()
 
-    def show_signed_in_no_key(self):
+    def show_signed_in_no_key(self) -> None:
         self.signed_in_no_key.show()
         self.signed_in.hide()
         self.signed_out.hide()
 
-    def show_signed_out(self):
+    def show_signed_out(self) -> None:
         self.signed_in_no_key.hide()
         self.signed_in.hide()
         self.signed_out.show()
 
-    def update_label_width(self, width):
+    def update_label_width(self, width: int) -> None:
         if width > self.RESERVED_WIDTH:
             # Ensure source designations are elided with "..." if needed per
             # current container size
             self.source_name_label.max_length = width - self.RESERVED_WIDTH
             self.source_name_label.setText(self.source_name)
-
-
-class DeleteSourceAction(QAction):
-    """Use this action to delete the source record."""
-
-    def __init__(self, source, parent, controller):
-        self.source = source
-        self.controller = controller
-        self.text = _("Entire source account")
-
-        super().__init__(self.text, parent)
-
-        self.confirmation_dialog = DeleteSourceDialog(self.source, self.controller)
-        self.triggered.connect(self.trigger)
-
-    def trigger(self):
-        if self.controller.api is None:
-            self.controller.on_action_requiring_login()
-        else:
-            self.confirmation_dialog.exec()
-
-
-class DeleteConversationAction(QAction):
-    """Use this action to delete a source's submissions and replies."""
-
-    def __init__(self, source, parent, controller):
-        self.source = source
-        self.controller = controller
-        self.text = _("Files and messages")
-
-        super().__init__(self.text, parent)
-
-        self.confirmation_dialog = DeleteConversationDialog(self.source, self.controller)
-        self.triggered.connect(self.trigger)
-
-    def trigger(self):
-        if self.controller.api is None:
-            self.controller.on_action_requiring_login()
-        else:
-            self.confirmation_dialog.exec()
 
 
 class SourceMenu(QMenu):
@@ -4130,7 +4097,7 @@ class SourceMenu(QMenu):
 
     SOURCE_MENU_CSS = load_css("source_menu.css")
 
-    def __init__(self, source, controller):
+    def __init__(self, source: Source, controller: Controller) -> None:
         super().__init__()
         self.source = source
         self.controller = controller
@@ -4147,13 +4114,53 @@ class SourceMenu(QMenu):
         self.addAction(DeleteSourceAction(self.source, self, self.controller))
 
 
+class DeleteSourceAction(QAction):
+    """Use this action to delete the source record."""
+
+    def __init__(self, source: Source, parent: SourceMenu, controller: Controller) -> None:
+        self.source = source
+        self.controller = controller
+        self.text = _("Entire source account")
+
+        super().__init__(self.text, parent)
+
+        self.confirmation_dialog = DeleteSourceDialog(self.source, self.controller)
+        self.triggered.connect(self.trigger)
+
+    def trigger(self) -> None:
+        if self.controller.api is None:
+            self.controller.on_action_requiring_login()
+        else:
+            self.confirmation_dialog.exec()
+
+
+class DeleteConversationAction(QAction):
+    """Use this action to delete a source's submissions and replies."""
+
+    def __init__(self, source: Source, parent: SourceMenu, controller: Controller) -> None:
+        self.source = source
+        self.controller = controller
+        self.text = _("Files and messages")
+
+        super().__init__(self.text, parent)
+
+        self.confirmation_dialog = DeleteConversationDialog(self.source, self.controller)
+        self.triggered.connect(self.trigger)
+
+    def trigger(self) -> None:
+        if self.controller.api is None:
+            self.controller.on_action_requiring_login()
+        else:
+            self.confirmation_dialog.exec()
+
+
 class SourceMenuButton(QToolButton):
     """An ellipse based source menu button.
 
     This button is responsible for launching the source menu on click.
     """
 
-    def __init__(self, source, controller):
+    def __init__(self, source: Source, controller: Controller) -> None:
         super().__init__()
         self.controller = controller
         self.source = source
@@ -4174,20 +4181,20 @@ class SourceMenuButton(QToolButton):
 class TitleLabel(QLabel):
     """The title for a conversation."""
 
-    def __init__(self, text):
+    def __init__(self, text: str) -> None:
         super().__init__(_(text))
 
-        # Set css id
+        # Set CSS id
         self.setObjectName("TitleLabel")
 
 
 class LastUpdatedLabel(QLabel):
     """Time the conversation was last updated."""
 
-    def __init__(self, last_updated):
+    def __init__(self, last_updated):  # type: ignore [no-untyped-def]
         super().__init__(last_updated)
 
-        # Set css id
+        # Set CSS id
         self.setObjectName("LastUpdatedLabel")
 
 
@@ -4203,7 +4210,7 @@ class SourceProfileShortWidget(QWidget):
     MARGIN_RIGHT = 17
     VERTICAL_MARGIN = 14
 
-    def __init__(self, source, controller):
+    def __init__(self, source: Source, controller: Controller) -> None:
         super().__init__()
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
@@ -4240,7 +4247,7 @@ class SourceProfileShortWidget(QWidget):
         layout.addWidget(header)
         layout.addWidget(horizontal_line)
 
-    def update_timestamp(self):
+    def update_timestamp(self) -> None:
         """
         Ensure the timestamp is always kept up to date with the latest activity
         from the source.
