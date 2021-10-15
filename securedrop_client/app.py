@@ -43,6 +43,7 @@ LanguageCode = NewType("LanguageCode", str)
 
 DEFAULT_LANGUAGE = LanguageCode("en")
 DEFAULT_SDC_HOME = "~/.securedrop_client"
+DESKTOP_FILE_NAME = "org.freedomofthepress.securedrop.client"
 ENCODING = "utf-8"
 GETTEXT_DOMAIN = "messages"
 LOGLEVEL = os.environ.get("LOGLEVEL", "info").upper()
@@ -206,7 +207,7 @@ def start_app(args, qt_args) -> None:
 
     app = QApplication(qt_args)
     app.setApplicationName(SDC_NAME)
-    app.setDesktopFileName("org.freedomofthepress.securedrop.client")
+    app.setDesktopFileName(DESKTOP_FILE_NAME)
     app.setApplicationVersion(__version__)
     app.setAttribute(Qt.AA_UseHighDpiPixmaps)
 
