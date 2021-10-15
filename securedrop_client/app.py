@@ -55,7 +55,7 @@ def init(sdc_home: Path) -> None:
     safe_mkdir(sdc_home, "data")
 
 
-def excepthook(*exc_args):
+def excepthook(*exc_args):  # type: ignore [no-untyped-def]
     """
     This function is called in the event of a catastrophic failure.
     Log exception and exit cleanly.
@@ -122,8 +122,8 @@ def configure_logging(sdc_home: Path) -> None:
     sys.excepthook = excepthook
 
 
-def configure_signal_handlers(app) -> None:
-    def signal_handler(*nargs) -> None:
+def configure_signal_handlers(app: QApplication) -> None:
+    def signal_handler(*nargs) -> None:  # type: ignore [no-untyped-def]
         app.quit()
 
     for sig in [signal.SIGINT, signal.SIGTERM]:

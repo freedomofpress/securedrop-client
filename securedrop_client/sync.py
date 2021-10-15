@@ -93,7 +93,7 @@ class ApiSyncBackgroundTask(QObject):
     ApiSyncBackgroundTask provides a sync method that executes a MetadataSyncJob.
     """
 
-    def __init__(
+    def __init__(  # type: ignore [no-untyped-def]
         self,
         api_client: API,
         session_maker: scoped_session,

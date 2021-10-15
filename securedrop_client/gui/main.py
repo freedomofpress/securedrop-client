@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 from gettext import gettext as _
-from typing import Dict, List, Optional  # noqa: F401
+from typing import List, Optional  # noqa: F401
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QGuiApplication
@@ -30,7 +30,7 @@ from PyQt5.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QVBoxLayout,
 from securedrop_client import __version__
 from securedrop_client.db import Source, User
 from securedrop_client.gui.widgets import LeftPane, LoginDialog, MainView, TopPane
-from securedrop_client.logic import Controller  # noqa: F401
+from securedrop_client.logic import Controller
 from securedrop_client.resources import load_css, load_font, load_icon
 
 logger = logging.getLogger(__name__)
@@ -86,12 +86,15 @@ class Window(QMainWindow):
         central_widget_layout.addWidget(self.top_pane)
         central_widget_layout.addWidget(self.main_pane)
 
-    def setup(self, controller):
+        # Dialogs
+        self.login_dialog: Optional[LoginDialog] = None
+
+    def setup(self, controller: Controller) -> None:
         """
         Create references to the controller logic and instantiate the various
         views used in the UI.
         """
-        self.controller = controller  # Reference the Controller logic instance.
+        self.controller = controller
         self.top_pane.setup(self.controller)
         self.left_pane.setup(self, self.controller)
         self.main_view.setup(self.controller)
@@ -111,7 +114,7 @@ class Window(QMainWindow):
         if db_user:
             self.set_logged_in_as(db_user)
 
-    def show_login(self, error: str = ""):
+    def show_login(self, error: str = "") -> None:
         """
         Show the login form.
         """
@@ -129,34 +132,35 @@ class Window(QMainWindow):
             self.login_dialog.error(error)
         self.login_dialog.show()
 
-    def show_login_error(self, error):
+    def show_login_error(self, error: str) -> None:
         """
         Display an error in the login dialog.
         """
         if self.login_dialog and error:
             self.login_dialog.error(error)
 
-    def hide_login(self):
+    def hide_login(self) -> None:
         """
         Kill the login dialog.
         """
-        self.login_dialog.accept()
-        self.login_dialog = None
+        if self.login_dialog is not None:
+            self.login_dialog.accept()
+            self.login_dialog = None
 
-    def refresh_current_source_conversation(self):
+    def refresh_current_source_conversation(self) -> None:
         """
         Update the current conversation if the source collection has changed.
         """
         self.main_view.refresh_source_conversations()
 
-    def show_sources(self, sources: List[Source]):
+    def show_sources(self, sources: List[Source]) -> None:
         """
         Update the left hand sources list in the UI with the passed in list of
         sources.
         """
         self.main_view.show_sources(sources)
 
-    def show_last_sync(self, updated_on):
+    def show_last_sync(self, updated_on):  # type: ignore [no-untyped-def]
         """
         Display a message indicating the time of last sync with the server.
         """
@@ -165,41 +169,41 @@ class Window(QMainWindow):
         else:
             self.update_activity_status(_("Last Refresh: never"))
 
-    def set_logged_in_as(self, db_user: User):
+    def set_logged_in_as(self, db_user: User) -> None:
         """
         Update the UI to show user logged in with username.
         """
         self.left_pane.set_logged_in_as(db_user)
         self.top_pane.set_logged_in()
 
-    def logout(self):
+    def logout(self) -> None:
         """
         Update the UI to show the user is logged out.
         """
         self.left_pane.set_logged_out()
         self.top_pane.set_logged_out()
 
-    def update_activity_status(self, message: str, duration=0):
+    def update_activity_status(self, message: str, duration: int = 0) -> None:
         """
         Display an activity status message to the user. Optionally, supply a duration
         (in milliseconds), the default will continuously show the message.
         """
         self.top_pane.update_activity_status(message, duration)
 
-    def update_error_status(self, message: str, duration=10000) -> None:
+    def update_error_status(self, message: str, duration: int = 10000) -> None:
         """
         Display an error status message to the user. Optionally, supply a duration
         (in milliseconds), the default will continuously show the message.
         """
         self.top_pane.update_error_status(message, duration)
 
-    def clear_error_status(self):
+    def clear_error_status(self) -> None:
         """
         Clear any message currently in the error status bar.
         """
         self.top_pane.clear_error_status()
 
-    def clear_clipboard(self):
+    def clear_clipboard(self) -> None:
         """
         Purge any clipboard contents.
         """
