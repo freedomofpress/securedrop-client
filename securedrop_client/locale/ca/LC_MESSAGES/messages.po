@@ -7,111 +7,124 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.5.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2021-10-16 20:42+0000\n"
+"Last-Translator: John Smith <ecron_89@hotmail.com>\n"
+"Language-Team: Catalan <https://weblate.securedrop.org/projects/securedrop/"
+"securedrop-client/ca/>\n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.6\n"
 "Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
-msgstr ""
+msgstr "{application_name} ja s'ha iniciat"
 
 msgid "The SecureDrop server cannot be reached. Trying to reconnect..."
-msgstr ""
+msgstr "No es pot arribar al servidor del SecureDrop. S'intenta de nou..."
 
 msgid ""
 "Could not reach the SecureDrop server. Please check your \n"
 "Internet and Tor connection and try again."
 msgstr ""
+"No s'ha pogut arribar al servidor del SecureDrop. Comproveu la vostra\n"
+"connexió a internet i la del Tor i proveu-ho de nou."
 
 msgid ""
 "Those credentials didn't work. Please try again, and \n"
 "make sure to use a new two-factor code."
 msgstr ""
+"Aquestes credencials no han funcionat. Proveu de nou, i\n"
+"comproveu que useu un codi de doble factor."
 
 msgid "That didn't work. Please check everything and try again."
-msgstr ""
+msgstr "Això no ha funcionat. Comproveu-ho tot i proveu de nou."
 
 msgid "You must sign in to perform this action."
-msgstr ""
+msgstr "Cal que inicieu sessió per a fer aquesta acció."
 
 msgid "Your session expired. Please log in again."
-msgstr ""
+msgstr "La sessió ha caducat. Torneu a iniciar-hi sessió."
 
 msgid "Failed to update star."
 msgstr ""
 
 msgid "Retrieving new messages"
-msgstr ""
+msgstr "S'estan obtenint els missatges nous"
 
 msgid "File does not exist in the data directory. Please try re-downloading."
 msgstr ""
+"Els fitxers no existeixen en el directori de dades. Proveu de baixar-los de "
+"nou."
 
 msgid "The file download failed. Please try again."
-msgstr ""
+msgstr "Ha fallat la baixada del fitxer. Proveu-ho de nou."
 
 msgid "Failed to delete conversation at server"
-msgstr ""
+msgstr "Ha fallat la supressió de la conversa al servidor"
 
 msgid "Failed to delete source at server"
-msgstr ""
+msgstr "Ha fallat la supressió de la font al servidor"
 
 msgid "SecureDrop Client {}"
-msgstr ""
+msgstr "Client del SecureDrop {}"
 
 msgid "Last Refresh: {}"
-msgstr ""
+msgstr "Última actualització: {}"
 
 msgid "Last Refresh: never"
-msgstr ""
+msgstr "Última actualització: mai"
 
 msgid "{}"
-msgstr ""
+msgstr "{}"
 
 msgid "SIGN OUT"
-msgstr ""
+msgstr "TANCA LA SESSIÓ"
 
 msgid "SIGN IN"
-msgstr ""
+msgstr "INICIA LA SESSIÓ"
 
 msgid "Nothing to see just yet!"
-msgstr ""
+msgstr "Encara no hi ha res per mostrar"
 
 msgid "Source submissions will be listed to the left, once downloaded and decrypted."
 msgstr ""
+"Els enviaments de les fonts es llistaran a l'esquerra, una vegada es baixen "
+"i es desxifren."
 
 msgid "This is where you will read messages, reply to sources, and work with files."
 msgstr ""
+"Aquí és on llegireu els missatges, respostes a les fonts, i on treballareu "
+"amb els fitxers."
 
 msgid "Select a source from the list, to:"
-msgstr ""
+msgstr "Seleccioneu una font de la llista, per a:"
 
 msgid "Read a conversation"
-msgstr ""
+msgstr "Llegir una conversa"
 
 msgid "View or retrieve files"
-msgstr ""
+msgstr "Veure o obtenir fitxers"
 
 msgid "Send a response"
-msgstr ""
+msgstr "Enviar una resposta"
 
 msgid "Deleting files and messages..."
-msgstr ""
+msgstr "S'estan suprimint fitxers i missatges..."
 
 msgid "Deleting source account..."
-msgstr ""
+msgstr "S'està suprimint el compte de la font..."
 
 msgid "— All files and messages deleted for this source —"
-msgstr ""
+msgstr "— S'han eliminat tots els fitxers i missatges d'aquesta font —"
 
 msgid "USE OFFLINE"
-msgstr ""
+msgstr "USA-HO FORA DE LÍNIA"
 
 msgid "Username"
-msgstr ""
+msgstr "Nom d’usuari"
 
 msgid "Passphrase"
 msgstr ""
@@ -165,10 +178,10 @@ msgid " DOWNLOADING "
 msgstr ""
 
 msgid "CANCEL"
-msgstr ""
+msgstr "CANCEL·LA"
 
 msgid "CONTINUE"
-msgstr ""
+msgstr "CONTINUA"
 
 msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr ""
@@ -234,13 +247,13 @@ msgid "Remember to be careful when working with files outside of your Workstatio
 msgstr ""
 
 msgid "SUBMIT"
-msgstr ""
+msgstr "ENVIA"
 
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgstr ""
 
 msgid "Are you sure this is what you want?"
-msgstr ""
+msgstr "Segur que això és el que voleu?"
 
 msgid "When the entire account for a source is deleted:"
 msgstr ""
@@ -252,7 +265,7 @@ msgid "Your organization will not be able to send them replies."
 msgstr ""
 
 msgid "All files and messages from that source will also be destroyed."
-msgstr ""
+msgstr "També es destruiran tots els missatges de la font."
 
 msgid "YES, DELETE FILES AND MESSAGES"
 msgstr ""
@@ -308,4 +321,4 @@ msgid "Files and messages"
 msgstr ""
 
 msgid "DELETE"
-msgstr ""
+msgstr "SUPRIMEIX"
