@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.5.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2021-10-03 23:42+0000\n"
+"PO-Revision-Date: 2021-10-17 22:42+0000\n"
 "Last-Translator: Zuhualime Akoochimoya <zakooch@protonmail.ch>\n"
 "Language-Team: Spanish <https://weblate.securedrop.org/projects/securedrop/"
 "securedrop-client/es/>\n"
@@ -37,7 +37,7 @@ msgid ""
 "make sure to use a new two-factor code."
 msgstr ""
 "Esas credenciales no funcionaron. Por favor inténtalo de nuevo, y \n"
-"asegúrate de usar un nuevo códifo de dos factores."
+"asegúrate de usar un nuevo código de autenticación de dos factores."
 
 msgid "That didn't work. Please check everything and try again."
 msgstr "Eso no funcionó. Por favor comprueba todo e inténtalo de nuevo."
@@ -56,8 +56,8 @@ msgstr "Descargando mensajes nuevos"
 
 msgid "File does not exist in the data directory. Please try re-downloading."
 msgstr ""
-"El archivo no existe en el directorio de datos. Por favor, intenta volviendo "
-"a descargarlo."
+"El archivo no existe en el directorio de datos. Por favor, intenta volver a "
+"descargarlo."
 
 msgid "The file download failed. Please try again."
 msgstr "La descarga del archivo falló. Por favor inténtalo de nuevo."
@@ -91,230 +91,276 @@ msgstr "¡Nada para mirar por ahora!"
 
 msgid "Source submissions will be listed to the left, once downloaded and decrypted."
 msgstr ""
+"Los envíos de la fuente serán listados a la izquierda, una vez que sean "
+"descargados y descifrados."
 
 msgid "This is where you will read messages, reply to sources, and work with files."
 msgstr ""
+"Esto es donde leerás mensajes, responderás a las fuentes y trabajarás con "
+"archivos."
 
 msgid "Select a source from the list, to:"
-msgstr ""
+msgstr "Selecciona una fuente de la lista, para:"
 
 msgid "Read a conversation"
-msgstr ""
+msgstr "Leer una conversación"
 
 msgid "View or retrieve files"
-msgstr ""
+msgstr "Ver o descargar archivos"
 
 msgid "Send a response"
-msgstr ""
+msgstr "Enviar una respuesta"
 
 msgid "Deleting files and messages..."
-msgstr ""
+msgstr "Borrando archivos y mensajes..."
 
 msgid "Deleting source account..."
-msgstr ""
+msgstr "Borrando cuenta de la fuente..."
 
 msgid "— All files and messages deleted for this source —"
-msgstr ""
+msgstr "— Todos los archivos y mensajes borrados para esta fuente —"
 
 msgid "USE OFFLINE"
-msgstr ""
+msgstr "USAR FUERA DE LÍNEA"
 
 msgid "Username"
 msgstr "Nombre de Usuario"
 
 msgid "Passphrase"
-msgstr ""
+msgstr "Frase de contraseña"
 
 msgid "Two-Factor Code"
-msgstr ""
+msgstr "Código de autenticación de dos factores"
 
 msgid "SecureDrop Client v{}"
-msgstr ""
+msgstr "Cliente SecureDrop v{}"
 
 msgid ""
 "That username won't work.\n"
 "It should be at least 3 characters long."
 msgstr ""
+"Ese nombre de usuario no funcionará.\n"
+"Debería tener al menos un largo de 3 caracteres."
 
 msgid ""
 "That passphrase won't work.\n"
 "It should be between 14 and 128 characters long."
 msgstr ""
+"Esa frase de contraseña no funcionará.\n"
+"Debería tener entre 14 y 128 caracteres de largo."
 
 msgid ""
 "That two-factor code won't work.\n"
 "It should only contain numerals."
 msgstr ""
+"Ese código de autenticación de dos factores no funcionará.\n"
+"Debería contener solo numerales."
 
 msgid "SIGNING IN"
-msgstr ""
+msgstr "CREANDO CUENTA"
 
 msgid "Please enter a username, passphrase and two-factor code."
 msgstr ""
+"Por favor ingresa un nombre de usuario, frase de contraseña y código de "
+"autenticación de dos factores."
 
 msgid "Failed to send"
-msgstr ""
+msgstr "Fallo al enviar"
 
 msgid " DOWNLOAD"
-msgstr ""
+msgstr " DESCARGAR"
 
 msgid "EXPORT"
-msgstr ""
+msgstr "EXPORTAR"
 
 msgid "PRINT"
-msgstr ""
+msgstr "IMPRIMIR"
 
 msgid "ENCRYPTED FILE ON SERVER"
-msgstr ""
+msgstr "ARCHIVO CIFRADO EN SERVIDOR"
 
 msgid "DOWNLOAD"
-msgstr ""
+msgstr "DESCARGAR"
 
 msgid " DOWNLOADING "
-msgstr ""
+msgstr " DESCARGANDO "
 
 msgid "CANCEL"
-msgstr ""
+msgstr "CANCELAR"
 
 msgid "CONTINUE"
-msgstr ""
+msgstr "CONTINUAR"
 
 msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr ""
+"Preparando para imprimir:<br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "Ready to print:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr ""
+msgstr "Listo para imprimir:<br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "Connect USB printer"
-msgstr ""
+msgstr "Conectar impresora USB"
 
 msgid "Printing failed"
-msgstr ""
+msgstr "Fallo de impresión"
 
 msgid "<h2>Managing printout risks</h2><b>QR codes and web addresses</b><br />Never type in and open web addresses or scan QR codes contained in printed documents without taking security precautions. If you are unsure how to manage this risk, please contact your administrator.<br /><br /><b>Printer dots</b><br />Any part of a printed page may contain identifying information invisible to the naked eye, such as printer dots. Please carefully consider this risk when working with or publishing scanned printouts."
 msgstr ""
+"<h2>Gestionando los riesgos con impresiones</h2><b>códigos QR y direcciones "
+"web</b><br />Nunca tipees ni abras direcciones web o escanees códigos QR "
+"contenidos en documentos impresos sin tomar precauciones de seguridad. Si no "
+"estás seguro acerca de cómo gestionar este riesgo, por favor contacta a tu "
+"administrador.<br /><br /><b>Puntos de impresora</b><br />Cualquier parte de "
+"una página impresa podría contener información identificatoria invisible al "
+"ojo desnudo, tales como puntos de impresora. Por favor considera este riesgo "
+"cuidadosamente al trabajar con o publicar impresiones escaneadas."
 
 msgid "Please connect your printer to a USB port."
-msgstr ""
+msgstr "Por favor conecta tu impresora a un puerto USB."
 
 msgid "See your administrator for help."
-msgstr ""
+msgstr "Vé a tu administrador por ayuda."
 
 msgid "DONE"
-msgstr ""
+msgstr "HECHO"
 
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr ""
+"Preparando para exportar:<br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr ""
+msgstr "Listo para exportar:<br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "Insert encrypted USB drive"
-msgstr ""
+msgstr "Insertar unidad USB cifrada"
 
 msgid "Enter passphrase for USB drive"
-msgstr ""
+msgstr "Ingresar frase de contraseña para unidad USB"
 
 msgid "Export successful"
-msgstr ""
+msgstr "Exportación exitosa"
 
 msgid "Export failed"
-msgstr ""
+msgstr "Fallo de exportación"
 
 msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
 msgstr ""
+"<h2>Entiende los riesgos antes de exportar archivos</h2><b>Malware</b><br /"
+">Esta estación de trabajo te permite abrir archivos en forma segura. Si "
+"abres archivos en otra computadora, cualquier malware incorporado podría "
+"diseminarse a tu computadora o red. Si no estás seguro de cómo gestionar "
+"este riesgo, por favor imprime el archivo, o contacta a tu administrador.<br "
+"/><br /><b>Anonimato</b><br />Los archivos enviados por fuentes podrían "
+"contener información o metadatos ocultos que identifican quiénes son. Para "
+"proteger a tus fuentes, por favor considera redactar los archivos antes de "
+"trabajar con ellos en computadoras conectadas en red."
 
 msgid "Exporting: {}"
-msgstr ""
+msgstr "Exportando: {}"
 
 msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
 msgstr ""
+"Por favor inserta una de las unidades de exportación provistas "
+"específicamente para la estación de trabajo SecureDrop."
 
 msgid "Either the drive is not encrypted or there is something else wrong with it."
 msgstr ""
+"La unidad no está cifrada o bien hay algo más que no está correcto con ella."
 
 msgid "The passphrase provided did not work. Please try again."
 msgstr ""
+"La frase de contraseña ingresada no funcionó. Por favor inténtalo de nuevo."
 
 msgid "The CONTINUE button will be disabled until the Export VM is ready"
 msgstr ""
+"El botón CONTINUAR será deshabilitado hasta que la MV de Exportación esté "
+"lista"
 
 msgid "Remember to be careful when working with files outside of your Workstation machine."
 msgstr ""
+"Recuerda ser cuidadoso cuando trabajes con archivos fuera de tu estación de "
+"trabajo."
 
 msgid "SUBMIT"
-msgstr ""
+msgstr "ENVIAR"
 
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
-msgstr ""
+msgstr "SÍ, BORRAR POR COMPLETO LA CUENTA DE LA FUENTE"
 
 msgid "Are you sure this is what you want?"
-msgstr ""
+msgstr "¿Estás seguro de que esto es lo quieres?"
 
 msgid "When the entire account for a source is deleted:"
-msgstr ""
+msgstr "Cuando la cuenta de una fuente es borrada por completo:"
 
 msgid "The source will not be able to log in with their codename again."
 msgstr ""
+"La fuente no será capaz de iniciar sesión con su nombre en código de nuevo."
 
 msgid "Your organization will not be able to send them replies."
-msgstr ""
+msgstr "Tu organización no será capaz de enviarle respuestas."
 
 msgid "All files and messages from that source will also be destroyed."
-msgstr ""
+msgstr "Todos los archivos y mensajes de esa fuente también serán destruidos."
 
 msgid "YES, DELETE FILES AND MESSAGES"
-msgstr ""
+msgstr "SÍ, BORRAR ARCHIVOS Y MENSAJES"
 
 msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
 msgstr ""
+"¿Desearías borrar {files_to_delete}, {replies_to_delete}, "
+"{messages_to_delete} de la cuenta de la fuente para {source}?"
 
 msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
 msgstr ""
+"Preservar la cuenta retendrá sus metadatos, y la habilidad de {source} de "
+"iniciar sesión en tu SecureDrop de nuevo."
 
 msgid "one file"
 msgid_plural "{file_count} files"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "un archivo"
+msgstr[1] "{file_count} archivos"
 
 msgid "one reply"
 msgid_plural "{reply_count} replies"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "una respuesta"
+msgstr[1] "{reply_count} respuestas"
 
 msgid "one message"
 msgid_plural "{message_count} messages"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "un mensaje"
+msgstr[1] "{message_count} mensajes"
 
 msgid "Earlier files and messages deleted."
-msgstr ""
+msgstr "Archivos y mensajes anteriores borrados."
 
 msgid ""
 "Files and messages deleted\n"
 " for this source"
 msgstr ""
+"Archivos y mensajes borrados\n"
+"para esta fuente"
 
 msgid "Compose a reply to "
-msgstr ""
+msgstr "Escribe una respuesta para "
 
 msgid "Awaiting encryption key"
-msgstr ""
+msgstr "Esperando clave de cifrado"
 
 msgid " from server to enable replies"
-msgstr ""
+msgstr " del servidor para habilitar respuestas"
 
 msgid "Sign in"
-msgstr ""
+msgstr "Crear cuenta"
 
 msgid " to compose or send a reply"
-msgstr ""
+msgstr " para componer o enviar una respuesta"
 
 msgid "Entire source account"
-msgstr ""
+msgstr "Cuenta de la fuente completa"
 
 msgid "Files and messages"
-msgstr ""
+msgstr "Archivos y mensajes"
 
 msgid "DELETE"
 msgstr "BORRAR"
