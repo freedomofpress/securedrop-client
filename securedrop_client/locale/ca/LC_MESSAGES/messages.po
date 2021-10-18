@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.5.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2021-10-16 20:42+0000\n"
-"Last-Translator: John Smith <ecron_89@hotmail.com>\n"
+"PO-Revision-Date: 2021-10-18 15:42+0000\n"
+"Last-Translator: Benet (BennyBeat) R. i Camps <bennybeat@gmail.com>\n"
 "Language-Team: Catalan <https://weblate.securedrop.org/projects/securedrop/"
 "securedrop-client/ca/>\n"
 "Language: ca\n"
@@ -130,52 +130,58 @@ msgid "Passphrase"
 msgstr ""
 
 msgid "Two-Factor Code"
-msgstr ""
+msgstr "Codi d'autenticació de factor doble"
 
 msgid "SecureDrop Client v{}"
-msgstr ""
+msgstr "Client del SecureDrop v{}"
 
 msgid ""
 "That username won't work.\n"
 "It should be at least 3 characters long."
 msgstr ""
+"No es pot utilitzar aquest nom d'usuari.\n"
+"Indiqueu un nom d'usuari d'almenys 3 caràcters."
 
 msgid ""
 "That passphrase won't work.\n"
 "It should be between 14 and 128 characters long."
 msgstr ""
+"No es pot utilitzar aquesta contrasenya.\n"
+"Indiqueu una contrasenya de 14 a 128 caràcters."
 
 msgid ""
 "That two-factor code won't work.\n"
 "It should only contain numerals."
 msgstr ""
+"No es pot utilitzar aquest codi.\n"
+"El codi ha de ser només numèric."
 
 msgid "SIGNING IN"
 msgstr ""
 
 msgid "Please enter a username, passphrase and two-factor code."
-msgstr ""
+msgstr "Inseriu un nom d'usuari, contrasenya i codi de factor doble."
 
 msgid "Failed to send"
-msgstr ""
+msgstr "Ha fallat en enviar"
 
 msgid " DOWNLOAD"
-msgstr ""
+msgstr " ·BAIXADA"
 
 msgid "EXPORT"
-msgstr ""
+msgstr "EXPORTA"
 
 msgid "PRINT"
-msgstr ""
+msgstr "IMPRIMEIX"
 
 msgid "ENCRYPTED FILE ON SERVER"
-msgstr ""
+msgstr "FITXER XIFRAT AL SERVIDOR"
 
 msgid "DOWNLOAD"
-msgstr ""
+msgstr "BAIXADA"
 
 msgid " DOWNLOADING "
-msgstr ""
+msgstr " S'ESTÀ BAIXANT... "
 
 msgid "CANCEL"
 msgstr "CANCEL·LA"
@@ -185,6 +191,8 @@ msgstr "CONTINUA"
 
 msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr ""
+"S'està preparant per imprimir:<br /><span style=\"font-weight:normal\""
+">{}</span>"
 
 msgid "Ready to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr ""
