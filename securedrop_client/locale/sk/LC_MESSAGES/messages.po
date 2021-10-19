@@ -1,0 +1,355 @@
+# Translations template for SecureDrop Client.
+# Copyright (C) 2021 Freedom of the Press Foundation
+# This file is distributed under the same license as the SecureDrop Client project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: SecureDrop Client 0.5.0\n"
+"Report-Msgid-Bugs-To: securedrop@freedom.press\n"
+"PO-Revision-Date: 2021-10-18 15:42+0000\n"
+"Last-Translator: Katarina Kasalova <katka.kasalova@gmail.com>\n"
+"Language-Team: Slovak <https://weblate.securedrop.org/projects/securedrop/"
+"securedrop-client/sk/>\n"
+"Language: sk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"X-Generator: Weblate 4.6\n"
+"Generated-By: Babel 2.9.1\n"
+
+msgid "{application_name} is already running"
+msgstr "{application_name} je už otvorená"
+
+msgid "The SecureDrop server cannot be reached. Trying to reconnect..."
+msgstr ""
+"Nie je možné pripojiť sa na server SecureDrop. Pokus o opätovné pripojenie "
+"práve prebieha ..."
+
+msgid ""
+"Could not reach the SecureDrop server. Please check your \n"
+"Internet and Tor connection and try again."
+msgstr ""
+"Nie je možné pripojiť sa na server SecureDrop. Prosím skontrolujte vaše\n"
+"pripojenie na internet a Tor a skúste znova."
+
+msgid ""
+"Those credentials didn't work. Please try again, and \n"
+"make sure to use a new two-factor code."
+msgstr ""
+"Tieto prihlasovacie údaje sú nefunkčné. Prosíme skúste znova, a \n"
+"nezabudnite použiť nový dvojfaktorový kód."
+
+msgid "That didn't work. Please check everything and try again."
+msgstr "Nepodarilo sa. Prosíme všetko skontrolujte a skúste znova."
+
+msgid "You must sign in to perform this action."
+msgstr "Na vykonanie tejto úlohy sa musíte prihlásiť."
+
+msgid "Your session expired. Please log in again."
+msgstr "Platnosť vášho prihlásenia vypršala. Prosíme prihláste sa znova."
+
+msgid "Failed to update star."
+msgstr "Zlyhalo aktualizovanie star."
+
+msgid "Retrieving new messages"
+msgstr "Načítavanie nových správ"
+
+msgid "File does not exist in the data directory. Please try re-downloading."
+msgstr "Súbor neexistuje v adresári dát. Prosíme skúste ho stiahnuť znova."
+
+msgid "The file download failed. Please try again."
+msgstr "Sťahovanie súboru sa nepodarilo. Prosíme skúste znova."
+
+msgid "Failed to delete conversation at server"
+msgstr "Nepodarilo sa vymazať konverzáciu zo servera"
+
+msgid "Failed to delete source at server"
+msgstr "Nepodarilo sa zmazať zdroj zo servera"
+
+msgid "SecureDrop Client {}"
+msgstr "SecureDrop Klient {}"
+
+msgid "Last Refresh: {}"
+msgstr "Posledné načítanie: {}"
+
+msgid "Last Refresh: never"
+msgstr "Posledné načítanie: nebolo"
+
+msgid "{}"
+msgstr "{}"
+
+msgid "SIGN OUT"
+msgstr "ODHLÁSIŤ SA"
+
+msgid "SIGN IN"
+msgstr "PRIHLÁSIŤ SA"
+
+msgid "Nothing to see just yet!"
+msgstr "Zatiaľ tu nič nie je!"
+
+msgid "Source submissions will be listed to the left, once downloaded and decrypted."
+msgstr ""
+"Nahraté zdroje budú uvedené naľavo po tom, ako budú stiahnuté a dešifrované."
+
+msgid "This is where you will read messages, reply to sources, and work with files."
+msgstr "Tu budete čítať správy, odpovedať zdrojom, a pracovať so súbormi."
+
+msgid "Select a source from the list, to:"
+msgstr "Vyberte zdroj zo zoznamu na:"
+
+msgid "Read a conversation"
+msgstr "Čítať konverzáciu"
+
+msgid "View or retrieve files"
+msgstr "Zobrazenie alebo načítanie súborov"
+
+msgid "Send a response"
+msgstr "Poslať odpoveď"
+
+msgid "Deleting files and messages..."
+msgstr "Mazanie súborov a správ ..."
+
+msgid "Deleting source account..."
+msgstr "Mazanie účtu zdroja ..."
+
+msgid "— All files and messages deleted for this source —"
+msgstr "— Všetky súbory a správy pre tento zdroj boli zmazané —"
+
+msgid "USE OFFLINE"
+msgstr "POUŽIŤ OFFLINE"
+
+msgid "Username"
+msgstr "Používateľské meno"
+
+msgid "Passphrase"
+msgstr "Prístupová fráza"
+
+msgid "Two-Factor Code"
+msgstr "Dvojfaktorový kód"
+
+msgid "SecureDrop Client v{}"
+msgstr "SecureDrop Klient v{}"
+
+msgid ""
+"That username won't work.\n"
+"It should be at least 3 characters long."
+msgstr ""
+"Prihlasovacie meno nebude fungovať\n"
+"Malo by byť aspoň 3 znaky dlhé."
+
+msgid ""
+"That passphrase won't work.\n"
+"It should be between 14 and 128 characters long."
+msgstr ""
+"Táto prístupová fráza nebude fungovať.\n"
+"Mala by mať 14 až 128 znakov."
+
+msgid ""
+"That two-factor code won't work.\n"
+"It should only contain numerals."
+msgstr ""
+"Tento dvojfaktorový kód nebude fungovať.\n"
+"Mal by obsahovať iba čísla."
+
+msgid "SIGNING IN"
+msgstr "PRIHLÁSENIE"
+
+msgid "Please enter a username, passphrase and two-factor code."
+msgstr ""
+"Prosíme zadajte prihlasovacie meno, prihlasovaciu frázu a dvojfaktorový kód."
+
+msgid "Failed to send"
+msgstr "Zaslanie sa nepodarilo"
+
+msgid " DOWNLOAD"
+msgstr " STIAHNUŤ"
+
+msgid "EXPORT"
+msgstr "EXPORTOVAŤ"
+
+msgid "PRINT"
+msgstr "TLAČIŤ"
+
+msgid "ENCRYPTED FILE ON SERVER"
+msgstr "ŠIFROVANÝ SÚBOR NA SERVERE"
+
+msgid "DOWNLOAD"
+msgstr "STIAHNUŤ"
+
+msgid " DOWNLOADING "
+msgstr " SŤAHUJE SA "
+
+msgid "CANCEL"
+msgstr "ZRUŠIŤ"
+
+msgid "CONTINUE"
+msgstr "ĎALEJ"
+
+msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Tlač sa pripravuje:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Ready to print:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Pripravený na tlač:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Connect USB printer"
+msgstr "Pripojiť USB tlačiareň"
+
+msgid "Printing failed"
+msgstr "Tlač sa nepodarila"
+
+msgid "<h2>Managing printout risks</h2><b>QR codes and web addresses</b><br />Never type in and open web addresses or scan QR codes contained in printed documents without taking security precautions. If you are unsure how to manage this risk, please contact your administrator.<br /><br /><b>Printer dots</b><br />Any part of a printed page may contain identifying information invisible to the naked eye, such as printer dots. Please carefully consider this risk when working with or publishing scanned printouts."
+msgstr ""
+"<h2> Správa rizík tlače </h2> <b> QR kódy a webové adresy </b> <br /> Nikdy "
+"nezadávajte a neotvárajte webové adresy ani neskenujte QR kódy obsiahnuté v "
+"tlačených dokumentoch bez vykonania bezpečnostných opatrení. Ak si nie ste "
+"istí, ako zvládnuť toto riziko, prosíme kontaktujte svojho správcu. <br /> "
+"<br /> <b> Body tlačiarne </b> <br /> Akákoľvek časť vytlačenej strany môže "
+"obsahovať identifikačné informácie neviditeľné voľným okom, napríklad bodky "
+"tlačiarne. Pri práci so skenovanými výtlačkami alebo pri ich publikovaní "
+"toto riziko starostlivo zvážte."
+
+msgid "Please connect your printer to a USB port."
+msgstr "Prosíme pripojte vašu tlačiareň do USB portu."
+
+msgid "See your administrator for help."
+msgstr "Požiadajte vášho správcu o pomoc."
+
+msgid "DONE"
+msgstr "HOTOVO"
+
+msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Príprava na export:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Pripravené na export:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Insert encrypted USB drive"
+msgstr "Vložte šifrovaný USB kľúč"
+
+msgid "Enter passphrase for USB drive"
+msgstr "Zadajte prístupovú frázu na USB kľúč"
+
+msgid "Export successful"
+msgstr "Export sa podaril"
+
+msgid "Export failed"
+msgstr "Export zlyhal"
+
+msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
+msgstr ""
+"<h2>Pochopte riziká pred exportom súborov</h2><b>Malvér</b> <br />Táto "
+"pracovná stanica vám umožňuje bezpečne otvárať súbory. Ak otvoríte súbory na "
+"inom počítači, všetok zabudovaný škodlivý softvér sa môže rozšíriť do vášho "
+"počítača alebo siete. Ak si nie ste istí, ako zvládnuť toto riziko, vytlačte "
+"si tento súbor alebo sa obráťte na svojho správcu.<br /><br /><b>Anonymita</"
+"b><br />Súbory odoslané zdrojmi môžu obsahovať informácie alebo skryté "
+"metadáta, ktoré ich identifikujú. V záujme ochrany vašich zdrojov zvážte "
+"pred prácou s týmito súbormi na počítačoch pripojených k sieti."
+
+msgid "Exporting: {}"
+msgstr "Exportovanie: {}"
+
+msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
+msgstr ""
+"Prosíme vložte jednu z exportovacích pamätí získanú špeciálne len pre "
+"SecureDrop Workstation."
+
+msgid "Either the drive is not encrypted or there is something else wrong with it."
+msgstr "Buď pamäť nie je šifrovaná, alebo má inú chybu."
+
+msgid "The passphrase provided did not work. Please try again."
+msgstr "Zadaná prístupová fráza nefunguje. Prosíme skúste znova."
+
+msgid "The CONTINUE button will be disabled until the Export VM is ready"
+msgstr "Tlačidlo ĎALEJ bude deaktivované kým bude pripravený Export VM"
+
+msgid "Remember to be careful when working with files outside of your Workstation machine."
+msgstr "Nezabudnite na opatrnosť pri práci so súbormi mimo vašej Workstation."
+
+msgid "SUBMIT"
+msgstr "POTVRDIŤ"
+
+msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
+msgstr "ÁNO, ZMAZAŤ CELÝ ÚČET ZDROJA"
+
+msgid "Are you sure this is what you want?"
+msgstr "Ste si istí, že to chcete spraviť?"
+
+msgid "When the entire account for a source is deleted:"
+msgstr "Keď sa vymaže celý účet zdroja:"
+
+msgid "The source will not be able to log in with their codename again."
+msgstr "Zdroj sa nebude môcť znova prihlásiť s ich kódovacím menom."
+
+msgid "Your organization will not be able to send them replies."
+msgstr "Vaša organizácia mu nebude môcť poslať odpovede."
+
+msgid "All files and messages from that source will also be destroyed."
+msgstr "Všetky súbory a správy od daného zdroja budú zničené."
+
+msgid "YES, DELETE FILES AND MESSAGES"
+msgstr "ÁNO, ZMAZAŤ SÚBORY A SPRÁVY"
+
+msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
+msgstr ""
+"Chceli by ste zmazať {files_to_delete}, {replies_to_delete}, "
+"{messages_to_delete} z účtu zdroja pre {source}?"
+
+msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
+msgstr ""
+"Zachovanie účtu zachová jeho metadáta a možnosť {source} znova sa prihlásiť "
+"do vášho SecureDrop."
+
+msgid "one file"
+msgid_plural "{file_count} files"
+msgstr[0] "jeden súbor"
+msgstr[1] "{file_count} súbory"
+msgstr[2] "{file_count} súbory"
+
+msgid "one reply"
+msgid_plural "{reply_count} replies"
+msgstr[0] "jedna odpoveď"
+msgstr[1] "{reply_count} odpovede"
+msgstr[2] "{reply_count} odpovede"
+
+msgid "one message"
+msgid_plural "{message_count} messages"
+msgstr[0] "jedna správa"
+msgstr[1] "{message_count} správy"
+msgstr[2] "{message_count} správy"
+
+msgid "Earlier files and messages deleted."
+msgstr "Predchádzajúce súbory a správy vymazané."
+
+msgid ""
+"Files and messages deleted\n"
+" for this source"
+msgstr ""
+"Súbory a správy vymazané\n"
+" pre tento zdroj"
+
+msgid "Compose a reply to "
+msgstr "Vytvoriť odpoveď pre "
+
+msgid "Awaiting encryption key"
+msgstr "Čakanie na šifrovací kľúč"
+
+msgid " from server to enable replies"
+msgstr " zo servera na umožnenie odpovedí"
+
+msgid "Sign in"
+msgstr "Prihlásiť sa"
+
+msgid " to compose or send a reply"
+msgstr " vytvoriť alebo poslať odpoveď"
+
+msgid "Entire source account"
+msgstr "Celý účet zdroja"
+
+msgid "Files and messages"
+msgstr "Súbory a správy"
+
+msgid "DELETE"
+msgstr "ZMAZAŤ"
