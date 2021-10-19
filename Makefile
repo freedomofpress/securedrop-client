@@ -56,7 +56,8 @@ mypy: ## Run static type checker
 		--show-error-codes \
 		--warn-unreachable \
 		--warn-unused-ignores \
-		securedrop_client
+		securedrop_client \
+		*.py
 
 .PHONY: clean
 clean:  ## Clean the workspace of generated resources
