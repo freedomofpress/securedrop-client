@@ -5,6 +5,7 @@ import datetime
 import os
 import time
 import uuid
+from tempfile import TemporaryDirectory
 
 import pytest
 from dateutil.parser import parse
@@ -106,6 +107,20 @@ def make_remote_reply(source_uuid, journalist_uuid="testymctestface"):
         uuid=str(uuid.uuid4()),
         seen_by=[],
     )
+
+
+def test_make_session_maker_updates_db_file_with_safe_perms():
+    """
+    When a db file already exists with unsafe permissions, ensure make_session_maker updates it to
+    the expected restricted 600 permissions.
+    """
+    with TemporaryDirectory() as temp_dir:
+        db_path = os.path.join(temp_dir, "svs.sqlite")
+        with open(db_path, "w"):
+            os.chmod(db_path, 0o100644)  # set unsafe perms
+            db.make_session_maker(temp_dir)
+
+            assert oct(os.stat(db_path).st_mode) == "0o100600"  # now check safe perms
 
 
 def test_get_local_sources(mocker):
