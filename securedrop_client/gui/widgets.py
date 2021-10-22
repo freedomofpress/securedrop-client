@@ -49,6 +49,7 @@ from PyQt5.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QGraphicsDropShadowEffect,
+    QGraphicsOpacityEffect,
     QGridLayout,
     QHBoxLayout,
     QLabel,
@@ -1758,6 +1759,8 @@ class LoginDialog(QDialog):
         self.tfa_label = QLabel(_("Two-Factor Code"))
         self.tfa_field = QLineEdit()
 
+        self.opacity_effect = QGraphicsOpacityEffect()
+
         buttons = QWidget()
         buttons_layout = QHBoxLayout()
         buttons.setLayout(buttons_layout)
@@ -1838,6 +1841,9 @@ class LoginDialog(QDialog):
         self.submit.setText(_("SIGN IN"))
         self.error_bar.set_message(message)
 
+        self.opacity_effect.setOpacity(1)
+        self.offline_mode.setGraphicsEffect(self.opacity_effect)
+
     def validate(self) -> None:
         """
         Validate the user input -- we expect values for:
@@ -1880,6 +1886,11 @@ class LoginDialog(QDialog):
                 )
                 return
             self.submit.setText(_("SIGNING IN"))
+
+            # Changing the opacity of the link to .4 alpha of its' 100% value when authenticated
+            self.opacity_effect.setOpacity(0.4)
+            self.offline_mode.setGraphicsEffect(self.opacity_effect)
+
             self.controller.login(username, password, tfa_token)
         else:
             self.setDisabled(False)
