@@ -27,6 +27,9 @@ wheels/
 *.egg
 MANIFEST
 
+# ignore the test-results directory which is used to share logs and test files.
+test-results
+
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.

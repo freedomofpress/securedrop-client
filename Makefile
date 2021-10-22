@@ -81,7 +81,7 @@ test: ## Run the application tests in parallel (for rapid development)
 
 .PHONY: test-random
 test-random: ## Run the application tests in random order
-	@TEST_CMD="python -m pytest -v --random-order-bucket=global --ignore=$(FTESTS) --ignore=$(ITESTS) $(TESTOPTS) $(TESTS)" ; \
+	@TEST_CMD="python -m pytest -v --junitxml=test-results/junit.xml --random-order-bucket=global --ignore=$(FTESTS) --ignore=$(ITESTS) $(TESTOPTS) $(TESTS)" ; \
 		if command -v xvfb-run > /dev/null; then \
 		xvfb-run -a $$TEST_CMD ; else \
 		$$TEST_CMD ; fi
