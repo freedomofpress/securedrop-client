@@ -64,7 +64,7 @@ from PyQt5.QtWidgets import (
     QStatusBar,
     QToolButton,
     QVBoxLayout,
-    QWidget,
+    QWidget, QGraphicsOpacityEffect,
 )
 
 from securedrop_client import __version__ as sd_version
@@ -203,7 +203,7 @@ class LeftPane(QWidget):
         layout.addWidget(self.user_profile)
         layout.addWidget(self.branding_barre)
 
-    def setup(self, window, controller: Controller) -> None:  # type: ignore [no-untyped-def]
+    def setup(self, window, controller: Controller) -> None:  # type ignore [no-untyped-def]
         self.user_profile.setup(window, controller)
 
     def set_logged_in_as(self, db_user: User) -> None:
@@ -244,7 +244,7 @@ class SyncIcon(QLabel):
         self.controller = controller
         self.controller.sync_events.connect(self._on_sync)
 
-    def _on_sync(self, data) -> None:  # type: ignore [no-untyped-def]
+    def _on_sync(self, data) -> None:  # type ignore [no-untyped-def]
         if data == "syncing":
             self.sync_animation = load_movie("sync_active.gif")
             self.sync_animation.setScaledSize(QSize(24, 20))
@@ -428,7 +428,7 @@ class UserProfile(QLabel):
         layout.addWidget(self.user_icon, alignment=Qt.AlignTop)
         layout.addWidget(self.user_button, alignment=Qt.AlignTop)
 
-    def setup(self, window, controller: Controller) -> None:  # type: ignore [no-untyped-def]
+    def setup(self, window, controller: Controller) -> None:  # type ignore [no-untyped-def]
         self.controller = controller
         self.controller.update_authenticated_user.connect(self._on_update_authenticated_user)
         self.user_button.setup(controller)
@@ -540,7 +540,7 @@ class LoginButton(QPushButton):
         # Set click handler
         self.clicked.connect(self._on_clicked)
 
-    def setup(self, window) -> None:  # type: ignore [no-untyped-def]
+    def setup(self, window) -> None:  # type ignore [no-untyped-def]
         """
         Store a reference to the GUI window object.
         """
@@ -1712,7 +1712,7 @@ class LoginDialog(QDialog):
     MAX_PASSWORD_LEN = 128  # Journalist.MAX_PASSWORD_LEN on server
     MIN_JOURNALIST_USERNAME = 3  # Journalist.MIN_USERNAME_LEN on server
 
-    def __init__(self, parent) -> None:  # type: ignore [no-untyped-def]
+    def __init__(self, parent) -> None:  # type ignore [no-untyped-def]
         self.parent = parent
         super().__init__(self.parent)
 
@@ -1838,6 +1838,10 @@ class LoginDialog(QDialog):
         self.submit.setText(_("SIGN IN"))
         self.error_bar.set_message(message)
 
+        self.opacity_effect = QGraphicsOpacityEffect()
+        self.opacity_effect.setOpacity(1)
+        self.offline_mode.setGraphicsEffect(self.opacity_effect)
+
     def validate(self) -> None:
         """
         Validate the user input -- we expect values for:
@@ -1880,6 +1884,12 @@ class LoginDialog(QDialog):
                 )
                 return
             self.submit.setText(_("SIGNING IN"))
+
+            #Changing the opacity of the Offline Mode link to .4 alpha of its' 100% value when authenticated
+            self.opacity_effect = QGraphicsOpacityEffect()
+            self.opacity_effect.setOpacity(0.4)
+            self.offline_mode.setGraphicsEffect(self.opacity_effect)
+
             self.controller.login(username, password, tfa_token)
         else:
             self.setDisabled(False)
@@ -1977,7 +1987,7 @@ class SpeechBubble(QWidget):
     TOP_MARGIN = 28
     BOTTOM_MARGIN = 0
 
-    def __init__(  # type: ignore [no-untyped-def]
+    def __init__(  # type ignore [no-untyped-def]
         self,
         message_uuid: str,
         text: str,
@@ -2104,7 +2114,7 @@ class MessageWidget(SpeechBubble):
     Represents an incoming message from the source.
     """
 
-    def __init__(  # type: ignore [no-untyped-def]
+    def __init__(  # type ignore [no-untyped-def]
         self,
         message_uuid: str,
         message: str,
@@ -2135,7 +2145,7 @@ class ReplyWidget(SpeechBubble):
 
     ERROR_BOTTOM_MARGIN = 20
 
-    def __init__(  # type: ignore [no-untyped-def]
+    def __init__(  # type ignore [no-untyped-def]
         self,
         controller: Controller,
         message_uuid: str,
@@ -4191,7 +4201,7 @@ class TitleLabel(QLabel):
 class LastUpdatedLabel(QLabel):
     """Time the conversation was last updated."""
 
-    def __init__(self, last_updated):  # type: ignore [no-untyped-def]
+    def __init__(self, last_updated):  # type ignore [no-untyped-def]
         super().__init__(last_updated)
 
         # Set CSS id
