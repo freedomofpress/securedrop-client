@@ -57,5 +57,4 @@ fi
 
 wait
 
-make compile-translation-catalogs
 python -m securedrop_client --sdc-home "$SDC_HOME" --no-proxy "$qubes_flag" "$@"
