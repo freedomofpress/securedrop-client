@@ -1891,6 +1891,9 @@ class LoginDialog(QDialog):
             self.opacity_effect.setOpacity(0.4)
             self.offline_mode.setGraphicsEffect(self.opacity_effect)
 
+            # If authentication is successful, clear error messages displayed priorly
+            self.error_bar.clear_message()
+
             self.controller.login(username, password, tfa_token)
         else:
             self.setDisabled(False)
