@@ -391,7 +391,7 @@ def test__export_archive_does_not_raise_ExportError_when_CalledProcessError(mock
     """
     Ensure ExportError is raised if a CalledProcessError is encountered.
     """
-    mock_error = subprocess.CalledProcessError("mock_cmd", 123)
+    mock_error = subprocess.CalledProcessError(cmd=["mock_cmd"], returncode=1)
     mocker.patch("subprocess.check_output", side_effect=mock_error)
 
     export = Export()
