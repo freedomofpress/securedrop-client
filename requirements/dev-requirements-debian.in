@@ -2,7 +2,7 @@ babel
 black
 flake8==3.6.0
 flaky
-isort==4.3.21
+isort
 MarkupSafe
 mypy==0.761
 pip-tools
