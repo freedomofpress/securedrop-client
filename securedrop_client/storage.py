@@ -615,9 +615,9 @@ def find_new_messages(session: Session) -> List[Message]:
         .join(Source)
         .filter(
             or_(
-                Message.is_downloaded == False,
-                Message.is_decrypted == False,
-                Message.is_decrypted == None,
+                Message.is_downloaded is False,
+                Message.is_decrypted == False,  # noqa: E712
+                Message.is_decrypted == None,  # noqa: E712
             )
         )
     )  # noqa: E712
@@ -639,9 +639,9 @@ def find_new_replies(session: Session) -> List[Reply]:
         .join(Source)
         .filter(
             or_(
-                Reply.is_downloaded == False,
-                Reply.is_decrypted == False,
-                Reply.is_decrypted == None,
+                Reply.is_downloaded is False,
+                Reply.is_decrypted == False,  # noqa: E712
+                Reply.is_decrypted == None,  # noqa: E712
             )
         )
     )  # noqa: E712

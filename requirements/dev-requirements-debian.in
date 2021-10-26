@@ -1,6 +1,6 @@
 babel
 black
-flake8==3.6.0
+flake8
 flaky
 isort
 MarkupSafe
