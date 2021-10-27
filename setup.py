@@ -26,13 +26,13 @@ setuptools.setup(
     url="https://github.com/freedomofpress/securedrop-proxy",
     packages=["securedrop_client", "securedrop_client.gui", "securedrop_client.resources"],
     include_package_data=True,
-    classifiers=(
+    classifiers=[
         "Development Status :: 3 - Alpha",
         "Programming Language :: Python :: 3",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Intended Audience :: Developers",
         "Operating System :: OS Independent",
-    ),
+    ],
     entry_points={"console_scripts": ["sd-client = securedrop_client.app:run"]},
 )

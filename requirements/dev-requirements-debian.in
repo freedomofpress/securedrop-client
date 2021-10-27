@@ -4,7 +4,7 @@ flake8
 flaky
 isort
 MarkupSafe
-mypy==0.761
+mypy
 pip-tools
 PyAutoGUI
 pyobjc-core;platform_system=="Darwin"
@@ -18,4 +18,6 @@ pytest-vcr
 pytest-xdist
 semgrep
 toml
+types-python-dateutil
+types-setuptools
 wlc
