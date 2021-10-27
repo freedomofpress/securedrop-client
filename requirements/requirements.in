@@ -7,4 +7,4 @@ pyyaml==5.4.1
 requests>=2.26.0
 six==1.11.0
 urllib3>=1.26.5
-werkzeug==0.16.0
+werkzeug>=0.16.0
