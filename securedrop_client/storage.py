@@ -615,12 +615,12 @@ def find_new_messages(session: Session) -> List[Message]:
         .join(Source)
         .filter(
             or_(
-                Message.is_downloaded is False,
+                Message.is_downloaded == False,  # noqa: E712
                 Message.is_decrypted == False,  # noqa: E712
-                Message.is_decrypted == None,  # noqa: E712
+                Message.is_decrypted == None,  # noqa: E711
             )
         )
-    )  # noqa: E712
+    )
     q = q.order_by(desc(Source.last_updated))
     return q.all()
 
@@ -639,12 +639,12 @@ def find_new_replies(session: Session) -> List[Reply]:
         .join(Source)
         .filter(
             or_(
-                Reply.is_downloaded is False,
+                Reply.is_downloaded == False,  # noqa: E712
                 Reply.is_decrypted == False,  # noqa: E712
-                Reply.is_decrypted == None,  # noqa: E712
+                Reply.is_decrypted == None,  # noqa: E711
             )
         )
-    )  # noqa: E712
+    )
     q = q.order_by(desc(Source.last_updated))
     return q.all()
 

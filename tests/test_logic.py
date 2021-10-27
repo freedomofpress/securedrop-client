@@ -1228,8 +1228,8 @@ def test_Controller_on_file_downloaded_success(homedir, config, mocker, session_
     mock_file.source.uuid = "a_uuid"
     mock_storage.get_file.return_value = mock_file
 
-    with mocker.patch("securedrop_client.logic.storage", mock_storage):
-        co.on_file_download_success("file_uuid")
+    mocker.patch("securedrop_client.logic.storage", mock_storage)
+    co.on_file_download_success("file_uuid")
 
     mock_file_ready.emit.assert_called_once_with("a_uuid", "file_uuid", "foo.txt")
 
@@ -2005,8 +2005,8 @@ def test_Controller_on_reply_success(homedir, mocker, session_maker, session):
     mock_reply.source.uuid = "source_uuid"
     mock_storage.get_reply.return_value = mock_reply
 
-    with mocker.patch("securedrop_client.logic.storage", mock_storage):
-        co.on_reply_success(reply.uuid)
+    mocker.patch("securedrop_client.logic.storage", mock_storage)
+    co.on_reply_success(reply.uuid)
 
     assert info_logger.call_args_list[0][0][0] == "{} sent successfully".format(reply.uuid)
     reply_succeeded.emit.assert_called_once_with("source_uuid", reply.uuid, "reply_message_mock")
