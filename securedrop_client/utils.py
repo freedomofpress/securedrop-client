@@ -6,7 +6,7 @@ import shutil
 import time
 from contextlib import contextmanager
 from pathlib import Path
-from typing import IO, Any, BinaryIO, Dict, Generator, Optional, Union
+from typing import BinaryIO, Dict, Generator, Optional, Union
 
 from sqlalchemy.orm.session import Session
 
@@ -99,7 +99,7 @@ def safe_copy(src_path: str, dest_path: str, dest_base_path: str) -> None:
     Path(dest_path).chmod(0o600)
 
 
-def safe_copyfileobj(src_file: IO[Any], dest_file: BinaryIO, dest_base_path: str) -> None:
+def safe_copyfileobj(src_file: gzip.GzipFile, dest_file: BinaryIO, dest_base_path: str) -> None:
     """
     Safely copy src_file to dest_file.
     """

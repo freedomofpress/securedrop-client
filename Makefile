@@ -42,11 +42,11 @@ check-black: ## Check Python source code formatting with black
 
 .PHONY: isort
 isort: ## Run isort to organize Python imports
-	@isort --skip-glob .venv-debian --recursive ./
+	@isort --skip-glob .venv-debian ./
 
 .PHONY: check-isort
 check-isort: ## Check Python import organization with isort
-	@isort --skip-glob .venv-debian --recursive --check-only --diff ./
+	@isort --skip-glob .venv-debian --check-only --diff ./
 
 .PHONY: mypy
 mypy: ## Run static type checker
