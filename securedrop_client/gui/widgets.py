@@ -2001,7 +2001,7 @@ class ReplyWidget(SpeechBubble):
         self.sender_icon.is_current_user = self._sender_is_current_user
         if self._sender:
             self.sender_icon.initials = self._sender.initials
-
+            self.sender_icon.setToolTip(self._sender.fullname)
         self._update_styles()
 
     @property
@@ -2025,6 +2025,7 @@ class ReplyWidget(SpeechBubble):
 
         if self._sender:
             self.sender_icon.initials = self._sender.initials
+            self.sender_icon.setToolTip(self._sender.fullname)
 
     @pyqtSlot(bool)
     def _on_authentication_changed(self, authenticated: bool) -> None:
@@ -2043,6 +2044,7 @@ class ReplyWidget(SpeechBubble):
         if user.uuid == self.sender.uuid:
             self.sender_is_current_user = True
             self.sender = user
+            self.sender_icon.setToolTip(self.sender.fullname)
             self._update_styles()
 
     @pyqtSlot(str, str, str)
