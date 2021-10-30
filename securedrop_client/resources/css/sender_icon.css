@@ -57,3 +57,17 @@
     font-size: 23px;
     color: #fff;
 }
+
+#SenderIcon QToolTip {
+    border: none;
+    padding: 5px;
+    background-color: #ffffff;
+    font-family: 'Source Sans Pro';
+}
+
+#SenderIcon_current_user QToolTip {
+    border: none;
+    padding: 5px;
+    background-color: #ffffff;
+    font-family: 'Source Sans Pro';
+}
