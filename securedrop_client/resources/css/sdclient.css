@@ -29,12 +29,6 @@ QWidget {
     color: #9fddff;
 }
 
-#LoginOfflineLink {
-    border: none;
-    color: #fff;
-    text-decoration: underline;
-}
-
 #SignInButton {
     border: none;
     background-color: #05edfe;

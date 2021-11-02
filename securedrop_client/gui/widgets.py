@@ -79,7 +79,13 @@ from securedrop_client.db import (
     User,
 )
 from securedrop_client.export import ExportError, ExportStatus
-from securedrop_client.gui import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
+from securedrop_client.gui import (
+    SDPushButton,
+    SecureQLabel,
+    SvgLabel,
+    SvgPushButton,
+    SvgToggleButton,
+)
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_css, load_icon, load_image, load_movie
 from securedrop_client.storage import source_exists
@@ -1576,26 +1582,13 @@ class StarToggleButton(SvgToggleButton):
             self.pending_count = self.pending_count - 1
 
 
-class LoginOfflineLink(QLabel):
-    """
-    A button that logs the user in in offline mode.
-    """
-
-    clicked = pyqtSignal()
+class LoginOfflineLink(SDPushButton):
+    """A button that logs the user in, in offline mode."""
 
     def __init__(self) -> None:
-        # Add svg images to button
         super().__init__()
-
-        # Set css id
-        self.setObjectName("LoginOfflineLink")
-
-        self.setFixedSize(QSize(120, 22))
-
         self.setText(_("USE OFFLINE"))
-
-    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        self.clicked.emit()
+        self.setAlignment(SDPushButton.AlignLeft)
 
 
 class SignInButton(QPushButton):
