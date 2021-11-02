@@ -19,7 +19,6 @@ def test_class_name_matches_css_object_name(mocker, main_window):
     assert "LoginDialog" in app_version_label.objectName()
     login_offline_link = login_dialog.offline_mode
     assert "LoginOfflineLink" == login_offline_link.__class__.__name__
-    assert "LoginOfflineLink" == login_offline_link.objectName()
     login_button = login_dialog.submit
     assert "SignInButton" == login_button.__class__.__name__
     assert "SignInButton" in login_button.objectName()

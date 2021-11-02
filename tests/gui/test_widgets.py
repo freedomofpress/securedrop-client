@@ -34,7 +34,6 @@ from securedrop_client.gui.widgets import (
     LoginButton,
     LoginDialog,
     LoginErrorBar,
-    LoginOfflineLink,
     MainView,
     MessageWidget,
     PasswordEdit,
@@ -2745,18 +2744,6 @@ def test_LoginErrorBar_clear_message(mocker):
 
     error_bar.error_status_bar.setText.assert_called_with("")
     error_bar.hide.assert_called_with()
-
-
-def test_LoginOfflineLink(mocker):
-    """
-    Assert that the clicked signal is emitted on mouse release event.
-    """
-    offline_link = LoginOfflineLink()
-    offline_link.clicked = mocker.MagicMock()
-
-    offline_link.mouseReleaseEvent(None)
-
-    offline_link.clicked.emit.assert_called_with()
 
 
 def test_LoginDialog_closeEvent_does_not_exit_when_main_window_is_visible(mocker):

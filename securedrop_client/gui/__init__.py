@@ -21,6 +21,8 @@ from typing import Union
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
 
+# Allow the buttons to be imported directly.
+from securedrop_client.gui.buttons import SDPushButton  # noqa: F401
 from securedrop_client.resources import load_icon, load_svg
 
 
