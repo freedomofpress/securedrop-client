@@ -3266,16 +3266,19 @@ class ConversationView(QWidget):
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.debug("Error initializing ConversationView: %s", e)
 
-    def update_deletion_markers(self, collection: list) -> None:
-        if collection:
-            self.scroll.show()
-            if collection[0].file_counter > 1:
-                self.deleted_conversation_marker.hide()
-                self.deleted_conversation_items_marker.show()
-        elif self.source.interaction_count > 0:
-            self.deleted_conversation_items_marker.hide()
-            self.scroll.hide()
-            self.deleted_conversation_marker.show()
+    def update_deletion_markers(self) -> None:
+        try:
+            if self.source.collection:
+                self.scroll.show()
+                if self.source.collection[0].file_counter > 1:
+                    self.deleted_conversation_marker.hide()
+                    self.deleted_conversation_items_marker.show()
+            elif self.source.interaction_count > 0:
+                self.scroll.hide()
+                self.deleted_conversation_items_marker.hide()
+                self.deleted_conversation_marker.show()
+        except sqlalchemy.exc.InvalidRequestError as e:
+            logger.debug(f"Could not Update deletion markers in the ConversationView: {e}")
 
     def update_conversation(self, collection: list) -> None:
         """
@@ -3349,7 +3352,7 @@ class ConversationView(QWidget):
             item_widget.deleteLater()
             self.scroll.remove_widget_from_conversation(item_widget)
 
-        self.update_deletion_markers(collection)
+        self.update_deletion_markers()
         self.conversation_updated.emit()
 
     def add_file(self, file: File, index: int) -> None:
@@ -3464,15 +3467,7 @@ class ConversationView(QWidget):
         self.reply_flag = True
         if source_uuid == self.source.uuid:
             self.add_reply_from_reply_box(reply_uuid, reply_text)
-            try:
-                self.update_deletion_markers(self.source.collection.copy())
-            except sqlalchemy.exc.InvalidRequestError as e:
-                # The only way we should get here is if
-                # source.collection can't be populated, presumably
-                # because it had never been loaded, and the source and
-                # its conversation items were deleted between adding
-                # the reply and updating deletion markers.
-                logger.debug("Error in ConversationView.on_reply_sent: %s", e)
+            self.update_deletion_markers()
 
 
 class SourceConversationWrapper(QWidget):

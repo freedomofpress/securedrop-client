@@ -4584,7 +4584,9 @@ def test_ConversationView_on_reply_sent_with_deleted_source(mocker):
 
     cv.on_reply_sent(source.uuid, "mock", "mock")
 
-    debug_logger.assert_any_call("Error in ConversationView.on_reply_sent: %s", ire)
+    debug_logger.assert_any_call(
+        f"Could not Update deletion markers in the ConversationView: {ire}"
+    )
 
 
 def test_ConversationView_add_reply_from_reply_box(mocker, session, session_maker, homedir):
@@ -5644,6 +5646,7 @@ def test_update_conversation_content_updates(mocker, session):
     session.commit()
 
     cv = ConversationView(source, mock_controller)
+    cv.update_deletion_markers = mocker.MagicMock()
     cv.current_messages = {}
 
     cv.scroll.conversation_layout.removeWidget = mocker.MagicMock()
@@ -5742,6 +5745,8 @@ def test_update_conversation_updates_sender_when_sender_changes(
     controller = logic.Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
     controller.update_authenticated_user = mocker.MagicMock()
     cv = ConversationView(source, controller)
+    cv.update_deletion_markers = mocker.MagicMock()
+
     cv.update_conversation(cv.source.collection)
 
     reply.journalist.firstname = "abc"
