@@ -1002,7 +1002,12 @@ class Controller(QObject):
             self.gui.update_error_status(_("The file download failed. Please try again."))
 
     def on_delete_conversation_success(self, uuid: str) -> None:
+        """
+        If the source collection has been successfully scheduled for deletion on the server, mark the
+        source as deleted and emit a signal for the GUI to handle.
+        """
         logger.info("Conversation %s successfully deleted at server", uuid)
+        storage.conversation_deletion_scheduled(uuid, self.session)
         self.api_sync.sync()
 
     def on_delete_conversation_failure(self, e: Exception) -> None:

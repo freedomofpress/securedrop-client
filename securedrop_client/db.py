@@ -58,6 +58,7 @@ class Source(Base):
     is_starred = Column(Boolean(name="is_starred"), server_default=text("0"))
     last_updated = Column(DateTime)
     account_deletion_scheduled = Column(Boolean(name="deleted"), nullable=False, server_default=text("0"))
+    conversation_deletion_scheduled = Column(Boolean(name="deleted"), nullable=False, server_default=text("0"))
 
     def __repr__(self) -> str:
         return "<Source {}: {}>".format(self.uuid, self.journalist_designation)
