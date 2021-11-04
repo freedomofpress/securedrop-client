@@ -1006,9 +1006,11 @@ class Controller(QObject):
 
     def on_delete_source_success(self, source_uuid: str) -> None:
         """
-        Rely on sync to delete the source locally so we know for sure it was deleted
+        If the source has been successfully scheduled for deletion on the server, mark the
+        source as deleted until the our sync with the server updates our local database.
         """
         logger.info("Source %s successfully deleted at server", source_uuid)
+        storage.account_deletion_scheduled(source_uuid, self.session)
         self.api_sync.sync()
 
     def on_delete_source_failure(self, e: Exception) -> None:

@@ -649,6 +649,17 @@ def find_new_replies(session: Session) -> List[Reply]:
     return q.all()
 
 
+def account_deletion_scheduled(uuid: str, session: Session) -> None:
+    """
+    Set Source.account_deletion_scheduled in the database.
+    """
+    source = session.query(Source).filter_by(uuid=uuid).one_or_none()
+    if source:
+        source.account_deletion_scheduled = True
+        session.add(source)
+        session.commit()
+
+
 def mark_as_not_downloaded(uuid: str, session: Session) -> None:
     """
     Mark File as not downloaded in the database.
