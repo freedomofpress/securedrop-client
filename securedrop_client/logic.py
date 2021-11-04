@@ -280,6 +280,14 @@ class Controller(QObject):
     source_deletion_failed = pyqtSignal(str)
 
     """
+    This signal indicates that a deletion attempt was successful at the server.
+
+    Emits:
+        str: the source UUID
+    """
+    source_deletion_successful = pyqtSignal(str)
+
+    """
     This signal lets the queue manager know to add the job to the appropriate
     network queue.
 
@@ -1006,12 +1014,12 @@ class Controller(QObject):
 
     def on_delete_source_success(self, source_uuid: str) -> None:
         """
-        If the source has been successfully scheduled for deletion on the server, mark the
-        source as deleted until the our sync with the server updates our local database.
+        The source has been successfully scheduled for deletion on the server, so emit a
+        signal to the GUI.
         """
         logger.info("Source %s successfully deleted at server", source_uuid)
         storage.account_deletion_scheduled(source_uuid, self.session)
-        self.api_sync.sync()
+        self.source_deletion_successful.emit(source_uuid)
 
     def on_delete_source_failure(self, e: Exception) -> None:
         if isinstance(e, DeleteSourceJobException):

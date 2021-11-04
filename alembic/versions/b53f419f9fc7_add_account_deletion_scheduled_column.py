@@ -1,4 +1,4 @@
-"""add account_deletion_scheduled columnOC
+"""add account_deletion_scheduled column
 
 Revision ID: b53f419f9fc7
 Revises: bd57477f19a2

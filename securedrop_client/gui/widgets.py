@@ -601,6 +601,7 @@ class MainView(QWidget):
         Pass through the controller object to this widget.
         """
         self.controller = controller
+        self.controller.source_deletion_successful.connect(self._on_source_deletion_successful)
         self.source_list.setup(controller)
 
     def show_sources(self, sources: List[Source]) -> None:
@@ -677,6 +678,20 @@ class MainView(QWidget):
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.debug("Error refreshing source conversations: %s", e)
 
+    def delete_source(self, source_uuid: str) -> None:
+        """
+        When we delete a source, we should delete its SourceConversationWrapper,
+        and remove the reference to it in self.source_conversations
+        """
+        self.source_list.delete_source([source_uuid])
+        self.delete_conversation(source_uuid)
+        if not self.source_list.source_items:
+            self.empty_conversation_view.show_no_sources_message()
+            self.empty_conversation_view.show()
+        else:
+            self.empty_conversation_view.show_no_source_selected_message()
+            self.empty_conversation_view.show()
+
     def delete_conversation(self, source_uuid: str) -> None:
         """
         When we delete a source, we should delete its SourceConversationWrapper,
@@ -702,6 +717,14 @@ class MainView(QWidget):
         self.empty_conversation_view.hide()
         self.view_layout.addWidget(widget)
         widget.show()
+
+    @pyqtSlot(str)
+    def _on_source_deletion_successful(self, source_uuid: str) -> None:
+        """
+        Handle the signal for a source that was successfully deleted by deleting that source from
+        the source list and the corresponding conversation.
+        """
+        self.delete_source(source_uuid)
 
 
 class EmptyConversationView(QWidget):
@@ -862,6 +885,11 @@ class SourceList(QListWidget):
         sources_to_add = {}
         for source in sources:
             try:
+                # If a source has been scheduled for deletion, then it has already been deleted
+                # from the GUI.
+                if source.account_deletion_scheduled:
+                    continue
+
                 if source.uuid in self.source_items:
                     sources_to_update.append(source.uuid)
                 else:
@@ -871,21 +899,8 @@ class SourceList(QListWidget):
                 continue
 
         # Delete widgets for sources not in the supplied sourcelist
-        deleted_uuids = []
-        sources_to_delete = [
-            self.source_items[uuid] for uuid in self.source_items if uuid not in sources_to_update
-        ]
-        for source_item in sources_to_delete:
-            if source_item.isSelected():
-                self.setCurrentItem(None)
-
-            source_widget = self.itemWidget(source_item)
-            self.takeItem(self.row(source_item))
-            if source_widget.source_uuid in self.source_items:
-                del self.source_items[source_widget.source_uuid]
-
-            deleted_uuids.append(source_widget.source_uuid)
-            source_widget.deleteLater()
+        sources_to_delete = [uuid for uuid in self.source_items if uuid not in sources_to_update]
+        deleted_uuids = self.delete_source(sources_to_delete)
 
         # Update the remaining widgets
         for i in range(self.count()):
@@ -913,6 +928,28 @@ class SourceList(QListWidget):
 
         # Return uuids of source widgets that were deleted so we can later delete the corresponding
         # conversation widgets
+        return deleted_uuids
+
+    def delete_source(self, source_uuids: List[int]) -> List[str]:
+        deleted_uuids = []
+
+        for uuid in source_uuids:
+            try:
+                source_item = self.source_items[uuid]
+                if source_item.isSelected():
+                    self.setCurrentItem(None)
+
+                source_widget = self.itemWidget(source_item)
+                self.takeItem(self.row(source_item))
+                if source_widget.source_uuid in self.source_items:
+                    del self.source_items[source_widget.source_uuid]
+
+                deleted_uuids.append(source_widget.source_uuid)
+                source_widget.deleteLater()
+            except KeyError:
+                continue
+
+
         return deleted_uuids
 
     def initial_update(self, sources: List[Source]) -> None:
