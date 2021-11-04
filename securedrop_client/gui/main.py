@@ -160,6 +160,10 @@ class Window(QMainWindow):
         """
         self.main_view.show_sources(sources)
 
+        selected_source = self.main_view.source_list.get_selected_source()
+        if selected_source:
+            self.main_view.empty_conversation_view.hide()
+
     def show_last_sync(self, updated_on):  # type: ignore [no-untyped-def]
         """
         Display a message indicating the time of last sync with the server.
