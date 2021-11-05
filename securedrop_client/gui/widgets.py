@@ -607,25 +607,32 @@ class MainView(QWidget):
 
     def show_sources(self, sources: List[Source]) -> None:
         """
-        Update the left hand sources list in the UI with the passed in list of
-        sources.
+        Update the sources list in the GUI with the supplied list of sources.
         """
-        if sources:
+        # If no sources are supplied, display the EmptyConversationView with the no-sources message.
+        #
+        # If there are sources but no source is selected in the GUI, display the
+        # EmptyConversationView with the no-source-selected messaging.
+        #
+        # Otherwise, hide the EmptyConversationView.
+        if not sources:
+            self.empty_conversation_view.show_no_sources_message()
+            self.empty_conversation_view.show()
+        elif not self.source_list.get_selected_source():
             self.empty_conversation_view.show_no_source_selected_message()
             self.empty_conversation_view.show()
         else:
-            self.empty_conversation_view.show_no_sources_message()
-            self.empty_conversation_view.show()
+            self.empty_conversation_view.hide()
 
-        if self.source_list.source_items:
-            # The source list already contains sources.
+        # If the source list in the GUI is empty, then we will run the optimized intial update.
+        # Otherwise, do a regular source list update.
+        if not self.source_list.source_items:
+            self.source_list.initial_update(sources)
+        else:
             deleted_sources = self.source_list.update(sources)
             for source_uuid in deleted_sources:
                 # Then call the function to remove the wrapper and its children.
                 self.delete_conversation(source_uuid)
-        else:
-            # We have an empty source list, so do an initial update.
-            self.source_list.initial_update(sources)
 
     def on_source_changed(self) -> None:
         """

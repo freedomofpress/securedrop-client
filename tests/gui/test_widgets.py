@@ -558,7 +558,17 @@ def test_MainView_show_sources_with_none_selected(mocker):
     Ensure the sources list is passed to the source list widget to be updated.
     """
     mv = MainView(None)
-    mv.source_list = mocker.MagicMock()
+
+    # Set up SourceList so that SourceList.get_selected_source() returns a source
+    mv.source_list = SourceList()
+    source_widget = SourceWidget(
+        mocker.MagicMock(), factory.Source(uuid="stub_uuid"), mocker.MagicMock(), mocker.MagicMock()
+    )
+    source_item = SourceListWidgetItem(mv.source_list)
+    mv.source_list.setItemWidget(source_item, source_widget)
+    mv.source_list.source_items["stub_uuid"] = source_item
+    mocker.patch.object(mv.source_list, "update")
+
     mv.empty_conversation_view = mocker.MagicMock()
 
     mv.show_sources([1, 2, 3])
