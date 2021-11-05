@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import html
 import logging
+from datetime import datetime
 from gettext import gettext as _
 from gettext import ngettext
 from typing import Dict, List, Optional, Union  # noqa: F401
@@ -248,8 +249,8 @@ class SyncIcon(QLabel):
         self.controller.sync_started.connect(self._on_sync_started)
         self.controller.sync_succeeded.connect(self._on_sync_succeeded)
 
-    @pyqtSlot()
-    def _on_sync_started(self) -> None:
+    @pyqtSlot(datetime)
+    def _on_sync_started(self, timestamp: datetime) -> None:
         self.sync_animation = load_movie("sync_active.gif")
         self.sync_animation.setScaledSize(QSize(24, 20))
         self.setMovie(self.sync_animation)
@@ -3726,8 +3727,8 @@ class ReplyBoxWidget(QWidget):
         else:
             self.set_logged_out()
 
-    @pyqtSlot()
-    def _on_sync_started(self) -> None:
+    @pyqtSlot(datetime)
+    def _on_sync_started(self, timestamp: datetime) -> None:
         try:
             self.update_authentication_state(self.controller.is_authenticated)
             if self.text_edit.hasFocus():
