@@ -275,7 +275,7 @@ def test_SyncIcon__on_sync_started(mocker):
     """
     sync_icon = SyncIcon()
 
-    sync_icon._on_sync_started()
+    sync_icon._on_sync_started(mocker.MagicMock())
 
     file_path = sync_icon.sync_animation.fileName()
     filename = file_path[file_path.rfind("/") + 1 :]
@@ -5056,14 +5056,14 @@ def test_ReplyBoxWidget_test_refocus_after_sync(mocker):
     rb.text_edit.hasFocus = mocker.MagicMock(return_value=True)
     rb.text_edit.setFocus = mocker.MagicMock()
 
-    rb._on_sync_started()
+    rb._on_sync_started(mocker.MagicMock())
     assert rb.refocus_after_sync is True
 
     rb._on_sync_succeeded()
     rb.text_edit.setFocus.assert_called_once_with()
 
     rb.text_edit.hasFocus.return_value = False
-    rb._on_sync_started()
+    rb._on_sync_started(mocker.MagicMock())
     assert rb.refocus_after_sync is False
 
 
@@ -5079,7 +5079,7 @@ def test_ReplyBoxWidget_on_sync_source_deleted(mocker, source):
 
     uas = mocker.patch.object(ReplyBoxWidget, "update_authentication_state")
     uas.side_effect = pretend_source_was_deleted
-    rb._on_sync_started()
+    rb._on_sync_started(mocker.MagicMock())
     rb._on_sync_succeeded()
 
     exception_str = str(sqlalchemy.orm.exc.ObjectDeletedError(attributes.instance_state(s), None))

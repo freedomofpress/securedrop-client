@@ -16,12 +16,12 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import datetime
 import functools
 import inspect
 import logging
 import os
 import uuid
+from datetime import datetime
 from gettext import gettext as _
 from typing import Dict, List, Type, Union  # noqa: F401
 
@@ -138,8 +138,11 @@ class Controller(QObject):
 
     """
     This signal indicates when a sync has started.
+
+    Emits:
+        datetime: the time that the sync started
     """
-    sync_started = pyqtSignal()
+    sync_started = pyqtSignal(datetime)
 
     """
     This signal indicates when a sync has successfully completed.
@@ -592,7 +595,7 @@ class Controller(QObject):
             return None
 
     def on_sync_started(self) -> None:
-        self.sync_started.emit()
+        self.sync_started.emit(datetime.utcnow())
 
     def on_sync_success(self) -> None:
         """
@@ -1079,7 +1082,7 @@ class Controller(QObject):
         )
         draft_reply = db.DraftReply(
             uuid=reply_uuid,
-            timestamp=datetime.datetime.utcnow(),
+            timestamp=datetime.utcnow(),
             source_id=source.id,
             journalist_id=self.authenticated_user.id,
             file_counter=source.interaction_count,
