@@ -245,19 +245,22 @@ class SyncIcon(QLabel):
         Assign a controller object (containing the application logic).
         """
         self.controller = controller
-        self.controller.sync_events.connect(self._on_sync)
+        self.controller.sync_started.connect(self._on_sync_started)
+        self.controller.sync_succeeded.connect(self._on_sync_succeeded)
 
-    def _on_sync(self, data) -> None:  # type: ignore [no-untyped-def]
-        if data == "syncing":
-            self.sync_animation = load_movie("sync_active.gif")
-            self.sync_animation.setScaledSize(QSize(24, 20))
-            self.setMovie(self.sync_animation)
-            self.sync_animation.start()
-        elif data == "synced":
-            self.sync_animation = load_movie("sync.gif")
-            self.sync_animation.setScaledSize(QSize(24, 20))
-            self.setMovie(self.sync_animation)
-            self.sync_animation.start()
+    @pyqtSlot()
+    def _on_sync_started(self) -> None:
+        self.sync_animation = load_movie("sync_active.gif")
+        self.sync_animation.setScaledSize(QSize(24, 20))
+        self.setMovie(self.sync_animation)
+        self.sync_animation.start()
+
+    @pyqtSlot()
+    def _on_sync_succeeded(self) -> None:
+        self.sync_animation = load_movie("sync.gif")
+        self.sync_animation.setScaledSize(QSize(24, 20))
+        self.setMovie(self.sync_animation)
+        self.sync_animation.start()
 
     def enable(self) -> None:
         self.sync_animation = load_movie("sync.gif")
@@ -3675,7 +3678,8 @@ class ReplyBoxWidget(QWidget):
 
         # Connect signals to slots
         self.controller.authentication_state.connect(self._on_authentication_changed)
-        self.controller.sync_events.connect(self._on_synced)
+        self.controller.sync_started.connect(self._on_sync_started)
+        self.controller.sync_succeeded.connect(self._on_sync_succeeded)
 
     def set_logged_in(self) -> None:
         self.text_edit.set_logged_in()
@@ -3722,18 +3726,30 @@ class ReplyBoxWidget(QWidget):
         else:
             self.set_logged_out()
 
-    def _on_synced(self, data: str) -> None:
+    @pyqtSlot()
+    def _on_sync_started(self) -> None:
         try:
             self.update_authentication_state(self.controller.is_authenticated)
-
-            if data == "syncing" and self.text_edit.hasFocus():
+            if self.text_edit.hasFocus():
                 self.refocus_after_sync = True
-            elif data == "synced" and self.refocus_after_sync:
+            else:
+                self.refocus_after_sync = False
+        except sqlalchemy.orm.exc.ObjectDeletedError as e:
+            logger.debug(f"During sync, ReplyBoxWidget found its source had been deleted: {e}")
+            self.destroy()
+
+    @pyqtSlot()
+    def _on_sync_succeeded(self) -> None:
+        try:
+            self.update_authentication_state(self.controller.is_authenticated)
+            # TODO: Handle edge case where a user starts out with the reply box in focus at the
+            # beginning of a sync, but then switches to another reply box before the sync finishes.
+            if self.refocus_after_sync:
                 self.text_edit.setFocus()
             else:
                 self.refocus_after_sync = False
-        except sqlalchemy.orm.exc.ObjectDeletedError:
-            logger.debug("During sync, ReplyBoxWidget found its source had been deleted.")
+        except sqlalchemy.orm.exc.ObjectDeletedError as e:
+            logger.debug(f"During sync, ReplyBoxWidget found its source had been deleted: {e}")
             self.destroy()
 
 

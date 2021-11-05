@@ -136,10 +136,18 @@ class Controller(QObject):
     application, this is the controller.
     """
 
-    sync_events = pyqtSignal(str)
+    """
+    This signal indicates when a sync has started.
+    """
+    sync_started = pyqtSignal()
 
     """
-    A signal that emits a signal when the authentication state changes.
+    This signal indicates when a sync has successfully completed.
+    """
+    sync_succeeded = pyqtSignal()
+
+    """
+    This signal indicates when the authentication state changes.
 
     Emits:
         bool: is_authenticated
@@ -584,7 +592,7 @@ class Controller(QObject):
             return None
 
     def on_sync_started(self) -> None:
-        self.sync_events.emit("syncing")
+        self.sync_started.emit()
 
     def on_sync_success(self) -> None:
         """
@@ -608,7 +616,7 @@ class Controller(QObject):
         self.gui.refresh_current_source_conversation()
         self.download_new_messages()
         self.download_new_replies()
-        self.sync_events.emit("synced")
+        self.sync_succeeded.emit()
 
         if (
             self.authenticated_user

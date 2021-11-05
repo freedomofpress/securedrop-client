@@ -269,48 +269,30 @@ def test_SyncIcon_disable_starts_animiation(mocker):
     sync_icon.sync_animation.start.assert_called_with()
 
 
-def test_SyncIcon__on_sync_syncing(mocker):
+def test_SyncIcon__on_sync_started(mocker):
     """
     Sync icon becomes active when it receives the `syncing` signal.
     """
     sync_icon = SyncIcon()
 
-    sync_icon._on_sync("syncing")
+    sync_icon._on_sync_started()
 
     file_path = sync_icon.sync_animation.fileName()
     filename = file_path[file_path.rfind("/") + 1 :]
     assert filename == "sync_active.gif"
 
 
-def test_SyncIcon__on_sync_synced(mocker):
+def test_SyncIcon__on_sync_succeeded(mocker):
     """
     Sync icon becomes "inactive" when it receives the `synced` signal.
     """
     sync_icon = SyncIcon()
 
-    sync_icon._on_sync("synced")
+    sync_icon._on_sync_succeeded()
 
     file_path = sync_icon.sync_animation.fileName()
     filename = file_path[file_path.rfind("/") + 1 :]
     assert filename == "sync.gif"
-
-
-def test_SyncIcon___on_sync_with_data_not_equal_to_syncing(mocker):
-    """
-    Sync does not because active when the sync signal's data is something other than 'syncing'
-    """
-    movie = QMovie()
-    movie.start = mocker.MagicMock()
-    mocker.patch("securedrop_client.gui.widgets.load_movie", return_value=movie)
-    sync_icon = SyncIcon()
-
-    # assert that start call count has only been called once
-    sync_icon.sync_animation.start.assert_called_once_with()
-
-    sync_icon._on_sync("something other than syncing")
-
-    # assert that _on_sync doesn't increase start call count from one
-    sync_icon.sync_animation.start.assert_called_once_with()
 
 
 def test_ErrorStatusBar_clear_error_status(mocker):
@@ -5067,21 +5049,21 @@ def test_ReplyBoxWidget_send_reply_does_not_send_empty_string(mocker):
     assert not controller.send_reply.called
 
 
-def test_ReplyBoxWidget_on_synced(mocker):
+def test_ReplyBoxWidget_test_refocus_after_sync(mocker):
     source = factory.Source()
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
     rb.text_edit.hasFocus = mocker.MagicMock(return_value=True)
     rb.text_edit.setFocus = mocker.MagicMock()
 
-    rb._on_synced("syncing")
+    rb._on_sync_started()
     assert rb.refocus_after_sync is True
 
-    rb._on_synced("synced")
+    rb._on_sync_succeeded()
     rb.text_edit.setFocus.assert_called_once_with()
 
     rb.text_edit.hasFocus.return_value = False
-    rb._on_synced("syncing")
+    rb._on_sync_started()
     assert rb.refocus_after_sync is False
 
 
@@ -5097,10 +5079,14 @@ def test_ReplyBoxWidget_on_sync_source_deleted(mocker, source):
 
     uas = mocker.patch.object(ReplyBoxWidget, "update_authentication_state")
     uas.side_effect = pretend_source_was_deleted
-    rb._on_synced("syncing")
-    debug_logger.assert_called_once_with(
-        "During sync, ReplyBoxWidget found its source had been deleted."
+    rb._on_sync_started()
+    rb._on_sync_succeeded()
+
+    exception_str = str(sqlalchemy.orm.exc.ObjectDeletedError(attributes.instance_state(s), None))
+    debug_logger.assert_called_with(
+        f"During sync, ReplyBoxWidget found its source had been deleted: {exception_str}"
     )
+    assert debug_logger.call_count == 2
 
 
 def test_ReplyWidget_success_failure_slots(mocker):
@@ -5267,7 +5253,7 @@ def test_ReplyBoxWidget_enable_after_source_gets_key(mocker, session, session_ma
     storage.update_sources([source_with_key], [source], session, homedir)
 
     # ... simulate the ReplyBoxWidget receiving the sync success signal
-    rbw._on_synced("synced")
+    rbw._on_sync_succeeded()
 
     # ... and the widget should be enabled
     assert rbw.source.fingerprint
