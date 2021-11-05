@@ -407,11 +407,11 @@ def test_Controller_on_sync_started(mocker, homedir):
 
     co.on_sync_started()
 
-    sync_events = mocker.patch.object(co, "sync_events")
+    sync_started = mocker.patch.object(co, "sync_started")
 
     co.on_sync_started()
 
-    sync_events.emit.assert_called_once_with("syncing")
+    sync_started.emit.assert_called_once()
 
 
 def test_Controller_on_sync_failure(homedir, config, mocker, session_maker):
