@@ -197,12 +197,16 @@ class LeftPane(QWidget):
         self.branding_barre.setPixmap(load_image("left_pane.svg"))
         self.user_profile = UserProfile()
 
+        # Add user guide links in left pane.
+        self.user_guide_label = UserGuideLabel()
+
         # Hide user profile widget until user logs in
         self.user_profile.hide()
 
         # Add widgets to layout
         layout.addWidget(self.user_profile)
         layout.addWidget(self.branding_barre)
+        layout.addWidget(self.user_guide_label)
 
     def setup(self, window, controller: Controller) -> None:  # type: ignore [no-untyped-def]
         self.user_profile.setup(window, controller)
@@ -375,6 +379,31 @@ class ErrorStatusBar(QWidget):
         """
         self.status_bar.clearMessage()
         self._hide()
+
+
+class UserGuideLabel(QLabel):
+    """ A widget that contains the user guide for journalists.
+    This opens in a Tor disposable VM.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        # Set css id
+        self.setObjectName("UserGuideLink")
+
+        self.setFixedSize(QSize(120, 22))
+        self.setAlignment(Qt.AlignCenter)
+
+        self.setOpenExternalLinks(True)
+
+        linkTemplate = "<a href={0}>{1}<a/>"
+        self.setText(
+            linkTemplate.format(
+                "https://workstation.securedrop.org/en/stable/journalist/introduction.html",
+                "User Guide",
+            )
+        )
 
 
 class UserProfile(QLabel):
