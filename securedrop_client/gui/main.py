@@ -29,7 +29,8 @@ from PyQt5.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QVBoxLayout,
 
 from securedrop_client import __version__
 from securedrop_client.db import Source, User
-from securedrop_client.gui.widgets import LeftPane, LoginDialog, MainView, TopPane
+from securedrop_client.gui.login_dialog import LoginDialog
+from securedrop_client.gui.widgets import LeftPane, MainView, TopPane
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_css, load_font, load_icon
 
