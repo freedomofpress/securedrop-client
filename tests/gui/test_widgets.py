@@ -14,7 +14,7 @@ import sqlalchemy.orm.exc
 from PyQt5.QtCore import QEvent, QSize, Qt
 from PyQt5.QtGui import QFocusEvent, QKeyEvent, QMovie, QResizeEvent
 from PyQt5.QtTest import QTest
-from PyQt5.QtWidgets import QApplication, QLineEdit, QMainWindow, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QApplication, QLineEdit, QVBoxLayout, QWidget
 from sqlalchemy.orm import attributes, scoped_session, sessionmaker
 
 from securedrop_client import db, logic, storage
@@ -2709,21 +2709,6 @@ def test_LoginDialog_submitKeyPressEvent(mocker, qt_key):
     ld.validate.assert_called_once_with()
 
 
-def test_LoginDialog_closeEvent_exits(mocker):
-    """
-    If the main window is not visible, then exit the application when the LoginDialog receives a
-    close event.
-    """
-    mw = QMainWindow()
-    ld = LoginDialog(mw)
-    sys_exit_fn = mocker.patch("securedrop_client.gui.widgets.sys.exit")
-    mw.hide()
-
-    ld.closeEvent(event="mock")
-
-    sys_exit_fn.assert_called_once_with(0)
-
-
 def test_LoginErrorBar_set_message(mocker):
     error_bar = LoginErrorBar()
     error_bar.error_status_bar = mocker.MagicMock()
@@ -2744,21 +2729,6 @@ def test_LoginErrorBar_clear_message(mocker):
 
     error_bar.error_status_bar.setText.assert_called_with("")
     error_bar.hide.assert_called_with()
-
-
-def test_LoginDialog_closeEvent_does_not_exit_when_main_window_is_visible(mocker):
-    """
-    If the main window is visible, then to not exit the application when the LoginDialog receives a
-    close event.
-    """
-    mw = QMainWindow()
-    ld = LoginDialog(mw)
-    sys_exit_fn = mocker.patch("securedrop_client.gui.widgets.sys.exit")
-    mw.show()
-
-    ld.closeEvent(event="mock")
-
-    assert sys_exit_fn.called is False
 
 
 def test_SpeechBubble_init(mocker):

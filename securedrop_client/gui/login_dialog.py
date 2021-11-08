@@ -19,11 +19,10 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
-import sys
 from gettext import gettext as _
 
 from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtGui import QBrush, QCloseEvent, QKeyEvent, QPalette
+from PyQt5.QtGui import QBrush, QKeyEvent, QPalette
 from PyQt5.QtWidgets import (
     QDialog,
     QGraphicsOpacityEffect,
@@ -58,8 +57,7 @@ class LoginDialog(QDialog):
     MIN_JOURNALIST_USERNAME = 3  # Journalist.MIN_USERNAME_LEN on server
 
     def __init__(self, parent: QWidget) -> None:
-        self.parent = parent
-        super().__init__(self.parent)
+        super().__init__(parent)
 
         # Set modal
         self.setModal(True)
@@ -141,13 +139,6 @@ class LoginDialog(QDialog):
         layout.addWidget(form)
         layout.addStretch()
         layout.addWidget(application_version)
-
-    def closeEvent(self, event: QCloseEvent) -> None:
-        """
-        Only exit the application when the main window is not visible.
-        """
-        if not self.parent.isVisible():
-            sys.exit(0)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """
