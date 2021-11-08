@@ -15,7 +15,7 @@ def test_class_name_matches_css_object_name(mocker, main_window):
     assert "LoginDialog" == login_dialog.__class__.__name__
     form = login_dialog.layout().itemAt(2).widget()
     assert "LoginDialog" in form.objectName()
-    app_version_label = login_dialog.layout().itemAt(4).widget().layout().itemAt(0).widget()
+    app_version_label = login_dialog.layout().itemAt(4).widget()
     assert "LoginDialog" in app_version_label.objectName()
     login_offline_link = login_dialog.offline_mode
     assert "LoginOfflineLink" == login_offline_link.__class__.__name__
@@ -161,7 +161,7 @@ def test_styles_for_login_dialog(mocker, main_window):
     for c in form_children_qlineedit:
         assert 30 == c.height()  # 30px + 0px margin
         assert (0, 0, 0, 0) == c.getContentsMargins()
-    app_version_label = login_dialog.layout().itemAt(4).widget().layout().itemAt(0).widget()
+    app_version_label = login_dialog.layout().itemAt(4).widget()
     assert "#9fddff" == app_version_label.palette().color(QPalette.Foreground).name()
 
     login_offline_link = login_dialog.offline_mode
