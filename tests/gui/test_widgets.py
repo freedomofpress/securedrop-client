@@ -2679,36 +2679,6 @@ def test_LoginDialog_validate_input_ok(mocker):
     mock_controller.login.assert_called_once_with("foo", "nicelongpassword", "123456")
 
 
-def test_LoginDialog_escapeKeyPressEvent(mocker):
-    """
-    Ensure we don't hide the login dialog when Esc key is pressed.
-    """
-    ld = LoginDialog(None)
-    event = mocker.MagicMock()
-    event.key = mocker.MagicMock(return_value=Qt.Key_Escape)
-
-    ld.keyPressEvent(event)
-
-    event.ignore.assert_called_once_with()
-
-
-@pytest.mark.parametrize("qt_key", [Qt.Key_Enter, Qt.Key_Return])
-def test_LoginDialog_submitKeyPressEvent(mocker, qt_key):
-    """
-    Ensure we submit the form when the user presses [Enter] or [Return]
-    """
-
-    ld = LoginDialog(None)
-    event = mocker.MagicMock()
-    event.key = mocker.MagicMock(return_value=qt_key)
-
-    ld.validate = mocker.MagicMock()
-
-    ld.keyPressEvent(event)
-
-    ld.validate.assert_called_once_with()
-
-
 def test_LoginErrorBar_set_message(mocker):
     error_bar = LoginErrorBar()
     error_bar.error_status_bar = mocker.MagicMock()
