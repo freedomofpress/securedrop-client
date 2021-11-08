@@ -22,7 +22,7 @@ import logging
 from gettext import gettext as _
 
 from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtGui import QBrush, QKeyEvent, QPalette
+from PyQt5.QtGui import QBrush, QPalette
 from PyQt5.QtWidgets import (
     QDialog,
     QGraphicsOpacityEffect,
@@ -108,6 +108,7 @@ class LoginDialog(QDialog):
         buttons.setLayout(buttons_layout)
         buttons_layout.setContentsMargins(0, 20, 0, 0)
         self.submit = SignInButton()
+        self.submit.setDefault(True)
         self.submit.clicked.connect(self.validate)
         self.offline_mode = LoginOfflineLink()
         buttons_layout.addWidget(self.offline_mode)
@@ -135,19 +136,6 @@ class LoginDialog(QDialog):
         layout.addWidget(form)
         layout.addStretch()
         layout.addWidget(application_version)
-
-    def keyPressEvent(self, event: QKeyEvent) -> None:
-        """
-        Cutomize keyboard behavior in the login dialog.
-
-        - [Esc] should not close the dialog
-        - [Enter] or [Return] should attempt to submit the form
-        """
-        if event.key() == Qt.Key_Escape:
-            event.ignore()
-
-        if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
-            self.validate()
 
     def setup(self, controller: Controller) -> None:
         self.controller = controller
