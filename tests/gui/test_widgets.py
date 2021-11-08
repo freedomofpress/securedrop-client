@@ -19,6 +19,7 @@ from sqlalchemy.orm import attributes, scoped_session, sessionmaker
 
 from securedrop_client import db, logic, storage
 from securedrop_client.export import ExportError, ExportStatus
+from securedrop_client.gui.login_dialog import LoginDialog
 from securedrop_client.gui.widgets import (
     ActivityStatusBar,
     ConversationView,
@@ -32,7 +33,6 @@ from securedrop_client.gui.widgets import (
     FileWidget,
     LeftPane,
     LoginButton,
-    LoginDialog,
     LoginErrorBar,
     MainView,
     MessageWidget,
