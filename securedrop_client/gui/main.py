@@ -24,8 +24,8 @@ from gettext import gettext as _
 from typing import List, Optional
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QGuiApplication
-from PyQt5.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QVBoxLayout, QWidget
+from PyQt5.QtGui import QGuiApplication, QIcon, QKeySequence
+from PyQt5.QtWidgets import QAction, QApplication, QHBoxLayout, QMainWindow, QVBoxLayout, QWidget
 
 from securedrop_client import __version__
 from securedrop_client.db import Source, User
@@ -89,6 +89,13 @@ class Window(QMainWindow):
 
         # Dialogs
         self.login_dialog: Optional[LoginDialog] = None
+
+        # Actions
+        quit = QAction(_("Quit"), self)
+        quit.setIcon(QIcon.fromTheme("application-exit"))
+        quit.setShortcut(QKeySequence.Quit)
+        quit.triggered.connect(self.close)
+        self.addAction(quit)
 
     def setup(self, controller: Controller) -> None:
         """
