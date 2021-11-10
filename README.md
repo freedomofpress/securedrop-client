@@ -100,9 +100,8 @@ See [SecureDrop docs](https://docs.securedrop.org/en/latest/development/setup_de
 ```
 git clone git@github.com:freedomofpress/securedrop-client.git
 cd securedrop-client
-virtualenv --python=python3.7 .venv
+make venv
 source .venv/bin/activate
-pip install --require-hashes -r requirements/dev-requirements.txt
 ```
 
 4. Run SecureDrop Client
