@@ -27,10 +27,11 @@ def safe_mkdir(
       * the resolved relative_path is not a subdirectory of base_path
       * a child directory in relative_path already exists with permissions other than 700
     """
-    base_path = Path(base_path).resolve()
+    base_path = Path(base_path)
     if not base_path.is_absolute():
         raise ValueError(f"Base directory '{base_path}' must be an absolute path")
 
+    base_path = base_path.resolve()
     check_path_traversal(base_path)
 
     if relative_path:

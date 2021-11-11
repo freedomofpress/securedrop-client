@@ -122,7 +122,6 @@ Or, if you want to persist data across restarts, you will need to run the client
 It is possible to run the development environment in macOS on non-Apple Silicon (M1) systems, but some functionality may not be available:
  * If you want to be able to open or export file submissions in a disposable AppVM, then you'll need to follow the instructions for running this in a [developer environment](#developer-environment) in Qubes.
  * Tor is not used in the developer environment. If you want to use a Tor connection between the client and server, then you'll need to follow the [staging environment](#staging-environment) instructions instead.
- * A home directory must be specified when running the client under macOS, using the flag `--sdc_home`.
 
 #### Set up the server
 1. Open a terminal in macOS (note: this terminal must be a login shell - check your terminal app preferences)
@@ -152,10 +151,12 @@ It is possible to run the development environment in macOS on non-Apple Silicon 
    make venv-mac
    source .venv/bin/activate
    ```
-7. Run SecureDrop Client
+7. Run SecureDrop Client:
   ```
-  ./run.sh --sdc_home=~/.securedrop_client
+  ./run.sh
   ```
+
+Note: to persist data and config across multiple client runs, specify a home directory, e.g. `./run.sh --sdc_home=~/.sd_client`
 
 ### Staging environment
 

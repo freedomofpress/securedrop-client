@@ -74,9 +74,8 @@ def read_gzip_header_filename(filename: str) -> str:
 
 
 class GpgHelper:
-    # We use a hardcoded temporary directory path in sd-app. Since sd-app is not a multi-user
-    # environment, we can safely assume that only the client is managing that filepath.
-    EXTRACTION_PATH = "/tmp"  # nosec
+    # The extraction path should be the fully-resolved tempdir provided by the system
+    EXTRACTION_PATH = Path(tempfile.gettempdir()).resolve()
 
     def __init__(self, sdc_home: str, session_maker: scoped_session, is_qubes: bool) -> None:
         """
