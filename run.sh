@@ -17,9 +17,18 @@ while [ -n "$1" ]; do
   shift
 done
 
-SDC_HOME=${SDC_HOME:-$(mktemp -d)}
-
+if [[ $OSTYPE == 'darwin'* ]]; then
+  # Override tempfile behavior in OS X as /var symlink conflicts with path traversal checks 
+  TMP_BASE=$HOME/.sdc_tmp
+  [ -d $TMP_BASE ] && rm -rf $TMP_BASE
+  mkdir $TMP_BASE
+  export TMPDIR=$TMP_BASE
+  SDC_HOME=${SDC_HOME:-$(mktemp -d $TMP_BASE/sd_client.XXXX)}
+else
+  SDC_HOME=${SDC_HOME:-$(mktemp -d)}
+fi
 export SDC_HOME
+
 
 GNUPGHOME="$SDC_HOME/gpg"
 export GNUPGHOME
@@ -57,4 +66,5 @@ fi
 
 wait
 
+echo "Starting client, log available at: $SDC_HOME/logs/client.log"
 python -m securedrop_client --sdc-home "$SDC_HOME" --no-proxy "$qubes_flag" "$@"

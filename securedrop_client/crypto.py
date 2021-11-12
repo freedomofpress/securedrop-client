@@ -74,8 +74,8 @@ def read_gzip_header_filename(filename: str) -> str:
 
 
 class GpgHelper:
-    # The extraction path should be the fully-resolved tempdir provided by the system
-    EXTRACTION_PATH = Path(tempfile.gettempdir()).resolve()
+    # The extraction path should be the tempdir provided by the system
+    EXTRACTION_PATH = Path(tempfile.gettempdir())
 
     def __init__(self, sdc_home: str, session_maker: scoped_session, is_qubes: bool) -> None:
         """
