@@ -27,6 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 from gettext import gettext as _
+from typing import NewType
 
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon, QKeyEvent, QPixmap
@@ -49,22 +50,24 @@ logger = logging.getLogger(__name__)
 
 class SDModalDialog(QDialog):
 
+    Intent = NewType("Intent", str)
+    IntentDefault = Intent("")
+    IntentDestructive = Intent("dangerous")
+
     BUTTON_CSS = load_css("modal_dialog_button.css")
     ERROR_DETAILS_CSS = load_css("modal_dialog_error_details.css")
 
     MARGIN = 40
     NO_MARGIN = 0
 
-    def __init__(self, show_header: bool = True, dangerous: bool = False) -> None:
+    def __init__(self, show_header: bool = True, intent: Intent = IntentDefault) -> None:
         parent = QApplication.activeWindow()
         super().__init__(parent)
         self.setObjectName("ModalDialog")
         self.setModal(True)
 
         self.show_header = show_header
-        self.dangerous = dangerous
-        if self.dangerous:
-            self.setProperty("class", "dangerous")
+        self.setIntent(intent)
 
         # Widget for displaying error messages
         self.error_details = QLabel()
@@ -131,6 +134,13 @@ class SDModalDialog(QDialog):
         self.header_animation.setScaledSize(QSize(64, 64))
         self.header_animation.frameChanged.connect(self.animate_header)
 
+    def setIntent(self, intent: Intent) -> None:
+        self.intent = intent
+        self._setStyles()
+
+    def _setStyles(self) -> None:
+        self.setProperty("class", f"dialog {self.intent}")
+
     def configure_buttons(self) -> QWidget:
         # Buttons to continue and cancel
         window_buttons = QWidget()
@@ -150,7 +160,7 @@ class SDModalDialog(QDialog):
         button_box = QDialogButtonBox(Qt.Horizontal)
         button_box.setObjectName("ModalDialog_button_box")
 
-        if self.dangerous:
+        if self.intent == self.IntentDestructive:
             self.cancel_button.setAutoDefault(True)
             self.continue_button.setDefault(False)
             self.cancel_button.setObjectName("ModalDialog_primary_button")

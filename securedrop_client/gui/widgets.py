@@ -2783,7 +2783,7 @@ class DeleteSourceDialog(SDModalDialog):
     """Used to confirm deletion of source accounts."""
 
     def __init__(self, source: Source, controller: Controller) -> None:
-        super().__init__(show_header=False, dangerous=True)
+        super().__init__(show_header=False, intent=SDModalDialog.IntentDestructive)
 
         self.source = source
         self.controller = controller
@@ -2833,7 +2833,7 @@ class DeleteConversationDialog(SDModalDialog):
     """
 
     def __init__(self, source: Source, controller: Controller) -> None:
-        super().__init__(show_header=False, dangerous=False)
+        super().__init__(show_header=False)
 
         self.source = source
         self.controller = controller
