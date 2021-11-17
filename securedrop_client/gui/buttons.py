@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from typing import NewType
 
-from PyQt5.QtWidgets import QPushButton
+from PyQt5.QtWidgets import QPushButton, QWidget
 
 from securedrop_client.resources import load_css
 
@@ -39,8 +39,8 @@ class SDPushButton(QPushButton):
     Alignment = NewType("Alignment", str)
     AlignLeft = Alignment("left-aligned")
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, parent: QWidget = None) -> None:
+        super().__init__(parent)
         self.setStyleSheet(load_css("button.css"))
 
     def setAlignment(self, align: Alignment) -> None:
