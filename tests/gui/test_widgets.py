@@ -3512,7 +3512,7 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
 
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
     fw.update = mocker.MagicMock()
-    mocker.patch("securedrop_client.gui.widgets.QDialog.exec")
+    mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.run_export_preflight_checks = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=True)
 
@@ -3535,7 +3535,7 @@ def test_FileWidget__on_export_clicked_missing_file(mocker, session, source):
 
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
     fw.update = mocker.MagicMock()
-    mocker.patch("securedrop_client.gui.widgets.QDialog.exec")
+    mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.run_export_preflight_checks = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=False)
     dialog = mocker.patch("securedrop_client.gui.widgets.ExportDialog")
@@ -3559,7 +3559,7 @@ def test_FileWidget__on_print_clicked(mocker, session, source):
 
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
     fw.update = mocker.MagicMock()
-    mocker.patch("securedrop_client.gui.widgets.QDialog.exec")
+    mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.print_file = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=True)
 
@@ -3583,7 +3583,7 @@ def test_FileWidget__on_print_clicked_missing_file(mocker, session, source):
 
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
     fw.update = mocker.MagicMock()
-    mocker.patch("securedrop_client.gui.widgets.QDialog.exec")
+    mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.print_file = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=False)
     dialog = mocker.patch("securedrop_client.gui.widgets.PrintDialog")
@@ -3612,7 +3612,7 @@ def test_FileWidget_update_file_size_with_deleted_file(
 
 
 @pytest.mark.parametrize("key", [Qt.Key_Enter, Qt.Key_Return])
-def test_ModalDialog_keyPressEvent_does_not_close_on_enter_or_return(mocker, modal_dialog, key):
+def test_SDModalDialog_keyPressEvent_does_not_close_on_enter_or_return(mocker, modal_dialog, key):
     modal_dialog.close = mocker.MagicMock()
 
     event = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
@@ -3622,7 +3622,7 @@ def test_ModalDialog_keyPressEvent_does_not_close_on_enter_or_return(mocker, mod
 
 
 @pytest.mark.parametrize("key", [Qt.Key_Enter, Qt.Key_Return])
-def test_ModalDialog_keyPressEvent_cancel_on_enter_when_focused(mocker, modal_dialog, key):
+def test_SDModalDialog_keyPressEvent_cancel_on_enter_when_focused(mocker, modal_dialog, key):
     modal_dialog.cancel_button.click = mocker.MagicMock()
     modal_dialog.cancel_button.hasFocus = mocker.MagicMock(return_value=True)
 
@@ -3633,7 +3633,7 @@ def test_ModalDialog_keyPressEvent_cancel_on_enter_when_focused(mocker, modal_di
 
 
 @pytest.mark.parametrize("key", [Qt.Key_Enter, Qt.Key_Return])
-def test_ModalDialog_keyPressEvent_continue_on_enter(mocker, modal_dialog, key):
+def test_SDModalDialog_keyPressEvent_continue_on_enter(mocker, modal_dialog, key):
     modal_dialog.continue_button.click = mocker.MagicMock()
 
     event = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
@@ -3643,7 +3643,7 @@ def test_ModalDialog_keyPressEvent_continue_on_enter(mocker, modal_dialog, key):
 
 
 @pytest.mark.parametrize("key", [Qt.Key_Alt, Qt.Key_A])
-def test_ModalDialog_keyPressEvent_does_not_close_for_other_keys(mocker, modal_dialog, key):
+def test_SDModalDialog_keyPressEvent_does_not_close_for_other_keys(mocker, modal_dialog, key):
     modal_dialog.close = mocker.MagicMock()
 
     event = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
@@ -3652,7 +3652,7 @@ def test_ModalDialog_keyPressEvent_does_not_close_for_other_keys(mocker, modal_d
     modal_dialog.close.assert_not_called()
 
 
-def test_ModalDialog_animation_of_activestate(mocker, modal_dialog):
+def test_SDModalDialog_animation_of_activestate(mocker, modal_dialog):
     assert modal_dialog.button_animation
     modal_dialog.button_animation.start = mocker.MagicMock()
     modal_dialog.button_animation.stop = mocker.MagicMock()
@@ -3680,7 +3680,7 @@ def test_ModalDialog_animation_of_activestate(mocker, modal_dialog):
     assert modal_dialog.continue_button.setStyleSheet.call_count == 2  # also called once for reset
 
 
-def test_ModalDialog_animation_of_header(mocker, modal_dialog):
+def test_SDModalDialog_animation_of_header(mocker, modal_dialog):
     assert modal_dialog.header_animation
     modal_dialog.header_animation.start = mocker.MagicMock()
     modal_dialog.header_animation.stop = mocker.MagicMock()
@@ -3721,7 +3721,7 @@ def test_ExportDialog_init(mocker):
 
 def test_ExportDialog_init_sanitizes_filename(mocker):
     secure_qlabel = mocker.patch("securedrop_client.gui.widgets.SecureQLabel")
-    mocker.patch("securedrop_client.gui.widgets.QVBoxLayout.addWidget")
+    mocker.patch("PyQt5.QtWidgets.QVBoxLayout.addWidget")
     filename = '<script>alert("boom!");</script>'
 
     ExportDialog(mocker.MagicMock(), "mock_uuid", filename)
@@ -4754,7 +4754,7 @@ def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
     cv.conversation_updated = mocker.MagicMock()
 
     mock_label = mocker.patch("securedrop_client.gui.widgets.SecureQLabel")
-    mocker.patch("securedrop_client.gui.widgets.QHBoxLayout.addWidget")
+    mocker.patch("PyQt5.QtWidgets.QHBoxLayout.addWidget")
 
     cv.add_file(file, 0)
 
@@ -4781,7 +4781,7 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, sessi
     cv.conversation_updated = mocker.MagicMock()
 
     mock_label = mocker.patch("securedrop_client.gui.widgets.SecureQLabel")
-    mocker.patch("securedrop_client.gui.widgets.QHBoxLayout.addWidget")
+    mocker.patch("PyQt5.QtWidgets.QHBoxLayout.addWidget")
 
     cv.add_file(file, 0)
 
@@ -4811,7 +4811,7 @@ def test_DeleteConversationDialog_exec(mocker, source, session):
     mock_controller = mocker.MagicMock()
     dialog = DeleteConversationDialog(source, mock_controller)
     mocker.patch.object(dialog.body, "setText")
-    mocker.patch("securedrop_client.gui.widgets.ModalDialog.exec")
+    mocker.patch("securedrop_client.gui.dialogs.SDModalDialog.exec")
     dialog.exec()
     dialog.body.setText.assert_called_once()
 
@@ -5000,7 +5000,7 @@ def test_ReplyBoxWidget_send_reply(mocker):
     mocker.patch("securedrop_client.gui.widgets.uuid4", return_value=reply_uuid)
     controller = mocker.MagicMock()
     mocker.patch("securedrop_client.gui.widgets.SourceProfileShortWidget")
-    mocker.patch("securedrop_client.gui.widgets.QVBoxLayout.addWidget")
+    mocker.patch("PyQt5.QtWidgets.QVBoxLayout.addWidget")
     scw = SourceConversationWrapper(source, controller)
     on_reply_sent_fn = mocker.MagicMock()
     scw.conversation_view.on_reply_sent = on_reply_sent_fn

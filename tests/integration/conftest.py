@@ -2,7 +2,7 @@ import pytest
 from PyQt5.QtWidgets import QApplication
 
 from securedrop_client.gui.main import Window
-from securedrop_client.gui.widgets import ExportDialog, ModalDialog, PrintDialog
+from securedrop_client.gui.widgets import ExportDialog, PrintDialog, SDModalDialog
 from securedrop_client.logic import Controller
 from tests import factory
 
@@ -96,7 +96,7 @@ def modal_dialog(mocker, homedir):
     gui.setup(controller)
     gui.login_dialog.close()
     app.setActiveWindow(gui)
-    dialog = ModalDialog()
+    dialog = SDModalDialog()
 
     yield dialog
 

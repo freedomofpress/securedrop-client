@@ -22,7 +22,7 @@ from securedrop_client.db import (
     make_session_maker,
 )
 from securedrop_client.gui.main import Window
-from securedrop_client.gui.widgets import ExportDialog, ModalDialog, PrintDialog
+from securedrop_client.gui.widgets import ExportDialog, PrintDialog, SDModalDialog
 from securedrop_client.logic import Controller
 from tests import factory
 
@@ -53,20 +53,16 @@ TIME_FILE_DOWNLOAD = 5000
 
 @pytest.fixture(scope="function")
 def modal_dialog(mocker, homedir):
-    mocker.patch(
-        "securedrop_client.gui.widgets.QApplication.activeWindow", return_value=QMainWindow()
-    )
+    mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
-    dialog = ModalDialog()
+    dialog = SDModalDialog()
 
     yield dialog
 
 
 @pytest.fixture(scope="function")
 def print_dialog(mocker, homedir):
-    mocker.patch(
-        "securedrop_client.gui.widgets.QApplication.activeWindow", return_value=QMainWindow()
-    )
+    mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
     file = factory.File(source=factory.Source(), is_downloaded=True)
     get_file = mocker.MagicMock(return_value=file)
@@ -80,9 +76,7 @@ def print_dialog(mocker, homedir):
 
 @pytest.fixture(scope="function")
 def export_dialog(mocker, homedir):
-    mocker.patch(
-        "securedrop_client.gui.widgets.QApplication.activeWindow", return_value=QMainWindow()
-    )
+    mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
     file = factory.File(source=factory.Source(), is_downloaded=True)
     get_file = mocker.MagicMock(return_value=file)
