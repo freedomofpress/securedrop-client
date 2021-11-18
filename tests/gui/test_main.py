@@ -1,6 +1,10 @@
 """
 Check the core Window UI class works as expected.
 """
+import unittest
+
+from PyQt5.QtCore import Qt
+from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QApplication, QHBoxLayout
 
 from securedrop_client.gui.main import Window
@@ -8,6 +12,21 @@ from securedrop_client.logic import Controller
 from securedrop_client.resources import load_icon
 
 app = QApplication([])
+
+
+class WindowTest(unittest.TestCase):
+    def setUp(self):
+        self.window = Window()
+
+    def test_does_not_display_a_menu_bar_by_default(self):
+        menubar = self.window.menuBar()
+        assert not menubar.isVisibleTo(self.window)
+
+    def test_displays_a_menu_bar_when_toggle_key_is_pressed(self):
+        menubar = self.window.menuBar()
+        # I couln't find a way to send "Alt" without sending another key as well.
+        QTest.keyClicks(self.window, " ", Qt.AltModifier)
+        assert menubar.isVisibleTo(self.window)
 
 
 def test_init(mocker):

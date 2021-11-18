@@ -37,7 +37,7 @@ class SDMenuBar(QMenuBar):
     KeyToggle = Qt.Key_Alt
     KeyClose = Qt.Key_Escape
 
-    def __init__(self, parent: QWidget) -> None:
+    def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
         self.hide()
 
@@ -58,7 +58,7 @@ class SDMenuBar(QMenuBar):
                 self.show()
                 self.setFocus()
                 return None
-        if event.key() == self.KeyClose:
+        if event.key() == self.KeyClose:  # pragma: no cover
             self.hide()
             self.clearFocus()
             return None
