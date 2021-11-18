@@ -34,6 +34,9 @@ from PyQt5.QtWidgets import QMenuBar, QWidget
 class SDMenuBar(QMenuBar):
     """A menu bar that hides itself automatically when out of focus."""
 
+    KeyToggle = Qt.Key_Alt
+    KeyClose = Qt.Key_Escape
+
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
         self.hide()
@@ -46,7 +49,7 @@ class SDMenuBar(QMenuBar):
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Show the menu bar and grab focus when Alt is pressed. Close it on Alt or Escape."""
-        if event.key() == Qt.Key_Alt:
+        if event.key() == self.KeyToggle:
             if self.isVisible():
                 self.hide()
                 self.clearFocus()
@@ -55,8 +58,12 @@ class SDMenuBar(QMenuBar):
                 self.show()
                 self.setFocus()
                 return None
-        if event.key() == Qt.Key_Escape:
+        if event.key() == self.KeyClose:
             self.hide()
             self.clearFocus()
             return None
         return super().keyPressEvent(event)
+
+    def toggle_key(self) -> int:
+        """The key value that toggles the menu bar visibility."""
+        return self.KeyToggle

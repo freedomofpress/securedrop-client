@@ -240,6 +240,7 @@ class Window(QMainWindow):
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Ensure the menu bar receives the event that will open it initially."""
-        if event.key() == Qt.Key_Alt:
-            self.menuBar().keyPressEvent(event)
+        menu_bar = self.menuBar()
+        if event.key() == menu_bar.toggle_key():
+            menu_bar.keyPressEvent(event)
         return super().keyPressEvent(event)
