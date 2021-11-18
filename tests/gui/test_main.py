@@ -3,10 +3,9 @@ Check the core Window UI class works as expected.
 """
 import unittest
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QApplication, QHBoxLayout
 
+import tests.gui.helpers as helpers
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_icon
@@ -24,8 +23,7 @@ class WindowTest(unittest.TestCase):
 
     def test_displays_a_menu_bar_when_toggle_key_is_pressed(self):
         menubar = self.window.menuBar()
-        # I couln't find a way to send "Alt" without sending another key as well.
-        QTest.keyClicks(self.window, " ", Qt.AltModifier)
+        helpers.press_alt_key(self.window)
         assert menubar.isVisibleTo(self.window)
 
 

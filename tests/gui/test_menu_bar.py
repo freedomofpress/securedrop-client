@@ -5,6 +5,7 @@ from PyQt5.QtGui import QFocusEvent
 from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QApplication, QWidget
 
+import tests.gui.helpers as helpers
 from securedrop_client.gui import SDMenuBar
 
 app = QApplication([])
@@ -29,14 +30,12 @@ class SDMenuBarTest(unittest.TestCase):
         assert self.menubar.toggle_key() == Qt.Key_Alt
 
     def test_becomes_visible_when_toggle_key_is_pressed(self):
-        # I couln't find a way to send "Alt" without sending another key as well.
-        QTest.keyClicks(self.menubar, " ", Qt.AltModifier)
+        helpers.press_alt_key(self.menubar)
         assert self.menubar.isVisible()
 
     def test_when_visible_becomes_hidden_when_toggle_key_is_pressed(self):
         self.menubar.show()
-        # I couln't find a way to send "Alt" without sending another key as well.
-        QTest.keyClicks(self.menubar, " ", Qt.AltModifier)
+        helpers.press_alt_key(self.menubar)
         assert self.menubar.isHidden()
 
     @unittest.skip("I couldn't find how to emulate an Escape key event.")
