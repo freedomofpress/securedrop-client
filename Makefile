@@ -194,14 +194,10 @@ VERSION=$(shell python -c "import securedrop_client; print(securedrop_client.__v
 WEBLATE_API=https://weblate.securedrop.org/api/
 WEBLATE_COMPONENT=securedrop-client
 
-# Update POTs from translated strings in source code and merge into
-# per-locale POs.
-.PHONY: update-translation-catalogs
-update-translation-catalogs:
+.PHONY: extract-strings
+extract-strings: ## Extract translatable strings from source code
 	@make --always-make ${POT}
-	@git add --verbose ${POT}
-	@for catalog in $$(find ${LOCALE_DIR} -name "*.po"); do make $${catalog}; git add --verbose $${catalog}; done
-	-git commit --message "l10n: update translation catalogs"
+	@for catalog in $$(find ${LOCALE_DIR} -name "*.po"); do make $${catalog}; done
 
 # Compile loadable/packageable MOs.
 .PHONY: compile-translation-catalogs
