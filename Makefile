@@ -199,9 +199,7 @@ WEBLATE_COMPONENT=securedrop-client
 .PHONY: update-translation-catalogs
 update-translation-catalogs:
 	@make --always-make ${POT}
-	@git add --verbose ${POT}
-	@for catalog in $$(find ${LOCALE_DIR} -name "*.po"); do make $${catalog}; git add --verbose $${catalog}; done
-	-git commit --message "l10n: update translation catalogs"
+	@for catalog in $$(find ${LOCALE_DIR} -name "*.po"); do make $${catalog}; done
 
 # Compile loadable/packageable MOs.
 .PHONY: compile-translation-catalogs
