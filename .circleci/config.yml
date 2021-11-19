@@ -22,7 +22,7 @@ common-steps:
       command: |
         set -e
         source .venv/bin/activate
-        make check-black check-isort lint bandit
+        make check-black check-isort lint bandit check-strings
 
   - &check_python_dependencies_for_vulns
     run:
