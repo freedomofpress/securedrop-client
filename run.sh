@@ -66,5 +66,6 @@ fi
 
 wait
 
+make compile-translation-catalogs
 echo "Starting client, log available at: $SDC_HOME/logs/client.log"
 python -m securedrop_client --sdc-home "$SDC_HOME" --no-proxy "$qubes_flag" "$@"
