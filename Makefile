@@ -194,6 +194,11 @@ VERSION=$(shell python -c "import securedrop_client; print(securedrop_client.__v
 WEBLATE_API=https://weblate.securedrop.org/api/
 WEBLATE_COMPONENT=securedrop-client
 
+.PHONY: check-translation-catalogs
+check-translation-catalogs:
+	@make update-translation-catalogs
+	@git diff --quiet ${LOCALE_DIR} || { echo "Translation catalogs are out of date. Please run \"make update-translation-catalogs\" and commit the changes."; exit 1; }
+
 # Update POTs from translated strings in source code and merge into
 # per-locale POs.
 .PHONY: update-translation-catalogs
