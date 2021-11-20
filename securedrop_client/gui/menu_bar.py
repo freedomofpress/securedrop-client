@@ -47,7 +47,7 @@ class SDMenuBar(QMenuBar):
             self.hide()
         return super().focusOutEvent(event)
 
-    def keyPressEvent(self, event: QKeyEvent) -> None:
+    def keyReleaseEvent(self, event: QKeyEvent) -> None:
         """Show the menu bar and grab focus when Alt is pressed. Close it on Alt or Escape."""
         if event.key() == self.KeyToggle:
             if self.isVisible():
@@ -62,7 +62,7 @@ class SDMenuBar(QMenuBar):
             self.hide()
             self.clearFocus()
             return None
-        return super().keyPressEvent(event)
+        return super().keyReleaseEvent(event)
 
     def toggle_key(self) -> int:
         """The key value that toggles the menu bar visibility."""

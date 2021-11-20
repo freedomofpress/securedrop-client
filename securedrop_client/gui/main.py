@@ -238,9 +238,9 @@ class Window(QMainWindow):
         cb = QApplication.clipboard()
         cb.clear()
 
-    def keyPressEvent(self, event: QKeyEvent) -> None:
+    def keyReleaseEvent(self, event: QKeyEvent) -> None:
         """Ensure the menu bar receives the event that will open it initially."""
         menu_bar = self.menuBar()
         if event.key() == menu_bar.toggle_key():
-            menu_bar.keyPressEvent(event)
-        return super().keyPressEvent(event)
+            menu_bar.keyReleaseEvent(event)
+        return super().keyReleaseEvent(event)
