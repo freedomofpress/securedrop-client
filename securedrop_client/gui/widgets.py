@@ -1581,8 +1581,8 @@ class StarToggleButton(SvgToggleButton):
 class LoginOfflineLink(SDPushButton):
     """A button that logs the user in, in offline mode."""
 
-    def __init__(self, parent: QWidget = None) -> None:
-        super().__init__(parent)
+    def __init__(self) -> None:
+        super().__init__()
         self.setText(_("USE OFFLINE"))
         self.setAlignment(SDPushButton.AlignLeft)
 
@@ -1592,8 +1592,8 @@ class SignInButton(QPushButton):
     A button that logs the user into application when clicked.
     """
 
-    def __init__(self, parent: QWidget = None) -> None:
-        super().__init__(parent)
+    def __init__(self) -> None:
+        super().__init__()
         self.setText(_("SIGN IN"))
 
         # Set css id

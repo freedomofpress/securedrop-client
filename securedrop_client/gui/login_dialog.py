@@ -107,10 +107,9 @@ class LoginDialog(QDialog):
         buttons_layout = QHBoxLayout()
         buttons.setLayout(buttons_layout)
         buttons_layout.setContentsMargins(0, 20, 0, 0)
-        self.submit = SignInButton(self)
-        self.submit.setDefault(True)
+        self.submit = SignInButton()
         self.submit.clicked.connect(self.validate)
-        self.offline_mode = LoginOfflineLink(self)
+        self.offline_mode = LoginOfflineLink()
         buttons_layout.addWidget(self.offline_mode)
         buttons_layout.addStretch()
         buttons_layout.addWidget(self.submit)
@@ -136,6 +135,8 @@ class LoginDialog(QDialog):
         layout.addWidget(form)
         layout.addStretch()
         layout.addWidget(application_version)
+
+        self.submit.setDefault(True)
 
     def setup(self, controller: Controller) -> None:
         self.controller = controller
