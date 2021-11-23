@@ -11,7 +11,7 @@ from tests import factory
 def main_window(mocker, homedir):
     # Setup
     app = QApplication([])
-    gui = Window()
+    gui = Window(QApplication.clipboard())
     app.setActiveWindow(gui)
     gui.show()
     controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, proxy=False)
@@ -51,7 +51,7 @@ def main_window(mocker, homedir):
 def main_window_no_key(mocker, homedir):
     # Setup
     app = QApplication([])
-    gui = Window()
+    gui = Window(QApplication.clipboard())
     app.setActiveWindow(gui)
     gui.show()
     controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, proxy=False)
@@ -90,7 +90,7 @@ def main_window_no_key(mocker, homedir):
 @pytest.fixture(scope="function")
 def modal_dialog(mocker, homedir):
     app = QApplication([])
-    gui = Window()
+    gui = Window(QApplication.clipboard())
     gui.show()
     controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, proxy=False)
     controller.authenticated_user = factory.User()
@@ -109,7 +109,7 @@ def modal_dialog(mocker, homedir):
 @pytest.fixture(scope="function")
 def print_dialog(mocker, homedir):
     app = QApplication([])
-    gui = Window()
+    gui = Window(QApplication.clipboard())
     gui.show()
     controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, proxy=False)
     controller.authenticated_user = factory.User()
@@ -128,7 +128,7 @@ def print_dialog(mocker, homedir):
 @pytest.fixture(scope="function")
 def export_dialog(mocker, homedir):
     app = QApplication([])
-    gui = Window()
+    gui = Window(QApplication.clipboard())
     gui.show()
     controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, proxy=False)
     controller.authenticated_user = factory.User()

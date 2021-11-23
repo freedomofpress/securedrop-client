@@ -215,7 +215,7 @@ def start_app(args, qt_args) -> NoReturn:  # type: ignore [no-untyped-def]
 
     session_maker = make_session_maker(args.sdc_home)
 
-    gui = Window()
+    gui = Window(QApplication.clipboard())
 
     controller = Controller(
         "http://localhost:8081/",

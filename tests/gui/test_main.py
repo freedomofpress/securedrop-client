@@ -25,7 +25,7 @@ def test_init(mocker):
     mocker.patch("securedrop_client.gui.main.Window.setStyleSheet")
     load_css = mocker.patch("securedrop_client.gui.main.load_css")
 
-    w = Window()
+    w = Window(QApplication.clipboard())
 
     mock_li.assert_called_once_with(w.icon)
     mock_lp.assert_called_once_with()
@@ -39,7 +39,7 @@ def test_setup(mocker, homedir, session_maker):
     Ensure the passed in controller is referenced and the various views are
     instantiated as expected.
     """
-    w = Window()
+    w = Window(QApplication.clipboard())
     w.show_login = mocker.MagicMock()
     w.top_pane = mocker.MagicMock()
     w.left_pane = mocker.MagicMock()
@@ -56,7 +56,7 @@ def test_setup(mocker, homedir, session_maker):
 
 
 def test_show_main_window(mocker, homedir, session_maker):
-    w = Window()
+    w = Window(QApplication.clipboard())
     controller = Controller("http://localhost", w, session_maker, homedir)
     w.setup(controller)
     w.show = mocker.MagicMock()
@@ -87,7 +87,7 @@ def test_show_main_window_when_already_showing(mocker, homedir, session_maker):
     """
     Ensure we don't maximize the main window if it's already showing.
     """
-    w = Window()
+    w = Window(QApplication.clipboard())
     controller = Controller("http://localhost", w, session_maker, homedir)
     w.setup(controller)
     w.show = mocker.MagicMock()
@@ -116,7 +116,7 @@ def test_show_main_window_when_already_showing(mocker, homedir, session_maker):
 
 
 def test_show_main_window_without_username(mocker, homedir, session_maker):
-    w = Window()
+    w = Window(QApplication.clipboard())
     controller = Controller("http://localhost", w, session_maker, homedir)
     w.setup(controller)
     w.show = mocker.MagicMock()
@@ -143,7 +143,7 @@ def test_show_main_window_without_username(mocker, homedir, session_maker):
 
 
 def test_show_main_window_without_username_when_already_showing(mocker, homedir, session_maker):
-    w = Window()
+    w = Window(QApplication.clipboard())
     controller = Controller("http://localhost", w, session_maker, homedir)
     w.setup(controller)
     w.show = mocker.MagicMock()
@@ -174,7 +174,7 @@ def test_show_login(mocker):
     """
     The login dialog is displayed with a clean state.
     """
-    w = Window()
+    w = Window(QApplication.clipboard())
     w.controller = mocker.MagicMock()
     mock_ld = mocker.patch("securedrop_client.gui.main.LoginDialog")
 
@@ -189,7 +189,7 @@ def test_show_login_with_error_message(mocker):
     """
     The login dialog is displayed with a clean state.
     """
-    w = Window()
+    w = Window(QApplication.clipboard())
     w.controller = mocker.MagicMock()
     mock_ld = mocker.patch("securedrop_client.gui.main.LoginDialog")
 
@@ -205,7 +205,7 @@ def test_show_login_error(mocker):
     """
     Ensures that an error message is displayed in the login dialog.
     """
-    w = Window()
+    w = Window(QApplication.clipboard())
     w.show_login = mocker.MagicMock()
     w.setup(mocker.MagicMock())
     w.login_dialog = mocker.MagicMock()
@@ -219,7 +219,7 @@ def test_hide_login(mocker):
     """
     Ensure the login dialog is closed and hidden.
     """
-    w = Window()
+    w = Window(QApplication.clipboard())
     w.show_login = mocker.MagicMock()
     ld = mocker.MagicMock()
     w.login_dialog = ld
@@ -236,7 +236,7 @@ def test_refresh_current_source_conversation(mocker):
     updates the current conversation) when
     refresh_current_source_conversation() is called.
     """
-    w = Window()
+    w = Window(QApplication.clipboard())
     w.main_view = mocker.MagicMock()
 
     w.refresh_current_source_conversation()
@@ -248,7 +248,7 @@ def test_show_sources(mocker):
     """
     Ensure the sources list is passed to the main view to be updated.
     """
-    w = Window()
+    w = Window(QApplication.clipboard())
     w.main_view = mocker.MagicMock()
     w.show_sources([1, 2, 3])
     w.main_view.show_sources.assert_called_once_with([1, 2, 3])
@@ -259,7 +259,7 @@ def test_update_error_status_default(mocker):
     Ensure that the error to be shown in the error status bar will be passed to the top pane with a
     default duration of 10 seconds.
     """
-    w = Window()
+    w = Window(QApplication.clipboard())
     w.top_pane = mocker.MagicMock()
     w.update_error_status(message="test error message")
     w.top_pane.update_error_status.assert_called_once_with("test error message", 10000)
@@ -270,7 +270,7 @@ def test_update_error_status(mocker):
     Ensure that the error to be shown in the error status bar will be passed to the top pane with
     the duration of seconds provided.
     """
-    w = Window()
+    w = Window(QApplication.clipboard())
     w.top_pane = mocker.MagicMock()
     w.update_error_status(message="test error message", duration=123)
     w.top_pane.update_error_status.assert_called_once_with("test error message", 123)
@@ -281,7 +281,7 @@ def test_update_activity_status_default(mocker):
     Ensure that the activity to be shown in the activity status bar will be passed to the top pane
     with a default duration of 0 seconds, i.e. forever.
     """
-    w = Window()
+    w = Window(QApplication.clipboard())
     w.top_pane = mocker.MagicMock()
     w.update_activity_status(message="test message")
     w.top_pane.update_activity_status.assert_called_once_with("test message", 0)
@@ -292,7 +292,7 @@ def test_update_activity_status(mocker):
     Ensure that the activity to be shown in the activity status bar will be passed to the top pane
     with the duration of seconds provided.
     """
-    w = Window()
+    w = Window(QApplication.clipboard())
     w.top_pane = mocker.MagicMock()
     w.update_activity_status(message="test message", duration=123)
     w.top_pane.update_activity_status.assert_called_once_with("test message", 123)
@@ -302,7 +302,7 @@ def test_clear_error_status(mocker):
     """
     Ensure clear_error_status is called.
     """
-    w = Window()
+    w = Window(QApplication.clipboard())
     w.top_pane = mocker.MagicMock()
 
     w.clear_error_status()
@@ -314,7 +314,7 @@ def test_show_last_sync(mocker):
     """
     If there's a value display the result of its "humanize" method.humanize
     """
-    w = Window()
+    w = Window(QApplication.clipboard())
     w.update_activity_status = mocker.MagicMock()
     updated_on = mocker.MagicMock()
     w.show_last_sync(updated_on)
@@ -327,7 +327,7 @@ def test_show_last_sync_no_sync(mocker):
     """
     If there's no value to display, default to a "waiting" message.
     """
-    w = Window()
+    w = Window(QApplication.clipboard())
     w.update_activity_status = mocker.MagicMock()
     w.show_last_sync(None)
     w.update_activity_status.assert_called_once_with("Last Refresh: never")
@@ -337,7 +337,7 @@ def test_set_logged_in_as(mocker):
     """
     Given a username, the left pane is appropriately called to update.
     """
-    w = Window()
+    w = Window(QApplication.clipboard())
     w.left_pane = mocker.MagicMock()
 
     w.set_logged_in_as("test")
@@ -349,7 +349,7 @@ def test_logout(mocker):
     """
     Ensure the left pane updates to the logged out state.
     """
-    w = Window()
+    w = Window(QApplication.clipboard())
     w.left_pane = mocker.MagicMock()
     w.top_pane = mocker.MagicMock()
 
@@ -364,7 +364,7 @@ def test_clear_clipboard(mocker):
     Ensure we are clearing the system-level clipboard in the expected manner.
     """
     mock_clipboard = mocker.MagicMock()
-    mocker.patch("securedrop_client.gui.main.QApplication.clipboard", return_value=mock_clipboard)
-    w = Window()
+    mocker.patch("PyQt5.QtWidgets.QApplication.clipboard", return_value=mock_clipboard)
+    w = Window(QApplication.clipboard())
     w.clear_clipboard()
     mock_clipboard.clear.assert_called_once_with()
