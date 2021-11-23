@@ -204,7 +204,7 @@ check-translation-catalogs:
 .PHONY: update-translation-catalogs
 update-translation-catalogs:
 	@make --always-make ${POT}
-	@for catalog in $$(find ${LOCALE_DIR} -name "*.po"); do make $${catalog}; done
+#@for catalog in $$(find ${LOCALE_DIR} -name "*.po"); do make $${catalog}; done
 
 # Compile loadable/packageable MOs.
 .PHONY: compile-translation-catalogs
