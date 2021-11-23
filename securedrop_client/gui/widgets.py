@@ -1174,7 +1174,7 @@ class SourceWidget(QWidget):
     SOURCE_PREVIEW_CSS = load_css("source_preview.css")
     SOURCE_TIMESTAMP_CSS = load_css("source_timestamp.css")
 
-    deleting = False
+    CONVERSATION_DELETED_TEXT = _("\u2014 All files and messages deleted for this source \u2014")
 
     def __init__(
         self,
@@ -1186,7 +1186,11 @@ class SourceWidget(QWidget):
         super().__init__()
 
         self.controller = controller
+        self.controller.sync_started.connect(self._on_sync_started)
         self.controller.conversation_deleted.connect(self._on_conversation_deleted)
+        controller.conversation_deletion_successful.connect(
+            self._on_conversation_deletion_successful
+        )
         self.controller.conversation_deletion_failed.connect(self._on_conversation_deletion_failed)
         self.controller.source_deleted.connect(self._on_source_deleted)
         self.controller.source_deletion_failed.connect(self._on_source_deletion_failed)
@@ -1199,6 +1203,11 @@ class SourceWidget(QWidget):
         self.source_uuid = self.source.uuid
         self.last_updated = self.source.last_updated
         self.selected = False
+        self.deletion_scheduled_timestamp = datetime.utcnow()
+        self.sync_started_timestamp = datetime.utcnow()
+
+        self.deleting_conversation = False
+        self.deleting = False
 
         self.setCursor(QCursor(Qt.PointingHandCursor))
 
@@ -1274,6 +1283,15 @@ class SourceWidget(QWidget):
         """
         Updates the displayed values with the current values from self.source.
         """
+        # If the account or conversation is being deleted, do not update the source widget
+        if self.deleting or self.deleting_conversation:
+            return
+
+        # If the sync started before the deletion finished, then the sync is stale and we do
+        # not want to update the source widget.
+        if self.sync_started_timestamp < self.deletion_scheduled_timestamp:
+            return
+
         try:
             self.controller.session.refresh(self.source)
             self.last_updated = self.source.last_updated
@@ -1295,6 +1313,12 @@ class SourceWidget(QWidget):
 
             self.end_deletion()
 
+            if self.source.document_count == 0:
+                self.paperclip.hide()
+                self.paperclip_disabled.hide()
+
+            self.star.update(self.source.is_starred)
+
             # When not authenticated we always show the source as having been seen
             self.seen = True if not self.controller.is_authenticated else self.source.seen
             self.update_styles()
@@ -1311,26 +1335,30 @@ class SourceWidget(QWidget):
         if source_uuid != self.source_uuid:
             return
 
-        if self.deleting:
-            content = ""
-        elif not self.source.server_collection:
+        if self.deleting or self.deleting_conversation:
+            return
+
+        if not self.source.server_collection:
             if self.source.interaction_count > 0:
                 # The server only ever increases the interaction
                 # count, so if it's non-zero but the source collection
                 # is empty, we know the conversation has been deleted.
-                content = _("\u2014 All files and messages deleted for this source \u2014")
-            else:
-                content = ""
+                self.set_snippet_while_conversation_deletion_scheduled()
         else:
             last_activity = self.source.server_collection[-1]
             if collection_uuid and collection_uuid != last_activity.uuid:
                 return
 
-            if not content:
-                content = str(last_activity)
+            self.preview.setProperty("class", "")
+            self.preview.setText(content) if content else self.preview.setText(str(last_activity))
+            self.preview.adjust_preview(self.width())
+            self.update_styles()
 
-        self.preview.setText(content)
+    def set_snippet_while_conversation_deletion_scheduled(self) -> None:
+        self.preview.setProperty("class", "conversation_deleted")
+        self.preview.setText(self.CONVERSATION_DELETED_TEXT)
         self.preview.adjust_preview(self.width())
+        self.update_styles()
 
     def update_styles(self) -> None:
         if self.seen:
@@ -1383,10 +1411,21 @@ class SourceWidget(QWidget):
             self.selected = False
             self.update_styles()
 
+    @pyqtSlot(datetime)
+    def _on_sync_started(self, timestamp: datetime) -> None:
+        self.sync_started_timestamp = timestamp
+
     @pyqtSlot(str)
     def _on_conversation_deleted(self, source_uuid: str) -> None:
         if self.source_uuid == source_uuid:
             self.start_conversation_deletion()
+
+    @pyqtSlot(str, datetime)
+    def _on_conversation_deletion_successful(self, source_uuid: str, timestamp: datetime) -> None:
+        if self.source_uuid == source_uuid:
+            self.deletion_scheduled_timestamp = timestamp
+            self.set_snippet_while_conversation_deletion_scheduled()
+            self.end_conversation_deletion()
 
     @pyqtSlot(str)
     def _on_conversation_deletion_failed(self, source_uuid: str) -> None:
@@ -1417,6 +1456,7 @@ class SourceWidget(QWidget):
 
     def end_deletion(self) -> None:
         self.deletion_indicator.stop()
+        self.update_styles()
         self.preview.show()
         self.timestamp.show()
         self.paperclip_disabled.hide()
