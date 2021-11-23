@@ -1808,6 +1808,23 @@ def test_SourceWidget__on_source_selected_skips_op_if_already_seen(mocker):
     sw.update_styles.assert_called_once_with()
 
 
+def test_SourceWidget__on_sync_started(mocker):
+    sw = SourceWidget(mocker.MagicMock(), factory.Source(), mocker.MagicMock(), mocker.MagicMock())
+    timestamp = datetime.now()
+    sw._on_sync_started(timestamp)
+    assert sw.sync_started_timestamp == timestamp
+
+
+def test_SourceWidget__on_conversation_deletion_successful(mocker):
+    sw = SourceWidget(mocker.MagicMock(), factory.Source(), mocker.MagicMock(), mocker.MagicMock())
+    timestamp = datetime.now()
+    sw._on_conversation_deletion_successful(sw.source.uuid, timestamp)
+    assert sw.deletion_scheduled_timestamp == timestamp
+    assert sw.preview.text() == "\u2014 All files and messages deleted for this source \u2014"
+    assert sw.deleting_conversation is False
+    assert sw.deletion_indicator.isHidden()
+
+
 def test_SourceWidget_update_attachment_icon(mocker):
     """
     Attachment icon identicates document count
@@ -1841,6 +1858,40 @@ def test_SourceWidget_update_does_not_raise_exception(mocker):
     mocker.patch("securedrop_client.gui.widgets.logger", mock_logger)
     sw.update()
     assert mock_logger.debug.call_count == 1
+
+
+def test_SourceWidget_update_skips_setting_snippet_if_deletion_in_progress(mocker):
+    """
+    If the source is being deleted, do not update the snippet.
+    """
+    sw = SourceWidget(mocker.MagicMock(), factory.Source(), mocker.MagicMock(), mocker.MagicMock())
+    sw.deleting = True
+    sw.set_snippet = mocker.MagicMock()
+    sw.update()
+    sw.set_snippet.assert_not_called()
+
+
+def test_SourceWidget_update_skips_setting_snippet_if_sync_is_stale(mocker):
+    """
+    If the sync started before the source was scheduled for deletion, do not update the snippet.
+    """
+    sw = SourceWidget(mocker.MagicMock(), factory.Source(), mocker.MagicMock(), mocker.MagicMock())
+    sw.sync_started_timestamp = datetime.now()
+    sw.deletion_scheduled_timestamp = datetime.now()
+    sw.set_snippet = mocker.MagicMock()
+    sw.update()
+    sw.set_snippet.assert_not_called()
+
+
+def test_SourceWidget_update_skips_setting_snippet_if_conversation_deletion_in_progress(mocker):
+    """
+    If the source conversation is being deleted, do not update the snippet.
+    """
+    sw = SourceWidget(mocker.MagicMock(), factory.Source(), mocker.MagicMock(), mocker.MagicMock())
+    sw.deleting_conversation = True
+    sw.set_snippet = mocker.MagicMock()
+    sw.update()
+    sw.set_snippet.assert_not_called()
 
 
 def test_SourceWidget_set_snippet_draft_only(mocker, session_maker, session, homedir):
