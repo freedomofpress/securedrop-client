@@ -3241,10 +3241,19 @@ class ConversationView(QWidget):
         super().__init__()
 
         self.source = source_db_object
+        self.source_uuid = source_db_object.uuid
         self.controller = controller
+
+        self.controller.sync_started.connect(self._on_sync_started)
+        controller.conversation_deletion_successful.connect(
+            self._on_conversation_deletion_successful
+        )
 
         # To hold currently displayed messages.
         self.current_messages = {}  # type: Dict[str, QWidget]
+
+        self.deletion_scheduled_timestamp = datetime.utcnow()
+        self.sync_started_timestamp = datetime.utcnow()
 
         self.setObjectName("ConversationView")
 
@@ -3276,6 +3285,20 @@ class ConversationView(QWidget):
             self.update_conversation(self.source.collection)
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.debug("Error initializing ConversationView: %s", e)
+
+    @pyqtSlot(datetime)
+    def _on_sync_started(self, timestamp: datetime) -> None:
+        self.sync_started_timestamp = timestamp
+
+    @pyqtSlot(str, datetime)
+    def _on_conversation_deletion_successful(self, source_uuid: str, timestamp: datetime) -> None:
+        if self.source_uuid == source_uuid:
+            self.deletion_scheduled_timestamp = timestamp
+            for message in self.current_messages.values():
+                message.hide()
+            self.scroll.hide()
+            self.deleted_conversation_items_marker.hide()
+            self.deleted_conversation_marker.show()
 
     def update_deletion_markers(self) -> None:
         try:
@@ -3310,6 +3333,11 @@ class ConversationView(QWidget):
         passed into this method in case of a mismatch between where the widget
         has been and now is in terms of its index in the conversation.
         """
+        # If the sync started before the deletion finished, then the sync is stale and we do
+        # not want to update the conversation.
+        if self.sync_started_timestamp < self.deletion_scheduled_timestamp:
+            return
+
         self.controller.session.refresh(self.source)
 
         # Keep a temporary copy of the current conversation so we can delete any
@@ -3498,6 +3526,9 @@ class SourceConversationWrapper(QWidget):
         self.source_uuid = source.uuid
         controller.conversation_deleted.connect(self.on_conversation_deleted)
         controller.conversation_deletion_failed.connect(self.on_conversation_deletion_failed)
+        controller.conversation_deletion_successful.connect(
+            self._on_conversation_deletion_successful
+        )
         controller.source_deleted.connect(self.on_source_deleted)
         controller.source_deletion_failed.connect(self.on_source_deletion_failed)
 
@@ -3531,6 +3562,11 @@ class SourceConversationWrapper(QWidget):
     def on_conversation_deleted(self, source_uuid: str) -> None:
         if self.source_uuid == source_uuid:
             self.start_conversation_deletion()
+
+    @pyqtSlot(str, datetime)
+    def _on_conversation_deletion_successful(self, source_uuid: str, timestamp: datetime) -> None:
+        if self.source_uuid == source_uuid:
+            self.end_conversation_deletion()
 
     @pyqtSlot(str)
     def on_conversation_deletion_failed(self, source_uuid: str) -> None:

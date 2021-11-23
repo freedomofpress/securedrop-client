@@ -4337,6 +4337,19 @@ def test_SourceConversationWrapper_on_conversation_deleted_wrong_uuid(mocker):
     assert scw.deletion_indicator.isHidden()
 
 
+def test_SourceConversationWrapper__on_conversation_deletion_successful(mocker):
+    scw = SourceConversationWrapper(factory.Source(uuid="123"), mocker.MagicMock())
+    scw.on_conversation_deleted("123")
+
+    scw._on_conversation_deletion_successful("123", datetime.now())
+
+    assert not scw.conversation_title_bar.isHidden()
+    assert not scw.conversation_view.isHidden()
+    assert not scw.reply_box.isHidden()
+    assert scw.conversation_deletion_indicator.isHidden()
+    assert scw.deletion_indicator.isHidden()
+
+
 def test_SourceConversationWrapper_on_conversation_deletion_failed(mocker):
     scw = SourceConversationWrapper(factory.Source(uuid="123"), mocker.MagicMock())
     scw.on_conversation_deleted("123")
@@ -4422,6 +4435,47 @@ def test_ConversationView_ConversationScrollArea_resize(mocker):
     assert cv.scroll.widget().width() == cv.scroll.width()
     speech_bubble_adjust_width.assert_called_with(cv.scroll.widget().width())
     file_widget_adjust_width.assert_called_with(cv.scroll.widget().width())
+
+
+def test_ConversationView__on_sync_started(mocker, session):
+    cv = ConversationView(factory.Source(), mocker.MagicMock())
+    timestamp = datetime.now()
+    cv._on_sync_started(timestamp)
+    assert cv.sync_started_timestamp == timestamp
+
+
+def test_ConversationView__on_conversation_deletion_successful(mocker, session):
+    source = factory.Source()
+    message = factory.Message(source=source)
+    session.add(message)
+    session.add(source)
+    session.commit()
+    cv = ConversationView(source, mocker.MagicMock())
+    timestamp = datetime.now()
+
+    cv._on_conversation_deletion_successful(cv.source.uuid, timestamp)
+
+    assert cv.deletion_scheduled_timestamp == timestamp
+    assert cv.scroll.isHidden()
+    assert cv.deleted_conversation_items_marker.isHidden()
+    assert not cv.deleted_conversation_marker.isHidden()
+    assert cv.current_messages[message.uuid].isHidden()
+
+
+def test_ConversationView_update_conversation_skips_if_sync_is_stale(mocker):
+    """
+    If the sync started before the source was scheduled for deletion, do not update the conversation
+    """
+    cv = ConversationView(factory.Source(), mocker.MagicMock())
+    cv.update_deletion_markers = mocker.MagicMock()
+    cv.sync_started_timestamp = datetime.now()
+    cv.deletion_scheduled_timestamp = datetime.now()
+    cv.update_conversation([])
+    cv.update_deletion_markers.assert_not_called()
+    # Also test that a new message will not get added if the sync is stale
+    cv.update_conversation([factory.Message()])
+    assert not cv.current_messages
+    cv.update_deletion_markers.assert_not_called()
 
 
 def test_ConversationView_update_conversation_position_follow(mocker, homedir):
