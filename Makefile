@@ -2,7 +2,7 @@
 all: help
 
 .PHONY: venv-debian
-venv-debian: ## Provision a Python 3 virtualenv for development on a prod-like system that has installed dependencies specified in https://github.com/freedomofpress/securedrop-debian-packaging/blob/main/securedrop-client/debian/control
+venv-debian: hooks ## Provision a Python 3 virtualenv for development on a prod-like system that has installed dependencies specified in https://github.com/freedomofpress/securedrop-debian-packaging/blob/main/securedrop-client/debian/control
 	python3 -m venv .venv-debian --system-site-packages
 	.venv-debian/bin/pip install --upgrade pip wheel
 	.venv-debian/bin/pip install --require-hashes -r "requirements/dev-requirements-debian.txt"
@@ -12,7 +12,7 @@ venv-debian: ## Provision a Python 3 virtualenv for development on a prod-like s
 	@echo "Then run: source .venv-debian/bin/activate"
 
 .PHONY: venv
-venv: ## Provision a Python 3 virtualenv for development on Linux
+venv: hooks ## Provision a Python 3 virtualenv for development on Linux
 	python3 -m venv .venv
 	.venv/bin/pip install --upgrade pip wheel
 	.venv/bin/pip install --require-hashes -r "requirements/dev-requirements.txt"
@@ -20,12 +20,18 @@ venv: ## Provision a Python 3 virtualenv for development on Linux
 	@echo "Make sure to run: source .venv/bin/activate"
 
 .PHONY: venv-mac
-venv-mac: ## Provision a Python 3 virtualenv for development on macOS
+venv-mac: hooks ## Provision a Python 3 virtualenv for development on macOS
 	python3 -m venv .venv
 	.venv/bin/pip install --upgrade pip wheel
 	.venv/bin/pip install --require-hashes -r "requirements/dev-mac-requirements.txt"
 	@echo "#################"
 	@echo "Make sure to run: source .venv/bin/activate"
+
+HOOKS_DIR=.githooks
+
+.PHONY: hooks
+hooks:  ## Configure Git to look for this repository's hooks in our $HOOKS_DIR.
+	git config core.hooksPath "$(HOOKS_DIR)"
 
 SEMGREP_FLAGS := --exclude "tests/" --error --strict --verbose
 
