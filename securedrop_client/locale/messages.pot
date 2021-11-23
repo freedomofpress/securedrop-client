@@ -16,7 +16,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.9.1\n"
 
-msgid "{application_name} is already running"
+msgid "{application_name} is already running!"
 msgstr ""
 
 msgid "The SecureDrop server cannot be reached. Trying to reconnect..."

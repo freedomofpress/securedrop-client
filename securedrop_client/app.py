@@ -175,7 +175,7 @@ def prevent_second_instance(app: QApplication, unique_name: str) -> None:
         if e.errno == ALREADY_BOUND_ERRNO:
             err_dialog = QMessageBox()
             err_dialog.setText(
-                _("{application_name} is already running").format(
+                _("{application_name} is already running!").format(
                     application_name=app.applicationName()
                 )
             )
