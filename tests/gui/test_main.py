@@ -1,6 +1,8 @@
 """
 Check the core Window UI class works as expected.
 """
+import unittest
+
 from PyQt5.QtWidgets import QApplication, QHBoxLayout
 
 from securedrop_client.gui.main import Window
@@ -8,6 +10,18 @@ from securedrop_client.logic import Controller
 from securedrop_client.resources import load_icon
 
 app = QApplication([])
+
+
+class WindowTest(unittest.TestCase):
+    def setUp(self):
+        self._clipboard = QApplication.clipboard()
+        self.window = Window(self._clipboard)
+
+    def test_clear_clipboard(self):
+        self._clipboard.setText("The clipboard is not empty")
+
+        self.window.clear_clipboard()
+        assert self._clipboard.text() == ""
 
 
 def test_init(mocker):
@@ -357,14 +371,3 @@ def test_logout(mocker):
 
     w.left_pane.set_logged_out.assert_called_once_with()
     w.top_pane.set_logged_out.assert_called_once_with()
-
-
-def test_clear_clipboard(mocker):
-    """
-    Ensure we are clearing the system-level clipboard in the expected manner.
-    """
-    mock_clipboard = mocker.MagicMock()
-    mocker.patch("PyQt5.QtWidgets.QApplication.clipboard", return_value=mock_clipboard)
-    w = Window(QApplication.clipboard())
-    w.clear_clipboard()
-    mock_clipboard.clear.assert_called_once_with()
