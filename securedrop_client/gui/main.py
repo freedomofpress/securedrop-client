@@ -24,8 +24,8 @@ from gettext import gettext as _
 from typing import List, Optional
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QGuiApplication, QIcon, QKeySequence
-from PyQt5.QtWidgets import QAction, QApplication, QHBoxLayout, QMainWindow, QVBoxLayout, QWidget
+from PyQt5.QtGui import QClipboard, QGuiApplication, QIcon, QKeySequence
+from PyQt5.QtWidgets import QAction, QHBoxLayout, QMainWindow, QVBoxLayout, QWidget
 
 from securedrop_client import __version__
 from securedrop_client.db import Source, User
@@ -45,7 +45,7 @@ class Window(QMainWindow):
 
     icon = "icon.png"
 
-    def __init__(self) -> None:
+    def __init__(self, clipboard: QClipboard) -> None:
         """
         Create the default start state. The window contains a root widget into
         which is placed:
@@ -56,6 +56,9 @@ class Window(QMainWindow):
           place for details / message contents / forms.
         """
         super().__init__()
+
+        self.clipboard = clipboard
+
         load_font("Montserrat")
         load_font("Source_Sans_Pro")
         self.setStyleSheet(load_css("sdclient.css"))
@@ -215,5 +218,4 @@ class Window(QMainWindow):
         """
         Purge any clipboard contents.
         """
-        cb = QApplication.clipboard()
-        cb.clear()
+        self.clipboard.clear()
