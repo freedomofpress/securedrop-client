@@ -883,16 +883,14 @@ def test_MainView_refresh_source_conversations(homedir, mocker, qtbot, session_m
     assert not scw1.conversation_deletion_indicator.isHidden()
     assert not sw1.deletion_indicator.isHidden()
 
+    # ensure that a refresh does not hide the deletion animation since the success or failure
+    # signals should be the only way to stop/hide the animation
     mv.refresh_source_conversations()
+    assert not scw1.conversation_deletion_indicator.isHidden()
 
-    assert scw1.conversation_deletion_indicator.isHidden()
-
-    # refresh with source1 selected while its account is being deleted
     scw1.on_source_deleted(source1.uuid)
     assert not scw1.deletion_indicator.isHidden()
     assert scw1.conversation_deletion_indicator.isHidden()
-
-    mv.refresh_source_conversations()
 
 
 def test_MainView_refresh_source_conversations_with_deleted(
