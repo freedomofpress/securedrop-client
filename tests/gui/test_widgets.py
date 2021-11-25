@@ -1100,6 +1100,10 @@ class DeletedSource(Mock):
     def uuid(self):
         raise sqlalchemy.exc.InvalidRequestError()
 
+    @property
+    def collection(self):
+        raise sqlalchemy.exc.InvalidRequestError()
+
 
 def test_SourceList_initial_update_does_not_raise_exc_and_no_widget_created(mocker, qtbot):
     """
@@ -4544,6 +4548,50 @@ def test_ConversationView__on_conversation_deletion_successful(mocker, session):
     assert cv.deleted_conversation_items_marker.isHidden()
     assert not cv.deleted_conversation_marker.isHidden()
     assert cv.current_messages[message.uuid].isHidden()
+
+
+def test_ConversationView__on_conversation_deletion_successful_with_mismatched_source_uuid(mocker):
+    """
+    If the success signal was emitted for a different source, ensure the deletion markers are not
+    altered.
+    """
+    source = factory.Source(uuid="abc123")
+    cv = ConversationView(source, mocker.MagicMock())
+
+    assert not cv.scroll.isHidden()
+    assert cv.deleted_conversation_items_marker.isHidden()
+    assert cv.deleted_conversation_marker.isHidden()
+
+    cv._on_conversation_deletion_successful("notabc123", datetime.now())
+
+    assert not cv.scroll.isHidden()
+    assert cv.deleted_conversation_items_marker.isHidden()
+    assert cv.deleted_conversation_marker.isHidden()
+
+
+def test_ConversationView__on_conversation_deletion_successful_handles_exception(mocker, session):
+    cv = ConversationView(factory.Source(uuid="abc123"), mocker.MagicMock())
+    cv.source = DeletedSource()
+    cv._on_conversation_deletion_successful("abc123", datetime.now())  # does not raise exception
+
+
+def test_ConversationView__on_conversation_deletion_successful_does_not_hide_draft(mocker, session):
+    source = factory.Source()
+    message = factory.Message(source=source)
+    draft_reply = factory.DraftReply(source=source, send_status=factory.ReplySendStatus())
+    session.add(draft_reply)
+    session.add(message)
+    session.add(source)
+    session.commit()
+    cv = ConversationView(source, mocker.MagicMock())
+
+    cv._on_conversation_deletion_successful(cv.source.uuid, datetime.now())
+
+    assert not cv.scroll.isHidden()
+    assert not cv.deleted_conversation_items_marker.isHidden()
+    assert cv.deleted_conversation_marker.isHidden()
+    assert cv.current_messages[message.uuid].isHidden()
+    assert not cv.current_messages[draft_reply.uuid].isHidden()
 
 
 def test_ConversationView_update_conversation_skips_if_sync_is_stale(mocker):

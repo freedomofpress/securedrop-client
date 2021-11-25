@@ -3330,13 +3330,35 @@ class ConversationView(QWidget):
 
     @pyqtSlot(str, datetime)
     def _on_conversation_deletion_successful(self, source_uuid: str, timestamp: datetime) -> None:
-        if self.source_uuid == source_uuid:
-            self.deletion_scheduled_timestamp = timestamp
-            for message in self.current_messages.values():
-                message.hide()
-            self.scroll.hide()
-            self.deleted_conversation_items_marker.hide()
-            self.deleted_conversation_marker.show()
+        if self.source_uuid != source_uuid:
+            return
+
+        self.deletion_scheduled_timestamp = timestamp
+
+        # Now that we know the deletion is scheduled, hide conversation items until they are
+        # removed from the local database.
+        try:
+            draft_reply_exists = False
+            for item in self.source.collection:
+                if isinstance(item, DraftReply):
+                    draft_reply_exists = True
+                    continue
+                item_widget = self.current_messages.get(item.uuid)
+                if item_widget:
+                    item_widget.hide()
+
+            # If a draft reply exists then show the tear pattern above the draft replies.
+            # Otherwise, show that the entire conversation is deleted.
+            if draft_reply_exists:
+                self.scroll.show()
+                self.deleted_conversation_items_marker.show()
+                self.deleted_conversation_marker.hide()
+            else:
+                self.scroll.hide()
+                self.deleted_conversation_items_marker.hide()
+                self.deleted_conversation_marker.show()
+        except sqlalchemy.exc.InvalidRequestError as e:
+            logger.debug(f"Could not update ConversationView: {e}")
 
     def update_deletion_markers(self) -> None:
         try:
