@@ -1941,6 +1941,41 @@ def test_SourceWidget_set_snippet(mocker, session_maker, session, homedir):
     sw.set_snippet(source_uuid, "mock_file_uuid", "something new")
 
 
+def test_SourceWidget_set_snippet_does_not_update_if_sync_is_stale(mocker):
+    """
+    Ensure that the snippet does not get updated when an update is based on a sync that started
+    before a deletion operation succeeded.
+    """
+    controller = mocker.MagicMock()
+    source = mocker.MagicMock()
+    source.journalist_designation = "Testy McTestface"
+    source.collection = [factory.Message(content="abc123")]
+    source.server_collection = source.collection
+    sw = SourceWidget(controller, source, mocker.MagicMock(), mocker.MagicMock())
+    sw.update()
+    assert sw.preview.text() == "abc123"
+
+    # Make the sync stale
+    sw.sync_started_timestamp = datetime.now()
+    sw.deletion_scheduled_timestamp = datetime.now()
+
+    # Set up source data so that it appears that the conversation was deleted
+    source.collection = []
+    source.interaction_count = 1
+    source.server_collection = source.collection
+
+    # Assert the preview snippet does not get updated because the sync is stale
+    sw.set_snippet(source.uuid, "mock_file_uuid")
+    assert sw.preview.text() == "abc123"
+
+    # The sync is no longer stale so the preview should show that the are no more source
+    # conversation items because they've been deleted
+    sw.deletion_scheduled_timestamp = datetime.now()
+    sw.sync_started_timestamp = datetime.now()
+    sw.set_snippet(source.uuid, "mock_file_uuid")
+    assert sw.preview.text() == "— All files and messages deleted for this source —"
+
+
 def test_SourceWidget_update_truncate_latest_msg(mocker):
     """
     If the latest message in the conversation is longer than 150 characters,
