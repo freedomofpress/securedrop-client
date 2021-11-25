@@ -670,22 +670,15 @@ class MainView(QWidget):
             logger.debug(e)
 
     def refresh_source_conversations(self) -> None:
-        deleting_conversations = [
-            c for c in self.source_conversations.values() if c.deleting_conversation
-        ]
-        for conversation_wrapper in deleting_conversations:
-            conversation_wrapper.end_conversation_deletion()
-
-        source = self.source_list.get_selected_source()
-        if not source:
-            return
-
-        self.on_source_changed()
-        conversation_wrapper = self.source_conversations[source.uuid]
-        source_widget = self.source_list.get_source_widget(source.uuid)
-        if source_widget:
-            source_widget.deletion_indicator.stop()
+        """
+        Refresh the selected source conversation.
+        """
         try:
+            source = self.source_list.get_selected_source()
+            if not source:
+                return
+            self.controller.session.refresh(source)
+            conversation_wrapper = self.source_conversations[source.uuid]
             conversation_wrapper.conversation_view.update_conversation(source.collection)
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.debug("Error refreshing source conversations: %s", e)
