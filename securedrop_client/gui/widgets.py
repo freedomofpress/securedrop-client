@@ -1328,15 +1328,20 @@ class SourceWidget(QWidget):
         if source_uuid != self.source_uuid:
             return
 
+        # If the account or conversation is being deleted, do not update the source widget
         if self.deleting or self.deleting_conversation:
             return
 
+        # If the sync started before the deletion finished, then the sync is stale and we do
+        # not want to update the source widget.
+        if self.sync_started_timestamp < self.deletion_scheduled_timestamp:
+            return
+
+        # If the source collection is empty yet the interaction_count is greater than zero, then we
+        # known that the conversation has been deleted.
         if not self.source.server_collection:
             if self.source.interaction_count > 0:
-                # The server only ever increases the interaction
-                # count, so if it's non-zero but the source collection
-                # is empty, we know the conversation has been deleted.
-                self.set_snippet_while_conversation_deletion_scheduled()
+                self.set_snippet_to_conversation_deleted()
         else:
             last_activity = self.source.server_collection[-1]
             if collection_uuid and collection_uuid != last_activity.uuid:
@@ -1347,7 +1352,7 @@ class SourceWidget(QWidget):
             self.preview.adjust_preview(self.width())
             self.update_styles()
 
-    def set_snippet_while_conversation_deletion_scheduled(self) -> None:
+    def set_snippet_to_conversation_deleted(self) -> None:
         self.preview.setProperty("class", "conversation_deleted")
         self.preview.setText(self.CONVERSATION_DELETED_TEXT)
         self.preview.adjust_preview(self.width())
@@ -1417,7 +1422,7 @@ class SourceWidget(QWidget):
     def _on_conversation_deletion_successful(self, source_uuid: str, timestamp: datetime) -> None:
         if self.source_uuid == source_uuid:
             self.deletion_scheduled_timestamp = timestamp
-            self.set_snippet_while_conversation_deletion_scheduled()
+            self.set_snippet_to_conversation_deleted()
             self.end_conversation_deletion()
 
     @pyqtSlot(str)
