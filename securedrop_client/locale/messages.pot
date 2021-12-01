@@ -59,7 +59,46 @@ msgstr ""
 msgid "Failed to delete source at server"
 msgstr ""
 
+msgid "Username"
+msgstr ""
+
+msgid "Passphrase"
+msgstr ""
+
+msgid "Two-Factor Code"
+msgstr ""
+
+msgid "SecureDrop Client v{}"
+msgstr ""
+
+msgid "SIGN IN"
+msgstr ""
+
+msgid ""
+"That username won't work.\n"
+"It should be at least 3 characters long."
+msgstr ""
+
+msgid ""
+"That passphrase won't work.\n"
+"It should be between 14 and 128 characters long."
+msgstr ""
+
+msgid ""
+"That two-factor code won't work.\n"
+"It should only contain numerals."
+msgstr ""
+
+msgid "SIGNING IN"
+msgstr ""
+
+msgid "Please enter a username, passphrase and two-factor code."
+msgstr ""
+
 msgid "SecureDrop Client {}"
+msgstr ""
+
+msgid "Quit"
 msgstr ""
 
 msgid "Last Refresh: {}"
@@ -72,9 +111,6 @@ msgid "{}"
 msgstr ""
 
 msgid "SIGN OUT"
-msgstr ""
-
-msgid "SIGN IN"
 msgstr ""
 
 msgid "Nothing to see just yet!"
@@ -108,39 +144,6 @@ msgid "— All files and messages deleted for this source —"
 msgstr ""
 
 msgid "USE OFFLINE"
-msgstr ""
-
-msgid "Username"
-msgstr ""
-
-msgid "Passphrase"
-msgstr ""
-
-msgid "Two-Factor Code"
-msgstr ""
-
-msgid "SecureDrop Client v{}"
-msgstr ""
-
-msgid ""
-"That username won't work.\n"
-"It should be at least 3 characters long."
-msgstr ""
-
-msgid ""
-"That passphrase won't work.\n"
-"It should be between 14 and 128 characters long."
-msgstr ""
-
-msgid ""
-"That two-factor code won't work.\n"
-"It should only contain numerals."
-msgstr ""
-
-msgid "SIGNING IN"
-msgstr ""
-
-msgid "Please enter a username, passphrase and two-factor code."
 msgstr ""
 
 msgid "Failed to send"
@@ -301,12 +304,12 @@ msgstr ""
 msgid " to compose or send a reply"
 msgstr ""
 
+msgid "DELETE"
+msgstr ""
+
 msgid "Entire source account"
 msgstr ""
 
 msgid "Files and messages"
-msgstr ""
-
-msgid "DELETE"
 msgstr ""
 
