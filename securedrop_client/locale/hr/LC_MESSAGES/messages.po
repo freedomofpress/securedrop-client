@@ -1,4 +1,4 @@
-# Translations template for SecureDrop Client.
+# Croatian translations for SecureDrop Client.
 # Copyright (C) 2021 Freedom of the Press Foundation
 # This file is distributed under the same license as the SecureDrop Client project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
@@ -9,15 +9,12 @@ msgstr ""
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
 "PO-Revision-Date: 2021-10-18 15:42+0000\n"
 "Last-Translator: Igor K. <igorkrainovic@gmail.com>\n"
-"Language-Team: Croatian <https://weblate.securedrop.org/projects/securedrop/"
-"securedrop-client/hr/>\n"
 "Language: hr\n"
+"Language-Team: Croatian <https://weblate.securedrop.org/projects/securedrop/securedrop-client/hr/>\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
-"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 4.6\n"
 "Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
@@ -67,58 +64,6 @@ msgstr "Nije uspjelo brisanje razgovora na poslužitelju"
 msgid "Failed to delete source at server"
 msgstr "Nije uspjelo brisanje izvora na poslužitelju"
 
-msgid "SecureDrop Client {}"
-msgstr "SecureDrop klijent{}"
-
-msgid "Last Refresh: {}"
-msgstr "Posljednje osvježenje: {}"
-
-msgid "Last Refresh: never"
-msgstr "Posljednje osvježenje: nikad"
-
-msgid "{}"
-msgstr "{}"
-
-msgid "SIGN OUT"
-msgstr "Odjava"
-
-msgid "SIGN IN"
-msgstr "Prijava"
-
-msgid "Nothing to see just yet!"
-msgstr "Trenutno nema ništa za vidjeti!"
-
-msgid "Source submissions will be listed to the left, once downloaded and decrypted."
-msgstr ""
-"Predaje izvora će biti prikazane lijevo, nakon što se preuzmu i dekriptiraju."
-
-msgid "This is where you will read messages, reply to sources, and work with files."
-msgstr "Ovdje će te čitati poruke, odgovarati na izvore i raditi s datotekama."
-
-msgid "Select a source from the list, to:"
-msgstr "Odaberite izvor sa popisa kako bi:"
-
-msgid "Read a conversation"
-msgstr "Pročitali razgovor"
-
-msgid "View or retrieve files"
-msgstr "Pogledali ili dohvatili datoteke"
-
-msgid "Send a response"
-msgstr "Poslali odgovor"
-
-msgid "Deleting files and messages..."
-msgstr "Brišem datoteke i poruke..."
-
-msgid "Deleting source account..."
-msgstr "Brišem račun izvora..."
-
-msgid "— All files and messages deleted for this source —"
-msgstr "— Sve datoteke i poruke obrisane za ovaj izvor —"
-
-msgid "USE OFFLINE"
-msgstr "Koristi offline"
-
 msgid "Username"
 msgstr "Korisničko ime"
 
@@ -130,6 +75,9 @@ msgstr "Dvofaktorski kod"
 
 msgid "SecureDrop Client v{}"
 msgstr "SecureDrop klijent v{}"
+
+msgid "SIGN IN"
+msgstr "Prijava"
 
 msgid ""
 "That username won't work.\n"
@@ -157,6 +105,57 @@ msgstr "Prijava"
 
 msgid "Please enter a username, passphrase and two-factor code."
 msgstr "Molimo unesite korisničko ime, lozinku i dvofaktorski kod."
+
+msgid "SecureDrop Client {}"
+msgstr "SecureDrop klijent{}"
+
+msgid "Quit"
+msgstr ""
+
+msgid "Last Refresh: {}"
+msgstr "Posljednje osvježenje: {}"
+
+msgid "Last Refresh: never"
+msgstr "Posljednje osvježenje: nikad"
+
+msgid "{}"
+msgstr "{}"
+
+msgid "SIGN OUT"
+msgstr "Odjava"
+
+msgid "Nothing to see just yet!"
+msgstr "Trenutno nema ništa za vidjeti!"
+
+msgid "Source submissions will be listed to the left, once downloaded and decrypted."
+msgstr "Predaje izvora će biti prikazane lijevo, nakon što se preuzmu i dekriptiraju."
+
+msgid "This is where you will read messages, reply to sources, and work with files."
+msgstr "Ovdje će te čitati poruke, odgovarati na izvore i raditi s datotekama."
+
+msgid "Select a source from the list, to:"
+msgstr "Odaberite izvor sa popisa kako bi:"
+
+msgid "Read a conversation"
+msgstr "Pročitali razgovor"
+
+msgid "View or retrieve files"
+msgstr "Pogledali ili dohvatili datoteke"
+
+msgid "Send a response"
+msgstr "Poslali odgovor"
+
+msgid "Deleting files and messages..."
+msgstr "Brišem datoteke i poruke..."
+
+msgid "Deleting source account..."
+msgstr "Brišem račun izvora..."
+
+msgid "— All files and messages deleted for this source —"
+msgstr "— Sve datoteke i poruke obrisane za ovaj izvor —"
+
+msgid "USE OFFLINE"
+msgstr "Koristi offline"
 
 msgid "Failed to send"
 msgstr "Slanje nije uspjelo"
@@ -198,15 +197,7 @@ msgid "Printing failed"
 msgstr "Ispis nije uspio"
 
 msgid "<h2>Managing printout risks</h2><b>QR codes and web addresses</b><br />Never type in and open web addresses or scan QR codes contained in printed documents without taking security precautions. If you are unsure how to manage this risk, please contact your administrator.<br /><br /><b>Printer dots</b><br />Any part of a printed page may contain identifying information invisible to the naked eye, such as printer dots. Please carefully consider this risk when working with or publishing scanned printouts."
-msgstr ""
-"<h2>Upravljanje rizicima ispisa</h2><b>QR kodovi i web adrese</b><br />Nikad "
-"ne upisujte i ne otvarajte web adrese, i ne skenirajte QR kodove sadržane u "
-"ispisanim dokumentima bez poduzimanja sigurnosnih predstrožnosti. Ako niste "
-"sigurni kako upravljati ovim rizikom, kontaktirajte svog administratora.<br /"
-"><br /><b>Točke printera</b><br />Bilo koji dio ispisane stranice može "
-"sadržavati identificirajuće informacije nevidljive golom oku, tzv. točke "
-"printera. Pomno razmotrite rizik kad radite sa ili objavljujete skenirane "
-"ispise."
+msgstr "<h2>Upravljanje rizicima ispisa</h2><b>QR kodovi i web adrese</b><br />Nikad ne upisujte i ne otvarajte web adrese, i ne skenirajte QR kodove sadržane u ispisanim dokumentima bez poduzimanja sigurnosnih predstrožnosti. Ako niste sigurni kako upravljati ovim rizikom, kontaktirajte svog administratora.<br /><br /><b>Točke printera</b><br />Bilo koji dio ispisane stranice može sadržavati identificirajuće informacije nevidljive golom oku, tzv. točke printera. Pomno razmotrite rizik kad radite sa ili objavljujete skenirane ispise."
 
 msgid "Please connect your printer to a USB port."
 msgstr "Molimo spojite pisač sa USB portom."
@@ -236,24 +227,13 @@ msgid "Export failed"
 msgstr "Izvoz nije uspio"
 
 msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
-msgstr ""
-"<h2>Razumijte rizike prije izvoza datoteka</h2><b>Malware</b><br />Ova radna "
-"stanica Vam omogućuje sigurno otvaranje datoteka. Ako otvorite datoteke na "
-"drugom računalu, svaki će se usađeni malware moći proširiti na Vaše računalo "
-"ili mrežu. Ako niste sigurni kako upravljati ovim rizikom, molimo Vas da "
-"ispišete datoteku ili kontaktirate svog administratora. <br /><br "
-"/><b>Anonimnost</b><br />Datoteke koje je predao izvor mogu sadržavati "
-"informacije ili skrivene metapodatke koji identificiraju taj izvor. Kako bi "
-"zaštitili svoje izvore, razmotrite uređivanje datoteka prije nego radite s "
-"njima na računalima spojenim na mrežu."
+msgstr "<h2>Razumijte rizike prije izvoza datoteka</h2><b>Malware</b><br />Ova radna stanica Vam omogućuje sigurno otvaranje datoteka. Ako otvorite datoteke na drugom računalu, svaki će se usađeni malware moći proširiti na Vaše računalo ili mrežu. Ako niste sigurni kako upravljati ovim rizikom, molimo Vas da ispišete datoteku ili kontaktirate svog administratora. <br /><br /><b>Anonimnost</b><br />Datoteke koje je predao izvor mogu sadržavati informacije ili skrivene metapodatke koji identificiraju taj izvor. Kako bi zaštitili svoje izvore, razmotrite uređivanje datoteka prije nego radite s njima na računalima spojenim na mrežu."
 
 msgid "Exporting: {}"
 msgstr "Izvoz:{}"
 
 msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
-msgstr ""
-"Umetnite jedan od pogona za izvoz predviđenih specifično za SecureDrop radnu "
-"stanicu."
+msgstr "Umetnite jedan od pogona za izvoz predviđenih specifično za SecureDrop radnu stanicu."
 
 msgid "Either the drive is not encrypted or there is something else wrong with it."
 msgstr "Ili pogon nije enkriptiran ili je nešto drugo pogrešno s njim."
@@ -265,8 +245,7 @@ msgid "The CONTINUE button will be disabled until the Export VM is ready"
 msgstr "Gumb Nastavi će biti onemogućen sve dok Izvoz VM-a nije spreman"
 
 msgid "Remember to be careful when working with files outside of your Workstation machine."
-msgstr ""
-"Zapamtite - budite oprezni kad radite s datotekama izvan svoje radne stanice."
+msgstr "Zapamtite - budite oprezni kad radite s datotekama izvan svoje radne stanice."
 
 msgid "SUBMIT"
 msgstr "Predaj"
@@ -293,14 +272,10 @@ msgid "YES, DELETE FILES AND MESSAGES"
 msgstr "Da, obriši datoteke i poruke"
 
 msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
-msgstr ""
-"Želite obrisati {files_to_delete}, {replies_to_delete}, {messages_to_delete} "
-"od izvora {source}?"
+msgstr "Želite obrisati {files_to_delete}, {replies_to_delete}, {messages_to_delete} od izvora {source}?"
 
 msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
-msgstr ""
-"Očuvanje računa će zadržati njegove metapodatke i mogućnost da se {source} "
-"ponovno prijavi na Vaš SecureDrop."
+msgstr "Očuvanje računa će zadržati njegove metapodatke i mogućnost da se {source} ponovno prijavi na Vaš SecureDrop."
 
 msgid "one file"
 msgid_plural "{file_count} files"
@@ -345,11 +320,12 @@ msgstr "Prijava"
 msgid " to compose or send a reply"
 msgstr " kako bi napisao ili poslao odgovor"
 
+msgid "DELETE"
+msgstr "Obriši"
+
 msgid "Entire source account"
 msgstr "Cijeli račun izvora"
 
 msgid "Files and messages"
 msgstr "Datoteke i poruke"
 
-msgid "DELETE"
-msgstr "Obriši"
