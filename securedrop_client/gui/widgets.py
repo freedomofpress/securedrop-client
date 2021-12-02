@@ -1594,7 +1594,7 @@ class SignInButton(QPushButton):
 
     def __init__(self) -> None:
         super().__init__()
-        self.setText(_("SIGN IN"))
+        self.setText(_("LOG IN"))
 
         # Set css id
         self.setObjectName("SignInButton")
