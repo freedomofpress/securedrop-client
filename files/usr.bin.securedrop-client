@@ -34,6 +34,7 @@
   /usr/bin/chmod mrix,
   /usr/bin/dash ix,
   /usr/bin/mkdir mrix,
+  /usr/bin/python3.7 ix,
   /usr/bin/qrexec-client-vm mrix,
   /usr/bin/qubes-gpg-client mrix,
   /usr/bin/qubes-gpg-import-key mrix,
