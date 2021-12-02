@@ -69,6 +69,8 @@ make venv
 source .venv/bin/activate
 ```
 
+   * `make venv` will also run `make hooks`, which will configure Git to use the hooks found in `.githooks/` to check certain code-quality standards on new commits in this repository.  These checks are also enforced in CI.
+
 4. Run SecureDrop Client
 
 ```
@@ -103,6 +105,8 @@ cd securedrop-client
 make venv
 source .venv/bin/activate
 ```
+
+   * `make venv` will also run `make hooks`, which will configure Git to use the hooks found in `.githooks/` to check certain code-quality standards on new commits in this repository.  These checks are also enforced in CI.
 
 4. Run SecureDrop Client
 
@@ -151,6 +155,8 @@ It is possible to run the development environment in macOS on non-Apple Silicon 
    make venv-mac
    source .venv/bin/activate
    ```
+   * `make venv-mac` will also run `make hooks`, which will configure Git to use the hooks found in `.githooks/` to check certain code-quality standards on new commits in this repository.  These checks are also enforced in CI.
+
 7. Run SecureDrop Client
    ```
    ./run.sh
