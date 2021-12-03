@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.5.1
+* Fix Python symlink, which broke package in 0.5.0
+
 ## 0.5.0
 * Support deletion of conversations (#1263)
 * Speed up deletion of accounts and conversations (#1273)
