@@ -1,5 +1,3 @@
-# coding: utf-8
-
 """
 A dialog that allows users to sign in, or use the application offline.
 
@@ -18,7 +16,6 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import logging
 from gettext import gettext as _
 
 from PyQt5.QtCore import QSize, Qt
@@ -35,16 +32,10 @@ from PyQt5.QtWidgets import (
 )
 
 from securedrop_client import __version__ as sd_version
-from securedrop_client.gui.widgets import (
-    LoginErrorBar,
-    LoginOfflineLink,
-    PasswordEdit,
-    SignInButton,
-)
+from securedrop_client.gui.inputs import PasswordEdit
+from securedrop_client.gui.widgets import LoginErrorBar, LoginOfflineLink, SignInButton
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_image
-
-logger = logging.getLogger(__name__)
 
 
 class LoginDialog(QDialog):

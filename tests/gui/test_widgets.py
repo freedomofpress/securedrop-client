@@ -19,7 +19,12 @@ from sqlalchemy.orm import attributes, scoped_session, sessionmaker
 
 from securedrop_client import db, logic, storage
 from securedrop_client.export import ExportError, ExportStatus
-from securedrop_client.gui.login_dialog import LoginDialog
+from securedrop_client.gui import SecureQLabel
+from securedrop_client.gui.auth import LoginDialog
+from securedrop_client.gui.conversation import FileWidget
+from securedrop_client.gui.conversation.export import ExportDialog
+from securedrop_client.gui.conversation.print import PrintDialog
+from securedrop_client.gui.inputs import PasswordEdit
 from securedrop_client.gui.widgets import (
     ActivityStatusBar,
     ConversationView,
@@ -29,20 +34,15 @@ from securedrop_client.gui.widgets import (
     DeleteSourceDialog,
     EmptyConversationView,
     ErrorStatusBar,
-    ExportDialog,
-    FileWidget,
     LeftPane,
     LoginButton,
     LoginErrorBar,
     MainView,
     MessageWidget,
-    PasswordEdit,
-    PrintDialog,
     ReplyBoxWidget,
     ReplyTextEdit,
     ReplyTextEditPlaceholder,
     ReplyWidget,
-    SecureQLabel,
     SenderIcon,
     SourceConversationWrapper,
     SourceList,
@@ -3289,7 +3289,7 @@ def test_FileWidget__set_file_state_under_mouse(mocker, source, session):
     fw.download_button.underMouse = mocker.MagicMock(return_value=True)
     fw.download_button.setIcon = mocker.MagicMock()
     mock_load = mocker.MagicMock()
-    mocker.patch("securedrop_client.gui.widgets.load_icon", mock_load)
+    mocker.patch("securedrop_client.gui.conversation.file.load_icon", mock_load)
     fw._set_file_state()
     mock_load.assert_called_once_with("download_file_hover.svg")
 
@@ -3592,11 +3592,11 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
 
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
     fw.update = mocker.MagicMock()
-    mocker.patch("securedrop_client.gui.widgets.QDialog.exec")
+    mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.run_export_preflight_checks = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=True)
 
-    dialog = mocker.patch("securedrop_client.gui.widgets.ExportDialog")
+    dialog = mocker.patch("securedrop_client.gui.conversation.file.ExportDialog")
 
     fw._on_export_clicked()
     dialog.assert_called_once_with(controller, file.uuid, file.filename)
@@ -3615,10 +3615,10 @@ def test_FileWidget__on_export_clicked_missing_file(mocker, session, source):
 
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
     fw.update = mocker.MagicMock()
-    mocker.patch("securedrop_client.gui.widgets.QDialog.exec")
+    mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.run_export_preflight_checks = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=False)
-    dialog = mocker.patch("securedrop_client.gui.widgets.ExportDialog")
+    dialog = mocker.patch("securedrop_client.gui.conversation.file.ExportDialog")
 
     fw._on_export_clicked()
 
@@ -3639,11 +3639,11 @@ def test_FileWidget__on_print_clicked(mocker, session, source):
 
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
     fw.update = mocker.MagicMock()
-    mocker.patch("securedrop_client.gui.widgets.QDialog.exec")
+    mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.print_file = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=True)
 
-    dialog = mocker.patch("securedrop_client.gui.widgets.PrintDialog")
+    dialog = mocker.patch("securedrop_client.gui.conversation.file.PrintDialog")
 
     fw._on_print_clicked()
 
@@ -3663,10 +3663,10 @@ def test_FileWidget__on_print_clicked_missing_file(mocker, session, source):
 
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
     fw.update = mocker.MagicMock()
-    mocker.patch("securedrop_client.gui.widgets.QDialog.exec")
+    mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.print_file = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=False)
-    dialog = mocker.patch("securedrop_client.gui.widgets.PrintDialog")
+    dialog = mocker.patch("securedrop_client.gui.conversation.file.PrintDialog")
 
     fw._on_print_clicked()
 
@@ -3686,7 +3686,9 @@ def test_FileWidget_update_file_size_with_deleted_file(
 
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
 
-    mocker.patch("securedrop_client.gui.widgets.humanize_filesize", side_effect=Exception("boom!"))
+    mocker.patch(
+        "securedrop_client.gui.conversation.file.humanize_filesize", side_effect=Exception("boom!")
+    )
     fw.update_file_size()
     assert fw.file_size.text() == ""
 
@@ -3790,7 +3792,7 @@ def test_ModalDialog_animation_of_header(mocker, modal_dialog):
 
 def test_ExportDialog_init(mocker):
     _show_starting_instructions_fn = mocker.patch(
-        "securedrop_client.gui.widgets.ExportDialog._show_starting_instructions"
+        "securedrop_client.gui.conversation.file.ExportDialog._show_starting_instructions"
     )
 
     export_dialog = ExportDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
@@ -3800,8 +3802,8 @@ def test_ExportDialog_init(mocker):
 
 
 def test_ExportDialog_init_sanitizes_filename(mocker):
-    secure_qlabel = mocker.patch("securedrop_client.gui.widgets.SecureQLabel")
-    mocker.patch("securedrop_client.gui.widgets.QVBoxLayout.addWidget")
+    secure_qlabel = mocker.patch("securedrop_client.gui.conversation.export.dialog.SecureQLabel")
+    mocker.patch("PyQt5.QtWidgets.QVBoxLayout.addWidget")
     filename = '<script>alert("boom!");</script>'
 
     ExportDialog(mocker.MagicMock(), "mock_uuid", filename)
@@ -4118,7 +4120,7 @@ def test_ExportDialog__update_dialog_when_status_is_unknown(mocker, export_dialo
 
 def test_PrintDialog_init(mocker):
     _show_starting_instructions_fn = mocker.patch(
-        "securedrop_client.gui.widgets.PrintDialog._show_starting_instructions"
+        "securedrop_client.gui.conversation.file.PrintDialog._show_starting_instructions"
     )
 
     PrintDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
@@ -4127,7 +4129,7 @@ def test_PrintDialog_init(mocker):
 
 
 def test_PrintDialog_init_sanitizes_filename(mocker):
-    secure_qlabel = mocker.patch("securedrop_client.gui.widgets.SecureQLabel")
+    secure_qlabel = mocker.patch("securedrop_client.gui.conversation.print.dialog.SecureQLabel")
     filename = '<script>alert("boom!");</script>'
 
     PrintDialog(mocker.MagicMock(), "mock_uuid", filename)
@@ -4933,8 +4935,8 @@ def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
     cv = ConversationView(source, controller)
     cv.conversation_updated = mocker.MagicMock()
 
-    mock_label = mocker.patch("securedrop_client.gui.widgets.SecureQLabel")
-    mocker.patch("securedrop_client.gui.widgets.QHBoxLayout.addWidget")
+    mock_label = mocker.patch("securedrop_client.gui.conversation.file.SecureQLabel")
+    mocker.patch("PyQt5.QtWidgets.QHBoxLayout.addWidget")
 
     cv.add_file(file, 0)
 
@@ -4960,8 +4962,8 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, sessi
     cv = ConversationView(source, controller)
     cv.conversation_updated = mocker.MagicMock()
 
-    mock_label = mocker.patch("securedrop_client.gui.widgets.SecureQLabel")
-    mocker.patch("securedrop_client.gui.widgets.QHBoxLayout.addWidget")
+    mock_label = mocker.patch("securedrop_client.gui.conversation.file.SecureQLabel")
+    mocker.patch("PyQt5.QtWidgets.QHBoxLayout.addWidget")
 
     cv.add_file(file, 0)
 
@@ -4991,7 +4993,7 @@ def test_DeleteConversationDialog_exec(mocker, source, session):
     mock_controller = mocker.MagicMock()
     dialog = DeleteConversationDialog(source, mock_controller)
     mocker.patch.object(dialog.body, "setText")
-    mocker.patch("securedrop_client.gui.widgets.ModalDialog.exec")
+    mocker.patch("securedrop_client.gui.dialogs.ModalDialog.exec")
     dialog.exec()
     dialog.body.setText.assert_called_once()
 

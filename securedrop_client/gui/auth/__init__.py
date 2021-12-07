@@ -1,7 +1,7 @@
 """
-Generic custom widgets.
+The widgets related to user authentication.
 
-Copyright (C) 2018  The Freedom of the Press Foundation.
+Copyright (C) 2021  The Freedom of the Press Foundation.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
@@ -16,11 +16,6 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 # Expose GUI elements without exposing the package structure
-from securedrop_client.gui.buttons import SDPushButton  # noqa: F401
-from securedrop_client.gui.misc import (  # noqa: F401
-    SecureQLabel,
-    SvgLabel,
-    SvgPushButton,
-    SvgToggleButton,
-)
+from securedrop_client.gui.auth.dialog import LoginDialog  # noqa: F401

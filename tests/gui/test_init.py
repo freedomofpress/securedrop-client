@@ -16,9 +16,9 @@ def test_SvgToggleButton_init(mocker):
     """
     svg_size = QSize(1, 1)
     icon = mocker.MagicMock()
-    load_icon_fn = mocker.patch("securedrop_client.gui.load_icon", return_value=icon)
-    setIcon_fn = mocker.patch("securedrop_client.gui.SvgToggleButton.setIcon")
-    setIconSize_fn = mocker.patch("securedrop_client.gui.SvgToggleButton.setIconSize")
+    load_icon_fn = mocker.patch("securedrop_client.gui.misc.load_icon", return_value=icon)
+    setIcon_fn = mocker.patch("securedrop_client.gui.misc.SvgToggleButton.setIcon")
+    setIconSize_fn = mocker.patch("securedrop_client.gui.misc.SvgToggleButton.setIconSize")
 
     stb = SvgToggleButton(on="mock_on", off="mock_off", svg_size=svg_size)
 
@@ -47,7 +47,7 @@ def test_SvgToggleButton_set_icon(mocker):
     """
     setIcon_fn = mocker.patch("securedrop_client.gui.SvgToggleButton.setIcon")
     icon = mocker.MagicMock()
-    load_icon_fn = mocker.patch("securedrop_client.gui.load_icon", return_value=icon)
+    load_icon_fn = mocker.patch("securedrop_client.gui.misc.load_icon", return_value=icon)
     stb = SvgToggleButton(on="mock_on", off="mock_off")
 
     stb.set_icon(on="mock_on", off="mock_off")
@@ -63,7 +63,7 @@ def test_SvgPushButton_init(mocker):
     """
     svg_size = QSize(1, 1)
     icon = mocker.MagicMock()
-    load_icon_fn = mocker.patch("securedrop_client.gui.load_icon", return_value=icon)
+    load_icon_fn = mocker.patch("securedrop_client.gui.misc.load_icon", return_value=icon)
     setIcon_fn = mocker.patch("securedrop_client.gui.SvgPushButton.setIcon")
     setIconSize_fn = mocker.patch("securedrop_client.gui.SvgPushButton.setIconSize")
 
@@ -85,8 +85,8 @@ def test_SvgLabel_init(mocker):
     """
     svg_size = QSize(1, 1)
     svg = mocker.MagicMock()
-    load_svg_fn = mocker.patch("securedrop_client.gui.load_svg", return_value=svg)
-    mocker.patch("securedrop_client.gui.QHBoxLayout.addWidget")
+    load_svg_fn = mocker.patch("securedrop_client.gui.misc.load_svg", return_value=svg)
+    mocker.patch("PyQt5.QtWidgets.QHBoxLayout.addWidget")
 
     sl = SvgLabel(filename="mock", svg_size=svg_size)
 
@@ -100,8 +100,8 @@ def test_SvgLabel_update(mocker):
     Ensure SvgLabel calls the expected methods correctly to set the icon and size.
     """
     svg = mocker.MagicMock()
-    load_svg_fn = mocker.patch("securedrop_client.gui.load_svg", return_value=svg)
-    mocker.patch("securedrop_client.gui.QHBoxLayout.addWidget")
+    load_svg_fn = mocker.patch("securedrop_client.gui.misc.load_svg", return_value=svg)
+    mocker.patch("PyQt5.QtWidgets.QHBoxLayout.addWidget")
     sl = SvgLabel(filename="mock", svg_size=QSize(1, 1))
 
     sl.update_image(filename="mock_two", svg_size=QSize(2, 2))

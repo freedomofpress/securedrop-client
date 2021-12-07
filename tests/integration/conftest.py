@@ -1,8 +1,10 @@
 import pytest
 from PyQt5.QtWidgets import QApplication
 
+from securedrop_client.gui.conversation.export import ExportDialog
+from securedrop_client.gui.conversation.print import PrintDialog
+from securedrop_client.gui.dialogs import ModalDialog
 from securedrop_client.gui.main import Window
-from securedrop_client.gui.widgets import ExportDialog, ModalDialog, PrintDialog
 from securedrop_client.logic import Controller
 from tests import factory
 
@@ -25,7 +27,7 @@ def main_window(mocker, homedir):
     source_list.update([source])
 
     # Create a file widget, message widget, and reply widget
-    mocker.patch("securedrop_client.gui.widgets.humanize_filesize", return_value="100")
+    mocker.patch("securedrop_client.gui.conversation.file.humanize_filesize", return_value="100")
     mocker.patch(
         "securedrop_client.gui.SecureQLabel.get_elided_text", return_value="1-yellow-doc.gz.gpg"
     )
@@ -64,7 +66,7 @@ def main_window_no_key(mocker, homedir):
     source_list.update([source])
 
     # Create a file widget, message widget, and reply widget
-    mocker.patch("securedrop_client.gui.widgets.humanize_filesize", return_value="100")
+    mocker.patch("securedrop_client.gui.conversation.file.humanize_filesize", return_value="100")
     mocker.patch(
         "securedrop_client.gui.SecureQLabel.get_elided_text", return_value="1-yellow-doc.gz.gpg"
     )
