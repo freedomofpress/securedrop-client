@@ -35,4 +35,5 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     entry_points={"console_scripts": ["sd-client = securedrop_client.app:run"]},
+    package_data={"": ["locale/*/*/*.mo", "locale/*/*/*.po"]},
 )
