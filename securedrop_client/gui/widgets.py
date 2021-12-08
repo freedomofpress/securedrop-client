@@ -20,7 +20,6 @@ import html
 import logging
 from datetime import datetime
 from gettext import gettext as _
-from gettext import ngettext
 from typing import Dict, List, Optional, Union  # noqa: F401
 from uuid import uuid4
 
@@ -69,15 +68,9 @@ from securedrop_client.db import (
     Source,
     User,
 )
-from securedrop_client.gui import (
-    ModalDialog,
-    PushButton,
-    SecureQLabel,
-    SvgLabel,
-    SvgPushButton,
-    SvgToggleButton,
-)
+from securedrop_client.gui import PushButton, SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.gui.conversation import File as FileWidget
+from securedrop_client.gui.conversation import Menu as ConversationMenu
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_css, load_icon, load_image, load_movie
 from securedrop_client.storage import source_exists
@@ -2135,131 +2128,6 @@ class ReplyWidget(SpeechBubble):
         self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
 
 
-class DeleteSourceDialog(ModalDialog):
-    """Used to confirm deletion of source accounts."""
-
-    def __init__(self, source: Source, controller: Controller) -> None:
-        super().__init__(show_header=False, dangerous=True)
-
-        self.source = source
-        self.controller = controller
-
-        self.body.setText(self.make_body_text())
-
-        self.continue_button.setText(_("YES, DELETE ENTIRE SOURCE ACCOUNT"))
-        self.continue_button.clicked.connect(self.delete_source)
-
-        self.confirmation_label.setText(_("Are you sure this is what you want?"))
-
-        self.adjustSize()
-
-    def make_body_text(self) -> str:
-        message_tuple = (
-            "<style>",
-            "p {{white-space: nowrap;}}",
-            "</style>",
-            "<p><b>",
-            _("When the entire account for a source is deleted:"),
-            "</b></p>",
-            "<p><b>\u2219</b>&nbsp;",
-            _("The source will not be able to log in with their codename again."),
-            "</p>",
-            "<p><b>\u2219</b>&nbsp;",
-            _("Your organization will not be able to send them replies."),
-            "</p>",
-            "<p><b>\u2219</b>&nbsp;",
-            _("All files and messages from that source will also be destroyed."),
-            "</p>",
-            "<p>&nbsp;</p>",
-        )
-
-        return "".join(message_tuple).format(
-            source="<b>{}</b>".format(self.source.journalist_designation)
-        )
-
-    @pyqtSlot()
-    def delete_source(self) -> None:
-        self.controller.delete_source(self.source)
-        self.close()
-
-
-class DeleteConversationDialog(ModalDialog):
-    """
-    Shown to confirm deletion of all content in a source conversation.
-    """
-
-    def __init__(self, source: Source, controller: Controller) -> None:
-        super().__init__(show_header=False, dangerous=False)
-
-        self.source = source
-        self.controller = controller
-
-        self.body.setText(self.make_body_text())
-
-        self.continue_button.setText(_("YES, DELETE FILES AND MESSAGES"))
-        self.continue_button.clicked.connect(self.delete_conversation)
-        self.continue_button.setFocus()
-
-        self.adjustSize()
-
-    def make_body_text(self) -> str:
-        files = 0
-        messages = 0
-        replies = 0
-        for submission in self.source.collection:
-            if isinstance(submission, Message):
-                messages += 1
-            if isinstance(submission, Reply):
-                replies += 1
-            elif isinstance(submission, File):
-                files += 1
-
-        message_tuple = (
-            "<style>li {{line-height: 150%;}}</li></style>",
-            "<p>",
-            _(
-                "You would like to delete {files_to_delete}, {replies_to_delete}, "
-                "{messages_to_delete} from the source account for {source}?"
-            ),
-            "</p>",
-            "<p>",
-            _(
-                "Preserving the account will retain its metadata, and the ability for {source} "
-                "to log in to your SecureDrop again."
-            ),
-            "</p>",
-        )
-
-        files_to_delete = ngettext("one file", "{file_count} files", files).format(file_count=files)
-
-        replies_to_delete = ngettext("one reply", "{reply_count} replies", replies).format(
-            reply_count=replies
-        )
-
-        messages_to_delete = ngettext("one message", "{message_count} messages", messages).format(
-            message_count=messages
-        )
-
-        source = "<b>{}</b>".format(self.source.journalist_designation)
-
-        return "".join(message_tuple).format(
-            files_to_delete=files_to_delete,
-            messages_to_delete=messages_to_delete,
-            replies_to_delete=replies_to_delete,
-            source=source,
-        )
-
-    def exec(self) -> None:
-        # Refresh counters
-        self.body.setText(self.make_body_text())
-        super().exec()
-
-    @pyqtSlot()
-    def delete_conversation(self) -> None:
-        self.controller.delete_conversation(self.source)
-        self.close()
-
-
 class ConversationScrollArea(QScrollArea):
 
     MARGIN_LEFT = 38
@@ -3131,75 +2999,6 @@ class ReplyTextEditPlaceholder(QWidget):
             self.source_name_label.setText(self.source_name)
 
 
-class SourceMenu(QMenu):
-    """Renders menu having various operations.
-
-    This menu provides below functionality via menu actions:
-
-    1. Delete source
-
-    Note: At present this only supports "delete" operation.
-    """
-
-    SOURCE_MENU_CSS = load_css("source_menu.css")
-
-    def __init__(self, source: Source, controller: Controller) -> None:
-        super().__init__()
-        self.source = source
-        self.controller = controller
-
-        self.setStyleSheet(self.SOURCE_MENU_CSS)
-        separator_font = QFont()
-        separator_font.setLetterSpacing(QFont.AbsoluteSpacing, 2)
-        separator_font.setBold(True)
-
-        delete_section = self.addSection(_("DELETE"))
-        delete_section.setFont(separator_font)
-
-        self.addAction(DeleteConversationAction(self.source, self, self.controller))
-        self.addAction(DeleteSourceAction(self.source, self, self.controller))
-
-
-class DeleteSourceAction(QAction):
-    """Use this action to delete the source record."""
-
-    def __init__(self, source: Source, parent: SourceMenu, controller: Controller) -> None:
-        self.source = source
-        self.controller = controller
-        self.text = _("Entire source account")
-
-        super().__init__(self.text, parent)
-
-        self.confirmation_dialog = DeleteSourceDialog(self.source, self.controller)
-        self.triggered.connect(self.trigger)
-
-    def trigger(self) -> None:
-        if self.controller.api is None:
-            self.controller.on_action_requiring_login()
-        else:
-            self.confirmation_dialog.exec()
-
-
-class DeleteConversationAction(QAction):
-    """Use this action to delete a source's submissions and replies."""
-
-    def __init__(self, source: Source, parent: SourceMenu, controller: Controller) -> None:
-        self.source = source
-        self.controller = controller
-        self.text = _("Files and messages")
-
-        super().__init__(self.text, parent)
-
-        self.confirmation_dialog = DeleteConversationDialog(self.source, self.controller)
-        self.triggered.connect(self.trigger)
-
-    def trigger(self) -> None:
-        if self.controller.api is None:
-            self.controller.on_action_requiring_login()
-        else:
-            self.confirmation_dialog.exec()
-
-
 class SourceMenuButton(QToolButton):
     """An ellipse based source menu button.
 
@@ -3216,7 +3015,7 @@ class SourceMenuButton(QToolButton):
         self.setIcon(load_icon("ellipsis.svg"))
         self.setIconSize(QSize(22, 33))  # Make it taller than the svg viewBox to increase hitbox
 
-        self.menu = SourceMenu(self.source, self.controller)
+        self.menu = ConversationMenu(self.source, self.controller)
         self.setMenu(self.menu)
 
         self.setPopupMode(QToolButton.InstantPopup)

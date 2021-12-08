@@ -20,18 +20,18 @@ from sqlalchemy.orm import attributes, scoped_session, sessionmaker
 from securedrop_client import db, logic, storage
 from securedrop_client.export import ExportError, ExportStatus
 from securedrop_client.gui import SecureQLabel
+from securedrop_client.gui.actions import DeleteConversationAction, DeleteSourceAction
 from securedrop_client.gui.auth import Dialog as LoginDialog
+from securedrop_client.gui.conversation import DeleteDialog as DeleteConversationDialog
 from securedrop_client.gui.conversation import File as FileWidget
 from securedrop_client.gui.conversation.export import Dialog as ExportDialog
+from securedrop_client.gui.conversation.menu import Menu as ConversationMenu
 from securedrop_client.gui.conversation.print import Dialog as PrintDialog
 from securedrop_client.gui.inputs import PasswordEdit
+from securedrop_client.gui.source import DeleteDialog as DeleteSourceDialog
 from securedrop_client.gui.widgets import (
     ActivityStatusBar,
     ConversationView,
-    DeleteConversationAction,
-    DeleteConversationDialog,
-    DeleteSourceAction,
-    DeleteSourceDialog,
     EmptyConversationView,
     ErrorStatusBar,
     LeftPane,
@@ -47,7 +47,6 @@ from securedrop_client.gui.widgets import (
     SourceConversationWrapper,
     SourceList,
     SourceListWidgetItem,
-    SourceMenu,
     SourcePreview,
     SourceProfileShortWidget,
     SourceWidget,
@@ -5084,7 +5083,7 @@ def test_DeleteSourceAction_trigger(mocker):
     mock_delete_source_dialog = mocker.MagicMock()
     mock_delete_source_dialog.return_value = mock_delete_source_dialog_instance
 
-    mocker.patch("securedrop_client.gui.widgets.DeleteSourceDialog", mock_delete_source_dialog)
+    mocker.patch("securedrop_client.gui.actions.DeleteSourceDialog", mock_delete_source_dialog)
     delete_source_action = DeleteSourceAction(mock_source, None, mock_controller)
     delete_source_action.trigger()
     mock_delete_source_dialog_instance.exec.assert_called_once()
@@ -5098,7 +5097,7 @@ def test_DeleteConversationAction_trigger(mocker):
     mock_delete_conversation_dialog.return_value = mock_delete_conversation_dialog_instance
 
     mocker.patch(
-        "securedrop_client.gui.widgets.DeleteConversationDialog", mock_delete_conversation_dialog
+        "securedrop_client.gui.actions.DeleteConversationDialog", mock_delete_conversation_dialog
     )
     delete_conversation_action = DeleteConversationAction(mock_source, None, mock_controller)
     delete_conversation_action.trigger()
@@ -5114,7 +5113,7 @@ def test_DeleteConversationAction_trigger_when_user_is_loggedout(mocker):
     mock_delete_conversation_dialog.return_value = mock_delete_conversation_dialog_instance
 
     mocker.patch(
-        "securedrop_client.gui.widgets.DeleteConversationDialog", mock_delete_conversation_dialog
+        "securedrop_client.gui.actions.DeleteConversationDialog", mock_delete_conversation_dialog
     )
     delete_conversation_action = DeleteConversationAction(mock_source, None, mock_controller)
     delete_conversation_action.trigger()
@@ -5129,8 +5128,8 @@ def test_DeleteSource_from_source_menu_when_user_is_loggedout(mocker):
     mock_delete_source_dialog = mocker.MagicMock()
     mock_delete_source_dialog.return_value = mock_delete_source_dialog_instance
 
-    mocker.patch("securedrop_client.gui.widgets.DeleteSourceDialog", mock_delete_source_dialog)
-    source_menu = SourceMenu(mock_source, mock_controller)
+    mocker.patch("securedrop_client.gui.actions.DeleteSourceDialog", mock_delete_source_dialog)
+    source_menu = ConversationMenu(mock_source, mock_controller)
     source_menu.actions()[2].trigger()
     mock_delete_source_dialog_instance.exec.assert_not_called()
 

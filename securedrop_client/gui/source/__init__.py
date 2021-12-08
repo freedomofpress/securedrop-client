@@ -1,5 +1,5 @@
 """
-A conversation between a source and one or more journalists.
+A source who interacts with journalists.
 
 Copyright (C) 2021  The Freedom of the Press Foundation.
 
@@ -17,6 +17,4 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 # Expose GUI elements without exposing the package structure
-from securedrop_client.gui.conversation.delete import Dialog as DeleteDialog  # noqa: F401
-from securedrop_client.gui.conversation.file import File  # noqa: F401
-from securedrop_client.gui.conversation.menu import Menu  # noqa: F401
+from securedrop_client.gui.source.delete import Dialog as DeleteDialog  # noqa: F401
