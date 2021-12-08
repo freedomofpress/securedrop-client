@@ -17,6 +17,6 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 # Expose GUI elements without exposing the package structure
-from securedrop_client.gui.conversation.delete import Dialog as DeleteDialog  # noqa: F401
-from securedrop_client.gui.conversation.file import File  # noqa: F401
-from securedrop_client.gui.conversation.menu import Menu  # noqa: F401
+from .delete import Dialog as DeleteDialog  # noqa: F401
+from .file import File  # noqa: F401
+from .menu import Menu  # noqa: F401

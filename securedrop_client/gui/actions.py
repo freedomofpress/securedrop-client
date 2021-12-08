@@ -21,13 +21,14 @@ from gettext import gettext as _
 from PyQt5.QtWidgets import QAction, QMenu
 
 from securedrop_client.db import Source
-from securedrop_client.gui.conversation import (
+from securedrop_client.logic import Controller
+
+from .conversation import (
     DeleteDialog as DeleteConversationDialog,  # shouldn't depend on more nested parts of the GUI
 )
-from securedrop_client.gui.source import (
+from .source import (
     DeleteDialog as DeleteSourceDialog,  # shouldn't depend on more nested parts of the GUI
 )
-from securedrop_client.logic import Controller
 
 
 class DeleteSourceAction(QAction):
