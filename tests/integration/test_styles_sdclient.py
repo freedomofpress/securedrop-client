@@ -9,10 +9,9 @@ def test_css(main_window):
     assert "LoginDialog_form" in main_window.styleSheet()
 
 
-def test_class_name_matches_css_object_name(mocker, main_window):
+def test_preferred_name_matches_css_object_name(mocker, main_window):
     # Login Dialog
     login_dialog = main_window.login_dialog
-    assert "LoginDialog" == login_dialog.__class__.__name__
     form = login_dialog.layout().itemAt(2).widget()
     assert "LoginDialog" in form.objectName()
     app_version_label = login_dialog.layout().itemAt(4).widget()
@@ -115,7 +114,7 @@ def test_class_name_matches_css_object_name(mocker, main_window):
     assert "ConversationScrollArea" == conversation_scroll_area.__class__.__name__
     assert "ConversationScrollArea" in conversation_scroll_area.widget().objectName()
     file_widget = conversation_scroll_area.widget().layout().itemAt(0).widget()
-    assert "FileWidget" == file_widget.__class__.__name__
+    assert "FileWidget" == file_widget.objectName()
     message_widget = conversation_scroll_area.widget().layout().itemAt(1).widget()
     assert "MessageWidget" == message_widget.__class__.__name__
     reply_widget = conversation_scroll_area.widget().layout().itemAt(2).widget()
@@ -124,12 +123,7 @@ def test_class_name_matches_css_object_name(mocker, main_window):
     assert "ReplyWidget" in error_message.objectName()
 
 
-def test_class_name_matches_css_object_name_for_print_dialog(print_dialog):
-    assert "PrintDialog" == print_dialog.__class__.__name__
-
-
-def test_class_name_matches_css_object_name_for_export_dialog(export_dialog):
-    assert "ExportDialog" == export_dialog.__class__.__name__
+def test_preferred_name_matches_css_object_name_for_export_dialog(export_dialog):
     assert "ExportDialog" in export_dialog.passphrase_form.objectName()
 
 

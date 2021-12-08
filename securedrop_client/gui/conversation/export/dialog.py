@@ -29,7 +29,7 @@ from securedrop_client.gui.inputs import PasswordEdit
 from securedrop_client.logic import Controller
 
 
-class ExportDialog(ModalDialog):
+class Dialog(ModalDialog):
 
     PASSPHRASE_LABEL_SPACING = 0.5
     NO_MARGIN = 0

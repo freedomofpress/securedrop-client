@@ -18,4 +18,4 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 # Expose GUI elements without exposing the package structure
-from securedrop_client.gui.auth.dialog import LoginDialog  # noqa: F401
+from securedrop_client.gui.auth.dialog import Dialog  # noqa: F401

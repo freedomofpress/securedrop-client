@@ -70,14 +70,14 @@ from securedrop_client.db import (
     User,
 )
 from securedrop_client.gui import (
-    SDPushButton,
+    ModalDialog,
+    PushButton,
     SecureQLabel,
     SvgLabel,
     SvgPushButton,
     SvgToggleButton,
 )
-from securedrop_client.gui.conversation import FileWidget  # should eventually only be Conversation
-from securedrop_client.gui.dialogs import ModalDialog  # should eventually come from gui
+from securedrop_client.gui.conversation import File as FileWidget
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_css, load_icon, load_image, load_movie
 from securedrop_client.storage import source_exists
@@ -1621,13 +1621,13 @@ class StarToggleButton(SvgToggleButton):
             self.pending_count = self.pending_count - 1
 
 
-class LoginOfflineLink(SDPushButton):
+class LoginOfflineLink(PushButton):
     """A button that logs the user in, in offline mode."""
 
     def __init__(self) -> None:
         super().__init__()
         self.setText(_("USE OFFLINE"))
-        self.setAlignment(SDPushButton.AlignLeft)
+        self.setAlignment(PushButton.AlignLeft)
 
 
 class SignInButton(QPushButton):

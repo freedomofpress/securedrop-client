@@ -20,10 +20,10 @@ from sqlalchemy.orm import attributes, scoped_session, sessionmaker
 from securedrop_client import db, logic, storage
 from securedrop_client.export import ExportError, ExportStatus
 from securedrop_client.gui import SecureQLabel
-from securedrop_client.gui.auth import LoginDialog
-from securedrop_client.gui.conversation import FileWidget
-from securedrop_client.gui.conversation.export import ExportDialog
-from securedrop_client.gui.conversation.print import PrintDialog
+from securedrop_client.gui.auth import Dialog as LoginDialog
+from securedrop_client.gui.conversation import File as FileWidget
+from securedrop_client.gui.conversation.export import Dialog as ExportDialog
+from securedrop_client.gui.conversation.print import Dialog as PrintDialog
 from securedrop_client.gui.inputs import PasswordEdit
 from securedrop_client.gui.widgets import (
     ActivityStatusBar,

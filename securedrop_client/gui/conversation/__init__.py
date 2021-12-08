@@ -18,4 +18,4 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 # Expose GUI elements without exposing the package structure
-from securedrop_client.gui.conversation.file import FileWidget  # noqa: F401
+from securedrop_client.gui.conversation.file import File  # noqa: F401

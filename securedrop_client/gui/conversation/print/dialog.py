@@ -26,7 +26,7 @@ from securedrop_client.gui.dialogs import ModalDialog  # should eventually come 
 from securedrop_client.logic import Controller
 
 
-class PrintDialog(ModalDialog):
+class Dialog(ModalDialog):
 
     FILENAME_WIDTH_PX = 260
 

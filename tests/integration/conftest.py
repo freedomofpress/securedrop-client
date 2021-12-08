@@ -1,8 +1,8 @@
 import pytest
 from PyQt5.QtWidgets import QApplication
 
-from securedrop_client.gui.conversation.export import ExportDialog
-from securedrop_client.gui.conversation.print import PrintDialog
+from securedrop_client.gui.conversation.export import Dialog as ExportDialog
+from securedrop_client.gui.conversation.print import Dialog as PrintDialog
 from securedrop_client.gui.dialogs import ModalDialog
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller

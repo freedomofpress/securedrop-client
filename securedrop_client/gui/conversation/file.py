@@ -23,10 +23,10 @@ from PyQt5.QtCore import QEvent, QObject, Qt, QTimer, pyqtBoundSignal, pyqtSlot
 from PyQt5.QtGui import QCursor, QFont, QIcon
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton, QSizePolicy, QWidget
 
-from securedrop_client.db import File
+from securedrop_client.db import File as DatabaseFile
 from securedrop_client.gui import SecureQLabel
-from securedrop_client.gui.conversation.export import ExportDialog
-from securedrop_client.gui.conversation.print import PrintDialog
+from securedrop_client.gui.conversation.export import Dialog as ExportDialog
+from securedrop_client.gui.conversation.print import Dialog as PrintDialog
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_css, load_icon, load_movie
 from securedrop_client.utils import humanize_filesize
@@ -34,7 +34,7 @@ from securedrop_client.utils import humanize_filesize
 logger = logging.getLogger(__name__)
 
 
-class FileWidget(QWidget):
+class File(QWidget):
     """
     Represents a file.
     """
@@ -284,7 +284,7 @@ class FileWidget(QWidget):
             if self.controller.api:
                 self.start_button_animation()
             # Download the file.
-            self.controller.on_submission_download(File, self.uuid)
+            self.controller.on_submission_download(DatabaseFile, self.uuid)
 
     def start_button_animation(self) -> None:
         """

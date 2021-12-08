@@ -38,7 +38,7 @@ from securedrop_client.logic import Controller
 from securedrop_client.resources import load_image
 
 
-class LoginDialog(QDialog):
+class Dialog(QDialog):
     """
     A dialog to display the login form.
     """

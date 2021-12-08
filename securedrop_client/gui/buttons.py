@@ -33,7 +33,7 @@ from PyQt5.QtWidgets import QPushButton, QWidget
 from securedrop_client.resources import load_css
 
 
-class SDPushButton(QPushButton):
+class PushButton(QPushButton):
     """A QPushButton that follows SecureDrop guidelines."""
 
     Alignment = NewType("Alignment", str)

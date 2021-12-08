@@ -17,7 +17,8 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 # Expose GUI elements without exposing the package structure
-from securedrop_client.gui.buttons import SDPushButton  # noqa: F401
+from securedrop_client.gui.buttons import PushButton  # noqa: F401
+from securedrop_client.gui.dialogs import ModalDialog  # noqa: F401
 from securedrop_client.gui.misc import (  # noqa: F401
     SecureQLabel,
     SvgLabel,
