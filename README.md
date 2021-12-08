@@ -5,25 +5,13 @@
 
 # securedrop-client
 
-The SecureDrop Client is a desktop application for journalists to communicate with sources and work with SecureDrop submissions on the [SecureDrop Workstation](https://github.com/freedomofpress/securedrop-workstation).
+The SecureDrop Client is a desktop application for journalists to communicate with sources and work with submissions on the [SecureDrop Workstation](https://github.com/freedomofpress/securedrop-workstation).
 
 The client runs within a [Qubes OS](https://www.qubes-os.org/intro/) VM that has no direct network access and opens files within individual, non-networked, disposable VMs. API requests and responses to and from the [SecureDrop application server](https://docs.securedrop.org/en/stable/glossary.html#application-server) are sent through an intermediate VM using the [SecureDrop Proxy](https://github.com/freedomofpress/securedrop-proxy).
 
-To learn more about architecture and our rationale behind our Qubes OS approach for source communication and handling submissions, see the [SecureDrop Workstation readme](https://github.com/freedomofpress/securedrop-workstation/blob/main/README.md).
+To learn more about architecture and our rationale behind our Qubes OS approach, see the [SecureDrop Workstation readme](https://github.com/freedomofpress/securedrop-workstation/blob/main/README.md).
 
 **IMPORTANT:** This project is currently undergoing a pilot study and should not be used in production environments.
-
-# Current limitations
-
-This client is under active development and currently supports a minimal feature set. Major supported features include:
-
-- the download and decryption of files, messages, and replies (using [Qubes split-gpg](https://www.qubes-os.org/doc/split-gpg/))
-- the display of decrypted messages and replies in a new conversation view
-- the opening of all files in individual, non-networked, Qubes disposable VMs
-- replying to sources
-- deleting sources
-- exporting files to LUKS-encrypted USB drives
-- printing to supported printers
 
 ## Getting Started
 
