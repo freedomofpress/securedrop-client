@@ -5077,8 +5077,7 @@ def test_DeleteSourceAction_trigger(mocker):
     dialog = mocker.MagicMock()
     dialog_constructor.return_value = dialog
 
-    mocker.patch("securedrop_client.gui.actions.DeleteSourceDialog", dialog_constructor)
-    action = DeleteSourceAction(source, None, controller)
+    action = DeleteSourceAction(source, None, controller, dialog_constructor)
     action.trigger()
     dialog_constructor.assert_called_once_with(source, controller)
     dialog.exec.assert_called_once()
@@ -5091,8 +5090,7 @@ def test_DeleteConversationAction_trigger(mocker):
     dialog = mocker.MagicMock()
     dialog_constructor.return_value = dialog
 
-    mocker.patch("securedrop_client.gui.actions.DeleteConversationDialog", dialog_constructor)
-    action = DeleteConversationAction(source, None, controller)
+    action = DeleteConversationAction(source, None, controller, dialog_constructor)
     action.trigger()
     dialog_constructor.assert_called_once_with(source, controller)
     dialog.exec.assert_called_once()
@@ -5106,8 +5104,7 @@ def test_DeleteConversationAction_trigger_when_user_is_loggedout(mocker):
     dialog = mocker.MagicMock()
     dialog_constructor.return_value = dialog
 
-    mocker.patch("securedrop_client.gui.actions.DeleteConversationDialog", dialog_constructor)
-    action = DeleteConversationAction(source, None, controller)
+    action = DeleteConversationAction(source, None, controller, dialog_constructor)
     action.trigger()
     dialog.exec.assert_not_called()
 
@@ -5120,7 +5117,7 @@ def test_DeleteSource_from_source_menu_when_user_is_loggedout(mocker):
     dialog = mocker.MagicMock()
     dialog_constructor.return_value = dialog
 
-    mocker.patch("securedrop_client.gui.actions.DeleteSourceDialog", dialog_constructor)
+    mocker.patch("securedrop_client.gui.conversation.menu.DeleteSourceDialog", dialog_constructor)
     source_menu = ConversationMenu(source, controller)
     source_menu.actions()[2].trigger()
     dialog.exec.assert_not_called()

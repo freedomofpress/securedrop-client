@@ -23,6 +23,8 @@ from PyQt5.QtWidgets import QMenu
 
 from securedrop_client.db import Source
 from securedrop_client.gui.actions import DeleteConversationAction, DeleteSourceAction
+from securedrop_client.gui.conversation import DeleteDialog
+from securedrop_client.gui.source import DeleteDialog as DeleteSourceDialog
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_css
 
@@ -52,5 +54,5 @@ class Menu(QMenu):
         delete_section = self.addSection(_("DELETE"))
         delete_section.setFont(separator_font)
 
-        self.addAction(DeleteConversationAction(self.source, self, self.controller))
-        self.addAction(DeleteSourceAction(self.source, self, self.controller))
+        self.addAction(DeleteConversationAction(self.source, self, self.controller, DeleteDialog))
+        self.addAction(DeleteSourceAction(self.source, self, self.controller, DeleteSourceDialog))
