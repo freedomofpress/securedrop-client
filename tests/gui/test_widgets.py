@@ -5061,12 +5061,6 @@ def test_DeleteSourceDialog_make_body_text(mocker, source, session):
     assert message == expected_message
 
 
-def test_DeleteSourceAction_init(mocker):
-    mock_controller = mocker.MagicMock()
-    mock_source = mocker.MagicMock()
-    DeleteSourceAction(mock_source, None, mock_controller)
-
-
 def test_PasswordEdit(mocker):
     passwordline = PasswordEdit(None)
     passwordline.togglepasswordAction.trigger()
@@ -5077,61 +5071,59 @@ def test_PasswordEdit(mocker):
 
 
 def test_DeleteSourceAction_trigger(mocker):
-    mock_controller = mocker.MagicMock()
-    mock_source = mocker.MagicMock()
-    mock_delete_source_dialog_instance = mocker.MagicMock(DeleteSourceDialog)
-    mock_delete_source_dialog = mocker.MagicMock()
-    mock_delete_source_dialog.return_value = mock_delete_source_dialog_instance
+    controller = mocker.MagicMock()
+    source = mocker.MagicMock()
+    dialog_constructor = mocker.MagicMock(DeleteSourceDialog)
+    dialog = mocker.MagicMock()
+    dialog_constructor.return_value = dialog
 
-    mocker.patch("securedrop_client.gui.actions.DeleteSourceDialog", mock_delete_source_dialog)
-    delete_source_action = DeleteSourceAction(mock_source, None, mock_controller)
-    delete_source_action.trigger()
-    mock_delete_source_dialog_instance.exec.assert_called_once()
+    mocker.patch("securedrop_client.gui.actions.DeleteSourceDialog", dialog_constructor)
+    action = DeleteSourceAction(source, None, controller)
+    action.trigger()
+    dialog_constructor.assert_called_once_with(source, controller)
+    dialog.exec.assert_called_once()
 
 
 def test_DeleteConversationAction_trigger(mocker):
-    mock_controller = mocker.MagicMock()
-    mock_source = mocker.MagicMock()
-    mock_delete_conversation_dialog_instance = mocker.MagicMock(DeleteSourceDialog)
-    mock_delete_conversation_dialog = mocker.MagicMock()
-    mock_delete_conversation_dialog.return_value = mock_delete_conversation_dialog_instance
+    controller = mocker.MagicMock()
+    source = mocker.MagicMock()
+    dialog_constructor = mocker.MagicMock(DeleteConversationDialog)
+    dialog = mocker.MagicMock()
+    dialog_constructor.return_value = dialog
 
-    mocker.patch(
-        "securedrop_client.gui.actions.DeleteConversationDialog", mock_delete_conversation_dialog
-    )
-    delete_conversation_action = DeleteConversationAction(mock_source, None, mock_controller)
-    delete_conversation_action.trigger()
-    mock_delete_conversation_dialog_instance.exec.assert_called_once()
+    mocker.patch("securedrop_client.gui.actions.DeleteConversationDialog", dialog_constructor)
+    action = DeleteConversationAction(source, None, controller)
+    action.trigger()
+    dialog_constructor.assert_called_once_with(source, controller)
+    dialog.exec.assert_called_once()
 
 
 def test_DeleteConversationAction_trigger_when_user_is_loggedout(mocker):
-    mock_controller = mocker.MagicMock()
-    mock_controller.api = None
-    mock_source = mocker.MagicMock()
-    mock_delete_conversation_dialog_instance = mocker.MagicMock(DeleteSourceDialog)
-    mock_delete_conversation_dialog = mocker.MagicMock()
-    mock_delete_conversation_dialog.return_value = mock_delete_conversation_dialog_instance
+    controller = mocker.MagicMock()
+    controller.api = None
+    source = mocker.MagicMock()
+    dialog_constructor = mocker.MagicMock(DeleteConversationDialog)
+    dialog = mocker.MagicMock()
+    dialog_constructor.return_value = dialog
 
-    mocker.patch(
-        "securedrop_client.gui.actions.DeleteConversationDialog", mock_delete_conversation_dialog
-    )
-    delete_conversation_action = DeleteConversationAction(mock_source, None, mock_controller)
-    delete_conversation_action.trigger()
-    mock_delete_conversation_dialog_instance.exec.assert_not_called()
+    mocker.patch("securedrop_client.gui.actions.DeleteConversationDialog", dialog_constructor)
+    action = DeleteConversationAction(source, None, controller)
+    action.trigger()
+    dialog.exec.assert_not_called()
 
 
 def test_DeleteSource_from_source_menu_when_user_is_loggedout(mocker):
-    mock_controller = mocker.MagicMock()
-    mock_controller.api = None
-    mock_source = mocker.MagicMock()
-    mock_delete_source_dialog_instance = mocker.MagicMock(DeleteSourceDialog)
-    mock_delete_source_dialog = mocker.MagicMock()
-    mock_delete_source_dialog.return_value = mock_delete_source_dialog_instance
+    controller = mocker.MagicMock()
+    controller.api = None
+    source = mocker.MagicMock()
+    dialog_constructor = mocker.MagicMock(DeleteSourceDialog)
+    dialog = mocker.MagicMock()
+    dialog_constructor.return_value = dialog
 
-    mocker.patch("securedrop_client.gui.actions.DeleteSourceDialog", mock_delete_source_dialog)
-    source_menu = ConversationMenu(mock_source, mock_controller)
+    mocker.patch("securedrop_client.gui.actions.DeleteSourceDialog", dialog_constructor)
+    source_menu = ConversationMenu(source, controller)
     source_menu.actions()[2].trigger()
-    mock_delete_source_dialog_instance.exec.assert_not_called()
+    dialog.exec.assert_not_called()
 
 
 def test_ReplyBoxWidget_init(mocker):
