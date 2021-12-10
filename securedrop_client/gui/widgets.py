@@ -1980,6 +1980,7 @@ class SpeechBubble(QWidget):
 
     MESSAGE_CSS = load_css("speech_bubble_message.css")
     STATUS_BAR_CSS = load_css("speech_bubble_status_bar.css")
+    SEEN_BY_CHECKER = load_css("speech_bubble_message.css")
 
     WIDTH_TO_CONTAINER_WIDTH_RATIO = 5 / 9
     MIN_WIDTH = 400
@@ -2046,6 +2047,19 @@ class SpeechBubble(QWidget):
 
         # Add widget to layout
         layout.addWidget(bubble_area)
+
+        # Seen By Checker
+        #self.seen_by = QWidget()
+        #self.seen_by.setObjectName("Seen_by_checker")
+        seen_by_icon = SvgLabel("checkkycheck.svg", svg_size=QSize(16, 9))
+        seen_by_icon.setObjectName("Seen_by_checker")
+        seen_by_icon.setStyleSheet(self.SEEN_BY_CHECKER)
+        seen_by_icon.setFixedHeight(0)
+        #add something similar to _update_styles for positioning
+        #layout horizontal?
+
+        # Add widget to layout
+        layout.addWidget(seen_by_icon)
 
         # Make text selectable but disable the context menu
         self.message.setTextInteractionFlags(Qt.TextSelectableByMouse)
@@ -2134,7 +2148,6 @@ class MessageWidget(SpeechBubble):
             container_width,
             failed_to_decrypt,
         )
-
 
 class ReplyWidget(SpeechBubble):
     """

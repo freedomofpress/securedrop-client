@@ -65,3 +65,7 @@
     border-top: 1px solid rgba(211, 216, 234, 0.55);
     border-left: 1px solid rgba(211, 216, 234, 0.55);
 }
+
+#Seen_by_checker {
+    padding-left: 380px;
+}
