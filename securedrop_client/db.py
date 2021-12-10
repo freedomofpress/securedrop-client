@@ -2,7 +2,7 @@ import datetime
 import os
 from enum import Enum
 from pathlib import Path
-from typing import Any, List, Union  # noqa: F401
+from typing import Any, Dict, List, Union  # noqa: F401
 from uuid import uuid4
 
 from sqlalchemy import (
@@ -257,6 +257,19 @@ class Message(Base):
 
         return False
 
+    @property
+    def seen_by_list(self) -> Dict[str, "User"]:
+        """
+        For each message retrieve a dictionary of users who have seen it.
+        Each dictionary item consists of the user's username as its key and the user
+        object as its value.
+        """
+        usernames = {}  # type: Dict[str, 'User']
+        for seen_message in self.seen_messages:
+            if seen_message.journalist:
+                usernames[seen_message.journalist.username] = seen_message.journalist
+        return usernames
+
 
 class File(Base):
 
@@ -461,6 +474,19 @@ class Reply(Base):
 
         return False
 
+    @property
+    def seen_by_list(self) -> Dict[str, "User"]:
+        """
+        For each reply retrieve a dictionary of users who have seen it.
+        Each dictionary item consists of the user's username as its key and the user
+        object as its value.
+        """
+        usernames = {}  # type: Dict[str, 'User']
+        for seen_reply in self.seen_replies:
+            if seen_reply.journalist:
+                usernames[seen_reply.journalist.username] = seen_reply.journalist
+        return usernames
+
 
 class DownloadErrorCodes(Enum):
     """
@@ -558,6 +584,13 @@ class DraftReply(Base):
             self.send_status is not None
             and self.send_status.name == ReplySendStatusCodes.PENDING.value
         )
+
+    def seen_by_list(self) -> Dict[str, "User"]:
+        """
+        A draft reply is considered seen by everyone (we don't track who sees draft replies).
+        Return an empty dictionary.
+        """
+        return {}
 
 
 class ReplySendStatus(Base):
