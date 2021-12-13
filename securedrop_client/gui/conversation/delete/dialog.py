@@ -19,11 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from gettext import gettext as _
 from gettext import ngettext
 
-from PyQt5.QtCore import pyqtSlot
-
 from securedrop_client.db import File, Message, Reply, Source
 from securedrop_client.gui.dialogs import ModalDialog
-from securedrop_client.logic import Controller
 
 
 class Dialog(ModalDialog):
@@ -31,16 +28,13 @@ class Dialog(ModalDialog):
     Shown to confirm deletion of all content in a source conversation.
     """
 
-    def __init__(self, source: Source, controller: Controller) -> None:
+    def __init__(self, source: Source) -> None:
         super().__init__(show_header=False, dangerous=False)
 
         self.source = source
-        self.controller = controller
 
         self.body.setText(self.make_body_text())
-
         self.continue_button.setText(_("YES, DELETE FILES AND MESSAGES"))
-        self.continue_button.clicked.connect(self.delete_conversation)
         self.continue_button.setFocus()
 
         self.adjustSize()
@@ -96,8 +90,3 @@ class Dialog(ModalDialog):
         # Refresh counters
         self.body.setText(self.make_body_text())
         super().exec()
-
-    @pyqtSlot()
-    def delete_conversation(self) -> None:
-        self.controller.delete_conversation(self.source)
-        self.close()

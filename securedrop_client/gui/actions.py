@@ -41,7 +41,10 @@ class DeleteSourceAction(QAction):
 
         super().__init__(self.text, parent)
 
-        self._confirmation_dialog = confirmation_dialog(self.source, self.controller)
+        self._confirmation_dialog = confirmation_dialog(self.source)
+        self._confirmation_dialog.accepted.connect(
+            lambda: self.controller.delete_source(self.source)
+        )
         self.triggered.connect(self.trigger)
 
     def trigger(self) -> None:
@@ -67,11 +70,14 @@ class DeleteConversationAction(QAction):
 
         super().__init__(self.text, parent)
 
-        self.confirmation_dialog = confirmation_dialog(self.source, self.controller)
+        self._confirmation_dialog = confirmation_dialog(self.source)
+        self._confirmation_dialog.accepted.connect(
+            lambda: self.controller.delete_conversation(self.source)
+        )
         self.triggered.connect(self.trigger)
 
     def trigger(self) -> None:
         if self.controller.api is None:
             self.controller.on_action_requiring_login()
         else:
-            self.confirmation_dialog.exec()
+            self._confirmation_dialog.exec()
