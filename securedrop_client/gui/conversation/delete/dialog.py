@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gettext import gettext as _
 from gettext import ngettext
+from PyQt5.QtGui import QShowEvent
 
 from securedrop_client.db import File, Message, Reply, Source
 from securedrop_client.gui.dialogs import ModalDialog
@@ -86,7 +87,7 @@ class Dialog(ModalDialog):
             source=source,
         )
 
-    def exec(self) -> None:
-        # Refresh counters
+    def showEvent(self, event: QShowEvent) -> None:
+        """Ensure the counters are updated before the dialog becomes visible."""
         self.body.setText(self.make_body_text())
-        super().exec()
+        return super().showEvent(event)
