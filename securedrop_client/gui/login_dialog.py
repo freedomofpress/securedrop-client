@@ -35,8 +35,9 @@ from PyQt5.QtWidgets import (
 )
 
 from securedrop_client import __version__ as sd_version
+from securedrop_client.gui.auth import SignInButton
 from securedrop_client.gui.base import PasswordEdit
-from securedrop_client.gui.widgets import LoginErrorBar, LoginOfflineLink, SignInButton
+from securedrop_client.gui.widgets import LoginErrorBar, LoginOfflineLink
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_image
 
