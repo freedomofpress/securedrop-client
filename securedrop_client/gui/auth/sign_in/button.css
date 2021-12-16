@@ -1,0 +1,16 @@
+QWidget {
+    font-family: 'Source Sans Pro';
+}
+
+#SignInButton {
+    border: none;
+    background-color: #05edfe;
+    font-family: 'Montserrat';
+    font-weight: 600;
+    font-size: 14px;
+    color: #2a319d;
+}
+
+#SignInButton:pressed {
+    background-color: #85f6fe;
+}
