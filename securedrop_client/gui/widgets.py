@@ -1637,58 +1637,6 @@ class LoginOfflineLink(SDPushButton):
         self.setAlignment(SDPushButton.AlignLeft)
 
 
-class LoginErrorBar(QWidget):
-    """
-    A bar widget for displaying messages about login errors to the user.
-    """
-
-    def __init__(self) -> None:
-        super().__init__()
-
-        self.setObjectName("LoginErrorBar")
-
-        # Set layout
-        layout = QHBoxLayout(self)
-        self.setLayout(layout)
-
-        # Remove margins and spacing
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-
-        # Set size policy
-        retain_space = self.sizePolicy()
-        retain_space.setRetainSizeWhenHidden(True)
-        self.setSizePolicy(retain_space)
-
-        # Error icon
-        self.error_icon = SvgLabel("error_icon_white.svg", svg_size=QSize(18, 18))
-        self.error_icon.setObjectName("LoginErrorBar_icon")
-        self.error_icon.setFixedWidth(42)
-
-        # Error status bar
-        self.error_status_bar = SecureQLabel(wordwrap=False)
-        self.error_status_bar.setObjectName("LoginErrorBar_status_bar")
-        self.setFixedHeight(42)
-
-        # Create space ths size of the error icon to keep the error message centered
-        spacer1 = QWidget()
-        spacer2 = QWidget()
-
-        # Add widgets to layout
-        layout.addWidget(spacer1)
-        layout.addWidget(self.error_icon)
-        layout.addWidget(self.error_status_bar)
-        layout.addWidget(spacer2)
-
-    def set_message(self, message: str) -> None:
-        self.show()
-        self.error_status_bar.setText(message)
-
-    def clear_message(self) -> None:
-        self.error_status_bar.setText("")
-        self.hide()
-
-
 class SenderIcon(QWidget):
     """
     Represents a reply to a source.

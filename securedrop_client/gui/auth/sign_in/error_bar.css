@@ -1,0 +1,18 @@
+QWidget {
+    font-family: 'Source Sans Pro';
+}
+
+#LoginErrorBar QWidget {
+    background-color: #ce0083;
+}
+
+#LoginErrorBar_icon {
+    color: #fff;
+}
+
+#LoginErrorBar_status_bar {
+    font-family: 'Montserrat';
+    font-weight: 500;
+    font-size: 12px;
+    color: #fff;
+}
