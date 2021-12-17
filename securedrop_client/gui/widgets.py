@@ -2030,7 +2030,6 @@ class SpeechBubble(QWidget):
         # Checker mark
         self.checker = CheckerMark()
         self.checker.setContentsMargins(0, 0, self.CHECKER_RIGHT_MARGIN, 0)
-        self.checker.hide()
 
         # Speech bubble
         self.speech_bubble = QWidget()
@@ -2042,17 +2041,16 @@ class SpeechBubble(QWidget):
         speech_bubble_layout.setSpacing(0)
 
         # Bubble area includes speech bubble plus error message if there is an error
-        bubble_area = QWidget()
-        bubble_area.setLayoutDirection(Qt.RightToLeft)
+        self.bubble_area = QWidget()
+        self.bubble_area.setLayoutDirection(Qt.RightToLeft)
         self.bubble_area_layout = QHBoxLayout()
         self.bubble_area_layout.setContentsMargins(0, self.TOP_MARGIN, 0, self.BOTTOM_MARGIN)
-        bubble_area.setLayout(self.bubble_area_layout)
+        self.bubble_area.setLayout(self.bubble_area_layout)
         self.bubble_area_layout.addWidget(self.sender_icon, alignment=Qt.AlignBottom)
         self.bubble_area_layout.addWidget(self.speech_bubble)
-        self.bubble_area_layout.addWidget(self.checker, alignment=Qt.AlignBottom)
 
         # Add widget to layout
-        layout.addWidget(bubble_area)
+        layout.addWidget(self.bubble_area)
 
         # Make text selectable but disable the context menu
         self.message.setTextInteractionFlags(Qt.TextSelectableByMouse)
@@ -2125,7 +2123,6 @@ class CheckerMark(QWidget):
     def __init__(self) -> None:
         super().__init__()
         self.setObjectName("SeenChecker")
-        #self.setStyleSheet(self.CHECKER_CSS)
         layout = QHBoxLayout()
         checker_icon = SvgLabel("checkkycheck.svg", svg_size=QSize(16, 9))
         checker_icon.setFixedWidth(16)
@@ -2135,10 +2132,13 @@ class CheckerMark(QWidget):
         layout.setSpacing(0)
         self.setLayout(layout)
 
+
 class MessageWidget(SpeechBubble):
     """
     Represents an incoming message from the source.
     """
+
+    CHECKER_LEFT_MARGIN = 13
 
     def __init__(  # type: ignore [no-untyped-def]
         self,
@@ -2159,7 +2159,12 @@ class MessageWidget(SpeechBubble):
             container_width,
             failed_to_decrypt,
         )
-        self.setLayoutDirection(Qt.LeftToRight)
+
+        self.bubble_area.setLayoutDirection(Qt.LeftToRight)
+        self.checker.setContentsMargins(self.CHECKER_LEFT_MARGIN, 0, 0, 0)
+        self.bubble_area_layout.addWidget(self.checker, alignment=Qt.AlignBottom)
+        self.checker.show()
+
 
 class ReplyWidget(SpeechBubble):
     """
@@ -2219,8 +2224,10 @@ class ReplyWidget(SpeechBubble):
         self.error.setSizePolicy(retain_space)
         self.error.hide()
 
+        self.bubble_area_layout.addWidget(self.checker, alignment=Qt.AlignBottom)
         self.bubble_area_layout.addWidget(self.error, alignment=Qt.AlignBottom)
         self.sender_icon.show()
+
         self.checker.show()
 
         message_succeeded_signal.connect(self._on_reply_success)
@@ -2360,11 +2367,11 @@ class FileWidget(QWidget):
     FILE_OPTIONS_FONT_SPACING = 1.6
     FILENAME_WIDTH_PX = 360
     FILE_OPTIONS_LAYOUT_SPACING = 8
-    CHECKER_RIGHT_MARGIN = 13
+    CHECKER_LEFT_MARGIN = 20
 
     WIDTH_TO_CONTAINER_WIDTH_RATIO = 5 / 9
     MIN_CONTAINER_WIDTH = 750
-    MIN_WIDTH = 430
+    MIN_WIDTH = 435
 
     def __init__(
         self,
@@ -2460,7 +2467,7 @@ class FileWidget(QWidget):
 
         # Checker Mark
         self.checker = CheckerMark()
-        self.checker.setContentsMargins(self.CHECKER_RIGHT_MARGIN, 0, 0, 0)
+        self.checker.setContentsMargins(self.CHECKER_LEFT_MARGIN, 0, 0, 0)
         self.checker.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         # File size
