@@ -1980,7 +1980,6 @@ class SpeechBubble(QWidget):
 
     MESSAGE_CSS = load_css("speech_bubble_message.css")
     STATUS_BAR_CSS = load_css("speech_bubble_status_bar.css")
-    SEEN_BY_CHECKER = load_css("speech_bubble_message.css")
 
     WIDTH_TO_CONTAINER_WIDTH_RATIO = 5 / 9
     MIN_WIDTH = 400
@@ -1988,6 +1987,7 @@ class SpeechBubble(QWidget):
 
     TOP_MARGIN = 28
     BOTTOM_MARGIN = 0
+    CHECKER_RIGHT_MARGIN = 13
 
     def __init__(  # type: ignore [no-untyped-def]
         self,
@@ -2027,6 +2027,11 @@ class SpeechBubble(QWidget):
         self.sender_icon = SenderIcon()
         self.sender_icon.hide()
 
+        # Checker mark
+        self.checker = CheckerMark()
+        self.checker.setContentsMargins(0, 0, self.CHECKER_RIGHT_MARGIN, 0)
+        self.checker.hide()
+
         # Speech bubble
         self.speech_bubble = QWidget()
         speech_bubble_layout = QVBoxLayout()
@@ -2044,22 +2049,10 @@ class SpeechBubble(QWidget):
         bubble_area.setLayout(self.bubble_area_layout)
         self.bubble_area_layout.addWidget(self.sender_icon, alignment=Qt.AlignBottom)
         self.bubble_area_layout.addWidget(self.speech_bubble)
+        self.bubble_area_layout.addWidget(self.checker, alignment=Qt.AlignBottom)
 
         # Add widget to layout
         layout.addWidget(bubble_area)
-
-        # Seen By Checker
-        #self.seen_by = QWidget()
-        #self.seen_by.setObjectName("Seen_by_checker")
-        seen_by_icon = SvgLabel("checkkycheck.svg", svg_size=QSize(16, 9))
-        seen_by_icon.setObjectName("Seen_by_checker")
-        seen_by_icon.setStyleSheet(self.SEEN_BY_CHECKER)
-        seen_by_icon.setFixedHeight(0)
-        #add something similar to _update_styles for positioning
-        #layout horizontal?
-
-        # Add widget to layout
-        layout.addWidget(seen_by_icon)
 
         # Make text selectable but disable the context menu
         self.message.setTextInteractionFlags(Qt.TextSelectableByMouse)
@@ -2124,6 +2117,24 @@ class SpeechBubble(QWidget):
         self.sender_icon.set_failed_to_decrypt_styles()
 
 
+class CheckerMark(QWidget):
+    """
+    Represents the seen feature for each bubble.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.setObjectName("SeenChecker")
+        #self.setStyleSheet(self.CHECKER_CSS)
+        layout = QHBoxLayout()
+        checker_icon = SvgLabel("checkkycheck.svg", svg_size=QSize(16, 9))
+        checker_icon.setFixedWidth(16)
+        checker_icon.setFixedHeight(9)
+        layout.addWidget(checker_icon)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        self.setLayout(layout)
+
 class MessageWidget(SpeechBubble):
     """
     Represents an incoming message from the source.
@@ -2148,6 +2159,7 @@ class MessageWidget(SpeechBubble):
             container_width,
             failed_to_decrypt,
         )
+        self.setLayoutDirection(Qt.LeftToRight)
 
 class ReplyWidget(SpeechBubble):
     """
@@ -2209,6 +2221,7 @@ class ReplyWidget(SpeechBubble):
 
         self.bubble_area_layout.addWidget(self.error, alignment=Qt.AlignBottom)
         self.sender_icon.show()
+        self.checker.show()
 
         message_succeeded_signal.connect(self._on_reply_success)
         message_failed_signal.connect(self._on_reply_failure)
@@ -2347,10 +2360,11 @@ class FileWidget(QWidget):
     FILE_OPTIONS_FONT_SPACING = 1.6
     FILENAME_WIDTH_PX = 360
     FILE_OPTIONS_LAYOUT_SPACING = 8
+    CHECKER_RIGHT_MARGIN = 13
 
     WIDTH_TO_CONTAINER_WIDTH_RATIO = 5 / 9
     MIN_CONTAINER_WIDTH = 750
-    MIN_WIDTH = 400
+    MIN_WIDTH = 430
 
     def __init__(
         self,
@@ -2444,6 +2458,11 @@ class FileWidget(QWidget):
         self.spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.spacer.hide()
 
+        # Checker Mark
+        self.checker = CheckerMark()
+        self.checker.setContentsMargins(self.CHECKER_RIGHT_MARGIN, 0, 0, 0)
+        self.checker.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
         # File size
         self.file_size = SecureQLabel(humanize_filesize(self.file.size))
         self.file_size.setObjectName("FileWidget_file_size")
@@ -2459,6 +2478,7 @@ class FileWidget(QWidget):
         layout.addWidget(self.spacer)
         layout.addWidget(self.horizontal_line)
         layout.addWidget(self.file_size)
+        layout.addWidget(self.checker)
 
         # Connect signals to slots
         file_ready_signal.connect(self._on_file_downloaded, type=Qt.QueuedConnection)
