@@ -143,9 +143,6 @@ msgstr ""
 msgid "— All files and messages deleted for this source —"
 msgstr ""
 
-msgid "USE OFFLINE"
-msgstr ""
-
 msgid "Failed to send"
 msgstr ""
 
@@ -311,5 +308,8 @@ msgid "Entire source account"
 msgstr ""
 
 msgid "Files and messages"
+msgstr ""
+
+msgid "USE OFFLINE"
 msgstr ""
 
