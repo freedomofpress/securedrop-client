@@ -27,7 +27,8 @@ def main_window(mocker, homedir):
     # Create a file widget, message widget, and reply widget
     mocker.patch("securedrop_client.gui.widgets.humanize_filesize", return_value="100")
     mocker.patch(
-        "securedrop_client.gui.SecureQLabel.get_elided_text", return_value="1-yellow-doc.gz.gpg"
+        "securedrop_client.gui.base.SecureQLabel.get_elided_text",
+        return_value="1-yellow-doc.gz.gpg",
     )
     source.collection.append(
         [
@@ -66,7 +67,8 @@ def main_window_no_key(mocker, homedir):
     # Create a file widget, message widget, and reply widget
     mocker.patch("securedrop_client.gui.widgets.humanize_filesize", return_value="100")
     mocker.patch(
-        "securedrop_client.gui.SecureQLabel.get_elided_text", return_value="1-yellow-doc.gz.gpg"
+        "securedrop_client.gui.base.SecureQLabel.get_elided_text",
+        return_value="1-yellow-doc.gz.gpg",
     )
     source.collection.append(
         [

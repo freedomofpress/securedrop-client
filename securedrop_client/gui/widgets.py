@@ -76,7 +76,7 @@ from securedrop_client.db import (
     User,
 )
 from securedrop_client.export import ExportError, ExportStatus
-from securedrop_client.gui import (
+from securedrop_client.gui.base import (
     SDPushButton,
     SecureQLabel,
     SvgLabel,

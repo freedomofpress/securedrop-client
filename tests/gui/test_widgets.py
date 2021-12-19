@@ -1645,7 +1645,7 @@ def test_SourceWidget_html_init(mocker):
     sw.name = mocker.MagicMock()
     sw.summary_layout = mocker.MagicMock()
 
-    mocker.patch("securedrop_client.gui.SvgLabel")
+    mocker.patch("securedrop_client.gui.base.SvgLabel")
     sw.update()
 
     sw.name.setText.assert_called_once_with("foo <b>bar</b> baz")
@@ -2446,7 +2446,7 @@ def test_StarToggleButton_on_pressed_offline_when_checked(mocker):
     controller.is_authenticated = False
     source = factory.Source(is_starred=True)
     stb = StarToggleButton(controller, source.uuid, source.is_starred)
-    set_icon_fn = mocker.patch("securedrop_client.gui.SvgToggleButton.set_icon")
+    set_icon_fn = mocker.patch("securedrop_client.gui.base.SvgToggleButton.set_icon")
 
     stb.on_authentication_changed(False)
     assert stb.isCheckable() is False
