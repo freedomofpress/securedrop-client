@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QApplication
 
-from securedrop_client.gui.auth import LoginErrorBar
+from securedrop_client.gui.auth.sign_in import LoginErrorBar
 
 app = QApplication([])
 

@@ -1,0 +1,21 @@
+QWidget {
+    font-family: 'Source Sans Pro';
+}
+
+#LoginDialog_form QLabel {
+    color: #fff;
+    font-family: 'Montserrat';
+    font-weight: 500;
+    font-size: 13px;
+}
+
+#LoginDialog_form QLineEdit {
+    border-radius: 0px;
+    height: 30px;
+    margin: 0px 0px 0px 0px;
+    padding-left: 5px;
+}
+
+#LoginDialog_app_version_label {
+    color: #9fddff;
+}

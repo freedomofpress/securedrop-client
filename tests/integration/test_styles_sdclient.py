@@ -6,7 +6,8 @@ from PyQt5.QtWidgets import QLabel, QLineEdit, QPushButton, QWidget
 
 
 def test_css(main_window):
-    assert "LoginDialog_form" in main_window.styleSheet()
+    login_dialog = main_window.login_dialog
+    assert "LoginDialog_form" in login_dialog.styleSheet()
 
 
 def test_class_name_matches_css_object_name(mocker, main_window):
