@@ -16,12 +16,12 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import datetime
 import functools
 import inspect
 import logging
 import os
 import uuid
+from datetime import datetime
 from gettext import gettext as _
 from typing import Dict, List, Type, Union  # noqa: F401
 
@@ -136,10 +136,21 @@ class Controller(QObject):
     application, this is the controller.
     """
 
-    sync_events = pyqtSignal(str)
+    """
+    This signal indicates when a sync has started.
+
+    Emits:
+        datetime: the time that the sync started
+    """
+    sync_started = pyqtSignal(datetime)
 
     """
-    A signal that emits a signal when the authentication state changes.
+    This signal indicates when a sync has successfully completed.
+    """
+    sync_succeeded = pyqtSignal()
+
+    """
+    This signal indicates when the authentication state changes.
 
     Emits:
         bool: is_authenticated
@@ -278,6 +289,15 @@ class Controller(QObject):
         str: the source UUID
     """
     source_deletion_failed = pyqtSignal(str)
+
+    """
+    This signal indicates that a deletion attempt was successful at the server.
+
+    Emits:
+        str: the source UUID
+        datetime: the timestamp for when the deletion succeeded
+    """
+    conversation_deletion_successful = pyqtSignal(str, datetime)
 
     """
     This signal lets the queue manager know to add the job to the appropriate
@@ -584,7 +604,7 @@ class Controller(QObject):
             return None
 
     def on_sync_started(self) -> None:
-        self.sync_events.emit("syncing")
+        self.sync_started.emit(datetime.utcnow())
 
     def on_sync_success(self) -> None:
         """
@@ -608,7 +628,7 @@ class Controller(QObject):
         self.gui.refresh_current_source_conversation()
         self.download_new_messages()
         self.download_new_replies()
-        self.sync_events.emit("synced")
+        self.sync_succeeded.emit()
 
         if (
             self.authenticated_user
@@ -994,8 +1014,12 @@ class Controller(QObject):
             self.gui.update_error_status(_("The file download failed. Please try again."))
 
     def on_delete_conversation_success(self, uuid: str) -> None:
+        """
+        If the source collection has been successfully scheduled for deletion on the server, emit a
+        signal and sync.
+        """
         logger.info("Conversation %s successfully deleted at server", uuid)
-        self.api_sync.sync()
+        self.conversation_deletion_successful.emit(uuid, datetime.utcnow())
 
     def on_delete_conversation_failure(self, e: Exception) -> None:
         if isinstance(e, DeleteConversationJobException):
@@ -1071,7 +1095,7 @@ class Controller(QObject):
         )
         draft_reply = db.DraftReply(
             uuid=reply_uuid,
-            timestamp=datetime.datetime.utcnow(),
+            timestamp=datetime.utcnow(),
             source_id=source.id,
             journalist_id=self.authenticated_user.id,
             file_counter=source.interaction_count,

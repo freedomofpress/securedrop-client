@@ -1,4 +1,4 @@
-# Translations template for SecureDrop Client.
+# Slovak translations for SecureDrop Client.
 # Copyright (C) 2021 Freedom of the Press Foundation
 # This file is distributed under the same license as the SecureDrop Client project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
@@ -9,23 +9,19 @@ msgstr ""
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
 "PO-Revision-Date: 2021-10-18 15:42+0000\n"
 "Last-Translator: Katarina Kasalova <katka.kasalova@gmail.com>\n"
-"Language-Team: Slovak <https://weblate.securedrop.org/projects/securedrop/"
-"securedrop-client/sk/>\n"
 "Language: sk\n"
+"Language-Team: Slovak <https://weblate.securedrop.org/projects/securedrop/securedrop-client/sk/>\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
-"X-Generator: Weblate 4.6\n"
 "Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
 msgstr "{application_name} je už otvorená"
 
 msgid "The SecureDrop server cannot be reached. Trying to reconnect..."
-msgstr ""
-"Nie je možné pripojiť sa na server SecureDrop. Pokus o opätovné pripojenie "
-"práve prebieha ..."
+msgstr "Nie je možné pripojiť sa na server SecureDrop. Pokus o opätovné pripojenie práve prebieha ..."
 
 msgid ""
 "Could not reach the SecureDrop server. Please check your \n"
@@ -68,8 +64,53 @@ msgstr "Nepodarilo sa vymazať konverzáciu zo servera"
 msgid "Failed to delete source at server"
 msgstr "Nepodarilo sa zmazať zdroj zo servera"
 
+msgid "Username"
+msgstr "Používateľské meno"
+
+msgid "Passphrase"
+msgstr "Prístupová fráza"
+
+msgid "Two-Factor Code"
+msgstr "Dvojfaktorový kód"
+
+msgid "SecureDrop Client v{}"
+msgstr "SecureDrop Klient v{}"
+
+msgid "SIGN IN"
+msgstr "PRIHLÁSIŤ SA"
+
+msgid ""
+"That username won't work.\n"
+"It should be at least 3 characters long."
+msgstr ""
+"Prihlasovacie meno nebude fungovať\n"
+"Malo by byť aspoň 3 znaky dlhé."
+
+msgid ""
+"That passphrase won't work.\n"
+"It should be between 14 and 128 characters long."
+msgstr ""
+"Táto prístupová fráza nebude fungovať.\n"
+"Mala by mať 14 až 128 znakov."
+
+msgid ""
+"That two-factor code won't work.\n"
+"It should only contain numerals."
+msgstr ""
+"Tento dvojfaktorový kód nebude fungovať.\n"
+"Mal by obsahovať iba čísla."
+
+msgid "SIGNING IN"
+msgstr "PRIHLÁSENIE"
+
+msgid "Please enter a username, passphrase and two-factor code."
+msgstr "Prosíme zadajte prihlasovacie meno, prihlasovaciu frázu a dvojfaktorový kód."
+
 msgid "SecureDrop Client {}"
 msgstr "SecureDrop Klient {}"
+
+msgid "Quit"
+msgstr ""
 
 msgid "Last Refresh: {}"
 msgstr "Posledné načítanie: {}"
@@ -83,15 +124,11 @@ msgstr "{}"
 msgid "SIGN OUT"
 msgstr "ODHLÁSIŤ SA"
 
-msgid "SIGN IN"
-msgstr "PRIHLÁSIŤ SA"
-
 msgid "Nothing to see just yet!"
 msgstr "Zatiaľ tu nič nie je!"
 
 msgid "Source submissions will be listed to the left, once downloaded and decrypted."
-msgstr ""
-"Nahraté zdroje budú uvedené naľavo po tom, ako budú stiahnuté a dešifrované."
+msgstr "Nahraté zdroje budú uvedené naľavo po tom, ako budú stiahnuté a dešifrované."
 
 msgid "This is where you will read messages, reply to sources, and work with files."
 msgstr "Tu budete čítať správy, odpovedať zdrojom, a pracovať so súbormi."
@@ -119,46 +156,6 @@ msgstr "— Všetky súbory a správy pre tento zdroj boli zmazané —"
 
 msgid "USE OFFLINE"
 msgstr "POUŽIŤ OFFLINE"
-
-msgid "Username"
-msgstr "Používateľské meno"
-
-msgid "Passphrase"
-msgstr "Prístupová fráza"
-
-msgid "Two-Factor Code"
-msgstr "Dvojfaktorový kód"
-
-msgid "SecureDrop Client v{}"
-msgstr "SecureDrop Klient v{}"
-
-msgid ""
-"That username won't work.\n"
-"It should be at least 3 characters long."
-msgstr ""
-"Prihlasovacie meno nebude fungovať\n"
-"Malo by byť aspoň 3 znaky dlhé."
-
-msgid ""
-"That passphrase won't work.\n"
-"It should be between 14 and 128 characters long."
-msgstr ""
-"Táto prístupová fráza nebude fungovať.\n"
-"Mala by mať 14 až 128 znakov."
-
-msgid ""
-"That two-factor code won't work.\n"
-"It should only contain numerals."
-msgstr ""
-"Tento dvojfaktorový kód nebude fungovať.\n"
-"Mal by obsahovať iba čísla."
-
-msgid "SIGNING IN"
-msgstr "PRIHLÁSENIE"
-
-msgid "Please enter a username, passphrase and two-factor code."
-msgstr ""
-"Prosíme zadajte prihlasovacie meno, prihlasovaciu frázu a dvojfaktorový kód."
 
 msgid "Failed to send"
 msgstr "Zaslanie sa nepodarilo"
@@ -200,15 +197,7 @@ msgid "Printing failed"
 msgstr "Tlač sa nepodarila"
 
 msgid "<h2>Managing printout risks</h2><b>QR codes and web addresses</b><br />Never type in and open web addresses or scan QR codes contained in printed documents without taking security precautions. If you are unsure how to manage this risk, please contact your administrator.<br /><br /><b>Printer dots</b><br />Any part of a printed page may contain identifying information invisible to the naked eye, such as printer dots. Please carefully consider this risk when working with or publishing scanned printouts."
-msgstr ""
-"<h2> Správa rizík tlače </h2> <b> QR kódy a webové adresy </b> <br /> Nikdy "
-"nezadávajte a neotvárajte webové adresy ani neskenujte QR kódy obsiahnuté v "
-"tlačených dokumentoch bez vykonania bezpečnostných opatrení. Ak si nie ste "
-"istí, ako zvládnuť toto riziko, prosíme kontaktujte svojho správcu. <br /> "
-"<br /> <b> Body tlačiarne </b> <br /> Akákoľvek časť vytlačenej strany môže "
-"obsahovať identifikačné informácie neviditeľné voľným okom, napríklad bodky "
-"tlačiarne. Pri práci so skenovanými výtlačkami alebo pri ich publikovaní "
-"toto riziko starostlivo zvážte."
+msgstr "<h2> Správa rizík tlače </h2> <b> QR kódy a webové adresy </b> <br /> Nikdy nezadávajte a neotvárajte webové adresy ani neskenujte QR kódy obsiahnuté v tlačených dokumentoch bez vykonania bezpečnostných opatrení. Ak si nie ste istí, ako zvládnuť toto riziko, prosíme kontaktujte svojho správcu. <br /> <br /> <b> Body tlačiarne </b> <br /> Akákoľvek časť vytlačenej strany môže obsahovať identifikačné informácie neviditeľné voľným okom, napríklad bodky tlačiarne. Pri práci so skenovanými výtlačkami alebo pri ich publikovaní toto riziko starostlivo zvážte."
 
 msgid "Please connect your printer to a USB port."
 msgstr "Prosíme pripojte vašu tlačiareň do USB portu."
@@ -238,23 +227,13 @@ msgid "Export failed"
 msgstr "Export zlyhal"
 
 msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
-msgstr ""
-"<h2>Pochopte riziká pred exportom súborov</h2><b>Malvér</b> <br />Táto "
-"pracovná stanica vám umožňuje bezpečne otvárať súbory. Ak otvoríte súbory na "
-"inom počítači, všetok zabudovaný škodlivý softvér sa môže rozšíriť do vášho "
-"počítača alebo siete. Ak si nie ste istí, ako zvládnuť toto riziko, vytlačte "
-"si tento súbor alebo sa obráťte na svojho správcu.<br /><br /><b>Anonymita</"
-"b><br />Súbory odoslané zdrojmi môžu obsahovať informácie alebo skryté "
-"metadáta, ktoré ich identifikujú. V záujme ochrany vašich zdrojov zvážte "
-"pred prácou s týmito súbormi na počítačoch pripojených k sieti."
+msgstr "<h2>Pochopte riziká pred exportom súborov</h2><b>Malvér</b> <br />Táto pracovná stanica vám umožňuje bezpečne otvárať súbory. Ak otvoríte súbory na inom počítači, všetok zabudovaný škodlivý softvér sa môže rozšíriť do vášho počítača alebo siete. Ak si nie ste istí, ako zvládnuť toto riziko, vytlačte si tento súbor alebo sa obráťte na svojho správcu.<br /><br /><b>Anonymita</b><br />Súbory odoslané zdrojmi môžu obsahovať informácie alebo skryté metadáta, ktoré ich identifikujú. V záujme ochrany vašich zdrojov zvážte pred prácou s týmito súbormi na počítačoch pripojených k sieti."
 
 msgid "Exporting: {}"
 msgstr "Exportovanie: {}"
 
 msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
-msgstr ""
-"Prosíme vložte jednu z exportovacích pamätí získanú špeciálne len pre "
-"SecureDrop Workstation."
+msgstr "Prosíme vložte jednu z exportovacích pamätí získanú špeciálne len pre SecureDrop Workstation."
 
 msgid "Either the drive is not encrypted or there is something else wrong with it."
 msgstr "Buď pamäť nie je šifrovaná, alebo má inú chybu."
@@ -293,14 +272,10 @@ msgid "YES, DELETE FILES AND MESSAGES"
 msgstr "ÁNO, ZMAZAŤ SÚBORY A SPRÁVY"
 
 msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
-msgstr ""
-"Chceli by ste zmazať {files_to_delete}, {replies_to_delete}, "
-"{messages_to_delete} z účtu zdroja pre {source}?"
+msgstr "Chceli by ste zmazať {files_to_delete}, {replies_to_delete}, {messages_to_delete} z účtu zdroja pre {source}?"
 
 msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
-msgstr ""
-"Zachovanie účtu zachová jeho metadáta a možnosť {source} znova sa prihlásiť "
-"do vášho SecureDrop."
+msgstr "Zachovanie účtu zachová jeho metadáta a možnosť {source} znova sa prihlásiť do vášho SecureDrop."
 
 msgid "one file"
 msgid_plural "{file_count} files"
@@ -345,11 +320,12 @@ msgstr "Prihlásiť sa"
 msgid " to compose or send a reply"
 msgstr " vytvoriť alebo poslať odpoveď"
 
+msgid "DELETE"
+msgstr "ZMAZAŤ"
+
 msgid "Entire source account"
 msgstr "Celý účet zdroja"
 
 msgid "Files and messages"
 msgstr "Súbory a správy"
 
-msgid "DELETE"
-msgstr "ZMAZAŤ"

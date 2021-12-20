@@ -1,4 +1,4 @@
-# Translations template for SecureDrop Client.
+# Catalan translations for SecureDrop Client.
 # Copyright (C) 2021 Freedom of the Press Foundation
 # This file is distributed under the same license as the SecureDrop Client project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
@@ -9,14 +9,12 @@ msgstr ""
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
 "PO-Revision-Date: 2021-10-18 15:42+0000\n"
 "Last-Translator: Benet (BennyBeat) R. i Camps <bennybeat@gmail.com>\n"
-"Language-Team: Catalan <https://weblate.securedrop.org/projects/securedrop/"
-"securedrop-client/ca/>\n"
 "Language: ca\n"
+"Language-Team: Catalan <https://weblate.securedrop.org/projects/securedrop/securedrop-client/ca/>\n"
+"Plural-Forms: nplurals=2; plural=n != 1\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.6\n"
 "Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
@@ -55,9 +53,7 @@ msgid "Retrieving new messages"
 msgstr "S'estan obtenint els missatges nous"
 
 msgid "File does not exist in the data directory. Please try re-downloading."
-msgstr ""
-"Els fitxers no existeixen en el directori de dades. Proveu de baixar-los de "
-"nou."
+msgstr "Els fitxers no existeixen en el directori de dades. Proveu de baixar-los de nou."
 
 msgid "The file download failed. Please try again."
 msgstr "Ha fallat la baixada del fitxer. Proveu-ho de nou."
@@ -67,61 +63,6 @@ msgstr "Ha fallat la supressió de la conversa al servidor"
 
 msgid "Failed to delete source at server"
 msgstr "Ha fallat la supressió de la font al servidor"
-
-msgid "SecureDrop Client {}"
-msgstr "Client del SecureDrop {}"
-
-msgid "Last Refresh: {}"
-msgstr "Última actualització: {}"
-
-msgid "Last Refresh: never"
-msgstr "Última actualització: mai"
-
-msgid "{}"
-msgstr "{}"
-
-msgid "SIGN OUT"
-msgstr "TANCA LA SESSIÓ"
-
-msgid "SIGN IN"
-msgstr "INICIA LA SESSIÓ"
-
-msgid "Nothing to see just yet!"
-msgstr "Encara no hi ha res per mostrar"
-
-msgid "Source submissions will be listed to the left, once downloaded and decrypted."
-msgstr ""
-"Els enviaments de les fonts es llistaran a l'esquerra, una vegada es baixen "
-"i es desxifren."
-
-msgid "This is where you will read messages, reply to sources, and work with files."
-msgstr ""
-"Aquí és on llegireu els missatges, respostes a les fonts, i on treballareu "
-"amb els fitxers."
-
-msgid "Select a source from the list, to:"
-msgstr "Seleccioneu una font de la llista, per a:"
-
-msgid "Read a conversation"
-msgstr "Llegir una conversa"
-
-msgid "View or retrieve files"
-msgstr "Veure o obtenir fitxers"
-
-msgid "Send a response"
-msgstr "Enviar una resposta"
-
-msgid "Deleting files and messages..."
-msgstr "S'estan suprimint fitxers i missatges..."
-
-msgid "Deleting source account..."
-msgstr "S'està suprimint el compte de la font..."
-
-msgid "— All files and messages deleted for this source —"
-msgstr "— S'han eliminat tots els fitxers i missatges d'aquesta font —"
-
-msgid "USE OFFLINE"
-msgstr "USA-HO FORA DE LÍNIA"
 
 msgid "Username"
 msgstr "Nom d’usuari"
@@ -134,6 +75,9 @@ msgstr "Codi d'autenticació de factor doble"
 
 msgid "SecureDrop Client v{}"
 msgstr "Client del SecureDrop v{}"
+
+msgid "SIGN IN"
+msgstr "INICIA LA SESSIÓ"
 
 msgid ""
 "That username won't work.\n"
@@ -161,6 +105,57 @@ msgstr ""
 
 msgid "Please enter a username, passphrase and two-factor code."
 msgstr "Inseriu un nom d'usuari, contrasenya i codi de factor doble."
+
+msgid "SecureDrop Client {}"
+msgstr "Client del SecureDrop {}"
+
+msgid "Quit"
+msgstr ""
+
+msgid "Last Refresh: {}"
+msgstr "Última actualització: {}"
+
+msgid "Last Refresh: never"
+msgstr "Última actualització: mai"
+
+msgid "{}"
+msgstr "{}"
+
+msgid "SIGN OUT"
+msgstr "TANCA LA SESSIÓ"
+
+msgid "Nothing to see just yet!"
+msgstr "Encara no hi ha res per mostrar"
+
+msgid "Source submissions will be listed to the left, once downloaded and decrypted."
+msgstr "Els enviaments de les fonts es llistaran a l'esquerra, una vegada es baixen i es desxifren."
+
+msgid "This is where you will read messages, reply to sources, and work with files."
+msgstr "Aquí és on llegireu els missatges, respostes a les fonts, i on treballareu amb els fitxers."
+
+msgid "Select a source from the list, to:"
+msgstr "Seleccioneu una font de la llista, per a:"
+
+msgid "Read a conversation"
+msgstr "Llegir una conversa"
+
+msgid "View or retrieve files"
+msgstr "Veure o obtenir fitxers"
+
+msgid "Send a response"
+msgstr "Enviar una resposta"
+
+msgid "Deleting files and messages..."
+msgstr "S'estan suprimint fitxers i missatges..."
+
+msgid "Deleting source account..."
+msgstr "S'està suprimint el compte de la font..."
+
+msgid "— All files and messages deleted for this source —"
+msgstr "— S'han eliminat tots els fitxers i missatges d'aquesta font —"
+
+msgid "USE OFFLINE"
+msgstr "USA-HO FORA DE LÍNIA"
 
 msgid "Failed to send"
 msgstr "Ha fallat en enviar"
@@ -190,9 +185,7 @@ msgid "CONTINUE"
 msgstr "CONTINUA"
 
 msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr ""
-"S'està preparant per imprimir:<br /><span style=\"font-weight:normal\""
-">{}</span>"
+msgstr "S'està preparant per imprimir:<br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "Ready to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr ""
@@ -322,11 +315,12 @@ msgstr ""
 msgid " to compose or send a reply"
 msgstr ""
 
+msgid "DELETE"
+msgstr "SUPRIMEIX"
+
 msgid "Entire source account"
 msgstr ""
 
 msgid "Files and messages"
 msgstr ""
 
-msgid "DELETE"
-msgstr "SUPRIMEIX"

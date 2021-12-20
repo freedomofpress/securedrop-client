@@ -1,0 +1,17 @@
+.button {
+	color: #ffffff;
+	font-family: "Montserrat";
+	font-weight: 500;
+	font-size: 13px;
+	padding: 11px 18px;
+}
+
+.text {
+	border: none;
+	background-color: none;
+	text-decoration: underline;
+}
+
+.left-aligned {
+	margin: 0 0 0 -18px;
+}

@@ -2,7 +2,7 @@
 all: help
 
 .PHONY: venv-debian
-venv-debian: ## Provision a Python 3 virtualenv for development on a prod-like system that has installed dependencies specified in https://github.com/freedomofpress/securedrop-debian-packaging/blob/main/securedrop-client/debian/control
+venv-debian: hooks ## Provision a Python 3 virtualenv for development on a prod-like system that has installed dependencies specified in https://github.com/freedomofpress/securedrop-debian-packaging/blob/main/securedrop-client/debian/control
 	python3 -m venv .venv-debian --system-site-packages
 	.venv-debian/bin/pip install --upgrade pip wheel
 	.venv-debian/bin/pip install --require-hashes -r "requirements/dev-requirements-debian.txt"
@@ -12,10 +12,26 @@ venv-debian: ## Provision a Python 3 virtualenv for development on a prod-like s
 	@echo "Then run: source .venv-debian/bin/activate"
 
 .PHONY: venv
-venv: ## Provision a Python 3 virtualenv for development
+venv: hooks ## Provision a Python 3 virtualenv for development on Linux
 	python3 -m venv .venv
 	.venv/bin/pip install --upgrade pip wheel
 	.venv/bin/pip install --require-hashes -r "requirements/dev-requirements.txt"
+	@echo "#################"
+	@echo "Make sure to run: source .venv/bin/activate"
+
+.PHONY: venv-mac
+venv-mac: hooks ## Provision a Python 3 virtualenv for development on macOS
+	python3 -m venv .venv
+	.venv/bin/pip install --upgrade pip wheel
+	.venv/bin/pip install --require-hashes -r "requirements/dev-mac-requirements.txt"
+	@echo "#################"
+	@echo "Make sure to run: source .venv/bin/activate"
+
+HOOKS_DIR=.githooks
+
+.PHONY: hooks
+hooks:  ## Configure Git to use the hooks provided by this repository.
+	git config core.hooksPath "$(HOOKS_DIR)"
 
 SEMGREP_FLAGS := --exclude "tests/" --error --strict --verbose
 
@@ -42,11 +58,11 @@ check-black: ## Check Python source code formatting with black
 
 .PHONY: isort
 isort: ## Run isort to organize Python imports
-	@isort --skip-glob .venv-debian --recursive ./
+	@isort --skip-glob .venv-debian ./
 
 .PHONY: check-isort
 check-isort: ## Check Python import organization with isort
-	@isort --skip-glob .venv-debian --recursive --check-only --diff ./
+	@isort --skip-glob .venv-debian --check-only --diff ./
 
 .PHONY: mypy
 mypy: ## Run static type checker
@@ -81,7 +97,7 @@ test: ## Run the application tests in parallel (for rapid development)
 
 .PHONY: test-random
 test-random: ## Run the application tests in random order
-	@TEST_CMD="python -m pytest -v --random-order-bucket=global --ignore=$(FTESTS) --ignore=$(ITESTS) $(TESTOPTS) $(TESTS)" ; \
+	@TEST_CMD="python -m pytest -v --junitxml=test-results/junit.xml --random-order-bucket=global --ignore=$(FTESTS) --ignore=$(ITESTS) $(TESTOPTS) $(TESTS)" ; \
 		if command -v xvfb-run > /dev/null; then \
 		xvfb-run -a $$TEST_CMD ; else \
 		$$TEST_CMD ; fi
@@ -177,26 +193,20 @@ version:
 ##############
 
 LOCALE_DIR=securedrop_client/locale
-LOCALES=$(shell find ${LOCALE_DIR} -name "*.po")
 POT=${LOCALE_DIR}/messages.pot
 SUPPORTED_LOCALES_LIST=l10n.txt
 VERSION=$(shell python -c "import securedrop_client; print(securedrop_client.__version__)")
 WEBLATE_API=https://weblate.securedrop.org/api/
 WEBLATE_COMPONENT=securedrop-client
 
-# Update POTs from translated strings in source code and merge into
-# per-locale POs.
-.PHONY: update-translation-catalogs
-update-translation-catalogs:
-	@make --always-make ${POT}
-	@git add --verbose ${POT}
-	@for catalog in $$(find ${LOCALE_DIR} -name "*.po"); do make $${catalog}; git add --verbose $${catalog}; done
-	-git commit --message "l10n: update translation catalogs"
+.PHONY: check-strings
+check-strings: ## Check that the translation catalog is up to date with source code
+	@make extract-strings
+	@git diff --quiet ${LOCALE_DIR} || { echo "Translation catalog is out of date. Please run \"make extract-strings\" and commit the changes."; exit 1; }
 
-# Compile loadable/packageable MOs.
-.PHONY: compile-translation-catalogs
-compile-translation-catalogs: ${LOCALE_DIR}/*/LC_MESSAGES/messages.mo
-	@for locale in $^; do make $${locale}; done
+.PHONY: extract-strings
+extract-strings: ## Extract translatable strings from source code
+	@make --always-make ${POT}
 
 # Derive POT from sources.
 $(POT): securedrop_client
@@ -215,34 +225,6 @@ $(POT): securedrop_client
 		--no-wrap \
 		$^
 	@sed -i -e '/^"POT-Creation-Date/d' ${POT}
-
-# Merge current POT with a locale's PO.
-#
-# NB. freedomofpress/securedrop/securedrop/i18n_tool.py updates via
-# msgmerge even though pybabel.update() is available.  Here we use
-# "pybabel update" for consistency with "pybabel extract".
-${LOCALE_DIR}/%/LC_MESSAGES/messages.po: ${POT}
-ifeq ($(strip $(LOCALES)),)
-	@echo "no translation catalogs to update"
-else
-	@pybabel update \
-		--locale $$(echo $@ | grep -Eio "[a-zA-Z_]+/LC_MESSAGES/messages.po" | sed 's/\/LC_MESSAGES\/messages.po//') \
-		--input-file ${POT} \
-		--output-file $@ \
-		--no-wrap \
-		--previous
-	@sed -i -e '/^"POT-Creation-Date/d' $@
-endif
-
-# Compile a locale's PO to MO for (a) development runtime or (b) packaging.
-${LOCALE_DIR}/%/LC_MESSAGES/messages.mo: ${LOCALE_DIR}/%/LC_MESSAGES/messages.po
-ifeq ($(strip $(LOCALES)),)
-	@echo "no translation catalogs to compile"
-else
-	@pybabel compile \
-		--directory ${LOCALE_DIR} \
-		--statistics
-endif
 
 # List languages 100% translated in Weblate.
 .PHONY: supported-languages

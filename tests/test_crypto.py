@@ -166,7 +166,7 @@ def test_import_key_gpg_call_fail(homedir, config, mocker, session_maker):
     err = subprocess.CalledProcessError(cmd=["foo"], returncode=1)
     mock_call = mocker.patch("securedrop_client.crypto.subprocess.check_call", side_effect=err)
 
-    with pytest.raises(CryptoError, match=f"Could not import key."):
+    with pytest.raises(CryptoError, match="Could not import key."):
         helper.import_key(source)
 
     # ensure the mock was used

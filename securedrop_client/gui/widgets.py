@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import html
 import logging
-import sys
+from datetime import datetime
 from gettext import gettext as _
 from gettext import ngettext
 from typing import Dict, List, Optional, Union  # noqa: F401
@@ -29,7 +29,6 @@ import sqlalchemy.orm.exc
 from PyQt5.QtCore import QEvent, QObject, QSize, Qt, QTimer, pyqtBoundSignal, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import (
     QBrush,
-    QCloseEvent,
     QColor,
     QCursor,
     QFocusEvent,
@@ -68,7 +67,6 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from securedrop_client import __version__ as sd_version
 from securedrop_client.db import (
     DraftReply,
     File,
@@ -79,7 +77,13 @@ from securedrop_client.db import (
     User,
 )
 from securedrop_client.export import ExportError, ExportStatus
-from securedrop_client.gui import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
+from securedrop_client.gui import (
+    SDPushButton,
+    SecureQLabel,
+    SvgLabel,
+    SvgPushButton,
+    SvgToggleButton,
+)
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_css, load_icon, load_image, load_movie
 from securedrop_client.storage import source_exists
@@ -243,19 +247,22 @@ class SyncIcon(QLabel):
         Assign a controller object (containing the application logic).
         """
         self.controller = controller
-        self.controller.sync_events.connect(self._on_sync)
+        self.controller.sync_started.connect(self._on_sync_started)
+        self.controller.sync_succeeded.connect(self._on_sync_succeeded)
 
-    def _on_sync(self, data) -> None:  # type: ignore [no-untyped-def]
-        if data == "syncing":
-            self.sync_animation = load_movie("sync_active.gif")
-            self.sync_animation.setScaledSize(QSize(24, 20))
-            self.setMovie(self.sync_animation)
-            self.sync_animation.start()
-        elif data == "synced":
-            self.sync_animation = load_movie("sync.gif")
-            self.sync_animation.setScaledSize(QSize(24, 20))
-            self.setMovie(self.sync_animation)
-            self.sync_animation.start()
+    @pyqtSlot(datetime)
+    def _on_sync_started(self, timestamp: datetime) -> None:
+        self.sync_animation = load_movie("sync_active.gif")
+        self.sync_animation.setScaledSize(QSize(24, 20))
+        self.setMovie(self.sync_animation)
+        self.sync_animation.start()
+
+    @pyqtSlot()
+    def _on_sync_succeeded(self) -> None:
+        self.sync_animation = load_movie("sync.gif")
+        self.sync_animation.setScaledSize(QSize(24, 20))
+        self.setMovie(self.sync_animation)
+        self.sync_animation.start()
 
     def enable(self) -> None:
         self.sync_animation = load_movie("sync.gif")
@@ -605,25 +612,32 @@ class MainView(QWidget):
 
     def show_sources(self, sources: List[Source]) -> None:
         """
-        Update the left hand sources list in the UI with the passed in list of
-        sources.
+        Update the sources list in the GUI with the supplied list of sources.
         """
-        if sources:
+        # If no sources are supplied, display the EmptyConversationView with the no-sources message.
+        #
+        # If there are sources but no source is selected in the GUI, display the
+        # EmptyConversationView with the no-source-selected messaging.
+        #
+        # Otherwise, hide the EmptyConversationView.
+        if not sources:
+            self.empty_conversation_view.show_no_sources_message()
+            self.empty_conversation_view.show()
+        elif not self.source_list.get_selected_source():
             self.empty_conversation_view.show_no_source_selected_message()
             self.empty_conversation_view.show()
         else:
-            self.empty_conversation_view.show_no_sources_message()
-            self.empty_conversation_view.show()
+            self.empty_conversation_view.hide()
 
-        if self.source_list.source_items:
-            # The source list already contains sources.
+        # If the source list in the GUI is empty, then we will run the optimized intial update.
+        # Otherwise, do a regular source list update.
+        if not self.source_list.source_items:
+            self.source_list.initial_update(sources)
+        else:
             deleted_sources = self.source_list.update(sources)
             for source_uuid in deleted_sources:
                 # Then call the function to remove the wrapper and its children.
                 self.delete_conversation(source_uuid)
-        else:
-            # We have an empty source list, so do an initial update.
-            self.source_list.initial_update(sources)
 
     def on_source_changed(self) -> None:
         """
@@ -657,22 +671,15 @@ class MainView(QWidget):
             logger.debug(e)
 
     def refresh_source_conversations(self) -> None:
-        deleting_conversations = [
-            c for c in self.source_conversations.values() if c.deleting_conversation
-        ]
-        for conversation_wrapper in deleting_conversations:
-            conversation_wrapper.end_conversation_deletion()
-
-        source = self.source_list.get_selected_source()
-        if not source:
-            return
-
-        self.on_source_changed()
-        conversation_wrapper = self.source_conversations[source.uuid]
-        source_widget = self.source_list.get_source_widget(source.uuid)
-        if source_widget:
-            source_widget.deletion_indicator.stop()
+        """
+        Refresh the selected source conversation.
+        """
         try:
+            source = self.source_list.get_selected_source()
+            if not source:
+                return
+            self.controller.session.refresh(source)
+            conversation_wrapper = self.source_conversations[source.uuid]
             conversation_wrapper.conversation_view.update_conversation(source.collection)
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.debug("Error refreshing source conversations: %s", e)
@@ -1161,7 +1168,7 @@ class SourceWidget(QWidget):
     SOURCE_PREVIEW_CSS = load_css("source_preview.css")
     SOURCE_TIMESTAMP_CSS = load_css("source_timestamp.css")
 
-    deleting = False
+    CONVERSATION_DELETED_TEXT = _("\u2014 All files and messages deleted for this source \u2014")
 
     def __init__(
         self,
@@ -1173,7 +1180,11 @@ class SourceWidget(QWidget):
         super().__init__()
 
         self.controller = controller
+        self.controller.sync_started.connect(self._on_sync_started)
         self.controller.conversation_deleted.connect(self._on_conversation_deleted)
+        controller.conversation_deletion_successful.connect(
+            self._on_conversation_deletion_successful
+        )
         self.controller.conversation_deletion_failed.connect(self._on_conversation_deletion_failed)
         self.controller.source_deleted.connect(self._on_source_deleted)
         self.controller.source_deletion_failed.connect(self._on_source_deletion_failed)
@@ -1186,6 +1197,11 @@ class SourceWidget(QWidget):
         self.source_uuid = self.source.uuid
         self.last_updated = self.source.last_updated
         self.selected = False
+        self.deletion_scheduled_timestamp = datetime.utcnow()
+        self.sync_started_timestamp = datetime.utcnow()
+
+        self.deleting_conversation = False
+        self.deleting = False
 
         self.setCursor(QCursor(Qt.PointingHandCursor))
 
@@ -1261,6 +1277,15 @@ class SourceWidget(QWidget):
         """
         Updates the displayed values with the current values from self.source.
         """
+        # If the account or conversation is being deleted, do not update the source widget
+        if self.deleting or self.deleting_conversation:
+            return
+
+        # If the sync started before the deletion finished, then the sync is stale and we do
+        # not want to update the source widget.
+        if self.sync_started_timestamp < self.deletion_scheduled_timestamp:
+            return
+
         try:
             self.controller.session.refresh(self.source)
             self.last_updated = self.source.last_updated
@@ -1282,6 +1307,12 @@ class SourceWidget(QWidget):
 
             self.end_deletion()
 
+            if self.source.document_count == 0:
+                self.paperclip.hide()
+                self.paperclip_disabled.hide()
+
+            self.star.update(self.source.is_starred)
+
             # When not authenticated we always show the source as having been seen
             self.seen = True if not self.controller.is_authenticated else self.source.seen
             self.update_styles()
@@ -1298,26 +1329,35 @@ class SourceWidget(QWidget):
         if source_uuid != self.source_uuid:
             return
 
-        if self.deleting:
-            content = ""
-        elif not self.source.server_collection:
+        # If the account or conversation is being deleted, do not update the source widget
+        if self.deleting or self.deleting_conversation:
+            return
+
+        # If the sync started before the deletion finished, then the sync is stale and we do
+        # not want to update the source widget.
+        if self.sync_started_timestamp < self.deletion_scheduled_timestamp:
+            return
+
+        # If the source collection is empty yet the interaction_count is greater than zero, then we
+        # known that the conversation has been deleted.
+        if not self.source.server_collection:
             if self.source.interaction_count > 0:
-                # The server only ever increases the interaction
-                # count, so if it's non-zero but the source collection
-                # is empty, we know the conversation has been deleted.
-                content = _("\u2014 All files and messages deleted for this source \u2014")
-            else:
-                content = ""
+                self.set_snippet_to_conversation_deleted()
         else:
             last_activity = self.source.server_collection[-1]
             if collection_uuid and collection_uuid != last_activity.uuid:
                 return
 
-            if not content:
-                content = str(last_activity)
+            self.preview.setProperty("class", "")
+            self.preview.setText(content) if content else self.preview.setText(str(last_activity))
+            self.preview.adjust_preview(self.width())
+            self.update_styles()
 
-        self.preview.setText(content)
+    def set_snippet_to_conversation_deleted(self) -> None:
+        self.preview.setProperty("class", "conversation_deleted")
+        self.preview.setText(self.CONVERSATION_DELETED_TEXT)
         self.preview.adjust_preview(self.width())
+        self.update_styles()
 
     def update_styles(self) -> None:
         if self.seen:
@@ -1370,10 +1410,21 @@ class SourceWidget(QWidget):
             self.selected = False
             self.update_styles()
 
+    @pyqtSlot(datetime)
+    def _on_sync_started(self, timestamp: datetime) -> None:
+        self.sync_started_timestamp = timestamp
+
     @pyqtSlot(str)
     def _on_conversation_deleted(self, source_uuid: str) -> None:
         if self.source_uuid == source_uuid:
             self.start_conversation_deletion()
+
+    @pyqtSlot(str, datetime)
+    def _on_conversation_deletion_successful(self, source_uuid: str, timestamp: datetime) -> None:
+        if self.source_uuid == source_uuid:
+            self.deletion_scheduled_timestamp = timestamp
+            self.set_snippet_to_conversation_deleted()
+            self.end_conversation_deletion()
 
     @pyqtSlot(str)
     def _on_conversation_deletion_failed(self, source_uuid: str) -> None:
@@ -1404,6 +1455,7 @@ class SourceWidget(QWidget):
 
     def end_deletion(self) -> None:
         self.deletion_indicator.stop()
+        self.update_styles()
         self.preview.show()
         self.timestamp.show()
         self.paperclip_disabled.hide()
@@ -1576,26 +1628,13 @@ class StarToggleButton(SvgToggleButton):
             self.pending_count = self.pending_count - 1
 
 
-class LoginOfflineLink(QLabel):
-    """
-    A button that logs the user in in offline mode.
-    """
-
-    clicked = pyqtSignal()
+class LoginOfflineLink(SDPushButton):
+    """A button that logs the user in, in offline mode."""
 
     def __init__(self) -> None:
-        # Add svg images to button
         super().__init__()
-
-        # Set css id
-        self.setObjectName("LoginOfflineLink")
-
-        self.setFixedSize(QSize(120, 22))
-
         self.setText(_("USE OFFLINE"))
-
-    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        self.clicked.emit()
+        self.setAlignment(SDPushButton.AlignLeft)
 
 
 class SignInButton(QPushButton):
@@ -1604,7 +1643,8 @@ class SignInButton(QPushButton):
     """
 
     def __init__(self) -> None:
-        super().__init__(_("SIGN IN"))
+        super().__init__()
+        self.setText(_("SIGN IN"))
 
         # Set css id
         self.setObjectName("SignInButton")
@@ -1704,6 +1744,7 @@ class PasswordEdit(QLineEdit):
             self.togglepasswordAction.setIcon(self.hiddenIcon)
 
 
+<<<<<<< HEAD
 class LoginDialog(QDialog):
     """
     A dialog to display the login form.
@@ -1897,6 +1938,8 @@ class LoginDialog(QDialog):
             self.error(_("Please enter a username, passphrase and " "two-factor code."))
 
 
+=======
+>>>>>>> main
 class SenderIcon(QWidget):
     """
     Represents a reply to a source.
@@ -2238,7 +2281,7 @@ class ReplyWidget(SpeechBubble):
         self.sender_icon.is_current_user = self._sender_is_current_user
         if self._sender:
             self.sender_icon.initials = self._sender.initials
-
+            self.sender_icon.setToolTip(self._sender.fullname)
         self._update_styles()
 
     @property
@@ -2262,6 +2305,7 @@ class ReplyWidget(SpeechBubble):
 
         if self._sender:
             self.sender_icon.initials = self._sender.initials
+            self.sender_icon.setToolTip(self._sender.fullname)
 
     @pyqtSlot(bool)
     def _on_authentication_changed(self, authenticated: bool) -> None:
@@ -2280,6 +2324,7 @@ class ReplyWidget(SpeechBubble):
         if user.uuid == self.sender.uuid:
             self.sender_is_current_user = True
             self.sender = user
+            self.sender_icon.setToolTip(self.sender.fullname)
             self._update_styles()
 
     @pyqtSlot(str, str, str)
@@ -3471,10 +3516,19 @@ class ConversationView(QWidget):
         super().__init__()
 
         self.source = source_db_object
+        self.source_uuid = source_db_object.uuid
         self.controller = controller
+
+        self.controller.sync_started.connect(self._on_sync_started)
+        controller.conversation_deletion_successful.connect(
+            self._on_conversation_deletion_successful
+        )
 
         # To hold currently displayed messages.
         self.current_messages = {}  # type: Dict[str, QWidget]
+
+        self.deletion_scheduled_timestamp = datetime.utcnow()
+        self.sync_started_timestamp = datetime.utcnow()
 
         self.setObjectName("ConversationView")
 
@@ -3507,16 +3561,55 @@ class ConversationView(QWidget):
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.debug("Error initializing ConversationView: %s", e)
 
-    def update_deletion_markers(self, collection: list) -> None:
-        if collection:
-            self.scroll.show()
-            if collection[0].file_counter > 1:
-                self.deleted_conversation_marker.hide()
+    @pyqtSlot(datetime)
+    def _on_sync_started(self, timestamp: datetime) -> None:
+        self.sync_started_timestamp = timestamp
+
+    @pyqtSlot(str, datetime)
+    def _on_conversation_deletion_successful(self, source_uuid: str, timestamp: datetime) -> None:
+        if self.source_uuid != source_uuid:
+            return
+
+        self.deletion_scheduled_timestamp = timestamp
+
+        # Now that we know the deletion is scheduled, hide conversation items until they are
+        # removed from the local database.
+        try:
+            draft_reply_exists = False
+            for item in self.source.collection:
+                if isinstance(item, DraftReply):
+                    draft_reply_exists = True
+                    continue
+                item_widget = self.current_messages.get(item.uuid)
+                if item_widget:
+                    item_widget.hide()
+
+            # If a draft reply exists then show the tear pattern above the draft replies.
+            # Otherwise, show that the entire conversation is deleted.
+            if draft_reply_exists:
+                self.scroll.show()
                 self.deleted_conversation_items_marker.show()
-        elif self.source.interaction_count > 0:
-            self.deleted_conversation_items_marker.hide()
-            self.scroll.hide()
-            self.deleted_conversation_marker.show()
+                self.deleted_conversation_marker.hide()
+            else:
+                self.scroll.hide()
+                self.deleted_conversation_items_marker.hide()
+                self.deleted_conversation_marker.show()
+        except sqlalchemy.exc.InvalidRequestError as e:
+            logger.debug(f"Could not update ConversationView: {e}")
+
+    def update_deletion_markers(self) -> None:
+        try:
+            if self.source.collection:
+                self.scroll.show()
+                if self.source.collection[0].file_counter > 1:
+                    self.deleted_conversation_marker.hide()
+                    self.deleted_conversation_items_marker.show()
+            elif self.source.interaction_count > 0:
+                self.scroll.hide()
+                self.deleted_conversation_items_marker.hide()
+                self.deleted_conversation_marker.show()
+        except sqlalchemy.exc.InvalidRequestError as e:
+            logger.debug(f"Could not Update deletion markers in the ConversationView: {e}")
 
     def update_conversation(self, collection: list) -> None:
         """
@@ -3537,6 +3630,11 @@ class ConversationView(QWidget):
         passed into this method in case of a mismatch between where the widget
         has been and now is in terms of its index in the conversation.
         """
+        # If the sync started before the deletion finished, then the sync is stale and we do
+        # not want to update the conversation.
+        if self.sync_started_timestamp < self.deletion_scheduled_timestamp:
+            return
+
         self.controller.session.refresh(self.source)
 
         # Keep a temporary copy of the current conversation so we can delete any
@@ -3590,7 +3688,7 @@ class ConversationView(QWidget):
             item_widget.deleteLater()
             self.scroll.remove_widget_from_conversation(item_widget)
 
-        self.update_deletion_markers(collection)
+        self.update_deletion_markers()
         self.conversation_updated.emit()
 
     def add_file(self, file: File, index: int) -> None:
@@ -3705,15 +3803,7 @@ class ConversationView(QWidget):
         self.reply_flag = True
         if source_uuid == self.source.uuid:
             self.add_reply_from_reply_box(reply_uuid, reply_text)
-            try:
-                self.update_deletion_markers(self.source.collection.copy())
-            except sqlalchemy.exc.InvalidRequestError as e:
-                # The only way we should get here is if
-                # source.collection can't be populated, presumably
-                # because it had never been loaded, and the source and
-                # its conversation items were deleted between adding
-                # the reply and updating deletion markers.
-                logger.debug("Error in ConversationView.on_reply_sent: %s", e)
+            self.update_deletion_markers()
 
 
 class SourceConversationWrapper(QWidget):
@@ -3722,7 +3812,6 @@ class SourceConversationWrapper(QWidget):
     per-source resources.
     """
 
-    deleting_account = False
     deleting_conversation = False
 
     def __init__(self, source: Source, controller: Controller) -> None:
@@ -3734,6 +3823,9 @@ class SourceConversationWrapper(QWidget):
         self.source_uuid = source.uuid
         controller.conversation_deleted.connect(self.on_conversation_deleted)
         controller.conversation_deletion_failed.connect(self.on_conversation_deletion_failed)
+        controller.conversation_deletion_successful.connect(
+            self._on_conversation_deletion_successful
+        )
         controller.source_deleted.connect(self.on_source_deleted)
         controller.source_deletion_failed.connect(self.on_source_deletion_failed)
 
@@ -3768,6 +3860,11 @@ class SourceConversationWrapper(QWidget):
         if self.source_uuid == source_uuid:
             self.start_conversation_deletion()
 
+    @pyqtSlot(str, datetime)
+    def _on_conversation_deletion_successful(self, source_uuid: str, timestamp: datetime) -> None:
+        if self.source_uuid == source_uuid:
+            self.end_conversation_deletion()
+
     @pyqtSlot(str)
     def on_conversation_deletion_failed(self, source_uuid: str) -> None:
         if self.source_uuid == source_uuid:
@@ -3796,7 +3893,6 @@ class SourceConversationWrapper(QWidget):
 
     def start_account_deletion(self) -> None:
         self.reply_box.setProperty("class", "deleting")
-        self.deleting_account = True
         self.reply_box.text_edit.setText("")
         self.start_deletion()
 
@@ -3826,7 +3922,6 @@ class SourceConversationWrapper(QWidget):
         self.end_deletion()
 
     def end_account_deletion(self) -> None:
-        self.deleting_account = False
         self.end_deletion()
 
     def end_deletion(self) -> None:
@@ -3917,7 +4012,8 @@ class ReplyBoxWidget(QWidget):
 
         # Connect signals to slots
         self.controller.authentication_state.connect(self._on_authentication_changed)
-        self.controller.sync_events.connect(self._on_synced)
+        self.controller.sync_started.connect(self._on_sync_started)
+        self.controller.sync_succeeded.connect(self._on_sync_succeeded)
 
     def set_logged_in(self) -> None:
         self.text_edit.set_logged_in()
@@ -3964,18 +4060,30 @@ class ReplyBoxWidget(QWidget):
         else:
             self.set_logged_out()
 
-    def _on_synced(self, data: str) -> None:
+    @pyqtSlot(datetime)
+    def _on_sync_started(self, timestamp: datetime) -> None:
         try:
             self.update_authentication_state(self.controller.is_authenticated)
-
-            if data == "syncing" and self.text_edit.hasFocus():
+            if self.text_edit.hasFocus():
                 self.refocus_after_sync = True
-            elif data == "synced" and self.refocus_after_sync:
+            else:
+                self.refocus_after_sync = False
+        except sqlalchemy.orm.exc.ObjectDeletedError as e:
+            logger.debug(f"During sync, ReplyBoxWidget found its source had been deleted: {e}")
+            self.destroy()
+
+    @pyqtSlot()
+    def _on_sync_succeeded(self) -> None:
+        try:
+            self.update_authentication_state(self.controller.is_authenticated)
+            # TODO: Handle edge case where a user starts out with the reply box in focus at the
+            # beginning of a sync, but then switches to another reply box before the sync finishes.
+            if self.refocus_after_sync:
                 self.text_edit.setFocus()
             else:
                 self.refocus_after_sync = False
-        except sqlalchemy.orm.exc.ObjectDeletedError:
-            logger.debug("During sync, ReplyBoxWidget found its source had been deleted.")
+        except sqlalchemy.orm.exc.ObjectDeletedError as e:
+            logger.debug(f"During sync, ReplyBoxWidget found its source had been deleted: {e}")
             self.destroy()
 
 

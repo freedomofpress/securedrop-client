@@ -14,7 +14,7 @@ for name in os.listdir("./securedrop_client/resources/images/"):
 
 setuptools.setup(
     name="securedrop-client",
-    version="0.5.0",
+    version="0.5.1",
     author="Freedom of the Press Foundation",
     author_email="securedrop@freedom.press",
     description="SecureDrop Workstation client application",
@@ -26,13 +26,13 @@ setuptools.setup(
     url="https://github.com/freedomofpress/securedrop-proxy",
     packages=["securedrop_client", "securedrop_client.gui", "securedrop_client.resources"],
     include_package_data=True,
-    classifiers=(
+    classifiers=[
         "Development Status :: 3 - Alpha",
         "Programming Language :: Python :: 3",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Intended Audience :: Developers",
         "Operating System :: OS Independent",
-    ),
+    ],
     entry_points={"console_scripts": ["sd-client = securedrop_client.app:run"]},
 )

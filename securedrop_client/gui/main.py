@@ -21,15 +21,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 from gettext import gettext as _
-from typing import List, Optional  # noqa: F401
+from typing import List, Optional
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QGuiApplication
-from PyQt5.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QVBoxLayout, QWidget
+from PyQt5.QtGui import QGuiApplication, QIcon, QKeySequence
+from PyQt5.QtWidgets import QAction, QApplication, QHBoxLayout, QMainWindow, QVBoxLayout, QWidget
 
 from securedrop_client import __version__
 from securedrop_client.db import Source, User
-from securedrop_client.gui.widgets import LeftPane, LoginDialog, MainView, TopPane
+from securedrop_client.gui.login_dialog import LoginDialog
+from securedrop_client.gui.widgets import LeftPane, MainView, TopPane
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_css, load_font, load_icon
 
@@ -88,6 +89,13 @@ class Window(QMainWindow):
 
         # Dialogs
         self.login_dialog: Optional[LoginDialog] = None
+
+        # Actions
+        quit = QAction(_("Quit"), self)
+        quit.setIcon(QIcon.fromTheme("application-exit"))
+        quit.setShortcut(QKeySequence.Quit)
+        quit.triggered.connect(self.close)
+        self.addAction(quit)
 
     def setup(self, controller: Controller) -> None:
         """

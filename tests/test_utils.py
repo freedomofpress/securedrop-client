@@ -58,7 +58,7 @@ def test_safe_mkdir_with_first_param_containing_path_traversal_attack():
     """
     with pytest.raises(ValueError) as e:
         safe_mkdir("../../../../../../traversed")
-        assert f"traversed is not an absolute path" in str(e.value)
+        assert "traversed is not an absolute path" in str(e.value)
 
 
 def test_safe_mkdir_with_second_param_containing_path_traversal_attack():

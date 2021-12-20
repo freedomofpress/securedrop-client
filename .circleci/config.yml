@@ -22,7 +22,7 @@ common-steps:
       command: |
         set -e
         source .venv/bin/activate
-        make check-black check-isort lint bandit
+        make check-black check-isort lint bandit check-strings
 
   - &check_python_dependencies_for_vulns
     run:
@@ -89,6 +89,8 @@ jobs:
       - checkout
       - run: sudo apt-get install -y sqlite3 libqt5x11extras5
       - *run_tests
+      - store_test_results:
+          path: test-results
       - *run_lint
       - *check_python_dependencies_for_vulns
 

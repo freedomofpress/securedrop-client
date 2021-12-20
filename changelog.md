@@ -1,6 +1,15 @@
 # Changelog
 
+## 0.5.1
+* Fix Python symlink, which broke package in 0.5.0
+
 ## 0.5.0
+
+* Speed up deletion of conversations (#1311)
+* Add tooltips with journalist name for badges (#1327)
+* Add keyboard shortcut to quit application (#1331)
+* Allow tabbing to the "Use offline" button on login dialog (#1328)
+* Clear login error message on successful login attempt (#1321)
 * Support deletion of conversations (#1263)
 * Speed up deletion of accounts and conversations (#1273)
 * Update securedrop-sdk version to 0.3.0 (#1274)

@@ -5,25 +5,13 @@
 
 # securedrop-client
 
-The SecureDrop Client is a desktop application for journalists to communicate with sources and work with SecureDrop submissions on the [SecureDrop Workstation](https://github.com/freedomofpress/securedrop-workstation).
+The SecureDrop Client is a desktop application for journalists to communicate with sources and work with submissions on the [SecureDrop Workstation](https://github.com/freedomofpress/securedrop-workstation).
 
 The client runs within a [Qubes OS](https://www.qubes-os.org/intro/) VM that has no direct network access and opens files within individual, non-networked, disposable VMs. API requests and responses to and from the [SecureDrop application server](https://docs.securedrop.org/en/stable/glossary.html#application-server) are sent through an intermediate VM using the [SecureDrop Proxy](https://github.com/freedomofpress/securedrop-proxy).
 
-To learn more about architecture and our rationale behind our Qubes OS approach for source communication and handling submissions, see the [SecureDrop Workstation readme](https://github.com/freedomofpress/securedrop-workstation/blob/main/README.md).
+To learn more about architecture and our rationale behind our Qubes OS approach, see the [SecureDrop Workstation readme](https://github.com/freedomofpress/securedrop-workstation/blob/main/README.md).
 
 **IMPORTANT:** This project is currently undergoing a pilot study and should not be used in production environments.
-
-# Current limitations
-
-This client is under active development and currently supports a minimal feature set. Major supported features include:
-
-- the download and decryption of files, messages, and replies (using [Qubes split-gpg](https://www.qubes-os.org/doc/split-gpg/))
-- the display of decrypted messages and replies in a new conversation view
-- the opening of all files in individual, non-networked, Qubes disposable VMs
-- replying to sources
-- deleting sources
-- exporting files to LUKS-encrypted USB drives
-- printing to supported printers
 
 ## Getting Started
 
@@ -65,10 +53,11 @@ See [SecureDrop docs](https://docs.securedrop.org/en/latest/development/setup_de
 ```
 git clone git@github.com:freedomofpress/securedrop-client.git
 cd securedrop-client
-virtualenv --python=python3.7 .venv
+make venv
 source .venv/bin/activate
-pip install --require-hashes -r requirements/dev-requirements.txt
 ```
+
+   * `make venv` will also run `make hooks`, which will configure Git to use the hooks found in `.githooks/` to check certain code-quality standards on new commits in this repository.  These checks are also enforced in CI.
 
 4. Run SecureDrop Client
 
@@ -82,7 +71,7 @@ Or, if you want to persist data across restarts, you will need to run the client
 ./run.sh --sdc-home /path/to/my/configuration/directory
 ```
 
-### Developer environment on a non-Qubes OS
+### Developer environment on a Linux-based non-Qubes OS
 
 Running the client in a developer environment will use a temporary directory as its configuration directory, instead of ` ~/.securedrop_client`. A development gpg private key inside a gpg keychain is stored in the temporary configuration directory, which will be used to decrypt messages.
 
@@ -101,10 +90,11 @@ See [SecureDrop docs](https://docs.securedrop.org/en/latest/development/setup_de
 ```
 git clone git@github.com:freedomofpress/securedrop-client.git
 cd securedrop-client
-virtualenv --python=python3.7 .venv
+make venv
 source .venv/bin/activate
-pip install --require-hashes -r requirements/dev-requirements.txt
 ```
+
+   * `make venv` will also run `make hooks`, which will configure Git to use the hooks found in `.githooks/` to check certain code-quality standards on new commits in this repository.  These checks are also enforced in CI.
 
 4. Run SecureDrop Client
 
@@ -117,6 +107,54 @@ Or, if you want to persist data across restarts, you will need to run the client
 ```
 ./run.sh --sdc-home /path/to/my/configuration/directory
 ```
+
+
+### Developer environment on macOS
+
+It is possible to run the development environment in macOS on non-Apple Silicon (M1) systems, but some functionality may not be available:
+ * If you want to be able to open or export file submissions in a disposable AppVM, then you'll need to follow the instructions for running this in a [developer environment](#developer-environment) in Qubes.
+ * Tor is not used in the developer environment. If you want to use a Tor connection between the client and server, then you'll need to follow the [staging environment](#staging-environment) instructions instead.
+
+#### Set up the server
+1. Open a terminal in macOS (note: this terminal must be a login shell - check your terminal app preferences)
+
+2. Run a SecureDrop server in a local docker container:
+
+   1. If it is not already installed, install Docker following instructions from https://docs.docker.com/desktop/mac/install/
+   2. Clone the securedrop repo: `git clone git@github.com:freedomofpress/securedrop.git`
+   3. Start the development server: `cd securedrop && make dev`. The Source Interface will now be available on `http://localhost:8080`.
+
+  See [SecureDrop docs](https://docs.securedrop.org/en/latest/development/setup_development.html) for more info and troubleshooting steps if necessary.
+
+#### Set up the SecureDrop Client
+1. Open a new terminal window.
+2. If it is not already installed, install Homebrew via the instructions at https://brew.sh/
+3. Install dependencies via Homebrew: `brew install pyenv gnupg oath-toolkit`
+4. Set up pyenv following the steps here: https://github.com/pyenv/pyenv#basic-github-checkout -  starting with #2 ("Configure your shell's environment for Pyenv"). You may need to close and reopen the terminal window for changes to be applied.
+5. install and select the latest version of python 3.7.x
+   ```
+   pyenv install 3.7.x
+   pyenv local 3.7.x
+   ```
+6. clone the SecureDrop Client repo and set up its virtual environment
+   ```
+   git clone git@github.com:freedomofpress/securedrop-client.git
+   cd securedrop-client
+   make venv-mac
+   source .venv/bin/activate
+   ```
+   * `make venv-mac` will also run `make hooks`, which will configure Git to use the hooks found in `.githooks/` to check certain code-quality standards on new commits in this repository.  These checks are also enforced in CI.
+
+7. Run SecureDrop Client
+   ```
+   ./run.sh
+   ```
+
+To log in, use one of the journalist usernames/passwords displayed in the Docker server output, such as
+`journalist/correct horse battery staple profanity oil chewy`. To generate the required 2FA token, use 
+the `oathtool` command, eg: `oathtool -b --totp "JHCOGO7VCER3EJ4L"` in your terminal.
+
+Note: to persist data and config across multiple client runs, specify a home directory, e.g. `./run.sh --sdc_home=~/.sd_client`
 
 ### Staging environment
 

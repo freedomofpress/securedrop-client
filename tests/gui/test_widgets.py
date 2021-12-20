@@ -5,7 +5,7 @@ import math
 import random
 from datetime import datetime
 from gettext import gettext as _
-from unittest.mock import Mock, PropertyMock, patch
+from unittest.mock import Mock, PropertyMock
 
 import arrow
 import pytest
@@ -14,11 +14,12 @@ import sqlalchemy.orm.exc
 from PyQt5.QtCore import QEvent, QSize, Qt
 from PyQt5.QtGui import QFocusEvent, QKeyEvent, QMovie, QResizeEvent
 from PyQt5.QtTest import QTest
-from PyQt5.QtWidgets import QApplication, QLineEdit, QMainWindow, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QApplication, QLineEdit, QVBoxLayout, QWidget
 from sqlalchemy.orm import attributes, scoped_session, sessionmaker
 
 from securedrop_client import db, logic, storage
 from securedrop_client.export import ExportError, ExportStatus
+from securedrop_client.gui.login_dialog import LoginDialog
 from securedrop_client.gui.widgets import (
     ActivityStatusBar,
     ConversationView,
@@ -32,9 +33,7 @@ from securedrop_client.gui.widgets import (
     FileWidget,
     LeftPane,
     LoginButton,
-    LoginDialog,
     LoginErrorBar,
-    LoginOfflineLink,
     MainView,
     MessageWidget,
     PasswordEdit,
@@ -270,48 +269,30 @@ def test_SyncIcon_disable_starts_animiation(mocker):
     sync_icon.sync_animation.start.assert_called_with()
 
 
-def test_SyncIcon__on_sync_syncing(mocker):
+def test_SyncIcon__on_sync_started(mocker):
     """
     Sync icon becomes active when it receives the `syncing` signal.
     """
     sync_icon = SyncIcon()
 
-    sync_icon._on_sync("syncing")
+    sync_icon._on_sync_started(mocker.MagicMock())
 
     file_path = sync_icon.sync_animation.fileName()
     filename = file_path[file_path.rfind("/") + 1 :]
     assert filename == "sync_active.gif"
 
 
-def test_SyncIcon__on_sync_synced(mocker):
+def test_SyncIcon__on_sync_succeeded(mocker):
     """
     Sync icon becomes "inactive" when it receives the `synced` signal.
     """
     sync_icon = SyncIcon()
 
-    sync_icon._on_sync("synced")
+    sync_icon._on_sync_succeeded()
 
     file_path = sync_icon.sync_animation.fileName()
     filename = file_path[file_path.rfind("/") + 1 :]
     assert filename == "sync.gif"
-
-
-def test_SyncIcon___on_sync_with_data_not_equal_to_syncing(mocker):
-    """
-    Sync does not because active when the sync signal's data is something other than 'syncing'
-    """
-    movie = QMovie()
-    movie.start = mocker.MagicMock()
-    mocker.patch("securedrop_client.gui.widgets.load_movie", return_value=movie)
-    sync_icon = SyncIcon()
-
-    # assert that start call count has only been called once
-    sync_icon.sync_animation.start.assert_called_once_with()
-
-    sync_icon._on_sync("something other than syncing")
-
-    # assert that _on_sync doesn't increase start call count from one
-    sync_icon.sync_animation.start.assert_called_once_with()
 
 
 def test_ErrorStatusBar_clear_error_status(mocker):
@@ -559,7 +540,17 @@ def test_MainView_show_sources_with_none_selected(mocker):
     Ensure the sources list is passed to the source list widget to be updated.
     """
     mv = MainView(None)
-    mv.source_list = mocker.MagicMock()
+
+    # Set up SourceList so that SourceList.get_selected_source() returns a source
+    mv.source_list = SourceList()
+    source_widget = SourceWidget(
+        mocker.MagicMock(), factory.Source(uuid="stub_uuid"), mocker.MagicMock(), mocker.MagicMock()
+    )
+    source_item = SourceListWidgetItem(mv.source_list)
+    mv.source_list.setItemWidget(source_item, source_widget)
+    mv.source_list.source_items["stub_uuid"] = source_item
+    mocker.patch.object(mv.source_list, "update")
+
     mv.empty_conversation_view = mocker.MagicMock()
 
     mv.show_sources([1, 2, 3])
@@ -839,23 +830,21 @@ def test_MainView_refresh_source_conversations(homedir, mocker, qtbot, session_m
     mv.show()
 
     # get the conversations created
-    with mocker.patch(
+    mocker.patch(
         "securedrop_client.gui.widgets.SourceList.get_selected_source", return_value=source1
-    ):
-        mv.on_source_changed()
+    )
+    mv.on_source_changed()
 
-    with mocker.patch(
+    mocker.patch(
         "securedrop_client.gui.widgets.SourceList.get_selected_source", return_value=source2
-    ):
-        mv.on_source_changed()
+    )
+    mv.on_source_changed()
 
     assert len(mv.source_conversations) == 2
 
     # refresh with no source selected
-    with mocker.patch(
-        "securedrop_client.gui.widgets.SourceList.get_selected_source", return_value=None
-    ):
-        mv.refresh_source_conversations()
+    mocker.patch("securedrop_client.gui.widgets.SourceList.get_selected_source", return_value=None)
+    mv.refresh_source_conversations()
 
     # refresh with source1 selected while its conversation is being deleted
     mocker.patch(
@@ -894,16 +883,14 @@ def test_MainView_refresh_source_conversations(homedir, mocker, qtbot, session_m
     assert not scw1.conversation_deletion_indicator.isHidden()
     assert not sw1.deletion_indicator.isHidden()
 
+    # ensure that a refresh does not hide the deletion animation since the success or failure
+    # signals should be the only way to stop/hide the animation
     mv.refresh_source_conversations()
+    assert not scw1.conversation_deletion_indicator.isHidden()
 
-    assert scw1.conversation_deletion_indicator.isHidden()
-
-    # refresh with source1 selected while its account is being deleted
     scw1.on_source_deleted(source1.uuid)
     assert not scw1.deletion_indicator.isHidden()
     assert scw1.conversation_deletion_indicator.isHidden()
-
-    mv.refresh_source_conversations()
 
 
 def test_MainView_refresh_source_conversations_with_deleted(
@@ -939,13 +926,13 @@ def test_MainView_refresh_source_conversations_with_deleted(
     )
     mv.on_source_changed()
 
-    with patch(
+    mock_collection = mocker.patch(
         "securedrop_client.db.Source.collection", new_callable=PropertyMock
-    ) as mock_collection:
-        ire = sqlalchemy.exc.InvalidRequestError()
-        mock_collection.side_effect = ire
-        mv.refresh_source_conversations()
-        debug_logger.assert_any_call("Error refreshing source conversations: %s", ire)
+    )
+    ire = sqlalchemy.exc.InvalidRequestError()
+    mock_collection.side_effect = ire
+    mv.refresh_source_conversations()
+    debug_logger.assert_any_call("Error refreshing source conversations: %s", ire)
 
 
 def test_MainView_set_conversation(mocker):
@@ -1103,14 +1090,18 @@ def test_SourceList_add_source_starts_timer(mocker, session_maker, homedir):
     sl = SourceList()
     sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock()]
     mock_timer = mocker.MagicMock()
-    with mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer):
-        sl.add_source(sources)
+    mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer)
+    sl.add_source(sources)
     assert mock_timer.singleShot.call_count == 1
 
 
 class DeletedSource(Mock):
     @property
     def uuid(self):
+        raise sqlalchemy.exc.InvalidRequestError()
+
+    @property
+    def collection(self):
         raise sqlalchemy.exc.InvalidRequestError()
 
 
@@ -1274,22 +1265,22 @@ def test_SourceList_add_source_closure_adds_sources(mocker):
     mocker.patch("securedrop_client.gui.widgets.SourceListWidgetItem", mock_lwi)
     sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock()]
     mock_timer = mocker.MagicMock()
-    with mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer):
-        sl.add_source(sources, 1)
-        # Now grab the function created within add_source:
-        inner_fn = mock_timer.singleShot.call_args_list[0][0][1]
-        # Ensure add_source is mocked to avoid recursion in the test and so we
-        # can spy on how it's called.
-        sl.add_source = mocker.MagicMock()
-        # Call the inner function (as if the timer had completed).
-        inner_fn()
-        assert mock_sw.call_count == 1
-        assert mock_lwi.call_count == 1
-        assert sl.insertItem.call_count == 1
-        assert sl.setItemWidget.call_count == 1
-        assert len(sl.source_items) == 1
-        assert sl.setCurrentItem.call_count == 0
-        sl.add_source.assert_called_once_with(sources[1:], 2)
+    mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer)
+    sl.add_source(sources, 1)
+    # Now grab the function created within add_source:
+    inner_fn = mock_timer.singleShot.call_args_list[0][0][1]
+    # Ensure add_source is mocked to avoid recursion in the test and so we
+    # can spy on how it's called.
+    sl.add_source = mocker.MagicMock()
+    # Call the inner function (as if the timer had completed).
+    inner_fn()
+    assert mock_sw.call_count == 1
+    assert mock_lwi.call_count == 1
+    assert sl.insertItem.call_count == 1
+    assert sl.setItemWidget.call_count == 1
+    assert len(sl.source_items) == 1
+    assert sl.setCurrentItem.call_count == 0
+    sl.add_source.assert_called_once_with(sources[1:], 2)
 
 
 def test_SourceList_add_source_closure_exits_on_no_more_sources(mocker):
@@ -1309,22 +1300,22 @@ def test_SourceList_add_source_closure_exits_on_no_more_sources(mocker):
     mocker.patch("securedrop_client.gui.widgets.SourceListWidgetItem", mock_lwi)
     sources = []
     mock_timer = mocker.MagicMock()
-    with mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer):
-        sl.add_source(sources, 1)
-        # Now grab the function created within add_source:
-        inner_fn = mock_timer.singleShot.call_args_list[0][0][1]
-        # Ensure add_source is mocked to avoid recursion in the test and so we
-        # can spy on how it's called.
-        sl.add_source = mocker.MagicMock()
-        # Call the inner function (as if the timer had completed).
-        assert inner_fn() is None
-        assert mock_sw.call_count == 0
-        assert mock_lwi.call_count == 0
-        assert sl.addItem.call_count == 0
-        assert sl.setItemWidget.call_count == 0
-        assert len(sl.source_items) == 0
-        assert sl.setCurrentItem.call_count == 0
-        assert sl.add_source.call_count == 0
+    mocker.patch("securedrop_client.gui.widgets.QTimer", mock_timer)
+    sl.add_source(sources, 1)
+    # Now grab the function created within add_source:
+    inner_fn = mock_timer.singleShot.call_args_list[0][0][1]
+    # Ensure add_source is mocked to avoid recursion in the test and so we
+    # can spy on how it's called.
+    sl.add_source = mocker.MagicMock()
+    # Call the inner function (as if the timer had completed).
+    assert inner_fn() is None
+    assert mock_sw.call_count == 0
+    assert mock_lwi.call_count == 0
+    assert sl.addItem.call_count == 0
+    assert sl.setItemWidget.call_count == 0
+    assert len(sl.source_items) == 0
+    assert sl.setCurrentItem.call_count == 0
+    assert sl.add_source.call_count == 0
 
 
 def test_SourceList_set_snippet(mocker):
@@ -1819,6 +1810,23 @@ def test_SourceWidget__on_source_selected_skips_op_if_already_seen(mocker):
     sw.update_styles.assert_called_once_with()
 
 
+def test_SourceWidget__on_sync_started(mocker):
+    sw = SourceWidget(mocker.MagicMock(), factory.Source(), mocker.MagicMock(), mocker.MagicMock())
+    timestamp = datetime.now()
+    sw._on_sync_started(timestamp)
+    assert sw.sync_started_timestamp == timestamp
+
+
+def test_SourceWidget__on_conversation_deletion_successful(mocker):
+    sw = SourceWidget(mocker.MagicMock(), factory.Source(), mocker.MagicMock(), mocker.MagicMock())
+    timestamp = datetime.now()
+    sw._on_conversation_deletion_successful(sw.source.uuid, timestamp)
+    assert sw.deletion_scheduled_timestamp == timestamp
+    assert sw.preview.text() == "\u2014 All files and messages deleted for this source \u2014"
+    assert sw.deleting_conversation is False
+    assert sw.deletion_indicator.isHidden()
+
+
 def test_SourceWidget_update_attachment_icon(mocker):
     """
     Attachment icon identicates document count
@@ -1852,6 +1860,40 @@ def test_SourceWidget_update_does_not_raise_exception(mocker):
     mocker.patch("securedrop_client.gui.widgets.logger", mock_logger)
     sw.update()
     assert mock_logger.debug.call_count == 1
+
+
+def test_SourceWidget_update_skips_setting_snippet_if_deletion_in_progress(mocker):
+    """
+    If the source is being deleted, do not update the snippet.
+    """
+    sw = SourceWidget(mocker.MagicMock(), factory.Source(), mocker.MagicMock(), mocker.MagicMock())
+    sw.deleting = True
+    sw.set_snippet = mocker.MagicMock()
+    sw.update()
+    sw.set_snippet.assert_not_called()
+
+
+def test_SourceWidget_update_skips_setting_snippet_if_sync_is_stale(mocker):
+    """
+    If the sync started before the source was scheduled for deletion, do not update the snippet.
+    """
+    sw = SourceWidget(mocker.MagicMock(), factory.Source(), mocker.MagicMock(), mocker.MagicMock())
+    sw.sync_started_timestamp = datetime.now()
+    sw.deletion_scheduled_timestamp = datetime.now()
+    sw.set_snippet = mocker.MagicMock()
+    sw.update()
+    sw.set_snippet.assert_not_called()
+
+
+def test_SourceWidget_update_skips_setting_snippet_if_conversation_deletion_in_progress(mocker):
+    """
+    If the source conversation is being deleted, do not update the snippet.
+    """
+    sw = SourceWidget(mocker.MagicMock(), factory.Source(), mocker.MagicMock(), mocker.MagicMock())
+    sw.deleting_conversation = True
+    sw.set_snippet = mocker.MagicMock()
+    sw.update()
+    sw.set_snippet.assert_not_called()
 
 
 def test_SourceWidget_set_snippet_draft_only(mocker, session_maker, session, homedir):
@@ -1901,6 +1943,41 @@ def test_SourceWidget_set_snippet(mocker, session_maker, session, homedir):
 
     # check when the source has been deleted that it catches sqlalchemy.exc.InvalidRequestError
     sw.set_snippet(source_uuid, "mock_file_uuid", "something new")
+
+
+def test_SourceWidget_set_snippet_does_not_update_if_sync_is_stale(mocker):
+    """
+    Ensure that the snippet does not get updated when an update is based on a sync that started
+    before a deletion operation succeeded.
+    """
+    controller = mocker.MagicMock()
+    source = mocker.MagicMock()
+    source.journalist_designation = "Testy McTestface"
+    source.collection = [factory.Message(content="abc123")]
+    source.server_collection = source.collection
+    sw = SourceWidget(controller, source, mocker.MagicMock(), mocker.MagicMock())
+    sw.update()
+    assert sw.preview.text() == "abc123"
+
+    # Make the sync stale
+    sw.sync_started_timestamp = datetime.now()
+    sw.deletion_scheduled_timestamp = datetime.now()
+
+    # Set up source data so that it appears that the conversation was deleted
+    source.collection = []
+    source.interaction_count = 1
+    source.server_collection = source.collection
+
+    # Assert the preview snippet does not get updated because the sync is stale
+    sw.set_snippet(source.uuid, "mock_file_uuid")
+    assert sw.preview.text() == "abc123"
+
+    # The sync is no longer stale so the preview should show that the are no more source
+    # conversation items because they've been deleted
+    sw.deletion_scheduled_timestamp = datetime.now()
+    sw.sync_started_timestamp = datetime.now()
+    sw.set_snippet(source.uuid, "mock_file_uuid")
+    assert sw.preview.text() == "— All files and messages deleted for this source —"
 
 
 def test_SourceWidget_update_truncate_latest_msg(mocker):
@@ -2682,51 +2759,6 @@ def test_LoginDialog_validate_input_ok(mocker):
     mock_controller.login.assert_called_once_with("foo", "nicelongpassword", "123456")
 
 
-def test_LoginDialog_escapeKeyPressEvent(mocker):
-    """
-    Ensure we don't hide the login dialog when Esc key is pressed.
-    """
-    ld = LoginDialog(None)
-    event = mocker.MagicMock()
-    event.key = mocker.MagicMock(return_value=Qt.Key_Escape)
-
-    ld.keyPressEvent(event)
-
-    event.ignore.assert_called_once_with()
-
-
-@pytest.mark.parametrize("qt_key", [Qt.Key_Enter, Qt.Key_Return])
-def test_LoginDialog_submitKeyPressEvent(mocker, qt_key):
-    """
-    Ensure we submit the form when the user presses [Enter] or [Return]
-    """
-
-    ld = LoginDialog(None)
-    event = mocker.MagicMock()
-    event.key = mocker.MagicMock(return_value=qt_key)
-
-    ld.validate = mocker.MagicMock()
-
-    ld.keyPressEvent(event)
-
-    ld.validate.assert_called_once_with()
-
-
-def test_LoginDialog_closeEvent_exits(mocker):
-    """
-    If the main window is not visible, then exit the application when the LoginDialog receives a
-    close event.
-    """
-    mw = QMainWindow()
-    ld = LoginDialog(mw)
-    sys_exit_fn = mocker.patch("securedrop_client.gui.widgets.sys.exit")
-    mw.hide()
-
-    ld.closeEvent(event="mock")
-
-    sys_exit_fn.assert_called_once_with(0)
-
-
 def test_LoginErrorBar_set_message(mocker):
     error_bar = LoginErrorBar()
     error_bar.error_status_bar = mocker.MagicMock()
@@ -2747,33 +2779,6 @@ def test_LoginErrorBar_clear_message(mocker):
 
     error_bar.error_status_bar.setText.assert_called_with("")
     error_bar.hide.assert_called_with()
-
-
-def test_LoginOfflineLink(mocker):
-    """
-    Assert that the clicked signal is emitted on mouse release event.
-    """
-    offline_link = LoginOfflineLink()
-    offline_link.clicked = mocker.MagicMock()
-
-    offline_link.mouseReleaseEvent(None)
-
-    offline_link.clicked.emit.assert_called_with()
-
-
-def test_LoginDialog_closeEvent_does_not_exit_when_main_window_is_visible(mocker):
-    """
-    If the main window is visible, then to not exit the application when the LoginDialog receives a
-    close event.
-    """
-    mw = QMainWindow()
-    ld = LoginDialog(mw)
-    sys_exit_fn = mocker.patch("securedrop_client.gui.widgets.sys.exit")
-    mw.show()
-
-    ld.closeEvent(event="mock")
-
-    assert sys_exit_fn.called is False
 
 
 def test_SpeechBubble_init(mocker):
@@ -3284,9 +3289,9 @@ def test_FileWidget__set_file_state_under_mouse(mocker, source, session):
     fw.download_button.underMouse = mocker.MagicMock(return_value=True)
     fw.download_button.setIcon = mocker.MagicMock()
     mock_load = mocker.MagicMock()
-    with mocker.patch("securedrop_client.gui.widgets.load_icon", mock_load):
-        fw._set_file_state()
-        mock_load.assert_called_once_with("download_file_hover.svg")
+    mocker.patch("securedrop_client.gui.widgets.load_icon", mock_load)
+    fw._set_file_state()
+    mock_load.assert_called_once_with("download_file_hover.svg")
 
 
 def test_FileWidget_event_handler_left_click(mocker, session, source):
@@ -3681,11 +3686,9 @@ def test_FileWidget_update_file_size_with_deleted_file(
 
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
 
-    with mocker.patch(
-        "securedrop_client.gui.widgets.humanize_filesize", side_effect=Exception("boom!")
-    ):
-        fw.update_file_size()
-        assert fw.file_size.text() == ""
+    mocker.patch("securedrop_client.gui.widgets.humanize_filesize", side_effect=Exception("boom!"))
+    fw.update_file_size()
+    assert fw.file_size.text() == ""
 
 
 @pytest.mark.parametrize("key", [Qt.Key_Enter, Qt.Key_Return])
@@ -4422,6 +4425,19 @@ def test_SourceConversationWrapper_on_conversation_deleted_wrong_uuid(mocker):
     assert scw.deletion_indicator.isHidden()
 
 
+def test_SourceConversationWrapper__on_conversation_deletion_successful(mocker):
+    scw = SourceConversationWrapper(factory.Source(uuid="123"), mocker.MagicMock())
+    scw.on_conversation_deleted("123")
+
+    scw._on_conversation_deletion_successful("123", datetime.now())
+
+    assert not scw.conversation_title_bar.isHidden()
+    assert not scw.conversation_view.isHidden()
+    assert not scw.reply_box.isHidden()
+    assert scw.conversation_deletion_indicator.isHidden()
+    assert scw.deletion_indicator.isHidden()
+
+
 def test_SourceConversationWrapper_on_conversation_deletion_failed(mocker):
     scw = SourceConversationWrapper(factory.Source(uuid="123"), mocker.MagicMock())
     scw.on_conversation_deleted("123")
@@ -4474,13 +4490,13 @@ def test_ConversationView_init_with_deleted_source(mocker, homedir, session):
     session.add(source)
     session.commit()
 
-    with patch(
+    mock_collection = mocker.patch(
         "securedrop_client.db.Source.collection", new_callable=PropertyMock
-    ) as mock_collection:
-        ire = sqlalchemy.exc.InvalidRequestError()
-        mock_collection.side_effect = ire
-        ConversationView(source, mocked_controller)
-        debug_logger.assert_any_call("Error initializing ConversationView: %s", ire)
+    )
+    ire = sqlalchemy.exc.InvalidRequestError()
+    mock_collection.side_effect = ire
+    ConversationView(source, mocked_controller)
+    debug_logger.assert_any_call("Error initializing ConversationView: %s", ire)
 
 
 def test_ConversationView_ConversationScrollArea_resize(mocker):
@@ -4507,6 +4523,91 @@ def test_ConversationView_ConversationScrollArea_resize(mocker):
     assert cv.scroll.widget().width() == cv.scroll.width()
     speech_bubble_adjust_width.assert_called_with(cv.scroll.widget().width())
     file_widget_adjust_width.assert_called_with(cv.scroll.widget().width())
+
+
+def test_ConversationView__on_sync_started(mocker, session):
+    cv = ConversationView(factory.Source(), mocker.MagicMock())
+    timestamp = datetime.now()
+    cv._on_sync_started(timestamp)
+    assert cv.sync_started_timestamp == timestamp
+
+
+def test_ConversationView__on_conversation_deletion_successful(mocker, session):
+    source = factory.Source()
+    message = factory.Message(source=source)
+    session.add(message)
+    session.add(source)
+    session.commit()
+    cv = ConversationView(source, mocker.MagicMock())
+    timestamp = datetime.now()
+
+    cv._on_conversation_deletion_successful(cv.source.uuid, timestamp)
+
+    assert cv.deletion_scheduled_timestamp == timestamp
+    assert cv.scroll.isHidden()
+    assert cv.deleted_conversation_items_marker.isHidden()
+    assert not cv.deleted_conversation_marker.isHidden()
+    assert cv.current_messages[message.uuid].isHidden()
+
+
+def test_ConversationView__on_conversation_deletion_successful_with_mismatched_source_uuid(mocker):
+    """
+    If the success signal was emitted for a different source, ensure the deletion markers are not
+    altered.
+    """
+    source = factory.Source(uuid="abc123")
+    cv = ConversationView(source, mocker.MagicMock())
+
+    assert not cv.scroll.isHidden()
+    assert cv.deleted_conversation_items_marker.isHidden()
+    assert cv.deleted_conversation_marker.isHidden()
+
+    cv._on_conversation_deletion_successful("notabc123", datetime.now())
+
+    assert not cv.scroll.isHidden()
+    assert cv.deleted_conversation_items_marker.isHidden()
+    assert cv.deleted_conversation_marker.isHidden()
+
+
+def test_ConversationView__on_conversation_deletion_successful_handles_exception(mocker, session):
+    cv = ConversationView(factory.Source(uuid="abc123"), mocker.MagicMock())
+    cv.source = DeletedSource()
+    cv._on_conversation_deletion_successful("abc123", datetime.now())  # does not raise exception
+
+
+def test_ConversationView__on_conversation_deletion_successful_does_not_hide_draft(mocker, session):
+    source = factory.Source()
+    message = factory.Message(source=source)
+    draft_reply = factory.DraftReply(source=source, send_status=factory.ReplySendStatus())
+    session.add(draft_reply)
+    session.add(message)
+    session.add(source)
+    session.commit()
+    cv = ConversationView(source, mocker.MagicMock())
+
+    cv._on_conversation_deletion_successful(cv.source.uuid, datetime.now())
+
+    assert not cv.scroll.isHidden()
+    assert not cv.deleted_conversation_items_marker.isHidden()
+    assert cv.deleted_conversation_marker.isHidden()
+    assert cv.current_messages[message.uuid].isHidden()
+    assert not cv.current_messages[draft_reply.uuid].isHidden()
+
+
+def test_ConversationView_update_conversation_skips_if_sync_is_stale(mocker):
+    """
+    If the sync started before the source was scheduled for deletion, do not update the conversation
+    """
+    cv = ConversationView(factory.Source(), mocker.MagicMock())
+    cv.update_deletion_markers = mocker.MagicMock()
+    cv.sync_started_timestamp = datetime.now()
+    cv.deletion_scheduled_timestamp = datetime.now()
+    cv.update_conversation([])
+    cv.update_deletion_markers.assert_not_called()
+    # Also test that a new message will not get added if the sync is stale
+    cv.update_conversation([factory.Message()])
+    assert not cv.current_messages
+    cv.update_deletion_markers.assert_not_called()
 
 
 def test_ConversationView_update_conversation_position_follow(mocker, homedir):
@@ -4653,15 +4754,17 @@ def test_ConversationView_on_reply_sent_with_deleted_source(mocker):
         raise sqlalchemy.exc.InvalidRequestError()
 
     debug_logger = mocker.patch("securedrop_client.gui.widgets.logger.debug")
-    with patch(
+    mock_collection = mocker.patch(
         "securedrop_client.db.Source.collection", new_callable=PropertyMock
-    ) as mock_collection:
-        ire = sqlalchemy.exc.InvalidRequestError()
-        mock_collection.side_effect = ire
+    )
+    ire = sqlalchemy.exc.InvalidRequestError()
+    mock_collection.side_effect = ire
 
-        cv.on_reply_sent(source.uuid, "mock", "mock")
+    cv.on_reply_sent(source.uuid, "mock", "mock")
 
-        debug_logger.assert_any_call("Error in ConversationView.on_reply_sent: %s", ire)
+    debug_logger.assert_any_call(
+        f"Could not Update deletion markers in the ConversationView: {ire}"
+    )
 
 
 def test_ConversationView_add_reply_from_reply_box(mocker, session, session_maker, homedir):
@@ -4979,12 +5082,10 @@ def test_DeleteSourceAction_trigger(mocker):
     mock_delete_source_dialog = mocker.MagicMock()
     mock_delete_source_dialog.return_value = mock_delete_source_dialog_instance
 
-    with mocker.patch(
-        "securedrop_client.gui.widgets.DeleteSourceDialog", mock_delete_source_dialog
-    ):
-        delete_source_action = DeleteSourceAction(mock_source, None, mock_controller)
-        delete_source_action.trigger()
-        mock_delete_source_dialog_instance.exec.assert_called_once()
+    mocker.patch("securedrop_client.gui.widgets.DeleteSourceDialog", mock_delete_source_dialog)
+    delete_source_action = DeleteSourceAction(mock_source, None, mock_controller)
+    delete_source_action.trigger()
+    mock_delete_source_dialog_instance.exec.assert_called_once()
 
 
 def test_DeleteConversationAction_trigger(mocker):
@@ -4994,12 +5095,12 @@ def test_DeleteConversationAction_trigger(mocker):
     mock_delete_conversation_dialog = mocker.MagicMock()
     mock_delete_conversation_dialog.return_value = mock_delete_conversation_dialog_instance
 
-    with mocker.patch(
+    mocker.patch(
         "securedrop_client.gui.widgets.DeleteConversationDialog", mock_delete_conversation_dialog
-    ):
-        delete_conversation_action = DeleteConversationAction(mock_source, None, mock_controller)
-        delete_conversation_action.trigger()
-        mock_delete_conversation_dialog_instance.exec.assert_called_once()
+    )
+    delete_conversation_action = DeleteConversationAction(mock_source, None, mock_controller)
+    delete_conversation_action.trigger()
+    mock_delete_conversation_dialog_instance.exec.assert_called_once()
 
 
 def test_DeleteConversationAction_trigger_when_user_is_loggedout(mocker):
@@ -5010,12 +5111,12 @@ def test_DeleteConversationAction_trigger_when_user_is_loggedout(mocker):
     mock_delete_conversation_dialog = mocker.MagicMock()
     mock_delete_conversation_dialog.return_value = mock_delete_conversation_dialog_instance
 
-    with mocker.patch(
+    mocker.patch(
         "securedrop_client.gui.widgets.DeleteConversationDialog", mock_delete_conversation_dialog
-    ):
-        delete_conversation_action = DeleteConversationAction(mock_source, None, mock_controller)
-        delete_conversation_action.trigger()
-        mock_delete_conversation_dialog_instance.exec.assert_not_called()
+    )
+    delete_conversation_action = DeleteConversationAction(mock_source, None, mock_controller)
+    delete_conversation_action.trigger()
+    mock_delete_conversation_dialog_instance.exec.assert_not_called()
 
 
 def test_DeleteSource_from_source_menu_when_user_is_loggedout(mocker):
@@ -5026,12 +5127,10 @@ def test_DeleteSource_from_source_menu_when_user_is_loggedout(mocker):
     mock_delete_source_dialog = mocker.MagicMock()
     mock_delete_source_dialog.return_value = mock_delete_source_dialog_instance
 
-    with mocker.patch(
-        "securedrop_client.gui.widgets.DeleteSourceDialog", mock_delete_source_dialog
-    ):
-        source_menu = SourceMenu(mock_source, mock_controller)
-        source_menu.actions()[2].trigger()
-        mock_delete_source_dialog_instance.exec.assert_not_called()
+    mocker.patch("securedrop_client.gui.widgets.DeleteSourceDialog", mock_delete_source_dialog)
+    source_menu = SourceMenu(mock_source, mock_controller)
+    source_menu.actions()[2].trigger()
+    mock_delete_source_dialog_instance.exec.assert_not_called()
 
 
 def test_ReplyBoxWidget_init(mocker):
@@ -5136,21 +5235,21 @@ def test_ReplyBoxWidget_send_reply_does_not_send_empty_string(mocker):
     assert not controller.send_reply.called
 
 
-def test_ReplyBoxWidget_on_synced(mocker):
+def test_ReplyBoxWidget_test_refocus_after_sync(mocker):
     source = factory.Source()
     controller = mocker.MagicMock()
     rb = ReplyBoxWidget(source, controller)
     rb.text_edit.hasFocus = mocker.MagicMock(return_value=True)
     rb.text_edit.setFocus = mocker.MagicMock()
 
-    rb._on_synced("syncing")
+    rb._on_sync_started(mocker.MagicMock())
     assert rb.refocus_after_sync is True
 
-    rb._on_synced("synced")
+    rb._on_sync_succeeded()
     rb.text_edit.setFocus.assert_called_once_with()
 
     rb.text_edit.hasFocus.return_value = False
-    rb._on_synced("syncing")
+    rb._on_sync_started(mocker.MagicMock())
     assert rb.refocus_after_sync is False
 
 
@@ -5164,12 +5263,16 @@ def test_ReplyBoxWidget_on_sync_source_deleted(mocker, source):
     def pretend_source_was_deleted(self):
         raise sqlalchemy.orm.exc.ObjectDeletedError(attributes.instance_state(s), None)
 
-    with patch.object(ReplyBoxWidget, "update_authentication_state") as uas:
-        uas.side_effect = pretend_source_was_deleted
-        rb._on_synced("syncing")
-        debug_logger.assert_called_once_with(
-            "During sync, ReplyBoxWidget found its source had been deleted."
-        )
+    uas = mocker.patch.object(ReplyBoxWidget, "update_authentication_state")
+    uas.side_effect = pretend_source_was_deleted
+    rb._on_sync_started(mocker.MagicMock())
+    rb._on_sync_succeeded()
+
+    exception_str = str(sqlalchemy.orm.exc.ObjectDeletedError(attributes.instance_state(s), None))
+    debug_logger.assert_called_with(
+        f"During sync, ReplyBoxWidget found its source had been deleted: {exception_str}"
+    )
+    assert debug_logger.call_count == 2
 
 
 def test_ReplyWidget_success_failure_slots(mocker):
@@ -5236,14 +5339,14 @@ def test_ReplyBoxWidget_on_authentication_changed_source_deleted(mocker, source)
 
     debug_logger = mocker.patch("securedrop_client.gui.widgets.logger.debug")
 
-    with mocker.patch(
+    mocker.patch(
         "securedrop_client.gui.widgets.ReplyBoxWidget.update_authentication_state",
         side_effect=sqlalchemy.orm.exc.ObjectDeletedError(attributes.instance_state(s), None),
-    ):
-        rb._on_authentication_changed(True)
-        debug_logger.assert_called_once_with(
-            "On authentication change, ReplyBoxWidget found its source had been deleted."
-        )
+    )
+    rb._on_authentication_changed(True)
+    debug_logger.assert_called_once_with(
+        "On authentication change, ReplyBoxWidget found its source had been deleted."
+    )
 
 
 def test_ReplyBoxWidget__on_authentication_changed_offline(mocker, homedir):
@@ -5313,36 +5416,36 @@ def test_ReplyBoxWidget_enable_after_source_gets_key(mocker, session, session_ma
     Test that it's enabled when a source that lacked a key now has one.
     """
 
-    with mocker.patch("sdclientapi.API"):
-        mock_gui = mocker.MagicMock()
-        controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir)
-        controller.is_authenticated = True
+    mocker.patch("sdclientapi.API")
+    mock_gui = mocker.MagicMock()
+    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir)
+    controller.is_authenticated = True
 
-        # create source without key or fingerprint
-        source = factory.Source(public_key=None, fingerprint=None)
-        session.add(source)
-        session.commit()
+    # create source without key or fingerprint
+    source = factory.Source(public_key=None, fingerprint=None)
+    session.add(source)
+    session.commit()
 
-        # when the ReplyBoxWidget is constructed, the source has no key,
-        # so the widget should be disabled
-        rbw = ReplyBoxWidget(source, controller)
-        assert rbw.source.fingerprint is None
-        assert rbw.source.public_key is None
-        assert rbw.replybox.isEnabled() is False
-        assert rbw.text_edit.isEnabled() is False
+    # when the ReplyBoxWidget is constructed, the source has no key,
+    # so the widget should be disabled
+    rbw = ReplyBoxWidget(source, controller)
+    assert rbw.source.fingerprint is None
+    assert rbw.source.public_key is None
+    assert rbw.replybox.isEnabled() is False
+    assert rbw.text_edit.isEnabled() is False
 
-        # now simulate a sync...
-        source_with_key = factory.RemoteSource(uuid=source.uuid)
-        storage.update_sources([source_with_key], [source], session, homedir)
+    # now simulate a sync...
+    source_with_key = factory.RemoteSource(uuid=source.uuid)
+    storage.update_sources([source_with_key], [source], session, homedir)
 
-        # ... simulate the ReplyBoxWidget receiving the sync success signal
-        rbw._on_synced("synced")
+    # ... simulate the ReplyBoxWidget receiving the sync success signal
+    rbw._on_sync_succeeded()
 
-        # ... and the widget should be enabled
-        assert rbw.source.fingerprint
-        assert rbw.source.public_key
-        assert rbw.replybox.isEnabled()
-        assert rbw.text_edit.isEnabled()
+    # ... and the widget should be enabled
+    assert rbw.source.fingerprint
+    assert rbw.source.public_key
+    assert rbw.replybox.isEnabled()
+    assert rbw.text_edit.isEnabled()
 
 
 def test_ReplyTextEdit_focus_change_no_text(mocker):
@@ -5489,17 +5592,17 @@ def test_ReplyBox_resize_adjusts_label_width(mocker):
 
     # We wrap the update_label_width method so we can verify that it has been
     # called while preserving its behavior.
-    with patch.object(
+    wrapped_update = mocker.patch.object(
         ReplyTextEditPlaceholder,
         "update_label_width",
         wraps=rb.text_edit.placeholder.update_label_width,
-    ) as wrapped_update:
-        rb.resize(1000, rb.height())
-        wrapped_update.assert_called_with(rb.text_edit.width() - 2)
-        assert rb.text_edit.placeholder.source_name_label.elided is False
-        rb.resize(500, rb.height())
-        wrapped_update.assert_called_with(rb.text_edit.width() - 2)
-        assert rb.text_edit.placeholder.source_name_label.elided is True
+    )
+    rb.resize(1000, rb.height())
+    wrapped_update.assert_called_with(rb.text_edit.width() - 2)
+    assert rb.text_edit.placeholder.source_name_label.elided is False
+    rb.resize(500, rb.height())
+    wrapped_update.assert_called_with(rb.text_edit.width() - 2)
+    assert rb.text_edit.placeholder.source_name_label.elided is True
 
     rb.hide()
 
@@ -5725,6 +5828,7 @@ def test_update_conversation_content_updates(mocker, session):
     session.commit()
 
     cv = ConversationView(source, mock_controller)
+    cv.update_deletion_markers = mocker.MagicMock()
     cv.current_messages = {}
 
     cv.scroll.conversation_layout.removeWidget = mocker.MagicMock()
@@ -5823,6 +5927,8 @@ def test_update_conversation_updates_sender_when_sender_changes(
     controller = logic.Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
     controller.update_authenticated_user = mocker.MagicMock()
     cv = ConversationView(source, controller)
+    cv.update_deletion_markers = mocker.MagicMock()
+
     cv.update_conversation(cv.source.collection)
 
     reply.journalist.firstname = "abc"

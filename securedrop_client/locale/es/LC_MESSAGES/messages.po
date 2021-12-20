@@ -1,4 +1,4 @@
-# Translations template for SecureDrop Client.
+# Spanish translations for SecureDrop Client.
 # Copyright (C) 2021 Freedom of the Press Foundation
 # This file is distributed under the same license as the SecureDrop Client project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
@@ -9,14 +9,12 @@ msgstr ""
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
 "PO-Revision-Date: 2021-10-17 22:42+0000\n"
 "Last-Translator: Zuhualime Akoochimoya <zakooch@protonmail.ch>\n"
-"Language-Team: Spanish <https://weblate.securedrop.org/projects/securedrop/"
-"securedrop-client/es/>\n"
 "Language: es\n"
+"Language-Team: Spanish <https://weblate.securedrop.org/projects/securedrop/securedrop-client/es/>\n"
+"Plural-Forms: nplurals=2; plural=n != 1\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.6\n"
 "Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
@@ -55,9 +53,7 @@ msgid "Retrieving new messages"
 msgstr "Descargando mensajes nuevos"
 
 msgid "File does not exist in the data directory. Please try re-downloading."
-msgstr ""
-"El archivo no existe en el directorio de datos. Por favor, intenta volver a "
-"descargarlo."
+msgstr "El archivo no existe en el directorio de datos. Por favor, intenta volver a descargarlo."
 
 msgid "The file download failed. Please try again."
 msgstr "La descarga del archivo falló. Por favor inténtalo de nuevo."
@@ -67,61 +63,6 @@ msgstr "Fallo al borrar conversación en el servidor"
 
 msgid "Failed to delete source at server"
 msgstr "Fallo al borrar fuente en el servidor"
-
-msgid "SecureDrop Client {}"
-msgstr "Cliente SecureDrop {}"
-
-msgid "Last Refresh: {}"
-msgstr "Último Refresco: {}"
-
-msgid "Last Refresh: never"
-msgstr "Último Refresco: nunca"
-
-msgid "{}"
-msgstr "{}"
-
-msgid "SIGN OUT"
-msgstr "CERRAR SESIÓN"
-
-msgid "SIGN IN"
-msgstr "INICIAR SESIÓN"
-
-msgid "Nothing to see just yet!"
-msgstr "¡Nada para mirar por ahora!"
-
-msgid "Source submissions will be listed to the left, once downloaded and decrypted."
-msgstr ""
-"Los envíos de la fuente serán listados a la izquierda, una vez que sean "
-"descargados y descifrados."
-
-msgid "This is where you will read messages, reply to sources, and work with files."
-msgstr ""
-"Esto es donde leerás mensajes, responderás a las fuentes y trabajarás con "
-"archivos."
-
-msgid "Select a source from the list, to:"
-msgstr "Selecciona una fuente de la lista, para:"
-
-msgid "Read a conversation"
-msgstr "Leer una conversación"
-
-msgid "View or retrieve files"
-msgstr "Ver o descargar archivos"
-
-msgid "Send a response"
-msgstr "Enviar una respuesta"
-
-msgid "Deleting files and messages..."
-msgstr "Borrando archivos y mensajes..."
-
-msgid "Deleting source account..."
-msgstr "Borrando cuenta de la fuente..."
-
-msgid "— All files and messages deleted for this source —"
-msgstr "— Todos los archivos y mensajes borrados para esta fuente —"
-
-msgid "USE OFFLINE"
-msgstr "USAR FUERA DE LÍNEA"
 
 msgid "Username"
 msgstr "Nombre de Usuario"
@@ -134,6 +75,9 @@ msgstr "Código de autenticación de dos factores"
 
 msgid "SecureDrop Client v{}"
 msgstr "Cliente SecureDrop v{}"
+
+msgid "SIGN IN"
+msgstr "INICIAR SESIÓN"
 
 msgid ""
 "That username won't work.\n"
@@ -160,9 +104,58 @@ msgid "SIGNING IN"
 msgstr "CREANDO CUENTA"
 
 msgid "Please enter a username, passphrase and two-factor code."
+msgstr "Por favor ingresa un nombre de usuario, frase de contraseña y código de autenticación de dos factores."
+
+msgid "SecureDrop Client {}"
+msgstr "Cliente SecureDrop {}"
+
+msgid "Quit"
 msgstr ""
-"Por favor ingresa un nombre de usuario, frase de contraseña y código de "
-"autenticación de dos factores."
+
+msgid "Last Refresh: {}"
+msgstr "Último Refresco: {}"
+
+msgid "Last Refresh: never"
+msgstr "Último Refresco: nunca"
+
+msgid "{}"
+msgstr "{}"
+
+msgid "SIGN OUT"
+msgstr "CERRAR SESIÓN"
+
+msgid "Nothing to see just yet!"
+msgstr "¡Nada para mirar por ahora!"
+
+msgid "Source submissions will be listed to the left, once downloaded and decrypted."
+msgstr "Los envíos de la fuente serán listados a la izquierda, una vez que sean descargados y descifrados."
+
+msgid "This is where you will read messages, reply to sources, and work with files."
+msgstr "Esto es donde leerás mensajes, responderás a las fuentes y trabajarás con archivos."
+
+msgid "Select a source from the list, to:"
+msgstr "Selecciona una fuente de la lista, para:"
+
+msgid "Read a conversation"
+msgstr "Leer una conversación"
+
+msgid "View or retrieve files"
+msgstr "Ver o descargar archivos"
+
+msgid "Send a response"
+msgstr "Enviar una respuesta"
+
+msgid "Deleting files and messages..."
+msgstr "Borrando archivos y mensajes..."
+
+msgid "Deleting source account..."
+msgstr "Borrando cuenta de la fuente..."
+
+msgid "— All files and messages deleted for this source —"
+msgstr "— Todos los archivos y mensajes borrados para esta fuente —"
+
+msgid "USE OFFLINE"
+msgstr "USAR FUERA DE LÍNEA"
 
 msgid "Failed to send"
 msgstr "Fallo al enviar"
@@ -192,8 +185,7 @@ msgid "CONTINUE"
 msgstr "CONTINUAR"
 
 msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr ""
-"Preparando para imprimir:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Preparando para imprimir:<br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "Ready to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Listo para imprimir:<br /><span style=\"font-weight:normal\">{}</span>"
@@ -205,15 +197,7 @@ msgid "Printing failed"
 msgstr "Fallo de impresión"
 
 msgid "<h2>Managing printout risks</h2><b>QR codes and web addresses</b><br />Never type in and open web addresses or scan QR codes contained in printed documents without taking security precautions. If you are unsure how to manage this risk, please contact your administrator.<br /><br /><b>Printer dots</b><br />Any part of a printed page may contain identifying information invisible to the naked eye, such as printer dots. Please carefully consider this risk when working with or publishing scanned printouts."
-msgstr ""
-"<h2>Gestionando los riesgos con impresiones</h2><b>códigos QR y direcciones "
-"web</b><br />Nunca tipees ni abras direcciones web o escanees códigos QR "
-"contenidos en documentos impresos sin tomar precauciones de seguridad. Si no "
-"estás seguro acerca de cómo gestionar este riesgo, por favor contacta a tu "
-"administrador.<br /><br /><b>Puntos de impresora</b><br />Cualquier parte de "
-"una página impresa podría contener información identificatoria invisible al "
-"ojo desnudo, tales como puntos de impresora. Por favor considera este riesgo "
-"cuidadosamente al trabajar con o publicar impresiones escaneadas."
+msgstr "<h2>Gestionando los riesgos con impresiones</h2><b>códigos QR y direcciones web</b><br />Nunca tipees ni abras direcciones web o escanees códigos QR contenidos en documentos impresos sin tomar precauciones de seguridad. Si no estás seguro acerca de cómo gestionar este riesgo, por favor contacta a tu administrador.<br /><br /><b>Puntos de impresora</b><br />Cualquier parte de una página impresa podría contener información identificatoria invisible al ojo desnudo, tales como puntos de impresora. Por favor considera este riesgo cuidadosamente al trabajar con o publicar impresiones escaneadas."
 
 msgid "Please connect your printer to a USB port."
 msgstr "Por favor conecta tu impresora a un puerto USB."
@@ -225,8 +209,7 @@ msgid "DONE"
 msgstr "HECHO"
 
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr ""
-"Preparando para exportar:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Preparando para exportar:<br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Listo para exportar:<br /><span style=\"font-weight:normal\">{}</span>"
@@ -244,42 +227,25 @@ msgid "Export failed"
 msgstr "Fallo de exportación"
 
 msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
-msgstr ""
-"<h2>Entiende los riesgos antes de exportar archivos</h2><b>Malware</b><br /"
-">Esta estación de trabajo te permite abrir archivos en forma segura. Si "
-"abres archivos en otra computadora, cualquier malware incorporado podría "
-"diseminarse a tu computadora o red. Si no estás seguro de cómo gestionar "
-"este riesgo, por favor imprime el archivo, o contacta a tu administrador.<br "
-"/><br /><b>Anonimato</b><br />Los archivos enviados por fuentes podrían "
-"contener información o metadatos ocultos que identifican quiénes son. Para "
-"proteger a tus fuentes, por favor considera redactar los archivos antes de "
-"trabajar con ellos en computadoras conectadas en red."
+msgstr "<h2>Entiende los riesgos antes de exportar archivos</h2><b>Malware</b><br />Esta estación de trabajo te permite abrir archivos en forma segura. Si abres archivos en otra computadora, cualquier malware incorporado podría diseminarse a tu computadora o red. Si no estás seguro de cómo gestionar este riesgo, por favor imprime el archivo, o contacta a tu administrador.<br /><br /><b>Anonimato</b><br />Los archivos enviados por fuentes podrían contener información o metadatos ocultos que identifican quiénes son. Para proteger a tus fuentes, por favor considera redactar los archivos antes de trabajar con ellos en computadoras conectadas en red."
 
 msgid "Exporting: {}"
 msgstr "Exportando: {}"
 
 msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
-msgstr ""
-"Por favor inserta una de las unidades de exportación provistas "
-"específicamente para la estación de trabajo SecureDrop."
+msgstr "Por favor inserta una de las unidades de exportación provistas específicamente para la estación de trabajo SecureDrop."
 
 msgid "Either the drive is not encrypted or there is something else wrong with it."
-msgstr ""
-"La unidad no está cifrada o bien hay algo más que no está correcto con ella."
+msgstr "La unidad no está cifrada o bien hay algo más que no está correcto con ella."
 
 msgid "The passphrase provided did not work. Please try again."
-msgstr ""
-"La frase de contraseña ingresada no funcionó. Por favor inténtalo de nuevo."
+msgstr "La frase de contraseña ingresada no funcionó. Por favor inténtalo de nuevo."
 
 msgid "The CONTINUE button will be disabled until the Export VM is ready"
-msgstr ""
-"El botón CONTINUAR será deshabilitado hasta que la MV de Exportación esté "
-"lista"
+msgstr "El botón CONTINUAR será deshabilitado hasta que la MV de Exportación esté lista"
 
 msgid "Remember to be careful when working with files outside of your Workstation machine."
-msgstr ""
-"Recuerda ser cuidadoso cuando trabajes con archivos fuera de tu estación de "
-"trabajo."
+msgstr "Recuerda ser cuidadoso cuando trabajes con archivos fuera de tu estación de trabajo."
 
 msgid "SUBMIT"
 msgstr "ENVIAR"
@@ -294,8 +260,7 @@ msgid "When the entire account for a source is deleted:"
 msgstr "Cuando la cuenta de una fuente es borrada por completo:"
 
 msgid "The source will not be able to log in with their codename again."
-msgstr ""
-"La fuente no será capaz de iniciar sesión con su nombre en código de nuevo."
+msgstr "La fuente no será capaz de iniciar sesión con su nombre en código de nuevo."
 
 msgid "Your organization will not be able to send them replies."
 msgstr "Tu organización no será capaz de enviarle respuestas."
@@ -307,14 +272,10 @@ msgid "YES, DELETE FILES AND MESSAGES"
 msgstr "SÍ, BORRAR ARCHIVOS Y MENSAJES"
 
 msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
-msgstr ""
-"¿Desearías borrar {files_to_delete}, {replies_to_delete}, "
-"{messages_to_delete} de la cuenta de la fuente para {source}?"
+msgstr "¿Desearías borrar {files_to_delete}, {replies_to_delete}, {messages_to_delete} de la cuenta de la fuente para {source}?"
 
 msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
-msgstr ""
-"Preservar la cuenta retendrá sus metadatos, y la habilidad de {source} de "
-"iniciar sesión en tu SecureDrop de nuevo."
+msgstr "Preservar la cuenta retendrá sus metadatos, y la habilidad de {source} de iniciar sesión en tu SecureDrop de nuevo."
 
 msgid "one file"
 msgid_plural "{file_count} files"
@@ -356,11 +317,12 @@ msgstr "Crear cuenta"
 msgid " to compose or send a reply"
 msgstr " para componer o enviar una respuesta"
 
+msgid "DELETE"
+msgstr "BORRAR"
+
 msgid "Entire source account"
 msgstr "Cuenta de la fuente completa"
 
 msgid "Files and messages"
 msgstr "Archivos y mensajes"
 
-msgid "DELETE"
-msgstr "BORRAR"
