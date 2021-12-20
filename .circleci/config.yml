@@ -73,7 +73,7 @@ version: 2
 jobs:
   build-buster:
     docker:
-      - image: circleci/python:3.7-buster
+      - image: cimg/python:3.7-buster
     steps:
       - checkout
       - *removevirtualenv
@@ -84,7 +84,7 @@ jobs:
 
   test-buster:
     docker:
-      - image: circleci/python:3.7-buster
+      - image: cimg/python:3.7-buster
     steps:
       - checkout
       - run: sudo apt-get install -y sqlite3 libqt5x11extras5
