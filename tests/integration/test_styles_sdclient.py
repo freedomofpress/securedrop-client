@@ -369,7 +369,7 @@ def test_styles_for_conversation_view(mocker, main_window):
     assert "#f9f9ff" == conversation_scrollarea.palette().color(QPalette.Background).name()
     assert "#f9f9ff" == conversation_scrollarea.widget().palette().color(QPalette.Background).name()
     file_widget = conversation_scrollarea.widget().layout().itemAt(0).widget()
-    assert 400 == file_widget.minimumSize().width()
+    assert 435 == file_widget.minimumSize().width()
     assert 137 == file_widget.file_options.minimumSize().width()
     assert "Source Sans Pro" == file_widget.export_button.font().family()
     assert QFont.DemiBold - 1 == file_widget.export_button.font().weight()
