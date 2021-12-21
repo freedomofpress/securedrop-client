@@ -1,9 +1,12 @@
 ---
 common-steps:
-  - &removevirtualenv
+  - &install_deps
     run:
-      name: Removes the upstream virtualenv from the original container image
-      command: sudo pip uninstall virtualenv -y
+      name: Install base dependencies for Debian python
+      command: |
+        set -e
+        pip uninstall virtualenv -y || true
+        apt-get update && apt-get install -y sudo make git gnupg python3 python3-venv
 
   - &run_tests
     run:
@@ -36,10 +39,13 @@ common-steps:
     run:
       name: Install Debian packaging dependencies and download wheels
       command: |
+        set -x
         mkdir ~/packaging && cd ~/packaging
-        git config --global --unset url.ssh://git@github.com.insteadof
+        # local builds may not have an ssh url, so || true
+        git config --global --unset url.ssh://git@github.com.insteadof || true
         git clone https://github.com/freedomofpress/securedrop-debian-packaging.git
         cd securedrop-debian-packaging
+        apt-get update && apt-get install -y sudo make
         make install-deps
         PKG_DIR=~/project make requirements
 
@@ -66,17 +72,17 @@ common-steps:
       command: |
         cd ~/packaging/securedrop-debian-packaging
         export PKG_VERSION=1000.0
-        export PKG_PATH=/home/circleci/project/dist/securedrop-client-$PKG_VERSION.tar.gz
+        export PKG_PATH=~/project/dist/securedrop-client-$PKG_VERSION.tar.gz
         make securedrop-client
 
 version: 2
 jobs:
   build-buster:
     docker:
-      - image: circleci/python:3.7-buster
+      - image: debian:buster
     steps:
+      - *install_deps
       - checkout
-      - *removevirtualenv
       - *install_packaging_dependencies
       - *verify_requirements
       - *make_source_tarball
@@ -84,10 +90,11 @@ jobs:
 
   test-buster:
     docker:
-      - image: circleci/python:3.7-buster
+      - image: debian:buster
     steps:
+      - *install_deps
       - checkout
-      - run: sudo apt-get install -y sqlite3 libqt5x11extras5
+      - run: apt-get update && apt-get install -y sqlite3 libqt5x11extras5 xvfb python3-tk python3-dev
       - *run_tests
       - store_test_results:
           path: test-results
