@@ -1,5 +1,5 @@
 """
-Widgets related to authentication.
+Widgets related to the activity of using the application offline.
 
 Copyright (C) 2021  The Freedom of the Press Foundation.
 
@@ -16,6 +16,5 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-# Import classes here to make possible to import them from securedrop_client.gui.auth
-from securedrop_client.gui.auth.sign_in import LoginErrorBar, SignInButton  # noqa: F401
-from securedrop_client.gui.auth.use_offline import LoginOfflineLink  # noqa: F401
+# Import classes here to make possible to import them from securedrop_client.gui.auth.use_offline
+from securedrop_client.gui.auth.use_offline.button import LoginOfflineLink  # noqa: F401

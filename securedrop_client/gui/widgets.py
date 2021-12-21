@@ -78,7 +78,6 @@ from securedrop_client.db import (
 from securedrop_client.export import ExportError, ExportStatus
 from securedrop_client.gui.base import (
     PasswordEdit,
-    SDPushButton,
     SecureQLabel,
     SvgLabel,
     SvgPushButton,
@@ -1626,15 +1625,6 @@ class StarToggleButton(SvgToggleButton):
         """
         if self.source_uuid == source_uuid:
             self.pending_count = self.pending_count - 1
-
-
-class LoginOfflineLink(SDPushButton):
-    """A button that logs the user in, in offline mode."""
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.setText(_("USE OFFLINE"))
-        self.setAlignment(SDPushButton.AlignLeft)
 
 
 class SenderIcon(QWidget):
