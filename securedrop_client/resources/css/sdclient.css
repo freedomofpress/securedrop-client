@@ -11,52 +11,6 @@ QWidget {
     min-height: 600px;
 }
 
-#LoginDialog_form QLabel {
-    color: #fff;
-    font-family: 'Montserrat';
-    font-weight: 500;
-    font-size: 13px;
-}
-
-#LoginDialog_form QLineEdit {
-    border-radius: 0px;
-    height: 30px;
-    margin: 0px 0px 0px 0px;
-    padding-left: 5px;
-}
-
-#LoginDialog_app_version_label {
-    color: #9fddff;
-}
-
-#SignInButton {
-    border: none;
-    background-color: #05edfe;
-    font-family: 'Montserrat';
-    font-weight: 600;
-    font-size: 14px;
-    color: #2a319d;
-}
-
-#SignInButton:pressed {
-    background-color: #85f6fe;
-}
-
-#LoginErrorBar QWidget {
-    background-color: #ce0083;
-}
-
-#LoginErrorBar_icon {
-    color: #fff;
-}
-
-#LoginErrorBar_status_bar {
-    font-family: 'Montserrat';
-    font-weight: 500;
-    font-size: 12px;
-    color: #fff;
-}
-
 #SyncIcon {
     border: none;
     color: #fff;

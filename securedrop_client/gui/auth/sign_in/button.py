@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gettext import gettext as _
 
+from pkg_resources import resource_string
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QCursor
 from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QPushButton
@@ -34,6 +35,8 @@ class SignInButton(QPushButton):
 
         # Set css id
         self.setObjectName("SignInButton")
+        styles = resource_string(__name__, "button.css").decode("utf-8")
+        self.setStyleSheet(styles)
 
         self.setFixedHeight(40)
         self.setFixedWidth(140)
@@ -47,4 +50,5 @@ class SignInButton(QPushButton):
         effect.setBlurRadius(8)
         effect.setColor(QColor("#aa000000"))
         self.setGraphicsEffect(effect)
+
         self.update()
