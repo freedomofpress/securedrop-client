@@ -1637,33 +1637,6 @@ class LoginOfflineLink(SDPushButton):
         self.setAlignment(SDPushButton.AlignLeft)
 
 
-class SignInButton(QPushButton):
-    """
-    A button that logs the user into application when clicked.
-    """
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.setText(_("SIGN IN"))
-
-        # Set css id
-        self.setObjectName("SignInButton")
-
-        self.setFixedHeight(40)
-        self.setFixedWidth(140)
-
-        # Set cursor.
-        self.setCursor(QCursor(Qt.PointingHandCursor))
-
-        # Set drop shadow effect
-        effect = QGraphicsDropShadowEffect(self)
-        effect.setOffset(0, 1)
-        effect.setBlurRadius(8)
-        effect.setColor(QColor("#aa000000"))
-        self.setGraphicsEffect(effect)
-        self.update()
-
-
 class LoginErrorBar(QWidget):
     """
     A bar widget for displaying messages about login errors to the user.
