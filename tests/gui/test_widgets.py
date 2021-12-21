@@ -33,7 +33,6 @@ from securedrop_client.gui.widgets import (
     FileWidget,
     LeftPane,
     LoginButton,
-    LoginErrorBar,
     MainView,
     MessageWidget,
     PrintDialog,
@@ -2756,28 +2755,6 @@ def test_LoginDialog_validate_input_ok(mocker):
     assert ld.setDisabled.call_count == 1
     assert ld.error.call_count == 0
     mock_controller.login.assert_called_once_with("foo", "nicelongpassword", "123456")
-
-
-def test_LoginErrorBar_set_message(mocker):
-    error_bar = LoginErrorBar()
-    error_bar.error_status_bar = mocker.MagicMock()
-    mocker.patch.object(error_bar, "show")
-
-    error_bar.set_message("mock error")
-
-    error_bar.error_status_bar.setText.assert_called_with("mock error")
-    error_bar.show.assert_called_with()
-
-
-def test_LoginErrorBar_clear_message(mocker):
-    error_bar = LoginErrorBar()
-    error_bar.error_status_bar = mocker.MagicMock()
-    mocker.patch.object(error_bar, "hide")
-
-    error_bar.clear_message()
-
-    error_bar.error_status_bar.setText.assert_called_with("")
-    error_bar.hide.assert_called_with()
 
 
 def test_SpeechBubble_init(mocker):
