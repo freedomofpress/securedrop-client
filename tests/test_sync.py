@@ -158,12 +158,14 @@ def test_ApiSync_on_sync_failure(mocker, session_maker, homedir):
     """
     api_sync = ApiSync(mocker.MagicMock(), session_maker, mocker.MagicMock(), homedir)
     sync_failure = mocker.patch.object(api_sync, "sync_failure")
+    singleShot_fn = mocker.patch("securedrop_client.sync.QTimer.singleShot")
 
     error = Exception()
 
     api_sync.on_sync_failure(error)
 
     sync_failure.emit.assert_called_once_with(error)
+    singleShot_fn.assert_called_once_with(15000, api_sync.api_sync_bg_task.sync)
 
 
 @pytest.mark.parametrize("exception", [RequestTimeoutError, ServerConnectionError])
@@ -175,8 +177,10 @@ def test_ApiSync_on_sync_failure_because_of_timeout(mocker, session_maker, homed
     """
     api_sync = ApiSync(mocker.MagicMock(), session_maker, mocker.MagicMock(), homedir)
     sync_failure = mocker.patch.object(api_sync, "sync_failure")
+    singleShot_fn = mocker.patch("securedrop_client.sync.QTimer.singleShot")
     error = exception()
 
     api_sync.on_sync_failure(error)
 
     sync_failure.emit.assert_called_once_with(error)
+    singleShot_fn.assert_called_once_with(15000, api_sync.api_sync_bg_task.sync)
