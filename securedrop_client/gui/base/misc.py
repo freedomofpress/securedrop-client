@@ -41,7 +41,6 @@ class SvgToggleButton(QPushButton):
 
     def __init__(self, on: str, off: str, svg_size: str = None):
         super().__init__()
-        print("OK")
 
         # Set layout
         layout = QHBoxLayout(self)
