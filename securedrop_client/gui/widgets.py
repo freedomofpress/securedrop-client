@@ -607,6 +607,7 @@ class MainView(QWidget):
         Pass through the controller object to this widget.
         """
         self.controller = controller
+        self.controller.source_deletion_successful.connect(self._on_source_deletion_successful)
         self.source_list.setup(controller)
 
     def show_sources(self, sources: List[Source]) -> None:
@@ -683,6 +684,20 @@ class MainView(QWidget):
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.debug("Error refreshing source conversations: %s", e)
 
+    def _delete_source(self, source_uuid: str) -> None:
+        """
+        When we delete a source, we should delete its SourceConversationWrapper,
+        and remove the reference to it in self.source_conversations
+        """
+        self.source_list.delete_sources([source_uuid])
+        self.delete_conversation(source_uuid)
+        if not self.source_list.source_items:
+            self.empty_conversation_view.show_no_sources_message()
+            self.empty_conversation_view.show()
+        else:
+            self.empty_conversation_view.show_no_source_selected_message()
+            self.empty_conversation_view.show()
+
     def delete_conversation(self, source_uuid: str) -> None:
         """
         When we delete a source, we should delete its SourceConversationWrapper,
@@ -708,6 +723,14 @@ class MainView(QWidget):
         self.empty_conversation_view.hide()
         self.view_layout.addWidget(widget)
         widget.show()
+
+    @pyqtSlot(str, datetime)
+    def _on_source_deletion_successful(self, source_uuid: str, timestamp: datetime) -> None:
+        """
+        Handle the signal for a source that was successfully deleted by deleting that source from
+        the source list and the corresponding conversation.
+        """
+        self._delete_source(source_uuid)
 
 
 class EmptyConversationView(QWidget):
@@ -877,21 +900,8 @@ class SourceList(QListWidget):
                 continue
 
         # Delete widgets for sources not in the supplied sourcelist
-        deleted_uuids = []
-        sources_to_delete = [
-            self.source_items[uuid] for uuid in self.source_items if uuid not in sources_to_update
-        ]
-        for source_item in sources_to_delete:
-            if source_item.isSelected():
-                self.setCurrentItem(None)
-
-            source_widget = self.itemWidget(source_item)
-            self.takeItem(self.row(source_item))
-            if source_widget.source_uuid in self.source_items:
-                del self.source_items[source_widget.source_uuid]
-
-            deleted_uuids.append(source_widget.source_uuid)
-            source_widget.deleteLater()
+        sources_to_delete = [uuid for uuid in self.source_items if uuid not in sources_to_update]
+        deleted_uuids = self.delete_sources(sources_to_delete)
 
         # Update the remaining widgets
         for i in range(self.count()):
@@ -919,6 +929,27 @@ class SourceList(QListWidget):
 
         # Return uuids of source widgets that were deleted so we can later delete the corresponding
         # conversation widgets
+        return deleted_uuids
+
+    def delete_sources(self, source_uuids: List[str]) -> List[str]:
+        deleted_uuids = []
+
+        for uuid in source_uuids:
+            try:
+                source_item = self.source_items[uuid]
+                if source_item.isSelected():
+                    self.setCurrentItem(None)
+
+                source_widget = self.itemWidget(source_item)
+                self.takeItem(self.row(source_item))
+                if source_widget.source_uuid in self.source_items:
+                    del self.source_items[source_widget.source_uuid]
+
+                deleted_uuids.append(source_widget.source_uuid)
+                source_widget.deleteLater()
+            except KeyError:
+                continue
+
         return deleted_uuids
 
     def initial_update(self, sources: List[Source]) -> None:
@@ -1181,11 +1212,12 @@ class SourceWidget(QWidget):
         self.controller = controller
         self.controller.sync_started.connect(self._on_sync_started)
         self.controller.conversation_deleted.connect(self._on_conversation_deleted)
-        controller.conversation_deletion_successful.connect(
+        self.controller.conversation_deletion_successful.connect(
             self._on_conversation_deletion_successful
         )
         self.controller.conversation_deletion_failed.connect(self._on_conversation_deletion_failed)
         self.controller.source_deleted.connect(self._on_source_deleted)
+        self.controller.source_deletion_successful.connect(self._on_source_deletion_successful)
         self.controller.source_deletion_failed.connect(self._on_source_deletion_failed)
         self.controller.authentication_state.connect(self._on_authentication_changed)
         source_selected_signal.connect(self._on_source_selected)
@@ -1434,6 +1466,11 @@ class SourceWidget(QWidget):
     def _on_source_deleted(self, source_uuid: str) -> None:
         if self.source_uuid == source_uuid:
             self.start_account_deletion()
+
+    @pyqtSlot(str, datetime)
+    def _on_source_deletion_successful(self, source_uuid: str, timestamp: datetime) -> None:
+        if self.source_uuid == source_uuid:
+            self.deletion_scheduled_timestamp = timestamp
 
     @pyqtSlot(str)
     def _on_source_deletion_failed(self, source_uuid: str) -> None:
