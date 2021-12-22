@@ -3389,7 +3389,7 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
 
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
     fw.update = mocker.MagicMock()
-    mocker.patch("securedrop_client.gui.widgets.QDialog.exec")
+    mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.run_export_preflight_checks = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=True)
 
@@ -3412,7 +3412,7 @@ def test_FileWidget__on_export_clicked_missing_file(mocker, session, source):
 
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
     fw.update = mocker.MagicMock()
-    mocker.patch("securedrop_client.gui.widgets.QDialog.exec")
+    mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.run_export_preflight_checks = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=False)
     dialog = mocker.patch("securedrop_client.gui.widgets.ExportDialog")
@@ -3436,7 +3436,7 @@ def test_FileWidget__on_print_clicked(mocker, session, source):
 
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
     fw.update = mocker.MagicMock()
-    mocker.patch("securedrop_client.gui.widgets.QDialog.exec")
+    mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.print_file = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=True)
 
@@ -3460,7 +3460,7 @@ def test_FileWidget__on_print_clicked_missing_file(mocker, session, source):
 
     fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
     fw.update = mocker.MagicMock()
-    mocker.patch("securedrop_client.gui.widgets.QDialog.exec")
+    mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.print_file = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=False)
     dialog = mocker.patch("securedrop_client.gui.widgets.PrintDialog")
