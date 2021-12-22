@@ -20,7 +20,6 @@ import html
 import logging
 from datetime import datetime
 from gettext import gettext as _
-from gettext import ngettext
 from typing import Dict, List, Optional, Union  # noqa: F401
 from uuid import uuid4
 
@@ -79,6 +78,7 @@ from securedrop_client.gui.base import (
     SvgPushButton,
     SvgToggleButton,
 )
+from securedrop_client.gui.conversation import DeleteConversationDialog
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_css, load_icon, load_image, load_movie
 from securedrop_client.storage import source_exists
@@ -2757,83 +2757,6 @@ class DeleteSourceDialog(ModalDialog):
     @pyqtSlot()
     def delete_source(self) -> None:
         self.controller.delete_source(self.source)
-        self.close()
-
-
-class DeleteConversationDialog(ModalDialog):
-    """
-    Shown to confirm deletion of all content in a source conversation.
-    """
-
-    def __init__(self, source: Source, controller: Controller) -> None:
-        super().__init__(show_header=False, dangerous=False)
-
-        self.source = source
-        self.controller = controller
-
-        self.body.setText(self.make_body_text())
-
-        self.continue_button.setText(_("YES, DELETE FILES AND MESSAGES"))
-        self.continue_button.clicked.connect(self.delete_conversation)
-        self.continue_button.setFocus()
-
-        self.adjustSize()
-
-    def make_body_text(self) -> str:
-        files = 0
-        messages = 0
-        replies = 0
-        for submission in self.source.collection:
-            if isinstance(submission, Message):
-                messages += 1
-            if isinstance(submission, Reply):
-                replies += 1
-            elif isinstance(submission, File):
-                files += 1
-
-        message_tuple = (
-            "<style>li {{line-height: 150%;}}</li></style>",
-            "<p>",
-            _(
-                "You would like to delete {files_to_delete}, {replies_to_delete}, "
-                "{messages_to_delete} from the source account for {source}?"
-            ),
-            "</p>",
-            "<p>",
-            _(
-                "Preserving the account will retain its metadata, and the ability for {source} "
-                "to log in to your SecureDrop again."
-            ),
-            "</p>",
-        )
-
-        files_to_delete = ngettext("one file", "{file_count} files", files).format(file_count=files)
-
-        replies_to_delete = ngettext("one reply", "{reply_count} replies", replies).format(
-            reply_count=replies
-        )
-
-        messages_to_delete = ngettext("one message", "{message_count} messages", messages).format(
-            message_count=messages
-        )
-
-        source = "<b>{}</b>".format(self.source.journalist_designation)
-
-        return "".join(message_tuple).format(
-            files_to_delete=files_to_delete,
-            messages_to_delete=messages_to_delete,
-            replies_to_delete=replies_to_delete,
-            source=source,
-        )
-
-    def exec(self) -> None:
-        # Refresh counters
-        self.body.setText(self.make_body_text())
-        super().exec()
-
-    @pyqtSlot()
-    def delete_conversation(self) -> None:
-        self.controller.delete_conversation(self.source)
         self.close()
 
 
