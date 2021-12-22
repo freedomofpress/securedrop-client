@@ -131,12 +131,6 @@ msgstr ""
 msgid " DOWNLOADING "
 msgstr ""
 
-msgid "CANCEL"
-msgstr ""
-
-msgid "CONTINUE"
-msgstr ""
-
 msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr ""
 
@@ -204,6 +198,9 @@ msgid "Passphrase"
 msgstr ""
 
 msgid "SUBMIT"
+msgstr ""
+
+msgid "CONTINUE"
 msgstr ""
 
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
@@ -311,5 +308,8 @@ msgid "Please enter a username, passphrase and two-factor code."
 msgstr ""
 
 msgid "USE OFFLINE"
+msgstr ""
+
+msgid "CANCEL"
 msgstr ""
 
