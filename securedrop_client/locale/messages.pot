@@ -203,24 +203,6 @@ msgstr ""
 msgid "CONTINUE"
 msgstr ""
 
-msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
-msgstr ""
-
-msgid "Are you sure this is what you want?"
-msgstr ""
-
-msgid "When the entire account for a source is deleted:"
-msgstr ""
-
-msgid "The source will not be able to log in with their codename again."
-msgstr ""
-
-msgid "Your organization will not be able to send them replies."
-msgstr ""
-
-msgid "All files and messages from that source will also be destroyed."
-msgstr ""
-
 msgid "Earlier files and messages deleted."
 msgstr ""
 
@@ -312,4 +294,22 @@ msgid "one message"
 msgid_plural "{message_count} messages"
 msgstr[0] ""
 msgstr[1] ""
+
+msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
+msgstr ""
+
+msgid "Are you sure this is what you want?"
+msgstr ""
+
+msgid "When the entire account for a source is deleted:"
+msgstr ""
+
+msgid "The source will not be able to log in with their codename again."
+msgstr ""
+
+msgid "Your organization will not be able to send them replies."
+msgstr ""
+
+msgid "All files and messages from that source will also be destroyed."
+msgstr ""
 
