@@ -18,12 +18,12 @@ from sqlalchemy.orm import attributes, scoped_session, sessionmaker
 
 from securedrop_client import db, logic, storage
 from securedrop_client.export import ExportError, ExportStatus
+from securedrop_client.gui.source import DeleteSourceDialog
 from securedrop_client.gui.widgets import (
     ActivityStatusBar,
     ConversationView,
     DeleteConversationAction,
     DeleteSourceAction,
-    DeleteSourceDialog,
     EmptyConversationView,
     ErrorStatusBar,
     ExportDialog,
