@@ -221,30 +221,6 @@ msgstr ""
 msgid "All files and messages from that source will also be destroyed."
 msgstr ""
 
-msgid "YES, DELETE FILES AND MESSAGES"
-msgstr ""
-
-msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
-msgstr ""
-
-msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
-msgstr ""
-
-msgid "one file"
-msgid_plural "{file_count} files"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "one reply"
-msgid_plural "{reply_count} replies"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "one message"
-msgid_plural "{message_count} messages"
-msgstr[0] ""
-msgstr[1] ""
-
 msgid "Earlier files and messages deleted."
 msgstr ""
 
@@ -312,4 +288,28 @@ msgstr ""
 
 msgid "CANCEL"
 msgstr ""
+
+msgid "YES, DELETE FILES AND MESSAGES"
+msgstr ""
+
+msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
+msgstr ""
+
+msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
+msgstr ""
+
+msgid "one file"
+msgid_plural "{file_count} files"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "one reply"
+msgid_plural "{reply_count} replies"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "one message"
+msgid_plural "{message_count} messages"
+msgstr[0] ""
+msgstr[1] ""
 
