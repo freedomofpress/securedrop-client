@@ -397,6 +397,9 @@ class Controller(QObject):
         ):
             os.chmod(self.last_sync_filepath, 0o600)
 
+        self.deletion_scheduled_timestamp = datetime.utcnow()
+        self.sync_started_timestamp = datetime.utcnow()
+
     @property
     def is_authenticated(self) -> bool:
         return self.__is_authenticated
@@ -613,7 +616,8 @@ class Controller(QObject):
             return None
 
     def on_sync_started(self) -> None:
-        self.sync_started.emit(datetime.utcnow())
+        self.sync_started_timestamp = datetime.utcnow()
+        self.sync_started.emit(self.sync_started_timestamp)
 
     def on_sync_success(self) -> None:
         """
@@ -633,8 +637,12 @@ class Controller(QObject):
         missing_files = storage.update_missing_files(self.data_dir, self.session)
         for missed_file in missing_files:
             self.file_missing.emit(missed_file.source.uuid, missed_file.uuid, str(missed_file))
-        self.update_sources()
-        self.gui.refresh_current_source_conversation()
+
+        # don't update the gui if the sync started before a deletion operation
+        if not self.sync_started_timestamp < self.deletion_scheduled_timestamp:
+            self.update_sources()
+            self.gui.refresh_current_source_conversation()
+
         self.download_new_messages()
         self.download_new_replies()
         self.sync_succeeded.emit()
@@ -1067,6 +1075,7 @@ class Controller(QObject):
 
         self.add_job.emit(job)
         self.source_deleted.emit(source.uuid)
+        self.deletion_scheduled_timestamp = datetime.utcnow()
 
     @login_required
     def delete_conversation(self, source: db.Source) -> None:
