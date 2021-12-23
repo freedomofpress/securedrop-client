@@ -70,7 +70,6 @@ from securedrop_client.db import (
     User,
 )
 from securedrop_client.export import ExportError, ExportStatus
-from securedrop_client.gui.actions import DeleteConversationAction, DeleteSourceAction
 from securedrop_client.gui.base import (
     ModalDialog,
     PasswordEdit,
@@ -79,6 +78,7 @@ from securedrop_client.gui.base import (
     SvgPushButton,
     SvgToggleButton,
 )
+from securedrop_client.gui.conversation import SourceMenu
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_css, load_icon, load_image, load_movie
 from securedrop_client.storage import source_exists
@@ -3581,35 +3581,6 @@ class ReplyTextEditPlaceholder(QWidget):
             # current container size
             self.source_name_label.max_length = width - self.RESERVED_WIDTH
             self.source_name_label.setText(self.source_name)
-
-
-class SourceMenu(QMenu):
-    """Renders menu having various operations.
-
-    This menu provides below functionality via menu actions:
-
-    1. Delete source
-
-    Note: At present this only supports "delete" operation.
-    """
-
-    SOURCE_MENU_CSS = load_css("source_menu.css")
-
-    def __init__(self, source: Source, controller: Controller) -> None:
-        super().__init__()
-        self.source = source
-        self.controller = controller
-
-        self.setStyleSheet(self.SOURCE_MENU_CSS)
-        separator_font = QFont()
-        separator_font.setLetterSpacing(QFont.AbsoluteSpacing, 2)
-        separator_font.setBold(True)
-
-        delete_section = self.addSection(_("DELETE"))
-        delete_section.setFont(separator_font)
-
-        self.addAction(DeleteConversationAction(self.source, self, self.controller))
-        self.addAction(DeleteSourceAction(self.source, self, self.controller))
 
 
 class SourceMenuButton(QToolButton):

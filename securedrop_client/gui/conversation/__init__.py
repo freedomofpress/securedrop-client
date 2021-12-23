@@ -18,3 +18,4 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 # Import classes here to make possible to import them from securedrop_client.gui.conversation
 from securedrop_client.gui.conversation.delete import DeleteConversationDialog  # noqa: F401
+from securedrop_client.gui.conversation.menu import SourceMenu  # noqa: F401

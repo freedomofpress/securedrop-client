@@ -232,9 +232,6 @@ msgstr ""
 msgid " to compose or send a reply"
 msgstr ""
 
-msgid "DELETE"
-msgstr ""
-
 msgid "Username"
 msgstr ""
 
@@ -269,6 +266,9 @@ msgid "USE OFFLINE"
 msgstr ""
 
 msgid "CANCEL"
+msgstr ""
+
+msgid "DELETE"
 msgstr ""
 
 msgid "YES, DELETE FILES AND MESSAGES"
