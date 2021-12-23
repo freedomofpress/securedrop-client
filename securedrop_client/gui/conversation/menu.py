@@ -18,13 +18,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gettext import gettext as _
 
+from pkg_resources import resource_string
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QMenu
 
 from securedrop_client.db import Source
 from securedrop_client.gui.actions import DeleteConversationAction, DeleteSourceAction
 from securedrop_client.logic import Controller
-from securedrop_client.resources import load_css
 
 
 class SourceMenu(QMenu):
@@ -37,7 +37,7 @@ class SourceMenu(QMenu):
     Note: At present this only supports "delete" operation.
     """
 
-    SOURCE_MENU_CSS = load_css("source_menu.css")
+    SOURCE_MENU_CSS = resource_string(__name__, "menu.css").decode("utf-8")
 
     def __init__(self, source: Source, controller: Controller) -> None:
         super().__init__()
