@@ -3616,7 +3616,7 @@ class SourceMenu(QMenu):
 class DeleteSourceAction(QAction):
     """Use this action to delete the source record."""
 
-    def __init__(self, source: Source, parent: SourceMenu, controller: Controller) -> None:
+    def __init__(self, source: Source, parent: QMenu, controller: Controller) -> None:
         self.source = source
         self.controller = controller
         self.text = _("Entire source account")
@@ -3636,7 +3636,7 @@ class DeleteSourceAction(QAction):
 class DeleteConversationAction(QAction):
     """Use this action to delete a source's submissions and replies."""
 
-    def __init__(self, source: Source, parent: SourceMenu, controller: Controller) -> None:
+    def __init__(self, source: Source, parent: QMenu, controller: Controller) -> None:
         self.source = source
         self.controller = controller
         self.text = _("Files and messages")
