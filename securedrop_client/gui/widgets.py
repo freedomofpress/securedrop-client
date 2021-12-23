@@ -70,6 +70,7 @@ from securedrop_client.db import (
     User,
 )
 from securedrop_client.export import ExportError, ExportStatus
+from securedrop_client.gui.actions import DeleteConversationAction, DeleteSourceAction
 from securedrop_client.gui.base import (
     ModalDialog,
     PasswordEdit,
@@ -78,8 +79,6 @@ from securedrop_client.gui.base import (
     SvgPushButton,
     SvgToggleButton,
 )
-from securedrop_client.gui.conversation import DeleteConversationDialog
-from securedrop_client.gui.source import DeleteSourceDialog
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_css, load_icon, load_image, load_movie
 from securedrop_client.storage import source_exists
@@ -3611,46 +3610,6 @@ class SourceMenu(QMenu):
 
         self.addAction(DeleteConversationAction(self.source, self, self.controller))
         self.addAction(DeleteSourceAction(self.source, self, self.controller))
-
-
-class DeleteSourceAction(QAction):
-    """Use this action to delete the source record."""
-
-    def __init__(self, source: Source, parent: QMenu, controller: Controller) -> None:
-        self.source = source
-        self.controller = controller
-        self.text = _("Entire source account")
-
-        super().__init__(self.text, parent)
-
-        self.confirmation_dialog = DeleteSourceDialog(self.source, self.controller)
-        self.triggered.connect(self.trigger)
-
-    def trigger(self) -> None:
-        if self.controller.api is None:
-            self.controller.on_action_requiring_login()
-        else:
-            self.confirmation_dialog.exec()
-
-
-class DeleteConversationAction(QAction):
-    """Use this action to delete a source's submissions and replies."""
-
-    def __init__(self, source: Source, parent: QMenu, controller: Controller) -> None:
-        self.source = source
-        self.controller = controller
-        self.text = _("Files and messages")
-
-        super().__init__(self.text, parent)
-
-        self.confirmation_dialog = DeleteConversationDialog(self.source, self.controller)
-        self.triggered.connect(self.trigger)
-
-    def trigger(self) -> None:
-        if self.controller.api is None:
-            self.controller.on_action_requiring_login()
-        else:
-            self.confirmation_dialog.exec()
 
 
 class SourceMenuButton(QToolButton):

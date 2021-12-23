@@ -59,6 +59,12 @@ msgstr ""
 msgid "Failed to delete source at server"
 msgstr ""
 
+msgid "Entire source account"
+msgstr ""
+
+msgid "Files and messages"
+msgstr ""
+
 msgid "SecureDrop Client {}"
 msgstr ""
 
@@ -227,12 +233,6 @@ msgid " to compose or send a reply"
 msgstr ""
 
 msgid "DELETE"
-msgstr ""
-
-msgid "Entire source account"
-msgstr ""
-
-msgid "Files and messages"
 msgstr ""
 
 msgid "Username"
