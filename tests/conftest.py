@@ -8,7 +8,7 @@ from uuid import uuid4
 
 import pytest
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QMainWindow
+from PyQt5.QtWidgets import QMainWindow
 
 from securedrop_client.app import configure_locale_and_language
 from securedrop_client.config import Config
@@ -53,7 +53,9 @@ TIME_FILE_DOWNLOAD = 5000
 
 @pytest.fixture(scope="function")
 def modal_dialog(mocker, homedir):
-    mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
+    mocker.patch(
+        "securedrop_client.gui.widgets.QApplication.activeWindow", return_value=QMainWindow()
+    )
 
     dialog = ModalDialog()
 
@@ -62,7 +64,9 @@ def modal_dialog(mocker, homedir):
 
 @pytest.fixture(scope="function")
 def print_dialog(mocker, homedir):
-    mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
+    mocker.patch(
+        "securedrop_client.gui.widgets.QApplication.activeWindow", return_value=QMainWindow()
+    )
 
     file = factory.File(source=factory.Source(), is_downloaded=True)
     get_file = mocker.MagicMock(return_value=file)
@@ -76,7 +80,9 @@ def print_dialog(mocker, homedir):
 
 @pytest.fixture(scope="function")
 def export_dialog(mocker, homedir):
-    mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
+    mocker.patch(
+        "securedrop_client.gui.widgets.QApplication.activeWindow", return_value=QMainWindow()
+    )
 
     file = factory.File(source=factory.Source(), is_downloaded=True)
     get_file = mocker.MagicMock(return_value=file)
@@ -127,7 +133,7 @@ def functional_test_app_started_context(homedir, reply_status_codes, session, co
     used to for tests that need to start from the login dialog before the main application window
     is visible.
     """
-    gui = Window(QApplication.clipboard())
+    gui = Window()
     create_gpg_test_context(homedir)  # Configure test keys
     session_maker = make_session_maker(homedir)  # Configure and create the database
     controller = Controller(HOSTNAME, gui, session_maker, homedir, False, False)
