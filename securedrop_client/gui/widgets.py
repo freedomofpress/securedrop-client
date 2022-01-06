@@ -3022,6 +3022,7 @@ class DeleteConversationDialog(ModalDialog):
 
 class ConversationScrollArea(QScrollArea):
 
+    MARGIN_BOTTOM = 28
     MARGIN_LEFT = 38
     MARGIN_RIGHT = 20
 
@@ -3041,7 +3042,9 @@ class ConversationScrollArea(QScrollArea):
         conversation.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.conversation_layout = QVBoxLayout()
         conversation.setLayout(self.conversation_layout)
-        self.conversation_layout.setContentsMargins(self.MARGIN_LEFT, 0, self.MARGIN_RIGHT, 0)
+        self.conversation_layout.setContentsMargins(
+            self.MARGIN_LEFT, 0, self.MARGIN_RIGHT, self.MARGIN_BOTTOM
+        )
         self.conversation_layout.setSpacing(0)
 
         # `conversation` is a child of this scroll area
