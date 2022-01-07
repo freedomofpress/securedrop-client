@@ -607,6 +607,7 @@ class MainView(QWidget):
         Pass through the controller object to this widget.
         """
         self.controller = controller
+        self.controller.source_deletion_successful.connect(self._on_source_deletion_successful)
         self.source_list.setup(controller)
 
     def show_sources(self, sources: List[Source]) -> None:
@@ -683,6 +684,33 @@ class MainView(QWidget):
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.debug("Error refreshing source conversations: %s", e)
 
+    def _hide_source(self, source_uuid: str) -> None:
+        """
+        Hide the source and corresponding conversation.
+        """
+        self._hide_conversation(source_uuid)
+        self.source_list.hide_source(source_uuid)
+
+        visible_item_exists = False
+        for i in range(self.source_list.count()):
+            if not self.source_list.isRowHidden(i):
+                visible_item_exists = True
+                break
+
+        if visible_item_exists:
+            self.empty_conversation_view.show_no_source_selected_message()
+            self.empty_conversation_view.show()
+        else:
+            self.empty_conversation_view.show_no_sources_message()
+            self.empty_conversation_view.show()
+
+    def _hide_conversation(self, source_uuid: str) -> None:
+        try:
+            conversation_wrapper = self.source_conversations[source_uuid]
+            conversation_wrapper.hide()
+        except KeyError:
+            logger.debug("No SourceConversationWrapper for {} to hide".format(source_uuid))
+
     def delete_conversation(self, source_uuid: str) -> None:
         """
         When we delete a source, we should delete its SourceConversationWrapper,
@@ -708,6 +736,16 @@ class MainView(QWidget):
         self.empty_conversation_view.hide()
         self.view_layout.addWidget(widget)
         widget.show()
+
+    @pyqtSlot(str, datetime)
+    def _on_source_deletion_successful(self, source_uuid: str, timestamp: datetime) -> None:
+        """
+        Hide the source until a sync removes it from the GUI to ensure that a stale sync does not
+        re-add a source. This method will no longer be necessary once Journalist API v2 is
+        implemented (see https://github.com/freedomofpress/securedrop/issues/5104) and we can know
+        explicitly when a source is new.
+        """
+        self._hide_source(source_uuid)
 
 
 class EmptyConversationView(QWidget):
@@ -877,21 +915,8 @@ class SourceList(QListWidget):
                 continue
 
         # Delete widgets for sources not in the supplied sourcelist
-        deleted_uuids = []
-        sources_to_delete = [
-            self.source_items[uuid] for uuid in self.source_items if uuid not in sources_to_update
-        ]
-        for source_item in sources_to_delete:
-            if source_item.isSelected():
-                self.setCurrentItem(None)
-
-            source_widget = self.itemWidget(source_item)
-            self.takeItem(self.row(source_item))
-            if source_widget.source_uuid in self.source_items:
-                del self.source_items[source_widget.source_uuid]
-
-            deleted_uuids.append(source_widget.source_uuid)
-            source_widget.deleteLater()
+        sources_to_delete = [uuid for uuid in self.source_items if uuid not in sources_to_update]
+        deleted_uuids = self.delete_sources(sources_to_delete)
 
         # Update the remaining widgets
         for i in range(self.count()):
@@ -919,6 +944,37 @@ class SourceList(QListWidget):
 
         # Return uuids of source widgets that were deleted so we can later delete the corresponding
         # conversation widgets
+        return deleted_uuids
+
+    def hide_source(self, uuid: str) -> None:
+        try:
+            source_item = self.source_items[uuid]
+            if source_item.isSelected():
+                self.setCurrentItem(None)
+
+            source_item.setHidden(True)
+        except KeyError:
+            logger.debug("No SourceListWidgetItem for {} to hide".format(uuid))
+
+    def delete_sources(self, source_uuids: List[str]) -> List[str]:
+        deleted_uuids = []
+
+        for uuid in source_uuids:
+            try:
+                source_item = self.source_items[uuid]
+                if source_item.isSelected():
+                    self.setCurrentItem(None)
+
+                source_widget = self.itemWidget(source_item)
+                self.takeItem(self.row(source_item))
+                if source_widget.source_uuid in self.source_items:
+                    del self.source_items[source_widget.source_uuid]
+
+                deleted_uuids.append(source_widget.source_uuid)
+                source_widget.deleteLater()
+            except KeyError:
+                continue
+
         return deleted_uuids
 
     def initial_update(self, sources: List[Source]) -> None:
@@ -1181,11 +1237,12 @@ class SourceWidget(QWidget):
         self.controller = controller
         self.controller.sync_started.connect(self._on_sync_started)
         self.controller.conversation_deleted.connect(self._on_conversation_deleted)
-        controller.conversation_deletion_successful.connect(
+        self.controller.conversation_deletion_successful.connect(
             self._on_conversation_deletion_successful
         )
         self.controller.conversation_deletion_failed.connect(self._on_conversation_deletion_failed)
         self.controller.source_deleted.connect(self._on_source_deleted)
+        self.controller.source_deletion_successful.connect(self._on_source_deletion_successful)
         self.controller.source_deletion_failed.connect(self._on_source_deletion_failed)
         self.controller.authentication_state.connect(self._on_authentication_changed)
         source_selected_signal.connect(self._on_source_selected)
@@ -1434,6 +1491,11 @@ class SourceWidget(QWidget):
     def _on_source_deleted(self, source_uuid: str) -> None:
         if self.source_uuid == source_uuid:
             self.start_account_deletion()
+
+    @pyqtSlot(str, datetime)
+    def _on_source_deletion_successful(self, source_uuid: str, timestamp: datetime) -> None:
+        if self.source_uuid == source_uuid:
+            self.deletion_scheduled_timestamp = timestamp
 
     @pyqtSlot(str)
     def _on_source_deletion_failed(self, source_uuid: str) -> None:

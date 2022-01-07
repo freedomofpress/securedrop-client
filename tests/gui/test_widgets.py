@@ -605,6 +605,21 @@ def test_MainView_show_sources_when_sources_are_deleted(mocker):
     mv.delete_conversation.assert_called_once_with(4)
 
 
+def test_MainView_show_sources_does_not_reshow_deleted_sources(mocker):
+    """
+    Ensure that the hidden source remains hidden.
+    """
+    mv = MainView(None)
+    mv.source_list.controller = mocker.MagicMock()
+    source = factory.Source(uuid="123")
+    mv.source_list.update([factory.Source(uuid="abc"), source])
+    mv._on_source_deletion_successful("123", datetime.now())  # "delete" the source
+
+    mv.show_sources([source])
+
+    assert mv.source_list.source_items["123"].isHidden()
+
+
 def test_MainView_delete_conversation_when_conv_wrapper_exists(mocker):
     """
     Ensure SourceConversationWrapper is deleted if it exists.
@@ -947,6 +962,97 @@ def test_MainView_set_conversation(mocker):
     mv.view_layout.addWidget.assert_called_once_with(mock_widget)
 
 
+def test_MainView__hide_source(mocker):
+    """
+    Ensure that the source and conversation provided by source uuid are hidden,
+    and then deleted later by show_sources.
+    """
+    source = factory.Source(uuid="123")
+    conversation_wrapper = SourceConversationWrapper(source, mocker.MagicMock())
+    mv = MainView(None)
+    mv.source_conversations = {}
+    mv.source_conversations["123"] = conversation_wrapper
+    mv.source_list.controller = mocker.MagicMock()
+    mv.source_list.update([source])
+
+    mv._hide_source("123")
+
+    assert len(mv.source_conversations) > 0
+    assert len(mv.source_list.source_items) > 0
+
+    mv.show_sources([])  # Now the server is telling us to delete the source
+
+    # Ensure the hidden source and conversation are actually deleted
+    assert len(mv.source_conversations) == 0
+    assert len(mv.source_list.source_items) == 0
+
+
+def test_MainView__hide_source_with_multiple_sources(mocker):
+    """
+    Ensure that each source and conversation provided by source uuid are hidden,
+    and that both are deleted later by show_sources.
+    """
+    source1 = factory.Source(uuid="abc")
+    source2 = factory.Source(uuid="123")
+    mv = MainView(None)
+    mv.source_conversations = {}
+    mv.source_conversations["123"] = SourceConversationWrapper(source1, mocker.MagicMock())
+    mv.source_conversations["abc"] = SourceConversationWrapper(source2, mocker.MagicMock())
+    mv.source_list.controller = mocker.MagicMock()
+    mv.source_list.update([source1, source2])
+
+    mv._hide_source("123")
+    mv._hide_source("abc")
+
+    assert len(mv.source_conversations) == 2
+    assert len(mv.source_list.source_items) == 2
+
+    mv.show_sources([])  # Now the server is telling us to delete both sources
+
+    # Ensure hidden sources and conversations are actually deleted
+    assert len(mv.source_conversations) == 0
+    assert len(mv.source_list.source_items) == 0
+
+
+def test_MainView__on_source_deletion_successful(mocker):
+    """
+    Ensure that the source and conversation provided by source uuid are hidden.
+    """
+    source = factory.Source(uuid="123")
+    conversation_wrapper = SourceConversationWrapper(source, mocker.MagicMock())
+    mv = MainView(None)
+    mv.source_conversations = {}
+    mv.source_conversations["123"] = conversation_wrapper
+    mv.source_list.controller = mocker.MagicMock()
+    mv.source_list.update([source])
+    mv.source_conversations["123"].setHidden(False)
+
+    mv._on_source_deletion_successful("123", datetime.now())
+
+    assert mv.source_conversations["123"].isHidden()
+    assert mv.source_list.source_items["123"].isHidden()
+
+
+def test_MainView__on_source_deletion_successful_does_not_select_next_source(mocker):
+    """
+    Ensure that no other source is selected by default after a source deletion.
+    """
+    source = factory.Source(uuid="123")
+    mv = MainView(None)
+    mv.setup(mocker.MagicMock())
+    mv.source_list.update([source])
+    mv.source_list.setCurrentItem(mv.source_list.itemAt(0, 0))  # select source
+
+    mv._on_source_deletion_successful("123", datetime.now())
+
+    assert not mv.source_list.get_selected_source()
+
+
+def test_MainView__on_source_deletion_handles_keyerror():
+    mv = MainView(None)
+    mv._on_source_deletion_successful("throw-keyerror", datetime.now())
+
+
 def test_EmptyConversationView_show_no_sources_message(mocker):
     ecv = EmptyConversationView()
 
@@ -981,6 +1087,11 @@ def test_SourceList_get_selected_source(mocker):
     current_source = sl.get_selected_source()
 
     assert current_source.id == sources[1].id
+
+
+def test_SourceList_delete_sources_handles_keyerror():
+    sl = SourceList()
+    sl.delete_sources([factory.Source(uuid="throw-keyerror")])
 
 
 def test_SourceList_update_adds_new_sources(mocker):
@@ -2025,6 +2136,30 @@ def test_SourceWidget__on_source_deleted_wrong_uuid(mocker, session, source):
     assert not sw.preview.isHidden()
     assert sw.deletion_indicator.isHidden()
     assert not sw.timestamp.isHidden()
+
+
+def test_SourceWidget_update_and_set_snippet_ineffective_after_deletion_successful(mocker):
+    """
+    Ensure that a source widget is not updated by a stale sync if a deletion
+    request has been successfully received by the server.
+    """
+    controller = mocker.MagicMock()
+    mark_seen_signal = mocker.MagicMock()
+    sw = SourceWidget(controller, factory.Source(uuid="123"), mark_seen_signal, mocker.MagicMock())
+    sw._on_sync_started(datetime.now())
+
+    sw._on_source_deletion_successful("123", datetime.now())
+
+    sw.update_styles = mocker.MagicMock()
+    sw.set_snippet("mock_uuid", "msg_uuid", "msg_content")
+    sw.update_styles.assert_not_called()
+
+    sw.set_snippet = mocker.MagicMock()
+    sw.set_snippet_to_conversation_deleted = mocker.MagicMock()
+    sw.update()
+    sw.set_snippet.assert_not_called()
+    sw.set_snippet_to_conversation_deleted.assert_not_called()
+    sw.update_styles.assert_not_called()
 
 
 def test_SourceWidget__on_source_deletion_failed(mocker, session, source):
@@ -4152,6 +4287,30 @@ def test_SourceConversationWrapper_on_source_deleted(mocker):
     assert scw.reply_box.text_edit.document().isEmpty()
     assert scw.conversation_view.isHidden()
     assert not scw.deletion_indicator.isHidden()
+
+
+def test_SourceWidget_update_and_set_snippet_ineffective_after_deletion_started(mocker):
+    """
+    Ensure that when deletion has started that the source widget is not
+    updated when set_snippet or update are called.
+    """
+    controller = mocker.MagicMock()
+    sw = SourceWidget(
+        controller, factory.Source(uuid="123"), mocker.MagicMock(), mocker.MagicMock()
+    )
+    sw._on_source_deleted("123")  # Start source deletion
+    sw.update_styles = mocker.MagicMock()
+    sw.set_snippet_to_conversation_deleted = mocker.MagicMock()
+
+    sw.set_snippet("123", "msg_uuid", "msg_content")
+    sw.update_styles.assert_not_called()
+    sw.set_snippet_to_conversation_deleted.assert_not_called()
+
+    sw.set_snippet = mocker.MagicMock()
+    sw.update()
+    sw.update_styles.assert_not_called()
+    sw.set_snippet.assert_not_called()
+    sw.set_snippet_to_conversation_deleted.assert_not_called()
 
 
 def test_SourceConversationWrapper_on_source_deleted_wrong_uuid(mocker):
