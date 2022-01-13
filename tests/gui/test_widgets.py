@@ -22,7 +22,6 @@ from securedrop_client.gui.widgets import (
     ActivityStatusBar,
     ConversationView,
     DeleteConversationAction,
-    DeleteConversationDialog,
     DeleteSourceAction,
     DeleteSourceDialog,
     EmptyConversationView,
@@ -4828,30 +4827,6 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, sessi
 
     file_widget = cv.scroll.conversation_layout.itemAt(1).widget()
     assert isinstance(file_widget, FileWidget)
-
-
-def test_DeleteConversationDialog_continue(mocker, source, session):
-    source = source["source"]  # to get the Source object
-
-    mock_controller = mocker.MagicMock()
-    dialog = DeleteConversationDialog(source, mock_controller)
-    dialog.continue_button.click()
-    mock_controller.delete_conversation.assert_called_once_with(source)
-
-
-def test_DeleteConversationDialog_exec(mocker, source, session):
-    """
-    Test that the dialog body is updated every time it is opened, to ensure
-    that the file, message and reply counters are up-to-date.
-    """
-    source = source["source"]  # to get the Source object
-
-    mock_controller = mocker.MagicMock()
-    dialog = DeleteConversationDialog(source, mock_controller)
-    mocker.patch.object(dialog.body, "setText")
-    mocker.patch("securedrop_client.gui.widgets.ModalDialog.exec")
-    dialog.exec()
-    dialog.body.setText.assert_called_once()
 
 
 def test_DeleteSourceDialog_init(mocker, source):
