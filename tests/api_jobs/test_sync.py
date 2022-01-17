@@ -1,14 +1,52 @@
 import os
+import unittest
+from collections import namedtuple
 
-from securedrop_client.api_jobs.sync import MetadataSyncJob
+from securedrop_client import state
+from securedrop_client.api_jobs.sync import MetadataSyncJob, _update_state
 from tests import factory
 
 with open(os.path.join(os.path.dirname(__file__), "..", "files", "test-key.gpg.pub.asc")) as f:
     PUB_KEY = f.read()
 
+Source = namedtuple("Source", ["uuid"])
+Submission = namedtuple("Submission", ["uuid", "source_uuid", "is_file", "is_downloaded"])
+File = namedtuple("File", ["is_downloaded"])
+
+
+class TestUpdateState(unittest.TestCase):
+    def setUp(self):
+        self._state = state.State()
+        self._sources = []
+        self._submissions = []
+
+    def _get_file(self, id: str) -> File:
+        for submission in self._submissions:
+            if submission.uuid == id:
+                return File(submission.is_downloaded)
+        raise Exception
+
+    def test_handles_missing_files_gracefully(self):
+        self._sources = [
+            Source(uuid="3"),
+            Source(uuid="4"),
+        ]
+        self._submissions = [
+            Submission(uuid="6", source_uuid="3", is_file=lambda: True, is_downloaded=True),
+            Submission(uuid="7", source_uuid="4", is_file=lambda: True, is_downloaded=True),
+            Submission(uuid="8", source_uuid="3", is_file=lambda: False, is_downloaded=True),
+            Submission(uuid="9", source_uuid="3", is_file=lambda: True, is_downloaded=False),
+        ]
+
+        _update_state(self._state, self._sources, self._submissions, self._get_file)
+        assert (
+            "conversation_files: {'3': [6 (downloaded), '9'], '4': [7 (downloaded)]}"
+            in f"{self._state}"
+        )
+
 
 def test_MetadataSyncJob_success(mocker, homedir, session, session_maker):
-    job = MetadataSyncJob(homedir)
+    job = MetadataSyncJob(homedir, state.State())
 
     mock_source = factory.RemoteSource(
         key={"type": "PGP", "public": PUB_KEY, "fingerprint": "123456ABC"}
@@ -32,7 +70,7 @@ def test_MetadataSyncJob_success(mocker, homedir, session, session_maker):
 
 
 def test_MetadataSyncJob_success_current_user_name_change(mocker, homedir, session, session_maker):
-    job = MetadataSyncJob(homedir)
+    job = MetadataSyncJob(homedir, state.State())
 
     mock_source = factory.RemoteSource(
         key={"type": "PGP", "public": PUB_KEY, "fingerprint": "123456ABC"}
@@ -59,7 +97,7 @@ def test_MetadataSyncJob_success_with_missing_key(mocker, homedir, session, sess
     """
     Check that we can gracefully handle missing source keys.
     """
-    job = MetadataSyncJob(homedir)
+    job = MetadataSyncJob(homedir, state.State())
 
     mock_source = factory.RemoteSource(key={"type": "PGP", "public": "", "fingerprint": ""})
 

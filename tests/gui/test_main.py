@@ -56,7 +56,7 @@ def test_setup(mocker, homedir, session_maker):
     w.top_pane = mocker.MagicMock()
     w.left_pane = mocker.MagicMock()
     w.main_view = mocker.MagicMock()
-    controller = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    controller = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir, None)
 
     w.setup(controller)
 
@@ -69,7 +69,7 @@ def test_setup(mocker, homedir, session_maker):
 
 def test_show_main_window(mocker, homedir, session_maker):
     w = Window()
-    controller = Controller("http://localhost", w, session_maker, homedir)
+    controller = Controller("http://localhost", w, session_maker, homedir, None)
     w.setup(controller)
     w.show = mocker.MagicMock()
     w.showMaximized = mocker.MagicMock()
@@ -100,7 +100,7 @@ def test_show_main_window_when_already_showing(mocker, homedir, session_maker):
     Ensure we don't maximize the main window if it's already showing.
     """
     w = Window()
-    controller = Controller("http://localhost", w, session_maker, homedir)
+    controller = Controller("http://localhost", w, session_maker, homedir, None)
     w.setup(controller)
     w.show = mocker.MagicMock()
     w.showMaximized = mocker.MagicMock()
@@ -129,7 +129,7 @@ def test_show_main_window_when_already_showing(mocker, homedir, session_maker):
 
 def test_show_main_window_without_username(mocker, homedir, session_maker):
     w = Window()
-    controller = Controller("http://localhost", w, session_maker, homedir)
+    controller = Controller("http://localhost", w, session_maker, homedir, None)
     w.setup(controller)
     w.show = mocker.MagicMock()
     w.showMaximized = mocker.MagicMock()
@@ -156,7 +156,7 @@ def test_show_main_window_without_username(mocker, homedir, session_maker):
 
 def test_show_main_window_without_username_when_already_showing(mocker, homedir, session_maker):
     w = Window()
-    controller = Controller("http://localhost", w, session_maker, homedir)
+    controller = Controller("http://localhost", w, session_maker, homedir, None)
     w.setup(controller)
     w.show = mocker.MagicMock()
     w.showMaximized = mocker.MagicMock()

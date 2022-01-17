@@ -4,6 +4,7 @@ from PyQt5.QtCore import QObject, Qt, QThread, QTimer, pyqtSignal
 from sdclientapi import API
 from sqlalchemy.orm import scoped_session
 
+from securedrop_client import state
 from securedrop_client.api_jobs.base import ApiInaccessibleError
 from securedrop_client.api_jobs.sync import MetadataSyncJob
 from securedrop_client.crypto import GpgHelper
@@ -23,7 +24,12 @@ class ApiSync(QObject):
     TIME_BETWEEN_SYNCS_MS = 1000 * 15  # fifteen seconds between syncs
 
     def __init__(
-        self, api_client: API, session_maker: scoped_session, gpg: GpgHelper, data_dir: str
+        self,
+        api_client: API,
+        session_maker: scoped_session,
+        gpg: GpgHelper,
+        data_dir: str,
+        state: state.State,
     ):
         super().__init__()
         self.api_client = api_client
@@ -37,6 +43,7 @@ class ApiSync(QObject):
             self.sync_started,
             self.on_sync_success,
             self.on_sync_failure,
+            state,
         )
         self.api_sync_bg_task.moveToThread(self.sync_thread)
 
@@ -92,6 +99,7 @@ class ApiSyncBackgroundTask(QObject):
         sync_started: pyqtSignal,
         on_sync_success,
         on_sync_failure,
+        state: state.State,
     ):
         super().__init__()
 
@@ -103,7 +111,7 @@ class ApiSyncBackgroundTask(QObject):
         self.on_sync_success = on_sync_success
         self.on_sync_failure = on_sync_failure
 
-        self.job = MetadataSyncJob(self.data_dir)
+        self.job = MetadataSyncJob(self.data_dir, state)
         self.job.success_signal.connect(self.on_sync_success, type=Qt.QueuedConnection)
         self.job.failure_signal.connect(self.on_sync_failure, type=Qt.QueuedConnection)
 
