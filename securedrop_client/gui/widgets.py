@@ -87,6 +87,9 @@ from securedrop_client.utils import humanize_filesize
 logger = logging.getLogger(__name__)
 
 
+MINUMUM_ANIMATION_DURATION_IN_MILLISECONDS = 300
+
+
 class TopPane(QWidget):
     """
     Top pane of the app window.
@@ -2316,13 +2319,17 @@ class FileWidget(QWidget):
     def _on_file_downloaded(self, source_uuid: str, file_uuid: str, filename: str) -> None:
         if file_uuid == self.uuid:
             self.downloading = False
-            QTimer.singleShot(300, self.stop_button_animation)
+            QTimer.singleShot(
+                MINUMUM_ANIMATION_DURATION_IN_MILLISECONDS, self.stop_button_animation
+            )
 
     @pyqtSlot(str, str, str)
     def _on_file_missing(self, source_uuid: str, file_uuid: str, filename: str) -> None:
         if file_uuid == self.uuid:
             self.downloading = False
-            QTimer.singleShot(300, self.stop_button_animation)
+            QTimer.singleShot(
+                MINUMUM_ANIMATION_DURATION_IN_MILLISECONDS, self.stop_button_animation
+            )
 
     @pyqtSlot()
     def _on_export_clicked(self) -> None:
