@@ -68,6 +68,7 @@ def _update_state(
     submissions: List,
     get_file_from_local_storage: Callable[[Any], Any],
 ) -> None:
+    return None
     for source in sources:
         source_id = source.uuid
         files: List[Union[state.FileId, state.DownloadedFileId]] = []
