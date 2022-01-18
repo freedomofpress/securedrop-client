@@ -14,6 +14,4 @@ A short summary of the idea.
 <!-- Would this change create new risks for sources, journalists, or administrators? Would it mitigate existing risks? -->
 
 ## User Stories
-<!-- “As a [role], I want to [task], so that [reason].” -->
-
-If appropriate
+<!-- If appropriate, add one or more relevant user stories in this format: “As a [role], I want to [task], so that [reason].” -->

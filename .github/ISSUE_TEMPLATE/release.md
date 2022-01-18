@@ -28,3 +28,4 @@ SecureDrop maintainers and testers: As you QA this release, please report back y
 - [ ] Sign production package
 - [ ] Perform final pre-flight testing using apt-qa.freedom.press
 - [ ] Publish production package
+- [ ] Publicize release via support channels
