@@ -5,6 +5,7 @@ flaky
 isort
 MarkupSafe
 mypy
+Pillow>=9.0.0  # for mouseinfo, pyscreeze as of CVE-2022-{22815,22816,22817}
 pip-tools
 PyAutoGUI
 pyobjc-core;platform_system=="Darwin"
