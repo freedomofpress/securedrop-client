@@ -544,7 +544,7 @@ class User(Base):
 
     @property
     def deleted(self) -> bool:
-        return True if self.uuid == "deleted" else False
+        return True if self.username == "deleted" else False
 
     @property
     def fullname(self) -> str:

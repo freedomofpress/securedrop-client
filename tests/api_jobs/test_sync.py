@@ -1,10 +1,70 @@
 import os
 
 from securedrop_client.api_jobs.sync import MetadataSyncJob
+from securedrop_client.db import User
 from tests import factory
 
 with open(os.path.join(os.path.dirname(__file__), "..", "files", "test-key.gpg.pub.asc")) as f:
     PUB_KEY = f.read()
+
+
+def test_MetadataSyncJob_creates_new_user(mocker, homedir, session, session_maker):
+    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    remote_user = factory.RemoteUser()
+    api_client.get_users = mocker.MagicMock(return_value=[remote_user])
+
+    job = MetadataSyncJob(homedir)
+    job.call_api(api_client, session)
+
+    local_user = session.query(User).filter_by(uuid=remote_user.uuid).one_or_none()
+    assert local_user
+
+
+def test_MetadataSyncJob_creates_new_special_deleted_user(mocker, homedir, session, session_maker):
+    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    remote_user = factory.RemoteUser(username="deleted")
+    api_client.get_users = mocker.MagicMock(return_value=[remote_user])
+
+    job = MetadataSyncJob(homedir)
+    job.call_api(api_client, session)
+
+    local_user = session.query(User).filter_by(uuid=remote_user.uuid).one_or_none()
+    assert local_user.deleted
+
+
+def test_MetadataSyncJob_updates_existing_user(mocker, homedir, session, session_maker):
+    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    remote_user = factory.RemoteUser(
+        uuid="abc123-ima-uuid",
+        username="new-username",
+        first_name="NewFirstName",
+        last_name="NewLastName",
+    )
+    api_client.get_users = mocker.MagicMock(return_value=[remote_user])
+
+    exising_user = factory.User(uuid="abc123-ima-uuid")
+    session.add(exising_user)
+
+    job = MetadataSyncJob(homedir)
+    job.call_api(api_client, session)
+
+    assert exising_user.username == "new-username"
+    assert exising_user.firstname == "NewFirstName"
+    assert exising_user.lastname == "NewLastName"
+
+
+def test_MetadataSyncJob_deletes_user(mocker, homedir, session, session_maker):
+    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    api_client.get_users = mocker.MagicMock(return_value=[])
+
+    user = factory.User()
+    session.add(user)
+
+    job = MetadataSyncJob(homedir)
+    job.call_api(api_client, session)
+
+    local_user = session.query(User).filter_by(uuid=user.uuid).one_or_none()
+    assert not local_user
 
 
 def test_MetadataSyncJob_success(mocker, homedir, session, session_maker):
