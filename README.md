@@ -251,6 +251,7 @@ If you're adding or updating a dependency, you need to:
 
 1. Modify either `requirements.in` or `dev-requirements.in` (depending on whether it is prod or dev only)
 2. Run `make update-pip-requirements`. This will generate `dev-requirements.txt` and `requirements.txt`
+   * To update a macOS-specific dependency, modify `dev-mac-requirements.in` and then run `make update-mac-pip-requirements` on a Mac.  The latest development requirements from `dev-requirements.in` will also be included.
 
 For building a debian package from this project, we use the requirements in
 `build-requirements.txt` which uses our pip mirror, i.e. the hashes in that file point to

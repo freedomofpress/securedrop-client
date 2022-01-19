@@ -1,0 +1,4 @@
+-r dev-requirements.in
+pyobjc-core
+pyobjc
+rubicon-objc

@@ -167,6 +167,10 @@ update-dev-only-dependencies:  ## Update dev-requirements.txt to pin to the late
 		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-requirements-debian.txt requirements/requirements.in requirements/dev-requirements-debian.in; \
 	done < 'requirements/dev-requirements-debian.in'
 
+.PHONY: update-mac-pip-requirements
+update-mac-pip-requirements: ## Updates only dev Python requirements files via pip-compile for macOS.
+	pip-compile --verbose --rebuild --generate-hashes --annotate --allow-unsafe --output-file "requirements/dev-mac-requirements.txt" "requirements/requirements.in" "requirements/dev-mac-requirements.in"
+
 # Explaination of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##
 # 2. Use sed-like syntax to remove the make targets
