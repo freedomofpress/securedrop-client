@@ -60,6 +60,7 @@ class MetadataSyncJob(ApiJob):
                     lastname=remote_user.last_name,
                 )
                 session.add(new_user)
+                logger.debug(f"Adding account for user {new_user.uuid}")
             else:
                 if local_user.username != remote_user.username:
                     local_user.username = remote_user.username
@@ -71,5 +72,6 @@ class MetadataSyncJob(ApiJob):
 
         for uuid, account in local_users.items():
             session.delete(account)
+            logger.debug(f"Deleting account for user {uuid}")
 
         session.commit()
