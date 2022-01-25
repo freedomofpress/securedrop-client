@@ -1,9 +1,10 @@
 import logging
-from typing import Any, List
+from typing import Any, List, Optional
 
 from sdclientapi import API
 from sqlalchemy.orm.session import Session
 
+from securedrop_client import state
 from securedrop_client.api_jobs.base import ApiJob
 from securedrop_client.db import User
 from securedrop_client.storage import get_remote_data, update_local_storage
@@ -18,9 +19,10 @@ class MetadataSyncJob(ApiJob):
 
     NUMBER_OF_TIMES_TO_RETRY_AN_API_CALL = 2
 
-    def __init__(self, data_dir: str) -> None:
+    def __init__(self, data_dir: str, app_state: Optional[state.State] = None) -> None:
         super().__init__(remaining_attempts=self.NUMBER_OF_TIMES_TO_RETRY_AN_API_CALL)
         self.data_dir = data_dir
+        self._state = app_state
 
     def call_api(self, api_client: API, session: Session) -> Any:
         """
@@ -42,6 +44,8 @@ class MetadataSyncJob(ApiJob):
         MetadataSyncJob._update_users(session, users)
         sources, submissions, replies = get_remote_data(api_client)
         update_local_storage(session, sources, submissions, replies, self.data_dir)
+        if self._state is not None:
+            _update_state(self._state, submissions)
 
     def _update_users(session: Session, remote_users: List[User]) -> None:
         """
@@ -75,3 +79,14 @@ class MetadataSyncJob(ApiJob):
             logger.debug(f"Deleting account for user {uuid}")
 
         session.commit()
+
+
+def _update_state(
+    app_state: state.State,
+    submissions: List,
+) -> None:
+    for submission in submissions:
+        if submission.is_file():
+            app_state.add_file(
+                state.ConversationId(submission.source_uuid), state.FileId(submission.uuid)
+            )

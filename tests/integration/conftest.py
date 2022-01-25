@@ -14,7 +14,7 @@ def main_window(mocker, homedir):
     gui = Window()
     app.setActiveWindow(gui)
     gui.show()
-    controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, proxy=False)
+    controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, None, proxy=False)
     controller.authenticated_user = factory.User()
     controller.qubes = False
     gui.setup(controller)
@@ -54,7 +54,7 @@ def main_window_no_key(mocker, homedir):
     gui = Window()
     app.setActiveWindow(gui)
     gui.show()
-    controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, proxy=False)
+    controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, None, proxy=False)
     controller.authenticated_user = factory.User()
     controller.qubes = False
     gui.setup(controller)
@@ -92,7 +92,7 @@ def modal_dialog(mocker, homedir):
     app = QApplication([])
     gui = Window()
     gui.show()
-    controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, proxy=False)
+    controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, None, proxy=False)
     controller.authenticated_user = factory.User()
     controller.qubes = False
     gui.setup(controller)
@@ -111,7 +111,7 @@ def print_dialog(mocker, homedir):
     app = QApplication([])
     gui = Window()
     gui.show()
-    controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, proxy=False)
+    controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, None, proxy=False)
     controller.authenticated_user = factory.User()
     controller.qubes = False
     gui.setup(controller)
@@ -130,7 +130,7 @@ def export_dialog(mocker, homedir):
     app = QApplication([])
     gui = Window()
     gui.show()
-    controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, proxy=False)
+    controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, None, proxy=False)
     controller.authenticated_user = factory.User()
     controller.qubes = False
     gui.setup(controller)
