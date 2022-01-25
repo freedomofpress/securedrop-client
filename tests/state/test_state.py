@@ -18,6 +18,14 @@ class TestState(unittest.TestCase):
         self.state.selected_conversation = 1
         assert self.state.selected_conversation == 1
 
+    def test_selected_conversation_can_be_set_from_an_optional_source_id_and_cleared(self):
+        source_id = state.SourceId("some_id")
+        self.state.set_selected_conversation_for_source(source_id)
+        assert self.state.selected_conversation == state.ConversationId("some_id")
+
+        self.state.clear_selected_conversation()
+        assert self.state.selected_conversation is None
+
     def test_add_file_does_not_duplicate_information(self):
         self.state.add_file(5, 1)
         self.state.add_file(5, 7)
