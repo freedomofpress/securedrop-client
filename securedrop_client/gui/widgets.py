@@ -79,6 +79,7 @@ from securedrop_client.gui.base import (
     SvgToggleButton,
 )
 from securedrop_client.gui.conversation import DeleteConversationDialog
+from securedrop_client.gui.source import DeleteSourceDialog
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_css, load_icon, load_image, load_movie
 from securedrop_client.storage import source_exists
@@ -2772,54 +2773,6 @@ class ExportDialog(ModalDialog):
                 self._show_insert_encrypted_usb_message()
             else:
                 self._show_generic_error_message()
-
-
-class DeleteSourceDialog(ModalDialog):
-    """Used to confirm deletion of source accounts."""
-
-    def __init__(self, source: Source, controller: Controller) -> None:
-        super().__init__(show_header=False, dangerous=True)
-
-        self.source = source
-        self.controller = controller
-
-        self.body.setText(self.make_body_text())
-
-        self.continue_button.setText(_("YES, DELETE ENTIRE SOURCE ACCOUNT"))
-        self.continue_button.clicked.connect(self.delete_source)
-
-        self.confirmation_label.setText(_("Are you sure this is what you want?"))
-
-        self.adjustSize()
-
-    def make_body_text(self) -> str:
-        message_tuple = (
-            "<style>",
-            "p {{white-space: nowrap;}}",
-            "</style>",
-            "<p><b>",
-            _("When the entire account for a source is deleted:"),
-            "</b></p>",
-            "<p><b>\u2219</b>&nbsp;",
-            _("The source will not be able to log in with their codename again."),
-            "</p>",
-            "<p><b>\u2219</b>&nbsp;",
-            _("Your organization will not be able to send them replies."),
-            "</p>",
-            "<p><b>\u2219</b>&nbsp;",
-            _("All files and messages from that source will also be destroyed."),
-            "</p>",
-            "<p>&nbsp;</p>",
-        )
-
-        return "".join(message_tuple).format(
-            source="<b>{}</b>".format(self.source.journalist_designation)
-        )
-
-    @pyqtSlot()
-    def delete_source(self) -> None:
-        self.controller.delete_source(self.source)
-        self.close()
 
 
 class ConversationScrollArea(QScrollArea):
