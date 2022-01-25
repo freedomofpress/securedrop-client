@@ -30,17 +30,13 @@ def test_application_sets_en_as_default_language_code(mocker):
     assert language_code == "en"
 
 
-def test_application_uses_set_locale(mocker):
+@pytest.mark.parametrize("lang", ["es"], indirect=True)
+def test_application_uses_set_locale(mocker, lang):
     """
     The application respects the locale set in the environment's $LANG.
     """
-    LANG = os.environ.get("LANG", "")
-
-    os.environ["LANG"] = "es"
-    language_code = configure_locale_and_language()
-    assert language_code == "es"
-
-    os.environ["LANG"] = LANG
+    language_code = os.environ["LANG"]
+    assert language_code == lang
 
 
 def test_excepthook(mocker):

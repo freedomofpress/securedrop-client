@@ -1,14 +1,13 @@
-import os
-
+import pytest
 from PyQt5.QtWidgets import QApplication
 
-from securedrop_client.app import configure_locale_and_language
 from securedrop_client.gui.auth import LoginDialog
 
 app = QApplication([])
 
 
-def test_LoginDialog_translated():
+@pytest.mark.parametrize("lang", ["es"], indirect=True)
+def test_LoginDialog_translated(lang):
     """
     The LoginDialog is translated when a valid $LANG is set.
 
@@ -17,34 +16,19 @@ def test_LoginDialog_translated():
     constants or even read (via polib) from the gettext catalogs under
     "securedrop_client/locale/", but the complication (never mind the extra
     dependency) doesn't seem worthwhile for a few tests.
-
-    Note that we reset $LANG to its original value so that other string-based
-    tests don't fail under translation.  This could be factored out into a
-    fixture for easier reuse.
     """
-    LANG = os.environ.get("LANG", "")
-
-    os.environ["LANG"] = "es"
-    configure_locale_and_language()
     ld = LoginDialog(None)
     assert ld.username_label.text() == "Nombre de Usuario"  # expected translation
 
-    os.environ["LANG"] = LANG
 
-
-def test_LoginDialog_not_translated_with_invalid_lang():
+@pytest.mark.parametrize("lang", ["foo"], indirect=True)
+def test_LoginDialog_not_translated_with_invalid_lang(lang):
     """
     The LoginDialog falls back to source (English) strings when an invalid $LANG
     is set.  See test_LoginDialog_translated() above for commentary.
     """
-    LANG = os.environ.get("LANG", "")
-
-    os.environ["LANG"] = "foo"  # no such locale!
-    configure_locale_and_language()
     ld = LoginDialog(None)
     assert ld.username_label.text() == "Username"  # expected source string
-
-    os.environ["LANG"] = LANG
 
 
 def test_LoginDialog_setup(mocker, i18n):
