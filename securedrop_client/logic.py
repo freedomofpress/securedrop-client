@@ -1090,6 +1090,17 @@ class Controller(QObject):
         self.conversation_deleted.emit(source.uuid)
 
     @login_required
+    def download_conversation(self, id: state.ConversationId) -> None:
+        files = self._state.conversation_files(id)
+        for file in files:
+            if not file.is_downloaded:
+                job = FileDownloadJob(str(file.id), self.data_dir, self.gpg)
+                job.success_signal.connect(self.on_file_download_success, type=Qt.QueuedConnection)
+                job.failure_signal.connect(self.on_file_download_failure, type=Qt.QueuedConnection)
+                self.add_job.emit(job)
+                self.file_download_started.emit(file.id)
+
+    @login_required
     def send_reply(self, source_uuid: str, reply_uuid: str, message: str) -> None:
         """
         Send a reply to a source.
