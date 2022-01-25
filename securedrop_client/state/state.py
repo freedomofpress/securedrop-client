@@ -7,10 +7,12 @@ Note: the Graphical User Interface MUST NOT write state, except in QActions.
 """
 from typing import Dict, List, Optional
 
-from .domain import ConversationId, File, FileId
+from PyQt5.QtCore import QObject, pyqtSlot
+
+from .domain import ConversationId, File, FileId, SourceId
 
 
-class State:
+class State(QObject):
     """Stores and provides read/write access to the internal state of the SecureDrop Client.
 
     Note: the Graphical User Interface SHOULD NOT write state, except in QActions.
@@ -58,3 +60,11 @@ class State:
     @selected_conversation.setter
     def selected_conversation(self, id: Optional[ConversationId]) -> None:
         self._selected_conversation = id
+
+    @pyqtSlot(SourceId)
+    def set_selected_conversation_for_source(self, source_id: SourceId) -> None:
+        self.selected_conversation = ConversationId(str(source_id))
+
+    @pyqtSlot()
+    def clear_selected_conversation(self) -> None:
+        self.selected_conversation = None
