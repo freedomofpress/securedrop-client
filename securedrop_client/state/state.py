@@ -41,6 +41,9 @@ class State:
         default: List[File] = []
         return self._conversation_files.get(id, default)
 
+    def file(self, id: FileId) -> Optional[File]:
+        return self._files.get(id, None)
+
     def record_file_download(self, id: FileId) -> None:
         if id not in self._files.keys():
             pass
