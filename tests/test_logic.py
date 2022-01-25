@@ -1239,6 +1239,35 @@ def test_Controller_on_file_downloaded_success(homedir, config, mocker, session_
     mock_file_ready.emit.assert_called_once_with("a_uuid", "file_uuid", "foo.txt")
 
 
+def test_Controller_on_file_downloaded_success_updates_application_state(
+    homedir, config, mocker, session_maker
+):
+    """
+    Using the `config` fixture to ensure the config is written to disk.
+    """
+    mock_gui = mocker.MagicMock()
+    app_state = state.State()
+
+    co = Controller("http://localhost", mock_gui, session_maker, homedir, app_state)
+    co.session = mocker.MagicMock()
+
+    mock_storage = mocker.MagicMock()
+    mock_file = mocker.MagicMock()
+    mock_file.filename = "foo.txt"
+    mock_file.source.uuid = "a_uuid"
+    mock_storage.get_file.return_value = mock_file
+    mocker.patch("securedrop_client.logic.storage", mock_storage)
+
+    app_state.add_file("a_uuid", state.FileId("file_uuid"))
+
+    assert app_state.file(state.FileId("file_uuid"))
+    assert not app_state.file(state.FileId("file_uuid")).is_downloaded
+
+    co.on_file_download_success("file_uuid")
+
+    assert app_state.file(state.FileId("file_uuid")).is_downloaded
+
+
 def test_Controller_on_file_downloaded_api_failure(homedir, config, mocker, session_maker):
     """
     Using the `config` fixture to ensure the config is written to disk.

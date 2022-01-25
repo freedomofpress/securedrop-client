@@ -1007,6 +1007,7 @@ class Controller(QObject):
         file_obj = storage.get_file(self.session, uuid)
         file_obj.download_error = None
         storage.update_file_size(uuid, self.data_dir, self.session)
+        self._state.record_file_download(state.FileId(uuid))
 
         self.file_ready.emit(file_obj.source.uuid, uuid, file_obj.filename)
 
