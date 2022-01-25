@@ -223,6 +223,8 @@ class Controller(QObject):
     """
     message_download_failed = pyqtSignal(str, str, str)
 
+    file_download_started = pyqtSignal(state.FileId)
+
     """
     This signal indicates that a file has been successfully downloaded.
 
