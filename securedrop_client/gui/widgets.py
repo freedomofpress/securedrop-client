@@ -3706,6 +3706,29 @@ class SourceMenu(QMenu):
         self.addAction(DeleteSourceAction(self.source, self, self.controller))
 
 
+class DownloadConversation(QAction):
+    """Download all files and messages of the currently selected conversation."""
+
+    def __init__(
+        self, parent: QMenu, controller: Controller, app_state: Optional[state.State] = None
+    ) -> None:
+        self._controller = controller
+        self._state = app_state
+        self._text = _("All Files")
+        super().__init__(self._text, parent)
+        self.setShortcut(Qt.CTRL + Qt.Key_D)
+        self.triggered.connect(self.on_triggered)
+        self.setShortcutVisibleInContextMenu(True)
+
+    @pyqtSlot()
+    def on_triggered(self) -> None:
+        if self._state is not None:
+            id = self._state.selected_conversation
+            if id is None:
+                return
+            self._controller.download_conversation(id)
+
+
 class DeleteSourceAction(QAction):
     """Use this action to delete the source record."""
 

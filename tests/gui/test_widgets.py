@@ -13,10 +13,10 @@ import sqlalchemy.orm.exc
 from PyQt5.QtCore import QEvent, QSize, Qt
 from PyQt5.QtGui import QFocusEvent, QMovie, QResizeEvent
 from PyQt5.QtTest import QTest
-from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QApplication, QMenu, QVBoxLayout, QWidget
 from sqlalchemy.orm import attributes, scoped_session, sessionmaker
 
-from securedrop_client import db, logic, storage
+from securedrop_client import db, logic, state, storage
 from securedrop_client.export import ExportError, ExportStatus
 from securedrop_client.gui.source import DeleteSourceDialog
 from securedrop_client.gui.widgets import (
@@ -24,6 +24,7 @@ from securedrop_client.gui.widgets import (
     ConversationView,
     DeleteConversationAction,
     DeleteSourceAction,
+    DownloadConversation,
     EmptyConversationView,
     ErrorStatusBar,
     ExportDialog,
@@ -4859,6 +4860,31 @@ def test_DeleteSourceAction_trigger(mocker):
     delete_source_action = DeleteSourceAction(mock_source, None, mock_controller)
     delete_source_action.trigger()
     mock_delete_source_dialog_instance.exec.assert_called_once()
+
+
+def test_DownloadConversation_trigger(mocker):
+    menu = QMenu()
+    controller = mocker.MagicMock()
+    app_state = state.State()
+
+    conversation_id = state.ConversationId("some_conversation")
+    app_state.selected_conversation = conversation_id
+
+    action = DownloadConversation(menu, controller, app_state)
+    action.trigger()
+
+    controller.download_conversation.assert_called_once_with(conversation_id)
+
+
+def test_DownloadConversation_trigger_downloads_nothing_if_no_conversation_is_selected(mocker):
+    menu = QMenu()
+    controller = mocker.MagicMock()
+    app_state = state.State()
+
+    action = DownloadConversation(menu, controller, app_state)
+    action.trigger()
+
+    assert controller.download_conversation.not_called
 
 
 def test_DeleteConversationAction_trigger(mocker):
