@@ -5812,7 +5812,7 @@ def test_SenderIcon_for_deleted_user(mocker):
     """
     Ensure reply sender badge shows image instead of initials for delted user.
     """
-    sender = factory.User(uuid="deleted")
+    sender = factory.User(username="deleted")
     si = SenderIcon()
     si.label.setPixmap = mocker.MagicMock()
 

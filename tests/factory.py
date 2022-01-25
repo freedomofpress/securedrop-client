@@ -10,6 +10,7 @@ from typing import List
 from sdclientapi import Reply as SDKReply
 from sdclientapi import Source as SDKSource
 from sdclientapi import Submission as SDKSubmission
+from sdclientapi import User as SDKUser
 
 from securedrop_client import db
 from securedrop_client.api_jobs.base import ApiJob
@@ -166,6 +167,17 @@ def dummy_job_factory(mocker, return_value, **kwargs):
                 return return_value
 
     return DummyApiJob
+
+
+def RemoteUser(**attrs):
+    defaults = dict(
+        uuid=str(uuid.uuid4()),
+        username="dellsberg",
+        first_name="Daniel",
+        last_name="Ellsberg",
+    )
+    defaults.update(attrs)
+    return SDKUser(**defaults)
 
 
 def RemoteSource(**attrs):

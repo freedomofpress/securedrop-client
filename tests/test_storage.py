@@ -1380,9 +1380,16 @@ def test_update_replies_missing_source(homedir, mocker, session):
 
 def test_User_deleted(mocker, session):
     """
-    Test deleted User..
+    Test deleted User. The deleted User account must have the username "deleted".
     """
-    user = create_or_update_user("deleted", "mock", "mock", "mock", session)
+    deleted_user = factory.User(username="deleted")
+    user = create_or_update_user(
+        deleted_user.uuid,
+        deleted_user.username,
+        deleted_user.firstname,
+        deleted_user.lastname,
+        session,
+    )
     assert not user.initials
     assert not user.fullname
     assert user.deleted
