@@ -27,5 +27,6 @@ SecureDrop maintainers and testers: As you QA this release, please report back y
 - [ ] Build production package in standard [build environment](https://github.com/freedomofpress/securedrop-debian-packaging/wiki/FAQ#how-do-i-create-a-local-environment-suitable-for-building-packages)
 - [ ] Sign production package
 - [ ] Perform final pre-flight testing using apt-qa.freedom.press
+  - [ ] **Localization:** In a dispVM, change your locale (e.g.: `export LANG=es_ES.utf-8; dpkg-reconfigure locales`), run the Client, and confirm that the application is translated.
 - [ ] Publish production package
 - [ ] Publicize release via support channels
