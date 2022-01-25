@@ -27,7 +27,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QGuiApplication, QIcon, QKeySequence
 from PyQt5.QtWidgets import QAction, QApplication, QHBoxLayout, QMainWindow, QVBoxLayout, QWidget
 
-from securedrop_client import __version__
+from securedrop_client import __version__, state
 from securedrop_client.db import Source, User
 from securedrop_client.gui.auth import LoginDialog
 from securedrop_client.gui.widgets import LeftPane, MainView, TopPane
@@ -45,7 +45,7 @@ class Window(QMainWindow):
 
     icon = "icon.png"
 
-    def __init__(self) -> None:
+    def __init__(self, app_state: Optional[state.State] = None) -> None:
         """
         Create the default start state. The window contains a root widget into
         which is placed:
@@ -73,7 +73,7 @@ class Window(QMainWindow):
         layout.setSpacing(0)
         self.main_pane.setLayout(layout)
         self.left_pane = LeftPane()
-        self.main_view = MainView(self.main_pane)
+        self.main_view = MainView(self.main_pane, app_state)
         layout.addWidget(self.left_pane)
         layout.addWidget(self.main_view)
 

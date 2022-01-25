@@ -5,6 +5,7 @@ import unittest
 
 from PyQt5.QtWidgets import QApplication, QHBoxLayout
 
+from securedrop_client import state
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_icon
@@ -37,11 +38,12 @@ def test_init(mocker):
     mocker.patch("securedrop_client.gui.main.Window.setStyleSheet")
     load_css = mocker.patch("securedrop_client.gui.main.load_css")
 
-    w = Window()
+    app_state = state.State()
+    w = Window(app_state)
 
     mock_li.assert_called_once_with(w.icon)
     mock_lp.assert_called_once_with()
-    mock_mv.assert_called_once_with(w.main_pane)
+    mock_mv.assert_called_once_with(w.main_pane, app_state)
     assert mock_lo().addWidget.call_count == 2
     load_css.assert_called_once_with("sdclient.css")
 
@@ -56,7 +58,7 @@ def test_setup(mocker, homedir, session_maker):
     w.top_pane = mocker.MagicMock()
     w.left_pane = mocker.MagicMock()
     w.main_view = mocker.MagicMock()
-    controller = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    controller = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir, None)
 
     w.setup(controller)
 
@@ -69,7 +71,7 @@ def test_setup(mocker, homedir, session_maker):
 
 def test_show_main_window(mocker, homedir, session_maker):
     w = Window()
-    controller = Controller("http://localhost", w, session_maker, homedir)
+    controller = Controller("http://localhost", w, session_maker, homedir, None)
     w.setup(controller)
     w.show = mocker.MagicMock()
     w.showMaximized = mocker.MagicMock()
@@ -100,7 +102,7 @@ def test_show_main_window_when_already_showing(mocker, homedir, session_maker):
     Ensure we don't maximize the main window if it's already showing.
     """
     w = Window()
-    controller = Controller("http://localhost", w, session_maker, homedir)
+    controller = Controller("http://localhost", w, session_maker, homedir, None)
     w.setup(controller)
     w.show = mocker.MagicMock()
     w.showMaximized = mocker.MagicMock()
@@ -129,7 +131,7 @@ def test_show_main_window_when_already_showing(mocker, homedir, session_maker):
 
 def test_show_main_window_without_username(mocker, homedir, session_maker):
     w = Window()
-    controller = Controller("http://localhost", w, session_maker, homedir)
+    controller = Controller("http://localhost", w, session_maker, homedir, None)
     w.setup(controller)
     w.show = mocker.MagicMock()
     w.showMaximized = mocker.MagicMock()
@@ -156,7 +158,7 @@ def test_show_main_window_without_username(mocker, homedir, session_maker):
 
 def test_show_main_window_without_username_when_already_showing(mocker, homedir, session_maker):
     w = Window()
-    controller = Controller("http://localhost", w, session_maker, homedir)
+    controller = Controller("http://localhost", w, session_maker, homedir, None)
     w.setup(controller)
     w.show = mocker.MagicMock()
     w.showMaximized = mocker.MagicMock()

@@ -60,6 +60,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
+from securedrop_client import state
 from securedrop_client.db import (
     DraftReply,
     File,
@@ -566,8 +567,10 @@ class MainView(QWidget):
     and main context view).
     """
 
-    def __init__(self, parent: QObject) -> None:
+    def __init__(self, parent: QObject, app_state: Optional[state.State] = None) -> None:
         super().__init__(parent)
+
+        self._state = app_state
 
         # Set id and styles
         self.setObjectName("MainView")
