@@ -90,6 +90,7 @@ logger = logging.getLogger(__name__)
 
 
 MINIMUM_ANIMATION_DURATION_IN_MILLISECONDS = 300
+NO_DELAY = 1
 
 
 class TopPane(QWidget):
@@ -2161,6 +2162,7 @@ class FileWidget(QWidget):
         self,
         file_uuid: str,
         controller: Controller,
+        file_download_started: pyqtBoundSignal,
         file_ready_signal: pyqtBoundSignal,
         file_missing: pyqtBoundSignal,
         index: int,
@@ -2266,6 +2268,7 @@ class FileWidget(QWidget):
         layout.addWidget(self.file_size)
 
         # Connect signals to slots
+        file_download_started.connect(self._on_file_download_started, type=Qt.QueuedConnection)
         file_ready_signal.connect(self._on_file_downloaded, type=Qt.QueuedConnection)
         file_missing.connect(self._on_file_missing, type=Qt.QueuedConnection)
 
@@ -2339,6 +2342,12 @@ class FileWidget(QWidget):
         if self.file_name.is_elided():
             self.horizontal_line.hide()
             self.spacer.show()
+
+    @pyqtSlot(state.FileId)
+    def _on_file_download_started(self, id: state.FileId) -> None:
+        if str(id) == self.uuid:
+            self.downloading = True
+            QTimer.singleShot(NO_DELAY, self.start_button_animation)
 
     @pyqtSlot(str, str, str)
     def _on_file_downloaded(self, source_uuid: str, file_uuid: str, filename: str) -> None:
@@ -3135,6 +3144,7 @@ class ConversationView(QWidget):
         conversation_item = FileWidget(
             file.uuid,
             self.controller,
+            self.controller.file_download_started,
             self.controller.file_ready,
             self.controller.file_missing,
             index,
