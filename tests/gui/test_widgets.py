@@ -3013,7 +3013,9 @@ def test_FileWidget_init_file_not_downloaded(mocker, source, session):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget("mock", controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        "mock", controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
 
     assert fw.controller == controller
     assert fw.file.is_downloaded is False
@@ -3036,7 +3038,9 @@ def test_FileWidget_init_file_downloaded(mocker, source, session):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget("mock", controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        "mock", controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
 
     assert fw.controller == controller
     assert fw.file.is_downloaded is True
@@ -3058,7 +3062,15 @@ def test_FileWidget_adjust_width(mocker):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget("abc123-ima-uuid", controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        "abc123-ima-uuid",
+        controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
 
     fw.adjust_width(fw.MIN_CONTAINER_WIDTH - 1)
     assert fw.width() == fw.MIN_WIDTH
@@ -3079,7 +3091,15 @@ def test_FileWidget__set_file_state_under_mouse(mocker, source, session):
     mock_get_file = mocker.MagicMock(return_value=file_)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
-    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file_.uuid,
+        mock_controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
     fw.download_button.underMouse = mocker.MagicMock(return_value=True)
     fw.download_button.setIcon = mocker.MagicMock()
     mock_load = mocker.MagicMock()
@@ -3101,7 +3121,15 @@ def test_FileWidget_event_handler_left_click(mocker, session, source):
     test_event = QEvent(QEvent.MouseButtonPress)
     test_event.button = mocker.MagicMock(return_value=Qt.LeftButton)
 
-    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file_.uuid,
+        mock_controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
     fw._on_left_click = mocker.MagicMock()
 
     fw.eventFilter(fw, test_event)
@@ -3120,7 +3148,15 @@ def test_FileWidget_event_handler_hover(mocker, session, source):
     mock_get_file = mocker.MagicMock(return_value=file_)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
-    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file_.uuid,
+        mock_controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
     fw.download_button = mocker.MagicMock()
 
     # Hover enter
@@ -3147,7 +3183,15 @@ def test_FileWidget_on_left_click_download(mocker, session, source):
     mock_get_file = mocker.MagicMock(return_value=file_)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
-    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file_.uuid,
+        mock_controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
     fw.download_button = mocker.MagicMock()
     mock_get_file.assert_called_once_with(file_.uuid)
     mock_get_file.reset_mock()
@@ -3169,7 +3213,15 @@ def test_FileWidget_on_left_click_downloading_in_progress(mocker, session, sourc
     mock_get_file = mocker.MagicMock(return_value=file_)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
-    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file_.uuid,
+        mock_controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
     fw.downloading = True
     fw.download_button = mocker.MagicMock()
     mock_get_file.assert_called_once_with(file_.uuid)
@@ -3189,7 +3241,15 @@ def test_FileWidget_start_button_animation(mocker, session, source):
     session.commit()
     mock_get_file = mocker.MagicMock(return_value=file_)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
-    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file_.uuid,
+        mock_controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
     fw.download_button = mocker.MagicMock()
     fw.start_button_animation()
     # Check indicators of activity have been updated.
@@ -3207,7 +3267,15 @@ def test_FileWidget_on_left_click_open(mocker, session, source):
     mock_get_file = mocker.MagicMock(return_value=file_)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
-    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file_.uuid,
+        mock_controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
     fw._on_left_click()
     fw.controller.on_file_open.assert_called_once_with(file_)
 
@@ -3224,7 +3292,15 @@ def test_FileWidget_set_button_animation_frame(mocker, session, source):
     mock_get_file = mocker.MagicMock(return_value=file_)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
-    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file_.uuid,
+        mock_controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
     fw.download_button = mocker.MagicMock()
     fw.set_button_animation_frame(1)
     assert fw.download_button.setIcon.call_count == 1
@@ -3239,7 +3315,9 @@ def test_FileWidget_update(mocker, session, source):
     session.commit()
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
 
     fw.update()
 
@@ -3259,7 +3337,9 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_matches(mocker, sou
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
     fw.update = mocker.MagicMock()
 
     fw._on_file_downloaded(file.source.uuid, file.uuid, str(file))
@@ -3270,6 +3350,31 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_matches(mocker, sou
     assert not fw.print_button.isHidden()
     assert fw.no_file_name.isHidden()
     assert not fw.file_name.isHidden()
+
+
+def test_FileWidget_on_file_download_started_updates_items_when_uuid_matches(
+    mocker, source, session
+):
+    """
+    The _on_download_started method should update the FileWidget
+    """
+    file = factory.File(source=source["source"])
+    session.add(file)
+    session.commit()
+
+    get_file = mocker.MagicMock(return_value=file)
+    controller = mocker.MagicMock(get_file=get_file)
+
+    fw = FileWidget(
+        file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
+    fw.update = mocker.MagicMock()
+
+    assert not fw.downloading
+
+    fw._on_file_download_started(file.uuid)
+
+    assert fw.downloading
 
 
 def test_FileWidget_filename_truncation(mocker, source, session):
@@ -3286,7 +3391,9 @@ def test_FileWidget_filename_truncation(mocker, source, session):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
     fw.update = mocker.MagicMock()
 
     fw._on_file_downloaded(file.source.uuid, file.uuid, str(file))
@@ -3308,7 +3415,9 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
     fw.clear = mocker.MagicMock()
     fw.update = mocker.MagicMock()
 
@@ -3336,7 +3445,15 @@ def test_FileWidget_on_file_missing_show_download_button_when_uuid_matches(
     mock_gui = mocker.MagicMock()
     controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir, None)
 
-    fw = FileWidget(file.uuid, controller, controller.file_ready, controller.file_missing, 0, 123)
+    fw = FileWidget(
+        file.uuid,
+        controller,
+        controller.file_download_started,
+        controller.file_ready,
+        controller.file_missing,
+        0,
+        123,
+    )
     fw._on_file_missing(file.source.uuid, file.uuid, str(file))
 
     # this is necessary for the timer that stops the download
@@ -3365,7 +3482,9 @@ def test_FileWidget_on_file_missing_does_not_show_download_button_when_uuid_does
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
     fw.download_button.show = mocker.MagicMock()
 
     fw._on_file_missing("not a matching source uuid", "not a matching file uuid", "mock filename")
@@ -3384,7 +3503,9 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
     fw.update = mocker.MagicMock()
     mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.run_export_preflight_checks = mocker.MagicMock()
@@ -3407,7 +3528,9 @@ def test_FileWidget__on_export_clicked_missing_file(mocker, session, source):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
     fw.update = mocker.MagicMock()
     mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.run_export_preflight_checks = mocker.MagicMock()
@@ -3431,7 +3554,9 @@ def test_FileWidget__on_print_clicked(mocker, session, source):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
     fw.update = mocker.MagicMock()
     mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.print_file = mocker.MagicMock()
@@ -3455,7 +3580,9 @@ def test_FileWidget__on_print_clicked_missing_file(mocker, session, source):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
     fw.update = mocker.MagicMock()
     mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.print_file = mocker.MagicMock()
@@ -3478,7 +3605,9 @@ def test_FileWidget_update_file_size_with_deleted_file(
     controller.session.add(file)
     controller.session.commit()
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
 
     mocker.patch("securedrop_client.gui.widgets.humanize_filesize", side_effect=Exception("boom!"))
     fw.update_file_size()
