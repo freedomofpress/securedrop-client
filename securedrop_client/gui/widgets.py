@@ -668,13 +668,16 @@ class MainView(QWidget):
                 conversation_wrapper = self.source_conversations[source.uuid]
                 conversation_wrapper.conversation_view.update_conversation(source.collection)
             else:
-                conversation_wrapper = SourceConversationWrapper(source, self.controller)
+                conversation_wrapper = SourceConversationWrapper(
+                    source, self.controller, self._state
+                )
                 self.source_conversations[source.uuid] = conversation_wrapper
 
             self.set_conversation(conversation_wrapper)
             logger.debug(
                 "Set conversation to the selected source with uuid: {}".format(source.uuid)
             )
+
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.debug(e)
 
@@ -3247,7 +3250,9 @@ class SourceConversationWrapper(QWidget):
 
     deleting_conversation = False
 
-    def __init__(self, source: Source, controller: Controller) -> None:
+    def __init__(
+        self, source: Source, controller: Controller, app_state: Optional[state.State] = None
+    ) -> None:
         super().__init__()
 
         self.setObjectName("SourceConversationWrapper")
@@ -3271,7 +3276,7 @@ class SourceConversationWrapper(QWidget):
         layout.setSpacing(0)
 
         # Create widgets
-        self.conversation_title_bar = SourceProfileShortWidget(source, controller)
+        self.conversation_title_bar = SourceProfileShortWidget(source, controller, app_state)
         self.conversation_view = ConversationView(source, controller)
         self.reply_box = ReplyBoxWidget(source, controller)
         self.deletion_indicator = SourceDeletionIndicator()
@@ -3689,7 +3694,9 @@ class SourceMenu(QMenu):
 
     SOURCE_MENU_CSS = load_css("source_menu.css")
 
-    def __init__(self, source: Source, controller: Controller) -> None:
+    def __init__(
+        self, source: Source, controller: Controller, app_state: Optional[state.State]
+    ) -> None:
         super().__init__()
         self.source = source
         self.controller = controller
@@ -3698,6 +3705,11 @@ class SourceMenu(QMenu):
         separator_font = QFont()
         separator_font.setLetterSpacing(QFont.AbsoluteSpacing, 2)
         separator_font.setBold(True)
+
+        download_section = self.addSection(_("DOWNLOAD"))
+        download_section.setFont(separator_font)
+
+        self.addAction(DownloadConversation(self, self.controller, app_state))
 
         delete_section = self.addSection(_("DELETE"))
         delete_section.setFont(separator_font)
@@ -3775,7 +3787,9 @@ class SourceMenuButton(QToolButton):
     This button is responsible for launching the source menu on click.
     """
 
-    def __init__(self, source: Source, controller: Controller) -> None:
+    def __init__(
+        self, source: Source, controller: Controller, app_state: Optional[state.State]
+    ) -> None:
         super().__init__()
         self.controller = controller
         self.source = source
@@ -3785,7 +3799,7 @@ class SourceMenuButton(QToolButton):
         self.setIcon(load_icon("ellipsis.svg"))
         self.setIconSize(QSize(22, 33))  # Make it taller than the svg viewBox to increase hitbox
 
-        self.menu = SourceMenu(self.source, self.controller)
+        self.menu = SourceMenu(self.source, self.controller, app_state)
         self.setMenu(self.menu)
 
         self.setPopupMode(QToolButton.InstantPopup)
@@ -3825,7 +3839,9 @@ class SourceProfileShortWidget(QWidget):
     MARGIN_RIGHT = 17
     VERTICAL_MARGIN = 14
 
-    def __init__(self, source: Source, controller: Controller) -> None:
+    def __init__(
+        self, source: Source, controller: Controller, app_state: Optional[state.State]
+    ) -> None:
         super().__init__()
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
@@ -3847,7 +3863,7 @@ class SourceProfileShortWidget(QWidget):
         )
         title = TitleLabel(self.source.journalist_designation)
         self.updated = LastUpdatedLabel(_(arrow.get(self.source.last_updated).format("MMM D")))
-        menu = SourceMenuButton(self.source, self.controller)
+        menu = SourceMenuButton(self.source, self.controller, app_state)
         header_layout.addWidget(title, alignment=Qt.AlignLeft)
         header_layout.addStretch()
         header_layout.addWidget(self.updated, alignment=Qt.AlignRight)
