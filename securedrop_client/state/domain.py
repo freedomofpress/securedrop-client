@@ -23,11 +23,11 @@ class FileId(str):
 
 class File:
     def __init__(self, id: FileId) -> None:
-        self._id: str = id
+        self._id: FileId = id
         self._is_downloaded: bool = False
 
     @property
-    def id(self) -> str:
+    def id(self) -> FileId:
         """A unique identifier file set by the server (opaque string)."""
         return self._id
 

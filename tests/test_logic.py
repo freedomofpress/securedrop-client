@@ -13,6 +13,7 @@ import arrow
 import pytest
 import sqlalchemy.orm.exc
 from PyQt5.QtCore import Qt
+from PyQt5.QtTest import QSignalSpy
 from sdclientapi import AuthError, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm import attributes
 
@@ -1176,6 +1177,101 @@ def test_create_client_dir_permissions(tmpdir, mocker, session_maker):
     # check that both mocks were called to ensure they aren't "dead code"
     assert mock_open.called
     assert mock_json.called
+
+
+def test_Controller_download_conversation(homedir, config, session, mocker, session_maker):
+
+    app_state = state.State()
+    gui = mocker.MagicMock()
+    co = Controller("http://localhost", gui, session_maker, homedir, app_state)
+    co.api = "journalist is authenticated"
+
+    add_job_emissions = QSignalSpy(co.add_job)
+    file_download_started_emissions = QSignalSpy(co.file_download_started)
+
+    job_success_signal = mocker.MagicMock()
+    job_failure_signal = mocker.MagicMock()
+    job = mocker.MagicMock(success_signal=job_success_signal, failure_signal=job_failure_signal)
+    file_download_job_constructor = mocker.patch(
+        "securedrop_client.logic.FileDownloadJob", return_value=job
+    )
+
+    conversation_id = state.ConversationId("some_conversation")
+    unrelated_conversation_id = state.ConversationId("unrelated_conversation")
+    some_file_id = state.FileId("some_file")
+    another_file_id = state.FileId("another_file")
+    unrelated_file_id = state.FileId("unrelated_file")
+
+    app_state.add_file(conversation_id, some_file_id)
+    app_state.add_file(conversation_id, another_file_id)
+    app_state.add_file(unrelated_conversation_id, unrelated_file_id)
+
+    co.download_conversation(conversation_id)
+
+    expected = [
+        call(some_file_id, co.data_dir, co.gpg),
+        call(another_file_id, co.data_dir, co.gpg),
+    ]
+    assert file_download_job_constructor.mock_calls == expected
+
+    assert len(add_job_emissions) == 2
+    assert add_job_emissions[0] == [job]
+    assert add_job_emissions[1] == [job]
+    expected = [
+        call(co.on_file_download_success, type=Qt.QueuedConnection),
+        call(co.on_file_download_success, type=Qt.QueuedConnection),
+    ]
+    assert job_success_signal.connect.mock_calls == expected
+    expected = [
+        call(co.on_file_download_failure, type=Qt.QueuedConnection),
+        call(co.on_file_download_failure, type=Qt.QueuedConnection),
+    ]
+    assert job_failure_signal.connect.mock_calls == expected
+
+    assert len(file_download_started_emissions) == 2
+    assert file_download_started_emissions[0] == [some_file_id]
+    assert file_download_started_emissions[1] == [another_file_id]
+
+
+def test_Controller_download_conversation_requires_authenticated_journalist(
+    homedir, config, session, mocker, session_maker
+):
+    app_state = state.State()
+    gui = mocker.MagicMock()
+    co = Controller("http://localhost", gui, session_maker, homedir, app_state)
+    co.api = None  # journalist is not authenticated
+
+    co.add_job = mocker.MagicMock()
+    co.add_job.emit = mocker.MagicMock()
+    co.file_download_started = mocker.MagicMock()
+    co.file_download_started.emit = mocker.MagicMock()
+    co.on_action_requiring_login = mocker.MagicMock()
+
+    job_success_signal = mocker.MagicMock()
+    job_failure_signal = mocker.MagicMock()
+    job = mocker.MagicMock(success_signal=job_success_signal, failure_signal=job_failure_signal)
+    file_download_job_constructor = mocker.patch(
+        "securedrop_client.logic.FileDownloadJob", return_value=job
+    )
+
+    conversation_id = state.ConversationId("some_conversation")
+    unrelated_conversation_id = state.ConversationId("unrelated_conversation")
+    some_file_id = state.FileId("some_file")
+    another_file_id = state.FileId("another_file")
+    unrelated_file_id = state.FileId("unrelated_file")
+
+    app_state.add_file(conversation_id, some_file_id)
+    app_state.add_file(conversation_id, another_file_id)
+    app_state.add_file(unrelated_conversation_id, unrelated_file_id)
+
+    co.download_conversation(conversation_id)
+
+    assert not file_download_job_constructor.called
+    assert not co.add_job.emit.called
+    assert not job_success_signal.connect.called
+    assert not job_failure_signal.connect.called
+    assert not co.file_download_started.emit.called
+    assert co.on_action_requiring_login.called
 
 
 def test_Controller_on_file_download_Submission(homedir, config, session, mocker, session_maker):
