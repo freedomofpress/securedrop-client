@@ -52,6 +52,27 @@ TIME_FILE_DOWNLOAD = 5000
 
 
 @pytest.fixture(scope="function")
+def lang(request):
+    """
+    Setup:  Override $LANG as parameterized and configure locale accordingly.
+
+    Teardown:  Restore original $LANG and locale configuration.
+
+    Must be used with "indirect" to wrap setup and teardown at runtime.
+    """
+    lang = request.param
+
+    LANG = os.environ.get("LANG", "")
+    os.environ["LANG"] = lang
+    configure_locale_and_language()
+
+    yield lang
+
+    os.environ["LANG"] = LANG
+    configure_locale_and_language()
+
+
+@pytest.fixture(scope="function")
 def modal_dialog(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
