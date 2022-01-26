@@ -7,7 +7,7 @@ Note: the Graphical User Interface MUST NOT write state, except in QActions.
 """
 from typing import Dict, List, Optional
 
-from PyQt5.QtCore import QObject, pyqtSlot
+from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
 from .domain import ConversationId, File, FileId, SourceId
 
@@ -17,6 +17,8 @@ class State(QObject):
 
     Note: the Graphical User Interface SHOULD NOT write state, except in QActions.
     """
+
+    selected_conversation_files_changed = pyqtSignal()
 
     def __init__(self) -> None:
         super().__init__()
@@ -30,14 +32,16 @@ class State(QObject):
             self._files[fid] = file
 
         if cid not in self._conversation_files.keys():
-            self._conversation_files[cid] = [file]
-        else:
-            file_is_known = False
-            for known_file in self._conversation_files[cid]:
-                if fid == known_file.id:
-                    file_is_known = True
-            if not file_is_known:
-                self._conversation_files[cid].append(file)
+            self._conversation_files[cid] = []
+
+        file_is_known = False
+        for known_file in self._conversation_files[cid]:
+            if fid == known_file.id:
+                file_is_known = True
+        if not file_is_known:
+            self._conversation_files[cid].append(file)
+            if cid == self._selected_conversation:
+                self.selected_conversation_files_changed.emit()
 
     def conversation_files(self, id: ConversationId) -> List[File]:
         default: List[File] = []
@@ -51,6 +55,7 @@ class State(QObject):
             pass
         else:
             self._files[id].is_downloaded = True
+            self.selected_conversation_files_changed.emit()
 
     @property
     def selected_conversation(self) -> Optional[ConversationId]:
@@ -60,6 +65,20 @@ class State(QObject):
     @selected_conversation.setter
     def selected_conversation(self, id: Optional[ConversationId]) -> None:
         self._selected_conversation = id
+        self.selected_conversation_files_changed.emit()
+
+    @property
+    def selected_conversation_has_downloadable_files(self) -> bool:
+        """Whether the selected conversation has any files that are not alredy downloaded"""
+        selected_conversation_id = self._selected_conversation
+        if selected_conversation_id is None:
+            return False
+
+        default: List[File] = []
+        for f in self._conversation_files.get(selected_conversation_id, default):
+            if not f.is_downloaded:
+                return True
+        return False
 
     @pyqtSlot(SourceId)
     def set_selected_conversation_for_source(self, source_id: SourceId) -> None:
