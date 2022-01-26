@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.0
+* Speed up source deletion (#1386)
+* Use /users endpoint for managing journalist accounts (#1397)
+* UI fix to bottom margin in conversation view (#1391)
+* (Dev) Refactors that break up the widgets module into smaller components (#1377-1383, #1390, #1393, #1394)
+* (Dev) Use Debian Stable container images in CI (#1385)
+* (Dev) New templates for creating different types of Github Issues (#1392)
+* (Dev) Add localization testing task to the release Github Issue template (#1401)
+
 ## 0.5.1
 * Fix Python symlink, which broke package in 0.5.0
 
