@@ -1,6 +1,11 @@
 import unittest
 
+from PyQt5.QtTest import QSignalSpy
+from PyQt5.QtWidgets import QApplication
+
 from securedrop_client import state
+
+app = QApplication([])
 
 
 class TestState(unittest.TestCase):
@@ -64,3 +69,40 @@ class TestState(unittest.TestCase):
         missing_file_id = state.FileId("missing")
         self.state.record_file_download(missing_file_id)
         assert True
+
+    def test_selected_conversation_files_changed_signal_is_emited_when_meaningful(self):
+        signal_emissions = QSignalSpy(self.state.selected_conversation_files_changed)
+
+        # when the selected conversation changed
+        self.state.selected_conversation = 1
+        assert len(signal_emissions) == 1
+
+        # NOT when a file is added to a conversation that's not the selected one
+        self.state.add_file("some_conversation_id", "file_id")
+        assert len(signal_emissions) == 1  # the signal wasn't emited again
+
+        # when a known file was downloaded
+        self.state.record_file_download("file_id")
+        assert len(signal_emissions) == 2
+
+        # when a file is added to the selected conversation
+        self.state.add_file(1, "some_file_id")
+        assert len(signal_emissions) == 3
+
+    def test_selected_conversation_has_downloadable_files_false_by_default(self):
+        assert not self.state.selected_conversation_has_downloadable_files
+
+    def test_selected_conversation_has_downloadable_files_false_when_all_files_are_downloaded(self):
+        self.state.selected_conversation = 1
+        self.state.add_file(1, "some_file_id")
+        self.state.add_file(1, "another_file_id")
+
+        self.state.add_file("conversation that's not selected", "unrelated_file")
+        self.state.file("unrelated_file").is_downloaded = False  # to be explicit
+
+        self.state.file("some_file_id").is_downloaded = True
+        self.state.file("another_file_id").is_downloaded = True
+        assert not self.state.selected_conversation_has_downloadable_files
+
+        self.state.file("some_file_id").is_downloaded = False
+        assert self.state.selected_conversation_has_downloadable_files

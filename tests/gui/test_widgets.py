@@ -3,8 +3,10 @@ Make sure the UI widgets are configured correctly and work as expected.
 """
 import math
 import random
+import unittest
 from datetime import datetime
 from gettext import gettext as _
+from unittest import mock
 from unittest.mock import Mock, PropertyMock
 
 import arrow
@@ -4768,31 +4770,6 @@ def test_DeleteSourceAction_requires_an_authenticated_journalist(mocker):
     mock_controller.on_action_requiring_login.assert_called_once()
 
 
-def test_DownloadConversation_trigger(mocker):
-    menu = QMenu()
-    controller = mocker.MagicMock()
-    app_state = state.State()
-
-    conversation_id = state.ConversationId("some_conversation")
-    app_state.selected_conversation = conversation_id
-
-    action = DownloadConversation(menu, controller, app_state)
-    action.trigger()
-
-    controller.download_conversation.assert_called_once_with(conversation_id)
-
-
-def test_DownloadConversation_trigger_downloads_nothing_if_no_conversation_is_selected(mocker):
-    menu = QMenu()
-    controller = mocker.MagicMock()
-    app_state = state.State()
-
-    action = DownloadConversation(menu, controller, app_state)
-    action.trigger()
-
-    assert controller.download_conversation.not_called
-
-
 def test_DeleteConversationAction_trigger(mocker):
     mock_controller = mocker.MagicMock()
     mock_source = mocker.MagicMock()
@@ -5767,3 +5744,85 @@ def test_SenderIcon_set_normal_styles_purple_for_authenticated_user(mocker):
     si.set_normal_styles()
 
     si.setObjectName.assert_called_once_with("SenderIcon_current_user")
+
+
+class TestDownloadConversation(unittest.TestCase):
+    def test_trigger(self):
+        menu = QMenu()
+        controller = mock.MagicMock()
+        app_state = state.State()
+        action = DownloadConversation(menu, controller, app_state)
+
+        conversation_id = state.ConversationId("some_conversation")
+        app_state.selected_conversation = conversation_id
+
+        action.trigger()
+
+        controller.download_conversation.assert_called_once_with(conversation_id)
+
+    def test_trigger_downloads_nothing_if_no_conversation_is_selected(self):
+        menu = QMenu()
+        controller = mock.MagicMock()
+        app_state = state.State()
+        action = DownloadConversation(menu, controller, app_state)
+
+        action.trigger()
+        assert controller.download_conversation.not_called
+
+    def test_gets_disabled_when_no_files_to_download_remain(self):
+        menu = QMenu()
+        controller = mock.MagicMock()
+        app_state = state.State()
+        action = DownloadConversation(menu, controller, app_state)
+
+        conversation_id = state.ConversationId(3)
+        app_state.selected_conversation = conversation_id
+
+        app_state.add_file(conversation_id, 5)
+        app_state.file(5).is_downloaded = True
+
+        action.setEnabled(True)  # only for extra contrast
+        app_state.selected_conversation_files_changed.emit()
+        assert not action.isEnabled()
+
+    def test_gets_enabled_when_files_are_available_to_download(self):
+        menu = QMenu()
+        controller = mock.MagicMock()
+        app_state = state.State()
+        action = DownloadConversation(menu, controller, app_state)
+
+        conversation_id = state.ConversationId(3)
+        app_state.selected_conversation = conversation_id
+
+        app_state.add_file(conversation_id, 5)
+        app_state.file(5).is_downloaded = False
+
+        action.setEnabled(False)  # only for extra contrast
+        app_state.selected_conversation_files_changed.emit()
+        assert action.isEnabled()
+
+    def test_does_not_require_state_to_be_defined_defined(self):
+        menu = QMenu()
+        controller = mock.MagicMock()
+        action = DownloadConversation(menu, controller, app_state=None)
+
+        action.setEnabled(False)
+        assert not action.isEnabled()
+
+        action.setEnabled(True)
+        assert action.isEnabled()
+
+    def test_on_selected_conversation_files_changed_handles_missing_state_gracefully(
+        self,
+    ):
+        menu = QMenu()
+        controller = mock.MagicMock()
+        action = DownloadConversation(menu, controller, None)
+
+        action.setEnabled(True)
+        action._on_selected_conversation_files_changed()
+        assert action.isEnabled()
+
+        action.setEnabled(False)
+        action._on_selected_conversation_files_changed()
+        assert not action.isEnabled()
