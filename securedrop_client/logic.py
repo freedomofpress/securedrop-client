@@ -60,7 +60,7 @@ from securedrop_client.api_jobs.uploads import (
     SendReplyJobTimeoutError,
 )
 from securedrop_client.crypto import GpgHelper
-from securedrop_client.export import Export
+from securedrop_client.export import Export, ExportStatus
 from securedrop_client.queue import ApiJobQueue
 from securedrop_client.sync import ApiSync
 from securedrop_client.utils import check_dir_permissions
@@ -933,31 +933,39 @@ class Controller(QObject):
         """
         Run preflight checks to make sure the Export VM is configured correctly.
         """
-        logger.info("Running printer preflight check")
 
         if not self.qubes:
-            self.export.printer_preflight_success.emit()
+            logger.warning("QubesOS not detected, skipping printer preflight check")
+            self.export.printer_preflight_success.emit(
+                ExportStatus.WARNING_QUBESOS_NOT_DETECTED.value
+            )
             return
 
+        logger.info("Running printer preflight check")
         self.export.begin_printer_preflight.emit()
 
     def run_export_preflight_checks(self) -> None:
         """
         Run preflight checks to make sure the Export VM is configured correctly.
         """
-        logger.info("Running export preflight check")
 
         if not self.qubes:
-            self.export.preflight_check_call_success.emit()
+            logger.warning("QubesOS not detected; skipping export preflight check")
+            self.export.preflight_check_call_success.emit(
+                ExportStatus.WARNING_QUBESOS_NOT_DETECTED.value
+            )
             return
 
+        logger.info("Running export preflight check")
         self.export.begin_preflight_check.emit()
 
-    def export_file_to_usb_drive(self, file_uuid: str, passphrase: str) -> None:
+    def export_file_to_usb_drive(self, file_uuid: str, passphrase: str = "") -> None:
         """
         Send the file specified by file_uuid to the Export VM with the user-provided passphrase for
         unlocking the attached transfer device.  If the file is missing, update the db so that
         is_downloaded is set to False.
+
+        If the drive is already unlocked, send an empty string as the passphrase.
         """
         file = self.get_file(file_uuid)
         file_location = file.location(self.data_dir)
@@ -967,7 +975,9 @@ class Controller(QObject):
             return
 
         if not self.qubes:
-            self.export.export_usb_call_success.emit()
+            self.export.export_usb_call_success.emit(
+                ExportStatus.WARNING_QUBESOS_NOT_DETECTED.value
+            )
             return
 
         self.export.begin_usb_export.emit([file_location], passphrase)

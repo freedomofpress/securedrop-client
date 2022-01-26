@@ -3805,6 +3805,30 @@ def test_ExportDialog__on_preflight_success_when_continue_enabled(mocker, export
     export_dialog._show_passphrase_request_message.assert_called_once_with()
 
 
+def test_ExportDialog__on_preflight_success_drive_unlocked(mocker, export_dialog):
+    export_dialog._show_passphrase_request_message = mocker.MagicMock()
+    export_dialog.continue_button = mocker.MagicMock()
+    mocker.patch.object(export_dialog.continue_button, "isEnabled", return_value=False)
+    export_dialog.continue_button.clicked = mocker.MagicMock()
+
+    # Call with the signal that is emitted when a drive is already unlocked
+    export_dialog._on_preflight_success(status=ExportStatus.USB_ENCRYPTED_UNLOCKED.value)
+
+    export_dialog.continue_button.clicked.connect.assert_called_once_with(export_dialog._export_file)
+
+
+def test_ExportDialog__on_preflight_success_drive_unlocked_continue_enabled(mocker, export_dialog):
+    export_dialog._show_passphrase_request_message = mocker.MagicMock()
+    export_dialog.continue_button.setEnabled(True)
+    mock_export_file = mocker.patch.object(export_dialog, "_export_file")
+
+    # Call with the signal that is emitted when a drive is already unlocked
+    export_dialog._on_preflight_success(status=ExportStatus.USB_ENCRYPTED_UNLOCKED.value)
+
+    export_dialog._show_passphrase_request_message.assert_not_called()
+    mock_export_file.assert_called_once_with()
+
+
 def test_ExportDialog__on_preflight_success_enabled_after_preflight_success(mocker, export_dialog):
     assert not export_dialog.continue_button.isEnabled()
     export_dialog._on_preflight_success()

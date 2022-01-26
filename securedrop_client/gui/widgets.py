@@ -2465,8 +2465,8 @@ class PrintDialog(ModalDialog):
         self.controller.print_file(self.file_uuid)
         self.close()
 
-    @pyqtSlot()
-    def _on_preflight_success(self) -> None:
+    @pyqtSlot(str)
+    def _on_preflight_success(self, status: str = None) -> None:
         # If the continue button is disabled then this is the result of a background preflight check
         self.stop_animate_header()
         self.header_icon.update_image("printer.svg", svg_size=QSize(64, 64))
@@ -2696,20 +2696,33 @@ class ExportDialog(ModalDialog):
         self.passphrase_field.setDisabled(True)
         self.controller.export_file_to_usb_drive(self.file_uuid, self.passphrase_field.text())
 
-    @pyqtSlot()
-    def _on_preflight_success(self) -> None:
-        # If the continue button is disabled then this is the result of a background preflight check
+    @pyqtSlot(str)
+    def _on_preflight_success(self, status: str = None) -> None:
         self.stop_animate_header()
         self.header_icon.update_image("savetodisk.svg", QSize(64, 64))
         self.header.setText(self.ready_header)
+
+        # Check if drive is unlocked. If so, skip passowrd prompt screen.
+        is_drive_unlocked = status == ExportStatus.USB_ENCRYPTED_UNLOCKED.value
+
+        # If the continue button is disabled then this is the result of a background preflight check
         if not self.continue_button.isEnabled():
             self.continue_button.clicked.disconnect()
-            self.continue_button.clicked.connect(self._show_passphrase_request_message)
+            if is_drive_unlocked:
+                self.continue_button.clicked.connect(self._export_file)
+            else:
+                self.continue_button.clicked.connect(self._show_passphrase_request_message)
             self.continue_button.setEnabled(True)
             self.continue_button.setFocus()
             return
 
-        self._show_passphrase_request_message()
+        # If the continue button is already enabled, either export files or
+        # prompt for passphrase and export files, depending on disk status.
+        else:
+            if is_drive_unlocked:
+                self._export_file()
+            else:
+                self._show_passphrase_request_message()
 
     @pyqtSlot(object)
     def _on_preflight_failure(self, error: ExportError) -> None:

@@ -4,7 +4,7 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import pytest
 
-from securedrop_client.export import Export, ExportError
+from securedrop_client.export import Export, ExportError, ExportStatus
 
 
 def test_run_printer_preflight(mocker):
@@ -50,7 +50,7 @@ def test__run_printer_preflight(mocker):
     """
     Ensure _export_archive and _create_archive are called with the expected parameters,
     _export_archive is called with the return value of _create_archive, and
-    _run_disk_test returns without error if 'USB_CONNECTED' is the return value of _export_archive.
+    _run_usb_test returns without error if 'USB_CONNECTED' is the return value of _export_archive.
     """
     export = Export()
     export._create_archive = mocker.MagicMock(return_value="mock_archive_path")
@@ -66,7 +66,7 @@ def test__run_printer_preflight(mocker):
 
 def test__run_printer_preflight_raises_ExportError_if_not_empty_string(mocker):
     """
-    Ensure ExportError is raised if _run_disk_test returns anything other than 'USB_CONNECTED'.
+    Ensure ExportError is raised if _run_usb_test returns anything other than 'USB_CONNECTED'.
     """
     export = Export()
     export._create_archive = mocker.MagicMock(return_value="mock_archive_path")
@@ -211,13 +211,13 @@ def test_run_preflight_checks(mocker):
     export.preflight_check_call_success = mocker.MagicMock()
     export.preflight_check_call_success.emit = mocker.MagicMock()
     _run_usb_export = mocker.patch.object(export, "_run_usb_test")
-    _run_disk_export = mocker.patch.object(export, "_run_disk_test")
+    _run_disk_export = mocker.patch.object(export, "_run_disk_test", return_value = ExportStatus.USB_ENCRYPTED)
 
     export.run_preflight_checks()
 
     _run_usb_export.assert_called_once_with("mock_temp_dir")
     _run_disk_export.assert_called_once_with("mock_temp_dir")
-    export.preflight_check_call_success.emit.assert_called_once_with()
+    export.preflight_check_call_success.emit.assert_called_once_with(None)
 
 
 def test_run_preflight_checks_error(mocker):
@@ -263,27 +263,30 @@ def test__run_disk_export(mocker):
     )
 
 
-def test__run_disk_export_raises_ExportError_if_not_empty_string(mocker):
+def test__run_disk_export_raises_ExportError_if_not_supported_status(mocker):
     """
-    Ensure ExportError is raised if _run_disk_test returns anything other than ''.
+    Ensure ExportError is raised if _run_disk_test returns anything other than a
+    supported status.
     """
     export = Export()
     export._create_archive = mocker.MagicMock(return_value="mock_archive_path")
-    export._export_archive = mocker.MagicMock(return_value="SOMETHING_OTHER_THAN_EMPTY_STRING")
+    export._export_archive = mocker.MagicMock(return_value="DEFINITELY_NOT_SUPPORTED_DISK_STATUS")
 
     with pytest.raises(ExportError):
         export._run_disk_export("mock_archive_dir", ["mock_filepath"], "mock_passphrase")
 
 
-def test__run_disk_test(mocker):
+# We have to sort the list or pytest complains
+@pytest.mark.parametrize("supported_status", Export.SUPPORTED_DISK_STATUSES)
+def test__run_disk_test(mocker, supported_status):
     """
     Ensure _export_archive and _create_archive are called with the expected parameters,
     _export_archive is called with the return value of _create_archive, and
-    _run_disk_test returns without error if 'USB_ENCRYPTED' is the ouput status of _export_archive.
+    _run_disk_test returns without error if a supported status is the ouput status of _export_archive.
     """
     export = Export()
     export._create_archive = mocker.MagicMock(return_value="mock_archive_path")
-    export._export_archive = mocker.MagicMock(return_value="USB_ENCRYPTED")
+    export._export_archive = mocker.MagicMock(return_value=supported_status)
 
     export._run_disk_test("mock_archive_dir")
 
@@ -293,13 +296,13 @@ def test__run_disk_test(mocker):
     )
 
 
-def test__run_disk_test_raises_ExportError_if_not_USB_ENCRYPTED(mocker):
+def test__run_disk_test_raises_ExportError_if_not_supported_status(mocker):
     """
-    Ensure ExportError is raised if _run_disk_test returns anything other than 'USB_ENCRYPTED'.
+    Ensure ExportError is raised if _run_disk_test returns an unsupported status.
     """
     export = Export()
     export._create_archive = mocker.MagicMock(return_value="mock_archive_path")
-    export._export_archive = mocker.MagicMock(return_value="SOMETHING_OTHER_THAN_USB_ENCRYPTED")
+    export._export_archive = mocker.MagicMock(return_value="DEFINITELY_NOT_SUPPORTED_DISK_STATUS")
 
     with pytest.raises(ExportError):
         export._run_disk_test("mock_archive_dir")

@@ -21,9 +21,22 @@ class ExportError(Exception):
 
 
 class ExportStatus(Enum):
+    """
+    Status codes representing results of export- and print- related calls.
+
+    Codes may represent failure states (`USB_BAD_PASSPHRASE`) or success states
+    (`USB_CONNECTED`).
+
+    Warning: do not make changes to existing values without reviewing
+    `securedrop-export/securedrop_export/export.py`.
+    """
+
     # On the way to success
     USB_CONNECTED = "USB_CONNECTED"
     DISK_ENCRYPTED = "USB_ENCRYPTED"
+
+    # (Success) Drive is compatible and unlocked; do not prompt for passphrase
+    USB_ENCRYPTED_UNLOCKED = "USB_ENCRYPTED_UNLOCKED"
 
     # Not too far from success
     USB_NOT_CONNECTED = "USB_NOT_CONNECTED"
@@ -36,6 +49,9 @@ class ExportStatus(Enum):
     UNEXPECTED_RETURN_STATUS = "UNEXPECTED_RETURN_STATUS"
     PRINTER_NOT_FOUND = "ERROR_PRINTER_NOT_FOUND"
     MISSING_PRINTER_URI = "ERROR_MISSING_PRINTER_URI"
+
+    # Used internally
+    WARNING_QUBESOS_NOT_DETECTED = "WARNING_QUBESOS_NOT_DETECTED"
 
 
 class Export(QObject):
@@ -66,10 +82,15 @@ class Export(QObject):
     DISK_ENCRYPTION_KEY_NAME = "encryption_key"
     DISK_EXPORT_DIR = "export_data"
 
+    # Set of supported states for external disks that pass initial usb testing
+    # (meaning, they are attached and configured with a supported encryption and partition
+    # scheme, and may optionally be unlocked).
+    SUPPORTED_DISK_STATUSES = [ExportStatus.DISK_ENCRYPTED, ExportStatus.USB_ENCRYPTED_UNLOCKED]
+
     # Set up signals for communication with the GUI thread
     begin_preflight_check = pyqtSignal()
     preflight_check_call_failure = pyqtSignal(object)
-    preflight_check_call_success = pyqtSignal()
+    preflight_check_call_success = pyqtSignal(str)
     begin_usb_export = pyqtSignal(list, str)
     export_usb_call_failure = pyqtSignal(object)
     export_usb_call_success = pyqtSignal()
@@ -204,28 +225,35 @@ class Export(QObject):
         if status != ExportStatus.USB_CONNECTED.value:
             raise ExportError(status)
 
-    def _run_disk_test(self, archive_dir: str) -> None:
+    def _run_disk_test(self, archive_dir: str) -> str:
         """
         Run disk-test.
 
         Args:
             archive_dir (str): The path to the directory in which to create the archive.
 
+        Returns:
+            status (str): the status code resulting from the disk-test.
+
         Raises:
-            ExportError: Raised if the usb-test does not return a DISK_ENCRYPTED status.
+            ExportError: Raised if the disk-test does not return a supported status
+            (Currently supported: DISK_ENCRYPTED, USB_ENCRYPTED_UNLOCKED).
         """
         archive_path = self._create_archive(archive_dir, self.DISK_TEST_FN, self.DISK_TEST_METADATA)
 
         status = self._export_archive(archive_path)
-        if status != ExportStatus.DISK_ENCRYPTED.value:
+        if status not in (item.value for item in Export.SUPPORTED_DISK_STATUSES):
             raise ExportError(status)
+        return status
 
     def _run_disk_export(self, archive_dir: str, filepaths: List[str], passphrase: str) -> None:
         """
-        Run disk-test.
+        Run disk-export.
 
         Args:
             archive_dir (str): The path to the directory in which to create the archive.
+            filepaths (List[str]): the list of files to add to the archive
+            passphrase (str): passphrase for the encrypted USB.
 
         Raises:
             ExportError: Raised if the usb-test does not return a DISK_ENCRYPTED status.
@@ -256,6 +284,8 @@ class Export(QObject):
     def run_preflight_checks(self) -> None:
         """
         Run preflight checks to verify that the usb device is connected and luks-encrypted.
+        Emits disk status (an ExportStatus enum, whose value describes the encryption type and
+        whether the drive is already unlocked).
         """
         with TemporaryDirectory() as temp_dir:
             try:
@@ -264,10 +294,14 @@ class Export(QObject):
                         threading.current_thread().ident
                     )
                 )
+
+                # Checks to see if USB is connected
                 self._run_usb_test(temp_dir)
-                self._run_disk_test(temp_dir)
+
+                # Checks whether disk state is supported
+                disk_status = self._run_disk_test(temp_dir)
                 logger.debug("completed preflight checks: success")
-                self.preflight_check_call_success.emit()
+                self.preflight_check_call_success.emit(disk_status)
             except ExportError as e:
                 logger.debug("completed preflight checks: failure")
                 self.preflight_check_call_failure.emit(e)
