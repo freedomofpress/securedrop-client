@@ -4,7 +4,7 @@ from typing import Any, List
 from sdclientapi import API
 from sqlalchemy.orm.session import Session
 
-from securedrop_client.api_jobs.base import ApiJob
+from securedrop_client.api_jobs.base import ApiInaccessibleError, ApiJob
 from securedrop_client.db import User
 from securedrop_client.storage import get_remote_data, update_local_storage
 
@@ -38,6 +38,9 @@ class MetadataSyncJob(ApiJob):
         # This timeout is used for 3 different requests: `get_sources`, `get_all_submissions`, and
         # `get_all_replies`
         api_client.default_request_timeout = 60
+        user = api_client.get_current_user()
+        if not user:
+            raise ApiInaccessibleError()
         users = api_client.get_users()
         MetadataSyncJob._update_users(session, users)
         sources, submissions, replies = get_remote_data(api_client)

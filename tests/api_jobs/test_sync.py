@@ -1,5 +1,8 @@
 import os
 
+import pytest
+
+from securedrop_client.api_jobs.base import ApiInaccessibleError
 from securedrop_client.api_jobs.sync import MetadataSyncJob
 from securedrop_client.db import User
 from tests import factory
@@ -113,6 +116,17 @@ def test_MetadataSyncJob_success_current_user_name_change(mocker, homedir, sessi
     job.call_api(api_client, session)
 
     assert mock_get_remote_data.call_count == 1
+
+
+def test_MetadataSyncJob_raises_when_current_user_no_longer_exists(
+    mocker, homedir, session, session_maker
+):
+    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    mocker.patch.object(api_client, "get_current_user", return_value=None)
+
+    job = MetadataSyncJob(homedir)
+    with pytest.raises(ApiInaccessibleError):
+        job.call_api(api_client, session)
 
 
 def test_MetadataSyncJob_success_with_missing_key(mocker, homedir, session, session_maker):
