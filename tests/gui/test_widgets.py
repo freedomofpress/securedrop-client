@@ -5801,7 +5801,35 @@ class TestDownloadConversation(unittest.TestCase):
         app_state.selected_conversation_files_changed.emit()
         assert action.isEnabled()
 
-    def test_does_not_require_state_to_be_defined_defined(self):
+    def test_gets_initially_disabled_when_file_information_is_available(self):
+        menu = QMenu()
+        controller = mock.MagicMock()
+        app_state = state.State()
+
+        conversation_id = state.ConversationId(3)
+        app_state.selected_conversation = conversation_id
+        app_state.add_file(conversation_id, 5)
+        app_state.file(5).is_downloaded = True
+
+        action = DownloadConversation(menu, controller, app_state)
+
+        assert not action.isEnabled()
+
+    def test_gets_initially_enabled_when_file_information_is_available(self):
+        menu = QMenu()
+        controller = mock.MagicMock()
+        app_state = state.State()
+
+        conversation_id = state.ConversationId(3)
+        app_state.selected_conversation = conversation_id
+        app_state.add_file(conversation_id, 5)
+        app_state.file(5).is_downloaded = False
+
+        action = DownloadConversation(menu, controller, app_state)
+
+        assert action.isEnabled()
+
+    def test_does_not_require_state_to_be_defined(self):
         menu = QMenu()
         controller = mock.MagicMock()
         action = DownloadConversation(menu, controller, app_state=None)

@@ -3646,10 +3646,8 @@ class DownloadConversation(QAction):
         self.triggered.connect(self.on_triggered)
         self.setShortcutVisibleInContextMenu(True)
 
-        if self._state is not None:
-            self._state.selected_conversation_files_changed.connect(
-                self._on_selected_conversation_files_changed
-            )
+        self._connect_enabled_to_conversation_changes()
+        self._set_enabled_initial_value()
 
     @pyqtSlot()
     def on_triggered(self) -> None:
@@ -3659,6 +3657,12 @@ class DownloadConversation(QAction):
                 return
             self._controller.download_conversation(id)
 
+    def _connect_enabled_to_conversation_changes(self) -> None:
+        if self._state is not None:
+            self._state.selected_conversation_files_changed.connect(
+                self._on_selected_conversation_files_changed
+            )
+
     @pyqtSlot()
     def _on_selected_conversation_files_changed(self) -> None:
         if self._state is None:
@@ -3667,6 +3671,9 @@ class DownloadConversation(QAction):
             self.setEnabled(True)
         else:
             self.setEnabled(False)
+
+    def _set_enabled_initial_value(self) -> None:
+        self._on_selected_conversation_files_changed()
 
 
 class DeleteSourceAction(QAction):
