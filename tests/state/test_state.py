@@ -1,4 +1,5 @@
 import unittest
+from unittest import mock
 
 from PyQt5.QtTest import QSignalSpy
 from PyQt5.QtWidgets import QApplication
@@ -106,3 +107,24 @@ class TestState(unittest.TestCase):
 
         self.state.file("some_file_id").is_downloaded = False
         assert self.state.selected_conversation_has_downloadable_files
+
+    def test_gets_initialized_when_created_with_a_database(self):
+        # Note that the return value of database.get_files is
+        # a "duck type". We don't specifically need it to be a list of files,
+        # as long as the objects respond to uuid, source, is_downloaded etc.
+        # This means the test file doesn't even import any database-specific module!
+        #
+        # In that line of thought, the type of uuid property doesn't matter,
+        # because state.State treats it as an opaque value anyway.
+        source = mock.MagicMock(uuid="id")
+        file_1 = mock.MagicMock(uuid="one", source=source, is_downloaded=True)
+        file_2 = mock.MagicMock(uuid="two", source=source, is_downloaded=False)
+
+        database = mock.MagicMock()
+        database.get_files = mock.MagicMock(return_value=[file_1, file_2])
+
+        initialized_state = state.State(database)
+        assert initialized_state.file(state.FileId("one")).is_downloaded
+        assert not initialized_state.file(state.FileId("two")).is_downloaded
+
+        assert len(initialized_state.conversation_files(state.ConversationId("id"))) == 2

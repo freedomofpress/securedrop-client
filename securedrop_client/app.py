@@ -34,6 +34,7 @@ from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QApplication, QMessageBox
 
 from securedrop_client import __version__, state
+from securedrop_client.database import Database
 from securedrop_client.db import make_session_maker
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
@@ -215,7 +216,9 @@ def start_app(args, qt_args) -> NoReturn:  # type: ignore [no-untyped-def]
 
     session_maker = make_session_maker(args.sdc_home)
 
-    app_state = state.State()
+    session = session_maker()
+    database = Database(session)
+    app_state = state.State(database)
     gui = Window(app_state)
 
     controller = Controller(
