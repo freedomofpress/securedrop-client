@@ -252,6 +252,7 @@ def test_signal_interception(mocker, homedir):
     mocker.patch("securedrop_client.app.prevent_second_instance")
     mocker.patch("sys.exit")
     mocker.patch("securedrop_client.db.make_session_maker")
+    mocker.patch("securedrop_client.app.Database")
     mocker.patch("securedrop_client.app.init")
     mocker.patch("securedrop_client.logic.Controller.setup")
     mocker.patch("securedrop_client.logic.GpgHelper")
