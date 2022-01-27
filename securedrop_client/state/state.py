@@ -9,6 +9,8 @@ from typing import Dict, List, Optional
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
+from securedrop_client.database import Database
+
 from .domain import ConversationId, File, FileId, SourceId
 
 
@@ -20,11 +22,25 @@ class State(QObject):
 
     selected_conversation_files_changed = pyqtSignal()
 
-    def __init__(self) -> None:
+    def __init__(self, database: Optional[Database] = None) -> None:
         super().__init__()
         self._files: Dict[FileId, File] = {}
         self._conversation_files: Dict[ConversationId, List[File]] = {}
         self._selected_conversation: Optional[ConversationId] = None
+
+        if database is not None:
+            self._initialize_from_database(database)
+
+    def _initialize_from_database(self, database: Database) -> None:
+        persisted_files = database.get_files()
+        for persisted_file in persisted_files:
+            conversation_id = ConversationId(persisted_file.source.uuid)
+            file_id = FileId(persisted_file.uuid)
+            self.add_file(conversation_id, file_id)
+            if persisted_file.is_downloaded:
+                known_file = self.file(file_id)
+                if known_file is not None:
+                    known_file.is_downloaded = True
 
     def add_file(self, cid: ConversationId, fid: FileId) -> None:
         file = File(fid)  # store references to the same object
