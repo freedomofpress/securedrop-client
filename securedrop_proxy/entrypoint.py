@@ -7,14 +7,13 @@
 # the README for configuration options.
 
 import http
-import json
 import logging
 import os
 import platform
 import sys
 from logging.handlers import SysLogHandler, TimedRotatingFileHandler
 
-from securedrop_proxy import main, proxy
+from securedrop_proxy import json, main, proxy
 from securedrop_proxy.version import version
 
 DEFAULT_HOME = os.path.join(os.path.expanduser("~"), ".securedrop_proxy")
