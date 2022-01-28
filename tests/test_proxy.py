@@ -227,7 +227,7 @@ class TestServerErrorHandling(unittest.TestCase):
         p = proxy.Proxy(self.conf_path, req)
         p.proxy()
 
-        self.assertEqual(p.res.status, 418)
+        self.assertEqual(p.res.status, 499)
         self.assertIn("application/json", p.res.headers["Content-Type"])
         body = json.loads(p.res.body)
         self.assertEqual(body["error"], "unspecified server error")
