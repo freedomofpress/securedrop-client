@@ -3622,6 +3622,7 @@ class SourceMenu(QMenu):
 
         download_section = self.addSection(_("DOWNLOAD"))
         download_section.setFont(separator_font)
+        download_section.setObjectName("first_section")
 
         self.addAction(DownloadConversation(self, self.controller, app_state))
 
