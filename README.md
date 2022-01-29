@@ -57,6 +57,7 @@ make venv
 source .venv/bin/activate
 ```
 
+   * You will need Python 3.7 to run the client. If it's not the default `python3` on your installation, you can use `PYTHON=python3.7 make venv` to explicitly use a `python3.7` binary.
    * `make venv` will also run `make hooks`, which will configure Git to use the hooks found in `.githooks/` to check certain code-quality standards on new commits in this repository.  These checks are also enforced in CI.
 
 4. Run SecureDrop Client
