@@ -1,9 +1,12 @@
 .PHONY: all
 all: help
 
+# Default to plain "python3"
+PYTHON ?= python3
+
 .PHONY: venv-debian
 venv-debian: hooks ## Provision a Python 3 virtualenv for development on a prod-like system that has installed dependencies specified in https://github.com/freedomofpress/securedrop-debian-packaging/blob/main/securedrop-client/debian/control
-	python3 -m venv .venv-debian --system-site-packages
+	$(PYTHON) -m venv .venv-debian --system-site-packages
 	.venv-debian/bin/pip install --upgrade pip wheel
 	.venv-debian/bin/pip install --require-hashes -r "requirements/dev-requirements-debian.txt"
 	@echo "#################"
@@ -13,7 +16,7 @@ venv-debian: hooks ## Provision a Python 3 virtualenv for development on a prod-
 
 .PHONY: venv
 venv: hooks ## Provision a Python 3 virtualenv for development on Linux
-	python3 -m venv .venv
+	$(PYTHON) -m venv .venv
 	.venv/bin/pip install --upgrade pip wheel
 	.venv/bin/pip install --require-hashes -r "requirements/dev-requirements.txt"
 	@echo "#################"
@@ -21,7 +24,7 @@ venv: hooks ## Provision a Python 3 virtualenv for development on Linux
 
 .PHONY: venv-mac
 venv-mac: hooks ## Provision a Python 3 virtualenv for development on macOS
-	python3 -m venv .venv
+	$(PYTHON) -m venv .venv
 	.venv/bin/pip install --upgrade pip wheel
 	.venv/bin/pip install -r "requirements/dev-mac-requirements.in"
 	@echo "#################"
