@@ -23,7 +23,7 @@ venv: hooks ## Provision a Python 3 virtualenv for development on Linux
 venv-mac: hooks ## Provision a Python 3 virtualenv for development on macOS
 	python3 -m venv .venv
 	.venv/bin/pip install --upgrade pip wheel
-	.venv/bin/pip install --require-hashes -r "requirements/dev-mac-requirements.txt"
+	.venv/bin/pip install -r "requirements/dev-mac-requirements.in"
 	@echo "#################"
 	@echo "Make sure to run: source .venv/bin/activate"
 
