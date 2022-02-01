@@ -552,6 +552,21 @@ def test_Controller_on_sync_success_when_current_user_deleted(mocker, homedir):
     co.gui.logout.assert_called_once_with()
 
 
+def test_Controller__close_client_session(mocker, homedir):
+    co = Controller("http://localhost", mocker.MagicMock(), mocker.MagicMock(), homedir)
+    co.authenticated_user = factory.User(username="foo")
+    co.api = "not None"
+    co.gui = mocker.MagicMock()
+
+    co._close_client_session()
+
+    assert co.authenticated_user is None
+    assert co.api is None
+    assert co.is_authenticated is False
+    co.gui.logout.assert_called_once_with()
+    co.gui.show_login.assert_called_once_with(error="Your session expired. Please log in again.")
+
+
 def test_Controller_on_sync_success_username_change(homedir, session, config, mocker):
     """
     If there's a result to syncing, then update local storage.

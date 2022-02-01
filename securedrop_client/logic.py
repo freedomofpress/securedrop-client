@@ -651,9 +651,7 @@ class Controller(QObject):
             ):
                 self.update_authenticated_user.emit(self.authenticated_user)
         except sqlalchemy.orm.exc.ObjectDeletedError:
-            self.invalidate_token()
-            self.logout()
-            self.gui.show_login(error=_("Your session expired. Please log in again."))
+            self._close_client_session()
 
         self.resume_queues()
 
@@ -670,13 +668,16 @@ class Controller(QObject):
             if not self.is_authenticated or not self.api:
                 return
 
-            self.invalidate_token()
-            self.logout()
-            self.gui.show_login(error=_("Your session expired. Please log in again."))
+            self._close_client_session()
         elif isinstance(result, (RequestTimeoutError, ServerConnectionError)):
             self.gui.update_error_status(
                 _("The SecureDrop server cannot be reached. Trying to reconnect..."), duration=0
             )
+
+    def _close_client_session(self) -> None:
+        self.invalidate_token()
+        self.logout()
+        self.gui.show_login(error=_("Your session expired. Please log in again."))
 
     def show_last_sync(self) -> None:
         """
