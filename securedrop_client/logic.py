@@ -639,16 +639,19 @@ class Controller(QObject):
         self.download_new_replies()
         self.sync_succeeded.emit()
 
-        if (
-            self.authenticated_user
-            and self.api
-            and (
-                self.authenticated_user.username != self.api.username
-                or self.authenticated_user.firstname != self.api.first_name
-                or self.authenticated_user.lastname != self.api.last_name
-            )
-        ):
-            self.update_authenticated_user.emit(self.authenticated_user)
+        try:
+            if (
+                self.authenticated_user
+                and self.api
+                and (
+                    self.authenticated_user.username != self.api.username
+                    or self.authenticated_user.firstname != self.api.first_name
+                    or self.authenticated_user.lastname != self.api.last_name
+                )
+            ):
+                self.update_authenticated_user.emit(self.authenticated_user)
+        except sqlalchemy.orm.exc.ObjectDeletedError:
+            self._close_client_session()
 
         self.resume_queues()
 
@@ -665,13 +668,16 @@ class Controller(QObject):
             if not self.is_authenticated or not self.api:
                 return
 
-            self.invalidate_token()
-            self.logout()
-            self.gui.show_login(error=_("Your session expired. Please log in again."))
+            self._close_client_session()
         elif isinstance(result, (RequestTimeoutError, ServerConnectionError)):
             self.gui.update_error_status(
                 _("The SecureDrop server cannot be reached. Trying to reconnect..."), duration=0
             )
+
+    def _close_client_session(self) -> None:
+        self.invalidate_token()
+        self.logout()
+        self.gui.show_login(error=_("Your session expired. Please log in again."))
 
     def show_last_sync(self) -> None:
         """

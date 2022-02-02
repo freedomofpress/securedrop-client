@@ -14,6 +14,7 @@ import pytest
 import sqlalchemy.orm.exc
 from PyQt5.QtCore import Qt
 from sdclientapi import AuthError, RequestTimeoutError, ServerConnectionError
+from sqlalchemy.orm import attributes
 
 from securedrop_client import db
 from securedrop_client.api_jobs.base import ApiInaccessibleError
@@ -529,6 +530,41 @@ def test_Controller_on_sync_success(homedir, config, mocker):
     co.download_new_replies.assert_called_once_with()
     co.resume_queues.assert_called_once_with()
     co.file_missing.emit.assert_called_once_with(missing.source.uuid, missing.uuid, str(missing))
+
+
+def test_Controller_on_sync_success_when_current_user_deleted(mocker, homedir):
+    co = Controller("http://localhost", mocker.MagicMock(), mocker.MagicMock(), homedir)
+
+    class DeletedUser(db.User):
+        @property
+        def username(self):
+            raise sqlalchemy.orm.exc.ObjectDeletedError(attributes.instance_state(db.User()), None)
+
+    co.authenticated_user = DeletedUser()
+    co.api = "not None"
+    co.gui = mocker.MagicMock()
+
+    co.on_sync_success()
+
+    assert co.authenticated_user is None
+    assert co.api is None
+    assert co.is_authenticated is False
+    co.gui.logout.assert_called_once_with()
+
+
+def test_Controller__close_client_session(mocker, homedir):
+    co = Controller("http://localhost", mocker.MagicMock(), mocker.MagicMock(), homedir)
+    co.authenticated_user = factory.User(username="foo")
+    co.api = "not None"
+    co.gui = mocker.MagicMock()
+
+    co._close_client_session()
+
+    assert co.authenticated_user is None
+    assert co.api is None
+    assert co.is_authenticated is False
+    co.gui.logout.assert_called_once_with()
+    co.gui.show_login.assert_called_once_with(error="Your session expired. Please log in again.")
 
 
 def test_Controller_on_sync_success_username_change(homedir, session, config, mocker):
