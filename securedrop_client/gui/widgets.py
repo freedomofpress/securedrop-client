@@ -2034,11 +2034,14 @@ class ReplyWidget(SpeechBubble):
         """
         When the user logs in or updates user info, update the reply badge.
         """
-        if user.uuid == self.sender.uuid:
-            self.sender_is_current_user = True
-            self.sender = user
-            self.sender_icon.setToolTip(self.sender.fullname)
-            self._update_styles()
+        try:
+            if self.sender and self.sender.uuid == user.uuid:
+                self.sender_is_current_user = True
+                self.sender = user
+                self.sender_icon.setToolTip(self.sender.fullname)
+                self._update_styles()
+        except sqlalchemy.orm.exc.ObjectDeletedError:
+            logger.debug("The sender was deleted.")
 
     @pyqtSlot(str, str, str)
     def _on_reply_success(self, source_uuid: str, uuid: str, content: str) -> None:
