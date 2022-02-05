@@ -55,7 +55,7 @@ class MetadataSyncJob(ApiJob):
         local_users = {user.uuid: user for user in session.query(User).all()}
         for remote_user in remote_users:
             local_user = local_users.get(remote_user.uuid)
-            if not local_user:
+            if not local_user:  # Create local user account
                 new_user = User(
                     uuid=remote_user.uuid,
                     username=remote_user.username,
@@ -64,16 +64,16 @@ class MetadataSyncJob(ApiJob):
                 )
                 session.add(new_user)
 
-                # If the new user is the reserved "deleted" user account, store its id in case we
-                # need to reassociate draft replies later.
+                # If the new user is the "deleted" user account, store its id in case we need to
+                # reassociate draft replies later.
                 if new_user.deleted:
                     session.commit()
                     deleted_user_id = new_user.id
 
                 logger.debug(f"Adding account for user with uuid='{new_user.uuid}'")
-            else:
-                # If the local user is the reserved "deleted" user account, store its id in case we
-                # need to reassociate draft replies later.
+            else:  # Update existing local users
+                # If the local user is the "deleted" user account, store its id in case we need to
+                # reassociate draft replies later.
                 if local_user.deleted:
                     deleted_user_id = local_user.id
 
@@ -85,6 +85,12 @@ class MetadataSyncJob(ApiJob):
                     local_user.lastname = remote_user.last_name
                 del local_users[remote_user.uuid]
 
+        # Delete all remaining local user accounts that no longer exist on the server.
+        #
+        # In order to support an edge case that can occur on a pre-2.2.0 server that does not create
+        # a "deleted" user account, the client will create one locally when there are draft replies
+        # that need to be re-assoicated. Once the "deleted" user account exists on the server, it
+        # will replace the local one.
         for uuid, account in local_users.items():
             # Do not delete the local "deleted" user account if there is no "deleted" user account
             # on the server.
@@ -94,11 +100,9 @@ class MetadataSyncJob(ApiJob):
             # Get draft replies sent by the user who's account is about to be deleted.
             draft_replies = session.query(DraftReply).filter_by(journalist_id=account.id).all()
 
-            # Do not delete an account with draft replies unless there is another account that can
-            # be used to re-associate those draft replies.
-            if draft_replies and not deleted_user_id and not account.deleted:
-                # Create a local "deleted" user account if there is no "deleted" user account on the
-                # server and we are about to delete a user.
+            # Create a local "deleted" user account if there is no "deleted" user account locally or
+            # on the server and we are about to delete a user.
+            if draft_replies and not account.deleted and not deleted_user_id:
                 deleted_user = DeletedUser()
                 session.add(deleted_user)
                 session.commit()  # commit so that we can retrieve the generated `id`
@@ -106,8 +110,9 @@ class MetadataSyncJob(ApiJob):
                 logger.debug(f"Creating DeletedUser with uuid='{deleted_user.uuid}'")
 
             # Re-associate draft replies
-            for draft_reply in draft_replies:
-                draft_reply.journalist_id = deleted_user_id
+            for reply in draft_replies:
+                reply.journalist_id = deleted_user_id
+                logger.debug(f"DraftReply with uuid='{reply.uuid}' re-associated to DeletedUser")
 
             # Ensure re-associated draft replies are committed to the db before deleting the account
             if draft_replies:
