@@ -6,7 +6,7 @@ from sdclientapi import User as SDKUser
 from sqlalchemy.orm.session import Session
 
 from securedrop_client.api_jobs.base import ApiJob
-from securedrop_client.db import DraftReply, User
+from securedrop_client.db import DeletedUser, DraftReply, User
 from securedrop_client.storage import get_remote_data, update_local_storage
 
 logger = logging.getLogger(__name__)
@@ -96,11 +96,14 @@ class MetadataSyncJob(ApiJob):
 
             # Do not delete an account with draft replies unless there is another account that can
             # be used to re-associate those draft replies.
-            if draft_replies and not deleted_user_id:
-                logger.error(
-                    f"Cannot delete user with uuid='{uuid}' without a reserved deleted user account"
-                )
-                continue
+            if draft_replies and not deleted_user_id and not account.deleted:
+                # Create a local "deleted" user account if there is no "deleted" user account on the
+                # server and we are about to delete a user.
+                deleted_user = DeletedUser()
+                session.add(deleted_user)
+                session.commit()  # commit so that we can retrieve the generated `id`
+                deleted_user_id = deleted_user.id
+                logger.debug(f"Creating DeletedUser with uuid='{deleted_user.uuid}'")
 
             # Re-associate draft replies
             for draft_reply in draft_replies:
