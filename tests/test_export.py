@@ -199,7 +199,8 @@ def test_send_file_to_usb_device_error(mocker):
     export.export_completed.emit.assert_called_once_with(["path1", "path2"])
 
 
-def test_run_preflight_checks(mocker):
+@pytest.mark.parametrize("supported_status", (i.value for i in Export.SUPPORTED_DISK_STATUSES))
+def test_run_preflight_checks(mocker, supported_status):
     """
     Ensure TemporaryDirectory is used when creating and sending the archives during the preflight
     checks and that the success signal is emitted by Export.
@@ -210,14 +211,14 @@ def test_run_preflight_checks(mocker):
     export = Export()
     export.preflight_check_call_success = mocker.MagicMock()
     export.preflight_check_call_success.emit = mocker.MagicMock()
-    _run_usb_export = mocker.patch.object(export, "_run_usb_test")
-    _run_disk_export = mocker.patch.object(export, "_run_disk_test", return_value = ExportStatus.USB_ENCRYPTED)
+    _run_usb_test = mocker.patch.object(export, "_run_usb_test")
+    _run_disk_test = mocker.patch.object(export, "_run_disk_test", return_value=supported_status)
 
     export.run_preflight_checks()
 
-    _run_usb_export.assert_called_once_with("mock_temp_dir")
-    _run_disk_export.assert_called_once_with("mock_temp_dir")
-    export.preflight_check_call_success.emit.assert_called_once_with(None)
+    _run_usb_test.assert_called_once_with("mock_temp_dir")
+    _run_disk_test.assert_called_once_with("mock_temp_dir")
+    export.preflight_check_call_success.emit.assert_called_once_with(supported_status)
 
 
 def test_run_preflight_checks_error(mocker):
@@ -232,13 +233,13 @@ def test_run_preflight_checks_error(mocker):
     export.preflight_check_call_failure = mocker.MagicMock()
     export.preflight_check_call_failure.emit = mocker.MagicMock()
     error = ExportError("bang!")
-    _run_usb_export = mocker.patch.object(export, "_run_usb_test")
-    _run_disk_export = mocker.patch.object(export, "_run_disk_test", side_effect=error)
+    _run_usb_test = mocker.patch.object(export, "_run_usb_test")
+    _run_disk_test = mocker.patch.object(export, "_run_disk_test", side_effect=error)
 
     export.run_preflight_checks()
 
-    _run_usb_export.assert_called_once_with("mock_temp_dir")
-    _run_disk_export.assert_called_once_with("mock_temp_dir")
+    _run_usb_test.assert_called_once_with("mock_temp_dir")
+    _run_disk_test.assert_called_once_with("mock_temp_dir")
     export.preflight_check_call_failure.emit.assert_called_once_with(error)
 
 
@@ -277,7 +278,7 @@ def test__run_disk_export_raises_ExportError_if_not_supported_status(mocker):
 
 
 # We have to sort the list or pytest complains
-@pytest.mark.parametrize("supported_status", Export.SUPPORTED_DISK_STATUSES)
+@pytest.mark.parametrize("supported_status", (i.value for i in Export.SUPPORTED_DISK_STATUSES))
 def test__run_disk_test(mocker, supported_status):
     """
     Ensure _export_archive and _create_archive are called with the expected parameters,

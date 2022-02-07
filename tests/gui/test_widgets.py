@@ -3814,7 +3814,9 @@ def test_ExportDialog__on_preflight_success_drive_unlocked(mocker, export_dialog
     # Call with the signal that is emitted when a drive is already unlocked
     export_dialog._on_preflight_success(status=ExportStatus.USB_ENCRYPTED_UNLOCKED.value)
 
-    export_dialog.continue_button.clicked.connect.assert_called_once_with(export_dialog._export_file)
+    export_dialog.continue_button.clicked.connect.assert_called_once_with(
+        export_dialog._export_file
+    )
 
 
 def test_ExportDialog__on_preflight_success_drive_unlocked_continue_enabled(mocker, export_dialog):
