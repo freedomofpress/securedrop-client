@@ -1911,8 +1911,11 @@ class CheckMark(QPushButton):
         super().__init__()
         self.setObjectName("Checker")
         self.setStyleSheet(self.CHECK_MARK_CSS)
+        layout = QHBoxLayout()
         self.setIcon(load_icon("checkmark.svg"))
         self.setIconSize(QSize(16, 9))
+        layout.setSpacing(self.CLICKABLE_SPACE)
+        self.setLayout(layout)
 
 
 class MessageWidget(SpeechBubble):
