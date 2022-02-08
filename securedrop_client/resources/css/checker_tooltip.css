@@ -1,0 +1,17 @@
+QPushButton#Checker{
+    border: none;
+}
+
+#Checker QToolTip{
+    font-family: Source Sans Pro;
+    font-style: normal;
+    font-size: 12px;
+    border: none;
+    padding: 2px;
+    background-color: #ffffff;
+}
+
+QPushButton#FileWidget_check_mark{
+    border: none;
+    padding-left: 8;
+}

@@ -1899,6 +1899,22 @@ class SpeechBubble(QWidget):
         self.sender_icon.set_failed_to_decrypt_styles()
 
 
+class CheckMark(QPushButton):
+    """
+    Represents the seen by checkmark for each bubble.
+    """
+
+    CHECK_MARK_CSS = load_css("checker_tooltip.css")
+    CLICKABLE_SPACE = 60
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.setObjectName("Checker")
+        self.setStyleSheet(self.CHECK_MARK_CSS)
+        self.setIcon(load_icon("checkmark.svg"))
+        self.setIconSize(QSize(16, 9))
+
+
 class MessageWidget(SpeechBubble):
     """
     Represents an incoming message from the source.
@@ -2118,6 +2134,7 @@ class FileWidget(QWidget):
     """
 
     DOWNLOAD_BUTTON_CSS = load_css("file_download_button.css")
+    CHECK_MARK_CSS = load_css("checker_tooltip.css")
 
     TOP_MARGIN = 18
     BOTTOM_MARGIN = 0
@@ -2128,7 +2145,7 @@ class FileWidget(QWidget):
 
     WIDTH_TO_CONTAINER_WIDTH_RATIO = 5 / 9
     MIN_CONTAINER_WIDTH = 750
-    MIN_WIDTH = 400
+    MIN_WIDTH = 427
 
     def __init__(
         self,
@@ -2162,11 +2179,11 @@ class FileWidget(QWidget):
 
         # Set layout
         layout = QHBoxLayout()
-        self.setLayout(layout)
 
-        # Set margins and spacing
-        layout.setContentsMargins(0, self.TOP_MARGIN, 0, self.BOTTOM_MARGIN)
-        layout.setSpacing(0)
+        # Check Mark
+        check_mark = CheckMark()
+        check_mark.setObjectName("FileWidget_check_mark")
+        check_mark.setStyleSheet(self.CHECK_MARK_CSS)
 
         # File options: download, export, print
         self.file_options = QWidget()
@@ -2237,6 +2254,14 @@ class FileWidget(QWidget):
         layout.addWidget(self.spacer)
         layout.addWidget(self.horizontal_line)
         layout.addWidget(self.file_size)
+
+        # Nesting the layouts for a better display of the check-mark.
+        main_layout = QHBoxLayout()
+        main_layout.addLayout(layout)
+        main_layout.addWidget(check_mark, alignment=Qt.AlignRight)
+        main_layout.setContentsMargins(0, self.TOP_MARGIN, 0, self.BOTTOM_MARGIN)
+        main_layout.setSpacing(0)
+        self.setLayout(main_layout)
 
         # Connect signals to slots
         file_ready_signal.connect(self._on_file_downloaded, type=Qt.QueuedConnection)
