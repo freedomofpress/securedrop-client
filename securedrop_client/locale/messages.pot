@@ -229,9 +229,6 @@ msgstr ""
 msgid "DELETE"
 msgstr ""
 
-msgid "All Files"
-msgstr ""
-
 msgid "Entire source account"
 msgstr ""
 
@@ -297,6 +294,9 @@ msgid "one message"
 msgid_plural "{message_count} messages"
 msgstr[0] ""
 msgstr[1] ""
+
+msgid "All Files"
+msgstr ""
 
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgstr ""
