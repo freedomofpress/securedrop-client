@@ -20,15 +20,11 @@ from sqlalchemy.orm import attributes, scoped_session, sessionmaker
 from securedrop_client import db, logic, storage
 from securedrop_client.export import ExportError, ExportStatus
 from securedrop_client.gui import SecureQLabel
-from securedrop_client.gui.actions import DeleteConversationAction, DeleteSourceAction
 from securedrop_client.gui.auth import Dialog as LoginDialog
-from securedrop_client.gui.conversation import DeleteDialog as DeleteConversationDialog
 from securedrop_client.gui.conversation import File as FileWidget
 from securedrop_client.gui.conversation.export import Dialog as ExportDialog
-from securedrop_client.gui.conversation.menu import Menu as ConversationMenu
 from securedrop_client.gui.conversation.print import Dialog as PrintDialog
 from securedrop_client.gui.inputs import PasswordEdit
-from securedrop_client.gui.source import DeleteDialog as DeleteSourceDialog
 from securedrop_client.gui.widgets import (
     ActivityStatusBar,
     ConversationView,
@@ -4973,94 +4969,6 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, sessi
     assert isinstance(file_widget, FileWidget)
 
 
-def test_DeleteConversationDialog_continue(mocker, source, session):
-    source = source["source"]  # to get the Source object
-
-    mock_controller = mocker.MagicMock()
-    dialog = DeleteConversationDialog(source, mock_controller)
-    dialog.continue_button.click()
-    mock_controller.delete_conversation.assert_called_once_with(source)
-
-
-def test_DeleteConversationDialog_exec(mocker, source, session):
-    """
-    Test that the dialog body is updated every time it is opened, to ensure
-    that the file, message and reply counters are up-to-date.
-    """
-    source = source["source"]  # to get the Source object
-
-    mock_controller = mocker.MagicMock()
-    dialog = DeleteConversationDialog(source, mock_controller)
-    mocker.patch.object(dialog.body, "setText")
-    mocker.patch("securedrop_client.gui.dialogs.ModalDialog.exec")
-    dialog.exec()
-    dialog.body.setText.assert_called_once()
-
-
-def test_DeleteSourceDialog_init(mocker, source):
-    mock_controller = mocker.MagicMock()
-    DeleteSourceDialog(source["source"], mock_controller)
-
-
-def test_DeleteSourceDialog_cancel(mocker, source):
-    source = source["source"]  # to get the Source object
-
-    mock_controller = mocker.MagicMock()
-    delete_source_dialog = DeleteSourceDialog(source, mock_controller)
-    delete_source_dialog.cancel_button.click()
-    mock_controller.delete_source.assert_not_called()
-
-
-def test_DeleteSourceDialog_continue(mocker, source, session):
-    source = source["source"]  # to get the Source object
-
-    mock_controller = mocker.MagicMock()
-    delete_source_dialog = DeleteSourceDialog(source, mock_controller)
-    delete_source_dialog.continue_button.click()
-    mock_controller.delete_source.assert_called_once_with(source)
-
-
-def test_DeleteSourceDialog_make_body_text(mocker, source, session):
-    source = source["source"]  # to get the Source object
-    file_ = factory.File(source=source)
-    session.add(file_)
-    message = factory.Message(source=source)
-    session.add(message)
-    message = factory.Message(source=source)
-    session.add(message)
-    reply = factory.Reply(source=source)
-    session.add(reply)
-    session.commit()
-
-    mock_controller = mocker.MagicMock()
-
-    delete_source_message_box = DeleteSourceDialog(source, mock_controller)
-
-    message = delete_source_message_box.make_body_text()
-
-    expected_message = "".join(
-        (
-            "<style>",
-            "p {{white-space: nowrap;}}",
-            "</style>",
-            "<p><b>",
-            _("When the entire account for a source is deleted:"),
-            "</b></p>",
-            "<p><b>\u2219</b>&nbsp;",
-            _("The source will not be able to log in with their codename again."),
-            "</p>",
-            "<p><b>\u2219</b>&nbsp;",
-            _("Your organization will not be able to send them replies."),
-            "</p>",
-            "<p><b>\u2219</b>&nbsp;",
-            _("All files and messages from that source will also be destroyed."),
-            "</p>",
-            "<p>&nbsp;</p>",
-        )
-    ).format(source=source.journalist_designation)
-    assert message == expected_message
-
-
 def test_PasswordEdit(mocker):
     passwordline = PasswordEdit(None)
     passwordline.togglepasswordAction.trigger()
@@ -5068,59 +4976,6 @@ def test_PasswordEdit(mocker):
     assert passwordline.echoMode() == QLineEdit.Normal
     passwordline.togglepasswordAction.trigger()
     assert passwordline.echoMode() == QLineEdit.Password
-
-
-def test_DeleteSourceAction_trigger(mocker):
-    controller = mocker.MagicMock()
-    source = mocker.MagicMock()
-    dialog_constructor = mocker.MagicMock(DeleteSourceDialog)
-    dialog = mocker.MagicMock()
-    dialog_constructor.return_value = dialog
-
-    action = DeleteSourceAction(source, None, controller, dialog_constructor)
-    action.trigger()
-    dialog_constructor.assert_called_once_with(source, controller)
-    dialog.exec.assert_called_once()
-
-
-def test_DeleteConversationAction_trigger(mocker):
-    controller = mocker.MagicMock()
-    source = mocker.MagicMock()
-    dialog_constructor = mocker.MagicMock(DeleteConversationDialog)
-    dialog = mocker.MagicMock()
-    dialog_constructor.return_value = dialog
-
-    action = DeleteConversationAction(source, None, controller, dialog_constructor)
-    action.trigger()
-    dialog_constructor.assert_called_once_with(source, controller)
-    dialog.exec.assert_called_once()
-
-
-def test_DeleteConversationAction_trigger_when_user_is_loggedout(mocker):
-    controller = mocker.MagicMock()
-    controller.api = None
-    source = mocker.MagicMock()
-    dialog_constructor = mocker.MagicMock(DeleteConversationDialog)
-    dialog = mocker.MagicMock()
-    dialog_constructor.return_value = dialog
-
-    action = DeleteConversationAction(source, None, controller, dialog_constructor)
-    action.trigger()
-    dialog.exec.assert_not_called()
-
-
-def test_DeleteSource_from_source_menu_when_user_is_loggedout(mocker):
-    controller = mocker.MagicMock()
-    controller.api = None
-    source = mocker.MagicMock()
-    dialog_constructor = mocker.MagicMock(DeleteSourceDialog)
-    dialog = mocker.MagicMock()
-    dialog_constructor.return_value = dialog
-
-    mocker.patch("securedrop_client.gui.conversation.menu.DeleteSourceDialog", dialog_constructor)
-    source_menu = ConversationMenu(source, controller)
-    source_menu.actions()[2].trigger()
-    dialog.exec.assert_not_called()
 
 
 def test_ReplyBoxWidget_init(mocker):

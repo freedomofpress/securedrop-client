@@ -32,6 +32,7 @@ class Dialog(ModalDialog):
 
         self.body.setText(self.make_body_text())
         self.continue_button.setText(_("YES, DELETE ENTIRE SOURCE ACCOUNT"))
+        self.cancel_button.setDefault(False)  # FIXME: figure this out.
         self.confirmation_label.setText(_("Are you sure this is what you want?"))
 
         self.adjustSize()
