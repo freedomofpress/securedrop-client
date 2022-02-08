@@ -223,3 +223,7 @@ class ModalDialog(QDialog):
         self.header_icon.setVisible(True)
         self.header_spinner_label.setVisible(False)
         self.header_animation.stop()
+
+    def text(self) -> str:
+        """A text-only representation of the dialog."""
+        return self.body.text()
