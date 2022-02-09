@@ -67,6 +67,165 @@ def test_MetadataSyncJob_deletes_user(mocker, homedir, session, session_maker):
     assert not local_user
 
 
+def test_MetadataSyncJob_does_not_delete_reserved_deleted_user(mocker, homedir, session):
+    """
+    Ensure that we do not delete the local "deleted" user account unless a "deleted" user account
+    exists on the server that we can replace it with.
+
+    This test is to ensure that we support an edge case that can occur on a pre-2.2.0 server
+    (before the server added support for creating an actual deleted user account).
+    """
+    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    api_client.get_users = mocker.MagicMock(return_value=[])
+
+    reserved_deleted_user = factory.User(username="deleted")
+    session.add(reserved_deleted_user)
+
+    job = MetadataSyncJob(homedir)
+    job.call_api(api_client, session)
+
+    assert session.query(User).filter_by(username="deleted").one_or_none()
+
+
+def test_MetadataSyncJob_reassociates_draftreplies_to_new_account_before_deleting_user(
+    mocker, homedir, session
+):
+    """
+    Ensure that any draft replies sent by a user that is about to be deleted are re-associated
+    to a new "deleted" user account that exists on the server.
+    """
+    user_to_delete_with_drafts = factory.User()
+    session.add(user_to_delete_with_drafts)
+    session.commit()
+    draftreply = factory.DraftReply(journalist_id=user_to_delete_with_drafts.id)
+    session.add(draftreply)
+    session.commit()
+
+    remote_reserved_deleted_user = factory.RemoteUser(username="deleted")
+    # Set up get_users so that `user_to_delete_with_drafts` will be deleted and
+    # `remote_reserved_deleted_user` will be created since it exists on the server
+    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    api_client.get_users = mocker.MagicMock(return_value=[remote_reserved_deleted_user])
+
+    job = MetadataSyncJob(homedir)
+    job.call_api(api_client, session)
+
+    # Ensure the account was deleted
+    deleted_user = session.query(User).filter_by(uuid=user_to_delete_with_drafts.uuid).one_or_none()
+    assert not deleted_user
+    # Ensure the "deleted" user account that exists on the server was created locally
+    reserved_deleted_user = session.query(User).filter_by(username="deleted").one_or_none()
+    assert reserved_deleted_user
+    assert reserved_deleted_user.uuid == remote_reserved_deleted_user.uuid
+    # Ensure draft replies are reassociated
+    assert draftreply.journalist_id == reserved_deleted_user.id
+
+
+def test_MetadataSyncJob_reassociates_draftreplies_to_existing_account_before_deleting_user(
+    mocker, homedir, session
+):
+    """
+    Ensure that any draft replies sent by a user that is about to be deleted are re-associated
+    to an existing "deleted" user account.
+    """
+    user_to_delete_with_drafts = factory.User()
+    session.add(user_to_delete_with_drafts)
+    session.commit()
+    draftreply = factory.DraftReply(journalist_id=user_to_delete_with_drafts.id)
+    session.add(draftreply)
+    session.commit()
+
+    local_reserved_deleted_user = factory.User(username="deleted")
+    session.add(local_reserved_deleted_user)
+    session.commit()
+
+    remote_reserved_deleted_user = factory.RemoteUser(
+        username="deleted", uuid=local_reserved_deleted_user.uuid
+    )
+    # Set up get_users so that `user_to_delete_with_drafts` will be deleted and
+    # `remote_reserved_deleted_user` will replace `local_reserved_deleted_user`
+    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    api_client.get_users = mocker.MagicMock(return_value=[remote_reserved_deleted_user])
+
+    job = MetadataSyncJob(homedir)
+    job.call_api(api_client, session)
+
+    # Ensure the account was deleted
+    deleted_user = session.query(User).filter_by(uuid=user_to_delete_with_drafts.uuid).one_or_none()
+    assert not deleted_user
+    # Ensure the "deleted" user account still exists
+    reserved_deleted_user = session.query(User).filter_by(username="deleted").one_or_none()
+    assert reserved_deleted_user
+    assert reserved_deleted_user.uuid == local_reserved_deleted_user.uuid
+    # Ensure draft replies are reassociated
+    assert draftreply.journalist_id == reserved_deleted_user.id
+
+
+def test_MetadataSyncJob_reassociates_draftreplies_to_new_local_account_before_deleting_user(
+    mocker, homedir, session
+):
+    """
+    Ensure that any draft replies, sent by a user that is about to be deleted, are re-associated
+    to a new "deleted" user account that only exists locally.
+
+    This test is to ensure that we support an edge case that can occur on a pre-2.2.0 server
+    (before the server added support for creating an actual deleted user account).
+    """
+    user_to_delete_with_drafts = factory.User()
+    session.add(user_to_delete_with_drafts)
+    session.commit()
+
+    draftreply = factory.DraftReply(journalist_id=user_to_delete_with_drafts.id)
+    session.add(draftreply)
+    # Set up get_users so that `user_to_delete_with_drafts` will be deleted
+    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    api_client.get_users = mocker.MagicMock(return_value=[])
+
+    job = MetadataSyncJob(homedir)
+    job.call_api(api_client, session)
+
+    # Ensure the account was deleted
+    deleted_user = session.query(User).filter_by(uuid=user_to_delete_with_drafts.uuid).one_or_none()
+    assert not deleted_user
+    # Ensure the "deleted" user account exists
+    reserved_deleted_user = session.query(User).filter_by(username="deleted").one_or_none()
+    assert reserved_deleted_user
+    # Ensure draft replies are reassociated
+    assert draftreply.journalist_id == reserved_deleted_user.id
+
+
+def test_MetadataSyncJob_replaces_reserved_deleted_user_account(mocker, homedir, session):
+    """
+    Ensure that we delete the local "deleted" user account if it is being replaced by a new account
+    from the server and that any draft replies are re-associated appropriately.
+
+    This test is to ensure that we support an edge case that can occur on a pre-2.2.0 server
+    (before the server added support for creating an actual deleted user account).
+    """
+    local_reserved_deleted_user = factory.User(username="deleted")
+    session.add(local_reserved_deleted_user)
+    session.commit()
+    draftreply = factory.DraftReply(journalist_id=local_reserved_deleted_user.id)
+    session.add(draftreply)
+    session.commit()
+
+    remote_reserved_deleted_user = factory.RemoteUser(username="deleted")
+    # Set up get_users so that `user_to_delete_with_drafts` will be deleted and
+    # `remote_reserved_deleted_user` will replace `local_reserved_deleted_user`
+    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    api_client.get_users = mocker.MagicMock(return_value=[remote_reserved_deleted_user])
+
+    job = MetadataSyncJob(homedir)
+    job.call_api(api_client, session)
+
+    # Ensure `remote_reserved_deleted_user` replaced `local_reserved_deleted_user` and that the
+    # draft reply was reassociated to the new "deleted" user account.
+    reserved_deleted_user = session.query(User).filter_by(username="deleted").one_or_none()
+    assert reserved_deleted_user
+    assert reserved_deleted_user.uuid == remote_reserved_deleted_user.uuid
+    assert draftreply.journalist_id == reserved_deleted_user.id
+
+
 def test_MetadataSyncJob_success(mocker, homedir, session, session_maker):
     job = MetadataSyncJob(homedir)
 

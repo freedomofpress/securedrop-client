@@ -37,6 +37,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.session import Session
 
 from securedrop_client.db import (
+    DeletedUser,
     DraftReply,
     File,
     Message,
@@ -409,38 +410,33 @@ def update_replies(
     * New replies have an entry created in the local database.
     * Local replies not returned in the remote replies are deleted from the
       local database unless they are pending or failed.
-
-    If a reply references a new journalist username, add them to the database
-    as a new user.
     """
     local_replies_by_uuid = {r.uuid: r for r in local_replies}
-    users: Dict[str, User] = {}
+    deleted_user = session.query(User).filter_by(username="deleted").one_or_none()
+    user_cache: Dict[str, User] = {}
     source_cache = SourceCache(session)
     for reply in remote_replies:
-        user = users.get(reply.journalist_uuid)
-
+        user = user_cache.get(reply.journalist_uuid)
         if not user:
-            user = create_or_update_user(
-                reply.journalist_uuid,
-                reply.journalist_username,
-                reply.journalist_first_name,
-                reply.journalist_last_name,
-                session,
-            )
-            users[reply.journalist_uuid] = user
-        elif (
-            user.username != reply.journalist_username
-            or user.firstname != reply.journalist_first_name
-            or user.lastname != reply.journalist_last_name
-        ):
-            user = create_or_update_user(
-                reply.journalist_uuid,
-                reply.journalist_username,
-                reply.journalist_first_name,
-                reply.journalist_last_name,
-                session,
-            )
-            users[reply.journalist_uuid] = user
+            user = session.query(User).filter_by(uuid=reply.journalist_uuid).one_or_none()
+
+            # If the account for the sender does not exist, then replies will need to be associated
+            # to a local "deleted" user account.
+            #
+            # Once support for the pre-2.2.0 server is deprecated, this code can be removed, and the
+            # client can rely entirely on the /users endpoint to manage user accounts. Until then,
+            # we must handle the case where the pre-2.2.0 server returns a `journalist_uuid` of
+            # "deleted" for a reply's sender when no actual account exists with that uuid.
+            if not user:
+                user = deleted_user
+                if not user:
+                    user = DeletedUser()
+                    session.add(user)
+                    session.commit()
+                    deleted_user = user
+
+            # Add the retrieved or newly created "deleted" user to the cache
+            user_cache[reply.journalist_uuid] = user
 
         local_reply = local_replies_by_uuid.get(reply.uuid)
         if local_reply:

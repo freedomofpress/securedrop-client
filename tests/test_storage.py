@@ -562,11 +562,6 @@ def test_update_replies_deletes_files_associated_with_the_reply(homedir, mocker)
     abs_local_filename = add_test_file_to_temp_dir(source_directory, local_filename_when_decrypted)
     local_replies = [local_reply]
 
-    # There needs to be a corresponding local_source.
-    local_source = mocker.MagicMock()
-    local_source.uuid = "test-source-uuid"
-    local_source.id = 666
-    mock_session.query().filter_by.return_value = [local_source]
     update_replies(remote_replies, local_replies, mock_session, homedir)
 
     # Ensure the file associated with the reply are deleted on disk.

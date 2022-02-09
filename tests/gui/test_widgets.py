@@ -3018,6 +3018,39 @@ def test_ReplyBoxWidget__on_authentication_changed_does_nothing_when_authenticat
     reply_widget._update_styles.assert_not_called()
 
 
+def test_ReplyWidget__on_update_authenticated_user_does_not_raise_when_sender_deleted(mocker):
+    authenticated_user = factory.User()
+    controller = mocker.MagicMock(authenticated_user=authenticated_user)
+
+    class DeletedUser(db.User):
+        @property
+        def uuid(self):
+            raise sqlalchemy.orm.exc.ObjectDeletedError(attributes.instance_state(db.User()), None)
+
+        @property
+        def initials(self):
+            return "ab"
+
+    reply_widget = ReplyWidget(
+        controller=controller,
+        message_uuid="mock_uuid",
+        message="hello",
+        reply_status="dummy",
+        update_signal=mocker.MagicMock(),
+        download_error_signal=mocker.MagicMock(),
+        message_succeeded_signal=mocker.MagicMock(),
+        message_failed_signal=mocker.MagicMock(),
+        index=0,
+        container_width=123,
+        sender=DeletedUser(),
+        sender_is_current_user=False,
+        failed_to_decrypt=False,
+    )
+
+    # Ensure that this does not handles `ObjectDeletedError` exception by
+    reply_widget._on_update_authenticated_user(authenticated_user)
+
+
 def test_ReplyWidget__on_update_authenticated_user_does_nothing_when_not_sender(mocker):
     authenticated_user = factory.User()
     controller = mocker.MagicMock(authenticated_user=authenticated_user)

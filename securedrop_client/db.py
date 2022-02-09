@@ -3,6 +3,7 @@ import os
 from enum import Enum
 from pathlib import Path
 from typing import Any, List, Union  # noqa: F401
+from uuid import uuid4
 
 from sqlalchemy import (
     Boolean,
@@ -571,6 +572,11 @@ class User(Base):
             return self.lastname[0:2].lower()
         else:
             return self.username[0:2].lower()  # username must be at least 3 characters
+
+
+class DeletedUser(User):
+    def __init__(self) -> None:
+        super().__init__(uuid=str(uuid4()), username="deleted")
 
 
 class SeenFile(Base):
