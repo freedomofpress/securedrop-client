@@ -1,7 +1,7 @@
 # Changelog
 
 ## 0.6.0
-* Speed up source deletion (#1386)
+* Speed up source deletion (#1386, #1415)
 * Use /users endpoint for managing journalist accounts (#1397)
 * UI fix to bottom margin in conversation view (#1391)
 * (Dev) Refactors that break up the widgets module into smaller components (#1377-1383, #1390, #1393, #1394)
