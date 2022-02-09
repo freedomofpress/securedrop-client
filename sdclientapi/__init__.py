@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright © 2018–2022 The Freedom of the Press Foundation.
 import configparser
 import http
 import json
@@ -20,6 +22,7 @@ from .sdlocalobjects import (
     User,
     WrongUUIDError,
 )
+from .timestamps import parse as parse_datetime
 
 DEFAULT_PROXY_VM_NAME = "sd-proxy"
 DEFAULT_REQUEST_TIMEOUT = 20  # 20 seconds
@@ -247,8 +250,12 @@ class API:
         if "expiration" not in token_data:
             raise AuthError("Authentication error")
 
+        token_expiration = parse_datetime(token_data["expiration"])
+        if token_expiration is None:
+            raise BaseError("Error in parsing token expiration time")
+
         self.token = token_data["token"]
-        self.token_expiration = datetime.strptime(token_data["expiration"], "%Y-%m-%dT%H:%M:%S.%fZ")
+        self.token_expiration = token_expiration
         self.token_journalist_uuid = token_data["journalist_uuid"]
         self.first_name = token_data["journalist_first_name"]
         self.last_name = token_data["journalist_last_name"]
