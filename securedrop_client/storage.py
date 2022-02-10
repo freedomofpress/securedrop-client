@@ -81,6 +81,17 @@ def delete_local_source_by_uuid(session: Session, uuid: str, data_dir: str) -> N
         logger.info("Deleted source with UUID {} from local database.".format(uuid))
 
 
+def delete_local_conversation_by_source_uuid(session: Session, uuid: str, data_dir: str) -> None:
+    """
+    Delete the conversation with the referenced UUID.
+    """
+    source = session.query(Source).filter_by(uuid=uuid).one_or_none()
+    if source:
+        delete_source_collection(source.journalist_filename, data_dir)
+        session.commit()
+        logger.info("Deleted conversation by source {} from local database, preserving source.".format(uuid))
+
+
 def get_local_messages(session: Session) -> List[Message]:
     """
     Return all submission objects from the local database.

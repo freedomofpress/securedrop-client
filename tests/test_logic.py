@@ -1796,7 +1796,7 @@ def test_Controller_on_message_downloaded_decryption_failure(mocker, homedir, se
 
 def test_Controller_on_delete_source_success(mocker, homedir):
     """
-    Test that on a successful deletion does not delete the source locally (regression).
+    Test that a successful deletion callback from the server also triggers local deletion.
     """
     co = Controller("http://localhost", mocker.MagicMock(), mocker.MagicMock(), homedir)
     co.source_deleted = mocker.MagicMock()
@@ -1804,7 +1804,7 @@ def test_Controller_on_delete_source_success(mocker, homedir):
 
     co.on_delete_source_success("uuid")
 
-    storage.delete_local_source_by_uuid.assert_not_called()
+    storage.delete_local_source_by_uuid.assert_called_once_with()
 
 
 def test_Controller_on_delete_source_failure(homedir, config, mocker, session_maker):

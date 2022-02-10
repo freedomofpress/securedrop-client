@@ -1034,6 +1034,9 @@ class Controller(QObject):
         signal.
         """
         logger.info("Conversation %s successfully deleted at server", uuid)
+        
+        # Delete conversation locally, to ensure it does not remain on disk
+        storage.delete_local_conversation_by_source_uuid(self.session, uuid, self.data_dir)
         self.conversation_deletion_successful.emit(uuid, datetime.utcnow())
 
     def on_delete_conversation_failure(self, e: Exception) -> None:
@@ -1049,6 +1052,9 @@ class Controller(QObject):
         signal.
         """
         logger.info("Source %s successfully deleted at server", source_uuid)
+        
+        # Delete source locally to ensure that it does not remain on disk
+        storage.delete_local_source_by_uuid(self.session, source_uuid, self.data_dir)
         self.source_deletion_successful.emit(source_uuid, datetime.utcnow())
 
     def on_delete_source_failure(self, e: Exception) -> None:
