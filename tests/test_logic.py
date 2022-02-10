@@ -1794,17 +1794,17 @@ def test_Controller_on_message_downloaded_decryption_failure(mocker, homedir, se
     message_download_failed.emit.assert_called_with(message.source.uuid, message.uuid, str(message))
 
 
-def test_Controller_on_delete_source_success(mocker, homedir):
+def test_Controller_on_delete_source_success(mocker, homedir, session_maker):
     """
     Test that a successful deletion callback from the server also triggers local deletion.
     """
-    co = Controller("http://localhost", mocker.MagicMock(), mocker.MagicMock(), homedir)
+    co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
     co.source_deleted = mocker.MagicMock()
     storage = mocker.patch("securedrop_client.logic.storage")
 
     co.on_delete_source_success("uuid")
 
-    storage.delete_local_source_by_uuid.assert_called_once_with()
+    storage.delete_local_source_by_uuid.assert_called_once_with(session_maker, "uuid", homedir)
 
 
 def test_Controller_on_delete_source_failure(homedir, config, mocker, session_maker):
