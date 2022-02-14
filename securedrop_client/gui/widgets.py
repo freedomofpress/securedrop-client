@@ -681,32 +681,19 @@ class MainView(QWidget):
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.debug("Error refreshing source conversations: %s", e)
 
-    def _hide_source(self, source_uuid: str) -> None:
+    def _delete_source(self, source_uuid: str) -> None:
         """
-        Hide the source and corresponding conversation.
+        When we delete a source, we should delete its SourceConversationWrapper,
+        and remove the reference to it in self.source_conversations
         """
-        self._hide_conversation(source_uuid)
-        self.source_list.hide_source(source_uuid)
-
-        visible_item_exists = False
-        for i in range(self.source_list.count()):
-            if not self.source_list.isRowHidden(i):
-                visible_item_exists = True
-                break
-
-        if visible_item_exists:
-            self.empty_conversation_view.show_no_source_selected_message()
-            self.empty_conversation_view.show()
-        else:
+        self.source_list.delete_sources([source_uuid])
+        self.delete_conversation(source_uuid)
+        if not self.source_list.source_items:
             self.empty_conversation_view.show_no_sources_message()
             self.empty_conversation_view.show()
-
-    def _hide_conversation(self, source_uuid: str) -> None:
-        try:
-            conversation_wrapper = self.source_conversations[source_uuid]
-            conversation_wrapper.hide()
-        except KeyError:
-            logger.debug("No SourceConversationWrapper for {} to hide".format(source_uuid))
+        else:
+            self.empty_conversation_view.show_no_source_selected_message()
+            self.empty_conversation_view.show()
 
     def delete_conversation(self, source_uuid: str) -> None:
         """
@@ -737,12 +724,10 @@ class MainView(QWidget):
     @pyqtSlot(str, datetime)
     def _on_source_deletion_successful(self, source_uuid: str, timestamp: datetime) -> None:
         """
-        Hide the source until a sync removes it from the GUI to ensure that a stale sync does not
-        re-add a source. This method will no longer be necessary once Journalist API v2 is
-        implemented (see https://github.com/freedomofpress/securedrop/issues/5104) and we can know
-        explicitly when a source is new.
+        Handle the signal for a source that was successfully deleted by deleting that source from
+        the source list and the corresponding conversation.
         """
-        self._hide_source(source_uuid)
+        self._delete_source(source_uuid)
 
 
 class EmptyConversationView(QWidget):
@@ -942,16 +927,6 @@ class SourceList(QListWidget):
         # Return uuids of source widgets that were deleted so we can later delete the corresponding
         # conversation widgets
         return deleted_uuids
-
-    def hide_source(self, uuid: str) -> None:
-        try:
-            source_item = self.source_items[uuid]
-            if source_item.isSelected():
-                self.setCurrentItem(None)
-
-            source_item.setHidden(True)
-        except KeyError:
-            logger.debug("No SourceListWidgetItem for {} to hide".format(uuid))
 
     def delete_sources(self, source_uuids: List[str]) -> List[str]:
         deleted_uuids = []
