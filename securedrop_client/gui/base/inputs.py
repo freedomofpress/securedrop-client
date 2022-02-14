@@ -16,7 +16,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from PyQt5.QtWidgets import QDialog, QLineEdit
+from PyQt5.QtWidgets import QDialog, QLineEdit, QCheckBox
 
 from securedrop_client.resources import load_icon
 
@@ -30,20 +30,15 @@ class PasswordEdit(QLineEdit):
         self.parent = parent
         super().__init__(self.parent)
 
-        self.visibleIcon = load_icon("eye_visible.svg")
-        self.hiddenIcon = load_icon("eye_hidden.svg")
-
         self.setEchoMode(QLineEdit.Password)
-        self.togglepasswordAction = self.addAction(self.hiddenIcon, QLineEdit.TrailingPosition)
-        self.togglepasswordAction.triggered.connect(self.on_toggle_password_Action)
         self.password_shown = False
 
     def on_toggle_password_Action(self) -> None:
+        state = QCheckBox()
         if not self.password_shown:
             self.setEchoMode(QLineEdit.Normal)
             self.password_shown = True
-            self.togglepasswordAction.setIcon(self.visibleIcon)
+            state.isChecked()
         else:
             self.setEchoMode(QLineEdit.Password)
             self.password_shown = False
-            self.togglepasswordAction.setIcon(self.hiddenIcon)
