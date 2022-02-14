@@ -297,15 +297,6 @@ class Controller(QObject):
         str: the source UUID
         datetime: the timestamp for when the deletion succeeded
     """
-    source_deletion_successful = pyqtSignal(str, datetime)
-
-    """
-    This signal indicates that a deletion attempt was successful at the server.
-
-    Emits:
-        str: the source UUID
-        datetime: the timestamp for when the deletion succeeded
-    """
     conversation_deletion_successful = pyqtSignal(str, datetime)
 
     """
@@ -1031,7 +1022,7 @@ class Controller(QObject):
     def on_delete_conversation_success(self, uuid: str) -> None:
         """
         If the source collection has been successfully scheduled for deletion on the server, emit a
-        signal.
+        signal and sync.
         """
         logger.info("Conversation %s successfully deleted at server", uuid)
         self.conversation_deletion_successful.emit(uuid, datetime.utcnow())
@@ -1045,11 +1036,10 @@ class Controller(QObject):
 
     def on_delete_source_success(self, source_uuid: str) -> None:
         """
-        If the source has been successfully scheduled for deletion on the server, emit a
-        signal.
+        Rely on sync to delete the source locally so we know for sure it was deleted
         """
         logger.info("Source %s successfully deleted at server", source_uuid)
-        self.source_deletion_successful.emit(source_uuid, datetime.utcnow())
+        self.api_sync.sync()
 
     def on_delete_source_failure(self, e: Exception) -> None:
         if isinstance(e, DeleteSourceJobException):
