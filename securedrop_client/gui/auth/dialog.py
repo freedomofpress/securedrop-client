@@ -21,7 +21,7 @@ from gettext import gettext as _
 
 from pkg_resources import resource_string
 from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtGui import QBrush, QPalette
+from PyQt5.QtGui import QBrush, QPalette, QFont
 from PyQt5.QtWidgets import (
     QDialog,
     QGraphicsOpacityEffect,
@@ -31,6 +31,7 @@ from PyQt5.QtWidgets import (
     QSizePolicy,
     QVBoxLayout,
     QWidget,
+    QCheckBox,
 )
 
 from securedrop_client import __version__ as sd_version
@@ -51,6 +52,7 @@ class LoginDialog(QDialog):
     MIN_PASSWORD_LEN = 14  # Journalist.MIN_PASSWORD_LEN on server
     MAX_PASSWORD_LEN = 128  # Journalist.MAX_PASSWORD_LEN on server
     MIN_JOURNALIST_USERNAME = 3  # Journalist.MIN_USERNAME_LEN on server
+    PASSPHRASE_LABEL_SPACING = 0.5
 
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
@@ -96,6 +98,13 @@ class LoginDialog(QDialog):
         self.password_label = QLabel(_("Passphrase"))
         self.password_field = PasswordEdit(self)
 
+        font = QFont()
+        font.setLetterSpacing(QFont.AbsoluteSpacing, self.PASSPHRASE_LABEL_SPACING)
+
+        self.checkbox = QCheckBox("Show Passphrase", self)
+        self.checkbox.setFont(font)
+        self.checkbox.stateChanged.connect(self.password_field.on_toggle_password_Action)
+
         self.tfa_label = QLabel(_("Two-Factor Code"))
         self.tfa_field = QLineEdit()
 
@@ -117,7 +126,7 @@ class LoginDialog(QDialog):
         form_layout.addWidget(QWidget(self))
         form_layout.addWidget(self.password_label)
         form_layout.addWidget(self.password_field)
-        form_layout.addWidget(QWidget(self))
+        form_layout.addWidget(self.checkbox, alignment=Qt.AlignRight)
         form_layout.addWidget(self.tfa_label)
         form_layout.addWidget(self.tfa_field)
         form_layout.addWidget(buttons)

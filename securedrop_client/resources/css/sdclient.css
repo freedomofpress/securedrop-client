@@ -383,11 +383,13 @@ QWidget#FileWidget_horizontal_line {
 }
 
 #ExportDialog_passphrase_form QCheckBox{
-    font-family: 'Montserrat';
-    font-weight: 500;
+    font-family: 'Source Sans Pro';
+    font-weight: 600;
     font-size: 12px;
-    color: #2a319d;
-    padding: 7px;
-    border: 1px solid #2a319d;
-    border-radius: 4px;
+    line-height: 15px;
+    color: #2A319D;
+}
+
+#ExportDialog_passphrase_form QCheckBox::indicator:checked{
+    background-color: #2A319D;
 }

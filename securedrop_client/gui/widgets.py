@@ -41,6 +41,7 @@ from PyQt5.QtGui import (
 )
 from PyQt5.QtWidgets import (
     QAction,
+    QCheckBox,
     QGraphicsDropShadowEffect,
     QGridLayout,
     QHBoxLayout,
@@ -58,7 +59,6 @@ from PyQt5.QtWidgets import (
     QToolButton,
     QVBoxLayout,
     QWidget,
-    QCheckBox,
 )
 
 from securedrop_client import state
@@ -2686,6 +2686,7 @@ class ExportDialog(ModalDialog):
         self.passphrase_field.setGraphicsEffect(effect)
 
         self.checkbox = QCheckBox("Show Passphrase", self)
+        self.checkbox.setFont(font)
         self.checkbox.stateChanged.connect(self.passphrase_field.on_toggle_password_Action)
 
         passphrase_form_layout.addWidget(passphrase_label)

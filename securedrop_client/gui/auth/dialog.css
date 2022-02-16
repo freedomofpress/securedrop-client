@@ -19,3 +19,15 @@ QWidget {
 #LoginDialog_app_version_label {
     color: #9fddff;
 }
+
+#LoginDialog_form QCheckBox{
+    font-family: 'Source Sans Pro';
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 15px;
+    color: #9fddff;;
+}
+
+#LoginDialog_form QCheckBox::indicator:checked{
+    color: black;
+}
