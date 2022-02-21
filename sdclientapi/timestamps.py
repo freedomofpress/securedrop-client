@@ -1,5 +1,3 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
-# Copyright © 2022 The Freedom of the Press Foundation.
 from datetime import datetime
 from typing import Optional
 

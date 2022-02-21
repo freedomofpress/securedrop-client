@@ -1,5 +1,3 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
-# Copyright © 2018–2022 The Freedom of the Press Foundation.
 import configparser
 import http
 import json
