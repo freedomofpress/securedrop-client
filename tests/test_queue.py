@@ -14,6 +14,7 @@ from securedrop_client.api_jobs.downloads import (
     ReplyDownloadJob,
 )
 from securedrop_client.api_jobs.seen import SeenJob
+from securedrop_client.api_jobs.uploads import SendReplyJob
 from securedrop_client.app import threads
 from securedrop_client.queue import ApiJobQueue, RunnableQueue
 from tests import factory
@@ -470,6 +471,28 @@ def test_ApiJobQueue_stop_stops_queue_threads(mocker):
 
         assert not job_queue.main_thread.isRunning()
         assert not job_queue.download_file_thread.isRunning()
+
+
+def test_ApiJobQueue_stop_clears_jobs(mocker):
+    """
+    After ApiJobQueue.stop(), the underlying RunnableQueue is empty.
+    """
+    mock_api = mocker.MagicMock()
+    mock_client = mocker.MagicMock()
+    mock_session_maker = mocker.MagicMock()
+
+    with threads(2) as [main_thread, file_download_thread]:
+        job_queue = ApiJobQueue(
+            mocker.MagicMock(), mocker.MagicMock(), main_thread, file_download_thread
+        )
+        job_queue.start(mock_api)
+
+        job = SendReplyJob("mock", "mock", "mock", "mock")
+        job_queue.enqueue(job)
+        assert job_queue.main_queue.queue.qsize() == 1
+
+        job_queue.stop()
+        assert job_queue.main_queue.queue.empty()
 
 
 def test_ApiJobQueue_stop_results_in_queue_threads_not_running(mocker):
