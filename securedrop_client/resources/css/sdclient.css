@@ -374,6 +374,10 @@ QWidget#FileWidget_horizontal_line {
     padding-top: 6px;
 }
 
+#ExportDialog_passphrase_form #Passphrase_Title::hover {
+    background-color: rgba(230, 253, 255, 0);
+}
+
 #ExportDialog_passphrase_form QLineEdit {
     border-radius: 0px;
     min-height: 30px;
@@ -382,14 +386,10 @@ QWidget#FileWidget_horizontal_line {
     padding-bottom: 2px;
 }
 
-#ExportDialog_passphrase_form QCheckBox{
-    font-family: 'Source Sans Pro';
-    font-weight: 600;
-    font-size: 12px;
-    line-height: 15px;
-    color: #2A319D;
+#ExportDialog_passphrase_form QFrame::hover {
+    background-color: rgba(230, 253, 255);
 }
 
 #ExportDialog_passphrase_form QCheckBox::indicator:checked{
-    background-color: #2A319D;
+    background-color: rgba(42,49,157);
 }

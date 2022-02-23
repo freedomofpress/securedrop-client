@@ -41,7 +41,6 @@ from PyQt5.QtGui import (
 )
 from PyQt5.QtWidgets import (
     QAction,
-    QCheckBox,
     QGraphicsDropShadowEffect,
     QGridLayout,
     QHBoxLayout,
@@ -85,6 +84,7 @@ from securedrop_client.gui.base import (
     SvgPushButton,
     SvgToggleButton,
 )
+from securedrop_client.gui.base.checkbox import SDCheckBox
 from securedrop_client.gui.conversation import DeleteConversationDialog
 from securedrop_client.gui.source import DeleteSourceDialog
 from securedrop_client.logic import Controller
@@ -2674,6 +2674,7 @@ class ExportDialog(ModalDialog):
         )
         self.passphrase_form.setLayout(passphrase_form_layout)
         passphrase_label = SecureQLabel(_("Passphrase"))
+        passphrase_label.setObjectName("Passphrase_Title")
         font = QFont()
         font.setLetterSpacing(QFont.AbsoluteSpacing, self.PASSPHRASE_LABEL_SPACING)
         passphrase_label.setFont(font)
@@ -2685,13 +2686,12 @@ class ExportDialog(ModalDialog):
         effect.setColor(QColor("#aaa"))
         self.passphrase_field.setGraphicsEffect(effect)
 
-        self.checkbox = QCheckBox("Show Passphrase", self)
-        self.checkbox.setFont(font)
-        self.checkbox.stateChanged.connect(self.passphrase_field.on_toggle_password_Action)
+        check = SDCheckBox()
+        check.checkbox.stateChanged.connect(self.passphrase_field.on_toggle_password_Action)
 
         passphrase_form_layout.addWidget(passphrase_label)
         passphrase_form_layout.addWidget(self.passphrase_field)
-        passphrase_form_layout.addWidget(self.checkbox, alignment=Qt.AlignRight)
+        passphrase_form_layout.addWidget(check, alignment=Qt.AlignRight)
         self.body_layout.addWidget(self.passphrase_form)
         self.passphrase_form.hide()
 

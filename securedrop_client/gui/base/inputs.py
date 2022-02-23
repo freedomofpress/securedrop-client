@@ -18,8 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from PyQt5.QtWidgets import QCheckBox, QDialog, QLineEdit
 
-from securedrop_client.resources import load_icon
-
 
 class PasswordEdit(QLineEdit):
     """

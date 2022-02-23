@@ -1,0 +1,18 @@
+#ShowPassphrase_widget QFrame{
+    padding: 3px 3px 3px 5px;
+}
+#ShowPassphrase_widget QLabel{
+    font-family: 'Source Sans Pro';
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 15px;
+    padding: 0px;
+}
+
+#ShowPassphrase_widget QCheckBox::indicator{
+    color: #fff;
+}
+
+#ShowPassphrase_widget QLabel::hover{
+    background-color: rgba(255,255,255,0);
+}
