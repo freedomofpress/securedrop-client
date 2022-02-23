@@ -3,6 +3,7 @@ import datetime
 import pytest
 
 from securedrop_client.db import (
+    DeletedConversation,
     DownloadError,
     DownloadErrorCodes,
     DraftReply,
@@ -349,3 +350,11 @@ def test_reply_with_download_error(session, download_error_codes):
 
     classname = r.__class__.__name__.lower()
     assert str(r) == f"cannot decrypt {classname}"
+
+
+def test_deletedconversation_creation(session):
+    with pytest.raises(TypeError):
+        DeletedConversation()  # must initialize with a UUID
+
+    dc = DeletedConversation(uuid="test-uuid")
+    assert str(dc) == "DeletedConversation (source {})".format(dc.uuid)

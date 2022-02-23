@@ -1874,9 +1874,16 @@ def test_Controller_on_delete_conversation_success(mocker, homedir):
     info_logger = mocker.patch("securedrop_client.logic.logger.info")
 
     co = Controller("http://localhost", mocker.MagicMock(), mocker.MagicMock(), homedir)
+    mock_storage = mocker.MagicMock()
+    mocker.patch("securedrop_client.logic.storage", mock_storage)
+
     co.on_delete_conversation_success("uuid-blah")
+
     info_logger.assert_called_once_with(
-        "Conversation %s successfully deleted at server", "uuid-blah"
+        "Conversation %s successfully scheduled for deletion at server", "uuid-blah"
+    )
+    mock_storage.delete_local_conversation_by_source_uuid.assert_called_once_with(
+        co.session, "uuid-blah", co.data_dir
     )
 
 
