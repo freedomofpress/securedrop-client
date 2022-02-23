@@ -108,6 +108,26 @@ class Source(Base):
         return True
 
 
+class DeletedConversation(Base):
+    """
+    Table that stores only source UUIDs for conversations (files and messages) that
+    have been deleted locally, to prevent them from being re-added to the Messages and
+    Replies tables during a 'stale sync' (network race condition).
+    """
+
+    __tablename__ = "deletedconversation"
+
+    uuid = Column(String(36), primary_key=True, nullable=False)
+
+    def __repr__(self) -> str:
+        return "DeletedConversation (source {})".format(self.uuid)
+
+    def __init__(self, **kwargs: Any) -> None:
+        if "uuid" not in kwargs:
+            raise TypeError("Keyword argument 'uuid' (source UUID) required")
+        super().__init__(**kwargs)
+
+
 class Message(Base):
 
     __tablename__ = "messages"
