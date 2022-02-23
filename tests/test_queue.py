@@ -8,6 +8,7 @@ from sdclientapi import RequestTimeoutError, ServerConnectionError
 
 from securedrop_client.api_jobs.base import ApiInaccessibleError, PauseQueueJob
 from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob
+from securedrop_client.api_jobs.uploads import SendReplyJob
 from securedrop_client.queue import ApiJobQueue, RunnableQueue
 from tests import factory
 
@@ -441,6 +442,25 @@ def test_ApiJobQueue_stop_stops_queue_threads(mocker):
 
     assert not job_queue.main_thread.isRunning()
     assert not job_queue.download_file_thread.isRunning()
+
+
+def test_ApiJobQueue_stop_clears_jobs(mocker):
+    """
+    After ApiJobQueue.stop(), the underlying RunnableQueue is empty.
+    """
+    mock_api = mocker.MagicMock()
+    mock_client = mocker.MagicMock()
+    mock_session_maker = mocker.MagicMock()
+
+    job_queue = ApiJobQueue(mock_client, mock_session_maker)
+    job_queue.start(mock_api)
+
+    job = SendReplyJob("mock", "mock", "mock", "mock")
+    job_queue.enqueue(job)
+    assert job_queue.main_queue.queue.qsize() == 1
+
+    job_queue.stop()
+    assert job_queue.main_queue.queue.empty()
 
 
 def test_ApiJobQueue_stop_results_in_queue_threads_not_running(mocker):
