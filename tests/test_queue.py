@@ -237,6 +237,22 @@ def test_RunnableQueue_does_not_run_jobs_when_not_authed(mocker):
     assert queue.api_client is None
 
 
+def test_RunnableQueue_clear(mocker):
+    """
+    After RunnableQueue.clear(), the underlying PriorityQueue is empty.
+    """
+    api_client = mocker.MagicMock()
+    session_maker = mocker.MagicMock(return_value=mocker.MagicMock())
+    queue = RunnableQueue(api_client, session_maker)
+
+    job = SendReplyJob("mock", "mock", "mock", "mock")
+    queue.add_job(job)
+    assert queue.queue.qsize() == 1
+
+    queue.clear()
+    assert queue.queue.empty()
+
+
 def test_ApiJobQueue_enqueue_when_queues_are_running(mocker):
     mock_client = mocker.MagicMock()
     mock_session_maker = mocker.MagicMock()
