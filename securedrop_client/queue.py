@@ -96,7 +96,10 @@ class RunnableQueue(QObject):
         SeenJob: 18,
     }
 
-    # Signal that is emitted when processing stops
+    # Signal that is emitted when processing is stopped and enqueued jobs are cleared
+    cleared = pyqtSignal()
+
+    # Signal that is emitted when processing is paused
     paused = pyqtSignal()
 
     # Signal that is emitted to resume processing jobs
@@ -137,6 +140,16 @@ class RunnableQueue(QObject):
             logger.debug("Duplicate job {}, skipping".format(job))
             return True
         return False
+
+    def _clear(self) -> None:
+        """
+        Reinstantiate the PriorityQueue, rather than trying to clear it via undocumented methods.[1]
+
+        [1]: https://stackoverflow.com/a/38560911
+        """
+        with self.condition_add_or_remove_job:
+            self.queue = PriorityQueue()
+        self.cleared.emit()
 
     def add_job(self, job: QueueJob) -> None:
         """
