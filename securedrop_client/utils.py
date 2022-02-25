@@ -188,7 +188,7 @@ def humanize_filesize(filesize: int) -> str:
     elif filesize < 1024 * 1024:
         return "{}KB".format(math.floor(filesize / 1024))
     else:
-        return "{}MB".format(math.floor(filesize / 1024 ** 2))
+        return "{}MB".format(math.floor(filesize / 1024**2))
 
 
 @contextmanager
