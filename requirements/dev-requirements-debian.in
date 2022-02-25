@@ -5,7 +5,7 @@ flaky
 isort
 MarkupSafe
 mypy
-pip-tools
+pip-tools>=6.5.0  # for jazzband/piptools#1558
 PyAutoGUI
 pyobjc-core;platform_system=="Darwin"
 pyobjc;platform_system=="Darwin"
