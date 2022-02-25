@@ -12,6 +12,7 @@ from securedrop_client.api_jobs.base import (
     DEFAULT_NUM_ATTEMPTS,
     ApiInaccessibleError,
     ApiJob,
+    ClearQueueJob,
     PauseQueueJob,
     QueueJob,
 )
@@ -85,6 +86,7 @@ class RunnableQueue(QObject):
 
     # These are the priorities for processing jobs. Lower numbers corresponds to a higher priority.
     JOB_PRIORITIES = {
+        ClearQueueJob: 0,  # Must preempt all other jobs
         PauseQueueJob: 11,
         FileDownloadJob: 13,  # File downloads processed in separate queue
         DeleteSourceJob: 14,
@@ -96,7 +98,7 @@ class RunnableQueue(QObject):
         SeenJob: 18,
     }
 
-    # Signal that is emitted when processing is stopped and enqueued jobs are cleared
+    # Signal that is emitted when processing is stopped and queued jobs are cleared
     cleared = pyqtSignal()
 
     # Signal that is emitted when processing is paused
@@ -189,6 +191,9 @@ class RunnableQueue(QObject):
         """
         Process the next job in the queue.
 
+        If the job is a ClearQueueJob, call _clear() and return from the processing loop so that
+        the processing thread can quit.
+
         If the job is a PauseQueueJob, emit the paused signal and return from the processing loop so
         that no more jobs are processed until the queue resumes.
 
@@ -209,7 +214,13 @@ class RunnableQueue(QObject):
                 self.condition_add_or_remove_job.wait_for(lambda: not self.queue.empty())
                 priority, self.current_job = self.queue.get(block=False)
 
-            if isinstance(self.current_job, PauseQueueJob):
+            if isinstance(self.current_job, ClearQueueJob):
+                with self.condition_add_or_remove_job:
+                    self.current_job = None
+                self._clear()
+                return
+
+            if isinstance(self.current_job, PauseQueueJob):  # type: ignore
                 self.paused.emit()
                 with self.condition_add_or_remove_job:
                     self.current_job = None
@@ -251,6 +262,9 @@ class ApiJobQueue(QObject):
     from the Controller.
     """
 
+    # Signal that is emitted after a queue is cleared.
+    cleared = pyqtSignal()
+
     # Signal that is emitted after a queue is paused.
     paused = pyqtSignal()
 
@@ -283,6 +297,9 @@ class ApiJobQueue(QObject):
         self.main_queue.paused.connect(self.on_main_queue_paused)
         self.download_file_queue.paused.connect(self.on_file_download_queue_paused)
 
+        self.main_queue.cleared.connect(self.on_main_queue_cleared)
+        self.download_file_queue.cleared.connect(self.on_file_download_queue_cleared)
+
     def start(self, api_client: API) -> None:
         """
         Start the queues whenever a new api token is provided.
@@ -300,15 +317,19 @@ class ApiJobQueue(QObject):
 
     def stop(self) -> None:
         """
-        Stop the queues.
+        Inject a ClearQueueJob into each queue and quit its processing thread.  To keep this
+        method non-blocking, we do NOT wait() for the thread to return, which will happen only
+        when RunnableQueue.process() reaches the ClearQueueJob and returns from its loop.
         """
         if self.main_thread.isRunning():
+            self.main_queue.add_job(ClearQueueJob())
             self.main_thread.quit()
-            logger.debug("Stopped main queue")
+            logger.debug("Asked main queue thread to quit")
 
         if self.download_file_thread.isRunning():
+            self.download_file_queue.add_job(ClearQueueJob())
             self.download_file_thread.quit()
-            logger.debug("Stopped file download queue")
+            logger.debug("Asked file-download queue thread to quit")
 
     @pyqtSlot()
     def on_main_queue_paused(self) -> None:
@@ -325,6 +346,22 @@ class ApiJobQueue(QObject):
         """
         logger.debug("Paused file download queue")
         self.paused.emit()
+
+    @pyqtSlot()
+    def on_main_queue_cleared(self) -> None:
+        """
+        Emit the "cleared" signal when the main RunnableQueue is cleared.
+        """
+        logger.debug("Cleared main queue")
+        self.cleared.emit()
+
+    @pyqtSlot()
+    def on_file_download_queue_cleared(self) -> None:
+        """
+        Emit the "cleared" signal when the file-download RunnableQueue is cleared.
+        """
+        logger.debug("Cleared file download queue")
+        self.cleared.emit()
 
     def resume_queues(self) -> None:
         """

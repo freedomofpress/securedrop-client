@@ -41,6 +41,10 @@ class QueueJob(QObject):
         return self.order_number < other.order_number
 
 
+class ClearQueueJob(QueueJob):
+    pass
+
+
 class PauseQueueJob(QueueJob):
     def __init__(self) -> None:
         super().__init__()
