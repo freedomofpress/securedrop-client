@@ -85,6 +85,7 @@ class RunnableQueue(QObject):
 
         self.resume.connect(self.process)
 
+    @pyqtSlot()
     def clear(self) -> None:
         """
         Clear the underlying PriorityQueue.
@@ -228,6 +229,9 @@ class ApiJobQueue(QObject):
         self.main_thread.started.connect(self.main_queue.process)
         self.download_file_thread.started.connect(self.download_file_queue.process)
 
+        self.main_thread.finished.connect(self.main_queue.clear)
+        self.download_file_thread.finished.connect(self.download_file_queue.clear)
+
         self.main_queue.paused.connect(self.on_main_queue_paused)
         self.download_file_queue.paused.connect(self.on_file_download_queue_paused)
 
@@ -248,14 +252,18 @@ class ApiJobQueue(QObject):
 
     def stop(self) -> None:
         """
-        Stop the queues.
+        Inject a PauseQueueJob into each queue's thread and wait for processing to stop.
         """
         if self.main_thread.isRunning():
+            self.main_queue.add_job(PauseQueueJob())
             self.main_thread.quit()
+            self.main_thread.wait()
             logger.debug("Stopped main queue")
 
         if self.download_file_thread.isRunning():
+            self.download_file_queue.add_job(PauseQueueJob())
             self.download_file_thread.quit()
+            self.download_file_thread.wait()
             logger.debug("Stopped file download queue")
 
     @pyqtSlot()
