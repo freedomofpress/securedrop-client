@@ -6,7 +6,7 @@ from queue import Queue
 import pytest
 from sdclientapi import RequestTimeoutError, ServerConnectionError
 
-from securedrop_client.api_jobs.base import ApiInaccessibleError, PauseQueueJob
+from securedrop_client.api_jobs.base import ApiInaccessibleError, ClearQueueJob, PauseQueueJob
 from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob
 from securedrop_client.api_jobs.uploads import SendReplyJob
 from securedrop_client.queue import ApiJobQueue, RunnableQueue
@@ -80,6 +80,18 @@ def test_RunnableQueue_job_timeout(mocker, exception):
     queue.process()
     assert queue.queue.qsize() == 1  # queue contains: job2
     assert queue.queue.get(block=True) == (1, job2)
+
+
+def test_RunnableQueue_process_ClearQueueJob(mocker):
+    api_client = mocker.MagicMock()
+    session_maker = mocker.MagicMock(return_value=mocker.MagicMock())
+    queue = RunnableQueue(api_client, session_maker)
+    queue.JOB_PRIORITIES = {ClearQueueJob: 0}
+
+    queue.add_job(ClearQueueJob())
+    queue.process()
+
+    assert queue.queue.empty()
 
 
 def test_RunnableQueue_process_PauseQueueJob(mocker):
@@ -323,6 +335,28 @@ def test_ApiJobQueue_enqueue_when_queues_are_not_running(mocker):
 
     mock_download_file_add_job.assert_not_called()
     mock_main_queue_add_job.assert_not_called()
+
+
+def test_ApiJobQueue_on_file_download_queue_cleared(mocker):
+    job_queue = ApiJobQueue(mocker.MagicMock(), mocker.MagicMock())
+    mocker.patch.object(job_queue, "cleared")
+    clear_job = ClearQueueJob()
+    mocker.patch("securedrop_client.queue.ClearQueueJob", return_value=clear_job)
+
+    job_queue.on_file_download_queue_cleared()
+
+    job_queue.cleared.emit.assert_called_once_with()
+
+
+def test_ApiJobQueue_on_main_queue_cleared(mocker):
+    job_queue = ApiJobQueue(mocker.MagicMock(), mocker.MagicMock())
+    mocker.patch.object(job_queue, "cleared")
+    clear_job = ClearQueueJob()
+    mocker.patch("securedrop_client.queue.ClearQueueJob", return_value=clear_job)
+
+    job_queue.on_main_queue_cleared()
+
+    job_queue.cleared.emit.assert_called_once_with()
 
 
 def test_ApiJobQueue_on_main_queue_paused(mocker):
