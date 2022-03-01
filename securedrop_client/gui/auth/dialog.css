@@ -9,10 +9,6 @@ QWidget {
     font-size: 13px;
 }
 
-#LoginDialog_form QLabel::hover {
-    background-color: rgba(255,255,255,0);
-}
-
 #LoginDialog_form QLineEdit {
     border-radius: 0px;
     height: 30px;
@@ -22,16 +18,4 @@ QWidget {
 
 #LoginDialog_app_version_label {
     color: #9fddff;
-}
-
-#LoginDialog_app_version_label::hover {
-    background-color: rgba(255, 255, 255, 0);
-}
-
-#LoginDialog_form QCheckBox{
-    color: #045FB4;
-}
-
-QFrame::hover{
-    background-color: rgba(255, 255, 255, 0.2);
 }

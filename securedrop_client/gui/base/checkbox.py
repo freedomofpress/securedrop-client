@@ -1,22 +1,25 @@
 """
+SecureDrop customized passphrase checkbox control
 
+A checkbox control created to toggle with hiding and showing PasswordEdit passphrases.
+Consists of a QCheckBox and a QLabel positioned horizontally within a QFrame.
+Present in the Sign-in and Export Dialog.
 """
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QCursor, QFont
+from pkg_resources import resource_string
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QCursor, QFont, QMouseEvent
 from PyQt5.QtWidgets import QCheckBox, QFrame, QHBoxLayout, QLabel, QWidget
-
-from securedrop_client.resources import load_css
 
 
 class SDCheckBox(QWidget):
-
-    CHECKBOX_CSS = "checkbox.css"
+    clicked = pyqtSignal()
+    CHECKBOX_CSS = resource_string(__name__, "checkbox.css").decode("utf-8")
     PASSPHRASE_LABEL_SPACING = 1
 
     def __init__(self) -> None:
         super().__init__()
         self.setObjectName("ShowPassphrase_widget")
-        self.setStyleSheet(load_css(self.CHECKBOX_CSS))
+        self.setStyleSheet(self.CHECKBOX_CSS)
 
         font = QFont()
         font.setLetterSpacing(QFont.AbsoluteSpacing, self.PASSPHRASE_LABEL_SPACING)
@@ -39,3 +42,8 @@ class SDCheckBox(QWidget):
         self.frame.layout().addWidget(self.checkbox)
         self.frame.layout().addWidget(self.label)
         self.frame.setCursor(QCursor(Qt.PointingHandCursor))
+
+        self.clicked.connect(self.checkbox.click)
+
+    def mousePressEvent(self, e: QMouseEvent) -> None:
+        self.clicked.emit()

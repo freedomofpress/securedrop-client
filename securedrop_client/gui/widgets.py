@@ -2674,7 +2674,6 @@ class ExportDialog(ModalDialog):
         )
         self.passphrase_form.setLayout(passphrase_form_layout)
         passphrase_label = SecureQLabel(_("Passphrase"))
-        passphrase_label.setObjectName("Passphrase_Title")
         font = QFont()
         font.setLetterSpacing(QFont.AbsoluteSpacing, self.PASSPHRASE_LABEL_SPACING)
         passphrase_label.setFont(font)
