@@ -35,7 +35,8 @@ class SDCheckBox(QWidget):
         self.frame.layout().setSpacing(0)
 
         self.checkbox = QCheckBox()
-        self.label = QLabel("Show Passphrase")
+        self.label = QLabel()
+        self.label.setText("Show Passphrase")
         self.label.setFont(font)
 
         self.layout.addWidget(self.frame)
