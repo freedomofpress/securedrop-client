@@ -22,6 +22,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from PyQt5.QtCore import QProcess
+from PyQt5.QtWidgets import QApplication
 from sqlalchemy.orm import scoped_session
 
 from securedrop_client.config import Config
@@ -105,7 +107,13 @@ class GpgHelper:
         with tempfile.NamedTemporaryFile(suffix=".message") as out:
             cmd = self._gpg_cmd_base()
             cmd.extend(["--decrypt", filepath])
-            res = subprocess.call(cmd, stdout=out, stderr=err)
+            p = QProcess()
+            p.setStandardOutputFile(out.name)
+            p.setStandardErrorFile(err.name)
+            QApplication.instance().aboutToQuit.connect(p.terminate)
+            p.start(cmd[0], cmd[1:])
+            p.waitForFinished()
+            res = p.exitCode()
 
             if res != 0:
                 # The err tempfile was created with delete=False, so needs to
