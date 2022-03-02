@@ -5,6 +5,8 @@ A checkbox control created to toggle with hiding and showing PasswordEdit passph
 Consists of a QCheckBox and a QLabel positioned horizontally within a QFrame.
 Present in the Sign-in and Export Dialog.
 """
+from gettext import gettext as _
+
 from pkg_resources import resource_string
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QCursor, QFont, QMouseEvent
@@ -35,8 +37,7 @@ class SDCheckBox(QWidget):
         self.frame.layout().setSpacing(0)
 
         self.checkbox = QCheckBox()
-        self.label = QLabel()
-        self.label.setText("Show Passphrase")
+        self.label = QLabel(_("Show Passphrase"))
         self.label.setFont(font)
 
         self.layout.addWidget(self.frame)
