@@ -62,8 +62,15 @@ QWidget {
 
 #UserProfile {
     background-color: #0096dc;
-    padding: 15px;
-    min-height: 60px
+    padding: 10px;
+    min-height: 45px;
+}
+
+#UserProfile QFrame{
+    padding-top: 7px;
+    padding-right: 7px;
+    padding-bottom: 7px;
+    padding-left: 7px;
 }
 
 #UserProfile_icon {

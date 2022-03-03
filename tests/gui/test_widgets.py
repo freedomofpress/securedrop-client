@@ -434,13 +434,6 @@ def test_UserProfile_hide(mocker):
     up.login_button.show.assert_called_once_with()
 
 
-def test_UserIconLabel_clicks(mocker):
-    uil = UserIconLabel()
-    uil.clicked = mocker.MagicMock()
-    uil.mousePressEvent(None)
-    uil.clicked.emit.assert_called_once_with()
-
-
 def test_UserButton_setup(mocker):
     ub = UserButton()
     ub.menu = mocker.MagicMock()

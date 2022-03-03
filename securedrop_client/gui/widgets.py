@@ -41,6 +41,7 @@ from PyQt5.QtGui import (
 )
 from PyQt5.QtWidgets import (
     QAction,
+    QFrame,
     QGraphicsDropShadowEffect,
     QGridLayout,
     QHBoxLayout,
@@ -388,6 +389,8 @@ class UserProfile(QLabel):
     button if the user is logged out.
     """
 
+    clicked = pyqtSignal()
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -410,6 +413,13 @@ class UserProfile(QLabel):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
+        self.frame = QFrame()
+        self.frame.setLayout(QHBoxLayout())
+        self.frame.layout().setContentsMargins(0, 0, 0, 0)
+        self.frame.layout().setSpacing(0)
+
+        layout.addWidget(self.frame)
+
         # Login button
         self.login_button = LoginButton()
 
@@ -424,13 +434,14 @@ class UserProfile(QLabel):
         self.user_icon_font = QFont()
         self.user_icon_font.setLetterSpacing(QFont.AbsoluteSpacing, 0.58)
         self.user_icon.setFont(self.user_icon_font)
-        self.user_icon.clicked.connect(self.user_button.click)
-        self.user_icon.setCursor(QCursor(Qt.PointingHandCursor))
 
-        # Add widgets to user auth layout
-        layout.addWidget(self.login_button, alignment=Qt.AlignTop)
-        layout.addWidget(self.user_icon, alignment=Qt.AlignTop)
-        layout.addWidget(self.user_button, alignment=Qt.AlignTop)
+        # Add widgets to user auth layout's frame
+        self.frame.layout().addWidget(self.login_button, alignment=Qt.AlignTop)
+        self.frame.layout().addWidget(self.user_icon, alignment=Qt.AlignTop)
+        self.frame.layout().addWidget(self.user_button, alignment=Qt.AlignTop)
+        self.clicked.connect(self.user_button.click)
+
+        self.frame.setCursor(QCursor(Qt.PointingHandCursor))
 
     def setup(self, window, controller: Controller) -> None:  # type: ignore [no-untyped-def]
         self.controller = controller
@@ -456,16 +467,14 @@ class UserProfile(QLabel):
         self.user_button.hide()
         self.login_button.show()
 
+    def mousePressEvent(self, e: QMouseEvent) -> None:
+        self.clicked.emit()
+
 
 class UserIconLabel(QLabel):
     """
-    Makes a label clickable. (For the label containing the user icon.)
+    The label containing the user icon.
     """
-
-    clicked = pyqtSignal()
-
-    def mousePressEvent(self, e: QMouseEvent) -> None:
-        self.clicked.emit()
 
 
 class UserButton(SvgPushButton):
