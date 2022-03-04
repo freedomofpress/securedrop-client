@@ -518,15 +518,20 @@ def test_ApiJobQueue_start_if_queues_running(mocker):
 
 
 def test_ApiJobQueue_stop_stops_queue_threads(mocker):
+    """
+    After ApiJobQueue.stop(), the queue threads return from the processing loop and quit.
+    """
     with threads(2) as [main_thread, file_download_thread]:
         job_queue = ApiJobQueue(
             mocker.MagicMock(), mocker.MagicMock(), main_thread, file_download_thread
         )
+        job_queue.start(mocker.MagicMock())
+        assert job_queue.main_thread.isRunning()
+        assert job_queue.download_file_thread.isRunning()
 
         job_queue.stop()
-
-        assert not job_queue.main_thread.isRunning()
-        assert not job_queue.download_file_thread.isRunning()
+        assert job_queue.main_thread.wait()
+        assert job_queue.download_file_thread.wait()
 
 
 def test_ApiJobQueue_stop_clears_jobs(mocker):
@@ -534,8 +539,6 @@ def test_ApiJobQueue_stop_clears_jobs(mocker):
     After ApiJobQueue.stop(), the underlying RunnableQueue is empty.
     """
     mock_api = mocker.MagicMock()
-    mock_client = mocker.MagicMock()
-    mock_session_maker = mocker.MagicMock()
 
     with threads(2) as [main_thread, file_download_thread]:
         job_queue = ApiJobQueue(
@@ -548,6 +551,8 @@ def test_ApiJobQueue_stop_clears_jobs(mocker):
         assert job_queue.main_queue.queue.qsize() == 1
 
         job_queue.stop()
+        assert job_queue.main_thread.wait()
+        assert job_queue.download_file_thread.wait()
         assert job_queue.main_queue.queue.empty()
 
 
