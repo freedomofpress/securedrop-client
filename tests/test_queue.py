@@ -454,8 +454,11 @@ def test_ApiJobQueue_start_if_queues_running(mocker):
 def test_ApiJobQueue_stop_stops_queue_threads(mocker):
     job_queue = ApiJobQueue(mocker.MagicMock(), mocker.MagicMock())
 
-    job_queue.stop()
+    job_queue.start(mocker.MagicMock())
+    assert job_queue.main_thread.isRunning()
+    assert job_queue.download_file_thread.isRunning()
 
+    job_queue.stop()
     assert not job_queue.main_thread.isRunning()
     assert not job_queue.download_file_thread.isRunning()
 
@@ -477,14 +480,3 @@ def test_ApiJobQueue_stop_clears_jobs(mocker):
 
     job_queue.stop()
     assert job_queue.main_queue.queue.empty()
-
-
-def test_ApiJobQueue_stop_results_in_queue_threads_not_running(mocker):
-    job_queue = ApiJobQueue(mocker.MagicMock(), mocker.MagicMock())
-    job_queue.main_thread = mocker.MagicMock()
-    job_queue.download_file_thread = mocker.MagicMock()
-
-    job_queue.stop()
-
-    job_queue.main_thread.quit.assert_called_once_with()
-    job_queue.download_file_thread.quit.assert_called_once_with()
