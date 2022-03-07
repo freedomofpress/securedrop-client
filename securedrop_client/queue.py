@@ -85,21 +85,6 @@ class RunnableQueue(QObject):
 
         self.resume.connect(self.process)
 
-    @pyqtSlot()
-    def clear(self) -> None:
-        """
-        Clear the underlying PriorityQueue.
-
-        Commentary suggests[1] that the PriorityQueue should generally be
-        iterated over with get_nowait() until Empty, but we're protected here
-        by RunnableQueue.condition_add_or_remove_job.
-
-        [1]: https://stackoverflow.com/a/18873213
-        """
-        with self.condition_add_or_remove_job:
-            self.queue.queue.clear()
-            self.condition_add_or_remove_job.notify()
-
     def _check_for_duplicate_jobs(self, job: ApiJob) -> bool:
         """
         Queued jobs are stored on self.queue.queue. The currently executing job is
@@ -229,9 +214,6 @@ class ApiJobQueue(QObject):
         self.main_thread.started.connect(self.main_queue.process)
         self.download_file_thread.started.connect(self.download_file_queue.process)
 
-        self.main_thread.finished.connect(self.main_queue.clear)
-        self.download_file_thread.finished.connect(self.download_file_queue.clear)
-
         self.main_queue.paused.connect(self.on_main_queue_paused)
         self.download_file_queue.paused.connect(self.on_file_download_queue_paused)
 
@@ -256,14 +238,14 @@ class ApiJobQueue(QObject):
         """
         if self.main_thread.isRunning():
             self.main_queue.add_job(PauseQueueJob())
+            self.main_queue.queue.queue.clear()
             self.main_thread.quit()
-            self.main_thread.wait()
             logger.debug("Stopped main queue")
 
         if self.download_file_thread.isRunning():
             self.download_file_queue.add_job(PauseQueueJob())
+            self.download_file_queue.queue.queue.clear()
             self.download_file_thread.quit()
-            self.download_file_thread.wait()
             logger.debug("Stopped file download queue")
 
     @pyqtSlot()

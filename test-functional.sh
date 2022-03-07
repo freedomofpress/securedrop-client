@@ -4,7 +4,7 @@
 # pytest process. Why? Because not all random combinations of these tests
 # result in a passing suite (instead you get a core dump).
 
-TESTFILES=$(find tests/functional/test_*.py -print | sort -R)
+TESTFILES=$(find tests/functional/test_seen.py -print | sort -R)
 for f in $TESTFILES
 do
     TEST_CMD=(python -m pytest -v --random-order-bucket global "$f")
