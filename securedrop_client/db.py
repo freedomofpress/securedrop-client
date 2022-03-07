@@ -130,6 +130,26 @@ class DeletedConversation(Base):
         super().__init__(**kwargs)
 
 
+class DeletedSource(Base):
+    """
+    Table that temporarily stores UUIDs of sources whose accounts are deleted
+    locally, to prevent them from being re-added to the Sources table
+    during a 'stale sync' (network race condition).
+    """
+
+    __tablename__ = "deletedsource"
+
+    uuid = Column(String(36), primary_key=True, nullable=False)
+
+    def __repr__(self):
+        return "DeletedSource ({})".format(self.uuid)
+
+    def __init__(self, **kwargs: Any) -> None:
+        if "uuid" not in kwargs:
+            raise TypeError("Keyword argument 'uuid' is required")
+        super().__init__(**kwargs)
+
+
 class Message(Base):
 
     __tablename__ = "messages"

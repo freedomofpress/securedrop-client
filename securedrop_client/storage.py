@@ -230,7 +230,8 @@ def _cleanup_flagged_locally_deleted(
     session: Session, deleted_conversations: List[DeletedConversation]
 ) -> None:
     """
-    Helper function that removes a list of DeletedConversation items from local database.
+    Helper function that removes a list of DeletedConversation and DeletedSource
+    items from local database.
     """
     for item in deleted_conversations:
         logger.debug(
