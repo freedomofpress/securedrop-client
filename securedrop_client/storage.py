@@ -39,6 +39,7 @@ from sqlalchemy.orm.session import Session
 
 from securedrop_client.db import (
     DeletedConversation,
+    DeletedSource,
     DeletedUser,
     DraftReply,
     File,
@@ -77,10 +78,10 @@ def delete_local_source_by_uuid(session: Session, uuid: str, data_dir: str) -> N
     """
     source = session.query(Source).filter_by(uuid=uuid).one_or_none()
     if source:
+        logger.debug("Delete source {} from local database.".format(uuid))
         delete_source_collection(source.journalist_filename, data_dir)
         session.delete(source)
         session.commit()
-        logger.info("Deleted source with UUID {} from local database.".format(uuid))
 
 
 def get_local_messages(session: Session) -> List[Message]:
@@ -170,64 +171,94 @@ def update_local_storage(
     remote_messages = [x for x in remote_submissions if x.filename.endswith("msg.gpg")]
     remote_files = [x for x in remote_submissions if not x.filename.endswith("msg.gpg")]
 
-    # Get list of locally-modified conversations that have been scheduled for deletion
-    # on the server. The first sync is skipped for these conversations to avoid
-    # re-downloading deleted data.
-    skip_conversations = _get_flagged_locally_deleted(session)
+    # Get list of locally-modified conversations and sources that have been scheduled
+    # for deletion on the server. The first sync is skipped for these conversations to avoid
+    # potentially re-downloading deleted data.
+    skip_conversations, skip_sources = _get_flagged_locally_deleted(session)
     skip_conversation_uuids = [x.uuid for x in skip_conversations]
+    skip_source_uuids = [x.uuid for x in skip_sources]
 
     # The following update_* functions may change the database state.
     # Because of that, each get_local_* function needs to be called just before
     # its respective update_* function.
     with chronometer(logger, "update_sources"):
         update_sources(
-            remote_sources, get_local_sources(session), skip_conversation_uuids, session, data_dir
+            remote_sources,
+            get_local_sources(session),
+            skip_conversation_uuids,
+            skip_source_uuids,
+            session,
+            data_dir,
         )
 
     with chronometer(logger, "update_files"):
         update_files(
-            remote_files, get_local_files(session), skip_conversation_uuids, session, data_dir
+            remote_files,
+            get_local_files(session),
+            skip_conversation_uuids,
+            skip_source_uuids,
+            session,
+            data_dir,
         )
 
     with chronometer(logger, "update_messages"):
         update_messages(
-            remote_messages, get_local_messages(session), skip_conversation_uuids, session, data_dir
+            remote_messages,
+            get_local_messages(session),
+            skip_conversation_uuids,
+            skip_source_uuids,
+            session,
+            data_dir,
         )
 
     with chronometer(logger, "update_replies"):
         update_replies(
-            remote_replies, get_local_replies(session), skip_conversation_uuids, session, data_dir
+            remote_replies,
+            get_local_replies(session),
+            skip_conversation_uuids,
+            skip_source_uuids,
+            session,
+            data_dir,
         )
 
-    # Remove source UUIDs from DeletedConversation table.
-    # A record enters this table when a user deletes data locally and the
+    # Remove source UUIDs from DeletedConversation table and/or the DeletedSource table.
+    # Records enter these tables when a user deletes data locally and the
     # data is succesfully scheduled for deletion on the server. In order to guard
     # against locally-deleted records being re-added to the database (even for a few seconds)
-    # during a stale sync, we flag them in this table.
+    # during a stale sync, we flag them in these tables ("Deleting files and messages"
+    # corresponds to the DeletedConversation table, and deleting a source corresponds
+    # to the DeletedSource table).
     # A stale sync is defined as a sync that began before the deletion request was
     # received by the server, but returns after the request has been received, thus
     # rendering some of its data stale.
     # Assumption: There will be at most one stale sync when a record is deleted, because
     # there is only ever one sync happening at a given time.
-    _cleanup_flagged_locally_deleted(session, skip_conversations)
+    _cleanup_flagged_locally_deleted(session, skip_conversations, skip_sources)
 
 
-def _get_flagged_locally_deleted(session: Session) -> List[DeletedConversation]:
+def _get_flagged_locally_deleted(
+    session: Session,
+) -> (List[DeletedConversation], List[DeletedSource]):
     """
-    Helper function to return source UUIDs corresponding to locally-deleted conversations.
-    The first sync after a conversation is deleted locally, avoid updating the conversation,
-    to avoid possibly re-downloading stale data.
+    Helper function that returns two lists of source UUIDs, corresponding to
+    locally-deleted conversations and sources, respsectively.
+
+    The first sync after a conversation or source is deleted locally, we avoid updating it, in
+    order to avoid potentially re-downloading deleted data in a network race.
 
     This method should be used in conjunction with `_cleanup_flagged_locally_deleted`.
     After local sources and submissions have been updated, pass the results of this method into
     the above cleanup function to ensure that the flagged conversations are purged from
     the local table, and are no longer skipped on subsequent syncs.
     """
-    return session.query(DeletedConversation).all()
+
+    return (session.query(DeletedConversation).all(), session.query(DeletedSource).all())
 
 
 def _cleanup_flagged_locally_deleted(
-    session: Session, deleted_conversations: List[DeletedConversation]
+    session: Session,
+    deleted_conversations: List[DeletedConversation],
+    deleted_sources: List[DeletedSource],
 ) -> None:
     """
     Helper function that removes a list of DeletedConversation and DeletedSource
@@ -239,6 +270,11 @@ def _cleanup_flagged_locally_deleted(
             "table (will not be skipped next sync)".format(item.uuid)
         )
         session.delete(item)
+
+    for item in deleted_sources:
+        logger.debug("Removing source {} from deletedsource table".format(item.uuid))
+        session.delete(item)
+
     session.commit()
 
 
@@ -257,6 +293,7 @@ def update_sources(
     remote_sources: List[SDKSource],
     local_sources: List[Source],
     skip_uuids_deleted_conversation: List[str],
+    skip_uuids_deleted_source: List[str],
     session: Session,
     data_dir: str,
 ) -> None:
@@ -275,8 +312,12 @@ def update_sources(
     """
     local_sources_by_uuid = {s.uuid: s for s in local_sources}
     for source in remote_sources:
-        if source.uuid in local_sources_by_uuid:
+        if source.uuid in skip_uuids_deleted_source:
+            # Source was locally deleted and sync data is stale
+            logger.debug("Do not add locally-deleted source {}".format(source.uuid))
+            continue
 
+        elif source.uuid in local_sources_by_uuid:
             # Update an existing record.
             logger.debug("Update source {}".format(source.uuid))
             local_source = local_sources_by_uuid[source.uuid]
@@ -306,6 +347,7 @@ def update_sources(
             # this record won't be deleted at the end of this
             # function.
             del local_sources_by_uuid[source.uuid]
+            logger.debug("Updated source {}".format(source.uuid))
         else:
             # A new source to be added to the database.
             ns = Source(
@@ -326,9 +368,9 @@ def update_sources(
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
     for deleted_source in local_sources_by_uuid.values():
+        logger.debug("Delete source {}".format(deleted_source.uuid))
         delete_source_collection(deleted_source.journalist_filename, data_dir)
         session.delete(deleted_source)
-        logger.debug("Deleted source {}".format(deleted_source.uuid))
 
     session.commit()
 
@@ -337,6 +379,7 @@ def update_files(
     remote_submissions: List[SDKSubmission],
     local_submissions: List[File],
     skip_uuids_deleted_conversation: List[str],
+    skip_uuids_deleted_source: List[str],
     session: Session,
     data_dir: str,
 ) -> None:
@@ -345,6 +388,7 @@ def update_files(
         remote_submissions,
         local_submissions,
         skip_uuids_deleted_conversation,
+        skip_uuids_deleted_source,
         session,
         data_dir,
     )
@@ -354,6 +398,7 @@ def update_messages(
     remote_submissions: List[SDKSubmission],
     local_submissions: List[Message],
     skip_uuids_deleted_conversation: List[str],
+    skip_uuids_deleted_source: List[str],
     session: Session,
     data_dir: str,
 ) -> None:
@@ -362,6 +407,7 @@ def update_messages(
         remote_submissions,
         local_submissions,
         skip_uuids_deleted_conversation,
+        skip_uuids_deleted_source,
         session,
         data_dir,
     )
@@ -372,6 +418,7 @@ def __update_submissions(
     remote_submissions: List[SDKSubmission],
     local_submissions: Union[List[Message], List[File]],
     skip_uuids_deleted_conversation: List[str],
+    skip_uuids_deleted_source: List[str],
     session: Session,
     data_dir: str,
 ) -> None:
@@ -390,6 +437,14 @@ def __update_submissions(
     source_cache = SourceCache(session)
 
     for submission in remote_submissions:
+
+        # If submission belongs to a locally-deleted source, skip it
+        if submission.source_uuid in skip_uuids_deleted_source:
+            logger.debug(
+                "Skip submission from locally-deleted source {}".format(submission.source_uuid)
+            )
+            continue
+
         local_submission = local_submissions_by_uuid.get(submission.uuid)
         if local_submission:
             lazy_setattr(local_submission, "size", submission.size)
@@ -518,6 +573,7 @@ def update_replies(
     remote_replies: List[SDKReply],
     local_replies: List[Reply],
     skip_uuids_deleted_conversation: List[str],
+    skip_uuids_deleted_source: List[str],
     session: Session,
     data_dir: str,
 ) -> None:
@@ -534,6 +590,17 @@ def update_replies(
     user_cache: Dict[str, User] = {}
     source_cache = SourceCache(session)
     for reply in remote_replies:
+
+        # If the source account was just deleted locally (and is either deleted or scheduled
+        # for deletion on the server), we don't want this reply
+        if reply.source_uuid in skip_uuids_deleted_source:
+            logger.debug(
+                "Skipping stale remote reply for locally-deleted source {}".format(
+                    reply.source_uuid
+                )
+            )
+            continue
+
         user = user_cache.get(reply.journalist_uuid)
         if not user:
             user = session.query(User).filter_by(uuid=reply.journalist_uuid).one_or_none()
@@ -557,6 +624,7 @@ def update_replies(
             user_cache[reply.journalist_uuid] = user
 
         local_reply = local_replies_by_uuid.get(reply.uuid)
+
         if local_reply:
             lazy_setattr(local_reply, "journalist_id", user.id)
             lazy_setattr(local_reply, "size", reply.size)
@@ -566,11 +634,13 @@ def update_replies(
 
             del local_replies_by_uuid[reply.uuid]
             logger.debug("Updated reply {}".format(reply.uuid))
+
         elif reply.source_uuid in skip_uuids_deleted_conversation:
             logger.debug(
                 "Conversation deleted locally; skip remote reply {} "
                 "for source {} for one sync".format(reply.uuid, reply.source_uuid)
             )
+
         else:
             # A new reply to be added to the database.
             source = source_cache.get(reply.source_uuid)

@@ -1045,10 +1045,11 @@ class Controller(QObject):
 
     def on_delete_source_success(self, source_uuid: str) -> None:
         """
-        Rely on sync to delete the source locally so we know for sure it was deleted
+        Delete source locally once it has been scheduled for deletion at server, and
+        emit a signal.
         """
-        logger.info("Source %s successfully deleted at server", source_uuid)
-        self.api_sync.sync()
+        logger.info("Source %s successfully scheduled for deletion at server", source_uuid)
+        storage.delete_local_source_by_uuid(self.session, source_uuid, self.data_dir)
 
     def on_delete_source_failure(self, e: Exception) -> None:
         if isinstance(e, DeleteSourceJobException):
