@@ -5,8 +5,8 @@ flaky
 isort
 MarkupSafe
 mypy
-Pillow>=9.0.0  # for mouseinfo, pyscreeze as of CVE-2022-{22815,22816,22817}
-pip-tools
+Pillow>=9.0.1  # for mouseinfo, pyscreeze as of CVE-2022-{22817,24303}
+pip-tools>=6.5.0  # for jazzband/piptools#1558
 PyAutoGUI
 PyQt5==5.11.3
 pytest
