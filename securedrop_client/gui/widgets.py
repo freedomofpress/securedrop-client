@@ -1329,11 +1329,6 @@ class SourceWidget(QWidget):
         if self.deleting or self.deleting_conversation:
             return
 
-        # If the sync started before the deletion finished, then the sync is stale and we do
-        # not want to update the source widget.
-        if self.sync_started_timestamp < self.deletion_scheduled_timestamp:
-            return
-
         # If the source collection is empty yet the interaction_count is greater than zero, then we
         # known that the conversation has been deleted.
         if not self.source.server_collection:
@@ -2944,18 +2939,15 @@ class ConversationView(QWidget):
             logger.debug(f"Could not update ConversationView: {e}")
 
     def update_deletion_markers(self) -> None:
-        try:
-            if self.source.collection:
-                self.scroll.show()
-                if self.source.collection[0].file_counter > 1:
-                    self.deleted_conversation_marker.hide()
-                    self.deleted_conversation_items_marker.show()
-            elif self.source.interaction_count > 0:
-                self.scroll.hide()
-                self.deleted_conversation_items_marker.hide()
-                self.deleted_conversation_marker.show()
-        except sqlalchemy.exc.InvalidRequestError as e:
-            logger.debug(f"Could not Update deletion markers in the ConversationView: {e}")
+        if self.source.collection:
+            self.scroll.show()
+            if self.source.collection[0].file_counter > 1:
+                self.deleted_conversation_marker.hide()
+                self.deleted_conversation_items_marker.show()
+        elif self.source.interaction_count > 0:
+            self.scroll.hide()
+            self.deleted_conversation_items_marker.hide()
+            self.deleted_conversation_marker.show()
 
     def update_conversation(self, collection: list) -> None:
         """
@@ -2976,11 +2968,6 @@ class ConversationView(QWidget):
         passed into this method in case of a mismatch between where the widget
         has been and now is in terms of its index in the conversation.
         """
-        # If the sync started before the deletion finished, then the sync is stale and we do
-        # not want to update the conversation.
-        if self.sync_started_timestamp < self.deletion_scheduled_timestamp:
-            return
-
         self.controller.session.refresh(self.source)
 
         # Keep a temporary copy of the current conversation so we can delete any
@@ -3116,7 +3103,7 @@ class ConversationView(QWidget):
         self.scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignRight)
         self.current_messages[reply.uuid] = conversation_item
 
-    def on_reply_sent(self, source_uuid: str, reply_uuid: str, reply_text: str) -> None:
+    def on_reply_sent(self, source_uuid: str) -> None:
         """
         Add the reply text sent from ReplyBoxWidget to the conversation.
         """
@@ -3126,7 +3113,6 @@ class ConversationView(QWidget):
                 self.update_conversation(self.source.collection)
             except sqlalchemy.exc.InvalidRequestError as e:
                 logger.debug(e)
-            self.update_deletion_markers()
 
 
 class SourceConversationWrapper(QWidget):
@@ -3268,7 +3254,7 @@ class ReplyBoxWidget(QWidget):
     A textbox where a journalist can enter a reply.
     """
 
-    reply_sent = pyqtSignal(str, str, str)
+    reply_sent = pyqtSignal(str)
 
     def __init__(self, source: Source, controller: Controller) -> None:
         super().__init__()
@@ -3365,7 +3351,7 @@ class ReplyBoxWidget(QWidget):
             self.text_edit.setText("")
             reply_uuid = str(uuid4())
             self.controller.send_reply(self.source.uuid, reply_uuid, reply_text)
-            self.reply_sent.emit(self.source.uuid, reply_uuid, reply_text)
+            self.reply_sent.emit(self.source.uuid)
 
     @pyqtSlot(bool)
     def _on_authentication_changed(self, authenticated: bool) -> None:
