@@ -4448,12 +4448,12 @@ def test_ConversationView_on_reply_sent(mocker):
     controller = mocker.MagicMock()
     controller.authenticated_user = factory.User()
     cv = ConversationView(source, controller)
-    cv.add_reply_from_reply_box = mocker.MagicMock()
+    cv.update_conversation = mocker.MagicMock()
 
     assert cv.reply_flag is False
     cv.on_reply_sent(source_uuid=source.uuid, reply_uuid="abc123", reply_text="test message")
 
-    cv.add_reply_from_reply_box.assert_called_with("abc123", "test message")
+    cv.update_conversation.assert_called_with(source.collection)
     assert cv.reply_flag is True
 
 
@@ -4474,12 +4474,12 @@ def test_ConversationView_on_reply_sent_does_not_add_message_intended_for_differ
 
 def test_ConversationView_on_reply_sent_with_deleted_source(mocker):
     """
-    Check that replying to a deleted source causes an error and is logged.
+    Check that replying to a deleted source handles exception.
     """
     source = factory.Source()
     controller = mocker.MagicMock()
     cv = ConversationView(source, controller)
-    cv.add_reply_from_reply_box = mocker.MagicMock()
+    cv.update_conversation = mocker.MagicMock()
 
     def collection_error():
         raise sqlalchemy.exc.InvalidRequestError()
@@ -4496,59 +4496,6 @@ def test_ConversationView_on_reply_sent_with_deleted_source(mocker):
     debug_logger.assert_any_call(
         f"Could not Update deletion markers in the ConversationView: {ire}"
     )
-
-
-def test_ConversationView_add_reply_from_reply_box(mocker, session, session_maker, homedir):
-    """
-    Adding a reply from reply box results in a new ReplyWidget added to the layout.
-    """
-    controller = logic.Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
-    controller.authenticated_user = factory.User()
-
-    source = factory.Source()
-    session.add(source)
-    session.commit()
-    cv = ConversationView(source, controller)
-    cv.add_reply_from_reply_box(uuid="abc123", content=">^..^<")
-
-    # Check that we added the correct widget to the layout
-    reply_widget = cv.scroll.conversation_layout.itemAt(0).widget()
-    assert isinstance(reply_widget, ReplyWidget)
-
-    assert reply_widget.uuid == "abc123"
-    assert reply_widget.message.text() == ">^..^<"
-    assert reply_widget.index == 0
-    assert reply_widget.status == "PENDING"
-    assert not reply_widget.failed_to_decrypt
-    assert reply_widget.controller == controller
-    assert reply_widget.sender_is_current_user
-    assert cv.current_messages["abc123"].sender == controller.authenticated_user
-    assert reply_widget.sender == controller.authenticated_user
-
-
-def test_ConversationView_add_reply_from_reply_box_does_not_send_when_not_authenticated(mocker):
-    """
-    Ensure we do not send a reply from reply box when the user is no longer authenticated.
-    """
-    source = factory.Source()
-    reply_ready = mocker.MagicMock()
-    reply_download_failed = mocker.MagicMock()
-    reply_succeeded = mocker.MagicMock()
-    reply_failed = mocker.MagicMock()
-    controller = mocker.MagicMock(
-        reply_ready=reply_ready,
-        reply_download_failed=reply_download_failed,
-        reply_succeeded=reply_succeeded,
-        reply_failed=reply_failed,
-    )
-    controller.authenticated_user = None
-    cv = ConversationView(source, controller)
-    cv.scroll.conversation_layout = mocker.MagicMock()
-    reply_widget = mocker.patch("securedrop_client.gui.widgets.ReplyWidget")
-    cv.add_reply_from_reply_box(uuid="abc123", content="test message")
-
-    reply_widget.assert_not_called()
-    cv.scroll.conversation_layout.insertWidget.assert_not_called()
 
 
 def test_ConversationView_add_reply(mocker, homedir, session, session_maker):
