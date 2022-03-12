@@ -51,7 +51,6 @@ from securedrop_client.gui.widgets import (
     SyncIcon,
     TopPane,
     UserButton,
-    UserIconLabel,
     UserMenu,
     UserProfile,
 )
@@ -372,6 +371,13 @@ def test_UserProfile_setup(mocker):
     up.controller.update_authenticated_user.connect.assert_called_once_with(
         up._on_update_authenticated_user
     )
+
+
+def test_UserProfile_clicks(mocker):
+    up = UserProfile()
+    up.clicked = mocker.MagicMock()
+    up.mousePressEvent(None)
+    up.clicked.emit.assert_called_once_with()
 
 
 def test_UserProfile__on_update_authenticated_user(mocker):
