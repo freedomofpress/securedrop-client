@@ -33,6 +33,7 @@ from sdclientapi import Reply as SDKReply
 from sdclientapi import Source as SDKSource
 from sdclientapi import Submission as SDKSubmission
 from sqlalchemy import and_, desc, or_
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.session import Session
 
@@ -279,7 +280,7 @@ def update_sources(
             # til next sync to update it. The list of skip_uuids is managed by the
             # parent method and purged after each sync.
             if skip_uuids_deleted_conversation and source.uuid in skip_uuids_deleted_conversation:
-                logger.debug("Skip source update for {} (this sync only)")
+                logger.debug("Skip source update for {} (this sync only)".format(source.uuid))
 
             else:
                 # Update an existing record.
@@ -558,12 +559,12 @@ def update_replies(
 
             del local_replies_by_uuid[reply.uuid]
             logger.debug("Updated reply {}".format(reply.uuid))
-        elif reply.source_uuid in skip_uuids_deleted_conversation:
+        elif local_reply and reply.source_uuid in skip_uuids_deleted_conversation:
             logger.debug(
                 "Reply {} found for locally-modified source {}, "
                 "skipping update (for one sync)".format(reply.uuid, reply.source_uuid)
             )
-            continue
+            del local_replies_by_uuid[reply.uuid]
         else:
             # A new reply to be added to the database.
             source = source_cache.get(reply.source_uuid)
@@ -926,9 +927,15 @@ def _delete_source_collection_from_db(session: Session, source: Source) -> None:
     # Add source UUID to deletedconversation table, but only if we actually made
     # local database modifications
     if is_local_db_modified:
+        session.begin_nested()
         flagged_conversation = DeletedConversation(uuid=source.uuid)
-        logger.debug("Add source {} to deletedconversation table".format(source.uuid))
-        session.add(flagged_conversation)
+        try:
+            if not session.query(DeletedConversation).filter_by(uuid=source.uuid).one_or_none():
+                logger.debug("Add source {} to deletedconversation table".format(source.uuid))
+                session.add(flagged_conversation)
+        except SQLAlchemyError:
+            logger.error("Could not add source {} to deletedconversation table".format(source.uuid))
+            session.rollback()
 
     session.commit()
 
