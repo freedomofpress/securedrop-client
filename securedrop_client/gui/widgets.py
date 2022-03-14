@@ -439,9 +439,10 @@ class UserProfile(QLabel):
         self.frame.layout().addWidget(self.login_button, alignment=Qt.AlignTop)
         self.frame.layout().addWidget(self.user_icon, alignment=Qt.AlignTop)
         self.frame.layout().addWidget(self.user_button, alignment=Qt.AlignTop)
-        self.clicked.connect(self.user_button.click)
-
         self.frame.setCursor(QCursor(Qt.PointingHandCursor))
+
+        #self.mousePressEvent = self.clicked.connect(lambda x: self.user_button.click)
+
 
     def setup(self, window, controller: Controller) -> None:  # type: ignore [no-untyped-def]
         self.controller = controller
@@ -462,20 +463,28 @@ class UserProfile(QLabel):
         self.user_icon.show()
         self.user_button.show()
 
+        self.clicked.connect(self.user_button.click)
+
     def hide(self) -> None:
         self.user_icon.hide()
         self.user_button.hide()
         self.login_button.show()
 
+        #self.mousePressEvent = lambda event: event.ignore()
+        self.clicked.connect(self.blockprint)
+
     def mousePressEvent(self, e: QMouseEvent) -> None:
+        self.blockSignals(False)
         self.clicked.emit()
+
+    def blockprint(self):
+        self.blockSignals(True)
 
 
 class UserIconLabel(QLabel):
     """
     The label containing the user icon.
     """
-
 
 class UserButton(SvgPushButton):
     """An menu button for the journalist menu

@@ -73,6 +73,10 @@ QWidget {
     padding-left: 7px;
 }
 
+#UserProfile QFrame::hover{
+    background-color: #9211ff;
+}
+
 #UserProfile_icon {
     border: none;
     padding-left: 1px;
