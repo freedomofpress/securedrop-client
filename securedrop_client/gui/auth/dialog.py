@@ -52,7 +52,6 @@ class LoginDialog(QDialog):
     MIN_PASSWORD_LEN = 14  # Journalist.MIN_PASSWORD_LEN on server
     MAX_PASSWORD_LEN = 128  # Journalist.MAX_PASSWORD_LEN on server
     MIN_JOURNALIST_USERNAME = 3  # Journalist.MIN_USERNAME_LEN on server
-    PASSPHRASE_LABEL_SPACING = 0.5
 
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)

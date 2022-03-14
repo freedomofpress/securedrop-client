@@ -1,3 +1,4 @@
+from PyQt5.QtTest import QSignalSpy
 from PyQt5.QtWidgets import QApplication
 
 from securedrop_client.gui.base.checkbox import SDCheckBox
@@ -5,8 +6,10 @@ from securedrop_client.gui.base.checkbox import SDCheckBox
 app = QApplication([])
 
 
-def test_SDCheckBox(mocker):
+def test_SDCheckBox():
     checkbox_area = SDCheckBox()
-    checkbox_area.clicked = mocker.MagicMock()
+    signal_emissions = QSignalSpy(checkbox_area.clicked)
+
     checkbox_area.mousePressEvent(None)
-    checkbox_area.clicked.emit.assert_called_once_with()
+
+    assert len(signal_emissions) == 1

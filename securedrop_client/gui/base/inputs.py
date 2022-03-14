@@ -16,7 +16,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from PyQt5.QtWidgets import QCheckBox, QDialog, QLineEdit
+from PyQt5.QtWidgets import QDialog, QLineEdit
 
 
 class PasswordEdit(QLineEdit):
@@ -32,11 +32,9 @@ class PasswordEdit(QLineEdit):
         self.password_shown = False
 
     def on_toggle_password_Action(self) -> None:
-        state = QCheckBox()
         if not self.password_shown:
             self.setEchoMode(QLineEdit.Normal)
             self.password_shown = True
-            state.isChecked()
         else:
             self.setEchoMode(QLineEdit.Password)
             self.password_shown = False
