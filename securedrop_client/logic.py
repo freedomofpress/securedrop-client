@@ -1022,9 +1022,12 @@ class Controller(QObject):
     def on_delete_conversation_success(self, uuid: str) -> None:
         """
         If the source collection has been successfully scheduled for deletion on the server, emit a
-        signal and sync.
+        signal.
         """
-        logger.info("Conversation %s successfully deleted at server", uuid)
+        logger.info("Conversation %s successfully scheduled for deletion at server", uuid)
+
+        # Delete conversation locally to ensure that it does not remain on disk until next sync
+        storage.delete_local_conversation_by_source_uuid(self.session, uuid, self.data_dir)
         self.conversation_deletion_successful.emit(uuid, datetime.utcnow())
 
     def on_delete_conversation_failure(self, e: Exception) -> None:

@@ -11,12 +11,17 @@ import pytest
 from dateutil.parser import parse
 from PyQt5.QtCore import QThread
 from sdclientapi import Reply, Submission
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import NoResultFound
 
 import securedrop_client.db
 from securedrop_client import db
 from securedrop_client.storage import (
+    __update_submissions,
+    _cleanup_flagged_locally_deleted,
+    _delete_source_collection_from_db,
     create_or_update_user,
+    delete_local_conversation_by_source_uuid,
     delete_local_source_by_uuid,
     delete_single_submission_or_reply_on_disk,
     find_new_files,
@@ -265,12 +270,20 @@ def test_update_local_storage(homedir, mocker, session_maker):
     file_fn = mocker.patch("securedrop_client.storage.update_files")
     msg_fn = mocker.patch("securedrop_client.storage.update_messages")
 
+    # Assume no flagged UUID values (occurs during local deletion)- test this separately
+    mocker.patch("securedrop_client.storage._get_flagged_locally_deleted", return_value=[])
+    skip_uuids = []
+
     update_local_storage(mock_session, [remote_source], remote_submissions, [remote_reply], homedir)
 
-    src_fn.assert_called_once_with([remote_source], [local_source], mock_session, homedir)
-    rpl_fn.assert_called_once_with([remote_reply], [local_reply], mock_session, homedir)
-    file_fn.assert_called_once_with([remote_file], [local_file], mock_session, homedir)
-    msg_fn.assert_called_once_with([remote_message], [local_message], mock_session, homedir)
+    src_fn.assert_called_once_with(
+        [remote_source], [local_source], skip_uuids, mock_session, homedir
+    )
+    rpl_fn.assert_called_once_with([remote_reply], [local_reply], skip_uuids, mock_session, homedir)
+    file_fn.assert_called_once_with([remote_file], [local_file], skip_uuids, mock_session, homedir)
+    msg_fn.assert_called_once_with(
+        [remote_message], [local_message], skip_uuids, mock_session, homedir
+    )
 
 
 def test_update_local_storage_sanitizes_remote_data(mocker, homedir):
@@ -341,7 +354,9 @@ def test_sync_delete_race(homedir, mocker, session_maker, session):
 
     deleter = Deleter(source.uuid)
 
-    def delayed_update_messages(remote_submissions, local_submissions, session, data_dir):
+    def delayed_update_messages(
+        remote_submissions, local_submissions, skip_uuids, session, data_dir
+    ):
         assert source_exists(session, source.uuid)
         deleter.start()
         time.sleep(1)
@@ -351,7 +366,9 @@ def test_sync_delete_race(homedir, mocker, session_maker, session):
         # only been deleted in the Deleter's session. If transactions
         # are *not* working, the deletion will be visible here.
         assert source_exists(session, source.uuid) is False
-        update_messages(remote_submissions, local_submissions, session, data_dir)
+
+        # Don't pass in any UUIDs to skip, test this separately
+        update_messages(remote_submissions, local_submissions, [], session, data_dir)
 
     mocker.patch("securedrop_client.storage.update_messages", delayed_update_messages)
 
@@ -368,7 +385,24 @@ def test_sync_delete_race(homedir, mocker, session_maker, session):
         get_message(session, message2.uuid)
 
 
-def test_update_sources(homedir, mocker, session_maker, session):
+def _is_equivalent_source(source, remote_source) -> bool:
+    """
+    Helper function. Compare remote and local source and return True if they have
+    the same attributes.
+    """
+
+    return (
+        source.journalist_designation == remote_source.journalist_designation
+        and source.is_flagged == remote_source.is_flagged
+        and source.public_key == remote_source.key["public"]
+        and source.fingerprint == remote_source.key["fingerprint"]
+        and source.interaction_count == remote_source.interaction_count
+        and source.is_starred == remote_source.is_starred
+        and source.last_updated == parse(remote_source.last_updated)
+    )
+
+
+def test_update_sources_no_skipped_uuids(homedir, mocker, session_maker, session):
     """
     Check that:
 
@@ -405,30 +439,18 @@ def test_update_sources(homedir, mocker, session_maker, session):
 
     file_delete_fcn = mocker.patch("securedrop_client.storage.delete_source_collection")
 
-    update_sources(remote_sources, local_sources, session, homedir)
+    # Don't pass in UUIDS to skip, test that separately
+    update_sources(remote_sources, local_sources, [], session, homedir)
 
     # Check the expected local source object has been updated with values from
     # the API.
     updated_source = session.query(db.Source).filter_by(uuid=source_update.uuid).one()
-    assert updated_source.journalist_designation == source_update.journalist_designation
-    assert updated_source.is_flagged == source_update.is_flagged
-    assert updated_source.public_key == source_update.key["public"]
-    assert updated_source.fingerprint == source_update.key["fingerprint"]
-    assert updated_source.interaction_count == source_update.interaction_count
-    assert updated_source.is_starred == source_update.is_starred
-    assert updated_source.last_updated == parse(source_update.last_updated)
+    assert _is_equivalent_source(updated_source, source_update)
 
     # Check the expected local source object has been created with values from
     # the API.
     new_source = session.query(db.Source).filter_by(uuid=source_create.uuid).one()
-    assert new_source.uuid == source_create.uuid
-    assert new_source.journalist_designation == source_create.journalist_designation
-    assert new_source.is_flagged == source_create.is_flagged
-    assert new_source.public_key == source_create.key["public"]
-    assert new_source.fingerprint == source_create.key["fingerprint"]
-    assert new_source.interaction_count == source_create.interaction_count
-    assert new_source.is_starred == source_create.is_starred
-    assert new_source.last_updated == parse(source_create.last_updated)
+    assert _is_equivalent_source(new_source, source_create)
 
     # Check that the local source not present in the API results was deleted.
     with pytest.raises(NoResultFound):
@@ -484,7 +506,7 @@ def test_update_submissions_deletes_files_associated_with_the_submission(homedir
     local_source.uuid = "test-source-uuid"
     local_source.id = 666
     mock_session.query().filter_by.return_value = [local_source]
-    update_files(remote_submissions, local_submissions, mock_session, homedir)
+    update_files(remote_submissions, local_submissions, [], mock_session, homedir)
 
     # Ensure the files associated with the submission are deleted on disk.
     assert not os.path.exists(abs_local_filename)
@@ -524,15 +546,17 @@ def test_update_local_storage_does_not_call_update_functions_w_insecure_filename
     rpl_fn = mocker.patch("securedrop_client.storage.update_replies")
     file_fn = mocker.patch("securedrop_client.storage.update_files")
     msg_fn = mocker.patch("securedrop_client.storage.update_messages")
+    mocker.patch("securedrop_client.storage._get_flagged_locally_deleted", return_value=[])
+    skip_uuids = []
 
     update_local_storage(
         session, [remote_source], [remote_message, remote_file], [remote_reply], homedir
     )
 
-    src_fn.assert_called_once_with([], [local_source], session, homedir)
-    rpl_fn.assert_called_once_with([], [local_reply], session, homedir)
-    file_fn.assert_called_once_with([], [local_file], session, homedir)
-    msg_fn.assert_called_once_with([], [local_message], session, homedir)
+    src_fn.assert_called_once_with([], [local_source], skip_uuids, session, homedir)
+    rpl_fn.assert_called_once_with([], [local_reply], skip_uuids, session, homedir)
+    file_fn.assert_called_once_with([], [local_file], skip_uuids, session, homedir)
+    msg_fn.assert_called_once_with([], [local_message], skip_uuids, session, homedir)
 
 
 def test_update_replies_deletes_files_associated_with_the_reply(homedir, mocker):
@@ -562,7 +586,8 @@ def test_update_replies_deletes_files_associated_with_the_reply(homedir, mocker)
     abs_local_filename = add_test_file_to_temp_dir(source_directory, local_filename_when_decrypted)
     local_replies = [local_reply]
 
-    update_replies(remote_replies, local_replies, mock_session, homedir)
+    # test skipped UUIDs separately, for now pass empty list
+    update_replies(remote_replies, local_replies, [], mock_session, homedir)
 
     # Ensure the file associated with the reply are deleted on disk.
     assert not os.path.exists(abs_local_filename)
@@ -639,7 +664,8 @@ def test_update_sources_deletes_files_associated_with_the_source(homedir, mocker
 
     local_sources = [local_source]
 
-    update_sources(remote_sources, local_sources, mock_session, homedir)
+    # Don't pass UUIDs to skip, test that separately
+    update_sources(remote_sources, local_sources, [], mock_session, homedir)
 
     # Ensure the files associated with the reply are deleted on disk.
     for test_filename in test_filename_absolute_paths:
@@ -695,7 +721,8 @@ def test_update_files(homedir, mocker):
         "securedrop_client.storage.delete_single_submission_or_reply_on_disk"
     )
 
-    update_files(remote_submissions, local_submissions, mock_session, data_dir)
+    # don't set any uuids to skip--test separately
+    update_files(remote_submissions, local_submissions, [], mock_session, data_dir)
 
     # Check the expected local submission object has been updated with values
     # from the API.
@@ -786,7 +813,7 @@ def test_update_files_adds_seen_record(homedir, mocker, session):
         remote_file_to_create_with_unknown_journalist,
     ]
 
-    update_files(remote_files, local_files, session, data_dir)
+    update_files(remote_files, local_files, [], session, data_dir)
 
     assert (
         session.query(db.SeenFile)
@@ -861,7 +888,7 @@ def test_update_files_marks_read_files_as_seen_without_seen_records(homedir, moc
 
     remote_files = [remote_file_to_update, remote_file_to_create]
 
-    update_files(remote_files, local_files, session, data_dir)
+    update_files(remote_files, local_files, [], session, data_dir)
 
     new_local_file = session.query(db.File).filter_by(uuid=remote_file_to_create.uuid).one()
 
@@ -919,7 +946,8 @@ def test_update_messages(homedir, mocker):
         "securedrop_client.storage.delete_single_submission_or_reply_on_disk"
     )
 
-    update_messages(remote_messages, local_messages, mock_session, data_dir)
+    # Don't pass in skipped UUIDs, test that separately
+    update_messages(remote_messages, local_messages, [], mock_session, data_dir)
 
     # Check the expected local message object has been updated with values
     # from the API.
@@ -974,7 +1002,8 @@ def test_update_messages_marks_read_messages_as_seen_without_seen_records(homedi
 
     remote_messages = [remote_message_to_update, remote_message_to_create]
 
-    update_messages(remote_messages, local_messages, session, data_dir)
+    # Pass empty list for skipped uuids, test that feature separately
+    update_messages(remote_messages, local_messages, [], session, data_dir)
 
     new_local_message = (
         session.query(db.Message).filter_by(uuid=remote_message_to_create.uuid).one()
@@ -1057,7 +1086,8 @@ def test_update_messages_adds_seen_record(homedir, mocker, session):
         remote_message_t0_create_with_unknown_journalist,
     ]
 
-    update_messages(remote_messages, local_messages, session, data_dir)
+    # Don't pass in skip_uuids, test separately
+    update_messages(remote_messages, local_messages, [], session, data_dir)
 
     assert (
         session.query(db.SeenMessage)
@@ -1162,7 +1192,7 @@ def test_update_replies(homedir, mocker, session):
 
     remote_replies = [remote_reply_update, remote_reply_create]
 
-    update_replies(remote_replies, local_replies, session, data_dir)
+    update_replies(remote_replies, local_replies, [], session, data_dir)
 
     # Check the expected local reply object has been updated with values
     # from the API.
@@ -1247,7 +1277,8 @@ def test_update_replies_adds_seen_record(homedir, mocker, session):
         remote_reply_to_create_with_unknown_journalist,
     ]
 
-    update_replies(remote_replies, local_replies, session, data_dir)
+    # don't pass in UUIDs to skip, test that separately
+    update_replies(remote_replies, local_replies, [], session, data_dir)
 
     assert (
         session.query(db.SeenReply)
@@ -1333,7 +1364,7 @@ def test_update_replies_cleanup_drafts(homedir, mocker, session):
     # We have no replies locally stored.
     local_replies = []
 
-    update_replies(remote_replies, local_replies, session, data_dir)
+    update_replies(remote_replies, local_replies, [], session, data_dir)
 
     # Check the expected local source object has been created.
     new_local_replies = session.query(db.Reply).all()
@@ -1368,7 +1399,7 @@ def test_update_replies_missing_source(homedir, mocker, session):
 
     error_logger = mocker.patch("securedrop_client.storage.logger.error")
 
-    update_replies(remote_replies, local_replies, session, data_dir)
+    update_replies(remote_replies, local_replies, [], session, data_dir)
 
     error_logger.assert_called_once_with(f"No source found for reply {remote_reply.uuid}")
 
@@ -1797,3 +1828,422 @@ def test_update_draft_replies_commit(mocker, session):
 
     update_draft_replies(session, "notreal", datetime.datetime.now(), 1, 2)
     assert session.commit.call_count == 1
+
+
+def test_update_sources_skip_conversation_uuids(homedir, mocker, session):
+    """
+    Check that update_sources with a list of deletedconversation source UUIDs to skip
+    creates, updates, and deletes correct records, but does not update records that
+    were flagged to be skipped.
+    """
+
+    # This remote source exists locally and will be updated.
+    source_update = factory.RemoteSource(journalist_designation="source update")
+
+    # This remote source exists locally but should not be updated this sync.
+    source_skip = factory.RemoteSource(journalist_designation="source skip", document_count=12)
+
+    # This remote source does not exist locally and will be created.
+    source_create = factory.RemoteSource(journalist_designation="source create")
+
+    remote_sources = [source_update, source_skip, source_create]
+
+    # This local source already exists in the API results and will be updated.
+    local_source = factory.Source(
+        journalist_designation=source_update.journalist_designation,
+        uuid=source_update.uuid,
+        public_key=None,
+        fingerprint=None,
+    )
+
+    # This local source exists in the remote API, but will serve as the source whose conversation
+    # was just deleted locally and should not be updated
+    local_source_convo_deleted = factory.Source(
+        journalist_designation=source_skip.journalist_designation,
+        uuid=source_skip.uuid,
+        document_count=0,
+    )
+
+    session.add(local_source)
+    session.add(local_source_convo_deleted)
+    session.commit()
+
+    local_sources = [local_source, local_source_convo_deleted]
+    skip_conversation_uuids = [local_source_convo_deleted.uuid]
+
+    update_sources(remote_sources, local_sources, skip_conversation_uuids, session, homedir)
+
+    # Check the expected local source object has been updated with values from
+    # the API.
+    updated_source = session.query(db.Source).filter_by(uuid=source_update.uuid).one()
+    assert _is_equivalent_source(updated_source, source_update)
+
+    # Check that the skipped source has not been updated
+    skipped_source = session.query(db.Source).filter_by(uuid=source_skip.uuid).one()
+    assert skipped_source.document_count == local_source_convo_deleted.document_count == 0
+
+    # Make sure new source was still added
+    assert session.query(db.Source).filter_by(uuid=source_create.uuid).one()
+
+
+def test___update_submissions_skip_uuids_successful(mocker, session, homedir):
+    """
+    Check that:
+
+    * Existing submissions (files, messages, replies) are updated in the local database.
+      * Messages that have been recently locally deleted and are part of the
+        DeletedConversation table are not updated (simulates stale sync)
+      * A missing or invalid source UUID does not stop the rest of the data from syncing
+      * Missing records (simulating deletion race condition with sync) are gracefully handled
+    """
+
+    data_dir = os.path.join(homedir, "data")
+
+    # Setup
+    session.query(db.Message).delete()
+    session.query(db.Source).delete()
+    session.query(db.DeletedConversation).delete()
+    session.commit()
+
+    # Add sources
+    source = factory.Source(id=42)
+    skip_source = factory.Source(id=120)
+    delete_source = factory.Source(id=666)
+
+    session.add(source)
+    session.add(skip_source)
+
+    # One remote message object that which will exist in the
+    # local database and be updated, one that will not exist in the local database
+    # but should be skipped (simulate stale sync data)
+    remote_message_update = make_remote_submission(source.uuid)
+    remote_message_skip = make_remote_submission(skip_source.uuid)
+    remote_messages = [remote_message_update, remote_message_skip]
+
+    local_msg = factory.Message(uuid=remote_message_update.uuid, source_id=source.id)
+
+    local_msg_delete = factory.Message(uuid=(str(uuid.uuid4())), source_id=delete_source.id)
+
+    session.add(local_msg)
+    session.add(local_msg_delete)
+    session.commit()
+
+    local_messages = [local_msg, local_msg_delete]
+
+    # Not a real source
+    invalid_uuid = str(uuid.uuid4())
+
+    # Emulate race condition where records are deleted by background sync
+    mock_delete = mocker.patch(
+        "securedrop_client.storage.delete_single_submission_or_reply_on_disk",
+        side_effect=NoResultFound,
+    )
+
+    # Skip one source, update the other, handle invalid source UUID
+    skip_conversation_uuids = [invalid_uuid, skip_source.uuid]
+    __update_submissions(
+        db.Message, remote_messages, local_messages, skip_conversation_uuids, session, data_dir
+    )
+
+    assert session.query(db.Message).filter_by(source_id=source.id).count() == 1
+    assert session.query(db.Message).filter_by(source_id=skip_source.id).count() == 0
+    mock_delete.assert_called_once_with(local_msg_delete, data_dir)
+
+
+def test___update_replies_skip_uuids_successful(mocker, session, homedir):
+    """
+    Check that:
+
+    * Existing replies are updated in the local database.
+      * Where replies have been modified locally and are part of the DeletedConversation
+        table, they are not updated (simulating ignoring a stale sync)
+    * New replies have an entry in the local database.
+    * Local replies not returned by the remote server are deleted from the local database.
+      * Proper exception-handling exists if background sync has deleted the records
+        (race condition).
+    * References to journalist's usernames are correctly handled.
+    """
+    data_dir = os.path.join(homedir, "data")
+
+    journalist = factory.User(id=1)
+    session.add(journalist)
+
+    source = factory.Source()
+    session.add(source)
+
+    skip_source = factory.Source()
+    session.add(skip_source)
+
+    local_skip_source = factory.Source()
+    session.add(local_skip_source)
+
+    # Create a local reply that will be updated to match the remote reply object with the same uuid.
+    local_reply_update = factory.Reply(
+        source_id=source.id,
+        source=source,
+        journalist_id=journalist.id,
+        filename="1-original-reply.gpg",
+        size=2,
+    )
+    session.add(local_reply_update)
+
+    # Create a local reply that will be deleted when there is no remote reply object with the same
+    # uuid.
+    local_reply_delete = factory.Reply(source_id=source.id, source=source)
+    session.add(local_reply_delete)
+
+    # Create a local reply that will be skipped
+    local_reply_skip = factory.Reply(source_id=local_skip_source.id, source=local_skip_source)
+    session.add(local_reply_delete)
+
+    local_replies = [local_reply_skip, local_reply_update, local_reply_delete]
+
+    # Create a remote reply that will be used to update one of the local replies.
+    remote_reply_update = factory.RemoteReply(
+        uuid=local_reply_update.uuid,
+        journalist_uuid=journalist.uuid,
+        journalist_first_name="new_name",
+        journalist_last_name="new_name",
+        source_url="/api/v1/sources/{}".format(source.uuid),
+        file_counter=local_reply_update.file_counter,
+        filename=local_reply_update.filename,
+        seen_by=[],
+    )
+
+    # Create a remote reply that will be used to create a new local reply.
+    remote_reply_create = factory.RemoteReply(
+        journalist_uuid=journalist.uuid,
+        source_url="/api/v1/sources/{}".format(source.uuid),
+        file_counter=factory.REPLY_COUNT + 1,
+        filename="{}-filename.gpg".format(factory.REPLY_COUNT + 1),
+        journalist_first_name="",
+        journalist_last_name="",
+        seen_by=[],
+    )
+
+    # Create a remote reply that should not be added to the database,
+    # since it will represent stale sync data from a source that
+    # was just modified locally
+    remote_reply_skip = factory.RemoteReply(
+        journalist_uuid=journalist.uuid,
+        journalist_first_name="new_name",
+        journalist_last_name="new_name",
+        source_url="/api/v1/sources/{}".format(skip_source.uuid),
+        file_counter=local_reply_update.file_counter,
+        filename="{}-filename.gpg".format(factory.REPLY_COUNT + 1),
+        seen_by=[],
+    )
+
+    # Create another remote reply from a user with local conversation changes (skip).
+    remote_reply_skip2 = factory.RemoteReply(
+        uuid=local_reply_skip.uuid,
+        journalist_uuid=journalist.uuid,
+        source_url="/api/v1/sources/{}".format(local_skip_source.uuid),
+        file_counter=local_reply_skip.file_counter,
+        filename=local_reply_skip.filename,
+        seen_by=[],
+    )
+
+    # Simulate a race condition for deletion where local database is modified
+    # by sync and records are removed
+    delete_call = mocker.patch(
+        "securedrop_client.storage.delete_single_submission_or_reply_on_disk",
+        side_effect=NoResultFound,
+    )
+
+    remote_replies = [
+        remote_reply_skip,
+        remote_reply_skip2,
+        remote_reply_update,
+        remote_reply_create,
+    ]
+
+    skip_conversation_uuids = [skip_source.uuid, local_skip_source.uuid]
+    update_replies(remote_replies, local_replies, skip_conversation_uuids, session, data_dir)
+
+    # Check the expected local reply object has been updated with values
+    # from the API.
+    assert local_reply_update.journalist_id == journalist.id
+    assert local_reply_update.size == remote_reply_update.size
+    assert local_reply_update.filename == remote_reply_update.filename
+
+    new_reply = session.query(db.Reply).filter_by(uuid=remote_reply_create.uuid).one()
+    assert new_reply.source_id == source.id
+    assert new_reply.journalist_id == journalist.id
+    assert new_reply.size == remote_reply_create.size
+    assert new_reply.filename == remote_reply_create.filename
+
+    # Ensure the reply for the skipped UUID did not get added to the replies table
+    assert session.query(db.Reply).filter_by(uuid=skip_source.uuid).count() == 0
+
+    # Ensure the local reply that is not in the API results is deleted.
+    delete_call.assert_called_once_with(local_reply_delete, data_dir)
+
+
+def test__delete_source_collection_from_db_success(mocker, session, homedir):
+    """
+    Check that source records for a given UUID are deleted, and
+    and entry with that UUID is added to the DeletedConversation table.
+    """
+
+    source_uuid = str(uuid.uuid4())
+    source_id = 43
+
+    submission_to_delete = factory.Message(source_id=source_id)
+    file_to_delete = factory.File(source_id=source_id)
+
+    source = factory.Source(
+        journalist_designation="sourcer sourcington", uuid=source_uuid, id=source_id
+    )
+
+    session.add(source)
+    session.add(submission_to_delete)
+    session.add(file_to_delete)
+    session.commit()
+
+    _delete_source_collection_from_db(session, source)
+
+    assert session.query(db.DeletedConversation).filter_by(uuid=source.uuid).count() == 1
+
+
+def test__delete_source_collection_from_db_success_with_partial_results(session):
+    """
+    Check that source records for a given UUID are deleted, and
+    and entry with that UUID is added to the DeletedConversation table,
+    when only some tables contain information for a given source.
+    """
+    source_uuid = str(uuid.uuid4())
+    source_id = 42
+
+    submission_to_delete = factory.Message(source_id=source_id)
+    file_to_delete = factory.File(source_id=source_id)
+
+    source = factory.Source(
+        journalist_designation="sourcer sourcington", uuid=source_uuid, id=source_id
+    )
+
+    # Add a source and some content
+    session.add(source)
+    session.add(submission_to_delete)
+    session.add(file_to_delete)
+    session.commit()
+
+    _delete_source_collection_from_db(session, source)
+
+    assert session.query(db.DeletedConversation).filter_by(uuid=source_uuid).count() == 1
+
+
+def test__delete_source_collection_from_db_nothing_to_delete(session):
+    """
+    Check that when there is no data to delete for a given source
+    (either data was not present or sync deleted data), that the
+    call completes and the source UUID is not added to the
+    DeletedConversation table.
+    """
+
+    # Setup
+    session.query(db.Source).delete()
+    session.query(db.DeletedConversation).delete()
+    session.commit()
+
+    source_uuid = str(uuid.uuid4())
+    source = factory.Source(journalist_designation="sourcer sourcington", uuid=source_uuid)
+
+    session.add(source)
+    session.commit()
+
+    _delete_source_collection_from_db(session, source)
+    assert session.query(db.DeletedConversation).filter_by(uuid=source_uuid).count() == 0
+
+
+def test__delete_source_collection_from_db_uuid_not_found(mocker, homedir):
+    def mock_bad_query(source):
+        raise NoResultFound
+
+    # The deletion happens in multiple tables (Message, Reply, DraftReply, File) so
+    # match the rest of the debug logline except the table ID
+    class MatchingLogline:
+        def __init__(self, uuid):
+            self.uuid = uuid
+
+        def __eq__(self, other):
+            return (
+                "Tried to locally delete" in other
+                and "records associated with source" in other
+                and self.uuid in other
+                and "but none were found" in other
+            )
+
+    mock_session = mocker.MagicMock()
+    mock_session.query = mock_bad_query
+    mock_debug = mocker.patch("securedrop_client.storage.logger.debug")
+
+    source = factory.Source(journalist_designation="sourcer sourcington", uuid=str(uuid.uuid4()))
+
+    _delete_source_collection_from_db(mock_session, source)
+    mock_debug.assert_called_with(MatchingLogline((source.uuid)))
+
+
+def test__delete_source_collection_from_db_error(mocker, session):
+
+    mock_session = mocker.MagicMock()
+    mock_session.query().filter_by().all.return_value = [mocker.MagicMock()]
+    mock_session.query().filter_by().one_or_none.side_effect = SQLAlchemyError()
+    mock_error = mocker.patch("securedrop_client.storage.logger.error")
+
+    source = factory.Source(
+        journalist_designation="sourcer sourcington", id=42, uuid=str(uuid.uuid4())
+    )
+
+    _delete_source_collection_from_db(mock_session, source)
+    mock_error.assert_called_once_with(
+        "Could not add source {} to deletedconversation table".format(source.uuid)
+    )
+
+
+def test_delete_local_conversation_by_source_uuid_success(homedir, mocker, session):
+    """
+    Given a valid source UUID, ensure calls are made to remove its records
+    from database and its files from storage directory.
+    """
+
+    data_dir = os.path.join(homedir, "data")
+    source_delete_uuid = "000000"
+    source = factory.Source(journalist_designation="source skip", uuid=source_delete_uuid)
+    session.add(source)
+    session.commit()
+    mock_delete_collection = mocker.patch("securedrop_client.storage.delete_source_collection")
+    mock_delete_from_db = mocker.patch(
+        "securedrop_client.storage._delete_source_collection_from_db"
+    )
+
+    delete_local_conversation_by_source_uuid(session, source_delete_uuid, data_dir)
+
+    mock_delete_collection.assert_called_once_with(source.journalist_filename, data_dir)
+    mock_delete_from_db.assert_called_once_with(session, source)
+
+
+def test_delete_local_conversation_by_uuid_nosuchuuid(homedir, mocker, session):
+    """
+    Given an invalid source UUID, ensure the call to remove its records
+    from database and its files from storage directory appears in the error log.
+    """
+
+    # mock db and session and data dir, but no source
+    mock_uuid = "ohno-invalid-uuid-123456"
+    error_logger = mocker.patch("securedrop_client.storage.logger.error")
+    data_dir = os.path.join(homedir, "data")
+
+    delete_local_conversation_by_source_uuid(session, mock_uuid, data_dir)
+    error_logger.assert_called_once_with(
+        "Tried to delete source {}, but UUID " "was not found".format(mock_uuid)
+    )
+
+
+def test__cleanup_flagged_locally_deleted(mocker, session):
+    session = mocker.MagicMock()
+    session.delete = mocker.MagicMock()
+    targets = [db.DeletedConversation(uuid="uuid-1")]
+
+    _cleanup_flagged_locally_deleted(session, targets)
+    session.delete.assert_called_once_with(targets[0])

@@ -1940,41 +1940,6 @@ def test_SourceWidget_set_snippet(mocker, session_maker, session, homedir):
     sw.set_snippet(source_uuid, "mock_file_uuid", "something new")
 
 
-def test_SourceWidget_set_snippet_does_not_update_if_sync_is_stale(mocker):
-    """
-    Ensure that the snippet does not get updated when an update is based on a sync that started
-    before a deletion operation succeeded.
-    """
-    controller = mocker.MagicMock()
-    source = mocker.MagicMock()
-    source.journalist_designation = "Testy McTestface"
-    source.collection = [factory.Message(content="abc123")]
-    source.server_collection = source.collection
-    sw = SourceWidget(controller, source, mocker.MagicMock(), mocker.MagicMock())
-    sw.update()
-    assert sw.preview.text() == "abc123"
-
-    # Make the sync stale
-    sw.sync_started_timestamp = datetime.now()
-    sw.deletion_scheduled_timestamp = datetime.now()
-
-    # Set up source data so that it appears that the conversation was deleted
-    source.collection = []
-    source.interaction_count = 1
-    source.server_collection = source.collection
-
-    # Assert the preview snippet does not get updated because the sync is stale
-    sw.set_snippet(source.uuid, "mock_file_uuid")
-    assert sw.preview.text() == "abc123"
-
-    # The sync is no longer stale so the preview should show that the are no more source
-    # conversation items because they've been deleted
-    sw.deletion_scheduled_timestamp = datetime.now()
-    sw.sync_started_timestamp = datetime.now()
-    sw.set_snippet(source.uuid, "mock_file_uuid")
-    assert sw.preview.text() == "— All files and messages deleted for this source —"
-
-
 def test_SourceWidget_update_truncate_latest_msg(mocker):
     """
     If the latest message in the conversation is longer than 150 characters,
@@ -4325,22 +4290,6 @@ def test_ConversationView__on_conversation_deletion_successful_does_not_hide_dra
     assert not cv.current_messages[draft_reply.uuid].isHidden()
 
 
-def test_ConversationView_update_conversation_skips_if_sync_is_stale(mocker):
-    """
-    If the sync started before the source was scheduled for deletion, do not update the conversation
-    """
-    cv = ConversationView(factory.Source(), mocker.MagicMock())
-    cv.update_deletion_markers = mocker.MagicMock()
-    cv.sync_started_timestamp = datetime.now()
-    cv.deletion_scheduled_timestamp = datetime.now()
-    cv.update_conversation([])
-    cv.update_deletion_markers.assert_not_called()
-    # Also test that a new message will not get added if the sync is stale
-    cv.update_conversation([factory.Message()])
-    assert not cv.current_messages
-    cv.update_deletion_markers.assert_not_called()
-
-
 def test_ConversationView_update_conversation_position_follow(mocker, homedir):
     """
     Check the signal handler sets the correct value for the scrollbar to be
@@ -4448,12 +4397,12 @@ def test_ConversationView_on_reply_sent(mocker):
     controller = mocker.MagicMock()
     controller.authenticated_user = factory.User()
     cv = ConversationView(source, controller)
-    cv.add_reply_from_reply_box = mocker.MagicMock()
+    cv.update_conversation = mocker.MagicMock()
 
     assert cv.reply_flag is False
-    cv.on_reply_sent(source_uuid=source.uuid, reply_uuid="abc123", reply_text="test message")
+    cv.on_reply_sent(source_uuid=source.uuid)
 
-    cv.add_reply_from_reply_box.assert_called_with("abc123", "test message")
+    cv.update_conversation.assert_called_with(source.collection)
     assert cv.reply_flag is True
 
 
@@ -4467,88 +4416,30 @@ def test_ConversationView_on_reply_sent_does_not_add_message_intended_for_differ
     cv = ConversationView(source, controller)
     cv.add_reply = mocker.MagicMock()
 
-    cv.on_reply_sent("different_source_id", "mock", "mock")
+    cv.on_reply_sent("different_source_id")
 
     assert not cv.add_reply.called
 
 
 def test_ConversationView_on_reply_sent_with_deleted_source(mocker):
     """
-    Check that replying to a deleted source causes an error and is logged.
+    Check that replying to a deleted source handles exception.
     """
     source = factory.Source()
     controller = mocker.MagicMock()
     cv = ConversationView(source, controller)
-    cv.add_reply_from_reply_box = mocker.MagicMock()
+    cv.update_conversation = mocker.MagicMock()
 
     def collection_error():
         raise sqlalchemy.exc.InvalidRequestError()
 
-    debug_logger = mocker.patch("securedrop_client.gui.widgets.logger.debug")
     mock_collection = mocker.patch(
         "securedrop_client.db.Source.collection", new_callable=PropertyMock
     )
     ire = sqlalchemy.exc.InvalidRequestError()
     mock_collection.side_effect = ire
 
-    cv.on_reply_sent(source.uuid, "mock", "mock")
-
-    debug_logger.assert_any_call(
-        f"Could not Update deletion markers in the ConversationView: {ire}"
-    )
-
-
-def test_ConversationView_add_reply_from_reply_box(mocker, session, session_maker, homedir):
-    """
-    Adding a reply from reply box results in a new ReplyWidget added to the layout.
-    """
-    controller = logic.Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
-    controller.authenticated_user = factory.User()
-
-    source = factory.Source()
-    session.add(source)
-    session.commit()
-    cv = ConversationView(source, controller)
-    cv.add_reply_from_reply_box(uuid="abc123", content=">^..^<")
-
-    # Check that we added the correct widget to the layout
-    reply_widget = cv.scroll.conversation_layout.itemAt(0).widget()
-    assert isinstance(reply_widget, ReplyWidget)
-
-    assert reply_widget.uuid == "abc123"
-    assert reply_widget.message.text() == ">^..^<"
-    assert reply_widget.index == 0
-    assert reply_widget.status == "PENDING"
-    assert not reply_widget.failed_to_decrypt
-    assert reply_widget.controller == controller
-    assert reply_widget.sender_is_current_user
-    assert cv.current_messages["abc123"].sender == controller.authenticated_user
-    assert reply_widget.sender == controller.authenticated_user
-
-
-def test_ConversationView_add_reply_from_reply_box_does_not_send_when_not_authenticated(mocker):
-    """
-    Ensure we do not send a reply from reply box when the user is no longer authenticated.
-    """
-    source = factory.Source()
-    reply_ready = mocker.MagicMock()
-    reply_download_failed = mocker.MagicMock()
-    reply_succeeded = mocker.MagicMock()
-    reply_failed = mocker.MagicMock()
-    controller = mocker.MagicMock(
-        reply_ready=reply_ready,
-        reply_download_failed=reply_download_failed,
-        reply_succeeded=reply_succeeded,
-        reply_failed=reply_failed,
-    )
-    controller.authenticated_user = None
-    cv = ConversationView(source, controller)
-    cv.scroll.conversation_layout = mocker.MagicMock()
-    reply_widget = mocker.patch("securedrop_client.gui.widgets.ReplyWidget")
-    cv.add_reply_from_reply_box(uuid="abc123", content="test message")
-
-    reply_widget.assert_not_called()
-    cv.scroll.conversation_layout.insertWidget.assert_not_called()
+    cv.on_reply_sent(source.uuid)
 
 
 def test_ConversationView_add_reply(mocker, homedir, session, session_maker):
@@ -4825,7 +4716,7 @@ def test_ReplyBoxWidget_send_reply(mocker):
 
     scw.reply_box.send_reply()
 
-    scw.reply_box.reply_sent.emit.assert_called_once_with("abc123", "456xyz", "Alles für Alle")
+    scw.reply_box.reply_sent.emit.assert_called_once_with("abc123")
     scw.reply_box.text_edit.setText.assert_called_once_with("")
     controller.send_reply.assert_called_once_with("abc123", "456xyz", "Alles für Alle")
 
@@ -5070,7 +4961,9 @@ def test_ReplyBoxWidget_enable_after_source_gets_key(mocker, session, session_ma
 
     # now simulate a sync...
     source_with_key = factory.RemoteSource(uuid=source.uuid)
-    storage.update_sources([source_with_key], [source], session, homedir)
+
+    # passing 'None' for skip_uuid, test that separately
+    storage.update_sources([source_with_key], [source], None, session, homedir)
 
     # ... simulate the ReplyBoxWidget receiving the sync success signal
     rbw._on_sync_succeeded()
