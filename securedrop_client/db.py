@@ -141,7 +141,7 @@ class DeletedSource(Base):
 
     uuid = Column(String(36), primary_key=True, nullable=False)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "DeletedSource ({})".format(self.uuid)
 
     def __init__(self, **kwargs: Any) -> None:
