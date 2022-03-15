@@ -5050,7 +5050,7 @@ def test_ReplyBoxWidget_enable_after_source_gets_key(mocker, session, session_ma
     source_with_key = factory.RemoteSource(uuid=source.uuid)
 
     # passing 'None' for skip_uuid, test that separately
-    storage.update_sources([source_with_key], [source], None, session, homedir)
+    storage.update_sources([source_with_key], [source], [], [], session, homedir)
 
     # ... simulate the ReplyBoxWidget receiving the sync success signal
     rbw._on_sync_succeeded()

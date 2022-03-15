@@ -4,6 +4,7 @@ import pytest
 
 from securedrop_client.db import (
     DeletedConversation,
+    DeletedSource,
     DownloadError,
     DownloadErrorCodes,
     DraftReply,
@@ -378,3 +379,11 @@ def test_deletedconversation_creation(session):
 
     dc = DeletedConversation(uuid="test-uuid")
     assert str(dc) == "DeletedConversation (source {})".format(dc.uuid)
+
+
+def test_deletedsource_creation(session):
+    with pytest.raises(TypeError):
+        DeletedSource()  # must initialize with a UUID
+
+    ds = DeletedSource(uuid="test-uuid")
+    assert str(ds) == "DeletedSource ({})".format(ds.uuid)

@@ -238,7 +238,7 @@ def update_local_storage(
 
 def _get_flagged_locally_deleted(
     session: Session,
-) -> (List[DeletedConversation], List[DeletedSource]):
+) -> Tuple[List[DeletedConversation], List[DeletedSource]]:
     """
     Helper function that returns two lists of source UUIDs, corresponding to
     locally-deleted conversations and sources, respsectively.

@@ -271,18 +271,23 @@ def test_update_local_storage(homedir, mocker, session_maker):
     msg_fn = mocker.patch("securedrop_client.storage.update_messages")
 
     # Assume no flagged UUID values (occurs during local deletion)- test this separately
-    mocker.patch("securedrop_client.storage._get_flagged_locally_deleted", return_value=[])
-    skip_uuids = []
+    mocker.patch("securedrop_client.storage._get_flagged_locally_deleted", return_value=([], []))
+    skip_convos = []
+    skip_sources = []
 
     update_local_storage(mock_session, [remote_source], remote_submissions, [remote_reply], homedir)
 
     src_fn.assert_called_once_with(
-        [remote_source], [local_source], skip_uuids, mock_session, homedir
+        [remote_source], [local_source], skip_convos, skip_sources, mock_session, homedir
     )
-    rpl_fn.assert_called_once_with([remote_reply], [local_reply], skip_uuids, mock_session, homedir)
-    file_fn.assert_called_once_with([remote_file], [local_file], skip_uuids, mock_session, homedir)
+    rpl_fn.assert_called_once_with(
+        [remote_reply], [local_reply], skip_convos, skip_sources, mock_session, homedir
+    )
+    file_fn.assert_called_once_with(
+        [remote_file], [local_file], skip_convos, skip_sources, mock_session, homedir
+    )
     msg_fn.assert_called_once_with(
-        [remote_message], [local_message], skip_uuids, mock_session, homedir
+        [remote_message], [local_message], skip_convos, skip_sources, mock_session, homedir
     )
 
 
@@ -355,7 +360,7 @@ def test_sync_delete_race(homedir, mocker, session_maker, session):
     deleter = Deleter(source.uuid)
 
     def delayed_update_messages(
-        remote_submissions, local_submissions, skip_uuids, session, data_dir
+        remote_submissions, local_submissions, skip_conversations, skip_sources, session, data_dir
     ):
         assert source_exists(session, source.uuid)
         deleter.start()
@@ -368,7 +373,7 @@ def test_sync_delete_race(homedir, mocker, session_maker, session):
         assert source_exists(session, source.uuid) is False
 
         # Don't pass in any UUIDs to skip, test this separately
-        update_messages(remote_submissions, local_submissions, [], session, data_dir)
+        update_messages(remote_submissions, local_submissions, [], [], session, data_dir)
 
     mocker.patch("securedrop_client.storage.update_messages", delayed_update_messages)
 
@@ -440,7 +445,7 @@ def test_update_sources_no_skipped_uuids(homedir, mocker, session_maker, session
     file_delete_fcn = mocker.patch("securedrop_client.storage.delete_source_collection")
 
     # Don't pass in UUIDS to skip, test that separately
-    update_sources(remote_sources, local_sources, [], session, homedir)
+    update_sources(remote_sources, local_sources, [], [], session, homedir)
 
     # Check the expected local source object has been updated with values from
     # the API.
@@ -506,7 +511,7 @@ def test_update_submissions_deletes_files_associated_with_the_submission(homedir
     local_source.uuid = "test-source-uuid"
     local_source.id = 666
     mock_session.query().filter_by.return_value = [local_source]
-    update_files(remote_submissions, local_submissions, [], mock_session, homedir)
+    update_files(remote_submissions, local_submissions, [], [], mock_session, homedir)
 
     # Ensure the files associated with the submission are deleted on disk.
     assert not os.path.exists(abs_local_filename)
@@ -546,17 +551,18 @@ def test_update_local_storage_does_not_call_update_functions_w_insecure_filename
     rpl_fn = mocker.patch("securedrop_client.storage.update_replies")
     file_fn = mocker.patch("securedrop_client.storage.update_files")
     msg_fn = mocker.patch("securedrop_client.storage.update_messages")
-    mocker.patch("securedrop_client.storage._get_flagged_locally_deleted", return_value=[])
+    mocker.patch("securedrop_client.storage._get_flagged_locally_deleted", return_value=([], []))
     skip_uuids = []
+    skip_sources = []
 
     update_local_storage(
         session, [remote_source], [remote_message, remote_file], [remote_reply], homedir
     )
 
-    src_fn.assert_called_once_with([], [local_source], skip_uuids, session, homedir)
-    rpl_fn.assert_called_once_with([], [local_reply], skip_uuids, session, homedir)
-    file_fn.assert_called_once_with([], [local_file], skip_uuids, session, homedir)
-    msg_fn.assert_called_once_with([], [local_message], skip_uuids, session, homedir)
+    src_fn.assert_called_once_with([], [local_source], skip_uuids, skip_sources, session, homedir)
+    rpl_fn.assert_called_once_with([], [local_reply], skip_uuids, skip_sources, session, homedir)
+    file_fn.assert_called_once_with([], [local_file], skip_uuids, skip_sources, session, homedir)
+    msg_fn.assert_called_once_with([], [local_message], skip_uuids, skip_sources, session, homedir)
 
 
 def test_update_replies_deletes_files_associated_with_the_reply(homedir, mocker):
@@ -587,7 +593,7 @@ def test_update_replies_deletes_files_associated_with_the_reply(homedir, mocker)
     local_replies = [local_reply]
 
     # test skipped UUIDs separately, for now pass empty list
-    update_replies(remote_replies, local_replies, [], mock_session, homedir)
+    update_replies(remote_replies, local_replies, [], [], mock_session, homedir)
 
     # Ensure the file associated with the reply are deleted on disk.
     assert not os.path.exists(abs_local_filename)
@@ -665,7 +671,7 @@ def test_update_sources_deletes_files_associated_with_the_source(homedir, mocker
     local_sources = [local_source]
 
     # Don't pass UUIDs to skip, test that separately
-    update_sources(remote_sources, local_sources, [], mock_session, homedir)
+    update_sources(remote_sources, local_sources, [], [], mock_session, homedir)
 
     # Ensure the files associated with the reply are deleted on disk.
     for test_filename in test_filename_absolute_paths:
@@ -722,7 +728,7 @@ def test_update_files(homedir, mocker):
     )
 
     # don't set any uuids to skip--test separately
-    update_files(remote_submissions, local_submissions, [], mock_session, data_dir)
+    update_files(remote_submissions, local_submissions, [], [], mock_session, data_dir)
 
     # Check the expected local submission object has been updated with values
     # from the API.
@@ -813,7 +819,9 @@ def test_update_files_adds_seen_record(homedir, mocker, session):
         remote_file_to_create_with_unknown_journalist,
     ]
 
-    update_files(remote_files, local_files, [], session, data_dir)
+    # test skipped uuids for conversation and source in a separate test
+    # and pass empty lists for now
+    update_files(remote_files, local_files, [], [], session, data_dir)
 
     assert (
         session.query(db.SeenFile)
@@ -888,7 +896,7 @@ def test_update_files_marks_read_files_as_seen_without_seen_records(homedir, moc
 
     remote_files = [remote_file_to_update, remote_file_to_create]
 
-    update_files(remote_files, local_files, [], session, data_dir)
+    update_files(remote_files, local_files, [], [], session, data_dir)
 
     new_local_file = session.query(db.File).filter_by(uuid=remote_file_to_create.uuid).one()
 
@@ -947,7 +955,7 @@ def test_update_messages(homedir, mocker):
     )
 
     # Don't pass in skipped UUIDs, test that separately
-    update_messages(remote_messages, local_messages, [], mock_session, data_dir)
+    update_messages(remote_messages, local_messages, [], [], mock_session, data_dir)
 
     # Check the expected local message object has been updated with values
     # from the API.
@@ -1003,7 +1011,7 @@ def test_update_messages_marks_read_messages_as_seen_without_seen_records(homedi
     remote_messages = [remote_message_to_update, remote_message_to_create]
 
     # Pass empty list for skipped uuids, test that feature separately
-    update_messages(remote_messages, local_messages, [], session, data_dir)
+    update_messages(remote_messages, local_messages, [], [], session, data_dir)
 
     new_local_message = (
         session.query(db.Message).filter_by(uuid=remote_message_to_create.uuid).one()
@@ -1087,7 +1095,7 @@ def test_update_messages_adds_seen_record(homedir, mocker, session):
     ]
 
     # Don't pass in skip_uuids, test separately
-    update_messages(remote_messages, local_messages, [], session, data_dir)
+    update_messages(remote_messages, local_messages, [], [], session, data_dir)
 
     assert (
         session.query(db.SeenMessage)
@@ -1192,7 +1200,9 @@ def test_update_replies(homedir, mocker, session):
 
     remote_replies = [remote_reply_update, remote_reply_create]
 
-    update_replies(remote_replies, local_replies, [], session, data_dir)
+    # test skipped conversation and source uuids separately and
+    # pass empty lists for now
+    update_replies(remote_replies, local_replies, [], [], session, data_dir)
 
     # Check the expected local reply object has been updated with values
     # from the API.
@@ -1278,7 +1288,7 @@ def test_update_replies_adds_seen_record(homedir, mocker, session):
     ]
 
     # don't pass in UUIDs to skip, test that separately
-    update_replies(remote_replies, local_replies, [], session, data_dir)
+    update_replies(remote_replies, local_replies, [], [], session, data_dir)
 
     assert (
         session.query(db.SeenReply)
@@ -1364,7 +1374,7 @@ def test_update_replies_cleanup_drafts(homedir, mocker, session):
     # We have no replies locally stored.
     local_replies = []
 
-    update_replies(remote_replies, local_replies, [], session, data_dir)
+    update_replies(remote_replies, local_replies, [], [], session, data_dir)
 
     # Check the expected local source object has been created.
     new_local_replies = session.query(db.Reply).all()
@@ -1399,7 +1409,7 @@ def test_update_replies_missing_source(homedir, mocker, session):
 
     error_logger = mocker.patch("securedrop_client.storage.logger.error")
 
-    update_replies(remote_replies, local_replies, [], session, data_dir)
+    update_replies(remote_replies, local_replies, [], [], session, data_dir)
 
     error_logger.assert_called_once_with(f"No source found for reply {remote_reply.uuid}")
 
@@ -1870,8 +1880,11 @@ def test_update_sources_skip_conversation_uuids(homedir, mocker, session):
 
     local_sources = [local_source, local_source_convo_deleted]
     skip_conversation_uuids = [local_source_convo_deleted.uuid]
+    skip_source_uuids = []
 
-    update_sources(remote_sources, local_sources, skip_conversation_uuids, session, homedir)
+    update_sources(
+        remote_sources, local_sources, skip_conversation_uuids, skip_source_uuids, session, homedir
+    )
 
     # Check the expected local source object has been updated with values from
     # the API.
@@ -1881,6 +1894,57 @@ def test_update_sources_skip_conversation_uuids(homedir, mocker, session):
     # Check that the skipped source has not been updated
     skipped_source = session.query(db.Source).filter_by(uuid=source_skip.uuid).one()
     assert skipped_source.document_count == local_source_convo_deleted.document_count == 0
+
+    # Make sure new source was still added
+    assert session.query(db.Source).filter_by(uuid=source_create.uuid).one()
+
+
+def test_update_sources_skip_source_uuids(homedir, mocker, session):
+    """
+    Check that update_sources with a list of deletedsource source UUIDs
+    does not update these source records.
+    """
+
+    # This remote source exists locally and will be updated.
+    source_update = factory.RemoteSource(journalist_designation="source update")
+
+    # We will treat this remote source like a source that been locally deleted
+    # and should not be re-added this sync.
+    source_skip = factory.RemoteSource(
+        journalist_designation="source skip", uuid=str(uuid.uuid4()), document_count=12
+    )
+
+    # This remote source does not exist locally and will be created.
+    source_create = factory.RemoteSource(journalist_designation="source create")
+
+    remote_sources = [source_update, source_skip, source_create]
+
+    # This local source already exists in the API results and will be updated.
+    local_source = factory.Source(
+        journalist_designation=source_update.journalist_designation,
+        uuid=source_update.uuid,
+        public_key=None,
+        fingerprint=None,
+    )
+
+    session.add(local_source)
+    session.commit()
+
+    local_sources = [local_source]
+    skip_conversation_uuids = []
+    skip_source_uuids = [source_skip.uuid]
+
+    update_sources(
+        remote_sources, local_sources, skip_conversation_uuids, skip_source_uuids, session, homedir
+    )
+
+    # Check the expected local source object has been updated with values from
+    # the API.
+    updated_source = session.query(db.Source).filter_by(uuid=source_update.uuid).one()
+    assert _is_equivalent_source(updated_source, source_update)
+
+    # Check that the skipped source has not been added
+    assert not session.query(db.Source).filter_by(uuid=source_skip.uuid).one_or_none()
 
     # Make sure new source was still added
     assert session.query(db.Source).filter_by(uuid=source_create.uuid).one()
@@ -1903,22 +1967,26 @@ def test___update_submissions_skip_uuids_successful(mocker, session, homedir):
     session.query(db.Message).delete()
     session.query(db.Source).delete()
     session.query(db.DeletedConversation).delete()
+    session.query(db.DeletedSource).delete()
     session.commit()
 
     # Add sources
     source = factory.Source(id=42)
     skip_source = factory.Source(id=120)
     delete_source = factory.Source(id=666)
+    locally_deleted_source = factory.Source(id=123)
 
     session.add(source)
     session.add(skip_source)
 
     # One remote message object that which will exist in the
     # local database and be updated, one that will not exist in the local database
-    # but should be skipped (simulate stale sync data)
+    # but should be skipped, one that should be skipped because user has been
+    # locally deleted (simulate stale sync data)
     remote_message_update = make_remote_submission(source.uuid)
     remote_message_skip = make_remote_submission(skip_source.uuid)
-    remote_messages = [remote_message_update, remote_message_skip]
+    remote_message_user_deleted = make_remote_submission(locally_deleted_source.uuid)
+    remote_messages = [remote_message_update, remote_message_skip, remote_message_user_deleted]
 
     local_msg = factory.Message(uuid=remote_message_update.uuid, source_id=source.id)
 
@@ -1941,12 +2009,20 @@ def test___update_submissions_skip_uuids_successful(mocker, session, homedir):
 
     # Skip one source, update the other, handle invalid source UUID
     skip_conversation_uuids = [invalid_uuid, skip_source.uuid]
+    skip_source_uuids = [locally_deleted_source.uuid]
     __update_submissions(
-        db.Message, remote_messages, local_messages, skip_conversation_uuids, session, data_dir
+        db.Message,
+        remote_messages,
+        local_messages,
+        skip_conversation_uuids,
+        skip_source_uuids,
+        session,
+        data_dir,
     )
 
     assert session.query(db.Message).filter_by(source_id=source.id).count() == 1
     assert session.query(db.Message).filter_by(source_id=skip_source.id).count() == 0
+    assert session.query(db.Source).filter_by(id=locally_deleted_source.id).count() == 0
     mock_delete.assert_called_once_with(local_msg_delete, data_dir)
 
 
@@ -1977,6 +2053,12 @@ def test___update_replies_skip_uuids_successful(mocker, session, homedir):
     local_skip_source = factory.Source()
     session.add(local_skip_source)
 
+    # This source won't be added to the db since it will represent a
+    # source that was just deleted, but we'll create a remote reply for it,
+    # simulating stale sync data, to ensure the reply and source don't get
+    # added to the database
+    locally_deleted_source = factory.Source()
+
     # Create a local reply that will be updated to match the remote reply object with the same uuid.
     local_reply_update = factory.Reply(
         source_id=source.id,
@@ -1994,7 +2076,7 @@ def test___update_replies_skip_uuids_successful(mocker, session, homedir):
 
     # Create a local reply that will be skipped
     local_reply_skip = factory.Reply(source_id=local_skip_source.id, source=local_skip_source)
-    session.add(local_reply_delete)
+    session.add(local_reply_skip)
 
     local_replies = [local_reply_skip, local_reply_update, local_reply_delete]
 
@@ -2044,6 +2126,13 @@ def test___update_replies_skip_uuids_successful(mocker, session, homedir):
         seen_by=[],
     )
 
+    # Create a remote reply from a locally-deleted source (should be skipped).
+    remote_reply_skip3 = factory.RemoteReply(
+        uuid=locally_deleted_source.uuid,
+        journalist_uuid=journalist.uuid,
+        source_url="/api/v1/sources/{}".format(locally_deleted_source.uuid),
+    )
+
     # Simulate a race condition for deletion where local database is modified
     # by sync and records are removed
     delete_call = mocker.patch(
@@ -2054,12 +2143,16 @@ def test___update_replies_skip_uuids_successful(mocker, session, homedir):
     remote_replies = [
         remote_reply_skip,
         remote_reply_skip2,
+        remote_reply_skip3,
         remote_reply_update,
         remote_reply_create,
     ]
 
     skip_conversation_uuids = [skip_source.uuid, local_skip_source.uuid]
-    update_replies(remote_replies, local_replies, skip_conversation_uuids, session, data_dir)
+    skip_source_uuids = [locally_deleted_source.uuid]
+    update_replies(
+        remote_replies, local_replies, skip_conversation_uuids, skip_source_uuids, session, data_dir
+    )
 
     # Check the expected local reply object has been updated with values
     # from the API.
@@ -2073,8 +2166,9 @@ def test___update_replies_skip_uuids_successful(mocker, session, homedir):
     assert new_reply.size == remote_reply_create.size
     assert new_reply.filename == remote_reply_create.filename
 
-    # Ensure the reply for the skipped UUID did not get added to the replies table
+    # Ensure the replies for the skipped UUID did not get added to the replies table
     assert session.query(db.Reply).filter_by(uuid=skip_source.uuid).count() == 0
+    assert session.query(db.Reply).filter_by(uuid=locally_deleted_source.uuid).count() == 0
 
     # Ensure the local reply that is not in the API results is deleted.
     delete_call.assert_called_once_with(local_reply_delete, data_dir)
@@ -2273,10 +2367,21 @@ def test_delete_local_conversation_by_uuid_nosuchuuid(homedir, mocker, session):
     )
 
 
-def test__cleanup_flagged_locally_deleted(mocker, session):
+def test__cleanup_flagged_locally_deleted_conversations(mocker, session):
     session = mocker.MagicMock()
     session.delete = mocker.MagicMock()
-    targets = [db.DeletedConversation(uuid="uuid-1")]
+    target_convo = [db.DeletedConversation(uuid="uuid-1")]
+    target_source = []
 
-    _cleanup_flagged_locally_deleted(session, targets)
-    session.delete.assert_called_once_with(targets[0])
+    _cleanup_flagged_locally_deleted(session, target_convo, target_source)
+    session.delete.assert_called_once_with(target_convo[0])
+
+
+def test__cleanup_flagged_locally_deleted_sources(mocker, session):
+    session = mocker.MagicMock()
+    session.delete = mocker.MagicMock()
+    target_convo = []
+    target_source = [db.DeletedSource(uuid="uuid-1")]
+
+    _cleanup_flagged_locally_deleted(session, target_convo, target_source)
+    session.delete.assert_called_once_with(target_source[0])
