@@ -60,6 +60,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
+from securedrop_client import state
 from securedrop_client.db import (
     DraftReply,
     File,
@@ -86,6 +87,10 @@ from securedrop_client.storage import source_exists
 from securedrop_client.utils import humanize_filesize
 
 logger = logging.getLogger(__name__)
+
+
+MINIMUM_ANIMATION_DURATION_IN_MILLISECONDS = 300
+NO_DELAY = 1
 
 
 class TopPane(QWidget):
@@ -563,8 +568,10 @@ class MainView(QWidget):
     and main context view).
     """
 
-    def __init__(self, parent: QObject) -> None:
+    def __init__(self, parent: QObject, app_state: Optional[state.State] = None) -> None:
         super().__init__(parent)
+
+        self._state = app_state
 
         # Set id and styles
         self.setObjectName("MainView")
@@ -580,6 +587,11 @@ class MainView(QWidget):
         # Create SourceList widget
         self.source_list = SourceList()
         self.source_list.itemSelectionChanged.connect(self.on_source_changed)
+        if app_state is not None:
+            self.source_list.source_selection_changed.connect(
+                app_state.set_selected_conversation_for_source
+            )
+            self.source_list.source_selection_cleared.connect(app_state.clear_selected_conversation)
 
         # Create widgets
         self.view_holder = QWidget()
@@ -656,13 +668,16 @@ class MainView(QWidget):
                 conversation_wrapper = self.source_conversations[source.uuid]
                 conversation_wrapper.conversation_view.update_conversation(source.collection)
             else:
-                conversation_wrapper = SourceConversationWrapper(source, self.controller)
+                conversation_wrapper = SourceConversationWrapper(
+                    source, self.controller, self._state
+                )
                 self.source_conversations[source.uuid] = conversation_wrapper
 
             self.set_conversation(conversation_wrapper)
             logger.debug(
                 "Set conversation to the selected source with uuid: {}".format(source.uuid)
             )
+
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.debug(e)
 
@@ -818,6 +833,9 @@ class SourceList(QListWidget):
     Displays the list of sources.
     """
 
+    source_selection_changed = pyqtSignal(state.SourceId)
+    source_selection_cleared = pyqtSignal()
+
     NUM_SOURCES_TO_ADD_AT_A_TIME = 32
     INITIAL_UPDATE_SCROLLBAR_WIDTH = 20
 
@@ -842,6 +860,8 @@ class SourceList(QListWidget):
 
         # To hold references to SourceListWidgetItem instances indexed by source UUID.
         self.source_items: Dict[str, SourceListWidgetItem] = {}
+
+        self.itemSelectionChanged.connect(self._on_item_selection_changed)
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         self.adjust_preview.emit(event.size().width())
@@ -1004,6 +1024,14 @@ class SourceList(QListWidget):
         source_widget = self.get_source_widget(source_uuid)
         if source_widget:
             source_widget.set_snippet(source_uuid, collection_item_uuid, content)
+
+    @pyqtSlot()
+    def _on_item_selection_changed(self) -> None:
+        source = self.get_selected_source()
+        if source is not None:
+            self.source_selection_changed.emit(state.SourceId(source.uuid))
+        else:
+            self.source_selection_cleared.emit()
 
 
 class SourcePreview(SecureQLabel):
@@ -2070,6 +2098,7 @@ class FileWidget(QWidget):
         self,
         file_uuid: str,
         controller: Controller,
+        file_download_started: pyqtBoundSignal,
         file_ready_signal: pyqtBoundSignal,
         file_missing: pyqtBoundSignal,
         index: int,
@@ -2175,6 +2204,7 @@ class FileWidget(QWidget):
         layout.addWidget(self.file_size)
 
         # Connect signals to slots
+        file_download_started.connect(self._on_file_download_started, type=Qt.QueuedConnection)
         file_ready_signal.connect(self._on_file_downloaded, type=Qt.QueuedConnection)
         file_missing.connect(self._on_file_missing, type=Qt.QueuedConnection)
 
@@ -2249,17 +2279,27 @@ class FileWidget(QWidget):
             self.horizontal_line.hide()
             self.spacer.show()
 
+    @pyqtSlot(state.FileId)
+    def _on_file_download_started(self, id: state.FileId) -> None:
+        if str(id) == self.uuid:
+            self.downloading = True
+            QTimer.singleShot(NO_DELAY, self.start_button_animation)
+
     @pyqtSlot(str, str, str)
     def _on_file_downloaded(self, source_uuid: str, file_uuid: str, filename: str) -> None:
         if file_uuid == self.uuid:
             self.downloading = False
-            QTimer.singleShot(300, self.stop_button_animation)
+            QTimer.singleShot(
+                MINIMUM_ANIMATION_DURATION_IN_MILLISECONDS, self.stop_button_animation
+            )
 
     @pyqtSlot(str, str, str)
     def _on_file_missing(self, source_uuid: str, file_uuid: str, filename: str) -> None:
         if file_uuid == self.uuid:
             self.downloading = False
-            QTimer.singleShot(300, self.stop_button_animation)
+            QTimer.singleShot(
+                MINIMUM_ANIMATION_DURATION_IN_MILLISECONDS, self.stop_button_animation
+            )
 
     @pyqtSlot()
     def _on_export_clicked(self) -> None:
@@ -3032,6 +3072,7 @@ class ConversationView(QWidget):
         conversation_item = FileWidget(
             file.uuid,
             self.controller,
+            self.controller.file_download_started,
             self.controller.file_ready,
             self.controller.file_missing,
             index,
@@ -3123,7 +3164,9 @@ class SourceConversationWrapper(QWidget):
 
     deleting_conversation = False
 
-    def __init__(self, source: Source, controller: Controller) -> None:
+    def __init__(
+        self, source: Source, controller: Controller, app_state: Optional[state.State] = None
+    ) -> None:
         super().__init__()
 
         self.setObjectName("SourceConversationWrapper")
@@ -3147,7 +3190,7 @@ class SourceConversationWrapper(QWidget):
         layout.setSpacing(0)
 
         # Create widgets
-        self.conversation_title_bar = SourceProfileShortWidget(source, controller)
+        self.conversation_title_bar = SourceProfileShortWidget(source, controller, app_state)
         self.conversation_view = ConversationView(source, controller)
         self.reply_box = ReplyBoxWidget(source, controller)
         self.deletion_indicator = SourceDeletionIndicator()
@@ -3565,7 +3608,9 @@ class SourceMenu(QMenu):
 
     SOURCE_MENU_CSS = load_css("source_menu.css")
 
-    def __init__(self, source: Source, controller: Controller) -> None:
+    def __init__(
+        self, source: Source, controller: Controller, app_state: Optional[state.State]
+    ) -> None:
         super().__init__()
         self.source = source
         self.controller = controller
@@ -3575,11 +3620,61 @@ class SourceMenu(QMenu):
         separator_font.setLetterSpacing(QFont.AbsoluteSpacing, 2)
         separator_font.setBold(True)
 
+        download_section = self.addSection(_("DOWNLOAD"))
+        download_section.setFont(separator_font)
+        download_section.setObjectName("first_section")
+
+        self.addAction(DownloadConversation(self, self.controller, app_state))
+
         delete_section = self.addSection(_("DELETE"))
         delete_section.setFont(separator_font)
 
         self.addAction(DeleteConversationAction(self.source, self, self.controller))
         self.addAction(DeleteSourceAction(self.source, self, self.controller))
+
+
+class DownloadConversation(QAction):
+    """Download all files and messages of the currently selected conversation."""
+
+    def __init__(
+        self, parent: QMenu, controller: Controller, app_state: Optional[state.State] = None
+    ) -> None:
+        self._controller = controller
+        self._state = app_state
+        self._text = _("All Files")
+        super().__init__(self._text, parent)
+        self.setShortcut(Qt.CTRL + Qt.Key_D)
+        self.triggered.connect(self.on_triggered)
+        self.setShortcutVisibleInContextMenu(True)
+
+        self._connect_enabled_to_conversation_changes()
+        self._set_enabled_initial_value()
+
+    @pyqtSlot()
+    def on_triggered(self) -> None:
+        if self._state is not None:
+            id = self._state.selected_conversation
+            if id is None:
+                return
+            self._controller.download_conversation(id)
+
+    def _connect_enabled_to_conversation_changes(self) -> None:
+        if self._state is not None:
+            self._state.selected_conversation_files_changed.connect(
+                self._on_selected_conversation_files_changed
+            )
+
+    @pyqtSlot()
+    def _on_selected_conversation_files_changed(self) -> None:
+        if self._state is None:
+            return
+        if self._state.selected_conversation_has_downloadable_files:
+            self.setEnabled(True)
+        else:
+            self.setEnabled(False)
+
+    def _set_enabled_initial_value(self) -> None:
+        self._on_selected_conversation_files_changed()
 
 
 class DeleteSourceAction(QAction):
@@ -3628,7 +3723,9 @@ class SourceMenuButton(QToolButton):
     This button is responsible for launching the source menu on click.
     """
 
-    def __init__(self, source: Source, controller: Controller) -> None:
+    def __init__(
+        self, source: Source, controller: Controller, app_state: Optional[state.State]
+    ) -> None:
         super().__init__()
         self.controller = controller
         self.source = source
@@ -3638,7 +3735,7 @@ class SourceMenuButton(QToolButton):
         self.setIcon(load_icon("ellipsis.svg"))
         self.setIconSize(QSize(22, 33))  # Make it taller than the svg viewBox to increase hitbox
 
-        self.menu = SourceMenu(self.source, self.controller)
+        self.menu = SourceMenu(self.source, self.controller, app_state)
         self.setMenu(self.menu)
 
         self.setPopupMode(QToolButton.InstantPopup)
@@ -3678,7 +3775,9 @@ class SourceProfileShortWidget(QWidget):
     MARGIN_RIGHT = 17
     VERTICAL_MARGIN = 14
 
-    def __init__(self, source: Source, controller: Controller) -> None:
+    def __init__(
+        self, source: Source, controller: Controller, app_state: Optional[state.State]
+    ) -> None:
         super().__init__()
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
@@ -3700,7 +3799,7 @@ class SourceProfileShortWidget(QWidget):
         )
         title = TitleLabel(self.source.journalist_designation)
         self.updated = LastUpdatedLabel(_(arrow.get(self.source.last_updated).format("MMM D")))
-        menu = SourceMenuButton(self.source, self.controller)
+        menu = SourceMenuButton(self.source, self.controller, app_state)
         header_layout.addWidget(title, alignment=Qt.AlignLeft)
         header_layout.addStretch()
         header_layout.addWidget(self.updated, alignment=Qt.AlignRight)

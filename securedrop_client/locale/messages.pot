@@ -229,6 +229,9 @@ msgstr ""
 msgid "DELETE"
 msgstr ""
 
+msgid "All Files"
+msgstr ""
+
 msgid "Entire source account"
 msgstr ""
 

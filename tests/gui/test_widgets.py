@@ -3,8 +3,10 @@ Make sure the UI widgets are configured correctly and work as expected.
 """
 import math
 import random
+import unittest
 from datetime import datetime
 from gettext import gettext as _
+from unittest import mock
 from unittest.mock import Mock, PropertyMock
 
 import arrow
@@ -13,10 +15,10 @@ import sqlalchemy.orm.exc
 from PyQt5.QtCore import QEvent, QSize, Qt
 from PyQt5.QtGui import QFocusEvent, QMovie, QResizeEvent
 from PyQt5.QtTest import QTest
-from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QApplication, QMenu, QVBoxLayout, QWidget
 from sqlalchemy.orm import attributes, scoped_session, sessionmaker
 
-from securedrop_client import db, logic, storage
+from securedrop_client import db, logic, state, storage
 from securedrop_client.export import ExportError, ExportStatus
 from securedrop_client.gui.source import DeleteSourceDialog
 from securedrop_client.gui.widgets import (
@@ -24,6 +26,7 @@ from securedrop_client.gui.widgets import (
     ConversationView,
     DeleteConversationAction,
     DeleteSourceAction,
+    DownloadConversation,
     EmptyConversationView,
     ErrorStatusBar,
     ExportDialog,
@@ -817,7 +820,7 @@ def test_MainView_refresh_source_conversations(homedir, mocker, qtbot, session_m
     mv = MainView(None)
 
     mock_gui = mocker.MagicMock()
-    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir)
+    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir, None)
     controller.api = mocker.MagicMock()
 
     mv.setup(controller)
@@ -894,7 +897,7 @@ def test_MainView_refresh_source_conversations_with_deleted(
     mv = MainView(None)
 
     mock_gui = mocker.MagicMock()
-    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir)
+    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir, None)
     controller.api = mocker.MagicMock()
 
     debug_logger = mocker.patch("securedrop_client.gui.widgets.logger.debug")
@@ -1041,7 +1044,7 @@ def test_SourceList_update_when_source_deleted(mocker, session, session_maker, h
     ongoing sync will handle the deletion of the source's widgets.
     """
     mock_gui = mocker.MagicMock()
-    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir)
+    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir, None)
 
     # create the source in another session
     source = factory.Source()
@@ -1896,7 +1899,7 @@ def test_SourceWidget_set_snippet_draft_only(mocker, session_maker, session, hom
     Snippets/previews do not include draft messages.
     """
     mock_gui = mocker.MagicMock()
-    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir)
+    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir, None)
     source = factory.Source(document_count=1)
     mark_seen_signal = mocker.MagicMock()
     f = factory.File(source=source)
@@ -1916,7 +1919,7 @@ def test_SourceWidget_set_snippet(mocker, session_maker, session, homedir):
     Snippets are set as expected.
     """
     mock_gui = mocker.MagicMock()
-    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir)
+    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir, None)
     source = factory.Source(document_count=1)
     mark_seen_signal = mocker.MagicMock()
     f = factory.File(source=source)
@@ -2941,7 +2944,7 @@ def test_ReplyWidget__on_update_authenticated_user(mocker):
 def test_ReplyWidget__on_update_authenticated_user_updates_sender_when_changed(mocker, homedir):
     authenticated_user = factory.User()
     co = mocker.MagicMock(authenticated_user=authenticated_user)
-    co = logic.Controller("http://localhost", mocker.MagicMock(), mocker.MagicMock(), homedir)
+    co = logic.Controller("http://localhost", mocker.MagicMock(), mocker.MagicMock(), homedir, None)
     user = factory.User(uuid="abc123", username="foo")
     co.authenticated_user = user
     co.session.refresh = mocker.MagicMock()
@@ -3012,7 +3015,9 @@ def test_FileWidget_init_file_not_downloaded(mocker, source, session):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget("mock", controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        "mock", controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
 
     assert fw.controller == controller
     assert fw.file.is_downloaded is False
@@ -3035,7 +3040,9 @@ def test_FileWidget_init_file_downloaded(mocker, source, session):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget("mock", controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        "mock", controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
 
     assert fw.controller == controller
     assert fw.file.is_downloaded is True
@@ -3057,7 +3064,15 @@ def test_FileWidget_adjust_width(mocker):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget("abc123-ima-uuid", controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        "abc123-ima-uuid",
+        controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
 
     fw.adjust_width(fw.MIN_CONTAINER_WIDTH - 1)
     assert fw.width() == fw.MIN_WIDTH
@@ -3078,7 +3093,15 @@ def test_FileWidget__set_file_state_under_mouse(mocker, source, session):
     mock_get_file = mocker.MagicMock(return_value=file_)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
-    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file_.uuid,
+        mock_controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
     fw.download_button.underMouse = mocker.MagicMock(return_value=True)
     fw.download_button.setIcon = mocker.MagicMock()
     mock_load = mocker.MagicMock()
@@ -3100,7 +3123,15 @@ def test_FileWidget_event_handler_left_click(mocker, session, source):
     test_event = QEvent(QEvent.MouseButtonPress)
     test_event.button = mocker.MagicMock(return_value=Qt.LeftButton)
 
-    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file_.uuid,
+        mock_controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
     fw._on_left_click = mocker.MagicMock()
 
     fw.eventFilter(fw, test_event)
@@ -3119,7 +3150,15 @@ def test_FileWidget_event_handler_hover(mocker, session, source):
     mock_get_file = mocker.MagicMock(return_value=file_)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
-    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file_.uuid,
+        mock_controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
     fw.download_button = mocker.MagicMock()
 
     # Hover enter
@@ -3146,7 +3185,15 @@ def test_FileWidget_on_left_click_download(mocker, session, source):
     mock_get_file = mocker.MagicMock(return_value=file_)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
-    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file_.uuid,
+        mock_controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
     fw.download_button = mocker.MagicMock()
     mock_get_file.assert_called_once_with(file_.uuid)
     mock_get_file.reset_mock()
@@ -3168,7 +3215,15 @@ def test_FileWidget_on_left_click_downloading_in_progress(mocker, session, sourc
     mock_get_file = mocker.MagicMock(return_value=file_)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
-    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file_.uuid,
+        mock_controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
     fw.downloading = True
     fw.download_button = mocker.MagicMock()
     mock_get_file.assert_called_once_with(file_.uuid)
@@ -3188,7 +3243,15 @@ def test_FileWidget_start_button_animation(mocker, session, source):
     session.commit()
     mock_get_file = mocker.MagicMock(return_value=file_)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
-    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file_.uuid,
+        mock_controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
     fw.download_button = mocker.MagicMock()
     fw.start_button_animation()
     # Check indicators of activity have been updated.
@@ -3206,7 +3269,15 @@ def test_FileWidget_on_left_click_open(mocker, session, source):
     mock_get_file = mocker.MagicMock(return_value=file_)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
-    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file_.uuid,
+        mock_controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
     fw._on_left_click()
     fw.controller.on_file_open.assert_called_once_with(file_)
 
@@ -3223,7 +3294,15 @@ def test_FileWidget_set_button_animation_frame(mocker, session, source):
     mock_get_file = mocker.MagicMock(return_value=file_)
     mock_controller = mocker.MagicMock(get_file=mock_get_file)
 
-    fw = FileWidget(file_.uuid, mock_controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file_.uuid,
+        mock_controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
     fw.download_button = mocker.MagicMock()
     fw.set_button_animation_frame(1)
     assert fw.download_button.setIcon.call_count == 1
@@ -3238,7 +3317,9 @@ def test_FileWidget_update(mocker, session, source):
     session.commit()
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
 
     fw.update()
 
@@ -3258,7 +3339,9 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_matches(mocker, sou
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
     fw.update = mocker.MagicMock()
 
     fw._on_file_downloaded(file.source.uuid, file.uuid, str(file))
@@ -3269,6 +3352,31 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_matches(mocker, sou
     assert not fw.print_button.isHidden()
     assert fw.no_file_name.isHidden()
     assert not fw.file_name.isHidden()
+
+
+def test_FileWidget_on_file_download_started_updates_items_when_uuid_matches(
+    mocker, source, session
+):
+    """
+    The _on_download_started method should update the FileWidget
+    """
+    file = factory.File(source=source["source"])
+    session.add(file)
+    session.commit()
+
+    get_file = mocker.MagicMock(return_value=file)
+    controller = mocker.MagicMock(get_file=get_file)
+
+    fw = FileWidget(
+        file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
+    fw.update = mocker.MagicMock()
+
+    assert not fw.downloading
+
+    fw._on_file_download_started(file.uuid)
+
+    assert fw.downloading
 
 
 def test_FileWidget_filename_truncation(mocker, source, session):
@@ -3285,7 +3393,9 @@ def test_FileWidget_filename_truncation(mocker, source, session):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
     fw.update = mocker.MagicMock()
 
     fw._on_file_downloaded(file.source.uuid, file.uuid, str(file))
@@ -3307,7 +3417,9 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
     fw.clear = mocker.MagicMock()
     fw.update = mocker.MagicMock()
 
@@ -3333,9 +3445,17 @@ def test_FileWidget_on_file_missing_show_download_button_when_uuid_matches(
     session.commit()
 
     mock_gui = mocker.MagicMock()
-    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir)
+    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir, None)
 
-    fw = FileWidget(file.uuid, controller, controller.file_ready, controller.file_missing, 0, 123)
+    fw = FileWidget(
+        file.uuid,
+        controller,
+        controller.file_download_started,
+        controller.file_ready,
+        controller.file_missing,
+        0,
+        123,
+    )
     fw._on_file_missing(file.source.uuid, file.uuid, str(file))
 
     # this is necessary for the timer that stops the download
@@ -3364,7 +3484,9 @@ def test_FileWidget_on_file_missing_does_not_show_download_button_when_uuid_does
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
     fw.download_button.show = mocker.MagicMock()
 
     fw._on_file_missing("not a matching source uuid", "not a matching file uuid", "mock filename")
@@ -3383,7 +3505,9 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
     fw.update = mocker.MagicMock()
     mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.run_export_preflight_checks = mocker.MagicMock()
@@ -3406,7 +3530,9 @@ def test_FileWidget__on_export_clicked_missing_file(mocker, session, source):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
     fw.update = mocker.MagicMock()
     mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.run_export_preflight_checks = mocker.MagicMock()
@@ -3430,7 +3556,9 @@ def test_FileWidget__on_print_clicked(mocker, session, source):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
     fw.update = mocker.MagicMock()
     mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.print_file = mocker.MagicMock()
@@ -3454,7 +3582,9 @@ def test_FileWidget__on_print_clicked_missing_file(mocker, session, source):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
     fw.update = mocker.MagicMock()
     mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.print_file = mocker.MagicMock()
@@ -3471,13 +3601,15 @@ def test_FileWidget_update_file_size_with_deleted_file(
     mocker, homedir, config, session_maker, source
 ):
     mock_gui = mocker.MagicMock()
-    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir)
+    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir, None)
 
     file = factory.File(source=source["source"], is_downloaded=True)
     controller.session.add(file)
     controller.session.commit()
 
-    fw = FileWidget(file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), 0, 123)
+    fw = FileWidget(
+        file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
 
     mocker.patch("securedrop_client.gui.widgets.humanize_filesize", side_effect=Exception("boom!"))
     fw.update_file_size()
@@ -4017,7 +4149,7 @@ def test_SourceConversationWrapper_on_conversation_updated(mocker, qtbot):
     controller = mocker.MagicMock(get_file=get_file)
     source = factory.Source()
 
-    scw = SourceConversationWrapper(source, controller)
+    scw = SourceConversationWrapper(source, controller, None)
     scw.conversation_title_bar.updated.setText("CANARY")
 
     scw.conversation_view.add_file(file=file_, index=1)
@@ -4037,7 +4169,7 @@ def test_SourceConversationWrapper_on_source_deleted(mocker):
     mv.source_list.get_selected_source = mocker.MagicMock(return_value=source)
     mv.controller = mocker.MagicMock(is_authenticated=True)
     mv.show()
-    scw = SourceConversationWrapper(source, mv.controller)
+    scw = SourceConversationWrapper(source, mv.controller, None)
     mocker.patch("securedrop_client.gui.widgets.SourceConversationWrapper", return_value=scw)
     mv.on_source_changed()
     scw.on_source_deleted("123")
@@ -4093,7 +4225,7 @@ def test_SourceConversationWrapper_on_conversation_deleted(mocker):
     mv.source_list.get_selected_source = mocker.MagicMock(return_value=source)
     mv.controller = mocker.MagicMock(is_authenticated=True)
     mv.show()
-    scw = SourceConversationWrapper(source, mv.controller)
+    scw = SourceConversationWrapper(source, mv.controller, None)
     mocker.patch("securedrop_client.gui.widgets.SourceConversationWrapper", return_value=scw)
     mv.on_source_changed()
 
@@ -4343,7 +4475,9 @@ def test_ConversationView_add_message(mocker, session, session_maker, homedir):
     """
     Adding a message results in a new MessageWidget added to the layout.
     """
-    controller = logic.Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    controller = logic.Controller(
+        "http://localhost", mocker.MagicMock(), session_maker, homedir, None
+    )
     controller.authenticated_user = factory.User()
     source = factory.Source()
     message = factory.Message(source=source, content=">^..^<")
@@ -4369,7 +4503,9 @@ def test_ConversationView_add_message_no_content(mocker, session, session_maker,
     checks that if a `Message` has `content = None` that a helpful message is displayed as would
     be the case if download/decryption never occurred or failed.
     """
-    controller = logic.Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    controller = logic.Controller(
+        "http://localhost", mocker.MagicMock(), session_maker, homedir, None
+    )
     controller.authenticated_user = factory.User()
     source = factory.Source()
     message = factory.Message(source=source, is_decrypted=False, content=None)
@@ -4446,7 +4582,9 @@ def test_ConversationView_add_reply(mocker, homedir, session, session_maker):
     """
     Adding a reply from a source results in a new ReplyWidget added to the layout.
     """
-    controller = logic.Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    controller = logic.Controller(
+        "http://localhost", mocker.MagicMock(), session_maker, homedir, None
+    )
     controller.authenticated_user = factory.User()
     source = factory.Source()
     sender = factory.User()
@@ -4479,7 +4617,9 @@ def test_ConversationView_add_reply_no_content(mocker, homedir, session_maker, s
     checks that if a `Reply` has `content = None` that a helpful message is displayed as would
     be the case if download/decryption never occurred or failed.
     """
-    controller = logic.Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    controller = logic.Controller(
+        "http://localhost", mocker.MagicMock(), session_maker, homedir, None
+    )
     controller.authenticated_user = factory.User()
     source = factory.Source()
     sender = factory.User()
@@ -4513,7 +4653,9 @@ def test_ConversationView_add_reply_that_has_current_user_as_sender(
     Adding a reply from a source results in a new ReplyWidget added to the layout.
     """
     authenticated_user = factory.User()
-    controller = logic.Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    controller = logic.Controller(
+        "http://localhost", mocker.MagicMock(), session_maker, homedir, None
+    )
     controller.authenticated_user = authenticated_user
     source = factory.Source()
     reply = factory.Reply(uuid="abc123", source=source, content=">^..^<")
@@ -4613,6 +4755,21 @@ def test_DeleteSourceAction_trigger(mocker):
     mock_delete_source_dialog_instance.exec.assert_called_once()
 
 
+def test_DeleteSourceAction_requires_an_authenticated_journalist(mocker):
+    mock_controller = mocker.MagicMock()
+    mock_controller.api = None  # no aouthenticated journalist
+    mock_source = mocker.MagicMock()
+    mock_delete_source_dialog_instance = mocker.MagicMock(DeleteSourceDialog)
+    mock_delete_source_dialog = mocker.MagicMock()
+    mock_delete_source_dialog.return_value = mock_delete_source_dialog_instance
+
+    mocker.patch("securedrop_client.gui.widgets.DeleteSourceDialog", mock_delete_source_dialog)
+    delete_source_action = DeleteSourceAction(mock_source, None, mock_controller)
+    delete_source_action.trigger()
+    assert not mock_delete_source_dialog_instance.exec.called
+    mock_controller.on_action_requiring_login.assert_called_once()
+
+
 def test_DeleteConversationAction_trigger(mocker):
     mock_controller = mocker.MagicMock()
     mock_source = mocker.MagicMock()
@@ -4653,7 +4810,7 @@ def test_DeleteSource_from_source_menu_when_user_is_loggedout(mocker):
     mock_delete_source_dialog.return_value = mock_delete_source_dialog_instance
 
     mocker.patch("securedrop_client.gui.widgets.DeleteSourceDialog", mock_delete_source_dialog)
-    source_menu = SourceMenu(mock_source, mock_controller)
+    source_menu = SourceMenu(mock_source, mock_controller, None)
     source_menu.actions()[2].trigger()
     mock_delete_source_dialog_instance.exec.assert_not_called()
 
@@ -4706,7 +4863,7 @@ def test_ReplyBoxWidget_send_reply(mocker):
     controller = mocker.MagicMock()
     mocker.patch("securedrop_client.gui.widgets.SourceProfileShortWidget")
     mocker.patch("securedrop_client.gui.widgets.QVBoxLayout.addWidget")
-    scw = SourceConversationWrapper(source, controller)
+    scw = SourceConversationWrapper(source, controller, None)
     on_reply_sent_fn = mocker.MagicMock()
     scw.conversation_view.on_reply_sent = on_reply_sent_fn
     scw.reply_box.reply_sent = mocker.MagicMock()
@@ -4943,7 +5100,7 @@ def test_ReplyBoxWidget_enable_after_source_gets_key(mocker, session, session_ma
 
     mocker.patch("sdclientapi.API")
     mock_gui = mocker.MagicMock()
-    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir)
+    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir, None)
     controller.is_authenticated = True
 
     # create source without key or fingerprint
@@ -5403,7 +5560,9 @@ def test_update_conversation_updates_sender(mocker, homedir, session_maker, sess
     session.add(reply.journalist)
     session.add(reply)
     session.commit()
-    controller = logic.Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    controller = logic.Controller(
+        "http://localhost", mocker.MagicMock(), session_maker, homedir, None
+    )
     controller.authenticated_user = factory.User()
     controller.update_authenticated_user = mocker.MagicMock()
     cv = ConversationView(source, controller)
@@ -5427,7 +5586,9 @@ def test_update_conversation_calls_updates_sender_for_authenticated_user(
     session.add(reply.journalist)
     session.add(reply)
     session.commit()
-    controller = logic.Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    controller = logic.Controller(
+        "http://localhost", mocker.MagicMock(), session_maker, homedir, None
+    )
     controller.authenticated_user = reply.journalist
     controller.update_authenticated_user = mocker.MagicMock()
     cv = ConversationView(source, controller)
@@ -5451,7 +5612,9 @@ def test_update_conversation_updates_sender_when_sender_changes(
     session.add(reply.journalist)
     session.add(reply)
     session.commit()
-    controller = logic.Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    controller = logic.Controller(
+        "http://localhost", mocker.MagicMock(), session_maker, homedir, None
+    )
     controller.update_authenticated_user = mocker.MagicMock()
     cv = ConversationView(source, controller)
     cv.update_deletion_markers = mocker.MagicMock()
@@ -5486,7 +5649,9 @@ def test_update_conversation_shows_marker_when_all_items_deleted(
     source.interaction_count = 5
     session.add(source)
     session.commit()
-    controller = logic.Controller("http://localhost", mocker.MagicMock(), session_maker, homedir)
+    controller = logic.Controller(
+        "http://localhost", mocker.MagicMock(), session_maker, homedir, None
+    )
     controller.update_authenticated_user = mocker.MagicMock()
     cv = ConversationView(source, controller)
     cv.update_conversation(cv.source.collection)
@@ -5503,7 +5668,7 @@ def test_SourceProfileShortWidget_update_timestamp(mocker):
     mock_source = mocker.MagicMock()
     mock_source.last_updated = datetime.now()
     mock_source.journalist_designation = "wimple horse knackered unittest"
-    spsw = SourceProfileShortWidget(mock_source, mock_controller)
+    spsw = SourceProfileShortWidget(mock_source, mock_controller, None)
     spsw.updated = mocker.MagicMock()
     spsw.update_timestamp()
     spsw.updated.setText.assert_called_once_with(
@@ -5579,3 +5744,113 @@ def test_SenderIcon_set_normal_styles_purple_for_authenticated_user(mocker):
     si.set_normal_styles()
 
     si.setObjectName.assert_called_once_with("SenderIcon_current_user")
+
+
+class TestDownloadConversation(unittest.TestCase):
+    def test_trigger(self):
+        menu = QMenu()
+        controller = mock.MagicMock()
+        app_state = state.State()
+        action = DownloadConversation(menu, controller, app_state)
+
+        conversation_id = state.ConversationId("some_conversation")
+        app_state.selected_conversation = conversation_id
+
+        action.trigger()
+
+        controller.download_conversation.assert_called_once_with(conversation_id)
+
+    def test_trigger_downloads_nothing_if_no_conversation_is_selected(self):
+        menu = QMenu()
+        controller = mock.MagicMock()
+        app_state = state.State()
+        action = DownloadConversation(menu, controller, app_state)
+
+        action.trigger()
+        assert controller.download_conversation.not_called
+
+    def test_gets_disabled_when_no_files_to_download_remain(self):
+        menu = QMenu()
+        controller = mock.MagicMock()
+        app_state = state.State()
+        action = DownloadConversation(menu, controller, app_state)
+
+        conversation_id = state.ConversationId(3)
+        app_state.selected_conversation = conversation_id
+
+        app_state.add_file(conversation_id, 5)
+        app_state.file(5).is_downloaded = True
+
+        action.setEnabled(True)  # only for extra contrast
+        app_state.selected_conversation_files_changed.emit()
+        assert not action.isEnabled()
+
+    def test_gets_enabled_when_files_are_available_to_download(self):
+        menu = QMenu()
+        controller = mock.MagicMock()
+        app_state = state.State()
+        action = DownloadConversation(menu, controller, app_state)
+
+        conversation_id = state.ConversationId(3)
+        app_state.selected_conversation = conversation_id
+
+        app_state.add_file(conversation_id, 5)
+        app_state.file(5).is_downloaded = False
+
+        action.setEnabled(False)  # only for extra contrast
+        app_state.selected_conversation_files_changed.emit()
+        assert action.isEnabled()
+
+    def test_gets_initially_disabled_when_file_information_is_available(self):
+        menu = QMenu()
+        controller = mock.MagicMock()
+        app_state = state.State()
+
+        conversation_id = state.ConversationId(3)
+        app_state.selected_conversation = conversation_id
+        app_state.add_file(conversation_id, 5)
+        app_state.file(5).is_downloaded = True
+
+        action = DownloadConversation(menu, controller, app_state)
+
+        assert not action.isEnabled()
+
+    def test_gets_initially_enabled_when_file_information_is_available(self):
+        menu = QMenu()
+        controller = mock.MagicMock()
+        app_state = state.State()
+
+        conversation_id = state.ConversationId(3)
+        app_state.selected_conversation = conversation_id
+        app_state.add_file(conversation_id, 5)
+        app_state.file(5).is_downloaded = False
+
+        action = DownloadConversation(menu, controller, app_state)
+
+        assert action.isEnabled()
+
+    def test_does_not_require_state_to_be_defined(self):
+        menu = QMenu()
+        controller = mock.MagicMock()
+        action = DownloadConversation(menu, controller, app_state=None)
+
+        action.setEnabled(False)
+        assert not action.isEnabled()
+
+        action.setEnabled(True)
+        assert action.isEnabled()
+
+    def test_on_selected_conversation_files_changed_handles_missing_state_gracefully(
+        self,
+    ):
+        menu = QMenu()
+        controller = mock.MagicMock()
+        action = DownloadConversation(menu, controller, None)
+
+        action.setEnabled(True)
+        action._on_selected_conversation_files_changed()
+        assert action.isEnabled()
+
+        action.setEnabled(False)
+        action._on_selected_conversation_files_changed()
+        assert not action.isEnabled()

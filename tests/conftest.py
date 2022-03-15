@@ -10,6 +10,7 @@ import pytest
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMainWindow
 
+from securedrop_client import state
 from securedrop_client.app import configure_locale_and_language
 from securedrop_client.config import Config
 from securedrop_client.db import (
@@ -148,10 +149,11 @@ def functional_test_app_started_context(homedir, reply_status_codes, session, co
     used to for tests that need to start from the login dialog before the main application window
     is visible.
     """
-    gui = Window()
+    app_state = state.State()
+    gui = Window(app_state)
     create_gpg_test_context(homedir)  # Configure test keys
     session_maker = make_session_maker(homedir)  # Configure and create the database
-    controller = Controller(HOSTNAME, gui, session_maker, homedir, False, False)
+    controller = Controller(HOSTNAME, gui, session_maker, homedir, app_state, False, False)
     gui.setup(controller)  # Connect the gui to the controller
 
     def login_dialog_is_visible():

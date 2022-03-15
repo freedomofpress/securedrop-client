@@ -32,7 +32,7 @@ from PyQt5.QtCore import QObject, QProcess, Qt, QThread, QTimer, pyqtSignal
 from sdclientapi import AuthError, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm.session import sessionmaker
 
-from securedrop_client import db, storage
+from securedrop_client import db, state, storage
 from securedrop_client.api_jobs.base import ApiInaccessibleError
 from securedrop_client.api_jobs.downloads import (
     DownloadChecksumMismatchException,
@@ -223,6 +223,8 @@ class Controller(QObject):
     """
     message_download_failed = pyqtSignal(str, str, str)
 
+    file_download_started = pyqtSignal(state.FileId)
+
     """
     This signal indicates that a file has been successfully downloaded.
 
@@ -314,6 +316,7 @@ class Controller(QObject):
         gui,
         session_maker: sessionmaker,
         home: str,
+        state: state.State,
         proxy: bool = True,
         qubes: bool = True,
     ) -> None:
@@ -324,6 +327,8 @@ class Controller(QObject):
         """
         check_dir_permissions(home)
         super().__init__()
+
+        self._state = state
 
         # Controller is unauthenticated by default
         self.__is_authenticated = False
@@ -370,7 +375,7 @@ class Controller(QObject):
         self.data_dir = os.path.join(self.home, "data")
 
         # Background sync to keep client up-to-date with server changes
-        self.api_sync = ApiSync(self.api, self.session_maker, self.gpg, self.data_dir)
+        self.api_sync = ApiSync(self.api, self.session_maker, self.gpg, self.data_dir, state)
         self.api_sync.sync_started.connect(self.on_sync_started, type=Qt.QueuedConnection)
         self.api_sync.sync_success.connect(self.on_sync_success, type=Qt.QueuedConnection)
         self.api_sync.sync_failure.connect(self.on_sync_failure, type=Qt.QueuedConnection)
@@ -1001,6 +1006,7 @@ class Controller(QObject):
         file_obj = storage.get_file(self.session, uuid)
         file_obj.download_error = None
         storage.update_file_size(uuid, self.data_dir, self.session)
+        self._state.record_file_download(state.FileId(uuid))
 
         self.file_ready.emit(file_obj.source.uuid, uuid, file_obj.filename)
 
@@ -1083,6 +1089,17 @@ class Controller(QObject):
 
         self.add_job.emit(job)
         self.conversation_deleted.emit(source.uuid)
+
+    @login_required
+    def download_conversation(self, id: state.ConversationId) -> None:
+        files = self._state.conversation_files(id)
+        for file in files:
+            if not file.is_downloaded:
+                job = FileDownloadJob(str(file.id), self.data_dir, self.gpg)
+                job.success_signal.connect(self.on_file_download_success, type=Qt.QueuedConnection)
+                job.failure_signal.connect(self.on_file_download_failure, type=Qt.QueuedConnection)
+                self.add_job.emit(job)
+                self.file_download_started.emit(file.id)
 
     @login_required
     def send_reply(self, source_uuid: str, reply_uuid: str, message: str) -> None:
