@@ -1,29 +1,39 @@
+import unittest
+
 from PyQt5.QtWidgets import QApplication
 
-from securedrop_client.gui.conversation import DeleteConversationDialog
+from securedrop_client.gui.conversation.delete import DeleteConversationDialog as Dialog
+from tests import factory
 
 app = QApplication([])
 
 
-def test_DeleteConversationDialog_continue(mocker, source, session):
-    source = source["source"]  # to get the Source object
+class DeleteConversationDialogTest(unittest.TestCase):
+    def setUp(self):
+        self._source = factory.Source()
+        factory.File(source=self._source)
+        self.dialog = Dialog(self._source)
 
-    mock_controller = mocker.MagicMock()
-    dialog = DeleteConversationDialog(source, mock_controller)
-    dialog.continue_button.click()
-    mock_controller.delete_conversation.assert_called_once_with(source)
+    def test_displays_accurate_source_information_by_default(self):
+        assert "one file" in self.dialog.text()
+        assert "0 messages" in self.dialog.text()
+        assert "0 replies" in self.dialog.text()
 
+    @unittest.skip("Not yet implemented")
+    def test_displays_updated_source_information_when_shown(self):
+        for i in range(2):
+            factory.Reply(source=self._source)
+        for i in range(3):
+            factory.Message(source=self._source)
 
-def test_DeleteConversationDialog_exec(mocker, source, session):
-    """
-    Test that the dialog body is updated every time it is opened, to ensure
-    that the file, message and reply counters are up-to-date.
-    """
-    source = source["source"]  # to get the Source object
+        self.dialog.open()
 
-    mock_controller = mocker.MagicMock()
-    dialog = DeleteConversationDialog(source, mock_controller)
-    mocker.patch.object(dialog.body, "setText")
-    mocker.patch("securedrop_client.gui.widgets.ModalDialog.exec")
-    dialog.exec()
-    dialog.body.setText.assert_called_once()
+        assert "3 messages" in self.dialog.text()
+        assert "2 replies" in self.dialog.text()
+        assert "one file" in self.dialog.text()
+
+    def test_default_button_performs_action(self):
+        # This test does rely on an implementation detail (the buttons)
+        # but I couldn't find a way to test this properly using key events.
+        assert self.dialog.continue_button.isDefault()
+        assert not self.dialog.cancel_button.isDefault()
