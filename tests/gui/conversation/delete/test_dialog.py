@@ -1,5 +1,6 @@
 import unittest
 
+from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QApplication
 
 from securedrop_client.gui.conversation.delete import DeleteConversationDialog as Dialog
@@ -19,14 +20,14 @@ class DeleteConversationDialogTest(unittest.TestCase):
         assert "0 messages" in self.dialog.text()
         assert "0 replies" in self.dialog.text()
 
-    @unittest.skip("Not yet implemented")
     def test_displays_updated_source_information_when_shown(self):
         for i in range(2):
             factory.Reply(source=self._source)
         for i in range(3):
             factory.Message(source=self._source)
 
-        self.dialog.open()
+        QTimer.singleShot(300, self.dialog.close)
+        self.dialog.exec()
 
         assert "3 messages" in self.dialog.text()
         assert "2 replies" in self.dialog.text()

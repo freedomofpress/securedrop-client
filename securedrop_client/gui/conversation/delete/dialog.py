@@ -86,3 +86,8 @@ class DeleteConversationDialog(ModalDialog):
             replies_to_delete=replies_to_delete,
             source=source,
         )
+
+    def exec(self) -> None:
+        # Refresh counters
+        self.body.setText(self.make_body_text())
+        super().exec()
