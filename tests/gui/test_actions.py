@@ -9,6 +9,7 @@ from securedrop_client.gui.actions import (
     DeleteSourceAction,
     DownloadConversation,
 )
+from securedrop_client.gui.conversation import DeleteConversationDialog
 from securedrop_client.gui.source import DeleteSourceDialog
 
 app = QApplication([])
@@ -36,7 +37,7 @@ def test_DeleteSourceAction_trigger(mocker):
 def test_DeleteConversationAction_trigger(mocker):
     mock_controller = mocker.MagicMock()
     mock_source = mocker.MagicMock()
-    mock_delete_conversation_dialog_instance = mocker.MagicMock(DeleteSourceDialog)
+    mock_delete_conversation_dialog_instance = mocker.MagicMock(DeleteConversationDialog)
     mock_delete_conversation_dialog = mocker.MagicMock()
     mock_delete_conversation_dialog.return_value = mock_delete_conversation_dialog_instance
 
@@ -52,7 +53,7 @@ def test_DeleteConversationAction_trigger_when_user_is_loggedout(mocker):
     mock_controller = mocker.MagicMock()
     mock_controller.api = None
     mock_source = mocker.MagicMock()
-    mock_delete_conversation_dialog_instance = mocker.MagicMock(DeleteSourceDialog)
+    mock_delete_conversation_dialog_instance = mocker.MagicMock(DeleteConversationDialog)
     mock_delete_conversation_dialog = mocker.MagicMock()
     mock_delete_conversation_dialog.return_value = mock_delete_conversation_dialog_instance
 
