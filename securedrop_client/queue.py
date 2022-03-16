@@ -13,6 +13,7 @@ from securedrop_client.api_jobs.base import (
     ApiInaccessibleError,
     ApiJob,
     PauseQueueJob,
+    QueueJob,
 )
 from securedrop_client.api_jobs.downloads import (
     FileDownloadJob,
@@ -73,19 +74,19 @@ class RunnableQueue(QObject):
         super().__init__()
         self.api_client = api_client
         self.session_maker = session_maker
-        self.queue = PriorityQueue()  # type: PriorityQueue[Tuple[int, ApiJob]]
+        self.queue = PriorityQueue()  # type: PriorityQueue[Tuple[int, QueueJob]]
         # `order_number` ensures jobs with equal priority are retrived in FIFO order. This is needed
         # because PriorityQueue is implemented using heapq which does not have sort stability. For
         # more info, see : https://bugs.python.org/issue17794
         self.order_number = itertools.count()
-        self.current_job = None  # type: Optional[ApiJob]
+        self.current_job = None  # type: Optional[QueueJob]
 
         # Hold when reading/writing self.current_job or mutating queue state
         self.condition_add_or_remove_job = threading.Condition()
 
         self.resume.connect(self.process)
 
-    def _check_for_duplicate_jobs(self, job: ApiJob) -> bool:
+    def _check_for_duplicate_jobs(self, job: QueueJob) -> bool:
         """
         Queued jobs are stored on self.queue.queue. The currently executing job is
         stored on self.current_job. We check that the job to be added is not among them.
@@ -97,7 +98,7 @@ class RunnableQueue(QObject):
             return True
         return False
 
-    def add_job(self, job: ApiJob) -> None:
+    def add_job(self, job: QueueJob) -> None:
         """
         Add the job with its priority to the queue after assigning it the next order_number.
 
@@ -114,7 +115,7 @@ class RunnableQueue(QObject):
             self.queue.put_nowait((priority, job))
             self.condition_add_or_remove_job.notify()
 
-    def _re_add_job(self, job: ApiJob) -> None:
+    def _re_add_job(self, job: QueueJob) -> None:
         """
         Reset the job's remaining attempts and put it back into the queue in the order in which it
         was submitted by the user (do not assign it the next order_number). Used internally.
