@@ -43,6 +43,17 @@ class TestState(unittest.TestCase):
         self.state.add_file(5, 7)
         assert len(self.state.conversation_files(5)) == 2
 
+    def test_remove_conversation_files_removes_all_conversation_files(self):
+        self.state.add_file(7, 3)
+        self.state.add_file(7, 1)
+        assert len(self.state.conversation_files(7)) == 2
+        self.state.remove_conversation_files(7)
+        assert len(self.state.conversation_files(7)) == 0
+
+    def test_remove_conversation_files_handles_missing_files_gracefully(self):
+        self.state.remove_conversation_files(8)
+        assert len(self.state.conversation_files(8)) == 0
+
     def test_conversation_files_is_empty_by_default(self):
         assert len(self.state.conversation_files(2)) == 0
 
@@ -93,6 +104,14 @@ class TestState(unittest.TestCase):
         # when a file is added to the selected conversation
         self.state.add_file(1, "some_file_id")
         assert len(signal_emissions) == 3
+
+        # NOT when files are removed from a conversation that's not the selected one
+        self.state.remove_conversation_files("some_conversation_id")
+        assert len(signal_emissions) == 3  # the signal wasn't emited again
+
+        # when the selected conversation files are removed
+        self.state.remove_conversation_files(1)
+        assert len(signal_emissions) == 4
 
     def test_selected_conversation_has_downloadable_files_false_by_default(self):
         assert not self.state.selected_conversation_has_downloadable_files

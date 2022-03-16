@@ -59,6 +59,11 @@ class State(QObject):
             if cid == self._selected_conversation:
                 self.selected_conversation_files_changed.emit()
 
+    def remove_conversation_files(self, id: ConversationId) -> None:
+        self._conversation_files[id] = []
+        if id == self._selected_conversation:
+            self.selected_conversation_files_changed.emit()
+
     def conversation_files(self, id: ConversationId) -> List[File]:
         default: List[File] = []
         return self._conversation_files.get(id, default)
