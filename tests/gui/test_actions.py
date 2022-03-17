@@ -12,48 +12,10 @@ from securedrop_client.gui.actions import (
     DeleteSourceAction,
     DownloadConversation,
 )
-from securedrop_client.gui.source import DeleteSourceDialog
 from securedrop_client.logic import Controller
 from tests import factory
 
 app = QApplication([])
-
-
-def test_DeleteSourceAction_init(mocker):
-    mock_controller = mocker.MagicMock()
-    mock_source = mocker.MagicMock()
-    mock_delete_source_dialog = mocker.MagicMock()
-    DeleteSourceAction(mock_source, None, mock_controller, mock_delete_source_dialog)
-
-
-def test_DeleteSourceAction_trigger(mocker):
-    mock_controller = mocker.MagicMock()
-    mock_source = mocker.MagicMock()
-    mock_delete_source_dialog_instance = mocker.MagicMock(DeleteSourceDialog)
-    mock_delete_source_dialog = mocker.MagicMock()
-    mock_delete_source_dialog.return_value = mock_delete_source_dialog_instance
-
-    delete_source_action = DeleteSourceAction(
-        mock_source, None, mock_controller, mock_delete_source_dialog
-    )
-    delete_source_action.trigger()
-    mock_delete_source_dialog_instance.exec.assert_called_once()
-
-
-def test_DeleteSourceAction_requires_an_authenticated_journalist(mocker):
-    mock_controller = mocker.MagicMock()
-    mock_controller.api = None  # no aouthenticated journalist
-    mock_source = mocker.MagicMock()
-    mock_delete_source_dialog_instance = mocker.MagicMock(DeleteSourceDialog)
-    mock_delete_source_dialog = mocker.MagicMock()
-    mock_delete_source_dialog.return_value = mock_delete_source_dialog_instance
-
-    delete_source_action = DeleteSourceAction(
-        mock_source, None, mock_controller, mock_delete_source_dialog
-    )
-    delete_source_action.trigger()
-    assert not mock_delete_source_dialog_instance.exec.called
-    mock_controller.on_action_requiring_login.assert_called_once()
 
 
 class DeleteConversationActionTest(unittest.TestCase):
@@ -102,6 +64,53 @@ class DeleteConversationActionTest(unittest.TestCase):
 
         assert not confirmation_dialog.exec.called
         assert not controller.delete_conversation.called
+        controller.on_action_requiring_login.assert_called_once()
+
+
+class DeleteSourceActionTest(unittest.TestCase):
+    def setUp(self):
+        self._source = factory.Source()
+        _menu = QMenu()
+        self._controller = MagicMock(Controller, api=True)
+        self._dialog = QDialog()
+
+        def _dialog_constructor(source: Source) -> QDialog:
+            return self._dialog
+
+        self.action = DeleteSourceAction(self._source, _menu, self._controller, _dialog_constructor)
+
+    def test_deletes_source_when_dialog_accepted(self):
+        # Accept the confimation dialog from a separate thread.
+        timer = QTimer()
+        timer.start(10)
+        timer.timeout.connect(lambda: self._dialog.accept())
+
+        self.action.trigger()
+
+        self._controller.delete_source.assert_called_once_with(self._source)
+
+    def test_does_not_delete_source_when_dialog_rejected(self):
+        # Reject the confimation dialog from a separate thread.
+        timer = QTimer()
+        timer.start(10)
+        timer.timeout.connect(lambda: self._dialog.reject())
+
+        self.action.trigger()
+
+        assert not self._controller.delete_source.called
+
+    def test_requires_authenticated_journalist(self):
+        controller = mock.MagicMock()
+        controller.api = None  # no authenticated user
+        self.action.controller = controller
+
+        confirmation_dialog = mock.MagicMock()
+        self.action._confirmation_dialog = confirmation_dialog
+
+        self.action.trigger()
+
+        assert not confirmation_dialog.exec.called
+        assert not controller.delete_source.called
         controller.on_action_requiring_login.assert_called_once()
 
 
