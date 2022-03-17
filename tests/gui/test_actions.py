@@ -23,13 +23,16 @@ class DeleteConversationActionTest(unittest.TestCase):
         self._source = factory.Source()
         _menu = QMenu()
         self._controller = MagicMock(Controller, api=True)
+        self._app_state = MagicMock(
+            state.State, selected_conversation=state.ConversationId("some_conversation")
+        )
         self._dialog = QDialog()
 
         def _dialog_constructor(source: Source) -> QDialog:
             return self._dialog
 
         self.action = DeleteConversationAction(
-            self._source, _menu, self._controller, _dialog_constructor
+            self._source, _menu, self._controller, _dialog_constructor, self._app_state
         )
 
     def test_deletes_conversation_when_dialog_accepted(self):
@@ -39,6 +42,9 @@ class DeleteConversationActionTest(unittest.TestCase):
         self.action.trigger()
 
         self._controller.delete_conversation.assert_called_once_with(self._source)
+        self._app_state.remove_conversation_files.assert_called_once_with(
+            state.ConversationId("some_conversation")
+        )
 
     def test_does_not_delete_conversation_when_dialog_rejected(self):
         # Reject the confimation dialog from a separate thread.
@@ -47,6 +53,7 @@ class DeleteConversationActionTest(unittest.TestCase):
         self.action.trigger()
 
         assert not self._controller.delete_conversation.called
+        assert not self._app_state.remove_conversation_files.called
 
     def test_requires_authenticated_journalist(self):
         controller = mock.MagicMock(Controller, api=None)  # no authenticated user
@@ -60,6 +67,17 @@ class DeleteConversationActionTest(unittest.TestCase):
         assert not confirmation_dialog.exec.called
         assert not controller.delete_conversation.called
         controller.on_action_requiring_login.assert_called_once()
+
+    def test_deletes_nothing_if_no_conversation_is_selected(self):
+        self._app_state.selected_conversation = None
+
+        # Accept the confimation dialog from a separate thread.
+        QTimer.singleShot(10, self._dialog.accept)
+
+        self.action.trigger()
+
+        assert not self._controller.delete_conversation.called
+        assert not self._app_state.remove_conversation_files.called
 
 
 class DeleteSourceActionTest(unittest.TestCase):

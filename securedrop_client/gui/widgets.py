@@ -3635,7 +3635,9 @@ class SourceMenu(QMenu):
         delete_section.setFont(separator_font)
 
         self.addAction(
-            DeleteConversationAction(self.source, self, self.controller, DeleteConversationDialog)
+            DeleteConversationAction(
+                self.source, self, self.controller, DeleteConversationDialog, app_state
+            )
         )
         self.addAction(DeleteSourceAction(self.source, self, self.controller, DeleteSourceDialog))
 

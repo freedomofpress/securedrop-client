@@ -100,17 +100,17 @@ class DeleteConversationAction(QAction):
         parent: QMenu,
         controller: Controller,
         confirmation_dialog: Callable[[Source], QDialog],
+        app_state: Optional[state.State] = None,
     ) -> None:
         self.source = source
         self.controller = controller
+        self._state = app_state
         self.text = _("Files and messages")
 
         super().__init__(self.text, parent)
 
         self._confirmation_dialog = confirmation_dialog(self.source)
-        self._confirmation_dialog.accepted.connect(
-            lambda: self.controller.delete_conversation(self.source)
-        )
+        self._confirmation_dialog.accepted.connect(lambda: self._on_confirmation_dialog_accepted())
         self.triggered.connect(self.trigger)
 
     def trigger(self) -> None:
@@ -118,3 +118,11 @@ class DeleteConversationAction(QAction):
             self.controller.on_action_requiring_login()
         else:
             self._confirmation_dialog.exec()
+
+    def _on_confirmation_dialog_accepted(self) -> None:
+        if self._state is not None:
+            id = self._state.selected_conversation
+            if id is None:
+                return
+            self.controller.delete_conversation(self.source)
+            self._state.remove_conversation_files(id)
