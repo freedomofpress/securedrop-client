@@ -34,9 +34,7 @@ class DeleteConversationActionTest(unittest.TestCase):
 
     def test_deletes_conversation_when_dialog_accepted(self):
         # Accept the confimation dialog from a separate thread.
-        timer = QTimer()
-        timer.start(10)
-        timer.timeout.connect(lambda: self._dialog.accept())
+        QTimer.singleShot(10, self._dialog.accept)
 
         self.action.trigger()
 
@@ -44,9 +42,7 @@ class DeleteConversationActionTest(unittest.TestCase):
 
     def test_does_not_delete_conversation_when_dialog_rejected(self):
         # Reject the confimation dialog from a separate thread.
-        timer = QTimer()
-        timer.start(10)
-        timer.timeout.connect(lambda: self._dialog.reject())
+        QTimer.singleShot(10, self._dialog.reject)
 
         self.action.trigger()
 
@@ -80,9 +76,7 @@ class DeleteSourceActionTest(unittest.TestCase):
 
     def test_deletes_source_when_dialog_accepted(self):
         # Accept the confimation dialog from a separate thread.
-        timer = QTimer()
-        timer.start(10)
-        timer.timeout.connect(lambda: self._dialog.accept())
+        QTimer.singleShot(10, self._dialog.accept)
 
         self.action.trigger()
 
@@ -90,9 +84,7 @@ class DeleteSourceActionTest(unittest.TestCase):
 
     def test_does_not_delete_source_when_dialog_rejected(self):
         # Reject the confimation dialog from a separate thread.
-        timer = QTimer()
-        timer.start(10)
-        timer.timeout.connect(lambda: self._dialog.reject())
+        QTimer.singleShot(10, self._dialog.reject)
 
         self.action.trigger()
 
