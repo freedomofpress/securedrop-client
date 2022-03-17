@@ -53,8 +53,7 @@ class DeleteConversationActionTest(unittest.TestCase):
         assert not self._controller.delete_conversation.called
 
     def test_requires_authenticated_journalist(self):
-        controller = mock.MagicMock()
-        controller.api = None  # no authenticated user
+        controller = mock.MagicMock(Controller, api=None)  # no authenticated user
         self.action.controller = controller
 
         confirmation_dialog = mock.MagicMock()
@@ -100,8 +99,7 @@ class DeleteSourceActionTest(unittest.TestCase):
         assert not self._controller.delete_source.called
 
     def test_requires_authenticated_journalist(self):
-        controller = mock.MagicMock()
-        controller.api = None  # no authenticated user
+        controller = mock.MagicMock(Controller, api=None)  # no authenticated user
         self.action.controller = controller
 
         confirmation_dialog = mock.MagicMock()
@@ -117,7 +115,7 @@ class DeleteSourceActionTest(unittest.TestCase):
 class TestDownloadConversation(unittest.TestCase):
     def test_trigger(self):
         menu = QMenu()
-        controller = mock.MagicMock()
+        controller = MagicMock(Controller, api=True)
         app_state = state.State()
         action = DownloadConversation(menu, controller, app_state)
 
@@ -128,9 +126,23 @@ class TestDownloadConversation(unittest.TestCase):
 
         controller.download_conversation.assert_called_once_with(conversation_id)
 
+    def test_requires_authenticated_journalist(self):
+        menu = QMenu()
+        controller = mock.MagicMock(Controller, api=None)  # no authenticated user
+        app_state = state.State()
+        action = DownloadConversation(menu, controller, app_state)
+
+        conversation_id = state.ConversationId("some_conversation")
+        app_state.selected_conversation = conversation_id
+
+        action.trigger()
+
+        assert not controller.download_conversation.called
+        controller.on_action_requiring_login.assert_called_once()
+
     def test_trigger_downloads_nothing_if_no_conversation_is_selected(self):
         menu = QMenu()
-        controller = mock.MagicMock()
+        controller = MagicMock(Controller, api=True)
         app_state = state.State()
         action = DownloadConversation(menu, controller, app_state)
 
@@ -139,7 +151,7 @@ class TestDownloadConversation(unittest.TestCase):
 
     def test_gets_disabled_when_no_files_to_download_remain(self):
         menu = QMenu()
-        controller = mock.MagicMock()
+        controller = MagicMock(Controller, api=True)
         app_state = state.State()
         action = DownloadConversation(menu, controller, app_state)
 
@@ -155,7 +167,7 @@ class TestDownloadConversation(unittest.TestCase):
 
     def test_gets_enabled_when_files_are_available_to_download(self):
         menu = QMenu()
-        controller = mock.MagicMock()
+        controller = MagicMock(Controller, api=True)
         app_state = state.State()
         action = DownloadConversation(menu, controller, app_state)
 
@@ -171,7 +183,7 @@ class TestDownloadConversation(unittest.TestCase):
 
     def test_gets_initially_disabled_when_file_information_is_available(self):
         menu = QMenu()
-        controller = mock.MagicMock()
+        controller = MagicMock(Controller, api=True)
         app_state = state.State()
 
         conversation_id = state.ConversationId(3)
@@ -185,7 +197,7 @@ class TestDownloadConversation(unittest.TestCase):
 
     def test_gets_initially_enabled_when_file_information_is_available(self):
         menu = QMenu()
-        controller = mock.MagicMock()
+        controller = MagicMock(Controller, api=True)
         app_state = state.State()
 
         conversation_id = state.ConversationId(3)
@@ -199,7 +211,7 @@ class TestDownloadConversation(unittest.TestCase):
 
     def test_does_not_require_state_to_be_defined(self):
         menu = QMenu()
-        controller = mock.MagicMock()
+        controller = MagicMock(Controller, api=True)
         action = DownloadConversation(menu, controller, app_state=None)
 
         action.setEnabled(False)
@@ -212,7 +224,7 @@ class TestDownloadConversation(unittest.TestCase):
         self,
     ):
         menu = QMenu()
-        controller = mock.MagicMock()
+        controller = MagicMock(Controller, api=True)
         action = DownloadConversation(menu, controller, None)
 
         action.setEnabled(True)

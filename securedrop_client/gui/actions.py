@@ -34,11 +34,14 @@ class DownloadConversation(QAction):
 
     @pyqtSlot()
     def on_triggered(self) -> None:
-        if self._state is not None:
-            id = self._state.selected_conversation
-            if id is None:
-                return
-            self._controller.download_conversation(id)
+        if self._controller.api is None:
+            self._controller.on_action_requiring_login()
+        else:
+            if self._state is not None:
+                id = self._state.selected_conversation
+                if id is None:
+                    return
+                self._controller.download_conversation(id)
 
     def _connect_enabled_to_conversation_changes(self) -> None:
         if self._state is not None:
