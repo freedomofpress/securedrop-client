@@ -93,20 +93,21 @@ class SendReplyJob(SingleObjectApiJob):
             # Update following draft replies for the same source to reflect the new reply count
             draft_file_counter = draft_reply_db_object.file_counter
             draft_timestamp = draft_reply_db_object.timestamp
+
             update_draft_replies(
                 session,
                 source.id,
                 draft_timestamp,
                 draft_file_counter,
                 new_file_counter,
-                commit=False,
             )
 
             # Add reply to replies table and increase the source interaction count by 1 and delete
             # the draft reply.
             session.add(reply_db_object)
-            source.interaction_count += 1
+            source.interaction_count = source.interaction_count + 1
             session.add(source)
+
             session.delete(draft_reply_db_object)
             session.commit()
 
