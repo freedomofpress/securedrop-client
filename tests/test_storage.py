@@ -2184,7 +2184,7 @@ def test__delete_source_collection_from_db_uuid_not_found(mocker, homedir):
     mock_debug.assert_called_with(MatchingLogline((source.uuid)))
 
 
-def test__delete_source_collection_from_db_error(mocker, session):
+def test__delete_source_collection_from_db_query_error(mocker, session):
 
     mock_session = mocker.MagicMock()
     mock_session.query().filter_by().all.return_value = [mocker.MagicMock()]
@@ -2198,6 +2198,24 @@ def test__delete_source_collection_from_db_error(mocker, session):
     _delete_source_collection_from_db(mock_session, source)
     mock_error.assert_called_once_with(
         "Could not add source {} to deletedconversation table".format(source.uuid)
+    )
+
+
+def test__delete_source_collection_from_db_commit_error(mocker, session):
+
+    mock_session = mocker.MagicMock()
+    mock_session.commit.return_value = [mocker.MagicMock()]
+    mock_session.commit.side_effect = SQLAlchemyError()
+    mock_error = mocker.patch("securedrop_client.storage.logger.error")
+
+    source = factory.Source(
+        journalist_designation="sourcer sourcington", id=42, uuid=str(uuid.uuid4())
+    )
+
+    _delete_source_collection_from_db(mock_session, source)
+    mock_error.assert_called_once_with(
+        "Could not locally delete conversation for source {}"
+        "(collection will be deleted by sync)".format(source.uuid)
     )
 
 
