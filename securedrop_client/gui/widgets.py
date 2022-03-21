@@ -3151,6 +3151,7 @@ class ConversationView(QWidget):
         self.reply_flag = True
         if source_uuid == self.source.uuid:
             try:
+                self.controller.session.refresh(self.source)
                 self.update_conversation(self.source.collection)
             except sqlalchemy.exc.InvalidRequestError as e:
                 logger.debug(e)
