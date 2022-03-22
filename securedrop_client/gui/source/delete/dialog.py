@@ -18,29 +18,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gettext import gettext as _
 
-from PyQt5.QtCore import pyqtSlot
-
 from securedrop_client.db import Source
 from securedrop_client.gui.base import ModalDialog
-from securedrop_client.logic import Controller
 
 
 class DeleteSourceDialog(ModalDialog):
     """Used to confirm deletion of source accounts."""
 
-    def __init__(self, source: Source, controller: Controller) -> None:
+    def __init__(self, source: Source) -> None:
         super().__init__(show_header=False, dangerous=True)
 
         self.source = source
-        self.controller = controller
 
         self.body.setText(self.make_body_text())
-
         self.continue_button.setText(_("YES, DELETE ENTIRE SOURCE ACCOUNT"))
-        self.continue_button.clicked.connect(self.delete_source)
-
+        self.cancel_button.setDefault(True)
+        self.cancel_button.setFocus()
         self.confirmation_label.setText(_("Are you sure this is what you want?"))
-
         self.adjustSize()
 
     def make_body_text(self) -> str:
@@ -66,8 +60,3 @@ class DeleteSourceDialog(ModalDialog):
         return "".join(message_tuple).format(
             source="<b>{}</b>".format(self.source.journalist_designation)
         )
-
-    @pyqtSlot()
-    def delete_source(self) -> None:
-        self.controller.delete_source(self.source)
-        self.close()

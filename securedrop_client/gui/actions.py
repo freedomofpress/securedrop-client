@@ -5,15 +5,13 @@ Over time, this module could become the interface between
 the GUI and the controller.
 """
 from gettext import gettext as _
-from typing import Optional
+from typing import Callable, Optional
 
 from PyQt5.QtCore import Qt, pyqtSlot
-from PyQt5.QtWidgets import QAction, QMenu
+from PyQt5.QtWidgets import QAction, QDialog, QMenu
 
 from securedrop_client import state
 from securedrop_client.db import Source
-from securedrop_client.gui.conversation import DeleteConversationDialog
-from securedrop_client.gui.source import DeleteSourceDialog
 from securedrop_client.logic import Controller
 
 
@@ -36,11 +34,14 @@ class DownloadConversation(QAction):
 
     @pyqtSlot()
     def on_triggered(self) -> None:
-        if self._state is not None:
-            id = self._state.selected_conversation
-            if id is None:
-                return
-            self._controller.download_conversation(id)
+        if self._controller.api is None:
+            self._controller.on_action_requiring_login()
+        else:
+            if self._state is not None:
+                id = self._state.selected_conversation
+                if id is None:
+                    return
+                self._controller.download_conversation(id)
 
     def _connect_enabled_to_conversation_changes(self) -> None:
         if self._state is not None:
@@ -64,38 +65,56 @@ class DownloadConversation(QAction):
 class DeleteSourceAction(QAction):
     """Use this action to delete the source record."""
 
-    def __init__(self, source: Source, parent: QMenu, controller: Controller) -> None:
+    def __init__(
+        self,
+        source: Source,
+        parent: QMenu,
+        controller: Controller,
+        confirmation_dialog: Callable[[Source], QDialog],
+    ) -> None:
         self.source = source
         self.controller = controller
         self.text = _("Entire source account")
 
         super().__init__(self.text, parent)
 
-        self.confirmation_dialog = DeleteSourceDialog(self.source, self.controller)
+        self._confirmation_dialog = confirmation_dialog(self.source)
+        self._confirmation_dialog.accepted.connect(
+            lambda: self.controller.delete_source(self.source)
+        )
         self.triggered.connect(self.trigger)
 
     def trigger(self) -> None:
         if self.controller.api is None:
             self.controller.on_action_requiring_login()
         else:
-            self.confirmation_dialog.exec()
+            self._confirmation_dialog.exec()
 
 
 class DeleteConversationAction(QAction):
     """Use this action to delete a source's submissions and replies."""
 
-    def __init__(self, source: Source, parent: QMenu, controller: Controller) -> None:
+    def __init__(
+        self,
+        source: Source,
+        parent: QMenu,
+        controller: Controller,
+        confirmation_dialog: Callable[[Source], QDialog],
+    ) -> None:
         self.source = source
         self.controller = controller
         self.text = _("Files and messages")
 
         super().__init__(self.text, parent)
 
-        self.confirmation_dialog = DeleteConversationDialog(self.source, self.controller)
+        self._confirmation_dialog = confirmation_dialog(self.source)
+        self._confirmation_dialog.accepted.connect(
+            lambda: self.controller.delete_conversation(self.source)
+        )
         self.triggered.connect(self.trigger)
 
     def trigger(self) -> None:
         if self.controller.api is None:
             self.controller.on_action_requiring_login()
         else:
-            self.confirmation_dialog.exec()
+            self._confirmation_dialog.exec()

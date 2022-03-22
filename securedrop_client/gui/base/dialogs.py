@@ -132,7 +132,6 @@ class ModalDialog(QDialog):
 
         self.cancel_button = QPushButton(_("CANCEL"))
         self.cancel_button.setStyleSheet(self.BUTTON_CSS)
-        self.cancel_button.clicked.connect(self.close)
 
         self.continue_button = QPushButton(_("CONTINUE"))
         self.continue_button.setStyleSheet(self.BUTTON_CSS)
@@ -152,8 +151,11 @@ class ModalDialog(QDialog):
             self.cancel_button.setObjectName("ModalDialog_cancel_button")
             self.continue_button.setObjectName("ModalDialog_primary_button")
 
-        button_box.addButton(self.cancel_button, QDialogButtonBox.ActionRole)
-        button_box.addButton(self.continue_button, QDialogButtonBox.ActionRole)
+        button_box.addButton(self.cancel_button, QDialogButtonBox.RejectRole)
+        button_box.addButton(self.continue_button, QDialogButtonBox.AcceptRole)
+
+        button_box.rejected.connect(self.reject)
+        button_box.accepted.connect(self.accept)
 
         self.confirmation_label = QLabel()
         self.confirmation_label.setObjectName("ModalDialogConfirmation")
@@ -215,3 +217,7 @@ class ModalDialog(QDialog):
         self.header_icon.setVisible(True)
         self.header_spinner_label.setVisible(False)
         self.header_animation.stop()
+
+    def text(self) -> str:
+        """A text-only representation of the dialog."""
+        return self.body.text()

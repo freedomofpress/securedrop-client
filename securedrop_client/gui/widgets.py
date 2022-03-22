@@ -84,6 +84,8 @@ from securedrop_client.gui.base import (
     SvgPushButton,
     SvgToggleButton,
 )
+from securedrop_client.gui.conversation import DeleteConversationDialog
+from securedrop_client.gui.source import DeleteSourceDialog
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_css, load_icon, load_image, load_movie
 from securedrop_client.storage import source_exists
@@ -3632,8 +3634,10 @@ class SourceMenu(QMenu):
         delete_section = self.addSection(_("DELETE"))
         delete_section.setFont(separator_font)
 
-        self.addAction(DeleteConversationAction(self.source, self, self.controller))
-        self.addAction(DeleteSourceAction(self.source, self, self.controller))
+        self.addAction(
+            DeleteConversationAction(self.source, self, self.controller, DeleteConversationDialog)
+        )
+        self.addAction(DeleteSourceAction(self.source, self, self.controller, DeleteSourceDialog))
 
 
 class SourceMenuButton(QToolButton):
