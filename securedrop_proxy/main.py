@@ -1,8 +1,7 @@
-import json
 import logging
 from typing import Any, Dict
 
-from securedrop_proxy import proxy
+from securedrop_proxy import json, proxy
 from securedrop_proxy.proxy import Proxy
 
 logger = logging.getLogger(__name__)
@@ -17,7 +16,7 @@ def __main__(incoming: str, p: Proxy) -> None:
     client_req: Dict[str, Any] = {}
     try:
         client_req = json.loads(incoming)
-    except json.decoder.JSONDecodeError as e:
+    except ValueError as e:
         logging.error(e)
         p.simple_error(400, "Invalid JSON in request")
         p.on_done()

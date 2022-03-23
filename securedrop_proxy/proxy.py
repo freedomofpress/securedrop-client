@@ -1,5 +1,4 @@
 import http
-import json
 import logging
 import os
 import subprocess
@@ -14,6 +13,7 @@ import werkzeug
 import yaml
 
 import securedrop_proxy.version as version
+from securedrop_proxy import json
 
 logger = logging.getLogger(__name__)
 
