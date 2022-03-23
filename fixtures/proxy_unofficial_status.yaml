@@ -15,6 +15,6 @@ interactions:
       Server:
       - BaseHTTP/0.6 Python/3.7.3
     status:
-      code: 418
+      code: 499
       message: ''
 version: 1
