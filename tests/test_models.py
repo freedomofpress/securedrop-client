@@ -11,6 +11,7 @@ from securedrop_client.db import (
     Message,
     Reply,
     ReplySendStatus,
+    ReplySendStatusCodes,
     User,
 )
 from tests import factory
@@ -144,6 +145,25 @@ def test_string_representation_of_draft_reply():
     draft_reply.__str__()
     draft_reply.content = "hello"
     draft_reply.__str__()
+
+
+def test_reply_pending_status():
+    source = factory.Source()
+    journo = User(username="dellsberg")
+    failed_send_status = factory.ReplySendStatus(name=ReplySendStatusCodes.FAILED.value)
+    pending_send_status = factory.ReplySendStatus(name=ReplySendStatusCodes.PENDING.value)
+
+    draft_reply_pending = DraftReply(
+        source=source, journalist=journo, uuid="example", send_status=pending_send_status
+    )
+    draft_reply_failed = DraftReply(
+        source=source, journalist=journo, uuid="example2", send_status=failed_send_status
+    )
+    draft_reply_none = DraftReply(source=source, journalist=journo, uuid="example3")
+
+    assert draft_reply_pending.is_pending
+    assert not draft_reply_failed.is_pending
+    assert not draft_reply_none.is_pending
 
 
 def test_string_representation_of_send_reply_status():
