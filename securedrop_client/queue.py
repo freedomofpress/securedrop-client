@@ -163,8 +163,9 @@ class RunnableQueue(QObject):
                 return
 
             try:
-                session = self.session_maker()
-                self.current_job._do_call_api(self.api_client, session)
+                if isinstance(self.current_job, ApiJob):
+                    session = self.session_maker()
+                    self.current_job._do_call_api(self.api_client, session)
             except ApiInaccessibleError as e:
                 logger.debug("{}: {}".format(type(e).__name__, e))
                 self.api_client = None
