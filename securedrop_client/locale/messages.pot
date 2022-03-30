@@ -59,6 +59,9 @@ msgstr ""
 msgid "Failed to delete source at server"
 msgstr ""
 
+msgid "Conversation"
+msgstr ""
+
 msgid "All Files"
 msgstr ""
 

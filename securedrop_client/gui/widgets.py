@@ -75,6 +75,7 @@ from securedrop_client.gui.actions import (
     DeleteConversationAction,
     DeleteSourceAction,
     DownloadConversation,
+    ExportConversationAction,
 )
 from securedrop_client.gui.base import (
     ModalDialog,
@@ -3628,12 +3629,16 @@ class SourceMenu(QMenu):
         download_section = self.addSection(_("DOWNLOAD"))
         download_section.setFont(separator_font)
         download_section.setObjectName("first_section")
-
         self.addAction(DownloadConversation(self, self.controller, app_state))
+
+
+        export_section = self.addSection(_("EXPORT"))
+        export_section.setFont(separator_font)
+        self.addAction(ExportConversationAction(self, self.controller, app_state, ExportDialog))
+
 
         delete_section = self.addSection(_("DELETE"))
         delete_section.setFont(separator_font)
-
         self.addAction(
             DeleteConversationAction(
                 self.source, self, self.controller, DeleteConversationDialog, app_state

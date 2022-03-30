@@ -11,7 +11,7 @@ from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
 from securedrop_client.database import Database
 
-from .domain import ConversationId, File, FileId, SourceId
+from .domain import ConversationId, File, Message, FileId, SourceId
 
 
 class State(QObject):
@@ -26,6 +26,7 @@ class State(QObject):
         super().__init__()
         self._files: Dict[FileId, File] = {}
         self._conversation_files: Dict[ConversationId, List[File]] = {}
+        self._conversation: Dict[ConversationId, List[Message]] = {}
         self._selected_conversation: Optional[ConversationId] = None
 
         if database is not None:
@@ -63,6 +64,10 @@ class State(QObject):
         self._conversation_files[id] = []
         if id == self._selected_conversation:
             self.selected_conversation_files_changed.emit()
+
+    def conversation(self, id: ConversationId) -> List[Message]:
+        default: List[Message] = []
+        return self._conversation.get(id, default)
 
     def conversation_files(self, id: ConversationId) -> List[File]:
         default: List[File] = []

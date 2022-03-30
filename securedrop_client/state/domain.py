@@ -39,3 +39,13 @@ class File:
     @is_downloaded.setter
     def is_downloaded(self, value: bool) -> None:
         self._is_downloaded = value
+
+
+class Message:
+    def __init__(self, id: FileId) -> None:
+        self._id: FileId = id
+
+    @property
+    def id(self) -> FileId:
+        """A unique identifier file set by the server (opaque string)."""
+        return self._id

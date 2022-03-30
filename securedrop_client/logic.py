@@ -1101,6 +1101,13 @@ class Controller(QObject):
                 self.add_job.emit(job)
                 self.file_download_started.emit(file.id)
 
+
+    @login_required
+    def export_conversation(self, id: state.ConversationId) -> None:
+        conversation = self._state.conversation(id)
+        for item in conversation:
+            self.export_file_to_usb_drive(item)
+
     @login_required
     def send_reply(self, source_uuid: str, reply_uuid: str, message: str) -> None:
         """
