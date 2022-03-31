@@ -937,16 +937,17 @@ def _delete_source_collection_from_db(session: Session, source: Source) -> None:
             if not session.query(DeletedConversation).filter_by(uuid=source.uuid).one_or_none():
                 logger.debug("Add source {} to deletedconversation table".format(source.uuid))
                 session.add(flagged_conversation)
-        except SQLAlchemyError:
-            logger.error("Could not add source {} to deletedconversation table".format(source.uuid))
+        except SQLAlchemyError as e:
+            logger.error(
+                "Could not add source {} to deletedconversation table: {}".format(source.uuid, e)
+            )
             session.rollback()
 
     try:
         session.commit()
-    except SQLAlchemyError:
+    except SQLAlchemyError as e:
         logger.error(
-            "Could not locally delete conversation for source {}"
-            "(collection will be deleted by sync)".format(source.uuid)
+            "Could not locally delete conversation for source {}: {}".format(source.uuid, e)
         )
         session.rollback()
 
