@@ -131,8 +131,8 @@ class Window(QMainWindow):
         # Always display the login dialog centered in the screen.
         screen_size = QGuiApplication.primaryScreen().availableGeometry()
         login_dialog_size = self.login_dialog.geometry()
-        x_center = (screen_size.width() - login_dialog_size.width()) / 2
-        y_center = (screen_size.height() - login_dialog_size.height()) / 2
+        x_center = int((screen_size.width() - login_dialog_size.width()) / 2)
+        y_center = int((screen_size.height() - login_dialog_size.height()) / 2)
         self.login_dialog.move(x_center, y_center)
         self.login_dialog.setup(self.controller)
         self.login_dialog.reset()
