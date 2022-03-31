@@ -276,24 +276,30 @@ def update_sources(
     for source in remote_sources:
         if source.uuid in local_sources_by_uuid:
 
-            # If source UUID has been flagged as having been locally updated, wait
-            # til next sync to update it. The list of skip_uuids is managed by the
-            # parent method and purged after each sync.
+            # Update an existing record.
+            logger.debug("Update source {}".format(source.uuid))
+            local_source = local_sources_by_uuid[source.uuid]
+
+            lazy_setattr(local_source, "journalist_designation", source.journalist_designation)
+            lazy_setattr(local_source, "is_flagged", source.is_flagged)
+            lazy_setattr(local_source, "interaction_count", source.interaction_count)
+            lazy_setattr(local_source, "is_starred", source.is_starred)
+            lazy_setattr(local_source, "last_updated", parse(source.last_updated))
+            lazy_setattr(local_source, "public_key", source.key["public"])
+            lazy_setattr(local_source, "fingerprint", source.key["fingerprint"])
+
+            # If source files and messages have been locally-deleted, set the document count
+            # to 0. Otherwise, populate with document count.
             if skip_uuids_deleted_conversation and source.uuid in skip_uuids_deleted_conversation:
-                logger.debug("Skip source update for {} (this sync only)".format(source.uuid))
+                logger.debug(
+                    "Local deletion: override document_count for {} (this sync only)".format(
+                        source.uuid
+                    )
+                )
+                lazy_setattr(local_source, "document_count", 0)
 
             else:
-                # Update an existing record.
-                logger.debug("Update source {}".format(source.uuid))
-                local_source = local_sources_by_uuid[source.uuid]
-                lazy_setattr(local_source, "journalist_designation", source.journalist_designation)
-                lazy_setattr(local_source, "is_flagged", source.is_flagged)
-                lazy_setattr(local_source, "interaction_count", source.interaction_count)
                 lazy_setattr(local_source, "document_count", source.number_of_documents)
-                lazy_setattr(local_source, "is_starred", source.is_starred)
-                lazy_setattr(local_source, "last_updated", parse(source.last_updated))
-                lazy_setattr(local_source, "public_key", source.key["public"])
-                lazy_setattr(local_source, "fingerprint", source.key["fingerprint"])
 
             # Removing the UUID from local_sources_by_uuid ensures
             # this record won't be deleted at the end of this
@@ -384,7 +390,7 @@ def __update_submissions(
 
     for submission in remote_submissions:
         local_submission = local_submissions_by_uuid.get(submission.uuid)
-        if local_submission and submission.source_uuid not in skip_uuids_deleted_conversation:
+        if local_submission:
             lazy_setattr(local_submission, "size", submission.size)
             lazy_setattr(local_submission, "is_read", submission.is_read)
             lazy_setattr(local_submission, "download_url", submission.download_url)
@@ -550,7 +556,7 @@ def update_replies(
             user_cache[reply.journalist_uuid] = user
 
         local_reply = local_replies_by_uuid.get(reply.uuid)
-        if local_reply and reply.source_uuid not in skip_uuids_deleted_conversation:
+        if local_reply:
             lazy_setattr(local_reply, "journalist_id", user.id)
             lazy_setattr(local_reply, "size", reply.size)
             lazy_setattr(local_reply, "filename", reply.filename)
@@ -559,12 +565,11 @@ def update_replies(
 
             del local_replies_by_uuid[reply.uuid]
             logger.debug("Updated reply {}".format(reply.uuid))
-        elif local_reply and reply.source_uuid in skip_uuids_deleted_conversation:
+        elif reply.source_uuid in skip_uuids_deleted_conversation:
             logger.debug(
-                "Reply {} found for locally-modified source {}, "
-                "skipping update (for one sync)".format(reply.uuid, reply.source_uuid)
+                "Conversation deleted locally; skip remote reply {} "
+                "for source {} for one sync".format(reply.uuid, reply.source_uuid)
             )
-            del local_replies_by_uuid[reply.uuid]
         else:
             # A new reply to be added to the database.
             source = source_cache.get(reply.source_uuid)
@@ -703,7 +708,7 @@ def update_draft_replies(
             and_(
                 DraftReply.source_id == source_id,
                 DraftReply.timestamp > timestamp,
-                DraftReply.file_counter == old_file_counter,
+                DraftReply.file_counter <= old_file_counter,
             )
         )
         .all()
@@ -927,17 +932,24 @@ def _delete_source_collection_from_db(session: Session, source: Source) -> None:
     # Add source UUID to deletedconversation table, but only if we actually made
     # local database modifications
     if is_local_db_modified:
-        session.begin_nested()
         flagged_conversation = DeletedConversation(uuid=source.uuid)
         try:
             if not session.query(DeletedConversation).filter_by(uuid=source.uuid).one_or_none():
                 logger.debug("Add source {} to deletedconversation table".format(source.uuid))
                 session.add(flagged_conversation)
-        except SQLAlchemyError:
-            logger.error("Could not add source {} to deletedconversation table".format(source.uuid))
+        except SQLAlchemyError as e:
+            logger.error(
+                "Could not add source {} to deletedconversation table: {}".format(source.uuid, e)
+            )
             session.rollback()
 
-    session.commit()
+    try:
+        session.commit()
+    except SQLAlchemyError as e:
+        logger.error(
+            "Could not locally delete conversation for source {}: {}".format(source.uuid, e)
+        )
+        session.rollback()
 
 
 def source_exists(session: Session, source_uuid: str) -> bool:

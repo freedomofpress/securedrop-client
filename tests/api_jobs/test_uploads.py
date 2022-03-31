@@ -104,12 +104,26 @@ def test_drafts_ordering(homedir, mocker, session, session_maker, reply_status_c
     session.add(draft_reply)
     session.commit()
 
+    failed_status = (
+        session.query(db.ReplySendStatus).filter_by(name=db.ReplySendStatusCodes.FAILED.value).one()
+    )
+
+    # Failed Draft reply from the previous session.
+    draft_reply_before_failed = factory.DraftReply(
+        timestamp=draft_reply.timestamp - datetime.timedelta(minutes=5),
+        source_id=source.id,
+        file_counter=draft_reply.file_counter,
+        uuid="foo",
+        send_status=failed_status,
+    )
+    session.add(draft_reply_before_failed)
+
     # Draft reply from the previous queue job.
     draft_reply_before = factory.DraftReply(
         timestamp=draft_reply.timestamp - datetime.timedelta(minutes=1),
         source_id=source.id,
         file_counter=draft_reply.file_counter,
-        uuid="foo",
+        uuid="bar",
     )
     session.add(draft_reply_before)
 
@@ -118,7 +132,7 @@ def test_drafts_ordering(homedir, mocker, session, session_maker, reply_status_c
         timestamp=draft_reply.timestamp + datetime.timedelta(minutes=1),
         source_id=source.id,
         file_counter=draft_reply.file_counter,
-        uuid="bar",
+        uuid="baz",
     )
 
     session.add(draft_reply_after)
@@ -170,10 +184,13 @@ def test_drafts_ordering(homedir, mocker, session, session_maker, reply_status_c
     source = session.query(db.Source).filter_by(uuid=source_uuid).one()
     assert source.interaction_count == initial_interaction_count + 1
 
-    # Check the ordering displayed to the user
-    assert source.collection[0] == draft_reply_before
+    # Check the ordering displayed to the user.
+    # We push Draft replies in the Pending state to the end of the conversation thread;
+    # failed replies remain threaded normally
+    assert source.collection[0] == draft_reply_before_failed
     assert source.collection[1] == reply
-    assert source.collection[2] == draft_reply_after
+    assert source.collection[2] == draft_reply_before
+    assert source.collection[3] == draft_reply_after
 
 
 def test_send_reply_failure_gpg_error(homedir, mocker, session, session_maker, reply_status_codes):

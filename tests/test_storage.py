@@ -2184,21 +2184,54 @@ def test__delete_source_collection_from_db_uuid_not_found(mocker, homedir):
     mock_debug.assert_called_with(MatchingLogline((source.uuid)))
 
 
-def test__delete_source_collection_from_db_error(mocker, session):
+def test__delete_source_collection_from_db_query_error(mocker, session):
 
     mock_session = mocker.MagicMock()
     mock_session.query().filter_by().all.return_value = [mocker.MagicMock()]
     mock_session.query().filter_by().one_or_none.side_effect = SQLAlchemyError()
     mock_error = mocker.patch("securedrop_client.storage.logger.error")
 
+    # Match the logline outside of the SQLalchemy error
+    class MatchingLogline:
+        def __init__(self, uuid):
+            self.uuid = uuid
+
+        def __eq__(self, other):
+            return (
+                "Could not add source {} to deletedconversation table".format(source.uuid) in other
+            )
+
     source = factory.Source(
         journalist_designation="sourcer sourcington", id=42, uuid=str(uuid.uuid4())
     )
 
     _delete_source_collection_from_db(mock_session, source)
-    mock_error.assert_called_once_with(
-        "Could not add source {} to deletedconversation table".format(source.uuid)
+    mock_error.assert_called_once_with(MatchingLogline(source.uuid))
+
+
+def test__delete_source_collection_from_db_commit_error(mocker, session):
+
+    mock_session = mocker.MagicMock()
+    mock_session.commit.return_value = [mocker.MagicMock()]
+    mock_session.commit.side_effect = SQLAlchemyError()
+    mock_error = mocker.patch("securedrop_client.storage.logger.error")
+
+    # Match logline outside of SQLAlchemy error
+    class MatchingLogline:
+        def __init__(self, uuid):
+            self.uuid = uuid
+
+        def __eq__(self, other):
+            return (
+                "Could not locally delete conversation for source {}".format(source.uuid) in other
+            )
+
+    source = factory.Source(
+        journalist_designation="sourcer sourcington", id=42, uuid=str(uuid.uuid4())
     )
+
+    _delete_source_collection_from_db(mock_session, source)
+    mock_error.assert_called_once_with(MatchingLogline(source.uuid))
 
 
 def test_delete_local_conversation_by_source_uuid_success(homedir, mocker, session):

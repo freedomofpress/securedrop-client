@@ -71,9 +71,11 @@ class Source(Base):
         collection.extend(self.files)
         collection.extend(self.replies)
         collection.extend(self.draftreplies)
-        # Sort first by the file_counter, then by timestamp (used only for draft replies).
+        # Push pending replies to the end of the collection, then sort by
+        # file_counter, then by timestamp (the latter used only for draft replies).
         collection.sort(
             key=lambda x: (
+                getattr(x, "is_pending", False),
                 x.file_counter,
                 getattr(x, "timestamp", datetime.datetime(datetime.MINYEAR, 1, 1)),
             )
@@ -526,6 +528,16 @@ class DraftReply(Base):
         A draft reply is considered seen by everyone (we don't track who sees draft replies).
         """
         return True
+
+    @property
+    def is_pending(self) -> bool:
+        """
+        True if Draft Reply is in Pending state.
+        """
+        return (
+            self.send_status is not None
+            and self.send_status.name == ReplySendStatusCodes.PENDING.value
+        )
 
 
 class ReplySendStatus(Base):
