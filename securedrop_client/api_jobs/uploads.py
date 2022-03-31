@@ -100,6 +100,7 @@ class SendReplyJob(SingleObjectApiJob):
                 draft_timestamp,
                 draft_file_counter,
                 new_file_counter,
+                commit=False,
             )
 
             # Add reply to replies table and increase the source interaction count by 1 and delete
