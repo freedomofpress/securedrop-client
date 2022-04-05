@@ -65,6 +65,23 @@ def test_ApiSync_stop_calls_quit(mocker, session_maker, homedir):
     api_sync.sync_thread.quit.assert_called_once_with()
 
 
+def test_ApiSync_sync_starts_now(mocker, session_maker, homedir):
+    """
+    Ensure ApiSync sync() starts immediate single-shot sync
+    QTimer.singleShot(1, self.api_sync_bg_task.sync)
+    """
+    api_sync = ApiSync(mocker.MagicMock(), session_maker, mocker.MagicMock(), homedir)
+
+    mock_qtimer = mocker.MagicMock()
+    mocker.patch("securedrop_client.sync.QTimer", mock_qtimer)
+    mock_singleshot_method = mocker.MagicMock()
+    mock_qtimer.singleShot = mock_singleshot_method
+
+    api_sync.sync()
+
+    mock_singleshot_method.assert_called_once_with(1, api_sync.api_sync_bg_task.sync)
+
+
 def test_ApiSyncBackgroundTask_sync(mocker, session_maker, homedir):
     """
     Ensure sync enqueues a MetadataSyncJob and calls it's parent's processing function
