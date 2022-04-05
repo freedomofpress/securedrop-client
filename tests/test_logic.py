@@ -1055,6 +1055,7 @@ def test_Controller_logout_with_no_api(homedir, config, mocker, session_maker):
     mock_gui = mocker.MagicMock()
     co = Controller("http://localhost", mock_gui, session_maker, homedir, None)
     co.api = None
+    co.authenticated_user = factory.User()
     co.api_job_queue = mocker.MagicMock()
     co.api_job_queue.stop = mocker.MagicMock()
     co.call_api = mocker.MagicMock()
