@@ -1062,6 +1062,7 @@ def test_Controller_logout_with_no_api(homedir, config, mocker, session_maker):
 
     co.logout()
 
+    assert not co.authenticated_user
     co.call_api.assert_not_called()
     co.api_job_queue.stop.assert_called_once_with()
     co.gui.logout.assert_called_once_with()
