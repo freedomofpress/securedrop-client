@@ -2551,9 +2551,17 @@ def test_SpeechBubble_init(mocker):
     mock_download_error_connect = mocker.Mock()
     mock_download_error_signal.connect = mock_download_error_connect
 
-    sb = SpeechBubble("mock id", "hello", mock_update_signal, mock_download_error_signal, 0, 123)
+    sb = SpeechBubble(
+        "mock id",
+        "hello",
+        mock_update_signal,
+        mock_download_error_signal,
+        0,
+        123,
+    )
 
     sb.message.text() == "hello"
+
     assert mock_update_connect.called
     assert mock_download_error_connect.called
 
@@ -2591,8 +2599,14 @@ def test_SpeechBubble_adjust_width(mocker):
     width is smaller than than the minimum allowed container width. Otherwise check that the width
     is set to the width of the container multiplied by the stretch factor ratio.
     """
+
     sb = SpeechBubble(
-        "mock id", "hello", mocker.Mock(), mocker.Mock(), 0, SpeechBubble.MIN_CONTAINER_WIDTH
+        "mock id",
+        "hello",
+        mocker.Mock(),
+        mocker.Mock(),
+        0,
+        SpeechBubble.MIN_CONTAINER_WIDTH,
     )
 
     sb.adjust_width(sb.MIN_CONTAINER_WIDTH - 1)
@@ -2612,7 +2626,12 @@ def test_SpeechBubble_update_text(mocker):
 
     msg_id = "abc123"
     sb = SpeechBubble(
-        msg_id, "hello", mock_signal, mock_signal, 0, SpeechBubble.MIN_CONTAINER_WIDTH
+        msg_id,
+        "hello",
+        mock_signal,
+        mock_signal,
+        0,
+        SpeechBubble.MIN_CONTAINER_WIDTH,
     )
 
     new_msg = "new message"
@@ -2630,9 +2649,13 @@ def test_SpeechBubble_html_init(mocker):
     the passed in text, with HTML escaped properly).
     """
     mock_signal = mocker.MagicMock()
-
     bubble = SpeechBubble(
-        "mock id", "<b>hello</b>", mock_signal, mock_signal, 0, SpeechBubble.MIN_CONTAINER_WIDTH
+        "mock id",
+        "<b>hello</b>",
+        mock_signal,
+        mock_signal,
+        0,
+        SpeechBubble.MIN_CONTAINER_WIDTH,
     )
     assert bubble.message.text() == "<b>hello</b>"
 
@@ -2643,7 +2666,12 @@ def test_SpeechBubble_with_apostrophe_in_text(mocker):
 
     message = "I'm sure, you are reading my message."
     bubble = SpeechBubble(
-        "mock id", message, mock_signal, mock_signal, 0, SpeechBubble.MIN_CONTAINER_WIDTH
+        "mock id",
+        message,
+        mock_signal,
+        mock_signal,
+        0,
+        SpeechBubble.MIN_CONTAINER_WIDTH,
     )
     assert bubble.message.text() == message
 
@@ -2654,13 +2682,68 @@ def test_SpeechBubble__on_download_error(mocker):
     message_uuid = "mock id"
     message = "I'm sure, you are reading my message."
     bubble = SpeechBubble(
-        message_uuid, message, mock_signal, mock_signal, 0, SpeechBubble.MIN_CONTAINER_WIDTH
+        message_uuid,
+        message,
+        mock_signal,
+        mock_signal,
+        0,
+        SpeechBubble.MIN_CONTAINER_WIDTH,
     )
     assert bubble.message.text() == message
 
     error_message = "Oh no."
     bubble._on_download_error("source id", message_uuid, error_message)
     assert bubble.message.text() == error_message
+
+
+def test_CheckMark_eventFilter_hover(mocker):
+    mock_signal = mocker.MagicMock()
+    bubble = SpeechBubble(
+        "mock id",
+        "<b>hello</b>",
+        mock_signal,
+        mock_signal,
+        0,
+        SpeechBubble.MIN_CONTAINER_WIDTH,
+    )
+
+    bubble.check_mark = mocker.MagicMock()
+
+    # Hover enter
+    test_event = QEvent(QEvent.HoverEnter)
+    bubble.eventFilter(bubble, test_event)
+    assert bubble.check_mark.setIcon.call_count
+    bubble.check_mark.setIcon.reset_mock()  # ensure that it is the exact svg file we want
+
+    # Hover leave
+    test_event = QEvent(QEvent.HoverLeave)
+    bubble.eventFilter(bubble, test_event)
+    assert bubble.check_mark.setIcon.call_count == 1
+    bubble.check_mark.setIcon.reset_mock()
+
+
+def test_SpeechBubble_on_update_authenticated_user(mocker):
+    mock_update_signal = mocker.Mock()
+    mock_update_connect = mocker.Mock()
+    mock_update_signal.connect = mock_update_connect
+
+    mock_download_error_signal = mocker.Mock()
+    mock_download_error_connect = mocker.Mock()
+    mock_download_error_signal.connect = mock_download_error_connect
+
+    authenticated_user = factory.User()
+
+    sb = SpeechBubble(
+        "mock id",
+        "hello",
+        mock_update_signal,
+        mock_download_error_signal,
+        0,
+        123,
+    )
+
+    sb.on_update_authenticated_user(authenticated_user)
+    assert sb.authenticated_user == authenticated_user
 
 
 def test_MessageWidget_init(mocker):
@@ -2671,7 +2754,14 @@ def test_MessageWidget_init(mocker):
     mock_connected = mocker.Mock()
     mock_signal.connect = mock_connected
 
-    MessageWidget("abc123", "hello", mock_signal, mock_signal, 0, 123)
+    MessageWidget(
+        "abc123",
+        "hello",
+        mock_signal,
+        mock_signal,
+        0,
+        123,
+    )
 
     assert mock_connected.called
 
@@ -2680,8 +2770,16 @@ def test_MessageWidget_set_failed_to_decrypt_styles(mocker):
     """
     Check the CSS is set as expected when failed_to_decrypt=True.
     """
+    authenticated_user = factory.User()
     message_widget = MessageWidget(
-        "abc123", "test message", mocker.MagicMock(), mocker.MagicMock(), 0, 123, True
+        "abc123",
+        "test message",
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+        authenticated_user,
+        True,
     )
 
     message_widget.message = mocker.patch.object(message_widget, "message")
@@ -4294,7 +4392,8 @@ def test_ConversationView_init(mocker, homedir):
     mocked_source = mocker.MagicMock()
     message = factory.Message(source=factory.Source(), content=">^..^<")
     mocked_source.collection = mocked_source.server_collection = [message]
-    mocked_controller = mocker.MagicMock()
+    user = factory.User()
+    mocked_controller = mocker.MagicMock(authenticated_user=user)
     cv = ConversationView(mocked_source, mocked_controller)
     assert isinstance(cv.scroll.conversation_layout, QVBoxLayout)
 
@@ -4329,7 +4428,8 @@ def test_ConversationView_ConversationScrollArea_resize(mocker):
     """
     file = factory.File(source=factory.Source(), is_downloaded=True)
     get_file = mocker.MagicMock(return_value=file)
-    controller = mocker.MagicMock(get_file=get_file)
+    user = factory.User()
+    controller = mocker.MagicMock(get_file=get_file, authenticated_user=user)
     cv = ConversationView(factory.Source(), controller)
     message = factory.Message(source=factory.Source(), content=">^..^<")
     cv.add_message(message=message, index=0)
@@ -4361,7 +4461,8 @@ def test_ConversationView__on_conversation_deletion_successful(mocker, session):
     session.add(message)
     session.add(source)
     session.commit()
-    cv = ConversationView(source, mocker.MagicMock())
+    user = factory.User()
+    cv = ConversationView(source, mocker.MagicMock(authenticated_user=user))
     timestamp = datetime.now()
 
     cv._on_conversation_deletion_successful(cv.source.uuid, timestamp)
@@ -4400,13 +4501,14 @@ def test_ConversationView__on_conversation_deletion_successful_handles_exception
 
 def test_ConversationView__on_conversation_deletion_successful_does_not_hide_draft(mocker, session):
     source = factory.Source()
+    user = factory.User()
     message = factory.Message(source=source)
     draft_reply = factory.DraftReply(source=source, send_status=factory.ReplySendStatus())
     session.add(draft_reply)
     session.add(message)
     session.add(source)
     session.commit()
-    cv = ConversationView(source, mocker.MagicMock())
+    cv = ConversationView(source, mocker.MagicMock(authenticated_user=user))
 
     cv._on_conversation_deletion_successful(cv.source.uuid, datetime.now())
 
@@ -4428,7 +4530,8 @@ def test_ConversationView_update_conversation_position_follow(mocker, homedir):
     message = factory.Message(source=factory.Source(), content=">^..^<")
     mocked_source.collection = mocked_source.server_collection = [message]
 
-    mocked_controller = mocker.MagicMock()
+    user = factory.User()
+    mocked_controller = mocker.MagicMock(authenticated_user=user)
 
     cv = ConversationView(mocked_source, mocked_controller)
 
@@ -4453,7 +4556,8 @@ def test_ConversationView_update_conversation_position_stay_fixed(mocker, homedi
     message = factory.Message(source=factory.Source(), content=">^..^<")
     mocked_source.collection = mocked_source.server_collection = [message]
 
-    mocked_controller = mocker.MagicMock()
+    user = factory.User()
+    mocked_controller = mocker.MagicMock(authenticated_user=user)
 
     cv = ConversationView(mocked_source, mocked_controller)
 
@@ -5238,8 +5342,9 @@ def test_update_conversation_maintains_old_items(mocker, session):
     session.add(reply)
     session.commit()
 
+    user = factory.User()
     mock_get_file = mocker.MagicMock(return_value=file_)
-    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+    mock_controller = mocker.MagicMock(get_file=mock_get_file, authenticated_user=user)
 
     cv = ConversationView(source, mock_controller)
     assert cv.scroll.conversation_layout.count() == 3
@@ -5268,8 +5373,9 @@ def test_update_conversation_does_not_remove_pending_draft_items(mocker, session
     session.add(draft_reply)
     session.commit()
 
+    user = factory.User()
     mock_get_file = mocker.MagicMock(return_value=file_)
-    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+    mock_controller = mocker.MagicMock(get_file=mock_get_file, authenticated_user=user)
 
     cv = ConversationView(source, mock_controller)
     assert cv.scroll.conversation_layout.count() == 3  # precondition with draft
@@ -5303,8 +5409,9 @@ def test_update_conversation_does_remove_successful_draft_items(mocker, session)
     session.add(draft_reply)
     session.commit()
 
+    user = factory.User()
     mock_get_file = mocker.MagicMock(return_value=file_)
-    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+    mock_controller = mocker.MagicMock(get_file=mock_get_file, authenticated_user=user)
 
     cv = ConversationView(source, mock_controller)
     assert cv.scroll.conversation_layout.count() == 3  # precondition with draft
@@ -5328,6 +5435,7 @@ def test_update_conversation_keeps_failed_draft_items(mocker, session):
     Calling update_conversation keeps items that were added as drafts but which
     have failed.
     """
+    user = factory.User()
     source = factory.Source()
     session.add(source)
     send_status = factory.ReplySendStatus(name="FAILED")
@@ -5343,7 +5451,7 @@ def test_update_conversation_keeps_failed_draft_items(mocker, session):
     session.commit()
 
     mock_get_file = mocker.MagicMock(return_value=file_)
-    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+    mock_controller = mocker.MagicMock(get_file=mock_get_file, authenticated_user=user)
 
     cv = ConversationView(source, mock_controller)
     assert cv.scroll.conversation_layout.count() == 3  # precondition with draft
@@ -5374,8 +5482,9 @@ def test_update_conversation_adds_new_items(mocker, session):
     session.add(reply)
     session.commit()
 
+    user = factory.User()
     mock_get_file = mocker.MagicMock(return_value=file_)
-    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+    mock_controller = mocker.MagicMock(get_file=mock_get_file, authenticated_user=user)
 
     cv = ConversationView(source, mock_controller)
     assert cv.scroll.conversation_layout.count() == 3  # precondition
@@ -5405,8 +5514,9 @@ def test_update_conversation_position_updates(mocker, session):
     session.add(reply)
     session.commit()
 
+    user = factory.User()
     mock_get_file = mocker.MagicMock(return_value=file_)
-    mock_controller = mocker.MagicMock(get_file=mock_get_file)
+    mock_controller = mocker.MagicMock(get_file=mock_get_file, authenticated_user=user)
 
     cv = ConversationView(source, mock_controller)
     assert cv.scroll.conversation_layout.count() == 3  # precondition
@@ -5430,7 +5540,8 @@ def test_update_conversation_content_updates(mocker, session):
     Subsequent calls to update_conversation update the content of the conversation_item
     if it has changed.
     """
-    mock_controller = mocker.MagicMock()
+    user = factory.User()
+    mock_controller = mocker.MagicMock(authenticated_user=user)
     # The controller's session must be a legitimate sqlalchemy session for this test
     mock_controller.session = session
     source = factory.Source()
@@ -5674,3 +5785,90 @@ def test_SenderIcon_set_normal_styles_purple_for_authenticated_user(mocker):
     si.set_normal_styles()
 
     si.setObjectName.assert_called_once_with("SenderIcon_current_user")
+
+
+def test_ConversationView_updates_message_seenby_tooltip(mocker, session):
+    """
+    Ensure the tooltip displays the usernames of the users who have seen the messages
+    in the correct order.
+    """
+    # Create a source, message, and a journalist that will see that message
+    source = factory.Source()
+    session.add(source)
+    message = factory.Message(source=source)
+    session.add(message)
+    journalist = factory.User(username="dellsberg")
+    session.add(journalist)
+    session.commit()
+
+    # Add the record that says the journalist saw the message
+    session.add(db.SeenMessage(message_id=message.id, journalist_id=journalist.id))
+    session.commit()
+
+    # Create the MessageWidget for the message above
+    controller = mocker.MagicMock(authenticated_user=journalist)
+    cv = ConversationView(source, controller)
+    cv.update_conversation(source.collection)
+    message_widget = cv.current_messages[message.uuid]
+
+    # Get the tool tip text and compare it to the expected result
+    assert message_widget.check_mark.toolTip() == "dellsberg"
+
+    # Update the conversation again after another journalist has seen the same message
+    second_journalist = factory.User(username="journalist")
+    session.add(second_journalist)
+    session.commit()
+
+    # Add the record that says the second journalist saw the message
+    session.add(db.SeenMessage(message_id=message.id, journalist_id=second_journalist.id))
+    session.commit()
+
+    # Update the source collection
+    cv.update_conversation(source.collection)
+
+    m = mocker.MagicMock()
+    dict = {journalist.username: journalist, second_journalist.username: second_journalist}
+    m.__getitem__.side_effect = dict.__getitem__
+    assert message_widget.check_mark.toolTip() == "journalist,\ndellsberg"
+
+
+def test_ConversationView_updates_reply_seenby_tooltip(mocker, session):
+    """
+    Ensure the tooltip displays the usernames of the users who have seen the replies
+    in the correct order.
+    """
+    # Create a source, message, and a journalist that will see that message
+    source = factory.Source()
+    session.add(source)
+    reply = factory.Reply(source=source)
+    session.add(reply)
+    journalist = factory.User(username="dellsberg")
+    session.add(journalist)
+    session.commit()
+
+    # Add the record that says the journalist saw the message
+    session.add(db.SeenReply(reply_id=reply.id, journalist_id=journalist.id))
+    session.commit()
+
+    # Create the MessageWidget for the message above
+    controller = mocker.MagicMock(authenticated_user=journalist)
+    cv = ConversationView(source, controller)
+    cv.update_conversation(source.collection)
+    reply_widget = cv.current_messages[reply.uuid]
+
+    # Get the tool tip text and compare it to the expected result
+    assert reply_widget.check_mark.toolTip() == "dellsberg"
+
+    # Update the conversation again after another journalist has seen the same message
+    second_journalist = factory.User(username="journalist")
+    session.add(second_journalist)
+    session.commit()
+
+    # Add the record that says the second journalist saw the message
+    session.add(db.SeenReply(reply_id=reply.id, journalist_id=second_journalist.id))
+    session.commit()
+
+    # Update the source collection
+    cv.update_conversation(source.collection)
+
+    assert reply_widget.check_mark.toolTip() == "journalist,\ndellsberg"

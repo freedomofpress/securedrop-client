@@ -1,0 +1,14 @@
+QPushButton#Checker{
+    border: none;
+    margin-right: 8px;
+}
+
+#Checker QToolTip{
+    font-family: Source Sans Pro;
+    font-style: normal;
+    font-size: 12px;
+    border: none;
+    padding: 2px;
+    background-color: #ffffff;
+}
+

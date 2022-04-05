@@ -695,6 +695,7 @@ class MainView(QWidget):
             if not source:
                 return
             self.controller.session.refresh(source)
+            self.controller.mark_seen(source)
             conversation_wrapper = self.source_conversations[source.uuid]
             conversation_wrapper.conversation_view.update_conversation(source.collection)
         except sqlalchemy.exc.InvalidRequestError as e:
@@ -1735,6 +1736,7 @@ class SpeechBubble(QWidget):
 
     MESSAGE_CSS = load_css("speech_bubble_message.css")
     STATUS_BAR_CSS = load_css("speech_bubble_status_bar.css")
+    CHECK_MARK_CSS = load_css("checker_tooltip.css")
 
     WIDTH_TO_CONTAINER_WIDTH_RATIO = 5 / 9
     MIN_WIDTH = 400
@@ -1751,12 +1753,20 @@ class SpeechBubble(QWidget):
         download_error_signal,
         index: int,
         container_width: int,
+        authenticated_user: Optional[User] = None,
         failed_to_decrypt: bool = False,
     ) -> None:
         super().__init__()
-
         self.uuid = message_uuid
         self.index = index
+        self.authenticated_user = authenticated_user
+        self.seen_by: Dict[str, User] = {}
+
+        # Add the authenticated user as the default value of the dictionary
+        # that will initialize the tooltip.
+        if self.authenticated_user:
+            self.seen_by[self.authenticated_user.username] = self.authenticated_user
+
         self.failed_to_decrypt = failed_to_decrypt
 
         # Set layout
@@ -1781,6 +1791,12 @@ class SpeechBubble(QWidget):
         self.sender_icon = SenderIcon()
         self.sender_icon.hide()
 
+        # Check mark
+        self.check_mark = CheckMark()
+        self.setObjectName("Checker")
+        self.setStyleSheet(self.CHECK_MARK_CSS)
+        self.check_mark.installEventFilter(self)
+
         # Speech bubble
         self.speech_bubble = QWidget()
         speech_bubble_layout = QVBoxLayout()
@@ -1791,16 +1807,16 @@ class SpeechBubble(QWidget):
         speech_bubble_layout.setSpacing(0)
 
         # Bubble area includes speech bubble plus error message if there is an error
-        bubble_area = QWidget()
-        bubble_area.setLayoutDirection(Qt.RightToLeft)
+        self.bubble_area = QWidget()
+        self.bubble_area.setLayoutDirection(Qt.RightToLeft)
         self.bubble_area_layout = QHBoxLayout()
         self.bubble_area_layout.setContentsMargins(0, self.TOP_MARGIN, 0, self.BOTTOM_MARGIN)
-        bubble_area.setLayout(self.bubble_area_layout)
+        self.bubble_area.setLayout(self.bubble_area_layout)
         self.bubble_area_layout.addWidget(self.sender_icon, alignment=Qt.AlignBottom)
         self.bubble_area_layout.addWidget(self.speech_bubble)
 
         # Add widget to layout
-        layout.addWidget(bubble_area)
+        layout.addWidget(self.bubble_area)
 
         # Make text selectable but disable the context menu
         self.message.setTextInteractionFlags(Qt.TextSelectableByMouse)
@@ -1812,6 +1828,9 @@ class SpeechBubble(QWidget):
         # Connect signals to slots
         update_signal.connect(self._update_text)
         download_error_signal.connect(self._on_download_error)
+
+        # Set checkmark tooltip to the default seen_by list
+        self.update_seen_by_list(self.seen_by)
 
         self.adjust_width(container_width)
 
@@ -1847,6 +1866,14 @@ class SpeechBubble(QWidget):
             self.failed_to_decrypt = True
             self.set_failed_to_decrypt_styles()
 
+    @pyqtSlot(User)
+    def on_update_authenticated_user(self, user: User) -> None:
+        """
+        When the user logs in or updates user info, retrieve their object.
+        """
+        self.authenticated_user = user
+        self.update_seen_by_list(self.seen_by)
+
     def set_normal_styles(self) -> None:
         self.message.setStyleSheet("")
         self.message.setObjectName("SpeechBubble_message")
@@ -1864,6 +1891,52 @@ class SpeechBubble(QWidget):
         self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
         self.sender_icon.set_failed_to_decrypt_styles()
 
+    def update_seen_by_list(self, usernames: Dict[str, User]) -> None:
+        # Update the dictionary for the new usernames to be shown in the tooltip.
+        self.seen_by.update(usernames)
+
+        # Remove any users who've been deleted
+        usernames_to_remove = [i for i in self.seen_by if i not in usernames]
+        for i in usernames_to_remove:
+            del self.seen_by[i]
+
+        # Re-arrange for the authenticated user's username to be shown at the end of the
+        # username list shown in the tooltip.
+        if self.authenticated_user:
+            if self.authenticated_user.username in self.seen_by:
+                del self.seen_by[self.authenticated_user.username]
+            self.seen_by[self.authenticated_user.username] = self.authenticated_user
+
+        self.check_mark.setToolTip(",\n".join(username for username in self.seen_by.keys()))
+
+    def eventFilter(self, obj: QObject, event: QEvent) -> None:
+        t = event.type()
+        if t == QEvent.HoverEnter:
+            self.check_mark.setIcon(load_icon("checkmark_hover.svg"))
+        elif t == QEvent.HoverLeave:
+            self.check_mark.setIcon(load_icon("checkmark.svg"))
+
+        return QObject.event(obj, event)
+
+
+class CheckMark(QPushButton):
+    """
+    Represents the seen by checkmark for each bubble.
+    """
+
+    CHECK_MARK_CSS = load_css("checker_tooltip.css")
+    CLICKABLE_SPACE = 65
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.setObjectName("Checker")
+        self.setStyleSheet(self.CHECK_MARK_CSS)
+        layout = QHBoxLayout()
+        self.setIcon(load_icon("checkmark.svg"))
+        self.setIconSize(QSize(16, 10))
+        layout.setSpacing(self.CLICKABLE_SPACE)
+        self.setLayout(layout)
+
 
 class MessageWidget(SpeechBubble):
     """
@@ -1878,6 +1951,7 @@ class MessageWidget(SpeechBubble):
         download_error_signal,
         index: int,
         container_width: int,
+        authenticated_user: Optional[User] = None,
         failed_to_decrypt: bool = False,
     ) -> None:
         super().__init__(
@@ -1887,8 +1961,15 @@ class MessageWidget(SpeechBubble):
             download_error_signal,
             index,
             container_width,
+            authenticated_user,
             failed_to_decrypt,
         )
+
+        # Setting the message bubble's layout direction left to right for the check mark
+        # to appear in the required position.
+        self.bubble_area.setLayoutDirection(Qt.LeftToRight)
+        self.bubble_area_layout.addWidget(self.check_mark, alignment=Qt.AlignBottom)
+        self.check_mark.show()
 
 
 class ReplyWidget(SpeechBubble):
@@ -1915,6 +1996,7 @@ class ReplyWidget(SpeechBubble):
         container_width: int,
         sender: User,
         sender_is_current_user: bool,
+        authenticated_user: Optional[User] = None,
         failed_to_decrypt: bool = False,
     ) -> None:
         super().__init__(
@@ -1924,6 +2006,7 @@ class ReplyWidget(SpeechBubble):
             download_error_signal,
             index,
             container_width,
+            authenticated_user,
             failed_to_decrypt,
         )
         self.controller = controller
@@ -1949,8 +2032,11 @@ class ReplyWidget(SpeechBubble):
         self.error.setSizePolicy(retain_space)
         self.error.hide()
 
+        self.bubble_area_layout.addWidget(self.check_mark, alignment=Qt.AlignBottom)
         self.bubble_area_layout.addWidget(self.error, alignment=Qt.AlignBottom)
         self.sender_icon.show()
+
+        self.check_mark.show()
 
         message_succeeded_signal.connect(self._on_reply_success)
         message_failed_signal.connect(self._on_reply_failure)
@@ -2039,9 +2125,11 @@ class ReplyWidget(SpeechBubble):
         elif self.status == ReplySendStatusCodes.FAILED.value:
             self.set_failed_styles()
             self.error.show()
+            self.check_mark.hide()
         else:
             self.set_normal_styles()
             self.error.hide()
+            self.check_mark.show()
 
     def set_normal_styles(self) -> None:
         self.message.setStyleSheet("")
@@ -3040,6 +3128,10 @@ class ConversationView(QWidget):
                     ) and conversation_item.content:
                         item_widget.message.setText(conversation_item.content)
 
+                    # If the item widget is not a FileWidget, retrieve the latest list of
+                    # usernames of the users who have seen it.
+                    item_widget.update_seen_by_list(conversation_item.seen_by_list)
+
                 # TODO: Once the SDK supports the new /users endpoint, this code can be replaced so
                 # that we can also update user accounts in the local db who have not sent replies.
                 if isinstance(item_widget, ReplyWidget):
@@ -3107,8 +3199,16 @@ class ConversationView(QWidget):
             self.controller.message_download_failed,
             index,
             self.scroll.widget().width(),
+            self.controller.authenticated_user,
             message.download_error is not None,
         )
+
+        # Connect the on_update_authenticated_user pyqtSlot to the update_authenticated_user signal.
+        self.controller.update_authenticated_user.connect(
+            conversation_item.on_update_authenticated_user
+        )
+        # Retrieve the list of usernames of the users who have seen the message.
+        conversation_item.update_seen_by_list(message.seen_by_list)
         self.scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignLeft)
         self.current_messages[message.uuid] = conversation_item
         self.conversation_updated.emit()
@@ -3143,9 +3243,15 @@ class ConversationView(QWidget):
             self.scroll.widget().width(),
             sender,
             sender_is_current_user,
+            self.controller.authenticated_user,
             failed_to_decrypt=getattr(reply, "download_error", None) is not None,
         )
-
+        # Connect the on_update_authenticated_user pyqtSlot to the update_authenticated_user signal.
+        self.controller.update_authenticated_user.connect(
+            conversation_item.on_update_authenticated_user
+        )
+        # Retrieve the list of usernames of the users who have seen the reply.
+        conversation_item.update_seen_by_list(reply.seen_by_list)
         self.scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignRight)
         self.current_messages[reply.uuid] = conversation_item
 

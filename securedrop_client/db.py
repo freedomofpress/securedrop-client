@@ -2,7 +2,7 @@ import datetime
 import os
 from enum import Enum
 from pathlib import Path
-from typing import Any, List, Union  # noqa: F401
+from typing import Any, Dict, List, Union  # noqa: F401
 from uuid import uuid4
 
 from sqlalchemy import (
@@ -42,6 +42,55 @@ def make_session_maker(home: str) -> scoped_session:
         os.chmod(db_path, 0o600)
     maker = sessionmaker(bind=engine)
     return scoped_session(maker)
+
+
+class User(Base):
+
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True)
+    uuid = Column(String(36), unique=True, nullable=False)
+    username = Column(String(255), nullable=False)
+    firstname = Column(String(64))
+    lastname = Column(String(64))
+
+    def __repr__(self) -> str:
+        return "<Journalist {}: {}>".format(self.uuid, self.username)
+
+    @property
+    def deleted(self) -> bool:
+        return self.username == "deleted"
+
+    @property
+    def fullname(self) -> str:
+        if self.deleted:
+            return ""
+        if self.firstname and self.lastname:
+            return self.firstname + " " + self.lastname
+        elif self.firstname:
+            return self.firstname
+        elif self.lastname:
+            return self.lastname
+        else:
+            return self.username
+
+    @property
+    def initials(self) -> str:
+        if self.deleted:
+            return ""
+        if self.firstname and self.lastname:
+            return self.firstname[0].lower() + self.lastname[0].lower()
+        elif self.firstname and len(self.firstname) >= 2:
+            return self.firstname[0:2].lower()
+        elif self.lastname and len(self.lastname) >= 2:
+            return self.lastname[0:2].lower()
+        else:
+            return self.username[0:2].lower()  # username must be at least 3 characters
+
+
+class DeletedUser(User):
+    def __init__(self) -> None:
+        super().__init__(uuid=str(uuid4()), username="deleted")
 
 
 class Source(Base):
@@ -257,6 +306,19 @@ class Message(Base):
 
         return False
 
+    @property
+    def seen_by_list(self) -> Dict[str, User]:
+        """
+        For each message retrieve a dictionary of users who have seen it.
+        Each dictionary item consists of the user's username as its key and the user
+        object as its value.
+        """
+        usernames = {}  # type: Dict[str, User]
+        for seen_message in self.seen_messages:
+            if seen_message.journalist:
+                usernames[seen_message.journalist.username] = seen_message.journalist
+        return usernames
+
 
 class File(Base):
 
@@ -461,6 +523,19 @@ class Reply(Base):
 
         return False
 
+    @property
+    def seen_by_list(self) -> Dict[str, User]:
+        """
+        For each reply retrieve a dictionary of users who have seen it.
+        Each dictionary item consists of the user's username as its key and the user
+        object as its value.
+        """
+        usernames = {}  # type: Dict[str, User]
+        for seen_reply in self.seen_replies:
+            if seen_reply.journalist:
+                usernames[seen_reply.journalist.username] = seen_reply.journalist
+        return usernames
+
 
 class DownloadErrorCodes(Enum):
     """
@@ -537,6 +612,16 @@ class DraftReply(Base):
         return "<DraftReply {}>".format(self.uuid)
 
     @property
+    def is_pending(self) -> bool:
+        """
+        True if Draft Reply is in Pending state.
+        """
+        return (
+            self.send_status is not None
+            and self.send_status.name == ReplySendStatusCodes.PENDING.value
+        )
+
+    @property
     def seen(self) -> bool:
         """
         A draft reply is always seen in a global inbox.
@@ -550,14 +635,13 @@ class DraftReply(Base):
         return True
 
     @property
-    def is_pending(self) -> bool:
+    def seen_by_list(self) -> Dict[str, User]:
         """
-        True if Draft Reply is in Pending state.
+        A draft reply is considered seen by everyone (we don't track who sees draft replies).
+        Return an empty dictionary.
         """
-        return (
-            self.send_status is not None
-            and self.send_status.name == ReplySendStatusCodes.PENDING.value
-        )
+        usernames = {}  # type: Dict[str, User]
+        return usernames
 
 
 class ReplySendStatus(Base):
@@ -580,55 +664,6 @@ class ReplySendStatusCodes(Enum):
 
     PENDING = "PENDING"
     FAILED = "FAILED"
-
-
-class User(Base):
-
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True)
-    uuid = Column(String(36), unique=True, nullable=False)
-    username = Column(String(255), nullable=False)
-    firstname = Column(String(64))
-    lastname = Column(String(64))
-
-    def __repr__(self) -> str:
-        return "<Journalist {}: {}>".format(self.uuid, self.username)
-
-    @property
-    def deleted(self) -> bool:
-        return self.username == "deleted"
-
-    @property
-    def fullname(self) -> str:
-        if self.deleted:
-            return ""
-        if self.firstname and self.lastname:
-            return self.firstname + " " + self.lastname
-        elif self.firstname:
-            return self.firstname
-        elif self.lastname:
-            return self.lastname
-        else:
-            return self.username
-
-    @property
-    def initials(self) -> str:
-        if self.deleted:
-            return ""
-        if self.firstname and self.lastname:
-            return self.firstname[0].lower() + self.lastname[0].lower()
-        elif self.firstname and len(self.firstname) >= 2:
-            return self.firstname[0:2].lower()
-        elif self.lastname and len(self.lastname) >= 2:
-            return self.lastname[0:2].lower()
-        else:
-            return self.username[0:2].lower()  # username must be at least 3 characters
-
-
-class DeletedUser(User):
-    def __init__(self) -> None:
-        super().__init__(uuid=str(uuid4()), username="deleted")
 
 
 class SeenFile(Base):
