@@ -1050,6 +1050,7 @@ class Controller(QObject):
         """
         logger.info("Source %s successfully scheduled for deletion at server", source_uuid)
         storage.delete_local_source_by_uuid(self.session, source_uuid, self.data_dir)
+        self.update_sources()
 
     def on_delete_source_failure(self, e: Exception) -> None:
         if isinstance(e, DeleteSourceJobException):
