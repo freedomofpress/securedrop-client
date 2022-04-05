@@ -695,6 +695,7 @@ class MainView(QWidget):
             if not source:
                 return
             self.controller.session.refresh(source)
+            self.controller.mark_seen(source)
             conversation_wrapper = self.source_conversations[source.uuid]
             conversation_wrapper.conversation_view.update_conversation(source.collection)
         except sqlalchemy.exc.InvalidRequestError as e:
@@ -1829,7 +1830,7 @@ class SpeechBubble(QWidget):
         download_error_signal.connect(self._on_download_error)
 
         # Set checkmark tooltip to the default seen_by list
-        self.check_mark.setToolTip(",\n".join(username for username in self.seen_by.keys()))
+        self.update_seen_by_list(self.seen_by)
 
         self.adjust_width(container_width)
 
@@ -1893,6 +1894,11 @@ class SpeechBubble(QWidget):
     def update_seen_by_list(self, usernames: Dict[str, User]) -> None:
         # Update the dictionary for the new usernames to be shown in the tooltip.
         self.seen_by.update(usernames)
+
+        # Remove any users who've been deleted
+        usernames_to_remove = [i for i in self.seen_by if i not in usernames]
+        for i in usernames_to_remove:
+            del self.seen_by[i]
 
         # Re-arrange for the authenticated user's username to be shown at the end of the
         # username list shown in the tooltip.
