@@ -696,6 +696,12 @@ class MainView(QWidget):
                 return
             self.controller.session.refresh(source)
             self.controller.mark_seen(source)
+
+            # Always show the selected source widget as seen
+            source_widget = self.source_list.get_source_widget(source.uuid)
+            if source_widget and not source_widget.seen:
+                source_widget.seen = True
+
             conversation_wrapper = self.source_conversations[source.uuid]
             conversation_wrapper.conversation_view.update_conversation(source.collection)
         except sqlalchemy.exc.InvalidRequestError as e:
