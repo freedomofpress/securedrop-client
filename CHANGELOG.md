@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.4.0
+-----
+
+* Ensure support for common date string formats (#172)
+
 0.3.2
 -----
 
