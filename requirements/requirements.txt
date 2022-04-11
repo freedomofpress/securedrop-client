@@ -113,8 +113,8 @@ requests==2.26.0 \
     # via
     #   -r requirements/requirements.in
     #   securedrop-sdk
-securedrop-sdk==0.3.2 \
-    --hash=sha256:376a36a56c16a903663fc62b3441ba6799f406d3b7e25ecb17ef82f5a65b46b0
+securedrop-sdk==0.4.0 \
+    --hash=sha256:c08f77bae5f900b1fbcd3b5aae1c931dc877e7289d69aa5a8b1e3c3f4e0dc561
     # via -r requirements/requirements.in
 six==1.11.0 \
     --hash=sha256:70e8a77beed4562e7f14fe23a786b54f6296e34344c23bc42f07b15018ff98e9 \
