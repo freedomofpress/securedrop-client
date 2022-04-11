@@ -633,8 +633,8 @@ ruamel-yaml-clib==0.2.6 \
     --hash=sha256:dc6a613d6c74eef5a14a214d433d06291526145431c3b964f5e16529b1842bed \
     --hash=sha256:de9c6b8a1ba52919ae919f3ae96abb72b994dd0350226e28f3686cb4f142165c
     # via ruamel-yaml
-securedrop-sdk==0.3.2 \
-    --hash=sha256:376a36a56c16a903663fc62b3441ba6799f406d3b7e25ecb17ef82f5a65b46b0
+securedrop-sdk==0.4.0 \
+    --hash=sha256:c08f77bae5f900b1fbcd3b5aae1c931dc877e7289d69aa5a8b1e3c3f4e0dc561
     # via -r requirements/requirements.in
 semgrep==0.84.0 \
     --hash=sha256:405f828c0c3db2236c2089c8fa2d1200ec9fa8eba2c60e9494c689995a4c4ac3 \
