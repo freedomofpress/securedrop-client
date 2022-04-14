@@ -513,7 +513,7 @@ def __update_submissions(
             try:
                 logger.debug("Cleanup {} if empty".format(os.path.join(data_dir, directory_name)))
                 _cleanup_directory_if_empty(os.path.join(data_dir, directory_name))
-            except FileNotFoundError:
+            except OSError:
                 logger.error("Could not check {}".format(directory_name))
 
 
