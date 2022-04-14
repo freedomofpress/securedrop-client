@@ -74,13 +74,16 @@ def get_local_sources(session: Session) -> List[Source]:
 
 def delete_local_source_by_uuid(session: Session, uuid: str, data_dir: str) -> None:
     """
-    Delete the source with the referenced UUID.
+    Delete the source with the referenced UUID and add the source to the
+    DeletedSource table.
+    This method is used only during local delete actions.
     """
     source = session.query(Source).filter_by(uuid=uuid).one_or_none()
     if source:
         logger.debug("Delete source {} from local database.".format(uuid))
         delete_source_collection(source.journalist_filename, data_dir)
         session.delete(source)
+        session.add(DeletedSource(uuid=uuid))
         session.commit()
 
 
