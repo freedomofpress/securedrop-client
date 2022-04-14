@@ -2122,6 +2122,7 @@ class ReplyWidget(SpeechBubble):
             self.set_failed_to_decrypt_styles()
         elif self.status == ReplySendStatusCodes.PENDING.value:
             self.set_pending_styles()
+            self.check_mark.hide()
         elif self.status == ReplySendStatusCodes.FAILED.value:
             self.set_failed_styles()
             self.error.show()
