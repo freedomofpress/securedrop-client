@@ -2164,6 +2164,37 @@ def test_Controller_send_reply_does_not_send_if_no_user_account(
     mock_job_cls.assert_not_called()
 
 
+def test_Controller_send_reply_handles_deleted_source(homedir, mocker, session_maker, session):
+    """
+    Check that when a source is deleted by another thread, a reply to the
+    source is not sent and the error is logged.
+    """
+
+    co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir, None)
+    co.api = mocker.MagicMock()
+    co.authenticated_user = mocker.MagicMock()
+
+    source = factory.Source()
+    session.add(source)
+    session.commit()
+
+    mock_job_cls = mocker.patch("securedrop_client.logic.SendReplyJob")
+    mock_error = mocker.patch("securedrop_client.logic.logger.error")
+    mock_update = mocker.patch("securedrop_client.logic.Controller.update_sources")
+
+    # Simulate source being deleted in another thread
+    session.delete(source)
+    session.commit()
+
+    co.send_reply(source.uuid, "mock_reply_uuid", "mock_msg")
+
+    mock_job_cls.assert_not_called()
+    mock_error.assert_called_once_with(
+        "Cannot send a reply to a source account that has been deleted"
+    )
+    mock_update.assert_called()
+
+
 def test_Controller_on_reply_success(homedir, mocker, session_maker, session):
     """
     Check that when the method is called, the client emits the correct signal.

@@ -1114,9 +1114,14 @@ class Controller(QObject):
             logger.error("Sender of reply {} has been deleted".format(reply_uuid))
             return
 
+        source = self.session.query(db.Source).filter_by(uuid=source_uuid).one_or_none()
+        if not source:
+            logger.error("Cannot send a reply to a source account that has been deleted")
+            self.update_sources()  # Refresh source list to remove deleted source widget
+            return
+
         # Before we send the reply, add the draft to the database with a PENDING
         # reply send status.
-        source = self.session.query(db.Source).filter_by(uuid=source_uuid).one()
         reply_status = (
             self.session.query(db.ReplySendStatus)
             .filter_by(name=db.ReplySendStatusCodes.PENDING.value)
