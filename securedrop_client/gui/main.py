@@ -24,7 +24,7 @@ from gettext import gettext as _
 from typing import List, Optional
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QGuiApplication, QIcon, QKeySequence
+from PyQt5.QtGui import QClipboard, QGuiApplication, QIcon, QKeySequence
 from PyQt5.QtWidgets import QAction, QApplication, QHBoxLayout, QMainWindow, QVBoxLayout, QWidget
 
 from securedrop_client import __version__, state
@@ -217,3 +217,4 @@ class Window(QMainWindow):
         """
         cb = QApplication.clipboard()
         cb.clear()
+        cb.clear(QClipboard.Selection)
