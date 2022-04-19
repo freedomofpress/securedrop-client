@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.7.0-rc3
+* Revert #1464
+
 ## 0.7.0-rc2
 * Clear global mouse selection after login (#1477)
 * Fix bug that sometimes shows a selected source as unread (#1464)
