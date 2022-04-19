@@ -928,30 +928,6 @@ def test_MainView_refresh_source_conversations_with_deleted(
     debug_logger.assert_any_call("Error refreshing source conversations: %s", ire)
 
 
-def test_MainView_refresh_source_conversations_keeps_selected_source_as_seen(
-    mocker, session, session_maker, homedir
-):
-    mv = MainView(None)
-    controller = logic.Controller(
-        "http://localhost", mocker.MagicMock(), session_maker, homedir, None
-    )
-    controller.api = mocker.MagicMock()
-    mv.setup(controller)
-
-    source = factory.Source()
-    session.add(source)
-    mv.source_list.update([source])
-    mv.source_list.setCurrentItem(mv.source_list.itemAt(0, 0))  # select `source`
-
-    current_source_widget = mv.source_list.get_source_widget(source.uuid)
-    current_source_widget.seen = False
-    assert not current_source_widget.seen
-
-    mv.refresh_source_conversations()
-
-    assert current_source_widget.seen
-
-
 def test_MainView_set_conversation(mocker):
     """
     Ensure the passed-in widget is added to the layout of the main view holder
