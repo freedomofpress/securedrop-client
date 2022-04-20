@@ -1,11 +1,7 @@
 # Changelog
 
-## 0.7.0-rc3
-* Revert #1464
-
-## 0.7.0-rc2
+## 0.7.0
 * Clear global mouse selection after login (#1477)
-* Fix bug that sometimes shows a selected source as unread (#1464)
 * Update securedrop-sdk from version 0.3.2 to 0.4.0 (#1466)
 * Add journalist read receipts (#1417, #1449, #1471)
 * Speed up deletion of local files and database records (#1432, #1458, #1468, #1473)
