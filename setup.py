@@ -19,6 +19,10 @@ setuptools.setup(
     license="GPLv3+",
     install_requires=[],
     python_requires=">=3.5",
+    packages=setuptools.find_packages(exclude=["docs", "tests"]),
+    package_data={
+        'securedrop_log': ['VERSION'],
+    },
     url="https://github.com/freedomofpress/securedrop-log",
     classifiers=[
         "Development Status :: 3 - Alpha",
