@@ -71,11 +71,7 @@ from securedrop_client.db import (
     User,
 )
 from securedrop_client.export import ExportError, ExportStatus
-from securedrop_client.gui.actions import (
-    DeleteConversationAction,
-    DeleteSourceAction,
-    DownloadConversation,
-)
+from securedrop_client.gui import actions
 from securedrop_client.gui.base import (
     ModalDialog,
     PasswordEdit,
@@ -3737,17 +3733,17 @@ class SourceMenu(QMenu):
         download_section.setFont(separator_font)
         download_section.setObjectName("first_section")
 
-        self.addAction(DownloadConversation(self, self.controller, app_state))
+        self.addAction(actions.DownloadConversation(self, self.controller, app_state))
 
         delete_section = self.addSection(_("DELETE"))
         delete_section.setFont(separator_font)
 
         self.addAction(
-            DeleteConversationAction(
+            actions.DeleteConversation(
                 self.source, self, self.controller, DeleteConversationDialog, app_state
             )
         )
-        self.addAction(DeleteSourceAction(self.source, self, self.controller, DeleteSourceDialog))
+        self.addAction(actions.DeleteSource(self.source, self, self.controller, DeleteSourceDialog))
 
 
 class SourceMenuButton(QToolButton):
