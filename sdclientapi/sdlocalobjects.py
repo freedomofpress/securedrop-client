@@ -75,7 +75,7 @@ class Reply:
             self.uuid = kwargs["uuid"]
             self.filename = kwargs["filename"]
             return
-           # Fetch an object only by uuid and soure_uuid.
+            # Fetch an object only by uuid and soure_uuid.
         elif {"uuid", "source_uuid"} == set(kwargs.keys()):
             self.uuid = kwargs["uuid"]
             self.source_uuid = kwargs["source_uuid"]
