@@ -10,7 +10,7 @@
 }
 
 #ShowPassphrase_widget QFrame:hover {
-    background-color: rgba(230, 253, 255, 0.6);
+    background-color: rgba(230, 253, 255, 0.2);
 }
 
 #ShowPassphrase_widget QLabel:hover {
