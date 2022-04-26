@@ -478,17 +478,19 @@ class API:
         :param submission: Submission object we want to update.
         :returns: Updated submission object from the server.
         """
-        path_query = "api/v1/sources/{}/submissions/{}".format(
-            submission.source_uuid, submission.uuid
-        )
-        method = "GET"
+        if submission.source_uuid and submission.uuid is not None:
 
-        data, status_code, headers = self._send_json_request(
-            method,
-            path_query,
-            headers=self.req_headers,
-            timeout=self.default_request_timeout,
-        )
+            path_query = "api/v1/sources/{}/submissions/{}".format(
+                submission.source_uuid, submission.uuid
+            )
+            method = "GET"
+
+            data, status_code, headers = self._send_json_request(
+                method,
+                path_query,
+                headers=self.req_headers,
+                timeout=self.default_request_timeout,
+            )
 
         if status_code == 404:
             raise WrongUUIDError("Missing submission {}".format(submission.uuid))
@@ -760,20 +762,22 @@ class API:
         :param reply_uuid: UUID of the reply.
         :returns: A reply object
         """
-        path_query = "api/v1/sources/{}/replies/{}".format(source.uuid, reply_uuid)
-        method = "GET"
+        if source.uuid and reply_uuid is not None:
 
-        data, status_code, headers = self._send_json_request(
-            method,
-            path_query,
-            headers=self.req_headers,
-            timeout=self.default_request_timeout,
-        )
+            path_query = "api/v1/sources/{}/replies/{}".format(source.uuid, reply_uuid)
+            method = "GET"
 
-        if status_code == 404:
-            raise WrongUUIDError("Missing source {}".format(source.uuid))
+            data, status_code, headers = self._send_json_request(
+                method,
+                path_query,
+                headers=self.req_headers,
+                timeout=self.default_request_timeout,
+            )
 
-        reply = Reply(**data)
+            if status_code == 404:
+                raise WrongUUIDError("Missing source {}".format(source.uuid))
+
+            reply = Reply(**data)
 
         return reply
 
@@ -834,7 +838,9 @@ class API:
 
         if not self.proxy:
             # This is where we will save our downloaded file
-            filepath = os.path.join(path, reply.filename)
+            filepath = os.path.join(
+                path, headers["Content-Disposition"].split("attachment; filename=")[1]
+            )
             with open(filepath, "wb") as fobj:
                 for chunk in data.iter_content(chunk_size=1024):  # Getting 1024 in each chunk
                     if chunk:
