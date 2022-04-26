@@ -9,14 +9,10 @@
     padding: 0px 0px 0px 3px;
 }
 
-#ShowPassphrase_widget QLabel::hover{
-    background-color: rgba(255,255,255,0);
-}
-
-#ShowPassphrase_widget QFrame::hover {
+#ShowPassphrase_widget QFrame:hover {
     background-color: rgba(230, 253, 255, 0.6);
 }
 
-#ShowPassphrase_widget QLabel::hover {
-    background-color: rgba(255,255,255,0);
+#ShowPassphrase_widget QLabel:hover {
+    background-color: none;
 }
