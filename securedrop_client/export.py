@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 class ExportError(Exception):
-    def __init__(self, status: str):
-        self.status = status
+    def __init__(self, status: "ExportStatus"):
+        self.status: "ExportStatus" = status
 
 
 class ExportStatus(Enum):
@@ -90,7 +90,7 @@ class Export(QObject):
         self.begin_print.connect(self.print, type=Qt.QueuedConnection)
         self.begin_printer_preflight.connect(self.run_printer_preflight, type=Qt.QueuedConnection)
 
-    def _export_archive(cls, archive_path: str) -> str:
+    def _export_archive(cls, archive_path: str) -> ExportStatus:
         """
         Make the subprocess call to send the archive to the Export VM, where the archive will be
         processed.
@@ -116,10 +116,13 @@ class Export(QObject):
                 [quote("qvm-open-in-vm"), quote("sd-devices"), quote(archive_path), "--view-only"],
                 stderr=subprocess.STDOUT,
             )
-            return output.decode("utf-8").strip()
+            return ExportStatus(output.decode("utf-8").strip())
+        except ValueError:
+            # logger.error(f"Export subprocess returned unexpected value: {e}")
+            raise ExportError(ExportStatus.UNEXPECTED_RETURN_STATUS)
         except subprocess.CalledProcessError as e:
             logger.error(e)
-            raise ExportError(ExportStatus.CALLED_PROCESS_ERROR.value)
+            raise ExportError(ExportStatus.CALLED_PROCESS_ERROR)
 
     def _create_archive(
         cls, archive_dir: str, archive_fn: str, metadata: dict, filepaths: List[str] = []
@@ -201,7 +204,7 @@ class Export(QObject):
         """
         archive_path = self._create_archive(archive_dir, self.USB_TEST_FN, self.USB_TEST_METADATA)
         status = self._export_archive(archive_path)
-        if status != ExportStatus.USB_CONNECTED.value:
+        if status != ExportStatus.USB_CONNECTED:
             raise ExportError(status)
 
     def _run_disk_test(self, archive_dir: str) -> None:
@@ -217,7 +220,7 @@ class Export(QObject):
         archive_path = self._create_archive(archive_dir, self.DISK_TEST_FN, self.DISK_TEST_METADATA)
 
         status = self._export_archive(archive_path)
-        if status != ExportStatus.DISK_ENCRYPTED.value:
+        if status != ExportStatus.DISK_ENCRYPTED:
             raise ExportError(status)
 
     def _run_disk_export(self, archive_dir: str, filepaths: List[str], passphrase: str) -> None:

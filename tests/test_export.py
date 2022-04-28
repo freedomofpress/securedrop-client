@@ -4,7 +4,7 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import pytest
 
-from securedrop_client.export import Export, ExportError
+from securedrop_client.export import Export, ExportError, ExportStatus
 
 
 def test_run_printer_preflight(mocker):
@@ -283,7 +283,7 @@ def test__run_disk_test(mocker):
     """
     export = Export()
     export._create_archive = mocker.MagicMock(return_value="mock_archive_path")
-    export._export_archive = mocker.MagicMock(return_value="USB_ENCRYPTED")
+    export._export_archive = mocker.MagicMock(return_value=ExportStatus("USB_ENCRYPTED"))
 
     export._run_disk_test("mock_archive_dir")
 
@@ -313,7 +313,7 @@ def test__run_usb_test(mocker):
     """
     export = Export()
     export._create_archive = mocker.MagicMock(return_value="mock_archive_path")
-    export._export_archive = mocker.MagicMock(return_value="USB_CONNECTED")
+    export._export_archive = mocker.MagicMock(return_value=ExportStatus("USB_CONNECTED"))
 
     export._run_usb_test("mock_archive_dir")
 
@@ -380,11 +380,15 @@ def test__export_archive(mocker):
     """
     Ensure the subprocess call returns the expected output.
     """
-    mocker.patch("subprocess.check_output", return_value=b"mock")
     export = Export()
-    status = export._export_archive("mock.sd-export")
 
-    assert status == "mock"
+    mocker.patch("subprocess.check_output", return_value=b"USB_CONNECTED")
+    status = export._export_archive("mock.sd-export")
+    assert status == ExportStatus.USB_CONNECTED
+
+    mocker.patch("subprocess.check_output", return_value=b"mock")
+    with pytest.raises(ExportError, match="UNEXPECTED_RETURN_STATUS"):
+        export._export_archive("mock.sd-export")
 
 
 def test__export_archive_does_not_raise_ExportError_when_CalledProcessError(mocker):
@@ -407,7 +411,8 @@ def test__export_archive_with_evil_command(mocker):
     export = Export()
     check_output = mocker.patch("subprocess.check_output", return_value=b"")
 
-    export._export_archive("somefile; rm -rf ~")
+    with pytest.raises(ExportError, match="UNEXPECTED_RETURN_STATUS"):
+        export._export_archive("somefile; rm -rf ~")
 
     check_output.assert_called_once_with(
         ["qvm-open-in-vm", "sd-devices", "'somefile; rm -rf ~'", "--view-only"], stderr=-2
