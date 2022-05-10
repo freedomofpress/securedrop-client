@@ -170,7 +170,6 @@ def test_Controller_login(homedir, config, mocker, session_maker):
     """
     mock_gui = mocker.MagicMock()
     mock_api = mocker.patch("securedrop_client.logic.sdclientapi.API")
-    fail_draft_replies = mocker.patch("securedrop_client.storage.mark_all_pending_drafts_as_failed")
 
     co = Controller("http://localhost", mock_gui, session_maker, homedir, None)
     co.call_api = mocker.MagicMock()
@@ -181,7 +180,6 @@ def test_Controller_login(homedir, config, mocker, session_maker):
     co.call_api.assert_called_once_with(
         mock_api().authenticate, co.on_authenticate_success, co.on_authenticate_failure
     )
-    fail_draft_replies.assert_called_once_with(co.session)
     co.show_last_sync_timer.stop.assert_called_once_with()
 
 
@@ -1034,13 +1032,13 @@ def test_Controller_invalidate_token(mocker, homedir, session_maker):
 
 def test_Controller_logout_with_pending_replies(mocker, session_maker, homedir, reply_status_codes):
     """
-    Ensure draft reply fails on logout and that the reply_failed signal is emitted.
+    Ensure pending replies not currently being processed are marked failed and emit the
+    "reply_failed" signal.
     """
     co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir, None)
     co.api_job_queue = mocker.MagicMock()
     co.api_job_queue.stop = mocker.MagicMock()
     co.call_api = mocker.MagicMock()
-    reply_failed_emissions = QSignalSpy(co.reply_failed)
 
     source = factory.Source()
     session = session_maker()
@@ -1058,11 +1056,15 @@ def test_Controller_logout_with_pending_replies(mocker, session_maker, homedir, 
 
     co.logout()
 
-    for draft in session.query(db.DraftReply).all():
-        assert draft.send_status == failed_status
+    for (i, draft) in enumerate(session.query(db.DraftReply).all()):
+        if i == 0:
+            # We can't check that draft.sending_pid == os.getpid() here, because that's set by the
+            # SendReplyJob.
+            assert draft.send_status == pending_status
+        else:
+            assert draft.send_status == failed_status
+            co.reply_failed.emit.assert_called_once_with(draft.uuid)
 
-    assert len(reply_failed_emissions) == 1
-    assert reply_failed_emissions[0] == [pending_draft_reply.uuid]
     co.api_job_queue.stop.assert_called_once_with()
 
 
@@ -1078,7 +1080,6 @@ def test_Controller_logout_with_no_api(homedir, config, mocker, session_maker):
     co.api_job_queue = mocker.MagicMock()
     co.api_job_queue.stop = mocker.MagicMock()
     co.call_api = mocker.MagicMock()
-    fail_draft_replies = mocker.patch("securedrop_client.storage.mark_all_pending_drafts_as_failed")
 
     co.logout()
 
@@ -1086,7 +1087,6 @@ def test_Controller_logout_with_no_api(homedir, config, mocker, session_maker):
     co.call_api.assert_not_called()
     co.api_job_queue.stop.assert_called_once_with()
     co.gui.logout.assert_called_once_with()
-    fail_draft_replies.called_once_with(co.session)
 
 
 def test_Controller_logout_success(homedir, config, mocker, session_maker):
@@ -1104,7 +1104,6 @@ def test_Controller_logout_success(homedir, config, mocker, session_maker):
     co.call_api = mocker.MagicMock()
     co.show_last_sync_timer = mocker.MagicMock()
     info_logger = mocker.patch("securedrop_client.logic.logging.info")
-    fail_draft_replies = mocker.patch("securedrop_client.storage.mark_all_pending_drafts_as_failed")
     logout_method = co.api.logout
     co.logout()
     co.call_api.assert_called_with(logout_method, co.on_logout_success, co.on_logout_failure)
@@ -1114,7 +1113,6 @@ def test_Controller_logout_success(homedir, config, mocker, session_maker):
     co.gui.logout.assert_called_once_with()
     msg = "Client logout successful"
     info_logger.assert_called_once_with(msg)
-    fail_draft_replies.called_once_with(co.session)
     co.show_last_sync_timer.start.assert_called_once_with(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
 
 
@@ -1132,7 +1130,6 @@ def test_Controller_logout_failure(homedir, config, mocker, session_maker):
     co.api_job_queue.stop = mocker.MagicMock()
     co.call_api = mocker.MagicMock()
     info_logger = mocker.patch("securedrop_client.logic.logging.info")
-    fail_draft_replies = mocker.patch("securedrop_client.storage.mark_all_pending_drafts_as_failed")
     logout_method = co.api.logout
 
     co.logout()
@@ -1144,7 +1141,6 @@ def test_Controller_logout_failure(homedir, config, mocker, session_maker):
     co.gui.logout.assert_called_once_with()
     msg = "Client logout failure"
     info_logger.assert_called_once_with(msg)
-    fail_draft_replies.called_once_with(co.session)
 
 
 def test_Controller_set_activity_status(homedir, config, mocker, session_maker):
@@ -2349,6 +2345,21 @@ def test_APICallRunner_api_call_timeout(mocker, exception):
     assert len(call_timed_out_emissions) == 1
 
 
+def test_Controller_on_queue_cleared(homedir, config, mocker, session_maker):
+    """
+    Check that clearing the queue marks as failed replies that were still pending in the queue.
+    """
+    mock_gui = mocker.MagicMock()
+    co = Controller("http://localhost", mock_gui, session_maker, homedir, None)
+    fail_draft_replies = mocker.patch("securedrop_client.storage.mark_all_pending_drafts_as_failed")
+
+    mocker.patch.object(co, "api_job_queue")
+    co.api = "not none"
+    co.show_last_sync_timer = mocker.MagicMock()
+    co.on_queue_cleared()
+    fail_draft_replies.called_once_with(co.session)
+
+
 def test_Controller_on_queue_paused(homedir, config, mocker, session_maker):
     """
     Check that a paused queue is communicated to the user via the error status bar
@@ -2412,3 +2423,27 @@ def test_get_file(mocker, session, homedir):
 
     storage.get_file.assert_called_once_with(co.session, file.uuid)
     assert obj == file
+
+
+def test_Controller_update_failed_replies(homedir, config, mocker, session, session_maker):
+    """
+    The "reply_failed" signal is emitted for each pending reply marked as failed.
+    """
+    mock_storage = mocker.patch("securedrop_client.logic.storage")
+    mock_storage.mark_all_pending_drafts_as_failed = mocker.MagicMock()
+
+    controller = Controller(
+        "http://localhost", mocker.MagicMock(), session_maker, homedir, None, None
+    )
+    controller.authenticated_user = factory.User(id=1)
+    controller.reply_failed = mocker.MagicMock()
+
+    source = factory.Source()
+    draft = factory.DraftReply(source=source, journalist_id=controller.authenticated_user.id)
+
+    failed_drafts = [draft]
+    mock_storage.mark_all_pending_drafts_as_failed.return_value = failed_drafts
+
+    controller.update_failed_replies()
+    for failed in failed_drafts:
+        controller.reply_failed.emit.assert_called_once_with(failed.uuid)
