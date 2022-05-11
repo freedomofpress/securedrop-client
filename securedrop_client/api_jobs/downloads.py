@@ -169,7 +169,8 @@ class DownloadJob(SingleObjectApiJob):
         except BaseError as e:
             raise e
         except (ValueError, FileNotFoundError, RuntimeError) as e:
-            logger.error(e)
+            logger.error("Download failed")
+            logger.debug(f"Download failed: {e}")
             raise DownloadDecryptionException(
                 f"Failed to download {db_object.uuid}", type(db_object), db_object.uuid
             ) from e
@@ -188,7 +189,8 @@ class DownloadJob(SingleObjectApiJob):
             )
             logger.info(f"File decrypted to {os.path.dirname(filepath)}")
         except CryptoError as e:
-            logger.error(e)
+            logger.error("Decryption failed")
+            logger.debug(f"Decryption failed: {e}")
             mark_as_decrypted(type(db_object), db_object.uuid, session, is_decrypted=False)
             download_error = (
                 session.query(DownloadError)

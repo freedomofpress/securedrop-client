@@ -180,8 +180,8 @@ class RunnableQueue(QObject):
                     job, self.current_job = self.current_job, None
                     self._re_add_job(job)
             except Exception as e:
-                logger.error("{}: {}".format(type(e).__name__, e))
-                logger.debug("Skipping job")
+                logger.error("Skipping job")
+                logger.debug(f"Skipping job: {type(e).__name__}: {e}")
             finally:
                 with self.condition_add_or_remove_job:
                     self.current_job = None

@@ -136,7 +136,8 @@ def sanitize_submissions_or_replies(
     sanitized_sdk_objects = []
     for obj in remote_sdk_objects:
         if not VALID_FILENAME(obj.filename):
-            logger.error(f"Malformed filename: {obj.filename}")
+            logger.error("Malformed filename")
+            logger.debug(f"Malformed filename: {obj.filename}")
             continue
         sanitized_sdk_objects.append(obj)
     return sanitized_sdk_objects
@@ -149,7 +150,8 @@ def sanitize_sources(remote_sdk_objects: List[SDKSource]) -> List[SDKSource]:
     sanitized_sdk_objects = []
     for obj in remote_sdk_objects:
         if not VALID_JOURNALIST_DESIGNATION(obj.journalist_designation):
-            logger.error(f"Malformed journalist_designation: {obj.journalist_designation}")
+            logger.error("Malformed journalist_designation")
+            logger.debug(f"Malformed journalist_designation: {obj.journalist_designation}")
             continue
         sanitized_sdk_objects.append(obj)
     return sanitized_sdk_objects
@@ -1044,17 +1046,15 @@ def _delete_source_collection_from_db(session: Session, source: Source) -> None:
                 logger.debug("Add source {} to deletedconversation table".format(source.uuid))
                 session.add(flagged_conversation)
         except SQLAlchemyError as e:
-            logger.error(
-                "Could not add source {} to deletedconversation table: {}".format(source.uuid, e)
-            )
+            logger.error(f"Could not add source {source.uuid} to deletedconversation table")
+            logger.debug(f"Could not add source {source.uuid} to deletedconversation table: {e}")
             session.rollback()
 
     try:
         session.commit()
     except SQLAlchemyError as e:
-        logger.error(
-            "Could not locally delete conversation for source {}: {}".format(source.uuid, e)
-        )
+        logger.error(f"Could not locally delete conversation for source {source.uuid}")
+        logger.debug(f"Could not locally delete conversation for source {source.uuid}: {e}")
         session.rollback()
 
 
