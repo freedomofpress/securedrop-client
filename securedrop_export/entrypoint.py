@@ -28,9 +28,7 @@ def configure_logging():
     log_file = os.path.join(DEFAULT_HOME, LOG_DIR_NAME, EXPORT_LOG_FILENAME)
 
     # set logging format
-    log_fmt = (
-        "%(asctime)s - %(name)s:%(lineno)d(%(funcName)s) " "%(levelname)s: %(message)s"
-    )
+    log_fmt = "%(asctime)s - %(name)s:%(lineno)d(%(funcName)s) " "%(levelname)s: %(message)s"
     formatter = logging.Formatter(log_fmt)
 
     handler = TimedRotatingFileHandler(log_file)

@@ -84,9 +84,7 @@ def test_is_not_open_office_file(capsys, open_office_paths):
 def test_install_printer_ppd_laserjet(mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
     action = PrintExportAction(submission)
-    ppd = action.install_printer_ppd(
-        "usb://HP/LaserJet%20Pro%20M404-M405?serial=A00000A00000"
-    )
+    ppd = action.install_printer_ppd("usb://HP/LaserJet%20Pro%20M404-M405?serial=A00000A00000")
     assert ppd == "/usr/share/cups/model/hp-laserjet_6l.ppd"
 
 
@@ -94,9 +92,7 @@ def test_install_printer_ppd_laserjet(mocker):
 def test_install_printer_ppd_brother(mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
     action = PrintExportAction(submission)
-    ppd = action.install_printer_ppd(
-        "usb://Brother/HL-L2320D%20series?serial=A00000A000000"
-    )
+    ppd = action.install_printer_ppd("usb://Brother/HL-L2320D%20series?serial=A00000A000000")
     assert ppd == "/usr/share/cups/model/br7030.ppd"
 
 
@@ -106,9 +102,7 @@ def test_install_printer_ppd_error_no_driver(mocker):
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
     mocker.patch("subprocess.run", side_effect=CalledProcessError(1, "run"))
 
-    action.install_printer_ppd(
-        "usb://HP/LaserJet%20Pro%20M404-M405?serial=A00000A000000"
-    )
+    action.install_printer_ppd("usb://HP/LaserJet%20Pro%20M404-M405?serial=A00000A000000")
 
     assert mocked_exit.mock_calls[0][2]["msg"] == "ERROR_PRINTER_DRIVER_UNAVAILABLE"
     assert mocked_exit.mock_calls[0][2]["e"] is None

@@ -1,215 +1,149 @@
+import pytest
 from unittest import mock
 
 import os
 import pytest
 import sys
+import tempfile
 
+import subprocess
 from subprocess import CalledProcessError
 
+from securedrop_export.disk.exceptions import ExportException
+from securedrop_export.disk.status import Status
+
 from securedrop_export import export
-from securedrop_export.disk.actions import DiskExportAction, DiskTestAction
+from securedrop_export.disk.actions import DiskExportAction, DiskTestAction, USBTestAction
 
 TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config.json")
-SAMPLE_OUTPUT_NO_PART = b"disk\ncrypt"  # noqa
-SAMPLE_OUTPUT_ONE_PART = b"disk\npart\ncrypt"  # noqa
-SAMPLE_OUTPUT_MULTI_PART = b"disk\npart\npart\npart\ncrypt"  # noqa
+SAMPLE_OUTPUT_LSBLK_NO_PART = b"disk\ncrypt"  # noqa
+SAMPLE_OUTPUT_LSBLK_ONE_PART = b"disk\npart\ncrypt"  # noqa
+SAMPLE_OUTPUT_LSBLK_MULTI_PART = b"disk\npart\npart\npart\ncrypt"  # noqa
 SAMPLE_OUTPUT_USB = b"/dev/sda"  # noqa
 
 
-def test_usb_precheck_disconnected(capsys, mocker):
-    """Tests the scenario where there are disks connected, but none of them are USB"""
-    submission = export.SDExport("testfile", TEST_CONFIG)
-    action = DiskTestAction(submission)
-    expected_message = "USB_NOT_CONNECTED"
-    assert export.ExportStatus.USB_NOT_CONNECTED.value == expected_message
+class TestExportAction:
+    def _setup_submission(self) -> export.SDExport:
+        """
+        Helper method to set up stub export object
+        """
+        submission = export.SDExport("testfile", TEST_CONFIG)
+        temp_folder = tempfile.mkdtemp()
+        metadata = os.path.join(temp_folder, export.Metadata.METADATA_FILE)
+        with open(metadata, "w") as f:
+            f.write('{"device": "disk", "encryption_method": "luks", "encryption_key": "hunter1"}')
 
-    # Popen call returns lsblk output
-    command_output = mock.MagicMock()
-    command_output.stdout = mock.MagicMock()
-    command_output.stdout.readlines = mock.MagicMock(
-        return_value=[b"sda disk\n", b"sdb disk\n"]
-    )
-    mocker.patch("subprocess.Popen", return_value=command_output)
+        submission.archive_metadata = export.Metadata(temp_folder)
 
-    # check_output returns removable status
-    mocker.patch("subprocess.check_output", return_value=[b"0\n", b"0\n"])
+        return submission
 
-    mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
+    @mock.patch("sys.exit")
+    @mock.patch("securedrop_export.disk.actions.CLI")
+    def test_run_usbtestaction(self, mock_cli, mock_sys,):
 
-    mocker.patch(
-        "subprocess.check_output", side_effect=CalledProcessError(1, "check_output")
-    )
+        mock_cli.write_status = mock.MagicMock()
+        usb = USBTestAction(self._setup_submission())
 
-    action.check_usb_connected(exit=True)
-
-    mocked_exit.assert_called_once_with(expected_message)
-    assert action.device is None
+        usb.run()
+        mock_cli.write_status.assert_called_once_with(Status.LEGACY_USB_CONNECTED)
 
 
-def test_usb_precheck_connected(capsys, mocker):
-    """Tests the scenario where there is one USB connected"""
-    submission = export.SDExport("testfile", TEST_CONFIG)
-    action = DiskTestAction(submission)
+    @mock.patch("securedrop_export.disk.actions.CLI")
+    def test_run_usbtestaction_error(self, mock_cli, capsys):
+        mock_cli.get_connected_devices.side_effect = ExportException(Status.LEGACY_ERROR_USB_CHECK)
+        usb = USBTestAction(self._setup_submission())
 
-    # Popen call returns lsblk output
-    command_output = mock.MagicMock()
-    command_output.stdout = mock.MagicMock()
-    command_output.stdout.readlines = mock.MagicMock(return_value=[b"sdb disk\n"])
-    mocker.patch("subprocess.Popen", return_value=command_output)
+        mock_cli.write_status = mock.MagicMock()
+        
+        usb.run()
+        mock_cli.write_status.assert_called_once_with(Status.LEGACY_ERROR_USB_CHECK)
 
-    # check_output returns removable status
-    mocker.patch("subprocess.check_output", return_value=b"1\n")
+    @mock.patch("sys.exit")
+    @mock.patch("securedrop_export.disk.actions.CLI")
+    def test_run_disktestaction(self, mock_sys, mock_cli):
 
-    expected_message = "USB_CONNECTED"
-    assert export.ExportStatus.USB_CONNECTED.value == expected_message
-    mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
+        mock_cli.is_luks_volume.return_value=True
+        mock_cli.write_status = mock.MagicMock()
 
-    action.check_usb_connected(exit=True)
+        test_export = DiskTestAction(self._setup_submission())
+        test_export.run()
 
-    mocked_exit.assert_called_once_with(expected_message)
-    assert action.device == "/dev/sdb"
+        mock_cli.write_status.assert_called_once_with(Status.SUCCESS_EXPORT)
 
+    @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_LSBLK_NO_PART)
+    @mock.patch("subprocess.check_call", return_value=0)
+    def test_luks_precheck_encrypted_fde(mocked_call, capsys, mocker):
+        submission = export.SDExport("testfile", TEST_CONFIG)
+        action = DiskExportAction(submission)
 
-def test_usb_precheck_multiple_devices_connected(capsys, mocker):
-    """Tests the scenario where there are multiple USB drives connected"""
-    submission = export.SDExport("testfile", TEST_CONFIG)
-    action = DiskTestAction(submission)
+        command_output = mock.MagicMock()
+        command_output.stderr = b""
+        mocker.patch("subprocess.run", return_value=command_output)
 
-    # Popen call returns lsblk output
-    command_output = mock.MagicMock()
-    command_output.stdout = mock.MagicMock()
-    command_output.stdout.readlines = mock.MagicMock(
-        return_value=[b"sdb disk\n", b"sdc disk\n"]
-    )
-    mocker.patch("subprocess.Popen", return_value=command_output)
+        expected_message = Status.LEGACY_USB_ENCRYPTED.value
+        mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
 
-    # check_output returns removable status
-    mocker.patch("subprocess.check_output", return_value=b"1\n")
+    @mock.patch("sys.exit")
+    @mock.patch("securedrop_export.disk.actions.CLI")
+    def test_run_disktestaction_error(self, mock_cli, mocker):
+        mock_cli.patch("get_partitioned_device", side_effect=ExportException(Status.LEGACY_USB_ENCRYPTION_NOT_SUPPORTED))
 
-    expected_message = "ERROR_GENERIC"
-    assert export.ExportStatus.ERROR_GENERIC.value == expected_message
-    mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
+        status_mock = mock_cli.patch("write_status")
+        test_export = DiskTestAction(self._setup_submission())
+        test_export.run()
+        status_mock.assert_called_once_with(Status.LEGACY_ERROR_USB_WRITE)
 
-    action.check_usb_connected(exit=True)
+    @mock.patch("sys.exit")
+    @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_LSBLK_ONE_PART)
+    @mock.patch("subprocess.check_call", return_value=0)
+    def test_luks_precheck_encrypted_single_part(mocked_call, mock_output, capsys, mocker):
+        submission = export.SDExport("testfile", TEST_CONFIG)
+        action = DiskTestAction(submission)
+        action.device = "/dev/sda"
+        expected_message = Status.LEGACY_USB_ENCRYPTED.value
+        mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
 
-    mocked_exit.assert_called_once_with(expected_message)
-    assert action.device is None
+        command_output = mock.MagicMock()
+        command_output.stderr = b""
+        mocker.patch("subprocess.run", return_value=command_output)
 
+        action.run()
 
-@mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_NO_PART)
-def test_extract_device_name_no_part(mocked_call, capsys):
-    submission = export.SDExport("testfile", TEST_CONFIG)
-    action = DiskExportAction(submission)
+    @mock.patch("sys.exit")
+    @mock.patch("securedrop_export.disk.actions.CLI")
+    def test_run_diskexportaction(self, mock_cli, mock_sys):
 
-    action.device = "/dev/sda"
+        mock_cli.patch("is_luks_volume", return_value=True)
+        status_mock = mock_cli.patch("write_status")
 
-    action.set_extracted_device_name()
+        test_export = DiskExportAction(self._setup_submission())
+        test_export.run()
 
-    assert action.device == "/dev/sda"
+        status_mock.assert_called_once_with(Status.SUCCESS_EXPORT)
 
+    @mock.patch("sys.exit")
+    @mock.patch("securedrop_export.disk.actions.CLI")
+    def test_run_diskexportaction_disk_not_supported(self, mock_cli, mock_sys):
 
-@mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_ONE_PART)
-def test_extract_device_name_single_part(mocked_call, capsys):
-    submission = export.SDExport("testfile", TEST_CONFIG)
-    action = DiskExportAction(submission)
+        mock_cli.patch("get_partitioned_device")
+        mock_cli.patch("is_luks_volume", return_value=False)
+        status_mock = mock_cli.patch("write_status")
 
-    action.device = "/dev/sda"
+        test_export = DiskExportAction(self._setup_submission())
+        test_export.run()
 
-    action.set_extracted_device_name()
+        status_mock.assert_called_once_with(Status.LEGACY_USB_ENCRYPTION_NOT_SUPPORTED)
 
-    assert action.device == "/dev/sda1"
+    @mock.patch("sys.exit")
+    @mock.patch("securedrop_export.disk.actions.CLI")
+    def test_run_diskexportaction_not_supported(self, mock_sys, mock_cli):
 
+        status_mock = mock_cli.patch("write_status")
+        mock_cli.patch("get_partitioned_device")
+        mock_cli.is_luks_volume.return_value=True
+        mock_cli.write_data_to_device.side_effect = Status.LEGACY_ERROR_USB_WRITE
 
-@mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_MULTI_PART)
-def test_extract_device_name_multiple_part(mocked_call, capsys, mocker):
-    submission = export.SDExport("testfile", TEST_CONFIG)
-    action = DiskExportAction(submission)
-    action.device = "/dev/sda"
-    mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
-    expected_message = export.ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED.value
+        test_export = DiskExportAction(self._setup_submission())
+        test_export.run()
 
-    action.set_extracted_device_name()
-
-    mocked_exit.assert_called_once_with(expected_message)
-
-
-@mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_NO_PART)
-def test_luks_precheck_encrypted_fde(mocked_call, capsys, mocker):
-    submission = export.SDExport("testfile", TEST_CONFIG)
-    action = DiskExportAction(submission)
-
-    command_output = mock.MagicMock()
-    command_output.stderr = b""
-    mocker.patch("subprocess.run", return_value=command_output)
-
-    expected_message = export.ExportStatus.USB_ENCRYPTED.value
-    mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
-
-    action.check_luks_volume()
-
-    mocked_exit.assert_called_once_with(expected_message)
-
-
-@mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_ONE_PART)
-def test_luks_precheck_encrypted_single_part(mocked_call, capsys, mocker):
-    submission = export.SDExport("testfile", TEST_CONFIG)
-    action = DiskExportAction(submission)
-    action.device = "/dev/sda"
-    expected_message = export.ExportStatus.USB_ENCRYPTED.value
-    mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
-
-    command_output = mock.MagicMock()
-    command_output.stderr = b""
-    mocker.patch("subprocess.run", return_value=command_output)
-
-    action.check_luks_volume()
-
-    mocked_exit.assert_called_once_with(expected_message)
-
-
-@mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_MULTI_PART)
-def test_luks_precheck_encrypted_multi_part(mocked_call, capsys, mocker):
-    submission = export.SDExport("testfile", TEST_CONFIG)
-    action = DiskExportAction(submission)
-    action.device = "/dev/sda"
-    expected_message = export.ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED.value
-
-    # Here we need to mock the exit_gracefully method with a side effect otherwise
-    # program execution will continue after exit_gracefully and exit_gracefully
-    # may be called a second time.
-    mocked_exit = mocker.patch.object(
-        submission, "exit_gracefully", side_effect=lambda x: sys.exit(0)
-    )
-
-    # Output of `lsblk -o TYPE --noheadings DEVICE_NAME` when a drive has multiple
-    # partitions
-    multi_partition_lsblk_output = b"disk\npart\npart\n"
-    mocker.patch("subprocess.check_output", return_value=multi_partition_lsblk_output)
-
-    with pytest.raises(SystemExit):
-        action.check_luks_volume()
-
-    mocked_exit.assert_called_once_with(expected_message)
-
-
-@mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_ONE_PART)
-def test_luks_precheck_encrypted_luks_error(mocked_call, capsys, mocker):
-    submission = export.SDExport("testfile", TEST_CONFIG)
-    action = DiskExportAction(submission)
-    action.device = "/dev/sda"
-    expected_message = "USB_ENCRYPTION_NOT_SUPPORTED"
-    assert expected_message == export.ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED.value
-
-    mocked_exit = mocker.patch.object(
-        submission, "exit_gracefully", side_effect=lambda msg, e: sys.exit(0)
-    )
-
-    single_partition_lsblk_output = b"disk\npart\n"
-    mocker.patch("subprocess.check_output", return_value=single_partition_lsblk_output)
-    mocker.patch("subprocess.run", side_effect=CalledProcessError(1, "run"))
-
-    with pytest.raises(SystemExit):
-        action.check_luks_volume()
-
-    assert mocked_exit.mock_calls[0][2]["msg"] == expected_message
-    assert mocked_exit.mock_calls[0][2]["e"] is None
+        status_mock.assert_called_once_with(Status.LEGACY_ERROR_USB_WRITE)

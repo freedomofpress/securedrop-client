@@ -3,10 +3,10 @@ import os
 import signal
 import subprocess
 import time
+from enum import Enum
 
-from securedrop_export.exceptions import ExportStatus, handler, TimeoutException
-from securedrop_export.export import ExportAction
-
+from .exceptions import ExportStatus, handler, TimeoutException
+from .status import Status
 
 PRINTER_NAME = "sdw-printer"
 PRINTER_WAIT_TIMEOUT = 60
@@ -18,27 +18,55 @@ LASERJET_PPD = "/usr/share/cups/model/hp-laserjet_6l.ppd"
 logger = logging.getLogger(__name__)
 
 
-class PrintAction(ExportAction):
+class Service():
+    """
+    Printer service
+    """
+
     def __init__(self, submission):
         self.submission = submission
         self.printer_name = PRINTER_NAME
         self.printer_wait_timeout = PRINTER_WAIT_TIMEOUT
 
-    def run(self) -> None:
-        """Run logic"""
-        raise NotImplementedError
+    def print(self):
+        """
+        Routine to print all files.
+        Throws ExportException if an error is encountered.
+        """
+        logger.info("Printing all files from archive")
+        self._check_printer_setup()
+        self._print_all_files()
 
-    def wait_for_print(self):
-        # use lpstat to ensure the job was fully transfered to the printer
-        # returns True if print was successful, otherwise will throw exceptions
+    def printer_preflight(self):
+        """
+        Routine to perform preflight printer testing.
+
+        Throws ExportException if an error is encoutered.
+        """
+        logger.info("Running printer preflight")            
+        self._check_printer_setup()
+
+    def printer_test(self):
+        """
+        Routine to print a test page.
+
+        Throws ExportException if an error is encountered.
+        """
+        logger.info("Printing test page")            
+        self._check_printer_setup()
+        self._print_test_page()
+
+    def _wait_for_print(self):
+        """
+        Use lpstat to ensure the job was fully transfered to the printer
+        Return True if print was successful, otherwise throw ExportException.
+        """
         signal.signal(signal.SIGALRM, handler)
         signal.alarm(self.printer_wait_timeout)
         printer_idle_string = "printer {} is idle".format(self.printer_name)
         while True:
             try:
-                logger.info(
-                    "Running lpstat waiting for printer {}".format(self.printer_name)
-                )
+                logger.info("Running lpstat waiting for printer {}".format(self.printer_name))
                 output = subprocess.check_output(["lpstat", "-p", self.printer_name])
                 if printer_idle_string in output.decode("utf-8"):
                     logger.info("Print completed")
@@ -46,52 +74,54 @@ class PrintAction(ExportAction):
                 else:
                     time.sleep(5)
             except subprocess.CalledProcessError:
-                self.submission.exit_gracefully(ExportStatus.ERROR_PRINT.value)
+                raise ExportException(Status.ERROR_PRINT)
             except TimeoutException:
                 logger.error("Timeout waiting for printer {}".format(self.printer_name))
-                self.submission.exit_gracefully(ExportStatus.ERROR_PRINT.value)
+                raise ExportException(Status.ERROR_PRINT)
         return True
 
-    def check_printer_setup(self) -> None:
+    def _check_printer_setup(self) -> None:
+        """
+        Check printer setup.
+        Raise ExportException if supported setup is not found.
+        """
         try:
             logger.info("Searching for printer")
             output = subprocess.check_output(["sudo", "lpinfo", "-v"])
             printers = [x for x in output.decode("utf-8").split() if "usb://" in x]
             if not printers:
                 logger.info("No usb printers connected")
-                self.submission.exit_gracefully(
-                    ExportStatus.ERROR_PRINTER_NOT_FOUND.value
-                )
+                raise ExportException(Status.ERROR_PRINTER_NOT_FOUND)
 
             supported_printers = [
                 p for p in printers if any(sub in p for sub in ("Brother", "LaserJet"))
             ]
             if not supported_printers:
                 logger.info("{} are unsupported printers".format(printers))
-                self.submission.exit_gracefully(
-                    ExportStatus.ERROR_PRINTER_NOT_SUPPORTED.value
-                )
+                raise ExportException(Status.ERROR_PRINTER_NOT_SUPPORTED)
 
             if len(supported_printers) > 1:
                 logger.info("Too many usb printers connected")
-                self.submission.exit_gracefully(
-                    ExportStatus.ERROR_MULTIPLE_PRINTERS_FOUND.value
-                )
+                raise ExportException(Status.ERROR_MULTIPLE_PRINTERS_FOUND)
 
             printer_uri = printers[0]
-            printer_ppd = self.install_printer_ppd(printer_uri)
+            printer_ppd = self._install_printer_ppd(printer_uri)
             self.setup_printer(printer_uri, printer_ppd)
         except subprocess.CalledProcessError as e:
             logger.error(e)
-            self.submission.exit_gracefully(ExportStatus.ERROR_GENERIC.value)
+            raise ExportException(Status.ERROR_GENERIC)
 
-    def get_printer_uri(self):
-        # Get the URI via lpinfo and only accept URIs of supported printers
+    def _get_printer_uri(self) -> str:
+        """
+        Get the URI via lpinfo. Only accept URIs of supported printers.
+
+        Raise ExportException if supported setup is not found.
+        """
         printer_uri = ""
         try:
             output = subprocess.check_output(["sudo", "lpinfo", "-v"])
         except subprocess.CalledProcessError:
-            self.submission.exit_gracefully(ExportStatus.ERROR_PRINTER_URI.value)
+            raise ExportException(Status.ERROR_PRINTER_URI)
 
         # fetch the usb printer uri
         for line in output.split():
@@ -99,29 +129,23 @@ class PrintAction(ExportAction):
                 printer_uri = line.decode("utf-8")
                 logger.info("lpinfo usb printer: {}".format(printer_uri))
 
-        # verify that the printer is supported, else exit
+        # verify that the printer is supported, else throw
         if printer_uri == "":
             # No usb printer is connected
             logger.info("No usb printers connected")
-            self.submission.exit_gracefully(ExportStatus.ERROR_PRINTER_NOT_FOUND.value)
+            raise ExportException(Status.ERROR_PRINTER_NOT_FOUND)
         elif not any(x in printer_uri for x in ("Brother", "LaserJet")):
             # printer url is a make that is unsupported
             logger.info("Printer {} is unsupported".format(printer_uri))
-            self.submission.exit_gracefully(
-                ExportStatus.ERROR_PRINTER_NOT_SUPPORTED.value
-            )
+            raise ExportException(Status.ERROR_PRINTER_NOT_SUPPORTED)
 
         logger.info("Printer {} is supported".format(printer_uri))
         return printer_uri
 
     def install_printer_ppd(self, uri):
         if not any(x in uri for x in ("Brother", "LaserJet")):
-            logger.error(
-                "Cannot install printer ppd for unsupported printer: {}".format(uri)
-            )
-            self.submission.exit_gracefully(
-                msg=ExportStatus.ERROR_PRINTER_NOT_SUPPORTED.value
-            )
+            logger.error("Cannot install printer ppd for unsupported printer: {}".format(uri))
+            raise ExportException(Status.ERROR_PRINTER_NOT_SUPPORTED)
             return
 
         if "Brother" in uri:
@@ -134,7 +158,7 @@ class PrintAction(ExportAction):
         # Compile and install drivers that are not already installed
         if not os.path.exists(printer_ppd):
             logger.info("Installing printer drivers")
-            self.submission.safe_check_call(
+            self._safe_check_call(
                 command=[
                     "sudo",
                     "ppdc",
@@ -142,16 +166,16 @@ class PrintAction(ExportAction):
                     "-d",
                     "/usr/share/cups/model/",
                 ],
-                error_message=ExportStatus.ERROR_PRINTER_DRIVER_UNAVAILABLE.value,
+                error_message=Status.ERROR_PRINTER_DRIVER_UNAVAILABLE.value,
                 ignore_stderr_startswith=b"ppdc: Warning",
             )
 
         return printer_ppd
 
-    def setup_printer(self, printer_uri, printer_ppd):
+    def _setup_printer(self, printer_uri, printer_ppd):
         # Add the printer using lpadmin
         logger.info("Setting up printer {}".format(self.printer_name))
-        self.submission.safe_check_call(
+        self._safe_check_call(
             command=[
                 "sudo",
                 "lpadmin",
@@ -165,25 +189,25 @@ class PrintAction(ExportAction):
                 "-u",
                 "allow:user",
             ],
-            error_message=ExportStatus.ERROR_PRINTER_INSTALL.value,
+            error_message=Status.ERROR_PRINTER_INSTALL.value,
             ignore_stderr_startswith=b"lpadmin: Printer drivers",
         )
 
-    def print_test_page(self):
+    def _print_test_page(self):
         logger.info("Printing test page")
-        self.print_file("/usr/share/cups/data/testprint")
+        self._print_file("/usr/share/cups/data/testprint")
 
-    def print_all_files(self):
+    def _print_all_files(self):
         files_path = os.path.join(self.submission.tmpdir, "export_data/")
         files = os.listdir(files_path)
         print_count = 0
         for f in files:
             file_path = os.path.join(files_path, f)
-            self.print_file(file_path)
+            self._print_file(file_path)
             print_count += 1
             logger.info("Printing document {} of {}".format(print_count, len(files)))
 
-    def is_open_office_file(self, filename):
+    def _is_open_office_file(self, filename):
         OPEN_OFFICE_FORMATS = [
             ".doc",
             ".docx",
@@ -201,7 +225,7 @@ class PrintAction(ExportAction):
                 return True
         return False
 
-    def print_file(self, file_to_print):
+    def _print_file(self, file_to_print):
         # If the file to print is an (open)office document, we need to call unoconf to
         # convert the file to pdf as printer drivers do not support this format
         if self.is_open_office_file(file_to_print):
@@ -209,45 +233,36 @@ class PrintAction(ExportAction):
             folder = os.path.dirname(file_to_print)
             converted_filename = file_to_print + ".pdf"
             converted_path = os.path.join(folder, converted_filename)
-            self.submission.safe_check_call(
+            self.safe_check_call(
                 command=["unoconv", "-o", converted_path, file_to_print],
-                error_message=ExportStatus.ERROR_PRINT.value,
+                error_message=Status.ERROR_PRINT.value,
             )
             file_to_print = converted_path
 
         logger.info("Sending file to printer {}".format(self.printer_name))
-        self.submission.safe_check_call(
+        
+        # todo
+        self._safe_check_call(
             command=["xpp", "-P", self.printer_name, file_to_print],
-            error_message=ExportStatus.ERROR_PRINT.value,
+            error_message=Status.ERROR_PRINT.value,
         )
 
 
-class PrintExportAction(PrintAction):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def run(self):
-        logger.info("Export archive is printer")
-        self.check_printer_setup()
-        # prints all documents in the archive
-        self.print_all_files()
-
-
-class PrintTestPageAction(PrintAction):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def run(self):
-        logger.info("Export archive is printer-test")
-        self.check_printer_setup()
-        # Prints a test page to ensure the printer is functional
-        self.print_test_page()
-
-
-class PrintPreflightAction(PrintAction):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def run(self):
-        logger.info("Export archive is printer-preflight")
-        self.check_printer_setup()
+    def _safe_check_call(self, command: str, status: Status, ignore_stderr_startswith=None):
+        """
+        Safely wrap subprocess.check_output to ensure we always return 0 and
+        log the error messages
+        """
+        try:
+            err = subprocess.run(command, check=True, capture_output=True).stderr
+            # ppdc and lpadmin may emit warnings we are aware of which should not be treated as
+            # user facing errors
+            if ignore_stderr_startswith and err.startswith(ignore_stderr_startswith):
+                logger.info("Encountered warning: {}".format(err.decode("utf-8")))
+            elif err == b"":
+                # Nothing on stderr and returncode is 0, we're good
+                pass
+            else:
+                raise ExportException(status=status, e=err)
+        except subprocess.CalledProcessError as ex:
+            raise ExportException(status=status, e=ex.output)
