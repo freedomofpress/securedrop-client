@@ -33,6 +33,7 @@
   /usr/bin/cat mrix,
   /usr/bin/chmod mrix,
   /usr/bin/dash ix,
+  /usr/bin/expr ix,
   /usr/bin/mkdir mrix,
   /usr/bin/qrexec-client-vm mrix,
   /usr/bin/qubes-gpg-client mrix,
