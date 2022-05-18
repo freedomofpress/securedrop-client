@@ -164,6 +164,101 @@ msgstr ""
 msgid "DONE"
 msgstr ""
 
+msgid "Earlier files and messages deleted."
+msgstr ""
+
+msgid ""
+"Files and messages deleted\n"
+" for this source"
+msgstr ""
+
+msgid "Compose a reply to "
+msgstr ""
+
+msgid "Awaiting encryption key"
+msgstr ""
+
+msgid " from server to enable replies"
+msgstr ""
+
+msgid "Sign in"
+msgstr ""
+
+msgid " to compose or send a reply"
+msgstr ""
+
+msgid "DELETE"
+msgstr ""
+
+msgid "Username"
+msgstr ""
+
+msgid "Passphrase"
+msgstr ""
+
+msgid "Two-Factor Code"
+msgstr ""
+
+msgid "SecureDrop Client v{}"
+msgstr ""
+
+msgid ""
+"That username won't work.\n"
+"It should be at least 3 characters long."
+msgstr ""
+
+msgid ""
+"That passphrase won't work.\n"
+"It should be between 14 and 128 characters long."
+msgstr ""
+
+msgid ""
+"That two-factor code won't work.\n"
+"It should only contain numerals."
+msgstr ""
+
+msgid "SIGNING IN"
+msgstr ""
+
+msgid "Please enter a username, passphrase and two-factor code."
+msgstr ""
+
+msgid "USE OFFLINE"
+msgstr ""
+
+msgid "Show Passphrase"
+msgstr ""
+
+msgid "CANCEL"
+msgstr ""
+
+msgid "CONTINUE"
+msgstr ""
+
+msgid "YES, DELETE FILES AND MESSAGES"
+msgstr ""
+
+msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
+msgstr ""
+
+msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
+msgstr ""
+
+msgid "one file"
+msgid_plural "{file_count} files"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "one reply"
+msgid_plural "{reply_count} replies"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "one message"
+msgid_plural "{message_count} messages"
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr ""
 
@@ -203,103 +298,8 @@ msgstr ""
 msgid "Remember to be careful when working with files outside of your Workstation machine."
 msgstr ""
 
-msgid "Passphrase"
-msgstr ""
-
 msgid "SUBMIT"
 msgstr ""
-
-msgid "CONTINUE"
-msgstr ""
-
-msgid "Earlier files and messages deleted."
-msgstr ""
-
-msgid ""
-"Files and messages deleted\n"
-" for this source"
-msgstr ""
-
-msgid "Compose a reply to "
-msgstr ""
-
-msgid "Awaiting encryption key"
-msgstr ""
-
-msgid " from server to enable replies"
-msgstr ""
-
-msgid "Sign in"
-msgstr ""
-
-msgid " to compose or send a reply"
-msgstr ""
-
-msgid "DELETE"
-msgstr ""
-
-msgid "Username"
-msgstr ""
-
-msgid "Two-Factor Code"
-msgstr ""
-
-msgid "SecureDrop Client v{}"
-msgstr ""
-
-msgid ""
-"That username won't work.\n"
-"It should be at least 3 characters long."
-msgstr ""
-
-msgid ""
-"That passphrase won't work.\n"
-"It should be between 14 and 128 characters long."
-msgstr ""
-
-msgid ""
-"That two-factor code won't work.\n"
-"It should only contain numerals."
-msgstr ""
-
-msgid "SIGNING IN"
-msgstr ""
-
-msgid "Please enter a username, passphrase and two-factor code."
-msgstr ""
-
-msgid "USE OFFLINE"
-msgstr ""
-
-msgid "Show Passphrase"
-msgstr ""
-
-msgid "CANCEL"
-msgstr ""
-
-msgid "YES, DELETE FILES AND MESSAGES"
-msgstr ""
-
-msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
-msgstr ""
-
-msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
-msgstr ""
-
-msgid "one file"
-msgid_plural "{file_count} files"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "one reply"
-msgid_plural "{reply_count} replies"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "one message"
-msgid_plural "{message_count} messages"
-msgstr[0] ""
-msgstr[1] ""
 
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgstr ""
