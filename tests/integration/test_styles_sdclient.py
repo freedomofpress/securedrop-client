@@ -154,9 +154,9 @@ def test_styles_for_login_dialog(mocker, main_window):
     form = login_dialog.layout().itemAt(2).widget()
     form_children_qlabel = form.findChildren(QLabel)
     for c in form_children_qlabel:
-        assert "Montserrat" == c.font().family()
+        assert "Montserrat" == c.font().family() or "Source Sans Pro" == c.font().family()
         assert QFont.DemiBold - 1 == c.font().weight()
-        assert 13 == c.font().pixelSize()
+        assert 13 == c.font().pixelSize() or 12 == c.font().pixelSize()
         assert "#ffffff" == c.palette().color(QPalette.Foreground).name()
     form_children_qlineedit = form.findChildren(QLineEdit)
     for c in form_children_qlineedit:
@@ -550,7 +550,7 @@ def test_styles_for_export_dialog(export_dialog):
 
     passphrase_children_qlabel = export_dialog.passphrase_form.findChildren(QLabel)
     for c in passphrase_children_qlabel:
-        assert "Montserrat" == c.font().family()
+        assert "Montserrat" == c.font().family() or "Source Sans Pro" == c.font().family()
         assert QFont.DemiBold - 1 == c.font().weight()
         assert 12 == c.font().pixelSize()
         assert "#2a319d" == c.palette().color(QPalette.Foreground).name()

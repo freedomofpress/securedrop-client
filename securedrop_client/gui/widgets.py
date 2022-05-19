@@ -84,6 +84,7 @@ from securedrop_client.gui.base import (
     SvgPushButton,
     SvgToggleButton,
 )
+from securedrop_client.gui.base.checkbox import SDCheckBox
 from securedrop_client.gui.conversation import DeleteConversationDialog
 from securedrop_client.gui.source import DeleteSourceDialog
 from securedrop_client.logic import Controller
@@ -2683,8 +2684,13 @@ class ExportDialog(ModalDialog):
         effect.setBlurRadius(4)
         effect.setColor(QColor("#aaa"))
         self.passphrase_field.setGraphicsEffect(effect)
+
+        check = SDCheckBox()
+        check.checkbox.stateChanged.connect(self.passphrase_field.on_toggle_password_Action)
+
         passphrase_form_layout.addWidget(passphrase_label)
         passphrase_form_layout.addWidget(self.passphrase_field)
+        passphrase_form_layout.addWidget(check, alignment=Qt.AlignRight)
         self.body_layout.addWidget(self.passphrase_form)
         self.passphrase_form.hide()
 

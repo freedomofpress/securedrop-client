@@ -271,6 +271,9 @@ msgstr ""
 msgid "USE OFFLINE"
 msgstr ""
 
+msgid "Show Passphrase"
+msgstr ""
+
 msgid "CANCEL"
 msgstr ""
 
