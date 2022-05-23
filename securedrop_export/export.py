@@ -128,7 +128,13 @@ class SDExport(object):
         try:
             subprocess.check_call(command)
         except subprocess.CalledProcessError as ex:
-            self.exit_gracefully(msg=error_message, e=ex.output)
+            # ppdc emits warnings which should not be treated as user facing errors
+            if ex.returncode == 0 and \
+               ex.stderr is not None and \
+               ex.stderr.startswith("ppdc: Warning"):
+                logger.info('Encountered warning: {}'.format(ex.output))
+            else:
+                self.exit_gracefully(msg=error_message, e=ex.output)
 
 
 class ExportAction(abc.ABC):
