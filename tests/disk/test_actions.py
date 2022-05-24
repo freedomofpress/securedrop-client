@@ -26,16 +26,19 @@ def test_usb_precheck_disconnected(capsys, mocker):
     # Popen call returns lsblk output
     command_output = mock.MagicMock()
     command_output.stdout = mock.MagicMock()
-    command_output.stdout.readlines = mock.MagicMock(return_value=[b"sda disk\n", b"sdb disk\n"])
+    command_output.stdout.readlines = mock.MagicMock(
+        return_value=[b"sda disk\n", b"sdb disk\n"]
+    )
     mocker.patch("subprocess.Popen", return_value=command_output)
 
     # check_output returns removable status
-    mocker.patch("subprocess.check_output", return_value=[b'0\n', b'0\n'])
+    mocker.patch("subprocess.check_output", return_value=[b"0\n", b"0\n"])
 
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
 
-    mocker.patch("subprocess.check_output",
-                 side_effect=CalledProcessError(1, 'check_output'))
+    mocker.patch(
+        "subprocess.check_output", side_effect=CalledProcessError(1, "check_output")
+    )
 
     action.check_usb_connected(exit=True)
 
@@ -75,7 +78,9 @@ def test_usb_precheck_multiple_devices_connected(capsys, mocker):
     # Popen call returns lsblk output
     command_output = mock.MagicMock()
     command_output.stdout = mock.MagicMock()
-    command_output.stdout.readlines = mock.MagicMock(return_value=[b"sdb disk\n", b"sdc disk\n"])
+    command_output.stdout.readlines = mock.MagicMock(
+        return_value=[b"sdb disk\n", b"sdc disk\n"]
+    )
     mocker.patch("subprocess.Popen", return_value=command_output)
 
     # check_output returns removable status
@@ -166,8 +171,9 @@ def test_luks_precheck_encrypted_multi_part(mocked_call, capsys, mocker):
     # Here we need to mock the exit_gracefully method with a side effect otherwise
     # program execution will continue after exit_gracefully and exit_gracefully
     # may be called a second time.
-    mocked_exit = mocker.patch.object(submission, "exit_gracefully",
-                                      side_effect=lambda x: sys.exit(0))
+    mocked_exit = mocker.patch.object(
+        submission, "exit_gracefully", side_effect=lambda x: sys.exit(0)
+    )
 
     # Output of `lsblk -o TYPE --noheadings DEVICE_NAME` when a drive has multiple
     # partitions
@@ -189,15 +195,18 @@ def test_luks_precheck_encrypted_luks_error(mocked_call, capsys, mocker):
     expected_message = "USB_ENCRYPTION_NOT_SUPPORTED"
     assert expected_message == export.ExportStatus.USB_ENCRYPTION_NOT_SUPPORTED.value
 
-    mocked_exit = mocker.patch.object(submission, "exit_gracefully",
-                                      side_effect=lambda msg, e: sys.exit(0))
+    mocked_exit = mocker.patch.object(
+        submission, "exit_gracefully", side_effect=lambda msg, e: sys.exit(0)
+    )
 
     single_partition_lsblk_output = b"disk\npart\n"
     mocker.patch("subprocess.check_output", return_value=single_partition_lsblk_output)
-    mocker.patch("subprocess.check_call", side_effect=CalledProcessError(1, 'check_call'))
+    mocker.patch(
+        "subprocess.check_call", side_effect=CalledProcessError(1, "check_call")
+    )
 
     with pytest.raises(SystemExit):
         action.check_luks_volume()
 
-    assert mocked_exit.mock_calls[0][2]['msg'] == expected_message
-    assert mocked_exit.mock_calls[0][2]['e'] is None
+    assert mocked_exit.mock_calls[0][2]["msg"] == expected_message
+    assert mocked_exit.mock_calls[0][2]["e"] is None

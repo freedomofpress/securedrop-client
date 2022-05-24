@@ -21,7 +21,7 @@ setuptools.setup(
     url="https://github.com/freedomofpress/securedrop-export",
     packages=setuptools.find_packages(exclude=["docs", "tests"]),
     package_data={
-            'securedrop_export': ['VERSION'],
+        "securedrop_export": ["VERSION"],
     },
     classifiers=(
         "Development Status :: 3 - Alpha",
@@ -31,5 +31,7 @@ setuptools.setup(
         "Intended Audience :: Developers",
         "Operating System :: OS Independent",
     ),
-    entry_points={"console_scripts": ["send-to-usb = securedrop_export.entrypoint:start"]},
+    entry_points={
+        "console_scripts": ["send-to-usb = securedrop_export.entrypoint:start"]
+    },
 )

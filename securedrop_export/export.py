@@ -29,7 +29,7 @@ class Metadata(object):
         "disk-test",  # disk preflight test
         "printer",
         "printer-test",  # print test page
-        "printer-preflight"
+        "printer-preflight",
     ]
     SUPPORTED_ENCRYPTION_METHODS = ["luks"]
 
@@ -38,28 +38,26 @@ class Metadata(object):
 
         try:
             with open(self.metadata_path) as f:
-                logger.info('Parsing archive metadata')
+                logger.info("Parsing archive metadata")
                 json_config = json.loads(f.read())
                 self.export_method = json_config.get("device", None)
                 self.encryption_method = json_config.get("encryption_method", None)
-                self.encryption_key = json_config.get(
-                    "encryption_key", None
-                )
+                self.encryption_key = json_config.get("encryption_key", None)
                 logger.info(
-                    'Exporting to device {} with encryption_method {}'.format(
+                    "Exporting to device {} with encryption_method {}".format(
                         self.export_method, self.encryption_method
                     )
                 )
 
         except Exception:
-            logger.error('Metadata parsing failure')
+            logger.error("Metadata parsing failure")
             raise
 
     def is_valid(self):
-        logger.info('Validating metadata contents')
+        logger.info("Validating metadata contents")
         if self.export_method not in self.SUPPORTED_EXPORT_METHODS:
             logger.error(
-                'Archive metadata: Export method {} is not supported'.format(
+                "Archive metadata: Export method {} is not supported".format(
                     self.export_method
                 )
             )
@@ -68,7 +66,7 @@ class Metadata(object):
         if self.export_method == "disk":
             if self.encryption_method not in self.SUPPORTED_ENCRYPTION_METHODS:
                 logger.error(
-                    'Archive metadata: Encryption method {} is not supported'.format(
+                    "Archive metadata: Encryption method {} is not supported".format(
                         self.encryption_method
                     )
                 )
@@ -103,7 +101,7 @@ class SDExport(object):
         since non-zero exit values will cause system to try alternative
         solutions for mimetype handling, which we want to avoid.
         """
-        logger.info('Exiting with message: {}'.format(msg))
+        logger.info("Exiting with message: {}".format(msg))
         if not e:
             sys.stderr.write(msg)
             sys.stderr.write("\n")

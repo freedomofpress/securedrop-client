@@ -40,8 +40,9 @@ def test_get_bad_printer_uri(mocked_call, capsys, mocker):
     action = PrintExportAction(submission)
     expected_message = "ERROR_PRINTER_NOT_FOUND"
     assert export.ExportStatus.ERROR_PRINTER_NOT_FOUND.value == expected_message
-    mocked_exit = mocker.patch.object(submission, "exit_gracefully",
-                                      side_effect=lambda x: sys.exit(0))
+    mocked_exit = mocker.patch.object(
+        submission, "exit_gracefully", side_effect=lambda x: sys.exit(0)
+    )
 
     with pytest.raises(SystemExit):
         action.get_printer_uri()
@@ -49,24 +50,30 @@ def test_get_bad_printer_uri(mocked_call, capsys, mocker):
     mocked_exit.assert_called_once_with(expected_message)
 
 
-@pytest.mark.parametrize('open_office_paths', [
-    "/tmp/whatver/thisisadoc.doc"
-    "/home/user/Downloads/thisisadoc.xlsx"
-    "/home/user/Downloads/file.odt"
-    "/tmp/tmpJf83j9/secret.pptx"
-])
+@pytest.mark.parametrize(
+    "open_office_paths",
+    [
+        "/tmp/whatver/thisisadoc.doc"
+        "/home/user/Downloads/thisisadoc.xlsx"
+        "/home/user/Downloads/file.odt"
+        "/tmp/tmpJf83j9/secret.pptx"
+    ],
+)
 def test_is_open_office_file(capsys, open_office_paths):
     submission = export.SDExport("", TEST_CONFIG)
     action = PrintExportAction(submission)
     assert action.is_open_office_file(open_office_paths)
 
 
-@pytest.mark.parametrize('open_office_paths', [
-    "/tmp/whatver/thisisadoc.doccc"
-    "/home/user/Downloads/thisisa.xlsx.zip"
-    "/home/user/Downloads/file.odz"
-    "/tmp/tmpJf83j9/secret.gpg"
-])
+@pytest.mark.parametrize(
+    "open_office_paths",
+    [
+        "/tmp/whatver/thisisadoc.doccc"
+        "/home/user/Downloads/thisisa.xlsx.zip"
+        "/home/user/Downloads/file.odz"
+        "/tmp/tmpJf83j9/secret.gpg"
+    ],
+)
 def test_is_not_open_office_file(capsys, open_office_paths):
     submission = export.SDExport("", TEST_CONFIG)
     action = PrintExportAction(submission)
@@ -77,7 +84,9 @@ def test_is_not_open_office_file(capsys, open_office_paths):
 def test_install_printer_ppd_laserjet(mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
     action = PrintExportAction(submission)
-    ppd = action.install_printer_ppd("usb://HP/LaserJet%20Pro%20M404-M405?serial=A00000A00000")
+    ppd = action.install_printer_ppd(
+        "usb://HP/LaserJet%20Pro%20M404-M405?serial=A00000A00000"
+    )
     assert ppd == "/usr/share/cups/model/hp-laserjet_6l.ppd"
 
 
@@ -85,7 +94,9 @@ def test_install_printer_ppd_laserjet(mocker):
 def test_install_printer_ppd_brother(mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
     action = PrintExportAction(submission)
-    ppd = action.install_printer_ppd("usb://Brother/HL-L2320D%20series?serial=A00000A000000")
+    ppd = action.install_printer_ppd(
+        "usb://Brother/HL-L2320D%20series?serial=A00000A000000"
+    )
     assert ppd == "/usr/share/cups/model/br7030.ppd"
 
 
@@ -93,35 +104,43 @@ def test_install_printer_ppd_error_no_driver(mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
     action = PrintExportAction(submission)
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
-    mocker.patch("subprocess.check_call", side_effect=CalledProcessError(1, 'check_call'))
+    mocker.patch(
+        "subprocess.check_call", side_effect=CalledProcessError(1, "check_call")
+    )
 
-    action.install_printer_ppd("usb://HP/LaserJet%20Pro%20M404-M405?serial=A00000A000000")
+    action.install_printer_ppd(
+        "usb://HP/LaserJet%20Pro%20M404-M405?serial=A00000A000000"
+    )
 
-    assert mocked_exit.mock_calls[0][2]['msg'] == "ERROR_PRINTER_DRIVER_UNAVAILABLE"
-    assert mocked_exit.mock_calls[0][2]['e'] is None
+    assert mocked_exit.mock_calls[0][2]["msg"] == "ERROR_PRINTER_DRIVER_UNAVAILABLE"
+    assert mocked_exit.mock_calls[0][2]["e"] is None
 
 
 def test_install_printer_ppd_error_not_supported(mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
     action = PrintExportAction(submission)
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
-    mocker.patch("subprocess.check_call", side_effect=CalledProcessError(1, 'check_call'))
+    mocker.patch(
+        "subprocess.check_call", side_effect=CalledProcessError(1, "check_call")
+    )
 
     action.install_printer_ppd("usb://Not/Supported?serial=A00000A000000")
 
-    assert mocked_exit.mock_calls[0][2]['msg'] == "ERROR_PRINTER_NOT_SUPPORTED"
+    assert mocked_exit.mock_calls[0][2]["msg"] == "ERROR_PRINTER_NOT_SUPPORTED"
 
 
 def test_setup_printer_error(mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
     action = PrintExportAction(submission)
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
-    mocker.patch("subprocess.check_call", side_effect=CalledProcessError(1, 'check_call'))
+    mocker.patch(
+        "subprocess.check_call", side_effect=CalledProcessError(1, "check_call")
+    )
 
     action.setup_printer(
         "usb://Brother/HL-L2320D%20series?serial=A00000A000000",
-        "/usr/share/cups/model/br7030.ppd"
+        "/usr/share/cups/model/br7030.ppd",
     )
 
-    assert mocked_exit.mock_calls[0][2]['msg'] == "ERROR_PRINTER_INSTALL"
-    assert mocked_exit.mock_calls[0][2]['e'] is None
+    assert mocked_exit.mock_calls[0][2]["msg"] == "ERROR_PRINTER_INSTALL"
+    assert mocked_exit.mock_calls[0][2]["e"] is None

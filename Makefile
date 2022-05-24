@@ -40,7 +40,11 @@ update-dev-only-dependencies:  ## Update dev-requirements.txt to pin to the late
 	done < 'requirements/dev-requirements.in'
 
 .PHONY: check
-check: lint semgrep test  ## Run linter and tests
+check: lint semgrep test check-black ## Run linter and tests
+
+.PHONY: check-black
+check-black: ## Check Python source code formatting with black
+	@black --check --diff ./
 
 TESTS ?= tests
 .PHONY: test
@@ -50,6 +54,10 @@ test:  ## Run tests
 .PHONY: lint
 lint:  ## Run linter
 	flake8 securedrop_export/ tests/
+
+.PHONY: black
+black: ## Format Python source code with black
+	@black ./
 
 SEMGREP_FLAGS := --exclude "tests/" --error --strict --verbose
 

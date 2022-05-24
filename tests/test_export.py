@@ -11,7 +11,9 @@ from securedrop_export import export
 
 TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config.json")
 BAD_TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config-bad.json")
-ANOTHER_BAD_TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config-bad-2.json")
+ANOTHER_BAD_TEST_CONFIG = os.path.join(
+    os.path.dirname(__file__), "sd-export-config-bad-2.json"
+)
 
 
 def test_extract_tarball():
@@ -21,7 +23,11 @@ def test_extract_tarball():
     with tempfile.TemporaryDirectory() as temp_dir:
         archive_path = os.path.join(temp_dir, "archive.sd-export")
         with tarfile.open(archive_path, "w:gz") as archive:
-            metadata = {"device": "disk", "encryption_method": "luks", "encryption_key": "test"}
+            metadata = {
+                "device": "disk",
+                "encryption_method": "luks",
+                "encryption_key": "test",
+            }
             metadata_str = json.dumps(metadata)
             metadata_bytes = BytesIO(metadata_str.encode("utf-8"))
             metadata_file_info = tarfile.TarInfo("metadata.json")
@@ -45,15 +51,22 @@ def test_extract_tarball():
 
         submission.extract_tarball()
 
-        extracted_file_path = os.path.join(submission.tmpdir, "some", "dirs", "file.txt")
+        extracted_file_path = os.path.join(
+            submission.tmpdir, "some", "dirs", "file.txt"
+        )
         assert os.path.exists(extracted_file_path)
         assert oct(os.stat(extracted_file_path).st_mode) == "0o100600"
 
         # Subdirectories that are added as members are extracted with 700 permissions
-        assert oct(os.stat(os.path.join(submission.tmpdir, "some")).st_mode) == "0o40700"
+        assert (
+            oct(os.stat(os.path.join(submission.tmpdir, "some")).st_mode) == "0o40700"
+        )
         # Subdirectories that are not added as members are extracted with 700 permissions
         # because os.umask(0o077) is set in the SDExport constructor.
-        assert oct(os.stat(os.path.join(submission.tmpdir, "some", "dirs")).st_mode) == "0o40700"
+        assert (
+            oct(os.stat(os.path.join(submission.tmpdir, "some", "dirs")).st_mode)
+            == "0o40700"
+        )
 
 
 def test_extract_tarball_with_symlink():
@@ -63,7 +76,11 @@ def test_extract_tarball_with_symlink():
     with tempfile.TemporaryDirectory() as temp_dir:
         archive_path = os.path.join(temp_dir, "archive.sd-export")
         with tarfile.open(archive_path, "w:gz") as archive:
-            metadata = {"device": "disk", "encryption_method": "luks", "encryption_key": "test"}
+            metadata = {
+                "device": "disk",
+                "encryption_method": "luks",
+                "encryption_key": "test",
+            }
             metadata_str = json.dumps(metadata)
             metadata_bytes = BytesIO(metadata_str.encode("utf-8"))
             metadata_file_info = tarfile.TarInfo("metadata.json")
@@ -94,14 +111,20 @@ def test_extract_tarball_raises_if_doing_path_traversal():
     with tempfile.TemporaryDirectory() as temp_dir:
         archive_path = os.path.join(temp_dir, "archive.sd-export")
         with tarfile.open(archive_path, "w:gz") as archive:
-            metadata = {"device": "disk", "encryption_method": "luks", "encryption_key": "test"}
+            metadata = {
+                "device": "disk",
+                "encryption_method": "luks",
+                "encryption_key": "test",
+            }
             metadata_str = json.dumps(metadata)
             metadata_bytes = BytesIO(metadata_str.encode("utf-8"))
             metadata_file_info = tarfile.TarInfo("metadata.json")
             metadata_file_info.size = len(metadata_str)
             archive.addfile(metadata_file_info, metadata_bytes)
             content = b"test"
-            traversed_file_info = tarfile.TarInfo("../../../../../../../../../tmp/traversed")
+            traversed_file_info = tarfile.TarInfo(
+                "../../../../../../../../../tmp/traversed"
+            )
             traversed_file_info.size = len(content)
             archive.addfile(traversed_file_info, BytesIO(content))
             archive.close()
@@ -111,7 +134,7 @@ def test_extract_tarball_raises_if_doing_path_traversal():
         with pytest.raises(SystemExit):
             submission.extract_tarball()
 
-        assert not os.path.exists('/tmp/traversed')
+        assert not os.path.exists("/tmp/traversed")
 
 
 def test_extract_tarball_raises_if_doing_path_traversal_with_dir():
@@ -127,7 +150,11 @@ def test_extract_tarball_raises_if_doing_path_traversal_with_dir():
     with tempfile.TemporaryDirectory() as temp_dir:
         archive_path = os.path.join(temp_dir, "archive.sd-export")
         with tarfile.open(archive_path, "w:gz") as archive:
-            metadata = {"device": "disk", "encryption_method": "luks", "encryption_key": "test"}
+            metadata = {
+                "device": "disk",
+                "encryption_method": "luks",
+                "encryption_key": "test",
+            }
             metadata_str = json.dumps(metadata)
             metadata_bytes = BytesIO(metadata_str.encode("utf-8"))
             metadata_file_info = tarfile.TarInfo("metadata.json")
@@ -144,7 +171,7 @@ def test_extract_tarball_raises_if_doing_path_traversal_with_dir():
         with pytest.raises(SystemExit):
             submission.extract_tarball()
 
-        assert not os.path.exists('/tmp/traversed')
+        assert not os.path.exists("/tmp/traversed")
 
 
 def test_extract_tarball_raises_if_doing_path_traversal_with_symlink():
@@ -160,7 +187,11 @@ def test_extract_tarball_raises_if_doing_path_traversal_with_symlink():
     with tempfile.TemporaryDirectory() as temp_dir:
         archive_path = os.path.join(temp_dir, "archive.sd-export")
         with tarfile.open(archive_path, "w:gz") as archive:
-            metadata = {"device": "disk", "encryption_method": "luks", "encryption_key": "test"}
+            metadata = {
+                "device": "disk",
+                "encryption_method": "luks",
+                "encryption_key": "test",
+            }
             metadata_str = json.dumps(metadata)
             metadata_bytes = BytesIO(metadata_str.encode("utf-8"))
             metadata_file_info = tarfile.TarInfo("metadata.json")
@@ -179,7 +210,7 @@ def test_extract_tarball_raises_if_doing_path_traversal_with_symlink():
         with pytest.raises(SystemExit):
             submission.extract_tarball()
 
-        assert not os.path.exists('/tmp/traversed')
+        assert not os.path.exists("/tmp/traversed")
 
 
 def test_extract_tarball_raises_if_doing_path_traversal_with_symlink_linkname():
@@ -195,7 +226,11 @@ def test_extract_tarball_raises_if_doing_path_traversal_with_symlink_linkname():
     with tempfile.TemporaryDirectory() as temp_dir:
         archive_path = os.path.join(temp_dir, "archive.sd-export")
         with tarfile.open(archive_path, "w:gz") as archive:
-            metadata = {"device": "disk", "encryption_method": "luks", "encryption_key": "test"}
+            metadata = {
+                "device": "disk",
+                "encryption_method": "luks",
+                "encryption_key": "test",
+            }
             metadata_str = json.dumps(metadata)
             metadata_bytes = BytesIO(metadata_str.encode("utf-8"))
             metadata_file_info = tarfile.TarInfo("metadata.json")
@@ -214,7 +249,7 @@ def test_extract_tarball_raises_if_doing_path_traversal_with_symlink_linkname():
         with pytest.raises(SystemExit):
             submission.extract_tarball()
 
-        assert not os.path.exists('/tmp/traversed')
+        assert not os.path.exists("/tmp/traversed")
 
 
 def test_extract_tarball_raises_if_name_has_unsafe_absolute_path():
@@ -228,7 +263,11 @@ def test_extract_tarball_raises_if_name_has_unsafe_absolute_path():
     with tempfile.TemporaryDirectory() as temp_dir:
         archive_path = os.path.join(temp_dir, "archive.sd-export")
         with tarfile.open(archive_path, "w:gz") as archive:
-            metadata = {"device": "disk", "encryption_method": "luks", "encryption_key": "test"}
+            metadata = {
+                "device": "disk",
+                "encryption_method": "luks",
+                "encryption_key": "test",
+            }
             metadata_str = json.dumps(metadata)
             metadata_bytes = BytesIO(metadata_str.encode("utf-8"))
             metadata_file_info = tarfile.TarInfo("metadata.json")
@@ -246,7 +285,7 @@ def test_extract_tarball_raises_if_name_has_unsafe_absolute_path():
         with pytest.raises(SystemExit):
             submission.extract_tarball()
 
-        assert not os.path.exists('/tmp/unsafe')
+        assert not os.path.exists("/tmp/unsafe")
 
 
 def test_extract_tarball_raises_if_name_has_unsafe_absolute_path_with_symlink():
@@ -262,10 +301,16 @@ def test_extract_tarball_raises_if_name_has_unsafe_absolute_path_with_symlink():
         archive_path = os.path.join(temp_dir, "archive.sd-export")
         symlink_path = os.path.join(temp_dir, "symlink")
 
-        os.system(f"ln -s {tmp}/unsafe {symlink_path}")  # create symlink to "/tmp/unsafe"
+        os.system(
+            f"ln -s {tmp}/unsafe {symlink_path}"
+        )  # create symlink to "/tmp/unsafe"
 
         with tarfile.open(archive_path, "w:gz") as archive:
-            metadata = {"device": "disk", "encryption_method": "luks", "encryption_key": "test"}
+            metadata = {
+                "device": "disk",
+                "encryption_method": "luks",
+                "encryption_key": "test",
+            }
             metadata_str = json.dumps(metadata)
             metadata_bytes = BytesIO(metadata_str.encode("utf-8"))
             metadata_file_info = tarfile.TarInfo("metadata.json")
@@ -279,7 +324,7 @@ def test_extract_tarball_raises_if_name_has_unsafe_absolute_path_with_symlink():
         with pytest.raises(SystemExit):
             submission.extract_tarball()
 
-        assert not os.path.exists('/tmp/unsafe')
+        assert not os.path.exists("/tmp/unsafe")
 
 
 def test_extract_tarball_raises_if_name_has_unsafe_absolute_path_with_symlink_to_dir():
@@ -305,7 +350,11 @@ def test_extract_tarball_raises_if_name_has_unsafe_absolute_path_with_symlink_to
         os.system(f"ln -s {tmp} {symlink_path}")  # create symlink to "/tmp"
 
         with tarfile.open(archive_path, "w:gz") as archive:
-            metadata = {"device": "disk", "encryption_method": "luks", "encryption_key": "test"}
+            metadata = {
+                "device": "disk",
+                "encryption_method": "luks",
+                "encryption_key": "test",
+            }
             metadata_str = json.dumps(metadata)
             metadata_bytes = BytesIO(metadata_str.encode("utf-8"))
             metadata_file_info = tarfile.TarInfo("metadata.json")
@@ -320,7 +369,7 @@ def test_extract_tarball_raises_if_name_has_unsafe_absolute_path_with_symlink_to
         with pytest.raises(SystemExit):
             submission.extract_tarball()
 
-        assert not os.path.exists('/tmp/unsafe')
+        assert not os.path.exists("/tmp/unsafe")
 
 
 def test_extract_tarball_raises_if_linkname_has_unsafe_absolute_path():
@@ -334,7 +383,11 @@ def test_extract_tarball_raises_if_linkname_has_unsafe_absolute_path():
     with tempfile.TemporaryDirectory() as temp_dir:
         archive_path = os.path.join(temp_dir, "archive.sd-export")
         with tarfile.open(archive_path, "w:gz") as archive:
-            metadata = {"device": "disk", "encryption_method": "luks", "encryption_key": "test"}
+            metadata = {
+                "device": "disk",
+                "encryption_method": "luks",
+                "encryption_key": "test",
+            }
             metadata_str = json.dumps(metadata)
             metadata_bytes = BytesIO(metadata_str.encode("utf-8"))
             metadata_file_info = tarfile.TarInfo("metadata.json")
@@ -353,12 +406,12 @@ def test_extract_tarball_raises_if_linkname_has_unsafe_absolute_path():
         with pytest.raises(SystemExit):
             submission.extract_tarball()
 
-        assert not os.path.exists('/tmp/unsafe')
+        assert not os.path.exists("/tmp/unsafe")
 
 
 def test_exit_gracefully_no_exception(capsys):
     submission = export.SDExport("testfile", TEST_CONFIG)
-    test_msg = 'test'
+    test_msg = "test"
 
     with pytest.raises(SystemExit) as sysexit:
         submission.exit_gracefully(test_msg)
@@ -373,12 +426,10 @@ def test_exit_gracefully_no_exception(capsys):
 
 def test_exit_gracefully_exception(capsys):
     submission = export.SDExport("testfile", TEST_CONFIG)
-    test_msg = 'test'
+    test_msg = "test"
 
     with pytest.raises(SystemExit) as sysexit:
-        submission.exit_gracefully(
-            test_msg, e=Exception('BANG!')
-        )
+        submission.exit_gracefully(test_msg, e=Exception("BANG!"))
 
     # A graceful exit means a return code of 0
     assert sysexit.value.code == 0
@@ -463,11 +514,11 @@ def test_valid_encryption_config(capsys):
 
 def test_safe_check_call(capsys, mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
-    submission.safe_check_call(['ls'], "this will work")
+    submission.safe_check_call(["ls"], "this will work")
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
     expected_message = "uh oh!!!!"
 
-    submission.safe_check_call(['ls', 'kjdsfhkdjfh'], expected_message)
+    submission.safe_check_call(["ls", "kjdsfhkdjfh"], expected_message)
 
-    assert mocked_exit.mock_calls[0][2]['msg'] == expected_message
-    assert mocked_exit.mock_calls[0][2]['e'] is None
+    assert mocked_exit.mock_calls[0][2]["msg"] == expected_message
+    assert mocked_exit.mock_calls[0][2]["e"] is None
