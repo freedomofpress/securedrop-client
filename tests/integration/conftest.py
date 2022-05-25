@@ -1,9 +1,9 @@
 import pytest
 from PyQt5.QtWidgets import QApplication
 
-from securedrop_client.gui.conversation import ExportFileDialog
+from securedrop_client.gui.base import ModalDialog
+from securedrop_client.gui.conversation import ExportFileDialog, PrintFileDialog
 from securedrop_client.gui.main import Window
-from securedrop_client.gui.widgets import ModalDialog, PrintDialog
 from securedrop_client.logic import Controller
 from tests import factory
 
@@ -118,7 +118,7 @@ def print_dialog(mocker, homedir):
     gui.setup(controller)
     gui.login_dialog.close()
     app.setActiveWindow(gui)
-    dialog = PrintDialog(controller, "file_uuid", "file_name")
+    dialog = PrintFileDialog(controller, "file_uuid", "file_name")
 
     yield dialog
 

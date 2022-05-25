@@ -140,30 +140,6 @@ msgstr ""
 msgid " DOWNLOADING "
 msgstr ""
 
-msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr ""
-
-msgid "Ready to print:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr ""
-
-msgid "Connect USB printer"
-msgstr ""
-
-msgid "Printing failed"
-msgstr ""
-
-msgid "<h2>Managing printout risks</h2><b>QR codes and web addresses</b><br />Never type in and open web addresses or scan QR codes contained in printed documents without taking security precautions. If you are unsure how to manage this risk, please contact your administrator.<br /><br /><b>Printer dots</b><br />Any part of a printed page may contain identifying information invisible to the naked eye, such as printer dots. Please carefully consider this risk when working with or publishing scanned printouts."
-msgstr ""
-
-msgid "Please connect your printer to a USB port."
-msgstr ""
-
-msgid "See your administrator for help."
-msgstr ""
-
-msgid "DONE"
-msgstr ""
-
 msgid "Earlier files and messages deleted."
 msgstr ""
 
@@ -292,6 +268,9 @@ msgstr ""
 msgid "The passphrase provided did not work. Please try again."
 msgstr ""
 
+msgid "See your administrator for help."
+msgstr ""
+
 msgid "The CONTINUE button will be disabled until the Export VM is ready"
 msgstr ""
 
@@ -299,6 +278,27 @@ msgid "Remember to be careful when working with files outside of your Workstatio
 msgstr ""
 
 msgid "SUBMIT"
+msgstr ""
+
+msgid "DONE"
+msgstr ""
+
+msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr ""
+
+msgid "Ready to print:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr ""
+
+msgid "Connect USB printer"
+msgstr ""
+
+msgid "Printing failed"
+msgstr ""
+
+msgid "<h2>Managing printout risks</h2><b>QR codes and web addresses</b><br />Never type in and open web addresses or scan QR codes contained in printed documents without taking security precautions. If you are unsure how to manage this risk, please contact your administrator.<br /><br /><b>Printer dots</b><br />Any part of a printed page may contain identifying information invisible to the naked eye, such as printer dots. Please carefully consider this risk when working with or publishing scanned printouts."
+msgstr ""
+
+msgid "Please connect your printer to a USB port."
 msgstr ""
 
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
