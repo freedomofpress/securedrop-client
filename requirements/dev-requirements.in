@@ -21,4 +21,3 @@ sip==4.19.8
 toml
 types-python-dateutil
 types-setuptools
-wlc
