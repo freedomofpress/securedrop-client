@@ -1,3 +1,6 @@
+# Doxygen output from "make docs"
+docs/
+
 *.sqlite
 
 # Byte-compiled / optimized / DLL files
