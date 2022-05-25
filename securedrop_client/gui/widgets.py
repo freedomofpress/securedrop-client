@@ -73,7 +73,6 @@ from securedrop_client.gui.actions import (
     DeleteSourceAction,
     DownloadConversation,
 )
-from securedrop_client.gui.base import ModalDialog  # noqa: F401
 from securedrop_client.gui.base import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.gui.conversation import (
     DeleteConversationDialog,

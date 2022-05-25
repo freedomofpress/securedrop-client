@@ -24,7 +24,6 @@ from securedrop_client.db import (
 )
 from securedrop_client.gui.conversation import ExportFileDialog, PrintFileDialog
 from securedrop_client.gui.main import Window
-from securedrop_client.gui.widgets import ModalDialog
 from securedrop_client.logic import Controller
 from tests import factory
 
@@ -72,15 +71,6 @@ def lang(request):
 
     os.environ["LANG"] = LANG
     configure_locale_and_language()
-
-
-@pytest.fixture(scope="function")
-def modal_dialog(mocker, homedir):
-    mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
-
-    dialog = ModalDialog()
-
-    yield dialog
 
 
 @pytest.fixture(scope="function")
