@@ -28,8 +28,9 @@ def configure_logging():
     log_file = os.path.join(DEFAULT_HOME, LOG_DIR_NAME, EXPORT_LOG_FILENAME)
 
     # set logging format
-    log_fmt = ('%(asctime)s - %(name)s:%(lineno)d(%(funcName)s) '
-               '%(levelname)s: %(message)s')
+    log_fmt = (
+        "%(asctime)s - %(name)s:%(lineno)d(%(funcName)s) " "%(levelname)s: %(message)s"
+    )
     formatter = logging.Formatter(log_fmt)
 
     handler = TimedRotatingFileHandler(log_file)
@@ -60,13 +61,13 @@ def start():
         msg = "ERROR_LOGGING"
         export.SDExport.exit_gracefully(msg)
 
-    logger.info('Starting SecureDrop Export {}'.format(__version__))
+    logger.info("Starting SecureDrop Export {}".format(__version__))
     my_sub = export.SDExport(sys.argv[1], CONFIG_PATH)
 
     try:
         # Halt immediately if target file is absent
         if not os.path.exists(my_sub.archive):
-            logger.info('Archive is not found {}.'.format(my_sub.archive))
+            logger.info("Archive is not found {}.".format(my_sub.archive))
             msg = "ERROR_FILE_NOT_FOUND"
             my_sub.exit_gracefully(msg)
         main.__main__(my_sub)

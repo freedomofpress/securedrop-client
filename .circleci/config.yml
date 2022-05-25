@@ -18,7 +18,7 @@ common-steps:
         virtualenv .venv
         source .venv/bin/activate
         pip install --require-hashes -r requirements/dev-requirements.txt
-        make test
+        make check --keep-going
 
   - &install_packaging_dependencies
     run:
