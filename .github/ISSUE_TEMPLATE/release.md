@@ -21,6 +21,9 @@ SecureDrop maintainers and testers: As you QA this release, please report back y
 ## Release tasks
 
 - [ ] Check if there are any security bug fixes waiting to be pulled into the RC
+- [ ] Check if there are any translations:
+    - [ ] pending merge into `main`
+    - [ ] pending inclusion as a supported language in [`MANIFEST.in`](https://github.com/freedomofpress/securedrop-client/blob/main/MANIFEST.in)
 - [ ] Update changelog
 - [ ] Create test plan
 - [ ] Refresh nightlies
