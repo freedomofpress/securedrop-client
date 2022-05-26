@@ -113,7 +113,16 @@ class Export(QObject):
             # Python's implementation of subprocess, see
             # https://docs.python.org/3/library/subprocess.html#security-considerations
             output = subprocess.check_output(
-                [quote("qvm-open-in-vm"), quote("sd-devices"), quote(archive_path), "--view-only"],
+                [
+                    quote("qrexec-client-vm"),
+                    quote("--"),
+                    quote("sd-devices"),
+                    quote("qubes.OpenInVM"),
+                    quote("/usr/lib/qubes/qopen-in-vm"),
+                    quote("--view-only"),
+                    quote("--"),
+                    quote(archive_path),
+                ],
                 stderr=subprocess.STDOUT,
             )
             return output.decode("utf-8").strip()
