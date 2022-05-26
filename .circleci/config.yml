@@ -77,10 +77,10 @@ common-steps:
 
 version: 2
 jobs:
-  build-bullseye:
+  build-buster:
     docker:
-      - image: debian:bullseye
-    steps:
+      - image: circleci/python:3.7-buster
+      steps:
       - *install_deps
       - checkout
       - *install_packaging_dependencies
@@ -88,9 +88,9 @@ jobs:
       - *make_source_tarball
       - *build_debian_package
 
-  test-bullseye:
+  test-buster:
     docker:
-      - image: debian:bullseye
+      - image: debian:buster
     steps:
       - *install_deps
       - checkout
@@ -105,8 +105,8 @@ workflows:
   version: 2
   securedrop_client_ci:
     jobs:
-      - test-bullseye
-      - build-bullseye
+      - test-buster
+      - build-buster
 
   nightly:
     triggers:
@@ -117,5 +117,5 @@ workflows:
               only:
                 - main
     jobs:
-      - test-bullseye
-      - build-bullseye
+      - test-buster
+      - build-buster
