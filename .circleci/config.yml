@@ -77,9 +77,9 @@ common-steps:
 
 version: 2
 jobs:
-  build-buster:
+  build-bullseye:
     docker:
-      - image: debian:buster
+      - image: debian:bullseye
     steps:
       - *install_deps
       - checkout
@@ -88,9 +88,9 @@ jobs:
       - *make_source_tarball
       - *build_debian_package
 
-  test-buster:
+  test-bullseye:
     docker:
-      - image: debian:buster
+      - image: debian:bullseye
     steps:
       - *install_deps
       - checkout
@@ -105,8 +105,8 @@ workflows:
   version: 2
   securedrop_client_ci:
     jobs:
-      - test-buster
-      - build-buster
+      - test-bullseye
+      - build-bullseye
 
   nightly:
     triggers:
@@ -117,5 +117,5 @@ workflows:
               only:
                 - main
     jobs:
-      - test-buster
-      - build-buster
+      - test-bullseye
+      - build-bullseye
