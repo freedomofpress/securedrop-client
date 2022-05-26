@@ -2547,14 +2547,7 @@ def test_SpeechBubble_init(mocker):
     mock_download_error_connect = mocker.Mock()
     mock_download_error_signal.connect = mock_download_error_connect
 
-    sb = SpeechBubble(
-        "mock id",
-        "hello",
-        mock_update_signal,
-        mock_download_error_signal,
-        0,
-        123,
-    )
+    sb = SpeechBubble("mock id", "hello", mock_update_signal, mock_download_error_signal, 0, 123)
 
     sb.message.text() == "hello"
 
@@ -2597,12 +2590,7 @@ def test_SpeechBubble_adjust_width(mocker):
     """
 
     sb = SpeechBubble(
-        "mock id",
-        "hello",
-        mocker.Mock(),
-        mocker.Mock(),
-        0,
-        SpeechBubble.MIN_CONTAINER_WIDTH,
+        "mock id", "hello", mocker.Mock(), mocker.Mock(), 0, SpeechBubble.MIN_CONTAINER_WIDTH
     )
 
     sb.adjust_width(sb.MIN_CONTAINER_WIDTH - 1)
@@ -2622,12 +2610,7 @@ def test_SpeechBubble_update_text(mocker):
 
     msg_id = "abc123"
     sb = SpeechBubble(
-        msg_id,
-        "hello",
-        mock_signal,
-        mock_signal,
-        0,
-        SpeechBubble.MIN_CONTAINER_WIDTH,
+        msg_id, "hello", mock_signal, mock_signal, 0, SpeechBubble.MIN_CONTAINER_WIDTH
     )
 
     new_msg = "new message"
@@ -2646,12 +2629,7 @@ def test_SpeechBubble_html_init(mocker):
     """
     mock_signal = mocker.MagicMock()
     bubble = SpeechBubble(
-        "mock id",
-        "<b>hello</b>",
-        mock_signal,
-        mock_signal,
-        0,
-        SpeechBubble.MIN_CONTAINER_WIDTH,
+        "mock id", "<b>hello</b>", mock_signal, mock_signal, 0, SpeechBubble.MIN_CONTAINER_WIDTH
     )
     assert bubble.message.text() == "<b>hello</b>"
 
@@ -2662,12 +2640,7 @@ def test_SpeechBubble_with_apostrophe_in_text(mocker):
 
     message = "I'm sure, you are reading my message."
     bubble = SpeechBubble(
-        "mock id",
-        message,
-        mock_signal,
-        mock_signal,
-        0,
-        SpeechBubble.MIN_CONTAINER_WIDTH,
+        "mock id", message, mock_signal, mock_signal, 0, SpeechBubble.MIN_CONTAINER_WIDTH
     )
     assert bubble.message.text() == message
 
@@ -2678,12 +2651,7 @@ def test_SpeechBubble__on_download_error(mocker):
     message_uuid = "mock id"
     message = "I'm sure, you are reading my message."
     bubble = SpeechBubble(
-        message_uuid,
-        message,
-        mock_signal,
-        mock_signal,
-        0,
-        SpeechBubble.MIN_CONTAINER_WIDTH,
+        message_uuid, message, mock_signal, mock_signal, 0, SpeechBubble.MIN_CONTAINER_WIDTH
     )
     assert bubble.message.text() == message
 
@@ -2695,12 +2663,7 @@ def test_SpeechBubble__on_download_error(mocker):
 def test_CheckMark_eventFilter_hover(mocker):
     mock_signal = mocker.MagicMock()
     bubble = SpeechBubble(
-        "mock id",
-        "<b>hello</b>",
-        mock_signal,
-        mock_signal,
-        0,
-        SpeechBubble.MIN_CONTAINER_WIDTH,
+        "mock id", "<b>hello</b>", mock_signal, mock_signal, 0, SpeechBubble.MIN_CONTAINER_WIDTH
     )
 
     bubble.check_mark = mocker.MagicMock()
@@ -2729,14 +2692,7 @@ def test_SpeechBubble_on_update_authenticated_user(mocker):
 
     authenticated_user = factory.User()
 
-    sb = SpeechBubble(
-        "mock id",
-        "hello",
-        mock_update_signal,
-        mock_download_error_signal,
-        0,
-        123,
-    )
+    sb = SpeechBubble("mock id", "hello", mock_update_signal, mock_download_error_signal, 0, 123)
 
     sb.on_update_authenticated_user(authenticated_user)
     assert sb.authenticated_user == authenticated_user
@@ -2750,14 +2706,7 @@ def test_MessageWidget_init(mocker):
     mock_connected = mocker.Mock()
     mock_signal.connect = mock_connected
 
-    MessageWidget(
-        "abc123",
-        "hello",
-        mock_signal,
-        mock_signal,
-        0,
-        123,
-    )
+    MessageWidget("abc123", "hello", mock_signal, mock_signal, 0, 123)
 
     assert mock_connected.called
 
@@ -3909,7 +3858,7 @@ def test_ConversationView_ConversationScrollArea_resize(mocker):
     file_widget_adjust_width = mocker.patch("securedrop_client.gui.widgets.FileWidget.adjust_width")
 
     cv.setFixedWidth(800)
-    event = QResizeEvent(cv.scroll.size(), QSize(123456789, 123456789))
+    event = QResizeEvent(cv.scroll.size(), QSize(123_456_789, 123_456_789))
     cv.scroll.resizeEvent(event)
 
     assert cv.scroll.widget().width() == cv.scroll.width()

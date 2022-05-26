@@ -4,21 +4,29 @@ all: help
 # Default to plain "python3"
 PYTHON ?= python3
 
-.PHONY: venv-debian
-venv-debian: hooks ## Provision a Python 3 virtualenv for development on a prod-like system that has installed dependencies specified in https://github.com/freedomofpress/securedrop-debian-packaging/blob/main/securedrop-client/debian/control
-	$(PYTHON) -m venv .venv-debian --system-site-packages
-	.venv-debian/bin/pip install --upgrade pip wheel
-	.venv-debian/bin/pip install --require-hashes -r "requirements/dev-requirements-debian.txt"
-	@echo "#################"
-	@echo "Virtualenv with Debian system-packages is complete."
-	@echo "Make sure to install the apt packages for system Qt."
-	@echo "Then run: source .venv-debian/bin/activate"
-
 .PHONY: venv
 venv: hooks ## Provision a Python 3 virtualenv for development on Linux
 	$(PYTHON) -m venv .venv
 	.venv/bin/pip install --upgrade pip wheel
 	.venv/bin/pip install --require-hashes -r "requirements/dev-requirements.txt"
+	@echo "#################"
+	@echo "Make sure to run: source .venv/bin/activate"
+
+.PHONY: venv-sdw
+venv-sdw: hooks ## Provision a Python 3 virtualenv for development on a prod-like system that has installed dependencies specified in https://github.com/freedomofpress/securedrop-debian-packaging/blob/main/securedrop-client/debian/control
+	$(PYTHON) -m venv .venv --system-site-packages
+	.venv/bin/pip install --upgrade pip wheel
+	.venv/bin/pip install --require-hashes -r "requirements/dev-sdw-requirements.txt"
+	@echo "#################"
+	@echo "Virtualenv with Debian system-packages is complete."
+	@echo "Make sure to install the apt packages for system Qt."
+	@echo "Then run: source .venv/bin/activate"
+
+.PHONY: venv-buster
+venv-buster: hooks ## Provision a Python 3 virtualenv for development on Linux
+	$(PYTHON) -m venv .venv
+	.venv/bin/pip install --upgrade pip wheel
+	.venv/bin/pip install --require-hashes -r "requirements/dev-buster-requirements.txt"
 	@echo "#################"
 	@echo "Make sure to run: source .venv/bin/activate"
 
@@ -61,11 +69,11 @@ check-black: ## Check Python source code formatting with black
 
 .PHONY: isort
 isort: ## Run isort to organize Python imports
-	@isort --skip-glob .venv-debian ./
+	@isort --skip-glob .venv ./
 
 .PHONY: check-isort
 check-isort: ## Check Python import organization with isort
-	@isort --skip-glob .venv-debian --check-only --diff ./
+	@isort --skip-glob .venv --check-only --diff ./
 
 .PHONY: mypy
 mypy: ## Run static type checker
@@ -136,39 +144,26 @@ safety: ## Runs `safety check` to check python dependencies for vulnerabilities
 bandit: ## Run bandit with medium level excluding test-related folders
 	pip install --upgrade pip && \
 	pip install --upgrade bandit && \
-	bandit -ll --recursive . --exclude ./tests,./.venv,./.venv-debian
+	bandit -ll --recursive . --exclude ./tests,./.venv
 
 .PHONY: check
 check: clean check-black check-isort semgrep bandit lint mypy test-random test-integration test-functional ## Run the full CI test suite
 
-.PHONY: sync-requirements
-sync-requirements:  ## Update dev-requirements.txt to pin to the same versions of prod dependencies
+.PHONY: dev-requirements
+dev-requirements:  ## Update dev-*requirements.txt files if pinned versions do not comply with the dependency specifications in dev-*requirements.in
+	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-requirements.txt requirements/dev-requirements.in
+	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-sdw-requirements.txt requirements/dev-sdw-requirements.in
+
+.PHONY: update-dev-dependencies
+update-dev-dependencies:  ## Update dev requirements in case there are newer versions of packages or updates to prod dependencies
 	if test -f "requirements/dev-requirements.txt"; then rm -r requirements/dev-requirements.txt; fi
-	if test -f "requirements/dev-requirements-debian.txt"; then rm -r requirements/dev-requirements-debian.txt; fi
-	cp requirements/requirements.txt requirements/dev-requirements.txt
-	cp requirements/requirements.txt requirements/dev-requirements-debian.txt
-	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-requirements.txt requirements/requirements.in requirements/dev-requirements.in
-	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-requirements-debian.txt requirements/requirements.in requirements/dev-requirements-debian.in
+	if test -f "requirements/dev-sdw-requirements.txt"; then rm -r requirements/dev-sdw-requirements.txt; fi
+	$(MAKE) dev-requirements
 
 .PHONY: requirements
 requirements:  ## Update *requirements.txt files if pinned versions do not comply with the dependency specifications in *requirements.in
 	pip-compile --generate-hashes --output-file requirements/requirements.txt requirements/requirements.in
-	$(MAKE) sync-requirements
-
-.PHONY: update-dependency
-update-dependency:  ## Add or upgrade a package to the latest version that complies with the dependency specifications in requirements.in
-	pip-compile --generate-hashes --upgrade-package $(PACKAGE) --output-file requirements/requirements.txt requirements/requirements.in
-	$(MAKE) sync-requirements
-
-.PHONY: update-dev-only-dependencies
-update-dev-only-dependencies:  ## Update dev-requirements.txt to pin to the latest versions of dev-only dependencies that comply with the dependency specifications in dev-requirements.in
-	$(MAKE) sync-requirements
-	@while read line; do \
-		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-requirements.txt requirements/requirements.in requirements/dev-requirements.in; \
-	done < 'requirements/dev-requirements.in'
-	@while read line; do \
-		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-requirements-debian.txt requirements/requirements.in requirements/dev-requirements-debian.in; \
-	done < 'requirements/dev-requirements-debian.in'
+	$(MAKE) dev-requirements
 
 # Explaination of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##

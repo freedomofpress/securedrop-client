@@ -1,4 +1,3 @@
--r requirements.in
 -r dev-requirements.in
 pyobjc-core
 pyobjc

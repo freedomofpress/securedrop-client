@@ -1228,10 +1228,7 @@ def test_Controller_download_conversation(homedir, config, session, mocker, sess
 
     co.download_conversation(conversation_id)
 
-    expected = [
-        call(some_file_id, co.data_dir, co.gpg),
-        call(another_file_id, co.data_dir, co.gpg),
-    ]
+    expected = [call(some_file_id, co.data_dir, co.gpg), call(another_file_id, co.data_dir, co.gpg)]
     assert file_download_job_constructor.mock_calls == expected
 
     assert len(add_job_emissions) == 2
