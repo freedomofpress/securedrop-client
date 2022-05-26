@@ -410,5 +410,15 @@ def test__export_archive_with_evil_command(mocker):
     export._export_archive("somefile; rm -rf ~")
 
     check_output.assert_called_once_with(
-        ["qvm-open-in-vm", "sd-devices", "'somefile; rm -rf ~'", "--view-only"], stderr=-2
+        [
+            "qrexec-client-vm",
+            "--",
+            "sd-devices",
+            "qubes.OpenInVM",
+            "/usr/lib/qubes/qopen-in-vm",
+            "--view-only",
+            "--",
+            "'somefile; rm -rf ~'",
+        ],
+        stderr=-2,
     )
