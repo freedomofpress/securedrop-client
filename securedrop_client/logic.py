@@ -441,8 +441,7 @@ class Controller(QObject):
     ):
         """
         Calls the function in a non-blocking manner. Upon completion calls the
-        callback with the result. Calls timeout if the timer associated with
-        the call emits a timeout signal. Any further arguments are passed to
+        callback with the result. Any further arguments are passed to
         the function to be called.
         """
         new_thread_id = str(uuid.uuid4())  # Uniquely id the new thread.
