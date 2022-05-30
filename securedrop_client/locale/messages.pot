@@ -59,13 +59,13 @@ msgstr ""
 msgid "Failed to delete source at server"
 msgstr ""
 
-msgid "All Files"
+msgid "Download All Files"
 msgstr ""
 
-msgid "Entire source account"
+msgid "Delete Source Account"
 msgstr ""
 
-msgid "Files and messages"
+msgid "Delete All Files and Messages"
 msgstr ""
 
 msgid "SecureDrop Client {}"
@@ -161,9 +161,6 @@ msgid "Sign in"
 msgstr ""
 
 msgid " to compose or send a reply"
-msgstr ""
-
-msgid "DELETE"
 msgstr ""
 
 msgid "Username"

@@ -3342,19 +3342,8 @@ class SourceMenu(QMenu):
         self.controller = controller
 
         self.setStyleSheet(self.SOURCE_MENU_CSS)
-        separator_font = QFont()
-        separator_font.setLetterSpacing(QFont.AbsoluteSpacing, 2)
-        separator_font.setBold(True)
-
-        download_section = self.addSection(_("DOWNLOAD"))
-        download_section.setFont(separator_font)
-        download_section.setObjectName("first_section")
 
         self.addAction(DownloadConversation(self, self.controller, app_state))
-
-        delete_section = self.addSection(_("DELETE"))
-        delete_section.setFont(separator_font)
-
         self.addAction(
             DeleteConversationAction(
                 self.source, self, self.controller, DeleteConversationDialog, app_state

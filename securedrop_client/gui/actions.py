@@ -23,7 +23,7 @@ class DownloadConversation(QAction):
     ) -> None:
         self._controller = controller
         self._state = app_state
-        self._text = _("All Files")
+        self._text = _("Download All Files")
         super().__init__(self._text, parent)
         self.setShortcut(Qt.CTRL + Qt.Key_D)
         self.triggered.connect(self.on_triggered)
@@ -74,7 +74,7 @@ class DeleteSourceAction(QAction):
     ) -> None:
         self.source = source
         self.controller = controller
-        self.text = _("Entire source account")
+        self.text = _("Delete Source Account")
 
         super().__init__(self.text, parent)
 
@@ -105,7 +105,7 @@ class DeleteConversationAction(QAction):
         self.source = source
         self.controller = controller
         self._state = app_state
-        self.text = _("Files and messages")
+        self.text = _("Delete All Files and Messages")
 
         super().__init__(self.text, parent)
 
