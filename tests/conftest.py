@@ -25,7 +25,6 @@ from securedrop_client.db import (
 from securedrop_client.gui import conversation
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
-from tests import factory
 
 with open(os.path.join(os.path.dirname(__file__), "files", "test-key.gpg.pub.asc")) as f:
     PUB_KEY = f.read()
@@ -77,13 +76,9 @@ def lang(request):
 def print_dialog(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
-    file = factory.File(source=factory.Source(), is_downloaded=True)
-    get_file = mocker.MagicMock(return_value=file)
-    controller = mocker.MagicMock(get_file=get_file)
-    controller.qubes = False
-    export_device = conversation.ExportDevice(controller)
+    export_device = mocker.MagicMock(spec=conversation.ExportDevice)
 
-    dialog = conversation.PrintFileDialog(export_device, file.uuid, "file123.jpg")
+    dialog = conversation.PrintFileDialog(export_device, "file_UUID", "file123.jpg")
 
     yield dialog
 
@@ -92,13 +87,9 @@ def print_dialog(mocker, homedir):
 def export_dialog(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
-    file = factory.File(source=factory.Source(), is_downloaded=True)
-    get_file = mocker.MagicMock(return_value=file)
-    controller = mocker.MagicMock(get_file=get_file)
-    controller.qubes = False
-    export_device = conversation.ExportDevice(controller)
+    export_device = mocker.MagicMock(spec=conversation.ExportDevice)
 
-    dialog = conversation.ExportFileDialog(export_device, file.uuid, "file123.jpg")
+    dialog = conversation.ExportFileDialog(export_device, "file_UUID", "file123.jpg")
 
     yield dialog
 
