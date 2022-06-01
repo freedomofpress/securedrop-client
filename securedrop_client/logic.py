@@ -310,6 +310,23 @@ class Controller(QObject):
     """
     add_job = pyqtSignal("PyQt_PyObject")
 
+    export_preflight_check_requested = pyqtSignal()
+    export_preflight_check_succeeded = pyqtSignal()
+    export_preflight_check_failed = pyqtSignal(object)
+
+    export_requested = pyqtSignal(list, str)
+    export_succeeded = pyqtSignal()
+    export_failed = pyqtSignal(object)
+    export_completed = pyqtSignal(list)
+
+    print_preflight_check_requested = pyqtSignal()
+    print_preflight_check_succeeded = pyqtSignal()
+    print_preflight_check_failed = pyqtSignal(object)
+
+    print_requested = pyqtSignal(list)
+    print_succeeded = pyqtSignal()
+    print_failed = pyqtSignal(object)
+
     def __init__(  # type: ignore [no-untyped-def]
         self,
         hostname: str,
@@ -369,7 +386,26 @@ class Controller(QObject):
 
         self.gpg = GpgHelper(home, self.session_maker, proxy)
 
-        self.export = Export()
+        self.export = Export(
+            self.export_preflight_check_requested,
+            self.export_requested,
+            self.print_preflight_check_requested,
+            self.print_requested,
+        )
+
+        # Abstract the Export instance away from the GUI
+        self.export.preflight_check_call_success.connect(self.export_preflight_check_succeeded)
+        self.export.preflight_check_call_failure.connect(self.export_preflight_check_failed)
+
+        self.export.export_usb_call_success.connect(self.export_succeeded)
+        self.export.export_usb_call_failure.connect(self.export_failed)
+        self.export.export_completed.connect(self.export_completed)
+
+        self.export.printer_preflight_success.connect(self.print_preflight_check_succeeded)
+        self.export.printer_preflight_failure.connect(self.print_preflight_check_failed)
+
+        self.export.print_call_failure.connect(self.print_failed)
+        self.export.print_call_success.connect(self.print_succeeded)
 
         # File data.
         self.data_dir = os.path.join(self.home, "data")
@@ -937,10 +973,10 @@ class Controller(QObject):
         logger.info("Running printer preflight check")
 
         if not self.qubes:
-            self.export.printer_preflight_success.emit()
+            self.print_preflight_check_succeeded.emit()
             return
 
-        self.export.begin_printer_preflight.emit()
+        self.print_preflight_check_requested.emit()
 
     def run_export_preflight_checks(self) -> None:
         """
@@ -949,10 +985,10 @@ class Controller(QObject):
         logger.info("Running export preflight check")
 
         if not self.qubes:
-            self.export.preflight_check_call_success.emit()
+            self.export_preflight_check_succeeded.emit()
             return
 
-        self.export.begin_preflight_check.emit()
+        self.export_preflight_check_requested.emit()
 
     def export_file_to_usb_drive(self, file_uuid: str, passphrase: str) -> None:
         """
@@ -968,10 +1004,10 @@ class Controller(QObject):
             return
 
         if not self.qubes:
-            self.export.export_usb_call_success.emit()
+            self.export_succeeded.emit()
             return
 
-        self.export.begin_usb_export.emit([file_location], passphrase)
+        self.export_requested.emit([file_location], passphrase)
 
     def print_file(self, file_uuid: str) -> None:
         """
@@ -988,7 +1024,7 @@ class Controller(QObject):
         if not self.qubes:
             return
 
-        self.export.begin_print.emit([file_location])
+        self.print_requested.emit([file_location])
 
     @login_required
     def on_submission_download(
