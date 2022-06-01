@@ -60,7 +60,6 @@ from securedrop_client.api_jobs.uploads import (
     SendReplyJobTimeoutError,
 )
 from securedrop_client.crypto import GpgHelper
-from securedrop_client.export import Export
 from securedrop_client.queue import ApiJobQueue
 from securedrop_client.sync import ApiSync
 from securedrop_client.utils import check_dir_permissions
@@ -310,23 +309,6 @@ class Controller(QObject):
     """
     add_job = pyqtSignal("PyQt_PyObject")
 
-    export_preflight_check_requested = pyqtSignal()
-    export_preflight_check_succeeded = pyqtSignal()
-    export_preflight_check_failed = pyqtSignal(object)
-
-    export_requested = pyqtSignal(list, str)
-    export_succeeded = pyqtSignal()
-    export_failed = pyqtSignal(object)
-    export_completed = pyqtSignal(list)
-
-    print_preflight_check_requested = pyqtSignal()
-    print_preflight_check_succeeded = pyqtSignal()
-    print_preflight_check_failed = pyqtSignal(object)
-
-    print_requested = pyqtSignal(list)
-    print_succeeded = pyqtSignal()
-    print_failed = pyqtSignal(object)
-
     def __init__(  # type: ignore [no-untyped-def]
         self,
         hostname: str,
@@ -412,27 +394,6 @@ class Controller(QObject):
 
         self.gpg = GpgHelper(home, self.session_maker, proxy)
 
-        self.export = Export(
-            self.export_preflight_check_requested,
-            self.export_requested,
-            self.print_preflight_check_requested,
-            self.print_requested,
-        )
-
-        # Abstract the Export instance away from the GUI
-        self.export.preflight_check_call_success.connect(self.export_preflight_check_succeeded)
-        self.export.preflight_check_call_failure.connect(self.export_preflight_check_failed)
-
-        self.export.export_usb_call_success.connect(self.export_succeeded)
-        self.export.export_usb_call_failure.connect(self.export_failed)
-        self.export.export_completed.connect(self.export_completed)
-
-        self.export.printer_preflight_success.connect(self.print_preflight_check_succeeded)
-        self.export.printer_preflight_failure.connect(self.print_preflight_check_failed)
-
-        self.export.print_call_failure.connect(self.print_failed)
-        self.export.print_call_success.connect(self.print_succeeded)
-
         # File data.
         self.data_dir = os.path.join(self.home, "data")
 
@@ -483,13 +444,6 @@ class Controller(QObject):
         # The gui needs to reference this "controller" layer to call methods
         # triggered by UI events.
         self.gui.setup(self)
-
-        # Run export object in a separate thread context (a reference to the
-        # thread is kept on self such that it does not get garbage collected
-        # after this method returns) - we want to keep our export thread around for
-        # later processing.
-        self.export.moveToThread(self.export_thread)
-        self.export_thread.start()
 
         storage.clear_download_errors(self.session)
 
@@ -997,66 +951,6 @@ class Controller(QObject):
         args = ["--view-only", "@dispvm:sd-viewer", file.location(self.data_dir)]
         process = QProcess(self)
         process.start(command, args)
-
-    def run_printer_preflight_checks(self) -> None:
-        """
-        Run preflight checks to make sure the Export VM is configured correctly.
-        """
-        logger.info("Running printer preflight check")
-
-        if not self.qubes:
-            self.print_preflight_check_succeeded.emit()
-            return
-
-        self.print_preflight_check_requested.emit()
-
-    def run_export_preflight_checks(self) -> None:
-        """
-        Run preflight checks to make sure the Export VM is configured correctly.
-        """
-        logger.info("Running export preflight check")
-
-        if not self.qubes:
-            self.export_preflight_check_succeeded.emit()
-            return
-
-        self.export_preflight_check_requested.emit()
-
-    def export_file_to_usb_drive(self, file_uuid: str, passphrase: str) -> None:
-        """
-        Send the file specified by file_uuid to the Export VM with the user-provided passphrase for
-        unlocking the attached transfer device.  If the file is missing, update the db so that
-        is_downloaded is set to False.
-        """
-        file = self.get_file(file_uuid)
-        file_location = file.location(self.data_dir)
-        logger.info("Exporting file in: {}".format(os.path.dirname(file_location)))
-
-        if not self.downloaded_file_exists(file):
-            return
-
-        if not self.qubes:
-            self.export_succeeded.emit()
-            return
-
-        self.export_requested.emit([file_location], passphrase)
-
-    def print_file(self, file_uuid: str) -> None:
-        """
-        Send the file specified by file_uuid to the Export VM. If the file is missing, update the db
-        so that is_downloaded is set to False.
-        """
-        file = self.get_file(file_uuid)
-        file_location = file.location(self.data_dir)
-        logger.info("Printing file in: {}".format(os.path.dirname(file_location)))
-
-        if not self.downloaded_file_exists(file):
-            return
-
-        if not self.qubes:
-            return
-
-        self.print_requested.emit([file_location])
 
     @login_required
     def on_submission_download(

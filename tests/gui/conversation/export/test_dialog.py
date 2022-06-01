@@ -162,14 +162,14 @@ def test_ExportDialog__show_generic_error_message(mocker, export_dialog):
 
 
 def test_ExportDialog__export_file(mocker, export_dialog):
-    controller = mocker.MagicMock()
-    controller.export_file_to_usb_drive = mocker.MagicMock()
-    export_dialog.controller = controller
+    device = mocker.MagicMock()
+    device.export_file_to_usb_drive = mocker.MagicMock()
+    export_dialog._device = device
     export_dialog.passphrase_field.text = mocker.MagicMock(return_value="mock_passphrase")
 
     export_dialog._export_file()
 
-    controller.export_file_to_usb_drive.assert_called_once_with(
+    device.export_file_to_usb_drive.assert_called_once_with(
         export_dialog.file_uuid, "mock_passphrase"
     )
 
