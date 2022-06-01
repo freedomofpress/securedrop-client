@@ -34,10 +34,10 @@ class ExportDialog(ModalDialog):
         self.error_status = ""  # Hold onto the error status we receive from the Export VM
 
         # Connect controller signals to slots
-        self.controller.export.preflight_check_call_success.connect(self._on_preflight_success)
-        self.controller.export.preflight_check_call_failure.connect(self._on_preflight_failure)
-        self.controller.export.export_usb_call_success.connect(self._on_export_success)
-        self.controller.export.export_usb_call_failure.connect(self._on_export_failure)
+        self.controller.export_preflight_check_succeeded.connect(self._on_preflight_success)
+        self.controller.export_preflight_check_failed.connect(self._on_preflight_failure)
+        self.controller.export_succeeded.connect(self._on_export_success)
+        self.controller.export_failed.connect(self._on_export_failure)
 
         # Connect parent signals to slots
         self.continue_button.setEnabled(False)
