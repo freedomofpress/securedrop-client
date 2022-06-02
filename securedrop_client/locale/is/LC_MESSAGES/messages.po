@@ -7,14 +7,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.5.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2021-10-07 15:42+0000\n"
+"PO-Revision-Date: 2022-03-19 10:42+0000\n"
 "Last-Translator: Sveinn í Felli <sv1@fellsnet.is>\n"
-"Language: is\n"
 "Language-Team: Icelandic <https://weblate.securedrop.org/projects/securedrop/securedrop-client/is/>\n"
-"Plural-Forms: nplurals=2; plural=n % 10 != 1 || n % 100 == 11\n"
+"Language: is\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n % 10 != 1 || n % 100 == 11;\n"
+"X-Generator: Weblate 4.11.2\n"
 "Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
@@ -64,53 +65,20 @@ msgstr "Mistókst að eyða samtali á netþjóni"
 msgid "Failed to delete source at server"
 msgstr "Mistókst að eyða heimildarmanni á netþjóni"
 
-msgid "Username"
-msgstr "Notandanafn"
+msgid "All Files"
+msgstr "Allar skrár"
 
-msgid "Passphrase"
-msgstr "Lykilorð"
+msgid "Entire source account"
+msgstr "Öllum aðgangi heimildarmanns"
 
-msgid "Two-Factor Code"
-msgstr "Teggja-þátta kóði"
-
-msgid "SecureDrop Client v{}"
-msgstr "SecureDrop biðlari útg.{}"
-
-msgid "SIGN IN"
-msgstr "SKRÁ INN"
-
-msgid ""
-"That username won't work.\n"
-"It should be at least 3 characters long."
-msgstr ""
-"Þetta notandanafn mun ekki virka.\n"
-"Ætti að vera a.m.k. 3 stafa langt."
-
-msgid ""
-"That passphrase won't work.\n"
-"It should be between 14 and 128 characters long."
-msgstr ""
-"Þetta lykilorð mun ekki virka.\n"
-"Ætti að vera milli 14 og 128 stafa langt."
-
-msgid ""
-"That two-factor code won't work.\n"
-"It should only contain numerals."
-msgstr ""
-"Þessi tveggja-þátta kóði mun ekki virka.\n"
-"Hann ætti einungis að innihalda tölustafi."
-
-msgid "SIGNING IN"
-msgstr "SKRÁI INN"
-
-msgid "Please enter a username, passphrase and two-factor code."
-msgstr "Settu inn notandanafn, lykilorð og tvíþátta auðkenningarkóða."
+msgid "Files and messages"
+msgstr "Skrár og skilaboð"
 
 msgid "SecureDrop Client {}"
 msgstr "SecureDrop biðlari {}"
 
 msgid "Quit"
-msgstr ""
+msgstr "Hætta"
 
 msgid "Last Refresh: {}"
 msgstr "Síðasti endurlestur: {}"
@@ -123,6 +91,9 @@ msgstr "{}"
 
 msgid "SIGN OUT"
 msgstr "SKRÁ ÚT"
+
+msgid "SIGN IN"
+msgstr "SKRÁ INN"
 
 msgid "Nothing to see just yet!"
 msgstr "Ekkert að sjá hér ennþá!"
@@ -154,9 +125,6 @@ msgstr "Eyði aðgangi heimildarmanns..."
 msgid "— All files and messages deleted for this source —"
 msgstr "— Öllum skrám og skilaboðum eytt fyrir þennan heimildarmann —"
 
-msgid "USE OFFLINE"
-msgstr "NOTA ÓNETTENGT"
-
 msgid "Failed to send"
 msgstr "Mistókst að senda"
 
@@ -178,35 +146,110 @@ msgstr "SÆKJA"
 msgid " DOWNLOADING "
 msgstr " SÆKI GÖGN "
 
+msgid "Earlier files and messages deleted."
+msgstr "Eldri skrám og skilaboðum eytt."
+
+msgid ""
+"Files and messages deleted\n"
+" for this source"
+msgstr ""
+"Skrám og skilaboðum eytt\n"
+" fyrir þennan heimildarmann"
+
+msgid "Compose a reply to "
+msgstr "Semja svar til "
+
+msgid "Awaiting encryption key"
+msgstr "Bíð eftir dulritunarlykli"
+
+msgid " from server to enable replies"
+msgstr " frá netþjóni til að virkja svör"
+
+msgid "Sign in"
+msgstr "Skrá inn"
+
+msgid " to compose or send a reply"
+msgstr " til að semja eða senda svör"
+
+msgid "DELETE"
+msgstr "EYÐA"
+
+msgid "Username"
+msgstr "Notandanafn"
+
+msgid "Passphrase"
+msgstr "Lykilorð"
+
+msgid "Two-Factor Code"
+msgstr "Teggja-þátta kóði"
+
+msgid "SecureDrop Client v{}"
+msgstr "SecureDrop biðlari útg.{}"
+
+msgid ""
+"That username won't work.\n"
+"It should be at least 3 characters long."
+msgstr ""
+"Þetta notandanafn mun ekki virka.\n"
+"Ætti að vera a.m.k. 3 stafa langt."
+
+msgid ""
+"That passphrase won't work.\n"
+"It should be between 14 and 128 characters long."
+msgstr ""
+"Þetta lykilorð mun ekki virka.\n"
+"Ætti að vera milli 14 og 128 stafa langt."
+
+msgid ""
+"That two-factor code won't work.\n"
+"It should only contain numerals."
+msgstr ""
+"Þessi tveggja-þátta kóði mun ekki virka.\n"
+"Hann ætti einungis að innihalda tölustafi."
+
+msgid "SIGNING IN"
+msgstr "SKRÁI INN"
+
+msgid "Please enter a username, passphrase and two-factor code."
+msgstr "Settu inn notandanafn, lykilorð og tvíþátta auðkenningarkóða."
+
+msgid "USE OFFLINE"
+msgstr "NOTA ÓNETTENGT"
+
+#, fuzzy
+#| msgid "Passphrase"
+msgid "Show Passphrase"
+msgstr "Lykilorð"
+
 msgid "CANCEL"
 msgstr "HÆTTA VIÐ"
 
 msgid "CONTINUE"
 msgstr "HALDA ÁFRAM"
 
-msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr "Undirbý prentun:<br /><span style=\"font-weight:normal\">{}</span>"
+msgid "YES, DELETE FILES AND MESSAGES"
+msgstr "JÁ, EYÐA SKRÁM OG SKILABOÐUM"
 
-msgid "Ready to print:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr "Tilbúið að prenta:<br /><span style=\"font-weight:normal\">{}</span>"
+msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
+msgstr "Vilt þú eyða {files_to_delete}, {replies_to_delete}, {messages_to_delete} úr aðgangi heimildarmannsins {source}?"
 
-msgid "Connect USB printer"
-msgstr "Tengdu USB-prentara"
+msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
+msgstr "Sé aðgangnum haldið, geymast lýsigögn hans og möguleikinn fyrir {source} til að skrá sig aftur inn á SecureDrop hjá þér."
 
-msgid "Printing failed"
-msgstr "Prentun mistókst"
+msgid "one file"
+msgid_plural "{file_count} files"
+msgstr[0] "ein skrá"
+msgstr[1] "{file_count} skrár"
 
-msgid "<h2>Managing printout risks</h2><b>QR codes and web addresses</b><br />Never type in and open web addresses or scan QR codes contained in printed documents without taking security precautions. If you are unsure how to manage this risk, please contact your administrator.<br /><br /><b>Printer dots</b><br />Any part of a printed page may contain identifying information invisible to the naked eye, such as printer dots. Please carefully consider this risk when working with or publishing scanned printouts."
-msgstr "<h2>Áhættumat við útprentun</h2><b>QR-kóðar og vefslóðir</b><br />Aldrei skal skrifa og opna vefslóðir eða skanna QR-kóða úr prentuðu efni án þess að gera öryggisráðstafanir. Ef þú ert ekki viss um hvernig best sé að gæta öryggis svið þessar aðstæður, ættirðu að hafa samband við kerfisstjórann þinn.<br /><br /><b>Punktamynstur prentara</b><br />Allir hlutar útprentaðrar síðu geta innihaldið auðkennanleg mynstur prentdíla sem sjást ekki með berum augum. Mundu eftir þeirri áhættu þegar þú ert að vinna með eða birta skannað prentefni."
+msgid "one reply"
+msgid_plural "{reply_count} replies"
+msgstr[0] "eitt svar"
+msgstr[1] "{reply_count} svör"
 
-msgid "Please connect your printer to a USB port."
-msgstr "Tengdu prentarann þinn við USB-tengi."
-
-msgid "See your administrator for help."
-msgstr "Hafðu samband við kerfisstjórann þinn til að fá frekari aðstoð."
-
-msgid "DONE"
-msgstr "LOKIÐ"
+msgid "one message"
+msgid_plural "{message_count} messages"
+msgstr[0] "ein skilaboð"
+msgstr[1] "{message_count} skilaboð"
 
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Undirbý útflutning:<br /><span style=\"font-weight:normal\">{}</span>"
@@ -241,6 +284,9 @@ msgstr "Annað hvort er drifið ekki dulritað eða að það er eitthvað anna�
 msgid "The passphrase provided did not work. Please try again."
 msgstr "Uppgefið lykilorð virkaði ekki. Reyndu aftur."
 
+msgid "See your administrator for help."
+msgstr "Hafðu samband við kerfisstjórann þinn til að fá frekari aðstoð."
+
 msgid "The CONTINUE button will be disabled until the Export VM is ready"
 msgstr "HALDA ÁFRAM hnappurinn verður óvirkur þar til útflutnings-sýndarvélin (Export VM) er tilbúin"
 
@@ -249,6 +295,27 @@ msgstr "Mundu eftir að fara varlega þegar þú ert að vinna með skrár utan 
 
 msgid "SUBMIT"
 msgstr "SENDA INN"
+
+msgid "DONE"
+msgstr "LOKIÐ"
+
+msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Undirbý prentun:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Ready to print:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Tilbúið að prenta:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Connect USB printer"
+msgstr "Tengdu USB-prentara"
+
+msgid "Printing failed"
+msgstr "Prentun mistókst"
+
+msgid "<h2>Managing printout risks</h2><b>QR codes and web addresses</b><br />Never type in and open web addresses or scan QR codes contained in printed documents without taking security precautions. If you are unsure how to manage this risk, please contact your administrator.<br /><br /><b>Printer dots</b><br />Any part of a printed page may contain identifying information invisible to the naked eye, such as printer dots. Please carefully consider this risk when working with or publishing scanned printouts."
+msgstr "<h2>Áhættumat við útprentun</h2><b>QR-kóðar og vefslóðir</b><br />Aldrei skal skrifa og opna vefslóðir eða skanna QR-kóða úr prentuðu efni án þess að gera öryggisráðstafanir. Ef þú ert ekki viss um hvernig best sé að gæta öryggis svið þessar aðstæður, ættirðu að hafa samband við kerfisstjórann þinn.<br /><br /><b>Punktamynstur prentara</b><br />Allir hlutar útprentaðrar síðu geta innihaldið auðkennanleg mynstur prentdíla sem sjást ekki með berum augum. Mundu eftir þeirri áhættu þegar þú ert að vinna með eða birta skannað prentefni."
+
+msgid "Please connect your printer to a USB port."
+msgstr "Tengdu prentarann þinn við USB-tengi."
 
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgstr "JÁ, EYÐA ÖLLUM AÐGANGI HEIMILDARMANNS"
@@ -267,62 +334,3 @@ msgstr "Þið munið ekki geta sent þeim svör."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Öllum skilaboðum og skrám frá þessum heimildarmanni verður einnig eytt."
-
-msgid "YES, DELETE FILES AND MESSAGES"
-msgstr "JÁ, EYÐA SKRÁM OG SKILABOÐUM"
-
-msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
-msgstr "Vilt þú eyða {files_to_delete}, {replies_to_delete}, {messages_to_delete} úr aðgangi heimildarmannsins {source}?"
-
-msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
-msgstr "Sé aðgangnum haldið, geymast lýsigögn hans og möguleikinn fyrir {source} til að skrá sig aftur inn á SecureDrop hjá þér."
-
-msgid "one file"
-msgid_plural "{file_count} files"
-msgstr[0] "ein skrá"
-msgstr[1] "{file_count} skrár"
-
-msgid "one reply"
-msgid_plural "{reply_count} replies"
-msgstr[0] "eitt svar"
-msgstr[1] "{reply_count} svör"
-
-msgid "one message"
-msgid_plural "{message_count} messages"
-msgstr[0] "ein skilaboð"
-msgstr[1] "{message_count} skilaboð"
-
-msgid "Earlier files and messages deleted."
-msgstr "Eldri skrám og skilaboðum eytt."
-
-msgid ""
-"Files and messages deleted\n"
-" for this source"
-msgstr ""
-"Skrám og skilaboðum eytt\n"
-" fyrir þennan heimildarmann"
-
-msgid "Compose a reply to "
-msgstr "Semja svar til "
-
-msgid "Awaiting encryption key"
-msgstr "Bíð eftir dulritunarlykli"
-
-msgid " from server to enable replies"
-msgstr " frá netþjóni til að virkja svör"
-
-msgid "Sign in"
-msgstr "Skrá inn"
-
-msgid " to compose or send a reply"
-msgstr " til að semja eða senda svör"
-
-msgid "DELETE"
-msgstr "EYÐA"
-
-msgid "Entire source account"
-msgstr "Öllum aðgangi heimildarmanns"
-
-msgid "Files and messages"
-msgstr "Skrár og skilaboð"
-
