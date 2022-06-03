@@ -143,9 +143,9 @@ def test_Controller_call_api(homedir, config, mocker, session_maker):
     thread.started.connect.assert_called_once_with(runner.call_api)
     thread.start.assert_called_once_with()
     runner.moveToThread.assert_called_once_with(thread)
-    runner.call_succeeded.connect.call_count == 1
-    runner.call_failed.connect.call_count == 1
-    runner.call_timed_out.connect.call_count == 1
+    assert runner.call_succeeded.connect.call_count == 1
+    assert runner.call_failed.connect.call_count == 1
+    assert runner.call_timed_out.connect.call_count == 0
 
 
 def test_Controller_login(homedir, config, mocker, session_maker):
@@ -1474,7 +1474,7 @@ def test_Controller_on_file_decryption_failure(homedir, config, mocker, session,
     mock_file_ready.emit.assert_not_called()
     mock_update_error_status.assert_called_once_with("The file download failed. Please try again.")
 
-    co._submit_download_job.call_count == 1
+    assert co._submit_download_job.call_count == 0
     error_logger.call_args_list[0][0][0] == "Failed to decrypt {}".format(file_.uuid)
 
     mock_set_status.assert_not_called()
@@ -1713,7 +1713,7 @@ def test_Controller_on_reply_downloaded_checksum_failure(mocker, homedir, sessio
     reply_ready.emit.assert_not_called()
 
     # Job should get resubmitted and we should log this is happening
-    co._submit_download_job.call_count == 1
+    assert co._submit_download_job.call_count == 1
     warning_logger.call_args_list[0][0][
         0
     ] == "Failure due to checksum mismatch, retrying {}".format(reply.uuid)
@@ -1906,7 +1906,7 @@ def test_Controller_on_message_downloaded_checksum_failure(mocker, homedir, sess
     message_ready.emit.assert_not_called()
 
     # Job should get resubmitted and we should log this is happening
-    co._submit_download_job.call_count == 1
+    assert co._submit_download_job.call_count == 1
 
 
 def test_Controller_on_message_downloaded_decryption_failure(mocker, homedir, session_maker):
@@ -2378,7 +2378,7 @@ def test_Controller_run_printer_preflight_checks(homedir, mocker, session, sourc
 
     co.run_printer_preflight_checks()
 
-    co.export.begin_printer_preflight.emit.call_count == 1
+    assert co.export.begin_printer_preflight.emit.call_count == 1
 
 
 def test_Controller_run_printer_preflight_checks_not_qubes(homedir, mocker, session, source):
@@ -2392,8 +2392,8 @@ def test_Controller_run_printer_preflight_checks_not_qubes(homedir, mocker, sess
 
     co.run_printer_preflight_checks()
 
-    co.export.begin_printer_preflight.emit.call_count == 0
-    co.export.printer_preflight_success.emit.call_count == 1
+    assert co.export.begin_printer_preflight.emit.call_count == 0
+    assert co.export.printer_preflight_success.emit.call_count == 1
 
 
 def test_Controller_run_print_file(mocker, session, homedir):
@@ -2412,7 +2412,7 @@ def test_Controller_run_print_file(mocker, session, homedir):
 
     co.print_file(file.uuid)
 
-    co.export.begin_print.emit.call_count == 1
+    assert co.export.begin_print.emit.call_count == 1
 
 
 def test_Controller_run_print_file_not_qubes(mocker, session, homedir):
@@ -2433,7 +2433,7 @@ def test_Controller_run_print_file_not_qubes(mocker, session, homedir):
 
     co.print_file(file.uuid)
 
-    co.export.begin_print.emit.call_count == 0
+    assert co.export.begin_print.emit.call_count == 0
 
 
 def test_Controller_print_file_file_missing(homedir, mocker, session, session_maker):
@@ -2491,7 +2491,7 @@ def test_Controller_print_file_when_orig_file_already_exists(
 
     co.print_file(file.uuid)
 
-    co.export.begin_print.emit.call_count == 1
+    assert co.export.begin_print.emit.call_count == 1
     co.get_file.assert_called_with(file.uuid)
 
 
@@ -2518,7 +2518,7 @@ def test_Controller_print_file_when_orig_file_already_exists_not_qubes(
 
     co.export_file_to_usb_drive(file.uuid, "mock passphrase")
 
-    co.export.begin_print.emit.call_count == 1
+    assert co.export.begin_print.emit.call_count == 0
     co.get_file.assert_called_with(file.uuid)
 
 
@@ -2534,7 +2534,7 @@ def test_Controller_run_export_preflight_checks(homedir, mocker, session, source
 
     co.run_export_preflight_checks()
 
-    co.export.begin_usb_export.emit.call_count == 1
+    assert co.export.begin_preflight_check.emit.call_count == 1
 
 
 def test_Controller_run_export_preflight_checks_not_qubes(homedir, mocker, session, source):
@@ -2550,7 +2550,7 @@ def test_Controller_run_export_preflight_checks_not_qubes(homedir, mocker, sessi
 
     co.run_export_preflight_checks()
 
-    co.export.begin_usb_export.emit.call_count == 0
+    assert co.export.begin_preflight_check.emit.call_count == 0
 
 
 def test_Controller_export_file_to_usb_drive(homedir, mocker, session):
@@ -2573,7 +2573,7 @@ def test_Controller_export_file_to_usb_drive(homedir, mocker, session):
 
     co.export_file_to_usb_drive(file.uuid, "mock passphrase")
 
-    co.export.begin_usb_export.emit.call_count == 1
+    assert co.export.begin_usb_export.emit.call_count == 1
 
 
 def test_Controller_export_file_to_usb_drive_not_qubes(homedir, mocker, session):
@@ -2598,7 +2598,7 @@ def test_Controller_export_file_to_usb_drive_not_qubes(homedir, mocker, session)
     co.export_file_to_usb_drive(file.uuid, "mock passphrase")
 
     co.export.send_file_to_usb_device.assert_not_called()
-    co.export.begin_usb_export.emit.call_count == 0
+    assert co.export.begin_usb_export.emit.call_count == 0
 
 
 def test_Controller_export_file_to_usb_drive_file_missing(homedir, mocker, session, session_maker):
@@ -2658,7 +2658,7 @@ def test_Controller_export_file_to_usb_drive_when_orig_file_already_exists(
 
     co.export_file_to_usb_drive(file.uuid, "mock passphrase")
 
-    co.export.begin_usb_export.emit.call_count == 1
+    assert co.export.begin_usb_export.emit.call_count == 1
     co.get_file.assert_called_with(file.uuid)
 
 
@@ -2685,7 +2685,7 @@ def test_Controller_export_file_to_usb_drive_when_orig_file_already_exists_not_q
 
     co.export_file_to_usb_drive(file.uuid, "mock passphrase")
 
-    co.export.begin_usb_export.emit.call_count == 1
+    assert co.export.begin_usb_export.emit.call_count == 0
     co.get_file.assert_called_with(file.uuid)
 
 
