@@ -5,7 +5,6 @@ common-steps:
       name: Install base dependencies for Debian python
       command: |
         set -e
-        pip uninstall virtualenv -y || true
         apt-get update && apt-get install -y sudo make git gnupg python3 python3-venv
   - &install_packages
     run:
