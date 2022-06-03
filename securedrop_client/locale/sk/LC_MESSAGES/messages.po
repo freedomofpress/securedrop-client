@@ -9,12 +9,12 @@ msgstr ""
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
 "PO-Revision-Date: 2021-10-18 15:42+0000\n"
 "Last-Translator: Katarina Kasalova <katka.kasalova@gmail.com>\n"
-"Language: sk\n"
 "Language-Team: Slovak <https://weblate.securedrop.org/projects/securedrop/securedrop-client/sk/>\n"
-"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2\n"
+"Language: sk\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2\n"
 "Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
@@ -64,47 +64,14 @@ msgstr "Nepodarilo sa vymazať konverzáciu zo servera"
 msgid "Failed to delete source at server"
 msgstr "Nepodarilo sa zmazať zdroj zo servera"
 
-msgid "Username"
-msgstr "Používateľské meno"
-
-msgid "Passphrase"
-msgstr "Prístupová fráza"
-
-msgid "Two-Factor Code"
-msgstr "Dvojfaktorový kód"
-
-msgid "SecureDrop Client v{}"
-msgstr "SecureDrop Klient v{}"
-
-msgid "SIGN IN"
-msgstr "PRIHLÁSIŤ SA"
-
-msgid ""
-"That username won't work.\n"
-"It should be at least 3 characters long."
+msgid "All Files"
 msgstr ""
-"Prihlasovacie meno nebude fungovať\n"
-"Malo by byť aspoň 3 znaky dlhé."
 
-msgid ""
-"That passphrase won't work.\n"
-"It should be between 14 and 128 characters long."
-msgstr ""
-"Táto prístupová fráza nebude fungovať.\n"
-"Mala by mať 14 až 128 znakov."
+msgid "Entire source account"
+msgstr "Celý účet zdroja"
 
-msgid ""
-"That two-factor code won't work.\n"
-"It should only contain numerals."
-msgstr ""
-"Tento dvojfaktorový kód nebude fungovať.\n"
-"Mal by obsahovať iba čísla."
-
-msgid "SIGNING IN"
-msgstr "PRIHLÁSENIE"
-
-msgid "Please enter a username, passphrase and two-factor code."
-msgstr "Prosíme zadajte prihlasovacie meno, prihlasovaciu frázu a dvojfaktorový kód."
+msgid "Files and messages"
+msgstr "Súbory a správy"
 
 msgid "SecureDrop Client {}"
 msgstr "SecureDrop Klient {}"
@@ -123,6 +90,9 @@ msgstr "{}"
 
 msgid "SIGN OUT"
 msgstr "ODHLÁSIŤ SA"
+
+msgid "SIGN IN"
+msgstr "PRIHLÁSIŤ SA"
 
 msgid "Nothing to see just yet!"
 msgstr "Zatiaľ tu nič nie je!"
@@ -154,9 +124,6 @@ msgstr "Mazanie účtu zdroja ..."
 msgid "— All files and messages deleted for this source —"
 msgstr "— Všetky súbory a správy pre tento zdroj boli zmazané —"
 
-msgid "USE OFFLINE"
-msgstr "POUŽIŤ OFFLINE"
-
 msgid "Failed to send"
 msgstr "Zaslanie sa nepodarilo"
 
@@ -178,35 +145,113 @@ msgstr "STIAHNUŤ"
 msgid " DOWNLOADING "
 msgstr " SŤAHUJE SA "
 
+msgid "Earlier files and messages deleted."
+msgstr "Predchádzajúce súbory a správy vymazané."
+
+msgid ""
+"Files and messages deleted\n"
+" for this source"
+msgstr ""
+"Súbory a správy vymazané\n"
+" pre tento zdroj"
+
+msgid "Compose a reply to "
+msgstr "Vytvoriť odpoveď pre "
+
+msgid "Awaiting encryption key"
+msgstr "Čakanie na šifrovací kľúč"
+
+msgid " from server to enable replies"
+msgstr " zo servera na umožnenie odpovedí"
+
+msgid "Sign in"
+msgstr "Prihlásiť sa"
+
+msgid " to compose or send a reply"
+msgstr " vytvoriť alebo poslať odpoveď"
+
+msgid "DELETE"
+msgstr "ZMAZAŤ"
+
+msgid "Username"
+msgstr "Používateľské meno"
+
+msgid "Passphrase"
+msgstr "Prístupová fráza"
+
+msgid "Two-Factor Code"
+msgstr "Dvojfaktorový kód"
+
+msgid "SecureDrop Client v{}"
+msgstr "SecureDrop Klient v{}"
+
+msgid ""
+"That username won't work.\n"
+"It should be at least 3 characters long."
+msgstr ""
+"Prihlasovacie meno nebude fungovať\n"
+"Malo by byť aspoň 3 znaky dlhé."
+
+msgid ""
+"That passphrase won't work.\n"
+"It should be between 14 and 128 characters long."
+msgstr ""
+"Táto prístupová fráza nebude fungovať.\n"
+"Mala by mať 14 až 128 znakov."
+
+msgid ""
+"That two-factor code won't work.\n"
+"It should only contain numerals."
+msgstr ""
+"Tento dvojfaktorový kód nebude fungovať.\n"
+"Mal by obsahovať iba čísla."
+
+msgid "SIGNING IN"
+msgstr "PRIHLÁSENIE"
+
+msgid "Please enter a username, passphrase and two-factor code."
+msgstr "Prosíme zadajte prihlasovacie meno, prihlasovaciu frázu a dvojfaktorový kód."
+
+msgid "USE OFFLINE"
+msgstr "POUŽIŤ OFFLINE"
+
+#, fuzzy
+#| msgid "Passphrase"
+msgid "Show Passphrase"
+msgstr "Prístupová fráza"
+
 msgid "CANCEL"
 msgstr "ZRUŠIŤ"
 
 msgid "CONTINUE"
 msgstr "ĎALEJ"
 
-msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr "Tlač sa pripravuje:<br /><span style=\"font-weight:normal\">{}</span>"
+msgid "YES, DELETE FILES AND MESSAGES"
+msgstr "ÁNO, ZMAZAŤ SÚBORY A SPRÁVY"
 
-msgid "Ready to print:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr "Pripravený na tlač:<br /><span style=\"font-weight:normal\">{}</span>"
+msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
+msgstr "Chceli by ste zmazať {files_to_delete}, {replies_to_delete}, {messages_to_delete} z účtu zdroja pre {source}?"
 
-msgid "Connect USB printer"
-msgstr "Pripojiť USB tlačiareň"
+msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
+msgstr "Zachovanie účtu zachová jeho metadáta a možnosť {source} znova sa prihlásiť do vášho SecureDrop."
 
-msgid "Printing failed"
-msgstr "Tlač sa nepodarila"
+msgid "one file"
+msgid_plural "{file_count} files"
+msgstr[0] "jeden súbor"
+msgstr[1] "{file_count} súbory"
+msgstr[2] "{file_count} súbory"
 
-msgid "<h2>Managing printout risks</h2><b>QR codes and web addresses</b><br />Never type in and open web addresses or scan QR codes contained in printed documents without taking security precautions. If you are unsure how to manage this risk, please contact your administrator.<br /><br /><b>Printer dots</b><br />Any part of a printed page may contain identifying information invisible to the naked eye, such as printer dots. Please carefully consider this risk when working with or publishing scanned printouts."
-msgstr "<h2> Správa rizík tlače </h2> <b> QR kódy a webové adresy </b> <br /> Nikdy nezadávajte a neotvárajte webové adresy ani neskenujte QR kódy obsiahnuté v tlačených dokumentoch bez vykonania bezpečnostných opatrení. Ak si nie ste istí, ako zvládnuť toto riziko, prosíme kontaktujte svojho správcu. <br /> <br /> <b> Body tlačiarne </b> <br /> Akákoľvek časť vytlačenej strany môže obsahovať identifikačné informácie neviditeľné voľným okom, napríklad bodky tlačiarne. Pri práci so skenovanými výtlačkami alebo pri ich publikovaní toto riziko starostlivo zvážte."
+msgid "one reply"
+msgid_plural "{reply_count} replies"
+msgstr[0] "jedna odpoveď"
+msgstr[1] "{reply_count} odpovede"
+msgstr[2] "{reply_count} odpovede"
 
-msgid "Please connect your printer to a USB port."
-msgstr "Prosíme pripojte vašu tlačiareň do USB portu."
-
-msgid "See your administrator for help."
-msgstr "Požiadajte vášho správcu o pomoc."
-
-msgid "DONE"
-msgstr "HOTOVO"
+msgid "one message"
+msgid_plural "{message_count} messages"
+msgstr[0] "jedna správa"
+msgstr[1] "{message_count} správy"
+msgstr[2] "{message_count} správy"
 
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Príprava na export:<br /><span style=\"font-weight:normal\">{}</span>"
@@ -241,6 +286,9 @@ msgstr "Buď pamäť nie je šifrovaná, alebo má inú chybu."
 msgid "The passphrase provided did not work. Please try again."
 msgstr "Zadaná prístupová fráza nefunguje. Prosíme skúste znova."
 
+msgid "See your administrator for help."
+msgstr "Požiadajte vášho správcu o pomoc."
+
 msgid "The CONTINUE button will be disabled until the Export VM is ready"
 msgstr "Tlačidlo ĎALEJ bude deaktivované kým bude pripravený Export VM"
 
@@ -249,6 +297,27 @@ msgstr "Nezabudnite na opatrnosť pri práci so súbormi mimo vašej Workstation
 
 msgid "SUBMIT"
 msgstr "POTVRDIŤ"
+
+msgid "DONE"
+msgstr "HOTOVO"
+
+msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Tlač sa pripravuje:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Ready to print:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Pripravený na tlač:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Connect USB printer"
+msgstr "Pripojiť USB tlačiareň"
+
+msgid "Printing failed"
+msgstr "Tlač sa nepodarila"
+
+msgid "<h2>Managing printout risks</h2><b>QR codes and web addresses</b><br />Never type in and open web addresses or scan QR codes contained in printed documents without taking security precautions. If you are unsure how to manage this risk, please contact your administrator.<br /><br /><b>Printer dots</b><br />Any part of a printed page may contain identifying information invisible to the naked eye, such as printer dots. Please carefully consider this risk when working with or publishing scanned printouts."
+msgstr "<h2> Správa rizík tlače </h2> <b> QR kódy a webové adresy </b> <br /> Nikdy nezadávajte a neotvárajte webové adresy ani neskenujte QR kódy obsiahnuté v tlačených dokumentoch bez vykonania bezpečnostných opatrení. Ak si nie ste istí, ako zvládnuť toto riziko, prosíme kontaktujte svojho správcu. <br /> <br /> <b> Body tlačiarne </b> <br /> Akákoľvek časť vytlačenej strany môže obsahovať identifikačné informácie neviditeľné voľným okom, napríklad bodky tlačiarne. Pri práci so skenovanými výtlačkami alebo pri ich publikovaní toto riziko starostlivo zvážte."
+
+msgid "Please connect your printer to a USB port."
+msgstr "Prosíme pripojte vašu tlačiareň do USB portu."
 
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgstr "ÁNO, ZMAZAŤ CELÝ ÚČET ZDROJA"
@@ -267,65 +336,3 @@ msgstr "Vaša organizácia mu nebude môcť poslať odpovede."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Všetky súbory a správy od daného zdroja budú zničené."
-
-msgid "YES, DELETE FILES AND MESSAGES"
-msgstr "ÁNO, ZMAZAŤ SÚBORY A SPRÁVY"
-
-msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
-msgstr "Chceli by ste zmazať {files_to_delete}, {replies_to_delete}, {messages_to_delete} z účtu zdroja pre {source}?"
-
-msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
-msgstr "Zachovanie účtu zachová jeho metadáta a možnosť {source} znova sa prihlásiť do vášho SecureDrop."
-
-msgid "one file"
-msgid_plural "{file_count} files"
-msgstr[0] "jeden súbor"
-msgstr[1] "{file_count} súbory"
-msgstr[2] "{file_count} súbory"
-
-msgid "one reply"
-msgid_plural "{reply_count} replies"
-msgstr[0] "jedna odpoveď"
-msgstr[1] "{reply_count} odpovede"
-msgstr[2] "{reply_count} odpovede"
-
-msgid "one message"
-msgid_plural "{message_count} messages"
-msgstr[0] "jedna správa"
-msgstr[1] "{message_count} správy"
-msgstr[2] "{message_count} správy"
-
-msgid "Earlier files and messages deleted."
-msgstr "Predchádzajúce súbory a správy vymazané."
-
-msgid ""
-"Files and messages deleted\n"
-" for this source"
-msgstr ""
-"Súbory a správy vymazané\n"
-" pre tento zdroj"
-
-msgid "Compose a reply to "
-msgstr "Vytvoriť odpoveď pre "
-
-msgid "Awaiting encryption key"
-msgstr "Čakanie na šifrovací kľúč"
-
-msgid " from server to enable replies"
-msgstr " zo servera na umožnenie odpovedí"
-
-msgid "Sign in"
-msgstr "Prihlásiť sa"
-
-msgid " to compose or send a reply"
-msgstr " vytvoriť alebo poslať odpoveď"
-
-msgid "DELETE"
-msgstr "ZMAZAŤ"
-
-msgid "Entire source account"
-msgstr "Celý účet zdroja"
-
-msgid "Files and messages"
-msgstr "Súbory a správy"
-
