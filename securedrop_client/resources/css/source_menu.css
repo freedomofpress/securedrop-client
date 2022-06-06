@@ -4,17 +4,6 @@ QMenu {
     font-size: 16px;
 }
 
-QMenu::separator {
-    margin: 1.0em 1.75em 0.5em 1.675em;
-    height: 1em;
-    font-weight: 900;
-    color: #b8c0de;
-}
-
-QMenu::separator#first_section {
-    margin-top: 0.5em;
-}
-
 QMenu::item {
     padding: 0.5em 2em;
 }
