@@ -34,10 +34,14 @@ class ExportDialog(ModalDialog):
         self.error_status = ""  # Hold onto the error status we receive from the Export VM
 
         # Connect controller signals to slots
-        self.controller.export.preflight_check_call_success.connect(self._on_preflight_success)
-        self.controller.export.preflight_check_call_failure.connect(self._on_preflight_failure)
-        self.controller.export.export_usb_call_success.connect(self._on_export_success)
-        self.controller.export.export_usb_call_failure.connect(self._on_export_failure)
+        self.controller.export_preflight_check_succeeded.connect(
+            self._on_export_preflight_check_succeeded
+        )
+        self.controller.export_preflight_check_failed.connect(
+            self._on_export_preflight_check_failed
+        )
+        self.controller.export_succeeded.connect(self._on_export_succeeded)
+        self.controller.export_failed.connect(self._on_export_failed)
 
         # Connect parent signals to slots
         self.continue_button.setEnabled(False)
@@ -217,7 +221,7 @@ class ExportDialog(ModalDialog):
         self.controller.export_file_to_usb_drive(self.file_uuid, self.passphrase_field.text())
 
     @pyqtSlot()
-    def _on_preflight_success(self) -> None:
+    def _on_export_preflight_check_succeeded(self) -> None:
         # If the continue button is disabled then this is the result of a background preflight check
         self.stop_animate_header()
         self.header_icon.update_image("savetodisk.svg", QSize(64, 64))
@@ -232,18 +236,18 @@ class ExportDialog(ModalDialog):
         self._show_passphrase_request_message()
 
     @pyqtSlot(object)
-    def _on_preflight_failure(self, error: ExportError) -> None:
+    def _on_export_preflight_check_failed(self, error: ExportError) -> None:
         self.stop_animate_header()
         self.header_icon.update_image("savetodisk.svg", QSize(64, 64))
         self._update_dialog(error.status)
 
     @pyqtSlot()
-    def _on_export_success(self) -> None:
+    def _on_export_succeeded(self) -> None:
         self.stop_animate_activestate()
         self._show_success_message()
 
     @pyqtSlot(object)
-    def _on_export_failure(self, error: ExportError) -> None:
+    def _on_export_failed(self, error: ExportError) -> None:
         self.stop_animate_activestate()
         self.cancel_button.setEnabled(True)
         self.passphrase_field.setDisabled(False)

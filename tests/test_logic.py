@@ -2376,28 +2376,28 @@ def test_Controller_call_update_star_success(homedir, config, mocker, session_ma
 
 def test_Controller_run_printer_preflight_checks(homedir, mocker, session, source):
     co = Controller("http://localhost", mocker.MagicMock(), mocker.MagicMock(), homedir, None)
-    begin_printer_preflight_emissions = QSignalSpy(co.export.begin_printer_preflight)
+    print_preflight_check_requested_emissions = QSignalSpy(co.print_preflight_check_requested)
 
     co.run_printer_preflight_checks()
 
-    assert len(begin_printer_preflight_emissions) == 1
+    assert len(print_preflight_check_requested_emissions) == 1
 
 
 def test_Controller_run_printer_preflight_checks_not_qubes(homedir, mocker, session, source):
     co = Controller("http://localhost", mocker.MagicMock(), mocker.MagicMock(), homedir, None)
     co.qubes = False
-    begin_printer_preflight_emissions = QSignalSpy(co.export.begin_printer_preflight)
-    printer_preflight_success_emissions = QSignalSpy(co.export.printer_preflight_success)
+    print_preflight_check_requested_emissions = QSignalSpy(co.print_preflight_check_requested)
+    print_preflight_check_succeeded_emissions = QSignalSpy(co.print_preflight_check_succeeded)
 
     co.run_printer_preflight_checks()
 
-    assert len(begin_printer_preflight_emissions) == 0
-    assert len(printer_preflight_success_emissions) == 1
+    assert len(print_preflight_check_requested_emissions) == 0
+    assert len(print_preflight_check_succeeded_emissions) == 1
 
 
 def test_Controller_run_print_file(mocker, session, homedir):
     co = Controller("http://localhost", mocker.MagicMock(), mocker.MagicMock(), homedir, None)
-    begin_print_emissions = QSignalSpy(co.export.begin_print)
+    print_requested_emissions = QSignalSpy(co.print_requested)
     file = factory.File(source=factory.Source())
     session.add(file)
     session.commit()
@@ -2410,13 +2410,13 @@ def test_Controller_run_print_file(mocker, session, homedir):
 
     co.print_file(file.uuid)
 
-    assert len(begin_print_emissions) == 1
+    assert len(print_requested_emissions) == 1
 
 
 def test_Controller_run_print_file_not_qubes(mocker, session, homedir):
     co = Controller("http://localhost", mocker.MagicMock(), mocker.MagicMock(), homedir, None)
     co.qubes = False
-    begin_print_emissions = QSignalSpy(co.export.begin_print)
+    print_requested_emissions = QSignalSpy(co.print_requested)
     file = factory.File(source=factory.Source())
     session.add(file)
     session.commit()
@@ -2429,7 +2429,7 @@ def test_Controller_run_print_file_not_qubes(mocker, session, homedir):
 
     co.print_file(file.uuid)
 
-    assert len(begin_print_emissions) == 0
+    assert len(print_requested_emissions) == 0
 
 
 def test_Controller_print_file_file_missing(homedir, mocker, session, session_maker):
@@ -2473,11 +2473,11 @@ def test_Controller_print_file_when_orig_file_already_exists(
     homedir, config, mocker, session, session_maker, source
 ):
     """
-    The signal `begin_print` should still be emmited if the original file already exists.
+    The signal `print_requested` should still be emmited if the original file already exists.
     """
     co = Controller("http://localhost", mocker.MagicMock(), mocker.MagicMock(), homedir, None)
     file = factory.File(source=factory.Source())
-    begin_print_emissions = QSignalSpy(co.export.begin_print)
+    print_requested_emissions = QSignalSpy(co.print_requested)
     session.add(file)
     session.commit()
     mocker.patch("securedrop_client.logic.Controller.get_file", return_value=file)
@@ -2485,7 +2485,7 @@ def test_Controller_print_file_when_orig_file_already_exists(
 
     co.print_file(file.uuid)
 
-    assert len(begin_print_emissions) == 1
+    assert len(print_requested_emissions) == 1
     co.get_file.assert_called_with(file.uuid)
 
 
@@ -2493,11 +2493,11 @@ def test_Controller_print_file_when_orig_file_already_exists_not_qubes(
     homedir, config, mocker, session, session_maker, source
 ):
     """
-    The signal `begin_print` should still be emmited if the original file already exists.
+    The signal `print_requested` should still be emmited if the original file already exists.
     """
     co = Controller("http://localhost", mocker.MagicMock(), mocker.MagicMock(), homedir, None)
     co.qubes = False
-    begin_print_emissions = QSignalSpy(co.export.begin_print)
+    print_requested_emissions = QSignalSpy(co.print_requested)
     file = factory.File(source=factory.Source())
     session.add(file)
     session.commit()
@@ -2510,14 +2510,14 @@ def test_Controller_print_file_when_orig_file_already_exists_not_qubes(
 
     co.export_file_to_usb_drive(file.uuid, "mock passphrase")
 
-    assert len(begin_print_emissions) == 0
+    assert len(print_requested_emissions) == 0
     co.get_file.assert_called_with(file.uuid)
     co.get_file.assert_called_with(file.uuid)
 
 
 def test_Controller_run_export_preflight_checks(homedir, mocker, session, source):
     co = Controller("http://localhost", mocker.MagicMock(), mocker.MagicMock(), homedir, None)
-    begin_preflight_check_emissions = QSignalSpy(co.export.begin_preflight_check)
+    export_preflight_check_requested_emissions = QSignalSpy(co.export_preflight_check_requested)
     file = factory.File(source=source["source"])
     session.add(file)
     session.commit()
@@ -2525,13 +2525,14 @@ def test_Controller_run_export_preflight_checks(homedir, mocker, session, source
 
     co.run_export_preflight_checks()
 
-    assert len(begin_preflight_check_emissions) == 1
+    assert len(export_preflight_check_requested_emissions) == 1
 
 
 def test_Controller_run_export_preflight_checks_not_qubes(homedir, mocker, session, source):
     co = Controller("http://localhost", mocker.MagicMock(), mocker.MagicMock(), homedir, None)
     co.qubes = False
-    begin_preflight_check_emissions = QSignalSpy(co.export.begin_preflight_check)
+    export_preflight_check_requested_emissions = QSignalSpy(co.export_preflight_check_requested)
+    export_preflight_check_succeeded_emissions = QSignalSpy(co.export_preflight_check_succeeded)
     file = factory.File(source=source["source"])
     session.add(file)
     session.commit()
@@ -2539,15 +2540,16 @@ def test_Controller_run_export_preflight_checks_not_qubes(homedir, mocker, sessi
 
     co.run_export_preflight_checks()
 
-    assert len(begin_preflight_check_emissions) == 0
+    assert len(export_preflight_check_requested_emissions) == 0
+    assert len(export_preflight_check_succeeded_emissions) == 1
 
 
 def test_Controller_export_file_to_usb_drive(homedir, mocker, session):
     """
-    The signal `begin_usb_export` should be emmited during export_file_to_usb_drive.
+    The signal `export_requested` should be emmited during export_file_to_usb_drive.
     """
     co = Controller("http://localhost", mocker.MagicMock(), mocker.MagicMock(), homedir, None)
-    begin_usb_export_emissions = QSignalSpy(co.export.begin_usb_export)
+    export_requested_emissions = QSignalSpy(co.export_requested)
     file = factory.File(source=factory.Source())
     session.add(file)
     session.commit()
@@ -2560,16 +2562,16 @@ def test_Controller_export_file_to_usb_drive(homedir, mocker, session):
 
     co.export_file_to_usb_drive(file.uuid, "mock passphrase")
 
-    assert len(begin_usb_export_emissions) == 1
+    assert len(export_requested_emissions) == 1
 
 
 def test_Controller_export_file_to_usb_drive_not_qubes(homedir, mocker, session):
     """
-    The signal `begin_usb_export` should be emmited during export_file_to_usb_drive.
+    The signal `export_requested` should be emmited during export_file_to_usb_drive.
     """
     co = Controller("http://localhost", mocker.MagicMock(), mocker.MagicMock(), homedir, None)
     co.qubes = False
-    begin_usb_export_emissions = QSignalSpy(co.export.begin_usb_export)
+    export_requested_emissions = QSignalSpy(co.export_requested)
     co.export.send_file_to_usb_device = mocker.MagicMock()
     file = factory.File(source=factory.Source())
     session.add(file)
@@ -2584,7 +2586,7 @@ def test_Controller_export_file_to_usb_drive_not_qubes(homedir, mocker, session)
     co.export_file_to_usb_drive(file.uuid, "mock passphrase")
 
     co.export.send_file_to_usb_device.assert_not_called()
-    assert len(begin_usb_export_emissions) == 0
+    assert len(export_requested_emissions) == 0
 
 
 def test_Controller_export_file_to_usb_drive_file_missing(homedir, mocker, session, session_maker):
@@ -2630,10 +2632,10 @@ def test_Controller_export_file_to_usb_drive_when_orig_file_already_exists(
     homedir, config, mocker, session, session_maker, source
 ):
     """
-    The signal `begin_usb_export` should still be emmited if the original file already exists.
+    The signal `export_requested` should still be emmited if the original file already exists.
     """
     co = Controller("http://localhost", mocker.MagicMock(), mocker.MagicMock(), homedir, None)
-    begin_usb_export_emissions = QSignalSpy(co.export.begin_usb_export)
+    export_requested_emissions = QSignalSpy(co.export_requested)
     file = factory.File(source=factory.Source())
     session.add(file)
     session.commit()
@@ -2642,7 +2644,7 @@ def test_Controller_export_file_to_usb_drive_when_orig_file_already_exists(
 
     co.export_file_to_usb_drive(file.uuid, "mock passphrase")
 
-    assert len(begin_usb_export_emissions) == 1
+    assert len(export_requested_emissions) == 1
     co.get_file.assert_called_with(file.uuid)
 
 
@@ -2650,11 +2652,11 @@ def test_Controller_export_file_to_usb_drive_when_orig_file_already_exists_not_q
     homedir, config, mocker, session, session_maker, source
 ):
     """
-    The signal `begin_usb_export` should still be emmited if the original file already exists.
+    The signal `export_requested` should still be emmited if the original file already exists.
     """
     co = Controller("http://localhost", mocker.MagicMock(), mocker.MagicMock(), homedir, None)
     co.qubes = False
-    begin_usb_export_emissions = QSignalSpy(co.export.begin_usb_export)
+    export_requested_emissions = QSignalSpy(co.export_requested)
     file = factory.File(source=factory.Source())
     session.add(file)
     session.commit()
@@ -2667,7 +2669,7 @@ def test_Controller_export_file_to_usb_drive_when_orig_file_already_exists_not_q
 
     co.export_file_to_usb_drive(file.uuid, "mock passphrase")
 
-    assert len(begin_usb_export_emissions) == 0
+    assert len(export_requested_emissions) == 0
     co.get_file.assert_called_with(file.uuid)
 
 

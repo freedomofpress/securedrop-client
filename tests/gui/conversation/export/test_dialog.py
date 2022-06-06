@@ -177,13 +177,13 @@ def test_ExportDialog__export_file(mocker, export_dialog):
     )
 
 
-def test_ExportDialog__on_preflight_success(mocker, export_dialog):
+def test_ExportDialog__on_export_preflight_check_succeeded(mocker, export_dialog):
     export_dialog._show_passphrase_request_message = mocker.MagicMock()
     export_dialog.continue_button = mocker.MagicMock()
     export_dialog.continue_button.clicked = mocker.MagicMock()
     mocker.patch.object(export_dialog.continue_button, "isEnabled", return_value=False)
 
-    export_dialog._on_preflight_success()
+    export_dialog._on_export_preflight_check_succeeded()
 
     export_dialog._show_passphrase_request_message.assert_not_called()
     export_dialog.continue_button.clicked.connect.assert_called_once_with(
@@ -191,49 +191,55 @@ def test_ExportDialog__on_preflight_success(mocker, export_dialog):
     )
 
 
-def test_ExportDialog__on_preflight_success_when_continue_enabled(mocker, export_dialog):
+def test_ExportDialog__on_export_preflight_check_succeeded_when_continue_enabled(
+    mocker, export_dialog
+):
     export_dialog._show_passphrase_request_message = mocker.MagicMock()
     export_dialog.continue_button.setEnabled(True)
 
-    export_dialog._on_preflight_success()
+    export_dialog._on_export_preflight_check_succeeded()
 
     export_dialog._show_passphrase_request_message.assert_called_once_with()
 
 
-def test_ExportDialog__on_preflight_success_enabled_after_preflight_success(mocker, export_dialog):
+def test_ExportDialog__on_export_preflight_check_succeeded_enabled_after_preflight_success(
+    mocker, export_dialog
+):
     assert not export_dialog.continue_button.isEnabled()
-    export_dialog._on_preflight_success()
+    export_dialog._on_export_preflight_check_succeeded()
     assert export_dialog.continue_button.isEnabled()
 
 
-def test_ExportDialog__on_preflight_success_enabled_after_preflight_failure(mocker, export_dialog):
+def test_ExportDialog__on_export_preflight_check_succeeded_enabled_after_preflight_failure(
+    mocker, export_dialog
+):
     assert not export_dialog.continue_button.isEnabled()
-    export_dialog._on_preflight_failure(mocker.MagicMock())
+    export_dialog._on_export_preflight_check_failed(mocker.MagicMock())
     assert export_dialog.continue_button.isEnabled()
 
 
-def test_ExportDialog__on_preflight_failure(mocker, export_dialog):
+def test_ExportDialog__on_export_preflight_check_failed(mocker, export_dialog):
     export_dialog._update_dialog = mocker.MagicMock()
 
     error = ExportError("mock_error_status")
-    export_dialog._on_preflight_failure(error)
+    export_dialog._on_export_preflight_check_failed(error)
 
     export_dialog._update_dialog.assert_called_with("mock_error_status")
 
 
-def test_ExportDialog__on_export_success(mocker, export_dialog):
+def test_ExportDialog__on_export_succeeded(mocker, export_dialog):
     export_dialog._show_success_message = mocker.MagicMock()
 
-    export_dialog._on_export_success()
+    export_dialog._on_export_succeeded()
 
     export_dialog._show_success_message.assert_called_once_with()
 
 
-def test_ExportDialog__on_export_failure(mocker, export_dialog):
+def test_ExportDialog__on_export_failed(mocker, export_dialog):
     export_dialog._update_dialog = mocker.MagicMock()
 
     error = ExportError("mock_error_status")
-    export_dialog._on_export_failure(error)
+    export_dialog._on_export_failed(error)
 
     export_dialog._update_dialog.assert_called_with("mock_error_status")
 

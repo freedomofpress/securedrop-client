@@ -22,8 +22,10 @@ class PrintDialog(ModalDialog):
         self.error_status = ""  # Hold onto the error status we receive from the Export VM
 
         # Connect controller signals to slots
-        self.controller.export.printer_preflight_success.connect(self._on_preflight_success)
-        self.controller.export.printer_preflight_failure.connect(self._on_preflight_failure)
+        self.controller.print_preflight_check_succeeded.connect(
+            self._on_print_preflight_check_succeeded
+        )
+        self.controller.print_preflight_check_failed.connect(self._on_print_preflight_check_failed)
 
         # Connect parent signals to slots
         self.continue_button.setEnabled(False)
@@ -98,7 +100,7 @@ class PrintDialog(ModalDialog):
         self.close()
 
     @pyqtSlot()
-    def _on_preflight_success(self) -> None:
+    def _on_print_preflight_check_succeeded(self) -> None:
         # If the continue button is disabled then this is the result of a background preflight check
         self.stop_animate_header()
         self.header_icon.update_image("printer.svg", svg_size=QSize(64, 64))
@@ -113,7 +115,7 @@ class PrintDialog(ModalDialog):
         self._print_file()
 
     @pyqtSlot(object)
-    def _on_preflight_failure(self, error: ExportError) -> None:
+    def _on_print_preflight_check_failed(self, error: ExportError) -> None:
         self.stop_animate_header()
         self.header_icon.update_image("printer.svg", svg_size=QSize(64, 64))
         self.error_status = error.status

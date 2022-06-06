@@ -8,7 +8,7 @@ from enum import Enum
 from io import BytesIO
 from shlex import quote
 from tempfile import TemporaryDirectory
-from typing import List
+from typing import List, Optional
 
 from PyQt5.QtCore import QObject, Qt, pyqtSignal, pyqtSlot
 
@@ -66,29 +66,41 @@ class Export(QObject):
     DISK_ENCRYPTION_KEY_NAME = "encryption_key"
     DISK_EXPORT_DIR = "export_data"
 
-    # Set up signals for communication with the GUI thread
-    begin_preflight_check = pyqtSignal()
+    # Set up signals for communication with the controller
     preflight_check_call_failure = pyqtSignal(object)
     preflight_check_call_success = pyqtSignal()
-    begin_usb_export = pyqtSignal(list, str)
     export_usb_call_failure = pyqtSignal(object)
     export_usb_call_success = pyqtSignal()
     export_completed = pyqtSignal(list)
 
-    begin_printer_preflight = pyqtSignal()
     printer_preflight_success = pyqtSignal()
     printer_preflight_failure = pyqtSignal(object)
-    begin_print = pyqtSignal(list)
     print_call_failure = pyqtSignal(object)
     print_call_success = pyqtSignal()
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        export_preflight_check_requested: Optional[pyqtSignal] = None,
+        export_requested: Optional[pyqtSignal] = None,
+        print_preflight_check_requested: Optional[pyqtSignal] = None,
+        print_requested: Optional[pyqtSignal] = None,
+    ) -> None:
         super().__init__()
 
-        self.begin_preflight_check.connect(self.run_preflight_checks, type=Qt.QueuedConnection)
-        self.begin_usb_export.connect(self.send_file_to_usb_device, type=Qt.QueuedConnection)
-        self.begin_print.connect(self.print, type=Qt.QueuedConnection)
-        self.begin_printer_preflight.connect(self.run_printer_preflight, type=Qt.QueuedConnection)
+        # This instance can optionally react to events to prevent
+        # coupling it to dependent code.
+        if export_preflight_check_requested is not None:
+            export_preflight_check_requested.connect(
+                self.run_preflight_checks, type=Qt.QueuedConnection
+            )
+        if export_requested is not None:
+            export_requested.connect(self.send_file_to_usb_device, type=Qt.QueuedConnection)
+        if print_requested is not None:
+            print_requested.connect(self.print, type=Qt.QueuedConnection)
+        if print_preflight_check_requested is not None:
+            print_preflight_check_requested.connect(
+                self.run_printer_preflight, type=Qt.QueuedConnection
+            )
 
     def _export_archive(cls, archive_path: str) -> str:
         """
