@@ -349,7 +349,7 @@ class Controller(QObject):
         self._state = state
 
         if export_thread is not None:
-            self.export_thread = export_thread
+            self.export_thread: QThread = export_thread
         else:  # pragma: no cover
             self.export_thread = QThread()
 
@@ -539,6 +539,9 @@ class Controller(QObject):
             user_callback(result_data, current_object=runner.current_object)
         else:
             user_callback(result_data)
+
+        thread = thread_info["thread"]
+        thread.exit()
 
     def login(self, username: str, password: str, totp: str) -> None:
         """
