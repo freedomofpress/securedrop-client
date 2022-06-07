@@ -30,6 +30,7 @@ from securedrop_client.api_jobs.sources import (
 )
 from securedrop_client.api_jobs.updatestar import UpdateStarJobError, UpdateStarJobTimeoutError
 from securedrop_client.api_jobs.uploads import SendReplyJobError, SendReplyJobTimeoutError
+from securedrop_client.app import threads
 from securedrop_client.logic import TIME_BETWEEN_SHOWING_LAST_SYNC_MS, APICallRunner, Controller
 from tests import factory
 
@@ -107,14 +108,26 @@ def test_Controller_setup(homedir, config, mocker, session_maker, session):
     Ensure the application is set up with the following default state:
     Using the `config` fixture to ensure the config is written to disk.
     """
-    mocker.patch("securedrop_client.logic.QThread")
-    co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir, None)
-    co.export.moveToThread = mocker.MagicMock()
-    co.update_sources = mocker.MagicMock()
+    with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_queue_thread]:
+        co = Controller(
+            "http://localhost",
+            mocker.MagicMock(),
+            session_maker,
+            homedir,
+            None,
+            export_thread=export_thread,
+            sync_thread=sync_thread,
+            main_queue_thread=main_queue_thread,
+            file_download_queue_thread=file_download_queue_thread,
+        )
+        co.export.moveToThread = mocker.MagicMock()
+        co.api_job_queue.main_queue.moveToThread = mocker.MagicMock()
+        co.api_job_queue = mocker.MagicMock()
+        co.update_sources = mocker.MagicMock()
 
-    co.setup()
+        co.setup()
 
-    co.gui.setup.assert_called_once_with(co)
+        co.gui.setup.assert_called_once_with(co)
 
 
 def test_Controller_call_api(homedir, config, mocker, session_maker):

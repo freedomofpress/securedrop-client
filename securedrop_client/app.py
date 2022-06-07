@@ -188,15 +188,20 @@ def prevent_second_instance(app: QApplication, unique_name: str) -> None:
 
 
 @contextmanager
-def thread() -> Any:
+def threads(count: int) -> Any:
     """Ensures that the thread is properly closed before its reference is dropped."""
-    thread = QThread()
-    yield thread
-    thread.exit()
+    threads = []
+    for i in range(count):
+        threads.append(QThread())
 
-    # Wait until the thread has finished, or the deadline expires.
-    TWO_SECONDS_IN_MILLISECONDS = 2000
-    thread.wait(TWO_SECONDS_IN_MILLISECONDS)
+    yield threads
+
+    for thread in threads:
+        thread.exit()
+
+        # Wait until the thread has finished, or the deadline expires.
+        TWO_SECONDS_IN_MILLISECONDS = 2000
+        thread.wait(TWO_SECONDS_IN_MILLISECONDS)
 
 
 def start_app(args, qt_args) -> NoReturn:  # type: ignore [no-untyped-def]
@@ -234,7 +239,7 @@ def start_app(args, qt_args) -> NoReturn:  # type: ignore [no-untyped-def]
     app_state = state.State(database)
     gui = Window(app_state)
 
-    with thread() as export_thread:
+    with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_queue_thread]:
         controller = Controller(
             "http://localhost:8081/",
             gui,
@@ -244,6 +249,9 @@ def start_app(args, qt_args) -> NoReturn:  # type: ignore [no-untyped-def]
             not args.no_proxy,
             not args.no_qubes,
             export_thread,
+            sync_thread,
+            main_queue_thread,
+            file_download_queue_thread,
         )
         controller.setup()
 
