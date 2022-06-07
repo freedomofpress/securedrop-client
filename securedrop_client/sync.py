@@ -31,11 +31,16 @@ class ApiSync(QObject):
         gpg: GpgHelper,
         data_dir: str,
         app_state: Optional[state.State] = None,
+        sync_thread: Optional[QThread] = None,
     ):
         super().__init__()
         self.api_client = api_client
 
-        self.sync_thread = QThread()
+        if sync_thread is not None:
+            self.sync_thread = sync_thread
+        else:  # pragma: no cover
+            self.sync_thread = QThread()
+
         self.api_sync_bg_task = ApiSyncBackgroundTask(
             api_client,
             session_maker,
