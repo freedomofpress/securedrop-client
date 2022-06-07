@@ -25,12 +25,13 @@ import signal
 import socket
 import sys
 from argparse import ArgumentParser
+from contextlib import contextmanager
 from gettext import gettext as _
 from logging.handlers import SysLogHandler, TimedRotatingFileHandler
 from pathlib import Path
-from typing import NewType, NoReturn
+from typing import Any, NewType, NoReturn
 
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QThread, QTimer
 from PyQt5.QtWidgets import QApplication, QMessageBox
 
 from securedrop_client import __version__, state
@@ -186,6 +187,14 @@ def prevent_second_instance(app: QApplication, unique_name: str) -> None:
             raise
 
 
+@contextmanager
+def thread() -> Any:
+    """Ensures that the thread is properly closed before its reference is dropped."""
+    thread = QThread()
+    yield thread
+    thread.exit()
+
+
 def start_app(args, qt_args) -> NoReturn:  # type: ignore [no-untyped-def]
     """
     Create all the top-level assets for the application, set things up and
@@ -221,23 +230,25 @@ def start_app(args, qt_args) -> NoReturn:  # type: ignore [no-untyped-def]
     app_state = state.State(database)
     gui = Window(app_state)
 
-    controller = Controller(
-        "http://localhost:8081/",
-        gui,
-        session_maker,
-        args.sdc_home,
-        app_state,
-        not args.no_proxy,
-        not args.no_qubes,
-    )
-    controller.setup()
+    with thread() as export_thread:
+        controller = Controller(
+            "http://localhost:8081/",
+            gui,
+            session_maker,
+            args.sdc_home,
+            app_state,
+            not args.no_proxy,
+            not args.no_qubes,
+            export_thread,
+        )
+        controller.setup()
 
-    configure_signal_handlers(app)
-    timer = QTimer()
-    timer.start(500)
-    timer.timeout.connect(lambda: None)
+        configure_signal_handlers(app)
+        timer = QTimer()
+        timer.start(500)
+        timer.timeout.connect(lambda: None)
 
-    sys.exit(app.exec_())
+        sys.exit(app.exec_())
 
 
 def run() -> NoReturn:
