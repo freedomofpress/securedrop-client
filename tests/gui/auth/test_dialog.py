@@ -1,9 +1,7 @@
 import pytest
-from PyQt5.QtWidgets import QApplication
 
 from securedrop_client.gui.auth import LoginDialog
-
-app = QApplication([])
+from tests.helper import app  # noqa: F401
 
 
 @pytest.mark.parametrize("lang", ["es"], indirect=True)

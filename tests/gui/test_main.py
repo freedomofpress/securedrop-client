@@ -3,14 +3,13 @@ Check the core Window UI class works as expected.
 """
 import unittest
 
-from PyQt5.QtWidgets import QApplication, QHBoxLayout
+from PyQt5.QtWidgets import QHBoxLayout
 
 from securedrop_client import state
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_icon
-
-app = QApplication([])
+from tests.helper import app  # noqa: F401
 
 
 class WindowTest(unittest.TestCase):

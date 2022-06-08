@@ -1,17 +1,16 @@
 import pytest
-from PyQt5.QtWidgets import QApplication
 
 from securedrop_client.gui.base import ModalDialog
 from securedrop_client.gui.conversation import ExportFileDialog, PrintFileDialog
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
 from tests import factory
+from tests.helper import app  # noqa: F401
 
 
 @pytest.fixture(scope="function")
 def main_window(mocker, homedir):
     # Setup
-    app = QApplication([])
     gui = Window()
     app.setActiveWindow(gui)
     gui.show()
@@ -51,7 +50,6 @@ def main_window(mocker, homedir):
 @pytest.fixture(scope="function")
 def main_window_no_key(mocker, homedir):
     # Setup
-    app = QApplication([])
     gui = Window()
     app.setActiveWindow(gui)
     gui.show()
@@ -90,7 +88,6 @@ def main_window_no_key(mocker, homedir):
 
 @pytest.fixture(scope="function")
 def modal_dialog(mocker, homedir):
-    app = QApplication([])
     gui = Window()
     gui.show()
     controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, None, proxy=False)
@@ -109,7 +106,6 @@ def modal_dialog(mocker, homedir):
 
 @pytest.fixture(scope="function")
 def print_dialog(mocker, homedir):
-    app = QApplication([])
     gui = Window()
     gui.show()
     controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, None, proxy=False)
@@ -128,7 +124,6 @@ def print_dialog(mocker, homedir):
 
 @pytest.fixture(scope="function")
 def export_dialog(mocker, homedir):
-    app = QApplication([])
     gui = Window()
     gui.show()
     controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, None, proxy=False)

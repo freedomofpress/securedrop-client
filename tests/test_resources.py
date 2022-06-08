@@ -3,11 +3,9 @@ Tests for the resources sub-module.
 """
 from PyQt5.QtGui import QIcon, QMovie, QPixmap
 from PyQt5.QtSvg import QSvgWidget
-from PyQt5.QtWidgets import QApplication
 
 import securedrop_client.resources
-
-app = QApplication([])
+from tests.helper import app  # noqa: F401
 
 
 def test_path(mocker):

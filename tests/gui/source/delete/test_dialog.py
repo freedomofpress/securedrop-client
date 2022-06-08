@@ -1,11 +1,8 @@
 import unittest
 
-from PyQt5.QtWidgets import QApplication
-
 from securedrop_client.gui.source.delete import DeleteSourceDialog as Dialog
 from tests import factory
-
-app = QApplication([])
+from tests.helper import app  # noqa: F401
 
 
 class DeleteSourceDialogTest(unittest.TestCase):

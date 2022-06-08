@@ -1,8 +1,5 @@
-from PyQt5.QtWidgets import QApplication
-
 from securedrop_client.gui.auth.sign_in import LoginErrorBar
-
-app = QApplication([])
+from tests.helper import app  # noqa: F401
 
 
 def test_LoginErrorBar_set_message(mocker):

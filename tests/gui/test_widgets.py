@@ -13,7 +13,7 @@ import sqlalchemy.orm.exc
 from PyQt5.QtCore import QEvent, QSize, Qt
 from PyQt5.QtGui import QFocusEvent, QMovie, QResizeEvent
 from PyQt5.QtTest import QTest
-from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QVBoxLayout, QWidget
 from sqlalchemy.orm import attributes, scoped_session, sessionmaker
 
 from securedrop_client import db, logic, storage
@@ -51,8 +51,7 @@ from securedrop_client.gui.widgets import (
     UserProfile,
 )
 from tests import factory
-
-app = QApplication([])
+from tests.helper import app  # noqa: F401
 
 
 def test_TopPane_init(mocker):
