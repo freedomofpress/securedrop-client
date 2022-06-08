@@ -542,6 +542,9 @@ class Controller(QObject):
 
         thread = thread_info["thread"]
         thread.exit()
+        # Wait until the thread has finished, or the deadline expires.
+        TWO_SECONDS_IN_MILLISECONDS = 2000
+        thread.wait(TWO_SECONDS_IN_MILLISECONDS)
 
     def login(self, username: str, password: str, totp: str) -> None:
         """

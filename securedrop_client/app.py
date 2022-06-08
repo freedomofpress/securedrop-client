@@ -194,6 +194,10 @@ def thread() -> Any:
     yield thread
     thread.exit()
 
+    # Wait until the thread has finished, or the deadline expires.
+    TWO_SECONDS_IN_MILLISECONDS = 2000
+    thread.wait(TWO_SECONDS_IN_MILLISECONDS)
+
 
 def start_app(args, qt_args) -> NoReturn:  # type: ignore [no-untyped-def]
     """
