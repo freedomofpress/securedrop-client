@@ -3,7 +3,7 @@ from unittest import mock
 from unittest.mock import MagicMock
 
 from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QApplication, QDialog, QMenu
+from PyQt5.QtWidgets import QDialog, QMenu
 
 from securedrop_client import state
 from securedrop_client.db import Source
@@ -14,8 +14,7 @@ from securedrop_client.gui.actions import (
 )
 from securedrop_client.logic import Controller
 from tests import factory
-
-app = QApplication([])
+from tests.helper import app  # noqa: F401
 
 
 class DeleteConversationActionTest(unittest.TestCase):

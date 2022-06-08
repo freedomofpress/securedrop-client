@@ -1,12 +1,10 @@
 import unittest
 
 from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QApplication
 
 from securedrop_client.gui.conversation.delete import DeleteConversationDialog as Dialog
 from tests import factory
-
-app = QApplication([])
+from tests.helper import app  # noqa: F401
 
 
 class DeleteConversationDialogTest(unittest.TestCase):

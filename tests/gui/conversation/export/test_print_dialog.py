@@ -1,9 +1,6 @@
-from PyQt5.QtWidgets import QApplication
-
 from securedrop_client.export import ExportError, ExportStatus
 from securedrop_client.gui.conversation import PrintFileDialog
-
-app = QApplication([])
+from tests.helper import app  # noqa: F401
 
 
 def test_PrintFileDialog_init(mocker):

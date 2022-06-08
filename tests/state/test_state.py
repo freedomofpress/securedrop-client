@@ -3,14 +3,12 @@ from collections import namedtuple
 from unittest import mock
 
 from PyQt5.QtTest import QSignalSpy
-from PyQt5.QtWidgets import QApplication
 
 from securedrop_client import state
+from tests.helper import app  # noqa: F401
 
 Source = namedtuple("Source", ["uuid"])
 File = namedtuple("File", ["uuid", "source", "is_downloaded"])
-
-app = QApplication([])
 
 
 class TestState(unittest.TestCase):

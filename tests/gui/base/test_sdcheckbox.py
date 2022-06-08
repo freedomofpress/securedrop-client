@@ -1,9 +1,7 @@
 from PyQt5.QtTest import QSignalSpy
-from PyQt5.QtWidgets import QApplication
 
 from securedrop_client.gui.base.checkbox import SDCheckBox
-
-app = QApplication([])
+from tests.helper import app  # noqa: F401
 
 
 def test_SDCheckBox():

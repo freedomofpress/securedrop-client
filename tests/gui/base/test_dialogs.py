@@ -1,11 +1,10 @@
 import pytest
 from PyQt5.QtCore import QEvent, Qt
 from PyQt5.QtGui import QKeyEvent
-from PyQt5.QtWidgets import QApplication, QMainWindow
+from PyQt5.QtWidgets import QMainWindow
 
 from securedrop_client.gui.base import ModalDialog
-
-app = QApplication([])
+from tests.helper import app  # noqa: F401
 
 
 @pytest.fixture(scope="function")

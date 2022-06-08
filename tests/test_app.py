@@ -6,7 +6,6 @@ import platform
 import sys
 
 import pytest
-from PyQt5.QtWidgets import QApplication
 
 from securedrop_client import state
 from securedrop_client.app import (
@@ -21,8 +20,7 @@ from securedrop_client.app import (
     run,
     start_app,
 )
-
-app = QApplication([])
+from tests.helper import app  # noqa: F401
 
 
 def test_application_sets_en_as_default_language_code(mocker):
