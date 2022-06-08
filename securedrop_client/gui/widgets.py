@@ -1838,7 +1838,9 @@ class SpeechBubble(QWidget):
         if container_width < self.MIN_CONTAINER_WIDTH:
             self.speech_bubble.setFixedWidth(self.MIN_WIDTH)
         else:
-            self.speech_bubble.setFixedWidth(container_width * self.WIDTH_TO_CONTAINER_WIDTH_RATIO)
+            self.speech_bubble.setFixedWidth(
+                int(container_width * self.WIDTH_TO_CONTAINER_WIDTH_RATIO)
+            )
 
     @pyqtSlot(str, str, str)
     def _update_text(self, source_uuid: str, uuid: str, text: str) -> None:
@@ -2304,7 +2306,7 @@ class FileWidget(QWidget):
         if container_width < self.MIN_CONTAINER_WIDTH:
             self.setFixedWidth(self.MIN_WIDTH)
         else:
-            self.setFixedWidth(container_width * self.WIDTH_TO_CONTAINER_WIDTH_RATIO)
+            self.setFixedWidth(int(container_width * self.WIDTH_TO_CONTAINER_WIDTH_RATIO))
 
     def eventFilter(self, obj: QObject, event: QEvent) -> None:
         t = event.type()
@@ -3051,7 +3053,7 @@ class ReplyBoxWidget(QWidget):
         self.replybox = QWidget()
         self.replybox.setObjectName("ReplyBoxWidget_replybox")
         replybox_layout = QHBoxLayout(self.replybox)
-        replybox_layout.setContentsMargins(32.6, 19, 27.3, 18)
+        replybox_layout.setContentsMargins(32, 19, 28, 18)
         replybox_layout.setSpacing(0)
 
         # Create reply text box
@@ -3064,7 +3066,7 @@ class ReplyBoxWidget(QWidget):
         send_button_icon = QIcon(load_image("send.svg"))
         send_button_icon.addPixmap(load_image("send-disabled.svg"), QIcon.Disabled)
         self.send_button.setIcon(send_button_icon)
-        self.send_button.setIconSize(QSize(56.5, 47))
+        self.send_button.setIconSize(QSize(56, 47))
         self.send_button.setShortcut(QKeySequence("Ctrl+Return"))
         self.send_button.setDefault(True)
 
