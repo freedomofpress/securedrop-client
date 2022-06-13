@@ -38,7 +38,7 @@ class ApiSync(QObject):
 
         if sync_thread is not None:
             self.sync_thread = sync_thread
-        else:  # pragma: no cover
+        else:
             self.sync_thread = QThread()
 
         self.api_sync_bg_task = ApiSyncBackgroundTask(

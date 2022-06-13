@@ -212,12 +212,12 @@ class ApiJobQueue(QObject):
 
         if main_thread is not None:
             self.main_thread = main_thread
-        else:  # pragma: no cover
+        else:
             self.main_thread = QThread()
 
         if download_file_thread is not None:
             self.download_file_thread = download_file_thread
-        else:  # pragma: no cover
+        else:
             self.download_file_thread = QThread()
 
         self.main_queue = RunnableQueue(api_client, session_maker)
