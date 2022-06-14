@@ -270,6 +270,8 @@ alembic upgrade head
 alembic revision --autogenerate -m "describe your revision here"
 ```
 
+**NOTE.**  Schema migrations, data migrations, and tests [MUST] be self-contained.  That is, their `upgrade()` and `downgrade()` methods and their tests [MUST NOT] rely, directly or indirectly, on other project code, such as `db.py`'s SQLAlchemy models or other helper classes and functions defined outside of the migration under test, because these utilities may change in Git over time.  (The scaffolding of the `test_alembic.py` test suite [MAY] rely on such utilities, because it is versioned at the Git level, not the Alembic level.)  See [#1500](https://github.com/freedomofpress/securedrop-client/issues/1500) for an example of why this guideline applies.
+
 ## AppArmor support
 
 An AppArmor profile is available for mandatory access control. When installing securedrop-client from a .deb package, the AppArmor profile will automatically be copied and enforced. Below are instructions to use the profile in non-production scenarios.
@@ -406,3 +408,8 @@ Then you can use [`pdb` commands](https://docs.python.org/3/library/pdb.html#deb
 
 Logs can be found in the `{sdc-home}/logs`. If you are debugging a version of this application installed from a deb package in Qubes, you can debug issues by looking at the log file in `~/.securedrop_client/logs/client.log`. You can also add additional log lines in the running code in
 `/opt/venvs/securedrop-client/lib/python3.7/site-packages/securedrop_client/`.
+
+
+[MAY]: https://datatracker.ietf.org/doc/html/rfc2119#section-5
+[MUST]: https://datatracker.ietf.org/doc/html/rfc2119#section-1
+[MUST NOT]: https://datatracker.ietf.org/doc/html/rfc2119#section-2
