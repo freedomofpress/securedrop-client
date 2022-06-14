@@ -109,7 +109,15 @@ def upgrade():
             server_default=sa.text("0"),
             nullable=False,
         ),
-        sa.Column("is_decrypted", sa.Boolean(name="is_decrypted"), nullable=True),
+        sa.Column(
+            "is_decrypted",
+            sa.Boolean(name="is_decrypted"),
+            sa.CheckConstraint(
+                "CASE WHEN is_downloaded = 0 THEN is_decrypted IS NULL ELSE 1 END",
+                name="files_compare_is_downloaded_vs_is_decrypted",
+            ),
+            nullable=True,
+        ),
         sa.Column("download_error_id", sa.Integer(), nullable=True),
         sa.Column(
             "is_read", sa.Boolean(name="is_read"), server_default=sa.text("0"), nullable=False
@@ -142,12 +150,28 @@ def upgrade():
             server_default=sa.text("0"),
             nullable=False,
         ),
-        sa.Column("is_decrypted", sa.Boolean(name="is_decrypted"), nullable=True),
+        sa.Column(
+            "is_decrypted",
+            sa.Boolean(name="is_decrypted"),
+            sa.CheckConstraint(
+                "CASE WHEN is_downloaded = 0 THEN is_decrypted IS NULL ELSE 1 END",
+                name="messages_compare_is_downloaded_vs_is_decrypted",
+            ),
+            nullable=True,
+        ),
         sa.Column("download_error_id", sa.Integer(), nullable=True),
         sa.Column(
             "is_read", sa.Boolean(name="is_read"), server_default=sa.text("0"), nullable=False
         ),
-        sa.Column("content", sa.Text(), nullable=True),
+        sa.Column(
+            "content",
+            sa.Text(),
+            sa.CheckConstraint(
+                "CASE WHEN is_downloaded = 0 THEN content IS NULL ELSE 1 END",
+                name="ck_message_compare_download_vs_content",
+            ),
+            nullable=True,
+        ),
         sa.Column("source_id", sa.Integer(), nullable=False),
         sa.Column("last_updated", sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(
@@ -172,8 +196,24 @@ def upgrade():
         sa.Column("file_counter", sa.Integer(), nullable=False),
         sa.Column("size", sa.Integer(), nullable=True),
         sa.Column("is_downloaded", sa.Boolean(name="is_downloaded"), nullable=True),
-        sa.Column("content", sa.Text(), nullable=True),
-        sa.Column("is_decrypted", sa.Boolean(name="is_decrypted"), nullable=True),
+        sa.Column(
+            "content",
+            sa.Text(),
+            sa.CheckConstraint(
+                "CASE WHEN is_downloaded = 0 THEN content IS NULL ELSE 1 END",
+                name="replies_compare_download_vs_content",
+            ),
+            nullable=True,
+        ),
+        sa.Column(
+            "is_decrypted",
+            sa.Boolean(name="is_decrypted"),
+            sa.CheckConstraint(
+                "CASE WHEN is_downloaded = 0 THEN is_decrypted IS NULL ELSE 1 END",
+                name="replies_compare_is_downloaded_vs_is_decrypted",
+            ),
+            nullable=True,
+        ),
         sa.Column("download_error_id", sa.Integer(), nullable=True),
         sa.Column("last_updated", sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(
