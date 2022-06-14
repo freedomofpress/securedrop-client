@@ -438,7 +438,7 @@ class Controller(QObject):
 
         # Background sync to keep client up-to-date with server changes
         self.api_sync = ApiSync(
-            self.api, self.session_maker, self.gpg, self.data_dir, state, self.sync_thread
+            self.api, self.session_maker, self.gpg, self.data_dir, self.sync_thread, state
         )
         self.api_sync.sync_started.connect(self.on_sync_started, type=Qt.QueuedConnection)
         self.api_sync.sync_success.connect(self.on_sync_success, type=Qt.QueuedConnection)
