@@ -11,7 +11,8 @@ from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QLineEdit, QVBoxLayout, Q
 from securedrop_client.export import ExportError, ExportStatus
 from securedrop_client.gui.base import ModalDialog, PasswordEdit, SecureQLabel
 from securedrop_client.gui.base.checkbox import SDCheckBox
-from securedrop_client.logic import Controller
+
+from .device import Device
 
 
 class ExportDialog(ModalDialog):
@@ -22,11 +23,11 @@ class ExportDialog(ModalDialog):
     NO_MARGIN = 0
     FILENAME_WIDTH_PX = 260
 
-    def __init__(self, controller: Controller, file_uuid: str, file_name: str) -> None:
+    def __init__(self, device: Device, file_uuid: str, file_name: str) -> None:
         super().__init__()
         self.setStyleSheet(self.DIALOG_CSS)
 
-        self.controller = controller
+        self.controller = device._controller
         self.file_uuid = file_uuid
         self.file_name = SecureQLabel(
             file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX

@@ -22,7 +22,7 @@ from securedrop_client.db import (
     Source,
     make_session_maker,
 )
-from securedrop_client.gui.conversation import ExportFileDialog, PrintFileDialog
+from securedrop_client.gui import conversation
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
 from tests import factory
@@ -81,8 +81,9 @@ def print_dialog(mocker, homedir):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
     controller.qubes = False
+    export_device = conversation.ExportDevice(controller)
 
-    dialog = PrintFileDialog(controller, file.uuid, "file123.jpg")
+    dialog = conversation.PrintFileDialog(export_device, file.uuid, "file123.jpg")
 
     yield dialog
 
@@ -95,8 +96,9 @@ def export_dialog(mocker, homedir):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
     controller.qubes = False
+    export_device = conversation.ExportDevice(controller)
 
-    dialog = ExportFileDialog(controller, file.uuid, "file123.jpg")
+    dialog = conversation.ExportFileDialog(export_device, file.uuid, "file123.jpg")
 
     yield dialog
 
