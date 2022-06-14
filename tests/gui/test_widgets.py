@@ -3593,6 +3593,7 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
 
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
+    export_device = mocker.patch("securedrop_client.gui.conversation.ExportDevice")
 
     fw = FileWidget(
         file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
@@ -3605,7 +3606,7 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
     dialog = mocker.patch("securedrop_client.gui.widgets.ExportFileDialog")
 
     fw._on_export_clicked()
-    dialog.assert_called_once_with(controller, file.uuid, file.filename)
+    dialog.assert_called_once_with(export_device(), file.uuid, file.filename)
 
 
 def test_FileWidget__on_export_clicked_missing_file(mocker, session, source):
@@ -3644,6 +3645,7 @@ def test_FileWidget__on_print_clicked(mocker, session, source):
 
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
+    export_device = mocker.patch("securedrop_client.gui.conversation.ExportDevice")
 
     fw = FileWidget(
         file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
@@ -3657,7 +3659,7 @@ def test_FileWidget__on_print_clicked(mocker, session, source):
 
     fw._on_print_clicked()
 
-    dialog.assert_called_once_with(controller, file.uuid, file.filename)
+    dialog.assert_called_once_with(export_device(), file.uuid, file.filename)
 
 
 def test_FileWidget__on_print_clicked_missing_file(mocker, session, source):

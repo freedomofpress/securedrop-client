@@ -68,6 +68,7 @@ from securedrop_client.db import (
     Source,
     User,
 )
+from securedrop_client.gui import conversation
 from securedrop_client.gui.actions import (
     DeleteConversationAction,
     DeleteSourceAction,
@@ -2200,6 +2201,7 @@ class FileWidget(QWidget):
         super().__init__()
 
         self.controller = controller
+        self._export_device = conversation.ExportDevice(controller)
         self.file = self.controller.get_file(file_uuid)
         self.uuid = file_uuid
         self.index = index
@@ -2399,7 +2401,7 @@ class FileWidget(QWidget):
         if not self.controller.downloaded_file_exists(self.file):
             return
 
-        self.export_dialog = ExportFileDialog(self.controller, self.uuid, self.file.filename)
+        self.export_dialog = ExportFileDialog(self._export_device, self.uuid, self.file.filename)
         self.export_dialog.show()
 
     @pyqtSlot()
@@ -2410,7 +2412,7 @@ class FileWidget(QWidget):
         if not self.controller.downloaded_file_exists(self.file):
             return
 
-        dialog = PrintFileDialog(self.controller, self.uuid, self.file.filename)
+        dialog = PrintFileDialog(self._export_device, self.uuid, self.file.filename)
         dialog.exec()
 
     def _on_left_click(self) -> None:
