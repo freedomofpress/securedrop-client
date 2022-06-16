@@ -15,9 +15,10 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import NoResultFound
 
 import securedrop_client.db
-from securedrop_client import db
+from securedrop_client import db, utils
 from securedrop_client.storage import (
     __update_submissions,
+    _cleanup_directory_if_empty,
     _cleanup_flagged_locally_deleted,
     _delete_source_collection_from_db,
     create_or_update_user,
@@ -499,6 +500,7 @@ def test_update_submissions_deletes_files_associated_with_the_submission(homedir
     local_submission.uuid = "test-uuid"
     local_submission.filename = server_filename
     local_submission_source_journalist_filename = "pericardial_surfacing"
+    local_submission.source.journalist_filename = "pericardial_surfacing"
     source_directory = os.path.join(homedir, local_submission_source_journalist_filename)
     local_submission.location = mocker.MagicMock(
         return_value=os.path.join(source_directory, local_filename_when_decrypted)
@@ -717,6 +719,7 @@ def test_update_files(homedir, mocker):
     local_sub_delete = mocker.MagicMock()
     local_sub_delete.uuid = str(uuid.uuid4())
     local_sub_delete.filename = "local_sub_delete.filename"
+    local_sub_delete.source.journalist_filename = "local_sub_delete.journalist_designation"
     local_submissions = [local_sub_update, local_sub_delete]
     # There needs to be a corresponding local_source.
     local_source = mocker.MagicMock()
@@ -1990,7 +1993,9 @@ def test___update_submissions_skip_uuids_successful(mocker, session, homedir):
 
     local_msg = factory.Message(uuid=remote_message_update.uuid, source_id=source.id)
 
-    local_msg_delete = factory.Message(uuid=(str(uuid.uuid4())), source_id=delete_source.id)
+    local_msg_delete = factory.Message(
+        uuid=(str(uuid.uuid4())), source_id=delete_source.id, source=delete_source
+    )
 
     session.add(local_msg)
     session.add(local_msg_delete)
@@ -2024,6 +2029,91 @@ def test___update_submissions_skip_uuids_successful(mocker, session, homedir):
     assert session.query(db.Message).filter_by(source_id=skip_source.id).count() == 0
     assert session.query(db.Source).filter_by(id=locally_deleted_source.id).count() == 0
     mock_delete.assert_called_once_with(local_msg_delete, data_dir)
+
+
+def test__cleanup_directory_if_empty(mocker, session, homedir):
+    """
+    Check that:
+
+    * An empty target directory is removed
+    * A target directory with files in it is not removed
+    * An invalid directory is error-logged
+    """
+    data_dir = os.path.join(homedir, "data")
+    empty_dir = os.path.join(data_dir, "empty")
+    utils.safe_mkdir(empty_dir)
+
+    nonempty_dir = os.path.join(data_dir, "nonempty")
+    subdir = os.path.join(nonempty_dir, "subdir")
+    utils.safe_mkdir(nonempty_dir)
+    utils.safe_mkdir(subdir)
+
+    not_a_dir = "not_the_dirs_you_are_looking_for"
+
+    mock_error = mocker.MagicMock()
+    mocker.patch("securedrop_client.storage.logger.error", mock_error)
+
+    _cleanup_directory_if_empty(empty_dir)
+    _cleanup_directory_if_empty(nonempty_dir)
+    _cleanup_directory_if_empty(not_a_dir)
+
+    assert not os.path.exists(empty_dir)
+    assert os.path.exists(nonempty_dir)
+    mock_error.assert_called_once_with("Error: method called on missing or malformed directory")
+
+
+def test__cleanup_directory_error(mocker, session, homedir):
+    """
+    Check that:
+
+    * A valid directory that is deleted is error-handled (such as if
+      the directory is removed by another thread).
+    """
+
+    class MatchingLogline:
+        def __init__(self, msg):
+            self.msg = msg
+
+        def __eq__(self, other):
+            return other.find(self.msg) > -1
+
+    data_dir = os.path.join(homedir, "data")
+    target_dir = os.path.join(data_dir, "target_dir")
+    utils.safe_mkdir(target_dir)
+
+    mocker.patch("shutil.rmtree", side_effect=FileNotFoundError)
+    mocked_error = mocker.patch("securedrop_client.storage.logger.error")
+    _cleanup_directory_if_empty(target_dir)
+
+    assert mocked_error.call_count == 1
+    mocked_error.assert_called_with(MatchingLogline(msg="Could not clean up directory"))
+
+
+def test___update_submissions_cleanup_empty_folder_with_error(mocker, session, homedir):
+    """ """
+
+    class MatchingLogline:
+        def __init__(self, msg):
+            self.msg = msg
+
+        def __eq__(self, other):
+            return other.find(self.msg) > -1
+
+    local_source = factory.Source()
+    session.add(local_source)
+    local_file = factory.File(source=local_source, source_id=local_source.id)
+    session.add(local_file)
+    session.commit()
+    local_submissions = [local_file]
+
+    mock_error = mocker.patch("securedrop_client.storage.logger.error")
+    mocker.patch("securedrop_client.storage._cleanup_directory_if_empty", side_effect=OSError)
+    data_dir = os.path.join(homedir, "data")
+
+    update_files([], local_submissions, [], [], session, data_dir)
+    mock_error.assert_called_once_with(
+        MatchingLogline(msg="Could not check {}".format(local_file.source.journalist_designation))
+    )
 
 
 def test___update_replies_skip_uuids_successful(mocker, session, homedir):

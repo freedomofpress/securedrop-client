@@ -491,7 +491,12 @@ def __update_submissions(
 
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
+    # We will also collect the journalist desginations of deleted submissions to
+    # check if we have left empty directories behind after deletion.
+    deleted_submission_directory_names = set()
     for deleted_submission in local_submissions_by_uuid.values():
+
+        deleted_submission_directory_names.add(deleted_submission.source.journalist_filename)
 
         # The local method could have deleted these files and submissions already
         try:
@@ -504,6 +509,15 @@ def __update_submissions(
                 "it was already deleted locally."
             )
     session.commit()
+
+    # Check if we left any empty directories when deleting file submissions
+    if model.__name__ == File.__name__:
+        for directory_name in deleted_submission_directory_names:
+            try:
+                logger.debug("Cleanup {} if empty".format(os.path.join(data_dir, directory_name)))
+                _cleanup_directory_if_empty(os.path.join(data_dir, directory_name))
+            except OSError:
+                logger.error("Could not check {}".format(directory_name))
 
 
 def add_seen_file_records(file_id: int, journalist_uuids: List[str], session: Session) -> None:
@@ -941,6 +955,24 @@ def delete_single_submission_or_reply_on_disk(
             shutil.rmtree(os.path.dirname(obj_db.location(data_dir)))
         except FileNotFoundError:
             pass
+
+
+def _cleanup_directory_if_empty(target_dir: str) -> None:
+    """
+    If a directory is empty, remove it. Used after sync to ensure that an empty
+    directory is not left behind after files and messages are deleted.
+    """
+
+    try:
+        if os.path.isdir(target_dir):
+            if not next(os.scandir(target_dir), None):
+                # It's an empty directory; remove it
+                logger.debug("Remove empty directory {}".format(target_dir))
+                shutil.rmtree(target_dir)
+        else:
+            logger.error("Error: method called on missing or malformed directory")
+    except FileNotFoundError as e:
+        logger.error("Could not clean up directory: {}".format(e))
 
 
 def delete_local_conversation_by_source_uuid(session: Session, uuid: str, data_dir: str) -> None:
