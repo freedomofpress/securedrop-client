@@ -2054,11 +2054,12 @@ def test__cleanup_directory_if_empty(mocker, session, homedir):
     mocker.patch("securedrop_client.storage.logger.error", mock_error)
 
     _cleanup_directory_if_empty(empty_dir)
-    _cleanup_directory_if_empty(nonempty_dir)
-    _cleanup_directory_if_empty(not_a_dir)
-
     assert not os.path.exists(empty_dir)
+
+    _cleanup_directory_if_empty(nonempty_dir)
     assert os.path.exists(nonempty_dir)
+
+    _cleanup_directory_if_empty(not_a_dir)
     mock_error.assert_called_once_with("Error: method called on missing or malformed directory")
 
 

@@ -491,7 +491,7 @@ def __update_submissions(
 
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
-    # We will also collect the journalist desginations of deleted submissions to
+    # We will also collect the journalist designations of deleted submissions to
     # check if we have left empty directories behind after deletion.
     deleted_submission_directory_names = set()
     for deleted_submission in local_submissions_by_uuid.values():
