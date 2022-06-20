@@ -65,14 +65,20 @@ msgstr "Sunucudaki yazışma silinemedi"
 msgid "Failed to delete source at server"
 msgstr "Sunucudaki kaynak silinemedi"
 
-msgid "All Files"
+#, fuzzy
+#| msgid "All Files"
+msgid "Download All Files"
 msgstr "Tüm dosyalar"
 
-msgid "Entire source account"
-msgstr "Tüm kaynak hesabı"
+#, fuzzy
+#| msgid "Deleting source account..."
+msgid "Delete Source Account"
+msgstr "Kaynak hesap siliniyor..."
 
-msgid "Files and messages"
-msgstr "Dosyalar ve iletiler"
+#, fuzzy
+#| msgid "Deleting files and messages..."
+msgid "Delete All Files and Messages"
+msgstr "Dosya ve iletiler siliniyor..."
 
 msgid "SecureDrop Client {}"
 msgstr "SecureDrop İstemcisi {}"
@@ -170,9 +176,6 @@ msgstr "Oturum açarak"
 
 msgid " to compose or send a reply"
 msgstr " yanıt yazın ya da gönderin"
-
-msgid "DELETE"
-msgstr "SİL"
 
 msgid "Username"
 msgstr "Kullanıcı adı"
@@ -332,3 +335,12 @@ msgstr "Kuruluşunuz onlara yanıt gönderemeyecek."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Bu kaynağın tüm dosya ve iletileri de silinir."
+
+#~ msgid "Entire source account"
+#~ msgstr "Tüm kaynak hesabı"
+
+#~ msgid "Files and messages"
+#~ msgstr "Dosyalar ve iletiler"
+
+#~ msgid "DELETE"
+#~ msgstr "SİL"
