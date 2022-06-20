@@ -65,14 +65,18 @@ msgstr "Ha fallat la supressió de la conversa al servidor"
 msgid "Failed to delete source at server"
 msgstr "Ha fallat la supressió de la font al servidor"
 
-msgid "All Files"
+msgid "Download All Files"
 msgstr ""
 
-msgid "Entire source account"
-msgstr ""
+#, fuzzy
+#| msgid "Deleting source account..."
+msgid "Delete Source Account"
+msgstr "S'està suprimint el compte de la font..."
 
-msgid "Files and messages"
-msgstr ""
+#, fuzzy
+#| msgid "Deleting files and messages..."
+msgid "Delete All Files and Messages"
+msgstr "S'estan suprimint fitxers i missatges..."
 
 msgid "SecureDrop Client {}"
 msgstr "Client del SecureDrop {}"
@@ -168,9 +172,6 @@ msgstr ""
 
 msgid " to compose or send a reply"
 msgstr ""
-
-msgid "DELETE"
-msgstr "SUPRIMEIX"
 
 msgid "Username"
 msgstr "Nom d’usuari"
@@ -330,3 +331,6 @@ msgstr ""
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "També es destruiran tots els missatges de la font."
+
+#~ msgid "DELETE"
+#~ msgstr "SUPRIMEIX"
