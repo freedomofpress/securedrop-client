@@ -65,14 +65,20 @@ msgstr "Não foi possível eliminar a conversa no servidor"
 msgid "Failed to delete source at server"
 msgstr "Falha ao eliminar fonte no servidor"
 
-msgid "All Files"
+#, fuzzy
+#| msgid "All Files"
+msgid "Download All Files"
 msgstr "Todos os Ficheiros"
 
-msgid "Entire source account"
-msgstr "Conta completa da fonte"
+#, fuzzy
+#| msgid "Deleting source account..."
+msgid "Delete Source Account"
+msgstr "A eliminar conta da fonte..."
 
-msgid "Files and messages"
-msgstr "Ficheiros e mensagens"
+#, fuzzy
+#| msgid "Deleting files and messages..."
+msgid "Delete All Files and Messages"
+msgstr "A eliminar ficheiros e mensagens..."
 
 msgid "SecureDrop Client {}"
 msgstr "Cliente SecureDrop {}"
@@ -170,9 +176,6 @@ msgstr "Iniciar sessão"
 
 msgid " to compose or send a reply"
 msgstr " para escrever ou responder"
-
-msgid "DELETE"
-msgstr "ELIMINAR"
 
 msgid "Username"
 msgstr "Nome de utilizador"
@@ -332,3 +335,12 @@ msgstr "A sua organização não lhes conseguirá enviar respostas."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Todos os ficheiros e mensagens da fonte serão também destruídos."
+
+#~ msgid "Entire source account"
+#~ msgstr "Conta completa da fonte"
+
+#~ msgid "Files and messages"
+#~ msgstr "Ficheiros e mensagens"
+
+#~ msgid "DELETE"
+#~ msgstr "ELIMINAR"
