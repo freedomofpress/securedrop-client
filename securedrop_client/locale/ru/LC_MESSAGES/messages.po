@@ -65,14 +65,20 @@ msgstr "Не удалось удалить беседу на сервере"
 msgid "Failed to delete source at server"
 msgstr "Не удалось удалить источник на сервере"
 
-msgid "All Files"
+#, fuzzy
+#| msgid "All Files"
+msgid "Download All Files"
 msgstr "Все файлы"
 
-msgid "Entire source account"
-msgstr "Весь исходный аккаунт"
+#, fuzzy
+#| msgid "Deleting source account..."
+msgid "Delete Source Account"
+msgstr "Удаление исходного аккаунта..."
 
-msgid "Files and messages"
-msgstr "Файлы и сообщения"
+#, fuzzy
+#| msgid "Deleting files and messages..."
+msgid "Delete All Files and Messages"
+msgstr "Удаление файлов и сообщений..."
 
 msgid "SecureDrop Client {}"
 msgstr "Клиент SecureDrop {}"
@@ -170,9 +176,6 @@ msgstr "Вход"
 
 msgid " to compose or send a reply"
 msgstr " для написания или отправки ответа"
-
-msgid "DELETE"
-msgstr "УДАЛИТЬ"
 
 msgid "Username"
 msgstr "Имя пользователя"
@@ -335,3 +338,12 @@ msgstr "Ваша организация не сможет отправлять �
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Все файлы и сообщения источника будут очищены."
+
+#~ msgid "Entire source account"
+#~ msgstr "Весь исходный аккаунт"
+
+#~ msgid "Files and messages"
+#~ msgstr "Файлы и сообщения"
+
+#~ msgid "DELETE"
+#~ msgstr "УДАЛИТЬ"
