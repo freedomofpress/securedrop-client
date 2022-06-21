@@ -98,6 +98,7 @@ TESTS ?= tests
 ITESTS ?= tests/integration
 FTESTS ?= tests/functional
 TESTOPTS ?= -v --cov-config .coveragerc --cov-report html --cov-report term-missing --cov=securedrop_client --cov-fail-under 100
+RANDOM_SEED ?= $(shell bash -c 'echo $$RANDOM')
 
 .PHONY: test
 test: ## Run the application tests in parallel (for rapid development)
@@ -122,7 +123,7 @@ test-integration: ## Run the integration tests
 
 .PHONY: test-functional
 test-functional: ## Run the functional tests
-	@TEST_CMD="python -m pytest -v --random-order-bucket global $(FTESTS)" ; \
+	@TEST_CMD="python -m pytest -v -n 4 --random-order-bucket global --random-order-seed=$(RANDOM_SEED) $(FTESTS)" ; \
 		if command -v xvfb-run > /dev/null; then \
 		xvfb-run --server-args="-screen 0, 1680x1050x24" -a $$TEST_CMD ; else \
 		$$TEST_CMD ; fi
