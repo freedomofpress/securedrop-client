@@ -1,16 +1,17 @@
 import pytest
+from PyQt5.QtWidgets import QApplication
 
 from securedrop_client.gui import conversation
 from securedrop_client.gui.base import ModalDialog
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
 from tests import factory
-from tests.helper import app  # noqa: F401
 
 
 @pytest.fixture(scope="function")
 def main_window(mocker, homedir):
     # Setup
+    app = QApplication([])
     gui = Window()
     app.setActiveWindow(gui)
     gui.show()
@@ -44,12 +45,14 @@ def main_window(mocker, homedir):
 
     # Teardown
     gui.login_dialog.close()
+    gui.close()
     app.exit()
 
 
 @pytest.fixture(scope="function")
 def main_window_no_key(mocker, homedir):
     # Setup
+    app = QApplication([])
     gui = Window()
     app.setActiveWindow(gui)
     gui.show()
@@ -83,30 +86,35 @@ def main_window_no_key(mocker, homedir):
 
     # Teardown
     gui.login_dialog.close()
+    gui.close()
     app.exit()
 
 
 @pytest.fixture(scope="function")
 def modal_dialog(mocker, homedir):
+    app = QApplication([])
     gui = Window()
+    app.setActiveWindow(gui)
     gui.show()
     controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, None, proxy=False)
     controller.authenticated_user = factory.User()
     controller.qubes = False
     gui.setup(controller)
     gui.login_dialog.close()
-    app.setActiveWindow(gui)
     dialog = ModalDialog()
 
     yield dialog
 
     dialog.close()
+    gui.close()
     app.exit()
 
 
 @pytest.fixture(scope="function")
 def print_dialog(mocker, homedir):
+    app = QApplication([])
     gui = Window()
+    app.setActiveWindow(gui)
     gui.show()
     controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, None, proxy=False)
     controller.authenticated_user = factory.User()
@@ -114,18 +122,20 @@ def print_dialog(mocker, homedir):
     export_device = conversation.ExportDevice(controller)
     gui.setup(controller)
     gui.login_dialog.close()
-    app.setActiveWindow(gui)
     dialog = conversation.PrintFileDialog(export_device, "file_uuid", "file_name")
 
     yield dialog
 
     dialog.close()
+    gui.close()
     app.exit()
 
 
 @pytest.fixture(scope="function")
 def export_dialog(mocker, homedir):
+    app = QApplication([])
     gui = Window()
+    app.setActiveWindow(gui)
     gui.show()
     controller = Controller("http://localhost", gui, mocker.MagicMock(), homedir, None, proxy=False)
     controller.authenticated_user = factory.User()
@@ -133,7 +143,6 @@ def export_dialog(mocker, homedir):
     export_device = conversation.ExportDevice(controller)
     gui.setup(controller)
     gui.login_dialog.close()
-    app.setActiveWindow(gui)
     dialog = conversation.ExportFileDialog(export_device, "file_uuid", "file_name")
     dialog.show()
 
@@ -141,3 +150,4 @@ def export_dialog(mocker, homedir):
 
     dialog.close()
     gui.close()
+    app.exit()
