@@ -142,6 +142,7 @@ def test_start_app(homedir, mocker):
 
     mocker.patch("securedrop_client.app.configure_logging")
     mock_app = mocker.patch("securedrop_client.app.QApplication")
+    export_thread = mocker.patch("securedrop_client.app.QThread")
     mock_win = mocker.patch("securedrop_client.app.Window")
     mocker.patch("securedrop_client.resources.path", return_value=mock_args.sdc_home + "dummy.jpg")
     mock_controller = mocker.patch("securedrop_client.app.Controller")
@@ -161,6 +162,7 @@ def test_start_app(homedir, mocker):
         app_state,
         False,
         False,
+        export_thread(),
     )
 
 
