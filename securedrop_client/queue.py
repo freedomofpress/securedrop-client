@@ -205,20 +205,13 @@ class ApiJobQueue(QObject):
         self,
         api_client: API,
         session_maker: scoped_session,
-        main_thread: Optional[QThread] = None,
-        download_file_thread: Optional[QThread] = None,
+        main_thread: QThread,
+        download_file_thread: QThread,
     ) -> None:
         super().__init__(None)
 
-        if main_thread is not None:
-            self.main_thread = main_thread
-        else:  # pragma: no cover
-            self.main_thread = QThread()
-
-        if download_file_thread is not None:
-            self.download_file_thread = download_file_thread
-        else:  # pragma: no cover
-            self.download_file_thread = QThread()
+        self.main_thread = main_thread
+        self.download_file_thread = download_file_thread
 
         self.main_queue = RunnableQueue(api_client, session_maker)
         self.download_file_queue = RunnableQueue(api_client, session_maker)
