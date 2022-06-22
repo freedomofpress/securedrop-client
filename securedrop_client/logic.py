@@ -353,22 +353,22 @@ class Controller(QObject):
 
         if export_thread is not None:
             self.export_thread = export_thread
-        else:  # pragma: no cover
+        else:
             self.export_thread = QThread()
 
         if sync_thread is not None:
             self.sync_thread = sync_thread
-        else:  # pragma: no cover
+        else:
             self.sync_thread = QThread()
 
         if main_queue_thread is not None:
             self.main_queue_thread = main_queue_thread
-        else:  # pragma: no cover
+        else:
             self.main_queue_thread = QThread()
 
         if file_download_queue_thread is not None:
             self.file_download_queue_thread = file_download_queue_thread
-        else:  # pragma: no cover
+        else:
             self.file_download_queue_thread = QThread()
 
         # Controller is unauthenticated by default
@@ -438,7 +438,7 @@ class Controller(QObject):
 
         # Background sync to keep client up-to-date with server changes
         self.api_sync = ApiSync(
-            self.api, self.session_maker, self.gpg, self.data_dir, state, self.sync_thread
+            self.api, self.session_maker, self.gpg, self.data_dir, self.sync_thread, state
         )
         self.api_sync.sync_started.connect(self.on_sync_started, type=Qt.QueuedConnection)
         self.api_sync.sync_success.connect(self.on_sync_success, type=Qt.QueuedConnection)

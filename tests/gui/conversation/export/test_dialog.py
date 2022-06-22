@@ -21,7 +21,7 @@ def test_ExportDialog_init_sanitizes_filename(mocker):
 
     ExportFileDialog(mocker.MagicMock(), "mock_uuid", filename)
 
-    secure_qlabel.call_args_list[1].assert_called_with(filename)
+    secure_qlabel.assert_any_call(filename, wordwrap=False, max_length=260)
 
 
 def test_ExportDialog__show_starting_instructions(mocker, export_dialog):
