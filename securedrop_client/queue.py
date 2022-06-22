@@ -92,7 +92,8 @@ class RunnableQueue(QObject):
         stored on self.current_job. We check that the job to be added is not among them.
         """
         in_progress_jobs = [in_progress_job for priority, in_progress_job in self.queue.queue]
-        in_progress_jobs.append(self.current_job)
+        if self.current_job is not None:
+            in_progress_jobs.append(self.current_job)
         if job in in_progress_jobs:
             logger.debug("Duplicate job {}, skipping".format(job))
             return True
