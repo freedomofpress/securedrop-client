@@ -337,6 +337,9 @@ class Controller(QObject):
         proxy: bool = True,
         qubes: bool = True,
         export_thread: Optional[QThread] = None,
+        sync_thread: Optional[QThread] = None,
+        main_queue_thread: Optional[QThread] = None,
+        file_download_queue_thread: Optional[QThread] = None,
     ) -> None:
         """
         The hostname, gui and session objects are used to coordinate with the
@@ -349,9 +352,24 @@ class Controller(QObject):
         self._state = state
 
         if export_thread is not None:
-            self.export_thread: QThread = export_thread
+            self.export_thread = export_thread
         else:  # pragma: no cover
             self.export_thread = QThread()
+
+        if sync_thread is not None:
+            self.sync_thread = sync_thread
+        else:  # pragma: no cover
+            self.sync_thread = QThread()
+
+        if main_queue_thread is not None:
+            self.main_queue_thread = main_queue_thread
+        else:  # pragma: no cover
+            self.main_queue_thread = QThread()
+
+        if file_download_queue_thread is not None:
+            self.file_download_queue_thread = file_download_queue_thread
+        else:  # pragma: no cover
+            self.file_download_queue_thread = QThread()
 
         # Controller is unauthenticated by default
         self.__is_authenticated = False
@@ -383,7 +401,9 @@ class Controller(QObject):
         self.session = session_maker()
 
         # Queue that handles running API job
-        self.api_job_queue = ApiJobQueue(self.api, self.session_maker)
+        self.api_job_queue = ApiJobQueue(
+            self.api, self.session_maker, self.main_queue_thread, self.file_download_queue_thread
+        )
         self.api_job_queue.paused.connect(self.on_queue_paused)
         self.add_job.connect(self.api_job_queue.enqueue)
 
@@ -417,7 +437,9 @@ class Controller(QObject):
         self.data_dir = os.path.join(self.home, "data")
 
         # Background sync to keep client up-to-date with server changes
-        self.api_sync = ApiSync(self.api, self.session_maker, self.gpg, self.data_dir, state)
+        self.api_sync = ApiSync(
+            self.api, self.session_maker, self.gpg, self.data_dir, state, self.sync_thread
+        )
         self.api_sync.sync_started.connect(self.on_sync_started, type=Qt.QueuedConnection)
         self.api_sync.sync_success.connect(self.on_sync_success, type=Qt.QueuedConnection)
         self.api_sync.sync_failure.connect(self.on_sync_failure, type=Qt.QueuedConnection)
