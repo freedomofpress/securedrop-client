@@ -23,7 +23,7 @@ import os
 import uuid
 from datetime import datetime
 from gettext import gettext as _
-from typing import Dict, List, Type, Union  # noqa: F401
+from typing import Dict, List, Optional, Type, Union
 
 import arrow
 import sdclientapi
@@ -336,6 +336,7 @@ class Controller(QObject):
         state: state.State,
         proxy: bool = True,
         qubes: bool = True,
+        export_thread: Optional[QThread] = None,
     ) -> None:
         """
         The hostname, gui and session objects are used to coordinate with the
@@ -346,6 +347,11 @@ class Controller(QObject):
         super().__init__()
 
         self._state = state
+
+        if export_thread is not None:
+            self.export_thread: QThread = export_thread
+        else:  # pragma: no cover
+            self.export_thread = QThread()
 
         # Controller is unauthenticated by default
         self.__is_authenticated = False
@@ -460,7 +466,6 @@ class Controller(QObject):
         # thread is kept on self such that it does not get garbage collected
         # after this method returns) - we want to keep our export thread around for
         # later processing.
-        self.export_thread = QThread()
         self.export.moveToThread(self.export_thread)
         self.export_thread.start()
 
@@ -534,6 +539,12 @@ class Controller(QObject):
             user_callback(result_data, current_object=runner.current_object)
         else:
             user_callback(result_data)
+
+        thread = thread_info["thread"]
+        thread.exit()
+        # Wait until the thread has finished, or the deadline expires.
+        TWO_SECONDS_IN_MILLISECONDS = 2000
+        thread.wait(TWO_SECONDS_IN_MILLISECONDS)
 
     def login(self, username: str, password: str, totp: str) -> None:
         """
