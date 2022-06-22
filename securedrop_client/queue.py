@@ -2,7 +2,7 @@ import itertools
 import logging
 import threading
 from queue import PriorityQueue
-from typing import Optional, Tuple  # noqa: F401
+from typing import Optional, Tuple
 
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
 from sdclientapi import API, RequestTimeoutError, ServerConnectionError
@@ -201,11 +201,24 @@ class ApiJobQueue(QObject):
     # Signal that is emitted after a queue is paused.
     paused = pyqtSignal()
 
-    def __init__(self, api_client: API, session_maker: scoped_session) -> None:
+    def __init__(
+        self,
+        api_client: API,
+        session_maker: scoped_session,
+        main_thread: Optional[QThread] = None,
+        download_file_thread: Optional[QThread] = None,
+    ) -> None:
         super().__init__(None)
 
-        self.main_thread = QThread()
-        self.download_file_thread = QThread()
+        if main_thread is not None:
+            self.main_thread = main_thread
+        else:  # pragma: no cover
+            self.main_thread = QThread()
+
+        if download_file_thread is not None:
+            self.download_file_thread = download_file_thread
+        else:  # pragma: no cover
+            self.download_file_thread = QThread()
 
         self.main_queue = RunnableQueue(api_client, session_maker)
         self.download_file_queue = RunnableQueue(api_client, session_maker)
