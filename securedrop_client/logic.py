@@ -630,6 +630,7 @@ class Controller(QObject):
                 "make sure to use a new two-factor code."
             )
         else:
+            logging.debug(f"Unexpected error while authenticating: {result}")
             error = _("That didn't work. Please check everything and try again.")
 
         self.gui.show_login_error(error=error)
