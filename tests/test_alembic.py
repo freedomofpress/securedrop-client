@@ -152,13 +152,13 @@ def test_alembic_migration_upgrade(alembic_config, config, migration):
 @pytest.mark.parametrize("migration", DATA_MIGRATIONS)
 def test_alembic_migration_upgrade_with_data(alembic_config, config, migration, homedir):
     """
-    Upgrade to one migration before the target migration, load data, then upgrade in order to test
-    that the upgrade is successful when there is data.
+    Upgrade to one migration before the target migration (if there is one),
+    load data, then upgrade in order to test that the upgrade is successful
+    when there is data.
     """
     migrations = list_migrations(alembic_config, migration)
-    if len(migrations) == 1:
-        return
-    upgrade(alembic_config, migrations[-2])
+    if len(migrations) > 1:
+        upgrade(alembic_config, migrations[-2])
     mod_name = "tests.migrations.test_{}".format(migration)
     mod = __import__(mod_name, fromlist=["UpgradeTester"])
     session = make_session_maker(homedir)
