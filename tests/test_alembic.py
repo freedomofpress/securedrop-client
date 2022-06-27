@@ -6,11 +6,12 @@ import subprocess
 from os import path
 
 import pytest
-from sqlalchemy import text
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import scoped_session, sessionmaker
 
 from alembic.config import Config as AlembicConfig
 from alembic.script import ScriptDirectory
-from securedrop_client.db import Base, convention, make_session_maker
+from securedrop_client.db import Base, convention
 
 from . import conftest
 
@@ -23,6 +24,17 @@ ALL_MIGRATIONS = [
 DATA_MIGRATIONS = []
 
 WHITESPACE_REGEX = re.compile(r"\s+")
+
+
+def make_session_maker(home: str) -> scoped_session:
+    """
+    Duplicate securedrop_client.db.make_session_maker so that data migrations are decoupled
+    from that implementation.
+    """
+    db_path = os.path.join(home, "svs.sqlite")
+    engine = create_engine("sqlite:///{}".format(db_path))
+    maker = sessionmaker(bind=engine)
+    return scoped_session(maker)
 
 
 def list_migrations(cfg_path, head):
@@ -149,7 +161,8 @@ def test_alembic_migration_upgrade_with_data(alembic_config, config, migration, 
     upgrade(alembic_config, migrations[-2])
     mod_name = "tests.migrations.test_{}".format(migration)
     mod = __import__(mod_name, fromlist=["UpgradeTester"])
-    upgrade_tester = mod.UpgradeTester(homedir)
+    session = make_session_maker(homedir)
+    upgrade_tester = mod.UpgradeTester(homedir, session)
     upgrade_tester.load_data()
     upgrade(alembic_config, migration)
     upgrade_tester.check_upgrade()
@@ -177,7 +190,8 @@ def test_alembic_migration_downgrade_with_data(alembic_config, config, migration
     upgrade(alembic_config, migration)
     mod_name = "tests.migrations.test_{}".format(migration)
     mod = __import__(mod_name, fromlist=["DowngradeTester"])
-    downgrade_tester = mod.DowngradeTester(homedir)
+    session = make_session_maker(homedir)
+    downgrade_tester = mod.DowngradeTester(homedir, session)
     downgrade_tester.load_data()
     downgrade(alembic_config, "-1")
     downgrade_tester.check_downgrade()
