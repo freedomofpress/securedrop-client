@@ -21,7 +21,7 @@ ALL_MIGRATIONS = [
     x.split(".")[0].split("_")[0] for x in os.listdir(MIGRATION_PATH) if x.endswith(".py")
 ]
 
-DATA_MIGRATIONS = []
+DATA_MIGRATIONS = ["d7c8af95bc8e"]
 
 WHITESPACE_REGEX = re.compile(r"\s+")
 
