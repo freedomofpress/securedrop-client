@@ -12,6 +12,7 @@
   /dev/tty rw,
   /dev/xen/evtchn rw,
   /dev/xen/gntalloc rw,
+  /dev/xen/hypercall rw,
   /dev/xen/privcmd rw,
   /dev/xen/xenbus rw,
   /etc/group r,
