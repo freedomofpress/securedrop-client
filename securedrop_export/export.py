@@ -102,18 +102,19 @@ class SDExport(object):
         solutions for mimetype handling, which we want to avoid.
         """
         logger.info("Exiting with message: {}".format(msg))
-        if not e:
+        if e:
+            logger.error("Captured exception output: {}".format(e.output))
+        try:
+            # If the file archive was extracted, delete before returning
+            if os.path.isdir(self.tmpdir):
+                shutil.rmtree(self.tmpdir)
+            # Do this after deletion to avoid giving the client two error messages in case of the
+            # block above failing
             sys.stderr.write(msg)
             sys.stderr.write("\n")
-        else:
-            try:
-                # If the file archive was extracted, delete before returning
-                if os.path.isdir(self.tmpdir):
-                    shutil.rmtree(self.tmpdir)
-                logger.error("{}:{}".format(msg, e.output))
-            except Exception as ex:
-                logger.error("Unhandled exception: {}".format(ex))
-                sys.stderr.write(ExportStatus.ERROR_GENERIC.value)
+        except Exception as ex:
+            logger.error("Unhandled exception: {}".format(ex))
+            sys.stderr.write(ExportStatus.ERROR_GENERIC.value)
         # exit with 0 return code otherwise the os will attempt to open
         # the file with another application
         sys.exit(0)
