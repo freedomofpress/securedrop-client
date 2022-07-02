@@ -119,23 +119,24 @@ class SDExport(object):
         # the file with another application
         sys.exit(0)
 
-    def safe_check_call(self, command, error_message):
+    def safe_check_call(self, command, error_message, ignore_stderr_startswith=None):
         """
         Safely wrap subprocess.check_output to ensure we always return 0 and
         log the error messages
         """
         try:
-            subprocess.check_call(command)
-        except subprocess.CalledProcessError as ex:
-            # ppdc emits warnings which should not be treated as user facing errors
-            if (
-                ex.returncode == 0
-                and ex.stderr is not None
-                and ex.stderr.startswith("ppdc: Warning")
-            ):
-                logger.info("Encountered warning: {}".format(ex.output))
+            err = subprocess.run(command, check=True, capture_output=True).stderr
+            # ppdc and lpadmin may emit warnings we are aware of which should not be treated as
+            # user facing errors
+            if ignore_stderr_startswith and err.startswith(ignore_stderr_startswith):
+                logger.info("Encountered warning: {}".format(err.decode("utf-8")))
+            elif err == b"":
+                # Nothing on stderr and returncode is 0, we're good
+                pass
             else:
-                self.exit_gracefully(msg=error_message, e=ex.output)
+                self.exit_gracefully(msg=error_message, e=err)
+        except subprocess.CalledProcessError as ex:
+            self.exit_gracefully(msg=error_message, e=ex.output)
 
 
 class ExportAction(abc.ABC):

@@ -143,6 +143,7 @@ class PrintAction(ExportAction):
                     "/usr/share/cups/model/",
                 ],
                 error_message=ExportStatus.ERROR_PRINTER_DRIVER_UNAVAILABLE.value,
+                ignore_stderr_startswith=b"ppdc: Warning",
             )
 
         return printer_ppd
@@ -165,6 +166,7 @@ class PrintAction(ExportAction):
                 "allow:user",
             ],
             error_message=ExportStatus.ERROR_PRINTER_INSTALL.value,
+            ignore_stderr_startswith=b"lpadmin: Printer drivers",
         )
 
     def print_test_page(self):

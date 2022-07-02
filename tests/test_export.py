@@ -519,10 +519,33 @@ def test_valid_encryption_config(capsys):
 def test_safe_check_call(capsys, mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
     submission.safe_check_call(["ls"], "this will work")
-    mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
     expected_message = "uh oh!!!!"
 
-    submission.safe_check_call(["ls", "kjdsfhkdjfh"], expected_message)
+    with pytest.raises(SystemExit) as sysexit:
+        submission.safe_check_call(["ls", "kjdsfhkdjfh"], expected_message)
 
-    assert mocked_exit.mock_calls[0][2]["msg"] == expected_message
-    assert mocked_exit.mock_calls[0][2]["e"] is None
+    assert sysexit.value.code == 0
+
+    captured = capsys.readouterr()
+    assert captured.err == "{}\n".format(expected_message)
+    assert captured.out == ""
+
+    # This should work too
+    submission.safe_check_call(
+        ["python3", "-c", "import sys;sys.stderr.write('hello')"],
+        expected_message,
+        ignore_stderr_startswith=b'hello',
+    )
+
+    with pytest.raises(SystemExit) as sysexit:
+        submission.safe_check_call(
+            ["python3", "-c", "import sys;sys.stderr.write('hello\n')"],
+            expected_message,
+            ignore_stderr_startswith=b'world',
+        )
+
+    assert sysexit.value.code == 0
+
+    captured = capsys.readouterr()
+    assert captured.err == "{}\n".format(expected_message)
+    assert captured.out == ""

@@ -134,10 +134,13 @@ def test_extract_device_name_multiple_part(mocked_call, capsys, mocker):
 
 
 @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_NO_PART)
-@mock.patch("subprocess.check_call", return_value=0)
 def test_luks_precheck_encrypted_fde(mocked_call, capsys, mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
     action = DiskExportAction(submission)
+
+    command_output = mock.MagicMock()
+    command_output.stderr = b""
+    mocker.patch("subprocess.run", return_value=command_output)
 
     expected_message = export.ExportStatus.USB_ENCRYPTED.value
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
@@ -148,13 +151,16 @@ def test_luks_precheck_encrypted_fde(mocked_call, capsys, mocker):
 
 
 @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_ONE_PART)
-@mock.patch("subprocess.check_call", return_value=0)
 def test_luks_precheck_encrypted_single_part(mocked_call, capsys, mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
     action = DiskExportAction(submission)
     action.device = "/dev/sda"
     expected_message = export.ExportStatus.USB_ENCRYPTED.value
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
+
+    command_output = mock.MagicMock()
+    command_output.stderr = b""
+    mocker.patch("subprocess.run", return_value=command_output)
 
     action.check_luks_volume()
 
@@ -178,7 +184,6 @@ def test_luks_precheck_encrypted_multi_part(mocked_call, capsys, mocker):
     # Output of `lsblk -o TYPE --noheadings DEVICE_NAME` when a drive has multiple
     # partitions
     multi_partition_lsblk_output = b"disk\npart\npart\n"
-    mocker.patch("subprocess.check_call", return_value=0)
     mocker.patch("subprocess.check_output", return_value=multi_partition_lsblk_output)
 
     with pytest.raises(SystemExit):
@@ -202,7 +207,7 @@ def test_luks_precheck_encrypted_luks_error(mocked_call, capsys, mocker):
     single_partition_lsblk_output = b"disk\npart\n"
     mocker.patch("subprocess.check_output", return_value=single_partition_lsblk_output)
     mocker.patch(
-        "subprocess.check_call", side_effect=CalledProcessError(1, "check_call")
+        "subprocess.run", side_effect=CalledProcessError(1, "run")
     )
 
     with pytest.raises(SystemExit):
