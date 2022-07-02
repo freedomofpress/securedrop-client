@@ -2,6 +2,8 @@ import os
 import subprocess  # noqa: F401
 import tempfile
 
+from unittest import mock
+
 import json
 import pytest
 import tarfile
@@ -426,16 +428,18 @@ def test_exit_gracefully_no_exception(capsys):
 
 def test_exit_gracefully_exception(capsys):
     submission = export.SDExport("testfile", TEST_CONFIG)
-    test_msg = "test"
+    test_msg = "ERROR_GENERIC"
 
     with pytest.raises(SystemExit) as sysexit:
-        submission.exit_gracefully(test_msg, e=Exception("BANG!"))
+        exception = mock.MagicMock()
+        exception.output = "BANG!"
+        submission.exit_gracefully(test_msg, e=exception)
 
     # A graceful exit means a return code of 0
     assert sysexit.value.code == 0
 
     captured = capsys.readouterr()
-    assert captured.err == export.ExportStatus.ERROR_GENERIC.value
+    assert captured.err.rstrip() == export.ExportStatus.ERROR_GENERIC.value
     assert captured.out == ""
 
 
