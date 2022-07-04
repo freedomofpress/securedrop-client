@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.0
+
+  * Supports logging in QubesOS 4.1.
+
 ## 0.1.2
 
   * Uses Qubes domain name instead of system hostname.
