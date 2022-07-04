@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0
+
+  * Reject JSON with duplicate keys (TOB-SDW-014) (#98)
+  * Support Debian Bullseye (#100, #97)
+  * Use reproducible wheels (#81, #85)
+  * Dependency updates (#82, #88, #91, #93, #95, #96)
+
 ## 0.3.1
 
   * Moved proxy configuration to private volume (#79)
