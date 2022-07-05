@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+ * Support Debian Bullseye
+ * Improve error-handling
+ * Update dependencies
+ * Refactor path-traversal check for improved readability
+
 ## 0.2.6
   * Further validate target paths
 
