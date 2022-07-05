@@ -206,9 +206,7 @@ def test_luks_precheck_encrypted_luks_error(mocked_call, capsys, mocker):
 
     single_partition_lsblk_output = b"disk\npart\n"
     mocker.patch("subprocess.check_output", return_value=single_partition_lsblk_output)
-    mocker.patch(
-        "subprocess.run", side_effect=CalledProcessError(1, "run")
-    )
+    mocker.patch("subprocess.run", side_effect=CalledProcessError(1, "run"))
 
     with pytest.raises(SystemExit):
         action.check_luks_volume()
