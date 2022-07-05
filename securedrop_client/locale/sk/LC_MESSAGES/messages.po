@@ -64,14 +64,18 @@ msgstr "Nepodarilo sa vymazať konverzáciu zo servera"
 msgid "Failed to delete source at server"
 msgstr "Nepodarilo sa zmazať zdroj zo servera"
 
-msgid "All Files"
+msgid "Download All Files"
 msgstr ""
 
-msgid "Entire source account"
-msgstr "Celý účet zdroja"
+#, fuzzy
+#| msgid "Deleting source account..."
+msgid "Delete Source Account"
+msgstr "Mazanie účtu zdroja ..."
 
-msgid "Files and messages"
-msgstr "Súbory a správy"
+#, fuzzy
+#| msgid "Deleting files and messages..."
+msgid "Delete All Files and Messages"
+msgstr "Mazanie súborov a správ ..."
 
 msgid "SecureDrop Client {}"
 msgstr "SecureDrop Klient {}"
@@ -169,9 +173,6 @@ msgstr "Prihlásiť sa"
 
 msgid " to compose or send a reply"
 msgstr " vytvoriť alebo poslať odpoveď"
-
-msgid "DELETE"
-msgstr "ZMAZAŤ"
 
 msgid "Username"
 msgstr "Používateľské meno"
@@ -336,3 +337,12 @@ msgstr "Vaša organizácia mu nebude môcť poslať odpovede."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Všetky súbory a správy od daného zdroja budú zničené."
+
+#~ msgid "Entire source account"
+#~ msgstr "Celý účet zdroja"
+
+#~ msgid "Files and messages"
+#~ msgstr "Súbory a správy"
+
+#~ msgid "DELETE"
+#~ msgstr "ZMAZAŤ"
