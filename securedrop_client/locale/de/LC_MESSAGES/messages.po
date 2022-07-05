@@ -4,7 +4,19 @@
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
 #
 msgid ""
-msgstr "Project-Id-Version: SecureDrop Client 0.5.0\nReport-Msgid-Bugs-To: securedrop@freedom.press\nPO-Revision-Date: 2022-06-02 00:11+0000\nLast-Translator: Deleted User <noreply+296@weblate.org>\nLanguage-Team: German <https://weblate.securedrop.org/projects/securedrop/securedrop-client/de/>\nLanguage: de\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nPlural-Forms: nplurals=2; plural=n != 1;\nX-Generator: Weblate 4.11.2\nGenerated-By: Babel 2.9.1\n"
+msgstr ""
+"Project-Id-Version: SecureDrop Client 0.5.0\n"
+"Report-Msgid-Bugs-To: securedrop@freedom.press\n"
+"PO-Revision-Date: 2022-06-22 22:22+0000\n"
+"Last-Translator: Kevin Kandlbinder <kevin@kevink.dev>\n"
+"Language-Team: German <https://weblate.securedrop.org/projects/securedrop/securedrop-client/de/>\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.13\n"
+"Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
 msgstr "{application_name} läuft bereits"
@@ -53,14 +65,14 @@ msgstr "Löschen der Konversation am Server fehlgeschlagen"
 msgid "Failed to delete source at server"
 msgstr "Löschen der Quelle am Server fehlgeschlagen"
 
-msgid "All Files"
-msgstr "Alle Dateien"
+msgid "Download All Files"
+msgstr "Alle Dateien herunterladen"
 
-msgid "Entire source account"
-msgstr "Gesamtes Quellkonto"
+msgid "Delete Source Account"
+msgstr "Quellkonto löschen"
 
-msgid "Files and messages"
-msgstr "Dateien und Nachrichten"
+msgid "Delete All Files and Messages"
+msgstr "Alle Dateien und Nachrichten löschen"
 
 msgid "SecureDrop Client {}"
 msgstr "SecureDrop-Client {}"
@@ -87,7 +99,7 @@ msgid "Nothing to see just yet!"
 msgstr "Hier gibt es noch nichts zu sehen!"
 
 msgid "Source submissions will be listed to the left, once downloaded and decrypted."
-msgstr "Nach dem Herunterladen und Entschlüsseln werden die Quelltexte auf der linken Seite aufgelistet."
+msgstr "Nach dem Herunterladen und Entschlüsseln werden Quellen auf der linken Seite aufgelistet."
 
 msgid "This is where you will read messages, reply to sources, and work with files."
 msgstr "Hier werden Sie Nachrichten lesen, auf Quellen antworten und mit Dateien arbeiten."
@@ -158,9 +170,6 @@ msgstr "Anmelden"
 
 msgid " to compose or send a reply"
 msgstr " um eine Antwort zu verfassen oder zu senden"
-
-msgid "DELETE"
-msgstr "LÖSCHEN"
 
 msgid "Username"
 msgstr "Benutzername"
@@ -320,3 +329,12 @@ msgstr "Ihre Organisation kann ihnen dann keine Antworten senden."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Alle Dateien und Nachrichten von dieser Quelle werden ebenfalls zerstört."
+
+#~ msgid "Entire source account"
+#~ msgstr "Gesamtes Quellkonto"
+
+#~ msgid "Files and messages"
+#~ msgstr "Dateien und Nachrichten"
+
+#~ msgid "DELETE"
+#~ msgstr "LÖSCHEN"
