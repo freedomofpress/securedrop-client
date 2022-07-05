@@ -16,3 +16,16 @@ recursive-include securedrop_client *
 
 recursive-exclude alembic *.pyc
 recursive-exclude securedrop_client *.pyc
+
+
+# --- LOCALIZATION ---
+
+# Translations may appear in the tree before we consider them supported, so
+# don't include any by default.
+prune securedrop_client/locale
+
+# Explicitly include only supported translations, one line for each $LANG, like:
+#
+#     graft securedrop_client/locale/$LANG
+#
+# Please keep this list alphabetized.

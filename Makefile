@@ -205,10 +205,7 @@ docs:  ## Generate browsable documentation and call/caller graphs (requires Doxy
 
 LOCALE_DIR=securedrop_client/locale
 POT=${LOCALE_DIR}/messages.pot
-SUPPORTED_LOCALES_LIST=l10n.txt
 VERSION=$(shell python -c "import securedrop_client; print(securedrop_client.__version__)")
-WEBLATE_API=https://weblate.securedrop.org/api/
-WEBLATE_COMPONENT=securedrop-client
 
 .PHONY: check-strings
 check-strings: ## Check that the translation catalog is up to date with source code
@@ -237,13 +234,3 @@ $(POT): securedrop_client
 		$^
 	@sed -i -e '/^"POT-Creation-Date/d' ${POT}
 
-# List languages 100% translated in Weblate.
-.PHONY: supported-languages
-supported-languages:
-	@wlc \
-		--format json \
-		--url ${WEBLATE_API} \
-		list-translations \
-		| jq -r 'map(select(.component.slug == "${WEBLATE_COMPONENT}" and .translated_percent == 100)) | map("* \(.language.name|tostring) (``\(.translated_percent|tostring)``)") | join("\n")' \
-		> ${SUPPORTED_LOCALES_LIST}
-	@git add ${SUPPORTED_LOCALES_LIST}
