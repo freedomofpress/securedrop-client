@@ -1,16 +1,18 @@
 ---
 common-steps:
-  - &removevirtualenv
+  - &run_tests
     run:
-      name: Removes the upstream virtualenv from the original container image
-      command: sudo pip uninstall virtualenv -y
+      name: Run tests
+      command: |
+        apt-get update && apt-get install -y python3
+        python3 -m unittest
 
   - &install_packaging_dependencies
     run:
       name: Install Debian packaging dependencies and download wheels
       command: |
+        apt-get update && apt-get install -y git git-lfs make sudo
         mkdir ~/packaging && cd ~/packaging
-        git config --global --unset url.ssh://git@github.com.insteadof
         git clone https://github.com/freedomofpress/securedrop-debian-packaging.git
         cd securedrop-debian-packaging
         make install-deps
@@ -38,19 +40,31 @@ version: 2
 jobs:
   test:
     docker:
-      - image: circleci/python:3.7-buster
+      - image: debian:buster
     steps:
       - checkout
-      - run:
-          name: Run tests
-          command: python3 -m unittest
+      - *run_tests
+  test-bullseye:
+    docker:
+      - image: debian:bullseye
+    steps:
+      - checkout
+      - *run_tests
 
   build-buster:
     docker:
-      - image: circleci/python:3.7-buster
+      - image: debian:buster
     steps:
       - checkout
-      - *removevirtualenv
+      - *install_packaging_dependencies
+      - *verify_requirements
+      - *build_debian_package
+
+  build-bullseye:
+    docker:
+      - image: debian:bullseye
+    steps:
+      - checkout
       - *install_packaging_dependencies
       - *verify_requirements
       - *build_debian_package
@@ -60,4 +74,6 @@ workflows:
   per_pr:
     jobs:
       - test
+      - test-bullseye
       - build-buster
+      - build-bullseye
