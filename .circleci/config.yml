@@ -1,21 +1,22 @@
 ---
 common-steps:
-  - &removevirtualenv
+  - &install_deps
     run:
-      name: Removes the upstream virtualenv from the original container image
-      command: sudo pip uninstall virtualenv -y
-
+      name: Install base dependencies for Debian python
+      command: |
+        set -e
+        apt-get update && apt-get install -y sudo make git git-lfs gnupg python3 python3-venv
   - &install_packages
     run:
       name: Install packages
       command: |
-        sudo apt install libnotify-bin
+        sudo apt install -y libnotify-bin
 
   - &run_tests
     run:
       name: Install test requirements and run tests
       command: |
-        virtualenv .venv
+        python3 -m venv .venv
         source .venv/bin/activate
         pip install --require-hashes -r requirements/dev-requirements.txt
         make check --keep-going
@@ -25,7 +26,8 @@ common-steps:
       name: Install Debian packaging dependencies and download wheels
       command: |
         mkdir ~/packaging && cd ~/packaging
-        git config --global --unset url.ssh://git@github.com.insteadof
+        # local builds may not have an SSH url
+        git config --global --unset url.ssh://git@github.com.insteadof || true
         git clone https://github.com/freedomofpress/securedrop-debian-packaging.git
         cd securedrop-debian-packaging
         make install-deps
@@ -40,67 +42,100 @@ common-steps:
         # previous run step), else return 0.
         git diff --quiet
 
-  - &make_source_tarball
-    run:
-      name: Tag and make source tarball
-      command: |
-        cd ~/project
-        ./update_version.sh 1000.0  # Dummy version number, doesn't matter what we put here
-        python3 setup.py sdist
-
   - &build_debian_package
     run:
       name: Build debian package
       command: |
         cd ~/packaging/securedrop-debian-packaging
         export PKG_VERSION=1000.0
-        export PKG_PATH=/home/circleci/project/dist/securedrop-export-$PKG_VERSION.tar.gz
+        export PKG_PATH=~/project/
         make securedrop-export
+
+  - &run_lint
+    run:
+      name: Install test requirements and run lint
+      command: |
+        python3 -m venv .venv
+        source .venv/bin/activate
+        pip install --require-hashes -r requirements/dev-requirements.txt
+        make lint
+
+  - &run_safety
+    run:
+      name: Check Python dependencies for CVEs
+      command: |
+        set -e
+        source .venv/bin/activate
+        make safety
+
+
 
 version: 2
 jobs:
   lint:
     docker:
-      - image: circleci/python:3.7
+      - image: debian:buster
     steps:
+      - *install_deps
       - checkout
-      - run:
-          name: Install test requirements and run lint
-          command: |
-            virtualenv .venv
-            source .venv/bin/activate
-            pip install --require-hashes -r requirements/dev-requirements.txt
-            make lint
-      - run:
-          name: Check Python dependencies for CVEs
-          command: |
-            set -e
-            source .venv/bin/activate
-            make safety
+      - *run_lint
+      - *run_safety
+
+  lint-bullseye:
+    docker:
+      - image: debian:buster
+    steps:
+      - *install_deps
+      - checkout
+      - *run_lint
+      - *run_safety
 
   test-buster:
     docker:
-      - image: circleci/python:3.7-buster
+      - image: debian:buster
     steps:
+      - *install_deps
+      - checkout
+      - *install_packages
+      - *run_tests
+
+  test-bullseye:
+    docker:
+      - image: debian:bullseye
+    steps:
+      - *install_deps
       - checkout
       - *install_packages
       - *run_tests
 
   build-buster:
     docker:
-      - image: circleci/python:3.7-buster
+      - image: debian:buster
     steps:
+      - *install_deps
       - checkout
-      - *removevirtualenv
       - *install_packaging_dependencies
       - *verify_requirements
-      - *make_source_tarball
       - *build_debian_package
+
+  build-bullseye:
+    docker:
+      - image: debian:bullseye
+    steps:
+      - *install_deps
+      - checkout
+      - *install_packaging_dependencies
+      - *verify_requirements
+      - *build_debian_package
+
 
 workflows:
   version: 2
   securedrop_export_ci:
     jobs:
       - lint
+      - lint-bullseye
       - test-buster
+      - test-bullseye
       - build-buster
+      - build-bullseye
