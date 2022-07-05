@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.6.0-rc2\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2022-05-06 18:11+0000\n"
+"PO-Revision-Date: 2022-06-20 17:02+0000\n"
 "Last-Translator: ff98sha <ff98sha@163.com>\n"
 "Language-Team: Chinese (Simplified) <https://weblate.securedrop.org/projects/securedrop/securedrop-client/zh_Hans/>\n"
 "Language: zh_Hans\n"
@@ -65,14 +65,14 @@ msgstr "服务器上删除消息失败"
 msgid "Failed to delete source at server"
 msgstr "服务器上删除线人失败"
 
-msgid "All Files"
-msgstr "所有文件"
+msgid "Download All Files"
+msgstr "下载所有文件"
 
-msgid "Entire source account"
-msgstr "整个线人账号"
+msgid "Delete Source Account"
+msgstr "删除线人账号"
 
-msgid "Files and messages"
-msgstr "文件和消息"
+msgid "Delete All Files and Messages"
+msgstr "删除所有文件和消息"
 
 msgid "SecureDrop Client {}"
 msgstr "SecureDrop 客户端 {}"
@@ -171,9 +171,6 @@ msgstr "登录"
 msgid " to compose or send a reply"
 msgstr " 编写和发送回复"
 
-msgid "DELETE"
-msgstr "删除"
-
 msgid "Username"
 msgstr "用户名"
 
@@ -216,10 +213,8 @@ msgstr "请输入用户名、密码和两步认证码。"
 msgid "USE OFFLINE"
 msgstr "离线模式"
 
-#, fuzzy
-#| msgid "Passphrase"
 msgid "Show Passphrase"
-msgstr "密码"
+msgstr "显示密码"
 
 msgid "CANCEL"
 msgstr "取消"
@@ -331,3 +326,12 @@ msgstr "你的组织无法再向他们发送回复。"
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "此线人的所有文件和消息都将被删除。"
+
+#~ msgid "Entire source account"
+#~ msgstr "整个线人账号"
+
+#~ msgid "Files and messages"
+#~ msgstr "文件和消息"
+
+#~ msgid "DELETE"
+#~ msgstr "删除"
