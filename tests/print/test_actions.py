@@ -104,9 +104,7 @@ def test_install_printer_ppd_error_no_driver(mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
     action = PrintExportAction(submission)
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
-    mocker.patch(
-        "subprocess.run", side_effect=CalledProcessError(1, "run")
-    )
+    mocker.patch("subprocess.run", side_effect=CalledProcessError(1, "run"))
 
     action.install_printer_ppd(
         "usb://HP/LaserJet%20Pro%20M404-M405?serial=A00000A000000"
@@ -120,9 +118,7 @@ def test_install_printer_ppd_error_not_supported(mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
     action = PrintExportAction(submission)
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
-    mocker.patch(
-        "subprocess.run", side_effect=CalledProcessError(1, "run")
-    )
+    mocker.patch("subprocess.run", side_effect=CalledProcessError(1, "run"))
 
     action.install_printer_ppd("usb://Not/Supported?serial=A00000A000000")
 
@@ -133,9 +129,7 @@ def test_setup_printer_error(mocker):
     submission = export.SDExport("testfile", TEST_CONFIG)
     action = PrintExportAction(submission)
     mocked_exit = mocker.patch.object(submission, "exit_gracefully", return_value=0)
-    mocker.patch(
-        "subprocess.run", side_effect=CalledProcessError(1, "run")
-    )
+    mocker.patch("subprocess.run", side_effect=CalledProcessError(1, "run"))
 
     action.setup_printer(
         "usb://Brother/HL-L2320D%20series?serial=A00000A000000",

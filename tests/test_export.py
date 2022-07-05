@@ -534,14 +534,14 @@ def test_safe_check_call(capsys, mocker):
     submission.safe_check_call(
         ["python3", "-c", "import sys;sys.stderr.write('hello')"],
         expected_message,
-        ignore_stderr_startswith=b'hello',
+        ignore_stderr_startswith=b"hello",
     )
 
     with pytest.raises(SystemExit) as sysexit:
         submission.safe_check_call(
             ["python3", "-c", "import sys;sys.stderr.write('hello\n')"],
             expected_message,
-            ignore_stderr_startswith=b'world',
+            ignore_stderr_startswith=b"world",
         )
 
     assert sysexit.value.code == 0
