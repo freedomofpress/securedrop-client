@@ -21,7 +21,9 @@ If these changes add or remove files other than client code, the AppArmor profil
 
 If these changes modify the database schema, you should include a database migration. Please check as applicable:
 
- - [ ] I have written a migration and upgraded a test database based on `main` and confirmed that the migration applies cleanly
+ - [ ] I have written a migration and upgraded a test database based on `main` and confirmed that the migration is [self-contained] and applies cleanly
  - [ ] I have written a migration but have not upgraded a test database based on `main` and would like the reviewer to do so
  - [ ] I need help writing a database migration
  - [ ] No database schema changes are needed
+
+[self-contained]: https://github.com/freedomofpress/securedrop-client#generating-and-running-database-migrations
