@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.6.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2022-05-23 14:11+0000\n"
+"PO-Revision-Date: 2022-06-27 23:09+0000\n"
 "Last-Translator: deeplow <deeplower@protonmail.com>\n"
 "Language-Team: Portuguese (Portugal) <https://weblate.securedrop.org/projects/securedrop/securedrop-client/pt_PT/>\n"
 "Language: pt_PT\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.11.2\n"
+"X-Generator: Weblate 4.13\n"
 "Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
@@ -65,14 +65,14 @@ msgstr "Não foi possível eliminar a conversa no servidor"
 msgid "Failed to delete source at server"
 msgstr "Falha ao eliminar fonte no servidor"
 
-msgid "All Files"
-msgstr "Todos os Ficheiros"
+msgid "Download All Files"
+msgstr "Transferir Todos os Ficheiros"
 
-msgid "Entire source account"
-msgstr "Conta completa da fonte"
+msgid "Delete Source Account"
+msgstr "Eliminar Conta da Fonte"
 
-msgid "Files and messages"
-msgstr "Ficheiros e mensagens"
+msgid "Delete All Files and Messages"
+msgstr "Eliminar Todos os Ficheiros e Mensagens"
 
 msgid "SecureDrop Client {}"
 msgstr "Cliente SecureDrop {}"
@@ -170,9 +170,6 @@ msgstr "Iniciar sessão"
 
 msgid " to compose or send a reply"
 msgstr " para escrever ou responder"
-
-msgid "DELETE"
-msgstr "ELIMINAR"
 
 msgid "Username"
 msgstr "Nome de utilizador"
@@ -332,3 +329,12 @@ msgstr "A sua organização não lhes conseguirá enviar respostas."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Todos os ficheiros e mensagens da fonte serão também destruídos."
+
+#~ msgid "Entire source account"
+#~ msgstr "Conta completa da fonte"
+
+#~ msgid "Files and messages"
+#~ msgstr "Ficheiros e mensagens"
+
+#~ msgid "DELETE"
+#~ msgstr "ELIMINAR"

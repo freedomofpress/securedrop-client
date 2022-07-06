@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.5.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2022-03-19 10:42+0000\n"
+"PO-Revision-Date: 2022-06-09 04:11+0000\n"
 "Last-Translator: Sveinn í Felli <sv1@fellsnet.is>\n"
 "Language-Team: Icelandic <https://weblate.securedrop.org/projects/securedrop/securedrop-client/is/>\n"
 "Language: is\n"
@@ -65,14 +65,14 @@ msgstr "Mistókst að eyða samtali á netþjóni"
 msgid "Failed to delete source at server"
 msgstr "Mistókst að eyða heimildarmanni á netþjóni"
 
-msgid "All Files"
-msgstr "Allar skrár"
+msgid "Download All Files"
+msgstr "Sækja allar skrár"
 
-msgid "Entire source account"
-msgstr "Öllum aðgangi heimildarmanns"
+msgid "Delete Source Account"
+msgstr "Eyði aðgangi heimildarmanns"
 
-msgid "Files and messages"
-msgstr "Skrár og skilaboð"
+msgid "Delete All Files and Messages"
+msgstr "Eyða öllum skrám og skilaboðum"
 
 msgid "SecureDrop Client {}"
 msgstr "SecureDrop biðlari {}"
@@ -171,9 +171,6 @@ msgstr "Skrá inn"
 msgid " to compose or send a reply"
 msgstr " til að semja eða senda svör"
 
-msgid "DELETE"
-msgstr "EYÐA"
-
 msgid "Username"
 msgstr "Notandanafn"
 
@@ -216,10 +213,8 @@ msgstr "Settu inn notandanafn, lykilorð og tvíþátta auðkenningarkóða."
 msgid "USE OFFLINE"
 msgstr "NOTA ÓNETTENGT"
 
-#, fuzzy
-#| msgid "Passphrase"
 msgid "Show Passphrase"
-msgstr "Lykilorð"
+msgstr "Birta lykilorð"
 
 msgid "CANCEL"
 msgstr "HÆTTA VIÐ"
@@ -334,3 +329,12 @@ msgstr "Þið munið ekki geta sent þeim svör."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Öllum skilaboðum og skrám frá þessum heimildarmanni verður einnig eytt."
+
+#~ msgid "Entire source account"
+#~ msgstr "Öllum aðgangi heimildarmanns"
+
+#~ msgid "Files and messages"
+#~ msgstr "Skrár og skilaboð"
+
+#~ msgid "DELETE"
+#~ msgstr "EYÐA"

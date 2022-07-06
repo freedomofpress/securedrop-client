@@ -7,15 +7,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.5.1\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2022-05-19 17:11+0000\n"
-"Last-Translator: Kaya Zeren <kayazeren@gmail.com>\n"
+"PO-Revision-Date: 2022-06-23 05:17+0000\n"
+"Last-Translator: tekrei <tekrei@tutanota.com>\n"
 "Language-Team: Turkish <https://weblate.securedrop.org/projects/securedrop/securedrop-client/tr/>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.11.2\n"
+"X-Generator: Weblate 4.13\n"
 "Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
@@ -65,14 +65,14 @@ msgstr "Sunucudaki yazışma silinemedi"
 msgid "Failed to delete source at server"
 msgstr "Sunucudaki kaynak silinemedi"
 
-msgid "All Files"
-msgstr "Tüm dosyalar"
+msgid "Download All Files"
+msgstr "Tüm Dosyaları İndir"
 
-msgid "Entire source account"
-msgstr "Tüm kaynak hesabı"
+msgid "Delete Source Account"
+msgstr "Kaynak Hesabını Sil"
 
-msgid "Files and messages"
-msgstr "Dosyalar ve iletiler"
+msgid "Delete All Files and Messages"
+msgstr "Tüm Dosya ve İletileri Sil"
 
 msgid "SecureDrop Client {}"
 msgstr "SecureDrop İstemcisi {}"
@@ -170,9 +170,6 @@ msgstr "Oturum açarak"
 
 msgid " to compose or send a reply"
 msgstr " yanıt yazın ya da gönderin"
-
-msgid "DELETE"
-msgstr "SİL"
 
 msgid "Username"
 msgstr "Kullanıcı adı"
@@ -332,3 +329,12 @@ msgstr "Kuruluşunuz onlara yanıt gönderemeyecek."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Bu kaynağın tüm dosya ve iletileri de silinir."
+
+#~ msgid "Entire source account"
+#~ msgstr "Tüm kaynak hesabı"
+
+#~ msgid "Files and messages"
+#~ msgstr "Dosyalar ve iletiler"
+
+#~ msgid "DELETE"
+#~ msgstr "SİL"

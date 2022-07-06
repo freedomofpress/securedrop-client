@@ -65,14 +65,20 @@ msgstr "Nije uspjelo brisanje razgovora na poslužitelju"
 msgid "Failed to delete source at server"
 msgstr "Nije uspjelo brisanje izvora na poslužitelju"
 
-msgid "All Files"
+#, fuzzy
+#| msgid "All Files"
+msgid "Download All Files"
 msgstr "Sve datoteke"
 
-msgid "Entire source account"
-msgstr "Cijeli račun izvora"
+#, fuzzy
+#| msgid "Deleting source account..."
+msgid "Delete Source Account"
+msgstr "Brišem račun izvora..."
 
-msgid "Files and messages"
-msgstr "Datoteke i poruke"
+#, fuzzy
+#| msgid "Deleting files and messages..."
+msgid "Delete All Files and Messages"
+msgstr "Brišem datoteke i poruke..."
 
 msgid "SecureDrop Client {}"
 msgstr "SecureDrop klijent{}"
@@ -170,9 +176,6 @@ msgstr "Prijava"
 
 msgid " to compose or send a reply"
 msgstr " kako bi napisao ili poslao odgovor"
-
-msgid "DELETE"
-msgstr "Obriši"
 
 msgid "Username"
 msgstr "Korisničko ime"
@@ -337,3 +340,12 @@ msgstr "Vaša organizacija mu neće moći slati odgovore."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Sve datoteke i poruke tog izvora će također biti uništene."
+
+#~ msgid "Entire source account"
+#~ msgstr "Cijeli račun izvora"
+
+#~ msgid "Files and messages"
+#~ msgstr "Datoteke i poruke"
+
+#~ msgid "DELETE"
+#~ msgstr "Obriši"
