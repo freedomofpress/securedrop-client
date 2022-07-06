@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.8.0
+* Drop historical versions of database schema (#1517)
+* Replace "show/hide passphrase" widget with checkbox to increase accessibility (#1430)
+* Remove enclosing directory when all submissions have been deleted for a source (#1475)
+* Support Debian Bullseye (#1494, #1511, #1528)
+* Support Qubes 4.1 (#1495, #1530)
+* Allow translations to be enabled/disabled per language (#1497, #1527)
+* Handle terminating threads cleanly (#1512, #1518, #1519)
+* (Dev) Add tooling for visualizing the codebase (#1484)
+* (Dev) Refactor export and print dialogs for maintainability (#1492, #1498, #1502, #1501)
+* (Dev) Refactor signals according to Qt best practices (#1508)
+* (Dev) Prevent intermittent tests suite errors (#1515)
+* (Dev) Decouple database tests from models (#1517)
+* (Dev) Support development on Debian Bullseye (#1496)
+
 ## 0.7.0
 * Clear global mouse selection after login (#1477)
 * Update securedrop-sdk from version 0.3.2 to 0.4.0 (#1466)
