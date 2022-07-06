@@ -128,10 +128,7 @@ class MetadataSyncJob(ApiJob):
         session.commit()
 
 
-def _update_state(
-    app_state: state.State,
-    submissions: List,
-) -> None:
+def _update_state(app_state: state.State, submissions: List) -> None:
     for submission in submissions:
         if submission.is_file():
             app_state.add_file(

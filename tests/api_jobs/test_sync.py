@@ -22,10 +22,7 @@ class TestUpdateState(unittest.TestCase):
         self._submissions = []
 
     def test_handles_missing_files_gracefully(self):
-        self._sources = [
-            Source(uuid="3"),
-            Source(uuid="4"),
-        ]
+        self._sources = [Source(uuid="3"), Source(uuid="4")]
         self._submissions = [
             Submission(uuid="6", source_uuid="3", is_file=lambda: True, is_downloaded=True),
             Submission(uuid="7", source_uuid="4", is_file=lambda: True, is_downloaded=True),

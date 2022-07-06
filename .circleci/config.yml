@@ -2,7 +2,15 @@
 common-steps:
   - &install_deps
     run:
-      name: Install base dependencies for Debian python
+      name: Install base dependencies for Bullseye python
+      command: |
+        set -e
+        pip uninstall virtualenv -y || true
+        sudo apt update && sudo apt install -y make git gnupg
+
+  - &install_deps_on_buster
+    run:
+      name: Install base dependencies for Buster python
       command: |
         set -e
         pip uninstall virtualenv -y || true
@@ -15,7 +23,16 @@ common-steps:
         set -e
         make venv
         source .venv/bin/activate
-        pip install --require-hashes -r requirements/dev-requirements.txt
+        export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
+        make check --keep-going
+
+  - &run_tests_on_buster
+    run:
+      name: Install requirements and run tests
+      command: |
+        set -e
+        make venv-buster
+        source .venv/bin/activate
         export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
         make check --keep-going
 
@@ -36,6 +53,20 @@ common-steps:
         make safety
 
   - &install_packaging_dependencies
+    run:
+      name: Install Debian packaging dependencies and download wheels
+      command: |
+        set -x
+        mkdir ~/packaging && cd ~/packaging
+        # local builds may not have an ssh url, so || true
+        git config --global --unset url.ssh://git@github.com.insteadof || true
+        git clone https://github.com/freedomofpress/securedrop-debian-packaging.git
+        cd securedrop-debian-packaging
+        sudo apt update && sudo apt install -y make
+        make install-deps
+        PKG_DIR=~/project make requirements
+
+  - &install_packaging_dependencies_buster
     run:
       name: Install Debian packaging dependencies and download wheels
       command: |
@@ -71,9 +102,9 @@ common-steps:
 
 version: 2
 jobs:
-  build-buster:
+  build-bullseye:
     docker:
-      - image: debian:buster
+      - image: circleci/python:3.9-bullseye
     steps:
       - *install_deps
       - checkout
@@ -81,14 +112,37 @@ jobs:
       - *verify_requirements
       - *build_debian_package
 
+  test-bullseye:
+    docker:
+      - image: circleci/python:3.9-bullseye
+    steps:
+      - *install_deps
+      - checkout
+      - run: sudo apt update && sudo apt install -y sqlite3 libqt5x11extras5 xvfb python3-tk python3-dev
+      - *run_tests
+      - store_test_results:
+          path: test-results
+      - *run_lint
+      - *check_python_dependencies_for_vulns
+
+  build-buster:
+    docker:
+      - image: debian:buster
+    steps:
+      - *install_deps_on_buster
+      - checkout
+      - *install_packaging_dependencies_buster
+      - *verify_requirements
+      - *build_debian_package
+
   test-buster:
     docker:
       - image: debian:buster
     steps:
-      - *install_deps
+      - *install_deps_on_buster
       - checkout
       - run: apt-get update && apt-get install -y sqlite3 libqt5x11extras5 xvfb python3-tk python3-dev
-      - *run_tests
+      - *run_tests_on_buster
       - store_test_results:
           path: test-results
       - *run_lint
@@ -98,6 +152,8 @@ workflows:
   version: 2
   securedrop_client_ci:
     jobs:
+      - test-bullseye
+      - build-bullseye
       - test-buster
       - build-buster
 
@@ -110,5 +166,7 @@ workflows:
               only:
                 - main
     jobs:
+      - test-bullseye
+      - build-bullseye
       - test-buster
       - build-buster

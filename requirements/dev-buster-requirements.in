@@ -1,0 +1,3 @@
+-r dev-sdw-requirements.in
+PyQt5==5.11.3  # Match version of system package on Buster
+sip==4.19.8  # Match version of system package on Buster

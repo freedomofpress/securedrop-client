@@ -1,3 +1,4 @@
+-r requirements.in
 babel
 black
 flake8
@@ -5,7 +6,8 @@ flaky
 isort
 MarkupSafe
 mypy
-pip-tools>=6.5.0  # for jazzband/piptools#1558
+Pillow>=9.0.1  # for mouseinfo, pyscreeze as of CVE-2022-{22817,24303}
+pip-tools>=6.8.0  # for jazzband/piptools#1617
 PyAutoGUI
 pyobjc-core;platform_system=="Darwin"
 pyobjc;platform_system=="Darwin"
@@ -20,3 +22,4 @@ semgrep
 toml
 types-python-dateutil
 types-setuptools
+wlc

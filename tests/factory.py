@@ -171,10 +171,7 @@ def dummy_job_factory(mocker, return_value, **kwargs):
 
 def RemoteUser(**attrs):
     defaults = dict(
-        uuid=str(uuid.uuid4()),
-        username="dellsberg",
-        first_name="Daniel",
-        last_name="Ellsberg",
+        uuid=str(uuid.uuid4()), username="dellsberg", first_name="Daniel", last_name="Ellsberg"
     )
     defaults.update(attrs)
     return SDKUser(**defaults)
