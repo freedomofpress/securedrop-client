@@ -11,6 +11,12 @@ logger = logging.getLogger(__name__)
 
 
 class Device(QObject):
+    """Abstracts an export service for use in GUI components.
+
+    This class defines an interface for GUI components to have access
+    to the status of an export device without needed to interact directly
+    with the underlying export service.
+    """
 
     export_preflight_check_requested = pyqtSignal()
     export_preflight_check_succeeded = pyqtSignal()
