@@ -11,7 +11,8 @@ from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QLineEdit, QVBoxLayout, Q
 from securedrop_client.export import ExportError, ExportStatus
 from securedrop_client.gui.base import ModalDialog, PasswordEdit, SecureQLabel
 from securedrop_client.gui.base.checkbox import SDCheckBox
-from securedrop_client.logic import Controller
+
+from .device import Device
 
 
 class ExportDialog(ModalDialog):
@@ -22,26 +23,24 @@ class ExportDialog(ModalDialog):
     NO_MARGIN = 0
     FILENAME_WIDTH_PX = 260
 
-    def __init__(self, controller: Controller, file_uuid: str, file_name: str) -> None:
+    def __init__(self, device: Device, file_uuid: str, file_name: str) -> None:
         super().__init__()
         self.setStyleSheet(self.DIALOG_CSS)
 
-        self.controller = controller
+        self._device = device
         self.file_uuid = file_uuid
         self.file_name = SecureQLabel(
             file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
         ).text()
         self.error_status = ""  # Hold onto the error status we receive from the Export VM
 
-        # Connect controller signals to slots
-        self.controller.export_preflight_check_succeeded.connect(
+        # Connect device signals to slots
+        self._device.export_preflight_check_succeeded.connect(
             self._on_export_preflight_check_succeeded
         )
-        self.controller.export_preflight_check_failed.connect(
-            self._on_export_preflight_check_failed
-        )
-        self.controller.export_succeeded.connect(self._on_export_succeeded)
-        self.controller.export_failed.connect(self._on_export_failed)
+        self._device.export_preflight_check_failed.connect(self._on_export_preflight_check_failed)
+        self._device.export_succeeded.connect(self._on_export_succeeded)
+        self._device.export_failed.connect(self._on_export_failed)
 
         # Connect parent signals to slots
         self.continue_button.setEnabled(False)
@@ -211,14 +210,14 @@ class ExportDialog(ModalDialog):
 
     @pyqtSlot()
     def _run_preflight(self) -> None:
-        self.controller.run_export_preflight_checks()
+        self._device.run_export_preflight_checks()
 
     @pyqtSlot()
     def _export_file(self, checked: bool = False) -> None:
         self.start_animate_activestate()
         self.cancel_button.setEnabled(False)
         self.passphrase_field.setDisabled(True)
-        self.controller.export_file_to_usb_drive(self.file_uuid, self.passphrase_field.text())
+        self._device.export_file_to_usb_drive(self.file_uuid, self.passphrase_field.text())
 
     @pyqtSlot()
     def _on_export_preflight_check_succeeded(self) -> None:

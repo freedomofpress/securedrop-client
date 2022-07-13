@@ -4,28 +4,29 @@ from PyQt5.QtCore import QSize, pyqtSlot
 
 from securedrop_client.export import ExportError, ExportStatus
 from securedrop_client.gui.base import ModalDialog, SecureQLabel
-from securedrop_client.logic import Controller
+
+from .device import Device
 
 
 class PrintDialog(ModalDialog):
 
     FILENAME_WIDTH_PX = 260
 
-    def __init__(self, controller: Controller, file_uuid: str, file_name: str) -> None:
+    def __init__(self, device: Device, file_uuid: str, file_name: str) -> None:
         super().__init__()
 
-        self.controller = controller
+        self._device = device
         self.file_uuid = file_uuid
         self.file_name = SecureQLabel(
             file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
         ).text()
         self.error_status = ""  # Hold onto the error status we receive from the Export VM
 
-        # Connect controller signals to slots
-        self.controller.print_preflight_check_succeeded.connect(
+        # Connect device signals to slots
+        self._device.print_preflight_check_succeeded.connect(
             self._on_print_preflight_check_succeeded
         )
-        self.controller.print_preflight_check_failed.connect(self._on_print_preflight_check_failed)
+        self._device.print_preflight_check_failed.connect(self._on_print_preflight_check_failed)
 
         # Connect parent signals to slots
         self.continue_button.setEnabled(False)
@@ -92,11 +93,11 @@ class PrintDialog(ModalDialog):
 
     @pyqtSlot()
     def _run_preflight(self) -> None:
-        self.controller.run_printer_preflight_checks()
+        self._device.run_printer_preflight_checks()
 
     @pyqtSlot()
     def _print_file(self) -> None:
-        self.controller.print_file(self.file_uuid)
+        self._device.print_file(self.file_uuid)
         self.close()
 
     @pyqtSlot()
