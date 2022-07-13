@@ -29,3 +29,5 @@ prune securedrop_client/locale
 #     graft securedrop_client/locale/$LANG
 #
 # Please keep this list alphabetized.
+graft securedrop_client/locale/pt_PT
+graft securedrop_client/locale/zh_Hans
