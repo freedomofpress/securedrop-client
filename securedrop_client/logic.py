@@ -356,6 +356,9 @@ class Controller(QObject):
         # Controller is unauthenticated by default
         self.__is_authenticated = False
 
+        # Note: self.home is part of the application configuration. It is never updated
+        # while the application is running.
+
         # used for finding DB in sync thread
         self.home = home
 
