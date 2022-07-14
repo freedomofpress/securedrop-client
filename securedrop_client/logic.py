@@ -359,6 +359,10 @@ class Controller(QObject):
         # used for finding DB in sync thread
         self.home = home
 
+        # Note: both self.proxy and self.qubes are static. They represent charateristics
+        # of the environment and are never updated when the application is running.
+        # Is the controller the best place to store that information?
+
         # boolean flag for whether or not the client is operating behind a proxy
         self.proxy = proxy
 
