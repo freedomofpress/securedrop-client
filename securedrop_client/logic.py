@@ -914,11 +914,16 @@ class Controller(QObject):
         except Exception as e:
             logger.error(f"Could not emit reply_download_failed: {e}")
 
+    # Note: this method groups a query (does the file exist?) and a command (notify the GUI
+    # that the file doesnt exist).
     def downloaded_file_exists(self, file: db.File) -> bool:
         """
         Check if the file specified by file_uuid exists. If it doesn't update the local db and
         GUI to show the file as not downloaded.
         """
+        # Note: this method definition depends on db.File, a database type, but doesn't actually
+        # make use of any database-specific behavior of that type. Depending on the db package
+        # seems unnecessary.
         if not os.path.exists(file.location(self.data_dir)):
             self.gui.update_error_status(
                 _("File does not exist in the data directory. Please try re-downloading.")
@@ -928,9 +933,12 @@ class Controller(QObject):
                     os.path.dirname(file.filename)
                 )
             )
+            # This is a command.
             missing_files = storage.update_missing_files(self.data_dir, self.session)
             for f in missing_files:
                 self.file_missing.emit(f.source.uuid, f.uuid, str(f))
+
+            # This return value is a query response.
             return False
         return True
 
