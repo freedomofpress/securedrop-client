@@ -162,7 +162,7 @@ rules:
   message: String formatted before gettext
   patterns:
     - pattern-either:
-        - pattern-regex: |
-            _\(\s*"(.*)".format\(
-        - pattern-regex: |
+        - pattern-regex: |-
+            _\(\s*".*"\s*\.format\(
+        - pattern-regex: |-
             _\(\s*f"(.*)
