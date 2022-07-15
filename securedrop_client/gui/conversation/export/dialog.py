@@ -50,13 +50,13 @@ class ExportDialog(ModalDialog):
         self.starting_header = _(
             "Preparing to export:"
             "<br />"
-            '<span style="font-weight:normal">{}</span>'.format(self.file_name)
-        )
+            '<span style="font-weight:normal">{}</span>'
+        ).format(self.file_name)
         self.ready_header = _(
             "Ready to export:"
             "<br />"
-            '<span style="font-weight:normal">{}</span>'.format(self.file_name)
-        )
+            '<span style="font-weight:normal">{}</span>'
+        ).format(self.file_name)
         self.insert_usb_header = _("Insert encrypted USB drive")
         self.passphrase_header = _("Enter passphrase for USB drive")
         self.success_header = _("Export successful")
