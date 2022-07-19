@@ -171,7 +171,7 @@ def print_dialog(mocker, homedir):
         )
         controller.authenticated_user = factory.User()
         controller.qubes = False
-        export_device = conversation.ExportDevice(controller)
+        export_device = conversation.StubExportDevice(controller)
         gui.setup(controller)
         gui.login_dialog.close()
         dialog = conversation.PrintFileDialog(export_device, "file_uuid", "file_name")
@@ -204,7 +204,7 @@ def export_dialog(mocker, homedir):
         )
         controller.authenticated_user = factory.User()
         controller.qubes = False
-        export_device = conversation.ExportDevice(controller)
+        export_device = conversation.StubExportDevice(controller)
         gui.setup(controller)
         gui.login_dialog.close()
         dialog = conversation.ExportFileDialog(export_device, "file_uuid", "file_name")

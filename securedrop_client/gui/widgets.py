@@ -2197,7 +2197,14 @@ class FileWidget(QWidget):
         super().__init__()
 
         self.controller = controller
-        self._export_device = conversation.ExportDevice(controller, controller.export_thread)
+
+        if self.controller.qubes:
+            self._export_device = conversation.ExportDevice(controller, controller.export_thread)
+        else:
+            self._export_device = conversation.StubExportDevice(
+                controller, controller.export_thread
+            )  # pragma: nocover
+
         self.file = self.controller.get_file(file_uuid)
         self.uuid = file_uuid
         self.index = index
