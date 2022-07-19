@@ -192,7 +192,7 @@ def test_Device_print_file_file_missing_not_qubes(homedir, mocker, session):
 
 def test_Device_print_file_when_orig_file_already_exists(homedir, config, mocker, source):
     """
-    The signal `print_requested` should still be emmited if the original file already exists.
+    The signal `print_requested` should still be emited if the original file already exists.
     """
     gui = mocker.MagicMock(spec=Window)
     with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_queue_thread]:
@@ -222,7 +222,7 @@ def test_Device_print_file_when_orig_file_already_exists(homedir, config, mocker
 
 def test_Device_print_file_when_orig_file_already_exists_not_qubes(homedir, config, mocker, source):
     """
-    The signal `print_requested` should still be emmited if the original file already exists.
+    The signal `print_requested` should not be emited if the original file already exists.
     """
     gui = mocker.MagicMock(spec=Window)
     with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_queue_thread]:
@@ -242,16 +242,11 @@ def test_Device_print_file_when_orig_file_already_exists_not_qubes(homedir, conf
         print_requested_emissions = QSignalSpy(device.print_requested)
         file = factory.File(source=factory.Source())
         mocker.patch("securedrop_client.logic.Controller.get_file", return_value=file)
+        mocker.patch("os.path.exists", return_value=True)
 
-        filepath = file.location(controller.data_dir)
-        os.makedirs(os.path.dirname(filepath), mode=0o700, exist_ok=True)
-        with open(filepath, "w"):
-            pass
-
-        device.export_file_to_usb_drive(file.uuid, "mock passphrase")
+        device.print_file(file.uuid)
 
         assert len(print_requested_emissions) == 0
-        controller.get_file.assert_called_with(file.uuid)
         controller.get_file.assert_called_with(file.uuid)
 
 
