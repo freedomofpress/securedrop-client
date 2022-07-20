@@ -47,7 +47,7 @@ hooks:  ## Configure Git to use the hooks provided by this repository.
 SEMGREP_FLAGS := --exclude "tests/" --error --strict --verbose
 
 .PHONY: semgrep
-semgrep:semgrep-community semgrep-local
+semgrep:semgrep-community semgrep-local  ## Run semgrep with both semgrep.dev community and local rules
 
 .PHONY: semgrep-community
 semgrep-community:
@@ -153,6 +153,10 @@ check: clean check-black check-isort semgrep bandit lint mypy test-random test-i
 dev-requirements:  ## Update dev-*requirements.txt files if pinned versions do not comply with the dependency specifications in dev-*requirements.in
 	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-requirements.txt requirements/dev-requirements.in
 	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-sdw-requirements.txt requirements/dev-sdw-requirements.in
+
+.PHONY: dev-buster-requirements
+dev-buster-requirements:  ## Update dev-*requirements.txt files if pinned versions do not comply with the dependency specifications in dev-*requirements.in
+	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-buster-requirements.txt requirements/dev-buster-requirements.in
 
 .PHONY: update-dev-dependencies
 update-dev-dependencies:  ## Update dev requirements in case there are newer versions of packages or updates to prod dependencies
