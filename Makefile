@@ -47,7 +47,7 @@ hooks:  ## Configure Git to use the hooks provided by this repository.
 SEMGREP_FLAGS := --exclude "tests/" --error --strict --verbose
 
 .PHONY: semgrep
-semgrep:semgrep-community semgrep-local
+semgrep:semgrep-community semgrep-local  ## Run semgrep with both semgrep.dev community and local rules
 
 .PHONY: semgrep-community
 semgrep-community:
