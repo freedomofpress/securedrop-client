@@ -154,6 +154,10 @@ dev-requirements:  ## Update dev-*requirements.txt files if pinned versions do n
 	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-requirements.txt requirements/dev-requirements.in
 	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-sdw-requirements.txt requirements/dev-sdw-requirements.in
 
+.PHONY: dev-buster-requirements
+dev-buster-requirements:  ## Update dev-*requirements.txt files if pinned versions do not comply with the dependency specifications in dev-*requirements.in
+	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-buster-requirements.txt requirements/dev-buster-requirements.in
+
 .PHONY: update-dev-dependencies
 update-dev-dependencies:  ## Update dev requirements in case there are newer versions of packages or updates to prod dependencies
 	if test -f "requirements/dev-requirements.txt"; then rm -r requirements/dev-requirements.txt; fi
