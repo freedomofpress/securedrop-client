@@ -2401,6 +2401,13 @@ class FileWidget(QWidget):
         """
         Called when the export button is clicked.
         """
+        # Note that we also check + side-effect this in the export device.
+        # That makes me think we're trying to prevent errors when the file
+        # is removed from disk while the dialog is open. If that's the case,
+        # I don't think asking again and again is a good solution, and
+        # we should probably look into treating this as a concurrency problem
+        # with either concurrency tools or by removing the concurrency altogether,
+        # for example, by copying the file we need and working on a copy.
         if not self.controller.downloaded_file_exists(self.file):
             return
 
@@ -2414,6 +2421,7 @@ class FileWidget(QWidget):
         """
         Called when the print button is clicked.
         """
+        # Same comment as _on_export_clicked regarding handling the file presence.
         if not self.controller.downloaded_file_exists(self.file):
             return
 
