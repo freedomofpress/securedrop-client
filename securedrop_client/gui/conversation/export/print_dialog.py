@@ -34,15 +34,11 @@ class PrintDialog(ModalDialog):
 
         # Dialog content
         self.starting_header = _(
-            "Preparing to print:"
-            "<br />"
-            '<span style="font-weight:normal">{}</span>'.format(self.file_name)
-        )
+            "Preparing to print:<br />" '<span style="font-weight:normal">{}</span>'
+        ).format(self.file_name)
         self.ready_header = _(
-            "Ready to print:"
-            "<br />"
-            '<span style="font-weight:normal">{}</span>'.format(self.file_name)
-        )
+            "Ready to print:<br />" '<span style="font-weight:normal">{}</span>'
+        ).format(self.file_name)
         self.insert_usb_header = _("Connect USB printer")
         self.error_header = _("Printing failed")
         self.starting_message = _(
