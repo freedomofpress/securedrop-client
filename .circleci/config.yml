@@ -7,13 +7,6 @@ common-steps:
         set -e
         apt update && apt install -y git gnupg libqt5x11extras5 make python3-tk python3-dev gnupg python3-venv sqlite3 xvfb
 
-  - &install_testing_dependencies_on_buster
-    run:
-      name: Install testing dependencies (Buster)
-      command: |
-        set -e
-        apt update && apt install -y git gnupg libqt5x11extras5 make python3 python3-tk python3-dev gnupg python3-venv sqlite3 xvfb
-
   - &install_build_dependencies
     run:
       name: Install build dependencies
@@ -21,30 +14,12 @@ common-steps:
         set -e
         apt update && apt install -y git make sudo
 
-  - &install_build_dependencies_on_buster
-    run:
-      name: Install build dependencies (Buster)
-      command: |
-        set -e
-        pip uninstall virtualenv -y || true
-        apt update && apt install -y git gnupg make python3 python3-venv sudo
-
   - &run_tests
     run:
       name: Install requirements and run tests
       command: |
         set -e
         make venv
-        source .venv/bin/activate
-        export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
-        make check --keep-going
-
-  - &run_tests_on_buster
-    run:
-      name: Install requirements and run tests (Buster)
-      command: |
-        set -e
-        make venv-buster
         source .venv/bin/activate
         export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
         make check --keep-going
@@ -123,36 +98,12 @@ jobs:
       - *run_lint
       - *check_python_dependencies_for_vulnerabilities
 
-  build-buster:
-    docker:
-      - image: debian:buster
-    steps:
-      - *install_build_dependencies_on_buster
-      - checkout
-      - *install_packaging_dependencies
-      - *verify_requirements
-      - *build_debian_package
-
-  test-buster:
-    docker:
-      - image: debian:buster
-    steps:
-      - *install_testing_dependencies_on_buster
-      - checkout
-      - *run_tests_on_buster
-      - store_test_results:
-          path: test-results
-      - *run_lint
-      - *check_python_dependencies_for_vulnerabilities
-
 workflows:
   version: 2
   securedrop_client_ci:
     jobs:
       - test-bullseye
       - build-bullseye
-      - test-buster
-      - build-buster
 
   nightly:
     triggers:
@@ -165,5 +116,3 @@ workflows:
     jobs:
       - test-bullseye
       - build-bullseye
-      - test-buster
-      - build-buster
