@@ -3052,21 +3052,20 @@ def test_FileWidget_init_file_not_downloaded(mocker, source, session):
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
+    controller = mocker.MagicMock(get_file=get_file)
 
-        fw = FileWidget(
-            "mock", controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
-        )
+    fw = FileWidget(
+        "mock", controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
 
-        assert fw.controller == controller
-        assert fw.file.is_downloaded is False
-        assert not fw.download_button.isHidden()
-        assert not fw.no_file_name.isHidden()
-        assert fw.export_button.isHidden()
-        assert fw.middot.isHidden()
-        assert fw.print_button.isHidden()
-        assert fw.file_name.isHidden()
+    assert fw.controller == controller
+    assert fw.file.is_downloaded is False
+    assert not fw.download_button.isHidden()
+    assert not fw.no_file_name.isHidden()
+    assert fw.export_button.isHidden()
+    assert fw.middot.isHidden()
+    assert fw.print_button.isHidden()
+    assert fw.file_name.isHidden()
 
 
 def test_FileWidget_init_file_downloaded(mocker, source, session):
@@ -3078,21 +3077,20 @@ def test_FileWidget_init_file_downloaded(mocker, source, session):
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
+    controller = mocker.MagicMock(get_file=get_file)
 
-        fw = FileWidget(
-            "mock", controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
-        )
+    fw = FileWidget(
+        "mock", controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
+    )
 
-        assert fw.controller == controller
-        assert fw.file.is_downloaded is True
-        assert fw.download_button.isHidden()
-        assert fw.no_file_name.isHidden()
-        assert not fw.export_button.isHidden()
-        assert not fw.middot.isHidden()
-        assert not fw.print_button.isHidden()
-        assert not fw.file_name.isHidden()
+    assert fw.controller == controller
+    assert fw.file.is_downloaded is True
+    assert fw.download_button.isHidden()
+    assert fw.no_file_name.isHidden()
+    assert not fw.export_button.isHidden()
+    assert not fw.middot.isHidden()
+    assert not fw.print_button.isHidden()
+    assert not fw.file_name.isHidden()
 
 
 def test_FileWidget_adjust_width(mocker):
@@ -3103,24 +3101,23 @@ def test_FileWidget_adjust_width(mocker):
     """
     file = factory.File(source=factory.Source(), is_downloaded=True)
     get_file = mocker.MagicMock(return_value=file)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
+    controller = mocker.MagicMock(get_file=get_file)
 
-        fw = FileWidget(
-            "abc123-ima-uuid",
-            controller,
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            0,
-            123,
-        )
+    fw = FileWidget(
+        "abc123-ima-uuid",
+        controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
 
-        fw.adjust_width(fw.MIN_CONTAINER_WIDTH - 1)
-        assert fw.width() == fw.MIN_WIDTH
+    fw.adjust_width(fw.MIN_CONTAINER_WIDTH - 1)
+    assert fw.width() == fw.MIN_WIDTH
 
-        fw.adjust_width(fw.MIN_CONTAINER_WIDTH)
-        assert fw.width() == math.floor(fw.MIN_CONTAINER_WIDTH * fw.WIDTH_TO_CONTAINER_WIDTH_RATIO)
+    fw.adjust_width(fw.MIN_CONTAINER_WIDTH)
+    assert fw.width() == math.floor(fw.MIN_CONTAINER_WIDTH * fw.WIDTH_TO_CONTAINER_WIDTH_RATIO)
 
 
 def test_FileWidget__set_file_state_under_mouse(mocker, source, session):
@@ -3133,24 +3130,23 @@ def test_FileWidget__set_file_state_under_mouse(mocker, source, session):
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file_)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
+    controller = mocker.MagicMock(get_file=get_file)
 
-        fw = FileWidget(
-            file_.uuid,
-            controller,
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            0,
-            123,
-        )
-        fw.download_button.underMouse = mocker.MagicMock(return_value=True)
-        fw.download_button.setIcon = mocker.MagicMock()
-        mock_load = mocker.MagicMock()
-        mocker.patch("securedrop_client.gui.widgets.load_icon", mock_load)
-        fw._set_file_state()
-        mock_load.assert_called_once_with("download_file_hover.svg")
+    fw = FileWidget(
+        file_.uuid,
+        controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
+    fw.download_button.underMouse = mocker.MagicMock(return_value=True)
+    fw.download_button.setIcon = mocker.MagicMock()
+    mock_load = mocker.MagicMock()
+    mocker.patch("securedrop_client.gui.widgets.load_icon", mock_load)
+    fw._set_file_state()
+    mock_load.assert_called_once_with("download_file_hover.svg")
 
 
 def test_FileWidget_event_handler_left_click(mocker, session, source):
@@ -3162,25 +3158,24 @@ def test_FileWidget_event_handler_left_click(mocker, session, source):
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file_)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
+    controller = mocker.MagicMock(get_file=get_file)
 
-        test_event = QEvent(QEvent.MouseButtonPress)
-        test_event.button = mocker.MagicMock(return_value=Qt.LeftButton)
+    test_event = QEvent(QEvent.MouseButtonPress)
+    test_event.button = mocker.MagicMock(return_value=Qt.LeftButton)
 
-        fw = FileWidget(
-            file_.uuid,
-            controller,
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            0,
-            123,
-        )
-        fw._on_left_click = mocker.MagicMock()
+    fw = FileWidget(
+        file_.uuid,
+        controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
+    fw._on_left_click = mocker.MagicMock()
 
-        fw.eventFilter(fw, test_event)
-        fw._on_left_click.call_count == 1
+    fw.eventFilter(fw, test_event)
+    fw._on_left_click.call_count == 1
 
 
 def test_FileWidget_event_handler_hover(mocker, session, source):
@@ -3193,30 +3188,29 @@ def test_FileWidget_event_handler_hover(mocker, session, source):
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file_)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
+    controller = mocker.MagicMock(get_file=get_file)
 
-        fw = FileWidget(
-            file_.uuid,
-            controller,
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            0,
-            123,
-        )
-        fw.download_button = mocker.MagicMock()
+    fw = FileWidget(
+        file_.uuid,
+        controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
+    fw.download_button = mocker.MagicMock()
 
-        # Hover enter
-        test_event = QEvent(QEvent.HoverEnter)
-        fw.eventFilter(fw, test_event)
-        assert fw.download_button.setIcon.call_count == 1
-        fw.download_button.setIcon.reset_mock()
-        # Hover leave
-        test_event = QEvent(QEvent.HoverLeave)
-        fw.eventFilter(fw, test_event)
-        assert fw.download_button.setIcon.call_count == 1
-        fw.download_button.setIcon.reset_mock()
+    # Hover enter
+    test_event = QEvent(QEvent.HoverEnter)
+    fw.eventFilter(fw, test_event)
+    assert fw.download_button.setIcon.call_count == 1
+    fw.download_button.setIcon.reset_mock()
+    # Hover leave
+    test_event = QEvent(QEvent.HoverLeave)
+    fw.eventFilter(fw, test_event)
+    assert fw.download_button.setIcon.call_count == 1
+    fw.download_button.setIcon.reset_mock()
 
 
 def test_FileWidget_on_left_click_download(mocker, session, source):
@@ -3229,25 +3223,24 @@ def test_FileWidget_on_left_click_download(mocker, session, source):
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file_)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
+    controller = mocker.MagicMock(get_file=get_file)
 
-        fw = FileWidget(
-            file_.uuid,
-            controller,
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            0,
-            123,
-        )
-        fw.download_button = mocker.MagicMock()
-        get_file.assert_called_once_with(file_.uuid)
-        get_file.reset_mock()
+    fw = FileWidget(
+        file_.uuid,
+        controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
+    fw.download_button = mocker.MagicMock()
+    get_file.assert_called_once_with(file_.uuid)
+    get_file.reset_mock()
 
-        fw._on_left_click()
-        get_file.assert_called_once_with(file_.uuid)
-        controller.on_submission_download.assert_called_once_with(db.File, file_.uuid)
+    fw._on_left_click()
+    get_file.assert_called_once_with(file_.uuid)
+    controller.on_submission_download.assert_called_once_with(db.File, file_.uuid)
 
 
 def test_FileWidget_on_left_click_downloading_in_progress(mocker, session, source):
@@ -3260,26 +3253,25 @@ def test_FileWidget_on_left_click_downloading_in_progress(mocker, session, sourc
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file_)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
+    controller = mocker.MagicMock(get_file=get_file)
 
-        fw = FileWidget(
-            file_.uuid,
-            controller,
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            0,
-            123,
-        )
-        fw.downloading = True
-        fw.download_button = mocker.MagicMock()
-        get_file.assert_called_once_with(file_.uuid)
-        get_file.reset_mock()
+    fw = FileWidget(
+        file_.uuid,
+        controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
+    fw.downloading = True
+    fw.download_button = mocker.MagicMock()
+    get_file.assert_called_once_with(file_.uuid)
+    get_file.reset_mock()
 
-        fw._on_left_click()
-        get_file.call_count == 0
-        controller.on_submission_download.call_count == 0
+    fw._on_left_click()
+    get_file.call_count == 0
+    controller.on_submission_download.call_count == 0
 
 
 def test_FileWidget_start_button_animation(mocker, session, source):
@@ -3291,22 +3283,21 @@ def test_FileWidget_start_button_animation(mocker, session, source):
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file_)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
+    controller = mocker.MagicMock(get_file=get_file)
 
-        fw = FileWidget(
-            file_.uuid,
-            controller,
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            0,
-            123,
-        )
-        fw.download_button = mocker.MagicMock()
-        fw.start_button_animation()
-        # Check indicators of activity have been updated.
-        assert fw.download_button.setIcon.call_count == 1
+    fw = FileWidget(
+        file_.uuid,
+        controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
+    fw.download_button = mocker.MagicMock()
+    fw.start_button_animation()
+    # Check indicators of activity have been updated.
+    assert fw.download_button.setIcon.call_count == 1
 
 
 def test_FileWidget_on_left_click_open(mocker, session, source):
@@ -3318,20 +3309,19 @@ def test_FileWidget_on_left_click_open(mocker, session, source):
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file_)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
+    controller = mocker.MagicMock(get_file=get_file)
 
-        fw = FileWidget(
-            file_.uuid,
-            controller,
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            0,
-            123,
-        )
-        fw._on_left_click()
-        fw.controller.on_file_open.assert_called_once_with(file_)
+    fw = FileWidget(
+        file_.uuid,
+        controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
+    fw._on_left_click()
+    fw.controller.on_file_open.assert_called_once_with(file_)
 
 
 def test_FileWidget_set_button_animation_frame(mocker, session, source):
@@ -3344,21 +3334,20 @@ def test_FileWidget_set_button_animation_frame(mocker, session, source):
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file_)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
+    controller = mocker.MagicMock(get_file=get_file)
 
-        fw = FileWidget(
-            file_.uuid,
-            controller,
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            0,
-            123,
-        )
-        fw.download_button = mocker.MagicMock()
-        fw.set_button_animation_frame(1)
-        assert fw.download_button.setIcon.call_count == 1
+    fw = FileWidget(
+        file_.uuid,
+        controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
+    fw.download_button = mocker.MagicMock()
+    fw.set_button_animation_frame(1)
+    assert fw.download_button.setIcon.call_count == 1
 
 
 def test_FileWidget_update(mocker, session, source):
@@ -3370,24 +3359,23 @@ def test_FileWidget_update(mocker, session, source):
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
+    controller = mocker.MagicMock(get_file=get_file)
 
-        fw = FileWidget(
-            file.uuid,
-            controller,
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            0,
-            123,
-        )
+    fw = FileWidget(
+        file.uuid,
+        controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
 
-        fw.update()
+    fw.update()
 
-        assert fw.download_button.isHidden()
-        assert fw.no_file_name.isHidden()
-        assert not fw.file_name.isHidden()
+    assert fw.download_button.isHidden()
+    assert fw.no_file_name.isHidden()
+    assert not fw.file_name.isHidden()
 
 
 def test_FileWidget_on_file_download_updates_items_when_uuid_matches(mocker, source, session):
@@ -3399,28 +3387,27 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_matches(mocker, sou
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
+    controller = mocker.MagicMock(get_file=get_file)
 
-        fw = FileWidget(
-            file.uuid,
-            controller,
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            0,
-            123,
-        )
-        fw.update = mocker.MagicMock()
+    fw = FileWidget(
+        file.uuid,
+        controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
+    fw.update = mocker.MagicMock()
 
-        fw._on_file_downloaded(file.source.uuid, file.uuid, str(file))
+    fw._on_file_downloaded(file.source.uuid, file.uuid, str(file))
 
-        assert fw.download_button.isHidden()
-        assert not fw.export_button.isHidden()
-        assert not fw.middot.isHidden()
-        assert not fw.print_button.isHidden()
-        assert fw.no_file_name.isHidden()
-        assert not fw.file_name.isHidden()
+    assert fw.download_button.isHidden()
+    assert not fw.export_button.isHidden()
+    assert not fw.middot.isHidden()
+    assert not fw.print_button.isHidden()
+    assert fw.no_file_name.isHidden()
+    assert not fw.file_name.isHidden()
 
 
 def test_FileWidget_on_file_download_started_updates_items_when_uuid_matches(
@@ -3434,25 +3421,24 @@ def test_FileWidget_on_file_download_started_updates_items_when_uuid_matches(
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
+    controller = mocker.MagicMock(get_file=get_file)
 
-        fw = FileWidget(
-            file.uuid,
-            controller,
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            0,
-            123,
-        )
-        fw.update = mocker.MagicMock()
+    fw = FileWidget(
+        file.uuid,
+        controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
+    fw.update = mocker.MagicMock()
 
-        assert not fw.downloading
+    assert not fw.downloading
 
-        fw._on_file_download_started(file.uuid)
+    fw._on_file_download_started(file.uuid)
 
-        assert fw.downloading
+    assert fw.downloading
 
 
 def test_FileWidget_filename_truncation(mocker, source, session):
@@ -3467,24 +3453,23 @@ def test_FileWidget_filename_truncation(mocker, source, session):
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
+    controller = mocker.MagicMock(get_file=get_file)
 
-        fw = FileWidget(
-            file.uuid,
-            controller,
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            0,
-            123,
-        )
-        fw.update = mocker.MagicMock()
+    fw = FileWidget(
+        file.uuid,
+        controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
+    fw.update = mocker.MagicMock()
 
-        fw._on_file_downloaded(file.source.uuid, file.uuid, str(file))
+    fw._on_file_downloaded(file.source.uuid, file.uuid, str(file))
 
-        assert fw.file_name.text().endswith("...")
-        assert fw.file_name.toolTip() == filename
+    assert fw.file_name.text().endswith("...")
+    assert fw.file_name.toolTip() == filename
 
 
 def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(
@@ -3498,30 +3483,29 @@ def test_FileWidget_on_file_download_updates_items_when_uuid_does_not_match(
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
+    controller = mocker.MagicMock(get_file=get_file)
 
-        fw = FileWidget(
-            file.uuid,
-            controller,
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            0,
-            123,
-        )
-        fw.clear = mocker.MagicMock()
-        fw.update = mocker.MagicMock()
+    fw = FileWidget(
+        file.uuid,
+        controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
+    fw.clear = mocker.MagicMock()
+    fw.update = mocker.MagicMock()
 
-        fw._on_file_downloaded("not a matching source uuid", "not a matching file uuid", "mock")
+    fw._on_file_downloaded("not a matching source uuid", "not a matching file uuid", "mock")
 
-        fw.clear.assert_not_called()
-        assert fw.download_button.isHidden()
-        assert not fw.export_button.isHidden()
-        assert not fw.middot.isHidden()
-        assert not fw.print_button.isHidden()
-        assert fw.no_file_name.isHidden()
-        assert not fw.file_name.isHidden()
+    fw.clear.assert_not_called()
+    assert fw.download_button.isHidden()
+    assert not fw.export_button.isHidden()
+    assert not fw.middot.isHidden()
+    assert not fw.print_button.isHidden()
+    assert fw.no_file_name.isHidden()
+    assert not fw.file_name.isHidden()
 
 
 def test_FileWidget_on_file_missing_show_download_button_when_uuid_matches(
@@ -3535,31 +3519,30 @@ def test_FileWidget_on_file_missing_show_download_button_when_uuid_matches(
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
+    controller = mocker.MagicMock(get_file=get_file)
 
-        fw = FileWidget(
-            file.uuid,
-            controller,
-            controller.file_download_started,
-            controller.file_ready,
-            controller.file_missing,
-            0,
-            123,
-        )
-        fw._on_file_missing(file.source.uuid, file.uuid, str(file))
+    fw = FileWidget(
+        file.uuid,
+        controller,
+        controller.file_download_started,
+        controller.file_ready,
+        controller.file_missing,
+        0,
+        123,
+    )
+    fw._on_file_missing(file.source.uuid, file.uuid, str(file))
 
-        # this is necessary for the timer that stops the download
-        # animation to execute
-        QTest.qWait(1000)
+    # this is necessary for the timer that stops the download
+    # animation to execute
+    QTest.qWait(1000)
 
-        assert not fw.download_button.isHidden()
-        assert fw.export_button.isHidden()
-        assert fw.middot.isHidden()
-        assert fw.print_button.isHidden()
-        assert not fw.no_file_name.isHidden()
-        assert fw.file_name.isHidden()
-        assert fw.download_animation.state() == QMovie.NotRunning
+    assert not fw.download_button.isHidden()
+    assert fw.export_button.isHidden()
+    assert fw.middot.isHidden()
+    assert fw.print_button.isHidden()
+    assert not fw.no_file_name.isHidden()
+    assert fw.file_name.isHidden()
+    assert fw.download_animation.state() == QMovie.NotRunning
 
 
 def test_FileWidget_on_file_missing_does_not_show_download_button_when_uuid_does_not_match(
@@ -3573,25 +3556,22 @@ def test_FileWidget_on_file_missing_does_not_show_download_button_when_uuid_does
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
+    controller = mocker.MagicMock(get_file=get_file)
 
-        fw = FileWidget(
-            file.uuid,
-            controller,
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            0,
-            123,
-        )
-        fw.download_button.show = mocker.MagicMock()
+    fw = FileWidget(
+        file.uuid,
+        controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
+    fw.download_button.show = mocker.MagicMock()
 
-        fw._on_file_missing(
-            "not a matching source uuid", "not a matching file uuid", "mock filename"
-        )
+    fw._on_file_missing("not a matching source uuid", "not a matching file uuid", "mock filename")
 
-        fw.download_button.show.assert_not_called()
+    fw.download_button.show.assert_not_called()
 
 
 def test_FileWidget__on_export_clicked(mocker, session, source):
@@ -3629,28 +3609,27 @@ def test_FileWidget__on_export_clicked_missing_file(mocker, session, source):
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
+    controller = mocker.MagicMock(get_file=get_file)
 
-        fw = FileWidget(
-            file.uuid,
-            controller,
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            0,
-            123,
-        )
-        fw.update = mocker.MagicMock()
-        mocker.patch("PyQt5.QtWidgets.QDialog.exec")
-        controller.run_export_preflight_checks = mocker.MagicMock()
-        controller.downloaded_file_exists = mocker.MagicMock(return_value=False)
-        dialog = mocker.patch("securedrop_client.gui.conversation.ExportFileDialog")
+    fw = FileWidget(
+        file.uuid,
+        controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
+    fw.update = mocker.MagicMock()
+    mocker.patch("PyQt5.QtWidgets.QDialog.exec")
+    controller.run_export_preflight_checks = mocker.MagicMock()
+    controller.downloaded_file_exists = mocker.MagicMock(return_value=False)
+    dialog = mocker.patch("securedrop_client.gui.conversation.ExportFileDialog")
 
-        fw._on_export_clicked()
+    fw._on_export_clicked()
 
-        controller.run_export_preflight_checks.assert_not_called()
-        dialog.assert_not_called()
+    controller.run_export_preflight_checks.assert_not_called()
+    dialog.assert_not_called()
 
 
 def test_FileWidget__on_print_clicked(mocker, session, source):
@@ -3662,29 +3641,28 @@ def test_FileWidget__on_print_clicked(mocker, session, source):
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
-        export_device = mocker.patch("securedrop_client.gui.conversation.ExportDevice")
+    controller = mocker.MagicMock(get_file=get_file)
+    export_device = mocker.patch("securedrop_client.gui.conversation.ExportDevice")
 
-        fw = FileWidget(
-            file.uuid,
-            controller,
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            0,
-            123,
-        )
-        fw.update = mocker.MagicMock()
-        mocker.patch("PyQt5.QtWidgets.QDialog.exec")
-        controller.print_file = mocker.MagicMock()
-        controller.downloaded_file_exists = mocker.MagicMock(return_value=True)
+    fw = FileWidget(
+        file.uuid,
+        controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
+    fw.update = mocker.MagicMock()
+    mocker.patch("PyQt5.QtWidgets.QDialog.exec")
+    controller.print_file = mocker.MagicMock()
+    controller.downloaded_file_exists = mocker.MagicMock(return_value=True)
 
-        dialog = mocker.patch("securedrop_client.gui.conversation.PrintFileDialog")
+    dialog = mocker.patch("securedrop_client.gui.conversation.PrintFileDialog")
 
-        fw._on_print_clicked()
+    fw._on_print_clicked()
 
-        dialog.assert_called_once_with(export_device(), file.uuid, file.filename)
+    dialog.assert_called_once_with(export_device(), file.uuid, file.filename)
 
 
 def test_FileWidget__on_print_clicked_missing_file(mocker, session, source):
@@ -3696,42 +3674,40 @@ def test_FileWidget__on_print_clicked_missing_file(mocker, session, source):
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
+    controller = mocker.MagicMock(get_file=get_file)
 
-        fw = FileWidget(
-            file.uuid,
-            controller,
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            mocker.MagicMock(),
-            0,
-            123,
-        )
-        fw.update = mocker.MagicMock()
-        mocker.patch("PyQt5.QtWidgets.QDialog.exec")
-        controller.print_file = mocker.MagicMock()
-        controller.downloaded_file_exists = mocker.MagicMock(return_value=False)
-        dialog = mocker.patch("securedrop_client.gui.conversation.PrintFileDialog")
+    fw = FileWidget(
+        file.uuid,
+        controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
+    fw.update = mocker.MagicMock()
+    mocker.patch("PyQt5.QtWidgets.QDialog.exec")
+    controller.print_file = mocker.MagicMock()
+    controller.downloaded_file_exists = mocker.MagicMock(return_value=False)
+    dialog = mocker.patch("securedrop_client.gui.conversation.PrintFileDialog")
 
-        fw._on_print_clicked()
+    fw._on_print_clicked()
 
-        controller.print_file.assert_not_called()
-        dialog.assert_not_called()
+    controller.print_file.assert_not_called()
+    dialog.assert_not_called()
 
 
 def test_FileWidget_update_file_size_with_deleted_file(
     mocker, homedir, config, session_maker, source
 ):
     gui = mocker.MagicMock()
-    with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_queue_thread]:
+    with threads(3) as [sync_thread, main_queue_thread, file_download_queue_thread]:
         controller = logic.Controller(
             "http://localhost",
             gui,
             session_maker,
             homedir,
             None,
-            export_thread=export_thread,
             sync_thread=sync_thread,
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_queue_thread,
@@ -3763,20 +3739,19 @@ def test_SourceConversationWrapper_on_conversation_updated(mocker, qtbot):
     file = factory.File(source=source, is_downloaded=True)
 
     get_file = mocker.MagicMock(return_value=file)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
+    controller = mocker.MagicMock(get_file=get_file)
 
-        scw = SourceConversationWrapper(source, controller, None)
-        scw.conversation_title_bar.updated.setText("CANARY")
+    scw = SourceConversationWrapper(source, controller, None)
+    scw.conversation_title_bar.updated.setText("CANARY")
 
-        scw.conversation_view.add_file(file=file, index=1)
+    scw.conversation_view.add_file(file=file, index=1)
 
-        expected_timestamp = arrow.get(source.last_updated).format("MMM D")
+    expected_timestamp = arrow.get(source.last_updated).format("MMM D")
 
-        def check_timestamp():
-            assert scw.conversation_title_bar.updated.text() == expected_timestamp
+    def check_timestamp():
+        assert scw.conversation_title_bar.updated.text() == expected_timestamp
 
-        qtbot.waitUntil(check_timestamp, timeout=2000)
+    qtbot.waitUntil(check_timestamp, timeout=2000)
 
 
 def test_SourceConversationWrapper_on_source_deleted(mocker):
@@ -3954,29 +3929,24 @@ def test_ConversationView_ConversationScrollArea_resize(mocker):
     user = factory.User()
 
     get_file = mocker.MagicMock(return_value=file)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(
-            get_file=get_file, authenticated_user=user, export_thread=export_thread
-        )
+    controller = mocker.MagicMock(get_file=get_file, authenticated_user=user)
 
-        cv = ConversationView(factory.Source(), controller)
-        message = factory.Message(source=factory.Source(), content=">^..^<")
-        cv.add_message(message=message, index=0)
-        speech_bubble_adjust_width = mocker.patch(
-            "securedrop_client.gui.widgets.SpeechBubble.adjust_width"
-        )
-        cv.add_file(file=file, index=1)
-        file_widget_adjust_width = mocker.patch(
-            "securedrop_client.gui.widgets.FileWidget.adjust_width"
-        )
+    cv = ConversationView(factory.Source(), controller)
+    message = factory.Message(source=factory.Source(), content=">^..^<")
+    cv.add_message(message=message, index=0)
+    speech_bubble_adjust_width = mocker.patch(
+        "securedrop_client.gui.widgets.SpeechBubble.adjust_width"
+    )
+    cv.add_file(file=file, index=1)
+    file_widget_adjust_width = mocker.patch("securedrop_client.gui.widgets.FileWidget.adjust_width")
 
-        cv.setFixedWidth(800)
-        event = QResizeEvent(cv.scroll.size(), QSize(123_456_789, 123_456_789))
-        cv.scroll.resizeEvent(event)
+    cv.setFixedWidth(800)
+    event = QResizeEvent(cv.scroll.size(), QSize(123_456_789, 123_456_789))
+    cv.scroll.resizeEvent(event)
 
-        assert cv.scroll.widget().width() == cv.scroll.width()
-        speech_bubble_adjust_width.assert_called_with(cv.scroll.widget().width())
-        file_widget_adjust_width.assert_called_with(cv.scroll.widget().width())
+    assert cv.scroll.widget().width() == cv.scroll.width()
+    speech_bubble_adjust_width.assert_called_with(cv.scroll.widget().width())
+    file_widget_adjust_width.assert_called_with(cv.scroll.widget().width())
 
 
 def test_ConversationView__on_sync_started(mocker, session):
@@ -4323,22 +4293,21 @@ def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
+    controller = mocker.MagicMock(get_file=get_file)
 
-        cv = ConversationView(source, controller)
-        cv.conversation_updated = mocker.MagicMock()
+    cv = ConversationView(source, controller)
+    cv.conversation_updated = mocker.MagicMock()
 
-        mock_label = mocker.patch("securedrop_client.gui.widgets.SecureQLabel")
-        mocker.patch("securedrop_client.gui.widgets.QHBoxLayout.addWidget")
+    mock_label = mocker.patch("securedrop_client.gui.widgets.SecureQLabel")
+    mocker.patch("securedrop_client.gui.widgets.QHBoxLayout.addWidget")
 
-        cv.add_file(file, 0)
+    cv.add_file(file, 0)
 
-        mock_label.assert_called_with("123B")  # default factory filesize
-        assert cv.conversation_updated.emit.call_count == 1
+    mock_label.assert_called_with("123B")  # default factory filesize
+    assert cv.conversation_updated.emit.call_count == 1
 
-        file_widget = cv.scroll.conversation_layout.itemAt(1).widget()
-        assert isinstance(file_widget, FileWidget)
+    file_widget = cv.scroll.conversation_layout.itemAt(1).widget()
+    assert isinstance(file_widget, FileWidget)
 
 
 def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, session):
@@ -4352,22 +4321,21 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, sessi
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(get_file=get_file, export_thread=export_thread)
+    controller = mocker.MagicMock(get_file=get_file)
 
-        cv = ConversationView(source, controller)
-        cv.conversation_updated = mocker.MagicMock()
+    cv = ConversationView(source, controller)
+    cv.conversation_updated = mocker.MagicMock()
 
-        mock_label = mocker.patch("securedrop_client.gui.widgets.SecureQLabel")
-        mocker.patch("securedrop_client.gui.widgets.QHBoxLayout.addWidget")
+    mock_label = mocker.patch("securedrop_client.gui.widgets.SecureQLabel")
+    mocker.patch("securedrop_client.gui.widgets.QHBoxLayout.addWidget")
 
-        cv.add_file(file, 0)
+    cv.add_file(file, 0)
 
-        mock_label.assert_called_with("123B")  # default factory filesize
-        assert cv.conversation_updated.emit.call_count == 1
+    mock_label.assert_called_with("123B")  # default factory filesize
+    assert cv.conversation_updated.emit.call_count == 1
 
-        file_widget = cv.scroll.conversation_layout.itemAt(1).widget()
-        assert isinstance(file_widget, FileWidget)
+    file_widget = cv.scroll.conversation_layout.itemAt(1).widget()
+    assert isinstance(file_widget, FileWidget)
 
 
 def test_DeleteSource_from_source_menu_when_user_is_loggedout(mocker):
@@ -4879,17 +4847,14 @@ def test_update_conversation_maintains_old_items(mocker, session):
 
     user = factory.User()
     get_file = mocker.MagicMock(return_value=file)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(
-            get_file=get_file, authenticated_user=user, export_thread=export_thread
-        )
+    controller = mocker.MagicMock(get_file=get_file, authenticated_user=user)
 
-        cv = ConversationView(source, controller)
-        assert cv.scroll.conversation_layout.count() == 3
+    cv = ConversationView(source, controller)
+    assert cv.scroll.conversation_layout.count() == 3
 
-        cv.update_conversation(cv.source.collection)
+    cv.update_conversation(cv.source.collection)
 
-        assert cv.scroll.conversation_layout.count() == 3
+    assert cv.scroll.conversation_layout.count() == 3
 
 
 def test_update_conversation_does_not_remove_pending_draft_items(mocker, session):
@@ -4913,22 +4878,19 @@ def test_update_conversation_does_not_remove_pending_draft_items(mocker, session
 
     user = factory.User()
     get_file = mocker.MagicMock(return_value=file)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(
-            get_file=get_file, authenticated_user=user, export_thread=export_thread
-        )
+    controller = mocker.MagicMock(get_file=get_file, authenticated_user=user)
 
-        cv = ConversationView(source, controller)
-        assert cv.scroll.conversation_layout.count() == 3  # precondition with draft
+    cv = ConversationView(source, controller)
+    assert cv.scroll.conversation_layout.count() == 3  # precondition with draft
 
-        # add the new message and persist
-        new_message = factory.Message(filename="4-source-msg.gpg", source=source)
-        session.add(new_message)
-        session.commit()
+    # add the new message and persist
+    new_message = factory.Message(filename="4-source-msg.gpg", source=source)
+    session.add(new_message)
+    session.commit()
 
-        # New message added, draft message persists.
-        cv.update_conversation(cv.source.collection)
-        assert cv.scroll.conversation_layout.count() == 4
+    # New message added, draft message persists.
+    cv.update_conversation(cv.source.collection)
+    assert cv.scroll.conversation_layout.count() == 4
 
 
 def test_update_conversation_does_remove_successful_draft_items(mocker, session):
@@ -4952,26 +4914,23 @@ def test_update_conversation_does_remove_successful_draft_items(mocker, session)
 
     user = factory.User()
     get_file = mocker.MagicMock(return_value=file)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(
-            get_file=get_file, authenticated_user=user, export_thread=export_thread
-        )
+    controller = mocker.MagicMock(get_file=get_file, authenticated_user=user)
 
-        cv = ConversationView(source, controller)
-        assert cv.scroll.conversation_layout.count() == 3  # precondition with draft
+    cv = ConversationView(source, controller)
+    assert cv.scroll.conversation_layout.count() == 3  # precondition with draft
 
-        # add the new message and persist
-        new_message = factory.Message(filename="4-source-msg.gpg", source=source)
-        session.add(new_message)
-        session.commit()
+    # add the new message and persist
+    new_message = factory.Message(filename="4-source-msg.gpg", source=source)
+    session.add(new_message)
+    session.commit()
 
-        # remove draft
-        session.delete(draft_reply)
-        session.commit()
+    # remove draft
+    session.delete(draft_reply)
+    session.commit()
 
-        # New message added, draft message is gone.
-        cv.update_conversation(cv.source.collection)
-        assert cv.scroll.conversation_layout.count() == 3
+    # New message added, draft message is gone.
+    cv.update_conversation(cv.source.collection)
+    assert cv.scroll.conversation_layout.count() == 3
 
 
 def test_update_conversation_keeps_failed_draft_items(mocker, session):
@@ -4995,22 +4954,19 @@ def test_update_conversation_keeps_failed_draft_items(mocker, session):
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(
-            get_file=get_file, authenticated_user=user, export_thread=export_thread
-        )
+    controller = mocker.MagicMock(get_file=get_file, authenticated_user=user)
 
-        cv = ConversationView(source, controller)
-        assert cv.scroll.conversation_layout.count() == 3  # precondition with draft
+    cv = ConversationView(source, controller)
+    assert cv.scroll.conversation_layout.count() == 3  # precondition with draft
 
-        # add the new message and persist
-        new_message = factory.Message(filename="4-source-msg.gpg", source=source)
-        session.add(new_message)
-        session.commit()
+    # add the new message and persist
+    new_message = factory.Message(filename="4-source-msg.gpg", source=source)
+    session.add(new_message)
+    session.commit()
 
-        # New message added, draft message retained.
-        cv.update_conversation(cv.source.collection)
-        assert cv.scroll.conversation_layout.count() == 4
+    # New message added, draft message retained.
+    cv.update_conversation(cv.source.collection)
+    assert cv.scroll.conversation_layout.count() == 4
 
 
 def test_update_conversation_adds_new_items(mocker, session):
@@ -5031,21 +4987,18 @@ def test_update_conversation_adds_new_items(mocker, session):
 
     user = factory.User()
     get_file = mocker.MagicMock(return_value=file)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(
-            get_file=get_file, authenticated_user=user, export_thread=export_thread
-        )
+    controller = mocker.MagicMock(get_file=get_file, authenticated_user=user)
 
-        cv = ConversationView(source, controller)
-        assert cv.scroll.conversation_layout.count() == 3  # precondition
+    cv = ConversationView(source, controller)
+    assert cv.scroll.conversation_layout.count() == 3  # precondition
 
-        # add the new message and persist
-        new_message = factory.Message(filename="4-source-msg.gpg", source=source)
-        session.add(new_message)
-        session.commit()
+    # add the new message and persist
+    new_message = factory.Message(filename="4-source-msg.gpg", source=source)
+    session.add(new_message)
+    session.commit()
 
-        cv.update_conversation(cv.source.collection)
-        assert cv.scroll.conversation_layout.count() == 4
+    cv.update_conversation(cv.source.collection)
+    assert cv.scroll.conversation_layout.count() == 4
 
 
 def test_update_conversation_position_updates(mocker, session):
@@ -5066,26 +5019,23 @@ def test_update_conversation_position_updates(mocker, session):
 
     user = factory.User()
     get_file = mocker.MagicMock(return_value=file)
-    with threads(1) as [export_thread]:
-        controller = mocker.MagicMock(
-            get_file=get_file, authenticated_user=user, export_thread=export_thread
-        )
+    controller = mocker.MagicMock(get_file=get_file, authenticated_user=user)
 
-        cv = ConversationView(source, controller)
-        assert cv.scroll.conversation_layout.count() == 3  # precondition
+    cv = ConversationView(source, controller)
+    assert cv.scroll.conversation_layout.count() == 3  # precondition
 
-        # Change the position of the Reply.
-        reply_widget = cv.current_messages[reply.uuid]
-        reply_widget.index = 1
+    # Change the position of the Reply.
+    reply_widget = cv.current_messages[reply.uuid]
+    reply_widget.index = 1
 
-        # add the new message and persist
-        new_message = factory.Message(filename="4-source-msg.gpg", source=source)
-        session.add(new_message)
-        session.commit()
+    # add the new message and persist
+    new_message = factory.Message(filename="4-source-msg.gpg", source=source)
+    session.add(new_message)
+    session.commit()
 
-        cv.update_conversation(cv.source.collection)
-        assert cv.scroll.conversation_layout.count() == 4
-        assert reply_widget.index == 2  # re-ordered.
+    cv.update_conversation(cv.source.collection)
+    assert cv.scroll.conversation_layout.count() == 4
+    assert reply_widget.index == 2  # re-ordered.
 
 
 def test_update_conversation_content_updates(mocker, session):

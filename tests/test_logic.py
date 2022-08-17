@@ -108,14 +108,13 @@ def test_Controller_setup(homedir, config, mocker, session_maker, session):
     Ensure the application is set up with the following default state:
     Using the `config` fixture to ensure the config is written to disk.
     """
-    with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_queue_thread]:
+    with threads(3) as [sync_thread, main_queue_thread, file_download_queue_thread]:
         co = Controller(
             "http://localhost",
             mocker.MagicMock(),
             session_maker,
             homedir,
             None,
-            export_thread=export_thread,
             sync_thread=sync_thread,
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_queue_thread,

@@ -17,14 +17,13 @@ def main_window(mocker, homedir):
     gui = Window()
     app.setActiveWindow(gui)
     gui.show()
-    with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_thread]:
+    with threads(3) as [sync_thread, main_queue_thread, file_download_thread]:
         controller = Controller(
             "http://localhost",
             gui,
             mocker.MagicMock(),
             homedir,
             None,
-            export_thread=export_thread,
             sync_thread=sync_thread,
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_thread,
@@ -70,14 +69,13 @@ def main_window_no_key(mocker, homedir):
     gui = Window()
     app.setActiveWindow(gui)
     gui.show()
-    with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_thread]:
+    with threads(3) as [sync_thread, main_queue_thread, file_download_thread]:
         controller = Controller(
             "http://localhost",
             gui,
             mocker.MagicMock(),
             homedir,
             None,
-            export_thread=export_thread,
             sync_thread=sync_thread,
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_thread,
@@ -122,14 +120,13 @@ def modal_dialog(mocker, homedir):
     gui = Window()
     app.setActiveWindow(gui)
     gui.show()
-    with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_thread]:
+    with threads(3) as [sync_thread, main_queue_thread, file_download_thread]:
         controller = Controller(
             "http://localhost",
             gui,
             mocker.MagicMock(),
             homedir,
             None,
-            export_thread=export_thread,
             sync_thread=sync_thread,
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_thread,
@@ -155,14 +152,13 @@ def print_dialog(mocker, homedir):
     gui = Window(export_service=export_service)
     app.setActiveWindow(gui)
     gui.show()
-    with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_thread]:
+    with threads(3) as [sync_thread, main_queue_thread, file_download_thread]:
         controller = Controller(
             "http://localhost",
             gui,
             mocker.MagicMock(),
             homedir,
             None,
-            export_thread=export_thread,
             sync_thread=sync_thread,
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_thread,
@@ -192,14 +188,13 @@ def export_dialog(mocker, homedir):
     gui = Window(export_service=export_service)
     app.setActiveWindow(gui)
     gui.show()
-    with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_thread]:
+    with threads(3) as [sync_thread, main_queue_thread, file_download_thread]:
         controller = Controller(
             "http://localhost",
             gui,
             mocker.MagicMock(),
             homedir,
             None,
-            export_thread=export_thread,
             sync_thread=sync_thread,
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_thread,

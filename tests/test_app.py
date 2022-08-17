@@ -166,7 +166,6 @@ def test_start_app(homedir, mocker):
         mocker.ANY,
         mocker.ANY,
         mocker.ANY,
-        mocker.ANY,
     )
 
 

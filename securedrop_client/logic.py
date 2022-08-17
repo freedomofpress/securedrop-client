@@ -318,7 +318,6 @@ class Controller(QObject):
         state: state.State,
         proxy: bool = True,
         qubes: bool = True,
-        export_thread: Optional[QThread] = None,
         sync_thread: Optional[QThread] = None,
         main_queue_thread: Optional[QThread] = None,
         file_download_queue_thread: Optional[QThread] = None,
@@ -332,11 +331,6 @@ class Controller(QObject):
         super().__init__()
 
         self._state = state
-
-        if export_thread is not None:
-            self.export_thread = export_thread
-        else:
-            self.export_thread = QThread()
 
         if sync_thread is not None:
             self.sync_thread = sync_thread

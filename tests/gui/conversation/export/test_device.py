@@ -16,14 +16,13 @@ def no_session():
 
 def test_Device_run_printer_preflight_checks(homedir, mocker, source):
     gui = mocker.MagicMock(spec=Window)
-    with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_queue_thread]:
+    with threads(3) as [sync_thread, main_queue_thread, file_download_queue_thread]:
         controller = Controller(
             "http://localhost",
             gui,
             no_session,
             homedir,
             None,
-            export_thread=export_thread,
             sync_thread=sync_thread,
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_queue_thread,
@@ -41,14 +40,13 @@ def test_Device_run_printer_preflight_checks(homedir, mocker, source):
 
 def test_Device_run_print_file(mocker, homedir):
     gui = mocker.MagicMock(spec=Window)
-    with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_queue_thread]:
+    with threads(3) as [sync_thread, main_queue_thread, file_download_queue_thread]:
         controller = Controller(
             "http://localhost",
             gui,
             no_session,
             homedir,
             None,
-            export_thread=export_thread,
             sync_thread=sync_thread,
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_queue_thread,
@@ -75,14 +73,13 @@ def test_Device_print_file_file_missing(homedir, mocker, session):
     should be communicated to the user.
     """
     gui = mocker.MagicMock()
-    with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_queue_thread]:
+    with threads(3) as [sync_thread, main_queue_thread, file_download_queue_thread]:
         controller = Controller(
             "http://localhost",
             gui,
             session,
             homedir,
             None,
-            export_thread=export_thread,
             sync_thread=sync_thread,
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_queue_thread,
@@ -106,14 +103,13 @@ def test_Device_print_file_when_orig_file_already_exists(homedir, config, mocker
     The signal `print_requested` should still be emitted if the original file already exists.
     """
     gui = mocker.MagicMock(spec=Window)
-    with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_queue_thread]:
+    with threads(3) as [sync_thread, main_queue_thread, file_download_queue_thread]:
         controller = Controller(
             "http://localhost",
             gui,
             no_session,
             homedir,
             None,
-            export_thread=export_thread,
             sync_thread=sync_thread,
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_queue_thread,
@@ -133,14 +129,13 @@ def test_Device_print_file_when_orig_file_already_exists(homedir, config, mocker
 
 def test_Device_run_export_preflight_checks(homedir, mocker, source):
     gui = mocker.MagicMock(spec=Window)
-    with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_queue_thread]:
+    with threads(3) as [sync_thread, main_queue_thread, file_download_queue_thread]:
         controller = Controller(
             "http://localhost",
             gui,
             no_session,
             homedir,
             None,
-            export_thread=export_thread,
             sync_thread=sync_thread,
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_queue_thread,
@@ -162,14 +157,13 @@ def test_Device_export_file_to_usb_drive(homedir, mocker):
     The signal `export_requested` should be emmited during export_file_to_usb_drive.
     """
     gui = mocker.MagicMock(spec=Window)
-    with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_queue_thread]:
+    with threads(3) as [sync_thread, main_queue_thread, file_download_queue_thread]:
         controller = Controller(
             "http://localhost",
             gui,
             no_session,
             homedir,
             None,
-            export_thread=export_thread,
             sync_thread=sync_thread,
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_queue_thread,
@@ -196,14 +190,13 @@ def test_Device_export_file_to_usb_drive_file_missing(homedir, mocker, session):
     should be communicated to the user.
     """
     gui = mocker.MagicMock(spec=Window)
-    with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_queue_thread]:
+    with threads(3) as [sync_thread, main_queue_thread, file_download_queue_thread]:
         controller = Controller(
             "http://localhost",
             gui,
             session,
             homedir,
             None,
-            export_thread=export_thread,
             sync_thread=sync_thread,
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_queue_thread,
@@ -229,14 +222,13 @@ def test_Device_export_file_to_usb_drive_when_orig_file_already_exists(
     The signal `export_requested` should still be emmited if the original file already exists.
     """
     gui = mocker.MagicMock(spec=Window)
-    with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_queue_thread]:
+    with threads(3) as [sync_thread, main_queue_thread, file_download_queue_thread]:
         controller = Controller(
             "http://localhost",
             gui,
             no_session,
             homedir,
             None,
-            export_thread=export_thread,
             sync_thread=sync_thread,
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_queue_thread,

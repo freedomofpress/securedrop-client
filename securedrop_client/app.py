@@ -258,7 +258,6 @@ def start_app(args, qt_args) -> NoReturn:  # type: ignore [no-untyped-def]
             app_state,
             not args.no_proxy,
             not args.no_qubes,
-            export_service_thread,
             sync_thread,
             main_queue_thread,
             file_download_queue_thread,
