@@ -1,20 +1,18 @@
 ---
 common-steps:
-  - &install_deps
+  - &install_testing_dependencies
     run:
-      name: Install base dependencies for Bullseye python
+      name: Install testing dependencies
       command: |
         set -e
-        pip uninstall virtualenv -y || true
-        sudo apt update && sudo apt install -y make git gnupg
+        apt update && apt install -y git gnupg libqt5x11extras5 make python3-tk python3-dev gnupg python3-venv sqlite3 xvfb
 
-  - &install_deps_on_buster
+  - &install_build_dependencies
     run:
-      name: Install base dependencies for Buster python
+      name: Install build dependencies
       command: |
         set -e
-        pip uninstall virtualenv -y || true
-        apt-get update && apt-get install -y sudo make git gnupg python3 python3-venv
+        apt update && apt install -y git make sudo
 
   - &run_tests
     run:
@@ -22,16 +20,6 @@ common-steps:
       command: |
         set -e
         make venv
-        source .venv/bin/activate
-        export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
-        make check --keep-going
-
-  - &run_tests_on_buster
-    run:
-      name: Install requirements and run tests
-      command: |
-        set -e
-        make venv-buster
         source .venv/bin/activate
         export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
         make check --keep-going
@@ -44,7 +32,7 @@ common-steps:
         source .venv/bin/activate
         make check-black check-isort lint bandit check-strings
 
-  - &check_python_dependencies_for_vulns
+  - &check_python_dependencies_for_vulnerabilities
     run:
       name: Check Python dependencies for known vulnerabilities
       command: |
@@ -54,21 +42,7 @@ common-steps:
 
   - &install_packaging_dependencies
     run:
-      name: Install Debian packaging dependencies and download wheels
-      command: |
-        set -x
-        mkdir ~/packaging && cd ~/packaging
-        # local builds may not have an ssh url, so || true
-        git config --global --unset url.ssh://git@github.com.insteadof || true
-        git clone https://github.com/freedomofpress/securedrop-debian-packaging.git
-        cd securedrop-debian-packaging
-        sudo apt update && sudo apt install -y make
-        make install-deps
-        PKG_DIR=~/project make requirements
-
-  - &install_packaging_dependencies_buster
-    run:
-      name: Install Debian packaging dependencies and download wheels
+      name: Install Debian packaging dependencies and download Python wheels
       command: |
         set -x
         mkdir ~/packaging && cd ~/packaging
@@ -104,9 +78,9 @@ version: 2
 jobs:
   build-bullseye:
     docker:
-      - image: circleci/python:3.9-bullseye
+      - image: debian:bullseye
     steps:
-      - *install_deps
+      - *install_build_dependencies
       - checkout
       - *install_packaging_dependencies
       - *verify_requirements
@@ -114,39 +88,15 @@ jobs:
 
   test-bullseye:
     docker:
-      - image: circleci/python:3.9-bullseye
+      - image: debian:bullseye
     steps:
-      - *install_deps
+      - *install_testing_dependencies
       - checkout
-      - run: sudo apt update && sudo apt install -y sqlite3 libqt5x11extras5 xvfb python3-tk python3-dev
       - *run_tests
       - store_test_results:
           path: test-results
       - *run_lint
-      - *check_python_dependencies_for_vulns
-
-  build-buster:
-    docker:
-      - image: debian:buster
-    steps:
-      - *install_deps_on_buster
-      - checkout
-      - *install_packaging_dependencies_buster
-      - *verify_requirements
-      - *build_debian_package
-
-  test-buster:
-    docker:
-      - image: debian:buster
-    steps:
-      - *install_deps_on_buster
-      - checkout
-      - run: apt-get update && apt-get install -y sqlite3 libqt5x11extras5 xvfb python3-tk python3-dev
-      - *run_tests_on_buster
-      - store_test_results:
-          path: test-results
-      - *run_lint
-      - *check_python_dependencies_for_vulns
+      - *check_python_dependencies_for_vulnerabilities
 
 workflows:
   version: 2
@@ -154,8 +104,6 @@ workflows:
     jobs:
       - test-bullseye
       - build-bullseye
-      - test-buster
-      - build-buster
 
   nightly:
     triggers:
@@ -168,5 +116,3 @@ workflows:
     jobs:
       - test-bullseye
       - build-bullseye
-      - test-buster
-      - build-buster
