@@ -34,7 +34,7 @@ from typing import Any, NewType, NoReturn
 from PyQt5.QtCore import Qt, QThread, QTimer
 from PyQt5.QtWidgets import QApplication, QMessageBox
 
-from securedrop_client import __version__, state
+from securedrop_client import __version__, export, state
 from securedrop_client.database import Database
 from securedrop_client.db import make_session_maker
 from securedrop_client.gui.main import Window
@@ -237,9 +237,19 @@ def start_app(args, qt_args) -> NoReturn:  # type: ignore [no-untyped-def]
     session = session_maker()
     database = Database(session)
     app_state = state.State(database)
-    gui = Window(app_state)
 
-    with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_queue_thread]:
+    with threads(4) as [
+        export_service_thread,
+        sync_thread,
+        main_queue_thread,
+        file_download_queue_thread,
+    ]:
+        export_service = export.Service()
+        export_service.moveToThread(export_service_thread)
+        export_service_thread.start()
+
+        gui = Window(app_state, export_service)
+
         controller = Controller(
             "http://localhost:8081/",
             gui,
@@ -248,7 +258,7 @@ def start_app(args, qt_args) -> NoReturn:  # type: ignore [no-untyped-def]
             app_state,
             not args.no_proxy,
             not args.no_qubes,
-            export_thread,
+            export_service_thread,
             sync_thread,
             main_queue_thread,
             file_download_queue_thread,

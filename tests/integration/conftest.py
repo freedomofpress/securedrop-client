@@ -1,6 +1,7 @@
 import pytest
 from PyQt5.QtWidgets import QApplication
 
+from securedrop_client import export
 from securedrop_client.app import threads
 from securedrop_client.gui import conversation
 from securedrop_client.gui.base import ModalDialog
@@ -150,7 +151,8 @@ def modal_dialog(mocker, homedir):
 @pytest.fixture(scope="function")
 def print_dialog(mocker, homedir):
     app = QApplication([])
-    gui = Window()
+    export_service = export.Service()
+    gui = Window(export_service=export_service)
     app.setActiveWindow(gui)
     gui.show()
     with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_thread]:
@@ -186,7 +188,8 @@ def print_dialog(mocker, homedir):
 @pytest.fixture(scope="function")
 def export_dialog(mocker, homedir):
     app = QApplication([])
-    gui = Window()
+    export_service = export.Service()
+    gui = Window(export_service=export_service)
     app.setActiveWindow(gui)
     gui.show()
     with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_thread]:
