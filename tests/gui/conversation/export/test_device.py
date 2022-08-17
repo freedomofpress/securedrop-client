@@ -28,7 +28,7 @@ def test_Device_run_printer_preflight_checks(homedir, mocker, source):
             file_download_queue_thread=file_download_queue_thread,
         )
         export_service = export.Service()
-        device = Device(controller, export_service=export_service)
+        device = Device(controller, export_service)
         print_preflight_check_requested_emissions = QSignalSpy(
             device.print_preflight_check_requested
         )
@@ -52,7 +52,7 @@ def test_Device_run_print_file(mocker, homedir):
             file_download_queue_thread=file_download_queue_thread,
         )
         export_service = export.Service()
-        device = Device(controller, export_service=export_service)
+        device = Device(controller, export_service)
         print_requested_emissions = QSignalSpy(device.print_requested)
         file = factory.File(source=factory.Source())
         mocker.patch("securedrop_client.logic.Controller.get_file", return_value=file)
@@ -85,7 +85,7 @@ def test_Device_print_file_file_missing(homedir, mocker, session):
             file_download_queue_thread=file_download_queue_thread,
         )
         export_service = export.Service()
-        device = Device(controller, export_service=export_service)
+        device = Device(controller, export_service)
         file = factory.File(source=factory.Source())
         mocker.patch("securedrop_client.logic.Controller.get_file", return_value=file)
         warning_logger = mocker.patch("securedrop_client.logic.logger.warning")
@@ -115,7 +115,7 @@ def test_Device_print_file_when_orig_file_already_exists(homedir, config, mocker
             file_download_queue_thread=file_download_queue_thread,
         )
         export_service = export.Service()
-        device = Device(controller, export_service=export_service)
+        device = Device(controller, export_service)
         file = factory.File(source=factory.Source())
         print_requested_emissions = QSignalSpy(device.print_requested)
         mocker.patch("securedrop_client.logic.Controller.get_file", return_value=file)
@@ -169,7 +169,7 @@ def test_Device_export_file_to_usb_drive(homedir, mocker):
             file_download_queue_thread=file_download_queue_thread,
         )
         export_service = export.Service()
-        device = Device(controller, export_service=export_service)
+        device = Device(controller, export_service)
         export_requested_emissions = QSignalSpy(device.export_requested)
         file = factory.File(source=factory.Source())
         mocker.patch("securedrop_client.logic.Controller.get_file", return_value=file)
@@ -202,7 +202,7 @@ def test_Device_export_file_to_usb_drive_file_missing(homedir, mocker, session):
             file_download_queue_thread=file_download_queue_thread,
         )
         export_service = export.Service()
-        device = Device(controller, export_service=export_service)
+        device = Device(controller, export_service)
         file = factory.File(source=factory.Source())
         mocker.patch("securedrop_client.logic.Controller.get_file", return_value=file)
         warning_logger = mocker.patch("securedrop_client.logic.logger.warning")
@@ -234,7 +234,7 @@ def test_Device_export_file_to_usb_drive_when_orig_file_already_exists(
             file_download_queue_thread=file_download_queue_thread,
         )
         export_service = export.Service()
-        device = Device(controller, export_service=export_service)
+        device = Device(controller, export_service)
         export_requested_emissions = QSignalSpy(device.export_requested)
         file = factory.File(source=factory.Source())
         mocker.patch("securedrop_client.logic.Controller.get_file", return_value=file)

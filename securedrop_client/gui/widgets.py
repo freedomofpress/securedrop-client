@@ -2205,6 +2205,12 @@ class FileWidget(QWidget):
 
         self.controller = controller
 
+        if export_service is None:
+            # Note that injecting an export service that runs in a separate
+            # thread is greatly encouraged! But it is optional because strictly
+            # speaking it is not a dependency of this FileWidget.
+            export_service = export.Service()
+
         self._export_device = conversation.ExportDevice(controller, export_service)
 
         self.file = self.controller.get_file(file_uuid)

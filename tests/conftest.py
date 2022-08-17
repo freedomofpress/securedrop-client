@@ -131,9 +131,11 @@ def export_service():
     """An export service that assumes the Qubes RPC calls are successful and skips them."""
     export_service = export.Service()
     # Ensure the export_service doesn't rely on Qubes OS:
-    export_service._run_disk_test = lambda dir: print("_run_disk_test")
-    export_service._run_usb_test = lambda dir: print("_run_usb_test")
-    export_service._run_disk_export = lambda dir, path, pasphrase: print("_run_disk_export")
+    export_service._run_disk_test = lambda dir: None
+    export_service._run_usb_test = lambda dir: None
+    export_service._run_disk_export = lambda dir, paths, pasphrase: None
+    export_service._run_printer_preflight = lambda dir: None
+    export_service._run_print = lambda dir, paths: None
     return export_service
 
 

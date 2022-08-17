@@ -1,6 +1,5 @@
 import logging
 import os
-from typing import Optional
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
@@ -35,43 +34,36 @@ class Device(QObject):
     print_succeeded = pyqtSignal()
     print_failed = pyqtSignal(object)
 
-    def __init__(
-        self, controller: Controller, export_service: Optional[export.Service] = None
-    ) -> None:
+    def __init__(self, controller: Controller, export_service: export.Service) -> None:
         super().__init__()
 
         self._controller = controller
         self._export_service = export_service
 
-        if self._export_service is not None:
-            self._export_service.connect_signals(
-                self.export_preflight_check_requested,
-                self.export_requested,
-                self.print_preflight_check_requested,
-                self.print_requested,
-            )
+        self._export_service.connect_signals(
+            self.export_preflight_check_requested,
+            self.export_requested,
+            self.print_preflight_check_requested,
+            self.print_requested,
+        )
 
-            # Abstract the Export instance away from the GUI
-            self._export_service.preflight_check_call_success.connect(
-                self.export_preflight_check_succeeded
-            )
-            self._export_service.preflight_check_call_failure.connect(
-                self.export_preflight_check_failed
-            )
+        # Abstract the Export instance away from the GUI
+        self._export_service.preflight_check_call_success.connect(
+            self.export_preflight_check_succeeded
+        )
+        self._export_service.preflight_check_call_failure.connect(
+            self.export_preflight_check_failed
+        )
 
-            self._export_service.export_usb_call_success.connect(self.export_succeeded)
-            self._export_service.export_usb_call_failure.connect(self.export_failed)
-            self._export_service.export_completed.connect(self.export_completed)
+        self._export_service.export_usb_call_success.connect(self.export_succeeded)
+        self._export_service.export_usb_call_failure.connect(self.export_failed)
+        self._export_service.export_completed.connect(self.export_completed)
 
-            self._export_service.printer_preflight_success.connect(
-                self.print_preflight_check_succeeded
-            )
-            self._export_service.printer_preflight_failure.connect(
-                self.print_preflight_check_failed
-            )
+        self._export_service.printer_preflight_success.connect(self.print_preflight_check_succeeded)
+        self._export_service.printer_preflight_failure.connect(self.print_preflight_check_failed)
 
-            self._export_service.print_call_failure.connect(self.print_failed)
-            self._export_service.print_call_success.connect(self.print_succeeded)
+        self._export_service.print_call_failure.connect(self.print_failed)
+        self._export_service.print_call_success.connect(self.print_succeeded)
 
     def run_printer_preflight_checks(self) -> None:
         """

@@ -146,9 +146,21 @@ def modal_dialog(mocker, homedir):
 
 
 @pytest.fixture(scope="function")
-def print_dialog(mocker, homedir):
-    app = QApplication([])
+def export_service():
+    """An export service that assumes the Qubes RPC calls are successful and skips them."""
     export_service = export.Service()
+    # Ensure the export_service doesn't rely on Qubes OS:
+    export_service._run_disk_test = lambda dir: None
+    export_service._run_usb_test = lambda dir: None
+    export_service._run_disk_export = lambda dir, paths, pasphrase: None
+    export_service._run_printer_preflight = lambda dir: None
+    export_service._run_print = lambda dir, paths: None
+    return export_service
+
+
+@pytest.fixture(scope="function")
+def print_dialog(mocker, homedir, export_service):
+    app = QApplication([])
     gui = Window(export_service=export_service)
     app.setActiveWindow(gui)
     gui.show()
@@ -169,7 +181,7 @@ def print_dialog(mocker, homedir):
         )
         controller.authenticated_user = factory.User()
         controller.qubes = False
-        export_device = conversation.ExportDevice(controller)
+        export_device = conversation.ExportDevice(controller, export_service)
         gui.setup(controller)
         gui.login_dialog.close()
         dialog = conversation.PrintFileDialog(export_device, "file_uuid", "file_name")
@@ -182,9 +194,8 @@ def print_dialog(mocker, homedir):
 
 
 @pytest.fixture(scope="function")
-def export_dialog(mocker, homedir):
+def export_dialog(mocker, homedir, export_service):
     app = QApplication([])
-    export_service = export.Service()
     gui = Window(export_service=export_service)
     app.setActiveWindow(gui)
     gui.show()
@@ -202,7 +213,7 @@ def export_dialog(mocker, homedir):
         )
         controller.authenticated_user = factory.User()
         controller.qubes = False
-        export_device = conversation.ExportDevice(controller)
+        export_device = conversation.ExportDevice(controller, export_service)
         gui.setup(controller)
         gui.login_dialog.close()
         dialog = conversation.ExportFileDialog(export_device, "file_uuid", "file_name")
