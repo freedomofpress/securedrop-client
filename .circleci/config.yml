@@ -14,29 +14,69 @@ common-steps:
         set -e
         apt update && apt install -y git make sudo
 
-  - &run_tests
+  - &run_unit_tests
     run:
-      name: Install requirements and run tests
+      name: Install requirements and run unit tests
       command: |
         set -e
         make venv
         source .venv/bin/activate
         export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
-        make check --keep-going
+        make test-random
+
+  - &run_integration_tests
+    run:
+      name: Install requirements and run integration tests
+      command: |
+        set -e
+        make venv
+        source .venv/bin/activate
+        export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
+        make test-integration
+
+  - &run_functional_tests
+    run:
+      name: Install requirements and run functional tests
+      command: |
+        set -e
+        make venv
+        source .venv/bin/activate
+        export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
+        make test-functional
 
   - &run_lint
     run:
-      name: Run lint, then static analysis on source code to find security issues
+      name: Run lint, type checking, code formatting
       command: |
         set -e
+        make venv
         source .venv/bin/activate
-        make check-black check-isort lint bandit check-strings
+        make check-black check-isort lint mypy
+
+  - &check_security
+    run:
+      name: Run static analysis on source code to find security issues
+      command: |
+        set -e
+        make venv
+        source .venv/bin/activate
+        make semgrep bandit
+
+  - &check_internationalization
+    run:
+      name: Run internationalization check
+      command: |
+        set -e
+        make venv
+        source .venv/bin/activate
+        make check-strings
 
   - &check_python_dependencies_for_vulnerabilities
     run:
       name: Check Python dependencies for known vulnerabilities
       command: |
         set -e
+        make venv
         source .venv/bin/activate
         make safety
 
@@ -86,23 +126,76 @@ jobs:
       - *verify_requirements
       - *build_debian_package
 
-  test-bullseye:
+  unit-test-bullseye:
     docker:
       - image: debian:bullseye
     steps:
       - *install_testing_dependencies
       - checkout
-      - *run_tests
+      - *run_unit_tests
       - store_test_results:
           path: test-results
+
+  integration-test-bullseye:
+    docker:
+      - image: debian:bullseye
+    steps:
+      - *install_testing_dependencies
+      - checkout
+      - *run_integration_tests
+
+  functional-test-bullseye:
+    docker:
+      - image: debian:bullseye
+    steps:
+      - *install_testing_dependencies
+      - checkout
+      - *run_functional_tests
+
+  lint-bullseye:
+    docker:
+      - image: debian:bullseye
+    steps:
+      - *install_testing_dependencies
+      - checkout
       - *run_lint
+
+  check-security-bullseye:
+    docker:
+      - image: debian:bullseye
+    steps:
+      - *install_testing_dependencies
+      - checkout
+      - *check_security
+
+  check-python-security-bullseye:
+    docker:
+      - image: debian:bullseye
+    steps:
+      - *install_testing_dependencies
+      - checkout
       - *check_python_dependencies_for_vulnerabilities
+
+
+  check-internationalization-bullseye:
+    docker:
+      - image: debian:bullseye
+    steps:
+      - *install_testing_dependencies
+      - checkout
+      - *check_internationalization
 
 workflows:
   version: 2
   securedrop_client_ci:
     jobs:
-      - test-bullseye
+      - unit-test-bullseye
+      - integration-test-bullseye
+      - functional-test-bullseye
+      - lint-bullseye
+      - check-security-bullseye
+      - check-python-security-bullseye
+      - check-internationalization-bullseye
       - build-bullseye
 
   nightly:
@@ -114,5 +207,11 @@ workflows:
               only:
                 - main
     jobs:
-      - test-bullseye
+      - unit-test-bullseye
+      - integration-test-bullseye
+      - functional-test-bullseye
+      - lint-bullseye
+      - check-security-bullseye
+      - check-python-security-bullseye
+      - check-internationalization-bullseye
       - build-bullseye
