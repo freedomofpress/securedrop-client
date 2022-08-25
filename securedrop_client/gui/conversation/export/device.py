@@ -1,10 +1,9 @@
 import logging
 import os
-from typing import Optional
 
-from PyQt5.QtCore import QObject, QThread, pyqtSignal
+from PyQt5.QtCore import QObject, pyqtSignal
 
-from securedrop_client.export import Export
+from securedrop_client import export
 from securedrop_client.logic import Controller
 
 logger = logging.getLogger(__name__)
@@ -35,14 +34,13 @@ class Device(QObject):
     print_succeeded = pyqtSignal()
     print_failed = pyqtSignal(object)
 
-    def __init__(
-        self, controller: Controller, export_service_thread: Optional[QThread] = None
-    ) -> None:
+    def __init__(self, controller: Controller, export_service: export.Service) -> None:
         super().__init__()
 
         self._controller = controller
+        self._export_service = export_service
 
-        self._export_service = Export(
+        self._export_service.connect_signals(
             self.export_preflight_check_requested,
             self.export_requested,
             self.print_preflight_check_requested,
@@ -67,23 +65,11 @@ class Device(QObject):
         self._export_service.print_call_failure.connect(self.print_failed)
         self._export_service.print_call_success.connect(self.print_succeeded)
 
-        if export_service_thread is not None:
-            # Run export object in a separate thread context (a reference to the
-            # thread is kept on self such that it does not get garbage collected
-            # after this method returns) - we want to keep our export thread around for
-            # later processing.
-            self._move_export_service_to_thread(export_service_thread)
-
     def run_printer_preflight_checks(self) -> None:
         """
         Run preflight checks to make sure the Export VM is configured correctly.
         """
         logger.info("Running printer preflight check")
-
-        if not self._controller.qubes:
-            self.print_preflight_check_succeeded.emit()
-            return
-
         self.print_preflight_check_requested.emit()
 
     def run_export_preflight_checks(self) -> None:
@@ -91,11 +77,6 @@ class Device(QObject):
         Run preflight checks to make sure the Export VM is configured correctly.
         """
         logger.info("Running export preflight check")
-
-        if not self._controller.qubes:
-            self.export_preflight_check_succeeded.emit()
-            return
-
         self.export_preflight_check_requested.emit()
 
     def export_file_to_usb_drive(self, file_uuid: str, passphrase: str) -> None:
@@ -109,10 +90,6 @@ class Device(QObject):
         logger.info("Exporting file in: {}".format(os.path.dirname(file_location)))
 
         if not self._controller.downloaded_file_exists(file):
-            return
-
-        if not self._controller.qubes:
-            self.export_succeeded.emit()
             return
 
         self.export_requested.emit([file_location], passphrase)
@@ -129,13 +106,4 @@ class Device(QObject):
         if not self._controller.downloaded_file_exists(file):
             return
 
-        if not self._controller.qubes:
-            return
-
         self.print_requested.emit([file_location])
-
-    def _move_export_service_to_thread(self, thread: QThread) -> None:
-        self._export_service_thread = thread
-
-        self._export_service.moveToThread(self._export_service_thread)
-        self._export_service_thread.start()

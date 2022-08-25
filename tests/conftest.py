@@ -10,7 +10,7 @@ import pytest
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMainWindow
 
-from securedrop_client import state
+from securedrop_client import export, state
 from securedrop_client.app import configure_locale_and_language
 from securedrop_client.config import Config
 from securedrop_client.db import (
@@ -127,14 +127,29 @@ def homedir(i18n):
 
 
 @pytest.fixture(scope="function")
-def functional_test_app_started_context(homedir, reply_status_codes, session, config, qtbot):
+def export_service():
+    """An export service that assumes the Qubes RPC calls are successful and skips them."""
+    export_service = export.Service()
+    # Ensure the export_service doesn't rely on Qubes OS:
+    export_service._run_disk_test = lambda dir: None
+    export_service._run_usb_test = lambda dir: None
+    export_service._run_disk_export = lambda dir, paths, pasphrase: None
+    export_service._run_printer_preflight = lambda dir: None
+    export_service._run_print = lambda dir, paths: None
+    return export_service
+
+
+@pytest.fixture(scope="function")
+def functional_test_app_started_context(
+    homedir, reply_status_codes, session, config, qtbot, export_service
+):
     """
     Returns a tuple containing the gui window and controller of a configured client. This should be
     used to for tests that need to start from the login dialog before the main application window
     is visible.
     """
     app_state = state.State()
-    gui = Window(app_state)
+    gui = Window(app_state, export_service)
     create_gpg_test_context(homedir)  # Configure test keys
     session_maker = make_session_maker(homedir)  # Configure and create the database
     controller = Controller(HOSTNAME, gui, session_maker, homedir, app_state, False, False)

@@ -1,6 +1,7 @@
 import pytest
 from PyQt5.QtWidgets import QApplication
 
+from securedrop_client import export
 from securedrop_client.app import threads
 from securedrop_client.gui import conversation
 from securedrop_client.gui.base import ModalDialog
@@ -16,14 +17,13 @@ def main_window(mocker, homedir):
     gui = Window()
     app.setActiveWindow(gui)
     gui.show()
-    with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_thread]:
+    with threads(3) as [sync_thread, main_queue_thread, file_download_thread]:
         controller = Controller(
             "http://localhost",
             gui,
             mocker.MagicMock(),
             homedir,
             None,
-            export_thread=export_thread,
             sync_thread=sync_thread,
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_thread,
@@ -69,14 +69,13 @@ def main_window_no_key(mocker, homedir):
     gui = Window()
     app.setActiveWindow(gui)
     gui.show()
-    with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_thread]:
+    with threads(3) as [sync_thread, main_queue_thread, file_download_thread]:
         controller = Controller(
             "http://localhost",
             gui,
             mocker.MagicMock(),
             homedir,
             None,
-            export_thread=export_thread,
             sync_thread=sync_thread,
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_thread,
@@ -121,14 +120,13 @@ def modal_dialog(mocker, homedir):
     gui = Window()
     app.setActiveWindow(gui)
     gui.show()
-    with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_thread]:
+    with threads(3) as [sync_thread, main_queue_thread, file_download_thread]:
         controller = Controller(
             "http://localhost",
             gui,
             mocker.MagicMock(),
             homedir,
             None,
-            export_thread=export_thread,
             sync_thread=sync_thread,
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_thread,
@@ -148,19 +146,31 @@ def modal_dialog(mocker, homedir):
 
 
 @pytest.fixture(scope="function")
-def print_dialog(mocker, homedir):
+def export_service():
+    """An export service that assumes the Qubes RPC calls are successful and skips them."""
+    export_service = export.Service()
+    # Ensure the export_service doesn't rely on Qubes OS:
+    export_service._run_disk_test = lambda dir: None
+    export_service._run_usb_test = lambda dir: None
+    export_service._run_disk_export = lambda dir, paths, pasphrase: None
+    export_service._run_printer_preflight = lambda dir: None
+    export_service._run_print = lambda dir, paths: None
+    return export_service
+
+
+@pytest.fixture(scope="function")
+def print_dialog(mocker, homedir, export_service):
     app = QApplication([])
-    gui = Window()
+    gui = Window(export_service=export_service)
     app.setActiveWindow(gui)
     gui.show()
-    with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_thread]:
+    with threads(3) as [sync_thread, main_queue_thread, file_download_thread]:
         controller = Controller(
             "http://localhost",
             gui,
             mocker.MagicMock(),
             homedir,
             None,
-            export_thread=export_thread,
             sync_thread=sync_thread,
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_thread,
@@ -171,7 +181,7 @@ def print_dialog(mocker, homedir):
         )
         controller.authenticated_user = factory.User()
         controller.qubes = False
-        export_device = conversation.ExportDevice(controller)
+        export_device = conversation.ExportDevice(controller, export_service)
         gui.setup(controller)
         gui.login_dialog.close()
         dialog = conversation.PrintFileDialog(export_device, "file_uuid", "file_name")
@@ -184,19 +194,18 @@ def print_dialog(mocker, homedir):
 
 
 @pytest.fixture(scope="function")
-def export_dialog(mocker, homedir):
+def export_dialog(mocker, homedir, export_service):
     app = QApplication([])
-    gui = Window()
+    gui = Window(export_service=export_service)
     app.setActiveWindow(gui)
     gui.show()
-    with threads(4) as [export_thread, sync_thread, main_queue_thread, file_download_thread]:
+    with threads(3) as [sync_thread, main_queue_thread, file_download_thread]:
         controller = Controller(
             "http://localhost",
             gui,
             mocker.MagicMock(),
             homedir,
             None,
-            export_thread=export_thread,
             sync_thread=sync_thread,
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_thread,
@@ -204,7 +213,7 @@ def export_dialog(mocker, homedir):
         )
         controller.authenticated_user = factory.User()
         controller.qubes = False
-        export_device = conversation.ExportDevice(controller)
+        export_device = conversation.ExportDevice(controller, export_service)
         gui.setup(controller)
         gui.login_dialog.close()
         dialog = conversation.ExportFileDialog(export_device, "file_uuid", "file_name")

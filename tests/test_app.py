@@ -7,7 +7,7 @@ import sys
 
 import pytest
 
-from securedrop_client import state
+from securedrop_client import export, state
 from securedrop_client.app import (
     DEFAULT_SDC_HOME,
     ENCODING,
@@ -139,10 +139,11 @@ def test_start_app(homedir, mocker):
     mock_args.proxy = False
     app_state = state.State()
     mocker.patch("securedrop_client.state.State", return_value=app_state)
+    export_service = export.Service()
+    mocker.patch("securedrop_client.export.Service", return_value=export_service)
 
     mocker.patch("securedrop_client.app.configure_logging")
     mock_app = mocker.patch("securedrop_client.app.QApplication")
-    thread = mocker.patch("securedrop_client.app.QThread")
     mock_win = mocker.patch("securedrop_client.app.Window")
     mocker.patch("securedrop_client.resources.path", return_value=mock_args.sdc_home + "dummy.jpg")
     mock_controller = mocker.patch("securedrop_client.app.Controller")
@@ -153,7 +154,7 @@ def test_start_app(homedir, mocker):
     start_app(mock_args, mock_qt_args)
 
     mock_app.assert_called_once_with(mock_qt_args)
-    mock_win.assert_called_once_with(app_state)
+    mock_win.assert_called_once_with(app_state, export_service)
     mock_controller.assert_called_once_with(
         "http://localhost:8081/",
         mock_win(),
@@ -162,10 +163,9 @@ def test_start_app(homedir, mocker):
         app_state,
         False,
         False,
-        thread(),
-        thread(),
-        thread(),
-        thread(),
+        mocker.ANY,
+        mocker.ANY,
+        mocker.ANY,
     )
 
 

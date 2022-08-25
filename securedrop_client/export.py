@@ -87,6 +87,21 @@ class Export(QObject):
     ) -> None:
         super().__init__()
 
+        self.connect_signals(
+            export_preflight_check_requested,
+            export_requested,
+            print_preflight_check_requested,
+            print_requested,
+        )
+
+    def connect_signals(
+        self,
+        export_preflight_check_requested: Optional[pyqtSignal] = None,
+        export_requested: Optional[pyqtSignal] = None,
+        print_preflight_check_requested: Optional[pyqtSignal] = None,
+        print_requested: Optional[pyqtSignal] = None,
+    ) -> None:
+
         # This instance can optionally react to events to prevent
         # coupling it to dependent code.
         if export_preflight_check_requested is not None:
@@ -350,3 +365,6 @@ class Export(QObject):
                 self.print_call_failure.emit(e)
 
         self.export_completed.emit(filepaths)
+
+
+Service = Export

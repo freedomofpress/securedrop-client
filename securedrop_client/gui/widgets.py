@@ -58,7 +58,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from securedrop_client import state
+from securedrop_client import export, state
 from securedrop_client.db import (
     DraftReply,
     File,
@@ -564,10 +564,16 @@ class MainView(QWidget):
     and main context view).
     """
 
-    def __init__(self, parent: QObject, app_state: Optional[state.State] = None) -> None:
+    def __init__(
+        self,
+        parent: QObject,
+        app_state: Optional[state.State] = None,
+        export_service: Optional[export.Service] = None,
+    ) -> None:
         super().__init__(parent)
 
         self._state = app_state
+        self._export_service = export_service
 
         # Set id and styles
         self.setObjectName("MainView")
@@ -665,7 +671,7 @@ class MainView(QWidget):
                 conversation_wrapper.conversation_view.update_conversation(source.collection)
             else:
                 conversation_wrapper = SourceConversationWrapper(
-                    source, self.controller, self._state
+                    source, self.controller, self._state, self._export_service
                 )
                 self.source_conversations[source.uuid] = conversation_wrapper
 
@@ -2190,6 +2196,7 @@ class FileWidget(QWidget):
         file_missing: pyqtBoundSignal,
         index: int,
         container_width: int,
+        export_service: Optional[export.Service] = None,
     ) -> None:
         """
         Given some text and a reference to the controller, make something to display a file.
@@ -2197,7 +2204,15 @@ class FileWidget(QWidget):
         super().__init__()
 
         self.controller = controller
-        self._export_device = conversation.ExportDevice(controller, controller.export_thread)
+
+        if export_service is None:
+            # Note that injecting an export service that runs in a separate
+            # thread is greatly encouraged! But it is optional because strictly
+            # speaking it is not a dependency of this FileWidget.
+            export_service = export.Service()
+
+        self._export_device = conversation.ExportDevice(controller, export_service)
+
         self.file = self.controller.get_file(file_uuid)
         self.uuid = file_uuid
         self.index = index
@@ -2602,8 +2617,15 @@ class ConversationView(QWidget):
 
     SCROLL_BAR_WIDTH = 15
 
-    def __init__(self, source_db_object: Source, controller: Controller) -> None:
+    def __init__(
+        self,
+        source_db_object: Source,
+        controller: Controller,
+        export_service: Optional[export.Service] = None,
+    ) -> None:
         super().__init__()
+
+        self._export_service = export_service
 
         self.source = source_db_object
         self.source_uuid = source_db_object.uuid
@@ -2790,6 +2812,7 @@ class ConversationView(QWidget):
             self.controller.file_missing,
             index,
             self.scroll.widget().width(),
+            self._export_service,
         )
         self.scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignLeft)
         self.current_messages[file.uuid] = conversation_item
@@ -2893,7 +2916,11 @@ class SourceConversationWrapper(QWidget):
     deleting_conversation = False
 
     def __init__(
-        self, source: Source, controller: Controller, app_state: Optional[state.State] = None
+        self,
+        source: Source,
+        controller: Controller,
+        app_state: Optional[state.State] = None,
+        export_service: Optional[export.Service] = None,
     ) -> None:
         super().__init__()
 
@@ -2919,7 +2946,7 @@ class SourceConversationWrapper(QWidget):
 
         # Create widgets
         self.conversation_title_bar = SourceProfileShortWidget(source, controller, app_state)
-        self.conversation_view = ConversationView(source, controller)
+        self.conversation_view = ConversationView(source, controller, export_service)
         self.reply_box = ReplyBoxWidget(source, controller)
         self.deletion_indicator = SourceDeletionIndicator()
         self.conversation_deletion_indicator = ConversationDeletionIndicator()
