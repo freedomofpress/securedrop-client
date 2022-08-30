@@ -18,6 +18,7 @@ class MetadataSyncJob(ApiJob):
     Update source metadata such that new download jobs can be added to the queue.
     """
 
+    DEFAULT_REQUEST_TIMEOUT = 60  # sec
     NUMBER_OF_TIMES_TO_RETRY_AN_API_CALL = 2
 
     def __init__(self, data_dir: str, app_state: Optional[state.State] = None) -> None:
@@ -40,7 +41,7 @@ class MetadataSyncJob(ApiJob):
         #
         # This timeout is used for 3 different requests: `get_sources`, `get_all_submissions`, and
         # `get_all_replies`
-        api_client.default_request_timeout = 60
+        api_client.default_request_timeout = self.DEFAULT_REQUEST_TIMEOUT
         users = api_client.get_users()
         MetadataSyncJob._update_users(session, users)
         sources, submissions, replies = get_remote_data(api_client)
