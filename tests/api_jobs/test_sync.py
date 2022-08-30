@@ -14,6 +14,8 @@ Source = namedtuple("Source", ["uuid"])
 Submission = namedtuple("Submission", ["uuid", "source_uuid", "is_file", "is_downloaded"])
 File = namedtuple("File", ["is_downloaded"])
 
+TIMEOUT_OVERRIDE = 600  # sec
+
 
 class TestUpdateState(unittest.TestCase):
     def setUp(self):
@@ -35,6 +37,31 @@ class TestUpdateState(unittest.TestCase):
         assert self._state.file("7")
         assert not self._state.file("8")
         assert self._state.file("9")
+
+
+def test_MetadataSyncJob_has_default_timeout(mocker, homedir, session, session_maker):
+    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    remote_user = factory.RemoteUser()
+    api_client.get_users = mocker.MagicMock(return_value=[remote_user])
+
+    job = MetadataSyncJob(homedir)
+    job.call_api(api_client, session)
+    assert api_client.default_request_timeout == job.DEFAULT_REQUEST_TIMEOUT
+
+
+def test_MetadataSyncJob_takes_overriden_timeout(mocker, homedir, session, session_maker):
+    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    remote_user = factory.RemoteUser()
+    api_client.get_users = mocker.MagicMock(return_value=[remote_user])
+
+    os.environ["SDEXTENDEDTIMEOUT"] = str(TIMEOUT_OVERRIDE)  # environment value must be string
+
+    job = MetadataSyncJob(homedir)
+    job.call_api(api_client, session)
+    assert api_client.default_request_timeout == TIMEOUT_OVERRIDE
+
+    # Don't pollute the environment for subsequent/out-of-order tests.
+    del os.environ["SDEXTENDEDTIMEOUT"]
 
 
 def test_MetadataSyncJob_creates_new_user(mocker, homedir, session, session_maker):
