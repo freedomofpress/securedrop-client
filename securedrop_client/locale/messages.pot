@@ -62,10 +62,10 @@ msgstr ""
 msgid "Download All Files"
 msgstr ""
 
-msgid "Delete Source Account"
+msgid "Delete Source Account…"
 msgstr ""
 
-msgid "Delete All Files and Messages"
+msgid "Delete All Files and Messages…"
 msgstr ""
 
 msgid "SecureDrop Client {}"
