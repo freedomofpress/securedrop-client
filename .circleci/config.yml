@@ -123,11 +123,15 @@ common-steps:
         export PKG_PATH=~/project/
         make securedrop-client
 
-version: 2
+version: 2.1
+
 jobs:
-  build-bullseye:
-    docker:
-      - image: debian:bullseye
+  build:
+    parameters: &parameters
+      image:
+        type: string
+    docker: &docker
+      - image: debian:<< parameters.image >>
     steps:
       - *install_build_dependencies
       - checkout
@@ -135,9 +139,9 @@ jobs:
       - *check_packaging_requirements
       - *build_debian_package
 
-  unit-test-bullseye:
-    docker:
-      - image: debian:bullseye
+  unit-test:
+    parameters: *parameters
+    docker: *docker
     steps:
       - *install_testing_dependencies
       - checkout
@@ -145,76 +149,88 @@ jobs:
       - store_test_results:
           path: test-results
 
-  integration-test-bullseye:
-    docker:
-      - image: debian:bullseye
+  integration-test:
+    parameters: *parameters
+    docker: *docker
     steps:
       - *install_testing_dependencies
       - checkout
       - *run_integration_tests
 
-  functional-test-bullseye:
-    docker:
-      - image: debian:bullseye
+  functional-test:
+    parameters: *parameters
+    docker: *docker
     steps:
       - *install_testing_dependencies
       - checkout
       - *run_functional_tests
 
-  lint-bullseye:
-    docker:
-      - image: debian:bullseye
+  lint:
+    parameters: *parameters
+    docker: *docker
     steps:
       - *install_testing_dependencies
       - checkout
       - *run_lint
 
-  check-security-bullseye:
-    docker:
-      - image: debian:bullseye
+  check-security:
+    parameters: *parameters
+    docker: *docker
     steps:
       - *install_testing_dependencies
       - checkout
       - *check_security
 
-  check-python-security-bullseye:
-    docker:
-      - image: debian:bullseye
+  check-python-security:
+    parameters: *parameters
+    docker: *docker
     steps:
       - *install_testing_dependencies
       - checkout
       - *check_python_dependencies_for_vulnerabilities
 
 
-  check-internationalization-bullseye:
-    docker:
-      - image: debian:bullseye
+  check-internationalization:
+    parameters: *parameters
+    docker: *docker
     steps:
       - *install_testing_dependencies
       - checkout
       - *check_internationalization
 
-  check-testing-requirements-bullseye:
-    docker:
-      - image: debian:bullseye
+  check-testing-requirements:
+    parameters: *parameters
+    docker: *docker
     steps:
       - *install_testing_dependencies
       - checkout
       - *check_testing_requirements
 
 workflows:
-  version: 2
   securedrop_client_ci:
-    jobs:
-      - check-testing-requirements-bullseye
-      - unit-test-bullseye
-      - integration-test-bullseye
-      - functional-test-bullseye
-      - lint-bullseye
-      - check-security-bullseye
-      - check-python-security-bullseye
-      - check-internationalization-bullseye
-      - build-bullseye
+    jobs: &jobs
+      - unit-test:
+          matrix: &matrix
+            parameters:
+              image:
+                - bullseye
+                - bookworm
+      - integration-test:
+          matrix: *matrix
+      - functional-test:
+          matrix: *matrix
+      - lint:
+          matrix: *matrix
+      - check-testing-requirements:
+          matrix: *matrix
+      - check-security:
+          matrix: *matrix
+      - check-python-security:
+          matrix: *matrix
+      - check-internationalization:
+          matrix: *matrix
+      - build:
+          matrix: *matrix
 
   nightly:
     triggers:
@@ -224,13 +240,4 @@ workflows:
             branches:
               only:
                 - main
-    jobs:
-      - check-testing-requirements-bullseye
-      - unit-test-bullseye
-      - integration-test-bullseye
-      - functional-test-bullseye
-      - lint-bullseye
-      - check-security-bullseye
-      - check-python-security-bullseye
-      - check-internationalization-bullseye
-      - build-bullseye
+    jobs: *jobs
