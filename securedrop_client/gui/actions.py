@@ -126,3 +126,58 @@ class DeleteConversation(QAction):
                 return
             self.controller.delete_conversation(self.source)
             self._state.remove_conversation_files(id)
+
+class ExportConversationFile(QAction):
+    """Export a single file to a USB drive.
+
+    This action should eventually be replaced by one that exports all currently selected files.
+    """
+
+    def __init__(
+            self, parent: QMenu, file_path: str, controller: Controller, app_state: Optional[state.State] = None
+    ) -> None:
+        self._controller = controller
+        self._state = app_state
+        self._text = _("EXPORT")
+        super().__init__(self._text, parent)
+        self.triggered.connect(self.on_triggered)
+
+        self._connect_enabled_to_conversation_changes()
+        self._connect_enabled_to_file_state_changes()
+        self._set_enabled_initial_value()
+
+    @pyqtSlot()
+    def on_triggered(self) -> None:
+        if self._controller.api is None:
+            self._controller.on_action_requiring_login()
+        else:
+            if self._state is not None:
+                if not self._conversation_selected() or not self._file_downloaded():
+                    return
+                dialog = QMessageBox()
+                dialog.setText(_("This action would export {file}").format(self.file_path))
+                dialog.exec()
+
+    def _conversation_selected(self) -> bool:
+        return True
+
+    def _file_downloaded(self) -> bool:
+        return True
+
+    def _connect_enabled_to_conversation_changes(self) -> None:
+        if self._state is not None:
+            self._state.selected_conversation_files_changed.connect(
+                self._on_selected_conversation_files_changed
+            )
+
+    @pyqtSlot()
+    def _on_selected_conversation_files_changed(self) -> None:
+        if self._state is None:
+            return
+        if self._state.selected_conversation_has_downloadable_files:
+            self.setEnabled(True)
+        else:
+            self.setEnabled(False)
+
+    def _set_enabled_initial_value(self) -> None:
+        self._on_selected_conversation_files_changed()

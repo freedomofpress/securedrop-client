@@ -2262,7 +2262,12 @@ class FileWidget(QWidget):
         file_options_layout.addWidget(self.print_button)
 
         self.download_button.installEventFilter(self)
-        self.export_button.clicked.connect(self._on_export_clicked)
+        #self.export_button.clicked.connect(self._on_export_clicked)
+
+        export = actions.ExportConversationFile(
+            self, self.file.location, self.controller, app_state
+        )
+        self.export_button.clicked.connect(export.triggered)
         self.print_button.clicked.connect(self._on_print_clicked)
 
         self.file_name = SecureQLabel(
