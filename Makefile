@@ -26,7 +26,7 @@ safety: ## Runs `safety check` to check python dependencies for vulnerabilities
 		done
 
 .PHONY: lint
-lint: check-isort check-black ## Run isort, black and flake8
+lint: check-isort check-black mypy ## Run isort, black and flake8 and mypy
 	@flake8 securedrop_proxy tests
 
 .PHONY: mypy
