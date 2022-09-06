@@ -4,8 +4,8 @@
 #
 #    pip-compile --allow-unsafe --generate-hashes --output-file=requirements/dev-sdw-requirements.txt requirements/dev-sdw-requirements.in
 #
-alembic==1.0.2 \
-    --hash=sha256:04bcb970ca8659c3607ddd8ffd86cc9d6a99661c9bc590955e8813c66bfa582b
+alembic==1.1.0 \
+    --hash=sha256:4a4811119efbdc5259d1f4c8f6de977b36ad3bcc919f59a29c2960c5ef9149e4
     # via -r requirements/requirements.in
 argcomplete==2.0.0 \
     --hash=sha256:6372ad78c89d662035101418ae253668445b391755cfe94ea52f1b9d22425b20 \
