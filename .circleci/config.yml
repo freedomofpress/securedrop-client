@@ -94,14 +94,23 @@ common-steps:
         make install-deps
         PKG_DIR=~/project make requirements
 
-  - &verify_requirements
+  - &check_packaging_requirements
     run:
-      name: Ensure that build-requirements.txt and requirements.txt are in sync.
+      name: Ensure that the same Python requirements are used for packaging and production.
       command: |
         cd ~/project
-        # Return 1 if unstaged changes exist (after `make requirements` in the
-        # previous run step), else return 0.
-        git diff --quiet
+        # Fail if unstaged changes exist (after `make requirements` in the previous run step).
+        git diff --exit-code
+
+  - &check_testing_requirements
+    run:
+      name: Ensure that the same Python requirements are used for development/testing and production.
+      command: |
+        set -e
+        make venv
+        source .venv/bin/activate
+        make requirements
+        git diff --exit-code
 
   - &build_debian_package
     run:
@@ -123,7 +132,7 @@ jobs:
       - *install_build_dependencies
       - checkout
       - *install_packaging_dependencies
-      - *verify_requirements
+      - *check_packaging_requirements
       - *build_debian_package
 
   unit-test-bullseye:
@@ -185,10 +194,19 @@ jobs:
       - checkout
       - *check_internationalization
 
+  check-testing-requirements-bullseye:
+    docker:
+      - image: debian:bullseye
+    steps:
+      - *install_testing_dependencies
+      - checkout
+      - *check_testing_requirements
+
 workflows:
   version: 2
   securedrop_client_ci:
     jobs:
+      - check-testing-requirements-bullseye
       - unit-test-bullseye
       - integration-test-bullseye
       - functional-test-bullseye
@@ -207,6 +225,7 @@ workflows:
               only:
                 - main
     jobs:
+      - check-testing-requirements-bullseye
       - unit-test-bullseye
       - integration-test-bullseye
       - functional-test-bullseye
