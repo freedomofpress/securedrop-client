@@ -57,7 +57,7 @@ make venv
 source .venv/bin/activate
 ```
 
-   * You will need Python 3.7 to run the client. If it's not the default `python3` on your installation, you can use `PYTHON=python3.7 make venv` to explicitly use a `python3.7` binary.
+   * You will need Python 3.9 to run the client. If it's not the default `python3` on your installation, you can use `PYTHON=python3.9 make venv` to explicitly use a `python3.9` binary.
    * `make venv` will also run `make hooks`, which will configure Git to use the hooks found in `.githooks/` to check certain code-quality standards on new commits in this repository.  These checks are also enforced in CI.
 
 4. Run SecureDrop Client
@@ -132,10 +132,10 @@ It is possible to run the development environment in macOS on non-Apple Silicon 
 2. If it is not already installed, install Homebrew via the instructions at https://brew.sh/
 3. Install dependencies via Homebrew: `brew install pyenv gnupg oath-toolkit`
 4. Set up pyenv following the steps here: https://github.com/pyenv/pyenv#basic-github-checkout -  starting with #2 ("Configure your shell's environment for Pyenv"). You may need to close and reopen the terminal window for changes to be applied.
-5. install and select the latest version of python 3.7.x
+5. install and select the latest version of python 3.9.x
    ```
-   pyenv install 3.7.x
-   pyenv local 3.7.x
+   pyenv install 3.9.x
+   pyenv local 3.9.x
    ```
 6. clone the SecureDrop Client repo and set up its virtual environment
    ```
@@ -199,7 +199,7 @@ Or [manually initialize](https://github.com/freedomofpress/securedrop-client/blo
 ```
 git clone git@github.com:freedomofpress/securedrop-client.git
 cd securedrop-client
-virtualenv --python=python3.7 .venv
+virtualenv --python=python3.9 .venv
 source .venv/bin/activate
 pip install --require-hashes -r requirements/dev-requirements.txt
 ```
@@ -407,7 +407,7 @@ import pdb; pdb.set_trace()
 Then you can use [`pdb` commands](https://docs.python.org/3/library/pdb.html#debugger-commands) as normal.
 
 Logs can be found in the `{sdc-home}/logs`. If you are debugging a version of this application installed from a deb package in Qubes, you can debug issues by looking at the log file in `~/.securedrop_client/logs/client.log`. You can also add additional log lines in the running code in
-`/opt/venvs/securedrop-client/lib/python3.7/site-packages/securedrop_client/`.
+`/opt/venvs/securedrop-client/lib/python3.9/site-packages/securedrop_client/`.
 
 
 [MAY]: https://datatracker.ietf.org/doc/html/rfc2119#section-5
