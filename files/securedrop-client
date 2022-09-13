@@ -10,5 +10,13 @@ cd /opt/venvs/securedrop-client
 # Check if qubes-db exists (and we are running in qubes)
 if [ ! -f "/usr/bin/qubesdb-read" ]; then echo "Not running in Qubes, client not starting." && exit; fi
 
+# EXPERIMENTAL(#1547): Check for the SDEXTENDEDTIMEOUT_N service flag and export it as
+# SDEXTENDEDTIMEOUT=N.
+timeout_flag_value=$(qubesdb-list /qubes-service/SDEXTENDEDTIMEOUT_)
+if [ -n "$timeout_flag_value" ]; then
+	echo "SDEXTENDEDTIMEOUT=$timeout_flag_value"
+	export SDEXTENDEDTIMEOUT="$timeout_flag_value"
+fi
+
 # Now execute the actual client, only if running in an sd-app
 if [ "$(qubesdb-read /name)" = "sd-app" ]; then ./bin/sd-client; else echo "Not running in sd-app, client not starting."; fi
