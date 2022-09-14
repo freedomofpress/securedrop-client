@@ -2,6 +2,7 @@
 A dialog that allows journalists to export sensitive files to a USB drive.
 """
 from gettext import gettext as _
+from typing import Optional
 
 from pkg_resources import resource_string
 from PyQt5.QtCore import QSize, Qt, pyqtSlot
@@ -32,7 +33,8 @@ class ExportDialog(ModalDialog):
         self.file_name = SecureQLabel(
             file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
         ).text()
-        self.error_status = ""  # Hold onto the error status we receive from the Export VM
+        # Hold onto the error status we receive from the Export VM
+        self.error_status: Optional[ExportStatus] = None
 
         # Connect device signals to slots
         self._device.export_preflight_check_succeeded.connect(
@@ -248,16 +250,16 @@ class ExportDialog(ModalDialog):
         self.passphrase_field.setDisabled(False)
         self._update_dialog(error.status)
 
-    def _update_dialog(self, error_status: str) -> None:
+    def _update_dialog(self, error_status: ExportStatus) -> None:
         self.error_status = error_status
         # If the continue button is disabled then this is the result of a background preflight check
         if not self.continue_button.isEnabled():
             self.continue_button.clicked.disconnect()
-            if self.error_status == ExportStatus.BAD_PASSPHRASE.value:
+            if self.error_status == ExportStatus.BAD_PASSPHRASE:
                 self.continue_button.clicked.connect(self._show_passphrase_request_message_again)
-            elif self.error_status == ExportStatus.USB_NOT_CONNECTED.value:
+            elif self.error_status == ExportStatus.USB_NOT_CONNECTED:
                 self.continue_button.clicked.connect(self._show_insert_usb_message)
-            elif self.error_status == ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value:
+            elif self.error_status == ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR:
                 self.continue_button.clicked.connect(self._show_insert_encrypted_usb_message)
             else:
                 self.continue_button.clicked.connect(self._show_generic_error_message)
@@ -265,11 +267,11 @@ class ExportDialog(ModalDialog):
             self.continue_button.setEnabled(True)
             self.continue_button.setFocus()
         else:
-            if self.error_status == ExportStatus.BAD_PASSPHRASE.value:
+            if self.error_status == ExportStatus.BAD_PASSPHRASE:
                 self._show_passphrase_request_message_again()
-            elif self.error_status == ExportStatus.USB_NOT_CONNECTED.value:
+            elif self.error_status == ExportStatus.USB_NOT_CONNECTED:
                 self._show_insert_usb_message()
-            elif self.error_status == ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR.value:
+            elif self.error_status == ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR:
                 self._show_insert_encrypted_usb_message()
             else:
                 self._show_generic_error_message()
