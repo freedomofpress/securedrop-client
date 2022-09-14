@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.8.1
+* Add experimental support for a custom timeout that allows the SecureDrop Client to retrieve a larger number of sources (#1552)
+
 ## 0.8.0
 * Drop historical versions of database schema (#1517)
 * Replace "show/hide passphrase" widget with checkbox to increase accessibility (#1430)
