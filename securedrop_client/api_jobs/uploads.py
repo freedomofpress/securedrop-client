@@ -140,16 +140,12 @@ class SendReplyJob(SingleObjectApiJob):
             session.add(draft_reply_db_object)
             session.commit()
         except SQLAlchemyError as e:
-            logger.info(
-                "SQL error when setting reply {uuid} as failed, skipping: {e}".format(
-                    uuid=self.reply_uuid, e=e
-                )
-            )
+            logger.info(f"SQL error when setting reply {self.reply_uuid} as failed, skipping")
+            logger.debug(f"SQL error when setting reply {self.reply_uuid} as failed, skipping: {e}")
         except Exception as e:
-            logger.error(
-                "Unknown error when setting reply {uuid} as failed, skipping: {e}".format(
-                    uuid=self.reply_uuid, e=e
-                )
+            logger.error(f"Unknown error when setting reply {self.reply_uuid} as failed, skipping")
+            logger.debug(
+                f"Unknown error when setting reply {self.reply_uuid} as failed, skipping: {e}"
             )
 
     def _make_call(self, encrypted_reply: str, api_client: API) -> sdclientapi.Reply:

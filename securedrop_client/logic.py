@@ -122,7 +122,8 @@ class APICallRunner(QObject):
             if isinstance(ex, (RequestTimeoutError, ServerConnectionError)):
                 self.call_timed_out.emit()
 
-            logger.error(ex)
+            logger.error("Call failed")
+            logger.debug(f"Call failed: {ex}")
             self.result = ex
             self.call_failed.emit()
         else:
@@ -673,7 +674,8 @@ class Controller(QObject):
         a sync fails is ApiInaccessibleError then we need to log the user out for security reasons
         and show them the login window in order to get a new token.
         """
-        logger.warning("sync failure: {}".format(result))
+        logger.warning("sync failure")
+        logger.debug(f"sync failure: {result}")
 
         if isinstance(result, ApiInaccessibleError):
             # Don't show login window if the user is already logged out
@@ -872,7 +874,8 @@ class Controller(QObject):
             message = storage.get_message(self.session, exception.uuid)
             self.message_download_failed.emit(message.source.uuid, message.uuid, str(message))
         except Exception as e:
-            logger.error(f"Could not emit message_download_failed: {e}")
+            logger.error("Could not emit message_download_failed")
+            logger.debug(f"Could not emit message_download_failed: {e}")
 
     def download_new_replies(self) -> None:
         replies = storage.find_new_replies(self.session)
@@ -906,7 +909,8 @@ class Controller(QObject):
             reply = storage.get_reply(self.session, exception.uuid)
             self.reply_download_failed.emit(reply.source.uuid, reply.uuid, str(reply))
         except Exception as e:
-            logger.error(f"Could not emit reply_download_failed: {e}")
+            logger.error("Could not emit reply_download_failed")
+            logger.debug(f"Could not emit reply_download_failed: {e}")
 
     def downloaded_file_exists(self, file: db.File) -> bool:
         """

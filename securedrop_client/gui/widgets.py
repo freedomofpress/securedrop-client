@@ -2337,7 +2337,8 @@ class FileWidget(QWidget):
         try:
             self.file_size.setText(humanize_filesize(self.file.size))
         except Exception as e:
-            logger.error(f"Could not update file size on FileWidget: {e}")
+            logger.error("Could not update file size on FileWidget")
+            logger.debug(f"Could not update file size on FileWidget: {e}")
             self.file_size.setText("")
 
     def _set_file_state(self) -> None:
