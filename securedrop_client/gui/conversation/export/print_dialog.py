@@ -1,4 +1,5 @@
 from gettext import gettext as _
+from typing import Optional
 
 from PyQt5.QtCore import QSize, pyqtSlot
 
@@ -20,7 +21,8 @@ class PrintDialog(ModalDialog):
         self.file_name = SecureQLabel(
             file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
         ).text()
-        self.error_status = ""  # Hold onto the error status we receive from the Export VM
+        # Hold onto the error status we receive from the Export VM
+        self.error_status: Optional[ExportStatus] = None
 
         # Connect device signals to slots
         self._device.print_preflight_check_succeeded.connect(
@@ -119,7 +121,7 @@ class PrintDialog(ModalDialog):
         # If the continue button is disabled then this is the result of a background preflight check
         if not self.continue_button.isEnabled():
             self.continue_button.clicked.disconnect()
-            if error.status == ExportStatus.PRINTER_NOT_FOUND.value:
+            if error.status == ExportStatus.PRINTER_NOT_FOUND:
                 self.continue_button.clicked.connect(self._show_insert_usb_message)
             else:
                 self.continue_button.clicked.connect(self._show_generic_error_message)
@@ -127,7 +129,7 @@ class PrintDialog(ModalDialog):
             self.continue_button.setEnabled(True)
             self.continue_button.setFocus()
         else:
-            if error.status == ExportStatus.PRINTER_NOT_FOUND.value:
+            if error.status == ExportStatus.PRINTER_NOT_FOUND:
                 self._show_insert_usb_message()
             else:
                 self._show_generic_error_message()
