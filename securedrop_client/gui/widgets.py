@@ -81,6 +81,7 @@ from securedrop_client.gui.actions import (
 )
 from securedrop_client.gui.base import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.gui.conversation import DeleteConversationDialog
+from securedrop_client.gui.datetime_helpers import format_datetime_local
 from securedrop_client.gui.source import DeleteSourceDialog
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_css, load_icon, load_image, load_movie
@@ -1366,7 +1367,7 @@ class SourceWidget(QWidget):
         try:
             self.controller.session.refresh(self.source)
             self.last_updated = self.source.last_updated
-            self.timestamp.setText(_(arrow.get(self.source.last_updated).format("MMM D")))
+            self.timestamp.setText(_(format_datetime_local(self.source.last_updated)))
             self.name.setText(self.source.journalist_designation)
 
             self.set_snippet(self.source_uuid)
@@ -3528,7 +3529,7 @@ class SourceProfileShortWidget(QWidget):
             self.MARGIN_LEFT, self.VERTICAL_MARGIN, self.MARGIN_RIGHT, self.VERTICAL_MARGIN
         )
         title = TitleLabel(self.source.journalist_designation)
-        self.updated = LastUpdatedLabel(_(arrow.get(self.source.last_updated).format("MMM D")))
+        self.updated = LastUpdatedLabel(_(format_datetime_local(self.source.last_updated)))
         menu = SourceMenuButton(self.source, self.controller, app_state)
         header_layout.addWidget(title, alignment=Qt.AlignLeft)
         header_layout.addStretch()
@@ -3549,4 +3550,4 @@ class SourceProfileShortWidget(QWidget):
         Ensure the timestamp is always kept up to date with the latest activity
         from the source.
         """
-        self.updated.setText(_(arrow.get(self.source.last_updated).format("MMM D")))
+        self.updated.setText(_(format_datetime_local(self.source.last_updated)))
