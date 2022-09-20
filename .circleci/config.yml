@@ -99,8 +99,8 @@ common-steps:
       name: Ensure that the same Python requirements are used for packaging and production.
       command: |
         cd ~/project
-        # Fail if unstaged changes exist (after `make requirements` in the previous run step).
-        git diff --exit-code
+        # Fail if unstaged changes exist that are not comments (after `make requirements` in the previous run step).
+        git diff --ignore-matching-lines=# --exit-code
 
   - &check_testing_requirements
     run:
@@ -110,7 +110,7 @@ common-steps:
         make venv
         source .venv/bin/activate
         make requirements
-        git diff --exit-code
+        git diff --ignore-matching-lines=# --exit-code
 
   - &build_debian_package
     run:
