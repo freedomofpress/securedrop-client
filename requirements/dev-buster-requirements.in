@@ -1,5 +1,0 @@
--r dev-sdw-requirements.in
-PyQt5==5.11.3  # Match version of system package on Buster
-sip==4.19.8  # Match version of system package on Buster
-semgrep>=0.93.0  # Previous versions can't parse all the rules
-black>=22.3.0  # So that semgrep's click dependency doesn't break black

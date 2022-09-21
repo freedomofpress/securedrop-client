@@ -22,14 +22,6 @@ venv-sdw: hooks ## Provision a Python 3 virtualenv for development on a prod-lik
 	@echo "Make sure to install the apt packages for system Qt."
 	@echo "Then run: source .venv/bin/activate"
 
-.PHONY: venv-buster
-venv-buster: hooks ## Provision a Python 3 virtualenv for development on Linux
-	$(PYTHON) -m venv .venv
-	.venv/bin/pip install --upgrade pip wheel
-	.venv/bin/pip install --require-hashes -r "requirements/dev-buster-requirements.txt"
-	@echo "#################"
-	@echo "Make sure to run: source .venv/bin/activate"
-
 .PHONY: venv-mac
 venv-mac: hooks ## Provision a Python 3 virtualenv for development on macOS
 	$(PYTHON) -m venv .venv
@@ -157,10 +149,6 @@ check: clean check-black check-isort semgrep bandit lint mypy test-random test-i
 dev-requirements:  ## Update dev-*requirements.txt files if pinned versions do not comply with the dependency specifications in dev-*requirements.in
 	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-requirements.txt requirements/dev-requirements.in
 	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-sdw-requirements.txt requirements/dev-sdw-requirements.in
-
-.PHONY: dev-buster-requirements
-dev-buster-requirements:  ## Update dev-*requirements.txt files if pinned versions do not comply with the dependency specifications in dev-*requirements.in
-	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-buster-requirements.txt requirements/dev-buster-requirements.in
 
 .PHONY: update-dev-dependencies
 update-dev-dependencies:  ## Update dev requirements in case there are newer versions of packages or updates to prod dependencies
