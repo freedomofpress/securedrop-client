@@ -3,12 +3,13 @@ all: help
 
 # Default to plain "python3"
 PYTHON ?= python3
+VERSION_CODENAME ?= bullseye
 
 .PHONY: venv
 venv: hooks ## Provision a Python 3 virtualenv for development on Linux
 	$(PYTHON) -m venv .venv
 	.venv/bin/pip install --upgrade pip wheel
-	.venv/bin/pip install --require-hashes -r "requirements/dev-requirements.txt"
+	.venv/bin/pip install --require-hashes -r "requirements/dev-${VERSION_CODENAME}-requirements.txt"
 	@echo "#################"
 	@echo "Make sure to run: source .venv/bin/activate"
 
@@ -147,12 +148,14 @@ check: clean check-black check-isort semgrep bandit lint mypy test-random test-i
 
 .PHONY: dev-requirements
 dev-requirements:  ## Update dev-*requirements.txt files if pinned versions do not comply with the dependency specifications in dev-*requirements.in
-	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-requirements.txt requirements/dev-requirements.in
+	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-bullseye-requirements.txt requirements/dev-bullseye-requirements.in
+	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-bookworm-requirements.txt requirements/dev-bookworm-requirements.in
 	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-sdw-requirements.txt requirements/dev-sdw-requirements.in
 
 .PHONY: update-dev-dependencies
 update-dev-dependencies:  ## Update dev requirements in case there are newer versions of packages or updates to prod dependencies
-	if test -f "requirements/dev-requirements.txt"; then rm -r requirements/dev-requirements.txt; fi
+	if test -f "requirements/dev-bullseye-requirements.txt"; then rm -r requirements/dev-bullseye-requirements.txt; fi
+	if test -f "requirements/dev-bookworm-requirements.txt"; then rm -r requirements/dev-bookworm-requirements.txt; fi
 	if test -f "requirements/dev-sdw-requirements.txt"; then rm -r requirements/dev-sdw-requirements.txt; fi
 	$(MAKE) dev-requirements
 
