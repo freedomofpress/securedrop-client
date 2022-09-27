@@ -3,7 +3,7 @@ arrow==0.12.1
 certifi>=2021.5.30
 charset-normalizer>=2.0.4
 idna>=2.7
-mako==1.0.7
+mako==1.2.2
 markupsafe>=1.1
 pathlib2==2.3.2
 python-dateutil==2.7.5
