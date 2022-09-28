@@ -7,12 +7,13 @@ import sys
 
 import subprocess
 
+from securedrop_export.enums import ExportEnum
 from securedrop_export.disk.cli import CLI
 from securedrop_export.disk.volume import EncryptionScheme, Volume
-from securedrop_export.disk.exceptions import ExportException
+from securedrop_export.exceptions import ExportException
 from securedrop_export.disk.status import Status
 
-from securedrop_export import export
+from securedrop_export.archive import Archive
 
 TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config.json")
 
@@ -214,9 +215,10 @@ class TestCli:
         with pytest.raises(ExportException):
             cli.unlock_luks_volume(pd, key)
 
+    @mock.patch("os.path.exists", return_value=True)
     @mock.patch("subprocess.check_output", return_value=b"\n")
     @mock.patch("subprocess.check_call", return_value=0)
-    def test_mount_volume(self, mocked_output, mocked_call):
+    def test_mount_volume(self, mocked_output, mocked_call, mocked_path):
         cli = CLI()
         vol = Volume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
@@ -225,9 +227,10 @@ class TestCli:
         )
         result = cli.mount_volume(vol)
 
+    @mock.patch("os.path.exists", return_value=True)
     @mock.patch("subprocess.check_output", return_value=b"/dev/pretend/luks-id-123456\n")
     @mock.patch("subprocess.check_call", return_value=0)
-    def test_mount_volume_already_mounted(self, mocked_output, mocked_call):
+    def test_mount_volume_already_mounted(self, mocked_output, mocked_call, mocked_path):
         cli = CLI()
         md = Volume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
@@ -236,9 +239,10 @@ class TestCli:
         )
         result = cli.mount_volume(md)
 
+    @mock.patch("os.path.exists", return_value=True)
     @mock.patch("subprocess.check_output", return_value=b"\n")
     @mock.patch("subprocess.check_call", return_value=0)
-    def test_mount_volume_mkdir(self, mocked_output, mocked_subprocess):
+    def test_mount_volume_mkdir(self, mocked_output, mocked_subprocess, mocked_path):
         cli = CLI()
         md = Volume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
@@ -339,7 +343,7 @@ class TestCli:
             encryption=EncryptionScheme.LUKS,
         )
 
-        submission = export.SDExport("testfile", TEST_CONFIG)
+        submission = Archive("testfile", TEST_CONFIG)
 
         cli.write_data_to_device(submission.tmpdir, submission.target_dirname, vol)
 
@@ -354,23 +358,9 @@ class TestCli:
             mountpoint=cli._DEFAULT_MOUNTPOINT,
             encryption=EncryptionScheme.LUKS,
         )
-        submission = export.SDExport("testfile", TEST_CONFIG)
+        submission = Archive("testfile", TEST_CONFIG)
 
         with pytest.raises(ExportException):
             cli.write_data_to_device(submission.tmpdir, submission.target_dirname, vol)
             cleanup_mock.assert_called_once()
 
-    @pytest.mark.parametrize("status", [s for s in Status])
-    def test_write_status(self, status, capsys):
-        cli = CLI()
-
-        cli.write_status(status)
-        captured = capsys.readouterr()
-        assert captured.out == status.value + "\n"
-
-    @pytest.mark.parametrize("invalid_status", ["foo", ";ls", "&& echo 0"])
-    def test_write_status_error(self, invalid_status, capsys):
-        cli = CLI()
-
-        with pytest.raises(ValueError):
-            cli.write_status(Status.value_of(invalid_status))

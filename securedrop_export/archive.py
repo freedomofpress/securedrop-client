@@ -10,57 +10,80 @@ import subprocess
 import sys
 import tempfile
 
-from securedrop_export.enums import Command
-from securedrop_export.exceptions import ExportStatus
+from securedrop_export.exceptions import ExportException
+from securedrop_export.enums import Command, ExportEnum
 from securedrop_export.utils import safe_extractall
 
 logger = logging.getLogger(__name__)
 
 
+class Status(ExportEnum):
+    ERROR_ARCHIVE_METADATA = "ERROR_ARCHIVE_METADATA"
+    ERROR_METADATA_PARSING = "ERROR_METADATA_PARSING"
+    ERROR_EXTRACTION = "ERROR_EXTRACTION"
+
 class Metadata(object):
     """
     Object to parse, validate and store json metadata from the sd-export archive.
+
+    Create a Metadata object by using the `create_and_validate()` method to
+    ensure well-formed and valid metadata.
     """
 
     METADATA_FILE = "metadata.json"
-
     SUPPORTED_ENCRYPTION_METHODS = ["luks"]
 
-    def __init__(self, archive_path):
-        # Calling create_and_validate() is the preferred way to initialize
+    # Slightly underhanded way of ensuring that a Metadata object is not instantiated
+    # directly; instead, the create_and_validate() method is used
+    __key = object()
+
+
+    def __init__(self, key, archive_path):
+        if not key == Metadata.__key:
+            raise ValueError("Must use create_and_validate() to create Metadata object")
+
+        # Initialize
         self.metadata_path = os.path.join(archive_path, self.METADATA_FILE)
 
-    @staticmethod
+
+    @classmethod
     def create_and_validate(cls, archive_path) -> 'Metadata':
         """
         Create and validate metadata object. Raise ExportException for invalid metadata.
         """
-        md = cls(archive_path)
+        md = Metadata(cls.__key, archive_path)
+        md.validate()
 
+        return md
+
+
+    def validate(self):
+        """
+        Validate Metadata.
+        Throw ExportException if invalid state is found.
+        """
         try:
-            with open(md.metadata_path) as f:
+            with open(self.metadata_path) as f:
                 logger.info("Parsing archive metadata")
                 json_config = json.loads(f.read())
-                md.export_method = json_config.get("device", None)
-                md.encryption_method = json_config.get("encryption_method", None)
-                md.encryption_key = json_config.get("encryption_key", None)
+                self.export_method = json_config.get("device", None)
+                self.encryption_method = json_config.get("encryption_method", None)
+                self.encryption_key = json_config.get("encryption_key", None)
                 logger.info(
                     "Exporting to device {} with encryption_method {}".format(
-                        md.export_method, md.encryption_method
+                        self.export_method, self.encryption_method
                     )
                 )
 
-        # Validate metadata - this will fail if command is not in list of supported commands
-        md.command = Commmand.value_of(md.export_method)
-        if md.command is Commmand.EXPORT and not md.encryption_method in md.SUPPORTED_ENCRYPTION_METHODS:
-            logger.error("Unsuported encryption method")
-            raise ExportException(ExportStatus.ERROR_ARCHIVE_METADATA)
+            # Validate metadata - this will fail if command is not in list of supported commands
+            self.command = Command(self.export_method)
+            if self.command is Command.EXPORT and not self.encryption_method in self.SUPPORTED_ENCRYPTION_METHODS:
+                logger.error("Unsuported encryption method")
+                raise ExportException(sdstatus=Status.ERROR_ARCHIVE_METADATA)
 
         except Exception as ex:
             logger.error("Metadata parsing failure")
-            raise ExportException(ExportStatus.ERROR_METADATA_PARSING) from ex
-
-        return md
+            raise ExportException(sdstatus=Status.ERROR_METADATA_PARSING) from ex
 
 
 class Archive(object):
@@ -79,6 +102,6 @@ class Archive(object):
             safe_extractall(self.archive, self.tmpdir)
         except Exception as ex:
             logger.error("Unable to extract tarball: {}".format(ex))
-            raise ExportException(ExportStatus.ERROR_EXTRACTION) from ex
+            raise ExportException(sdstatus=Status.ERROR_EXTRACTION) from ex
 
     

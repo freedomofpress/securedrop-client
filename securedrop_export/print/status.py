@@ -1,4 +1,4 @@
-from securedrop_export.exceptions import ExportEnum
+from securedrop_export.enums import ExportEnum
 
 class Status(ExportEnum):
 
@@ -11,3 +11,8 @@ class Status(ExportEnum):
 
     # Printer export errors
     ERROR_PRINT = "ERROR_PRINT"
+
+    # New
+    PREFLIGHT_SUCCESS = "PRINTER_PREFLIGHT_SUCCESS"
+    TEST_SUCCESS = "PRINTER_TEST_SUCCESS"
+    PRINT_SUCCESS = "PRINTER_SUCCESS"

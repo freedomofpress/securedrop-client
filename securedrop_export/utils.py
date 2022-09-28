@@ -2,6 +2,14 @@ import os
 import tarfile
 from pathlib import Path
 from typing import Optional, Union
+import subprocess
+import logging
+
+from securedrop_export.enums import ExportEnum as Status
+from securedrop_export.exceptions import ExportException
+
+
+logger = logging.getLogger(__name__)
 
 
 def safe_mkdir(
@@ -23,10 +31,10 @@ def safe_mkdir(
     if not base_path.is_absolute():
         raise ValueError(f"Base directory '{base_path}' must be an absolute path")
 
-    check_path_traversal(base_path)
+    _check_path_traversal(base_path)
 
     if relative_path:
-        check_path_traversal(relative_path)
+        _check_path_traversal(relative_path)
         full_path = base_path.joinpath(relative_path)
     else:
         full_path = base_path
@@ -35,7 +43,7 @@ def safe_mkdir(
     #
     # Note: We do not use parents=True because the parent directories will not be created with the
     # specified mode. Parents are created using system default permissions, which we modify to be
-    # 700 via os.umask in the SDExport contructor. Creating directories one-by-one with mode=0o0700
+    # 700 via os.umask in the Archive contructor. Creating directories one-by-one with mode=0o0700
     # is not necessary but adds defense in depth.
     relative_path = relative_filepath(full_path, base_path)
     for parent in reversed(relative_path.parents):
@@ -45,7 +53,7 @@ def safe_mkdir(
     full_path.mkdir(mode=0o0700, exist_ok=True)
 
     # Check permissions after creating the directories
-    check_all_permissions(relative_path, base_path)
+    _check_all_permissions(relative_path, base_path)
 
 
 def safe_extractall(archive_file_path: str, dest_path: str) -> None:
@@ -65,14 +73,14 @@ def safe_extractall(archive_file_path: str, dest_path: str) -> None:
         for file_info in tar.getmembers():
             file_info.mode = 0o700 if file_info.isdir() else 0o600
 
-            check_path_traversal(file_info.name)
+            _check_path_traversal(file_info.name)
 
             # If the path is relative then we don't need to check that it resolves to dest_path
             if Path(file_info.name).is_absolute():
                 relative_filepath(file_info.name, dest_path)
 
             if file_info.islnk() or file_info.issym():
-                check_path_traversal(file_info.linkname)
+                _check_path_traversal(file_info.linkname)
                 # If the path is relative then we don't need to check that it resolves to dest_path
                 if Path(file_info.linkname).is_absolute():
                     relative_filepath(file_info.linkname, dest_path)
@@ -92,7 +100,7 @@ def relative_filepath(filepath: Union[str, Path], base_dir: Union[str, Path]) ->
     return Path(filepath).resolve().relative_to(base_dir)
 
 
-def check_path_traversal(filename_or_filepath: Union[str, Path]) -> None:
+def _check_path_traversal(filename_or_filepath: Union[str, Path]) -> None:
     """
     Raise ValueError if filename_or_filepath does any path traversal. This works on filenames,
     relative paths, and absolute paths.
@@ -116,7 +124,7 @@ def check_path_traversal(filename_or_filepath: Union[str, Path]) -> None:
         raise ValueError(f"Unsafe file or directory name: '{filename_or_filepath}'")
 
 
-def check_all_permissions(path: Union[str, Path], base_path: Union[str, Path]) -> None:
+def _check_all_permissions(path: Union[str, Path], base_path: Union[str, Path]) -> None:
     """
     Check that the permissions of each directory between base_path and path are set to 700.
     """
@@ -126,16 +134,16 @@ def check_all_permissions(path: Union[str, Path], base_path: Union[str, Path]) -
         return
 
     Path(full_path).chmod(0o700)
-    check_dir_permissions(full_path)
+    _check_dir_permissions(full_path)
 
     relative_path = relative_filepath(full_path, base_path)
     for parent in relative_path.parents:
         full_path = base_path.joinpath(parent)
         Path(full_path).chmod(0o700)
-        check_dir_permissions(str(full_path))
+        _check_dir_permissions(str(full_path))
 
 
-def check_dir_permissions(dir_path: Union[str, Path]) -> None:
+def _check_dir_permissions(dir_path: Union[str, Path]) -> None:
     """
     Check that a directory has ``700`` as the final 3 bytes. Raises a ``RuntimeError`` otherwise.
     """
@@ -144,3 +152,24 @@ def check_dir_permissions(dir_path: Union[str, Path]) -> None:
         masked = stat_res & 0o777
         if masked & 0o077:
             raise RuntimeError("Unsafe permissions ({}) on {}".format(oct(stat_res), dir_path))
+
+
+
+def safe_check_call(command: str, error_status: Status, ignore_stderr_startswith=None):
+    """
+    Wrap subprocess.check_output to ensure we wrap CalledProcessError and return
+    our own exception, and log the error messages.
+    """
+    try:
+        err = subprocess.run(command, check=True, capture_output=True).stderr
+        # ppdc and lpadmin may emit warnings we are aware of which should not be treated as
+        # user facing errors
+        if ignore_stderr_startswith and err.startswith(ignore_stderr_startswith):
+            logger.info("Encountered warning: {}".format(err.decode("utf-8")))
+        elif err == b"":
+            # Nothing on stderr and returncode is 0, we're good
+            pass
+        else:
+            raise ExportException(sdstatus=error_status, sderror=err)
+    except subprocess.CalledProcessError as ex:
+        raise ExportException(sdstatus=error_status, sderror=ex.output)

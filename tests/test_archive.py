@@ -9,7 +9,8 @@ import pytest
 import tarfile
 from io import BytesIO
 
-from securedrop_export import export
+from securedrop_export.exceptions import ExportException
+from securedrop_export.archive import Archive, Metadata, Status
 
 TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config.json")
 BAD_TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config-bad.json")
@@ -46,7 +47,7 @@ def test_extract_tarball():
 
             archive.close()
 
-        submission = export.SDExport(archive_path, TEST_CONFIG)
+        submission = Archive(archive_path, TEST_CONFIG)
         assert oct(os.stat(submission.tmpdir).st_mode) == "0o40700"
 
         submission.extract_tarball()
@@ -58,7 +59,7 @@ def test_extract_tarball():
         # Subdirectories that are added as members are extracted with 700 permissions
         assert oct(os.stat(os.path.join(submission.tmpdir, "some")).st_mode) == "0o40700"
         # Subdirectories that are not added as members are extracted with 700 permissions
-        # because os.umask(0o077) is set in the SDExport constructor.
+        # because os.umask(0o077) is set in the Archive constructor.
         assert oct(os.stat(os.path.join(submission.tmpdir, "some", "dirs")).st_mode) == "0o40700"
 
 
@@ -85,7 +86,7 @@ def test_extract_tarball_with_symlink():
             archive.addfile(symlink_info)
             archive.close()
 
-        submission = export.SDExport(archive_path, TEST_CONFIG)
+        submission = Archive(archive_path, TEST_CONFIG)
         assert oct(os.stat(submission.tmpdir).st_mode) == "0o40700"
 
         submission.extract_tarball()
@@ -120,9 +121,9 @@ def test_extract_tarball_raises_if_doing_path_traversal():
             archive.addfile(traversed_file_info, BytesIO(content))
             archive.close()
 
-        submission = export.SDExport(archive_path, TEST_CONFIG)
+        submission = Archive(archive_path, TEST_CONFIG)
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(ExportException): # prev: SystemExit
             submission.extract_tarball()
 
         assert not os.path.exists("/tmp/traversed")
@@ -157,9 +158,9 @@ def test_extract_tarball_raises_if_doing_path_traversal_with_dir():
             archive.addfile(dir_info)
             archive.close()
 
-        submission = export.SDExport(archive_path, TEST_CONFIG)
+        submission = Archive(archive_path, TEST_CONFIG)
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(ExportException): # prev: SystemExit
             submission.extract_tarball()
 
         assert not os.path.exists("/tmp/traversed")
@@ -196,9 +197,9 @@ def test_extract_tarball_raises_if_doing_path_traversal_with_symlink():
             archive.addfile(symlink_info, BytesIO(content))
             archive.close()
 
-        submission = export.SDExport(archive_path, TEST_CONFIG)
+        submission = Archive(archive_path, TEST_CONFIG)
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(ExportException):
             submission.extract_tarball()
 
         assert not os.path.exists("/tmp/traversed")
@@ -235,9 +236,9 @@ def test_extract_tarball_raises_if_doing_path_traversal_with_symlink_linkname():
             archive.addfile(symlink_info, BytesIO(content))
             archive.close()
 
-        submission = export.SDExport(archive_path, TEST_CONFIG)
+        submission = Archive(archive_path, TEST_CONFIG)
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(ExportException):
             submission.extract_tarball()
 
         assert not os.path.exists("/tmp/traversed")
@@ -271,9 +272,9 @@ def test_extract_tarball_raises_if_name_has_unsafe_absolute_path():
             archive.addfile(file_info, BytesIO(content))
             archive.close()
 
-        submission = export.SDExport(archive_path, TEST_CONFIG)
+        submission = Archive(archive_path, TEST_CONFIG)
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(ExportException):
             submission.extract_tarball()
 
         assert not os.path.exists("/tmp/unsafe")
@@ -308,9 +309,9 @@ def test_extract_tarball_raises_if_name_has_unsafe_absolute_path_with_symlink():
             archive.add(symlink_path, "symlink")
             archive.close()
 
-        submission = export.SDExport(archive_path, TEST_CONFIG)
+        submission = Archive(archive_path, TEST_CONFIG)
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(ExportException):
             submission.extract_tarball()
 
         assert not os.path.exists("/tmp/unsafe")
@@ -353,9 +354,9 @@ def test_extract_tarball_raises_if_name_has_unsafe_absolute_path_with_symlink_to
             archive.add(file_path, "symlink/unsafe")
             archive.close()
 
-        submission = export.SDExport(archive_path, TEST_CONFIG)
+        submission = Archive(archive_path, TEST_CONFIG)
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(ExportException):
             submission.extract_tarball()
 
         assert not os.path.exists("/tmp/unsafe")
@@ -390,145 +391,87 @@ def test_extract_tarball_raises_if_linkname_has_unsafe_absolute_path():
             archive.addfile(symlink_info, BytesIO(content))
             archive.close()
 
-        submission = export.SDExport(archive_path, TEST_CONFIG)
+        submission = Archive(archive_path, TEST_CONFIG)
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(ExportException):
             submission.extract_tarball()
 
         assert not os.path.exists("/tmp/unsafe")
 
 
-def test_exit_gracefully_no_exception(capsys):
-    submission = export.SDExport("testfile", TEST_CONFIG)
-    test_msg = "test"
-
-    with pytest.raises(SystemExit) as sysexit:
-        submission.exit_gracefully(test_msg)
-
-    # A graceful exit means a return code of 0
-    assert sysexit.value.code == 0
-
-    captured = capsys.readouterr()
-    assert captured.err == "{}\n".format(test_msg)
-    assert captured.out == ""
-
-
-def test_exit_gracefully_exception(capsys):
-    submission = export.SDExport("testfile", TEST_CONFIG)
-    test_msg = "ERROR_GENERIC"
-
-    with pytest.raises(SystemExit) as sysexit:
-        exception = mock.MagicMock()
-        exception.output = "BANG!"
-        submission.exit_gracefully(test_msg, e=exception)
-
-    # A graceful exit means a return code of 0
-    assert sysexit.value.code == 0
-
-    captured = capsys.readouterr()
-    assert captured.err.rstrip() == export.ExportStatus.ERROR_GENERIC.value
-    assert captured.out == ""
-
-
 def test_empty_config(capsys):
-    export.SDExport("testfile", TEST_CONFIG)
+    Archive("testfile", TEST_CONFIG)
     temp_folder = tempfile.mkdtemp()
-    metadata = os.path.join(temp_folder, export.Metadata.METADATA_FILE)
+    metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
     with open(metadata, "w") as f:
         f.write("{}")
 
-    config = export.Metadata(temp_folder)
-
-    assert not config.is_valid()
+    with pytest.raises(ExportException) as ex:
+        config = Metadata.create_and_validate(temp_folder)
 
 
 def test_valid_printer_test_config(capsys):
-    export.SDExport("testfile", TEST_CONFIG)
+    Archive("testfile", TEST_CONFIG)
     temp_folder = tempfile.mkdtemp()
-    metadata = os.path.join(temp_folder, export.Metadata.METADATA_FILE)
+    metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
     with open(metadata, "w") as f:
         f.write('{"device": "printer-test"}')
 
-    config = export.Metadata(temp_folder)
+    config = Metadata.create_and_validate(temp_folder)
 
-    assert config.is_valid()
     assert config.encryption_key is None
     assert config.encryption_method is None
 
 
 def test_valid_printer_config(capsys):
-    export.SDExport("", TEST_CONFIG)
+    Archive("", TEST_CONFIG)
     temp_folder = tempfile.mkdtemp()
-    metadata = os.path.join(temp_folder, export.Metadata.METADATA_FILE)
+    metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
     with open(metadata, "w") as f:
         f.write('{"device": "printer"}')
 
-    config = export.Metadata(temp_folder)
+    config = Metadata.create_and_validate(temp_folder)
 
-    assert config.is_valid()
     assert config.encryption_key is None
     assert config.encryption_method is None
 
 
 def test_invalid_encryption_config(capsys):
-    export.SDExport("testfile", TEST_CONFIG)
+    Archive("testfile", TEST_CONFIG)
 
     temp_folder = tempfile.mkdtemp()
-    metadata = os.path.join(temp_folder, export.Metadata.METADATA_FILE)
+    metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
     with open(metadata, "w") as f:
         f.write('{"device": "disk", "encryption_method": "base64", "encryption_key": "hunter1"}')
 
-    config = export.Metadata(temp_folder)
+    with pytest.raises(ExportException) as ex:
+        config = Metadata.create_and_validate(temp_folder)
 
-    assert config.encryption_key == "hunter1"
-    assert config.encryption_method == "base64"
-    assert not config.is_valid()
+    assert ex.value.sdstatus is Status.ERROR_ARCHIVE_METADATA
 
+def test_malforned_config(capsys):
+    Archive("testfile", TEST_CONFIG)
+
+    temp_folder = tempfile.mkdtemp()
+    metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
+    with open(metadata, "w") as f:
+        f.write('{"device": "asdf", "encryption_method": "OHNO"}')
+
+    with pytest.raises(ExportException) as ex:
+        config = Metadata.create_and_validate(temp_folder)
+
+    assert ex.value.sdstatus is Status.ERROR_METADATA_PARSING
 
 def test_valid_encryption_config(capsys):
-    export.SDExport("testfile", TEST_CONFIG)
+    Archive("testfile", TEST_CONFIG)
     temp_folder = tempfile.mkdtemp()
-    metadata = os.path.join(temp_folder, export.Metadata.METADATA_FILE)
+    metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
     with open(metadata, "w") as f:
         f.write('{"device": "disk", "encryption_method": "luks", "encryption_key": "hunter1"}')
 
-    config = export.Metadata(temp_folder)
+    config = Metadata.create_and_validate(temp_folder)
 
     assert config.encryption_key == "hunter1"
     assert config.encryption_method == "luks"
-    assert config.is_valid()
 
 
-def test_safe_check_call(capsys, mocker):
-    submission = export.SDExport("testfile", TEST_CONFIG)
-    submission.safe_check_call(["ls"], "this will work")
-    expected_message = "uh oh!!!!"
-
-    with pytest.raises(SystemExit) as sysexit:
-        submission.safe_check_call(["ls", "kjdsfhkdjfh"], expected_message)
-
-    assert sysexit.value.code == 0
-
-    captured = capsys.readouterr()
-    assert captured.err == "{}\n".format(expected_message)
-    assert captured.out == ""
-
-    # This should work too
-    submission.safe_check_call(
-        ["python3", "-c", "import sys;sys.stderr.write('hello')"],
-        expected_message,
-        ignore_stderr_startswith=b"hello",
-    )
-
-    with pytest.raises(SystemExit) as sysexit:
-        submission.safe_check_call(
-            ["python3", "-c", "import sys;sys.stderr.write('hello\n')"],
-            expected_message,
-            ignore_stderr_startswith=b"world",
-        )
-
-    assert sysexit.value.code == 0
-
-    captured = capsys.readouterr()
-    assert captured.err == "{}\n".format(expected_message)
-    assert captured.out == ""

@@ -6,7 +6,7 @@ import platform
 
 from logging.handlers import TimedRotatingFileHandler, SysLogHandler
 from securedrop_export import __version__
-from securedrop_export import export
+from securedrop_export.archive import Archive
 from securedrop_export import main
 from securedrop_export.utils import safe_mkdir
 
@@ -57,17 +57,17 @@ def start():
         configure_logging()
     except Exception:
         msg = "ERROR_LOGGING"
-        export.SDExport.exit_gracefully(msg)
+        main._exit_gracefully(None, msg)
 
     logger.info("Starting SecureDrop Export {}".format(__version__))
-    my_sub = export.SDExport(sys.argv[1], CONFIG_PATH)
+    my_sub = Archive(sys.argv[1], CONFIG_PATH)
 
     try:
         # Halt immediately if target file is absent
         if not os.path.exists(my_sub.archive):
             logger.info("Archive is not found {}.".format(my_sub.archive))
             msg = "ERROR_FILE_NOT_FOUND"
-            my_sub.exit_gracefully(msg)
+            main._exit_gracefully(my_sub, msg)
         main.__main__(my_sub)
         # Delete extracted achive from tempfile
         shutil.rmtree(my_sub.tmpdir)
@@ -76,4 +76,4 @@ def start():
         # the file with another application
         logger.error(e)
         msg = "ERROR_GENERIC"
-        my_sub.exit_gracefully(msg)
+        main._exit_gracefully(my_sub, msg)

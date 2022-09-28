@@ -1,20 +1,9 @@
 from enum import Enum
-from typing import TypeVar, Type
-
-T = TypeVar('T', bound=ExportEnum)
 
 class ExportEnum(Enum):
     """
     Parent class for export and print statuses.
     """
-    @classmethod
-    def value_of(cls: Type[T], target: str) -> T:
-        for key, value in cls.__members__.items():
-            if key == target:
-                return value
-        # Don't print the value since we don't know what it is
-        raise ValueError("No valid entry found for provided value")
-
 
 class Command(ExportEnum):
     """
