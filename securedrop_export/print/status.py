@@ -1,6 +1,6 @@
-from securedrop_export.enums import ExportEnum
+from securedrop_export.status import BaseStatus
 
-class Status(ExportEnum):
+class Status(BaseStatus):
 
     # Printer preflight related errors
     ERROR_MULTIPLE_PRINTERS_FOUND = "ERROR_MULTIPLE_PRINTERS_FOUND"

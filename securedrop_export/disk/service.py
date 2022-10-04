@@ -26,22 +26,21 @@ class Service:
         Check if single USB is inserted.
         """
         logger.info("Export archive is usb-test")
-        status = Status.LEGACY_ERROR_GENERIC
 
         try:
             all_devices = self.cli.get_connected_devices()
             num_devices = len(all_devices)
 
-            if num_devices == 0:
-                raise ExportException(sdstatus=Status.LEGACY_USB_NOT_CONNECTED)
-            elif num_devices == 1:
-                return Status.LEGACY_USB_CONNECTED
-            elif num_devices > 1:
-                raise ExportException(sdstatus=Status.LEGACY_USB_ENCRYPTION_NOT_SUPPORTED)
-
         except ExportException as ex:
             # Use legacy status instead of new status values
-            raise ExportException(sdstatus=Status.LEGACY_ERROR_GENERIC) from ex
+            raise ExportException(sdstatus=Status.LEGACY_ERROR_USB_CHECK) from ex
+
+        if num_devices == 0:
+            raise ExportException(sdstatus=Status.LEGACY_USB_NOT_CONNECTED)
+        elif num_devices == 1:
+            return Status.LEGACY_USB_CONNECTED
+        elif num_devices > 1:
+            raise ExportException(sdstatus=Status.LEGACY_USB_ENCRYPTION_NOT_SUPPORTED)
 
 
     def check_disk_format(self) -> Status:
@@ -104,6 +103,7 @@ class Service:
                     raise ExportException(sdstatus=Status.LEGACY_USB_ENCRYPTION_NOT_SUPPORTED)
 
         except ExportException as ex:
+            print(ex)
             # Return legacy status values for now for ongoing client compatibility
             if ex.sdstatus in [s for s in NewStatus]:
                 status = self._legacy_status(ex.sdstatus)
@@ -114,7 +114,7 @@ class Service:
                 raise ExportException(sdstatus=Status.LEGACY_ERROR_GENERIC)
 
 
-    def _legacy_status(self, status: NewStatus):
+    def _legacy_status(self, status: NewStatus) -> Status:
         """
         Backwards-compatibility - status values that client (@0.7.0) is expecting.
         """
@@ -126,5 +126,7 @@ class Service:
             return Status.LEGACY_USB_BAD_PASSPHRASE
         elif status in [NewStatus.INVALID_DEVICE_DETECTED, NewStatus.MULTI_DEVICE_DETECTED]:
             return Status.LEGACY_USB_ENCRYPTION_NOT_SUPPORTED
+        # The other status values, such as Status.NO_DEVICE_DETECTED, are not returned by the
+        # CLI, so we don't need to check for them here
         else:
             return Status.LEGACY_ERROR_GENERIC

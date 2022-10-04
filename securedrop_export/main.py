@@ -6,7 +6,8 @@ import sys
 import subprocess
 
 from securedrop_export.archive import Archive, Metadata
-from securedrop_export.enums import Command, ExportEnum
+from securedrop_export.command import Command
+from securedrop_export.status import BaseStatus
 
 from securedrop_export.disk.service import Service as ExportService
 from securedrop_export.print.service import Service as PrintService
@@ -22,7 +23,7 @@ EXPORT_LOG_FILENAME = "export.log"
 
 logger = logging.getLogger(__name__)
 
-class Status(ExportEnum):
+class Status(BaseStatus):
     """
     Status values that can occur during initialization.
     """
@@ -30,10 +31,9 @@ class Status(ExportEnum):
     ERROR_GENERIC = "ERROR_GENERIC"
     ERROR_FILE_NOT_FOUND = "ERROR_FILE_NOT_FOUND"
 
-
 def entrypoint():
     """
-    Entrypoint for setuptools.
+    Entrypoint method (Note: a method is required for setuptools).
     Configure logging, extract tarball, and run desired export service,
     exiting with return code 0.
     """
@@ -97,8 +97,7 @@ def _configure_logging():
 def _extract_and_run(submission: Archive):
     """
     Extract tarball and metadata and run appropriate command based on metadata instruction.
-    Always exits by writing status, if applicable, to stdout.
-
+    Always exits with return code 0 and writes exit status, if applicable, to stderr.
     """
     status = None
     stacktrace = None
@@ -131,28 +130,23 @@ def _extract_and_run(submission: Archive):
 
 def _start_service(submission: Archive, cmd: Command) -> Status:
     """
-    Start print or export routine.
+    Start print or export service.
     """
-    if cmd in Command.printer_actions():
-        service = PrintService(submission)
+    # Print Routines
+    if cmd is Commmand.PRINTER:
+        return PrintService(submission).print()
+    elif cmd is Commmand.PRINTER_TEST:
+        return PrintService(submission).printer_preflight()
+    elif cmd is Commmand.PRINTER_TEST:
+        return PrintService(submission).printer_test()
 
-        if cmd is Commmand.PRINTER:
-            return service.print()
-        elif cmd is Commmand.PRINTER_TEST:
-            return service.printer_preflight()
-        elif cmd is Commmand.PRINTER_TEST:
-            return service.printer_test()
-
-    elif cmd in Command.export_actions():
-        service = ExportService(submission)
-
-        if cmd is Commmand.EXPORT:
-            return service.export()
-        elif cmd is Commmand.CHECK_USBS:
-            return service.check_connected_devices()
-        elif cmd is Commmand.CHECK_VOLUME:
-            return service.check_disk_format()
-
+    # Export routines
+    elif cmd is Commmand.EXPORT:
+        return ExportService(submission).export()
+    elif cmd is Commmand.CHECK_USBS:
+        return ExportService(submission).check_connected_devices()
+    elif cmd is Commmand.CHECK_VOLUME:
+        return ExportService(submission).check_disk_format()
 
 def _exit_gracefully(submission: Archive, status: Status=None, e=None):
     """
@@ -180,7 +174,7 @@ def _exit_gracefully(submission: Archive, status: Status=None, e=None):
         sys.exit(0)
 
 
-def _write_status(status: Status):
+def _write_status(status: BaseStatus):
     """
     Write string to stderr.
     """

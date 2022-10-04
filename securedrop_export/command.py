@@ -1,11 +1,6 @@
 from enum import Enum
 
-class ExportEnum(Enum):
-    """
-    Parent class for export and print statuses.
-    """
-
-class Command(ExportEnum):
+class Command(Enum):
     """
     All supported commands.
 
@@ -19,11 +14,3 @@ class Command(ExportEnum):
     CHECK_VOLUME = "disk-test"
     EXPORT = "disk"
     START_VM = ""
-
-    @classmethod
-    def printer_actions(cls):
-        return (cls.PRINTER_PREFLIGHT, cls.PRINTER_TEST, cls.PRINT)
-
-    @classmethod
-    def export_actions(cls):
-        return (cls.EXPORT, cls.CHECK_USBS, cls.CHECK_VOLUME)

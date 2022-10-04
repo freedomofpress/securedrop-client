@@ -5,7 +5,6 @@ from typing import Optional, Union
 import subprocess
 import logging
 
-from securedrop_export.enums import ExportEnum as Status
 from securedrop_export.exceptions import ExportException
 
 
@@ -153,23 +152,3 @@ def _check_dir_permissions(dir_path: Union[str, Path]) -> None:
         if masked & 0o077:
             raise RuntimeError("Unsafe permissions ({}) on {}".format(oct(stat_res), dir_path))
 
-
-
-def safe_check_call(command: str, error_status: Status, ignore_stderr_startswith=None):
-    """
-    Wrap subprocess.check_output to ensure we wrap CalledProcessError and return
-    our own exception, and log the error messages.
-    """
-    try:
-        err = subprocess.run(command, check=True, capture_output=True).stderr
-        # ppdc and lpadmin may emit warnings we are aware of which should not be treated as
-        # user facing errors
-        if ignore_stderr_startswith and err.startswith(ignore_stderr_startswith):
-            logger.info("Encountered warning: {}".format(err.decode("utf-8")))
-        elif err == b"":
-            # Nothing on stderr and returncode is 0, we're good
-            pass
-        else:
-            raise ExportException(sdstatus=error_status, sderror=err)
-    except subprocess.CalledProcessError as ex:
-        raise ExportException(sdstatus=error_status, sderror=ex.output)

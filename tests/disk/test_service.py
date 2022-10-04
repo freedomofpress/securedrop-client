@@ -9,7 +9,6 @@ import tempfile
 import subprocess
 from subprocess import CalledProcessError
 
-from securedrop_export.enums import ExportEnum
 from securedrop_export.exceptions import ExportException
 from securedrop_export.disk.status import Status
 from securedrop_export.disk.new_status import Status as NewStatus
@@ -77,29 +76,37 @@ class TestExportService:
 
         assert status is Status.LEGACY_USB_CONNECTED
 
-    def test_check_usb_error_no_devices(self):
-        self.mock_cli.get_connected_devices.side_effect = ExportException(sdstatus=NewStatus.NO_DEVICE_DETECTED)
-
+    def test_no_devices_connected(self):
+        self.mock_cli.get_connected_devices.return_value = []
         with pytest.raises(ExportException) as ex:
             self.service.check_connected_devices()
 
-        assert ex.value.sdstatus is Status.LEGACY_ERROR_GENERIC
+        assert ex.value.sdstatus is Status.LEGACY_USB_NOT_CONNECTED
 
-    def test_check_usb_error_multiple_devices(self):
-        self.mock_cli.get_connected_devices.side_effect = ExportException(sdstatus=NewStatus.MULTI_DEVICE_DETECTED)
-
+    def test_too_many_devices_connected(self):
+        self.mock_cli.get_connected_devices.return_value = [SAMPLE_OUTPUT_USB, "/dev/sdb"]
         with pytest.raises(ExportException) as ex:
             self.service.check_connected_devices()
 
-        assert ex.value.sdstatus is Status.LEGACY_ERROR_GENERIC
+        assert ex.value.sdstatus is Status.LEGACY_USB_ENCRYPTION_NOT_SUPPORTED
 
-    def test_check_usb_error_while_checking(self):
+    def test_device_is_not_luks(self):
+        self.mock_cli.is_luks_volume.return_value = False
+
+        # When VeraCrypt is supported, this will no longer be an exception
+        # and the return status will change
+        with pytest.raises(ExportException) as ex:
+            self.service.check_disk_format()
+
+        assert ex.value.sdstatus is Status.LEGACY_USB_ENCRYPTION_NOT_SUPPORTED
+
+    def test_check_usb_error(self):
         self.mock_cli.get_connected_devices.side_effect = ExportException(sdstatus=Status.LEGACY_ERROR_USB_CHECK)
 
         with pytest.raises(ExportException) as ex:
             self.service.check_connected_devices()
 
-        assert ex.value.sdstatus is Status.LEGACY_ERROR_GENERIC
+        assert ex.value.sdstatus is Status.LEGACY_ERROR_USB_CHECK
 
     def test_check_disk_format(self):
         status = self.service.check_disk_format()
@@ -135,3 +142,39 @@ class TestExportService:
             self.service.export()
 
         assert ex.value.sdstatus is Status.LEGACY_ERROR_USB_WRITE
+
+    def test_export_throws_new_exception_return_legacy_status(self):
+        self.mock_cli.get_connected_devices.side_effect = ExportException(sdstatus=NewStatus.ERROR_MOUNT)
+
+        with pytest.raises(ExportException) as ex:
+            self.service.export()
+
+        assert ex.value.sdstatus is Status.LEGACY_ERROR_USB_MOUNT
+
+    @mock.patch("os.path.exists", return_value=True)
+    def test_write_error_returns_legacy_status(self, mock_path):
+        self.mock_cli.is_luks_volume.return_value=True
+        self.mock_cli.write_data_to_device.side_effect = ExportException(sdstatus=NewStatus.ERROR_EXPORT)
+
+        with pytest.raises(ExportException) as ex:
+            self.service.export()
+
+        assert ex.value.sdstatus is Status.LEGACY_ERROR_USB_WRITE
+
+    @mock.patch("os.path.exists", return_value=True)
+    def test_unlock_error_returns_legacy_status(self, mock_path):
+        self.mock_cli.unlock_luks_volume.side_effect = ExportException(sdstatus=NewStatus.ERROR_UNLOCK_LUKS)
+
+        with pytest.raises(ExportException) as ex:
+            self.service.export()
+
+        assert ex.value.sdstatus is Status.LEGACY_USB_BAD_PASSPHRASE
+
+    @mock.patch("os.path.exists", return_value=True)
+    def test_unexpected_error_returns_legacy_status_generic(self, mock_path):
+        self.mock_cli.unlock_luks_volume.side_effect = ExportException(sdstatus=NewStatus.DEVICE_ERROR)
+
+        with pytest.raises(ExportException) as ex:
+            self.service.export()
+
+        assert ex.value.sdstatus is Status.LEGACY_ERROR_GENERIC

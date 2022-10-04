@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import abc
 import datetime
 import json
 import logging
@@ -11,13 +10,13 @@ import sys
 import tempfile
 
 from securedrop_export.exceptions import ExportException
-from securedrop_export.enums import Command, ExportEnum
+from securedrop_export.status import BaseStatus
+from securedrop_export.command import Command
 from securedrop_export.utils import safe_extractall
 
 logger = logging.getLogger(__name__)
 
-
-class Status(ExportEnum):
+class Status(BaseStatus):
     ERROR_ARCHIVE_METADATA = "ERROR_ARCHIVE_METADATA"
     ERROR_METADATA_PARSING = "ERROR_METADATA_PARSING"
     ERROR_EXTRACTION = "ERROR_EXTRACTION"
@@ -38,7 +37,7 @@ class Metadata(object):
     __key = object()
 
 
-    def __init__(self, key, archive_path):
+    def __init__(self, key: object, archive_path: str):
         if not key == Metadata.__key:
             raise ValueError("Must use create_and_validate() to create Metadata object")
 
@@ -75,15 +74,18 @@ class Metadata(object):
                     )
                 )
 
-            # Validate metadata - this will fail if command is not in list of supported commands
-            self.command = Command(self.export_method)
-            if self.command is Command.EXPORT and not self.encryption_method in self.SUPPORTED_ENCRYPTION_METHODS:
-                logger.error("Unsuported encryption method")
-                raise ExportException(sdstatus=Status.ERROR_ARCHIVE_METADATA)
-
         except Exception as ex:
             logger.error("Metadata parsing failure")
             raise ExportException(sdstatus=Status.ERROR_METADATA_PARSING) from ex
+
+        # Validate metadata - this will fail if command is not in list of supported commands
+        try:        
+            self.command = Command(self.export_method)
+            if self.command is Command.EXPORT and not self.encryption_method in self.SUPPORTED_ENCRYPTION_METHODS:
+                logger.error("Unsupported encryption method")
+                raise ExportException(sdstatus=Status.ERROR_ARCHIVE_METADATA)
+        except ValueError as v:
+            raise ExportException(sdstatus=Status.ERROR_METADATA_PARSING) from v
 
 
 class Archive(object):

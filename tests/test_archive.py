@@ -475,3 +475,20 @@ def test_valid_encryption_config(capsys):
     assert config.encryption_method == "luks"
 
 
+def test_cannot_use_metadata_constructor():
+    """
+    Require the `create_and_validate()` method for returning a Metadata object
+    """
+    with pytest.raises(ValueError):
+        Metadata(object(), tempfile.mkdtemp())
+
+
+@mock.patch("json.loads", side_effect=json.decoder.JSONDecodeError("ugh", "badjson", 0))
+def test_metadata_parsing_error(mock_json):
+    """
+    Handle exception caused when loading metadata JSON
+    """
+    with pytest.raises(ExportException) as ex:
+        Metadata.create_and_validate(tempfile.mkdtemp())
+
+    assert ex.value.sdstatus is Status.ERROR_METADATA_PARSING

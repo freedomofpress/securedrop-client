@@ -5,7 +5,6 @@ import subprocess
 import time
 
 from securedrop_export.exceptions import handler, TimeoutException, ExportException
-from securedrop_export.utils import safe_check_call
 from .status import Status
 
 PRINTER_NAME = "sdw-printer"
@@ -161,7 +160,7 @@ class Service:
         # Compile and install drivers that are not already installed
         if not os.path.exists(printer_ppd):
             logger.info("Installing printer drivers")
-            safe_check_call(
+            self.safe_check_call(
                 command=[
                     "sudo",
                     "ppdc",
@@ -244,8 +243,28 @@ class Service:
 
         logger.info("Sending file to printer {}".format(self.printer_name))
 
-        safe_check_call(
+        self.safe_check_call(
             command=["xpp", "-P", self.printer_name, file_to_print],
             error_status=Status.ERROR_PRINT,
         )
+
+
+    def safe_check_call(command: str, error_status: Status, ignore_stderr_startswith=None):
+        """
+        Wrap subprocess.check_output to ensure we wrap CalledProcessError and return
+        our own exception, and log the error messages.
+        """
+        try:
+            err = subprocess.run(command, check=True, capture_output=True).stderr
+            # ppdc and lpadmin may emit warnings we are aware of which should not be treated as
+            # user facing errors
+            if ignore_stderr_startswith and err.startswith(ignore_stderr_startswith):
+                logger.info("Encountered warning: {}".format(err.decode("utf-8")))
+            elif err == b"":
+                # Nothing on stderr and returncode is 0, we're good
+                pass
+            else:
+                raise ExportException(sdstatus=error_status, sderror=err)
+        except subprocess.CalledProcessError as ex:
+            raise ExportException(sdstatus=error_status, sderror=ex.output)
 

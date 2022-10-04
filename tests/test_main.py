@@ -2,16 +2,10 @@ import pytest
 from unittest import mock
 import os
 
-#from securedrop_export.main import __main__, _exit_gracefully  # noqa: F401
-from securedrop_export.main import Status, _extract_and_run, _exit_gracefully, _write_status  # noqa: F401
+from securedrop_export.main import Status, entrypoint, _extract_and_run, _exit_gracefully, _write_status  # noqa: F401
 from securedrop_export.archive import Archive
-# This import ensures at least the imports in main.__main__
-# are executed during a test run
 
 TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config.json")
-BAD_TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config-bad.json")
-ANOTHER_BAD_TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config-bad-2.json")
-
 
 class TestMain():
 
@@ -51,7 +45,7 @@ class TestMain():
         captured = capsys.readouterr()
         assert captured.err == status.value + "\n"
 
-    @pytest.mark.parametrize("invalid_status", ["foo", ";ls", "&& echo 0"])
+    @pytest.mark.parametrize("invalid_status", ["foo", ";ls", "&& echo 0", None])
     def test_write_status_error(self, invalid_status, capsys):
 
         with pytest.raises(ValueError):
@@ -63,4 +57,7 @@ class TestMain():
 
 
     def test__extract_and_run_failure(self):
+        pass
+
+    def test_entrypoint(self):
         pass

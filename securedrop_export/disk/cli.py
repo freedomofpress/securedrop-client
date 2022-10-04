@@ -21,6 +21,9 @@ class CLI:
     """
     A Python wrapper for various shell commands required to detect, map, and
     mount Export devices.
+
+    CLI callers must handle ExportException and all exceptions and exit with
+    sys.exit(0) so that another program does not attempt to open the submission.
     """
 
     # Default mountpoint (unless drive is already mounted manually by the user)
@@ -48,7 +51,12 @@ class CLI:
         except subprocess.CalledProcessError as ex:
             raise ExportException(sdstatus=Status.DEVICE_ERROR) from ex
 
-        # Determine which are USBs by selecting those block devices that are removable disks.
+        return self._get_removable_devices(attached_devices)
+
+    def _get_removable_devices(self, attached_devices: List[str]) -> List[str]:
+        """
+        Determine which block devices are USBs by selecting those that are removable.
+        """
         usb_devices = []
         for device in attached_devices:
             is_removable = False
@@ -120,7 +128,6 @@ class CLI:
             # subprocess will throw if the device is not luks (rc !=0)
             subprocess.check_call(["sudo", "cryptsetup", "isLuks", device])
 
-            # Status.LEGACY_USB_ENCRYPTED
             isLuks = True
 
         except subprocess.CalledProcessError as ex:
@@ -143,13 +150,13 @@ class CLI:
                     items = line.split("\t")
                     if "UUID" in items[0]:
                         return "luks-" + items[1]
-            else:
-                logger.error(
-                    f"Failed to dump LUKS headers; {device} may not be correctly formatted"
-                )
-                raise ExportException(sdstatus=Status.INVALID_DEVICE_DETECTED)
+
+            # If no header or no UUID field, we can't use this drive 
+            logger.error(f"Failed to get UUID from LUKS header; {device} may not be correctly formatted")
+            raise ExportException(sdstatus=Status.INVALID_DEVICE_DETECTED)
         except subprocess.CalledProcessError as ex:
-            raise ExportException(sdtatus=Status.DEVICE_ERROR) from ex
+            logger.error(f"Failed to dump LUKS header")
+            raise ExportException(sdstatus=Status.DEVICE_ERROR) from ex
 
     def get_luks_volume(self, device: str) -> Volume:
         """
@@ -241,7 +248,7 @@ class CLI:
         If volume is already mounted, mountpoint is not changed. Otherwise,
         volume is mounted at _DEFAULT_MOUNTPOINT.
 
-        Raises ExportException if errors are encountered during mounting.
+        Raise ExportException if errors are encountered during mounting.
         """
         if not volume.unlocked:
             raise ExportException(sdstatus=Status.ERROR_MOUNT)
@@ -251,32 +258,43 @@ class CLI:
         if mountpoint:
             logger.debug("The device is already mounted")
             if volume.mountpoint is not mountpoint:
-                # This should not happen, but if a user edits their veracrypt drive mountpoint on the fly.
                 logger.warning(f"Mountpoint was inaccurate, updating")
 
             volume.mountpoint = mountpoint
+            return volume
 
         else:
-            if not os.path.exists(self._DEFAULT_MOUNTPOINT):
-                try:
-                    subprocess.check_call(["sudo", "mkdir", self._DEFAULT_MOUNTPOINT])
-                except subprocess.CalledProcessError as ex:
-                    logger.error(ex)
-                    raise ExportException(sdstatus=Status.ERROR_MOUNT) from ex
+            return self._mount_at_mountpoint(volume, self._DEFAULT_MOUNTPOINT)
 
-            # Mount device /dev/mapper/{mapped_name} at /media/usb/
-            mapped_device_path = os.path.join(volume.MAPPED_VOLUME_PREFIX, volume.mapped_name)
 
+    def _mount_at_mountpoint(self, volume: Volume, mountpoint: str) -> Volume:
+        """
+        Mount a volume at the supplied mountpoint, creating the mountpoint directory and
+        adjusting permissions (user:user) if need be. `mountpoint` must be a full path.
+
+        Return Volume object.
+        Raise ExportException if unable to mount volume at target mountpoint.
+        """
+        if not os.path.exists(mountpoint):
             try:
-                logger.debug(f"Mounting volume {volume.device_name} at {self._DEFAULT_MOUNTPOINT}")
-                subprocess.check_call(["sudo", "mount", mapped_device_path, self._DEFAULT_MOUNTPOINT])
-                subprocess.check_call(["sudo", "chown", "-R", "user:user", self._DEFAULT_MOUNTPOINT])
-
-                volume.mountpoint = self._DEFAULT_MOUNTPOINT
-
+                subprocess.check_call(["sudo", "mkdir", mountpoint])
             except subprocess.CalledProcessError as ex:
                 logger.error(ex)
                 raise ExportException(sdstatus=Status.ERROR_MOUNT) from ex
+
+        # Mount device /dev/mapper/{mapped_name} at /media/usb/
+        mapped_device_path = os.path.join(volume.MAPPED_VOLUME_PREFIX, volume.mapped_name)
+
+        try:
+            logger.debug(f"Mounting volume {volume.device_name} at {mountpoint}")
+            subprocess.check_call(["sudo", "mount", mapped_device_path, mountpoint])
+            subprocess.check_call(["sudo", "chown", "-R", "user:user", mountpoint])
+
+            volume.mountpoint = mountpoint
+
+        except subprocess.CalledProcessError as ex:
+            logger.error(ex)
+            raise ExportException(sdstatus=Status.ERROR_MOUNT) from ex
 
         return volume
 
@@ -287,11 +305,7 @@ class CLI:
         Move files to drive (overwrites files with same filename) and unmount drive.
         Drive is unmounted and files are cleaned up as part of the `finally` block to ensure
         that cleanup happens even if export fails or only partially succeeds.
-
-        The calling method *must* handle ExportException and exit with sys.exit(0) so that
-        another program does not attempt to open the submission.
         """
-
         try:
             target_path = os.path.join(device.mountpoint, submission_target_dirname)
             subprocess.check_call(["mkdir", target_path])
@@ -340,9 +354,11 @@ class CLI:
 
             except subprocess.CalledProcessError as ex:
                 logger.error("Error unmounting device")
-                raise ExportException(sdstatus=Status.ERROR_MOUNT) from ex
+                raise ExportException(sdstatus=Status.DEVICE_ERROR) from ex
         else:
             logger.info("Mountpoint does not exist; volume was already unmounted")
+
+        return volume
 
     def _close_luks_volume(self, unlocked_device: Volume) -> None:
         """
@@ -369,13 +385,3 @@ class CLI:
         except subprocess.CalledProcessError as ex:
             logger.error("Error removing temporary directory")
             raise ExportException(sdstatus=Status.DEVICE_ERROR) from ex
-
-    def write_status(self, status: Status):
-        """
-        Write string to stdout.
-        """
-        if status:
-            sys.stdout.write(status.value)
-            sys.stdout.write("\n")
-        else:
-            logger.warning("No status value supplied")
