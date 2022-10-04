@@ -92,7 +92,7 @@ common-steps:
         cd securedrop-debian-packaging
         apt-get update && apt-get install -y sudo make
         make install-deps
-        PKG_DIR=~/project make requirements
+        ./scripts/update-requirements --pkg-dir=/root/project --project=securedrop-client
 
   - &check_packaging_requirements
     run:
