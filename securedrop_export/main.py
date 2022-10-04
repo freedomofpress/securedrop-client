@@ -24,16 +24,21 @@ logger = logging.getLogger(__name__)
 
 class Status(ExportEnum):
     """
-    Errors initializing export
+    Status values that can occur during initialization.
     """
     ERROR_LOGGING = "ERROR_LOGGING"
     ERROR_GENERIC = "ERROR_GENERIC"
     ERROR_FILE_NOT_FOUND = "ERROR_FILE_NOT_FOUND"
 
 
-def start():
+def entrypoint():
+    """
+    Entrypoint for setuptools.
+    Configure logging, extract tarball, and run desired export service,
+    exiting with return code 0.
+    """
     try:
-        configure_logging()
+        _configure_logging()
     except Exception:
         _exit_gracefully(submission=None, status=Status.ERROR_LOGGING)
 
@@ -46,7 +51,7 @@ def start():
             logger.info("Archive is not found {}.".format(data.archive))
             _exit_gracefully(data, Status.ERROR_FILE_NOT_FOUND)
 
-        # The main event. Extract archive and either print or export to disk.
+        # Extract archive and either print or export to disk.
         # Includes cleanup logic, which removes any temporary directories associated with
         # the archive.
         _extract_and_run(data)
@@ -91,10 +96,11 @@ def _configure_logging():
 
 def _extract_and_run(submission: Archive):
     """
-    Extract tarball and metadata and run appropriate command
-    based on metadata instruction.
+    Extract tarball and metadata and run appropriate command based on metadata instruction.
+    Always exits by writing status, if applicable, to stdout.
+
     """
-    status = Status.ERROR_GENERIC
+    status = None
     stacktrace = None
 
     try:
@@ -110,7 +116,7 @@ def _extract_and_run(submission: Archive):
             status = _start_service(submission, command)
 
     except ExportException as ex:
-        status = ex.sdstatus
+        status = ex.value.sdstatus
         stacktrace = ex.output
 
     except Exception as exc:
@@ -145,7 +151,7 @@ def _start_service(submission: Archive, cmd: Command) -> Status:
         elif cmd is Commmand.CHECK_USBS:
             return service.check_connected_devices()
         elif cmd is Commmand.CHECK_VOLUME:
-            return service.checK_disk_format()
+            return service.check_disk_format()
 
 
 def _exit_gracefully(submission: Archive, status: Status=None, e=None):
@@ -183,4 +189,3 @@ def _write_status(status: Status):
         sys.stderr.write("\n")
     else:
         logger.info("No status value supplied")
-
