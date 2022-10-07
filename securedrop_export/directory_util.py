@@ -5,9 +5,6 @@ from typing import Optional, Union
 import subprocess
 import logging
 
-from securedrop_export.exceptions import ExportException
-
-
 logger = logging.getLogger(__name__)
 
 

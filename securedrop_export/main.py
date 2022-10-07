@@ -8,13 +8,13 @@ import subprocess
 from securedrop_export.archive import Archive, Metadata
 from securedrop_export.command import Command
 from securedrop_export.status import BaseStatus
+from securedrop_export.directory_util import safe_mkdir
 
 from securedrop_export.disk.service import Service as ExportService
 from securedrop_export.print.service import Service as PrintService
 
 from logging.handlers import TimedRotatingFileHandler, SysLogHandler
 from securedrop_export import __version__
-from securedrop_export.utils import safe_mkdir
 
 CONFIG_PATH = "/etc/sd-export-config.json"
 DEFAULT_HOME = os.path.join(os.path.expanduser("~"), ".securedrop_export")

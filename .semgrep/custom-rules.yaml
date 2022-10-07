@@ -47,7 +47,7 @@ rules:
   languages:
     - python
   severity: ERROR
-  message: Possible path traversal or insecure directory and file permissions through os.mkdir(). Use securedrop_export.utils.safe_mkdir instead.
+  message: Possible path traversal or insecure directory and file permissions through os.mkdir(). Use securedrop_export.directory_util.safe_mkdir instead.
   patterns:
     - pattern: "....mkdir(...)"
     - pattern-not-inside: |
@@ -58,7 +58,7 @@ rules:
   languages:
     - python
   severity: ERROR
-  message: Possible path traversal or insecure directory and file permissions through os.makedirs(). Use securedrop_export.utils.safe_mkdir instead.
+  message: Possible path traversal or insecure directory and file permissions through os.makedirs(). Use securedrop_export.directory_util.safe_mkdir instead.
   patterns:
     - pattern: "....makedirs(...)"
     - pattern-not-inside: |

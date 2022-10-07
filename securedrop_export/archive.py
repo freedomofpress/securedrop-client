@@ -12,7 +12,7 @@ import tempfile
 from securedrop_export.exceptions import ExportException
 from securedrop_export.status import BaseStatus
 from securedrop_export.command import Command
-from securedrop_export.utils import safe_extractall
+from securedrop_export.directory_util import safe_extractall
 
 logger = logging.getLogger(__name__)
 
