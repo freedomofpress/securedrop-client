@@ -5,12 +5,10 @@ import os
 from securedrop_export.main import Status, entrypoint, _extract_and_run, _exit_gracefully, _write_status  # noqa: F401
 from securedrop_export.archive import Archive
 
-TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config.json")
-
 class TestMain():
 
     def test_exit_gracefully_no_exception(self, capsys):
-        submission = Archive("testfile", TEST_CONFIG)
+        submission = Archive("testfile")
         
         with pytest.raises(SystemExit) as sysexit:
             _exit_gracefully(submission, Status.ERROR_GENERIC)
@@ -24,7 +22,7 @@ class TestMain():
 
 
     def test_exit_gracefully_exception(self, capsys):
-        submission = Archive("testfile", TEST_CONFIG)
+        submission = Archive("testfile")
 
         with pytest.raises(SystemExit) as sysexit:
             exception = mock.MagicMock()

@@ -18,7 +18,6 @@ from securedrop_export.archive import Archive, Metadata
 from securedrop_export.disk.service import Service
 from securedrop_export.disk.cli import CLI
 
-TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config.json")
 SAMPLE_OUTPUT_LSBLK_NO_PART = b"disk\ncrypt"  # noqa
 SAMPLE_OUTPUT_USB = "/dev/sda"  # noqa
 SAMPLE_OUTPUT_USB_PARTITIONED = "/dev/sda1"
@@ -46,7 +45,7 @@ class TestExportService:
         """
         Helper method to set up sample archive
         """
-        submission = Archive("testfile", TEST_CONFIG)
+        submission = Archive("testfile")
         temp_folder = tempfile.mkdtemp()
         metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
         with open(metadata, "w") as f:

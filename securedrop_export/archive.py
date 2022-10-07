@@ -89,7 +89,7 @@ class Metadata(object):
 
 
 class Archive(object):
-    def __init__(self, archive, config_path):
+    def __init__(self, archive):
         os.umask(0o077)
         self.archive = archive
         self.submission_dirname = os.path.basename(self.archive).split(".")[0]

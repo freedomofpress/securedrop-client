@@ -12,11 +12,6 @@ from io import BytesIO
 from securedrop_export.exceptions import ExportException
 from securedrop_export.archive import Archive, Metadata, Status
 
-TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config.json")
-BAD_TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config-bad.json")
-ANOTHER_BAD_TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config-bad-2.json")
-
-
 def test_extract_tarball():
     """
     Check that we can successfully extract a valid tarball.
@@ -47,7 +42,7 @@ def test_extract_tarball():
 
             archive.close()
 
-        submission = Archive(archive_path, TEST_CONFIG)
+        submission = Archive(archive_path)
         assert oct(os.stat(submission.tmpdir).st_mode) == "0o40700"
 
         submission.extract_tarball()
@@ -86,7 +81,7 @@ def test_extract_tarball_with_symlink():
             archive.addfile(symlink_info)
             archive.close()
 
-        submission = Archive(archive_path, TEST_CONFIG)
+        submission = Archive(archive_path)
         assert oct(os.stat(submission.tmpdir).st_mode) == "0o40700"
 
         submission.extract_tarball()
@@ -121,9 +116,9 @@ def test_extract_tarball_raises_if_doing_path_traversal():
             archive.addfile(traversed_file_info, BytesIO(content))
             archive.close()
 
-        submission = Archive(archive_path, TEST_CONFIG)
+        submission = Archive(archive_path)
 
-        with pytest.raises(ExportException): # prev: SystemExit
+        with pytest.raises(ExportException):
             submission.extract_tarball()
 
         assert not os.path.exists("/tmp/traversed")
@@ -158,9 +153,9 @@ def test_extract_tarball_raises_if_doing_path_traversal_with_dir():
             archive.addfile(dir_info)
             archive.close()
 
-        submission = Archive(archive_path, TEST_CONFIG)
+        submission = Archive(archive_path)
 
-        with pytest.raises(ExportException): # prev: SystemExit
+        with pytest.raises(ExportException):
             submission.extract_tarball()
 
         assert not os.path.exists("/tmp/traversed")
@@ -197,7 +192,7 @@ def test_extract_tarball_raises_if_doing_path_traversal_with_symlink():
             archive.addfile(symlink_info, BytesIO(content))
             archive.close()
 
-        submission = Archive(archive_path, TEST_CONFIG)
+        submission = Archive(archive_path)
 
         with pytest.raises(ExportException):
             submission.extract_tarball()
@@ -236,7 +231,7 @@ def test_extract_tarball_raises_if_doing_path_traversal_with_symlink_linkname():
             archive.addfile(symlink_info, BytesIO(content))
             archive.close()
 
-        submission = Archive(archive_path, TEST_CONFIG)
+        submission = Archive(archive_path)
 
         with pytest.raises(ExportException):
             submission.extract_tarball()
@@ -272,7 +267,7 @@ def test_extract_tarball_raises_if_name_has_unsafe_absolute_path():
             archive.addfile(file_info, BytesIO(content))
             archive.close()
 
-        submission = Archive(archive_path, TEST_CONFIG)
+        submission = Archive(archive_path)
 
         with pytest.raises(ExportException):
             submission.extract_tarball()
@@ -309,7 +304,7 @@ def test_extract_tarball_raises_if_name_has_unsafe_absolute_path_with_symlink():
             archive.add(symlink_path, "symlink")
             archive.close()
 
-        submission = Archive(archive_path, TEST_CONFIG)
+        submission = Archive(archive_path)
 
         with pytest.raises(ExportException):
             submission.extract_tarball()
@@ -354,7 +349,7 @@ def test_extract_tarball_raises_if_name_has_unsafe_absolute_path_with_symlink_to
             archive.add(file_path, "symlink/unsafe")
             archive.close()
 
-        submission = Archive(archive_path, TEST_CONFIG)
+        submission = Archive(archive_path)
 
         with pytest.raises(ExportException):
             submission.extract_tarball()
@@ -391,7 +386,7 @@ def test_extract_tarball_raises_if_linkname_has_unsafe_absolute_path():
             archive.addfile(symlink_info, BytesIO(content))
             archive.close()
 
-        submission = Archive(archive_path, TEST_CONFIG)
+        submission = Archive(archive_path)
 
         with pytest.raises(ExportException):
             submission.extract_tarball()
@@ -400,7 +395,7 @@ def test_extract_tarball_raises_if_linkname_has_unsafe_absolute_path():
 
 
 def test_empty_config(capsys):
-    Archive("testfile", TEST_CONFIG)
+    Archive("testfile")
     temp_folder = tempfile.mkdtemp()
     metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
     with open(metadata, "w") as f:
@@ -411,7 +406,7 @@ def test_empty_config(capsys):
 
 
 def test_valid_printer_test_config(capsys):
-    Archive("testfile", TEST_CONFIG)
+    Archive("testfile")
     temp_folder = tempfile.mkdtemp()
     metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
     with open(metadata, "w") as f:
@@ -424,7 +419,7 @@ def test_valid_printer_test_config(capsys):
 
 
 def test_valid_printer_config(capsys):
-    Archive("", TEST_CONFIG)
+    Archive("")
     temp_folder = tempfile.mkdtemp()
     metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
     with open(metadata, "w") as f:
@@ -437,7 +432,7 @@ def test_valid_printer_config(capsys):
 
 
 def test_invalid_encryption_config(capsys):
-    Archive("testfile", TEST_CONFIG)
+    Archive("testfile")
 
     temp_folder = tempfile.mkdtemp()
     metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
@@ -450,7 +445,7 @@ def test_invalid_encryption_config(capsys):
     assert ex.value.sdstatus is Status.ERROR_ARCHIVE_METADATA
 
 def test_malforned_config(capsys):
-    Archive("testfile", TEST_CONFIG)
+    Archive("testfile")
 
     temp_folder = tempfile.mkdtemp()
     metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
@@ -463,7 +458,7 @@ def test_malforned_config(capsys):
     assert ex.value.sdstatus is Status.ERROR_METADATA_PARSING
 
 def test_valid_encryption_config(capsys):
-    Archive("testfile", TEST_CONFIG)
+    Archive("testfile")
     temp_folder = tempfile.mkdtemp()
     metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
     with open(metadata, "w") as f:

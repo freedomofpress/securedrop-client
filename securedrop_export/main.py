@@ -16,7 +16,6 @@ from securedrop_export.print.service import Service as PrintService
 from logging.handlers import TimedRotatingFileHandler, SysLogHandler
 from securedrop_export import __version__
 
-CONFIG_PATH = "/etc/sd-export-config.json"
 DEFAULT_HOME = os.path.join(os.path.expanduser("~"), ".securedrop_export")
 LOG_DIR_NAME = "logs"
 EXPORT_LOG_FILENAME = "export.log"
@@ -43,7 +42,7 @@ def entrypoint():
         _exit_gracefully(submission=None, status=Status.ERROR_LOGGING)
 
     logger.info("Starting SecureDrop Export {}".format(__version__))
-    data = Archive(sys.argv[1], CONFIG_PATH)
+    data = Archive(sys.argv[1])
 
     try:
         # Halt immediately if target file is absent

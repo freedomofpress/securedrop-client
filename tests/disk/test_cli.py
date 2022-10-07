@@ -13,8 +13,6 @@ from securedrop_export.disk.new_status import Status
 
 from securedrop_export.archive import Archive
 
-TEST_CONFIG = os.path.join(os.path.dirname(__file__), "sd-export-config.json")
-
 _DEFAULT_USB_DEVICE = "/dev/sda"
 _DEFAULT_USB_DEVICE_ONE_PART = "/dev/sda1"
 
@@ -406,7 +404,7 @@ class TestCli:
             encryption=EncryptionScheme.LUKS,
         )
 
-        submission = Archive("testfile", TEST_CONFIG)
+        submission = Archive("testfile")
 
         self.cli.write_data_to_device(submission.tmpdir, submission.target_dirname, vol)
         self.cli.cleanup_drive_and_tmpdir.assert_called_once()
@@ -427,7 +425,7 @@ class TestCli:
             mountpoint=self.cli._DEFAULT_MOUNTPOINT,
             encryption=EncryptionScheme.LUKS,
         )
-        submission = Archive("testfile", TEST_CONFIG)
+        submission = Archive("testfile")
 
         with pytest.raises(ExportException):
             self.cli.write_data_to_device(submission.tmpdir, submission.target_dirname, vol)
@@ -437,7 +435,7 @@ class TestCli:
 
     @mock.patch("subprocess.check_call", side_effect=subprocess.CalledProcessError(1, "check_call"))
     def test_cleanup_drive_and_tmpdir_error(self, mocked_subprocess):
-        submission = Archive("testfile", TEST_CONFIG)
+        submission = Archive("testfile")
         mock_volume = mock.MagicMock(Volume)
         
         with pytest.raises(ExportException) as ex:
@@ -447,7 +445,7 @@ class TestCli:
     @mock.patch("os.path.exists", return_value=False)
     @mock.patch("subprocess.check_call", return_value=0)
     def test_cleanup_drive_and_tmpdir(self, mock_subprocess, mocked_path):
-        submission = Archive("testfile", TEST_CONFIG)
+        submission = Archive("testfile")
         vol = Volume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
             mapped_name=_PRETEND_LUKS_ID,
