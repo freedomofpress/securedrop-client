@@ -1,0 +1,14 @@
+#!/bin/bash
+# Returns the Debian version's codename (e.g. "bullseye") in a way that should
+# work across both released versions and unreleased ones.
+# See https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1008735
+
+source /etc/os-release
+
+if [[ "$VERSION_CODENAME" != "" ]]; then
+    echo $VERSION_CODENAME
+else
+    # PRETTY_NAME="Debian GNU/Linux bookworm/sid"
+    # Use awk to split on spaces and /
+    echo $PRETTY_NAME | awk '{split($0, a, "[ /]"); print a[4]}'
+fi

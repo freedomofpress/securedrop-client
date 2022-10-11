@@ -19,6 +19,7 @@ common-steps:
       name: Install requirements and run unit tests
       command: |
         set -e
+        export VERSION_CODENAME=$(~/project/scripts/codename)
         make venv
         source .venv/bin/activate
         export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
@@ -29,6 +30,7 @@ common-steps:
       name: Install requirements and run integration tests
       command: |
         set -e
+        export VERSION_CODENAME=$(~/project/scripts/codename)
         make venv
         source .venv/bin/activate
         export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
@@ -39,6 +41,7 @@ common-steps:
       name: Install requirements and run functional tests
       command: |
         set -e
+        export VERSION_CODENAME=$(~/project/scripts/codename)
         make venv
         source .venv/bin/activate
         export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
@@ -49,6 +52,7 @@ common-steps:
       name: Run lint, type checking, code formatting
       command: |
         set -e
+        export VERSION_CODENAME=$(~/project/scripts/codename)
         make venv
         source .venv/bin/activate
         make check-black check-isort lint mypy
@@ -58,6 +62,7 @@ common-steps:
       name: Run static analysis on source code to find security issues
       command: |
         set -e
+        export VERSION_CODENAME=$(~/project/scripts/codename)
         make venv
         source .venv/bin/activate
         make semgrep bandit
@@ -67,6 +72,7 @@ common-steps:
       name: Run internationalization check
       command: |
         set -e
+        export VERSION_CODENAME=$(~/project/scripts/codename)
         make venv
         source .venv/bin/activate
         make check-strings
@@ -76,6 +82,7 @@ common-steps:
       name: Check Python dependencies for known vulnerabilities
       command: |
         set -e
+        export VERSION_CODENAME=$(~/project/scripts/codename)
         make venv
         source .venv/bin/activate
         make safety
@@ -107,6 +114,7 @@ common-steps:
       name: Ensure that the same Python requirements are used for development/testing and production.
       command: |
         set -e
+        export VERSION_CODENAME=$(~/project/scripts/codename)
         make venv
         source .venv/bin/activate
         make requirements
