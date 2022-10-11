@@ -39,7 +39,7 @@ def safe_mkdir(
     # is not necessary but adds defense in depth.
     relative_path = relative_filepath(full_path, base_path)
     for parent in reversed(relative_path.parents):
-        base_path.joinpath(parent).mkdir(mode=0o0700, exist_ok=True)
+        base_path.joinpath(parent).mkdir(mode=0o0744, exist_ok=True)
 
     # Now create the full_path directory.
     full_path.mkdir(mode=0o0700, exist_ok=True)
@@ -63,7 +63,7 @@ def safe_extractall(archive_file_path: str, dest_path: str) -> None:
         # Block device
         # Character device
         for file_info in tar.getmembers():
-            file_info.mode = 0o700 if file_info.isdir() else 0o600
+            file_info.mode = 0o744 if file_info.isdir() else 0o744
 
             _check_path_traversal(file_info.name)
 
@@ -130,13 +130,13 @@ def _check_all_permissions(path: Union[str, Path], base_path: Union[str, Path]) 
     if not full_path.exists():
         return
 
-    Path(full_path).chmod(0o700)
+    Path(full_path).chmod(0o744)
     _check_dir_permissions(full_path)
 
     relative_path = relative_filepath(full_path, base_path)
     for parent in relative_path.parents:
         full_path = base_path.joinpath(parent)
-        Path(full_path).chmod(0o700)
+        Path(full_path).chmod(0o744)
         _check_dir_permissions(str(full_path))
 
 
@@ -147,7 +147,7 @@ def _check_dir_permissions(dir_path: Union[str, Path]) -> None:
     if os.path.exists(dir_path):
         stat_res = os.stat(dir_path).st_mode
         masked = stat_res & 0o777
-        if masked & 0o077:
+        if masked & 0o033:
             raise RuntimeError(
                 "Unsafe permissions ({}) on {}".format(oct(stat_res), dir_path)
             )

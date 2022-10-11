@@ -68,7 +68,7 @@ class Metadata(object):
 
 class Archive(object):
     def __init__(self, archive_path: str):
-        os.umask(0o077)
+        os.umask(0o022)
         self.archive = archive_path
         self.target_dirname = "sd-export-{}".format(
             datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
