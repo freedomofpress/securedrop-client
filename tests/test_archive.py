@@ -12,6 +12,7 @@ from io import BytesIO
 from securedrop_export.exceptions import ExportException
 from securedrop_export.archive import Archive, Metadata, Status
 
+
 def test_extract_tarball():
     """
     Check that we can successfully extract a valid tarball.
@@ -42,20 +43,25 @@ def test_extract_tarball():
 
             archive.close()
 
-        submission = Archive(archive_path)
+        submission = Archive(archive_path).extract_tarball()
         assert oct(os.stat(submission.tmpdir).st_mode) == "0o40700"
 
-        submission.extract_tarball()
-
-        extracted_file_path = os.path.join(submission.tmpdir, "some", "dirs", "file.txt")
+        extracted_file_path = os.path.join(
+            submission.tmpdir, "some", "dirs", "file.txt"
+        )
         assert os.path.exists(extracted_file_path)
         assert oct(os.stat(extracted_file_path).st_mode) == "0o100600"
 
         # Subdirectories that are added as members are extracted with 700 permissions
-        assert oct(os.stat(os.path.join(submission.tmpdir, "some")).st_mode) == "0o40700"
+        assert (
+            oct(os.stat(os.path.join(submission.tmpdir, "some")).st_mode) == "0o40700"
+        )
         # Subdirectories that are not added as members are extracted with 700 permissions
         # because os.umask(0o077) is set in the Archive constructor.
-        assert oct(os.stat(os.path.join(submission.tmpdir, "some", "dirs")).st_mode) == "0o40700"
+        assert (
+            oct(os.stat(os.path.join(submission.tmpdir, "some", "dirs")).st_mode)
+            == "0o40700"
+        )
 
 
 def test_extract_tarball_with_symlink():
@@ -84,7 +90,7 @@ def test_extract_tarball_with_symlink():
         submission = Archive(archive_path)
         assert oct(os.stat(submission.tmpdir).st_mode) == "0o40700"
 
-        submission.extract_tarball()
+        submission = submission.extract_tarball()
 
         symlink_path = os.path.join(submission.tmpdir, "symlink")
         assert os.path.islink(symlink_path)
@@ -111,7 +117,9 @@ def test_extract_tarball_raises_if_doing_path_traversal():
             metadata_file_info.size = len(metadata_str)
             archive.addfile(metadata_file_info, metadata_bytes)
             content = b"test"
-            traversed_file_info = tarfile.TarInfo("../../../../../../../../../tmp/traversed")
+            traversed_file_info = tarfile.TarInfo(
+                "../../../../../../../../../tmp/traversed"
+            )
             traversed_file_info.size = len(content)
             archive.addfile(traversed_file_info, BytesIO(content))
             archive.close()
@@ -288,7 +296,9 @@ def test_extract_tarball_raises_if_name_has_unsafe_absolute_path_with_symlink():
         archive_path = os.path.join(temp_dir, "archive.sd-export")
         symlink_path = os.path.join(temp_dir, "symlink")
 
-        os.system(f"ln -s {tmp}/unsafe {symlink_path}")  # create symlink to "/tmp/unsafe"
+        os.system(
+            f"ln -s {tmp}/unsafe {symlink_path}"
+        )  # create symlink to "/tmp/unsafe"
 
         with tarfile.open(archive_path, "w:gz") as archive:
             metadata = {
@@ -402,7 +412,8 @@ def test_empty_config(capsys):
         f.write("{}")
 
     with pytest.raises(ExportException) as ex:
-        config = Metadata.create_and_validate(temp_folder)
+        Metadata(temp_folder).validate()
+    assert ex.value.sdstatus is Status.ERROR_ARCHIVE_METADATA
 
 
 def test_valid_printer_test_config(capsys):
@@ -412,7 +423,7 @@ def test_valid_printer_test_config(capsys):
     with open(metadata, "w") as f:
         f.write('{"device": "printer-test"}')
 
-    config = Metadata.create_and_validate(temp_folder)
+    config = Metadata(temp_folder).validate()
 
     assert config.encryption_key is None
     assert config.encryption_method is None
@@ -425,7 +436,7 @@ def test_valid_printer_config(capsys):
     with open(metadata, "w") as f:
         f.write('{"device": "printer"}')
 
-    config = Metadata.create_and_validate(temp_folder)
+    config = Metadata(temp_folder).validate()
 
     assert config.encryption_key is None
     assert config.encryption_method is None
@@ -437,14 +448,17 @@ def test_invalid_encryption_config(capsys):
     temp_folder = tempfile.mkdtemp()
     metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
     with open(metadata, "w") as f:
-        f.write('{"device": "disk", "encryption_method": "base64", "encryption_key": "hunter1"}')
+        f.write(
+            '{"device": "disk", "encryption_method": "base64", "encryption_key": "hunter1"}'
+        )
 
     with pytest.raises(ExportException) as ex:
-        config = Metadata.create_and_validate(temp_folder)
+        Metadata(temp_folder).validate()
 
     assert ex.value.sdstatus is Status.ERROR_ARCHIVE_METADATA
 
-def test_malforned_config(capsys):
+
+def test_invalid_config(capsys):
     Archive("testfile")
 
     temp_folder = tempfile.mkdtemp()
@@ -453,29 +467,38 @@ def test_malforned_config(capsys):
         f.write('{"device": "asdf", "encryption_method": "OHNO"}')
 
     with pytest.raises(ExportException) as ex:
-        config = Metadata.create_and_validate(temp_folder)
+        Metadata(temp_folder).validate()
+
+    assert ex.value.sdstatus is Status.ERROR_ARCHIVE_METADATA
+
+
+def test_malformed_config(capsys):
+    Archive("testfile")
+
+    temp_folder = tempfile.mkdtemp()
+    metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
+    with open(metadata, "w") as f:
+        f.write('{"device": "asdf", "encryption_method": {"OHNO", "MALFORMED"}')
+
+    with pytest.raises(ExportException) as ex:
+        Metadata(temp_folder).validate()
 
     assert ex.value.sdstatus is Status.ERROR_METADATA_PARSING
+
 
 def test_valid_encryption_config(capsys):
     Archive("testfile")
     temp_folder = tempfile.mkdtemp()
     metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
     with open(metadata, "w") as f:
-        f.write('{"device": "disk", "encryption_method": "luks", "encryption_key": "hunter1"}')
+        f.write(
+            '{"device": "disk", "encryption_method": "luks", "encryption_key": "hunter1"}'
+        )
 
-    config = Metadata.create_and_validate(temp_folder)
+    config = Metadata(temp_folder).validate()
 
     assert config.encryption_key == "hunter1"
     assert config.encryption_method == "luks"
-
-
-def test_cannot_use_metadata_constructor():
-    """
-    Require the `create_and_validate()` method for returning a Metadata object
-    """
-    with pytest.raises(ValueError):
-        Metadata(object(), tempfile.mkdtemp())
 
 
 @mock.patch("json.loads", side_effect=json.decoder.JSONDecodeError("ugh", "badjson", 0))
@@ -484,6 +507,6 @@ def test_metadata_parsing_error(mock_json):
     Handle exception caused when loading metadata JSON
     """
     with pytest.raises(ExportException) as ex:
-        Metadata.create_and_validate(tempfile.mkdtemp())
+        Metadata(tempfile.mkdtemp()).validate()
 
     assert ex.value.sdstatus is Status.ERROR_METADATA_PARSING

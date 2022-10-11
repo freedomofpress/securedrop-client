@@ -2,7 +2,6 @@ import os
 import tarfile
 from pathlib import Path
 from typing import Optional, Union
-import subprocess
 import logging
 
 logger = logging.getLogger(__name__)
@@ -105,7 +104,9 @@ def _check_path_traversal(filename_or_filepath: Union[str, Path]) -> None:
     if filename_or_filepath.is_absolute():
         base_path = filename_or_filepath
     else:
-        base_path = Path.cwd()  # use cwd so we can next ensure relative path does not traverse up
+        base_path = (
+            Path.cwd()
+        )  # use cwd so we can next ensure relative path does not traverse up
 
     try:
         relative_path = relative_filepath(filename_or_filepath, base_path)
@@ -114,7 +115,10 @@ def _check_path_traversal(filename_or_filepath: Union[str, Path]) -> None:
         # base, but can still have harmful side effects to the application. If this kind of
         # traversal is needed, then call relative_filepath instead in order to check that the
         # desired traversal does not go past a safe base directory.
-        if relative_path != filename_or_filepath and not filename_or_filepath.is_absolute():
+        if (
+            relative_path != filename_or_filepath
+            and not filename_or_filepath.is_absolute()
+        ):
             raise ValueError
     except ValueError:
         raise ValueError(f"Unsafe file or directory name: '{filename_or_filepath}'")
@@ -147,5 +151,6 @@ def _check_dir_permissions(dir_path: Union[str, Path]) -> None:
         stat_res = os.stat(dir_path).st_mode
         masked = stat_res & 0o777
         if masked & 0o077:
-            raise RuntimeError("Unsafe permissions ({}) on {}".format(oct(stat_res), dir_path))
-
+            raise RuntimeError(
+                "Unsafe permissions ({}) on {}".format(oct(stat_res), dir_path)
+            )

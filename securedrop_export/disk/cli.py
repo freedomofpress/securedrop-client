@@ -1,11 +1,6 @@
-import datetime
-import json
 import logging
 import os
-import shutil
 import subprocess
-import tempfile
-import sys
 
 from typing import List, Optional
 
@@ -36,12 +31,18 @@ class CLI:
 
         Raise ExportException if any commands fail.
         """
+        logger.info("Checking connected volumes")
         try:
             lsblk = subprocess.Popen(
-                ["lsblk", "-o", "NAME,TYPE"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                ["lsblk", "-o", "NAME,TYPE"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
             )
             grep = subprocess.Popen(
-                ["grep", "disk"], stdin=lsblk.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                ["grep", "disk"],
+                stdin=lsblk.stdout,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
             )
             command_output = grep.stdout.readlines()
 
@@ -57,12 +58,14 @@ class CLI:
         """
         Determine which block devices are USBs by selecting those that are removable.
         """
+        logger.info("Checking removable devices")
         usb_devices = []
         for device in attached_devices:
             is_removable = False
             try:
                 removable = subprocess.check_output(
-                    ["cat", f"/sys/class/block/{device}/removable"], stderr=subprocess.PIPE
+                    ["cat", f"/sys/class/block/{device}/removable"],
+                    stderr=subprocess.PIPE,
                 )
 
                 # 0 for non-removable device, 1 for removable
@@ -75,6 +78,7 @@ class CLI:
             if is_removable:
                 usb_devices.append(f"/dev/{device}")
 
+        logger.info(f"{len(usb_devices)} connected")
         return usb_devices
 
     def get_partitioned_device(self, blkid: str) -> str:
@@ -85,30 +89,40 @@ class CLI:
         Raise ExportException if partition check fails or device has unsupported partition scheme
         (currently, multiple partitions are unsupported).
         """
-        try:
+        device_and_partitions = self._check_partitions(blkid)
 
+        if device_and_partitions:
+            partition_count = (
+                device_and_partitions.decode("utf-8").split("\n").count("part")
+            )
+            logger.debug(f"Counted {partition_count} partitions")
+            if partition_count > 1:
+                # We don't currently support devices with multiple partitions
+                logger.error(
+                    f"Multiple partitions not supported ({partition_count} partitions"
+                    f" on {blkid})"
+                )
+                raise ExportException(sdstatus=Status.INVALID_DEVICE_DETECTED)
+
+            # redefine device to /dev/sda if disk is encrypted, /dev/sda1 if partition encrypted
+            if partition_count == 1:
+                logger.debug("One partition found")
+                blkid += "1"
+
+            return blkid
+
+        else:
+            # lsblk did not return output we could process
+            logger.error("Error checking device partitions")
+            raise ExportException(sdstatus=Status.DEVICE_ERROR)
+
+    def _check_partitions(self, blkid: str) -> str:
+        try:
+            logger.debug(f"Checking device partitions on {blkid}")
             device_and_partitions = subprocess.check_output(
                 ["lsblk", "-o", "TYPE", "--noheadings", blkid], stderr=subprocess.PIPE
             )
-
-            if device_and_partitions:
-                partition_count = device_and_partitions.decode("utf-8").split("\n").count("part")
-                if partition_count > 1:
-                    # We don't currently support devices with multiple partitions
-                    logger.error(
-                        f"Multiple partitions not supported (found {partition_count} partitions on {blkid}"
-                    )
-                    raise ExportException(sdstatus=Status.INVALID_DEVICE_DETECTED)
-
-                # redefine device to /dev/sda if disk is encrypted, /dev/sda1 if partition encrypted
-                if partition_count == 1:
-                    blkid += "1"
-
-                return blkid
-
-            else:
-                # lsblk did not return output we could process
-                raise ExportException(sdstatus=Status.DEVICE_ERROR)
+            return device_and_partitions
 
         except subprocess.CalledProcessError as ex:
             logger.error(f"Error checking block deivce {blkid}")
@@ -122,7 +136,7 @@ class CLI:
         isLuks = False
 
         try:
-            logger.debug(f"Checking if {device} is luks encrypted")
+            logger.debug("Checking if target device is luks encrypted")
 
             # cryptsetup isLuks returns 0 if the device is a luks volume
             # subprocess will throw if the device is not luks (rc !=0)
@@ -130,9 +144,9 @@ class CLI:
 
             isLuks = True
 
-        except subprocess.CalledProcessError as ex:
+        except subprocess.CalledProcessError:
             # Not necessarily an error state, just means the volume is not LUKS encrypted
-            logger.debug(f"{device} is not LUKS-encrypted")
+            logger.info("Target device is not LUKS-encrypted")
 
         return isLuks
 
@@ -142,8 +156,11 @@ class CLI:
 
         Raise ExportException if errors encounterd during attempt to parse LUKS headers.
         """
+        logger.debug("Get LUKS name from headers")
         try:
-            luks_header = subprocess.check_output(["sudo", "cryptsetup", "luksDump", device])
+            luks_header = subprocess.check_output(
+                ["sudo", "cryptsetup", "luksDump", device]
+            )
             if luks_header:
                 luks_header_list = luks_header.decode("utf-8").split("\n")
                 for line in luks_header_list:
@@ -151,11 +168,13 @@ class CLI:
                     if "UUID" in items[0]:
                         return "luks-" + items[1]
 
-            # If no header or no UUID field, we can't use this drive 
-            logger.error(f"Failed to get UUID from LUKS header; {device} may not be correctly formatted")
+            # If no header or no UUID field, we can't use this drive
+            logger.error(
+                f"Failed to get UUID from LUKS header; {device} may not be correctly formatted"
+            )
             raise ExportException(sdstatus=Status.INVALID_DEVICE_DETECTED)
         except subprocess.CalledProcessError as ex:
-            logger.error(f"Failed to dump LUKS header")
+            logger.error("Failed to dump LUKS header")
             raise ExportException(sdstatus=Status.DEVICE_ERROR) from ex
 
     def get_luks_volume(self, device: str) -> Volume:
@@ -174,10 +193,13 @@ class CLI:
         """
         try:
             mapped_name = self._get_luks_name_from_headers(device)
+            logger.debug(f"Mapped name is {mapped_name}")
 
             # Setting the mapped_name does not mean the device has already been unlocked.
             luks_volume = Volume(
-                device_name=device, mapped_name=mapped_name, encryption=EncryptionScheme.LUKS
+                device_name=device,
+                mapped_name=mapped_name,
+                encryption=EncryptionScheme.LUKS,
             )
 
             # If the device has been unlocked, we can see if it's mounted and
@@ -199,14 +221,20 @@ class CLI:
 
         Raise ExportException if errors are encountered during device unlocking.
         """
-        if not volume.encryption is EncryptionScheme.LUKS:
+        if volume.encryption is not EncryptionScheme.LUKS:
             logger.error("Must call unlock_luks_volume() on LUKS-encrypted device")
             raise ExportException(sdstatus=Status.DEVICE_ERROR)
 
         try:
             logger.debug("Unlocking luks volume {}".format(volume.device_name))
             p = subprocess.Popen(
-                ["sudo", "cryptsetup", "luksOpen", volume.device_name, volume.mapped_name],
+                [
+                    "sudo",
+                    "cryptsetup",
+                    "luksOpen",
+                    volume.device_name,
+                    volume.mapped_name,
+                ],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -217,7 +245,9 @@ class CLI:
 
             if rc == 0:
                 return Volume(
-                    device_name=volume.device_name, mapped_name=volume.mapped_name, encryption=EncryptionScheme.LUKS
+                    device_name=volume.device_name,
+                    mapped_name=volume.mapped_name,
+                    encryption=EncryptionScheme.LUKS,
                 )
             else:
                 logger.error("Bad volume passphrase")
@@ -231,6 +261,7 @@ class CLI:
         Check for existing mountpoint.
         Raise ExportException if errors encountered during command.
         """
+        logger.debug("Checking mountpoint")
         try:
             output = subprocess.check_output(
                 ["lsblk", "-o", "MOUNTPOINT", "--noheadings", volume.device_name]
@@ -251,21 +282,22 @@ class CLI:
         Raise ExportException if errors are encountered during mounting.
         """
         if not volume.unlocked:
+            logger.error("Volume is not unlocked.")
             raise ExportException(sdstatus=Status.ERROR_MOUNT)
 
         mountpoint = self._get_mountpoint(volume)
 
         if mountpoint:
-            logger.debug("The device is already mounted")
+            logger.info("The device is already mounted")
             if volume.mountpoint is not mountpoint:
-                logger.warning(f"Mountpoint was inaccurate, updating")
+                logger.warning("Mountpoint was inaccurate, updating")
 
             volume.mountpoint = mountpoint
             return volume
 
         else:
+            logger.info("Mount volume at default mountpoint")
             return self._mount_at_mountpoint(volume, self._DEFAULT_MOUNTPOINT)
-
 
     def _mount_at_mountpoint(self, volume: Volume, mountpoint: str) -> Volume:
         """
@@ -283,10 +315,12 @@ class CLI:
                 raise ExportException(sdstatus=Status.ERROR_MOUNT) from ex
 
         # Mount device /dev/mapper/{mapped_name} at /media/usb/
-        mapped_device_path = os.path.join(volume.MAPPED_VOLUME_PREFIX, volume.mapped_name)
+        mapped_device_path = os.path.join(
+            volume.MAPPED_VOLUME_PREFIX, volume.mapped_name
+        )
 
         try:
-            logger.debug(f"Mounting volume {volume.device_name} at {mountpoint}")
+            logger.info(f"Mounting volume at {mountpoint}")
             subprocess.check_call(["sudo", "mount", mapped_device_path, mountpoint])
             subprocess.check_call(["sudo", "chown", "-R", "user:user", mountpoint])
 
@@ -311,10 +345,12 @@ class CLI:
             subprocess.check_call(["mkdir", target_path])
 
             export_data = os.path.join(submission_tmpdir, "export_data/")
-            logger.info("Copying file to {}".format(submission_target_dirname))
+            logger.debug("Copying file to {}".format(submission_target_dirname))
 
             subprocess.check_call(["cp", "-r", export_data, target_path])
-            logger.info("File copied successfully to {}".format(submission_target_dirname))
+            logger.info(
+                "File copied successfully to {}".format(submission_target_dirname)
+            )
 
         except (subprocess.CalledProcessError, OSError) as ex:
             raise ExportException(sdstatus=Status.ERROR_EXPORT) from ex
@@ -330,7 +366,7 @@ class CLI:
 
         Raise ExportException if errors during cleanup are encoutered.
         """
-        logger.info("Syncing filesystems")
+        logger.debug("Syncing filesystems")
         try:
             subprocess.check_call(["sync"])
             umounted = self._unmount_volume(volume)

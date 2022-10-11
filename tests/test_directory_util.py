@@ -1,24 +1,34 @@
 import pytest
 import os
+import tempfile
+import shutil
 
 from pathlib import Path
 from securedrop_export import directory_util
-from securedrop_export.exceptions import ExportException
 
-class TestUtil:
 
-    _TMPDIR_PATH = "/tmp/pretendium/"
+class TestDirectoryUtil:
+
     _REL_TRAVERSAL = "../../../whee"
     _SAFE_RELPATH = "./hi"
     _SAFE_RELPATH2 = "yay/a/path"
     _UNSAFE_RELPATH = "lgtm/../ohwait"
 
+    @classmethod
+    def setup_class(cls):
+        cls.homedir = tempfile.mkdtemp() + "/"
+
+    @classmethod
+    def teardown_class(cls):
+        if os.path.exists(cls.homedir):
+            shutil.rmtree(cls.homedir)
+
     def setup_method(self, method):
         pass
 
     def teadown_method(self, method):
-        if (os.path.exists(self._TMPDIR_PATH)):
-            os.remove(self._TMPDIR_PATH)
+        if os.path.exists(self.homedir):
+            os.remove(self.homedir)
 
     def test_safe_mkdir_error_base_relpath(self):
         with pytest.raises(ValueError):
@@ -26,40 +36,49 @@ class TestUtil:
 
     def test_safe_mkdir_error_basepath_path_traversal(self):
         with pytest.raises(ValueError):
-            directory_util.safe_mkdir(f"{self._TMPDIR_PATH}{self._REL_TRAVERSAL}")
+            directory_util.safe_mkdir(f"{self.homedir}{self._REL_TRAVERSAL}")
 
     def test_safe_mkdir_error_relpath_path_traversal(self):
         with pytest.raises(ValueError):
-            directory_util.safe_mkdir(f"{self._TMPDIR_PATH}", f"{self._REL_TRAVERSAL}")
+            directory_util.safe_mkdir(f"{self.homedir}", f"{self._REL_TRAVERSAL}")
 
     def test_safe_mkdir_success(self):
-        directory_util.safe_mkdir(f"{self._TMPDIR_PATH}")
+        directory_util.safe_mkdir(f"{self.homedir}")
 
     def test_safe_mkdir_success_with_relpath(self):
-        directory_util.safe_mkdir(f"{self._TMPDIR_PATH}", f"{self._SAFE_RELPATH}")
+        directory_util.safe_mkdir(f"{self.homedir}", f"{self._SAFE_RELPATH}")
 
-        assert (os.path.exists(f"{self._TMPDIR_PATH}{self._SAFE_RELPATH}"))
+        assert os.path.exists(f"{self.homedir}{self._SAFE_RELPATH}")
 
     def test_safe_mkdir_success_another_relpath(self):
-        directory_util.safe_mkdir(f"{self._TMPDIR_PATH}", f"{self._SAFE_RELPATH2}")
+        directory_util.safe_mkdir(f"{self.homedir}", f"{self._SAFE_RELPATH2}")
 
-        assert (os.path.exists(f"{self._TMPDIR_PATH}{self._SAFE_RELPATH2}"))
-    
+        assert os.path.exists(f"{self.homedir}{self._SAFE_RELPATH2}")
+
     def test_safe_mkdir_weird_path(self):
         with pytest.raises(ValueError):
-            directory_util.safe_mkdir(f"{self._TMPDIR_PATH}", f"{self._UNSAFE_RELPATH}")
+            directory_util.safe_mkdir(f"{self.homedir}", f"{self._UNSAFE_RELPATH}")
 
     def test__check_all_permissions_path_missing(self):
         with pytest.raises(ValueError):
-            directory_util._check_all_permissions(f"{self._TMPDIR_PATH}", f"{self._SAFE_RELPATH}")
+            directory_util._check_all_permissions(
+                f"{self.homedir}", f"{self._SAFE_RELPATH}"
+            )
 
     def test_check_dir_perms_unsafe(self):
-        path = Path(f"{self._TMPDIR_PATH}{self._SAFE_RELPATH}")
+        path = Path(f"{self.homedir}{self._SAFE_RELPATH}")
 
         directory_util.safe_mkdir(path)
 
         # Not what we want, ever
         path.chmod(0o666)
-        
+
         with pytest.raises(RuntimeError):
-           directory_util._check_dir_permissions(path)
+            directory_util._check_dir_permissions(path)
+
+    def test_check_all_perms_invalid_full_path(self):
+        path = Path(f"{self.homedir}/idontexist")
+        base = Path(f"{self.homedir}")
+
+        # Returns without error
+        assert directory_util._check_all_permissions(path, base) is None

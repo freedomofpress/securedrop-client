@@ -4,9 +4,6 @@ import datetime
 import json
 import logging
 import os
-import shutil
-import subprocess
-import sys
 import tempfile
 
 from securedrop_export.exceptions import ExportException
@@ -16,51 +13,26 @@ from securedrop_export.directory_util import safe_extractall
 
 logger = logging.getLogger(__name__)
 
+
 class Status(BaseStatus):
     ERROR_ARCHIVE_METADATA = "ERROR_ARCHIVE_METADATA"
     ERROR_METADATA_PARSING = "ERROR_METADATA_PARSING"
     ERROR_EXTRACTION = "ERROR_EXTRACTION"
 
+
 class Metadata(object):
     """
     Object to parse, validate and store json metadata from the sd-export archive.
-
-    Create a Metadata object by using the `create_and_validate()` method to
-    ensure well-formed and valid metadata.
     """
 
     METADATA_FILE = "metadata.json"
     SUPPORTED_ENCRYPTION_METHODS = ["luks"]
 
-    # Slightly underhanded way of ensuring that a Metadata object is not instantiated
-    # directly; instead, the create_and_validate() method is used
-    __key = object()
-
-
-    def __init__(self, key: object, archive_path: str):
-        if not key == Metadata.__key:
-            raise ValueError("Must use create_and_validate() to create Metadata object")
-
-        # Initialize
+    def __init__(self, archive_path: str):
         self.metadata_path = os.path.join(archive_path, self.METADATA_FILE)
 
-
-    @classmethod
-    def create_and_validate(cls, archive_path) -> 'Metadata':
-        """
-        Create and validate metadata object. Raise ExportException for invalid metadata.
-        """
-        md = Metadata(cls.__key, archive_path)
-        md.validate()
-
-        return md
-
-
-    def validate(self):
-        """
-        Validate Metadata.
-        Throw ExportException if invalid state is found.
-        """
+    def validate(self) -> "Metadata":
+        # Read metadata json and set relevant attributes
         try:
             with open(self.metadata_path) as f:
                 logger.info("Parsing archive metadata")
@@ -69,7 +41,7 @@ class Metadata(object):
                 self.encryption_method = json_config.get("encryption_method", None)
                 self.encryption_key = json_config.get("encryption_key", None)
                 logger.info(
-                    "Exporting to device {} with encryption_method {}".format(
+                    "Target: {}, encryption_method {}".format(
                         self.export_method, self.encryption_method
                     )
                 )
@@ -78,32 +50,52 @@ class Metadata(object):
             logger.error("Metadata parsing failure")
             raise ExportException(sdstatus=Status.ERROR_METADATA_PARSING) from ex
 
-        # Validate metadata - this will fail if command is not in list of supported commands
-        try:        
+        # Validate action - fails if command is not in list of supported commands
+        try:
+            logger.debug("Validate export action")
             self.command = Command(self.export_method)
-            if self.command is Command.EXPORT and not self.encryption_method in self.SUPPORTED_ENCRYPTION_METHODS:
+            if (
+                self.command is Command.EXPORT
+                and self.encryption_method not in self.SUPPORTED_ENCRYPTION_METHODS
+            ):
                 logger.error("Unsupported encryption method")
                 raise ExportException(sdstatus=Status.ERROR_ARCHIVE_METADATA)
         except ValueError as v:
-            raise ExportException(sdstatus=Status.ERROR_METADATA_PARSING) from v
+            raise ExportException(sdstatus=Status.ERROR_ARCHIVE_METADATA) from v
+
+        return self
 
 
 class Archive(object):
-    def __init__(self, archive):
+    def __init__(self, archive_path: str):
         os.umask(0o077)
-        self.archive = archive
-        self.submission_dirname = os.path.basename(self.archive).split(".")[0]
+        self.archive = archive_path
         self.target_dirname = "sd-export-{}".format(
             datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         )
         self.tmpdir = tempfile.mkdtemp()
 
-    def extract_tarball(self):
+    def extract_tarball(self) -> "Archive":
+        """
+        Extract tarball, checking for path traversal, and return Archive object.
+        """
         try:
-            logger.info("Extracting tarball {} into {}".format(self.archive, self.tmpdir))
+            logger.info(
+                "Extracting tarball {} into {}".format(self.archive, self.tmpdir)
+            )
             safe_extractall(self.archive, self.tmpdir)
+            return self
         except Exception as ex:
             logger.error("Unable to extract tarball: {}".format(ex))
             raise ExportException(sdstatus=Status.ERROR_EXTRACTION) from ex
 
-    
+    def set_metadata(self, metadata: Metadata) -> "Archive":
+        """
+        Set relevant metadata attributes for a given archive.
+        """
+        self.command = metadata.command
+        if self.command is Command.EXPORT:
+            # When we support multiple encryption types, we will also want to add the
+            # encryption_method here
+            self.encryption_key = metadata.encryption_key
+        return self

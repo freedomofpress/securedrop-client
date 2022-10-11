@@ -7,13 +7,6 @@ import time
 from securedrop_export.exceptions import handler, TimeoutException, ExportException
 from .status import Status
 
-PRINTER_NAME = "sdw-printer"
-PRINTER_WAIT_TIMEOUT = 60
-BRLASER_DRIVER = "/usr/share/cups/drv/brlaser.drv"
-BRLASER_PPD = "/usr/share/cups/model/br7030.ppd"
-LASERJET_DRIVER = "/usr/share/cups/drv/hpcups.drv"
-LASERJET_PPD = "/usr/share/cups/model/hp-laserjet_6l.ppd"
-
 logger = logging.getLogger(__name__)
 
 
@@ -22,12 +15,19 @@ class Service:
     Printer service
     """
 
+    PRINTER_NAME = "sdw-printer"
+    PRINTER_WAIT_TIMEOUT = 60
+    BRLASER_DRIVER = "/usr/share/cups/drv/brlaser.drv"
+    BRLASER_PPD = "/usr/share/cups/model/br7030.ppd"
+    LASERJET_DRIVER = "/usr/share/cups/drv/hpcups.drv"
+    LASERJET_PPD = "/usr/share/cups/model/hp-laserjet_6l.ppd"
+
     def __init__(self, submission):
         self.submission = submission
-        self.printer_name = PRINTER_NAME
-        self.printer_wait_timeout = PRINTER_WAIT_TIMEOUT
+        self.printer_name = self.PRINTER_NAME
+        self.printer_wait_timeout = self.PRINTER_WAIT_TIMEOUT
 
-    def print(self) -> Status:
+    def print(self):
         """
         Routine to print all files.
         Throws ExportException if an error is encountered.
@@ -35,40 +35,49 @@ class Service:
         logger.info("Printing all files from archive")
         self._check_printer_setup()
         self._print_all_files()
-        return Status.PRINT_SUCCESS
+        # When client can accept new print statuses, we will return
+        # a success status here
+        # return Status.PRINT_SUCCESS
 
-    def printer_preflight(self) -> Status:
+    def printer_preflight(self):
         """
         Routine to perform preflight printer testing.
 
         Throws ExportException if an error is encoutered.
         """
-        logger.info("Running printer preflight")            
+        logger.info("Running printer preflight")
         self._check_printer_setup()
-        return Status.PREFLIGHT_SUCCESS
+        # When client can accept new print statuses, we will return
+        # a success status here
+        # return Status.PREFLIGHT_SUCCESS
 
-    def printer_test(self) -> Status:
+    def printer_test(self):
         """
         Routine to print a test page.
 
         Throws ExportException if an error is encountered.
         """
-        logger.info("Printing test page")            
+        logger.info("Printing test page")
         self._check_printer_setup()
         self._print_test_page()
-        return Status.PRINT_SUCCESS
+        # When client can accept new print statuses, we will return
+        # a success status here
+        # return Status.TEST_SUCCESS
 
     def _wait_for_print(self):
         """
         Use lpstat to ensure the job was fully transfered to the printer
         Return True if print was successful, otherwise throw ExportException.
+        Currently, the handler `handler` is defined in `exceptions.py`.
         """
         signal.signal(signal.SIGALRM, handler)
         signal.alarm(self.printer_wait_timeout)
         printer_idle_string = "printer {} is idle".format(self.printer_name)
         while True:
             try:
-                logger.info("Running lpstat waiting for printer {}".format(self.printer_name))
+                logger.info(
+                    "Running lpstat waiting for printer {}".format(self.printer_name)
+                )
                 output = subprocess.check_output(["lpstat", "-p", self.printer_name])
                 if printer_idle_string in output.decode("utf-8"):
                     logger.info("Print completed")
@@ -108,10 +117,10 @@ class Service:
 
             printer_uri = printers[0]
             printer_ppd = self._install_printer_ppd(printer_uri)
-            self.setup_printer(printer_uri, printer_ppd)
+            self._setup_printer(printer_uri, printer_ppd)
         except subprocess.CalledProcessError as e:
             logger.error(e)
-            raise ExportException(sdstatus=Status.ERROR_GENERIC)
+            raise ExportException(sdstatus=Status.ERROR_UNKNOWN)
 
     def _get_printer_uri(self) -> str:
         """
@@ -123,6 +132,7 @@ class Service:
         try:
             output = subprocess.check_output(["sudo", "lpinfo", "-v"])
         except subprocess.CalledProcessError:
+            logger.error("Error attempting to retrieve printer uri with lpinfo")
             raise ExportException(sdstatus=Status.ERROR_PRINTER_URI)
 
         # fetch the usb printer uri
@@ -146,16 +156,17 @@ class Service:
 
     def _install_printer_ppd(self, uri):
         if not any(x in uri for x in ("Brother", "LaserJet")):
-            logger.error("Cannot install printer ppd for unsupported printer: {}".format(uri))
+            logger.error(
+                "Cannot install printer ppd for unsupported printer: {}".format(uri)
+            )
             raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_SUPPORTED)
-            return
 
         if "Brother" in uri:
-            printer_driver = BRLASER_DRIVER
-            printer_ppd = BRLASER_PPD
+            printer_driver = self.BRLASER_DRIVER
+            printer_ppd = self.BRLASER_PPD
         elif "LaserJet" in uri:
-            printer_driver = LASERJET_DRIVER
-            printer_ppd = LASERJET_PPD
+            printer_driver = self.LASERJET_DRIVER
+            printer_ppd = self.LASERJET_PPD
 
         # Compile and install drivers that are not already installed
         if not os.path.exists(printer_ppd):
@@ -177,7 +188,7 @@ class Service:
     def _setup_printer(self, printer_uri, printer_ppd):
         # Add the printer using lpadmin
         logger.info("Setting up printer {}".format(self.printer_name))
-        safe_check_call(
+        self.safe_check_call(
             command=[
                 "sudo",
                 "lpadmin",
@@ -235,7 +246,7 @@ class Service:
             folder = os.path.dirname(file_to_print)
             converted_filename = file_to_print + ".pdf"
             converted_path = os.path.join(folder, converted_filename)
-            safe_check_call(
+            self.safe_check_call(
                 command=["unoconv", "-o", converted_path, file_to_print],
                 error_status=Status.ERROR_PRINT,
             )
@@ -248,8 +259,9 @@ class Service:
             error_status=Status.ERROR_PRINT,
         )
 
-
-    def safe_check_call(command: str, error_status: Status, ignore_stderr_startswith=None):
+    def safe_check_call(
+        self, command: str, error_status: Status, ignore_stderr_startswith=None
+    ):
         """
         Wrap subprocess.check_output to ensure we wrap CalledProcessError and return
         our own exception, and log the error messages.
@@ -267,4 +279,3 @@ class Service:
                 raise ExportException(sdstatus=error_status, sderror=err)
         except subprocess.CalledProcessError as ex:
             raise ExportException(sdstatus=error_status, sderror=ex.output)
-

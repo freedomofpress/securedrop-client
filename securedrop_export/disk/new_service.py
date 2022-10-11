@@ -1,17 +1,10 @@
 import logging
-import os
-import subprocess
-import sys
-
-from enum import Enum
-
-from typing import List
 
 from securedrop_export.archive import Archive
 
 from .cli import CLI
 from .status import Status
-from .volume import EncryptionScheme, Volume
+from .volume import Volume
 from securedrop_export.exceptions import ExportException
 
 
@@ -29,7 +22,7 @@ class Service:
 
     def run(self, arg: str) -> Status:
         """
-        Run export actions. 
+        Run export actions.
         """
 
     def scan_all_devices(self) -> Status:
@@ -46,13 +39,13 @@ class Service:
             elif number_devices > 1:
                 return Status.MULTI_DEVICE_DETECTED
             else:
-                return scan_single_device(all_devices[0])
+                return self.scan_single_device(all_devices[0])
 
-        except ExportException:
+        except ExportException as ex:
             logger.error(ex)
             return Status.DEVICE_ERROR  # Could not assess devices
 
-    def scan_single_device(self, str: blkid) -> Status:
+    def scan_single_device(self, blkid: str) -> Status:
         """
         Given a string representing a single block device, see if it
         is a suitable export target and return information about its state.

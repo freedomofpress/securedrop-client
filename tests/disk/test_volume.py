@@ -1,4 +1,3 @@
-import pytest
 from unittest import mock
 
 from securedrop_export.disk.volume import Volume, EncryptionScheme
@@ -6,7 +5,11 @@ from securedrop_export.disk.volume import Volume, EncryptionScheme
 
 class TestVolume:
     def test_overwrite_valid_encryption_scheme(self):
-        volume = Volume(device_name="/dev/sda", mapped_name="pretend-luks-mapper-id", encryption=EncryptionScheme.LUKS)
+        volume = Volume(
+            device_name="/dev/sda",
+            mapped_name="pretend-luks-mapper-id",
+            encryption=EncryptionScheme.LUKS,
+        )
         assert volume.encryption is EncryptionScheme.LUKS
         volume.encryption = None
         assert volume.encryption is EncryptionScheme.UNKNOWN
@@ -14,7 +17,9 @@ class TestVolume:
     @mock.patch("os.path.exists", return_value=True)
     def test_is_unlocked_true(self, mock_os_path):
         volume = Volume(
-            device_name="/dev/sda1", mapped_name="pretend-luks-mapper-id", encryption=EncryptionScheme.LUKS
+            device_name="/dev/sda1",
+            mapped_name="pretend-luks-mapper-id",
+            encryption=EncryptionScheme.LUKS,
         )
 
         assert volume.unlocked
@@ -22,7 +27,9 @@ class TestVolume:
     @mock.patch("os.path.exists", return_value=False)
     def test_is_unlocked_false_no_path(self, mock_os_path):
         volume = Volume(
-            device_name="/dev/sda1", mapped_name="pretend-luks-mapper-id", encryption=EncryptionScheme.LUKS
+            device_name="/dev/sda1",
+            mapped_name="pretend-luks-mapper-id",
+            encryption=EncryptionScheme.LUKS,
         )
 
         assert not volume.unlocked
@@ -30,13 +37,15 @@ class TestVolume:
     @mock.patch("os.path.exists", return_value=True)
     def test_writable_false(self, mock_os_path):
         vol = Volume(
-            device_name="dev/sda1", mapped_name="pretend-luks-id", encryption=EncryptionScheme.LUKS
+            device_name="dev/sda1",
+            mapped_name="pretend-luks-id",
+            encryption=EncryptionScheme.LUKS,
         )
 
         assert not vol.writable
 
     @mock.patch("os.path.exists", return_value=True)
-    def test_writable_false(self, mock_os_path):
+    def test_writable(self, mock_os_path):
         vol = Volume(
             device_name="dev/sda1",
             mapped_name="pretend-luks-id",

@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +15,8 @@ class ExportException(Exception):
         self.sdstatus = kwargs.get("sdstatus")
         self.sderror = kwargs.get("sderror")
 
-class TimeoutException(ExportException):
+
+class TimeoutException(Exception):
     pass
 
 

@@ -1,10 +1,7 @@
 import pytest
 from unittest import mock
 
-import os
-import pytest
 import subprocess
-import sys
 
 from securedrop_export.disk.cli import CLI
 from securedrop_export.disk.volume import EncryptionScheme, Volume
@@ -32,6 +29,7 @@ class TestCli:
     Test the CLI wrapper that handless identification and locking/unlocking of
     USB volumes.
     """
+
     @classmethod
     def setup_class(cls):
         cls.cli = CLI()
@@ -49,7 +47,8 @@ class TestCli:
 
         Parameters:
             disks (byte array): Array of disk names separated by newline.
-            is_removable (byte array): Array of removable status results (1 for removable) separated by newline
+            is_removable (byte array): Array of removable status results (1 for removable),
+            separated by newline
         """
 
         # Patch commandline calls to `lsblk | grep disk`
@@ -58,7 +57,7 @@ class TestCli:
         command_output.stdout.readlines = mock.MagicMock(return_value=disks)
         mocker.patch("subprocess.Popen", return_value=command_output)
 
-        # Pactch commandline call to 'cat /sys/class/block/{device}/removable'
+        # Patch commandline call to 'cat /sys/class/block/{device}/removable'
 
         # Using side_effect with an iterable allows for different return value each time,
         # which matches what would happen if iterating through list of devices
@@ -73,7 +72,10 @@ class TestCli:
 
         assert result[0] == "/dev/sda" and result[1] == "/dev/sdb"
 
-    @mock.patch("subprocess.check_output", side_effect=subprocess.CalledProcessError(1, "check_output"))
+    @mock.patch(
+        "subprocess.check_output",
+        side_effect=subprocess.CalledProcessError(1, "check_output"),
+    )
     def test_get_removable_devices_none_removable(self, mocker):
         disks = [b"sda disk\n", b"sdb disk\n"]
         removable = [b"0\n", b"0\n"]
@@ -83,7 +85,9 @@ class TestCli:
         result = self.cli._get_removable_devices(disks)
         assert len(result) == 0
 
-    @mock.patch("subprocess.Popen", side_effect=subprocess.CalledProcessError(1, "Popen"))
+    @mock.patch(
+        "subprocess.Popen", side_effect=subprocess.CalledProcessError(1, "Popen")
+    )
     def test_get_connected_devices_error(self, mocked_subprocess):
 
         with pytest.raises(ExportException):
@@ -91,15 +95,20 @@ class TestCli:
 
     @mock.patch("subprocess.check_output", return_value=_SAMPLE_OUTPUT_NO_PART)
     def test_get_partitioned_device_no_partition(self, mocked_call):
-        assert self.cli.get_partitioned_device(_DEFAULT_USB_DEVICE) == _DEFAULT_USB_DEVICE
+        assert (
+            self.cli.get_partitioned_device(_DEFAULT_USB_DEVICE) == _DEFAULT_USB_DEVICE
+        )
 
     @mock.patch("subprocess.check_output", return_value=_SAMPLE_OUTPUT_ONE_PART)
     def test_get_partitioned_device_one_partition(self, mocked_call):
-        assert self.cli.get_partitioned_device(_DEFAULT_USB_DEVICE) == _DEFAULT_USB_DEVICE+"1"
+        assert (
+            self.cli.get_partitioned_device(_DEFAULT_USB_DEVICE)
+            == _DEFAULT_USB_DEVICE + "1"
+        )
 
     @mock.patch("subprocess.check_output", return_value=_SAMPLE_OUTPUT_MULTI_PART)
     def test_get_partitioned_device_multi_partition(self, mocked_call):
-        
+
         with pytest.raises(ExportException) as ex:
             self.cli.get_partitioned_device(_SAMPLE_OUTPUT_MULTI_PART)
 
@@ -113,10 +122,11 @@ class TestCli:
         assert ex.value.sdstatus is Status.DEVICE_ERROR
 
     @mock.patch(
-        "subprocess.check_output", side_effect=subprocess.CalledProcessError(1, "check_output")
+        "subprocess.check_output",
+        side_effect=subprocess.CalledProcessError(1, "check_output"),
     )
     def test_get_partitioned_device_multi_partition_error(self, mocked_call):
-        
+
         # Make sure we wrap CalledProcessError and throw our own exception
         with pytest.raises(ExportException) as ex:
             self.cli.get_partitioned_device(_DEFAULT_USB_DEVICE)
@@ -125,11 +135,14 @@ class TestCli:
 
     @mock.patch("subprocess.check_call", return_value=0)
     def test_is_luks_volume_true(self, mocked_call):
-        
+
         # `sudo cryptsetup isLuks` returns 0 if true
         assert self.cli.is_luks_volume(_SAMPLE_OUTPUT_ONE_PART)
 
-    @mock.patch("subprocess.check_call", side_effect=subprocess.CalledProcessError(1, "check_call"))
+    @mock.patch(
+        "subprocess.check_call",
+        side_effect=subprocess.CalledProcessError(1, "check_call"),
+    )
     def test_is_luks_volume_false(self, mocked_subprocess):
 
         # `sudo cryptsetup isLuks` returns 1 if false; CalledProcessError is thrown
@@ -139,10 +152,14 @@ class TestCli:
     def test__get_luks_name_from_headers(self, mocked_subprocess):
         result = self.cli._get_luks_name_from_headers(_DEFAULT_USB_DEVICE)
 
-        assert result is not None and result.split("-")[1] in _SAMPLE_LUKS_HEADER.decode("utf8")
+        assert result is not None and result.split("-")[
+            1
+        ] in _SAMPLE_LUKS_HEADER.decode("utf8")
 
-    @mock.patch("subprocess.check_output", return_value=b"corrupted-or-invalid-header\n")
-    def test__get_luks_name_from_headers_error(self, mocked_subprocess):
+    @mock.patch(
+        "subprocess.check_output", return_value=b"corrupted-or-invalid-header\n"
+    )
+    def test__get_luks_name_from_headers_error_invalid(self, mocked_subprocess):
 
         with pytest.raises(ExportException) as ex:
             self.cli._get_luks_name_from_headers(_DEFAULT_USB_DEVICE)
@@ -158,7 +175,9 @@ class TestCli:
         assert ex.value.sdstatus is Status.INVALID_DEVICE_DETECTED
 
     @mock.patch("subprocess.check_output", return_value=None)
-    def test__get_luks_name_from_headers_error_nothing_returned(self, mocked_subprocess):
+    def test__get_luks_name_from_headers_error_nothing_returned(
+        self, mocked_subprocess
+    ):
 
         with pytest.raises(ExportException) as ex:
             self.cli._get_luks_name_from_headers(_DEFAULT_USB_DEVICE)
@@ -166,7 +185,8 @@ class TestCli:
         assert ex.value.sdstatus is Status.INVALID_DEVICE_DETECTED
 
     @mock.patch(
-        "subprocess.check_output", side_effect=subprocess.CalledProcessError(1, "check_output")
+        "subprocess.check_output",
+        side_effect=subprocess.CalledProcessError(1, "check_output"),
     )
     def test__get_luks_name_from_headers_error(self, mocked_subprocess):
         with pytest.raises(ExportException):
@@ -188,7 +208,10 @@ class TestCli:
         assert result.encryption is EncryptionScheme.LUKS
         assert not result.unlocked
 
-    @mock.patch("subprocess.check_output", side_effect=subprocess.CalledProcessError("check_output", 1))
+    @mock.patch(
+        "subprocess.check_output",
+        side_effect=subprocess.CalledProcessError("check_output", 1),
+    )
     def test_get_luks_volume_error(self, mocked_subprocess):
         with pytest.raises(ExportException) as ex:
             self.cli.get_luks_volume(_DEFAULT_USB_DEVICE_ONE_PART)
@@ -202,13 +225,19 @@ class TestCli:
         mock_popen.returncode = 0
 
         mocker.patch("subprocess.Popen", return_value=mock_popen)
-        mocker.patch("subprocess.Popen.communicate", return_value=mock_popen_communicate)
+        mocker.patch(
+            "subprocess.Popen.communicate", return_value=mock_popen_communicate
+        )
 
         mapped_name = "luks-id-123456"
-        vol = Volume(device_name=_DEFAULT_USB_DEVICE, mapped_name=mapped_name, encryption=EncryptionScheme.LUKS)
+        vol = Volume(
+            device_name=_DEFAULT_USB_DEVICE,
+            mapped_name=mapped_name,
+            encryption=EncryptionScheme.LUKS,
+        )
         key = "a_key&_!"
         result = self.cli.unlock_luks_volume(vol, key)
-        assert vol.unlocked
+        assert result.unlocked
 
     @mock.patch("os.path.exists", return_value=True)
     def test_unlock_luks_volume_not_luks(self, mocker):
@@ -218,9 +247,12 @@ class TestCli:
 
         mocker.patch("subprocess.Popen", mock_popen)
 
-        vol = Volume(device_name=_DEFAULT_USB_DEVICE, mapped_name=_PRETEND_LUKS_ID, encryption=EncryptionScheme.UNKNOWN)
+        vol = Volume(
+            device_name=_DEFAULT_USB_DEVICE,
+            mapped_name=_PRETEND_LUKS_ID,
+            encryption=EncryptionScheme.UNKNOWN,
+        )
         key = "a key!"
-        mapped_name = "luks-id-123456"
 
         with pytest.raises(ExportException) as ex:
             self.cli.unlock_luks_volume(vol, key)
@@ -234,18 +266,26 @@ class TestCli:
 
         mocker.patch("subprocess.Popen", mock_popen)
 
-        vol = Volume(device_name=_DEFAULT_USB_DEVICE, mapped_name=_PRETEND_LUKS_ID, encryption=EncryptionScheme.LUKS)
+        vol = Volume(
+            device_name=_DEFAULT_USB_DEVICE,
+            mapped_name=_PRETEND_LUKS_ID,
+            encryption=EncryptionScheme.LUKS,
+        )
         key = "a key!"
-        mapped_name = "luks-id-123456"
 
         with pytest.raises(ExportException):
             self.cli.unlock_luks_volume(vol, key)
 
-    @mock.patch("subprocess.Popen", side_effect=subprocess.CalledProcessError("1", "Popen"))
+    @mock.patch(
+        "subprocess.Popen", side_effect=subprocess.CalledProcessError("1", "Popen")
+    )
     def test_unlock_luks_volume_luksOpen_exception(self, mocked_subprocess):
-        pd = Volume(device_name=_DEFAULT_USB_DEVICE, mapped_name=_PRETEND_LUKS_ID, encryption=EncryptionScheme.LUKS)
+        pd = Volume(
+            device_name=_DEFAULT_USB_DEVICE,
+            mapped_name=_PRETEND_LUKS_ID,
+            encryption=EncryptionScheme.LUKS,
+        )
         key = "a key!"
-        mapped_name = "luks-id-123456"
 
         with pytest.raises(ExportException) as ex:
             self.cli.unlock_luks_volume(pd, key)
@@ -261,13 +301,17 @@ class TestCli:
             mapped_name=_PRETEND_LUKS_ID,
             encryption=EncryptionScheme.LUKS,
         )
-        result = self.cli.mount_volume(vol)
+        self.cli.mount_volume(vol)
         assert vol.mountpoint is self.cli._DEFAULT_MOUNTPOINT
 
     @mock.patch("os.path.exists", return_value=True)
-    @mock.patch("subprocess.check_output", return_value=b"/dev/pretend/luks-id-123456\n")
+    @mock.patch(
+        "subprocess.check_output", return_value=b"/dev/pretend/luks-id-123456\n"
+    )
     @mock.patch("subprocess.check_call", return_value=0)
-    def test_mount_volume_already_mounted(self, mocked_output, mocked_call, mocked_path):
+    def test_mount_volume_already_mounted(
+        self, mocked_output, mocked_call, mocked_path
+    ):
         md = Volume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
             mapped_name=_PRETEND_LUKS_ID,
@@ -288,7 +332,10 @@ class TestCli:
         assert self.cli.mount_volume(md).mapped_name == _PRETEND_LUKS_ID
 
     @mock.patch("subprocess.check_output", return_value=b"\n")
-    @mock.patch("subprocess.check_call", side_effect=subprocess.CalledProcessError(1, "check_call"))
+    @mock.patch(
+        "subprocess.check_call",
+        side_effect=subprocess.CalledProcessError(1, "check_call"),
+    )
     def test_mount_volume_error(self, mocked_subprocess, mocked_output):
         md = Volume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
@@ -302,7 +349,10 @@ class TestCli:
         assert ex.value.sdstatus is Status.ERROR_MOUNT
 
     @mock.patch("os.path.exists", return_value=False)
-    @mock.patch("subprocess.check_call", side_effect=subprocess.CalledProcessError(1, "check_call"))
+    @mock.patch(
+        "subprocess.check_call",
+        side_effect=subprocess.CalledProcessError(1, "check_call"),
+    )
     def test_mount_at_mountpoint_mkdir_error(self, mocked_subprocess, mocked_path):
         md = Volume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
@@ -317,7 +367,10 @@ class TestCli:
         assert ex.value.sdstatus is Status.ERROR_MOUNT
 
     @mock.patch("os.path.exists", return_value=True)
-    @mock.patch("subprocess.check_call", side_effect=subprocess.CalledProcessError(1, "check_call"))
+    @mock.patch(
+        "subprocess.check_call",
+        side_effect=subprocess.CalledProcessError(1, "check_call"),
+    )
     def test_mount_at_mountpoint_mounting_error(self, mocked_subprocess, mocked_path):
         md = Volume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
@@ -345,7 +398,10 @@ class TestCli:
         assert result.mountpoint is None
 
     @mock.patch("os.path.exists", return_value=True)
-    @mock.patch("subprocess.check_call", side_effect=subprocess.CalledProcessError(1, "check_call"))
+    @mock.patch(
+        "subprocess.check_call",
+        side_effect=subprocess.CalledProcessError(1, "check_call"),
+    )
     def test__unmount_volume_error(self, mocked_subprocess, mocked_mountpath):
         mounted = Volume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
@@ -372,7 +428,10 @@ class TestCli:
         self.cli._close_luks_volume(mapped)
 
     @mock.patch("os.path.exists", return_value=True)
-    @mock.patch("subprocess.check_call", side_effect=subprocess.CalledProcessError(1, "check_call"))
+    @mock.patch(
+        "subprocess.check_call",
+        side_effect=subprocess.CalledProcessError(1, "check_call"),
+    )
     def test__close_luks_volume_error(self, mocked_subprocess, mocked_os_call):
         mapped = Volume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
@@ -385,7 +444,10 @@ class TestCli:
 
         assert ex.value.sdstatus is Status.DEVICE_ERROR
 
-    @mock.patch("subprocess.check_call", side_effect=subprocess.CalledProcessError(1, "check_call"))
+    @mock.patch(
+        "subprocess.check_call",
+        side_effect=subprocess.CalledProcessError(1, "check_call"),
+    )
     def test__remove_temp_directory_error(self, mocked_subprocess):
         with pytest.raises(ExportException):
             self.cli._remove_temp_directory("tmp")
@@ -412,7 +474,10 @@ class TestCli:
         # Don't want to patch it indefinitely though, that will mess with the other tests
         patch.stop()
 
-    @mock.patch("subprocess.check_call", side_effect=subprocess.CalledProcessError(1, "check_call"))
+    @mock.patch(
+        "subprocess.check_call",
+        side_effect=subprocess.CalledProcessError(1, "check_call"),
+    )
     def test_write_to_disk_error_still_does_cleanup(self, mock_call):
         # see above - patch internal method only for this test
         patch = mock.patch.object(self.cli, "cleanup_drive_and_tmpdir")
@@ -428,16 +493,21 @@ class TestCli:
         submission = Archive("testfile")
 
         with pytest.raises(ExportException):
-            self.cli.write_data_to_device(submission.tmpdir, submission.target_dirname, vol)
+            self.cli.write_data_to_device(
+                submission.tmpdir, submission.target_dirname, vol
+            )
             self.cli.cleanup_drive_and_tmpdir.assert_called_once()
 
         patch.stop()
 
-    @mock.patch("subprocess.check_call", side_effect=subprocess.CalledProcessError(1, "check_call"))
+    @mock.patch(
+        "subprocess.check_call",
+        side_effect=subprocess.CalledProcessError(1, "check_call"),
+    )
     def test_cleanup_drive_and_tmpdir_error(self, mocked_subprocess):
         submission = Archive("testfile")
         mock_volume = mock.MagicMock(Volume)
-        
+
         with pytest.raises(ExportException) as ex:
             self.cli.cleanup_drive_and_tmpdir(mock_volume, submission.tmpdir)
         assert ex.value.sdstatus is Status.ERROR_EXPORT_CLEANUP
@@ -469,10 +539,19 @@ class TestCli:
         close_patch.stop()
         remove_tmpdir_patch.stop()
 
-    @mock.patch("subprocess.check_output", side_effect=subprocess.CalledProcessError(1, "check_output"))
+    @mock.patch(
+        "subprocess.check_output",
+        side_effect=subprocess.CalledProcessError(1, "check_output"),
+    )
     def test_mountpoint_error(self, mock_subprocess):
         with pytest.raises(ExportException) as ex:
-            self.cli._get_mountpoint(Volume(device_name=_DEFAULT_USB_DEVICE, mapped_name=_PRETEND_LUKS_ID, encryption=EncryptionScheme.LUKS))
+            self.cli._get_mountpoint(
+                Volume(
+                    device_name=_DEFAULT_USB_DEVICE,
+                    mapped_name=_PRETEND_LUKS_ID,
+                    encryption=EncryptionScheme.LUKS,
+                )
+            )
 
         assert ex.value.sdstatus is Status.ERROR_MOUNT
 
@@ -480,15 +559,15 @@ class TestCli:
     def test_mount_mkdir_fails(self, mocked_path):
         mock_mountpoint = mock.patch.object(self.cli, "_get_mountpoint")
         mock_mountpoint.return_value = None
-        # mock.patch("subprocess.check_output", side_effect=subprocess.CalledProcessError(1, "check_output"))
 
-        mock_volume = mock.MagicMock()
-        mock_volume.device_name = _DEFAULT_USB_DEVICE_ONE_PART
-        mock_volume.mapped_name = _PRETEND_LUKS_ID
-        mock_volume.EncryptionScheme = EncryptionScheme.LUKS
-        mock_volume.unlocked = True
+        vol = Volume(
+            device_name=_DEFAULT_USB_DEVICE_ONE_PART,
+            mapped_name=_PRETEND_LUKS_ID,
+            encryption=EncryptionScheme.LUKS,
+        )
+        mock.patch.object(vol, "unlocked", return_value=True)
 
         with pytest.raises(ExportException) as ex:
-            self.cli.mount_volume(mock_volume)
+            self.cli.mount_volume(vol)
 
         assert ex.value.sdstatus is Status.ERROR_MOUNT
