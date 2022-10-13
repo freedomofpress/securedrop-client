@@ -268,9 +268,6 @@ msgstr ""
 msgid "See your administrator for help."
 msgstr ""
 
-msgid "The CONTINUE button will be disabled until the Export VM is ready"
-msgstr ""
-
 msgid "Remember to be careful when working with files outside of your Workstation machine."
 msgstr ""
 
