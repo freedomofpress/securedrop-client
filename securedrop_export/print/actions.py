@@ -194,6 +194,7 @@ class PrintAction(ExportAction):
             ".odt",
             ".ods",
             ".odp",
+            ".rtf",
         ]
         for extension in OPEN_OFFICE_FORMATS:
             if os.path.basename(filename).endswith(extension):
