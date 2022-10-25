@@ -62,7 +62,7 @@ class DownloadConversation(QAction):
         self._on_selected_conversation_files_changed()
 
 
-class DeleteSourceAction(QAction):
+class DeleteSource(QAction):
     """Use this action to delete the source record."""
 
     def __init__(
@@ -91,7 +91,7 @@ class DeleteSourceAction(QAction):
             self._confirmation_dialog.exec()
 
 
-class DeleteConversationAction(QAction):
+class DeleteConversation(QAction):
     """Use this action to delete a source's submissions and replies."""
 
     def __init__(
