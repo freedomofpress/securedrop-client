@@ -84,9 +84,6 @@ class ExportDialog(ModalDialog):
         )
         self.passphrase_error_message = _("The passphrase provided did not work. Please try again.")
         self.generic_error_message = _("See your administrator for help.")
-        self.continue_disabled_message = _(
-            "The CONTINUE button will be disabled until the Export VM is ready"
-        )
         self.success_message = _(
             "Remember to be careful when working with files outside of your Workstation machine."
         )
