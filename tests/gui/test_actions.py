@@ -7,17 +7,13 @@ from PyQt5.QtWidgets import QDialog, QMenu
 
 from securedrop_client import state
 from securedrop_client.db import Source
-from securedrop_client.gui.actions import (
-    DeleteConversationAction,
-    DeleteSourceAction,
-    DownloadConversation,
-)
+from securedrop_client.gui import actions
 from securedrop_client.logic import Controller
 from tests import factory
 from tests.helper import app  # noqa: F401
 
 
-class DeleteConversationActionTest(unittest.TestCase):
+class DeleteConversationTest(unittest.TestCase):
     def setUp(self):
         self._source = factory.Source()
         _menu = QMenu()
@@ -30,7 +26,7 @@ class DeleteConversationActionTest(unittest.TestCase):
         def _dialog_constructor(source: Source) -> QDialog:
             return self._dialog
 
-        self.action = DeleteConversationAction(
+        self.action = actions.DeleteConversation(
             self._source, _menu, self._controller, _dialog_constructor, self._app_state
         )
 
@@ -79,7 +75,7 @@ class DeleteConversationActionTest(unittest.TestCase):
         assert not self._app_state.remove_conversation_files.called
 
 
-class DeleteSourceActionTest(unittest.TestCase):
+class DeleteSourceTest(unittest.TestCase):
     def setUp(self):
         self._source = factory.Source()
         _menu = QMenu()
@@ -89,7 +85,9 @@ class DeleteSourceActionTest(unittest.TestCase):
         def _dialog_constructor(source: Source) -> QDialog:
             return self._dialog
 
-        self.action = DeleteSourceAction(self._source, _menu, self._controller, _dialog_constructor)
+        self.action = actions.DeleteSource(
+            self._source, _menu, self._controller, _dialog_constructor
+        )
 
     def test_deletes_source_when_dialog_accepted(self):
         # Accept the confirmation dialog from a separate thread.
@@ -126,7 +124,7 @@ class TestDownloadConversation(unittest.TestCase):
         menu = QMenu()
         controller = MagicMock(Controller, api=True)
         app_state = state.State()
-        action = DownloadConversation(menu, controller, app_state)
+        action = actions.DownloadConversation(menu, controller, app_state)
 
         conversation_id = state.ConversationId("some_conversation")
         app_state.selected_conversation = conversation_id
@@ -139,7 +137,7 @@ class TestDownloadConversation(unittest.TestCase):
         menu = QMenu()
         controller = mock.MagicMock(Controller, api=None)  # no authenticated user
         app_state = state.State()
-        action = DownloadConversation(menu, controller, app_state)
+        action = actions.DownloadConversation(menu, controller, app_state)
 
         conversation_id = state.ConversationId("some_conversation")
         app_state.selected_conversation = conversation_id
@@ -153,7 +151,7 @@ class TestDownloadConversation(unittest.TestCase):
         menu = QMenu()
         controller = MagicMock(Controller, api=True)
         app_state = state.State()
-        action = DownloadConversation(menu, controller, app_state)
+        action = actions.DownloadConversation(menu, controller, app_state)
 
         action.trigger()
         assert controller.download_conversation.not_called
@@ -162,7 +160,7 @@ class TestDownloadConversation(unittest.TestCase):
         menu = QMenu()
         controller = MagicMock(Controller, api=True)
         app_state = state.State()
-        action = DownloadConversation(menu, controller, app_state)
+        action = actions.DownloadConversation(menu, controller, app_state)
 
         conversation_id = state.ConversationId(3)
         app_state.selected_conversation = conversation_id
@@ -178,7 +176,7 @@ class TestDownloadConversation(unittest.TestCase):
         menu = QMenu()
         controller = MagicMock(Controller, api=True)
         app_state = state.State()
-        action = DownloadConversation(menu, controller, app_state)
+        action = actions.DownloadConversation(menu, controller, app_state)
 
         conversation_id = state.ConversationId(3)
         app_state.selected_conversation = conversation_id
@@ -200,7 +198,7 @@ class TestDownloadConversation(unittest.TestCase):
         app_state.add_file(conversation_id, 5)
         app_state.file(5).is_downloaded = True
 
-        action = DownloadConversation(menu, controller, app_state)
+        action = actions.DownloadConversation(menu, controller, app_state)
 
         assert not action.isEnabled()
 
@@ -214,14 +212,14 @@ class TestDownloadConversation(unittest.TestCase):
         app_state.add_file(conversation_id, 5)
         app_state.file(5).is_downloaded = False
 
-        action = DownloadConversation(menu, controller, app_state)
+        action = actions.DownloadConversation(menu, controller, app_state)
 
         assert action.isEnabled()
 
     def test_does_not_require_state_to_be_defined(self):
         menu = QMenu()
         controller = MagicMock(Controller, api=True)
-        action = DownloadConversation(menu, controller, app_state=None)
+        action = actions.DownloadConversation(menu, controller, app_state=None)
 
         action.setEnabled(False)
         assert not action.isEnabled()
@@ -234,7 +232,7 @@ class TestDownloadConversation(unittest.TestCase):
     ):
         menu = QMenu()
         controller = MagicMock(Controller, api=True)
-        action = DownloadConversation(menu, controller, None)
+        action = actions.DownloadConversation(menu, controller, None)
 
         action.setEnabled(True)
         action._on_selected_conversation_files_changed()

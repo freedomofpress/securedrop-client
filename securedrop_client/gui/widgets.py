@@ -70,12 +70,7 @@ from securedrop_client.db import (
     Source,
     User,
 )
-from securedrop_client.gui import conversation
-from securedrop_client.gui.actions import (
-    DeleteConversationAction,
-    DeleteSourceAction,
-    DownloadConversation,
-)
+from securedrop_client.gui import actions, conversation
 from securedrop_client.gui.base import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.gui.conversation import DeleteConversationDialog
 from securedrop_client.gui.source import DeleteSourceDialog
@@ -3392,13 +3387,13 @@ class SourceMenu(QMenu):
 
         self.setStyleSheet(self.SOURCE_MENU_CSS)
 
-        self.addAction(DownloadConversation(self, self.controller, app_state))
+        self.addAction(actions.DownloadConversation(self, self.controller, app_state))
         self.addAction(
-            DeleteConversationAction(
+            actions.DeleteConversation(
                 self.source, self, self.controller, DeleteConversationDialog, app_state
             )
         )
-        self.addAction(DeleteSourceAction(self.source, self, self.controller, DeleteSourceDialog))
+        self.addAction(actions.DeleteSource(self.source, self, self.controller, DeleteSourceDialog))
 
 
 class SourceMenuButton(QToolButton):
