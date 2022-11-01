@@ -248,10 +248,28 @@ securedrop-client
 
 `dev-*-requirements.txt` and `requirements.txt` point to python software foundation hashes, and `build-requirements.txt` points to our builds of the wheels from our own pip mirror (https://github.com/freedomofpress/securedrop-builder/tree/main/localwheels). Whenever a dependency in `build-requirements.txt` changes, our team needs to manually review the code in the dependency diff with a focus on spotting vulnerabilities.
 
-If you're adding or updating a dependency, you need to:
+### Production
 
-1. Modify either `requirements.in` or `dev-*-requirements.in` (depending on whether it is prod or dev only)
-2. Run `make update-pip-requirements`. This will generate `dev-*-requirements.txt` and `requirements.txt`
+If you're adding or updating a production dependency, you need to:
+
+1. Modify `requirements.in`
+1. Activate a Python 3.9 virtual environment (default version on Debian Bullseye, used in production)
+1. Run `make requirements`. This will generate `requirements.txt`. Review and commit the changes.
+
+### Development
+
+In addition to supporting Debian Bullseye, we keep track of changes in the next version of Debian (Bookworm). In order to do that we need to maintain requirement files for both. If you're adding or updating a development dependency, you need to:
+
+1. Modify `dev-sdw-requirements.in` when possible. If needed modify `dev-bullseye-requirements.in` or `dev-bookworm-requirements.in`.
+1. Activate a Python 3.9 virtual environment (default version on Debian Bullseye, used in production)
+1. Run `make dev-requirements`. This will generate `dev-*-requirements.txt`. Only commit `dev-bullseye-requirements.txt` and `dev-sdw-requirements.txt`.
+1. Discard the other changes.
+1. Activate a Python 3.10 virtual environment (default version on Debian Bookworm).
+   If needed you can create one and activate it by running `python3.10 -m venv .venv310 && source .venv310/bin/activate`.
+1. Run `make dev-requirements`. This will generate `dev-*-requirements.txt`. Only commit `dev-bookworm-requirements.txt`.
+1. Discard the other changes.
+
+### Build dependencies
 
 For building a debian package from this project, we use the requirements in
 `build-requirements.txt` which uses our pip mirror, i.e. the hashes in that file point to

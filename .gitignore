@@ -93,6 +93,8 @@ celerybeat-schedule
 .env
 .venv
 .venv-debian
+.venv39
+.venv310
 env/
 venv/
 ENV/
