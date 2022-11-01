@@ -201,7 +201,7 @@ git clone git@github.com:freedomofpress/securedrop-client.git
 cd securedrop-client
 virtualenv --python=python3.9 .venv
 source .venv/bin/activate
-pip install --require-hashes -r requirements/dev-requirements.txt
+pip install --require-hashes -r requirements/dev-sdw-requirements.txt
 ```
 
 9. Run the client
@@ -246,12 +246,12 @@ securedrop-client
 
 ## Updating dependencies
 
-`dev-requirements.txt` and `requirements.txt` point to python software foundation hashes, and `build-requirements.txt` points to our builds of the wheels from our own pip mirror (https://github.com/freedomofpress/securedrop-builder/tree/main/localwheels). Whenever a dependency in `build-requirements.txt` changes, our team needs to manually review the code in the dependency diff with a focus on spotting vulnerabilities.
+`dev-*-requirements.txt` and `requirements.txt` point to python software foundation hashes, and `build-requirements.txt` points to our builds of the wheels from our own pip mirror (https://github.com/freedomofpress/securedrop-builder/tree/main/localwheels). Whenever a dependency in `build-requirements.txt` changes, our team needs to manually review the code in the dependency diff with a focus on spotting vulnerabilities.
 
 If you're adding or updating a dependency, you need to:
 
-1. Modify either `requirements.in` or `dev-requirements.in` (depending on whether it is prod or dev only)
-2. Run `make update-pip-requirements`. This will generate `dev-requirements.txt` and `requirements.txt`
+1. Modify either `requirements.in` or `dev-*-requirements.in` (depending on whether it is prod or dev only)
+2. Run `make update-pip-requirements`. This will generate `dev-*-requirements.txt` and `requirements.txt`
 
 For building a debian package from this project, we use the requirements in
 `build-requirements.txt` which uses our pip mirror, i.e. the hashes in that file point to
