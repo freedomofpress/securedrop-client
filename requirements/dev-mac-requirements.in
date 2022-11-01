@@ -1,4 +1,4 @@
--r dev-sdw-requirements.in
+-r dev-bullseye-requirements.in
 pyobjc-core
 pyobjc
 rubicon-objc
