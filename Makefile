@@ -14,7 +14,7 @@ venv: hooks ## Provision a Python 3 virtualenv for development on Linux
 	@echo "Make sure to run: source .venv/bin/activate"
 
 .PHONY: venv-sdw
-venv-sdw: hooks ## Provision a Python 3 virtualenv for development on a prod-like system that has installed dependencies specified in https://github.com/freedomofpress/securedrop-debian-packaging/blob/main/securedrop-client/debian/control
+venv-sdw: hooks ## Provision a Python 3 virtualenv for development on a prod-like system that has installed dependencies specified in https://github.com/freedomofpress/securedrop-builder/blob/main/securedrop-client/debian/control
 	$(PYTHON) -m venv .venv --system-site-packages
 	.venv/bin/pip install --upgrade pip wheel
 	.venv/bin/pip install --require-hashes -r "requirements/dev-sdw-requirements.txt"

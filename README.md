@@ -246,7 +246,7 @@ securedrop-client
 
 ## Updating dependencies
 
-`dev-requirements.txt` and `requirements.txt` point to python software foundation hashes, and `build-requirements.txt` points to our builds of the wheels from our own pip mirror (https://github.com/freedomofpress/securedrop-debian-packaging/tree/main/localwheels). Whenever a dependency in `build-requirements.txt` changes, our team needs to manually review the code in the dependency diff with a focus on spotting vulnerabilities.
+`dev-requirements.txt` and `requirements.txt` point to python software foundation hashes, and `build-requirements.txt` points to our builds of the wheels from our own pip mirror (https://github.com/freedomofpress/securedrop-builder/tree/main/localwheels). Whenever a dependency in `build-requirements.txt` changes, our team needs to manually review the code in the dependency diff with a focus on spotting vulnerabilities.
 
 If you're adding or updating a dependency, you need to:
 
@@ -258,7 +258,7 @@ For building a debian package from this project, we use the requirements in
 wheels on our pip mirror. A maintainer will need to add
 the updated dependency to our pip mirror (you can request this in the PR).
 
-3. Once the pip mirror is updated, you should checkout the [securedrop-debian-packaging repo](https://github.com/freedomofpress/securedrop-debian-packaging) and run `make requirements`. Commit the `build-requirements.txt` that results and add it to your PR.
+3. Once the pip mirror is updated, you should checkout the [securedrop-builder repo](https://github.com/freedomofpress/securedrop-builder) and run `make requirements`. Commit the `build-requirements.txt` that results and add it to your PR.
 
 
 ## Generating and running database migrations
@@ -394,7 +394,7 @@ Note: One of the functional tests deletes a source, so you may need to add it ba
 5. Perform the release signing ceremony on the tag. Push the tag.
 6. The signer should create the source tarball via `python3 setup.py sdist`.
 7. Add a detached signature (with the release key) for the source tarball.
-8. Submit the source tarball and signature via PR into this [repository](https://github.com/freedomofpress/securedrop-debian-packaging) along with the debian changelog addition. This tarball and changelog will be used by the package builder.
+8. Submit the source tarball and signature via PR into this [repository](https://github.com/freedomofpress/securedrop-builder) along with the debian changelog addition. This tarball and changelog will be used by the package builder.
 
 ## Debugging
 

@@ -95,8 +95,8 @@ common-steps:
         mkdir ~/packaging && cd ~/packaging
         # local builds may not have an ssh url, so || true
         git config --global --unset url.ssh://git@github.com.insteadof || true
-        git clone https://github.com/freedomofpress/securedrop-debian-packaging.git
-        cd securedrop-debian-packaging
+        git clone https://github.com/freedomofpress/securedrop-builder.git
+        cd securedrop-builder
         apt-get update && apt-get install -y sudo make
         make install-deps
         PKG_DIR=~/project make requirements
@@ -126,7 +126,7 @@ common-steps:
       command: |
         cd ~/project
         ./update_version.sh 1000.0  # Dummy version number, doesn't matter what we put here
-        cd ~/packaging/securedrop-debian-packaging
+        cd ~/packaging/securedrop-builder
         export PKG_VERSION=1000.0
         export PKG_PATH=~/project/
         make securedrop-client
