@@ -1,0 +1,16 @@
+{% if items|length <= 0 %}No messages.{% else %}
+  {% for item in items %}
+    {% if item.type == "message" %}
+      {% if loop.changed(item.sender) %}
+{{ item.sender }} wrote:
+      {% endif %}
+{{ item.content }}
+    {% elif item.type == "file" %}
+{{ item.sender }} sent:
+File: {{ item.filename }}
+    {% endif %}
+    {% if not loop.last %}
+------
+    {% endif %}
+  {% endfor %}
+{% endif %}

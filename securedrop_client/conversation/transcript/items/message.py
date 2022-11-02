@@ -1,5 +1,4 @@
-from gettext import gettext as _
-from typing import Optional, Union
+from typing import Union
 
 from securedrop_client import db as database
 
@@ -7,6 +6,8 @@ from .item import Item
 
 
 class Message(Item):
+    type = "message"
+
     def __init__(self, record: Union[database.Message, database.Reply]):
         super().__init__()
 
@@ -16,11 +17,3 @@ class Message(Item):
             self.sender = record.source.journalist_designation
         else:
             self.sender = record.journalist.username
-
-    @property
-    def context(self) -> Optional[str]:
-        return _("{username} wrote:\n").format(username=self.sender)
-
-    @property
-    def transcript(self) -> str:
-        return self.content + "\n"
