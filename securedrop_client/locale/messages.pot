@@ -61,6 +61,21 @@ msgstr ""
 msgid "Failed to delete source at server"
 msgstr ""
 
+msgid "No messages."
+msgstr ""
+
+#, python-format
+msgid "%(sender)s wrote:"
+msgstr ""
+
+#, python-format
+msgid "%(sender)s sent:"
+msgstr ""
+
+#, python-format
+msgid "File: %(filename)s"
+msgstr ""
+
 msgid "Download All Files"
 msgstr ""
 

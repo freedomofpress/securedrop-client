@@ -1,3 +1,4 @@
+import gettext
 from typing import Optional
 
 from jinja2 import Environment, PackageLoader, select_autoescape
@@ -10,10 +11,12 @@ from .items import transcribe as transcribe_item
 env = Environment(
     loader=PackageLoader("securedrop_client.conversation.transcript"),
     autoescape=select_autoescape(),
+    extensions=["jinja2.ext.i18n"],
     # Since our plain-text templates have literal whitespace:
     lstrip_blocks=True,
     trim_blocks=True,
 )
+env.install_gettext_translations(gettext)  # type: ignore [attr-defined]
 
 
 def transcribe(record: database.Base) -> Optional[Item]:
@@ -28,7 +31,7 @@ class Transcript:
                 [transcribe(record) for record in conversation.collection],
             )
         )
-        self._template = env.get_template("transcript.txt")
+        self._template = env.get_template("transcript.txt.jinja")
 
     def __str__(self) -> str:
         return self._template.render(items=self._items)
