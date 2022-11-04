@@ -222,6 +222,7 @@ $(POT): securedrop_client
 	@echo "updating catalog template: $@"
 	@mkdir -p ${LOCALE_DIR}
 	@pybabel extract \
+		-F babel.cfg \
 		--charset=utf-8 \
 		--output=${POT} \
 		--project="SecureDrop Client" \
