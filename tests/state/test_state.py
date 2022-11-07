@@ -93,7 +93,7 @@ class TestState(unittest.TestCase):
 
         # NOT when a file is added to a conversation that's not the selected one
         self.state.add_file("some_conversation_id", "file_id")
-        assert len(signal_emissions) == 1  # the signal wasn't emited again
+        assert len(signal_emissions) == 1  # the signal wasn't emitted again
 
         # when a known file was downloaded
         self.state.record_file_download("file_id")
@@ -105,7 +105,7 @@ class TestState(unittest.TestCase):
 
         # NOT when files are removed from a conversation that's not the selected one
         self.state.remove_conversation_files("some_conversation_id")
-        assert len(signal_emissions) == 3  # the signal wasn't emited again
+        assert len(signal_emissions) == 3  # the signal wasn't emitted again
 
         # when the selected conversation files are removed
         self.state.remove_conversation_files(1)

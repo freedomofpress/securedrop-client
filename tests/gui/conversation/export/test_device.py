@@ -154,7 +154,7 @@ def test_Device_run_export_preflight_checks(homedir, mocker, source):
 
 def test_Device_export_file_to_usb_drive(homedir, mocker):
     """
-    The signal `export_requested` should be emmited during export_file_to_usb_drive.
+    The signal `export_requested` should be emitted during export_file_to_usb_drive.
     """
     gui = mocker.MagicMock(spec=Window)
     with threads(3) as [sync_thread, main_queue_thread, file_download_queue_thread]:
@@ -219,7 +219,7 @@ def test_Device_export_file_to_usb_drive_when_orig_file_already_exists(
     homedir, config, mocker, source
 ):
     """
-    The signal `export_requested` should still be emmited if the original file already exists.
+    The signal `export_requested` should still be emitted if the original file already exists.
     """
     gui = mocker.MagicMock(spec=Window)
     with threads(3) as [sync_thread, main_queue_thread, file_download_queue_thread]:

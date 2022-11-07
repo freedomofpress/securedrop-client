@@ -223,7 +223,7 @@ def test_argparse(mocker):
     mock_expand = mocker.patch("os.path.expanduser", return_value=return_value)
     args = parser.parse_args([])
 
-    # check that the default home is used when no args args supplied
+    # check that the default home is used when no args are supplied
     mock_expand.assert_called_once_with(DEFAULT_SDC_HOME)
     # check that sdc_home is set after parsing args
     assert args.sdc_home == return_value
