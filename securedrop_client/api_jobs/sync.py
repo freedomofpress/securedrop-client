@@ -103,7 +103,7 @@ class MetadataSyncJob(ApiJob):
         #
         # In order to support an edge case that can occur on a pre-2.2.0 server that does not create
         # a "deleted" user account, the client will create one locally when there are draft replies
-        # that need to be re-assoicated. Once the "deleted" user account exists on the server, it
+        # that need to be re-associated. Once the "deleted" user account exists on the server, it
         # will replace the local one.
         for uuid, account in local_users.items():
             # Do not delete the local "deleted" user account if there is no "deleted" user account

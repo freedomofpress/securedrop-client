@@ -255,7 +255,7 @@ def test_send_reply_sql_exception_during_failure(
     session.add(source)
 
     # Note that we do not add a DraftReply. An exception will occur when we try
-    # to set the reply status to 'FAILED' for a non-existent reply, which we
+    # to set the reply status to 'FAILED' for a nonexistent reply, which we
     # expect to be handled.
 
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)

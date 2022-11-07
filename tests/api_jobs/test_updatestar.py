@@ -57,7 +57,7 @@ def test_unstar_if_star(homedir, mocker, session, session_maker):
 
     job.call_api(api_client, session)
 
-    # ensure we call remove start wtih right source uuid
+    # ensure we call remove start with right source uuid
     mock_source_init.assert_called_once_with(uuid=source.uuid)
     api_client.remove_star.assert_called_once_with(mock_sdk_source)
 

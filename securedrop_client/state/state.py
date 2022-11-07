@@ -90,7 +90,7 @@ class State(QObject):
 
     @property
     def selected_conversation_has_downloadable_files(self) -> bool:
-        """Whether the selected conversation has any files that are not alredy downloaded"""
+        """Whether the selected conversation has any files that are not already downloaded"""
         selected_conversation_id = self._selected_conversation
         if selected_conversation_id is None:
             return False

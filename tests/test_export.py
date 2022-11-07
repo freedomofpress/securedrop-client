@@ -246,7 +246,7 @@ def test__run_disk_export(mocker):
     """
     Ensure _export_archive and _create_archive are called with the expected parameters,
     _export_archive is called with the return value of _create_archive, and
-    _run_disk_test returns without error if '' is the ouput status of _export_archive.
+    _run_disk_test returns without error if '' is the output status of _export_archive.
     """
     export = Export()
     export._create_archive = mocker.MagicMock(return_value="mock_archive_path")
@@ -279,7 +279,7 @@ def test__run_disk_test(mocker):
     """
     Ensure _export_archive and _create_archive are called with the expected parameters,
     _export_archive is called with the return value of _create_archive, and
-    _run_disk_test returns without error if 'USB_ENCRYPTED' is the ouput status of _export_archive.
+    _run_disk_test returns without error if 'USB_ENCRYPTED' is the output status of _export_archive.
     """
     export = Export()
     export._create_archive = mocker.MagicMock(return_value="mock_archive_path")

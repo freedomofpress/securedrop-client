@@ -67,7 +67,7 @@ def test_APICallRunner_call_api(mocker):
 
 def test_APICallRunner_with_exception(mocker):
     """
-    An exception has occured so emit False.
+    An exception has occurred so emit False.
     """
     ex = Exception("boom")
     mock_api_call = mocker.MagicMock(side_effect=ex)
@@ -948,7 +948,7 @@ def test_Controller_on_seen_success(homedir, mocker, session_maker):
 def test_Controller_on_seen_failure(homedir, mocker, session_maker):
     co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir, None)
     debug_logger = mocker.patch("securedrop_client.logic.logger.debug")
-    error = Exception("errorororr")
+    error = Exception("error")
     co.on_seen_failure(error)
     debug_logger.assert_called_once_with(error)
 
@@ -1162,7 +1162,7 @@ def test_create_client_dir_permissions(tmpdir, mocker, session_maker):
     """
     mock_gui = mocker.MagicMock()
 
-    # we can't rely on the config fixture, and because of the order of exectution,
+    # we can't rely on the config fixture, and because of the order of execution,
     # we can't create the config at the right time, we we have to mock both
     # `open` and `json.loads`
     mock_open = mocker.patch("securedrop_client.config.open")

@@ -432,7 +432,7 @@ class Controller(QObject):
         Setup the application with the default state of:
 
         * Not logged in.
-        * Show most recent state of syncronised sources.
+        * Show most recent state of synchronized sources.
         * Show the login screen.
         * Check the sync status every 30 seconds.
         """
@@ -630,7 +630,7 @@ class Controller(QObject):
 
     def on_sync_success(self) -> None:
         """
-        Called when syncronisation of data via the API queue succeeds.
+        Called when synchronization of data via the API queue succeeds.
 
             * Set last sync flag
             * Display the last sync time and updated list of sources in GUI
@@ -670,7 +670,7 @@ class Controller(QObject):
 
     def on_sync_failure(self, result: Exception) -> None:
         """
-        Called when syncronisation of data via the API fails after a background sync. If the reason
+        Called when synchronization of data via the API fails after a background sync. If the reason
         a sync fails is ApiInaccessibleError then we need to log the user out for security reasons
         and show them the login window in order to get a new token.
         """

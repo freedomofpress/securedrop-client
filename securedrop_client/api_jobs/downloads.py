@@ -93,7 +93,7 @@ class DownloadJob(SingleObjectApiJob):
         self, api: API, db_object: Union[File, Message, Reply]
     ) -> Tuple[str, str]:
         """
-        Method for making the actual API call to downlod the file and handling the result.
+        Method for making the actual API call to download the file and handling the result.
 
         This MUST return the (etag, filepath) tuple response from the server and MUST raise an
         exception if and only if the download fails.

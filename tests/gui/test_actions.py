@@ -35,7 +35,7 @@ class DeleteConversationActionTest(unittest.TestCase):
         )
 
     def test_deletes_conversation_when_dialog_accepted(self):
-        # Accept the confimation dialog from a separate thread.
+        # Accept the confirmation dialog from a separate thread.
         QTimer.singleShot(10, self._dialog.accept)
 
         self.action.trigger()
@@ -46,7 +46,7 @@ class DeleteConversationActionTest(unittest.TestCase):
         )
 
     def test_does_not_delete_conversation_when_dialog_rejected(self):
-        # Reject the confimation dialog from a separate thread.
+        # Reject the confirmation dialog from a separate thread.
         QTimer.singleShot(10, self._dialog.reject)
 
         self.action.trigger()
@@ -70,7 +70,7 @@ class DeleteConversationActionTest(unittest.TestCase):
     def test_deletes_nothing_if_no_conversation_is_selected(self):
         self._app_state.selected_conversation = None
 
-        # Accept the confimation dialog from a separate thread.
+        # Accept the confirmation dialog from a separate thread.
         QTimer.singleShot(10, self._dialog.accept)
 
         self.action.trigger()
@@ -92,7 +92,7 @@ class DeleteSourceActionTest(unittest.TestCase):
         self.action = DeleteSourceAction(self._source, _menu, self._controller, _dialog_constructor)
 
     def test_deletes_source_when_dialog_accepted(self):
-        # Accept the confimation dialog from a separate thread.
+        # Accept the confirmation dialog from a separate thread.
         QTimer.singleShot(10, self._dialog.accept)
 
         self.action.trigger()
@@ -100,7 +100,7 @@ class DeleteSourceActionTest(unittest.TestCase):
         self._controller.delete_source.assert_called_once_with(self._source)
 
     def test_does_not_delete_source_when_dialog_rejected(self):
-        # Reject the confimation dialog from a separate thread.
+        # Reject the confirmation dialog from a separate thread.
         QTimer.singleShot(10, self._dialog.reject)
 
         self.action.trigger()

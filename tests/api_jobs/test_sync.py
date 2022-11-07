@@ -49,7 +49,7 @@ def test_MetadataSyncJob_has_default_timeout(mocker, homedir, session, session_m
     assert api_client.default_request_timeout == job.DEFAULT_REQUEST_TIMEOUT
 
 
-def test_MetadataSyncJob_takes_overriden_timeout(mocker, homedir, session, session_maker):
+def test_MetadataSyncJob_takes_overridden_timeout(mocker, homedir, session, session_maker):
     api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
     remote_user = factory.RemoteUser()
     api_client.get_users = mocker.MagicMock(return_value=[remote_user])
@@ -101,8 +101,8 @@ def test_MetadataSyncJob_updates_application_state(mocker, homedir, session, ses
     app_state = state.State()
     state_updater = mocker.patch("securedrop_client.api_jobs.sync._update_state")
 
-    exising_user = factory.User(uuid="abc123-ima-uuid")
-    session.add(exising_user)
+    existing_user = factory.User(uuid="abc123-ima-uuid")
+    session.add(existing_user)
 
     job = MetadataSyncJob(homedir, app_state)
     job.call_api(api_client, session)
@@ -120,15 +120,15 @@ def test_MetadataSyncJob_updates_existing_user(mocker, homedir, session, session
     )
     api_client.get_users = mocker.MagicMock(return_value=[remote_user])
 
-    exising_user = factory.User(uuid="abc123-ima-uuid")
-    session.add(exising_user)
+    existing_user = factory.User(uuid="abc123-ima-uuid")
+    session.add(existing_user)
 
     job = MetadataSyncJob(homedir)
     job.call_api(api_client, session)
 
-    assert exising_user.username == "new-username"
-    assert exising_user.firstname == "NewFirstName"
-    assert exising_user.lastname == "NewLastName"
+    assert existing_user.username == "new-username"
+    assert existing_user.firstname == "NewFirstName"
+    assert existing_user.lastname == "NewLastName"
 
 
 def test_MetadataSyncJob_deletes_user(mocker, homedir, session, session_maker):

@@ -17,7 +17,7 @@ To learn more about architecture and our rationale behind our Qubes OS approach,
 
 The quickest way to get started with running the client is to use the [developer environment](#developer-environment) that [runs against a test server running in a local docker container](#running-against-a-test-server). This differs from a staging or production environment where the client receives and sends requests over Tor. Things are a lot snappier in the developer environment and can sometimes lead to a much different user experience, which is why it is important to do end-to-end testing in Qubes using the [staging environment](#staging-environment), especially if you are modifying code paths involving how we handle server requests and responses.
 
-For reproducing production bugs or running demos, we recommend using the [Production Environment](#production-envrionment) that will allow you to test a nightly build of the client.
+For reproducing production bugs or running demos, we recommend using the [Production Environment](#production-environment) that will allow you to test a nightly build of the client.
 
 We support running the [developer environment on a non-Qubes OS](#developer-environment-on-a-non-qubes-os) for developer convenience. If this is your preferred environment, keep in mind that you, or a PR reviewer, will need to run tests in Qubes if you modify code paths involving any of the following:
 
@@ -175,7 +175,7 @@ See [SecureDrop docs on setting up a staging server](https://docs.securedrop.org
 3. Create a `config.json` file
 
 ```
-cd securedrop-worksation
+cd securedrop-workstation
 cp config.json.example config.json
 vi config.json
 ```
@@ -227,7 +227,7 @@ See [SecureDrop docs on setting up a server](https://docs.securedrop.org/en/late
 3. Create a `config.json` file
 
 ```
-cd securedrop-worksation
+cd securedrop-workstation
 cp config.json.example config.json
 vi config.json
 ```
@@ -327,7 +327,7 @@ There are two packages you'll have to install manually in order to run the entir
 `apt install xvfb`
 `apt install sqlite3`
 
-We launch tests via `xvfb-run` on an `xvfb` X server in order to support machines with no display hardware, like we have in CircleCI. Even when running tests on a machine with display hardware, `xvfb` is useful in that it prevents a bunch of windows and dialogs from popping up on your desktop. If you want to run tests without `xfvb` then you can just uninstall it and run thet tests and checks as described below.
+We launch tests via `xvfb-run` on an `xvfb` X server in order to support machines with no display hardware, like we have in CircleCI. Even when running tests on a machine with display hardware, `xvfb` is useful in that it prevents a bunch of windows and dialogs from popping up on your desktop. If you want to run tests without `xvfb` then you can just uninstall it and run thet tests and checks as described below.
 
 NOTE: `xvfb-run` will start and stop `xvfb` for you.
 

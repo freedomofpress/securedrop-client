@@ -46,7 +46,7 @@ class RunnableQueue(QObject):
     ApiInaccessibleError before it makes an api call, which will repeat this process.
 
     Any other exception encountered while processing a job is unexpected, so the queue will drop the
-    job and continue on to processing the next job. The job itself is responsible for emiting the
+    job and continue on to processing the next job. The job itself is responsible for emitting the
     success and failure signals, so when an unexpected error occurs, it should emit the failure
     signal so that the Controller can respond accordingly.
     """
@@ -75,9 +75,9 @@ class RunnableQueue(QObject):
         self.api_client = api_client
         self.session_maker = session_maker
         self.queue = PriorityQueue()  # type: PriorityQueue[Tuple[int, QueueJob]]
-        # `order_number` ensures jobs with equal priority are retrived in FIFO order. This is needed
-        # because PriorityQueue is implemented using heapq which does not have sort stability. For
-        # more info, see : https://bugs.python.org/issue17794
+        # `order_number` ensures jobs with equal priority are retrieved in FIFO order. This is
+        # needed because PriorityQueue is implemented using heapq which does not have sort
+        # stability. For more info, see : https://bugs.python.org/issue17794
         self.order_number = itertools.count()
         self.current_job = None  # type: Optional[QueueJob]
 

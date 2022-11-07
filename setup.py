@@ -21,7 +21,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="AGPLv3+",
-    install_requires=["SQLALchemy", "alembic", "securedrop-sdk", "python-dateutil", "arrow"],
+    install_requires=["SQLAlchemy", "alembic", "securedrop-sdk", "python-dateutil", "arrow"],
     python_requires=">=3.5",
     url="https://github.com/freedomofpress/securedrop-proxy",
     packages=["securedrop_client", "securedrop_client.gui", "securedrop_client.resources"],

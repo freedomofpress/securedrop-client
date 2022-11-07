@@ -185,20 +185,20 @@ def test_encrypt(homedir, source, config, mocker, session_maker):
     helper._import(JOURNO_KEY)
 
     plaintext = "bueller?"
-    cyphertext = helper.encrypt_to_source(source["uuid"], plaintext)
+    ciphertext = helper.encrypt_to_source(source["uuid"], plaintext)
 
     # check that we go *any* output just for sanity
-    assert cyphertext
+    assert ciphertext
 
-    cyphertext_file = os.path.join(homedir, "cyphertext.out")
+    ciphertext_file = os.path.join(homedir, "ciphertext.out")
     decrypted_file = os.path.join(homedir, "decrypted.out")
     gpg_home = os.path.join(homedir, "gpg")
 
-    with open(cyphertext_file, "w") as f:
-        f.write(cyphertext)
+    with open(ciphertext_file, "w") as f:
+        f.write(ciphertext)
 
     subprocess.check_call(
-        ["gpg", "--homedir", gpg_home, "--output", decrypted_file, "--decrypt", cyphertext_file]
+        ["gpg", "--homedir", gpg_home, "--output", decrypted_file, "--decrypt", ciphertext_file]
     )
 
     with open(decrypted_file) as f:
