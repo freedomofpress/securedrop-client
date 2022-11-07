@@ -45,7 +45,7 @@ LanguageCode = NewType("LanguageCode", str)
 
 DEFAULT_LANGUAGE = LanguageCode("en")
 DEFAULT_SDC_HOME = "~/.securedrop_client"
-DESKTOP_FILE_NAME = "org.freedomofthepress.securedrop.client"
+DESKTOP_FILE_NAME = "press.freedom.SecureDropClient.desktop"
 ENCODING = "utf-8"
 GETTEXT_DOMAIN = "messages"
 LOGLEVEL = os.environ.get("LOGLEVEL", "info").upper()
