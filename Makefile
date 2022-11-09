@@ -1,8 +1,10 @@
 .PHONY: all
 all: help
 
-# Default to plain "python3"
-PYTHON ?= python3
+# We prefer to use python3.9 if it's availabe, especially on arm64 based Macs,
+# which would not be able to install the virtual environment without an x86_64
+# Python 3.9, but we're also OK with just python3 if that's all we've got
+PYTHON := $(if $(shell bash -c "command -v python3.9"), python3.9, python3)
 VERSION_CODENAME ?= bullseye
 
 .PHONY: venv
@@ -27,7 +29,9 @@ venv-sdw: hooks ## Provision a Python 3 virtualenv for development on a prod-lik
 venv-mac: hooks ## Provision a Python 3 virtualenv for development on macOS
 	$(PYTHON) -m venv .venv
 	.venv/bin/pip install --upgrade pip wheel
-	.venv/bin/pip install -r "requirements/dev-mac-requirements.in"
+	# There are no M1/arm wheels for the version of PyQt5 we require, and
+	# unfortunately it also doesn't compile. So we're forcing x86_64 mode here
+	arch -x86_64 .venv/bin/pip install -r "requirements/dev-mac-requirements.in"
 	@echo "#################"
 	@echo "Make sure to run: source .venv/bin/activate"
 
