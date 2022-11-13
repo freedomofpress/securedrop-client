@@ -102,7 +102,9 @@ def test_safe_mkdir_with_base_dir_that_does_not_exist():
     """
     Ensure you can create a base dir if parent directories already exist.
     """
-    safe_mkdir("/tmp/does-not-exist", "test")
+    with tempfile.TemporaryDirectory() as temp_dir:
+        safe_mkdir(temp_dir)
+        safe_mkdir(f"{temp_dir}/does-not-exist", "test")
 
 
 def test_safe_mkdir_happy_path_with_secure_permissions():
