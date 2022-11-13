@@ -96,6 +96,7 @@ RANDOM_SEED ?= $(shell bash -c 'echo $$RANDOM')
 .PHONY: test
 test: ## Run the application tests in parallel (for rapid development)
 	@TEST_CMD="python -m pytest -v -n 4 --ignore=$(FTESTS) --ignore=$(ITESTS) $(TESTOPTS) $(TESTS)" ; \
+		source scripts/setup-tmp-directories.sh; \
 		if command -v xvfb-run > /dev/null; then \
 		xvfb-run -a $$TEST_CMD ; else \
 		$$TEST_CMD ; fi
