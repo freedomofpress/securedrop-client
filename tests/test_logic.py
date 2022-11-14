@@ -1030,44 +1030,6 @@ def test_Controller_invalidate_token(mocker, homedir, session_maker):
     assert co.api is None
 
 
-def test_Controller_logout_with_pending_replies(mocker, session_maker, homedir, reply_status_codes):
-    """
-    Ensure pending replies not currently being processed are marked failed and emit the
-    "reply_failed" signal.
-    """
-    co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir, None)
-    co.api_job_queue = mocker.MagicMock()
-    co.api_job_queue.stop = mocker.MagicMock()
-    co.call_api = mocker.MagicMock()
-
-    source = factory.Source()
-    session = session_maker()
-    pending_status = (
-        session.query(db.ReplySendStatus)
-        .filter_by(name=db.ReplySendStatusCodes.PENDING.value)
-        .one()
-    )
-    failed_status = (
-        session.query(db.ReplySendStatus).filter_by(name=db.ReplySendStatusCodes.FAILED.value).one()
-    )
-    pending_draft_reply = factory.DraftReply(source=source, send_status=pending_status)
-    session.add(source)
-    session.add(pending_draft_reply)
-
-    co.logout()
-
-    for (i, draft) in enumerate(session.query(db.DraftReply).all()):
-        if i == 0:
-            # We can't check that draft.sending_pid == os.getpid() here, because that's set by the
-            # SendReplyJob.
-            assert draft.send_status == pending_status
-        else:
-            assert draft.send_status == failed_status
-            co.reply_failed.emit.assert_called_once_with(draft.uuid)
-
-    co.api_job_queue.stop.assert_called_once_with()
-
-
 def test_Controller_logout_with_no_api(homedir, config, mocker, session_maker):
     """
     Ensure we don't attempt to make an api call to logout when the api has been set to None
