@@ -117,7 +117,7 @@ class Export(QObject):
                 self.run_printer_preflight, type=Qt.QueuedConnection
             )
 
-    def _export_archive(cls, archive_path: str) -> ExportStatus:
+    def _export_archive(cls, archive_path: str) -> Optional[ExportStatus]:
         """
         Make the subprocess call to send the archive to the Export VM, where the archive will be
         processed.
@@ -152,7 +152,14 @@ class Export(QObject):
                 ],
                 stderr=subprocess.STDOUT,
             )
-            return ExportStatus(output.decode("utf-8").strip())
+            result = output.decode("utf-8").strip()
+
+            # No status is returned for successful `disk`, `printer-test`, and `print` calls.
+            # This will change in a future release of sd-export.
+            if result:
+                return ExportStatus(result)
+            else:
+                return None
         except ValueError as e:
             logger.debug(f"Export subprocess returned unexpected value: {e}")
             raise ExportError(ExportStatus.UNEXPECTED_RETURN_STATUS)
@@ -241,7 +248,7 @@ class Export(QObject):
         """
         archive_path = self._create_archive(archive_dir, self.USB_TEST_FN, self.USB_TEST_METADATA)
         status = self._export_archive(archive_path)
-        if status != ExportStatus.USB_CONNECTED:
+        if status and status != ExportStatus.USB_CONNECTED:
             raise ExportError(status)
 
     def _run_disk_test(self, archive_dir: str) -> None:
@@ -257,7 +264,7 @@ class Export(QObject):
         archive_path = self._create_archive(archive_dir, self.DISK_TEST_FN, self.DISK_TEST_METADATA)
 
         status = self._export_archive(archive_path)
-        if status != ExportStatus.DISK_ENCRYPTED:
+        if status and status != ExportStatus.DISK_ENCRYPTED:
             raise ExportError(status)
 
     def _run_disk_export(self, archive_dir: str, filepaths: List[str], passphrase: str) -> None:

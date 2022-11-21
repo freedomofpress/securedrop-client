@@ -408,7 +408,7 @@ def test__export_archive_with_evil_command(mocker):
     Ensure shell command is shell-escaped.
     """
     export = Export()
-    check_output = mocker.patch("subprocess.check_output", return_value=b"")
+    check_output = mocker.patch("subprocess.check_output", return_value=b"ERROR_FILE_NOT_FOUND")
 
     with pytest.raises(ExportError, match="UNEXPECTED_RETURN_STATUS"):
         export._export_archive("somefile; rm -rf ~")
@@ -426,3 +426,33 @@ def test__export_archive_with_evil_command(mocker):
         ],
         stderr=-2,
     )
+
+
+def test__export_archive_success_on_empty_return_value(mocker):
+    """
+    Ensure an error is not raised when qrexec call returns empty string,
+    (success state for `disk`, `print`, `printer-test`).
+
+    When export behaviour changes so that all success states return a status
+    string, this test will no longer pass and should be rewritten.
+    """
+    export = Export()
+    check_output = mocker.patch("subprocess.check_output", return_value=b"")
+
+    result = export._export_archive("somefile.sd-export")
+
+    check_output.assert_called_once_with(
+        [
+            "qrexec-client-vm",
+            "--",
+            "sd-devices",
+            "qubes.OpenInVM",
+            "/usr/lib/qubes/qopen-in-vm",
+            "--view-only",
+            "--",
+            "somefile.sd-export",
+        ],
+        stderr=-2,
+    )
+
+    assert result is None
