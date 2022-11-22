@@ -10,11 +10,11 @@ Fixes #issue.
 
 ### Qubes OS environment
 
-If these changes modify code paths involving cryptography, the opening of files in VMs or network traffic (via the RPC service), Qubes OS testing in the staging environment is required. For fine tuning of the graphical user interface, testing in any environment in Qubes OS is required. Please make sure you mention it in the **test plan**.
+If these changes modify code paths involving cryptography, the opening of files in VMs or network traffic (via the RPC service), Qubes OS testing in the staging environment is required. For fine tuning of the graphical user interface, testing in any environment in Qubes OS is required. Please make sure you mention it in the **test plan**, or ask for guidance when in doubt!
 
 ### AppArmor profile
 
-If these changes add or remove files other than client code, the AppArmor profile may need to be updated. Please make sure you mention it in the **test plan**.
+If these changes add or remove files other than client code, the AppArmor profile may need to be updated. Please make sure you mention it in the **test plan**. ([How to update the AppArmor profile](https://github.com/freedomofpress/securedrop-client/blob/main/README.md#apparmor-support).)
 
 ### Database migrations
 
