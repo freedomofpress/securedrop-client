@@ -10,7 +10,7 @@ from flaky import flaky
 from tests.conftest import TIME_LOGOUT
 
 
-@flaky
+@flaky(max_runs=6)
 @pytest.mark.vcr()
 def test_logout_as_journalist(functional_test_logged_in_context, qtbot, mocker):
     """

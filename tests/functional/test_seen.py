@@ -8,7 +8,7 @@ from PyQt5.QtCore import Qt
 from tests.conftest import TIME_CLICK_ACTION, TIME_RENDER_SOURCE_LIST
 
 
-@flaky
+@flaky(max_runs=6)
 @pytest.mark.vcr()
 def test_unseen_source_becomes_seen_on_click(functional_test_logged_in_context, qtbot, mocker):
     """
@@ -36,7 +36,7 @@ def test_unseen_source_becomes_seen_on_click(functional_test_logged_in_context, 
     assert unseen_source_widget.seen
 
 
-@flaky
+@flaky(max_runs=6)
 @pytest.mark.vcr()
 def test_seen_and_unseen(functional_test_logged_in_context, qtbot, mocker):
     """

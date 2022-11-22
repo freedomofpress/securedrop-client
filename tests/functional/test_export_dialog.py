@@ -18,7 +18,7 @@ from tests.conftest import (
 )
 
 
-@flaky
+@flaky(max_runs=6)
 @pytest.mark.vcr()
 def test_export_dialog(functional_test_logged_in_context, qtbot, mocker):
     """

@@ -11,7 +11,7 @@ from PyQt5.QtCore import Qt
 from tests.conftest import PASSWORD, TIME_RENDER_CONV_VIEW, TOTP, USERNAME
 
 
-@flaky
+@flaky(max_runs=6)
 @pytest.mark.vcr()
 def test_login_from_offline(functional_test_offline_context, qtbot, mocker):
     """

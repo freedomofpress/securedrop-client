@@ -28,7 +28,7 @@ def test_login_ensure_errors_displayed(functional_test_app_started_context, qtbo
     assert error_status_msg == "Please enter a username, passphrase and two-factor code."
 
 
-@flaky
+@flaky(max_runs=6)
 @pytest.mark.vcr()
 def test_login_as_journalist(functional_test_app_started_context, qtbot, mocker):
     """

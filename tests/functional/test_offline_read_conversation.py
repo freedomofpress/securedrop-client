@@ -11,7 +11,7 @@ from PyQt5.QtCore import Qt
 from tests.conftest import TIME_CLICK_ACTION, TIME_RENDER_CONV_VIEW, TIME_RENDER_SOURCE_LIST
 
 
-@flaky
+@flaky(max_runs=6)
 @pytest.mark.vcr()
 def test_offline_read_conversation(functional_test_offline_context, qtbot, mocker):
     """
