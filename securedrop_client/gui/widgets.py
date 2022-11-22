@@ -1348,7 +1348,7 @@ class SourceWidget(QWidget):
 
     @pyqtSlot(str, str, str)
     def set_snippet(
-        self, source_uuid: str, collection_uuid: str = None, content: str = None
+        self, source_uuid: str, collection_uuid: Optional[str] = None, content: Optional[str] = None
     ) -> None:
         """
         Update the preview snippet if the source_uuid matches our own.

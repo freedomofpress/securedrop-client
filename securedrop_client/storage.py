@@ -25,7 +25,7 @@ import re
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 from dateutil.parser import parse
 from sdclientapi import API
@@ -902,7 +902,7 @@ def mark_as_decrypted(
     uuid: str,
     session: Session,
     is_decrypted: bool = True,
-    original_filename: str = None,
+    original_filename: Optional[str] = None,
 ) -> None:
     """
     Mark object as downloaded in the database.

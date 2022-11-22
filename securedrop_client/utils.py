@@ -14,7 +14,8 @@ from securedrop_client import db
 
 
 def safe_mkdir(
-    base_path: Union[Path, str], relative_path: Union[Optional[Path], Optional[str]] = None
+    base_path: Union[Path, str],
+    relative_path: Optional[Union[Optional[Path], Optional[str]]] = None,
 ) -> None:
     """
     Safely create directories with restricted 700 permissions inside the base_path directory. The

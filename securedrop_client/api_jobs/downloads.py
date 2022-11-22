@@ -4,7 +4,7 @@ import logging
 import math
 import os
 from tempfile import NamedTemporaryFile
-from typing import Any, Tuple, Type, Union
+from typing import Any, Optional, Tuple, Type, Union
 
 from sdclientapi import API, BaseError
 from sdclientapi import Reply as SdkReply
@@ -100,7 +100,7 @@ class DownloadJob(SingleObjectApiJob):
         """
         raise NotImplementedError
 
-    def call_decrypt(self, filepath: str, session: Session = None) -> str:
+    def call_decrypt(self, filepath: str, session: Optional[Session] = None) -> str:
         """
         Method for decrypting the file and storing the plaintext result.
 
@@ -265,7 +265,7 @@ class ReplyDownloadJob(DownloadJob):
         api.default_request_timeout = 20
         return api.download_reply(sdk_object)
 
-    def call_decrypt(self, filepath: str, session: Session = None) -> str:
+    def call_decrypt(self, filepath: str, session: Optional[Session] = None) -> str:
         """
         Override DownloadJob.
 
@@ -319,7 +319,7 @@ class MessageDownloadJob(DownloadJob):
             sdk_object, timeout=self._get_realistic_timeout(db_object.size)
         )
 
-    def call_decrypt(self, filepath: str, session: Session = None) -> str:
+    def call_decrypt(self, filepath: str, session: Optional[Session] = None) -> str:
         """
         Override DownloadJob.
 
@@ -375,7 +375,7 @@ class FileDownloadJob(DownloadJob):
             sdk_object, timeout=self._get_realistic_timeout(db_object.size)
         )
 
-    def call_decrypt(self, filepath: str, session: Session = None) -> str:
+    def call_decrypt(self, filepath: str, session: Optional[Session] = None) -> str:
         """
         Override DownloadJob.
 

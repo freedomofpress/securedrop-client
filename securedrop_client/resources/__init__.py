@@ -18,6 +18,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import os
+from typing import Optional
 
 from pkg_resources import resource_filename, resource_string
 from PyQt5.QtCore import QDir
@@ -47,13 +48,13 @@ def load_font(font_folder_name: str) -> None:
 
 def load_icon(
     normal: str,
-    disabled: str = None,
-    active: str = None,
-    selected: str = None,
-    normal_off: str = None,
-    disabled_off: str = None,
-    active_off: str = None,
-    selected_off: str = None,
+    disabled: Optional[str] = None,
+    active: Optional[str] = None,
+    selected: Optional[str] = None,
+    normal_off: Optional[str] = None,
+    disabled_off: Optional[str] = None,
+    active_off: Optional[str] = None,
+    selected_off: Optional[str] = None,
 ) -> QIcon:
     """
     Add the contents of Scalable Vector Graphics (SVG) files provided for associated icon modes and
