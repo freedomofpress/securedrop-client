@@ -127,6 +127,12 @@ It is possible to run the development environment in macOS on non-Apple Silicon 
 
   See [SecureDrop docs](https://docs.securedrop.org/en/latest/development/setup_development.html) for more info and troubleshooting steps if necessary.
 
+Alternatively, if you can run or access a SecureDrop development environment on a remote server `A.B.C.D`, you can use the following command to set up a proxy to that remote server rather than running it locally:
+
+```
+socat TCP4-LISTEN:8081,fork,reuseaddr TCP4:A.B.C.D:8081
+```
+
 #### Set up the SecureDrop Client
 1. Open a new terminal window.
 2. If it is not already installed, install Homebrew via the instructions at https://brew.sh/
