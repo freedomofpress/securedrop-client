@@ -112,7 +112,7 @@ class Window(QMainWindow):
         self.main_view.setup(self.controller)
         self.show_login()
 
-    def show_main_window(self, db_user: User = None) -> None:
+    def show_main_window(self, db_user: Optional[User] = None) -> None:
         """
         Show main application window.
         """

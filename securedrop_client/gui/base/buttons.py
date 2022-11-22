@@ -26,7 +26,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from typing import NewType
+from typing import NewType, Optional
 
 from PyQt5.QtWidgets import QPushButton, QWidget
 
@@ -39,7 +39,7 @@ class SDPushButton(QPushButton):
     Alignment = NewType("Alignment", str)
     AlignLeft = Alignment("left-aligned")
 
-    def __init__(self, parent: QWidget = None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.setStyleSheet(load_css("button.css"))
 
