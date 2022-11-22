@@ -43,7 +43,7 @@ def safe_mkdir(
     #
     # Note: We do not use parents=True because the parent directories will not be created with the
     # specified mode. Parents are created using system default permissions, which we modify to be
-    # 700 via os.umask in the Window (QMainWindow) contructor. Creating directories one-by-one with
+    # 700 via os.umask in the Window (QMainWindow) constructor. Creating directories one-by-one with
     # mode=0o0700 is not necessary but adds defense in depth.
     relative_path = relative_filepath(full_path, base_path)
     for parent in reversed(relative_path.parents):

@@ -234,7 +234,7 @@ class Message(Base):
 
     content = Column(
         Text,
-        # this check contraint ensures the state of the DB is what one would expect
+        # this check constraint ensures the state of the DB is what one would expect
         CheckConstraint(
             "CASE WHEN is_downloaded = 0 THEN content IS NULL ELSE 1 END",
             name="ck_message_compare_download_vs_content",

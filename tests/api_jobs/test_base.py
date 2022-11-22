@@ -17,7 +17,7 @@ def test_ApiInaccessibleError_init():
     assert str(err) == msg
 
 
-def test_ApiJob_raises_NotImplemetedError():
+def test_ApiJob_raises_NotImplementedError():
     job = ApiJob()
 
     with pytest.raises(NotImplementedError):
@@ -101,7 +101,7 @@ def test_ApiJob_other_error(mocker):
 
 
 @pytest.mark.parametrize("exception", [RequestTimeoutError, ServerConnectionError])
-def test_ApiJob_retry_suceeds_after_failed_attempt(mocker, exception):
+def test_ApiJob_retry_succeeds_after_failed_attempt(mocker, exception):
     """Retry logic: after failed attempt should succeed"""
 
     number_of_attempts = 5

@@ -194,7 +194,7 @@ def test_SyncIcon_init(mocker):
     assert filename == "sync_disabled.gif"
 
 
-def test_SyncIcon_init_starts_animiation(mocker):
+def test_SyncIcon_init_starts_animation(mocker):
     movie = QMovie()
     movie.start = mocker.MagicMock()
     mocker.patch("securedrop_client.gui.widgets.load_movie", return_value=movie)
@@ -227,7 +227,7 @@ def test_SyncIcon_enable(mocker):
     assert filename == "sync.gif"
 
 
-def test_SyncIcon_enable_starts_animiation(mocker):
+def test_SyncIcon_enable_starts_animation(mocker):
     movie = QMovie()
     movie.start = mocker.MagicMock()
     mocker.patch("securedrop_client.gui.widgets.load_movie", return_value=movie)
@@ -248,7 +248,7 @@ def test_SyncIcon_disable(mocker):
     assert filename == "sync_disabled.gif"
 
 
-def test_SyncIcon_disable_starts_animiation(mocker):
+def test_SyncIcon_disable_starts_animation(mocker):
     movie = QMovie()
     movie.start = mocker.MagicMock()
     mocker.patch("securedrop_client.gui.widgets.load_movie", return_value=movie)
@@ -2586,7 +2586,7 @@ def test_SpeechBubble_init_with_error(mocker):
 def test_SpeechBubble_adjust_width(mocker):
     """
     Ensure that the speech bubble is set to the minimum allowed width if the supplied container
-    width is smaller than than the minimum allowed container width. Otherwise check that the width
+    width is smaller than the minimum allowed container width. Otherwise check that the width
     is set to the width of the container multiplied by the stretch factor ratio.
     """
 
@@ -3096,7 +3096,7 @@ def test_FileWidget_init_file_downloaded(mocker, source, session):
 def test_FileWidget_adjust_width(mocker):
     """
     Ensure that the file widget is set to the minimum allowed width if the supplied container width
-    is smaller than than the minimum allowed container width. Otherwise check that the width is set
+    is smaller than the minimum allowed container width. Otherwise check that the width is set
     to the width of the container multiplied by the stretch factor ratio.
     """
     file = factory.File(source=factory.Source(), is_downloaded=True)
@@ -4584,7 +4584,7 @@ def test_ReplyBoxWidget__on_authentication_changed_offline(mocker, homedir):
 
 def test_ReplyBoxWidget_auth_signals(mocker, homedir):
     """
-    Ensure we connect to the auth signal and set the intial state on update
+    Ensure we connect to the auth signal and set the initial state on update
     """
     connect = mocker.MagicMock()
     signal = mocker.MagicMock(connect=connect)
@@ -5222,7 +5222,7 @@ def test_SourceProfileShortWidget_update_timestamp(mocker):
 
 def test_SenderIcon_for_deleted_user(mocker):
     """
-    Ensure reply sender badge shows image instead of initials for delted user.
+    Ensure reply sender badge shows image instead of initials for deleted user.
     """
     sender = factory.User(username="deleted")
     si = SenderIcon()
@@ -5248,7 +5248,7 @@ def test_SenderIcon_sets_text_to_initials(mocker):
 
 def test_SenderIcon_sets_text_to_initials_for_authenticated_user(mocker):
     """
-    Ensure reply sender badge sets label to initials of the sender for authnenticated user.
+    Ensure reply sender badge sets label to initials of the sender for authenticated user.
     """
     sender = factory.User()
     si = SenderIcon()
