@@ -5,7 +5,6 @@ The tests are based upon the client testing descriptions here:
 https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-testing
 """
 import pytest
-from flaky import flaky
 from PyQt5.QtCore import Qt
 
 from securedrop_client.gui.widgets import FileWidget, SourceConversationWrapper
@@ -17,7 +16,6 @@ from tests.conftest import (
 )
 
 
-@flaky
 @pytest.mark.vcr()
 def test_download_file(functional_test_logged_in_context, qtbot, mocker):
     """
@@ -62,3 +60,4 @@ def test_download_file(functional_test_logged_in_context, qtbot, mocker):
     assert file_widget.print_button.isHidden() is False
     assert file_widget.file_name.text() == "memo.txt"
     assert file_widget.file_size.text() == "47B"
+    gui.close()

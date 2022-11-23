@@ -5,13 +5,11 @@ The tests are based upon the client testing descriptions here:
 https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-testing
 """
 import pytest
-from flaky import flaky
 from PyQt5.QtCore import Qt
 
 from tests.conftest import PASSWORD, TIME_RENDER_CONV_VIEW, TOTP, USERNAME
 
 
-@flaky
 @pytest.mark.vcr()
 def test_login_from_offline(functional_test_offline_context, qtbot, mocker):
     """
@@ -38,3 +36,4 @@ def test_login_from_offline(functional_test_offline_context, qtbot, mocker):
         assert gui.login_dialog is None
 
     qtbot.waitUntil(wait_for_login, timeout=TIME_RENDER_CONV_VIEW)
+    gui.close()

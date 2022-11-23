@@ -5,7 +5,6 @@ The tests are based upon the client testing descriptions here:
 https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-testing
 """
 import pytest
-from flaky import flaky
 from PyQt5.QtCore import Qt
 
 from tests.conftest import PASSWORD, TIME_CLICK_ACTION, TIME_RENDER_CONV_VIEW, TOTP, USERNAME
@@ -26,9 +25,9 @@ def test_login_ensure_errors_displayed(functional_test_app_started_context, qtbo
 
     error_status_msg = gui.login_dialog.error_bar.error_status_bar.text()
     assert error_status_msg == "Please enter a username, passphrase and two-factor code."
+    gui.close()
 
 
-@flaky
 @pytest.mark.vcr()
 def test_login_as_journalist(functional_test_app_started_context, qtbot, mocker):
     """
@@ -49,3 +48,4 @@ def test_login_as_journalist(functional_test_app_started_context, qtbot, mocker)
     # When the main window is visible and the login dialog is closed then we know login is complete
     assert gui.isVisible()
     assert gui.login_dialog is None
+    gui.close()

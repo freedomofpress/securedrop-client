@@ -5,7 +5,6 @@ The tests are based upon the client testing descriptions here:
 https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-testing
 """
 import pytest
-from flaky import flaky
 from PyQt5.QtCore import Qt
 
 from securedrop_client.gui.widgets import FileWidget, SourceConversationWrapper
@@ -18,7 +17,6 @@ from tests.conftest import (
 )
 
 
-@flaky
 @pytest.mark.vcr()
 def test_export_dialog(functional_test_logged_in_context, qtbot, mocker):
     """
@@ -86,3 +84,4 @@ def test_export_dialog(functional_test_logged_in_context, qtbot, mocker):
 
     # Verify export is complete by checking that the continue button says "DONE"
     assert export_dialog.continue_button.text() == "DONE"
+    gui.close()

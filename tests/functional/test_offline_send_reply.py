@@ -5,13 +5,11 @@ The tests are based upon the client testing descriptions here:
 https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-testing
 """
 import pytest
-from flaky import flaky
 from PyQt5.QtCore import Qt
 
 from tests.conftest import TIME_CLICK_ACTION, TIME_RENDER_CONV_VIEW, TIME_RENDER_SOURCE_LIST
 
 
-@flaky
 @pytest.mark.vcr()
 def test_offline_send_reply_to_source(functional_test_offline_context, qtbot, mocker):
     """
@@ -40,3 +38,4 @@ def test_offline_send_reply_to_source(functional_test_offline_context, qtbot, mo
 
     assert not conversation.reply_box.text_edit.isEnabled()
     assert not conversation.reply_box.send_button.isVisible()
+    gui.close()

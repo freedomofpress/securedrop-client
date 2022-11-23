@@ -6,12 +6,9 @@ https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-
 """
 import pyautogui
 import pytest
-from flaky import flaky
 
 from tests.conftest import TIME_CLICK_ACTION
 
-
-@flaky(max_runs=3)
 @pytest.mark.vcr()
 def test_user_icon_click(qtbot, mocker, functional_test_logged_in_context):
     """
@@ -45,3 +42,4 @@ def test_user_icon_click(qtbot, mocker, functional_test_logged_in_context):
 
     # When the login button appears then we know logout is complete
     qtbot.waitUntil(login_button_is_visible, timeout=TIME_CLICK_ACTION)
+    gui.close()

@@ -5,13 +5,11 @@ The tests are based upon the client testing descriptions here:
 https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-testing
 """
 import pytest
-from flaky import flaky
 from PyQt5.QtCore import Qt
 
 from tests.conftest import TIME_CLICK_ACTION, TIME_RENDER_CONV_VIEW, TIME_RENDER_SOURCE_LIST
 
 
-@flaky
 @pytest.mark.vcr()
 def test_send_reply_to_source(functional_test_logged_in_context, qtbot, mocker):
     """
@@ -54,3 +52,4 @@ def test_send_reply_to_source(functional_test_logged_in_context, qtbot, mocker):
     reply_id = list(conversation.conversation_view.current_messages.keys())[-1]
     reply = conversation.conversation_view.current_messages[reply_id]
     assert reply.message.text() == "Hello, world!"
+    gui.close()
