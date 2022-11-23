@@ -44,8 +44,11 @@ update-dependency:  ## Add or upgrade a package to the latest version that compl
 update-dev-only-dependencies:  ## Update dev-requirements.txt to pin to the latest versions of dev-only dependencies that comply with the dependency specifications in dev-requirements.in
 	$(MAKE) sync-requirements
 	@while read line; do \
-		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-requirements.txt requirements/requirements.in requirements/dev-requirements.in; \
-	done < 'requirements/dev-requirements.in'
+		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-${VERSION_CODENAME}-requirements.txt requirements/requirements.in requirements/dev-bookworm-requirements.in; \
+	done < 'requirements/dev-bullseye-requirements.in'
+	@while read line; do \
+		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-${VERSION_CODENAME}-requirements.txt requirements/requirements.in requirements/dev-bookworm-requirements.in; \
+	done < 'requirements/dev-bookworm-requirements.in'
 
 .PHONY: check
 check: lint semgrep test check-black ## Run linter and tests
