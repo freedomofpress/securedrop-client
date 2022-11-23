@@ -1,0 +1,7 @@
+black
+flake8
+pip-tools
+pytest
+pytest-cov
+pytest-mock
+semgrep

@@ -1,11 +1,13 @@
 .PHONY: all
 all: help
 
+VERSION_CODENAME ?= bullseye
+
 .PHONY: venv
 venv:  ## Provision a Python 3 virtualenv for **development**
 	python3 -m venv .venv
 	.venv/bin/pip install --upgrade pip wheel
-	.venv/bin/pip install --require-hashes -r requirements/dev-requirements.txt
+	.venv/bin/pip install --require-hashes -r requirements/dev-${VERSION_CODENAME}-requirements.txt
 
 .PHONY: safety
 safety: ## Runs `safety check` to check python dependencies for vulnerabilities
@@ -19,8 +21,14 @@ safety: ## Runs `safety check` to check python dependencies for vulnerabilities
 
 .PHONY: sync-requirements
 sync-requirements:  ## Update dev-requirements.txt to pin to the same versions of prod dependencies
-	rm -r requirements/dev-requirements.txt && cp requirements/requirements.txt requirements/dev-requirements.txt
-	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-requirements.txt requirements/requirements.in requirements/dev-requirements.in
+	if test -f "requirements/dev-bullseye-requirements.txt"; then rm -r requirements/dev-bullseye-requirements.txt; fi
+	if test -f "requirements/dev-bookworm-requirements.txt"; then rm -r requirements/dev-bookworm-requirements.txt; fi
+	$(MAKE) dev-requirements
+
+.PHONY: dev-requirements
+dev-requirements:  ## Update dev-*requirements.txt files if pinned versions do not comply with the dependency specifications in dev-*requirements.in
+	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-bullseye-requirements.txt requirements/dev-bullseye-requirements.in
+	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-bookworm-requirements.txt requirements/dev-bookworm-requirements.in
 
 .PHONY: requirements
 requirements:  ## Update *requirements.txt files if pinned versions do not comply with the dependency specifications in *requirements.in
@@ -36,8 +44,11 @@ update-dependency:  ## Add or upgrade a package to the latest version that compl
 update-dev-only-dependencies:  ## Update dev-requirements.txt to pin to the latest versions of dev-only dependencies that comply with the dependency specifications in dev-requirements.in
 	$(MAKE) sync-requirements
 	@while read line; do \
-		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-requirements.txt requirements/requirements.in requirements/dev-requirements.in; \
-	done < 'requirements/dev-requirements.in'
+		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-${VERSION_CODENAME}-requirements.txt requirements/requirements.in requirements/dev-bookworm-requirements.in; \
+	done < 'requirements/dev-bullseye-requirements.in'
+	@while read line; do \
+		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-${VERSION_CODENAME}-requirements.txt requirements/requirements.in requirements/dev-bookworm-requirements.in; \
+	done < 'requirements/dev-bookworm-requirements.in'
 
 .PHONY: check
 check: lint semgrep test check-black ## Run linter and tests

@@ -1,46 +1,92 @@
 ---
 common-steps:
-  - &install_deps
+  - &install_testing_dependencies
     run:
-      name: Install base dependencies for Debian python
+      name: Install testing dependencies
       command: |
         set -e
-        apt-get update && apt-get install -y sudo make git git-lfs gnupg python3 python3-venv
-  - &install_packages
-    run:
-      name: Install packages
-      command: |
-        sudo apt install -y libnotify-bin
+        apt update && apt install -y git gnupg make python3-dev gnupg python3-venv libnotify-bin
 
-  - &run_tests
+  - &install_build_dependencies
     run:
-      name: Install test requirements and run tests
+      name: Install build dependencies
       command: |
-        python3 -m venv .venv
+        set -e
+        apt update && apt install -y git make sudo
+
+  - &run_unit_tests
+    run:
+      name: Install requirements and run unit tests
+      command: |
+        set -e
+        export VERSION_CODENAME=$(~/project/scripts/codename)
+        make venv
         source .venv/bin/activate
-        pip install --require-hashes -r requirements/dev-requirements.txt
-        make check --keep-going
+        export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
+        make test
+
+  - &run_lint
+    run:
+      name: Run lint, type checking, code formatting
+      command: |
+        set -e
+        export VERSION_CODENAME=$(~/project/scripts/codename)
+        make venv
+        source .venv/bin/activate
+        make check-black lint
+
+  - &check_security
+    run:
+      name: Run static analysis on source code to find security issues
+      command: |
+        set -e
+        export VERSION_CODENAME=$(~/project/scripts/codename)
+        make venv
+        source .venv/bin/activate
+        make semgrep
+
+  - &check_python_dependencies_for_vulnerabilities
+    run:
+      name: Check Python dependencies for known vulnerabilities
+      command: |
+        set -e
+        export VERSION_CODENAME=$(~/project/scripts/codename)
+        make venv
+        source .venv/bin/activate
+        make safety
 
   - &install_packaging_dependencies
     run:
-      name: Install Debian packaging dependencies and download wheels
+      name: Install Debian packaging dependencies and download Python wheels
       command: |
+        set -x
         mkdir ~/packaging && cd ~/packaging
-        # local builds may not have an SSH url
+        # local builds may not have an ssh url, so || true
         git config --global --unset url.ssh://git@github.com.insteadof || true
         git clone https://github.com/freedomofpress/securedrop-debian-packaging.git
         cd securedrop-debian-packaging
+        apt-get update && apt-get install -y sudo make
         make install-deps
         PKG_DIR=~/project make requirements
 
-  - &verify_requirements
+  - &check_packaging_requirements
     run:
-      name: Ensure that build-requirements.txt and requirements.txt are in sync.
+      name: Ensure that the same Python requirements are used for packaging and production.
       command: |
         cd ~/project
-        # Return 1 if unstaged changes exist (after `make requirements` in the
-        # previous run step), else return 0.
-        git diff --quiet
+        # Fail if unstaged changes exist (after `make requirements` in the previous run step).
+        git diff --ignore-matching-lines=# --exit-code
+
+  - &check_testing_requirements
+    run:
+      name: Ensure that the same Python requirements are used for development/testing and production.
+      command: |
+        set -e
+        export VERSION_CODENAME=$(~/project/scripts/codename)
+        make venv
+        source .venv/bin/activate
+        make requirements
+        git diff --ignore-matching-lines=# --exit-code
 
   - &build_debian_package
     run:
@@ -51,91 +97,90 @@ common-steps:
         export PKG_PATH=~/project/
         make securedrop-export
 
-  - &run_lint
-    run:
-      name: Install test requirements and run lint
-      command: |
-        python3 -m venv .venv
-        source .venv/bin/activate
-        pip install --require-hashes -r requirements/dev-requirements.txt
-        make lint
+version: 2.1
 
-  - &run_safety
-    run:
-      name: Check Python dependencies for CVEs
-      command: |
-        set -e
-        source .venv/bin/activate
-        make safety
-
-
-
-version: 2
 jobs:
+  build:
+    parameters: &parameters
+      image:
+        type: string
+    docker: &docker
+      - image: debian:<< parameters.image >>
+    steps:
+      - *install_build_dependencies
+      - checkout
+      - *install_packaging_dependencies
+      - *check_packaging_requirements
+      - *build_debian_package
+
+  unit-test:
+    parameters: *parameters
+    docker: *docker
+    steps:
+      - *install_testing_dependencies
+      - checkout
+      - *run_unit_tests
+      - store_test_results:
+          path: test-results
+
   lint:
-    docker:
-      - image: debian:buster
+    parameters: *parameters
+    docker: *docker
     steps:
-      - *install_deps
+      - *install_testing_dependencies
       - checkout
       - *run_lint
-      - *run_safety
 
-  lint-bullseye:
-    docker:
-      - image: debian:buster
+  check-security:
+    parameters: *parameters
+    docker: *docker
     steps:
-      - *install_deps
+      - *install_testing_dependencies
       - checkout
-      - *run_lint
-      - *run_safety
+      - *check_security
 
-  test-buster:
-    docker:
-      - image: debian:buster
+  check-python-security:
+    parameters: *parameters
+    docker: *docker
     steps:
-      - *install_deps
+      - *install_testing_dependencies
       - checkout
-      - *install_packages
-      - *run_tests
+      - *check_python_dependencies_for_vulnerabilities
 
-  test-bullseye:
-    docker:
-      - image: debian:bullseye
+  check-testing-requirements:
+    parameters: *parameters
+    docker: *docker
     steps:
-      - *install_deps
+      - *install_testing_dependencies
       - checkout
-      - *install_packages
-      - *run_tests
-
-  build-buster:
-    docker:
-      - image: debian:buster
-    steps:
-      - *install_deps
-      - checkout
-      - *install_packaging_dependencies
-      - *verify_requirements
-      - *build_debian_package
-
-  build-bullseye:
-    docker:
-      - image: debian:bullseye
-    steps:
-      - *install_deps
-      - checkout
-      - *install_packaging_dependencies
-      - *verify_requirements
-      - *build_debian_package
-
+      - *check_testing_requirements
 
 workflows:
-  version: 2
   securedrop_export_ci:
-    jobs:
-      - lint
-      - lint-bullseye
-      - test-buster
-      - test-bullseye
-      - build-buster
-      - build-bullseye
+    jobs: &jobs
+      - unit-test:
+          matrix: &matrix
+            parameters:
+              image:
+                - bullseye
+                - bookworm
+      - lint:
+          matrix: *matrix
+      - check-testing-requirements:
+          matrix: *matrix
+      - check-security:
+          matrix: *matrix
+      - check-python-security:
+          matrix: *matrix
+      - build:
+          matrix: *matrix
+
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 6 * * *"
+          filters:
+            branches:
+              only:
+                - main
+    jobs: *jobs
