@@ -218,6 +218,8 @@ def test_Controller_on_authenticate_failure(homedir, config, mocker, session_mak
 
     co = Controller("http://localhost", mock_gui, session_maker, homedir, None)
     co.api_sync.stop = mocker.MagicMock()
+    authentication_failed_emissions = QSignalSpy(co.authentication_failed)
+
     co.on_authenticate_failure(exception)
 
     if isinstance(exception, (RequestTimeoutError, ServerConnectionError)):
@@ -234,7 +236,10 @@ def test_Controller_on_authenticate_failure(homedir, config, mocker, session_mak
         error = _("That didn't work. Please check everything and try again.")
 
     co.api_sync.stop.assert_called_once_with()
-    mock_gui.show_login_error.assert_called_once_with(error=error)
+
+    assert authentication_failed_emissions.isValid()
+    assert len(authentication_failed_emissions) == 1
+    assert authentication_failed_emissions[0] == [error]
 
 
 def test_Controller_on_authenticate_success(homedir, config, mocker, session_maker, session):

@@ -77,6 +77,7 @@ class LoginDialog(QDialog):
 
         # Create error bar
         self.error_bar = LoginErrorBar()
+        self.error_bar.setVisible(False)
 
         # Create form widget
         form = QWidget()
@@ -143,6 +144,15 @@ class LoginDialog(QDialog):
     def setup(self, controller: Controller) -> None:
         self.controller = controller
         self.offline_mode.clicked.connect(self.controller.login_offline_mode)
+        self.controller.authentication_succeeded.connect(self._on_authentication_succeeded)
+        self.controller.authentication_failed.connect(self._on_authentication_failed)
+
+    def _on_authentication_succeeded(self) -> None:  # pragma: nocover
+        self.error_bar.clear_message()
+        self.setVisible(False)
+
+    def _on_authentication_failed(self, error: str) -> None:  # pragma: nocover
+        self.error(message=error)
 
     def reset(self) -> None:
         """

@@ -157,6 +157,9 @@ class Controller(QObject):
     """
     authentication_state = pyqtSignal(bool)
 
+    authentication_failed = pyqtSignal(str)
+    authentication_succeeded = pyqtSignal()
+
     """
     This signal indicates that the authenticated user info has changed.
 
@@ -559,6 +562,7 @@ class Controller(QObject):
 
         # Clear clipboard contents in case of previously pasted creds
         self.gui.clear_clipboard()
+        self.authentication_succeeded.emit()
         self.gui.show_main_window(user)
         self.update_sources()
         self.api_job_queue.start(self.api)
@@ -581,7 +585,7 @@ class Controller(QObject):
         else:
             error = _("That didn't work. Please check everything and try again.")
 
-        self.gui.show_login_error(error=error)
+        self.authentication_failed.emit(error)
         self.api_sync.stop()
 
     def login_offline_mode(self) -> None:
