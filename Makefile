@@ -95,28 +95,28 @@ RANDOM_SEED ?= $(shell bash -c 'echo $$RANDOM')
 
 .PHONY: test
 test: ## Run the application tests in parallel (for rapid development)
-	@TEST_CMD="python -m pytest -v -n 4 --ignore=$(FTESTS) --ignore=$(ITESTS) $(TESTOPTS) $(TESTS)" ; \
+	@TEST_CMD="python -m pytest --tb=short -v -n 4 --ignore=$(FTESTS) --ignore=$(ITESTS) $(TESTOPTS) $(TESTS)" ; \
 		if command -v xvfb-run > /dev/null; then \
 		xvfb-run -a $$TEST_CMD ; else \
 		$$TEST_CMD ; fi
 
 .PHONY: test-random
 test-random: ## Run the application tests in random order
-	@TEST_CMD="python -m pytest -v --junitxml=test-results/junit.xml --random-order-bucket=global --ignore=$(FTESTS) --ignore=$(ITESTS) $(TESTOPTS) $(TESTS)" ; \
+	@TEST_CMD="python -m pytest --tb=short -v --junitxml=test-results/junit.xml --random-order-bucket=global --ignore=$(FTESTS) --ignore=$(ITESTS) $(TESTOPTS) $(TESTS)" ; \
 		if command -v xvfb-run > /dev/null; then \
 		xvfb-run -a $$TEST_CMD ; else \
 		$$TEST_CMD ; fi
 
 .PHONY: test-integration
 test-integration: ## Run the integration tests
-	@TEST_CMD="python -m pytest -v -n 4 $(ITESTS)" ; \
+	@TEST_CMD="python -m pytest --tb=short -v -n 4 $(ITESTS)" ; \
 		if command -v xvfb-run > /dev/null; then \
 		xvfb-run -a $$TEST_CMD ; else \
 		$$TEST_CMD ; fi
 
 .PHONY: test-functional
 test-functional: ## Run the functional tests
-	@TEST_CMD="python -m pytest -v -n 4 --random-order-bucket global --random-order-seed=$(RANDOM_SEED) $(FTESTS)" ; \
+	@TEST_CMD="python -m pytest --tb=short -v -n 4 --random-order-bucket global --random-order-seed=$(RANDOM_SEED) $(FTESTS)" ; \
 		if command -v xvfb-run > /dev/null; then \
 		xvfb-run --server-args="-screen 0, 1680x1050x24" -a $$TEST_CMD ; else \
 		$$TEST_CMD ; fi
