@@ -37,25 +37,14 @@ class TestMain:
         with pytest.raises(SystemExit) as sysexit:
             _exit_gracefully(self.submission, Status.ERROR_GENERIC)
 
-        # A graceful exit means a return code of 0
-        assert sysexit.value.code == 0
-
-        captured = capsys.readouterr()
-        assert captured.err == "{}\n".format(Status.ERROR_GENERIC.value)
-        assert captured.out == ""
+        assert self._did_exit_gracefully(sysexit, capsys, Status.ERROR_GENERIC)
 
     def test_exit_gracefully_exception(self, capsys):
         with pytest.raises(SystemExit) as sysexit:
-            exception = mock.MagicMock()
-            exception.output = "BANG!"
-            _exit_gracefully(self.submission, Status.ERROR_GENERIC, e=exception)
+            _exit_gracefully(self.submission, Status.ERROR_GENERIC)
 
         # A graceful exit means a return code of 0
-        assert sysexit.value.code == 0
-
-        captured = capsys.readouterr()
-        assert captured.err.rstrip() == Status.ERROR_GENERIC.value  # todo
-        assert captured.out == ""
+        assert self._did_exit_gracefully(sysexit, capsys, Status.ERROR_GENERIC)
 
     @pytest.mark.parametrize("status", [s for s in Status])
     def test_write_status(self, status, capsys):
@@ -73,7 +62,13 @@ class TestMain:
         """
         Helper. True if exited with 0, writing supplied status to stderr.
         """
-        return exit.value.code == 0 and capsys.readouterr().err == status.value + "\n"
+        captured = capsys.readouterr()
+
+        return (
+            exit.value.code == 0
+            and captured.err.rstrip().endswith(status.value)
+            and captured.out == ""
+        )
 
     @pytest.mark.parametrize("command", list(Command))
     @mock.patch("securedrop_export.main._configure_logging")
@@ -119,8 +114,9 @@ class TestMain:
     )
     @mock.patch("securedrop_export.main.os.path.exists", return_value=True)
     @mock.patch("securedrop_export.main.shutil.rmtree")
+    @mock.patch("securedrop_export.main._configure_logging")
     def test_entrypoint_failure_extraction(
-        self, mock_rm, mock_path, mock_extract, capsys
+        self, mock_log, mock_rm, mock_path, mock_extract, capsys
     ):
         with mock.patch(
             "sys.argv", ["qvm-send-to-usb", SUBMISSION_SAMPLE_ARCHIVE]
@@ -135,7 +131,7 @@ class TestMain:
         "securedrop_export.main._configure_logging",
         side_effect=ExportException(
             sdstatus=Status.ERROR_LOGGING,
-            message="Zounds, an error setting up logging!",
+            sderror="Zounds, an error setting up logging!",
         ),
     )
     def test_entrypoint_logging_fails(self, mock_mkdir, capsys):

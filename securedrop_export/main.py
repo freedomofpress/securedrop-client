@@ -7,11 +7,11 @@ import sys
 from securedrop_export.archive import Archive, Metadata
 from securedrop_export.command import Command
 from securedrop_export.status import BaseStatus
-from securedrop_export.directory_util import safe_mkdir
+from securedrop_export.directory import safe_mkdir
 from securedrop_export.exceptions import ExportException
 
-from securedrop_export.disk.service import Service as ExportService
-from securedrop_export.print.service import Service as PrintService
+from securedrop_export.disk import Service as ExportService
+from securedrop_export.print import Service as PrintService
 
 from logging.handlers import TimedRotatingFileHandler, SysLogHandler
 from securedrop_export import __version__
@@ -38,8 +38,11 @@ def entrypoint():
     Entrypoint method (Note: a method is required for setuptools).
     Configure logging, extract tarball, and run desired export service,
     exiting with return code 0.
+
+    Non-zero exit values will cause the system to try alternative
+    solutions for mimetype handling, which we want to avoid.
     """
-    status, stacktrace, submission = None, None, None
+    status, submission = None, None
 
     try:
         _configure_logging()
@@ -68,16 +71,16 @@ def entrypoint():
 
     except ExportException as ex:
         logger.error(f"Encountered exception {ex.sdstatus.value}, exiting")
+        logger.error(ex)
         status = ex.sdstatus
-        stacktrace = ex.output
 
     except Exception as exc:
         logger.error("Encountered exception during export, exiting")
+        logger.error(exc)
         status = Status.ERROR_GENERIC
-        stacktrace = exc.output
 
     finally:
-        _exit_gracefully(submission, status=status, e=stacktrace)
+        _exit_gracefully(submission, status)
 
 
 def _configure_logging():
@@ -141,19 +144,16 @@ def _start_service(submission: Archive) -> Status:
         return ExportService(submission).check_disk_format()
 
 
-def _exit_gracefully(submission: Archive, status: BaseStatus = None, e: str = None):
+def _exit_gracefully(submission: Archive, status: BaseStatus = None):
     """
-    Utility to print error messages, mostly used during debugging,
-    then exits successfully despite the error. Always exits 0,
-    since non-zero exit values will cause system to try alternative
+    Write status code, ensure file cleanup, and exit with return code 0.
+    Non-zero exit values will cause the system to try alternative
     solutions for mimetype handling, which we want to avoid.
     """
     if status:
         logger.info(f"Exit gracefully with status: {status.value}")
     else:
         logger.info("Exit gracefully (no status code supplied)")
-    if e:
-        logger.error("Captured exception output: {}".format(e.output))
     try:
         # If the file archive was extracted, delete before returning
         if submission and os.path.isdir(submission.tmpdir):

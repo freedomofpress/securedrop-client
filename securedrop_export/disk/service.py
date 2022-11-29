@@ -1,144 +1,120 @@
 import logging
 
-from securedrop_export.exceptions import ExportException
+from securedrop_export.archive import Archive
 
 from .cli import CLI
 from .status import Status
-from .new_status import Status as NewStatus
+from .volume import Volume
+from securedrop_export.exceptions import ExportException
+
 
 logger = logging.getLogger(__name__)
 
 
 class Service:
-    def __init__(self, submission, cli=None):
-        self.submission = submission
-        self.cli = cli or CLI()
+    """
+    Checks that can be performed against the device(s).
+    This is the "API" portion of the export workflow.
+    """
 
-    def check_connected_devices(self) -> Status:
+    def __init__(self, cli: CLI):
+        self.cli = cli
+
+    def run(self, arg: str) -> Status:
         """
-        Check if single USB is inserted.
+        Run export actions.
         """
-        logger.info("Export archive is usb-test")
 
-        try:
-            all_devices = self.cli.get_connected_devices()
-            num_devices = len(all_devices)
-
-        except ExportException as ex:
-            logger.error(f"Error encountered during USB check: {ex.sdstatus.value}")
-            # Use legacy status instead of new status values
-            raise ExportException(sdstatus=Status.LEGACY_ERROR_USB_CHECK) from ex
-
-        if num_devices == 0:
-            raise ExportException(sdstatus=Status.LEGACY_USB_NOT_CONNECTED)
-        elif num_devices == 1:
-            return Status.LEGACY_USB_CONNECTED
-        elif num_devices > 1:
-            raise ExportException(sdstatus=Status.LEGACY_USB_ENCRYPTION_NOT_SUPPORTED)
-
-    def check_disk_format(self) -> Status:
+    def scan_all_devices(self) -> Status:
         """
-        Check if volume is correctly formatted for export.
+        Check all connected devices and return current device
+        status.
         """
         try:
             all_devices = self.cli.get_connected_devices()
+            number_devices = len(all_devices)
 
-            if len(all_devices) == 1:
-                device = self.cli.get_partitioned_device(all_devices[0])
-                logger.info("Check if LUKS")
-                if not self.cli.is_luks_volume(device):
-                    raise ExportException(
-                        sdstatus=Status.LEGACY_USB_ENCRYPTION_NOT_SUPPORTED
-                    )
-                # We can support checking if a drive is already unlocked, but for
-                # backwards compatibility, this is the only expected status
-                # at this stage
-                return Status.LEGACY_USB_ENCRYPTED
-
-        except ExportException as ex:
-            logger.error(
-                f"Error encountered during disk format check: {ex.sdstatus.value}"
-            )
-            # Return legacy status values for now for ongoing client compatibility
-            if ex.sdstatus in [s for s in NewStatus]:
-                status = self._legacy_status(ex.sdstatus)
-                raise ExportException(sdstatus=status)
-            elif ex.sdstatus:
-                raise
+            if number_devices == 0:
+                return Status.NO_DEVICE_DETECTED
+            elif number_devices > 1:
+                return Status.MULTI_DEVICE_DETECTED
             else:
-                raise ExportException(sdstatus=Status.LEGACY_USB_DISK_ERROR)
+                return self.scan_single_device(all_devices[0])
 
-    def export(self):
-        """
-        Export all files to target device.
-        """
-        logger.info("Export archive is disk")
+        except ExportException as ex:
+            logger.error(ex)
+            return Status.DEVICE_ERROR  # Could not assess devices
 
+    def scan_single_device(self, blkid: str) -> Status:
+        """
+        Given a string representing a single block device, see if it
+        is a suitable export target and return information about its state.
+        """
         try:
-            all_devices = self.cli.get_connected_devices()
+            target = self.cli.get_partitioned_device(blkid)
 
-            if len(all_devices) == 1:
-                device = self.cli.get_partitioned_device(all_devices[0])
+            # See if it's a LUKS drive
+            if self.cli.is_luks_volume(target):
 
-                # Decide what kind of volume it is
-                logger.info("Check if LUKS")
-                if self.cli.is_luks_volume(device):
-                    volume = self.cli.get_luks_volume(device)
-                    logger.info("Check if writable")
-                    if not volume.writable:
-                        logger.info("Not writable-will try unlocking")
-                        volume = self.cli.unlock_luks_volume(
-                            volume, self.submission.encryption_key
-                        )
-                        volume = self.cli.mount_volume(volume)
+                # Returns Volume or throws ExportException
+                self.volume = self.cli.get_luks_volume(target)
 
-                    logger.info(f"Export submission to {volume.mountpoint}")
-                    self.cli.write_data_to_device(
-                        self.submission.tmpdir, self.submission.target_dirname, volume
-                    )
-                    # This is SUCCESS_EXPORT, but the 0.7.0 client is not expecting
-                    # a return status from a successful export operation.
-                    # When the client is updated, we will return SUCCESS_EXPORT here.
-
+                # See if it's unlocked and mounted
+                if self.volume.writable:
+                    logger.debug("LUKS device is already mounted")
+                    return Status.DEVICE_WRITABLE
                 else:
-                    # Another kind of drive: VeraCrypt/TC, or unsupported.
-                    # For now this is an error--in future there will be support
-                    # for additional encryption formats
-                    logger.error(f"Export failed because {device} is not supported")
-                    raise ExportException(
-                        sdstatus=Status.LEGACY_USB_ENCRYPTION_NOT_SUPPORTED
-                    )
+                    # Prompt for passphrase
+                    return Status.DEVICE_LOCKED
+            else:
+                # Might be VeraCrypt, might be madness
+                logger.info("LUKS drive not found")
+
+                # Currently we don't support anything other than LUKS.
+                # In future, we will support TC/VC volumes as well
+                return Status.INVALID_DEVICE_DETECTED
 
         except ExportException as ex:
-            logger.error(
-                f"Error encountered during disk format check: {ex.sdstatus.value}"
-            )
-            # Return legacy status values for now for ongoing client compatibility
-            if ex.sdstatus in [s for s in NewStatus]:
-                status = self._legacy_status(ex.sdstatus)
-                raise ExportException(sdstatus=status)
-            elif ex.sdstatus:
-                raise
+            logger.error(ex)
+            if ex.sdstatus:
+                return ex.sdstatus
             else:
-                raise ExportException(sdstatus=Status.LEGACY_ERROR_GENERIC)
+                return Status.DEVICE_ERROR
 
-    def _legacy_status(self, status: NewStatus) -> Status:
+    def unlock_device(self, passphrase: str, volume: Volume) -> Status:
         """
-        Backwards-compatibility - status values that client (@0.7.0) is expecting.
+        Given provided passphrase, unlock target volume. Currently,
+        LUKS volumes are supported.
         """
-        logger.info(f"Convert to legacy: {status.value}")
-        if status is NewStatus.ERROR_MOUNT:
-            return Status.LEGACY_ERROR_USB_MOUNT
-        elif status in [NewStatus.ERROR_EXPORT, NewStatus.ERROR_EXPORT_CLEANUP]:
-            return Status.LEGACY_ERROR_USB_WRITE
-        elif status in [NewStatus.ERROR_UNLOCK_LUKS, NewStatus.ERROR_UNLOCK_GENERIC]:
-            return Status.LEGACY_USB_BAD_PASSPHRASE
-        elif status in [
-            NewStatus.INVALID_DEVICE_DETECTED,
-            NewStatus.MULTI_DEVICE_DETECTED,
-        ]:
-            return Status.LEGACY_USB_ENCRYPTION_NOT_SUPPORTED
-        # The other status values, such as Status.NO_DEVICE_DETECTED, are not returned by the
-        # CLI, so we don't need to check for them here
+        if volume:
+            try:
+                self.volume = self.cli.unlock_luks_volume(volume, passphrase)
+
+                if volume.writable:
+                    return Status.DEVICE_WRITABLE
+                else:
+                    return Status.ERROR_UNLOCK_LUKS
+
+            except ExportException as ex:
+                logger.error(ex)
+                return Status.ERROR_UNLOCK_LUKS
         else:
-            return Status.LEGACY_ERROR_GENERIC
+            # Trying to unlock devices before having an active device
+            logger.warning("Tried to unlock_device but no current volume detected.")
+            return Status.NO_DEVICE_DETECTED
+
+    def write_to_device(self, volume: Volume, data: Archive) -> Status:
+        """
+        Export data to volume. CLI unmounts and locks volume on completion, even
+        if export was unsuccessful.
+        """
+        try:
+            self.cli.write_data_to_device(data.tmpdir, data.target_dirname, volume)
+            return Status.SUCCESS_EXPORT
+
+        except ExportException as ex:
+            logger.error(ex)
+            if ex.sdstatus:
+                return ex.sdstatus
+            else:
+                return Status.ERROR_EXPORT

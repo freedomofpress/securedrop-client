@@ -5,7 +5,7 @@ import os
 import subprocess
 from subprocess import CalledProcessError
 
-from securedrop_export.directory_util import safe_mkdir
+from securedrop_export.directory import safe_mkdir
 
 from securedrop_export.exceptions import ExportException
 from securedrop_export.archive import Archive
@@ -39,6 +39,9 @@ class TestPrint:
         cls.service = None
         cls.submission = None
 
+    def setup_method(self):
+        self.service.printer_wait_timeout = self.service.PRINTER_WAIT_TIMEOUT
+
     @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_BROTHER_PRINTER)
     def test_get_good_printer_uri_laserjet(self, mocked_call):
         assert (
@@ -67,7 +70,8 @@ class TestPrint:
         patch_setup.stop()
         patch_print.stop()
 
-    def test_printer_test_all_methods_called(self):
+    @mock.patch("securedrop_export.print.service.Service._wait_for_print")
+    def test_printer_preflight_all_methods_called(self, mock_wait):
         patch_setup = mock.patch.object(self.service, "_check_printer_setup")
 
         mock_setup = patch_setup.start()
@@ -80,7 +84,8 @@ class TestPrint:
 
         patch_setup.stop()
 
-    def test_print_all_checks_called(self):
+    @mock.patch("securedrop_export.print.service.Service._wait_for_print")
+    def test_print_testpage_all_checks_called(self, mock_wait):
         patch_setup = mock.patch.object(self.service, "_check_printer_setup")
         patch_print = mock.patch.object(self.service, "_print_test_page")
 
@@ -208,7 +213,7 @@ class TestPrint:
 
         assert ex.value.sdstatus is Status.ERROR_PRINT
 
-    @mock.patch("time.sleep", return_value=None)
+    @mock.patch("securedrop_export.print.service.time.sleep", return_value=None)
     @mock.patch(
         "subprocess.check_output",
         side_effect=[
@@ -219,12 +224,12 @@ class TestPrint:
     def test__wait_for_print(self, mock_subprocess, mock_time):
         assert self.service._wait_for_print()
 
-    @mock.patch("time.sleep", return_value=None)
     @mock.patch(
         "subprocess.check_output",
         side_effect=subprocess.CalledProcessError(1, "check_output"),
     )
-    def test__wait_for_print_print_exception(self, mock_subprocess, mock_time):
+    @mock.patch("time.sleep", return_value=None)
+    def test__wait_for_print_print_exception(self, mock_time, mock_subprocess):
         with pytest.raises(ExportException) as ex:
             self.service._wait_for_print()
 
@@ -233,15 +238,13 @@ class TestPrint:
     @mock.patch(
         "subprocess.check_output", return_value=b"printer sdw-printer is busy\n"
     )
-    def test__wait_for_print_timeout_exception(self, mock_subprocess):
+    def test__wait_for_print_timeout_exception(self, mock_output):
         self.service.printer_wait_timeout = 1
 
         with pytest.raises(ExportException) as ex:
             self.service._wait_for_print()
 
         assert ex.value.sdstatus is Status.ERROR_PRINT
-
-        self.service.printer_wait_timeout = self.service.PRINTER_WAIT_TIMEOUT
 
     @pytest.mark.parametrize(
         "printers", [SAMPLE_OUTPUT_BROTHER_PRINTER, SAMPLE_OUTPUT_LASERJET_PRINTER]
@@ -322,7 +325,8 @@ class TestPrint:
             )
         assert ex.value.sdstatus is Status.ERROR_PRINTER_NOT_SUPPORTED
 
-    def test__print_test_page_calls_method(self):
+    @mock.patch("securedrop_export.print.service.Service._wait_for_print")
+    def test__print_test_page_calls_method(self, mock_wait):
         p = mock.patch.object(self.service, "_print_file")
         mock_print = p.start()
 
@@ -330,7 +334,8 @@ class TestPrint:
         mock_print.assert_called_once_with("/usr/share/cups/data/testprint")
         p.stop()
 
-    def test__print_all_files(self):
+    @mock.patch("securedrop_export.print.service.Service._wait_for_print")
+    def test__print_all_files(self, mock_wait):
         p = mock.patch.object(self.service, "_print_file")
         mock_print = p.start()
 
@@ -345,7 +350,8 @@ class TestPrint:
         )
         p.stop()
 
-    def test_open_office_file_convert_to_pdf(self):
+    @mock.patch("securedrop_export.print.service.Service._wait_for_print")
+    def test_open_office_file_convert_to_pdf(self, mock_wait):
         file = "/tmp/definitely-an-office-file.odt"
 
         with mock.patch.object(self.service, "safe_check_call") as scc, mock.patch(
@@ -391,3 +397,43 @@ class TestPrint:
             self.service.safe_check_call(command="ls", error_status=Status.TEST_SUCCESS)
 
         assert ex.value.sdstatus is Status.TEST_SUCCESS
+
+    @mock.patch("securedrop_export.print.service.time.sleep", return_value=None)
+    @mock.patch(
+        "subprocess.check_output",
+        side_effect=[
+            b"printer sdw-printer is busy\n",
+            b"printer sdw-printer is idle\n",
+        ],
+    )
+    def test__wait_for_print_waits_correctly(self, mock_subprocess, mock_time):
+        file = "/tmp/happy-to-print-you.pdf"
+
+        with mock.patch.object(self.service, "safe_check_call") as scc, mock.patch(
+            "securedrop_export.print.service.logger.info"
+        ) as log:
+            self.service._print_file(file)
+
+        assert scc.call_count == 1
+        scc.assert_has_calls(
+            [
+                mock.call(
+                    command=[
+                        "xpp",
+                        "-P",
+                        "sdw-printer",
+                        "/tmp/happy-to-print-you.pdf",
+                    ],
+                    error_status=Status.ERROR_PRINT,
+                ),
+            ]
+        )
+        assert log.call_count == 4
+        log.assert_has_calls(
+            [
+                mock.call("Sending file to printer sdw-printer"),
+                mock.call("Running lpstat waiting for printer sdw-printer"),
+                mock.call("Running lpstat waiting for printer sdw-printer"),
+                mock.call("Print completed"),
+            ]
+        )

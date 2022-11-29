@@ -7,7 +7,7 @@ from typing import List, Optional
 from securedrop_export.exceptions import ExportException
 
 from .volume import EncryptionScheme, Volume
-from .new_status import Status
+from .status import Status
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +125,7 @@ class CLI:
             return device_and_partitions
 
         except subprocess.CalledProcessError as ex:
-            logger.error(f"Error checking block deivce {blkid}")
+            logger.error(f"Error checking block device {blkid}")
             raise ExportException(sdstatus=Status.DEVICE_ERROR) from ex
 
     def is_luks_volume(self, device: str) -> bool:
@@ -364,7 +364,7 @@ class CLI:
         directory. Currently called at end of `write_data_to_device()` to ensure
         device is always locked after export.
 
-        Raise ExportException if errors during cleanup are encoutered.
+        Raise ExportException if errors during cleanup are encountered.
         """
         logger.debug("Syncing filesystems")
         try:

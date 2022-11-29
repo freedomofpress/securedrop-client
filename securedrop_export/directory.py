@@ -2,9 +2,6 @@ import os
 import tarfile
 from pathlib import Path
 from typing import Optional, Union
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 def safe_mkdir(

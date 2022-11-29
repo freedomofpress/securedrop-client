@@ -4,11 +4,11 @@ import os
 import tempfile
 
 from securedrop_export.exceptions import ExportException
-from securedrop_export.disk.status import Status
-from securedrop_export.disk.new_status import Status as NewStatus
+from securedrop_export.disk.legacy_status import Status as LegacyStatus
+from securedrop_export.disk.status import Status as Status
 from securedrop_export.disk.volume import Volume, EncryptionScheme
 from securedrop_export.archive import Archive, Metadata
-from securedrop_export.disk.service import Service
+from securedrop_export.disk.legacy_service import Service
 from securedrop_export.disk.cli import CLI
 
 SAMPLE_OUTPUT_LSBLK_NO_PART = b"disk\ncrypt"  # noqa
@@ -78,14 +78,14 @@ class TestExportService:
     def test_check_usb(self):
         status = self.service.check_connected_devices()
 
-        assert status is Status.LEGACY_USB_CONNECTED
+        assert status is LegacyStatus.LEGACY_USB_CONNECTED
 
     def test_no_devices_connected(self):
         self.mock_cli.get_connected_devices.return_value = []
         with pytest.raises(ExportException) as ex:
             self.service.check_connected_devices()
 
-        assert ex.value.sdstatus is Status.LEGACY_USB_NOT_CONNECTED
+        assert ex.value.sdstatus is LegacyStatus.LEGACY_USB_NOT_CONNECTED
 
     def test_too_many_devices_connected(self):
         self.mock_cli.get_connected_devices.return_value = [
@@ -95,7 +95,7 @@ class TestExportService:
         with pytest.raises(ExportException) as ex:
             self.service.check_connected_devices()
 
-        assert ex.value.sdstatus is Status.LEGACY_USB_ENCRYPTION_NOT_SUPPORTED
+        assert ex.value.sdstatus is LegacyStatus.LEGACY_USB_ENCRYPTION_NOT_SUPPORTED
 
     def test_device_is_not_luks(self):
         self.mock_cli.is_luks_volume.return_value = False
@@ -105,33 +105,33 @@ class TestExportService:
         with pytest.raises(ExportException) as ex:
             self.service.check_disk_format()
 
-        assert ex.value.sdstatus is Status.LEGACY_USB_ENCRYPTION_NOT_SUPPORTED
+        assert ex.value.sdstatus is LegacyStatus.LEGACY_USB_ENCRYPTION_NOT_SUPPORTED
 
     def test_check_usb_error(self):
         self.mock_cli.get_connected_devices.side_effect = ExportException(
-            sdstatus=Status.LEGACY_ERROR_USB_CHECK
+            sdstatus=LegacyStatus.LEGACY_ERROR_USB_CHECK
         )
 
         with pytest.raises(ExportException) as ex:
             self.service.check_connected_devices()
 
-        assert ex.value.sdstatus is Status.LEGACY_ERROR_USB_CHECK
+        assert ex.value.sdstatus is LegacyStatus.LEGACY_ERROR_USB_CHECK
 
     def test_check_disk_format(self):
         status = self.service.check_disk_format()
 
-        assert status is Status.LEGACY_USB_ENCRYPTED
+        assert status is LegacyStatus.LEGACY_USB_ENCRYPTED
 
     def test_check_disk_format_error(self):
         self.mock_cli.get_partitioned_device.side_effect = ExportException(
-            sdstatus=NewStatus.INVALID_DEVICE_DETECTED
+            sdstatus=Status.INVALID_DEVICE_DETECTED
         )
 
         with pytest.raises(ExportException) as ex:
             self.service.check_disk_format()
 
         # We still return the legacy status for now
-        assert ex.value.sdstatus is Status.LEGACY_USB_ENCRYPTION_NOT_SUPPORTED
+        assert ex.value.sdstatus is LegacyStatus.LEGACY_USB_ENCRYPTION_NOT_SUPPORTED
 
     def test_export(self):
         # Currently, a successful export does not return a success status.
@@ -145,59 +145,59 @@ class TestExportService:
         with pytest.raises(ExportException) as ex:
             self.service.export()
 
-        assert ex.value.sdstatus is Status.LEGACY_USB_ENCRYPTION_NOT_SUPPORTED
+        assert ex.value.sdstatus is LegacyStatus.LEGACY_USB_ENCRYPTION_NOT_SUPPORTED
 
     def test_export_write_error(self):
         self.mock_cli.is_luks_volume.return_value = True
         self.mock_cli.write_data_to_device.side_effect = ExportException(
-            sdstatus=Status.LEGACY_ERROR_USB_WRITE
+            sdstatus=LegacyStatus.LEGACY_ERROR_USB_WRITE
         )
 
         with pytest.raises(ExportException) as ex:
             self.service.export()
 
-        assert ex.value.sdstatus is Status.LEGACY_ERROR_USB_WRITE
+        assert ex.value.sdstatus is LegacyStatus.LEGACY_ERROR_USB_WRITE
 
     def test_export_throws_new_exception_return_legacy_status(self):
         self.mock_cli.get_connected_devices.side_effect = ExportException(
-            sdstatus=NewStatus.ERROR_MOUNT
+            sdstatus=Status.ERROR_MOUNT
         )
 
         with pytest.raises(ExportException) as ex:
             self.service.export()
 
-        assert ex.value.sdstatus is Status.LEGACY_ERROR_USB_MOUNT
+        assert ex.value.sdstatus is LegacyStatus.LEGACY_ERROR_USB_MOUNT
 
     @mock.patch("os.path.exists", return_value=True)
     def test_write_error_returns_legacy_status(self, mock_path):
         self.mock_cli.is_luks_volume.return_value = True
         self.mock_cli.write_data_to_device.side_effect = ExportException(
-            sdstatus=NewStatus.ERROR_EXPORT
+            sdstatus=Status.ERROR_EXPORT
         )
 
         with pytest.raises(ExportException) as ex:
             self.service.export()
 
-        assert ex.value.sdstatus is Status.LEGACY_ERROR_USB_WRITE
+        assert ex.value.sdstatus is LegacyStatus.LEGACY_ERROR_USB_WRITE
 
     @mock.patch("os.path.exists", return_value=True)
     def test_unlock_error_returns_legacy_status(self, mock_path):
         self.mock_cli.unlock_luks_volume.side_effect = ExportException(
-            sdstatus=NewStatus.ERROR_UNLOCK_LUKS
+            sdstatus=Status.ERROR_UNLOCK_LUKS
         )
 
         with pytest.raises(ExportException) as ex:
             self.service.export()
 
-        assert ex.value.sdstatus is Status.LEGACY_USB_BAD_PASSPHRASE
+        assert ex.value.sdstatus is LegacyStatus.LEGACY_USB_BAD_PASSPHRASE
 
     @mock.patch("os.path.exists", return_value=True)
     def test_unexpected_error_returns_legacy_status_generic(self, mock_path):
         self.mock_cli.unlock_luks_volume.side_effect = ExportException(
-            sdstatus=NewStatus.DEVICE_ERROR
+            sdstatus=Status.DEVICE_ERROR
         )
 
         with pytest.raises(ExportException) as ex:
             self.service.export()
 
-        assert ex.value.sdstatus is Status.LEGACY_ERROR_GENERIC
+        assert ex.value.sdstatus is LegacyStatus.LEGACY_ERROR_GENERIC

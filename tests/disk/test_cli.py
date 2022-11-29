@@ -6,7 +6,7 @@ import subprocess
 from securedrop_export.disk.cli import CLI
 from securedrop_export.disk.volume import EncryptionScheme, Volume
 from securedrop_export.exceptions import ExportException
-from securedrop_export.disk.new_status import Status
+from securedrop_export.disk.status import Status
 
 from securedrop_export.archive import Archive
 

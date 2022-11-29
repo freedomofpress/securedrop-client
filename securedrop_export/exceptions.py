@@ -1,8 +1,3 @@
-import logging
-
-logger = logging.getLogger(__name__)
-
-
 class ExportException(Exception):
     """
     Base class for exceptions encountered during export.

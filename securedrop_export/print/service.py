@@ -22,10 +22,15 @@ class Service:
     LASERJET_DRIVER = "/usr/share/cups/drv/hpcups.drv"
     LASERJET_PPD = "/usr/share/cups/model/hp-laserjet_6l.ppd"
 
-    def __init__(self, submission):
+    BROTHER = "Brother"
+    LASERJET = "LaserJet"
+
+    SUPPORTED_PRINTERS = [BROTHER, LASERJET]
+
+    def __init__(self, submission, printer_timeout_seconds=PRINTER_WAIT_TIMEOUT):
         self.submission = submission
         self.printer_name = self.PRINTER_NAME
-        self.printer_wait_timeout = self.PRINTER_WAIT_TIMEOUT
+        self.printer_wait_timeout = printer_timeout_seconds  # Override during testing
 
     def print(self):
         """
@@ -105,7 +110,7 @@ class Service:
                 raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_FOUND)
 
             supported_printers = [
-                p for p in printers if any(sub in p for sub in ("Brother", "LaserJet"))
+                p for p in printers if any(sub in p for sub in self.SUPPORTED_PRINTERS)
             ]
             if not supported_printers:
                 logger.info("{} are unsupported printers".format(printers))
@@ -146,7 +151,7 @@ class Service:
             # No usb printer is connected
             logger.info("No usb printers connected")
             raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_FOUND)
-        elif not any(x in printer_uri for x in ("Brother", "LaserJet")):
+        elif not any(x in printer_uri for x in self.SUPPORTED_PRINTERS):
             # printer url is a make that is unsupported
             logger.info("Printer {} is unsupported".format(printer_uri))
             raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_SUPPORTED)
@@ -155,16 +160,16 @@ class Service:
         return printer_uri
 
     def _install_printer_ppd(self, uri):
-        if not any(x in uri for x in ("Brother", "LaserJet")):
+        if not any(x in uri for x in self.SUPPORTED_PRINTERS):
             logger.error(
                 "Cannot install printer ppd for unsupported printer: {}".format(uri)
             )
             raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_SUPPORTED)
 
-        if "Brother" in uri:
+        if self.BROTHER in uri:
             printer_driver = self.BRLASER_DRIVER
             printer_ppd = self.BRLASER_PPD
-        elif "LaserJet" in uri:
+        elif self.LASERJET in uri:
             printer_driver = self.LASERJET_DRIVER
             printer_ppd = self.LASERJET_PPD
 
@@ -258,6 +263,10 @@ class Service:
             command=["xpp", "-P", self.printer_name, file_to_print],
             error_status=Status.ERROR_PRINT,
         )
+        # This is an addition to ensure that the entire print job is transferred over.
+        # If the job is not fully transferred within the timeout window, the user
+        # will see an error message.
+        self._wait_for_print()
 
     def safe_check_call(
         self, command: str, error_status: Status, ignore_stderr_startswith=None
