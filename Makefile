@@ -33,7 +33,7 @@ dev-requirements:  ## Update dev-*requirements.txt files if pinned versions do n
 .PHONY: requirements
 requirements:  ## Update *requirements.txt files if pinned versions do not comply with the dependency specifications in *requirements.in
 	pip-compile --generate-hashes --output-file requirements/requirements.txt requirements/requirements.in
-	$(MAKE) sync-requirements
+	$(MAKE) dev-requirements
 
 .PHONY: update-dependency
 update-dependency:  ## Add or upgrade a package to the latest version that complies with the dependency specifications in requirements.in
@@ -44,10 +44,10 @@ update-dependency:  ## Add or upgrade a package to the latest version that compl
 update-dev-only-dependencies:  ## Update dev-requirements.txt to pin to the latest versions of dev-only dependencies that comply with the dependency specifications in dev-requirements.in
 	$(MAKE) sync-requirements
 	@while read line; do \
-		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-${VERSION_CODENAME}-requirements.txt requirements/requirements.in requirements/dev-bookworm-requirements.in; \
+		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-bullseye-requirements.txt requirements/requirements.in requirements/dev-bullseye-requirements.in; \
 	done < 'requirements/dev-bullseye-requirements.in'
 	@while read line; do \
-		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-${VERSION_CODENAME}-requirements.txt requirements/requirements.in requirements/dev-bookworm-requirements.in; \
+		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-bookworm-requirements.txt requirements/requirements.in requirements/dev-bookworm-requirements.in; \
 	done < 'requirements/dev-bookworm-requirements.in'
 
 .PHONY: check
