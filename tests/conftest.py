@@ -4,6 +4,8 @@ import subprocess
 import tempfile
 from configparser import ConfigParser
 from datetime import datetime
+from pathlib import Path
+from sys import platform
 from uuid import uuid4
 
 import pytest
@@ -112,7 +114,12 @@ def homedir(i18n):
     inspect the contents for debugging purposes.
     """
 
-    tmpdir = tempfile.mkdtemp(prefix="sdc-")
+    # The default location of tmp directories is /var/folders/<random/string>/
+    # On OS X, the symlink from /var to /private/var causes tests that call path traversal checks to fail.
+    # Set the homedir's location to the home directory to avoid the issue.
+    dir = Path.home() if platform == "darwin" else None
+
+    tmpdir = tempfile.mkdtemp(prefix="sdc-", dir=dir)
     os.chmod(tmpdir, 0o0700)
 
     data_dir = os.path.join(tmpdir, "data")
