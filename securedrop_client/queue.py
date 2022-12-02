@@ -2,9 +2,9 @@ import itertools
 import logging
 import threading
 from queue import PriorityQueue
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Any
 
-from PyQt5.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QObject, QThread, pyqtBoundSignal, pyqtSignal, pyqtSlot
 from sdclientapi import API, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm import scoped_session
 
@@ -26,6 +26,38 @@ from securedrop_client.api_jobs.updatestar import UpdateStarJob
 from securedrop_client.api_jobs.uploads import SendReplyJob
 
 logger = logging.getLogger(__name__)
+
+
+class RunnablePriorityQueue(PriorityQueue):
+    """
+    Wrapper class around PriorityQueue that emits a signal when message or reply
+    download jobs are enqueued or dequeued.
+    """
+
+    def __init__(
+        self, *args: Any, queue_updated_signal: Optional[pyqtBoundSignal] = None, **kwargs: Any
+    ):
+        self.queue_updated_signal = queue_updated_signal
+        super().__init__(*args, **kwargs)
+
+    def get(self, *args, **kwargs):
+        item = super().get(*args, **kwargs)
+        if self.queue_updated_signal:
+            self.queue_updated_signal.emit(self._get_num_message_or_reply_download_jobs())
+        return item
+
+    def put(self, *args, **kwargs):
+        item = super().put(*args, **kwargs)
+        if self.queue_updated_signal:
+            self.queue_updated_signal.emit(self._get_num_message_or_reply_download_jobs())
+        return item
+
+    def _get_num_message_or_reply_download_jobs(self):
+        message_and_reply_download_jobs = list(
+            # PriorityQueue items are a tuple of (priority, job)
+            filter(lambda job: type(job[1]) in (MessageDownloadJob, ReplyDownloadJob), self.queue)
+        )
+        return len(message_and_reply_download_jobs)
 
 
 class RunnableQueue(QObject):
@@ -70,11 +102,18 @@ class RunnableQueue(QObject):
     # Signal that is emitted to resume processing jobs
     resume = pyqtSignal()
 
-    def __init__(self, api_client: API, session_maker: scoped_session) -> None:
+    def __init__(
+        self,
+        api_client: API,
+        session_maker: scoped_session,
+        queue_updated_signal: Optional[pyqtBoundSignal] = None,
+    ) -> None:
         super().__init__()
         self.api_client = api_client
         self.session_maker = session_maker
-        self.queue = PriorityQueue()  # type: PriorityQueue[Tuple[int, QueueJob]]
+        self.queue = RunnablePriorityQueue(
+            queue_updated_signal=queue_updated_signal
+        )  # type: PriorityQueue[Tuple[int, QueueJob]]
         # `order_number` ensures jobs with equal priority are retrieved in FIFO order. This is
         # needed because PriorityQueue is implemented using heapq which does not have sort
         # stability. For more info, see : https://bugs.python.org/issue17794
@@ -202,6 +241,9 @@ class ApiJobQueue(QObject):
     # Signal that is emitted after a queue is paused.
     paused = pyqtSignal()
 
+    # Signal emitted when an item is added or removed from the main queue
+    main_queue_updated = pyqtSignal(int)
+
     def __init__(
         self,
         api_client: API,
@@ -214,7 +256,9 @@ class ApiJobQueue(QObject):
         self.main_thread = main_thread
         self.download_file_thread = download_file_thread
 
-        self.main_queue = RunnableQueue(api_client, session_maker)
+        self.main_queue = RunnableQueue(
+            api_client, session_maker, queue_updated_signal=self.main_queue_updated
+        )
         self.download_file_queue = RunnableQueue(api_client, session_maker)
 
         self.main_queue.moveToThread(self.main_thread)
