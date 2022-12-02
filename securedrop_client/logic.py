@@ -23,12 +23,13 @@ import os
 import uuid
 from datetime import datetime
 from gettext import gettext as _
+from gettext import ngettext
 from typing import Dict, List, Optional, Type, Union
 
 import arrow
 import sdclientapi
 import sqlalchemy.orm.exc
-from PyQt5.QtCore import QObject, QProcess, Qt, QThread, QTimer, pyqtSignal
+from PyQt5.QtCore import QObject, QProcess, Qt, QThread, QTimer, pyqtSignal, pyqtSlot
 from sdclientapi import AuthError, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm.session import sessionmaker
 
@@ -382,6 +383,7 @@ class Controller(QObject):
             self.api, self.session_maker, self.main_queue_thread, self.file_download_queue_thread
         )
         self.api_job_queue.paused.connect(self.on_queue_paused)
+        self.api_job_queue.main_queue_updated.connect(self._on_main_queue_updated)
         self.add_job.connect(self.api_job_queue.enqueue)
 
         # Contains active threads calling the API.
@@ -413,6 +415,16 @@ class Controller(QObject):
         ):
             os.chmod(self.last_sync_filepath, 0o600)
 
+    @pyqtSlot(int)
+    def _on_main_queue_updated(self, num_items: int) -> None:
+        if num_items > 0:
+            status_text = ngettext(
+                "Retrieving 1 message", "Retrieving {message_count} messages", num_items
+            ).format(message_count=num_items)
+        else:
+            status_text = ""
+        self.set_status(status_text, 0)
+
     @property
     def is_authenticated(self) -> bool:
         return self.__is_authenticated
@@ -434,7 +446,6 @@ class Controller(QObject):
         * Not logged in.
         * Show most recent state of synchronized sources.
         * Show the login screen.
-        * Check the sync status every 30 seconds.
         """
         # The gui needs to reference this "controller" layer to call methods
         # triggered by UI events.
@@ -633,7 +644,6 @@ class Controller(QObject):
         Called when synchronization of data via the API queue succeeds.
 
             * Set last sync flag
-            * Display the last sync time and updated list of sources in GUI
             * Download new messages and replies
             * Update missing files so that they can be re-downloaded
             * Update authenticated user if name changed
@@ -840,9 +850,6 @@ class Controller(QObject):
 
     def download_new_messages(self) -> None:
         new_messages = storage.find_new_messages(self.session)
-        new_message_count = len(new_messages)
-        if new_message_count > 0:
-            self.set_status(_("Retrieving new messages"), 2500)
 
         for message in new_messages:
             if message.download_error:

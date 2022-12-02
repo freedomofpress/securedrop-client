@@ -2,7 +2,7 @@ import itertools
 import logging
 import threading
 from queue import PriorityQueue
-from typing import Optional, Tuple, Any
+from typing import Any, Optional, Tuple
 
 from PyQt5.QtCore import QObject, QThread, pyqtBoundSignal, pyqtSignal, pyqtSlot
 from sdclientapi import API, RequestTimeoutError, ServerConnectionError
@@ -40,19 +40,19 @@ class RunnablePriorityQueue(PriorityQueue):
         self.queue_updated_signal = queue_updated_signal
         super().__init__(*args, **kwargs)
 
-    def get(self, *args, **kwargs):
+    def get(self, *args: Any, **kwargs: Any) -> Tuple[int, QueueJob]:
         item = super().get(*args, **kwargs)
         if self.queue_updated_signal:
             self.queue_updated_signal.emit(self._get_num_message_or_reply_download_jobs())
         return item
 
-    def put(self, *args, **kwargs):
+    def put(self, *args: Any, **kwargs: Any) -> None:
         item = super().put(*args, **kwargs)
         if self.queue_updated_signal:
             self.queue_updated_signal.emit(self._get_num_message_or_reply_download_jobs())
         return item
 
-    def _get_num_message_or_reply_download_jobs(self):
+    def _get_num_message_or_reply_download_jobs(self) -> int:
         message_and_reply_download_jobs = list(
             # PriorityQueue items are a tuple of (priority, job)
             filter(lambda job: type(job[1]) in (MessageDownloadJob, ReplyDownloadJob), self.queue)
