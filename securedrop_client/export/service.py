@@ -386,3 +386,12 @@ class Service(QObject):
                 self.print_failed.emit(e)
 
         self.export_completed.emit(filepaths)
+
+
+# Store the service instance to prevent unnecessary concurrent access to the CLI. See getService.
+_service = Service()
+
+
+def getService() -> Service:
+    """All calls to this function return the same service instance."""
+    return _service

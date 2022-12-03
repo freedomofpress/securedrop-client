@@ -13,6 +13,15 @@ from securedrop_client.export import Service as Export
 
 
 class TestExportService(unittest.TestCase):
+    def test_export_service_is_unique(self):
+        export_service = export.getService()
+        same_export_service = export.getService()
+
+        self.assertTrue(
+            export_service is same_export_service,
+            "expected successive calls to export.getService to return the same service instance",  # noqa: E501
+        )
+
     @patch(
         "securedrop_client.export.service.TemporaryDirectory.__enter__",
         return_value="tmpdir-sq324f",
@@ -21,7 +30,7 @@ class TestExportService(unittest.TestCase):
     def test_uses_temporary_directory_for_printer_status_check(
         self, _check_printer_status, _tmpdir
     ):
-        export_service = export.Service()
+        export_service = export.getService()
 
         export_service.check_printer_status()
 
@@ -32,7 +41,7 @@ class TestExportService(unittest.TestCase):
     def test_emits_printer_found_ready_when_printer_status_check_succeeds(
         self, _check_printer_status, _temporary_directory
     ):
-        export_service = export.Service()
+        export_service = export.getService()
         printer_found_ready_emissions = QSignalSpy(export_service.printer_found_ready)
         assert printer_found_ready_emissions.isValid()
 
@@ -48,7 +57,7 @@ class TestExportService(unittest.TestCase):
     ):
         expected_error = ExportError("bang!")
         _check_printer_status.side_effect = expected_error
-        export_service = export.Service()
+        export_service = export.getService()
         printer_not_found_ready_emissions = QSignalSpy(export_service.printer_not_found_ready)
         assert printer_not_found_ready_emissions.isValid()
 
@@ -61,7 +70,7 @@ class TestExportService(unittest.TestCase):
 class TestExportServiceInterfaceWithCLI(unittest.TestCase):
     def test_internal_printer_status_check_returns_without_errors_when_empty_response(self):
         SUCCESS_STATUS = ""  # sd-devices API
-        export_service = export.Service()
+        export_service = export.getService()
         valid_archive_path = "archive_path_13kn3"
         export_service._create_archive = MagicMock()
         export_service._export_archive = MagicMock(return_value=SUCCESS_STATUS)
@@ -73,7 +82,7 @@ class TestExportServiceInterfaceWithCLI(unittest.TestCase):
     def test_internal_printer_status_check_exports_a_specifically_created_archive(self):
         expected_archive_path = "archive_path_9f483f"
         expected_archive_dir = "archive_dir_2i19c"
-        export_service = export.Service()
+        export_service = export.getService()
         export_service._create_archive = MagicMock(return_value=expected_archive_path)
         export_service._export_archive = MagicMock(return_value="")  # "magic" value
 
@@ -87,7 +96,7 @@ class TestExportServiceInterfaceWithCLI(unittest.TestCase):
     def test_internal_printer_status_check_raises_export_error_when_not_USB_CONNECTED(self):
         not_USB_CONNECTED = "whatever"
         valid_archive_path = "archive_path_034d3"
-        export_service = export.Service()
+        export_service = export.getService()
         export_service._create_archive = MagicMock()
         export_service._export_archive = MagicMock(return_value=not_USB_CONNECTED)
 
