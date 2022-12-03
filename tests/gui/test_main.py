@@ -11,6 +11,8 @@ from securedrop_client.logic import Controller
 from securedrop_client.resources import load_icon
 from tests.helper import app  # noqa: F401
 
+export_service = export.getService()
+
 
 class WindowTest(unittest.TestCase):
     def test_clear_clipboard(self):
@@ -38,7 +40,6 @@ def test_init(mocker):
     load_css = mocker.patch("securedrop_client.gui.main.load_css")
 
     app_state = state.State()
-    export_service = export.Service()
     w = Window(app_state, export_service)
 
     mock_li.assert_called_once_with(w.icon)
