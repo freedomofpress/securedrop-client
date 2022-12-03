@@ -22,6 +22,8 @@ from securedrop_client.app import (
 )
 from tests.helper import app  # noqa: F401
 
+export_service = export.getService()
+
 
 def test_application_sets_en_as_default_language_code(mocker):
     mocker.patch("locale.getdefaultlocale", return_value=(None, None))
@@ -139,7 +141,6 @@ def test_start_app(homedir, mocker):
     mock_args.proxy = False
     app_state = state.State()
     mocker.patch("securedrop_client.state.State", return_value=app_state)
-    export_service = export.Service()
     mocker.patch("securedrop_client.export.Service", return_value=export_service)
 
     mocker.patch("securedrop_client.app.configure_logging")
