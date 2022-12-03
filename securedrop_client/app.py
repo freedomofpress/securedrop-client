@@ -41,6 +41,8 @@ from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
 from securedrop_client.utils import safe_mkdir
 
+export_service = export.getService()
+
 LanguageCode = NewType("LanguageCode", str)
 
 DEFAULT_LANGUAGE = LanguageCode("en")
@@ -246,7 +248,6 @@ def start_app(args, qt_args) -> NoReturn:  # type: ignore [no-untyped-def]
         main_queue_thread,
         file_download_queue_thread,
     ]:
-        export_service = export.Service()
         export_service.moveToThread(export_service_thread)
         export_service_thread.start()
 

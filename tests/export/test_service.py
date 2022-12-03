@@ -16,7 +16,7 @@ class TestExportServicePrinterInterface(unittest.TestCase):
     def test_uses_temporary_directory_for_printer_status_check(
         self, check_printer_status, temporary_directory
     ):
-        export_service = export.Service()
+        export_service = export.getService()
 
         export_service.check_printer_status()
 
@@ -27,7 +27,7 @@ class TestExportServicePrinterInterface(unittest.TestCase):
     def test_emits_printer_found_ready_when_printer_status_check_succeeds(
         self, check_printer_status, temporary_directory
     ):
-        export_service = export.Service()
+        export_service = export.getService()
         printer_found_ready_emissions = QSignalSpy(export_service.printer_found_ready)
         assert printer_found_ready_emissions.isValid()
 
@@ -43,7 +43,7 @@ class TestExportServicePrinterInterface(unittest.TestCase):
     ):
         expected_error = export.ExportError("bang!")
         check_printer_status.side_effect = expected_error
-        export_service = export.Service()
+        export_service = export.getService()
         printer_not_found_ready_emissions = QSignalSpy(export_service.printer_not_found_ready)
         assert printer_not_found_ready_emissions.isValid()
 

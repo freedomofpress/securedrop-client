@@ -17,7 +17,7 @@ class TestExportServiceCLIInterface(unittest.TestCase):
     def test_printer_status_check_returns_without_errors_when_empty_response(
         self, create_archive, export_archive
     ):
-        export_service = export.Service()
+        export_service = export.getService()
         valid_archive_path = "archive_path_13kn3"
 
         export_service._cli.check_printer_status(valid_archive_path)
@@ -31,7 +31,7 @@ class TestExportServiceCLIInterface(unittest.TestCase):
     ):
         expected_archive_path = "archive_path_9f483f"
         expected_archive_dir = "archive_dir_2i19c"
-        export_service = export.Service()
+        export_service = export.getService()
 
         export_service._cli.check_printer_status(expected_archive_dir)
 
@@ -46,7 +46,7 @@ class TestExportServiceCLIInterface(unittest.TestCase):
         self, create_archive, export_archive
     ):
         valid_archive_path = "archive_path_034d3"
-        export_service = export.Service()
+        export_service = export.getService()
 
         with pytest.raises(export.ExportError):
             export_service._cli.check_printer_status(valid_archive_path)
