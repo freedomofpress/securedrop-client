@@ -14,7 +14,7 @@ def test_run_printer_preflight(mocker):
     """
     mock_temp_dir = mocker.MagicMock()
     mock_temp_dir.__enter__ = mocker.MagicMock(return_value="mock_temp_dir")
-    mocker.patch("securedrop_client.export.TemporaryDirectory", return_value=mock_temp_dir)
+    mocker.patch("securedrop_client.export.service.TemporaryDirectory", return_value=mock_temp_dir)
     export = Export()
     export.printer_preflight_success = mocker.MagicMock()
     export.printer_preflight_success.emit = mocker.MagicMock()
@@ -33,7 +33,7 @@ def test_run_printer_preflight_error(mocker):
     """
     mock_temp_dir = mocker.MagicMock()
     mock_temp_dir.__enter__ = mocker.MagicMock(return_value="mock_temp_dir")
-    mocker.patch("securedrop_client.export.TemporaryDirectory", return_value=mock_temp_dir)
+    mocker.patch("securedrop_client.export.service.TemporaryDirectory", return_value=mock_temp_dir)
     export = Export()
     export.printer_preflight_failure = mocker.MagicMock()
     export.printer_preflight_failure.emit = mocker.MagicMock()
@@ -83,7 +83,7 @@ def test_print(mocker):
     """
     mock_temp_dir = mocker.MagicMock()
     mock_temp_dir.__enter__ = mocker.MagicMock(return_value="mock_temp_dir")
-    mocker.patch("securedrop_client.export.TemporaryDirectory", return_value=mock_temp_dir)
+    mocker.patch("securedrop_client.export.service.TemporaryDirectory", return_value=mock_temp_dir)
     export = Export()
     export.print_call_success = mocker.MagicMock()
     export.print_call_success.emit = mocker.MagicMock()
@@ -106,7 +106,7 @@ def test_print_error(mocker):
     """
     mock_temp_dir = mocker.MagicMock()
     mock_temp_dir.__enter__ = mocker.MagicMock(return_value="mock_temp_dir")
-    mocker.patch("securedrop_client.export.TemporaryDirectory", return_value=mock_temp_dir)
+    mocker.patch("securedrop_client.export.service.TemporaryDirectory", return_value=mock_temp_dir)
     export = Export()
     export.print_call_failure = mocker.MagicMock()
     export.print_call_failure.emit = mocker.MagicMock()
@@ -159,7 +159,7 @@ def test_send_file_to_usb_device(mocker):
     """
     mock_temp_dir = mocker.MagicMock()
     mock_temp_dir.__enter__ = mocker.MagicMock(return_value="mock_temp_dir")
-    mocker.patch("securedrop_client.export.TemporaryDirectory", return_value=mock_temp_dir)
+    mocker.patch("securedrop_client.export.service.TemporaryDirectory", return_value=mock_temp_dir)
     export = Export()
     export.export_usb_call_success = mocker.MagicMock()
     export.export_usb_call_success.emit = mocker.MagicMock()
@@ -182,7 +182,7 @@ def test_send_file_to_usb_device_error(mocker):
     """
     mock_temp_dir = mocker.MagicMock()
     mock_temp_dir.__enter__ = mocker.MagicMock(return_value="mock_temp_dir")
-    mocker.patch("securedrop_client.export.TemporaryDirectory", return_value=mock_temp_dir)
+    mocker.patch("securedrop_client.export.service.TemporaryDirectory", return_value=mock_temp_dir)
     export = Export()
     export.export_usb_call_failure = mocker.MagicMock()
     export.export_usb_call_failure.emit = mocker.MagicMock()
@@ -206,7 +206,7 @@ def test_run_preflight_checks(mocker):
     """
     mock_temp_dir = mocker.MagicMock()
     mock_temp_dir.__enter__ = mocker.MagicMock(return_value="mock_temp_dir")
-    mocker.patch("securedrop_client.export.TemporaryDirectory", return_value=mock_temp_dir)
+    mocker.patch("securedrop_client.export.service.TemporaryDirectory", return_value=mock_temp_dir)
     export = Export()
     export.preflight_check_call_success = mocker.MagicMock()
     export.preflight_check_call_success.emit = mocker.MagicMock()
@@ -227,7 +227,7 @@ def test_run_preflight_checks_error(mocker):
     """
     mock_temp_dir = mocker.MagicMock()
     mock_temp_dir.__enter__ = mocker.MagicMock(return_value="mock_temp_dir")
-    mocker.patch("securedrop_client.export.TemporaryDirectory", return_value=mock_temp_dir)
+    mocker.patch("securedrop_client.export.service.TemporaryDirectory", return_value=mock_temp_dir)
     export = Export()
     export.preflight_check_call_failure = mocker.MagicMock()
     export.preflight_check_call_failure.emit = mocker.MagicMock()
