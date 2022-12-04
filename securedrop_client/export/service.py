@@ -386,6 +386,3 @@ class Service(QObject):
                 self.print_failed.emit(e)
 
         self.export_completed.emit(filepaths)
-
-
-Export = Service  # DEPRECATED

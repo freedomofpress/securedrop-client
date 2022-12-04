@@ -8,7 +8,8 @@ import pytest
 from PyQt5.QtTest import QSignalSpy
 
 from securedrop_client import export
-from securedrop_client.export import Export, ExportError, ExportStatus
+from securedrop_client.export import ExportError, ExportStatus
+from securedrop_client.export import Service as Export
 
 
 class TestExportService(unittest.TestCase):
