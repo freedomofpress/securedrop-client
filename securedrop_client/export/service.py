@@ -38,7 +38,7 @@ class ExportStatus(Enum):
     MISSING_PRINTER_URI = "ERROR_MISSING_PRINTER_URI"
 
 
-class Export(QObject):
+class Service(QObject):
     """
     This class sends files over to the Export VM so that they can be copied to a luks-encrypted USB
     disk drive or printed by a USB-connected printer.
@@ -409,4 +409,4 @@ class Export(QObject):
         self.export_completed.emit(filepaths)
 
 
-Service = Export
+Export = Service  # DEPRECATED
