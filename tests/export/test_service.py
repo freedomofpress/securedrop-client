@@ -3,6 +3,7 @@ import subprocess
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import pytest
+from PyQt5.QtTest import QSignalSpy
 
 from securedrop_client.export import Export, ExportError, ExportStatus
 
@@ -16,14 +17,15 @@ def test_run_printer_preflight(mocker):
     mock_temp_dir.__enter__ = mocker.MagicMock(return_value="mock_temp_dir")
     mocker.patch("securedrop_client.export.service.TemporaryDirectory", return_value=mock_temp_dir)
     export = Export()
-    export.printer_preflight_success = mocker.MagicMock()
-    export.printer_preflight_success.emit = mocker.MagicMock()
+    printer_preflight_success_emissions = QSignalSpy(export.printer_preflight_success)
+    assert printer_preflight_success_emissions.isValid()
     _run_printer_preflight = mocker.patch.object(export, "_run_printer_preflight")
 
     export.run_printer_preflight()
 
     _run_printer_preflight.assert_called_once_with("mock_temp_dir")
-    export.printer_preflight_success.emit.assert_called_once_with()
+    assert len(printer_preflight_success_emissions) == 1
+    assert printer_preflight_success_emissions[0] == []
 
 
 def test_run_printer_preflight_error(mocker):
@@ -35,15 +37,16 @@ def test_run_printer_preflight_error(mocker):
     mock_temp_dir.__enter__ = mocker.MagicMock(return_value="mock_temp_dir")
     mocker.patch("securedrop_client.export.service.TemporaryDirectory", return_value=mock_temp_dir)
     export = Export()
-    export.printer_preflight_failure = mocker.MagicMock()
-    export.printer_preflight_failure.emit = mocker.MagicMock()
+    printer_preflight_failure_emissions = QSignalSpy(export.printer_preflight_failure)
+    assert printer_preflight_failure_emissions.isValid()
     error = ExportError("bang!")
     _run_print_preflight = mocker.patch.object(export, "_run_printer_preflight", side_effect=error)
 
     export.run_printer_preflight()
 
     _run_print_preflight.assert_called_once_with("mock_temp_dir")
-    export.printer_preflight_failure.emit.assert_called_once_with(error)
+    assert len(printer_preflight_failure_emissions) == 1
+    assert printer_preflight_failure_emissions[0] == [error]
 
 
 def test__run_printer_preflight(mocker):
@@ -85,18 +88,20 @@ def test_print(mocker):
     mock_temp_dir.__enter__ = mocker.MagicMock(return_value="mock_temp_dir")
     mocker.patch("securedrop_client.export.service.TemporaryDirectory", return_value=mock_temp_dir)
     export = Export()
-    export.print_call_success = mocker.MagicMock()
-    export.print_call_success.emit = mocker.MagicMock()
-    export.export_completed = mocker.MagicMock()
-    export.export_completed.emit = mocker.MagicMock()
+    print_call_success_emissions = QSignalSpy(export.print_call_success)
+    assert print_call_success_emissions.isValid()
+    export_completed_emissions = QSignalSpy(export.export_completed)
+    assert export_completed_emissions.isValid()
     _run_print = mocker.patch.object(export, "_run_print")
     mocker.patch("os.path.exists", return_value=True)
 
     export.print(["path1", "path2"])
 
     _run_print.assert_called_once_with("mock_temp_dir", ["path1", "path2"])
-    export.print_call_success.emit.assert_called_once_with()
-    export.export_completed.emit.assert_called_once_with(["path1", "path2"])
+    assert len(print_call_success_emissions) == 1
+    assert print_call_success_emissions[0] == []
+    assert len(export_completed_emissions) == 1
+    assert export_completed_emissions[0] == [["path1", "path2"]]
 
 
 def test_print_error(mocker):
@@ -108,10 +113,10 @@ def test_print_error(mocker):
     mock_temp_dir.__enter__ = mocker.MagicMock(return_value="mock_temp_dir")
     mocker.patch("securedrop_client.export.service.TemporaryDirectory", return_value=mock_temp_dir)
     export = Export()
-    export.print_call_failure = mocker.MagicMock()
-    export.print_call_failure.emit = mocker.MagicMock()
-    export.export_completed = mocker.MagicMock()
-    export.export_completed.emit = mocker.MagicMock()
+    print_call_failure_emissions = QSignalSpy(export.print_call_failure)
+    assert print_call_failure_emissions.isValid()
+    export_completed_emissions = QSignalSpy(export.export_completed)
+    assert export_completed_emissions.isValid()
     error = ExportError("[mock_filepath]")
     _run_print = mocker.patch.object(export, "_run_print", side_effect=error)
     mocker.patch("os.path.exists", return_value=True)
@@ -119,8 +124,10 @@ def test_print_error(mocker):
     export.print(["path1", "path2"])
 
     _run_print.assert_called_once_with("mock_temp_dir", ["path1", "path2"])
-    export.print_call_failure.emit.assert_called_once_with(error)
-    export.export_completed.emit.assert_called_once_with(["path1", "path2"])
+    assert len(print_call_failure_emissions) == 1
+    assert print_call_failure_emissions[0] == [error]
+    assert len(export_completed_emissions) == 1
+    assert export_completed_emissions[0] == [["path1", "path2"]]
 
 
 def test__run_print(mocker):
@@ -161,18 +168,20 @@ def test_send_file_to_usb_device(mocker):
     mock_temp_dir.__enter__ = mocker.MagicMock(return_value="mock_temp_dir")
     mocker.patch("securedrop_client.export.service.TemporaryDirectory", return_value=mock_temp_dir)
     export = Export()
-    export.export_usb_call_success = mocker.MagicMock()
-    export.export_usb_call_success.emit = mocker.MagicMock()
-    export.export_completed = mocker.MagicMock()
-    export.export_completed.emit = mocker.MagicMock()
+    export_usb_call_success_emissions = QSignalSpy(export.export_usb_call_success)
+    assert export_usb_call_success_emissions.isValid()
+    export_completed_emissions = QSignalSpy(export.export_completed)
+    assert export_completed_emissions.isValid()
     _run_disk_export = mocker.patch.object(export, "_run_disk_export")
     mocker.patch("os.path.exists", return_value=True)
 
     export.send_file_to_usb_device(["path1", "path2"], "mock passphrase")
 
     _run_disk_export.assert_called_once_with("mock_temp_dir", ["path1", "path2"], "mock passphrase")
-    export.export_usb_call_success.emit.assert_called_once_with()
-    export.export_completed.emit.assert_called_once_with(["path1", "path2"])
+    assert len(export_usb_call_success_emissions) == 1
+    assert export_usb_call_success_emissions[0] == []
+    assert len(export_completed_emissions) == 1
+    assert export_completed_emissions[0] == [["path1", "path2"]]
 
 
 def test_send_file_to_usb_device_error(mocker):
@@ -184,10 +193,10 @@ def test_send_file_to_usb_device_error(mocker):
     mock_temp_dir.__enter__ = mocker.MagicMock(return_value="mock_temp_dir")
     mocker.patch("securedrop_client.export.service.TemporaryDirectory", return_value=mock_temp_dir)
     export = Export()
-    export.export_usb_call_failure = mocker.MagicMock()
-    export.export_usb_call_failure.emit = mocker.MagicMock()
-    export.export_completed = mocker.MagicMock()
-    export.export_completed.emit = mocker.MagicMock()
+    export_usb_call_failure_emissions = QSignalSpy(export.export_usb_call_failure)
+    assert export_usb_call_failure_emissions.isValid()
+    export_completed_emissions = QSignalSpy(export.export_completed)
+    assert export_completed_emissions.isValid()
     error = ExportError("[mock_filepath]")
     _run_disk_export = mocker.patch.object(export, "_run_disk_export", side_effect=error)
     mocker.patch("os.path.exists", return_value=True)
@@ -195,8 +204,10 @@ def test_send_file_to_usb_device_error(mocker):
     export.send_file_to_usb_device(["path1", "path2"], "mock passphrase")
 
     _run_disk_export.assert_called_once_with("mock_temp_dir", ["path1", "path2"], "mock passphrase")
-    export.export_usb_call_failure.emit.assert_called_once_with(error)
-    export.export_completed.emit.assert_called_once_with(["path1", "path2"])
+    assert len(export_usb_call_failure_emissions) == 1
+    assert export_usb_call_failure_emissions[0] == [error]
+    assert len(export_completed_emissions) == 1
+    assert export_completed_emissions[0] == [["path1", "path2"]]
 
 
 def test_run_preflight_checks(mocker):
@@ -208,8 +219,8 @@ def test_run_preflight_checks(mocker):
     mock_temp_dir.__enter__ = mocker.MagicMock(return_value="mock_temp_dir")
     mocker.patch("securedrop_client.export.service.TemporaryDirectory", return_value=mock_temp_dir)
     export = Export()
-    export.preflight_check_call_success = mocker.MagicMock()
-    export.preflight_check_call_success.emit = mocker.MagicMock()
+    preflight_check_call_success_emissions = QSignalSpy(export.preflight_check_call_success)
+    assert preflight_check_call_success_emissions.isValid()
     _run_usb_export = mocker.patch.object(export, "_run_usb_test")
     _run_disk_export = mocker.patch.object(export, "_run_disk_test")
 
@@ -217,7 +228,8 @@ def test_run_preflight_checks(mocker):
 
     _run_usb_export.assert_called_once_with("mock_temp_dir")
     _run_disk_export.assert_called_once_with("mock_temp_dir")
-    export.preflight_check_call_success.emit.assert_called_once_with()
+    assert len(preflight_check_call_success_emissions) == 1
+    assert preflight_check_call_success_emissions[0] == []
 
 
 def test_run_preflight_checks_error(mocker):
@@ -229,8 +241,8 @@ def test_run_preflight_checks_error(mocker):
     mock_temp_dir.__enter__ = mocker.MagicMock(return_value="mock_temp_dir")
     mocker.patch("securedrop_client.export.service.TemporaryDirectory", return_value=mock_temp_dir)
     export = Export()
-    export.preflight_check_call_failure = mocker.MagicMock()
-    export.preflight_check_call_failure.emit = mocker.MagicMock()
+    preflight_check_call_failure_emissions = QSignalSpy(export.preflight_check_call_failure)
+    assert preflight_check_call_failure_emissions.isValid()
     error = ExportError("bang!")
     _run_usb_export = mocker.patch.object(export, "_run_usb_test")
     _run_disk_export = mocker.patch.object(export, "_run_disk_test", side_effect=error)
@@ -239,7 +251,8 @@ def test_run_preflight_checks_error(mocker):
 
     _run_usb_export.assert_called_once_with("mock_temp_dir")
     _run_disk_export.assert_called_once_with("mock_temp_dir")
-    export.preflight_check_call_failure.emit.assert_called_once_with(error)
+    assert len(preflight_check_call_failure_emissions) == 1
+    assert preflight_check_call_failure_emissions[0] == [error]
 
 
 def test__run_disk_export(mocker):
