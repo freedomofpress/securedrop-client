@@ -1,0 +1,24 @@
+from enum import Enum
+
+
+class Status(Enum):
+    # On the way to success
+    USB_CONNECTED = "USB_CONNECTED"
+    DISK_ENCRYPTED = "USB_ENCRYPTED"
+
+    # Not too far from success
+    USB_NOT_CONNECTED = "USB_NOT_CONNECTED"
+    BAD_PASSPHRASE = "USB_BAD_PASSPHRASE"
+
+    # Failure
+    CALLED_PROCESS_ERROR = "CALLED_PROCESS_ERROR"
+    DISK_ENCRYPTION_NOT_SUPPORTED_ERROR = "USB_ENCRYPTION_NOT_SUPPORTED"
+    ERROR_USB_CONFIGURATION = "ERROR_USB_CONFIGURATION"
+    UNEXPECTED_RETURN_STATUS = "UNEXPECTED_RETURN_STATUS"
+    PRINTER_NOT_FOUND = "ERROR_PRINTER_NOT_FOUND"
+    MISSING_PRINTER_URI = "ERROR_MISSING_PRINTER_URI"
+
+
+class Error(Exception):
+    def __init__(self, status: Status):
+        self.status = status
