@@ -7,8 +7,11 @@ from PyQt5.QtTest import QSignalSpy
 
 from securedrop_client.export import Export, ExportError, ExportStatus
 
+# All tests in this file can be removed when the corresponding deprecated API is removed.
+# They all have equivalents in th other tests/export/test_*.py files.
 
-def test_run_printer_preflight(mocker):
+
+def test_run_printer_preflight(mocker):  # DEPRECATED
     """
     Ensure TemporaryDirectory is used when creating and sending the archives during the preflight
     checks and that the success signal is emitted by Export.
@@ -28,7 +31,7 @@ def test_run_printer_preflight(mocker):
     assert printer_preflight_success_emissions[0] == []
 
 
-def test_run_printer_preflight_error(mocker):
+def test_run_printer_preflight_error(mocker):  # DEPRECATED
     """
     Ensure TemporaryDirectory is used when creating and sending the archives during the preflight
     checks and that the failure signal is emitted by Export.
@@ -49,7 +52,7 @@ def test_run_printer_preflight_error(mocker):
     assert printer_preflight_failure_emissions[0] == [error]
 
 
-def test__run_printer_preflight(mocker):
+def test__run_printer_preflight(mocker):  # DEPRECATED
     """
     Ensure _export_archive and _create_archive are called with the expected parameters,
     _export_archive is called with the return value of _create_archive, and
@@ -67,7 +70,7 @@ def test__run_printer_preflight(mocker):
     )
 
 
-def test__run_printer_preflight_raises_ExportError_if_not_empty_string(mocker):
+def test__run_printer_preflight_raises_ExportError_if_not_empty_string(mocker):  # DEPRECATED
     """
     Ensure ExportError is raised if _run_disk_test returns anything other than 'USB_CONNECTED'.
     """
