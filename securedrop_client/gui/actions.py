@@ -222,7 +222,6 @@ class PrintConversation(QAction):
 
         with open(file_path, "w") as f:
             f.write(str(transcript))
-            logger.info(f"Printing transcript of conversation: ({self._transcript_display_name})")
             self.printer_job_enqueued.emit([str(file_path)])
 
     @property

@@ -125,11 +125,15 @@ class Service(QObject):
         """
         Make sure the Export VM is started.
         """
+
         with TemporaryDirectory() as temp_dir:
             try:
                 self._run_printer_preflight(temp_dir)
                 self.printer_found_ready.emit()
             except CLIError as e:
+                # HACK
+                # self.printer_preflight_success.emit()
+                # return
                 logger.error("Export failed")
                 logger.debug(f"Export failed: {e}")
                 self.printer_not_found_ready.emit(e)

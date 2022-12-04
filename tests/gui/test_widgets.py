@@ -4339,6 +4339,7 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, sessi
 
 
 def test_DeleteSource_from_source_menu_when_user_is_loggedout(mocker):
+    app_state = None
     mock_controller = mocker.MagicMock()
     mock_controller.api = None
     mock_source = mocker.MagicMock()
@@ -4347,7 +4348,7 @@ def test_DeleteSource_from_source_menu_when_user_is_loggedout(mocker):
     mock_delete_source_dialog.return_value = mock_delete_source_dialog_instance
 
     mocker.patch("securedrop_client.gui.source.DeleteSourceDialog", mock_delete_source_dialog)
-    source_menu = SourceMenu(mock_source, mock_controller, None)
+    source_menu = SourceMenu(mock_source, mock_controller, app_state)
     source_menu.actions()[2].trigger()
     mock_delete_source_dialog_instance.exec.assert_not_called()
 
@@ -5208,11 +5209,12 @@ def test_SourceProfileShortWidget_update_timestamp(mocker):
     Ensure the update_timestamp slot actually updates the LastUpdatedLabel
     instance with the last_updated value from the source..
     """
+    app_state = None
     mock_controller = mocker.MagicMock()
     mock_source = mocker.MagicMock()
     mock_source.last_updated = datetime.now()
     mock_source.journalist_designation = "wimple horse knackered unittest"
-    spsw = SourceProfileShortWidget(mock_source, mock_controller, None)
+    spsw = SourceProfileShortWidget(mock_source, mock_controller, app_state)
     spsw.updated = mocker.MagicMock()
     spsw.update_timestamp()
     spsw.updated.setText.assert_called_once_with(

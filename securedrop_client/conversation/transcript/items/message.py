@@ -23,4 +23,6 @@ class Message(Item):
 
     @property
     def transcript(self) -> str:
-        return self.content + "\n"
+        if self.content:
+            return self.content + "\n"
+        return ""

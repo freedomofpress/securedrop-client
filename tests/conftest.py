@@ -142,15 +142,17 @@ def export_service():
 
 @pytest.fixture(scope="function")
 def functional_test_app_started_context(
-    homedir, reply_status_codes, session, config, qtbot, export_service
+    mocker, homedir, reply_status_codes, session, config, qtbot, export_service
 ):
     """
     Returns a tuple containing the gui window and controller of a configured client. This should be
     used to for tests that need to start from the login dialog before the main application window
     is visible.
     """
+
+    mocker.patch("securedrop_client.gui.widgets.export.getService", return_value=export_service)
     app_state = state.State()
-    gui = Window(app_state, export_service)
+    gui = Window(app_state)
     create_gpg_test_context(homedir)  # Configure test keys
     session_maker = make_session_maker(homedir)  # Configure and create the database
     controller = Controller(HOSTNAME, gui, session_maker, homedir, app_state, False, False)

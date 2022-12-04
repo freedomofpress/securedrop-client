@@ -20,7 +20,7 @@ import html
 import logging
 from datetime import datetime
 from gettext import gettext as _
-from typing import Dict, List, Optional, Union  # noqa: F401
+from typing import Dict, List, Optional, Union
 from uuid import uuid4
 
 import arrow
@@ -666,7 +666,7 @@ class MainView(QWidget):
                 conversation_wrapper.conversation_view.update_conversation(source.collection)
             else:
                 conversation_wrapper = SourceConversationWrapper(
-                    source, self.controller, self._state, self._export_service
+                    source, self.controller, self._state
                 )
                 self.source_conversations[source.uuid] = conversation_wrapper
 
@@ -2191,7 +2191,7 @@ class FileWidget(QWidget):
         file_missing: pyqtBoundSignal,
         index: int,
         container_width: int,
-        export_service: Optional[export.Service] = None,
+        export_device: Optional[conversation.ExportDevice] = None,
     ) -> None:
         """
         Given some text and a reference to the controller, make something to display a file.
@@ -2200,13 +2200,15 @@ class FileWidget(QWidget):
 
         self.controller = controller
 
-        if export_service is None:
+        if export_device is None:
             # Note that injecting an export service that runs in a separate
             # thread is greatly encouraged! But it is optional because strictly
             # speaking it is not a dependency of this FileWidget.
             export_service = export.Service()
 
-        self._export_device = conversation.ExportDevice(controller, export_service)
+            self._export_device = conversation.ExportDevice(controller, export_service)
+        else:
+            self._export_device = export_device
 
         self.file = self.controller.get_file(file_uuid)
         self.uuid = file_uuid
@@ -2916,7 +2918,6 @@ class SourceConversationWrapper(QWidget):
         source: Source,
         controller: Controller,
         app_state: Optional[state.State] = None,
-        export_service: Optional[export.Service] = None,
     ) -> None:
         super().__init__()
 
@@ -2941,8 +2942,11 @@ class SourceConversationWrapper(QWidget):
         layout.setSpacing(0)
 
         # Create widgets
+        export_service = export.getService()
+        export_device = conversation.ExportDevice(controller, export_service)
+
         self.conversation_title_bar = SourceProfileShortWidget(source, controller, app_state)
-        self.conversation_view = ConversationView(source, controller, export_service)
+        self.conversation_view = ConversationView(source, controller, export_device)
         self.reply_box = ReplyBoxWidget(source, controller)
         self.deletion_indicator = SourceDeletionIndicator()
         self.conversation_deletion_indicator = ConversationDeletionIndicator()
@@ -3360,7 +3364,10 @@ class SourceMenu(QMenu):
     SOURCE_MENU_CSS = load_css("source_menu.css")
 
     def __init__(
-        self, source: Source, controller: Controller, app_state: Optional[state.State]
+        self,
+        source: Source,
+        controller: Controller,
+        app_state: Optional[state.State],
     ) -> None:
         super().__init__()
         self.source = source
@@ -3393,7 +3400,10 @@ class SourceMenuButton(QToolButton):
     """
 
     def __init__(
-        self, source: Source, controller: Controller, app_state: Optional[state.State]
+        self,
+        source: Source,
+        controller: Controller,
+        app_state: Optional[state.State],
     ) -> None:
         super().__init__()
         self.controller = controller
@@ -3445,7 +3455,10 @@ class SourceProfileShortWidget(QWidget):
     VERTICAL_MARGIN = 14
 
     def __init__(
-        self, source: Source, controller: Controller, app_state: Optional[state.State]
+        self,
+        source: Source,
+        controller: Controller,
+        app_state: Optional[state.State],
     ) -> None:
         super().__init__()
 

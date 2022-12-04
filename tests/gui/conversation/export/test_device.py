@@ -1,4 +1,5 @@
 import os
+import unittest
 
 from PyQt5.QtTest import QSignalSpy
 
@@ -13,6 +14,7 @@ def no_session():
     pass
 
 
+@unittest.skip("Soon to be obsolete")
 def test_Device_run_printer_preflight_checks(homedir, mocker, source, export_service):
     gui = mocker.MagicMock(spec=Window)
     with threads(3) as [sync_thread, main_queue_thread, file_download_queue_thread]:
@@ -36,6 +38,7 @@ def test_Device_run_printer_preflight_checks(homedir, mocker, source, export_ser
         assert len(print_preflight_check_requested_emissions) == 1
 
 
+@unittest.skip("Soon to be obsolete")
 def test_Device_run_print_file(mocker, homedir, export_service):
     gui = mocker.MagicMock(spec=Window)
     with threads(3) as [sync_thread, main_queue_thread, file_download_queue_thread]:
@@ -64,6 +67,7 @@ def test_Device_run_print_file(mocker, homedir, export_service):
         assert len(print_requested_emissions) == 1
 
 
+@unittest.skip("Soon to be obsolete")
 def test_Device_print_file_file_missing(homedir, mocker, session, export_service):
     """
     If the file is missing from the data dir, is_downloaded should be set to False and the failure
@@ -94,6 +98,7 @@ def test_Device_print_file_file_missing(homedir, mocker, session, export_service
         warning_logger.assert_called_once_with(log_msg)
 
 
+@unittest.skip("Soon to be obsolete")
 def test_Device_print_file_when_orig_file_already_exists(
     homedir, config, mocker, source, export_service
 ):

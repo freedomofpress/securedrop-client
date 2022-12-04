@@ -77,6 +77,9 @@ msgstr ""
 msgid "Delete All Files and Messages"
 msgstr ""
 
+msgid "Print Conversation"
+msgstr ""
+
 msgid "SecureDrop Client {}"
 msgstr ""
 
@@ -302,6 +305,12 @@ msgid "<h2>Managing printout risks</h2><b>QR codes and web addresses</b><br />Ne
 msgstr ""
 
 msgid "Please connect your printer to a USB port."
+msgstr ""
+
+msgid "Print:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr ""
+
+msgid "Printing failed<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr ""
 
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
