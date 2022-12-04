@@ -4,7 +4,6 @@ import os
 import subprocess
 import tarfile
 import threading
-from enum import Enum
 from io import BytesIO
 from shlex import quote
 from tempfile import TemporaryDirectory
@@ -12,30 +11,10 @@ from typing import List, Optional
 
 from PyQt5.QtCore import QObject, pyqtBoundSignal, pyqtSignal, pyqtSlot
 
+from .cli import Error as CLIError
+from .cli import Status as CLIStatus
+
 logger = logging.getLogger(__name__)
-
-
-class ExportError(Exception):
-    def __init__(self, status: "ExportStatus"):
-        self.status: "ExportStatus" = status
-
-
-class ExportStatus(Enum):
-    # On the way to success
-    USB_CONNECTED = "USB_CONNECTED"
-    DISK_ENCRYPTED = "USB_ENCRYPTED"
-
-    # Not too far from success
-    USB_NOT_CONNECTED = "USB_NOT_CONNECTED"
-    BAD_PASSPHRASE = "USB_BAD_PASSPHRASE"
-
-    # Failure
-    CALLED_PROCESS_ERROR = "CALLED_PROCESS_ERROR"
-    DISK_ENCRYPTION_NOT_SUPPORTED_ERROR = "USB_ENCRYPTION_NOT_SUPPORTED"
-    ERROR_USB_CONFIGURATION = "ERROR_USB_CONFIGURATION"
-    UNEXPECTED_RETURN_STATUS = "UNEXPECTED_RETURN_STATUS"
-    PRINTER_NOT_FOUND = "ERROR_PRINTER_NOT_FOUND"
-    MISSING_PRINTER_URI = "ERROR_MISSING_PRINTER_URI"
 
 
 class Service(QObject):
@@ -125,7 +104,7 @@ class Service(QObject):
             print_preflight_check_requested.connect(self.check_printer_status)
 
     @staticmethod
-    def _export_archive(archive_path: str) -> Optional[ExportStatus]:
+    def _export_archive(archive_path: str) -> Optional[CLIStatus]:
         """
         Make the subprocess call to send the archive to the Export VM, where the archive will be
         processed.
@@ -137,7 +116,7 @@ class Service(QObject):
             str: The export status returned from the Export VM processing script.
 
         Raises:
-            ExportError: Raised if (1) CalledProcessError is encountered, which can occur when
+            CLIError: Raised if (1) CalledProcessError is encountered, which can occur when
                 trying to start the Export VM when the USB device is not attached, or (2) when
                 the return code from `check_output` is not 0.
         """
@@ -165,16 +144,16 @@ class Service(QObject):
             # No status is returned for successful `disk`, `printer-test`, and `print` calls.
             # This will change in a future release of sd-export.
             if result:
-                return ExportStatus(result)
+                return CLIStatus(result)
             else:
                 return None
         except ValueError as e:
             logger.debug(f"Export subprocess returned unexpected value: {e}")
-            raise ExportError(ExportStatus.UNEXPECTED_RETURN_STATUS)
+            raise CLIError(CLIStatus.UNEXPECTED_RETURN_STATUS)
         except subprocess.CalledProcessError as e:
             logger.error("Subprocess failed")
             logger.debug(f"Subprocess failed: {e}")
-            raise ExportError(ExportStatus.CALLED_PROCESS_ERROR)
+            raise CLIError(CLIStatus.CALLED_PROCESS_ERROR)
 
     @staticmethod
     def _create_archive(
@@ -248,7 +227,7 @@ class Service(QObject):
 
         status = self._export_archive(archive_path)
         if status:
-            raise ExportError(status)
+            raise CLIError(status)
 
     def _run_usb_test(self, archive_dir: str) -> None:
         """
@@ -258,12 +237,12 @@ class Service(QObject):
             archive_dir (str): The path to the directory in which to create the archive.
 
         Raises:
-            ExportError: Raised if the usb-test does not return a USB_CONNECTED status.
+            CLIError: Raised if the usb-test does not return a USB_CONNECTED status.
         """
         archive_path = self._create_archive(archive_dir, self.USB_TEST_FN, self.USB_TEST_METADATA)
         status = self._export_archive(archive_path)
-        if status and status != ExportStatus.USB_CONNECTED:
-            raise ExportError(status)
+        if status and status != CLIStatus.USB_CONNECTED:
+            raise CLIError(status)
 
     def _run_disk_test(self, archive_dir: str) -> None:
         """
@@ -273,13 +252,13 @@ class Service(QObject):
             archive_dir (str): The path to the directory in which to create the archive.
 
         Raises:
-            ExportError: Raised if the usb-test does not return a DISK_ENCRYPTED status.
+            CLIError: Raised if the usb-test does not return a DISK_ENCRYPTED status.
         """
         archive_path = self._create_archive(archive_dir, self.DISK_TEST_FN, self.DISK_TEST_METADATA)
 
         status = self._export_archive(archive_path)
-        if status and status != ExportStatus.DISK_ENCRYPTED:
-            raise ExportError(status)
+        if status and status != CLIStatus.DISK_ENCRYPTED:
+            raise CLIError(status)
 
     def _run_disk_export(self, archive_dir: str, filepaths: List[str], passphrase: str) -> None:
         """
@@ -289,7 +268,7 @@ class Service(QObject):
             archive_dir (str): The path to the directory in which to create the archive.
 
         Raises:
-            ExportError: Raised if the usb-test does not return a DISK_ENCRYPTED status.
+            CLIError: Raised if the usb-test does not return a DISK_ENCRYPTED status.
         """
         metadata = self.DISK_METADATA.copy()
         metadata[self.DISK_ENCRYPTION_KEY_NAME] = passphrase
@@ -297,7 +276,7 @@ class Service(QObject):
 
         status = self._export_archive(archive_path)
         if status:
-            raise ExportError(status)
+            raise CLIError(status)
 
     def _run_print(self, archive_dir: str, filepaths: List[str]) -> None:
         """
@@ -311,7 +290,7 @@ class Service(QObject):
         archive_path = self._create_archive(archive_dir, self.PRINT_FN, metadata, filepaths)
         status = self._export_archive(archive_path)
         if status:
-            raise ExportError(status)
+            raise CLIError(status)
 
     @pyqtSlot()
     def run_preflight_checks(self) -> None:
@@ -329,7 +308,7 @@ class Service(QObject):
                 self._run_disk_test(temp_dir)
                 logger.debug("completed preflight checks: success")
                 self.preflight_check_call_success.emit()
-            except ExportError as e:
+            except CLIError as e:
                 logger.debug("completed preflight checks: failure")
                 self.preflight_check_call_failure.emit(e)
 
@@ -342,7 +321,7 @@ class Service(QObject):
             try:
                 self._run_printer_preflight(temp_dir)
                 self.printer_found_ready.emit()
-            except ExportError as e:
+            except CLIError as e:
                 logger.error("Export failed")
                 logger.debug(f"Export failed: {e}")
                 self.printer_not_found_ready.emit(e)
@@ -356,7 +335,7 @@ class Service(QObject):
             try:
                 self._check_printer_status(temp_dir)
                 self.printer_found_ready.emit()
-            except ExportError as e:
+            except CLIError as e:
                 logger.error("Export failed")
                 logger.debug(f"Export failed: {e}")
                 self.printer_not_found_ready.emit(e)
@@ -378,7 +357,7 @@ class Service(QObject):
                 self._run_disk_export(temp_dir, filepaths, passphrase)
                 self.export_usb_call_success.emit()
                 logger.debug("Export successful")
-            except ExportError as e:
+            except CLIError as e:
                 logger.error("Export failed")
                 logger.debug(f"Export failed: {e}")
                 self.export_usb_call_failure.emit(e)
@@ -401,7 +380,7 @@ class Service(QObject):
                 self._run_print(temp_dir, filepaths)
                 self.print_succeeded.emit()
                 logger.debug("Print successful")
-            except ExportError as e:
+            except CLIError as e:
                 logger.error("Export failed")
                 logger.debug(f"Export failed: {e}")
                 self.print_failed.emit(e)
