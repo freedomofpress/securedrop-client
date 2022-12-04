@@ -1,14 +1,104 @@
 import os
 import subprocess
+import unittest
 from tempfile import NamedTemporaryFile, TemporaryDirectory
+from unittest.mock import MagicMock, patch
 
 import pytest
 from PyQt5.QtTest import QSignalSpy
 
+from securedrop_client import export
 from securedrop_client.export import Export, ExportError, ExportStatus
 
 
-def test_run_printer_preflight(mocker):
+class TestExportService(unittest.TestCase):
+    @patch(
+        "securedrop_client.export.service.TemporaryDirectory.__enter__",
+        return_value="tmpdir-sq324f",
+    )
+    @patch.object(export.Service, "_check_printer_status")
+    def test_uses_temporary_directory_for_printer_status_check(
+        self, _check_printer_status, _tmpdir
+    ):
+        export_service = export.Service()
+
+        export_service.check_printer_status()
+
+        _check_printer_status.assert_called_once_with("tmpdir-sq324f")
+
+    @patch("securedrop_client.export.service.TemporaryDirectory")
+    @patch.object(export.Service, "_check_printer_status")
+    def test_emits_printer_found_ready_when_printer_status_check_succeeds(
+        self, _check_printer_status, _temporary_directory
+    ):
+        export_service = export.Service()
+        printer_found_ready_emissions = QSignalSpy(export_service.printer_found_ready)
+        assert printer_found_ready_emissions.isValid()
+
+        export_service.check_printer_status()
+
+        assert len(printer_found_ready_emissions) == 1
+        assert printer_found_ready_emissions[0] == []
+
+    @patch("securedrop_client.export.service.TemporaryDirectory")
+    @patch.object(export.Service, "_check_printer_status")
+    def test_emits_printer_not_found_ready_when_printer_status_check_fails(
+        self, _check_printer_status, _temporary_directory
+    ):
+        expected_error = ExportError("bang!")
+        _check_printer_status.side_effect = expected_error
+        export_service = export.Service()
+        printer_not_found_ready_emissions = QSignalSpy(export_service.printer_not_found_ready)
+        assert printer_not_found_ready_emissions.isValid()
+
+        export_service.check_printer_status()
+
+        assert len(printer_not_found_ready_emissions) == 1
+        assert printer_not_found_ready_emissions[0] == [expected_error]
+
+
+class TestExportServiceInterfaceWithCLI(unittest.TestCase):
+    def test_internal_printer_status_check_returns_without_errors_when_empty_response(self):
+        SUCCESS_STATUS = ""  # sd-devices API
+        export_service = export.Service()
+        valid_archive_path = "archive_path_13kn3"
+        export_service._create_archive = MagicMock()
+        export_service._export_archive = MagicMock(return_value=SUCCESS_STATUS)
+
+        export_service._check_printer_status(valid_archive_path)  # testing internal details
+
+        assert True  # no exception was raised
+
+    def test_internal_printer_status_check_exports_a_specifically_created_archive(self):
+        expected_archive_path = "archive_path_9f483f"
+        expected_archive_dir = "archive_dir_2i19c"
+        export_service = export.Service()
+        export_service._create_archive = MagicMock(return_value=expected_archive_path)
+        export_service._export_archive = MagicMock(return_value="")  # "magic" value
+
+        export_service._check_printer_status(expected_archive_dir)  # testing internal details
+
+        export_service._export_archive.assert_called_once_with(expected_archive_path)
+        export_service._create_archive.assert_called_once_with(
+            expected_archive_dir, "printer-preflight.sd-export", {"device": "printer-preflight"}
+        )
+
+    def test_internal_printer_status_check_raises_export_error_when_not_USB_CONNECTED(self):
+        not_USB_CONNECTED = "whatever"
+        valid_archive_path = "archive_path_034d3"
+        export_service = export.Service()
+        export_service._create_archive = MagicMock()
+        export_service._export_archive = MagicMock(return_value=not_USB_CONNECTED)
+
+        with pytest.raises(ExportError):
+            export_service._check_printer_status(valid_archive_path)  # testing internal details
+
+
+# All tests below this line can be removed when the corresponding deprecated API is removed.
+# They all have equivalents above this line.
+
+
+def test_run_printer_preflight(mocker):  # DEPRECATED
     """
     Ensure TemporaryDirectory is used when creating and sending the archives during the preflight
     checks and that the success signal is emitted by Export.
@@ -28,7 +118,7 @@ def test_run_printer_preflight(mocker):
     assert printer_preflight_success_emissions[0] == []
 
 
-def test_run_printer_preflight_error(mocker):
+def test_run_printer_preflight_error(mocker):  # DEPRECATED
     """
     Ensure TemporaryDirectory is used when creating and sending the archives during the preflight
     checks and that the failure signal is emitted by Export.
@@ -49,7 +139,7 @@ def test_run_printer_preflight_error(mocker):
     assert printer_preflight_failure_emissions[0] == [error]
 
 
-def test__run_printer_preflight(mocker):
+def test__run_printer_preflight(mocker):  # DEPRECATED
     """
     Ensure _export_archive and _create_archive are called with the expected parameters,
     _export_archive is called with the return value of _create_archive, and
@@ -67,7 +157,7 @@ def test__run_printer_preflight(mocker):
     )
 
 
-def test__run_printer_preflight_raises_ExportError_if_not_empty_string(mocker):
+def test__run_printer_preflight_raises_ExportError_if_not_empty_string(mocker):  # DEPRECATED
     """
     Ensure ExportError is raised if _run_disk_test returns anything other than 'USB_CONNECTED'.
     """

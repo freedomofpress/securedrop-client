@@ -73,10 +73,15 @@ class Export(QObject):
     export_usb_call_success = pyqtSignal()
     export_completed = pyqtSignal(list)
 
-    printer_preflight_success = pyqtSignal()
-    printer_preflight_failure = pyqtSignal(object)
-    print_call_failure = pyqtSignal(object)
-    print_call_success = pyqtSignal()
+    printer_preflight_success = pyqtSignal()  # DEPRECATED
+    printer_preflight_failure = pyqtSignal(object)  # DEPRECATED
+    print_call_failure = pyqtSignal(object)  # DEPRECATED
+    print_call_success = pyqtSignal()  # DEPRECATED
+
+    printer_found_ready = pyqtSignal()
+    printer_not_found_ready = pyqtSignal(object)
+    print_failed = pyqtSignal(object)
+    print_succeeded = pyqtSignal()
 
     def __init__(
         self,
@@ -93,6 +98,12 @@ class Export(QObject):
             print_preflight_check_requested,
             print_requested,
         )
+
+        # Ensure backwards compatibility with deprecated API
+        self.printer_found_ready.connect(self.printer_preflight_success)
+        self.printer_not_found_ready.connect(self.printer_preflight_failure)
+        self.print_succeeded.connect(self.print_call_success)
+        self.print_failed.connect(self.print_call_failure)
 
     def connect_signals(
         self,
@@ -114,7 +125,7 @@ class Export(QObject):
             print_requested.connect(self.print, type=Qt.QueuedConnection)
         if print_preflight_check_requested is not None:
             print_preflight_check_requested.connect(
-                self.run_printer_preflight, type=Qt.QueuedConnection
+                self.check_printer_status, type=Qt.QueuedConnection
             )
 
     def _export_archive(cls, archive_path: str) -> Optional[ExportStatus]:
@@ -224,7 +235,10 @@ class Export(QObject):
         arcname = os.path.join(cls.DISK_EXPORT_DIR, filename)
         archive.add(filepath, arcname=arcname, recursive=False)
 
-    def _run_printer_preflight(self, archive_dir: str) -> None:
+    def _run_printer_preflight(self, archive_dir: str) -> None:  # DEPRECATED
+        self._check_printer_status(archive_dir)
+
+    def _check_printer_status(self, archive_dir: str) -> None:
         """
         Make sure printer is ready.
         """
@@ -320,18 +334,32 @@ class Export(QObject):
                 self.preflight_check_call_failure.emit(e)
 
     @pyqtSlot()
-    def run_printer_preflight(self) -> None:
+    def run_printer_preflight(self) -> None:  # DEPRECATED
         """
         Make sure the Export VM is started.
         """
         with TemporaryDirectory() as temp_dir:
             try:
                 self._run_printer_preflight(temp_dir)
-                self.printer_preflight_success.emit()
+                self.printer_found_ready.emit()
             except ExportError as e:
                 logger.error("Export failed")
                 logger.debug(f"Export failed: {e}")
-                self.printer_preflight_failure.emit(e)
+                self.printer_not_found_ready.emit(e)
+
+    @pyqtSlot()
+    def check_printer_status(self) -> None:
+        """
+        Make sure the Export VM is started.
+        """
+        with TemporaryDirectory() as temp_dir:
+            try:
+                self._check_printer_status(temp_dir)
+                self.printer_found_ready.emit()
+            except ExportError as e:
+                logger.error("Export failed")
+                logger.debug(f"Export failed: {e}")
+                self.printer_not_found_ready.emit(e)
 
     @pyqtSlot(list, str)
     def send_file_to_usb_device(self, filepaths: List[str], passphrase: str) -> None:
@@ -371,12 +399,12 @@ class Export(QObject):
                     "beginning printer from thread {}".format(threading.current_thread().ident)
                 )
                 self._run_print(temp_dir, filepaths)
-                self.print_call_success.emit()
+                self.print_succeeded.emit()
                 logger.debug("Print successful")
             except ExportError as e:
                 logger.error("Export failed")
                 logger.debug(f"Export failed: {e}")
-                self.print_call_failure.emit(e)
+                self.print_failed.emit(e)
 
         self.export_completed.emit(filepaths)
 
