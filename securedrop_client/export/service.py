@@ -113,7 +113,8 @@ class Export(QObject):
         if print_preflight_check_requested is not None:
             print_preflight_check_requested.connect(self.run_printer_preflight)
 
-    def _export_archive(cls, archive_path: str) -> Optional[ExportStatus]:
+    @staticmethod
+    def _export_archive(archive_path: str) -> Optional[ExportStatus]:
         """
         Make the subprocess call to send the archive to the Export VM, where the archive will be
         processed.
@@ -164,8 +165,9 @@ class Export(QObject):
             logger.debug(f"Subprocess failed: {e}")
             raise ExportError(ExportStatus.CALLED_PROCESS_ERROR)
 
+    @staticmethod
     def _create_archive(
-        cls, archive_dir: str, archive_fn: str, metadata: dict, filepaths: List[str] = []
+        archive_dir: str, archive_fn: str, metadata: dict, filepaths: List[str] = []
     ) -> str:
         """
         Create the archive to be sent to the Export VM.
@@ -182,15 +184,16 @@ class Export(QObject):
         archive_path = os.path.join(archive_dir, archive_fn)
 
         with tarfile.open(archive_path, "w:gz") as archive:
-            cls._add_virtual_file_to_archive(archive, cls.METADATA_FN, metadata)
+            Service._add_virtual_file_to_archive(archive, Service.METADATA_FN, metadata)
 
             for filepath in filepaths:
-                cls._add_file_to_archive(archive, filepath)
+                Service._add_file_to_archive(archive, filepath)
 
         return archive_path
 
+    @staticmethod
     def _add_virtual_file_to_archive(
-        cls, archive: tarfile.TarFile, filename: str, filedata: dict
+        archive: tarfile.TarFile, filename: str, filedata: dict
     ) -> None:
         """
         Add filedata to a stream of in-memory bytes and add these bytes to the archive.
@@ -207,7 +210,8 @@ class Export(QObject):
         tarinfo.size = len(filedata_string)
         archive.addfile(tarinfo, filedata_bytes)
 
-    def _add_file_to_archive(cls, archive: tarfile.TarFile, filepath: str) -> None:
+    @staticmethod
+    def _add_file_to_archive(archive: tarfile.TarFile, filepath: str) -> None:
         """
         Add the file to the archive. When the archive is extracted, the file should exist in a
         directory called "export_data".
@@ -217,7 +221,7 @@ class Export(QObject):
             filepath: The path to the file that will be added to the supplied archive.
         """
         filename = os.path.basename(filepath)
-        arcname = os.path.join(cls.DISK_EXPORT_DIR, filename)
+        arcname = os.path.join(Service.DISK_EXPORT_DIR, filename)
         archive.add(filepath, arcname=arcname, recursive=False)
 
     def _run_printer_preflight(self, archive_dir: str) -> None:
