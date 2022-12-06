@@ -1,18 +1,12 @@
-import json
 import logging
-import os
-import subprocess
-import tarfile
 import threading
-from io import BytesIO
-from shlex import quote
 from tempfile import TemporaryDirectory
 from typing import List, Optional
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
+from .cli import CLI
 from .cli import Error as CLIError
-from .cli import Status as CLIStatus
 
 logger = logging.getLogger(__name__)
 
@@ -25,25 +19,6 @@ class Service(QObject):
     Files are archived in a specified format, which you can learn more about in the README for the
     securedrop-export repository.
     """
-
-    METADATA_FN = "metadata.json"
-
-    USB_TEST_FN = "usb-test.sd-export"
-    USB_TEST_METADATA = {"device": "usb-test"}
-
-    PRINTER_PREFLIGHT_FN = "printer-preflight.sd-export"
-    PRINTER_PREFLIGHT_METADATA = {"device": "printer-preflight"}
-
-    DISK_TEST_FN = "disk-test.sd-export"
-    DISK_TEST_METADATA = {"device": "disk-test"}
-
-    PRINT_FN = "print_archive.sd-export"
-    PRINT_METADATA = {"device": "printer"}
-
-    DISK_FN = "archive.sd-export"
-    DISK_METADATA = {"device": "disk", "encryption_method": "luks"}
-    DISK_ENCRYPTION_KEY_NAME = "encryption_key"
-    DISK_EXPORT_DIR = "export_data"
 
     # Set up signals for communication with the controller
     preflight_check_call_failure = pyqtSignal(object)
@@ -70,6 +45,8 @@ class Service(QObject):
         print_requested: Optional[pyqtSignal] = None,
     ) -> None:
         super().__init__()
+
+        self._cli = CLI()
 
         self.connect_signals(
             export_preflight_check_requested,
@@ -103,194 +80,25 @@ class Service(QObject):
         if print_preflight_check_requested is not None:
             print_preflight_check_requested.connect(self.check_printer_status)
 
-    @staticmethod
-    def _export_archive(archive_path: str) -> Optional[CLIStatus]:
-        """
-        Make the subprocess call to send the archive to the Export VM, where the archive will be
-        processed.
-
-        Args:
-            archive_path (str): The path to the archive to be processed.
-
-        Returns:
-            str: The export status returned from the Export VM processing script.
-
-        Raises:
-            CLIError: Raised if (1) CalledProcessError is encountered, which can occur when
-                trying to start the Export VM when the USB device is not attached, or (2) when
-                the return code from `check_output` is not 0.
-        """
-        try:
-            # There are already talks of switching to a QVM-RPC implementation for unlocking devices
-            # and exporting files, so it's important to remember to shell-escape what we pass to the
-            # shell, even if for the time being we're already protected against shell injection via
-            # Python's implementation of subprocess, see
-            # https://docs.python.org/3/library/subprocess.html#security-considerations
-            output = subprocess.check_output(
-                [
-                    quote("qrexec-client-vm"),
-                    quote("--"),
-                    quote("sd-devices"),
-                    quote("qubes.OpenInVM"),
-                    quote("/usr/lib/qubes/qopen-in-vm"),
-                    quote("--view-only"),
-                    quote("--"),
-                    quote(archive_path),
-                ],
-                stderr=subprocess.STDOUT,
-            )
-            result = output.decode("utf-8").strip()
-
-            # No status is returned for successful `disk`, `printer-test`, and `print` calls.
-            # This will change in a future release of sd-export.
-            if result:
-                return CLIStatus(result)
-            else:
-                return None
-        except ValueError as e:
-            logger.debug(f"Export subprocess returned unexpected value: {e}")
-            raise CLIError(CLIStatus.UNEXPECTED_RETURN_STATUS)
-        except subprocess.CalledProcessError as e:
-            logger.error("Subprocess failed")
-            logger.debug(f"Subprocess failed: {e}")
-            raise CLIError(CLIStatus.CALLED_PROCESS_ERROR)
-
-    @staticmethod
-    def _create_archive(
-        archive_dir: str, archive_fn: str, metadata: dict, filepaths: List[str] = []
-    ) -> str:
-        """
-        Create the archive to be sent to the Export VM.
-
-        Args:
-            archive_dir (str): The path to the directory in which to create the archive.
-            archive_fn (str): The name of the archive file.
-            metadata (dict): The dictionary containing metadata to add to the archive.
-            filepaths (List[str]): The list of files to add to the archive.
-
-        Returns:
-            str: The path to newly-created archive file.
-        """
-        archive_path = os.path.join(archive_dir, archive_fn)
-
-        with tarfile.open(archive_path, "w:gz") as archive:
-            Service._add_virtual_file_to_archive(archive, Service.METADATA_FN, metadata)
-
-            for filepath in filepaths:
-                Service._add_file_to_archive(archive, filepath)
-
-        return archive_path
-
-    @staticmethod
-    def _add_virtual_file_to_archive(
-        archive: tarfile.TarFile, filename: str, filedata: dict
-    ) -> None:
-        """
-        Add filedata to a stream of in-memory bytes and add these bytes to the archive.
-
-        Args:
-            archive (TarFile): The archive object to add the virtual file to.
-            filename (str): The name of the virtual file.
-            filedata (dict): The data to add to the bytes stream.
-
-        """
-        filedata_string = json.dumps(filedata)
-        filedata_bytes = BytesIO(filedata_string.encode("utf-8"))
-        tarinfo = tarfile.TarInfo(filename)
-        tarinfo.size = len(filedata_string)
-        archive.addfile(tarinfo, filedata_bytes)
-
-    @staticmethod
-    def _add_file_to_archive(archive: tarfile.TarFile, filepath: str) -> None:
-        """
-        Add the file to the archive. When the archive is extracted, the file should exist in a
-        directory called "export_data".
-
-        Args:
-            archive: The archive object ot add the file to.
-            filepath: The path to the file that will be added to the supplied archive.
-        """
-        filename = os.path.basename(filepath)
-        arcname = os.path.join(Service.DISK_EXPORT_DIR, filename)
-        archive.add(filepath, arcname=arcname, recursive=False)
-
     def _run_printer_preflight(self, archive_dir: str) -> None:  # DEPRECATED
-        self._check_printer_status(archive_dir)
+        self._cli._run_printer_preflight(archive_dir)
 
-    def _check_printer_status(self, archive_dir: str) -> None:
-        """
-        Make sure printer is ready.
-        """
-        archive_path = self._create_archive(
-            archive_dir, self.PRINTER_PREFLIGHT_FN, self.PRINTER_PREFLIGHT_METADATA
-        )
+    def _check_printer_status(self, archive_dir: str) -> None:  # DEPRECATED
+        self._cli.check_printer_status(archive_dir)
 
-        status = self._export_archive(archive_path)
-        if status:
-            raise CLIError(status)
+    def _run_usb_test(self, archive_dir: str) -> None:  # DEPRECATED
+        self._cli.run_usb_test(archive_dir)
 
-    def _run_usb_test(self, archive_dir: str) -> None:
-        """
-        Run usb-test.
+    def _run_disk_test(self, archive_dir: str) -> None:  # DEPRECATED
+        self._cli.run_disk_test(archive_dir)
 
-        Args:
-            archive_dir (str): The path to the directory in which to create the archive.
+    def _run_disk_export(
+        self, archive_dir: str, filepaths: List[str], passphrase: str
+    ) -> None:  # DEPRECATED
+        self._cli.run_disk_export(archive_dir, filepaths, passphrase)
 
-        Raises:
-            CLIError: Raised if the usb-test does not return a USB_CONNECTED status.
-        """
-        archive_path = self._create_archive(archive_dir, self.USB_TEST_FN, self.USB_TEST_METADATA)
-        status = self._export_archive(archive_path)
-        if status and status != CLIStatus.USB_CONNECTED:
-            raise CLIError(status)
-
-    def _run_disk_test(self, archive_dir: str) -> None:
-        """
-        Run disk-test.
-
-        Args:
-            archive_dir (str): The path to the directory in which to create the archive.
-
-        Raises:
-            CLIError: Raised if the usb-test does not return a DISK_ENCRYPTED status.
-        """
-        archive_path = self._create_archive(archive_dir, self.DISK_TEST_FN, self.DISK_TEST_METADATA)
-
-        status = self._export_archive(archive_path)
-        if status and status != CLIStatus.DISK_ENCRYPTED:
-            raise CLIError(status)
-
-    def _run_disk_export(self, archive_dir: str, filepaths: List[str], passphrase: str) -> None:
-        """
-        Run disk-test.
-
-        Args:
-            archive_dir (str): The path to the directory in which to create the archive.
-
-        Raises:
-            CLIError: Raised if the usb-test does not return a DISK_ENCRYPTED status.
-        """
-        metadata = self.DISK_METADATA.copy()
-        metadata[self.DISK_ENCRYPTION_KEY_NAME] = passphrase
-        archive_path = self._create_archive(archive_dir, self.DISK_FN, metadata, filepaths)
-
-        status = self._export_archive(archive_path)
-        if status:
-            raise CLIError(status)
-
-    def _run_print(self, archive_dir: str, filepaths: List[str]) -> None:
-        """
-        Create "printer" archive to send to Export VM.
-
-        Args:
-            archive_dir (str): The path to the directory in which to create the archive.
-
-        """
-        metadata = self.PRINT_METADATA.copy()
-        archive_path = self._create_archive(archive_dir, self.PRINT_FN, metadata, filepaths)
-        status = self._export_archive(archive_path)
-        if status:
-            raise CLIError(status)
+    def _run_print(self, archive_dir: str, filepaths: List[str]) -> None:  # DEPRECATED
+        self._cli.run_print(archive_dir, filepaths)
 
     @pyqtSlot()
     def run_preflight_checks(self) -> None:

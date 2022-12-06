@@ -1,4 +1,12 @@
+import logging
+import subprocess
 from enum import Enum
+from shlex import quote
+from typing import List, Optional
+
+from .archive import Archive
+
+logger = logging.getLogger(__name__)
 
 
 class Status(Enum):
@@ -22,3 +30,156 @@ class Status(Enum):
 class Error(Exception):
     def __init__(self, status: Status):
         self.status = status
+
+
+class CLI:
+    USB_TEST_FN = "usb-test.sd-export"
+    USB_TEST_METADATA = {"device": "usb-test"}
+
+    PRINTER_PREFLIGHT_FN = "printer-preflight.sd-export"
+    PRINTER_PREFLIGHT_METADATA = {"device": "printer-preflight"}
+
+    DISK_TEST_FN = "disk-test.sd-export"
+    DISK_TEST_METADATA = {"device": "disk-test"}
+
+    PRINT_FN = "print_archive.sd-export"
+    PRINT_METADATA = {"device": "printer"}
+
+    DISK_FN = "archive.sd-export"
+    DISK_METADATA = {"device": "disk", "encryption_method": "luks"}
+    DISK_ENCRYPTION_KEY_NAME = "encryption_key"
+
+    def __init__(self) -> None:
+        pass
+
+    def check_printer_status(self, archive_dir: str) -> None:
+        """
+        Make sure printer is ready.
+        """
+        archive_path = Archive.create_archive(
+            archive_dir, self.PRINTER_PREFLIGHT_FN, self.PRINTER_PREFLIGHT_METADATA
+        )
+
+        status = self._export_archive(archive_path)
+        if status:
+            raise Error(status)
+
+    def run_disk_export(self, archive_dir: str, filepaths: List[str], passphrase: str) -> None:
+        """
+        Run disk-test.
+
+        Args:
+            archive_dir (str): The path to the directory in which to create the archive.
+
+        Raises:
+            Error: Raised if the usb-test does not return a DISK_ENCRYPTED status.
+        """
+        metadata = self.DISK_METADATA.copy()
+        metadata[self.DISK_ENCRYPTION_KEY_NAME] = passphrase
+        archive_path = Archive.create_archive(archive_dir, self.DISK_FN, metadata, filepaths)
+
+        status = self._export_archive(archive_path)
+        if status:
+            raise Error(status)  # pragma: no cover
+
+    def run_disk_test(self, archive_dir: str) -> None:
+        """
+        Run disk-test.
+
+        Args:
+            archive_dir (str): The path to the directory in which to create the archive.
+
+        Raises:
+            Error: Raised if the usb-test does not return a DISK_ENCRYPTED status.
+        """
+        archive_path = Archive.create_archive(
+            archive_dir, self.DISK_TEST_FN, self.DISK_TEST_METADATA
+        )
+
+        status = self._export_archive(archive_path)
+        if status and status != Status.DISK_ENCRYPTED:
+            raise Error(status)
+
+    def run_print(self, archive_dir: str, filepaths: List[str]) -> None:
+        """
+        Create "printer" archive to send to Export VM.
+
+        Args:
+            archive_dir (str): The path to the directory in which to create the archive.
+
+        """
+        metadata = self.PRINT_METADATA.copy()
+        archive_path = Archive.create_archive(archive_dir, self.PRINT_FN, metadata, filepaths)
+        status = self._export_archive(archive_path)
+        if status:
+            raise Error(status)
+
+    def run_usb_test(self, archive_dir: str) -> None:
+        """
+        Run usb-test.
+
+        Args:
+            archive_dir (str): The path to the directory in which to create the archive.
+
+        Raises:
+            Error: Raised if the usb-test does not return a USB_CONNECTED status.
+        """
+        archive_path = Archive.create_archive(archive_dir, self.USB_TEST_FN, self.USB_TEST_METADATA)
+        status = self._export_archive(archive_path)
+        if status and status != Status.USB_CONNECTED:
+            raise Error(status)
+
+    @staticmethod
+    def _export_archive(archive_path: str) -> Optional[Status]:
+        """
+        Make the subprocess call to send the archive to the Export VM, where the archive will be
+        processed.
+
+        Args:
+            archive_path (str): The path to the archive to be processed.
+
+        Returns:
+            str: The export status returned from the Export VM processing script.
+
+        Raises:
+            Error: Raised if (1) CalledProcessError is encountered, which can occur when
+                trying to start the Export VM when the USB device is not attached, or (2) when
+                the return code from `check_output` is not 0.
+        """
+        try:
+            # There are already talks of switching to a QVM-RPC implementation for unlocking devices
+            # and exporting files, so it's important to remember to shell-escape what we pass to the
+            # shell, even if for the time being we're already protected against shell injection via
+            # Python's implementation of subprocess, see
+            # https://docs.python.org/3/library/subprocess.html#security-considerations
+            output = subprocess.check_output(
+                [
+                    quote("qrexec-client-vm"),
+                    quote("--"),
+                    quote("sd-devices"),
+                    quote("qubes.OpenInVM"),
+                    quote("/usr/lib/qubes/qopen-in-vm"),
+                    quote("--view-only"),
+                    quote("--"),
+                    quote(archive_path),
+                ],
+                stderr=subprocess.STDOUT,
+            )
+            result = output.decode("utf-8").strip()
+
+            # No status is returned for successful `disk`, `printer-test`, and `print` calls.
+            # This will change in a future release of sd-export.
+            if result:
+                return Status(result)
+            else:
+                return None
+        except ValueError as e:
+            logger.debug(f"Export subprocess returned unexpected value: {e}")
+            raise Error(Status.UNEXPECTED_RETURN_STATUS)
+        except subprocess.CalledProcessError as e:
+            logger.error("Subprocess failed")
+            logger.debug(f"Subprocess failed: {e}")
+            raise Error(Status.CALLED_PROCESS_ERROR)
+
+    def _run_printer_preflight(self, archive_dir: str) -> None:  # DEPRECATED
+        self.check_printer_status(archive_dir)
