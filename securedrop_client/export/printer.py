@@ -43,11 +43,12 @@ class Printer(QObject):
         self._cache.clear_on(self._poller.paused.entered)
         self._cache.on_change_emit(self.status_changed)
 
-        self._poller.poll_by(lambda: self._printing_service.run_printer_preflight())
+        # This is a blocking call, which is no good.
+        # self._poller.poll_by(lambda: self._printing_service.run_printer_preflight())
         # Alternatively, by taking advantage of the printing service features to loosen coupling:
-        # self._printing_service.connect_signals(
-        #    print_preflight_check_requested=self._poller.polling.entered
-        # )
+        self._printing_service.connect_signals(
+            print_preflight_check_requested=self._poller.polling.entered
+        )
 
         self._poller.wait_on(self._printing_service.printer_not_found_ready)
         self._poller.wait_on(self._printing_service.printer_found_ready)
@@ -248,7 +249,7 @@ class _Poller(QStateMachine):
         # It would be nice to connect a signal, but I didn't find how
         # to allow registering a signal that requires arguments without
         # the closure.
-        self.polling.entered.connect(lambda: callback())
+        self.polling.entered.connect(lambda: callback())  # pragma: nocover
 
 
 # Store printers to prevent concurrent access to the printing service. See getPrinter.
