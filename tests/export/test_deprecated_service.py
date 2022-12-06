@@ -5,7 +5,10 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 import pytest
 from PyQt5.QtTest import QSignalSpy
 
-from securedrop_client.export import Export, ExportError, ExportStatus
+from securedrop_client.export import ExportError, ExportStatus
+from securedrop_client.export import Service as Export
+from securedrop_client.export.archive import Archive
+from securedrop_client.export.cli import CLI
 
 # All tests in this file can be removed when the corresponding deprecated API is removed.
 # They all have equivalents in th other tests/export/test_*.py files.
@@ -43,7 +46,9 @@ def test_run_printer_preflight_error(mocker):  # DEPRECATED
     printer_preflight_failure_emissions = QSignalSpy(export.printer_preflight_failure)
     assert printer_preflight_failure_emissions.isValid()
     error = ExportError("bang!")
-    _run_print_preflight = mocker.patch.object(export, "_run_printer_preflight", side_effect=error)
+    _run_print_preflight = mocker.patch.object(
+        export._cli, "_run_printer_preflight", side_effect=error
+    )
 
     export.run_printer_preflight()
 
@@ -54,18 +59,18 @@ def test_run_printer_preflight_error(mocker):  # DEPRECATED
 
 def test__run_printer_preflight(mocker):  # DEPRECATED
     """
-    Ensure _export_archive and _create_archive are called with the expected parameters,
-    _export_archive is called with the return value of _create_archive, and
+    Ensure _export_archive and create_archive are called with the expected parameters,
+    _export_archive is called with the return value of create_archive, and
     _run_disk_test returns without error if 'USB_CONNECTED' is the return value of _export_archive.
     """
     export = Export()
-    export._create_archive = mocker.MagicMock(return_value="mock_archive_path")
-    export._export_archive = mocker.MagicMock(return_value="")
+    mocker.patch.object(Archive, "create_archive", return_value="mock_archive_path")
+    mocker.patch.object(CLI, "_export_archive", return_value="")
 
     export._run_printer_preflight("mock_archive_dir")
 
-    export._export_archive.assert_called_once_with("mock_archive_path")
-    export._create_archive.assert_called_once_with(
+    CLI._export_archive.assert_called_once_with("mock_archive_path")
+    Archive.create_archive.assert_called_once_with(
         "mock_archive_dir", "printer-preflight.sd-export", {"device": "printer-preflight"}
     )
 
@@ -75,8 +80,8 @@ def test__run_printer_preflight_raises_ExportError_if_not_empty_string(mocker): 
     Ensure ExportError is raised if _run_disk_test returns anything other than 'USB_CONNECTED'.
     """
     export = Export()
-    export._create_archive = mocker.MagicMock(return_value="mock_archive_path")
-    export._export_archive = mocker.MagicMock(return_value="SOMETHING_OTHER_THAN_EMPTY_STRING")
+    mocker.patch.object(Archive, "create_archive", return_value="mock_archive_path")
+    mocker.patch.object(CLI, "_export_archive", return_value="SOMETHING_OTHER_THAN_EMPTY_STRING")
 
     with pytest.raises(ExportError):
         export._run_printer_preflight("mock_archive_dir")
@@ -135,17 +140,17 @@ def test_print_error(mocker):
 
 def test__run_print(mocker):
     """
-    Ensure _export_archive and _create_archive are called with the expected parameters and
-    _export_archive is called with the return value of _create_archive.
+    Ensure _export_archive and create_archive are called with the expected parameters and
+    _export_archive is called with the return value of create_archive.
     """
     export = Export()
-    export._create_archive = mocker.MagicMock(return_value="mock_archive_path")
-    export._export_archive = mocker.MagicMock(return_value="")
+    mocker.patch.object(Archive, "create_archive", return_value="mock_archive_path")
+    mocker.patch.object(CLI, "_export_archive", return_value="")
 
     export._run_print("mock_archive_dir", ["mock_filepath"])
 
-    export._export_archive.assert_called_once_with("mock_archive_path")
-    export._create_archive.assert_called_once_with(
+    CLI._export_archive.assert_called_once_with("mock_archive_path")
+    Archive.create_archive.assert_called_once_with(
         "mock_archive_dir", "print_archive.sd-export", {"device": "printer"}, ["mock_filepath"]
     )
 
@@ -155,8 +160,8 @@ def test__run_print_raises_ExportError_if_not_empty_string(mocker):
     Ensure ExportError is raised if _run_print returns anything other than ''.
     """
     export = Export()
-    export._create_archive = mocker.MagicMock(return_value="mock_archive_path")
-    export._export_archive = mocker.MagicMock(return_value="SOMETHING_OTHER_THAN_EMPTY_STRING")
+    mocker.patch.object(Archive, "create_archive", return_value="mock_archive_path")
+    mocker.patch.object(CLI, "_export_archive", return_value="SOMETHING_OTHER_THAN_EMPTY_STRING")
 
     with pytest.raises(ExportError):
         export._run_print("mock_archive_dir", ["mock_filepath"])
@@ -260,18 +265,18 @@ def test_run_preflight_checks_error(mocker):
 
 def test__run_disk_export(mocker):
     """
-    Ensure _export_archive and _create_archive are called with the expected parameters,
-    _export_archive is called with the return value of _create_archive, and
+    Ensure _export_archive and create_archive are called with the expected parameters,
+    _export_archive is called with the return value of create_archive, and
     _run_disk_test returns without error if '' is the output status of _export_archive.
     """
     export = Export()
-    export._create_archive = mocker.MagicMock(return_value="mock_archive_path")
-    export._export_archive = mocker.MagicMock(return_value="")
+    mocker.patch.object(Archive, "create_archive", return_value="mock_archive_path")
+    mocker.patch.object(CLI, "_export_archive", return_value="")
 
     export._run_disk_export("mock_archive_dir", ["mock_filepath"], "mock_passphrase")
 
-    export._export_archive.assert_called_once_with("mock_archive_path")
-    export._create_archive.assert_called_once_with(
+    CLI._export_archive.assert_called_once_with("mock_archive_path")
+    Archive.create_archive.assert_called_once_with(
         "mock_archive_dir",
         "archive.sd-export",
         {"encryption_key": "mock_passphrase", "device": "disk", "encryption_method": "luks"},
@@ -284,27 +289,27 @@ def test__run_disk_export_raises_ExportError_if_not_empty_string(mocker):
     Ensure ExportError is raised if _run_disk_test returns anything other than ''.
     """
     export = Export()
-    export._create_archive = mocker.MagicMock(return_value="mock_archive_path")
-    export._export_archive = mocker.MagicMock(return_value="SOMETHING_OTHER_THAN_EMPTY_STRING")
+    mocker.patch.object(Archive, "create_archive", return_value="mock_archive_path")
+    mocker.patch.object(CLI, "_export_archive", return_value="SOMETHING_OTHER_THAN_EMPTY_STRING")
 
     with pytest.raises(ExportError):
-        export._run_disk_export("mock_archive_dir", ["mock_filepath"], "mock_passphrase")
+        export._run_disk_test("mock_archive_dir")
 
 
 def test__run_disk_test(mocker):
     """
-    Ensure _export_archive and _create_archive are called with the expected parameters,
-    _export_archive is called with the return value of _create_archive, and
+    Ensure _export_archive and create_archive are called with the expected parameters,
+    _export_archive is called with the return value of create_archive, and
     _run_disk_test returns without error if 'USB_ENCRYPTED' is the output status of _export_archive.
     """
     export = Export()
-    export._create_archive = mocker.MagicMock(return_value="mock_archive_path")
-    export._export_archive = mocker.MagicMock(return_value=ExportStatus("USB_ENCRYPTED"))
+    mocker.patch.object(Archive, "create_archive", return_value="mock_archive_path")
+    mocker.patch.object(CLI, "_export_archive", return_value=ExportStatus("USB_ENCRYPTED"))
 
     export._run_disk_test("mock_archive_dir")
 
-    export._export_archive.assert_called_once_with("mock_archive_path")
-    export._create_archive.assert_called_once_with(
+    CLI._export_archive.assert_called_once_with("mock_archive_path")
+    Archive.create_archive.assert_called_once_with(
         "mock_archive_dir", "disk-test.sd-export", {"device": "disk-test"}
     )
 
@@ -314,8 +319,8 @@ def test__run_disk_test_raises_ExportError_if_not_USB_ENCRYPTED(mocker):
     Ensure ExportError is raised if _run_disk_test returns anything other than 'USB_ENCRYPTED'.
     """
     export = Export()
-    export._create_archive = mocker.MagicMock(return_value="mock_archive_path")
-    export._export_archive = mocker.MagicMock(return_value="SOMETHING_OTHER_THAN_USB_ENCRYPTED")
+    mocker.patch.object(Archive, "create_archive", return_value="mock_archive_path")
+    mocker.patch.object(CLI, "_export_archive", return_value="SOMETHING_OTHER_THAN_USB_ENCRYPTED")
 
     with pytest.raises(ExportError):
         export._run_disk_test("mock_archive_dir")
@@ -323,18 +328,18 @@ def test__run_disk_test_raises_ExportError_if_not_USB_ENCRYPTED(mocker):
 
 def test__run_usb_test(mocker):
     """
-    Ensure _export_archive and _create_archive are called with the expected parameters,
-    _export_archive is called with the return value of _create_archive, and
+    Ensure _export_archive and create_archive are called with the expected parameters,
+    _export_archive is called with the return value of create_archive, and
     _run_disk_test returns without error if 'USB_CONNECTED' is the return value of _export_archive.
     """
     export = Export()
-    export._create_archive = mocker.MagicMock(return_value="mock_archive_path")
-    export._export_archive = mocker.MagicMock(return_value=ExportStatus("USB_CONNECTED"))
+    mocker.patch.object(Archive, "create_archive", return_value="mock_archive_path")
+    mocker.patch.object(CLI, "_export_archive", return_value=ExportStatus("USB_CONNECTED"))
 
     export._run_usb_test("mock_archive_dir")
 
-    export._export_archive.assert_called_once_with("mock_archive_path")
-    export._create_archive.assert_called_once_with(
+    CLI._export_archive.assert_called_once_with("mock_archive_path")
+    Archive.create_archive.assert_called_once_with(
         "mock_archive_dir", "usb-test.sd-export", {"device": "usb-test"}
     )
 
@@ -344,8 +349,8 @@ def test__run_usb_test_raises_ExportError_if_not_USB_CONNECTED(mocker):
     Ensure ExportError is raised if _run_disk_test returns anything other than 'USB_CONNECTED'.
     """
     export = Export()
-    export._create_archive = mocker.MagicMock(return_value="mock_archive_path")
-    export._export_archive = mocker.MagicMock(return_value="SOMETHING_OTHER_THAN_USB_CONNECTED")
+    mocker.patch.object(Archive, "create_archive", return_value="mock_archive_path")
+    mocker.patch.object(CLI, "_export_archive", return_value="SOMETHING_OTHER_THAN_USB_CONNECTED")
 
     with pytest.raises(ExportError):
         export._run_usb_test("mock_archive_dir")
@@ -353,12 +358,11 @@ def test__run_usb_test_raises_ExportError_if_not_USB_CONNECTED(mocker):
 
 def test__create_archive(mocker):
     """
-    Ensure _create_archive creates an archive in the supplied directory.
+    Ensure create_archive creates an archive in the supplied directory.
     """
-    export = Export()
     archive_path = None
     with TemporaryDirectory() as temp_dir:
-        archive_path = export._create_archive(temp_dir, "mock.sd-export", {})
+        archive_path = Archive.create_archive(temp_dir, "mock.sd-export", {})
         assert archive_path == os.path.join(temp_dir, "mock.sd-export")
         assert os.path.exists(archive_path)  # sanity check
 
@@ -366,10 +370,9 @@ def test__create_archive(mocker):
 
 
 def test__create_archive_with_an_export_file(mocker):
-    export = Export()
     archive_path = None
     with TemporaryDirectory() as temp_dir, NamedTemporaryFile() as export_file:
-        archive_path = export._create_archive(temp_dir, "mock.sd-export", {}, [export_file.name])
+        archive_path = Archive.create_archive(temp_dir, "mock.sd-export", {}, [export_file.name])
         assert archive_path == os.path.join(temp_dir, "mock.sd-export")
         assert os.path.exists(archive_path)  # sanity check
 
@@ -380,10 +383,9 @@ def test__create_archive_with_multiple_export_files(mocker):
     """
     Ensure an archive
     """
-    export = Export()
     archive_path = None
     with TemporaryDirectory() as temp_dir, NamedTemporaryFile() as export_file_one, NamedTemporaryFile() as export_file_two:  # noqa
-        archive_path = export._create_archive(
+        archive_path = Archive.create_archive(
             temp_dir, "mock.sd-export", {}, [export_file_one.name, export_file_two.name]
         )
         assert archive_path == os.path.join(temp_dir, "mock.sd-export")
@@ -396,14 +398,13 @@ def test__export_archive(mocker):
     """
     Ensure the subprocess call returns the expected output.
     """
-    export = Export()
     mocker.patch("subprocess.check_output", return_value=b"USB_CONNECTED")
-    status = export._export_archive("mock.sd-export")
+    status = CLI._export_archive("mock.sd-export")
     assert status == ExportStatus.USB_CONNECTED
 
     mocker.patch("subprocess.check_output", return_value=b"mock")
     with pytest.raises(ExportError, match="UNEXPECTED_RETURN_STATUS"):
-        export._export_archive("mock.sd-export")
+        CLI._export_archive("mock.sd-export")
 
 
 def test__export_archive_does_not_raise_ExportError_when_CalledProcessError(mocker):
@@ -413,21 +414,18 @@ def test__export_archive_does_not_raise_ExportError_when_CalledProcessError(mock
     mock_error = subprocess.CalledProcessError(cmd=["mock_cmd"], returncode=123)
     mocker.patch("subprocess.check_output", side_effect=mock_error)
 
-    export = Export()
-
     with pytest.raises(ExportError, match="CALLED_PROCESS_ERROR"):
-        export._export_archive("mock.sd-export")
+        CLI._export_archive("mock.sd-export")
 
 
 def test__export_archive_with_evil_command(mocker):
     """
     Ensure shell command is shell-escaped.
     """
-    export = Export()
     check_output = mocker.patch("subprocess.check_output", return_value=b"ERROR_FILE_NOT_FOUND")
 
     with pytest.raises(ExportError, match="UNEXPECTED_RETURN_STATUS"):
-        export._export_archive("somefile; rm -rf ~")
+        CLI._export_archive("somefile; rm -rf ~")
 
     check_output.assert_called_once_with(
         [
@@ -452,10 +450,11 @@ def test__export_archive_success_on_empty_return_value(mocker):
     When export behaviour changes so that all success states return a status
     string, this test will no longer pass and should be rewritten.
     """
-    export = Export()
-    check_output = mocker.patch("subprocess.check_output", return_value=b"")
+    check_output = mocker.patch(
+        "securedrop_client.export.cli.subprocess.check_output", return_value=b""
+    )
 
-    result = export._export_archive("somefile.sd-export")
+    result = CLI._export_archive("somefile.sd-export")
 
     check_output.assert_called_once_with(
         [
