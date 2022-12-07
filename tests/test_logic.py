@@ -34,6 +34,9 @@ from securedrop_client.app import threads
 from securedrop_client.logic import TIME_BETWEEN_SHOWING_LAST_SYNC_MS, APICallRunner, Controller
 from tests import factory
 
+MAX_SIGNAL_WAITING_TIME = 50
+
+
 with open(os.path.join(os.path.dirname(__file__), "files", "test-key.gpg.pub.asc")) as f:
     PUB_KEY = f.read()
 
@@ -1749,10 +1752,11 @@ def test_Controller_on_reply_downloaded_decryption_failure(mocker, homedir, sess
 def test_Controller_download_new_messages_with_new_message(mocker, session, session_maker, homedir):
     """
     Test that `download_new_messages` enqueues a job, connects to the right slots, and sets a
-    usre-facing status message when a new message is found.
+    user-facing status message when a new message is found.
     """
     co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir, None)
     co.api = "Api token has a value"
+    main_queue_updated_emissions = QSignalSpy(co.api_job_queue.main_queue_updated)
     message = factory.Message(source=factory.Source())
     mocker.patch("securedrop_client.storage.find_new_messages", return_value=[message])
     success_signal = mocker.MagicMock()
@@ -1772,7 +1776,21 @@ def test_Controller_download_new_messages_with_new_message(mocker, session, sess
     failure_signal.connect.assert_called_once_with(
         co.on_message_download_failure, type=Qt.QueuedConnection
     )
-    set_status.assert_called_once_with("Retrieving new messages", 2500)
+
+    # fake APIJobQueue's emitting main_queue_updated when the job is queued and dequeued
+    co.api_job_queue.main_queue_updated.emit(1)
+    main_queue_updated_emissions.wait(MAX_SIGNAL_WAITING_TIME)
+    set_status.assert_called_once_with("Retrieving 1 message", 0)
+
+    co.api_job_queue.main_queue_updated.emit(2)
+    main_queue_updated_emissions.wait(MAX_SIGNAL_WAITING_TIME)
+    assert set_status.call_count == 2
+    set_status.assert_called_with("Retrieving 2 messages", 0)
+
+    co.api_job_queue.main_queue_updated.emit(0)
+    main_queue_updated_emissions.wait(MAX_SIGNAL_WAITING_TIME)
+    assert set_status.call_count == 3
+    set_status.assert_called_with("", 0)
 
 
 def test_Controller_download_new_messages_without_messages(mocker, session, session_maker, homedir):
