@@ -3370,6 +3370,15 @@ class SourceMenu(QMenu):
 
         self.addAction(actions.DownloadConversation(self, self.controller, app_state))
         self.addAction(
+            actions.PrintConversation(
+                self.source,
+                self,
+                self.controller,
+                conversation.PrintConfirmationDialog,
+                conversation.PrintErrorDialog,
+            )
+        )
+        self.addAction(
             actions.DeleteConversation(
                 self.source, self, self.controller, DeleteConversationDialog, app_state
             )
