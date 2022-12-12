@@ -406,6 +406,7 @@ class Controller(QObject):
         # Create a timer to show the time since the last sync
         self.show_last_sync_timer = QTimer()
         self.show_last_sync_timer.timeout.connect(self.show_last_sync)
+        self.show_last_sync_timer.start(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
 
         # Path to the file containing the timestamp since the last sync with the server
         # TODO: Remove this code once the sync timestamp is tracked instead in svs.sqlite
@@ -500,11 +501,9 @@ class Controller(QObject):
         self.gui.update_error_status(
             _("The SecureDrop server cannot be reached. Trying to reconnect..."), duration=0
         )
-        self.show_last_sync_timer.start(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
 
     def resume_queues(self) -> None:
         self.api_job_queue.resume_queues()
-        self.show_last_sync_timer.stop()
 
         # clear error status in case queue was paused resulting in a permanent error message
         self.gui.clear_error_status()
@@ -547,8 +546,6 @@ class Controller(QObject):
         self.call_api(
             self.api.authenticate, self.on_authenticate_success, self.on_authenticate_failure
         )
-        self.show_last_sync_timer.stop()
-        self.set_status("")
 
     def on_authenticate_success(self, result):  # type: ignore [no-untyped-def]
         """
@@ -611,8 +608,6 @@ class Controller(QObject):
         self.gui.clear_clipboard()
         self.gui.show_main_window()
         self.update_sources()
-        self.show_last_sync()
-        self.show_last_sync_timer.start(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
 
     def on_action_requiring_login(self) -> None:
         """
@@ -810,8 +805,6 @@ class Controller(QObject):
         self.api_job_queue.stop()
         self.gui.logout()
 
-        self.show_last_sync_timer.start(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
-        self.show_last_sync()
         self.is_authenticated = False
 
     def invalidate_token(self) -> None:
