@@ -1,6 +1,6 @@
 alembic==1.1.0
 arrow==0.12.1
-certifi>=2021.5.30
+certifi>=2022.12.07  # CVE-2022-23491
 charset-normalizer>=2.0.4
 idna>=2.7
 mako==1.2.2
