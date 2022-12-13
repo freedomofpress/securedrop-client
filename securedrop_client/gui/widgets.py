@@ -128,10 +128,6 @@ class TopPane(QWidget):
         layout.setContentsMargins(10, 0, 0, 0)
         layout.setSpacing(0)
 
-        status_layout = QHBoxLayout()
-        status_layout.setContentsMargins(0, 0, 0, 0)
-        status_layout.setSpacing(0)
-
         # Sync icon
         self.sync_icon = SyncIcon()
 
