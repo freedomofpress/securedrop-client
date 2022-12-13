@@ -407,6 +407,7 @@ class Controller(QObject):
         self.show_last_sync_timer = QTimer()
         self.show_last_sync_timer.timeout.connect(self.show_last_sync)
         self.show_last_sync_timer.start(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
+        self.show_last_sync()
 
         # Path to the file containing the timestamp since the last sync with the server
         # TODO: Remove this code once the sync timestamp is tracked instead in svs.sqlite
@@ -649,6 +650,7 @@ class Controller(QObject):
         """
         with open(self.last_sync_filepath, "w") as f:
             f.write(arrow.now().format())
+        self.show_last_sync()
 
         missing_files = storage.update_missing_files(self.data_dir, self.session)
         for missed_file in missing_files:
