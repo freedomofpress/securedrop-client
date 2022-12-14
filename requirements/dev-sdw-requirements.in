@@ -11,6 +11,7 @@ pip-tools>=6.8.0  # for jazzband/piptools#1617
 PyAutoGUI
 pyobjc-core;platform_system=="Darwin"
 pyobjc;platform_system=="Darwin"
+pyqt5-stubs
 pytest>=7.2.0  # CVE-2022-42969
 pytest-cov
 pytest-mock
