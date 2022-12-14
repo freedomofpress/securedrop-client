@@ -10,7 +10,7 @@ from shlex import quote
 from tempfile import TemporaryDirectory
 from typing import List, Optional
 
-from PyQt5.QtCore import QObject, Qt, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QObject, Qt, pyqtBoundSignal, pyqtSignal, pyqtSlot
 
 logger = logging.getLogger(__name__)
 
@@ -80,10 +80,10 @@ class Export(QObject):
 
     def __init__(
         self,
-        export_preflight_check_requested: Optional[pyqtSignal] = None,
-        export_requested: Optional[pyqtSignal] = None,
-        print_preflight_check_requested: Optional[pyqtSignal] = None,
-        print_requested: Optional[pyqtSignal] = None,
+        export_preflight_check_requested: Optional[pyqtBoundSignal] = None,
+        export_requested: Optional[pyqtBoundSignal] = None,
+        print_preflight_check_requested: Optional[pyqtBoundSignal] = None,
+        print_requested: Optional[pyqtBoundSignal] = None,
     ) -> None:
         super().__init__()
 
@@ -96,10 +96,10 @@ class Export(QObject):
 
     def connect_signals(
         self,
-        export_preflight_check_requested: Optional[pyqtSignal] = None,
-        export_requested: Optional[pyqtSignal] = None,
-        print_preflight_check_requested: Optional[pyqtSignal] = None,
-        print_requested: Optional[pyqtSignal] = None,
+        export_preflight_check_requested: Optional[pyqtBoundSignal] = None,
+        export_requested: Optional[pyqtBoundSignal] = None,
+        print_preflight_check_requested: Optional[pyqtBoundSignal] = None,
+        print_requested: Optional[pyqtBoundSignal] = None,
     ) -> None:
 
         # This instance can optionally react to events to prevent

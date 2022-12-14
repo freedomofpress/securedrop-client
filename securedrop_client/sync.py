@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 
-from PyQt5.QtCore import QObject, Qt, QThread, QTimer, pyqtSignal
+from PyQt5.QtCore import QObject, Qt, QThread, QTimer, pyqtBoundSignal, pyqtSignal
 from sdclientapi import API
 from sqlalchemy.orm import scoped_session
 
@@ -110,7 +110,7 @@ class ApiSyncBackgroundTask(QObject):
         session_maker: scoped_session,
         gpg: GpgHelper,
         data_dir: str,
-        sync_started: pyqtSignal,
+        sync_started: pyqtBoundSignal,
         on_sync_success,
         on_sync_failure,
         app_state: Optional[state.State] = None,

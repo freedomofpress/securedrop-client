@@ -1201,8 +1201,8 @@ class SourceWidget(QWidget):
         self,
         controller: Controller,
         source: Source,
-        source_selected_signal: pyqtSignal,
-        adjust_preview: pyqtSignal,
+        source_selected_signal: pyqtBoundSignal,
+        adjust_preview: pyqtBoundSignal,
     ):
         super().__init__()
 
