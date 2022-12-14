@@ -2307,9 +2307,9 @@ class FileWidget(QWidget):
         layout.addWidget(self.file_size)
 
         # Connect signals to slots
-        file_download_started.connect(self._on_file_download_started, type=Qt.QueuedConnection)
-        file_ready_signal.connect(self._on_file_downloaded, type=Qt.QueuedConnection)
-        file_missing.connect(self._on_file_missing, type=Qt.QueuedConnection)
+        file_download_started.connect(self._on_file_download_started)
+        file_ready_signal.connect(self._on_file_downloaded)
+        file_missing.connect(self._on_file_missing)
 
     def adjust_width(self, container_width: int) -> None:
         """

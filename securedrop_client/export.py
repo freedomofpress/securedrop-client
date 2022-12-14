@@ -10,7 +10,7 @@ from shlex import quote
 from tempfile import TemporaryDirectory
 from typing import List, Optional
 
-from PyQt5.QtCore import QObject, Qt, pyqtBoundSignal, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QObject, pyqtBoundSignal, pyqtSignal, pyqtSlot
 
 logger = logging.getLogger(__name__)
 
@@ -105,17 +105,13 @@ class Export(QObject):
         # This instance can optionally react to events to prevent
         # coupling it to dependent code.
         if export_preflight_check_requested is not None:
-            export_preflight_check_requested.connect(
-                self.run_preflight_checks, type=Qt.QueuedConnection
-            )
+            export_preflight_check_requested.connect(self.run_preflight_checks)
         if export_requested is not None:
-            export_requested.connect(self.send_file_to_usb_device, type=Qt.QueuedConnection)
+            export_requested.connect(self.send_file_to_usb_device)
         if print_requested is not None:
-            print_requested.connect(self.print, type=Qt.QueuedConnection)
+            print_requested.connect(self.print)
         if print_preflight_check_requested is not None:
-            print_preflight_check_requested.connect(
-                self.run_printer_preflight, type=Qt.QueuedConnection
-            )
+            print_preflight_check_requested.connect(self.run_printer_preflight)
 
     def _export_archive(cls, archive_path: str) -> Optional[ExportStatus]:
         """

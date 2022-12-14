@@ -29,7 +29,7 @@ from typing import Dict, List, Optional, Type, Union
 import arrow
 import sdclientapi
 import sqlalchemy.orm.exc
-from PyQt5.QtCore import QObject, QProcess, Qt, QThread, QTimer, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QObject, QProcess, QThread, QTimer, pyqtSignal, pyqtSlot
 from sdclientapi import AuthError, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm.session import sessionmaker
 
@@ -398,9 +398,9 @@ class Controller(QObject):
         self.api_sync = ApiSync(
             self.api, self.session_maker, self.gpg, self.data_dir, self.sync_thread, state
         )
-        self.api_sync.sync_started.connect(self.on_sync_started, type=Qt.QueuedConnection)
-        self.api_sync.sync_success.connect(self.on_sync_success, type=Qt.QueuedConnection)
-        self.api_sync.sync_failure.connect(self.on_sync_failure, type=Qt.QueuedConnection)
+        self.api_sync.sync_started.connect(self.on_sync_started)
+        self.api_sync.sync_success.connect(self.on_sync_success)
+        self.api_sync.sync_failure.connect(self.on_sync_failure)
 
         # Create a timer to show the time since the last sync
         self.show_last_sync_timer = QTimer()
@@ -755,8 +755,8 @@ class Controller(QObject):
                 return
 
             job = SeenJob(files, messages, replies)
-            job.success_signal.connect(self.on_seen_success, type=Qt.QueuedConnection)
-            job.failure_signal.connect(self.on_seen_failure, type=Qt.QueuedConnection)
+            job.success_signal.connect(self.on_seen_success)
+            job.failure_signal.connect(self.on_seen_failure)
             self.add_job.emit(job)
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.debug(e)
@@ -784,8 +784,8 @@ class Controller(QObject):
         Star or unstar.
         """
         job = UpdateStarJob(source_uuid, is_starred)
-        job.success_signal.connect(self.on_update_star_success, type=Qt.QueuedConnection)
-        job.failure_signal.connect(self.on_update_star_failure, type=Qt.QueuedConnection)
+        job.success_signal.connect(self.on_update_star_success)
+        job.failure_signal.connect(self.on_update_star_failure)
         self.add_job.emit(job)
 
     def logout(self) -> None:
@@ -835,16 +835,16 @@ class Controller(QObject):
             job = ReplyDownloadJob(
                 uuid, self.data_dir, self.gpg
             )  # type: Union[ReplyDownloadJob, MessageDownloadJob, FileDownloadJob]
-            job.success_signal.connect(self.on_reply_download_success, type=Qt.QueuedConnection)
-            job.failure_signal.connect(self.on_reply_download_failure, type=Qt.QueuedConnection)
+            job.success_signal.connect(self.on_reply_download_success)
+            job.failure_signal.connect(self.on_reply_download_failure)
         elif object_type == db.Message:
             job = MessageDownloadJob(uuid, self.data_dir, self.gpg)
-            job.success_signal.connect(self.on_message_download_success, type=Qt.QueuedConnection)
-            job.failure_signal.connect(self.on_message_download_failure, type=Qt.QueuedConnection)
+            job.success_signal.connect(self.on_message_download_success)
+            job.failure_signal.connect(self.on_message_download_failure)
         elif object_type == db.File:
             job = FileDownloadJob(uuid, self.data_dir, self.gpg)
-            job.success_signal.connect(self.on_file_download_success, type=Qt.QueuedConnection)
-            job.failure_signal.connect(self.on_file_download_failure, type=Qt.QueuedConnection)
+            job.success_signal.connect(self.on_file_download_success)
+            job.failure_signal.connect(self.on_file_download_failure)
 
         self.add_job.emit(job)
 
@@ -1037,8 +1037,8 @@ class Controller(QObject):
         the failure handler will display an error.
         """
         job = DeleteSourceJob(source.uuid)
-        job.success_signal.connect(self.on_delete_source_success, type=Qt.QueuedConnection)
-        job.failure_signal.connect(self.on_delete_source_failure, type=Qt.QueuedConnection)
+        job.success_signal.connect(self.on_delete_source_success)
+        job.failure_signal.connect(self.on_delete_source_failure)
 
         self.add_job.emit(job)
         self.source_deleted.emit(source.uuid)
@@ -1054,8 +1054,8 @@ class Controller(QObject):
         handler will display an error.
         """
         job = DeleteConversationJob(source.uuid)
-        job.success_signal.connect(self.on_delete_conversation_success, type=Qt.QueuedConnection)
-        job.failure_signal.connect(self.on_delete_conversation_failure, type=Qt.QueuedConnection)
+        job.success_signal.connect(self.on_delete_conversation_success)
+        job.failure_signal.connect(self.on_delete_conversation_failure)
 
         self.add_job.emit(job)
         self.conversation_deleted.emit(source.uuid)
@@ -1066,8 +1066,8 @@ class Controller(QObject):
         for file in files:
             if not file.is_downloaded:
                 job = FileDownloadJob(str(file.id), self.data_dir, self.gpg)
-                job.success_signal.connect(self.on_file_download_success, type=Qt.QueuedConnection)
-                job.failure_signal.connect(self.on_file_download_failure, type=Qt.QueuedConnection)
+                job.success_signal.connect(self.on_file_download_success)
+                job.failure_signal.connect(self.on_file_download_failure)
                 self.add_job.emit(job)
                 self.file_download_started.emit(file.id)
 
@@ -1107,8 +1107,8 @@ class Controller(QObject):
         self.session.commit()
 
         job = SendReplyJob(source_uuid, reply_uuid, message, self.gpg)
-        job.success_signal.connect(self.on_reply_success, type=Qt.QueuedConnection)
-        job.failure_signal.connect(self.on_reply_failure, type=Qt.QueuedConnection)
+        job.success_signal.connect(self.on_reply_success)
+        job.failure_signal.connect(self.on_reply_failure)
 
         self.add_job.emit(job)
 

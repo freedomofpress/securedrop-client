@@ -12,7 +12,6 @@ from unittest.mock import Mock, call
 import arrow
 import pytest
 import sqlalchemy.orm.exc
-from PyQt5.QtCore import Qt
 from PyQt5.QtTest import QSignalSpy
 from sdclientapi import AuthError, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm import attributes
@@ -710,8 +709,8 @@ def test_Controller_mark_seen(homedir, config, mocker, session, session_maker):
 
     assert len(add_job_emissions) == 1
     assert add_job_emissions[0] == [job]
-    job.success_signal.connect.assert_called_once_with(co.on_seen_success, type=Qt.QueuedConnection)
-    job.failure_signal.connect.assert_called_once_with(co.on_seen_failure, type=Qt.QueuedConnection)
+    job.success_signal.connect.assert_called_once_with(co.on_seen_success)
+    job.failure_signal.connect.assert_called_once_with(co.on_seen_failure)
 
 
 def test_Controller_mark_seen_with_unseen_item_of_each_type(
@@ -1236,13 +1235,13 @@ def test_Controller_download_conversation(homedir, config, session, mocker, sess
     assert add_job_emissions[0] == [job]
     assert add_job_emissions[1] == [job]
     expected = [
-        call(co.on_file_download_success, type=Qt.QueuedConnection),
-        call(co.on_file_download_success, type=Qt.QueuedConnection),
+        call(co.on_file_download_success),
+        call(co.on_file_download_success),
     ]
     assert job_success_signal.connect.mock_calls == expected
     expected = [
-        call(co.on_file_download_failure, type=Qt.QueuedConnection),
-        call(co.on_file_download_failure, type=Qt.QueuedConnection),
+        call(co.on_file_download_failure),
+        call(co.on_file_download_failure),
     ]
     assert job_failure_signal.connect.mock_calls == expected
 
@@ -1319,12 +1318,8 @@ def test_Controller_on_file_download_Submission(homedir, config, session, mocker
     mock_job_cls.assert_called_once_with(file_.uuid, co.data_dir, co.gpg)
     assert len(add_job_emissions) == 1
     assert add_job_emissions[0] == [mock_job]
-    mock_success_signal.connect.assert_called_once_with(
-        co.on_file_download_success, type=Qt.QueuedConnection
-    )
-    mock_failure_signal.connect.assert_called_once_with(
-        co.on_file_download_failure, type=Qt.QueuedConnection
-    )
+    mock_success_signal.connect.assert_called_once_with(co.on_file_download_success)
+    mock_failure_signal.connect.assert_called_once_with(co.on_file_download_failure)
 
 
 def test_Controller_on_file_download_Submission_no_auth(
@@ -1644,12 +1639,8 @@ def test_Controller_download_new_replies_with_new_reply(mocker, session, session
 
     assert len(add_job_emissions) == 1
     assert add_job_emissions[0] == [job]
-    success_signal.connect.assert_called_once_with(
-        co.on_reply_download_success, type=Qt.QueuedConnection
-    )
-    failure_signal.connect.assert_called_once_with(
-        co.on_reply_download_failure, type=Qt.QueuedConnection
-    )
+    success_signal.connect.assert_called_once_with(co.on_reply_download_success)
+    failure_signal.connect.assert_called_once_with(co.on_reply_download_failure)
 
 
 def test_Controller_download_new_replies_without_replies(mocker, session, session_maker, homedir):
@@ -1770,12 +1761,8 @@ def test_Controller_download_new_messages_with_new_message(mocker, session, sess
 
     assert len(add_job_emissions) == 1
     assert add_job_emissions[0] == [job]
-    success_signal.connect.assert_called_once_with(
-        co.on_message_download_success, type=Qt.QueuedConnection
-    )
-    failure_signal.connect.assert_called_once_with(
-        co.on_message_download_failure, type=Qt.QueuedConnection
-    )
+    success_signal.connect.assert_called_once_with(co.on_message_download_success)
+    failure_signal.connect.assert_called_once_with(co.on_message_download_failure)
 
     # fake APIJobQueue's emitting main_queue_updated when the job is queued and dequeued
     co.api_job_queue.main_queue_updated.emit(1)
@@ -2020,12 +2007,8 @@ def test_Controller_delete_source(homedir, config, mocker, session_maker, sessio
     mock_job_cls.assert_called_once_with(source.uuid)
     assert len(add_job_emissions) == 1
     assert add_job_emissions[0] == [mock_job]
-    mock_success_signal.connect.assert_called_once_with(
-        co.on_delete_source_success, type=Qt.QueuedConnection
-    )
-    mock_failure_signal.connect.assert_called_once_with(
-        co.on_delete_source_failure, type=Qt.QueuedConnection
-    )
+    mock_success_signal.connect.assert_called_once_with(co.on_delete_source_success)
+    mock_failure_signal.connect.assert_called_once_with(co.on_delete_source_failure)
 
 
 def test_Controller_on_delete_conversation_success(mocker, homedir):
@@ -2100,12 +2083,8 @@ def test_Controller_delete_conversation(homedir, config, mocker, session_maker, 
     mock_job_cls.assert_called_once_with(source.uuid)
     assert len(add_job_emissions) == 1
     assert add_job_emissions[0] == [mock_job]
-    mock_success_signal.connect.assert_called_once_with(
-        co.on_delete_conversation_success, type=Qt.QueuedConnection
-    )
-    mock_failure_signal.connect.assert_called_once_with(
-        co.on_delete_conversation_failure, type=Qt.QueuedConnection
-    )
+    mock_success_signal.connect.assert_called_once_with(co.on_delete_conversation_success)
+    mock_failure_signal.connect.assert_called_once_with(co.on_delete_conversation_failure)
 
 
 def test_Controller_send_reply_success(
@@ -2141,12 +2120,8 @@ def test_Controller_send_reply_success(
 
     assert len(add_job_emissions) == 1
     assert add_job_emissions[0] == [mock_job]
-    mock_success_signal.connect.assert_called_once_with(
-        co.on_reply_success, type=Qt.QueuedConnection
-    )
-    mock_failure_signal.connect.assert_called_once_with(
-        co.on_reply_failure, type=Qt.QueuedConnection
-    )
+    mock_success_signal.connect.assert_called_once_with(co.on_reply_success)
+    mock_failure_signal.connect.assert_called_once_with(co.on_reply_failure)
 
 
 def test_Controller_send_reply_does_not_send_if_not_authenticated(
@@ -2392,12 +2367,8 @@ def test_Controller_call_update_star_success(homedir, config, mocker, session_ma
     assert len(add_job_emissions) == 1
     assert add_job_emissions[0] == [mock_job]
     assert star_update_successful.connect.call_count == 1
-    star_update_failed.connect.assert_called_once_with(
-        co.on_update_star_failure, type=Qt.QueuedConnection
-    )
-    star_update_successful.connect.assert_called_once_with(
-        co.on_update_star_success, type=Qt.QueuedConnection
-    )
+    star_update_failed.connect.assert_called_once_with(co.on_update_star_failure)
+    star_update_successful.connect.assert_called_once_with(co.on_update_star_success)
 
 
 def test_get_file(mocker, session, homedir):

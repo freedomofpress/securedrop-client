@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 
-from PyQt5.QtCore import QObject, Qt, QThread, QTimer, pyqtBoundSignal, pyqtSignal
+from PyQt5.QtCore import QObject, QThread, QTimer, pyqtBoundSignal, pyqtSignal
 from sdclientapi import API
 from sqlalchemy.orm import scoped_session
 
@@ -126,8 +126,8 @@ class ApiSyncBackgroundTask(QObject):
         self.on_sync_failure = on_sync_failure
 
         self.job = MetadataSyncJob(self.data_dir, app_state)
-        self.job.success_signal.connect(self.on_sync_success, type=Qt.QueuedConnection)
-        self.job.failure_signal.connect(self.on_sync_failure, type=Qt.QueuedConnection)
+        self.job.success_signal.connect(self.on_sync_success)
+        self.job.failure_signal.connect(self.on_sync_failure)
 
     def sync(self) -> None:
         """
