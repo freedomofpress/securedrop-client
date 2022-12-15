@@ -39,7 +39,7 @@ class SvgToggleButton(QPushButton):
         The display size of the SVG, defaults to filling the entire size of the widget.
     """
 
-    def __init__(self, on: str, off: str, svg_size: Optional[str] = None):
+    def __init__(self, on: str, off: str, svg_size: Optional[QSize] = None):
         super().__init__()
 
         # Set layout
@@ -88,7 +88,7 @@ class SvgPushButton(QPushButton):
         disabled: Optional[str] = None,
         active: Optional[str] = None,
         selected: Optional[str] = None,
-        svg_size: Optional[str] = None,
+        svg_size: Optional[QSize] = None,
     ) -> None:
         super().__init__()
 
@@ -126,7 +126,7 @@ class SvgLabel(QLabel):
         The display size of the SVG, defaults to filling the entire size of the widget.
     """
 
-    def __init__(self, filename: str, svg_size: Optional[str] = None) -> None:
+    def __init__(self, filename: str, svg_size: Optional[QSize] = None) -> None:
         super().__init__()
 
         # Remove margins and spacing
@@ -140,7 +140,7 @@ class SvgLabel(QLabel):
         self.svg.setFixedSize(svg_size) if svg_size else self.svg.setFixedSize(QSize())
         layout.addWidget(self.svg)
 
-    def update_image(self, filename: str, svg_size: Optional[str] = None) -> None:
+    def update_image(self, filename: str, svg_size: Optional[QSize] = None) -> None:
         self.svg = load_svg(filename)
         self.svg.setFixedSize(svg_size) if svg_size else self.svg.setFixedSize(QSize())
         child = self.layout().takeAt(0)
