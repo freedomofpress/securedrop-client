@@ -170,9 +170,11 @@ def prevent_second_instance(app: QApplication, unique_name: str) -> None:
     IDENTIFIER = "\0" + app.applicationName() + unique_name
     ALREADY_BOUND_ERRNO = 98
 
-    app.instance_binding = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+    app.instance_binding = socket.socket(  # type: ignore [attr-defined]
+        socket.AF_UNIX, socket.SOCK_DGRAM
+    )
     try:
-        app.instance_binding.bind(IDENTIFIER)
+        app.instance_binding.bind(IDENTIFIER)  # type: ignore [attr-defined]
     except OSError as e:
         if e.errno == ALREADY_BOUND_ERRNO:
             err_dialog = QMessageBox()
