@@ -438,12 +438,12 @@ def test_UserIconLabel_clicks(mocker):
 
 def test_UserButton_setup(mocker):
     ub = UserButton()
-    ub.menu = mocker.MagicMock()
+    ub._menu = mocker.MagicMock()
     controller = mocker.MagicMock()
 
     ub.setup(controller)
 
-    ub.menu.setup.assert_called_once_with(controller)
+    ub._menu.setup.assert_called_once_with(controller)
 
 
 def test_UserButton_set_username():
@@ -498,11 +498,11 @@ def test_LoginButton_setup(mocker):
     lb.window = window
 
 
-def test_Loginbutton_on_clicked(mocker):
+def test_LoginButton_on_clicked(mocker):
     lb = LoginButton()
-    lb.window = mocker.MagicMock()
+    lb._window = mocker.MagicMock()
     lb._on_clicked()
-    lb.window.show_login.assert_called_once_with()
+    lb._window.show_login.assert_called_once_with()
 
 
 def test_MainView_init():
@@ -3894,7 +3894,7 @@ def test_ConversationView_init(mocker, homedir):
     user = factory.User()
     mocked_controller = mocker.MagicMock(authenticated_user=user)
     cv = ConversationView(mocked_source, mocked_controller)
-    assert isinstance(cv.scroll.conversation_layout, QVBoxLayout)
+    assert isinstance(cv._scroll.conversation_layout, QVBoxLayout)
 
 
 def test_ConversationView_init_with_deleted_source(mocker, homedir, session):
@@ -3941,12 +3941,12 @@ def test_ConversationView_ConversationScrollArea_resize(mocker):
     file_widget_adjust_width = mocker.patch("securedrop_client.gui.widgets.FileWidget.adjust_width")
 
     cv.setFixedWidth(800)
-    event = QResizeEvent(cv.scroll.size(), QSize(123_456_789, 123_456_789))
-    cv.scroll.resizeEvent(event)
+    event = QResizeEvent(cv._scroll.size(), QSize(123_456_789, 123_456_789))
+    cv._scroll.resizeEvent(event)
 
-    assert cv.scroll.widget().width() == cv.scroll.width()
-    speech_bubble_adjust_width.assert_called_with(cv.scroll.widget().width())
-    file_widget_adjust_width.assert_called_with(cv.scroll.widget().width())
+    assert cv._scroll.widget().width() == cv._scroll.width()
+    speech_bubble_adjust_width.assert_called_with(cv._scroll.widget().width())
+    file_widget_adjust_width.assert_called_with(cv._scroll.widget().width())
 
 
 def test_ConversationView__on_sync_started(mocker, session):
@@ -3969,7 +3969,7 @@ def test_ConversationView__on_conversation_deletion_successful(mocker, session):
     cv._on_conversation_deletion_successful(cv.source.uuid, timestamp)
 
     assert cv.deletion_scheduled_timestamp == timestamp
-    assert cv.scroll.isHidden()
+    assert cv._scroll.isHidden()
     assert cv.deleted_conversation_items_marker.isHidden()
     assert not cv.deleted_conversation_marker.isHidden()
     assert cv.current_messages[message.uuid].isHidden()
@@ -3983,13 +3983,13 @@ def test_ConversationView__on_conversation_deletion_successful_with_mismatched_s
     source = factory.Source(uuid="abc123")
     cv = ConversationView(source, mocker.MagicMock())
 
-    assert not cv.scroll.isHidden()
+    assert not cv._scroll.isHidden()
     assert cv.deleted_conversation_items_marker.isHidden()
     assert cv.deleted_conversation_marker.isHidden()
 
     cv._on_conversation_deletion_successful("notabc123", datetime.now())
 
-    assert not cv.scroll.isHidden()
+    assert not cv._scroll.isHidden()
     assert cv.deleted_conversation_items_marker.isHidden()
     assert cv.deleted_conversation_marker.isHidden()
 
@@ -4013,7 +4013,7 @@ def test_ConversationView__on_conversation_deletion_successful_does_not_hide_dra
 
     cv._on_conversation_deletion_successful(cv.source.uuid, datetime.now())
 
-    assert not cv.scroll.isHidden()
+    assert not cv._scroll.isHidden()
     assert not cv.deleted_conversation_items_marker.isHidden()
     assert cv.deleted_conversation_marker.isHidden()
     assert cv.current_messages[message.uuid].isHidden()
@@ -4039,13 +4039,13 @@ def test_ConversationView_update_conversation_position_follow(mocker, homedir):
     # Flag to denote a reply was sent by the user.
     cv.reply_flag = True
 
-    cv.scroll.verticalScrollBar().value = mocker.MagicMock(return_value=5900)
-    cv.scroll.viewport().height = mocker.MagicMock(return_value=500)
-    cv.scroll.verticalScrollBar().setValue = mocker.MagicMock()
+    cv._scroll.verticalScrollBar().value = mocker.MagicMock(return_value=5900)
+    cv._scroll.viewport().height = mocker.MagicMock(return_value=500)
+    cv._scroll.verticalScrollBar().setValue = mocker.MagicMock()
 
     cv.update_conversation_position(0, 6000)
 
-    cv.scroll.verticalScrollBar().setValue.assert_called_once_with(6000)
+    cv._scroll.verticalScrollBar().setValue.assert_called_once_with(6000)
 
 
 def test_ConversationView_update_conversation_position_stay_fixed(mocker, homedir):
@@ -4062,13 +4062,13 @@ def test_ConversationView_update_conversation_position_stay_fixed(mocker, homedi
 
     cv = ConversationView(mocked_source, mocked_controller)
 
-    cv.scroll.verticalScrollBar().value = mocker.MagicMock(return_value=5500)
-    cv.scroll.viewport().height = mocker.MagicMock(return_value=500)
-    cv.scroll.verticalScrollBar().setValue = mocker.MagicMock()
+    cv._scroll.verticalScrollBar().value = mocker.MagicMock(return_value=5500)
+    cv._scroll.viewport().height = mocker.MagicMock(return_value=500)
+    cv._scroll.verticalScrollBar().setValue = mocker.MagicMock()
 
     cv.update_conversation_position(0, 6000)
 
-    cv.scroll.verticalScrollBar().setValue.assert_not_called()
+    cv._scroll.verticalScrollBar().setValue.assert_not_called()
 
 
 def test_ConversationView_add_message(mocker, session, session_maker, homedir):
@@ -4088,7 +4088,7 @@ def test_ConversationView_add_message(mocker, session, session_maker, homedir):
     cv.add_message(message=message, index=0)
 
     # Check that we added the correct widget to the layout
-    message_widget = cv.scroll.conversation_layout.itemAt(1).widget()
+    message_widget = cv._scroll.conversation_layout.itemAt(1).widget()
     assert isinstance(message_widget, MessageWidget)
 
     assert message_widget.message.text() == ">^..^<"
@@ -4116,7 +4116,7 @@ def test_ConversationView_add_message_no_content(mocker, session, session_maker,
     cv.add_message(message=message, index=0)
 
     # Check that we added the correct widget to the layout
-    message_widget = cv.scroll.conversation_layout.itemAt(1).widget()
+    message_widget = cv._scroll.conversation_layout.itemAt(1).widget()
     assert isinstance(message_widget, MessageWidget)
 
     assert message_widget.message.text() == "<Message not yet available>"
@@ -4197,7 +4197,7 @@ def test_ConversationView_add_reply(mocker, homedir, session, session_maker):
     cv.add_reply(reply=reply, sender=sender, index=0)
 
     # Check that we added the correct widget to the layout
-    reply_widget = cv.scroll.conversation_layout.itemAt(1).widget()
+    reply_widget = cv._scroll.conversation_layout.itemAt(1).widget()
     assert isinstance(reply_widget, ReplyWidget)
 
     assert reply_widget.uuid == "abc123"
@@ -4232,7 +4232,7 @@ def test_ConversationView_add_reply_no_content(mocker, homedir, session_maker, s
     cv.add_reply(reply=reply, sender=sender, index=0)
 
     # Check that we added the correct widget to the layout
-    reply_widget = cv.scroll.conversation_layout.itemAt(1).widget()
+    reply_widget = cv._scroll.conversation_layout.itemAt(1).widget()
     assert isinstance(reply_widget, ReplyWidget)
 
     assert reply_widget.uuid == "abc123"
@@ -4267,7 +4267,7 @@ def test_ConversationView_add_reply_that_has_current_user_as_sender(
     cv.add_reply(reply=reply, sender=authenticated_user, index=0)
 
     # Check that we added the correct widget to the layout
-    reply_widget = cv.scroll.conversation_layout.itemAt(1).widget()
+    reply_widget = cv._scroll.conversation_layout.itemAt(1).widget()
     assert isinstance(reply_widget, ReplyWidget)
 
     assert reply_widget.uuid == "abc123"
@@ -4306,7 +4306,7 @@ def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
     mock_label.assert_called_with("123B")  # default factory filesize
     assert cv.conversation_updated.emit.call_count == 1
 
-    file_widget = cv.scroll.conversation_layout.itemAt(1).widget()
+    file_widget = cv._scroll.conversation_layout.itemAt(1).widget()
     assert isinstance(file_widget, FileWidget)
 
 
@@ -4334,7 +4334,7 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, sessi
     mock_label.assert_called_with("123B")  # default factory filesize
     assert cv.conversation_updated.emit.call_count == 1
 
-    file_widget = cv.scroll.conversation_layout.itemAt(1).widget()
+    file_widget = cv._scroll.conversation_layout.itemAt(1).widget()
     assert isinstance(file_widget, FileWidget)
 
 
@@ -4850,11 +4850,11 @@ def test_update_conversation_maintains_old_items(mocker, session):
     controller = mocker.MagicMock(get_file=get_file, authenticated_user=user)
 
     cv = ConversationView(source, controller)
-    assert cv.scroll.conversation_layout.count() == 3
+    assert cv._scroll.conversation_layout.count() == 3
 
     cv.update_conversation(cv.source.collection)
 
-    assert cv.scroll.conversation_layout.count() == 3
+    assert cv._scroll.conversation_layout.count() == 3
 
 
 def test_update_conversation_does_not_remove_pending_draft_items(mocker, session):
@@ -4881,7 +4881,7 @@ def test_update_conversation_does_not_remove_pending_draft_items(mocker, session
     controller = mocker.MagicMock(get_file=get_file, authenticated_user=user)
 
     cv = ConversationView(source, controller)
-    assert cv.scroll.conversation_layout.count() == 3  # precondition with draft
+    assert cv._scroll.conversation_layout.count() == 3  # precondition with draft
 
     # add the new message and persist
     new_message = factory.Message(filename="4-source-msg.gpg", source=source)
@@ -4890,7 +4890,7 @@ def test_update_conversation_does_not_remove_pending_draft_items(mocker, session
 
     # New message added, draft message persists.
     cv.update_conversation(cv.source.collection)
-    assert cv.scroll.conversation_layout.count() == 4
+    assert cv._scroll.conversation_layout.count() == 4
 
 
 def test_update_conversation_does_remove_successful_draft_items(mocker, session):
@@ -4917,7 +4917,7 @@ def test_update_conversation_does_remove_successful_draft_items(mocker, session)
     controller = mocker.MagicMock(get_file=get_file, authenticated_user=user)
 
     cv = ConversationView(source, controller)
-    assert cv.scroll.conversation_layout.count() == 3  # precondition with draft
+    assert cv._scroll.conversation_layout.count() == 3  # precondition with draft
 
     # add the new message and persist
     new_message = factory.Message(filename="4-source-msg.gpg", source=source)
@@ -4930,7 +4930,7 @@ def test_update_conversation_does_remove_successful_draft_items(mocker, session)
 
     # New message added, draft message is gone.
     cv.update_conversation(cv.source.collection)
-    assert cv.scroll.conversation_layout.count() == 3
+    assert cv._scroll.conversation_layout.count() == 3
 
 
 def test_update_conversation_keeps_failed_draft_items(mocker, session):
@@ -4957,7 +4957,7 @@ def test_update_conversation_keeps_failed_draft_items(mocker, session):
     controller = mocker.MagicMock(get_file=get_file, authenticated_user=user)
 
     cv = ConversationView(source, controller)
-    assert cv.scroll.conversation_layout.count() == 3  # precondition with draft
+    assert cv._scroll.conversation_layout.count() == 3  # precondition with draft
 
     # add the new message and persist
     new_message = factory.Message(filename="4-source-msg.gpg", source=source)
@@ -4966,7 +4966,7 @@ def test_update_conversation_keeps_failed_draft_items(mocker, session):
 
     # New message added, draft message retained.
     cv.update_conversation(cv.source.collection)
-    assert cv.scroll.conversation_layout.count() == 4
+    assert cv._scroll.conversation_layout.count() == 4
 
 
 def test_update_conversation_adds_new_items(mocker, session):
@@ -4990,7 +4990,7 @@ def test_update_conversation_adds_new_items(mocker, session):
     controller = mocker.MagicMock(get_file=get_file, authenticated_user=user)
 
     cv = ConversationView(source, controller)
-    assert cv.scroll.conversation_layout.count() == 3  # precondition
+    assert cv._scroll.conversation_layout.count() == 3  # precondition
 
     # add the new message and persist
     new_message = factory.Message(filename="4-source-msg.gpg", source=source)
@@ -4998,7 +4998,7 @@ def test_update_conversation_adds_new_items(mocker, session):
     session.commit()
 
     cv.update_conversation(cv.source.collection)
-    assert cv.scroll.conversation_layout.count() == 4
+    assert cv._scroll.conversation_layout.count() == 4
 
 
 def test_update_conversation_position_updates(mocker, session):
@@ -5022,7 +5022,7 @@ def test_update_conversation_position_updates(mocker, session):
     controller = mocker.MagicMock(get_file=get_file, authenticated_user=user)
 
     cv = ConversationView(source, controller)
-    assert cv.scroll.conversation_layout.count() == 3  # precondition
+    assert cv._scroll.conversation_layout.count() == 3  # precondition
 
     # Change the position of the Reply.
     reply_widget = cv.current_messages[reply.uuid]
@@ -5034,7 +5034,7 @@ def test_update_conversation_position_updates(mocker, session):
     session.commit()
 
     cv.update_conversation(cv.source.collection)
-    assert cv.scroll.conversation_layout.count() == 4
+    assert cv._scroll.conversation_layout.count() == 4
     assert reply_widget.index == 2  # re-ordered.
 
 
@@ -5059,8 +5059,8 @@ def test_update_conversation_content_updates(mocker, session):
     cv.update_deletion_markers = mocker.MagicMock()
     cv.current_messages = {}
 
-    cv.scroll.conversation_layout.removeWidget = mocker.MagicMock()
-    mocker.patch.object(cv.scroll, "add_widget_to_conversation")
+    cv._scroll.conversation_layout.removeWidget = mocker.MagicMock()
+    mocker.patch.object(cv._scroll, "add_widget_to_conversation")
 
     # this is the MessageWidget that __init__() would return
     mock_msg_widget_res = mocker.MagicMock()

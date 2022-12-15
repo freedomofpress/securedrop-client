@@ -25,8 +25,7 @@ class PasswordEdit(QLineEdit):
     """
 
     def __init__(self, parent: QDialog) -> None:
-        self.parent = parent
-        super().__init__(self.parent)
+        super().__init__(parent)
 
         self.setEchoMode(QLineEdit.Password)
         self.password_shown = False

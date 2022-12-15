@@ -22,7 +22,7 @@ def test_logout_as_journalist(functional_test_logged_in_context, qtbot, mocker):
     # Trigger log out
     # Note: The qtbot object cannot interact with QAction items (as used in the logout button/menu),
     # so we programatically logout rather than using the GUI via qtbot
-    gui.left_pane.user_profile.user_button.menu.logout.trigger()
+    gui.left_pane.user_profile.user_button._menu.logout.trigger()
 
     def login_button_is_visible():
         assert gui.left_pane.user_profile.login_button.isVisible()

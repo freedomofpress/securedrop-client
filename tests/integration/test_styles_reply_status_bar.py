@@ -3,7 +3,7 @@ from PyQt5.QtGui import QPalette
 
 def test_styles(mocker, main_window):
     wrapper = main_window.main_view.view_layout.itemAt(0).widget()
-    conversation_scrollarea = wrapper.conversation_view.scroll
+    conversation_scrollarea = wrapper.conversation_view._scroll
     reply_widget = conversation_scrollarea.widget().layout().itemAt(2).widget()
     reply_widget.sender_is_current_user = False
 
@@ -26,7 +26,7 @@ def test_styles(mocker, main_window):
 
 def test_styles_for_replies_from_authenticated_user(mocker, main_window):
     wrapper = main_window.main_view.view_layout.itemAt(0).widget()
-    conversation_scrollarea = wrapper.conversation_view.scroll
+    conversation_scrollarea = wrapper.conversation_view._scroll
     reply_widget = conversation_scrollarea.widget().layout().itemAt(2).widget()
     reply_widget.sender_is_current_user = True
 
