@@ -829,6 +829,8 @@ class SourceListWidgetItem(QListWidgetItem):
         me = lw.itemWidget(self)
         them = lw.itemWidget(other)
         if me and them:
+            assert isinstance(me, SourceWidget)
+            assert isinstance(them, SourceWidget)
             my_ts = arrow.get(me.last_updated)
             other_ts = arrow.get(them.last_updated)
             return my_ts < other_ts
@@ -1226,7 +1228,7 @@ class SourceWidget(QWidget):
         self.source = source
         self.seen = self.source.seen
         self.source_uuid = self.source.uuid
-        self.last_updated = self.source.last_updated
+        self.last_updated: sqlalchemy.DateTime = self.source.last_updated
         self.selected = False
         self.deletion_scheduled_timestamp = datetime.utcnow()
         self.sync_started_timestamp = datetime.utcnow()
