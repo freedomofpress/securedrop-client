@@ -566,7 +566,7 @@ class MainView(QWidget):
 
     def __init__(
         self,
-        parent: QObject,
+        parent: Optional[QWidget],
         app_state: Optional[state.State] = None,
         export_service: Optional[export.Service] = None,
     ) -> None:
