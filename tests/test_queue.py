@@ -4,13 +4,21 @@ Testing for the ApiJobQueue and related classes.
 from queue import Queue
 
 import pytest
+from PyQt5.QtTest import QSignalSpy
 from sdclientapi import RequestTimeoutError, ServerConnectionError
 
 from securedrop_client.api_jobs.base import ApiInaccessibleError, PauseQueueJob
-from securedrop_client.api_jobs.downloads import FileDownloadJob, MessageDownloadJob
+from securedrop_client.api_jobs.downloads import (
+    FileDownloadJob,
+    MessageDownloadJob,
+    ReplyDownloadJob,
+)
+from securedrop_client.api_jobs.seen import SeenJob
 from securedrop_client.app import threads
 from securedrop_client.queue import ApiJobQueue, RunnableQueue
 from tests import factory
+
+MAX_SIGNAL_WAITING_TIME = 50
 
 
 def test_RunnableQueue_init(mocker):
@@ -476,3 +484,64 @@ def test_ApiJobQueue_stop_results_in_queue_threads_not_running(mocker):
 
         job_queue.main_thread.quit.assert_called_once_with()
         job_queue.download_file_thread.quit.assert_called_once_with()
+
+
+def test_ApiJobQueue_emits_main_queue_updated_signal_when_message_or_reply_download_added(
+    mocker,
+):
+    mock_client = mocker.MagicMock()
+    mock_session_maker = mocker.MagicMock()
+
+    with threads(2) as [main_thread, file_download_thread]:
+        job_queue = ApiJobQueue(mock_client, mock_session_maker, main_thread, file_download_thread)
+
+        message_download_job = MessageDownloadJob("mock", "mock", "mock")
+        reply_download_job = ReplyDownloadJob("mock", "mock", "mock")
+        main_queue_updated_emissions = QSignalSpy(job_queue.main_queue.queue.queue_updated_signal)
+        job_queue.main_thread.isRunning = mocker.MagicMock(return_value=True)
+        job_queue.download_file_thread.isRunning = mocker.MagicMock(return_value=True)
+
+        job_queue.enqueue(message_download_job)
+        job_queue.enqueue(reply_download_job)
+        main_queue_updated_emissions.wait(MAX_SIGNAL_WAITING_TIME)
+        main_queue_updated_emissions.wait(MAX_SIGNAL_WAITING_TIME)
+
+        assert len(main_queue_updated_emissions) == 2
+        assert main_queue_updated_emissions[0][0] == 1
+        assert main_queue_updated_emissions[1][0] == 2
+
+        job_queue.main_queue.queue.get()
+        job_queue.main_queue.queue.get()
+        main_queue_updated_emissions.wait(MAX_SIGNAL_WAITING_TIME)
+        main_queue_updated_emissions.wait(MAX_SIGNAL_WAITING_TIME)
+
+        assert len(main_queue_updated_emissions) == 4
+        assert main_queue_updated_emissions[2][0] == 1
+        assert main_queue_updated_emissions[3][0] == 0
+
+
+def test_ApiJobQueue_does_not_emit_main_queue_updated_signal_when_non_message_job_added(
+    mocker,
+):
+    mock_client = mocker.MagicMock()
+    mock_session_maker = mocker.MagicMock()
+
+    with threads(2) as [main_thread, file_download_thread]:
+        job_queue = ApiJobQueue(mock_client, mock_session_maker, main_thread, file_download_thread)
+
+        message_download_job = SeenJob("mock", "mock", "mock")
+        main_queue_updated_emissions = QSignalSpy(job_queue.main_queue.queue.queue_updated_signal)
+        job_queue.main_thread.isRunning = mocker.MagicMock(return_value=True)
+        job_queue.download_file_thread.isRunning = mocker.MagicMock(return_value=True)
+
+        job_queue.enqueue(message_download_job)
+        main_queue_updated_emissions.wait(MAX_SIGNAL_WAITING_TIME)
+
+        assert len(main_queue_updated_emissions) == 1
+        assert main_queue_updated_emissions[0][0] == 0
+
+        job_queue.main_queue.queue.get()
+        main_queue_updated_emissions.wait(MAX_SIGNAL_WAITING_TIME)
+
+        assert len(main_queue_updated_emissions) == 2
+        assert main_queue_updated_emissions[1][0] == 0

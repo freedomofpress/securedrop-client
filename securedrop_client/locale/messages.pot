@@ -19,6 +19,11 @@ msgstr ""
 msgid "{application_name} is already running"
 msgstr ""
 
+msgid "Retrieving 1 message"
+msgid_plural "Retrieving {message_count} messages"
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "The SecureDrop server cannot be reached. Trying to reconnect..."
 msgstr ""
 
@@ -42,9 +47,6 @@ msgid "Your session expired. Please log in again."
 msgstr ""
 
 msgid "Failed to update star."
-msgstr ""
-
-msgid "Retrieving new messages"
 msgstr ""
 
 msgid "File does not exist in the data directory. Please try re-downloading."
