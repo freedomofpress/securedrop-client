@@ -668,7 +668,9 @@ class MainView(QWidget):
             # Get or create the SourceConversationWrapper
             if source.uuid in self.source_conversations:
                 conversation_wrapper = self.source_conversations[source.uuid]
-                conversation_wrapper.conversation_view.update_conversation(source.collection)
+                conversation_wrapper.conversation_view.update_conversation(  # type: ignore [has-type]  # noqa: E501
+                    source.collection
+                )
             else:
                 conversation_wrapper = SourceConversationWrapper(
                     source, self.controller, self._state, self._export_service
@@ -694,7 +696,9 @@ class MainView(QWidget):
             self.controller.session.refresh(source)
             self.controller.mark_seen(source)
             conversation_wrapper = self.source_conversations[source.uuid]
-            conversation_wrapper.conversation_view.update_conversation(source.collection)
+            conversation_wrapper.conversation_view.update_conversation(  # type: ignore [has-type]
+                source.collection
+            )
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.debug("Error refreshing source conversations: %s", e)
 
