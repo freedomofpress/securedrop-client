@@ -87,7 +87,7 @@ class DeleteConversationDialog(ModalDialog):
             source=source,
         )
 
-    def exec(self) -> None:
+    def exec(self) -> int:
         # Refresh counters
         self.body.setText(self.make_body_text())
-        super().exec()
+        return super().exec()
