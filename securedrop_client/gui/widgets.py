@@ -1567,7 +1567,7 @@ class StarToggleButton(SvgToggleButton):
         self.setCheckable(True)
         self.set_icon(on="star_on.svg", off="star_off.svg")  # Undo icon change from disable_toggle
 
-    def eventFilter(self, obj: QObject, event: QEvent) -> None:
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         """
         If the button is checkable then we show a hover state.
         """
@@ -1912,7 +1912,7 @@ class SpeechBubble(QWidget):
 
         self.check_mark.setToolTip(",\n".join(username for username in self.seen_by.keys()))
 
-    def eventFilter(self, obj: QObject, event: QEvent) -> None:
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         t = event.type()
         if t == QEvent.HoverEnter:
             self.check_mark.setIcon(load_icon("checkmark_hover.svg"))
@@ -2325,7 +2325,7 @@ class FileWidget(QWidget):
         else:
             self.setFixedWidth(int(container_width * self.WIDTH_TO_CONTAINER_WIDTH_RATIO))
 
-    def eventFilter(self, obj: QObject, event: QEvent) -> None:
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         t = event.type()
         if t == QEvent.MouseButtonPress:
             if event.button() == Qt.LeftButton:
