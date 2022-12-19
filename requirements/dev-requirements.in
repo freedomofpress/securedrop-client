@@ -3,9 +3,8 @@ coverage
 flake8
 isort
 mypy
-py>=1.10.0
 pyotp
-pytest
+pytest>=7.2.0
 pytest-cov
 vcrpy
 pyyaml>=5.4.1,<6
