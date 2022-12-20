@@ -2649,7 +2649,7 @@ class ConversationView(QWidget):
         )
 
         # To hold currently displayed messages.
-        self.current_messages = {}  # type: Dict[str, QWidget]
+        self.current_messages = {}  # type: Dict[str, Union[FileWidget, MessageWidget, ReplyWidget]]
 
         self.deletion_scheduled_timestamp = datetime.utcnow()
         self.sync_started_timestamp = datetime.utcnow()
