@@ -2335,6 +2335,7 @@ class FileWidget(QWidget):
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         t = event.type()
         if t == QEvent.MouseButtonPress:
+            assert isinstance(event, QMouseEvent)
             if event.button() == Qt.LeftButton:
                 self._on_left_click()
         elif t == QEvent.HoverEnter and not self.downloading:

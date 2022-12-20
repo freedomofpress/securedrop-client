@@ -10,8 +10,8 @@ from unittest.mock import Mock, PropertyMock
 import arrow
 import sqlalchemy
 import sqlalchemy.orm.exc
-from PyQt5.QtCore import QEvent, QSize, Qt
-from PyQt5.QtGui import QFocusEvent, QMovie, QResizeEvent
+from PyQt5.QtCore import QEvent, QPointF, QSize, Qt
+from PyQt5.QtGui import QFocusEvent, QMouseEvent, QMovie, QResizeEvent
 from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QVBoxLayout, QWidget
 from sqlalchemy.orm import attributes, scoped_session, sessionmaker
@@ -3162,8 +3162,9 @@ def test_FileWidget_event_handler_left_click(mocker, session, source):
     get_file = mocker.MagicMock(return_value=file_)
     controller = mocker.MagicMock(get_file=get_file)
 
-    test_event = QEvent(QEvent.MouseButtonPress)
-    test_event.button = mocker.MagicMock(return_value=Qt.LeftButton)
+    test_event = QMouseEvent(
+        QEvent.MouseButtonPress, QPointF(), Qt.LeftButton, Qt.NoButton, Qt.NoModifier
+    )
 
     fw = FileWidget(
         file_.uuid,
