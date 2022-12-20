@@ -927,7 +927,8 @@ class SourceList(QListWidget):
             if not source_widget:
                 continue
 
-            source_widget.update()
+            assert isinstance(source_widget, SourceWidget)
+            source_widget.reload()
 
         # Add widgets for new sources
         for uuid in sources_to_add:
@@ -1304,14 +1305,14 @@ class SourceWidget(QWidget):
         layout.setSpacing(0)
         layout.addWidget(self.source_widget)
 
-        self.update()
+        self.reload()
 
     @pyqtSlot(int)
     def _on_adjust_preview(self, width: int) -> None:
         self.setFixedWidth(width)
         self.preview.adjust_preview(width)
 
-    def update(self) -> None:
+    def reload(self) -> None:
         """
         Updates the displayed values with the current values from self.source.
         """

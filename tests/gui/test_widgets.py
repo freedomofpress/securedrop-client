@@ -1638,7 +1638,7 @@ def test_SourceWidget_html_init(mocker):
     sw.summary_layout = mocker.MagicMock()
 
     mocker.patch("securedrop_client.gui.base.SvgLabel")
-    sw.update()
+    sw.reload()
 
     sw.name.setText.assert_called_once_with("foo <b>bar</b> baz")
 
@@ -1828,12 +1828,12 @@ def test_SourceWidget_update_attachment_icon(mocker):
     mark_seen_signal = mocker.MagicMock()
     sw = SourceWidget(controller, source, mark_seen_signal, mocker.MagicMock())
 
-    sw.update()
+    sw.reload()
     assert not sw.paperclip.isHidden()
 
     source.document_count = 0
 
-    sw.update()
+    sw.reload()
     assert sw.paperclip.isHidden()
 
 
@@ -1850,7 +1850,7 @@ def test_SourceWidget_update_does_not_raise_exception(mocker):
     controller.session.refresh.side_effect = ex
     mock_logger = mocker.MagicMock()
     mocker.patch("securedrop_client.gui.widgets.logger", mock_logger)
-    sw.update()
+    sw.reload()
     assert mock_logger.debug.call_count == 1
 
 
@@ -1861,7 +1861,7 @@ def test_SourceWidget_update_skips_setting_snippet_if_deletion_in_progress(mocke
     sw = SourceWidget(mocker.MagicMock(), factory.Source(), mocker.MagicMock(), mocker.MagicMock())
     sw.deleting = True
     sw.set_snippet = mocker.MagicMock()
-    sw.update()
+    sw.reload()
     sw.set_snippet.assert_not_called()
 
 
@@ -1873,7 +1873,7 @@ def test_SourceWidget_update_skips_setting_snippet_if_sync_is_stale(mocker):
     sw.sync_started_timestamp = datetime.now()
     sw.deletion_scheduled_timestamp = datetime.now()
     sw.set_snippet = mocker.MagicMock()
-    sw.update()
+    sw.reload()
     sw.set_snippet.assert_not_called()
 
 
@@ -1884,7 +1884,7 @@ def test_SourceWidget_update_skips_setting_snippet_if_conversation_deletion_in_p
     sw = SourceWidget(mocker.MagicMock(), factory.Source(), mocker.MagicMock(), mocker.MagicMock())
     sw.deleting_conversation = True
     sw.set_snippet = mocker.MagicMock()
-    sw.update()
+    sw.reload()
     sw.set_snippet.assert_not_called()
 
 
@@ -1950,7 +1950,7 @@ def test_SourceWidget_update_truncate_latest_msg(mocker):
     mark_seen_signal = mocker.MagicMock()
     sw = SourceWidget(controller, source, mark_seen_signal, mocker.MagicMock())
 
-    sw.update()
+    sw.reload()
     assert sw.preview.text().endswith("...")
 
 
@@ -2076,7 +2076,7 @@ def test_SourceWidget_preview_after_conversation_deleted(mocker, session, i18n):
 
     controller = mocker.MagicMock()
     sw = SourceWidget(controller, source, mocker.MagicMock(), mocker.MagicMock())
-    sw.update()
+    sw.reload()
     assert sw.preview.property("class") == "conversation_deleted"
     assert sw.preview.text() == _("\u2014 All files and messages deleted for this source \u2014")
 
@@ -2139,12 +2139,12 @@ def test_SourceWidget_uses_SecureQLabel(mocker):
     mark_seen_signal = mocker.MagicMock()
     sw = SourceWidget(controller, source, mark_seen_signal, mocker.MagicMock())
 
-    sw.update()
+    sw.reload()
     assert isinstance(sw.preview, SecureQLabel)
 
     sw.preview.setTextFormat = mocker.MagicMock()
     sw.preview.setText("<b>bad text</b>")
-    sw.update()
+    sw.reload()
     sw.preview.setTextFormat.assert_called_with(Qt.PlainText)
 
 
