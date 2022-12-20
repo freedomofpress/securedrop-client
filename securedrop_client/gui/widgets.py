@@ -913,6 +913,7 @@ class SourceList(QListWidget):
 
             source_widget = self.itemWidget(source_item)
             self.takeItem(self.row(source_item))
+            assert isinstance(source_widget, SourceWidget)
             if source_widget.source_uuid in self.source_items:
                 del self.source_items[source_widget.source_uuid]
 
@@ -1227,7 +1228,7 @@ class SourceWidget(QWidget):
 
         self.source = source
         self.seen = self.source.seen
-        self.source_uuid = self.source.uuid
+        self.source_uuid: str = self.source.uuid
         self.last_updated: sqlalchemy.DateTime = self.source.last_updated
         self.selected = False
         self.deletion_scheduled_timestamp = datetime.utcnow()
