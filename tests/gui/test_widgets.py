@@ -539,13 +539,13 @@ def test_MainView_show_sources_with_none_selected(mocker):
     source_item = SourceListWidgetItem(mv.source_list)
     mv.source_list.setItemWidget(source_item, source_widget)
     mv.source_list.source_items["stub_uuid"] = source_item
-    mocker.patch.object(mv.source_list, "update")
+    mocker.patch.object(mv.source_list, "update_sources")
 
     mv.empty_conversation_view = mocker.MagicMock()
 
     mv.show_sources([1, 2, 3])
 
-    mv.source_list.update.assert_called_once_with([1, 2, 3])
+    mv.source_list.update_sources.assert_called_once_with([1, 2, 3])
     mv.empty_conversation_view.show_no_source_selected_message.assert_called_once_with()
     mv.empty_conversation_view.show.assert_called_once_with()
 
@@ -574,7 +574,7 @@ def test_MainView_show_sources_with_no_sources_at_all(mocker):
 
     mv.show_sources([])
 
-    mv.source_list.update.assert_called_once_with([])
+    mv.source_list.update_sources.assert_called_once_with([])
     mv.empty_conversation_view.show_no_sources_message.assert_called_once_with()
     mv.empty_conversation_view.show.assert_called_once_with()
 
@@ -586,12 +586,12 @@ def test_MainView_show_sources_when_sources_are_deleted(mocker):
     mv = MainView(None)
     mv.source_list = mocker.MagicMock()
     mv.empty_conversation_view = mocker.MagicMock()
-    mv.source_list.update = mocker.MagicMock(return_value=[])
+    mv.source_list.update_sources = mocker.MagicMock(return_value=[])
     mv.delete_conversation = mocker.MagicMock()
 
     mv.show_sources([1, 2, 3, 4])
 
-    mv.source_list.update = mocker.MagicMock(return_value=[4])
+    mv.source_list.update_sources = mocker.MagicMock(return_value=[4])
 
     mv.show_sources([1, 2, 3])
 
@@ -816,7 +816,7 @@ def test_MainView_refresh_source_conversations(homedir, mocker, qtbot, session_m
     controller.api = mocker.MagicMock()
 
     mv.setup(controller)
-    mv.source_list.update(sources)
+    mv.source_list.update_sources(sources)
     mv.show()
 
     # get the conversations created
@@ -905,7 +905,7 @@ def test_MainView_refresh_source_conversations_with_deleted(
 
     sources = [source1, source2]
 
-    mv.source_list.update(sources)
+    mv.source_list.update_sources(sources)
     mv.show()
 
     def collection_error():
@@ -965,7 +965,7 @@ def test_SourceList_get_selected_source(mocker):
     sl = SourceList()
     sl.controller = mocker.MagicMock()
     sources = [factory.Source(), factory.Source()]
-    sl.update(sources)
+    sl.update_sources(sources)
 
     assert sl.get_selected_source() is None
 
@@ -996,7 +996,7 @@ def test_SourceList_update_adds_new_sources(mocker):
     mocker.patch("securedrop_client.gui.widgets.SourceListWidgetItem", mock_lwi)
 
     sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock()]
-    sl.update(sources)
+    sl.update_sources(sources)
 
     assert mock_sw.call_count == len(sources)
     assert mock_lwi.call_count == len(sources)
@@ -1050,7 +1050,7 @@ def test_SourceList_update_when_source_deleted(mocker, session, session_maker, h
     # add it to the SourceList
     sl = SourceList()
     sl.setup(controller)
-    deleted_uuids = sl.update([oss])
+    deleted_uuids = sl.update_sources([oss])
     assert not deleted_uuids
     assert len(sl.source_items) == 1
 
@@ -1060,13 +1060,13 @@ def test_SourceList_update_when_source_deleted(mocker, session, session_maker, h
 
     # now verify that updating does not raise an exception, and that the SourceWidget still exists
     # since the sync will end up calling update again and delete it
-    deleted_uuids = sl.update([source])
+    deleted_uuids = sl.update_sources([source])
     assert len(deleted_uuids) == 0
     assert not deleted_uuids
     assert len(sl.source_items) == 1
 
     # finish sync simulation where a local source is deleted
-    deleted_uuids = sl.update([])
+    deleted_uuids = sl.update_sources([])
     assert len(deleted_uuids) == 1
     assert source.uuid in deleted_uuids
     assert len(sl.source_items) == 0
@@ -1122,17 +1122,19 @@ def test_SourceList_update_does_not_raise_exc(mocker):
     sl = SourceList()
     sl.controller = mocker.MagicMock()
     source = DeletedSource()
-    sl.update([source])
+    sl.update_sources([source])
 
 
 def test_SourceList_update_does_not_raise_exc_when_itemWidget_is_none(mocker):
     sl = SourceList()
     sl.controller = mocker.MagicMock()
     source = factory.Source()
-    sl.update([source])  # first add the source so that the next time the same source is updated
+    sl.update_sources(
+        [source]
+    )  # first add the source so that the next time the same source is updated
 
     sl.itemWidget = mocker.MagicMock(return_value=None)
-    sl.update([source])  # does not raise exception
+    sl.update_sources([source])  # does not raise exception
 
 
 def test_SourceList_update_maintains_selection(mocker):
@@ -1142,16 +1144,16 @@ def test_SourceList_update_maintains_selection(mocker):
     sl = SourceList()
     sl.controller = mocker.MagicMock()
     sources = [factory.Source(), factory.Source()]
-    sl.update(sources)
+    sl.update_sources(sources)
 
     sl.setCurrentItem(sl.itemAt(0, 0))  # select the first source
-    sl.update(sources)
+    sl.update_sources(sources)
 
     assert sl.currentItem()
     assert sl.itemWidget(sl.currentItem()).source.id == sources[0].id
 
     sl.setCurrentItem(sl.itemAt(1, 0))  # select the second source
-    sl.update(sources)
+    sl.update_sources(sources)
 
     assert sl.currentItem()
     assert sl.itemWidget(sl.currentItem()).source.id == sources[1].id
@@ -1163,12 +1165,12 @@ def test_SourceList_update_with_pre_selected_source_maintains_selection(mocker):
     """
     sl = SourceList()
     sl.controller = mocker.MagicMock()
-    sl.update([factory.Source(), factory.Source()])
+    sl.update_sources([factory.Source(), factory.Source()])
     second_item = sl.itemAt(1, 0)
     sl.setCurrentItem(second_item)  # select the second source
     mocker.patch.object(second_item, "isSelected", return_value=True)
 
-    sl.update([factory.Source(), factory.Source()])
+    sl.update_sources([factory.Source(), factory.Source()])
 
     assert second_item.isSelected() is True
 
@@ -1179,10 +1181,10 @@ def test_SourceList_update_removes_selected_item_results_in_no_current_selection
     """
     sl = SourceList()
     sl.controller = mocker.MagicMock()
-    sl.update([factory.Source(uuid="new"), factory.Source(uuid="newer")])
+    sl.update_sources([factory.Source(uuid="new"), factory.Source(uuid="newer")])
 
     sl.setCurrentItem(sl.itemAt(0, 0))  # select source with uuid='newer'
-    sl.update([factory.Source(uuid="new")])  # delete source with uuid='newer'
+    sl.update_sources([factory.Source(uuid="new")])  # delete source with uuid='newer'
 
     assert not sl.currentItem()
 
@@ -1193,11 +1195,11 @@ def test_SourceList_update_removes_item_from_end_of_list(mocker):
     """
     sl = SourceList()
     sl.controller = mocker.MagicMock()
-    sl.update(
+    sl.update_sources(
         [factory.Source(uuid="new"), factory.Source(uuid="newer"), factory.Source(uuid="newest")]
     )
     assert sl.count() == 3
-    sl.update([factory.Source(uuid="newer"), factory.Source(uuid="newest")])
+    sl.update_sources([factory.Source(uuid="newer"), factory.Source(uuid="newest")])
     assert sl.count() == 2
     assert sl.itemWidget(sl.item(0)).source.uuid == "newest"
     assert sl.itemWidget(sl.item(1)).source.uuid == "newer"
@@ -1210,11 +1212,11 @@ def test_SourceList_update_removes_item_from_middle_of_list(mocker):
     """
     sl = SourceList()
     sl.controller = mocker.MagicMock()
-    sl.update(
+    sl.update_sources(
         [factory.Source(uuid="new"), factory.Source(uuid="newer"), factory.Source(uuid="newest")]
     )
     assert sl.count() == 3
-    sl.update([factory.Source(uuid="new"), factory.Source(uuid="newest")])
+    sl.update_sources([factory.Source(uuid="new"), factory.Source(uuid="newest")])
     assert sl.count() == 2
     assert sl.itemWidget(sl.item(0)).source.uuid == "newest"
     assert sl.itemWidget(sl.item(1)).source.uuid == "new"
@@ -1227,11 +1229,11 @@ def test_SourceList_update_removes_item_from_beginning_of_list(mocker):
     """
     sl = SourceList()
     sl.controller = mocker.MagicMock()
-    sl.update(
+    sl.update_sources(
         [factory.Source(uuid="new"), factory.Source(uuid="newer"), factory.Source(uuid="newest")]
     )
     assert sl.count() == 3
-    sl.update([factory.Source(uuid="new"), factory.Source(uuid="newer")])
+    sl.update_sources([factory.Source(uuid="new"), factory.Source(uuid="newer")])
     assert sl.count() == 2
     assert sl.itemWidget(sl.item(0)).source.uuid == "newer"
     assert sl.itemWidget(sl.item(1)).source.uuid == "new"
@@ -1330,7 +1332,7 @@ def test_SourceList_set_snippet(mocker):
 def test_SourceList_get_source_widget(mocker):
     sl = SourceList()
     sl.controller = mocker.MagicMock()
-    sl.update([factory.Source(uuid="mock_uuid")])
+    sl.update_sources([factory.Source(uuid="mock_uuid")])
     sl.source_items = {}
 
     source_widget = sl.get_source_widget("mock_uuid")
@@ -1343,7 +1345,7 @@ def test_SourceList_get_source_widget_does_not_exist(mocker):
     sl = SourceList()
     sl.controller = mocker.MagicMock()
     mock_source = factory.Source(uuid="mock_uuid")
-    sl.update([mock_source])
+    sl.update_sources([mock_source])
     sl.source_items = {}
 
     source_widget = sl.get_source_widget("uuid_for_source_not_in_list")

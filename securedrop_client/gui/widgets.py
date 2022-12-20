@@ -644,7 +644,7 @@ class MainView(QWidget):
         if not self.source_list.source_items:
             self.source_list.initial_update(sources)
         else:
-            deleted_sources = self.source_list.update(sources)
+            deleted_sources = self.source_list.update_sources(sources)
             for source_uuid in deleted_sources:
                 # Then call the function to remove the wrapper and its children.
                 self.delete_conversation(source_uuid)
@@ -886,7 +886,7 @@ class SourceList(QListWidget):
         self.controller.message_download_failed.connect(self.set_snippet)
         self.controller.reply_download_failed.connect(self.set_snippet)
 
-    def update(self, sources: List[Source]) -> List[str]:
+    def update_sources(self, sources: List[Source]) -> List[str]:
         """
         Update the list with the passed in list of sources.
         """
