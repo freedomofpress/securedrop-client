@@ -5065,7 +5065,11 @@ def test_update_conversation_content_updates(mocker, session):
     mocker.patch.object(cv._scroll, "add_widget_to_conversation")
 
     # this is the MessageWidget that __init__() would return
-    mock_msg_widget_res = mocker.MagicMock()
+    # FIXME: It is a sign that something isn't quite right that index and message must
+    # be manually added to the MessageWidget spec.
+    mock_msg_widget_res = mocker.MagicMock(
+        spec=MessageWidget, index=None, message=mocker.MagicMock(text=lambda: None)
+    )
     # mock MessageWidget so we can inspect the __init__ call to see what content
     # is in the widget.
     mock_msg_widget = mocker.patch(

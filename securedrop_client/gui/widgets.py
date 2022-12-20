@@ -2760,6 +2760,9 @@ class ConversationView(QWidget):
         for index, conversation_item in enumerate(collection):
             item_widget = current_conversation.get(conversation_item.uuid)
             if item_widget:
+                # FIXME: Item types cannot be defines as (FileWidget, MessageWidget, ReplyWidget)
+                # because one test mocks MessageWidget.
+                assert isinstance(item_widget, (FileWidget, SpeechBubble))
                 current_conversation.pop(conversation_item.uuid)
                 if item_widget.index != index:
                     # The existing widget is out of order.
