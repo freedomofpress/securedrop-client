@@ -2526,8 +2526,8 @@ class ConversationScrollArea(QScrollArea):
         super().resizeEvent(event)
         self.widget().setFixedWidth(event.size().width())
 
-        for widget in self.findChildren(FileWidget):
-            widget.adjust_width(self.widget().width())
+        for file_widget in self.findChildren(FileWidget):
+            file_widget.adjust_width(self.widget().width())
 
         for widget in self.findChildren(SpeechBubble):
             widget.adjust_width(self.widget().width())
