@@ -1006,19 +1006,22 @@ class SourceList(QListWidget):
             return source_widget.source
         return None  # pragma: nocover
 
-    def get_source_widget(self, source_uuid: str) -> Optional[QListWidget]:
+    def get_source_widget(self, source_uuid: str) -> Optional["SourceWidget"]:
         """
         First try to get the source widget from the cache, then look for it in the SourceList.
         """
         try:
             source_item = self.source_items[source_uuid]
-            return self.itemWidget(source_item)
+            source_widget = self.itemWidget(source_item)
+            assert isinstance(source_widget, SourceWidget)
+            return source_widget
         except KeyError:
             pass
 
         for i in range(self.count()):
             list_item = self.item(i)
             source_widget = self.itemWidget(list_item)
+            assert isinstance(source_widget, SourceWidget)
             if source_widget and source_widget.source_uuid == source_uuid:
                 return source_widget
 
