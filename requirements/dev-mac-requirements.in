@@ -1,4 +1,2 @@
 -r dev-bullseye-requirements.in
-pyobjc-core
-pyobjc
-rubicon-objc
+rubicon-objc==0.4.2
