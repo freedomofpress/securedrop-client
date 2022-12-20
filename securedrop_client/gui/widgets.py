@@ -1001,6 +1001,7 @@ class SourceList(QListWidget):
 
         source_item = self.selectedItems()[0]
         source_widget = self.itemWidget(source_item)
+        assert isinstance(source_widget, SourceWidget)
         if source_widget and source_exists(self.controller.session, source_widget.source_uuid):
             return source_widget.source
         return None  # pragma: nocover
@@ -1226,7 +1227,7 @@ class SourceWidget(QWidget):
         source_selected_signal.connect(self._on_source_selected)
         adjust_preview.connect(self._on_adjust_preview)
 
-        self.source = source
+        self.source: Source = source
         self.seen = self.source.seen
         self.source_uuid: str = self.source.uuid
         self.last_updated: sqlalchemy.DateTime = self.source.last_updated
