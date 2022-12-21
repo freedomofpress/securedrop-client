@@ -31,14 +31,14 @@ class Req:
         self.method = ""
         self.path_query = ""
         self.body = ""
-        self.headers = {}  # type: Dict[str, str]
+        self.headers: Dict[str, str] = {}
 
 
 class Response:
     def __init__(self, status: int) -> None:
         self.status = status
         self.body = ""
-        self.headers = {}  # type: Dict[str, str]
+        self.headers: Dict[str, str] = {}
         self.version = version.version
 
 
@@ -47,10 +47,10 @@ class Proxy:
         self.read_conf(conf_path)
 
         self.req = req
-        self.res = None  # type: Optional[Response]
+        self.res: Optional[Response] = None
         self.timeout = float(timeout)
 
-        self._prepared_request = None  # type: Optional[requests.PreparedRequest]
+        self._prepared_request: Optional[requests.PreparedRequest] = None
 
     def on_done(self) -> None:
         print(json.dumps(self.res.__dict__))
