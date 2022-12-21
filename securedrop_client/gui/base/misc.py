@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from typing import Optional, Union
 
 from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
 
 from securedrop_client.resources import load_icon, load_svg
@@ -99,8 +100,6 @@ class SvgPushButton(QPushButton):
         # Remove margins and spacing
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-
-        from PyQt5.QtGui import QIcon
 
         # Add SVG icon and set its size
         self._icon: QIcon = load_icon(
