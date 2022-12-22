@@ -16,6 +16,8 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from __future__ import annotations
+
 import html
 import logging
 from datetime import datetime
@@ -1007,7 +1009,7 @@ class SourceList(QListWidget):
             return source_widget.source
         return None  # pragma: nocover
 
-    def get_source_widget(self, source_uuid: str) -> Optional["SourceWidget"]:
+    def get_source_widget(self, source_uuid: str) -> Optional[SourceWidget]:
         """
         First try to get the source widget from the cache, then look for it in the SourceList.
         """
