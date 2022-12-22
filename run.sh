@@ -19,6 +19,11 @@ done
 
 source scripts/setup-tmp-directories.sh
 
+PYTHON="python"
+if [[ $OSTYPE == 'darwin'* ]] && [[ "$(uname -m)" == "arm64" ]]; then
+    PYTHON="arch -x86_64 ${PYTHON}"
+fi
+
 GNUPGHOME="$SDC_HOME/gpg"
 export GNUPGHOME
 mkdir -p "$GNUPGHOME"
@@ -56,4 +61,4 @@ fi
 wait
 
 echo "Starting client, log available at: $SDC_HOME/logs/client.log"
-python -m securedrop_client --sdc-home "$SDC_HOME" --no-proxy "$qubes_flag" "$@"
+$PYTHON -m securedrop_client --sdc-home "$SDC_HOME" --no-proxy "$qubes_flag" "$@"

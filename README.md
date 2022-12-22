@@ -112,7 +112,7 @@ Or, if you want to persist data across restarts, you will need to run the client
 
 ### Developer environment on macOS
 
-It is possible to run the development environment in macOS on non-Apple Silicon (M1) systems, but some functionality may not be available:
+It is possible to run the development environment in macOS systems, but some functionality may not be available:
  * If you want to be able to open or export file submissions in a disposable AppVM, then you'll need to follow the instructions for running this in a [developer environment](#developer-environment) in Qubes.
  * Tor is not used in the developer environment. If you want to use a Tor connection between the client and server, then you'll need to follow the [staging environment](#staging-environment) instructions instead.
 
@@ -135,15 +135,16 @@ socat TCP4-LISTEN:8081,fork,reuseaddr TCP4:A.B.C.D:8081
 
 #### Set up the SecureDrop Client
 1. Open a new terminal window.
-2. If it is not already installed, install Homebrew via the instructions at https://brew.sh/
-3. Install dependencies via Homebrew: `brew install pyenv gnupg oath-toolkit`
-4. Set up pyenv following the steps here: https://github.com/pyenv/pyenv#basic-github-checkout -  starting with #2 ("Configure your shell's environment for Pyenv"). You may need to close and reopen the terminal window for changes to be applied.
-5. install and select the latest version of python 3.9.x
-   ```
-   pyenv install 3.9.x
-   pyenv local 3.9.x
-   ```
-6. clone the SecureDrop Client repo and set up its virtual environment
+2. Install Homebrew
+  a. If you use an Intel based machine, follow the instructions at https://brew.sh/
+  b. If you use an Apple Silicon based machine (M1 or M2 Macs):
+    1. (Informational) If you already have a native `arm64` version of Homebrew, you will wind up with a separate Homebrew installation for each architecture. While they do not conflict, combining them in your `PATH` permanently may cause confusion about which brews are installed where. You may want to modify your `PATH` temporarily to perform this installation. The virtual environment you create in this session will continue to work in subsequent sessions.
+    2. Run `/usr/sbin/softwareupdate --install-rosetta` to allow you to run `x86_64` binaries
+    3. Enter a shell in `x86_64` mode with `arch -x86_64 bash`
+    4. Install Homebrew via the instructions at https://brew.sh/
+    5. Install the dependencies below in the same `x86_64` shell session
+3. Install dependencies via Homebrew: `brew install python@3.9 gnupg oath-toolkit`
+4. clone the SecureDrop Client repo and set up its virtual environment
    ```
    git clone git@github.com:freedomofpress/securedrop-client.git
    cd securedrop-client
@@ -152,13 +153,13 @@ socat TCP4-LISTEN:8081,fork,reuseaddr TCP4:A.B.C.D:8081
    ```
    * `make venv-mac` will also run `make hooks`, which will configure Git to use the hooks found in `.githooks/` to check certain code-quality standards on new commits in this repository.  These checks are also enforced in CI.
 
-7. Run SecureDrop Client
+5. Run SecureDrop Client
    ```
    ./run.sh
    ```
 
 To log in, use one of the journalist usernames/passwords displayed in the Docker server output, such as
-`journalist/correct horse battery staple profanity oil chewy`. To generate the required 2FA token, use 
+`journalist/correct horse battery staple profanity oil chewy`. To generate the required 2FA token, use
 the `oathtool` command, eg: `oathtool -b --totp "JHCOGO7VCER3EJ4L"` in your terminal.
 
 Note: to persist data and config across multiple client runs, specify a home directory, e.g. `./run.sh --sdc_home=~/.sd_client`
