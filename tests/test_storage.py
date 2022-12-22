@@ -1792,7 +1792,7 @@ def test_get_reply(mocker, session):
     assert result == reply
 
 
-def test_pending_replies_are_marked_as_failed_on_logout_login(mocker, session, reply_status_codes):
+def test_mark_pending_replies_as_failed(mocker, session, reply_status_codes):
     source = factory.Source()
     pending_status = (
         session.query(db.ReplySendStatus)
@@ -1802,14 +1802,21 @@ def test_pending_replies_are_marked_as_failed_on_logout_login(mocker, session, r
     failed_status = (
         session.query(db.ReplySendStatus).filter_by(name=db.ReplySendStatusCodes.FAILED.value).one()
     )
+    active_draft_reply = factory.DraftReply(
+        source=source, send_status=pending_status, sending_pid=os.getpid()
+    )
     pending_draft_reply = factory.DraftReply(source=source, send_status=pending_status)
     session.add(source)
+    session.add(active_draft_reply)
     session.add(pending_draft_reply)
 
     mark_all_pending_drafts_as_failed(session)
 
-    for draft in session.query(db.DraftReply).all():
-        assert draft.send_status == failed_status
+    for (i, draft) in enumerate(session.query(db.DraftReply).all()):
+        if i == 0:
+            assert draft.send_status == pending_status
+        else:
+            assert draft.send_status == failed_status
 
 
 def test_update_file_size(homedir, session):

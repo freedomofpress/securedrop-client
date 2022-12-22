@@ -382,6 +382,7 @@ class Controller(QObject):
         self.api_job_queue = ApiJobQueue(
             self.api, self.session_maker, self.main_queue_thread, self.file_download_queue_thread
         )
+        self.api_job_queue.cleared.connect(self.on_queue_cleared)
         self.api_job_queue.paused.connect(self.on_queue_paused)
         self.api_job_queue.main_queue_updated.connect(self._on_main_queue_updated)
         self.add_job.connect(self.api_job_queue.enqueue)
@@ -492,6 +493,9 @@ class Controller(QObject):
         # Start the thread and related activity.
         new_api_thread.start()
 
+    def on_queue_cleared(self) -> None:
+        self.update_failed_replies()
+
     def on_queue_paused(self) -> None:
         self.gui.update_error_status(
             _("The SecureDrop server cannot be reached. Trying to reconnect..."), duration=0
@@ -537,7 +541,6 @@ class Controller(QObject):
         default_request_timeout for Queue API requests in ApiJobQueue in order to display errors
         faster.
         """
-        storage.mark_all_pending_drafts_as_failed(self.session)
         self.api = sdclientapi.API(
             self.hostname, username, password, totp, self.proxy, default_request_timeout=60
         )
@@ -607,7 +610,6 @@ class Controller(QObject):
         # may have attempted online mode login, then switched to offline)
         self.gui.clear_clipboard()
         self.gui.show_main_window()
-        storage.mark_all_pending_drafts_as_failed(self.session)
         self.update_sources()
         self.show_last_sync()
         self.show_last_sync_timer.start(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
@@ -660,6 +662,7 @@ class Controller(QObject):
         self.gui.refresh_current_source_conversation()
         self.download_new_messages()
         self.download_new_replies()
+        self.update_failed_replies()
         self.sync_succeeded.emit()
 
         try:
@@ -802,10 +805,6 @@ class Controller(QObject):
             self.call_api(self.api.logout, self.on_logout_success, self.on_logout_failure)
 
         self.invalidate_token()
-
-        failed_replies = storage.mark_all_pending_drafts_as_failed(self.session)
-        for failed_reply in failed_replies:
-            self.reply_failed.emit(failed_reply.uuid)
 
         self.api_sync.stop()
         self.api_job_queue.stop()
@@ -1137,3 +1136,14 @@ class Controller(QObject):
 
     def on_logout_failure(self, result: Exception) -> None:
         logging.info("Client logout failure")
+
+    def update_failed_replies(self) -> None:
+        """
+        Emit an explicit `reply_failed` signal for each pending reply marked as failed by
+        the storage layer rather than the API job responsible for sending it (for example,
+        if the application quit mid-job or mid-queue).  Without this signal, the reply
+        won't be shown as failed in the GUI until the application is restarted.
+        """
+        failed_replies = storage.mark_all_pending_drafts_as_failed(self.session)
+        for failed_reply in failed_replies:
+            self.reply_failed.emit(failed_reply.uuid)

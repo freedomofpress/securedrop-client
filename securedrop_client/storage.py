@@ -1080,7 +1080,7 @@ def get_reply(session: Session, uuid: str) -> Reply:
 
 def mark_all_pending_drafts_as_failed(session: Session) -> List[DraftReply]:
     """
-    When we login (offline or online) or logout, we need to set all the pending replies as failed.
+    Mark as failed those pending replies that originate from other sessions (PIDs).
     """
     pending_status = (
         session.query(ReplySendStatus).filter_by(name=ReplySendStatusCodes.PENDING.value).one()
@@ -1089,7 +1089,15 @@ def mark_all_pending_drafts_as_failed(session: Session) -> List[DraftReply]:
         session.query(ReplySendStatus).filter_by(name=ReplySendStatusCodes.FAILED.value).one()
     )
 
-    pending_drafts = session.query(DraftReply).filter_by(send_status=pending_status).all()
+    pending_drafts = (
+        session.query(DraftReply)
+        .filter(
+            DraftReply.send_status == pending_status,
+            DraftReply.sending_pid.isnot(os.getpid()),
+        )
+        .all()
+    )
+    logger.debug(f"Found {len(pending_drafts)} pending replies not being processed in this session")
     for pending_draft in pending_drafts:
         pending_draft.send_status = failed_status
 

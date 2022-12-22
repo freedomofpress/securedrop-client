@@ -4518,6 +4518,7 @@ def test_ReplyWidget_success_failure_slots(mocker):
     )
 
     # ensure we have connected the slots
+    mock_update_signal.connect.assert_called_with(widget._on_reply_success)
     mock_success_signal.connect.assert_called_once_with(widget._on_reply_success)
     mock_failure_signal.connect.assert_called_once_with(widget._on_reply_failure)
     assert mock_update_signal.connect.called  # to ensure no stale mocks

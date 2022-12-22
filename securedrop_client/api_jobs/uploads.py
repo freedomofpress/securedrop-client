@@ -1,4 +1,5 @@
 import logging
+import os
 
 import sdclientapi
 from sdclientapi import API, RequestTimeoutError, ServerConnectionError
@@ -52,6 +53,8 @@ class SendReplyJob(SingleObjectApiJob):
             )
             if not draft_reply_db_object:
                 raise Exception("Draft reply {} does not exist".format(self.reply_uuid))
+            draft_reply_db_object.sending_pid = os.getpid()
+            session.commit()
 
             # If the source was deleted locally then do not send the message and delete the draft.
             source = session.query(Source).filter_by(uuid=self.source_uuid).one_or_none()

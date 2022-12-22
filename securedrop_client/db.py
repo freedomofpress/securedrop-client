@@ -595,6 +595,7 @@ class DraftReply(Base):
     # This tracks the sending status of the reply.
     send_status_id = Column(Integer, ForeignKey("replysendstatuses.id"))
     send_status = relationship("ReplySendStatus")
+    sending_pid = Column(Integer)
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)

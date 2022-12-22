@@ -2037,6 +2037,7 @@ class ReplyWidget(SpeechBubble):
 
         self.check_mark.show()
 
+        update_signal.connect(self._on_reply_success)
         message_succeeded_signal.connect(self._on_reply_success)
         message_failed_signal.connect(self._on_reply_failure)
         self.controller.update_authenticated_user.connect(self._on_update_authenticated_user)
