@@ -166,3 +166,17 @@ rules:
             _\(\s*".*"\s*\.format\(
         - pattern-regex: |-
             _\(\s*f"(.*)
+
+- id: unsafe-assert
+  languages:
+    - python
+  severity: ERROR
+  message: Assert is unsafe unless used for type narrowing - see https://mypy.readthedocs.io/en/stable/type_narrowing.html
+  patterns:
+    # Exempt assertions that are used for type narrowing
+    - pattern-not-regex: |
+        assert isinstance\(.*\)
+
+    # Forbid any other use of assert
+    - pattern-regex: |
+        assert.*
