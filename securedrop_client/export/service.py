@@ -20,17 +20,23 @@ class Service(QObject):
     securedrop-export repository.
     """
 
-    # Set up signals for communication with the controller
-    preflight_check_call_failure = pyqtSignal(object)
-    preflight_check_call_success = pyqtSignal()
-    export_usb_call_failure = pyqtSignal(object)
-    export_usb_call_success = pyqtSignal()
-    export_completed = pyqtSignal(list)
+    # Set up signals for communication with the export device
+    preflight_check_call_failure = pyqtSignal(object)  # DEPRECATED
+    preflight_check_call_success = pyqtSignal()  # DEPRECATED
+    export_usb_call_failure = pyqtSignal(object)  # DEPRECATED
+    export_usb_call_success = pyqtSignal()  # DEPRECATED
+    export_completed = pyqtSignal(list)  # DEPRECATED
 
     printer_preflight_success = pyqtSignal()  # DEPRECATED
     printer_preflight_failure = pyqtSignal(object)  # DEPRECATED
     print_call_failure = pyqtSignal(object)  # DEPRECATED
     print_call_success = pyqtSignal()  # DEPRECATED
+
+    luks_encrypted_disk_not_found = pyqtSignal(object)
+    luks_encrypted_disk_found = pyqtSignal()
+    export_failed = pyqtSignal(object)
+    export_succeeded = pyqtSignal()
+    export_finished = pyqtSignal(list)
 
     printer_found_ready = pyqtSignal()
     printer_not_found_ready = pyqtSignal(object)
@@ -60,6 +66,12 @@ class Service(QObject):
         self.printer_not_found_ready.connect(self.printer_preflight_failure)
         self.print_succeeded.connect(self.print_call_success)
         self.print_failed.connect(self.print_call_failure)
+
+        self.luks_encrypted_disk_found.connect(self.preflight_check_call_success)
+        self.luks_encrypted_disk_not_found.connect(self.preflight_check_call_failure)
+        self.export_succeeded.connect(self.export_usb_call_success)
+        self.export_failed.connect(self.export_usb_call_failure)
+        self.export_finished.connect(self.export_completed)
 
     def connect_signals(
         self,
@@ -115,10 +127,10 @@ class Service(QObject):
                 self._run_usb_test(temp_dir)
                 self._run_disk_test(temp_dir)
                 logger.debug("completed preflight checks: success")
-                self.preflight_check_call_success.emit()
+                self.luks_encrypted_disk_found.emit()
             except CLIError as e:
                 logger.debug("completed preflight checks: failure")
-                self.preflight_check_call_failure.emit(e)
+                self.luks_encrypted_disk_not_found.emit(e)
 
     @pyqtSlot()
     def run_printer_preflight(self) -> None:  # DEPRECATED
@@ -163,14 +175,14 @@ class Service(QObject):
                     "beginning export from thread {}".format(threading.current_thread().ident)
                 )
                 self._run_disk_export(temp_dir, filepaths, passphrase)
-                self.export_usb_call_success.emit()
+                self.export_succeeded.emit()
                 logger.debug("Export successful")
             except CLIError as e:
                 logger.error("Export failed")
                 logger.debug(f"Export failed: {e}")
-                self.export_usb_call_failure.emit(e)
+                self.export_failed.emit(e)
 
-        self.export_completed.emit(filepaths)
+        self.export_finished.emit(filepaths)
 
     @pyqtSlot(list)
     def print(self, filepaths: List[str]) -> None:
