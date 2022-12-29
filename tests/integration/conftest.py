@@ -154,7 +154,6 @@ def export_service():
     export_service._run_disk_test = lambda dir: None
     export_service._run_usb_test = lambda dir: None
     export_service._run_disk_export = lambda dir, paths, passphrase: None
-    export_service._run_printer_preflight = lambda dir: None  # DEPRECATED
     export_service._run_print = lambda dir, paths: None
     return export_service
 

@@ -34,10 +34,10 @@ class PrintingService(QObject):
         if print_requested is not None:
             print_requested.connect(self.print)
         if printer_check_requested is not None:
-            printer_check_requested.connect(self.run_printer_preflight)
+            printer_check_requested.connect(self.check_printer)
 
     @pyqtSlot()
-    def run_printer_preflight(self):
+    def check_printer(self):
         try:
             response = self.responses.pop(0)
             # The printer is unreachable unless it's ready.

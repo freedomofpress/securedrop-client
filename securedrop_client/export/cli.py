@@ -180,6 +180,3 @@ class CLI:
             logger.error("Subprocess failed")
             logger.debug(f"Subprocess failed: {e}")
             raise Error(Status.CALLED_PROCESS_ERROR)
-
-    def _run_printer_preflight(self, archive_dir: str) -> None:  # DEPRECATED
-        self.check_printer_status(archive_dir)
