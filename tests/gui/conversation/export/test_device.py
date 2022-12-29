@@ -27,13 +27,11 @@ def test_Device_run_printer_preflight_checks(homedir, mocker, source, export_ser
             file_download_queue_thread=file_download_queue_thread,
         )
         device = Device(controller, export_service)
-        print_preflight_check_requested_emissions = QSignalSpy(
-            device.print_preflight_check_requested
-        )
+        printer_check_requested_emissions = QSignalSpy(device.printer_check_requested)
 
         device.run_printer_preflight_checks()
 
-        assert len(print_preflight_check_requested_emissions) == 1
+        assert len(printer_check_requested_emissions) == 1
 
 
 def test_Device_run_print_file(mocker, homedir, export_service):
@@ -138,15 +136,13 @@ def test_Device_run_export_preflight_checks(homedir, mocker, source, export_serv
             file_download_queue_thread=file_download_queue_thread,
         )
         device = Device(controller, export_service)
-        export_preflight_check_requested_emissions = QSignalSpy(
-            device.export_preflight_check_requested
-        )
+        disk_check_requested_emissions = QSignalSpy(device.disk_check_requested)
         file = factory.File(source=source["source"])
         mocker.patch("securedrop_client.logic.Controller.get_file", return_value=file)
 
         device.run_export_preflight_checks()
 
-        assert len(export_preflight_check_requested_emissions) == 1
+        assert len(disk_check_requested_emissions) == 1
 
 
 def test_Device_export_file_to_usb_drive(homedir, mocker, export_service):

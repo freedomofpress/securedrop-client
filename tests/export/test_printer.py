@@ -27,14 +27,14 @@ class PrintingService(QObject):
 
     def connect_signals(
         self,
-        print_preflight_check_requested=None,
+        printer_check_requested=None,
         print_requested=None,
     ):
 
         if print_requested is not None:
             print_requested.connect(self.print)
-        if print_preflight_check_requested is not None:
-            print_preflight_check_requested.connect(self.run_printer_preflight)
+        if printer_check_requested is not None:
+            printer_check_requested.connect(self.run_printer_preflight)
 
     @pyqtSlot()
     def run_printer_preflight(self):
@@ -84,9 +84,7 @@ class TestPrintingService(unittest.TestCase):
         self.assertTrue(printer_found_ready_emissions.isValid())
         self.assertTrue(printer_not_found_ready_emissions.isValid())
 
-        printing_service.connect_signals(
-            print_preflight_check_requested=client.query_printing_service
-        )
+        printing_service.connect_signals(printer_check_requested=client.query_printing_service)
 
         client.query_printing_service.emit()  # Act.
         self.assertEqual(1, len(printer_found_ready_emissions))
@@ -108,9 +106,7 @@ class TestPrintingService(unittest.TestCase):
         self.assertTrue(printer_found_ready_emissions.isValid())
         self.assertTrue(printer_not_found_ready_emissions.isValid())
 
-        printing_service.connect_signals(
-            print_preflight_check_requested=client.query_printing_service
-        )
+        printing_service.connect_signals(printer_check_requested=client.query_printing_service)
 
         client.query_printing_service.emit()  # Act.
         self.assertEqual(0, len(printer_found_ready_emissions))

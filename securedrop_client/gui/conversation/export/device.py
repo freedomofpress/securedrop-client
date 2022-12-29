@@ -17,7 +17,7 @@ class Device(QObject):
     with the underlying export service.
     """
 
-    export_preflight_check_requested = pyqtSignal()
+    disk_check_requested = pyqtSignal()
     export_preflight_check_succeeded = pyqtSignal()
     export_preflight_check_failed = pyqtSignal(object)
 
@@ -26,7 +26,7 @@ class Device(QObject):
     export_failed = pyqtSignal(object)
     export_completed = pyqtSignal(list)
 
-    print_preflight_check_requested = pyqtSignal()
+    printer_check_requested = pyqtSignal()
     print_preflight_check_succeeded = pyqtSignal()
     print_preflight_check_failed = pyqtSignal(object)
 
@@ -41,9 +41,9 @@ class Device(QObject):
         self._export_service = export_service
 
         self._export_service.connect_signals(
-            self.export_preflight_check_requested,
+            self.disk_check_requested,
             self.export_requested,
-            self.print_preflight_check_requested,
+            self.printer_check_requested,
             self.print_requested,
         )
 
@@ -70,14 +70,14 @@ class Device(QObject):
         Run preflight checks to make sure the Export VM is configured correctly.
         """
         logger.info("Running printer preflight check")
-        self.print_preflight_check_requested.emit()
+        self.printer_check_requested.emit()
 
     def run_export_preflight_checks(self) -> None:
         """
         Run preflight checks to make sure the Export VM is configured correctly.
         """
         logger.info("Running export preflight check")
-        self.export_preflight_check_requested.emit()
+        self.disk_check_requested.emit()
 
     def export_file_to_usb_drive(self, file_uuid: str, passphrase: str) -> None:
         """
