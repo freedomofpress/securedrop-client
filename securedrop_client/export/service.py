@@ -92,9 +92,6 @@ class Service(QObject):
         if printer_check_requested is not None:
             printer_check_requested.connect(self.check_printer_status)
 
-    def _run_printer_preflight(self, archive_dir: str) -> None:  # DEPRECATED
-        self._cli._run_printer_preflight(archive_dir)
-
     def _check_printer_status(self, archive_dir: str) -> None:  # DEPRECATED
         self._cli.check_printer_status(archive_dir)
 
@@ -131,20 +128,6 @@ class Service(QObject):
             except CLIError as e:
                 logger.debug("completed preflight checks: failure")
                 self.luks_encrypted_disk_not_found.emit(e)
-
-    @pyqtSlot()
-    def run_printer_preflight(self) -> None:  # DEPRECATED
-        """
-        Make sure the Export VM is started.
-        """
-        with TemporaryDirectory() as temp_dir:
-            try:
-                self._run_printer_preflight(temp_dir)
-                self.printer_found_ready.emit()
-            except CLIError as e:
-                logger.error("Export failed")
-                logger.debug(f"Export failed: {e}")
-                self.printer_not_found_ready.emit(e)
 
     @pyqtSlot()
     def check_printer_status(self) -> None:
