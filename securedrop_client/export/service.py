@@ -45,9 +45,9 @@ class Service(QObject):
 
     def __init__(
         self,
-        export_preflight_check_requested: Optional[pyqtBoundSignal] = None,
+        disk_check_requested: Optional[pyqtBoundSignal] = None,
         export_requested: Optional[pyqtBoundSignal] = None,
-        print_preflight_check_requested: Optional[pyqtBoundSignal] = None,
+        printer_check_requested: Optional[pyqtBoundSignal] = None,
         print_requested: Optional[pyqtBoundSignal] = None,
     ) -> None:
         super().__init__()
@@ -55,9 +55,9 @@ class Service(QObject):
         self._cli = CLI()
 
         self.connect_signals(
-            export_preflight_check_requested,
+            disk_check_requested,
             export_requested,
-            print_preflight_check_requested,
+            printer_check_requested,
             print_requested,
         )
 
@@ -75,22 +75,22 @@ class Service(QObject):
 
     def connect_signals(
         self,
-        export_preflight_check_requested: Optional[pyqtBoundSignal] = None,
+        disk_check_requested: Optional[pyqtBoundSignal] = None,
         export_requested: Optional[pyqtBoundSignal] = None,
-        print_preflight_check_requested: Optional[pyqtBoundSignal] = None,
+        printer_check_requested: Optional[pyqtBoundSignal] = None,
         print_requested: Optional[pyqtBoundSignal] = None,
     ) -> None:
 
         # This instance can optionally react to events to prevent
         # coupling it to dependent code.
-        if export_preflight_check_requested is not None:
-            export_preflight_check_requested.connect(self.run_preflight_checks)
+        if disk_check_requested is not None:
+            disk_check_requested.connect(self.run_preflight_checks)
         if export_requested is not None:
             export_requested.connect(self.send_file_to_usb_device)
         if print_requested is not None:
             print_requested.connect(self.print)
-        if print_preflight_check_requested is not None:
-            print_preflight_check_requested.connect(self.check_printer_status)
+        if printer_check_requested is not None:
+            printer_check_requested.connect(self.check_printer_status)
 
     def _run_printer_preflight(self, archive_dir: str) -> None:  # DEPRECATED
         self._cli._run_printer_preflight(archive_dir)
