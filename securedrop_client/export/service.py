@@ -84,7 +84,7 @@ class Service(QObject):
         # This instance can optionally react to events to prevent
         # coupling it to dependent code.
         if disk_check_requested is not None:
-            disk_check_requested.connect(self.run_preflight_checks)
+            disk_check_requested.connect(self.check_disk)
         if export_requested is not None:
             export_requested.connect(self.send_file_to_usb_device)
         if print_requested is not None:
@@ -113,9 +113,9 @@ class Service(QObject):
         self._cli.run_print(archive_dir, filepaths)
 
     @pyqtSlot()
-    def run_preflight_checks(self) -> None:
+    def check_disk(self) -> None:
         """
-        Run preflight checks to verify that the usb device is connected and luks-encrypted.
+        Checks that the USB disk is connected and LUKS-encrypted.
         """
         with TemporaryDirectory() as temp_dir:
             try:

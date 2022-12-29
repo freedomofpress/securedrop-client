@@ -218,7 +218,7 @@ def test_send_file_to_usb_device_error(mocker):
     assert export_completed_emissions[0] == [["path1", "path2"]]
 
 
-def test_run_preflight_checks(mocker):
+def test_check_disk(mocker):
     """
     Ensure TemporaryDirectory is used when creating and sending the archives during the preflight
     checks and that the success signal is emitted by Export.
@@ -232,7 +232,7 @@ def test_run_preflight_checks(mocker):
     _run_usb_export = mocker.patch.object(export, "_run_usb_test")
     _run_disk_export = mocker.patch.object(export, "_run_disk_test")
 
-    export.run_preflight_checks()
+    export.check_disk()
 
     _run_usb_export.assert_called_once_with("mock_temp_dir")
     _run_disk_export.assert_called_once_with("mock_temp_dir")
@@ -240,7 +240,7 @@ def test_run_preflight_checks(mocker):
     assert preflight_check_call_success_emissions[0] == []
 
 
-def test_run_preflight_checks_error(mocker):
+def test_check_disk_error(mocker):
     """
     Ensure TemporaryDirectory is used when creating and sending the archives during the preflight
     checks and that the failure signal is emitted by Export.
@@ -255,7 +255,7 @@ def test_run_preflight_checks_error(mocker):
     _run_usb_export = mocker.patch.object(export, "_run_usb_test")
     _run_disk_export = mocker.patch.object(export, "_run_disk_test", side_effect=error)
 
-    export.run_preflight_checks()
+    export.check_disk()
 
     _run_usb_export.assert_called_once_with("mock_temp_dir")
     _run_disk_export.assert_called_once_with("mock_temp_dir")
