@@ -1,3 +1,4 @@
+import subprocess
 import unittest
 from unittest.mock import patch
 
@@ -5,7 +6,7 @@ import pytest
 
 from securedrop_client import export
 from securedrop_client.export.archive import Archive
-from securedrop_client.export.cli import CLI, Status
+from securedrop_client.export.cli import CLI, Error, Status
 
 
 class TestExportServiceCLIInterfaceForDisk(unittest.TestCase):
@@ -250,3 +251,85 @@ class TestExportServiceCLIInterfaceForPrinter(unittest.TestCase):
 
         with pytest.raises(export.ExportError):
             export_service._cli.print(valid_archive_dir, [valid_file_path])
+
+
+class TestExportServiceCLIInterfaceWithQubesOS(unittest.TestCase):
+    @patch.object(subprocess, "check_output", return_value=b"")
+    def test_path_of_exported_archive_is_shell_sanitized(self, subprocess_check_output):
+        unsafe_archive_path = "archive_$(path)_../.._4587fn"
+        sanitized_archive_path = "'archive_$(path)_../.._4587fn'"
+        export_service = export.getService()
+        export_service._cli._export_archive(unsafe_archive_path)
+
+        assert subprocess_check_output.called_once()
+        subprocess_check_output_arguments = subprocess_check_output.call_args.args[0]
+        assert unsafe_archive_path not in subprocess_check_output_arguments
+        assert sanitized_archive_path in subprocess_check_output_arguments
+
+    @patch.object(subprocess, "check_output", return_value=b"")
+    def test_issues_expected_qrexec_command(self, subprocess_check_output):
+        unsafe_archive_path = "archive_$(path)_../.._3wqrc"
+        sanitized_archive_path = "'archive_$(path)_../.._3wqrc'"
+        export_service = export.getService()
+
+        expected_qrexec_command = [
+            "qrexec-client-vm",
+            "--",
+            "sd-devices",
+            "qubes.OpenInVM",
+            "/usr/lib/qubes/qopen-in-vm",
+            "--view-only",
+            "--",
+            sanitized_archive_path,
+        ]
+        expected_execution_options = {"stderr": subprocess.STDOUT}
+
+        export_service._cli._export_archive(unsafe_archive_path)
+
+        assert subprocess_check_output.called_once_with(expected_qrexec_command)
+
+        subprocess_check_output_positional_arguments = subprocess_check_output.call_args.args[0]
+        assert subprocess_check_output_positional_arguments == expected_qrexec_command
+
+        subprocess_check_output_keyword_arguments = subprocess_check_output.call_args.kwargs
+        assert subprocess_check_output_keyword_arguments == expected_execution_options
+
+    @patch.object(subprocess, "check_output", return_value=b"")
+    def test_returns_no_status_when_response_is_empty(self, subprocess_check_output):
+        valid_archive_path = "archive_path_sdr3k"
+        export_service = export.getService()
+
+        status = export_service._cli._export_archive(valid_archive_path)
+        assert status is None
+
+    @patch.object(subprocess, "check_output", return_value=b"whatever")
+    def test_returns_status_when_response_is_a_valid_status(self, subprocess_check_output):
+        valid_archive_path = "archive_path_32arci"
+        export_service = export.getService()
+
+        with pytest.raises(Error) as error:
+            export_service._cli._export_archive(valid_archive_path)
+        assert error.value.status == Status.UNEXPECTED_RETURN_STATUS
+
+    @patch.object(subprocess, "check_output", return_value=b"USB_CONNECTED")
+    def test_raises_UNEXPECTED_RETURN_STATUS_when_response_is_not_a_valid_status(
+        self, subprocess_check_output
+    ):
+        valid_archive_path = "archive_path_pdsa49"
+        export_service = export.getService()
+
+        status = export_service._cli._export_archive(valid_archive_path)
+        assert status == Status.USB_CONNECTED
+
+    @patch.object(
+        subprocess,
+        "check_output",
+        side_effect=subprocess.CalledProcessError(returncode=1, cmd="..."),
+    )
+    def test_raises_CALLED_PROCESS_ERROR_when_command_fails(self, subprocess_check_output):
+        valid_archive_path = "archive_path_scm3I3"
+        export_service = export.getService()
+
+        with pytest.raises(Error) as error:
+            export_service._cli._export_archive(valid_archive_path)
+        assert error.value.status == Status.CALLED_PROCESS_ERROR
