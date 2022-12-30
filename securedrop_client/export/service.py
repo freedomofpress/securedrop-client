@@ -42,6 +42,7 @@ class Service(QObject):
     printer_not_found_ready = pyqtSignal(object)
     print_failed = pyqtSignal(object)
     print_succeeded = pyqtSignal()
+    print_finished = pyqtSignal(list)
 
     def __init__(
         self,
@@ -72,6 +73,7 @@ class Service(QObject):
         self.export_succeeded.connect(self.export_usb_call_success)
         self.export_failed.connect(self.export_usb_call_failure)
         self.export_finished.connect(self.export_completed)
+        self.print_finished.connect(self.export_completed)
 
     def connect_signals(
         self,
@@ -171,7 +173,7 @@ class Service(QObject):
                 logger.debug(f"Export failed: {e}")
                 self.print_failed.emit(e)
 
-        self.export_completed.emit(filepaths)
+        self.print_finished.emit(filepaths)
 
 
 # Store the service instance to prevent unnecessary concurrent access to the CLI. See getService.

@@ -52,4 +52,6 @@ class TestExportServicePrinterInterface(unittest.TestCase):
         assert len(printer_not_found_ready_emissions) == 1
         assert printer_not_found_ready_emissions[0] == [expected_error]
 
+    # FIXME Add printer's printing API tests
+
     # FIXME Add disk API tests
