@@ -156,13 +156,13 @@ class CLI:
             # https://docs.python.org/3/library/subprocess.html#security-considerations
             output = subprocess.check_output(
                 [
-                    quote("qrexec-client-vm"),
-                    quote("--"),
-                    quote("sd-devices"),
-                    quote("qubes.OpenInVM"),
-                    quote("/usr/lib/qubes/qopen-in-vm"),
-                    quote("--view-only"),
-                    quote("--"),
+                    "qrexec-client-vm",
+                    "--",
+                    "sd-devices",
+                    "qubes.OpenInVM",
+                    "/usr/lib/qubes/qopen-in-vm",
+                    "--view-only",
+                    "--",
                     quote(archive_path),
                 ],
                 stderr=subprocess.STDOUT,
