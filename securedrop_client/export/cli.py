@@ -33,20 +33,20 @@ class Error(Exception):
 
 
 class CLI:
-    USB_TEST_FN = "usb-test.sd-export"
-    USB_TEST_METADATA = {"device": "usb-test"}
+    DISK_PRESENCE_CHECK_FN = "usb-test.sd-export"
+    DISK_PRESENCE_CHECK_METADATA = {"device": "usb-test"}
 
-    PRINTER_PREFLIGHT_FN = "printer-preflight.sd-export"
-    PRINTER_PREFLIGHT_METADATA = {"device": "printer-preflight"}
+    PRINTER_CHECK_FN = "printer-preflight.sd-export"
+    PRINTER_CHECK_METADATA = {"device": "printer-preflight"}
 
-    DISK_TEST_FN = "disk-test.sd-export"
-    DISK_TEST_METADATA = {"device": "disk-test"}
+    DISK_ENCRYPTION_CHECK_FN = "disk-test.sd-export"
+    DISK_ENCRYPTION_CHECK_METADATA = {"device": "disk-test"}
 
     PRINT_FN = "print_archive.sd-export"
     PRINT_METADATA = {"device": "printer"}
 
-    DISK_FN = "archive.sd-export"
-    DISK_METADATA = {"device": "disk", "encryption_method": "luks"}
+    EXPORT_FN = "archive.sd-export"
+    EXPORT_METADATA = {"device": "disk", "encryption_method": "luks"}
     DISK_ENCRYPTION_KEY_NAME = "encryption_key"
 
     def __init__(self) -> None:
@@ -57,14 +57,14 @@ class CLI:
         Make sure printer is ready.
         """
         archive_path = Archive.create_archive(
-            archive_dir, self.PRINTER_PREFLIGHT_FN, self.PRINTER_PREFLIGHT_METADATA
+            archive_dir, self.PRINTER_CHECK_FN, self.PRINTER_CHECK_METADATA
         )
 
         status = self._export_archive(archive_path)
         if status:
             raise Error(status)
 
-    def run_disk_export(self, archive_dir: str, filepaths: List[str], passphrase: str) -> None:
+    def export(self, archive_dir: str, filepaths: List[str], passphrase: str) -> None:
         """
         Run disk-test.
 
@@ -74,15 +74,15 @@ class CLI:
         Raises:
             Error: Raised if the usb-test does not return a DISK_ENCRYPTED status.
         """
-        metadata = self.DISK_METADATA.copy()
+        metadata = self.EXPORT_METADATA.copy()
         metadata[self.DISK_ENCRYPTION_KEY_NAME] = passphrase
-        archive_path = Archive.create_archive(archive_dir, self.DISK_FN, metadata, filepaths)
+        archive_path = Archive.create_archive(archive_dir, self.EXPORT_FN, metadata, filepaths)
 
         status = self._export_archive(archive_path)
         if status:
             raise Error(status)  # pragma: no cover
 
-    def run_disk_test(self, archive_dir: str) -> None:
+    def check_disk_encryption(self, archive_dir: str) -> None:
         """
         Run disk-test.
 
@@ -93,14 +93,14 @@ class CLI:
             Error: Raised if the usb-test does not return a DISK_ENCRYPTED status.
         """
         archive_path = Archive.create_archive(
-            archive_dir, self.DISK_TEST_FN, self.DISK_TEST_METADATA
+            archive_dir, self.DISK_ENCRYPTION_CHECK_FN, self.DISK_ENCRYPTION_CHECK_METADATA
         )
 
         status = self._export_archive(archive_path)
         if status and status != Status.DISK_ENCRYPTED:
             raise Error(status)
 
-    def run_print(self, archive_dir: str, filepaths: List[str]) -> None:
+    def print(self, archive_dir: str, filepaths: List[str]) -> None:
         """
         Create "printer" archive to send to Export VM.
 
@@ -114,7 +114,7 @@ class CLI:
         if status:
             raise Error(status)
 
-    def run_usb_test(self, archive_dir: str) -> None:
+    def check_disk_presence(self, archive_dir: str) -> None:
         """
         Run usb-test.
 
@@ -124,7 +124,9 @@ class CLI:
         Raises:
             Error: Raised if the usb-test does not return a USB_CONNECTED status.
         """
-        archive_path = Archive.create_archive(archive_dir, self.USB_TEST_FN, self.USB_TEST_METADATA)
+        archive_path = Archive.create_archive(
+            archive_dir, self.DISK_PRESENCE_CHECK_FN, self.DISK_PRESENCE_CHECK_METADATA
+        )
         status = self._export_archive(archive_path)
         if status and status != Status.USB_CONNECTED:
             raise Error(status)

@@ -86,28 +86,11 @@ class Service(QObject):
         if disk_check_requested is not None:
             disk_check_requested.connect(self.check_disk)
         if export_requested is not None:
-            export_requested.connect(self.send_file_to_usb_device)
+            export_requested.connect(self.export)
         if print_requested is not None:
             print_requested.connect(self.print)
         if printer_check_requested is not None:
             printer_check_requested.connect(self.check_printer_status)
-
-    def _check_printer_status(self, archive_dir: str) -> None:  # DEPRECATED
-        self._cli.check_printer_status(archive_dir)
-
-    def _run_usb_test(self, archive_dir: str) -> None:  # DEPRECATED
-        self._cli.run_usb_test(archive_dir)
-
-    def _run_disk_test(self, archive_dir: str) -> None:  # DEPRECATED
-        self._cli.run_disk_test(archive_dir)
-
-    def _run_disk_export(
-        self, archive_dir: str, filepaths: List[str], passphrase: str
-    ) -> None:  # DEPRECATED
-        self._cli.run_disk_export(archive_dir, filepaths, passphrase)
-
-    def _run_print(self, archive_dir: str, filepaths: List[str]) -> None:  # DEPRECATED
-        self._cli.run_print(archive_dir, filepaths)
 
     @pyqtSlot()
     def check_disk(self) -> None:
@@ -121,8 +104,8 @@ class Service(QObject):
                         threading.current_thread().ident
                     )
                 )
-                self._run_usb_test(temp_dir)
-                self._run_disk_test(temp_dir)
+                self._cli.check_disk_presence(temp_dir)
+                self._cli.check_disk_encryption(temp_dir)
                 logger.debug("completed preflight checks: success")
                 self.luks_encrypted_disk_found.emit()
             except CLIError as e:
@@ -136,7 +119,7 @@ class Service(QObject):
         """
         with TemporaryDirectory() as temp_dir:
             try:
-                self._check_printer_status(temp_dir)
+                self._cli.check_printer_status(temp_dir)
                 self.printer_found_ready.emit()
             except CLIError as e:
                 logger.error("Export failed")
@@ -144,7 +127,7 @@ class Service(QObject):
                 self.printer_not_found_ready.emit(e)
 
     @pyqtSlot(list, str)
-    def send_file_to_usb_device(self, filepaths: List[str], passphrase: str) -> None:
+    def export(self, filepaths: List[str], passphrase: str) -> None:
         """
         Export the file to the luks-encrypted usb disk drive attached to the Export VM.
 
@@ -157,7 +140,7 @@ class Service(QObject):
                 logger.debug(
                     "beginning export from thread {}".format(threading.current_thread().ident)
                 )
-                self._run_disk_export(temp_dir, filepaths, passphrase)
+                self._cli.export(temp_dir, filepaths, passphrase)
                 self.export_succeeded.emit()
                 logger.debug("Export successful")
             except CLIError as e:
@@ -180,7 +163,7 @@ class Service(QObject):
                 logger.debug(
                     "beginning printer from thread {}".format(threading.current_thread().ident)
                 )
-                self._run_print(temp_dir, filepaths)
+                self._cli.print(temp_dir, filepaths)
                 self.print_succeeded.emit()
                 logger.debug("Print successful")
             except CLIError as e:
