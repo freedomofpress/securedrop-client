@@ -1,4 +1,4 @@
-from typing import Callable, NewType
+from typing import Callable, NewType, Optional
 
 from PyQt5.QtCore import QObject, QState, QStateMachine, QTimer, pyqtSignal, pyqtSlot
 
@@ -8,59 +8,62 @@ from .service import Service
 DEFAULT_POLLING_INTERVAL_IN_MILLISECONDS = 2000
 
 
-class Printer(QObject):
-    """Allows to enqueue printing jobs and track the status of the printing queue.
-
-    It can be treated like a printer, but technically speaking it only interfaces with
-    a printing queue, not an actual printer. Success or failure enqueing jobs can be tracked,
-    and is the best proxy we currently have to tracking the outcome of printing operations."""
+class Disk(QObject):
+    """Allows to export files to an ecrypted disk and track its availability."""
 
     status_changed = pyqtSignal()
-    job_done = pyqtSignal()
-    job_failed = pyqtSignal(str)
+    export_done = pyqtSignal()
+    export_failed = pyqtSignal(str)
 
     client_connected = pyqtSignal()
     last_client_disconnected = pyqtSignal()
 
     Status = NewType("Status", str)
-    StatusUnknown = Status("unknown-sf5fd")
-    StatusReady = Status("ready-83jf3")
-    StatusUnreachable = Status("unreachable-120a0")
+    StatusUnknown = Status("unknown-isw32")
+    StatusLUKSEncrypted = Status("luks-encrypted-8563d")
+    StatusUnreachable = Status("unreachable-ofbu4")
 
     def __init__(
         self,
-        printing_service: Service,
+        export_service: Service,
         polling_interval_in_milliseconds: int = DEFAULT_POLLING_INTERVAL_IN_MILLISECONDS,
     ) -> None:
         super().__init__()
 
         self._connected_clients = 0
-        self._printing_service = printing_service
+        self._export_service = export_service
         self._poller = _Poller(polling_interval_in_milliseconds)
-        self._cache = _StatusCache(self._printing_service)
+        self._cache = _StatusCache(self._export_service)
+        self._last_error: Optional[CLIError] = None
 
-        # Accept that the status is unknown if we don't watch the printer for a bit.
+        # Accept that the status is unknown if we don't watch the disk for a bit.
         self._cache.clear_on(self._poller.paused.entered)
         self._cache.on_change_emit(self.status_changed)
 
         # This is a blocking call, which is no good.
-        # self._poller.poll_by(lambda: self._printing_service.check_printer())
-        # Alternatively, by taking advantage of the printing service features to loosen coupling:
-        self._printing_service.connect_signals(printer_check_requested=self._poller.polling.entered)
+        # self._poller.poll_by(lambda: self._export_service.check_disk())
+        # Alternatively, by taking advantage of the export service features to loosen coupling:
+        self._export_service.connect_signals(disk_check_requested=self._poller.polling.entered)
 
-        self._poller.wait_on(self._printing_service.printer_not_found_ready)
-        self._poller.wait_on(self._printing_service.printer_found_ready)
+        self._poller.wait_on(self._export_service.luks_encrypted_disk_found)
+        self._poller.wait_on(self._export_service.luks_encrypted_disk_not_found)
 
         self._poller.start_on(self.client_connected)
         self._poller.pause_on(self.last_client_disconnected)
 
-        # The printing service is not up-to-date on the printing queue terminology.
-        self._printing_service.print_failed.connect(self._on_job_enqueuing_failed)
-        self._printing_service.print_succeeded.connect(self._on_job_enqueued)
+        self._export_service.luks_encrypted_disk_not_found.connect(
+            lambda error: self._on_luks_encrypted_disk_not_found(error)
+        )
+        self._export_service.export_failed.connect(self._on_export_failed)
+        self._export_service.export_succeeded.connect(self._on_export_succeeded)
 
     @property
     def status(self) -> Status:
         return self._cache.status
+
+    @property
+    def last_error(self) -> Optional[CLIError]:
+        return self._last_error  # FIXME Returning the CLIError type is an abstraction leak.
 
     @pyqtSlot()
     def connect(self) -> None:
@@ -73,41 +76,46 @@ class Printer(QObject):
         if self._connected_clients < 1:
             self.last_client_disconnected.emit()
 
-    def enqueue_job_on(self, signal: pyqtSignal) -> None:
-        """Allow to enqueue printing jobs, in a thread-safe manner."""
-        self._printing_service.connect_signals(print_requested=signal)
+    def export_on(self, signal: pyqtSignal) -> None:
+        """Allow to export files, in a thread-safe manner."""
+        self._export_service.connect_signals(export_requested=signal)
 
     @pyqtSlot()
-    def _on_job_enqueued(self) -> None:
-        self.job_done.emit()
+    def _on_luks_encrypted_disk_not_found(self, error: CLIError) -> None:
+        self._last_error = error
+
+    @pyqtSlot()
+    def _on_export_succeeded(self) -> None:
+        self.export_done.emit()
 
     @pyqtSlot(object)
-    def _on_job_enqueuing_failed(self, error: CLIError) -> None:
-        self.job_failed.emit("")  # FIXME Decide what error to emit.
+    def _on_export_failed(self, error: CLIError) -> None:
+        self._last_error = error
+        self.export_failed.emit("")  # FIXME Decide what errors to emit.
 
 
 class _StatusCache(QStateMachine):
-    """A cache that holds the information available about the status of the printing pipeline.
+    """A cache that holds the information available about the status of the export disk.
 
     Paste the following state chart in https://mermaid.live for
     a visual representation of the behavior implemented by this class!
     stateDiagram-v2
       [*] --> unknown
-      unknown --> ready: printing_service.printer_found_ready
-      unknown --> unreachable: printing_service.printer_not_found_ready
+      unknown --> luks_encrypted: export_service.luks_encrypted_disk_found
+      unknown --> unreachable: export_service.luks_encrypted_disk_not_found
 
-      ready --> unreachable: printing_service.printer_not_found_ready
-      ready --> unknown: registered_clearing_signal_emitted
+      luks_encrypted --> luks_unreachable: export_service.luks_encrypted_disk_not_found
+      luks_encrypted --> unknown: registered_clearing_signal_emitted
 
-      unreachable --> ready: printing_service.printer_found_ready
+      unreachable --> luks_encrypted: export_service.luks_encrypted_disk_found
       unreachable --> unknown: registered_clearing_signal_emitted
     """
 
-    def __init__(self, printing_service: Service) -> None:
+    def __init__(self, export_service: Service) -> None:
         super().__init__()
 
-        self._service = printing_service
-        self._status = Printer.StatusUnknown
+        self._service = export_service
+        self._status = Disk.StatusUnknown
 
         # Declare the state chart described in the docstring.
         # See https://doc.qt.io/qt-5/statemachine-api.html
@@ -115,58 +123,62 @@ class _StatusCache(QStateMachine):
         # This is a very declarative exercise.
 
         self._unknown = QState()
-        self._ready = QState()
+        self._luks_encrypted = QState()
         self._unreachable = QState()
 
-        self._unknown.addTransition(self._service.printer_found_ready, self._ready)
-        self._unknown.addTransition(self._service.printer_not_found_ready, self._unreachable)
+        self._unknown.addTransition(self._service.luks_encrypted_disk_found, self._luks_encrypted)
+        self._unknown.addTransition(self._service.luks_encrypted_disk_not_found, self._unreachable)
 
-        self._ready.addTransition(self._service.printer_not_found_ready, self._unreachable)
-        self._unreachable.addTransition(self._service.printer_found_ready, self._ready)
+        self._luks_encrypted.addTransition(
+            self._service.luks_encrypted_disk_not_found, self._unreachable
+        )
+        self._unreachable.addTransition(
+            self._service.luks_encrypted_disk_found, self._luks_encrypted
+        )
 
         # The transitions to the unknown state are created
         # when clearing signals are connected.
 
         self.addState(self._unknown)
-        self.addState(self._ready)
+        self.addState(self._luks_encrypted)
         self.addState(self._unreachable)
 
         self.setInitialState(self._unknown)
 
         self._unknown.entered.connect(self._on_unknown_state_entered)
-        self._ready.entered.connect(self._on_ready_state_entered)
+        self._luks_encrypted.entered.connect(self._on_luks_encrypted_state_entered)
         self._unreachable.entered.connect(self._on_unreachable_state_entered)
 
         self.start()
 
     def clear_on(self, signal: pyqtSignal) -> None:
-        """Allow the cache to be cleared (status == Printer.UnknownStatus) when signal is emitted.
+        """Allow the cache to be cleared (status == Disk.UnknownStatus) when signal is emitted.
 
         Register a clearing signal."""
-        self._ready.addTransition(signal, self._unknown)
+        self._luks_encrypted.addTransition(signal, self._unknown)
         self._unreachable.addTransition(signal, self._unknown)
 
     def on_change_emit(self, signal: pyqtSignal) -> None:
-        """Allow a signal to be emitted whe the value of the cache changes."""
+        """Allow a signal to be emitted when the value of the cache changes."""
         self._unknown.entered.connect(signal)
-        self._ready.entered.connect(signal)
+        self._luks_encrypted.entered.connect(signal)
         self._unreachable.entered.connect(signal)
 
     @property
-    def status(self) -> Printer.Status:
+    def status(self) -> Disk.Status:
         return self._status
 
     @pyqtSlot()
     def _on_unknown_state_entered(self) -> None:
-        self._status = Printer.StatusUnknown
+        self._status = Disk.StatusUnknown
 
     @pyqtSlot()
-    def _on_ready_state_entered(self) -> None:
-        self._status = Printer.StatusReady
+    def _on_luks_encrypted_state_entered(self) -> None:
+        self._status = Disk.StatusLUKSEncrypted
 
     @pyqtSlot()
     def _on_unreachable_state_entered(self) -> None:
-        self._status = Printer.StatusUnreachable
+        self._status = Disk.StatusUnreachable
 
 
 class _Poller(QStateMachine):
@@ -249,26 +261,26 @@ class _Poller(QStateMachine):
         self.polling.entered.connect(lambda: callback())  # pragma: nocover
 
 
-# Store printers to prevent concurrent access to the printing service. See getPrinter.
-_printers: dict[int, Printer] = {}
+# Store disks to prevent concurrent access to the export service. See getDisk.
+_disks: dict[int, Disk] = {}
 
 
-def getPrinter(
-    printing_service: Service,
+def getDisk(
+    export_service: Service,
     polling_interval_in_milliseconds: int = DEFAULT_POLLING_INTERVAL_IN_MILLISECONDS,
-) -> Printer:
-    """Return a printer with a specific configuration.
+) -> Disk:
+    """Return a disk with a specific configuration.
 
-    All calls to this function with the same configuration return the same printer instance."""
-    global _printers
+    All calls to this function with the same configuration return the same disk instance."""
+    global _disks
 
-    # Only create one printer by printing service,
-    # to prevent unnecessary concurrent access to the printing service.
-    printer_id = id(printing_service)
+    # Only create one disk by export service,
+    # to prevent unnecessary concurrent access to the export service.
+    disk_id = id(export_service)
 
-    printer = _printers.get(printer_id, None)
-    if not printer:
-        printer = Printer(printing_service, polling_interval_in_milliseconds)
-        _printers[printer_id] = printer
+    disk = _disks.get(disk_id, None)
+    if not disk:
+        disk = Disk(export_service, polling_interval_in_milliseconds)
+        _disks[disk_id] = disk
 
-    return printer
+    return disk

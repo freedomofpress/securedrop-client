@@ -112,6 +112,7 @@ class Service(QObject):
                 self.luks_encrypted_disk_found.emit()
             except CLIError as e:
                 logger.debug("completed preflight checks: failure")
+                # FIXME Emitting the CLIError type is an abstraction leak.
                 self.luks_encrypted_disk_not_found.emit(e)
 
     @pyqtSlot()
@@ -126,6 +127,7 @@ class Service(QObject):
             except CLIError as e:
                 logger.error("Export failed")
                 logger.debug(f"Export failed: {e}")
+                # FIXME Emitting the CLIError type is an abstraction leak.
                 self.printer_not_found_ready.emit(e)
 
     @pyqtSlot(list, str)
