@@ -27,12 +27,12 @@ def test_print(mocker):
     assert print_call_success_emissions.isValid()
     export_completed_emissions = QSignalSpy(export.export_completed)
     assert export_completed_emissions.isValid()
-    _run_print = mocker.patch.object(export, "_run_print")
+    print = mocker.patch.object(export._cli, "print")
     mocker.patch("os.path.exists", return_value=True)
 
     export.print(["path1", "path2"])
 
-    _run_print.assert_called_once_with("mock_temp_dir", ["path1", "path2"])
+    print.assert_called_once_with("mock_temp_dir", ["path1", "path2"])
     assert len(print_call_success_emissions) == 1
     assert print_call_success_emissions[0] == []
     assert len(export_completed_emissions) == 1
@@ -53,45 +53,16 @@ def test_print_error(mocker):
     export_completed_emissions = QSignalSpy(export.export_completed)
     assert export_completed_emissions.isValid()
     error = ExportError("[mock_filepath]")
-    _run_print = mocker.patch.object(export, "_run_print", side_effect=error)
+    print = mocker.patch.object(export._cli, "print", side_effect=error)
     mocker.patch("os.path.exists", return_value=True)
 
     export.print(["path1", "path2"])
 
-    _run_print.assert_called_once_with("mock_temp_dir", ["path1", "path2"])
+    print.assert_called_once_with("mock_temp_dir", ["path1", "path2"])
     assert len(print_call_failure_emissions) == 1
     assert print_call_failure_emissions[0] == [error]
     assert len(export_completed_emissions) == 1
     assert export_completed_emissions[0] == [["path1", "path2"]]
-
-
-def test__run_print(mocker):
-    """
-    Ensure _export_archive and create_archive are called with the expected parameters and
-    _export_archive is called with the return value of create_archive.
-    """
-    export = Export()
-    mocker.patch.object(Archive, "create_archive", return_value="mock_archive_path")
-    mocker.patch.object(CLI, "_export_archive", return_value="")
-
-    export._run_print("mock_archive_dir", ["mock_filepath"])
-
-    CLI._export_archive.assert_called_once_with("mock_archive_path")
-    Archive.create_archive.assert_called_once_with(
-        "mock_archive_dir", "print_archive.sd-export", {"device": "printer"}, ["mock_filepath"]
-    )
-
-
-def test__run_print_raises_ExportError_if_not_empty_string(mocker):
-    """
-    Ensure ExportError is raised if _run_print returns anything other than ''.
-    """
-    export = Export()
-    mocker.patch.object(Archive, "create_archive", return_value="mock_archive_path")
-    mocker.patch.object(CLI, "_export_archive", return_value="SOMETHING_OTHER_THAN_EMPTY_STRING")
-
-    with pytest.raises(ExportError):
-        export._run_print("mock_archive_dir", ["mock_filepath"])
 
 
 def test_send_file_to_usb_device(mocker):
@@ -102,17 +73,17 @@ def test_send_file_to_usb_device(mocker):
     mock_temp_dir = mocker.MagicMock()
     mock_temp_dir.__enter__ = mocker.MagicMock(return_value="mock_temp_dir")
     mocker.patch("securedrop_client.export.service.TemporaryDirectory", return_value=mock_temp_dir)
-    export = Export()
-    export_usb_call_success_emissions = QSignalSpy(export.export_usb_call_success)
+    service = Export()
+    export_usb_call_success_emissions = QSignalSpy(service.export_usb_call_success)
     assert export_usb_call_success_emissions.isValid()
-    export_completed_emissions = QSignalSpy(export.export_completed)
+    export_completed_emissions = QSignalSpy(service.export_completed)
     assert export_completed_emissions.isValid()
-    _run_disk_export = mocker.patch.object(export, "_run_disk_export")
+    export = mocker.patch.object(service._cli, "export")
     mocker.patch("os.path.exists", return_value=True)
 
-    export.send_file_to_usb_device(["path1", "path2"], "mock passphrase")
+    service.export(["path1", "path2"], "mock passphrase")
 
-    _run_disk_export.assert_called_once_with("mock_temp_dir", ["path1", "path2"], "mock passphrase")
+    export.assert_called_once_with("mock_temp_dir", ["path1", "path2"], "mock passphrase")
     assert len(export_usb_call_success_emissions) == 1
     assert export_usb_call_success_emissions[0] == []
     assert len(export_completed_emissions) == 1
@@ -127,18 +98,18 @@ def test_send_file_to_usb_device_error(mocker):
     mock_temp_dir = mocker.MagicMock()
     mock_temp_dir.__enter__ = mocker.MagicMock(return_value="mock_temp_dir")
     mocker.patch("securedrop_client.export.service.TemporaryDirectory", return_value=mock_temp_dir)
-    export = Export()
-    export_usb_call_failure_emissions = QSignalSpy(export.export_usb_call_failure)
+    service = Export()
+    export_usb_call_failure_emissions = QSignalSpy(service.export_usb_call_failure)
     assert export_usb_call_failure_emissions.isValid()
-    export_completed_emissions = QSignalSpy(export.export_completed)
+    export_completed_emissions = QSignalSpy(service.export_completed)
     assert export_completed_emissions.isValid()
     error = ExportError("[mock_filepath]")
-    _run_disk_export = mocker.patch.object(export, "_run_disk_export", side_effect=error)
+    export = mocker.patch.object(service._cli, "export", side_effect=error)
     mocker.patch("os.path.exists", return_value=True)
 
-    export.send_file_to_usb_device(["path1", "path2"], "mock passphrase")
+    service.export(["path1", "path2"], "mock passphrase")
 
-    _run_disk_export.assert_called_once_with("mock_temp_dir", ["path1", "path2"], "mock passphrase")
+    export.assert_called_once_with("mock_temp_dir", ["path1", "path2"], "mock passphrase")
     assert len(export_usb_call_failure_emissions) == 1
     assert export_usb_call_failure_emissions[0] == [error]
     assert len(export_completed_emissions) == 1
@@ -153,16 +124,16 @@ def test_check_disk(mocker):
     mock_temp_dir = mocker.MagicMock()
     mock_temp_dir.__enter__ = mocker.MagicMock(return_value="mock_temp_dir")
     mocker.patch("securedrop_client.export.service.TemporaryDirectory", return_value=mock_temp_dir)
-    export = Export()
-    preflight_check_call_success_emissions = QSignalSpy(export.preflight_check_call_success)
+    service = Export()
+    preflight_check_call_success_emissions = QSignalSpy(service.preflight_check_call_success)
     assert preflight_check_call_success_emissions.isValid()
-    _run_usb_export = mocker.patch.object(export, "_run_usb_test")
-    _run_disk_export = mocker.patch.object(export, "_run_disk_test")
+    check_disk_presence = mocker.patch.object(service._cli, "check_disk_presence")
+    check_disk_encryption = mocker.patch.object(service._cli, "check_disk_encryption")
 
-    export.check_disk()
+    service.check_disk()
 
-    _run_usb_export.assert_called_once_with("mock_temp_dir")
-    _run_disk_export.assert_called_once_with("mock_temp_dir")
+    check_disk_presence.assert_called_once_with("mock_temp_dir")
+    check_disk_encryption.assert_called_once_with("mock_temp_dir")
     assert len(preflight_check_call_success_emissions) == 1
     assert preflight_check_call_success_emissions[0] == []
 
@@ -175,112 +146,21 @@ def test_check_disk_error(mocker):
     mock_temp_dir = mocker.MagicMock()
     mock_temp_dir.__enter__ = mocker.MagicMock(return_value="mock_temp_dir")
     mocker.patch("securedrop_client.export.service.TemporaryDirectory", return_value=mock_temp_dir)
-    export = Export()
-    preflight_check_call_failure_emissions = QSignalSpy(export.preflight_check_call_failure)
+    service = Export()
+    preflight_check_call_failure_emissions = QSignalSpy(service.preflight_check_call_failure)
     assert preflight_check_call_failure_emissions.isValid()
     error = ExportError("bang!")
-    _run_usb_export = mocker.patch.object(export, "_run_usb_test")
-    _run_disk_export = mocker.patch.object(export, "_run_disk_test", side_effect=error)
+    check_disk_presence = mocker.patch.object(service._cli, "check_disk_presence")
+    check_disk_encryption = mocker.patch.object(
+        service._cli, "check_disk_encryption", side_effect=error
+    )
 
-    export.check_disk()
+    service.check_disk()
 
-    _run_usb_export.assert_called_once_with("mock_temp_dir")
-    _run_disk_export.assert_called_once_with("mock_temp_dir")
+    check_disk_presence.assert_called_once_with("mock_temp_dir")
+    check_disk_encryption.assert_called_once_with("mock_temp_dir")
     assert len(preflight_check_call_failure_emissions) == 1
     assert preflight_check_call_failure_emissions[0] == [error]
-
-
-def test__run_disk_export(mocker):
-    """
-    Ensure _export_archive and create_archive are called with the expected parameters,
-    _export_archive is called with the return value of create_archive, and
-    _run_disk_test returns without error if '' is the output status of _export_archive.
-    """
-    export = Export()
-    mocker.patch.object(Archive, "create_archive", return_value="mock_archive_path")
-    mocker.patch.object(CLI, "_export_archive", return_value="")
-
-    export._run_disk_export("mock_archive_dir", ["mock_filepath"], "mock_passphrase")
-
-    CLI._export_archive.assert_called_once_with("mock_archive_path")
-    Archive.create_archive.assert_called_once_with(
-        "mock_archive_dir",
-        "archive.sd-export",
-        {"encryption_key": "mock_passphrase", "device": "disk", "encryption_method": "luks"},
-        ["mock_filepath"],
-    )
-
-
-def test__run_disk_export_raises_ExportError_if_not_empty_string(mocker):
-    """
-    Ensure ExportError is raised if _run_disk_test returns anything other than ''.
-    """
-    export = Export()
-    mocker.patch.object(Archive, "create_archive", return_value="mock_archive_path")
-    mocker.patch.object(CLI, "_export_archive", return_value="SOMETHING_OTHER_THAN_EMPTY_STRING")
-
-    with pytest.raises(ExportError):
-        export._run_disk_test("mock_archive_dir")
-
-
-def test__run_disk_test(mocker):
-    """
-    Ensure _export_archive and create_archive are called with the expected parameters,
-    _export_archive is called with the return value of create_archive, and
-    _run_disk_test returns without error if 'USB_ENCRYPTED' is the output status of _export_archive.
-    """
-    export = Export()
-    mocker.patch.object(Archive, "create_archive", return_value="mock_archive_path")
-    mocker.patch.object(CLI, "_export_archive", return_value=ExportStatus("USB_ENCRYPTED"))
-
-    export._run_disk_test("mock_archive_dir")
-
-    CLI._export_archive.assert_called_once_with("mock_archive_path")
-    Archive.create_archive.assert_called_once_with(
-        "mock_archive_dir", "disk-test.sd-export", {"device": "disk-test"}
-    )
-
-
-def test__run_disk_test_raises_ExportError_if_not_USB_ENCRYPTED(mocker):
-    """
-    Ensure ExportError is raised if _run_disk_test returns anything other than 'USB_ENCRYPTED'.
-    """
-    export = Export()
-    mocker.patch.object(Archive, "create_archive", return_value="mock_archive_path")
-    mocker.patch.object(CLI, "_export_archive", return_value="SOMETHING_OTHER_THAN_USB_ENCRYPTED")
-
-    with pytest.raises(ExportError):
-        export._run_disk_test("mock_archive_dir")
-
-
-def test__run_usb_test(mocker):
-    """
-    Ensure _export_archive and create_archive are called with the expected parameters,
-    _export_archive is called with the return value of create_archive, and
-    _run_disk_test returns without error if 'USB_CONNECTED' is the return value of _export_archive.
-    """
-    export = Export()
-    mocker.patch.object(Archive, "create_archive", return_value="mock_archive_path")
-    mocker.patch.object(CLI, "_export_archive", return_value=ExportStatus("USB_CONNECTED"))
-
-    export._run_usb_test("mock_archive_dir")
-
-    CLI._export_archive.assert_called_once_with("mock_archive_path")
-    Archive.create_archive.assert_called_once_with(
-        "mock_archive_dir", "usb-test.sd-export", {"device": "usb-test"}
-    )
-
-
-def test__run_usb_test_raises_ExportError_if_not_USB_CONNECTED(mocker):
-    """
-    Ensure ExportError is raised if _run_disk_test returns anything other than 'USB_CONNECTED'.
-    """
-    export = Export()
-    mocker.patch.object(Archive, "create_archive", return_value="mock_archive_path")
-    mocker.patch.object(CLI, "_export_archive", return_value="SOMETHING_OTHER_THAN_USB_CONNECTED")
-
-    with pytest.raises(ExportError):
-        export._run_usb_test("mock_archive_dir")
 
 
 def test__create_archive(mocker):
