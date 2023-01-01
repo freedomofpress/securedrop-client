@@ -16,8 +16,8 @@ class Printer(QObject):
     and is the best proxy we currently have to tracking the outcome of printing operations."""
 
     status_changed = pyqtSignal()
-    job_done = pyqtSignal(str)
-    job_failed = pyqtSignal(str, str)
+    job_done = pyqtSignal()
+    job_failed = pyqtSignal(str)
 
     client_connected = pyqtSignal()
     last_client_disconnected = pyqtSignal()
@@ -79,12 +79,11 @@ class Printer(QObject):
 
     @pyqtSlot()
     def _on_job_enqueued(self) -> None:
-        self.job_done.emit("unknown job ID")  # FIXME
+        self.job_done.emit()
 
     @pyqtSlot(object)
     def _on_job_enqueuing_failed(self, error: CLIError) -> None:
-        reason = str(error)  # FIXME check the output
-        self.job_failed.emit("unknown job ID", reason)  # FIXME
+        self.job_failed.emit("")  # FIXME Decide what error to emit.
 
 
 class _StatusCache(QStateMachine):
