@@ -565,12 +565,10 @@ class MainView(QWidget):
         self,
         parent: Optional[QWidget],
         app_state: Optional[state.State] = None,
-        export_service: Optional[export.Service] = None,
     ) -> None:
         super().__init__(parent)
 
         self._state = app_state
-        self._export_service = export_service
 
         # Set id and styles
         self.setObjectName("MainView")
@@ -670,7 +668,7 @@ class MainView(QWidget):
                 )
             else:
                 conversation_wrapper = SourceConversationWrapper(
-                    source, self.controller, self._state, self._export_service
+                    source, self.controller, self._state
                 )
                 self.source_conversations[source.uuid] = conversation_wrapper
 
@@ -2206,7 +2204,6 @@ class FileWidget(QWidget):
         file_missing: pyqtBoundSignal,
         index: int,
         container_width: int,
-        export_service: Optional[export.Service] = None,
     ) -> None:
         """
         Given some text and a reference to the controller, make something to display a file.
@@ -2215,12 +2212,7 @@ class FileWidget(QWidget):
 
         self.controller = controller
 
-        if export_service is None:
-            # Note that injecting an export service that runs in a separate
-            # thread is greatly encouraged! But it is optional because strictly
-            # speaking it is not a dependency of this FileWidget.
-            export_service = export.Service()
-
+        export_service = export.getService()
         self._export_device = conversation.ExportDevice(controller, export_service)
 
         self.file = self.controller.get_file(file_uuid)
@@ -2633,11 +2625,8 @@ class ConversationView(QWidget):
         self,
         source_db_object: Source,
         controller: Controller,
-        export_service: Optional[export.Service] = None,
     ) -> None:
         super().__init__()
-
-        self._export_service = export_service
 
         self.source = source_db_object
         self.source_uuid = source_db_object.uuid
@@ -2827,7 +2816,6 @@ class ConversationView(QWidget):
             self.controller.file_missing,
             index,
             self._scroll.widget().width(),
-            self._export_service,
         )
         self._scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignLeft)
         self.current_messages[file.uuid] = conversation_item
@@ -2935,7 +2923,6 @@ class SourceConversationWrapper(QWidget):
         source: Source,
         controller: Controller,
         app_state: Optional[state.State] = None,
-        export_service: Optional[export.Service] = None,
     ) -> None:
         super().__init__()
 
@@ -2961,7 +2948,7 @@ class SourceConversationWrapper(QWidget):
 
         # Create widgets
         self.conversation_title_bar = SourceProfileShortWidget(source, controller, app_state)
-        self.conversation_view = ConversationView(source, controller, export_service)
+        self.conversation_view = ConversationView(source, controller)
         self.reply_box = ReplyBoxWidget(source, controller)
         self.deletion_indicator = SourceDeletionIndicator()
         self.conversation_deletion_indicator = ConversationDeletionIndicator()
