@@ -1,4 +1,4 @@
-from typing import Callable, NewType
+from typing import Callable, NewType, Optional
 
 from PyQt5.QtCore import QObject, QState, QStateMachine, QTimer, pyqtSignal, pyqtSlot
 
@@ -12,8 +12,8 @@ class Disk(QObject):
     """Allows to export files to an ecrypted disk and track its availability."""
 
     status_changed = pyqtSignal()
-    export_done = pyqtSignal(str)
-    export_failed = pyqtSignal(str, str)
+    export_done = pyqtSignal()
+    export_failed = pyqtSignal(str)
 
     client_connected = pyqtSignal()
     last_client_disconnected = pyqtSignal()
@@ -34,6 +34,7 @@ class Disk(QObject):
         self._export_service = export_service
         self._poller = _Poller(polling_interval_in_milliseconds)
         self._cache = _StatusCache(self._export_service)
+        self._last_error: Optional[CLIError] = None
 
         # Accept that the status is unknown if we don't watch the disk for a bit.
         self._cache.clear_on(self._poller.paused.entered)
@@ -50,12 +51,19 @@ class Disk(QObject):
         self._poller.start_on(self.client_connected)
         self._poller.pause_on(self.last_client_disconnected)
 
+        self._export_service.luks_encrypted_disk_not_found.connect(
+            lambda error: self._on_luks_encrypted_disk_not_found(error)
+        )
         self._export_service.export_failed.connect(self._on_export_failed)
         self._export_service.export_succeeded.connect(self._on_export_succeeded)
 
     @property
     def status(self) -> Status:
         return self._cache.status
+
+    @property
+    def last_error(self) -> Optional[CLIError]:
+        return self._last_error  # FIXME Returning the CLIError type is an abstraction leak.
 
     @pyqtSlot()
     def connect(self) -> None:
@@ -73,13 +81,17 @@ class Disk(QObject):
         self._export_service.connect_signals(export_requested=signal)
 
     @pyqtSlot()
+    def _on_luks_encrypted_disk_not_found(self, error: CLIError) -> None:
+        self._last_error = error
+
+    @pyqtSlot()
     def _on_export_succeeded(self) -> None:
-        self.export_done.emit("unknown export ID")  # FIXME
+        self.export_done.emit()
 
     @pyqtSlot(object)
     def _on_export_failed(self, error: CLIError) -> None:
-        reason = str(error)  # FIXME check the output
-        self.export_failed.emit("unknown export ID", reason)  # FIXME
+        self._last_error = error
+        self.export_failed.emit("")  # FIXME Decide what errors to emit.
 
 
 class _StatusCache(QStateMachine):
