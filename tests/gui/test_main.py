@@ -40,11 +40,11 @@ def test_init(mocker):
     load_css = mocker.patch("securedrop_client.gui.main.load_css")
 
     app_state = state.State()
-    w = Window(app_state, export_service)
+    w = Window(app_state)
 
     mock_li.assert_called_once_with(w.icon)
     mock_lp.assert_called_once_with()
-    mock_mv.assert_called_once_with(w.main_pane, app_state, export_service)
+    mock_mv.assert_called_once_with(w.main_pane, app_state)
     assert mock_lo().addWidget.call_count == 2
     load_css.assert_called_once_with("sdclient.css")
 
