@@ -11,7 +11,8 @@ from tests import factory
 
 
 @pytest.fixture(scope="function")
-def main_window(mocker, homedir):
+def main_window(mocker, homedir, export_service):
+    mocker.patch("securedrop_client.export.getService", return_value=export_service)
     # Setup
     app = QApplication([])
     gui = Window()
@@ -63,7 +64,8 @@ def main_window(mocker, homedir):
 
 
 @pytest.fixture(scope="function")
-def main_window_no_key(mocker, homedir):
+def main_window_no_key(mocker, homedir, export_service):
+    mocker.patch("securedrop_client.export.getService", return_value=export_service)
     # Setup
     app = QApplication([])
     gui = Window()
@@ -161,7 +163,7 @@ def export_service():
 @pytest.fixture(scope="function")
 def print_dialog(mocker, homedir, export_service):
     app = QApplication([])
-    gui = Window(export_service=export_service)
+    gui = Window()
     app.setActiveWindow(gui)
     gui.show()
     with threads(3) as [sync_thread, main_queue_thread, file_download_thread]:
@@ -196,7 +198,7 @@ def print_dialog(mocker, homedir, export_service):
 @pytest.fixture(scope="function")
 def export_dialog(mocker, homedir, export_service):
     app = QApplication([])
-    gui = Window(export_service=export_service)
+    gui = Window()
     app.setActiveWindow(gui)
     gui.show()
     with threads(3) as [sync_thread, main_queue_thread, file_download_thread]:
