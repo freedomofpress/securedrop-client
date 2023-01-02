@@ -294,3 +294,14 @@ def getDisk(
         _disks[disk_id] = disk
 
     return disk
+
+
+def clearDisk(
+    export_service: Service,
+) -> None:
+    global _disks
+
+    # See getDisk
+    disk_id = id(export_service)
+    if disk_id in _disks:
+        del _disks[disk_id]
