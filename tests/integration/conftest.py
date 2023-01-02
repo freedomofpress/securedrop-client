@@ -215,10 +215,11 @@ def export_dialog(mocker, homedir, export_service):
         )
         controller.authenticated_user = factory.User()
         controller.qubes = False
-        export_device = conversation.ExportDevice(controller, export_service)
         gui.setup(controller)
         gui.login_dialog.close()
-        dialog = conversation.ExportFileDialog(export_device, "file_uuid", "file_name")
+        dialog = conversation.ExportFileDialog(
+            export.getDisk(export_service), "file_uuid", "file_name"
+        )
         dialog.show()
 
         yield dialog
