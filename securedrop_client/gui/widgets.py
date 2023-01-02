@@ -2214,6 +2214,7 @@ class FileWidget(QWidget):
 
         export_service = export.getService()
         self._export_device = conversation.ExportDevice(controller, export_service)
+        self._export_disk = export.getDisk(export_service)
 
         self.file = self.controller.get_file(file_uuid)
         self.uuid = file_uuid
@@ -2416,8 +2417,9 @@ class FileWidget(QWidget):
         if not self.controller.downloaded_file_exists(self.file):
             return
 
+        file_location = self.file.location(self.controller.data_dir)
         self.export_dialog = conversation.ExportFileDialog(
-            self._export_device, self.uuid, self.file.filename
+            self._export_disk, file_location, self.file.filename
         )
         self.export_dialog.show()
 

@@ -16,7 +16,7 @@ from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QVBoxLayout, QWidget
 from sqlalchemy.orm import attributes, scoped_session, sessionmaker
 
-from securedrop_client import db, logic, storage
+from securedrop_client import db, export, logic, storage
 from securedrop_client.app import threads
 from securedrop_client.gui.source import DeleteSourceDialog
 from securedrop_client.gui.widgets import (
@@ -3577,17 +3577,16 @@ def test_FileWidget_on_file_missing_does_not_show_download_button_when_uuid_does
     fw.download_button.show.assert_not_called()
 
 
-def test_FileWidget__on_export_clicked(mocker, session, source):
+def test_FileWidget__on_export_clicked(mocker, session, source, export_service):
     """
     Ensure preflight checks start when the EXPORT button is clicked and that password is requested
     """
+    mocker.patch("securedrop_client.export.getService", return_value=export_service)
     file = factory.File(source=source["source"], is_downloaded=True)
     session.add(file)
     session.commit()
-
     get_file = mocker.MagicMock(return_value=file)
-    controller = mocker.MagicMock(get_file=get_file)
-    export_device = mocker.patch("securedrop_client.gui.conversation.ExportDevice")
+    controller = mocker.MagicMock(get_file=get_file, data_dir="data_dir_3vf23")
 
     fw = FileWidget(
         file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
@@ -3600,7 +3599,8 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
     dialog = mocker.patch("securedrop_client.gui.conversation.ExportFileDialog")
 
     fw._on_export_clicked()
-    dialog.assert_called_once_with(export_device(), file.uuid, file.filename)
+    export_disk = export.getDisk(export_service)
+    dialog.assert_called_once_with(export_disk, file.location("data_dir_3vf23"), file.filename)
 
 
 def test_FileWidget__on_export_clicked_missing_file(mocker, session, source):
