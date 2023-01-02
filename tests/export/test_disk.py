@@ -542,3 +542,22 @@ class TestDisk(unittest.TestCase):
             disk._cache.isRunning(),
             f"Expected the disk cache to be running after {max_waiting_time_in_milliseconds}ms. Abort the test.",  # noqa: E501
         )
+
+
+class TestDiskDeprecatedInterface(unittest.TestCase):
+    def test_performs_one_check_when_registered_signal_is_emitted(self):
+        client = ExportServiceClient()
+        export_service = ExportService()
+        disk = getDisk(export_service)
+
+        response_emitted_emissions = QSignalSpy(export_service.response_emitted)
+        self.assertTrue(response_emitted_emissions.isValid())
+
+        disk.check_status_once_on(client.query_export_service)
+        client.query_export_service.emit()  # Act.
+
+        self.assertEqual(
+            1,
+            len(response_emitted_emissions),
+            "Expected service to emit a response as a result of being queried.",
+        )

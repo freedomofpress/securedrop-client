@@ -1,3 +1,4 @@
+import warnings
 from typing import Callable, NewType, Optional
 
 from PyQt5.QtCore import QObject, QState, QStateMachine, QTimer, pyqtSignal, pyqtSlot
@@ -79,6 +80,15 @@ class Disk(QObject):
     def export_on(self, signal: pyqtSignal) -> None:
         """Allow to export files, in a thread-safe manner."""
         self._export_service.connect_signals(export_requested=signal)
+
+    def check_status_once_on(self, signal: pyqtSignal) -> None:
+        warnings.warn(
+            "check_status_once_on must not be used for nwe features, use the connect method instead",  # noqa: E501
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+        self._export_service.connect_signals(disk_check_requested=signal)
 
     @pyqtSlot()
     def _on_luks_encrypted_disk_not_found(self, error: CLIError) -> None:
