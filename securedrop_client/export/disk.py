@@ -14,7 +14,7 @@ class Disk(QObject):
 
     status_changed = pyqtSignal()
     export_done = pyqtSignal()
-    export_failed = pyqtSignal(str)
+    export_failed = pyqtSignal()
 
     client_connected = pyqtSignal()
     last_client_disconnected = pyqtSignal()
@@ -101,7 +101,7 @@ class Disk(QObject):
     @pyqtSlot(object)
     def _on_export_failed(self, error: CLIError) -> None:
         self._last_error = error
-        self.export_failed.emit("")  # FIXME Decide what errors to emit.
+        self.export_failed.emit()
 
 
 class _StatusCache(QStateMachine):
