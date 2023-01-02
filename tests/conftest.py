@@ -78,18 +78,18 @@ def print_dialog(mocker, homedir):
 
     export_device = mocker.MagicMock(spec=conversation.ExportDevice)
 
-    dialog = conversation.PrintFileDialog(export_device, "file_UUID", "file123.jpg")
+    dialog = conversation.PrintFileDialog(export_device, "file_location", "file123.jpg")
 
     yield dialog
 
 
 @pytest.fixture(scope="function")
-def export_dialog(mocker, homedir):
+def export_dialog(mocker, homedir, export_service):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
-    export_device = mocker.MagicMock(spec=conversation.ExportDevice)
-
-    dialog = conversation.ExportFileDialog(export_device, "file_UUID", "file123.jpg")
+    dialog = conversation.ExportFileDialog(
+        export.getDisk(export_service), "file_location", "file123.jpg"
+    )
 
     yield dialog
 

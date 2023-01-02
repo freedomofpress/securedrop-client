@@ -5,18 +5,19 @@ from gettext import gettext as _
 from typing import Optional
 
 from pkg_resources import resource_string
-from PyQt5.QtCore import QSize, Qt, pyqtSlot
+from PyQt5.QtCore import QSize, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QColor, QFont
 from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QLineEdit, QVBoxLayout, QWidget
 
-from securedrop_client.export import ExportError, ExportStatus
+from securedrop_client.export import Disk, ExportStatus
 from securedrop_client.gui.base import ModalDialog, PasswordEdit, SecureQLabel
 from securedrop_client.gui.base.checkbox import SDCheckBox
 
-from .device import Device
-
 
 class ExportDialog(ModalDialog):
+
+    disk_status_check_requested = pyqtSignal()
+    file_export_requested = pyqtSignal(list, str)
 
     DIALOG_CSS = resource_string(__name__, "dialog.css").decode("utf-8")
 
@@ -24,29 +25,26 @@ class ExportDialog(ModalDialog):
     NO_MARGIN = 0
     FILENAME_WIDTH_PX = 260
 
-    def __init__(self, device: Device, file_uuid: str, file_name: str) -> None:
+    def __init__(self, export_disk: Disk, file_location: str, file_name: str) -> None:
         super().__init__()
         self.setStyleSheet(self.DIALOG_CSS)
 
-        self._device = device
-        self.file_uuid = file_uuid
+        self._export_disk = export_disk
+        self.file_location = file_location
         self.file_name = SecureQLabel(
             file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
         ).text()
         # Hold onto the error status we receive from the Export VM
         self.error_status: Optional[ExportStatus] = None
 
-        # Connect device signals to slots
-        self._device.export_preflight_check_succeeded.connect(
-            self._on_export_preflight_check_succeeded
-        )
-        self._device.export_preflight_check_failed.connect(self._on_export_preflight_check_failed)
-        self._device.export_succeeded.connect(self._on_export_succeeded)
-        self._device.export_failed.connect(self._on_export_failed)
+        # Connect export_disk signals to slots
+        self._export_disk.status_changed.connect(self._on_disk_status_changed)
+        self._export_disk.export_done.connect(self._on_export_succeeded)
+        self._export_disk.export_failed.connect(self._on_export_failed)
 
         # Connect parent signals to slots
         self.continue_button.setEnabled(False)
-        self.continue_button.clicked.connect(self._run_preflight)
+        self.continue_button.clicked.connect(self.disk_status_check_requested)
 
         # Dialog content
         self.starting_header = _(
@@ -119,7 +117,12 @@ class ExportDialog(ModalDialog):
 
         self._show_starting_instructions()
         self.start_animate_header()
-        self._run_preflight()
+        self._export_disk.check_status_once_on(self.disk_status_check_requested)
+        self._export_disk.export_on(self.file_export_requested)
+        self.disk_status_check_requested.emit()
+
+    def text(self) -> str:
+        return self.header.text() + super().text()
 
     def _show_starting_instructions(self) -> None:
         self.header.setText(self.starting_header)
@@ -166,7 +169,7 @@ class ExportDialog(ModalDialog):
 
     def _show_insert_usb_message(self) -> None:
         self.continue_button.clicked.disconnect()
-        self.continue_button.clicked.connect(self._run_preflight)
+        self.continue_button.clicked.connect(self.disk_status_check_requested)
         self.header.setText(self.insert_usb_header)
         self.continue_button.setText(_("CONTINUE"))
         self.body.setText(self.insert_usb_message)
@@ -178,7 +181,7 @@ class ExportDialog(ModalDialog):
 
     def _show_insert_encrypted_usb_message(self) -> None:
         self.continue_button.clicked.disconnect()
-        self.continue_button.clicked.connect(self._run_preflight)
+        self.continue_button.clicked.connect(self.disk_status_check_requested)
         self.header.setText(self.insert_usb_header)
         self.error_details.setText(self.usb_error_message)
         self.continue_button.setText(_("CONTINUE"))
@@ -204,15 +207,22 @@ class ExportDialog(ModalDialog):
         self.adjustSize()
 
     @pyqtSlot()
-    def _run_preflight(self) -> None:
-        self._device.run_export_preflight_checks()
+    def _on_disk_status_changed(self) -> None:
+        disk_status = self._export_disk.status
+        if disk_status == Disk.StatusLUKSEncrypted:
+            self._on_export_preflight_check_succeeded()
+        elif disk_status == Disk.StatusUnreachable:
+            self._on_export_preflight_check_failed()
+        else:
+            # Disk.StatusUnknown is not supprted by this dialog.
+            pass
 
     @pyqtSlot()
     def _export_file(self, checked: bool = False) -> None:
         self.start_animate_activestate()
         self.cancel_button.setEnabled(False)
         self.passphrase_field.setDisabled(True)
-        self._device.export_file_to_usb_drive(self.file_uuid, self.passphrase_field.text())
+        self.file_export_requested.emit([self.file_location], self.passphrase_field.text())
 
     @pyqtSlot()
     def _on_export_preflight_check_succeeded(self) -> None:
@@ -230,22 +240,34 @@ class ExportDialog(ModalDialog):
         self._show_passphrase_request_message()
 
     @pyqtSlot(object)
-    def _on_export_preflight_check_failed(self, error: ExportError) -> None:
+    def _on_export_preflight_check_failed(self) -> None:
+        error = self._export_disk.last_error
+        if error:
+            status = error.status
+        else:
+            status = ExportStatus.UNEXPECTED_RETURN_STATUS
+
         self.stop_animate_header()
         self.header_icon.update_image("savetodisk.svg", QSize(64, 64))
-        self._update_dialog(error.status)
+        self._update_dialog(status)
 
     @pyqtSlot()
     def _on_export_succeeded(self) -> None:
         self.stop_animate_activestate()
         self._show_success_message()
 
-    @pyqtSlot(object)
-    def _on_export_failed(self, error: ExportError) -> None:
+    @pyqtSlot()
+    def _on_export_failed(self) -> None:
+        error = self._export_disk.last_error
+        if error:
+            status = error.status
+        else:
+            status = ExportStatus.UNEXPECTED_RETURN_STATUS
+
         self.stop_animate_activestate()
         self.cancel_button.setEnabled(True)
         self.passphrase_field.setDisabled(False)
-        self._update_dialog(error.status)
+        self._update_dialog(status)
 
     def _update_dialog(self, error_status: ExportStatus) -> None:
         self.error_status = error_status
