@@ -87,6 +87,7 @@ class TestExportService(unittest.TestCase):
         export_service.connect_signals(disk_check_requested=client.query_export_service)
 
         client.query_export_service.emit()  # Act.
+        luks_encrypted_disk_found_emissions.wait(100)
         self.assertEqual(1, len(luks_encrypted_disk_found_emissions))
         self.assertEqual(0, len(luks_encrypted_disk_not_found))
 
