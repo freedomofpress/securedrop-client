@@ -198,7 +198,7 @@ class TestDisk(unittest.TestCase):
             len(export_service_response),
             "Expected export service to receive no queries before the disk is connected, and emit no responses.",  # noqa: E501
         )
-        #disk_status_changed_emissions.wait()
+        # disk_status_changed_emissions.wait()
         self.assertEqual(
             Disk.StatusUnknown,
             disk.status,
@@ -215,7 +215,7 @@ class TestDisk(unittest.TestCase):
             len(export_service_response),
             "Expected exactly 1 query to the export service, and 1 response immediately after the disk was connected.",  # noqa: E501
         )
-        #disk_status_changed_emissions.wait()
+        # disk_status_changed_emissions.wait()
         self.assertEqual(
             Disk.StatusLUKSEncrypted,
             disk.status,
@@ -238,7 +238,7 @@ class TestDisk(unittest.TestCase):
             len(export_service_response),
             "Expected exactly a total of 2 queries, and 2 responses after the polling interval elapsed.",  # noqa: E501
         )
-        #disk_status_changed_emissions.wait()
+        # disk_status_changed_emissions.wait()
         self.assertEqual(
             Disk.StatusUnreachable,
             disk.status,
@@ -251,7 +251,7 @@ class TestDisk(unittest.TestCase):
             len(export_service_response),
             "Expected exactly a total of 3 queries, and 3 responses after the polling interval elapsed.",  # noqa: E501
         )
-        #disk_status_changed_emissions.wait()
+        # disk_status_changed_emissions.wait()
         self.assertEqual(
             Disk.StatusLUKSEncrypted,
             disk.status,
@@ -264,7 +264,7 @@ class TestDisk(unittest.TestCase):
             len(export_service_response),
             "Expected exactly a total of 4 queries, and 4 responses after the polling interval elapsed.",  # noqa: E501
         )
-        #disk_status_changed_emissions.wait()
+        # disk_status_changed_emissions.wait()
         self.assertEqual(
             Disk.StatusUnreachable,
             disk.status,
@@ -351,7 +351,7 @@ class TestDisk(unittest.TestCase):
             len(export_service_response),
             "Expected export service to receive no queries before the disk is connected, and emit no responses.",  # noqa: E501
         )
-        #disk_status_changed_emissions.wait()
+        # disk_status_changed_emissions.wait()
         self.assertEqual(
             Disk.StatusUnknown,
             disk.status,
@@ -368,8 +368,8 @@ class TestDisk(unittest.TestCase):
             len(export_service_response),
             "Expected exactly 1 query to the export service, and 1 response immediately after the disk was connected.",  # noqa: E501
         )
-        #disk_status_changed_emissions.wait()
-        #disk_status_changed_emissions.wait()
+        # disk_status_changed_emissions.wait()
+        # disk_status_changed_emissions.wait()
         self.assertEqual(
             Disk.StatusLUKSEncrypted,
             disk.status,
@@ -378,7 +378,7 @@ class TestDisk(unittest.TestCase):
 
         disk.disconnect()
 
-        #disk_status_changed_emissions.wait()
+        # disk_status_changed_emissions.wait()
         self.assertEqual(
             Disk.StatusUnknown,
             disk.status,
@@ -391,7 +391,7 @@ class TestDisk(unittest.TestCase):
             len(export_service_response),
             "Expected no new query to the export service after disconnection (total 1 query and 1 response)",  # noqa: E501
         )
-        #disk_status_changed_emissions.wait()
+        # disk_status_changed_emissions.wait()
         self.assertEqual(
             Disk.StatusUnknown,
             disk.status,
