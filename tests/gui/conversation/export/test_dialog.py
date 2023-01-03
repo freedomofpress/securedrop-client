@@ -109,7 +109,7 @@ class TestExportFileDialog(unittest.TestCase):
         )
 
         self._disk.status_changed.emit()  # Act.
-        status_changed_emissions.wait(100)
+        status_changed_emissions.wait()
 
         self.assertTrue(
             expected_message in self.dialog.text(),
