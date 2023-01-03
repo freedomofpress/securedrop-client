@@ -63,7 +63,7 @@ class TestExportFileDialog(unittest.TestCase):
         )
 
         self._disk.status_changed.emit()  # Act.
-        status_changed_emissions.wait(50)
+        status_changed_emissions.wait(100)
 
         self.assertTrue(
             passphrase_prompt in self.dialog.text(),
@@ -86,11 +86,11 @@ class TestExportFileDialog(unittest.TestCase):
         )
 
         self._disk.status_changed.emit()  # Act.
-        status_changed_emissions.wait(50)
+        status_changed_emissions.wait(100)
 
         self.assertTrue(
             expected_message in self.dialog.text(),
-            f'Expected {expected_message} in "{self.dialog.text()}".',
+            f'Expected "{expected_message}" in "{self.dialog.text()}".',
         )
 
     @patch("securedrop_client.export.disk.Disk.status", export.Disk.StatusUnreachable)
@@ -109,7 +109,7 @@ class TestExportFileDialog(unittest.TestCase):
         )
 
         self._disk.status_changed.emit()  # Act.
-        status_changed_emissions.wait(50)
+        status_changed_emissions.wait(100)
 
         self.assertTrue(
             expected_message in self.dialog.text(),
@@ -136,7 +136,7 @@ class TestExportFileDialog(unittest.TestCase):
         )
 
         self._disk.export_failed.emit()  # Act.
-        status_changed_emissions.wait(150)
+        status_changed_emissions.wait(100)
 
         self.assertTrue(
             expected_message in self.dialog.text(),
@@ -316,8 +316,8 @@ def test_ExportDialog__export_file(mocker, export_dialog, export_service):
 
     export_dialog._export_file()
 
-    file_export_requested_emissions.wait(50)
-    export_done_emissions.wait(50)
+    file_export_requested_emissions.wait(100)
+    export_done_emissions.wait(100)
 
     assert len(file_export_requested_emissions) == 1
     assert file_export_requested_emissions[0] == [[export_dialog.file_uuid], "mock_passphrase"]
