@@ -102,7 +102,9 @@ class TestExportService(unittest.TestCase):
         ]
         export_service = ExportService(responses)  # override default responses
         luks_encrypted_disk_found_emissions = QSignalSpy(export_service.luks_encrypted_disk_found)
-        luks_encrypted_disk_not_found_emissions = QSignalSpy(export_service.luks_encrypted_disk_not_found)
+        luks_encrypted_disk_not_found_emissions = QSignalSpy(
+            export_service.luks_encrypted_disk_not_found
+        )
         self.assertTrue(luks_encrypted_disk_found_emissions.isValid())
         self.assertTrue(luks_encrypted_disk_not_found_emissions.isValid())
 
