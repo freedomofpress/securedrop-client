@@ -81,13 +81,15 @@ class TestExportService(unittest.TestCase):
 
         luks_encrypted_disk_found_emissions = QSignalSpy(export_service.luks_encrypted_disk_found)
         luks_encrypted_disk_not_found = QSignalSpy(export_service.luks_encrypted_disk_not_found)
+        export_service_response = QSignalSpy(export_service.response_emitted)
+        self.assertTrue(export_service_response.isValid())
         self.assertTrue(luks_encrypted_disk_found_emissions.isValid())
         self.assertTrue(luks_encrypted_disk_not_found.isValid())
 
         export_service.connect_signals(disk_check_requested=client.query_export_service)
 
         client.query_export_service.emit()  # Act.
-        luks_encrypted_disk_found_emissions.wait(100)
+        export_service_response.wait()
         self.assertEqual(1, len(luks_encrypted_disk_found_emissions))
         self.assertEqual(0, len(luks_encrypted_disk_not_found))
 
@@ -106,45 +108,48 @@ class TestExportService(unittest.TestCase):
         luks_encrypted_disk_not_found_emissions = QSignalSpy(
             export_service.luks_encrypted_disk_not_found
         )
+        export_service_response = QSignalSpy(export_service.response_emitted)
+        self.assertTrue(export_service_response.isValid())
         self.assertTrue(luks_encrypted_disk_found_emissions.isValid())
         self.assertTrue(luks_encrypted_disk_not_found_emissions.isValid())
 
         export_service.connect_signals(disk_check_requested=client.query_export_service)
 
         client.query_export_service.emit()  # Act.
-        luks_encrypted_disk_not_found_emissions.wait(100)
+        export_service_response.wait()
         self.assertEqual(0, len(luks_encrypted_disk_found_emissions))
         self.assertEqual(1, len(luks_encrypted_disk_not_found_emissions))
 
         client.query_export_service.emit()  # Act again, because we care about the sequence, etc.
-        luks_encrypted_disk_found_emissions.wait(100)
-        luks_encrypted_disk_not_found_emissions.wait(100)
+        export_service_response.wait()
+        luks_encrypted_disk_found_emissions.wait()
         self.assertEqual(1, len(luks_encrypted_disk_found_emissions))
         self.assertEqual(1, len(luks_encrypted_disk_not_found_emissions))
 
         client.query_export_service.emit()
-        luks_encrypted_disk_found_emissions.wait(100)
+        export_service_response.wait()
         self.assertEqual(2, len(luks_encrypted_disk_found_emissions))
         self.assertEqual(1, len(luks_encrypted_disk_not_found_emissions))
 
         client.query_export_service.emit()
-        luks_encrypted_disk_not_found_emissions.wait(100)
+        export_service_response.wait()
         self.assertEqual(2, len(luks_encrypted_disk_found_emissions))
         self.assertEqual(2, len(luks_encrypted_disk_not_found_emissions))
 
         client.query_export_service.emit()
-        luks_encrypted_disk_found_emissions.wait(100)
+        export_service_response.wait()
+        luks_encrypted_disk_found_emissions.wait()
         self.assertEqual(3, len(luks_encrypted_disk_found_emissions))
         self.assertEqual(2, len(luks_encrypted_disk_not_found_emissions))
 
         # After all configured responses are consumed, defaults to LUKS-encrypted disk not found.
         client.query_export_service.emit()
-        luks_encrypted_disk_not_found_emissions.wait(100)
+        export_service_response.wait()
         self.assertEqual(3, len(luks_encrypted_disk_found_emissions))
         self.assertEqual(3, len(luks_encrypted_disk_not_found_emissions))
 
         client.query_export_service.emit()
-        luks_encrypted_disk_not_found_emissions.wait(100)
+        export_service_response.wait()
         self.assertEqual(3, len(luks_encrypted_disk_found_emissions))
         self.assertEqual(4, len(luks_encrypted_disk_not_found_emissions))
 
@@ -173,8 +178,6 @@ class TestDisk(unittest.TestCase):
             Disk.StatusLUKSEncrypted,
         ]
         export_service = ExportService(responses)
-        export_service_response = QSignalSpy(export_service.response_emitted)
-        self.assertTrue(export_service_response.isValid())
 
         POLLING_INTERVAL = 200  # milliseconds
         # There is a limit to the precision of the timer, but 50ms is plenty to play with.
@@ -182,20 +185,24 @@ class TestDisk(unittest.TestCase):
         CHECK_EXECUTION_TIME = 20  # milliseconds
 
         disk = getDisk(export_service, POLLING_INTERVAL)
+        disk_status_changed_emissions = QSignalSpy(disk.status_changed)
+        self.assertTrue(disk_status_changed_emissions.isValid())
+        export_service_response = QSignalSpy(export_service.response_emitted)
+        self.assertTrue(export_service_response.isValid())
 
         self.ensure_that_disk_internals_are_ready_to_process_events(disk, 400)
 
         # Warming up...
         self.assertEqual(
-            Disk.StatusUnknown,
-            disk.status,
-            "Expected default disk status to be Disk.StatusUnknown, was not.",
-        )
-
-        self.assertEqual(
             0,
             len(export_service_response),
             "Expected export service to receive no queries before the disk is connected, and emit no responses.",  # noqa: E501
+        )
+        #disk_status_changed_emissions.wait()
+        self.assertEqual(
+            Disk.StatusUnknown,
+            disk.status,
+            "Expected default disk status to be Disk.StatusUnknown, was not.",
         )
 
         disk.connect()  # Action!
@@ -208,6 +215,7 @@ class TestDisk(unittest.TestCase):
             len(export_service_response),
             "Expected exactly 1 query to the export service, and 1 response immediately after the disk was connected.",  # noqa: E501
         )
+        #disk_status_changed_emissions.wait()
         self.assertEqual(
             Disk.StatusLUKSEncrypted,
             disk.status,
@@ -230,6 +238,7 @@ class TestDisk(unittest.TestCase):
             len(export_service_response),
             "Expected exactly a total of 2 queries, and 2 responses after the polling interval elapsed.",  # noqa: E501
         )
+        #disk_status_changed_emissions.wait()
         self.assertEqual(
             Disk.StatusUnreachable,
             disk.status,
@@ -242,6 +251,7 @@ class TestDisk(unittest.TestCase):
             len(export_service_response),
             "Expected exactly a total of 3 queries, and 3 responses after the polling interval elapsed.",  # noqa: E501
         )
+        #disk_status_changed_emissions.wait()
         self.assertEqual(
             Disk.StatusLUKSEncrypted,
             disk.status,
@@ -254,6 +264,7 @@ class TestDisk(unittest.TestCase):
             len(export_service_response),
             "Expected exactly a total of 4 queries, and 4 responses after the polling interval elapsed.",  # noqa: E501
         )
+        #disk_status_changed_emissions.wait()
         self.assertEqual(
             Disk.StatusUnreachable,
             disk.status,
@@ -270,17 +281,15 @@ class TestDisk(unittest.TestCase):
         self,
     ):
         export_service = ExportService()
-        luks_encrypted_disk_not_found_emissions = QSignalSpy(
-            export_service.luks_encrypted_disk_not_found
-        )
-        assert luks_encrypted_disk_not_found_emissions.isValid()
-
         disk = getDisk(export_service)
         error = ExportError(ExportStatus.USB_NOT_CONNECTED)
         expected_error = error
 
+        disk_status_changed_emissions = QSignalSpy(disk.status_changed)
+        self.assertTrue(disk_status_changed_emissions.isValid())
+
         export_service.luks_encrypted_disk_not_found.emit(error)
-        luks_encrypted_disk_not_found_emissions.wait(50)
+        disk_status_changed_emissions.wait()
 
         self.assertEqual(expected_error, disk.last_error)
 
@@ -290,21 +299,21 @@ class TestDisk(unittest.TestCase):
         expected_error = error
 
         export_service.luks_encrypted_disk_not_found.emit(error)
-        luks_encrypted_disk_not_found_emissions.wait(50)
+        disk_status_changed_emissions.wait()
 
         self.assertEqual(expected_error, disk.last_error)
 
     def test_disk_last_error_returns_the_last_service_error_when_export_fails(self):
         export_service = ExportService()
-        export_failed_emissions = QSignalSpy(export_service.export_failed)
-        assert export_failed_emissions.isValid()
-
         disk = getDisk(export_service)
         error = ExportError(ExportStatus.BAD_PASSPHRASE)
         expected_error = error
 
+        disk_status_changed_emissions = QSignalSpy(disk.status_changed)
+        self.assertTrue(disk_status_changed_emissions.isValid())
+
         export_service.export_failed.emit(error)
-        export_failed_emissions.wait(50)
+        disk_status_changed_emissions.wait()
 
         self.assertEqual(expected_error, disk.last_error)
 
@@ -314,7 +323,7 @@ class TestDisk(unittest.TestCase):
         expected_error = error
 
         export_service.export_failed.emit(error)
-        export_failed_emissions.wait(50)
+        disk_status_changed_emissions.wait()
 
         self.assertEqual(expected_error, disk.last_error)
 
@@ -325,26 +334,28 @@ class TestDisk(unittest.TestCase):
             Disk.StatusLUKSEncrypted,
         ]
         export_service = ExportService(responses)
-        export_service_response = QSignalSpy(export_service.response_emitted)
-        self.assertTrue(export_service_response.isValid())
-
         POLLING_INTERVAL = 100  # milliseconds
         CHECK_EXECUTION_TIME = 20  # milliseconds
         disk = getDisk(export_service, POLLING_INTERVAL)
+
+        export_service_response = QSignalSpy(export_service.response_emitted)
+        self.assertTrue(export_service_response.isValid())
+        disk_status_changed_emissions = QSignalSpy(disk.status_changed)
+        self.assertTrue(disk_status_changed_emissions.isValid())
 
         self.ensure_that_disk_internals_are_ready_to_process_events(disk, 400)
 
         # Warming up...
         self.assertEqual(
-            Disk.StatusUnknown,
-            disk.status,
-            "Expected default disk status to be Disk.StatusUnknown, was not.",
-        )
-
-        self.assertEqual(
             0,
             len(export_service_response),
             "Expected export service to receive no queries before the disk is connected, and emit no responses.",  # noqa: E501
+        )
+        #disk_status_changed_emissions.wait()
+        self.assertEqual(
+            Disk.StatusUnknown,
+            disk.status,
+            "Expected default disk status to be Disk.StatusUnknown, was not.",
         )
 
         disk.connect()  # Action!
@@ -357,6 +368,8 @@ class TestDisk(unittest.TestCase):
             len(export_service_response),
             "Expected exactly 1 query to the export service, and 1 response immediately after the disk was connected.",  # noqa: E501
         )
+        #disk_status_changed_emissions.wait()
+        #disk_status_changed_emissions.wait()
         self.assertEqual(
             Disk.StatusLUKSEncrypted,
             disk.status,
@@ -365,6 +378,7 @@ class TestDisk(unittest.TestCase):
 
         disk.disconnect()
 
+        #disk_status_changed_emissions.wait()
         self.assertEqual(
             Disk.StatusUnknown,
             disk.status,
@@ -377,6 +391,7 @@ class TestDisk(unittest.TestCase):
             len(export_service_response),
             "Expected no new query to the export service after disconnection (total 1 query and 1 response)",  # noqa: E501
         )
+        #disk_status_changed_emissions.wait()
         self.assertEqual(
             Disk.StatusUnknown,
             disk.status,
@@ -395,6 +410,7 @@ class TestDisk(unittest.TestCase):
         self.ensure_that_disk_internals_are_ready_to_process_events(disk, 400)
 
         # Warming up...
+        disk_status_changed_emissions.wait()
         self.assertEqual(
             Disk.StatusUnknown,
             disk.status,
@@ -407,6 +423,7 @@ class TestDisk(unittest.TestCase):
         )
 
         export_service.luks_encrypted_disk_found.emit()
+        disk_status_changed_emissions.wait()
         self.assertEqual(
             Disk.StatusLUKSEncrypted,
             disk.status,
@@ -419,6 +436,7 @@ class TestDisk(unittest.TestCase):
         )
 
         export_service.luks_encrypted_disk_found.emit()
+        disk_status_changed_emissions.wait()
         self.assertEqual(
             Disk.StatusLUKSEncrypted,
             disk.status,
@@ -432,6 +450,7 @@ class TestDisk(unittest.TestCase):
 
         reason = object()
         export_service.luks_encrypted_disk_not_found.emit(reason)
+        disk_status_changed_emissions.wait()
         self.assertEqual(
             Disk.StatusUnreachable,
             disk.status,
@@ -471,10 +490,14 @@ class TestDisk(unittest.TestCase):
         export_method = MagicMock()
         export_service.export = export_method
 
+        file_sent_emissions = QSignalSpy(portfolio.file_sent)
+        self.assertTrue(file_sent_emissions.isValid())
+
         disk = getDisk(export_service)
         disk.export_on(portfolio.file_sent)
 
         portfolio.file_sent.emit(["my_file"])
+        file_sent_emissions.wait()
 
         export_method.assert_called_once_with(["my_file"])
 
@@ -482,12 +505,15 @@ class TestDisk(unittest.TestCase):
         export_service = Service()
         disk = getDisk(export_service)
 
+        export_succeeded_emissions = QSignalSpy(export_service.export_succeeded)
         export_done_emissions = QSignalSpy(disk.export_done)
         export_failed_emissions = QSignalSpy(disk.export_failed)
+        self.assertTrue(export_succeeded_emissions.isValid())
         self.assertTrue(export_done_emissions.isValid())
         self.assertTrue(export_failed_emissions.isValid())
 
         export_service.export_succeeded.emit()
+        export_succeeded_emissions.wait()
 
         self.assertEqual(
             1,
@@ -510,6 +536,7 @@ class TestDisk(unittest.TestCase):
         self.assertTrue(export_failed_emissions.isValid())
 
         export_service.export_failed.emit("a good reason")
+        export_failed_emissions.wait()
 
         self.assertEqual(
             1,
@@ -560,6 +587,7 @@ class TestDiskDeprecatedInterface(unittest.TestCase):
 
         disk.check_status_once_on(client.query_export_service)
         client.query_export_service.emit()  # Act.
+        response_emitted_emissions.wait()
 
         self.assertEqual(
             1,
