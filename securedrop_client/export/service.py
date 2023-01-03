@@ -185,3 +185,8 @@ _service = Service()
 def getService() -> Service:
     """All calls to this function return the same service instance."""
     return _service
+
+
+def resetService() -> None:
+    global _service
+    _service = Service()
