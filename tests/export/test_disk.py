@@ -102,40 +102,48 @@ class TestExportService(unittest.TestCase):
         ]
         export_service = ExportService(responses)  # override default responses
         luks_encrypted_disk_found_emissions = QSignalSpy(export_service.luks_encrypted_disk_found)
-        luks_encrypted_disk_not_found = QSignalSpy(export_service.luks_encrypted_disk_not_found)
+        luks_encrypted_disk_not_found_emissions = QSignalSpy(export_service.luks_encrypted_disk_not_found)
         self.assertTrue(luks_encrypted_disk_found_emissions.isValid())
-        self.assertTrue(luks_encrypted_disk_not_found.isValid())
+        self.assertTrue(luks_encrypted_disk_not_found_emissions.isValid())
 
         export_service.connect_signals(disk_check_requested=client.query_export_service)
 
         client.query_export_service.emit()  # Act.
+        luks_encrypted_disk_not_found_emissions.wait(100)
         self.assertEqual(0, len(luks_encrypted_disk_found_emissions))
-        self.assertEqual(1, len(luks_encrypted_disk_not_found))
+        self.assertEqual(1, len(luks_encrypted_disk_not_found_emissions))
 
         client.query_export_service.emit()  # Act again, because we care about the sequence, etc.
+        luks_encrypted_disk_found_emissions.wait(100)
+        luks_encrypted_disk_not_found_emissions.wait(100)
         self.assertEqual(1, len(luks_encrypted_disk_found_emissions))
-        self.assertEqual(1, len(luks_encrypted_disk_not_found))
+        self.assertEqual(1, len(luks_encrypted_disk_not_found_emissions))
 
         client.query_export_service.emit()
+        luks_encrypted_disk_found_emissions.wait(100)
         self.assertEqual(2, len(luks_encrypted_disk_found_emissions))
-        self.assertEqual(1, len(luks_encrypted_disk_not_found))
+        self.assertEqual(1, len(luks_encrypted_disk_not_found_emissions))
 
         client.query_export_service.emit()
+        luks_encrypted_disk_not_found_emissions.wait(100)
         self.assertEqual(2, len(luks_encrypted_disk_found_emissions))
-        self.assertEqual(2, len(luks_encrypted_disk_not_found))
+        self.assertEqual(2, len(luks_encrypted_disk_not_found_emissions))
 
         client.query_export_service.emit()
+        luks_encrypted_disk_found_emissions.wait(100)
         self.assertEqual(3, len(luks_encrypted_disk_found_emissions))
-        self.assertEqual(2, len(luks_encrypted_disk_not_found))
+        self.assertEqual(2, len(luks_encrypted_disk_not_found_emissions))
 
         # After all configured responses are consumed, defaults to LUKS-encrypted disk not found.
         client.query_export_service.emit()
+        luks_encrypted_disk_not_found_emissions.wait(100)
         self.assertEqual(3, len(luks_encrypted_disk_found_emissions))
-        self.assertEqual(3, len(luks_encrypted_disk_not_found))
+        self.assertEqual(3, len(luks_encrypted_disk_not_found_emissions))
 
         client.query_export_service.emit()
+        luks_encrypted_disk_not_found_emissions.wait(100)
         self.assertEqual(3, len(luks_encrypted_disk_found_emissions))
-        self.assertEqual(4, len(luks_encrypted_disk_not_found))
+        self.assertEqual(4, len(luks_encrypted_disk_not_found_emissions))
 
 
 class TestDisk(unittest.TestCase):
