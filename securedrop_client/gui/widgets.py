@@ -2402,8 +2402,9 @@ class FileWidget(QWidget):
         if not self.controller.downloaded_file_exists(self.file):
             return
 
+        file_location = self.file.location(self.controller.data_dir)
         self.export_dialog = conversation.ExportFileDialog(
-            self._export_disk, self.uuid, self.file.filename
+            self._export_disk, file_location, self.file.filename
         )
         self.export_dialog.show()
 

@@ -25,12 +25,12 @@ class ExportDialog(ModalDialog):
     NO_MARGIN = 0
     FILENAME_WIDTH_PX = 260
 
-    def __init__(self, export_disk: Disk, file_uuid: str, file_name: str) -> None:
+    def __init__(self, export_disk: Disk, file_location: str, file_name: str) -> None:
         super().__init__()
         self.setStyleSheet(self.DIALOG_CSS)
 
         self._export_disk = export_disk
-        self.file_uuid = file_uuid
+        self.file_location = file_location
         self.file_name = SecureQLabel(
             file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
         ).text()
@@ -222,7 +222,7 @@ class ExportDialog(ModalDialog):
         self.start_animate_activestate()
         self.cancel_button.setEnabled(False)
         self.passphrase_field.setDisabled(True)
-        self.file_export_requested.emit([self.file_uuid], self.passphrase_field.text())
+        self.file_export_requested.emit([self.file_location], self.passphrase_field.text())
 
     @pyqtSlot()
     def _on_export_preflight_check_succeeded(self) -> None:
