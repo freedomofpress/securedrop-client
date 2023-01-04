@@ -80,11 +80,11 @@ class TestExportService(unittest.TestCase):
         export_service = ExportService()  # default responses
 
         luks_encrypted_disk_found_emissions = QSignalSpy(export_service.luks_encrypted_disk_found)
-        luks_encrypted_disk_not_found = QSignalSpy(export_service.luks_encrypted_disk_not_found)
+        luks_encrypted_disk_not_found_emissions = QSignalSpy(export_service.luks_encrypted_disk_not_found)
         export_service_response = QSignalSpy(export_service.response_emitted)
         self.assertTrue(export_service_response.isValid())
         self.assertTrue(luks_encrypted_disk_found_emissions.isValid())
-        self.assertTrue(luks_encrypted_disk_not_found.isValid())
+        self.assertTrue(luks_encrypted_disk_not_found_emissions.isValid())
 
         export_service.connect_signals(disk_check_requested=client.query_export_service)
 
@@ -92,7 +92,7 @@ class TestExportService(unittest.TestCase):
         assert export_service_response.wait()
         assert luks_encrypted_disk_found_emissions.wait()
         self.assertEqual(1, len(luks_encrypted_disk_found_emissions))
-        self.assertEqual(0, len(luks_encrypted_disk_not_found))
+        self.assertEqual(0, len(luks_encrypted_disk_not_found_emissions))
 
     def test_export_service_responds_as_configured(self):
         client = ExportServiceClient()
