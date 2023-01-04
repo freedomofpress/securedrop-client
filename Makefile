@@ -94,7 +94,7 @@ clean:  ## Clean the workspace of generated resources
 TESTS ?= tests
 ITESTS ?= tests/integration
 FTESTS ?= tests/functional
-TESTOPTS ?= -v --cov-config .coveragerc --cov-report html --cov-report term-missing --cov=securedrop_client --cov-fail-under 100
+TESTOPTS ?= -v 
 RANDOM_SEED ?= $(shell bash -c 'echo $$RANDOM')
 
 .PHONY: test

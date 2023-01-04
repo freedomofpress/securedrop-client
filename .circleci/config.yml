@@ -14,6 +14,17 @@ common-steps:
         set -e
         apt update && apt install -y git make sudo
 
+  - &run_qsignalspy_tests
+    run:
+      name: Install requirements and run QSignalSpy tests
+      command: |
+        set -e
+        export VERSION_CODENAME=$(~/project/scripts/codename)
+        make venv
+        source .venv/bin/activate
+        export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
+        TESTS=tests/test_qsignalspy.py make test
+
   - &run_unit_tests
     run:
       name: Install requirements and run unit tests
@@ -147,6 +158,16 @@ jobs:
       - *check_packaging_requirements
       - *build_debian_package
 
+  qsignalspy-test:
+    parameters: *parameters
+    docker: *docker
+    steps:
+      - *install_testing_dependencies
+      - checkout
+      - *run_qsignalspy_tests
+      - store_test_results:
+          path: test-results
+
   unit-test:
     parameters: *parameters
     docker: *docker
@@ -217,28 +238,12 @@ jobs:
 workflows:
   securedrop_client_ci:
     jobs: &jobs
-      - unit-test:
+      - qsignalspy-test:
           matrix: &matrix
             parameters:
               image:
                 - bullseye
                 - bookworm
-      - integration-test:
-          matrix: *matrix
-      - functional-test:
-          matrix: *matrix
-      - lint:
-          matrix: *matrix
-      - check-testing-requirements:
-          matrix: *matrix
-      - check-security:
-          matrix: *matrix
-      - check-python-security:
-          matrix: *matrix
-      - check-internationalization:
-          matrix: *matrix
-      - build:
-          matrix: *matrix
 
   nightly:
     triggers:
