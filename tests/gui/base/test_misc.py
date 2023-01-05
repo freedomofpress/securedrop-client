@@ -52,7 +52,7 @@ def test_SvgToggleButton_set_icon(mocker):
 
     load_icon_fn.assert_called_with(normal="mock_on", normal_off="mock_off")
     setIcon_fn.assert_called_with(icon)
-    assert stb.icon == icon
+    assert stb._icon == icon
 
 
 def test_SvgPushButton_init(mocker):

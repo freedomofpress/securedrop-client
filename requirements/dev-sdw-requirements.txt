@@ -469,6 +469,10 @@ pyparsing==3.0.9 \
 pyperclip==1.8.2 \
     --hash=sha256:105254a8b04934f0bc84e9c24eb360a591aaf6535c9def5f29d92af107a9bf57
     # via mouseinfo
+pyqt5-stubs==5.15.6.0 \
+    --hash=sha256:7fb8177c72489a8911f021b7bd7c33f12c87f6dba92dcef3fdcdb5d9400f0f3f \
+    --hash=sha256:91270ac23ebf38a1dc04cd97aa852cd08af82dc839100e5395af1447e3e99707
+    # via -r requirements/dev-sdw-requirements.in
 pyrect==0.2.0 \
     --hash=sha256:f65155f6df9b929b67caffbd57c0947c5ae5449d3b580d178074bffb47a09b78
     # via pygetwindow

@@ -112,7 +112,7 @@ def test_class_name_matches_css_object_name(mocker, main_window):
     assert "LastUpdatedLabel" in last_updated_label.objectName()
     title = conversation_title_bar.layout().itemAt(0).widget().layout().itemAt(0).widget()
     assert "TitleLabel" in title.objectName()
-    conversation_scroll_area = wrapper.conversation_view.scroll
+    conversation_scroll_area = wrapper.conversation_view._scroll
     assert "ConversationScrollArea" == conversation_scroll_area.__class__.__name__
     assert "ConversationScrollArea" in conversation_scroll_area.widget().objectName()
     file_widget = conversation_scroll_area.widget().layout().itemAt(0).widget()
@@ -365,7 +365,7 @@ def test_styles_for_conversation_view(mocker, main_window):
     assert 24 == title.font().pixelSize()
     assert "#2a319d" == title.palette().color(QPalette.Foreground).name()
 
-    conversation_scrollarea = wrapper.conversation_view.scroll
+    conversation_scrollarea = wrapper.conversation_view._scroll
     assert "#f9f9ff" == conversation_scrollarea.palette().color(QPalette.Background).name()
     assert "#f9f9ff" == conversation_scrollarea.widget().palette().color(QPalette.Background).name()
     file_widget = conversation_scrollarea.widget().layout().itemAt(0).widget()

@@ -16,6 +16,8 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from __future__ import annotations
+
 import html
 import logging
 from datetime import datetime
@@ -485,14 +487,14 @@ class UserButton(SvgPushButton):
 
         self.setLayoutDirection(Qt.RightToLeft)
 
-        self.menu = UserMenu()
-        self.setMenu(self.menu)
+        self._menu = UserMenu()
+        self.setMenu(self._menu)
 
         # Set cursor.
         self.setCursor(QCursor(Qt.PointingHandCursor))
 
     def setup(self, controller: Controller) -> None:
-        self.menu.setup(controller)
+        self._menu.setup(controller)
 
     def set_username(self, username: str) -> None:
         formatted_name = _("{}").format(html.escape(username))
@@ -549,13 +551,13 @@ class LoginButton(QPushButton):
         """
         Store a reference to the GUI window object.
         """
-        self.window = window
+        self._window = window
 
     def _on_clicked(self) -> None:
         """
         Called when the login button is clicked.
         """
-        self.window.show_login()
+        self._window.show_login()
 
 
 class MainView(QWidget):
@@ -566,7 +568,7 @@ class MainView(QWidget):
 
     def __init__(
         self,
-        parent: QObject,
+        parent: Optional[QWidget],
         app_state: Optional[state.State] = None,
         export_service: Optional[export.Service] = None,
     ) -> None:
@@ -579,12 +581,12 @@ class MainView(QWidget):
         self.setObjectName("MainView")
 
         # Set layout
-        self.layout = QHBoxLayout(self)
-        self.setLayout(self.layout)
+        self._layout = QHBoxLayout(self)
+        self.setLayout(self._layout)
 
         # Set margins and spacing
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setSpacing(0)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._layout.setSpacing(0)
 
         # Create SourceList widget
         self.source_list = SourceList()
@@ -606,8 +608,8 @@ class MainView(QWidget):
         self.view_layout.addWidget(self.empty_conversation_view)
 
         # Add widgets to layout
-        self.layout.addWidget(self.source_list, stretch=1)
-        self.layout.addWidget(self.view_holder, stretch=2)
+        self._layout.addWidget(self.source_list, stretch=1)
+        self._layout.addWidget(self.view_holder, stretch=2)
 
         # Note: We should not delete SourceConversationWrapper when its source is unselected. This
         # is a temporary solution to keep copies of our objects since we do delete them.
@@ -644,7 +646,7 @@ class MainView(QWidget):
         if not self.source_list.source_items:
             self.source_list.initial_update(sources)
         else:
-            deleted_sources = self.source_list.update(sources)
+            deleted_sources = self.source_list.update_sources(sources)
             for source_uuid in deleted_sources:
                 # Then call the function to remove the wrapper and its children.
                 self.delete_conversation(source_uuid)
@@ -668,7 +670,9 @@ class MainView(QWidget):
             # Get or create the SourceConversationWrapper
             if source.uuid in self.source_conversations:
                 conversation_wrapper = self.source_conversations[source.uuid]
-                conversation_wrapper.conversation_view.update_conversation(source.collection)
+                conversation_wrapper.conversation_view.update_conversation(  # type: ignore [has-type]  # noqa: E501
+                    source.collection
+                )
             else:
                 conversation_wrapper = SourceConversationWrapper(
                     source, self.controller, self._state, self._export_service
@@ -694,7 +698,9 @@ class MainView(QWidget):
             self.controller.session.refresh(source)
             self.controller.mark_seen(source)
             conversation_wrapper = self.source_conversations[source.uuid]
-            conversation_wrapper.conversation_view.update_conversation(source.collection)
+            conversation_wrapper.conversation_view.update_conversation(  # type: ignore [has-type]
+                source.collection
+            )
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.debug("Error refreshing source conversations: %s", e)
 
@@ -825,6 +831,8 @@ class SourceListWidgetItem(QListWidgetItem):
         me = lw.itemWidget(self)
         them = lw.itemWidget(other)
         if me and them:
+            assert isinstance(me, SourceWidget)
+            assert isinstance(them, SourceWidget)
             my_ts = arrow.get(me.last_updated)
             other_ts = arrow.get(them.last_updated)
             return my_ts < other_ts
@@ -880,7 +888,7 @@ class SourceList(QListWidget):
         self.controller.message_download_failed.connect(self.set_snippet)
         self.controller.reply_download_failed.connect(self.set_snippet)
 
-    def update(self, sources: List[Source]) -> List[str]:
+    def update_sources(self, sources: List[Source]) -> List[str]:
         """
         Update the list with the passed in list of sources.
         """
@@ -907,6 +915,7 @@ class SourceList(QListWidget):
 
             source_widget = self.itemWidget(source_item)
             self.takeItem(self.row(source_item))
+            assert isinstance(source_widget, SourceWidget)
             if source_widget.source_uuid in self.source_items:
                 del self.source_items[source_widget.source_uuid]
 
@@ -920,7 +929,8 @@ class SourceList(QListWidget):
             if not source_widget:
                 continue
 
-            source_widget.update()
+            assert isinstance(source_widget, SourceWidget)
+            source_widget.reload()
 
         # Add widgets for new sources
         for uuid in sources_to_add:
@@ -994,23 +1004,27 @@ class SourceList(QListWidget):
 
         source_item = self.selectedItems()[0]
         source_widget = self.itemWidget(source_item)
+        assert isinstance(source_widget, SourceWidget)
         if source_widget and source_exists(self.controller.session, source_widget.source_uuid):
             return source_widget.source
         return None  # pragma: nocover
 
-    def get_source_widget(self, source_uuid: str) -> Optional[QListWidget]:
+    def get_source_widget(self, source_uuid: str) -> Optional[SourceWidget]:
         """
         First try to get the source widget from the cache, then look for it in the SourceList.
         """
         try:
             source_item = self.source_items[source_uuid]
-            return self.itemWidget(source_item)
+            source_widget = self.itemWidget(source_item)
+            assert isinstance(source_widget, SourceWidget)
+            return source_widget
         except KeyError:
             pass
 
         for i in range(self.count()):
             list_item = self.item(i)
             source_widget = self.itemWidget(list_item)
+            assert isinstance(source_widget, SourceWidget)
             if source_widget and source_widget.source_uuid == source_uuid:
                 return source_widget
 
@@ -1201,8 +1215,8 @@ class SourceWidget(QWidget):
         self,
         controller: Controller,
         source: Source,
-        source_selected_signal: pyqtSignal,
-        adjust_preview: pyqtSignal,
+        source_selected_signal: pyqtBoundSignal,
+        adjust_preview: pyqtBoundSignal,
     ):
         super().__init__()
 
@@ -1219,10 +1233,10 @@ class SourceWidget(QWidget):
         source_selected_signal.connect(self._on_source_selected)
         adjust_preview.connect(self._on_adjust_preview)
 
-        self.source = source
+        self.source: Source = source
         self.seen = self.source.seen
-        self.source_uuid = self.source.uuid
-        self.last_updated = self.source.last_updated
+        self.source_uuid: str = self.source.uuid
+        self.last_updated: sqlalchemy.DateTime = self.source.last_updated
         self.selected = False
         self.deletion_scheduled_timestamp = datetime.utcnow()
         self.sync_started_timestamp = datetime.utcnow()
@@ -1293,14 +1307,14 @@ class SourceWidget(QWidget):
         layout.setSpacing(0)
         layout.addWidget(self.source_widget)
 
-        self.update()
+        self.reload()
 
     @pyqtSlot(int)
     def _on_adjust_preview(self, width: int) -> None:
         self.setFixedWidth(width)
         self.preview.adjust_preview(width)
 
-    def update(self) -> None:
+    def reload(self) -> None:
         """
         Updates the displayed values with the current values from self.source.
         """
@@ -1563,7 +1577,7 @@ class StarToggleButton(SvgToggleButton):
         self.setCheckable(True)
         self.set_icon(on="star_on.svg", off="star_off.svg")  # Undo icon change from disable_toggle
 
-    def eventFilter(self, obj: QObject, event: QEvent) -> None:
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         """
         If the button is checkable then we show a hover state.
         """
@@ -1908,7 +1922,7 @@ class SpeechBubble(QWidget):
 
         self.check_mark.setToolTip(",\n".join(username for username in self.seen_by.keys()))
 
-    def eventFilter(self, obj: QObject, event: QEvent) -> None:
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         t = event.type()
         if t == QEvent.HoverEnter:
             self.check_mark.setIcon(load_icon("checkmark_hover.svg"))
@@ -2308,9 +2322,9 @@ class FileWidget(QWidget):
         layout.addWidget(self.file_size)
 
         # Connect signals to slots
-        file_download_started.connect(self._on_file_download_started, type=Qt.QueuedConnection)
-        file_ready_signal.connect(self._on_file_downloaded, type=Qt.QueuedConnection)
-        file_missing.connect(self._on_file_missing, type=Qt.QueuedConnection)
+        file_download_started.connect(self._on_file_download_started)
+        file_ready_signal.connect(self._on_file_downloaded)
+        file_missing.connect(self._on_file_missing)
 
     def adjust_width(self, container_width: int) -> None:
         """
@@ -2322,9 +2336,10 @@ class FileWidget(QWidget):
         else:
             self.setFixedWidth(int(container_width * self.WIDTH_TO_CONTAINER_WIDTH_RATIO))
 
-    def eventFilter(self, obj: QObject, event: QEvent) -> None:
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         t = event.type()
         if t == QEvent.MouseButtonPress:
+            assert isinstance(event, QMouseEvent)
             if event.button() == Qt.LeftButton:
                 self._on_left_click()
         elif t == QEvent.HoverEnter and not self.downloading:
@@ -2515,8 +2530,8 @@ class ConversationScrollArea(QScrollArea):
         super().resizeEvent(event)
         self.widget().setFixedWidth(event.size().width())
 
-        for widget in self.findChildren(FileWidget):
-            widget.adjust_width(self.widget().width())
+        for file_widget in self.findChildren(FileWidget):
+            file_widget.adjust_width(self.widget().width())
 
         for widget in self.findChildren(SpeechBubble):
             widget.adjust_width(self.widget().width())
@@ -2639,7 +2654,7 @@ class ConversationView(QWidget):
         )
 
         # To hold currently displayed messages.
-        self.current_messages = {}  # type: Dict[str, QWidget]
+        self.current_messages = {}  # type: Dict[str, Union[FileWidget, MessageWidget, ReplyWidget]]
 
         self.deletion_scheduled_timestamp = datetime.utcnow()
         self.sync_started_timestamp = datetime.utcnow()
@@ -2659,16 +2674,16 @@ class ConversationView(QWidget):
         main_layout.addWidget(self.deleted_conversation_items_marker)
         main_layout.addWidget(self.deleted_conversation_marker)
 
-        self.scroll = ConversationScrollArea()
+        self._scroll = ConversationScrollArea()
 
         # Flag to show if the current user has sent a reply. See issue #61.
         self.reply_flag = False
 
         # Completely unintuitive way to ensure the view remains scrolled to the bottom.
-        sb = self.scroll.verticalScrollBar()
+        sb = self._scroll.verticalScrollBar()
         sb.rangeChanged.connect(self.update_conversation_position)
 
-        main_layout.addWidget(self.scroll)
+        main_layout.addWidget(self._scroll)
 
         try:
             self.update_conversation(self.source.collection)
@@ -2701,11 +2716,11 @@ class ConversationView(QWidget):
             # If a draft reply exists then show the tear pattern above the draft replies.
             # Otherwise, show that the entire conversation is deleted.
             if draft_reply_exists:
-                self.scroll.show()
+                self._scroll.show()
                 self.deleted_conversation_items_marker.show()
                 self.deleted_conversation_marker.hide()
             else:
-                self.scroll.hide()
+                self._scroll.hide()
                 self.deleted_conversation_items_marker.hide()
                 self.deleted_conversation_marker.show()
         except sqlalchemy.exc.InvalidRequestError as e:
@@ -2713,12 +2728,12 @@ class ConversationView(QWidget):
 
     def update_deletion_markers(self) -> None:
         if self.source.collection:
-            self.scroll.show()
+            self._scroll.show()
             if self.source.collection[0].file_counter > 1:
                 self.deleted_conversation_marker.hide()
                 self.deleted_conversation_items_marker.show()
         elif self.source.interaction_count > 0:
-            self.scroll.hide()
+            self._scroll.hide()
             self.deleted_conversation_items_marker.hide()
             self.deleted_conversation_marker.show()
 
@@ -2750,16 +2765,19 @@ class ConversationView(QWidget):
         for index, conversation_item in enumerate(collection):
             item_widget = current_conversation.get(conversation_item.uuid)
             if item_widget:
+                # FIXME: Item types cannot be defines as (FileWidget, MessageWidget, ReplyWidget)
+                # because one test mocks MessageWidget.
+                assert isinstance(item_widget, (FileWidget, SpeechBubble))
                 current_conversation.pop(conversation_item.uuid)
                 if item_widget.index != index:
                     # The existing widget is out of order.
                     # Remove / re-add it and update index details.
-                    self.scroll.remove_widget_from_conversation(item_widget)
+                    self._scroll.remove_widget_from_conversation(item_widget)
                     item_widget.index = index
                     if isinstance(item_widget, ReplyWidget):
-                        self.scroll.add_widget_to_conversation(index, item_widget, Qt.AlignRight)
+                        self._scroll.add_widget_to_conversation(index, item_widget, Qt.AlignRight)
                     else:
-                        self.scroll.add_widget_to_conversation(index, item_widget, Qt.AlignLeft)
+                        self._scroll.add_widget_to_conversation(index, item_widget, Qt.AlignLeft)
                 # Check if text in item has changed, then update the
                 # widget to reflect this change.
                 if not isinstance(item_widget, FileWidget):
@@ -2796,7 +2814,7 @@ class ConversationView(QWidget):
             logger.debug("Deleting item: {}".format(item_widget.uuid))
             self.current_messages.pop(item_widget.uuid)
             item_widget.deleteLater()
-            self.scroll.remove_widget_from_conversation(item_widget)
+            self._scroll.remove_widget_from_conversation(item_widget)
 
         self.update_deletion_markers()
         self.conversation_updated.emit()
@@ -2813,10 +2831,10 @@ class ConversationView(QWidget):
             self.controller.file_ready,
             self.controller.file_missing,
             index,
-            self.scroll.widget().width(),
+            self._scroll.widget().width(),
             self._export_service,
         )
-        self.scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignLeft)
+        self._scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignLeft)
         self.current_messages[file.uuid] = conversation_item
         self.conversation_updated.emit()
 
@@ -2826,7 +2844,7 @@ class ConversationView(QWidget):
         it's scrolled to the bottom and thus visible.
         """
         if self.reply_flag and max_val > 0:
-            self.scroll.verticalScrollBar().setValue(max_val)
+            self._scroll.verticalScrollBar().setValue(max_val)
             self.reply_flag = False
 
     def add_message(self, message: Message, index: int) -> None:
@@ -2839,7 +2857,7 @@ class ConversationView(QWidget):
             self.controller.message_ready,
             self.controller.message_download_failed,
             index,
-            self.scroll.widget().width(),
+            self._scroll.widget().width(),
             self.controller.authenticated_user,
             message.download_error is not None,
         )
@@ -2850,7 +2868,7 @@ class ConversationView(QWidget):
         )
         # Retrieve the list of usernames of the users who have seen the message.
         conversation_item.update_seen_by_list(message.seen_by_list)
-        self.scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignLeft)
+        self._scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignLeft)
         self.current_messages[message.uuid] = conversation_item
         self.conversation_updated.emit()
 
@@ -2881,7 +2899,7 @@ class ConversationView(QWidget):
             self.controller.reply_succeeded,
             self.controller.reply_failed,
             index,
-            self.scroll.widget().width(),
+            self._scroll.widget().width(),
             sender,
             sender_is_current_user,
             self.controller.authenticated_user,
@@ -2893,7 +2911,7 @@ class ConversationView(QWidget):
         )
         # Retrieve the list of usernames of the users who have seen the reply.
         conversation_item.update_seen_by_list(reply.seen_by_list)
-        self.scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignRight)
+        self._scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignRight)
         self.current_messages[reply.uuid] = conversation_item
 
     def on_reply_sent(self, source_uuid: str) -> None:
@@ -3401,8 +3419,8 @@ class SourceMenuButton(QToolButton):
         self.setIcon(load_icon("ellipsis.svg"))
         self.setIconSize(QSize(22, 33))  # Make it taller than the svg viewBox to increase hitbox
 
-        self.menu = SourceMenu(self.source, self.controller, app_state)
-        self.setMenu(self.menu)
+        menu = SourceMenu(self.source, self.controller, app_state)
+        self.setMenu(menu)
 
         self.setPopupMode(QToolButton.InstantPopup)
         # Set cursor.

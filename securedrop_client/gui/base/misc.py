@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from typing import Optional, Union
 
 from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
 
 from securedrop_client.resources import load_icon, load_svg
@@ -39,7 +40,7 @@ class SvgToggleButton(QPushButton):
         The display size of the SVG, defaults to filling the entire size of the widget.
     """
 
-    def __init__(self, on: str, off: str, svg_size: Optional[str] = None):
+    def __init__(self, on: str, off: str, svg_size: Optional[QSize] = None):
         super().__init__()
 
         # Set layout
@@ -51,16 +52,16 @@ class SvgToggleButton(QPushButton):
         layout.setSpacing(0)
 
         # Add SVG icon and set its size
-        self.icon = load_icon(normal=on, normal_off=off)
-        self.setIcon(self.icon)
+        self._icon = load_icon(normal=on, normal_off=off)
+        self.setIcon(self._icon)
         self.setIconSize(svg_size) if svg_size else self.setIconSize(QSize())
 
         # Make this a toggle button
         self.setCheckable(True)
 
     def set_icon(self, on: str, off: str) -> None:
-        self.icon = load_icon(normal=on, normal_off=off)
-        self.setIcon(self.icon)
+        self._icon = load_icon(normal=on, normal_off=off)
+        self.setIcon(self._icon)
 
 
 class SvgPushButton(QPushButton):
@@ -88,7 +89,7 @@ class SvgPushButton(QPushButton):
         disabled: Optional[str] = None,
         active: Optional[str] = None,
         selected: Optional[str] = None,
-        svg_size: Optional[str] = None,
+        svg_size: Optional[QSize] = None,
     ) -> None:
         super().__init__()
 
@@ -101,7 +102,7 @@ class SvgPushButton(QPushButton):
         layout.setSpacing(0)
 
         # Add SVG icon and set its size
-        self._icon = load_icon(
+        self._icon: QIcon = load_icon(
             normal=normal,
             disabled=disabled,
             active=active,
@@ -124,7 +125,7 @@ class SvgLabel(QLabel):
         The display size of the SVG, defaults to filling the entire size of the widget.
     """
 
-    def __init__(self, filename: str, svg_size: Optional[str] = None) -> None:
+    def __init__(self, filename: str, svg_size: Optional[QSize] = None) -> None:
         super().__init__()
 
         # Remove margins and spacing
@@ -138,7 +139,7 @@ class SvgLabel(QLabel):
         self.svg.setFixedSize(svg_size) if svg_size else self.svg.setFixedSize(QSize())
         layout.addWidget(self.svg)
 
-    def update_image(self, filename: str, svg_size: Optional[str] = None) -> None:
+    def update_image(self, filename: str, svg_size: Optional[QSize] = None) -> None:
         self.svg = load_svg(filename)
         self.svg.setFixedSize(svg_size) if svg_size else self.svg.setFixedSize(QSize())
         child = self.layout().takeAt(0)

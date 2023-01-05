@@ -27,7 +27,7 @@ def test_user_icon_click(qtbot, mocker, functional_test_logged_in_context):
     pyautogui.click(cursor_x, cursor_y)
 
     def user_menu_is_visible():
-        assert gui.left_pane.user_profile.user_button.menu.logout.isVisible()
+        assert gui.left_pane.user_profile.user_button._menu.logout.isVisible()
 
     # Ensure user menu is visible after clicking on the user icon
     qtbot.waitUntil(user_menu_is_visible, timeout=TIME_CLICK_ACTION)

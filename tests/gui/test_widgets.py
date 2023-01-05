@@ -10,8 +10,8 @@ from unittest.mock import Mock, PropertyMock
 import arrow
 import sqlalchemy
 import sqlalchemy.orm.exc
-from PyQt5.QtCore import QEvent, QSize, Qt
-from PyQt5.QtGui import QFocusEvent, QMovie, QResizeEvent
+from PyQt5.QtCore import QEvent, QPointF, QSize, Qt
+from PyQt5.QtGui import QFocusEvent, QMouseEvent, QMovie, QResizeEvent
 from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QVBoxLayout, QWidget
 from sqlalchemy.orm import attributes, scoped_session, sessionmaker
@@ -438,12 +438,12 @@ def test_UserIconLabel_clicks(mocker):
 
 def test_UserButton_setup(mocker):
     ub = UserButton()
-    ub.menu = mocker.MagicMock()
+    ub._menu = mocker.MagicMock()
     controller = mocker.MagicMock()
 
     ub.setup(controller)
 
-    ub.menu.setup.assert_called_once_with(controller)
+    ub._menu.setup.assert_called_once_with(controller)
 
 
 def test_UserButton_set_username():
@@ -498,11 +498,11 @@ def test_LoginButton_setup(mocker):
     lb.window = window
 
 
-def test_Loginbutton_on_clicked(mocker):
+def test_LoginButton_on_clicked(mocker):
     lb = LoginButton()
-    lb.window = mocker.MagicMock()
+    lb._window = mocker.MagicMock()
     lb._on_clicked()
-    lb.window.show_login.assert_called_once_with()
+    lb._window.show_login.assert_called_once_with()
 
 
 def test_MainView_init():
@@ -539,13 +539,13 @@ def test_MainView_show_sources_with_none_selected(mocker):
     source_item = SourceListWidgetItem(mv.source_list)
     mv.source_list.setItemWidget(source_item, source_widget)
     mv.source_list.source_items["stub_uuid"] = source_item
-    mocker.patch.object(mv.source_list, "update")
+    mocker.patch.object(mv.source_list, "update_sources")
 
     mv.empty_conversation_view = mocker.MagicMock()
 
     mv.show_sources([1, 2, 3])
 
-    mv.source_list.update.assert_called_once_with([1, 2, 3])
+    mv.source_list.update_sources.assert_called_once_with([1, 2, 3])
     mv.empty_conversation_view.show_no_source_selected_message.assert_called_once_with()
     mv.empty_conversation_view.show.assert_called_once_with()
 
@@ -574,7 +574,7 @@ def test_MainView_show_sources_with_no_sources_at_all(mocker):
 
     mv.show_sources([])
 
-    mv.source_list.update.assert_called_once_with([])
+    mv.source_list.update_sources.assert_called_once_with([])
     mv.empty_conversation_view.show_no_sources_message.assert_called_once_with()
     mv.empty_conversation_view.show.assert_called_once_with()
 
@@ -586,12 +586,12 @@ def test_MainView_show_sources_when_sources_are_deleted(mocker):
     mv = MainView(None)
     mv.source_list = mocker.MagicMock()
     mv.empty_conversation_view = mocker.MagicMock()
-    mv.source_list.update = mocker.MagicMock(return_value=[])
+    mv.source_list.update_sources = mocker.MagicMock(return_value=[])
     mv.delete_conversation = mocker.MagicMock()
 
     mv.show_sources([1, 2, 3, 4])
 
-    mv.source_list.update = mocker.MagicMock(return_value=[4])
+    mv.source_list.update_sources = mocker.MagicMock(return_value=[4])
 
     mv.show_sources([1, 2, 3])
 
@@ -816,7 +816,7 @@ def test_MainView_refresh_source_conversations(homedir, mocker, qtbot, session_m
     controller.api = mocker.MagicMock()
 
     mv.setup(controller)
-    mv.source_list.update(sources)
+    mv.source_list.update_sources(sources)
     mv.show()
 
     # get the conversations created
@@ -905,7 +905,7 @@ def test_MainView_refresh_source_conversations_with_deleted(
 
     sources = [source1, source2]
 
-    mv.source_list.update(sources)
+    mv.source_list.update_sources(sources)
     mv.show()
 
     def collection_error():
@@ -965,7 +965,7 @@ def test_SourceList_get_selected_source(mocker):
     sl = SourceList()
     sl.controller = mocker.MagicMock()
     sources = [factory.Source(), factory.Source()]
-    sl.update(sources)
+    sl.update_sources(sources)
 
     assert sl.get_selected_source() is None
 
@@ -996,7 +996,7 @@ def test_SourceList_update_adds_new_sources(mocker):
     mocker.patch("securedrop_client.gui.widgets.SourceListWidgetItem", mock_lwi)
 
     sources = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock()]
-    sl.update(sources)
+    sl.update_sources(sources)
 
     assert mock_sw.call_count == len(sources)
     assert mock_lwi.call_count == len(sources)
@@ -1050,7 +1050,7 @@ def test_SourceList_update_when_source_deleted(mocker, session, session_maker, h
     # add it to the SourceList
     sl = SourceList()
     sl.setup(controller)
-    deleted_uuids = sl.update([oss])
+    deleted_uuids = sl.update_sources([oss])
     assert not deleted_uuids
     assert len(sl.source_items) == 1
 
@@ -1060,13 +1060,13 @@ def test_SourceList_update_when_source_deleted(mocker, session, session_maker, h
 
     # now verify that updating does not raise an exception, and that the SourceWidget still exists
     # since the sync will end up calling update again and delete it
-    deleted_uuids = sl.update([source])
+    deleted_uuids = sl.update_sources([source])
     assert len(deleted_uuids) == 0
     assert not deleted_uuids
     assert len(sl.source_items) == 1
 
     # finish sync simulation where a local source is deleted
-    deleted_uuids = sl.update([])
+    deleted_uuids = sl.update_sources([])
     assert len(deleted_uuids) == 1
     assert source.uuid in deleted_uuids
     assert len(sl.source_items) == 0
@@ -1122,17 +1122,19 @@ def test_SourceList_update_does_not_raise_exc(mocker):
     sl = SourceList()
     sl.controller = mocker.MagicMock()
     source = DeletedSource()
-    sl.update([source])
+    sl.update_sources([source])
 
 
 def test_SourceList_update_does_not_raise_exc_when_itemWidget_is_none(mocker):
     sl = SourceList()
     sl.controller = mocker.MagicMock()
     source = factory.Source()
-    sl.update([source])  # first add the source so that the next time the same source is updated
+    sl.update_sources(
+        [source]
+    )  # first add the source so that the next time the same source is updated
 
     sl.itemWidget = mocker.MagicMock(return_value=None)
-    sl.update([source])  # does not raise exception
+    sl.update_sources([source])  # does not raise exception
 
 
 def test_SourceList_update_maintains_selection(mocker):
@@ -1142,16 +1144,16 @@ def test_SourceList_update_maintains_selection(mocker):
     sl = SourceList()
     sl.controller = mocker.MagicMock()
     sources = [factory.Source(), factory.Source()]
-    sl.update(sources)
+    sl.update_sources(sources)
 
     sl.setCurrentItem(sl.itemAt(0, 0))  # select the first source
-    sl.update(sources)
+    sl.update_sources(sources)
 
     assert sl.currentItem()
     assert sl.itemWidget(sl.currentItem()).source.id == sources[0].id
 
     sl.setCurrentItem(sl.itemAt(1, 0))  # select the second source
-    sl.update(sources)
+    sl.update_sources(sources)
 
     assert sl.currentItem()
     assert sl.itemWidget(sl.currentItem()).source.id == sources[1].id
@@ -1163,12 +1165,12 @@ def test_SourceList_update_with_pre_selected_source_maintains_selection(mocker):
     """
     sl = SourceList()
     sl.controller = mocker.MagicMock()
-    sl.update([factory.Source(), factory.Source()])
+    sl.update_sources([factory.Source(), factory.Source()])
     second_item = sl.itemAt(1, 0)
     sl.setCurrentItem(second_item)  # select the second source
     mocker.patch.object(second_item, "isSelected", return_value=True)
 
-    sl.update([factory.Source(), factory.Source()])
+    sl.update_sources([factory.Source(), factory.Source()])
 
     assert second_item.isSelected() is True
 
@@ -1179,10 +1181,10 @@ def test_SourceList_update_removes_selected_item_results_in_no_current_selection
     """
     sl = SourceList()
     sl.controller = mocker.MagicMock()
-    sl.update([factory.Source(uuid="new"), factory.Source(uuid="newer")])
+    sl.update_sources([factory.Source(uuid="new"), factory.Source(uuid="newer")])
 
     sl.setCurrentItem(sl.itemAt(0, 0))  # select source with uuid='newer'
-    sl.update([factory.Source(uuid="new")])  # delete source with uuid='newer'
+    sl.update_sources([factory.Source(uuid="new")])  # delete source with uuid='newer'
 
     assert not sl.currentItem()
 
@@ -1193,11 +1195,11 @@ def test_SourceList_update_removes_item_from_end_of_list(mocker):
     """
     sl = SourceList()
     sl.controller = mocker.MagicMock()
-    sl.update(
+    sl.update_sources(
         [factory.Source(uuid="new"), factory.Source(uuid="newer"), factory.Source(uuid="newest")]
     )
     assert sl.count() == 3
-    sl.update([factory.Source(uuid="newer"), factory.Source(uuid="newest")])
+    sl.update_sources([factory.Source(uuid="newer"), factory.Source(uuid="newest")])
     assert sl.count() == 2
     assert sl.itemWidget(sl.item(0)).source.uuid == "newest"
     assert sl.itemWidget(sl.item(1)).source.uuid == "newer"
@@ -1210,11 +1212,11 @@ def test_SourceList_update_removes_item_from_middle_of_list(mocker):
     """
     sl = SourceList()
     sl.controller = mocker.MagicMock()
-    sl.update(
+    sl.update_sources(
         [factory.Source(uuid="new"), factory.Source(uuid="newer"), factory.Source(uuid="newest")]
     )
     assert sl.count() == 3
-    sl.update([factory.Source(uuid="new"), factory.Source(uuid="newest")])
+    sl.update_sources([factory.Source(uuid="new"), factory.Source(uuid="newest")])
     assert sl.count() == 2
     assert sl.itemWidget(sl.item(0)).source.uuid == "newest"
     assert sl.itemWidget(sl.item(1)).source.uuid == "new"
@@ -1227,11 +1229,11 @@ def test_SourceList_update_removes_item_from_beginning_of_list(mocker):
     """
     sl = SourceList()
     sl.controller = mocker.MagicMock()
-    sl.update(
+    sl.update_sources(
         [factory.Source(uuid="new"), factory.Source(uuid="newer"), factory.Source(uuid="newest")]
     )
     assert sl.count() == 3
-    sl.update([factory.Source(uuid="new"), factory.Source(uuid="newer")])
+    sl.update_sources([factory.Source(uuid="new"), factory.Source(uuid="newer")])
     assert sl.count() == 2
     assert sl.itemWidget(sl.item(0)).source.uuid == "newer"
     assert sl.itemWidget(sl.item(1)).source.uuid == "new"
@@ -1330,7 +1332,7 @@ def test_SourceList_set_snippet(mocker):
 def test_SourceList_get_source_widget(mocker):
     sl = SourceList()
     sl.controller = mocker.MagicMock()
-    sl.update([factory.Source(uuid="mock_uuid")])
+    sl.update_sources([factory.Source(uuid="mock_uuid")])
     sl.source_items = {}
 
     source_widget = sl.get_source_widget("mock_uuid")
@@ -1343,7 +1345,7 @@ def test_SourceList_get_source_widget_does_not_exist(mocker):
     sl = SourceList()
     sl.controller = mocker.MagicMock()
     mock_source = factory.Source(uuid="mock_uuid")
-    sl.update([mock_source])
+    sl.update_sources([mock_source])
     sl.source_items = {}
 
     source_widget = sl.get_source_widget("uuid_for_source_not_in_list")
@@ -1636,7 +1638,7 @@ def test_SourceWidget_html_init(mocker):
     sw.summary_layout = mocker.MagicMock()
 
     mocker.patch("securedrop_client.gui.base.SvgLabel")
-    sw.update()
+    sw.reload()
 
     sw.name.setText.assert_called_once_with("foo <b>bar</b> baz")
 
@@ -1826,12 +1828,12 @@ def test_SourceWidget_update_attachment_icon(mocker):
     mark_seen_signal = mocker.MagicMock()
     sw = SourceWidget(controller, source, mark_seen_signal, mocker.MagicMock())
 
-    sw.update()
+    sw.reload()
     assert not sw.paperclip.isHidden()
 
     source.document_count = 0
 
-    sw.update()
+    sw.reload()
     assert sw.paperclip.isHidden()
 
 
@@ -1848,7 +1850,7 @@ def test_SourceWidget_update_does_not_raise_exception(mocker):
     controller.session.refresh.side_effect = ex
     mock_logger = mocker.MagicMock()
     mocker.patch("securedrop_client.gui.widgets.logger", mock_logger)
-    sw.update()
+    sw.reload()
     assert mock_logger.debug.call_count == 1
 
 
@@ -1859,7 +1861,7 @@ def test_SourceWidget_update_skips_setting_snippet_if_deletion_in_progress(mocke
     sw = SourceWidget(mocker.MagicMock(), factory.Source(), mocker.MagicMock(), mocker.MagicMock())
     sw.deleting = True
     sw.set_snippet = mocker.MagicMock()
-    sw.update()
+    sw.reload()
     sw.set_snippet.assert_not_called()
 
 
@@ -1871,7 +1873,7 @@ def test_SourceWidget_update_skips_setting_snippet_if_sync_is_stale(mocker):
     sw.sync_started_timestamp = datetime.now()
     sw.deletion_scheduled_timestamp = datetime.now()
     sw.set_snippet = mocker.MagicMock()
-    sw.update()
+    sw.reload()
     sw.set_snippet.assert_not_called()
 
 
@@ -1882,7 +1884,7 @@ def test_SourceWidget_update_skips_setting_snippet_if_conversation_deletion_in_p
     sw = SourceWidget(mocker.MagicMock(), factory.Source(), mocker.MagicMock(), mocker.MagicMock())
     sw.deleting_conversation = True
     sw.set_snippet = mocker.MagicMock()
-    sw.update()
+    sw.reload()
     sw.set_snippet.assert_not_called()
 
 
@@ -1948,7 +1950,7 @@ def test_SourceWidget_update_truncate_latest_msg(mocker):
     mark_seen_signal = mocker.MagicMock()
     sw = SourceWidget(controller, source, mark_seen_signal, mocker.MagicMock())
 
-    sw.update()
+    sw.reload()
     assert sw.preview.text().endswith("...")
 
 
@@ -2074,7 +2076,7 @@ def test_SourceWidget_preview_after_conversation_deleted(mocker, session, i18n):
 
     controller = mocker.MagicMock()
     sw = SourceWidget(controller, source, mocker.MagicMock(), mocker.MagicMock())
-    sw.update()
+    sw.reload()
     assert sw.preview.property("class") == "conversation_deleted"
     assert sw.preview.text() == _("\u2014 All files and messages deleted for this source \u2014")
 
@@ -2137,12 +2139,12 @@ def test_SourceWidget_uses_SecureQLabel(mocker):
     mark_seen_signal = mocker.MagicMock()
     sw = SourceWidget(controller, source, mark_seen_signal, mocker.MagicMock())
 
-    sw.update()
+    sw.reload()
     assert isinstance(sw.preview, SecureQLabel)
 
     sw.preview.setTextFormat = mocker.MagicMock()
     sw.preview.setText("<b>bad text</b>")
-    sw.update()
+    sw.reload()
     sw.preview.setTextFormat.assert_called_with(Qt.PlainText)
 
 
@@ -3160,8 +3162,9 @@ def test_FileWidget_event_handler_left_click(mocker, session, source):
     get_file = mocker.MagicMock(return_value=file_)
     controller = mocker.MagicMock(get_file=get_file)
 
-    test_event = QEvent(QEvent.MouseButtonPress)
-    test_event.button = mocker.MagicMock(return_value=Qt.LeftButton)
+    test_event = QMouseEvent(
+        QEvent.MouseButtonPress, QPointF(), Qt.LeftButton, Qt.NoButton, Qt.NoModifier
+    )
 
     fw = FileWidget(
         file_.uuid,
@@ -3894,7 +3897,7 @@ def test_ConversationView_init(mocker, homedir):
     user = factory.User()
     mocked_controller = mocker.MagicMock(authenticated_user=user)
     cv = ConversationView(mocked_source, mocked_controller)
-    assert isinstance(cv.scroll.conversation_layout, QVBoxLayout)
+    assert isinstance(cv._scroll.conversation_layout, QVBoxLayout)
 
 
 def test_ConversationView_init_with_deleted_source(mocker, homedir, session):
@@ -3941,12 +3944,12 @@ def test_ConversationView_ConversationScrollArea_resize(mocker):
     file_widget_adjust_width = mocker.patch("securedrop_client.gui.widgets.FileWidget.adjust_width")
 
     cv.setFixedWidth(800)
-    event = QResizeEvent(cv.scroll.size(), QSize(123_456_789, 123_456_789))
-    cv.scroll.resizeEvent(event)
+    event = QResizeEvent(cv._scroll.size(), QSize(123_456_789, 123_456_789))
+    cv._scroll.resizeEvent(event)
 
-    assert cv.scroll.widget().width() == cv.scroll.width()
-    speech_bubble_adjust_width.assert_called_with(cv.scroll.widget().width())
-    file_widget_adjust_width.assert_called_with(cv.scroll.widget().width())
+    assert cv._scroll.widget().width() == cv._scroll.width()
+    speech_bubble_adjust_width.assert_called_with(cv._scroll.widget().width())
+    file_widget_adjust_width.assert_called_with(cv._scroll.widget().width())
 
 
 def test_ConversationView__on_sync_started(mocker, session):
@@ -3969,7 +3972,7 @@ def test_ConversationView__on_conversation_deletion_successful(mocker, session):
     cv._on_conversation_deletion_successful(cv.source.uuid, timestamp)
 
     assert cv.deletion_scheduled_timestamp == timestamp
-    assert cv.scroll.isHidden()
+    assert cv._scroll.isHidden()
     assert cv.deleted_conversation_items_marker.isHidden()
     assert not cv.deleted_conversation_marker.isHidden()
     assert cv.current_messages[message.uuid].isHidden()
@@ -3983,13 +3986,13 @@ def test_ConversationView__on_conversation_deletion_successful_with_mismatched_s
     source = factory.Source(uuid="abc123")
     cv = ConversationView(source, mocker.MagicMock())
 
-    assert not cv.scroll.isHidden()
+    assert not cv._scroll.isHidden()
     assert cv.deleted_conversation_items_marker.isHidden()
     assert cv.deleted_conversation_marker.isHidden()
 
     cv._on_conversation_deletion_successful("notabc123", datetime.now())
 
-    assert not cv.scroll.isHidden()
+    assert not cv._scroll.isHidden()
     assert cv.deleted_conversation_items_marker.isHidden()
     assert cv.deleted_conversation_marker.isHidden()
 
@@ -4013,7 +4016,7 @@ def test_ConversationView__on_conversation_deletion_successful_does_not_hide_dra
 
     cv._on_conversation_deletion_successful(cv.source.uuid, datetime.now())
 
-    assert not cv.scroll.isHidden()
+    assert not cv._scroll.isHidden()
     assert not cv.deleted_conversation_items_marker.isHidden()
     assert cv.deleted_conversation_marker.isHidden()
     assert cv.current_messages[message.uuid].isHidden()
@@ -4039,13 +4042,13 @@ def test_ConversationView_update_conversation_position_follow(mocker, homedir):
     # Flag to denote a reply was sent by the user.
     cv.reply_flag = True
 
-    cv.scroll.verticalScrollBar().value = mocker.MagicMock(return_value=5900)
-    cv.scroll.viewport().height = mocker.MagicMock(return_value=500)
-    cv.scroll.verticalScrollBar().setValue = mocker.MagicMock()
+    cv._scroll.verticalScrollBar().value = mocker.MagicMock(return_value=5900)
+    cv._scroll.viewport().height = mocker.MagicMock(return_value=500)
+    cv._scroll.verticalScrollBar().setValue = mocker.MagicMock()
 
     cv.update_conversation_position(0, 6000)
 
-    cv.scroll.verticalScrollBar().setValue.assert_called_once_with(6000)
+    cv._scroll.verticalScrollBar().setValue.assert_called_once_with(6000)
 
 
 def test_ConversationView_update_conversation_position_stay_fixed(mocker, homedir):
@@ -4062,13 +4065,13 @@ def test_ConversationView_update_conversation_position_stay_fixed(mocker, homedi
 
     cv = ConversationView(mocked_source, mocked_controller)
 
-    cv.scroll.verticalScrollBar().value = mocker.MagicMock(return_value=5500)
-    cv.scroll.viewport().height = mocker.MagicMock(return_value=500)
-    cv.scroll.verticalScrollBar().setValue = mocker.MagicMock()
+    cv._scroll.verticalScrollBar().value = mocker.MagicMock(return_value=5500)
+    cv._scroll.viewport().height = mocker.MagicMock(return_value=500)
+    cv._scroll.verticalScrollBar().setValue = mocker.MagicMock()
 
     cv.update_conversation_position(0, 6000)
 
-    cv.scroll.verticalScrollBar().setValue.assert_not_called()
+    cv._scroll.verticalScrollBar().setValue.assert_not_called()
 
 
 def test_ConversationView_add_message(mocker, session, session_maker, homedir):
@@ -4088,7 +4091,7 @@ def test_ConversationView_add_message(mocker, session, session_maker, homedir):
     cv.add_message(message=message, index=0)
 
     # Check that we added the correct widget to the layout
-    message_widget = cv.scroll.conversation_layout.itemAt(1).widget()
+    message_widget = cv._scroll.conversation_layout.itemAt(1).widget()
     assert isinstance(message_widget, MessageWidget)
 
     assert message_widget.message.text() == ">^..^<"
@@ -4116,7 +4119,7 @@ def test_ConversationView_add_message_no_content(mocker, session, session_maker,
     cv.add_message(message=message, index=0)
 
     # Check that we added the correct widget to the layout
-    message_widget = cv.scroll.conversation_layout.itemAt(1).widget()
+    message_widget = cv._scroll.conversation_layout.itemAt(1).widget()
     assert isinstance(message_widget, MessageWidget)
 
     assert message_widget.message.text() == "<Message not yet available>"
@@ -4197,7 +4200,7 @@ def test_ConversationView_add_reply(mocker, homedir, session, session_maker):
     cv.add_reply(reply=reply, sender=sender, index=0)
 
     # Check that we added the correct widget to the layout
-    reply_widget = cv.scroll.conversation_layout.itemAt(1).widget()
+    reply_widget = cv._scroll.conversation_layout.itemAt(1).widget()
     assert isinstance(reply_widget, ReplyWidget)
 
     assert reply_widget.uuid == "abc123"
@@ -4232,7 +4235,7 @@ def test_ConversationView_add_reply_no_content(mocker, homedir, session_maker, s
     cv.add_reply(reply=reply, sender=sender, index=0)
 
     # Check that we added the correct widget to the layout
-    reply_widget = cv.scroll.conversation_layout.itemAt(1).widget()
+    reply_widget = cv._scroll.conversation_layout.itemAt(1).widget()
     assert isinstance(reply_widget, ReplyWidget)
 
     assert reply_widget.uuid == "abc123"
@@ -4267,7 +4270,7 @@ def test_ConversationView_add_reply_that_has_current_user_as_sender(
     cv.add_reply(reply=reply, sender=authenticated_user, index=0)
 
     # Check that we added the correct widget to the layout
-    reply_widget = cv.scroll.conversation_layout.itemAt(1).widget()
+    reply_widget = cv._scroll.conversation_layout.itemAt(1).widget()
     assert isinstance(reply_widget, ReplyWidget)
 
     assert reply_widget.uuid == "abc123"
@@ -4306,7 +4309,7 @@ def test_ConversationView_add_downloaded_file(mocker, homedir, source, session):
     mock_label.assert_called_with("123B")  # default factory filesize
     assert cv.conversation_updated.emit.call_count == 1
 
-    file_widget = cv.scroll.conversation_layout.itemAt(1).widget()
+    file_widget = cv._scroll.conversation_layout.itemAt(1).widget()
     assert isinstance(file_widget, FileWidget)
 
 
@@ -4334,7 +4337,7 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, sessi
     mock_label.assert_called_with("123B")  # default factory filesize
     assert cv.conversation_updated.emit.call_count == 1
 
-    file_widget = cv.scroll.conversation_layout.itemAt(1).widget()
+    file_widget = cv._scroll.conversation_layout.itemAt(1).widget()
     assert isinstance(file_widget, FileWidget)
 
 
@@ -4851,11 +4854,11 @@ def test_update_conversation_maintains_old_items(mocker, session):
     controller = mocker.MagicMock(get_file=get_file, authenticated_user=user)
 
     cv = ConversationView(source, controller)
-    assert cv.scroll.conversation_layout.count() == 3
+    assert cv._scroll.conversation_layout.count() == 3
 
     cv.update_conversation(cv.source.collection)
 
-    assert cv.scroll.conversation_layout.count() == 3
+    assert cv._scroll.conversation_layout.count() == 3
 
 
 def test_update_conversation_does_not_remove_pending_draft_items(mocker, session):
@@ -4882,7 +4885,7 @@ def test_update_conversation_does_not_remove_pending_draft_items(mocker, session
     controller = mocker.MagicMock(get_file=get_file, authenticated_user=user)
 
     cv = ConversationView(source, controller)
-    assert cv.scroll.conversation_layout.count() == 3  # precondition with draft
+    assert cv._scroll.conversation_layout.count() == 3  # precondition with draft
 
     # add the new message and persist
     new_message = factory.Message(filename="4-source-msg.gpg", source=source)
@@ -4891,7 +4894,7 @@ def test_update_conversation_does_not_remove_pending_draft_items(mocker, session
 
     # New message added, draft message persists.
     cv.update_conversation(cv.source.collection)
-    assert cv.scroll.conversation_layout.count() == 4
+    assert cv._scroll.conversation_layout.count() == 4
 
 
 def test_update_conversation_does_remove_successful_draft_items(mocker, session):
@@ -4918,7 +4921,7 @@ def test_update_conversation_does_remove_successful_draft_items(mocker, session)
     controller = mocker.MagicMock(get_file=get_file, authenticated_user=user)
 
     cv = ConversationView(source, controller)
-    assert cv.scroll.conversation_layout.count() == 3  # precondition with draft
+    assert cv._scroll.conversation_layout.count() == 3  # precondition with draft
 
     # add the new message and persist
     new_message = factory.Message(filename="4-source-msg.gpg", source=source)
@@ -4931,7 +4934,7 @@ def test_update_conversation_does_remove_successful_draft_items(mocker, session)
 
     # New message added, draft message is gone.
     cv.update_conversation(cv.source.collection)
-    assert cv.scroll.conversation_layout.count() == 3
+    assert cv._scroll.conversation_layout.count() == 3
 
 
 def test_update_conversation_keeps_failed_draft_items(mocker, session):
@@ -4958,7 +4961,7 @@ def test_update_conversation_keeps_failed_draft_items(mocker, session):
     controller = mocker.MagicMock(get_file=get_file, authenticated_user=user)
 
     cv = ConversationView(source, controller)
-    assert cv.scroll.conversation_layout.count() == 3  # precondition with draft
+    assert cv._scroll.conversation_layout.count() == 3  # precondition with draft
 
     # add the new message and persist
     new_message = factory.Message(filename="4-source-msg.gpg", source=source)
@@ -4967,7 +4970,7 @@ def test_update_conversation_keeps_failed_draft_items(mocker, session):
 
     # New message added, draft message retained.
     cv.update_conversation(cv.source.collection)
-    assert cv.scroll.conversation_layout.count() == 4
+    assert cv._scroll.conversation_layout.count() == 4
 
 
 def test_update_conversation_adds_new_items(mocker, session):
@@ -4991,7 +4994,7 @@ def test_update_conversation_adds_new_items(mocker, session):
     controller = mocker.MagicMock(get_file=get_file, authenticated_user=user)
 
     cv = ConversationView(source, controller)
-    assert cv.scroll.conversation_layout.count() == 3  # precondition
+    assert cv._scroll.conversation_layout.count() == 3  # precondition
 
     # add the new message and persist
     new_message = factory.Message(filename="4-source-msg.gpg", source=source)
@@ -4999,7 +5002,7 @@ def test_update_conversation_adds_new_items(mocker, session):
     session.commit()
 
     cv.update_conversation(cv.source.collection)
-    assert cv.scroll.conversation_layout.count() == 4
+    assert cv._scroll.conversation_layout.count() == 4
 
 
 def test_update_conversation_position_updates(mocker, session):
@@ -5023,7 +5026,7 @@ def test_update_conversation_position_updates(mocker, session):
     controller = mocker.MagicMock(get_file=get_file, authenticated_user=user)
 
     cv = ConversationView(source, controller)
-    assert cv.scroll.conversation_layout.count() == 3  # precondition
+    assert cv._scroll.conversation_layout.count() == 3  # precondition
 
     # Change the position of the Reply.
     reply_widget = cv.current_messages[reply.uuid]
@@ -5035,7 +5038,7 @@ def test_update_conversation_position_updates(mocker, session):
     session.commit()
 
     cv.update_conversation(cv.source.collection)
-    assert cv.scroll.conversation_layout.count() == 4
+    assert cv._scroll.conversation_layout.count() == 4
     assert reply_widget.index == 2  # re-ordered.
 
 
@@ -5060,11 +5063,15 @@ def test_update_conversation_content_updates(mocker, session):
     cv.update_deletion_markers = mocker.MagicMock()
     cv.current_messages = {}
 
-    cv.scroll.conversation_layout.removeWidget = mocker.MagicMock()
-    mocker.patch.object(cv.scroll, "add_widget_to_conversation")
+    cv._scroll.conversation_layout.removeWidget = mocker.MagicMock()
+    mocker.patch.object(cv._scroll, "add_widget_to_conversation")
 
     # this is the MessageWidget that __init__() would return
-    mock_msg_widget_res = mocker.MagicMock()
+    # FIXME: It is a sign that something isn't quite right that index and message must
+    # be manually added to the MessageWidget spec.
+    mock_msg_widget_res = mocker.MagicMock(
+        spec=MessageWidget, index=None, message=mocker.MagicMock(text=lambda: None)
+    )
     # mock MessageWidget so we can inspect the __init__ call to see what content
     # is in the widget.
     mock_msg_widget = mocker.patch(

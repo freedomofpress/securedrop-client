@@ -23,9 +23,10 @@ class ApiInaccessibleError(Exception):
 
 
 class QueueJob(QObject):
-    def __init__(self) -> None:
+    def __init__(self, remaining_attempts: int = DEFAULT_NUM_ATTEMPTS) -> None:
         super().__init__()
         self.order_number = None  # type: Optional[int]
+        self.remaining_attempts = remaining_attempts
 
     def __lt__(self, other: QueueJobType) -> bool:
         """
@@ -64,8 +65,7 @@ class ApiJob(QueueJob):
     failure_signal = pyqtSignal(Exception)
 
     def __init__(self, remaining_attempts: int = DEFAULT_NUM_ATTEMPTS) -> None:
-        super().__init__()
-        self.remaining_attempts = remaining_attempts
+        super().__init__(remaining_attempts)
 
     def _do_call_api(self, api_client: API, session: Session) -> None:
         if not api_client:

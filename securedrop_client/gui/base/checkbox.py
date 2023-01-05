@@ -26,10 +26,10 @@ class SDCheckBox(QWidget):
         font = QFont()
         font.setLetterSpacing(QFont.AbsoluteSpacing, self.PASSPHRASE_LABEL_SPACING)
 
-        self.layout = QHBoxLayout()
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setSpacing(0)
-        self.setLayout(self.layout)
+        self._layout = QHBoxLayout()
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._layout.setSpacing(0)
+        self.setLayout(self._layout)
 
         self.frame = QFrame()
         self.frame.setLayout(QHBoxLayout())
@@ -40,7 +40,7 @@ class SDCheckBox(QWidget):
         self.label = QLabel(_("Show Passphrase"))
         self.label.setFont(font)
 
-        self.layout.addWidget(self.frame)
+        self._layout.addWidget(self.frame)
         self.frame.layout().addWidget(self.checkbox)
         self.frame.layout().addWidget(self.label)
         self.frame.setCursor(QCursor(Qt.PointingHandCursor))

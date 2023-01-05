@@ -36,7 +36,7 @@ def main_window(mocker, homedir):
         # Create a source widget
         source_list = gui.main_view.source_list
         source = factory.Source()
-        source_list.update([source])
+        source_list.update_sources([source])
 
         # Create a file widget, message widget, and reply widget
         mocker.patch("securedrop_client.gui.widgets.humanize_filesize", return_value="100")
@@ -88,7 +88,7 @@ def main_window_no_key(mocker, homedir):
         # Create a source widget
         source_list = gui.main_view.source_list
         source = factory.Source(public_key=None)
-        source_list.update([source])
+        source_list.update_sources([source])
 
         # Create a file widget, message widget, and reply widget
         mocker.patch("securedrop_client.gui.widgets.humanize_filesize", return_value="100")

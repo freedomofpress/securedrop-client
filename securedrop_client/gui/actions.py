@@ -74,9 +74,9 @@ class DeleteSourceAction(QAction):
     ) -> None:
         self.source = source
         self.controller = controller
-        self.text = _("Delete Source Account")
+        text = _("Delete Source Account")
 
-        super().__init__(self.text, parent)
+        super().__init__(text, parent)
 
         self._confirmation_dialog = confirmation_dialog(self.source)
         self._confirmation_dialog.accepted.connect(
@@ -105,9 +105,9 @@ class DeleteConversationAction(QAction):
         self.source = source
         self.controller = controller
         self._state = app_state
-        self.text = _("Delete All Files and Messages")
+        text = _("Delete All Files and Messages")
 
-        super().__init__(self.text, parent)
+        super().__init__(text, parent)
 
         self._confirmation_dialog = confirmation_dialog(self.source)
         self._confirmation_dialog.accepted.connect(lambda: self._on_confirmation_dialog_accepted())

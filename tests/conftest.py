@@ -203,7 +203,7 @@ def functional_test_offline_context(functional_test_logged_in_context, qtbot):
     # Trigger log out
     # Note: The qtbot object cannot interact with QAction items (as used in the logout button/menu),
     # so we programatically logout rather than using the GUI via qtbot
-    gui.left_pane.user_profile.user_button.menu.logout.trigger()
+    gui.left_pane.user_profile.user_button._menu.logout.trigger()
 
     def check_login_button():
         assert gui.left_pane.user_profile.login_button.isVisible()
