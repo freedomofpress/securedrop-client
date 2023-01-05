@@ -6,6 +6,14 @@ from PyQt5.QtTest import QSignalSpy
 from tests.helper import app  # noqa: F401
 
 
+def wait_if_needed(signal_spy, count) -> bool:
+    """Returns true if the signal emissions were confirmed."""
+    if len(signal_spy) < count:
+        confirmed = signal_spy.wait()
+        print("waited")
+        return confirmed
+    return True
+
 class Service(QObject):
     """Connects a response signal to a query signal."""
 
@@ -45,6 +53,25 @@ class TestService(unittest.TestCase):
         assert response_emissions.wait(200)
         self.assertEqual(1, len(query_emissions))
         self.assertEqual(1, len(response_emissions))
+
+    def test_assert_wait_if_needed(self):
+        client = Client()
+        service = Service()
+
+        response_emissions = QSignalSpy(service.response)
+        self.assertTrue(response_emissions.isValid())
+
+        query_emissions = QSignalSpy(client.query)
+        self.assertTrue(query_emissions.isValid())
+
+        service.connect_signals(query=client.query)
+
+        client.query.emit()  # Act.
+        assert wait_if_needed(query_emissions, 1)
+        assert wait_if_needed(response_emissions, 1)
+        self.assertEqual(1, len(query_emissions))
+        self.assertEqual(1, len(response_emissions))
+        assert False  # to see eventual printed lines
 
     def test_wait_without_assert(self):
         client = Client()
