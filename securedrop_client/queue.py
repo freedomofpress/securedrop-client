@@ -220,7 +220,7 @@ class RunnableQueue(QObject):
                 self._clear()
                 return
 
-            if isinstance(self.current_job, PauseQueueJob):  # type: ignore
+            if isinstance(self.current_job, PauseQueueJob):
                 self.paused.emit()
                 with self.condition_add_or_remove_job:
                     self.current_job = None
