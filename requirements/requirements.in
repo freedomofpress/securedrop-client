@@ -1,4 +1,4 @@
-certifi>=2021.5.30
+certifi>=2022.12.07
 charset-normalizer>=2.0.4
 furl==2.0.0
 idna>=2.7

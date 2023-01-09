@@ -52,9 +52,9 @@ common-steps:
 
 version: 2
 jobs:
-  build-buster:
+  build-bullseye:
     docker:
-      - image: circleci/python:3.7-buster
+      - image: circleci/python:3.9-bullseye
     steps:
       - checkout
       - *removevirtualenv
@@ -63,9 +63,9 @@ jobs:
       - *make_source_tarball
       - *build_debian_package
 
-  test-buster:
+  test-bullseye:
     docker:
-      - image: circleci/python:3.7-buster
+      - image: circleci/python:3.9-bullseye
     steps:
       - checkout
       - *run_tests
@@ -74,8 +74,8 @@ workflows:
   version: 2
   securedrop_proxy_ci:
     jobs:
-      - test-buster
-      - build-buster
+      - test-bullseye
+      - build-bullseye
 
   nightly:
     triggers:
@@ -86,5 +86,5 @@ workflows:
               only:
                 - main
     jobs:
-      - test-buster
-      - build-buster
+      - test-bullseye
+      - build-bullseye
