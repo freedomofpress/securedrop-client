@@ -1,14 +1,10 @@
 ---
 common-steps:
-  - &removevirtualenv
-    run:
-      name: Removes the upstream virtualenv from the original container image
-      command: sudo pip uninstall virtualenv -y
-
   - &run_tests
     run:
       name: Install requirements and run tests
       command: |
+        apt-get update && apt-get install -y make python3-venv
         make venv
         source .venv/bin/activate
         make check
@@ -17,8 +13,8 @@ common-steps:
     run:
       name: Install Debian packaging dependencies and download wheels
       command: |
+        apt-get update && apt-get install -y git git-lfs make sudo
         mkdir ~/packaging && cd ~/packaging
-        git config --global --unset url.ssh://git@github.com.insteadof
         git clone https://github.com/freedomofpress/securedrop-debian-packaging.git
         cd securedrop-debian-packaging
         make install-deps
@@ -47,17 +43,16 @@ common-steps:
       command: |
         cd ~/packaging/securedrop-debian-packaging
         export PKG_VERSION=1000.0
-        export PKG_PATH=/home/circleci/project/dist/securedrop-proxy-$PKG_VERSION.tar.gz
+        export PKG_PATH=~/project
         make securedrop-proxy
 
 version: 2
 jobs:
   build-bullseye:
     docker:
-      - image: circleci/python:3.9-bullseye
+      - image: debian:bullseye
     steps:
       - checkout
-      - *removevirtualenv
       - *install_packaging_dependencies
       - *verify_requirements
       - *make_source_tarball
@@ -65,7 +60,7 @@ jobs:
 
   test-bullseye:
     docker:
-      - image: circleci/python:3.9-bullseye
+      - image: debian:bullseye
     steps:
       - checkout
       - *run_tests
