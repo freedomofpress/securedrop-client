@@ -69,14 +69,14 @@ class TestEntrypoint(unittest.TestCase):
         """
         Tests a permission problem in `configure_logging`.
         """
-        output = None
-        with sdhome() as home:
-            os.chmod(home, 0o0444)
-            with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
-                with self.assertRaises(SystemExit):
-                    entrypoint.start()
-                output = mock_stdout.getvalue()
-            os.chmod(home, 0o0700)
+        with sdhome():
+            with patch(
+                "os.makedirs", side_effect=PermissionError("[Errno 13] Permission denied: '/foo'")
+            ):
+                with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+                    with self.assertRaises(SystemExit):
+                        entrypoint.start()
+                    output = mock_stdout.getvalue()
 
         response = json.loads(output)
         self.assertEqual(response["status"], http.HTTPStatus.INTERNAL_SERVER_ERROR)
