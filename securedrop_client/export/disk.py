@@ -83,7 +83,7 @@ class Disk(QObject):
 
     def check_status_once_on(self, signal: pyqtSignal) -> None:
         warnings.warn(
-            "check_status_once_on must not be used for nwe features, use the connect method instead",  # noqa: E501
+            "check_status_once_on must not be used for new features, use the connect method instead",  # noqa: E501
             DeprecationWarning,
             stacklevel=2,
         )

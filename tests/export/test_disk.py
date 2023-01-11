@@ -256,64 +256,6 @@ class TestDisk(unittest.TestCase):
             "Expected disk status to track the last response, did not.",
         )
 
-    def test_disk_last_error_returns_none_by_default(self):
-        export_service = ExportService()
-        disk = getDisk(export_service)
-
-        assert disk.last_error is None
-
-    def test_disk_last_error_returns_the_last_service_error_when_luks_encrypted_disk_not_found(
-        self,
-    ):
-        export_service = ExportService()
-        luks_encrypted_disk_not_found_emissions = QSignalSpy(
-            export_service.luks_encrypted_disk_not_found
-        )
-        assert luks_encrypted_disk_not_found_emissions.isValid()
-
-        disk = getDisk(export_service)
-        error = ExportError(ExportStatus.USB_NOT_CONNECTED)
-        expected_error = error
-
-        export_service.luks_encrypted_disk_not_found.emit(error)
-        luks_encrypted_disk_not_found_emissions.wait(50)
-
-        self.assertEqual(expected_error, disk.last_error)
-
-        # another round
-
-        error = ExportError(ExportStatus.CALLED_PROCESS_ERROR)
-        expected_error = error
-
-        export_service.luks_encrypted_disk_not_found.emit(error)
-        luks_encrypted_disk_not_found_emissions.wait(50)
-
-        self.assertEqual(expected_error, disk.last_error)
-
-    def test_disk_last_error_returns_the_last_service_error_when_export_fails(self):
-        export_service = ExportService()
-        export_failed_emissions = QSignalSpy(export_service.export_failed)
-        assert export_failed_emissions.isValid()
-
-        disk = getDisk(export_service)
-        error = ExportError(ExportStatus.BAD_PASSPHRASE)
-        expected_error = error
-
-        export_service.export_failed.emit(error)
-        export_failed_emissions.wait(50)
-
-        self.assertEqual(expected_error, disk.last_error)
-
-        # another round
-
-        error = ExportError(ExportStatus.CALLED_PROCESS_ERROR)
-        expected_error = error
-
-        export_service.export_failed.emit(error)
-        export_failed_emissions.wait(50)
-
-        self.assertEqual(expected_error, disk.last_error)
-
     def test_disk_status_stops_tracking_export_service_responses_when_disconnected(self):
         responses = [
             Disk.StatusLUKSEncrypted,
@@ -458,6 +400,64 @@ class TestDisk(unittest.TestCase):
             len(disk_status_changed_emissions),
             "Expected disk_status_changed to be emitted, was not.",
         )
+
+    def test_disk_last_error_returns_none_by_default(self):
+        export_service = ExportService()
+        disk = getDisk(export_service)
+
+        assert disk.last_error is None
+
+    def test_disk_last_error_returns_the_last_service_error_when_luks_encrypted_disk_not_found(
+        self,
+    ):
+        export_service = ExportService()
+        luks_encrypted_disk_not_found_emissions = QSignalSpy(
+            export_service.luks_encrypted_disk_not_found
+        )
+        assert luks_encrypted_disk_not_found_emissions.isValid()
+
+        disk = getDisk(export_service)
+        error = ExportError(ExportStatus.USB_NOT_CONNECTED)
+        expected_error = error
+
+        export_service.luks_encrypted_disk_not_found.emit(error)
+        luks_encrypted_disk_not_found_emissions.wait(50)
+
+        self.assertEqual(expected_error, disk.last_error)
+
+        # another round
+
+        error = ExportError(ExportStatus.CALLED_PROCESS_ERROR)
+        expected_error = error
+
+        export_service.luks_encrypted_disk_not_found.emit(error)
+        luks_encrypted_disk_not_found_emissions.wait(50)
+
+        self.assertEqual(expected_error, disk.last_error)
+
+    def test_disk_last_error_returns_the_last_service_error_when_export_fails(self):
+        export_service = ExportService()
+        export_failed_emissions = QSignalSpy(export_service.export_failed)
+        assert export_failed_emissions.isValid()
+
+        disk = getDisk(export_service)
+        error = ExportError(ExportStatus.BAD_PASSPHRASE)
+        expected_error = error
+
+        export_service.export_failed.emit(error)
+        export_failed_emissions.wait(50)
+
+        self.assertEqual(expected_error, disk.last_error)
+
+        # another round
+
+        error = ExportError(ExportStatus.CALLED_PROCESS_ERROR)
+        expected_error = error
+
+        export_service.export_failed.emit(error)
+        export_failed_emissions.wait(50)
+
+        self.assertEqual(expected_error, disk.last_error)
 
     def test_disk_allows_to_export(self):
         portfolio = Portfolio()
