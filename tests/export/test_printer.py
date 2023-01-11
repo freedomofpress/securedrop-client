@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 from PyQt5.QtTest import QSignalSpy
 
-from securedrop_client.export import Printer, Service, getPrinter
+from securedrop_client.export import ExportError, ExportStatus, Printer, Service, getPrinter
 from tests.helper import app  # noqa: F401
 
 
@@ -394,6 +394,62 @@ class TestPrinter(unittest.TestCase):
             len(printer_status_changed_emissions),
             "Expected printer_status_changed to be emitted, was not.",
         )
+
+    def test_printer_last_error_returns_none_by_default(self):
+        printing_service = PrintingService()
+        printer = getPrinter(printing_service)
+
+        assert printer.last_error is None
+
+    def test_printer_last_error_returns_the_last_service_error_when_printer_not_found_ready(
+        self,
+    ):
+        printing_service = PrintingService()
+        printer_not_found_ready_emissions = QSignalSpy(printing_service.printer_not_found_ready)
+        assert printer_not_found_ready_emissions.isValid()
+
+        printer = getPrinter(printing_service)
+        error = ExportError(ExportStatus.PRINTER_NOT_FOUND)
+        expected_error = error
+
+        printing_service.printer_not_found_ready.emit(error)
+        printer_not_found_ready_emissions.wait(50)
+
+        self.assertEqual(expected_error, printer.last_error)
+
+        # another round
+
+        error = ExportError(ExportStatus.CALLED_PROCESS_ERROR)
+        expected_error = error
+
+        printing_service.printer_not_found_ready.emit(error)
+        printer_not_found_ready_emissions.wait(50)
+
+        self.assertEqual(expected_error, printer.last_error)
+
+    def test_printer_last_error_returns_the_last_service_error_when_print_fails(self):
+        printing_service = PrintingService()
+        print_failed_emissions = QSignalSpy(printing_service.print_failed)
+        assert print_failed_emissions.isValid()
+
+        printer = getPrinter(printing_service)
+        error = ExportError(ExportStatus.PRINTER_NOT_FOUND)
+        expected_error = error
+
+        printing_service.print_failed.emit(error)
+        print_failed_emissions.wait(50)
+
+        self.assertEqual(expected_error, printer.last_error)
+
+        # another round
+
+        error = ExportError(ExportStatus.CALLED_PROCESS_ERROR)
+        expected_error = error
+
+        printing_service.print_failed.emit(error)
+        print_failed_emissions.wait(50)
+
+        self.assertEqual(expected_error, printer.last_error)
 
     def test_printer_allows_to_enqueue_printing_job(self):
         portfolio = Portfolio()

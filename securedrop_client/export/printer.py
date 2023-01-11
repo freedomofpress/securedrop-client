@@ -1,4 +1,4 @@
-from typing import Callable, NewType
+from typing import Callable, NewType, Optional
 
 from PyQt5.QtCore import QObject, QState, QStateMachine, QTimer, pyqtSignal, pyqtSlot
 
@@ -17,7 +17,7 @@ class Printer(QObject):
 
     status_changed = pyqtSignal()
     job_done = pyqtSignal()
-    job_failed = pyqtSignal(str)
+    job_failed = pyqtSignal()
 
     client_connected = pyqtSignal()
     last_client_disconnected = pyqtSignal()
@@ -38,6 +38,7 @@ class Printer(QObject):
         self._printing_service = printing_service
         self._poller = _Poller(polling_interval_in_milliseconds)
         self._cache = _StatusCache(self._printing_service)
+        self._last_error: Optional[CLIError] = None
 
         # Accept that the status is unknown if we don't watch the printer for a bit.
         self._cache.clear_on(self._poller.paused.entered)
@@ -55,12 +56,19 @@ class Printer(QObject):
         self._poller.pause_on(self.last_client_disconnected)
 
         # The printing service is not up-to-date on the printing queue terminology.
+        self._printing_service.printer_not_found_ready.connect(
+            lambda error: self._on_printer_not_found_ready(error)
+        )
         self._printing_service.print_failed.connect(self._on_job_enqueuing_failed)
         self._printing_service.print_succeeded.connect(self._on_job_enqueued)
 
     @property
     def status(self) -> Status:
         return self._cache.status
+
+    @property
+    def last_error(self) -> Optional[CLIError]:
+        return self._last_error  # FIXME Returning the CLIError type is an abstraction leak.
 
     @pyqtSlot()
     def connect(self) -> None:
@@ -78,12 +86,17 @@ class Printer(QObject):
         self._printing_service.connect_signals(print_requested=signal)
 
     @pyqtSlot()
+    def _on_printer_not_found_ready(self, error: CLIError) -> None:
+        self._last_error = error
+
+    @pyqtSlot()
     def _on_job_enqueued(self) -> None:
         self.job_done.emit()
 
     @pyqtSlot(object)
     def _on_job_enqueuing_failed(self, error: CLIError) -> None:
-        self.job_failed.emit("")  # FIXME Decide what error to emit.
+        self._last_error = error
+        self.job_failed.emit()
 
 
 class _StatusCache(QStateMachine):
