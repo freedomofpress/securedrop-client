@@ -1,3 +1,4 @@
+import warnings
 from typing import Callable, NewType, Optional
 
 from PyQt5.QtCore import QObject, QState, QStateMachine, QTimer, pyqtSignal, pyqtSlot
@@ -84,6 +85,15 @@ class Printer(QObject):
     def enqueue_job_on(self, signal: pyqtSignal) -> None:
         """Allow to enqueue printing jobs, in a thread-safe manner."""
         self._printing_service.connect_signals(print_requested=signal)
+
+    def check_status_once_on(self, signal: pyqtSignal) -> None:
+        warnings.warn(
+            "check_status_once_on must not be used for new features, use the connect method instead",  # noqa: E501
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+        self._printing_service.connect_signals(printer_check_requested=signal)
 
     @pyqtSlot()
     def _on_printer_not_found_ready(self, error: CLIError) -> None:

@@ -537,3 +537,22 @@ class TestPrinter(unittest.TestCase):
             printer._cache.isRunning(),
             f"Expected the printer cache to be running after {max_waiting_time_in_milliseconds}ms. Abort the test.",  # noqa: E501
         )
+
+
+class TestPrinterDeprecatedInterface(unittest.TestCase):
+    def test_performs_one_check_when_registered_signal_is_emitted(self):
+        client = PrintingServiceClient()
+        printing_service = PrintingService()
+        printer = getPrinter(printing_service)
+
+        response_emitted_emissions = QSignalSpy(printing_service.response_emitted)
+        self.assertTrue(response_emitted_emissions.isValid())
+
+        printer.check_status_once_on(client.query_printing_service)
+        client.query_printing_service.emit()  # Act.
+
+        self.assertEqual(
+            1,
+            len(response_emitted_emissions),
+            "Expected service to emit a response as a result of being queried.",
+        )
