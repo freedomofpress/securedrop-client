@@ -15,6 +15,7 @@ from tests.helper import assertEmissions, emitsSignals, tearDownQtObjects
 
 class TestExportFileDialog(unittest.TestCase):
     def setUp(self):
+        resetService()
         _export_service = export.getService()
         _export_service._cli = MagicMock(spec=CLI)
         _disk = export.getDisk(_export_service)
