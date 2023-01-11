@@ -1,22 +1,23 @@
 from gettext import gettext as _
 from typing import Optional
 
-from PyQt5.QtCore import QSize, pyqtSlot
+from PyQt5.QtCore import QSize, pyqtSignal, pyqtSlot
 
-from securedrop_client.export import ExportError, ExportStatus
+from securedrop_client.export import ExportStatus, Printer
 from securedrop_client.gui.base import ModalDialog, SecureQLabel
-
-from .device import Device
 
 
 class PrintDialog(ModalDialog):
 
+    printer_status_check_requested = pyqtSignal()
+    file_printing_requested = pyqtSignal(list)
+
     FILENAME_WIDTH_PX = 260
 
-    def __init__(self, device: Device, file_uuid: str, file_name: str) -> None:
+    def __init__(self, printer: Printer, file_uuid: str, file_name: str) -> None:
         super().__init__()
 
-        self._device = device
+        self._printer = printer
         self.file_uuid = file_uuid
         self.file_name = SecureQLabel(
             file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
@@ -24,15 +25,14 @@ class PrintDialog(ModalDialog):
         # Hold onto the error status we receive from the Export VM
         self.error_status: Optional[ExportStatus] = None
 
-        # Connect device signals to slots
-        self._device.print_preflight_check_succeeded.connect(
-            self._on_print_preflight_check_succeeded
-        )
-        self._device.print_preflight_check_failed.connect(self._on_print_preflight_check_failed)
+        # Connect printer signals to slots
+        self._printer.status_changed.connect(self._on_printer_status_changed)
+        self._printer.job_done.connect(self._on_printer_job_done)
+        self._printer.job_failed.connect(self._on_printer_job_failed)
 
         # Connect parent signals to slots
         self.continue_button.setEnabled(False)
-        self.continue_button.clicked.connect(self._run_preflight)
+        self.continue_button.clicked.connect(self.printer_status_check_requested)
 
         # Dialog content
         self.starting_header = _(
@@ -62,7 +62,9 @@ class PrintDialog(ModalDialog):
 
         self._show_starting_instructions()
         self.start_animate_header()
-        self._run_preflight()
+        self._printer.check_status_once_on(self.printer_status_check_requested)
+        self._printer.enqueue_job_on(self.file_printing_requested)
+        self.printer_status_check_requested.emit()
 
     def _show_starting_instructions(self) -> None:
         self.header.setText(self.starting_header)
@@ -72,7 +74,7 @@ class PrintDialog(ModalDialog):
 
     def _show_insert_usb_message(self) -> None:
         self.continue_button.clicked.disconnect()
-        self.continue_button.clicked.connect(self._run_preflight)
+        self.continue_button.clicked.connect(self.printer_status_check_requested)
         self.header.setText(self.insert_usb_header)
         self.body.setText(self.insert_usb_message)
         self.error_details.hide()
@@ -90,12 +92,19 @@ class PrintDialog(ModalDialog):
         self.adjustSize()
 
     @pyqtSlot()
-    def _run_preflight(self) -> None:
-        self._device.run_printer_preflight_checks()
+    def _on_printer_status_changed(self) -> None:
+        printer_status = self._printer.status
+        if printer_status == Printer.StatusReady:
+            self._on_print_preflight_check_succeeded()
+        elif printer_status == Printer.StatusUnreachable:
+            self._on_print_preflight_check_failed()
+        else:
+            # Printer.StatusUnknown is not supprted by this dialog.
+            pass
 
     @pyqtSlot()
     def _print_file(self) -> None:
-        self._device.print_file(self.file_uuid)
+        self.file_printing_requested.emit([self.file_uuid])
         self.close()
 
     @pyqtSlot()
@@ -114,14 +123,20 @@ class PrintDialog(ModalDialog):
         self._print_file()
 
     @pyqtSlot(object)
-    def _on_print_preflight_check_failed(self, error: ExportError) -> None:
+    def _on_print_preflight_check_failed(self) -> None:
+        error = self._printer.last_error
+        if error:
+            status = error.status
+        else:
+            status = ExportStatus.UNEXPECTED_RETURN_STATUS
+
         self.stop_animate_header()
         self.header_icon.update_image("printer.svg", svg_size=QSize(64, 64))
-        self.error_status = error.status
+        self.error_status = status
         # If the continue button is disabled then this is the result of a background preflight check
         if not self.continue_button.isEnabled():
             self.continue_button.clicked.disconnect()
-            if error.status == ExportStatus.PRINTER_NOT_FOUND:
+            if status == ExportStatus.PRINTER_NOT_FOUND:
                 self.continue_button.clicked.connect(self._show_insert_usb_message)
             else:
                 self.continue_button.clicked.connect(self._show_generic_error_message)
@@ -129,7 +144,7 @@ class PrintDialog(ModalDialog):
             self.continue_button.setEnabled(True)
             self.continue_button.setFocus()
         else:
-            if error.status == ExportStatus.PRINTER_NOT_FOUND:
+            if status == ExportStatus.PRINTER_NOT_FOUND:
                 self._show_insert_usb_message()
             else:
                 self._show_generic_error_message()
