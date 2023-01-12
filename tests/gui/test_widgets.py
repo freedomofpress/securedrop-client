@@ -3635,18 +3635,17 @@ def test_FileWidget__on_export_clicked_missing_file(mocker, session, source):
     dialog.assert_not_called()
 
 
-def test_FileWidget__on_print_clicked(mocker, session, source):
+def test_FileWidget__on_print_clicked(mocker, session, source, export_service):
     """
     Ensure print_file is called when the PRINT button is clicked
     """
+    mocker.patch("securedrop_client.export.getService", return_value=export_service)
     file = factory.File(source=source["source"], is_downloaded=True)
     session.add(file)
     session.commit()
 
     get_file = mocker.MagicMock(return_value=file)
-    controller = mocker.MagicMock(get_file=get_file)
-    export_device = mocker.patch("securedrop_client.gui.conversation.ExportDevice")
-
+    controller = mocker.MagicMock(get_file=get_file, data_dir="data_dir_4f4dsf")
     fw = FileWidget(
         file.uuid,
         controller,
@@ -3665,7 +3664,8 @@ def test_FileWidget__on_print_clicked(mocker, session, source):
 
     fw._on_print_clicked()
 
-    dialog.assert_called_once_with(export_device(), file.uuid, file.filename)
+    printer = export.getPrinter(export_service)
+    dialog.assert_called_once_with(printer, file.location("data_dir_4f4dsf"), file.filename)
 
 
 def test_FileWidget__on_print_clicked_missing_file(mocker, session, source):

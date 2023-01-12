@@ -2213,8 +2213,8 @@ class FileWidget(QWidget):
         self.controller = controller
 
         export_service = export.getService()
-        self._export_device = conversation.ExportDevice(controller, export_service)
         self._export_disk = export.getDisk(export_service)
+        self._printer = export.getPrinter(export_service)
 
         self.file = self.controller.get_file(file_uuid)
         self.uuid = file_uuid
@@ -2431,7 +2431,8 @@ class FileWidget(QWidget):
         if not self.controller.downloaded_file_exists(self.file):
             return
 
-        dialog = conversation.PrintFileDialog(self._export_device, self.uuid, self.file.filename)
+        file_location = self.file.location(self.controller.data_dir)
+        dialog = conversation.PrintFileDialog(self._printer, file_location, self.file.filename)
         dialog.exec()
 
     def _on_left_click(self) -> None:
