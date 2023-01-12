@@ -295,3 +295,14 @@ def getPrinter(
         _printers[printer_id] = printer
 
     return printer
+
+
+def clearPrinter(
+    export_service: Service,
+) -> None:
+    global _printers
+
+    # See getPrinter
+    printer_id = id(export_service)
+    if printer_id in _printers:
+        del _printers[printer_id]
