@@ -32,6 +32,6 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ),
     entry_points={
-        "console_scripts": ["send-to-usb = securedrop_export.entrypoint:start"]
+        "console_scripts": ["send-to-usb = securedrop_export.main:entrypoint"]
     },
 )
