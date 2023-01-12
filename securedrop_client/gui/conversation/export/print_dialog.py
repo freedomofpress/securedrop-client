@@ -14,11 +14,11 @@ class PrintDialog(ModalDialog):
 
     FILENAME_WIDTH_PX = 260
 
-    def __init__(self, printer: Printer, file_uuid: str, file_name: str) -> None:
+    def __init__(self, printer: Printer, file_location: str, file_name: str) -> None:
         super().__init__()
 
         self._printer = printer
-        self.file_uuid = file_uuid
+        self.file_location = file_location
         self.file_name = SecureQLabel(
             file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
         ).text()
@@ -27,8 +27,6 @@ class PrintDialog(ModalDialog):
 
         # Connect printer signals to slots
         self._printer.status_changed.connect(self._on_printer_status_changed)
-        self._printer.job_done.connect(self._on_printer_job_done)
-        self._printer.job_failed.connect(self._on_printer_job_failed)
 
         # Connect parent signals to slots
         self.continue_button.setEnabled(False)
@@ -65,6 +63,9 @@ class PrintDialog(ModalDialog):
         self._printer.check_status_once_on(self.printer_status_check_requested)
         self._printer.enqueue_job_on(self.file_printing_requested)
         self.printer_status_check_requested.emit()
+
+    def text(self) -> str:
+        return self.header.text() + super().text()
 
     def _show_starting_instructions(self) -> None:
         self.header.setText(self.starting_header)
@@ -104,7 +105,7 @@ class PrintDialog(ModalDialog):
 
     @pyqtSlot()
     def _print_file(self) -> None:
-        self.file_printing_requested.emit([self.file_uuid])
+        self.file_printing_requested.emit([self.file_location])
         self.close()
 
     @pyqtSlot()

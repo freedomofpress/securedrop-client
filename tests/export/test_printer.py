@@ -23,7 +23,7 @@ class PrintingService(QObject):
     def __init__(self, responses=[Printer.StatusReady]):
         super().__init__()
 
-        self.responses = responses
+        self.responses = responses[:]
 
     def connect_signals(
         self,
