@@ -18,6 +18,8 @@ SecureDrop maintainers and testers: As you QA this release, please report back y
 
 [Make sure to include the version(s) of the server that need to be tested against. If the release is being coordinated with a server release, specify rc versions of the server that need to be tested and release order. Once completed, insert or link to a test plan here. It can be left out until then.]
 
+- [ ] Pseudolocale (`LANG=en_XA`) QA per <https://github.com/freedomofpress/securedrop-workstation/wiki/Workstation-Acceptance-Tests#internationalization-reference>
+
 ## Release tasks
 
 - [ ] Check if there are any security bug fixes waiting to be pulled into the RC
