@@ -24,8 +24,8 @@ class Disk(QObject):
     export_done = pyqtSignal()
     export_failed = pyqtSignal()
 
-    client_connected = pyqtSignal()
-    last_client_disconnected = pyqtSignal()
+    client_started_watching = pyqtSignal()
+    last_client_stopped_watching = pyqtSignal()
 
     Status = NewType("Status", str)
     StatusUnknown = Status("unknown-isw32")
@@ -57,8 +57,8 @@ class Disk(QObject):
         self._poller.wait_on(self._export_service.luks_encrypted_disk_found)
         self._poller.wait_on(self._export_service.luks_encrypted_disk_not_found)
 
-        self._poller.start_on(self.client_connected)
-        self._poller.pause_on(self.last_client_disconnected)
+        self._poller.start_on(self.client_started_watching)
+        self._poller.pause_on(self.last_client_stopped_watching)
 
         self._export_service.luks_encrypted_disk_not_found.connect(
             lambda error: self._on_luks_encrypted_disk_not_found(error)
@@ -75,15 +75,15 @@ class Disk(QObject):
         return self._last_error  # FIXME Returning the CLIError type is an abstraction leak.
 
     @pyqtSlot()
-    def connect(self) -> None:
+    def watch(self) -> None:
         self._connected_clients += 1
-        self.client_connected.emit()
+        self.client_started_watching.emit()
 
     @pyqtSlot()
-    def disconnect(self) -> None:
+    def stop_watching(self) -> None:
         self._connected_clients -= 1
         if self._connected_clients < 1:
-            self.last_client_disconnected.emit()
+            self.last_client_stopped_watching.emit()
 
     def export_on(self, signal: pyqtBoundSignal) -> None:
         """Allow to export files, in a thread-safe manner."""

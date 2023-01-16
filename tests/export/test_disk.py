@@ -163,7 +163,7 @@ class TestDisk(unittest.TestCase):
 
         self.assertEqual(Disk.StatusUnknown, disk.status)
 
-    def test_disk_status_tracks_export_service_responses_when_connected(self):
+    def test_disk_status_tracks_export_service_responses_when_watched(self):
         responses = [
             Disk.StatusLUKSEncrypted,
             Disk.StatusUnreachable,
@@ -186,7 +186,7 @@ class TestDisk(unittest.TestCase):
         self.assertEqual(
             0,
             len(export_service_response),
-            "Expected export service to receive no queries before the disk is connected, and emit no responses.",  # noqa: E501
+            "Expected export service to receive no queries before the disk is being watched, and emit no responses.",  # noqa: E501
         )
         self.assertEqual(
             Disk.StatusUnknown,
@@ -194,7 +194,7 @@ class TestDisk(unittest.TestCase):
             "Expected default disk status to be Disk.StatusUnknown, was not.",
         )
 
-        disk.connect()  # Action!
+        disk.watch()  # Action!
 
         # The first query should be issued immediately.
         # After that, the dummy export service responds blazing fast.
@@ -202,7 +202,7 @@ class TestDisk(unittest.TestCase):
         self.assertEqual(
             1,
             len(export_service_response),
-            "Expected exactly 1 query to the export service, and 1 response immediately after the disk was connected.",  # noqa: E501
+            "Expected exactly 1 query to the export service, and 1 response immediately after the disk started being watched.",  # noqa: E501
         )
         self.assertEqual(
             Disk.StatusLUKSEncrypted,
@@ -256,7 +256,7 @@ class TestDisk(unittest.TestCase):
             "Expected disk status to track the last response, did not.",
         )
 
-    def test_disk_status_stops_tracking_export_service_responses_when_disconnected(self):
+    def test_disk_status_stops_tracking_export_service_responses_when_not_watched(self):
         responses = [
             Disk.StatusLUKSEncrypted,
             Disk.StatusUnreachable,
@@ -276,7 +276,7 @@ class TestDisk(unittest.TestCase):
         self.assertEqual(
             0,
             len(export_service_response),
-            "Expected export service to receive no queries before the disk is connected, and emit no responses.",  # noqa: E501
+            "Expected export service to receive no queries before the disk is being watched, and emit no responses.",  # noqa: E501
         )
         self.assertEqual(
             Disk.StatusUnknown,
@@ -284,7 +284,7 @@ class TestDisk(unittest.TestCase):
             "Expected default disk status to be Disk.StatusUnknown, was not.",
         )
 
-        disk.connect()  # Action!
+        disk.watch()  # Action!
 
         # The first query should be issued immediately.
         # After that, the dummy export service responds blazing fast.
@@ -292,7 +292,7 @@ class TestDisk(unittest.TestCase):
         self.assertEqual(
             1,
             len(export_service_response),
-            "Expected exactly 1 query to the export service, and 1 response immediately after the disk was connected.",  # noqa: E501
+            "Expected exactly 1 query to the export service, and 1 response immediately after the disk started being watched.",  # noqa: E501
         )
         self.assertEqual(
             Disk.StatusLUKSEncrypted,
@@ -300,24 +300,24 @@ class TestDisk(unittest.TestCase):
             "Expected disk status to track the last response, did not.",
         )
 
-        disk.disconnect()
+        disk.stop_watching()
 
         self.assertEqual(
             Disk.StatusUnknown,
             disk.status,
-            "Expected disk status to become unknown as soon as disconnected.",
+            "Expected disk status to become unknown as soon as stopped being watched.",
         )
 
         export_service_response.wait(POLLING_INTERVAL + CHECK_EXECUTION_TIME)  # will time out
         self.assertEqual(
             1,
             len(export_service_response),
-            "Expected no new query to the export service after disconnection (total 1 query and 1 response)",  # noqa: E501
+            "Expected no new query to the export service after the disk stopped being watched (total 1 query and 1 response)",  # noqa: E501
         )
         self.assertEqual(
             Disk.StatusUnknown,
             disk.status,
-            "Expected disk status to remain unknown until reconnected.",
+            "Expected disk status to remain unknown until being watched again.",
         )
 
     def test_disk_signals_changes_in_disk_status(self):
@@ -381,19 +381,20 @@ class TestDisk(unittest.TestCase):
         )
 
         # This last segment is admittedly awkward. We want to make sure that
-        # the signal is emitted when pausing the disk. Even though the disk connection
-        # is not the point of this test, we do have to connect to be able to disconnect it.
+        # the signal is emitted when pausing the disk. Even though the disk watching
+        # is not the point of this test, we do have to watch in order to be able
+        # to stop watching it.
         #
-        # The connection triggers a query to the disk_service. To ensure that
-        # connecting the disk doesn't have any visible side-effects, the dummy service
+        # Watching triggers a query to the disk_service. To ensure that
+        # watching the disk doesn't have any visible side-effects, the dummy service
         # is configured to respond that the disk wasn't found LUKS-encrypted.
-        disk.connect()
-        disk.disconnect()
+        disk.watch()
+        disk.stop_watching()
         disk_status_changed_emissions.wait(POLLING_INTERVAL)
         self.assertEqual(
             Disk.StatusUnknown,
             disk.status,
-            "Expected disk status to become Disk.StatusUnknown as soon as disconnected, was not.",  # noqa: E501
+            "Expected disk status to become Disk.StatusUnknown as soon as not being watched, was not.",  # noqa: E501
         )
         self.assertEqual(
             4,
