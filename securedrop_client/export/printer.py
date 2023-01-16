@@ -1,7 +1,15 @@
 import warnings
 from typing import Callable, NewType, Optional
 
-from PyQt5.QtCore import QObject, QState, QStateMachine, QTimer, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import (
+    QObject,
+    QState,
+    QStateMachine,
+    QTimer,
+    pyqtBoundSignal,
+    pyqtSignal,
+    pyqtSlot,
+)
 
 from .cli import Error as CLIError
 from .service import Service
@@ -82,11 +90,11 @@ class Printer(QObject):
         if self._connected_clients < 1:
             self.last_client_disconnected.emit()
 
-    def enqueue_job_on(self, signal: pyqtSignal) -> None:
+    def enqueue_job_on(self, signal: pyqtBoundSignal) -> None:
         """Allow to enqueue printing jobs, in a thread-safe manner."""
         self._printing_service.connect_signals(print_requested=signal)
 
-    def check_status_once_on(self, signal: pyqtSignal) -> None:
+    def check_status_once_on(self, signal: pyqtBoundSignal) -> None:
         warnings.warn(
             "check_status_once_on must not be used for new features, use the connect method instead",  # noqa: E501
             DeprecationWarning,
@@ -162,14 +170,14 @@ class _StatusCache(QStateMachine):
 
         self.start()
 
-    def clear_on(self, signal: pyqtSignal) -> None:
+    def clear_on(self, signal: pyqtBoundSignal) -> None:
         """Allow the cache to be cleared (status == Printer.UnknownStatus) when signal is emitted.
 
         Register a clearing signal."""
         self._ready.addTransition(signal, self._unknown)
         self._unreachable.addTransition(signal, self._unknown)
 
-    def on_change_emit(self, signal: pyqtSignal) -> None:
+    def on_change_emit(self, signal: pyqtBoundSignal) -> None:
         """Allow a signal to be emitted whe the value of the cache changes."""
         self._unknown.entered.connect(signal)
         self._ready.entered.connect(signal)
@@ -245,19 +253,19 @@ class _Poller(QStateMachine):
 
         self.start()  # start the state machine, not polling!
 
-    def start_on(self, signal: pyqtSignal) -> None:
+    def start_on(self, signal: pyqtBoundSignal) -> None:
         """Allow polling to be started, in a thread-safe manner.
 
         Register a starting signal."""
         self.paused.addTransition(signal, self._started)
 
-    def pause_on(self, signal: pyqtSignal) -> None:
+    def pause_on(self, signal: pyqtBoundSignal) -> None:
         """Allow polling to be paused, in a thread-safe manner.
 
         Register a pausing signal."""
         self._started.addTransition(signal, self.paused)
 
-    def wait_on(self, signal: pyqtSignal) -> None:
+    def wait_on(self, signal: pyqtBoundSignal) -> None:
         """Allow to signal that a given polling event is done, in a thread-safe manner.
 
         Register a waiting signal."""
