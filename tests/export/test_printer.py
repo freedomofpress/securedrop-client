@@ -155,7 +155,7 @@ class TestPrinter(unittest.TestCase):
 
         self.assertEqual(Printer.StatusUnknown, printer.status)
 
-    def test_printer_status_tracks_printing_service_responses_when_connected(self):
+    def test_printer_status_tracks_printing_service_responses_when_watched(self):
         responses = [
             Printer.StatusReady,
             Printer.StatusUnreachable,
@@ -184,10 +184,10 @@ class TestPrinter(unittest.TestCase):
         self.assertEqual(
             0,
             len(printing_service_response),
-            "Expected printing service to receive no queries before the printer is connected, and emit no responses.",  # noqa: E501
+            "Expected printing service to receive no queries before the printer is being watched, and emit no responses.",  # noqa: E501
         )
 
-        printer.connect()  # Action!
+        printer.watch()  # Action!
 
         # The first query should be issued immediately.
         # After that, the dummy printing service responds blazing fast.
@@ -195,7 +195,7 @@ class TestPrinter(unittest.TestCase):
         self.assertEqual(
             1,
             len(printing_service_response),
-            "Expected exactly 1 query to the printing service, and 1 response immediately after the printer was connected.",  # noqa: E501
+            "Expected exactly 1 query to the printing service, and 1 response immediately after the printer started being watched.",  # noqa: E501
         )
         self.assertEqual(
             Printer.StatusReady,
@@ -249,7 +249,7 @@ class TestPrinter(unittest.TestCase):
             "Expected printer status to track the last response, did not.",
         )
 
-    def test_printer_status_stops_tracking_printing_service_responses_when_disconnected(self):
+    def test_printer_status_stops_tracking_printing_service_responses_when_not_watched(self):
         responses = [
             Printer.StatusReady,
             Printer.StatusUnreachable,
@@ -275,10 +275,10 @@ class TestPrinter(unittest.TestCase):
         self.assertEqual(
             0,
             len(printing_service_response),
-            "Expected printing service to receive no queries before the printer is connected, and emit no responses.",  # noqa: E501
+            "Expected printing service to receive no queries before the printer is watched, and emit no responses.",  # noqa: E501
         )
 
-        printer.connect()  # Action!
+        printer.watch()  # Action!
 
         # The first query should be issued immediately.
         # After that, the dummy printing service responds blazing fast.
@@ -286,7 +286,7 @@ class TestPrinter(unittest.TestCase):
         self.assertEqual(
             1,
             len(printing_service_response),
-            "Expected exactly 1 query to the printing service, and 1 response immediately after the printer was connected.",  # noqa: E501
+            "Expected exactly 1 query to the printing service, and 1 response immediately after the printer started being watched.",  # noqa: E501
         )
         self.assertEqual(
             Printer.StatusReady,
@@ -294,24 +294,24 @@ class TestPrinter(unittest.TestCase):
             "Expected printer status to track the last response, did not.",
         )
 
-        printer.disconnect()
+        printer.stop_watching()
 
         self.assertEqual(
             Printer.StatusUnknown,
             printer.status,
-            "Expected printer status to become unknown as soon as disconnected.",
+            "Expected printer status to become unknown as soon as watching stopped.",
         )
 
         printing_service_response.wait(POLLING_INTERVAL + CHECK_EXECUTION_TIME)  # will time out
         self.assertEqual(
             1,
             len(printing_service_response),
-            "Expected no new query to the printing service after disconnection (total 1 query and 1 response)",  # noqa: E501
+            "Expected no new query to the printing service after watching has stopped (total 1 query and 1 response)",  # noqa: E501
         )
         self.assertEqual(
             Printer.StatusUnknown,
             printer.status,
-            "Expected printer status to remain unknown until reconnected.",
+            "Expected printer status to remain unknown until being watched again.",
         )
 
     def test_printer_signals_changes_in_printer_status(self):
@@ -375,19 +375,20 @@ class TestPrinter(unittest.TestCase):
         )
 
         # This last segment is admittedly awkward. We want to make sure that
-        # the signal is emitted when pausing the printer. Even though the printer connection
-        # is not the point of this test, we do have to connect to be able to disconnect it.
+        # the signal is emitted when pausing the printer. Even though the printer watching
+        # is not the point of this test, we do have to watch in order to be able
+        # to stop watching it.
         #
-        # The connection triggers a query to the printer_service. To ensure that
-        # connecting the printer doesn't have any visible side-effects, the dummy service
+        # Watching triggers a query to the printer_service. To ensure that
+        # watching the printer doesn't have any visible side-effects, the dummy service
         # is configured to respond that the printer wasn't found ready.
-        printer.connect()
-        printer.disconnect()
+        printer.watch()
+        printer.stop_watching()
         printer_status_changed_emissions.wait(POLLING_INTERVAL)
         self.assertEqual(
             Printer.StatusUnknown,
             printer.status,
-            "Expected printer status to become Printer.StatusUnknown as soon as disconnected, was not.",  # noqa: E501
+            "Expected printer status to become Printer.StatusUnknown as soon as watching stopped, was not.",  # noqa: E501
         )
         self.assertEqual(
             4,
