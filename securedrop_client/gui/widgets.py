@@ -59,6 +59,7 @@ from PyQt5.QtWidgets import (
     QToolButton,
     QVBoxLayout,
     QWidget,
+    QToolBar,
 )
 
 from securedrop_client import state
@@ -75,6 +76,7 @@ from securedrop_client.gui import conversation
 from securedrop_client.gui.actions import (
     DeleteConversationAction,
     DeleteSourceAction,
+    DeleteSourcesAction,
     DownloadConversation,
     ExportConversationAction,
     ExportConversationTranscriptAction,
@@ -84,6 +86,7 @@ from securedrop_client.gui.base import SecureQLabel, SvgLabel, SvgPushButton, Sv
 from securedrop_client.gui.conversation import DeleteConversationDialog
 from securedrop_client.gui.datetime_helpers import format_datetime_local
 from securedrop_client.gui.source import DeleteSourceDialog
+from securedrop_client.gui.source.delete.dialog import DeleteSourcesDialog
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_css, load_icon, load_image, load_movie
 from securedrop_client.storage import source_exists
@@ -646,7 +649,17 @@ class MainView(QWidget):
         self.view_layout.addWidget(self.empty_conversation_view)
 
         # Add widgets to layout
-        self._layout.addWidget(self.source_list, stretch=1)
+        self.sources_pane_holder = QWidget()
+        self.sources_pane_holder.setObjectName("MainView_sources_pane_holder")
+
+        self.sources_toolbar = SourceListToolbar()
+        self.sources_pane_layout = QVBoxLayout()
+        self.sources_pane_layout.setContentsMargins(0, 0, 0, 0)
+        self.sources_pane_holder.setLayout(self.sources_pane_layout)
+        self.sources_pane_layout.addWidget(self.sources_toolbar)
+        self.sources_pane_layout.addWidget(self.source_list)
+
+        self._layout.addWidget(self.sources_pane_holder, stretch=1)
         self._layout.addWidget(self.view_holder, stretch=2)
 
         # Note: We should not delete SourceConversationWrapper when its source is unselected. This
@@ -659,6 +672,7 @@ class MainView(QWidget):
         """
         self.controller = controller
         self.source_list.setup(controller)
+        self.sources_toolbar.setup(controller)
 
     def show_sources(self, sources: List[Source]) -> None:
         """
@@ -875,6 +889,16 @@ class SourceListWidgetItem(QListWidgetItem):
             other_ts = arrow.get(them.last_updated)
             return my_ts < other_ts
         return True
+
+
+class SourceListToolbar(QToolBar):
+    def setup(self, controller: Controller):
+        self.controller = controller
+        self.addAction(DeleteSourcesAction(self, self.controller, DeleteSourcesDialog))
+
+    def __init__(self):
+        super().__init__()
+        self.setObjectName("SourceListToolbar")
 
 
 class SourceList(QListWidget):
