@@ -44,6 +44,7 @@ from PyQt5.QtGui import (
 from PyQt5.QtWidgets import (
     QAction,
     QGridLayout,
+    QCheckBox,
     QHBoxLayout,
     QLabel,
     QListWidget,
@@ -1305,6 +1306,10 @@ class SourceWidget(QWidget):
         self.paperclip_disabled.setSizePolicy(retain_space)
         self.paperclip_disabled.hide()
 
+        self.checkbox = QCheckBox()
+        self.checkbox.source_uuid = self.source.uuid
+        self.checkbox.toggled.connect(controller.toggle_source)
+
         self.timestamp = QLabel()
         self.timestamp.setSizePolicy(retain_space)
         self.timestamp.setFixedWidth(self.TIMESTAMP_WIDTH)
@@ -1312,13 +1317,13 @@ class SourceWidget(QWidget):
 
         # Create source_widget:
         # -------------------------------------------------------------------
-        # | ------ | -------- | ------                   | -----------      |
-        # | |star| | |spacer| | |name|                   | |paperclip|      |
-        # | ------ | -------- | ------                   | -----------      |
+        # | ---------- | -------- | ------               | -----------      |
+        # | |  star  | | |spacer| | |name|               | |paperclip|      |
+        # | ---------- | -------- | ------               | -----------      |
         # -------------------------------------------------------------------
-        # |        |          | ---------                | -----------      |
-        # |        |          | |preview|                | |timestamp|      |
-        # |        |          | ---------                | -----------      |
+        # | ---------- |          | ---------            | -----------      |
+        # | |checkbox| |          | |preview|            | |timestamp|      |
+        # | ---------- |          | ---------            | -----------      |
         # ------------------------------------------- -----------------------
         # Column 0, 1, and 3 are fixed. Column 2 stretches.
         self.source_widget = QWidget()
