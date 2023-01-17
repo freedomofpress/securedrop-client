@@ -119,6 +119,7 @@ class DeleteSourcesAction(QAction):
 
         super().__init__(text, parent=parent)
         self.triggered.connect(self.trigger)
+        self.setEnabled(False)  # disabled until sources are selected
 
     def trigger(self) -> None:
         sources = list(self.controller.checked_sources)

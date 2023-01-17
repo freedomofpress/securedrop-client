@@ -782,6 +782,12 @@ class MainView(QWidget):
         self.view_layout.addWidget(widget)
         widget.show()
 
+    def toggle_delete_sources_button_enabled(self, enabled: bool) -> None:
+        """
+        Enable / disable the delete sources button.
+        """
+        self.sources_toolbar.delete_sources_action.setEnabled(enabled)
+
 
 class EmptyConversationView(QWidget):
 
@@ -878,7 +884,8 @@ class SourceListToolbar(QToolBar):
     def setup(self, controller: Controller):
         self.setFixedHeight(30)
         self.controller = controller
-        self.addAction(DeleteSourcesAction(self, self.controller, DeleteSourcesDialog))
+        self.delete_sources_action = DeleteSourcesAction(self, self.controller, DeleteSourcesDialog)
+        self.addAction(self.delete_sources_action)
 
     def __init__(self):
         super().__init__()

@@ -427,6 +427,8 @@ class Controller(QObject):
             self.checked_sources.add(checkbox.source_uuid)
         else:
             self.checked_sources.remove(checkbox.source_uuid)
+
+        self.gui.toggle_delete_sources_button_enabled(len(self.checked_sources) > 0)
         print(f"CHECKED sourced:  " + str(self.checked_sources))
 
     @pyqtSlot(int)

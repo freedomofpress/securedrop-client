@@ -228,3 +228,6 @@ class Window(QMainWindow):
         cb = QApplication.clipboard()
         cb.clear()
         cb.clear(QClipboard.Selection)
+
+    def toggle_delete_sources_button_enabled(self, enabled: bool):
+        self.main_view.toggle_delete_sources_button_enabled(enabled)
