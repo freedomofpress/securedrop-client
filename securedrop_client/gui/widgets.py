@@ -648,14 +648,14 @@ class MainView(QWidget):
         self.empty_conversation_view = EmptyConversationView()
         self.view_layout.addWidget(self.empty_conversation_view)
 
-        # Add widgets to layout
         self.sources_pane_holder = QWidget()
         self.sources_pane_holder.setObjectName("MainView_sources_pane_holder")
-
-        self.sources_toolbar = SourceListToolbar()
         self.sources_pane_layout = QVBoxLayout()
         self.sources_pane_layout.setContentsMargins(0, 0, 0, 0)
+        self.sources_pane_layout.setSpacing(0)
         self.sources_pane_holder.setLayout(self.sources_pane_layout)
+
+        self.sources_toolbar = SourceListToolbar()
         self.sources_pane_layout.addWidget(self.sources_toolbar)
         self.sources_pane_layout.addWidget(self.source_list)
 
@@ -874,6 +874,17 @@ class EmptyConversationView(QWidget):
         self.no_source_selected.show()
 
 
+class SourceListToolbar(QToolBar):
+    def setup(self, controller: Controller):
+        self.setFixedHeight(30)
+        self.controller = controller
+        self.addAction(DeleteSourcesAction(self, self.controller, DeleteSourcesDialog))
+
+    def __init__(self):
+        super().__init__()
+        self.setObjectName("SourceListToolbar")
+
+
 class SourceListWidgetItem(QListWidgetItem):
     def __lt__(self, other: "SourceListWidgetItem") -> bool:
         """
@@ -889,16 +900,6 @@ class SourceListWidgetItem(QListWidgetItem):
             other_ts = arrow.get(them.last_updated)
             return my_ts < other_ts
         return True
-
-
-class SourceListToolbar(QToolBar):
-    def setup(self, controller: Controller):
-        self.controller = controller
-        self.addAction(DeleteSourcesAction(self, self.controller, DeleteSourcesDialog))
-
-    def __init__(self):
-        super().__init__()
-        self.setObjectName("SourceListToolbar")
 
 
 class SourceList(QListWidget):
