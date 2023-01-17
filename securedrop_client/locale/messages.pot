@@ -82,6 +82,9 @@ msgstr ""
 msgid "Delete Source Account"
 msgstr ""
 
+msgid "Delete Multiple Source Accounts"
+msgstr ""
+
 msgid "Delete All Files and Messages"
 msgstr ""
 
@@ -349,5 +352,17 @@ msgid "Your organization will not be able to send them replies."
 msgstr ""
 
 msgid "All files and messages from that source will also be destroyed."
+msgstr ""
+
+msgid "YES, DELETE ALL SOURCE ACCOUNT"
+msgstr ""
+
+msgid "When the entire account for all source are deleted:"
+msgstr ""
+
+msgid "The sources will not be able to log in with their codename again."
+msgstr ""
+
+msgid "All files and messages from the sources will also be destroyed."
 msgstr ""
 
