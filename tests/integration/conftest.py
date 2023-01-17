@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QApplication
 
 from securedrop_client import export
 from securedrop_client.app import threads
+from securedrop_client.export.cli import CLI
 from securedrop_client.gui import conversation
 from securedrop_client.gui.base import ModalDialog
 from securedrop_client.gui.main import Window
@@ -148,15 +149,11 @@ def modal_dialog(mocker, homedir):
 
 
 @pytest.fixture(scope="function")
-def export_service():
+def export_service(mocker):
     """An export service that assumes the Qubes RPC calls are successful and skips them."""
     export_service = export.Service()
     # Ensure the export_service doesn't rely on Qubes OS:
-    export_service._cli.check_printer_status = lambda dir: None
-    export_service._cli.check_disk_encryption = lambda dir: None
-    export_service._cli.check_disk_presence = lambda dir: None
-    export_service._cli.export = lambda dir, paths, passphrase: None
-    export_service._cli.print = lambda dir, paths: None
+    export_service._cli = mocker.MagicMock(spec=CLI)
     return export_service
 
 

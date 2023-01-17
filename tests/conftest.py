@@ -22,6 +22,7 @@ from securedrop_client.db import (
     Source,
     make_session_maker,
 )
+from securedrop_client.export.cli import CLI
 from securedrop_client.gui import conversation
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
@@ -127,15 +128,11 @@ def homedir(i18n):
 
 
 @pytest.fixture(scope="function")
-def export_service():
+def export_service(mocker):
     """An export service that assumes the Qubes RPC calls are successful and skips them."""
     export_service = export.Service()
     # Ensure the export_service doesn't rely on Qubes OS:
-    export_service._cli.check_printer_status = lambda dir: None
-    export_service._cli.check_disk_encryption = lambda dir: None
-    export_service._cli.check_disk_presence = lambda dir: None
-    export_service._cli.export = lambda dir, paths, passphrase: None
-    export_service._cli.print = lambda dir, paths: None
+    export_service._cli = mocker.MagicMock(spec=CLI)
     return export_service
 
 
