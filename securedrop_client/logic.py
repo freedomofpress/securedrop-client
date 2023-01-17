@@ -1052,6 +1052,24 @@ class Controller(QObject):
         self.source_deleted.emit(source.uuid)
 
     @login_required
+    def delete_sources(self, sources: List[str]) -> None:
+        """
+        Performs a delete operation on multiple source records.
+
+        This method will submit a job per source to delete the source record on
+        the server. If the job succeeds, the success handler will
+        synchronize the server records with the local state. If not,
+        the failure handler will display an error.
+        """
+        for source_uuid in sources:
+            job = DeleteSourceJob(source_uuid)
+            job.success_signal.connect(self.on_delete_source_success)
+            job.failure_signal.connect(self.on_delete_source_failure)
+
+            self.add_job.emit(job)
+            self.source_deleted.emit(source_uuid)
+
+    @login_required
     def delete_conversation(self, source: db.Source) -> None:
         """
         Deletes the content of a source conversation.
