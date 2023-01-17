@@ -1361,6 +1361,7 @@ class SourceWidget(QWidget):
         source_widget_layout.addWidget(self.name, 0, 2, 1, 1)
         source_widget_layout.addWidget(self.paperclip, 0, 3, 1, 1)
         source_widget_layout.addWidget(self.paperclip_disabled, 0, 3, 1, 1)
+        source_widget_layout.addWidget(self.checkbox, 1, 0, 1, 1)
         source_widget_layout.addWidget(self.preview, 1, 2, 1, 1, alignment=Qt.AlignLeft)
         source_widget_layout.addWidget(self.deletion_indicator, 1, 2, 1, 1)
         source_widget_layout.addWidget(self.timestamp, 1, 3, 1, 1)
