@@ -119,7 +119,7 @@ class DeleteSourcesAction(QAction):
         self._confirmation_dialog = confirmation_dialog
         text = _("Delete Multiple Source Accounts")
 
-        super().__init__(text, parent)
+        super().__init__(text, parent=parent)
         self.triggered.connect(self.trigger)
 
     def trigger(self) -> None:
