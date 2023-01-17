@@ -1066,6 +1066,7 @@ class Controller(QObject):
             job = DeleteSourceJob(source_uuid)
             job.success_signal.connect(self.on_delete_source_success)
             job.failure_signal.connect(self.on_delete_source_failure)
+            self.checked_sources.remove(source_uuid)
 
             self.add_job.emit(job)
             self.source_deleted.emit(source_uuid)
