@@ -24,7 +24,7 @@ import uuid
 from datetime import datetime
 from gettext import gettext as _
 from gettext import ngettext
-from typing import Dict, List, Optional, Type, Union  # noqa: F401
+from typing import Dict, List, Optional, Set, Type, Union
 
 import arrow
 import sdclientapi
@@ -395,6 +395,9 @@ class Controller(QObject):
         # File data.
         self.data_dir = os.path.join(self.home, "data")
 
+        # uuids of sources with checkboxes checked
+        self.checked_sources: Set[str] = set()
+
         # Background sync to keep client up-to-date with server changes
         self.api_sync = ApiSync(
             self.api, self.session_maker, self.gpg, self.data_dir, self.sync_thread, state
@@ -417,6 +420,14 @@ class Controller(QObject):
             and oct(os.stat(self.last_sync_filepath).st_mode) != "0o100600"
         ):
             os.chmod(self.last_sync_filepath, 0o600)
+
+    def toggle_source(self):
+        checkbox = self.sender()
+        if checkbox.isChecked():
+            self.checked_sources.add(checkbox.source_uuid)
+        else:
+            self.checked_sources.remove(checkbox.source_uuid)
+        print(f"CHECKED sourced:  " + str(self.checked_sources))
 
     @pyqtSlot(int)
     def _on_main_queue_updated(self, num_items: int) -> None:
