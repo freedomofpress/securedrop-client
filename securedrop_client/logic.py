@@ -428,8 +428,15 @@ class Controller(QObject):
         else:
             self.checked_sources.remove(checkbox.source_uuid)
 
-        self.gui.toggle_delete_sources_button_enabled(len(self.checked_sources) > 0)
+        self._toggle_delete_source_button_enabled()
         print(f"CHECKED sourced:  " + str(self.checked_sources))
+
+    def uncheck_source(self, source_uuid: str):
+        self.checked_sources.remove(source_uuid)
+        self._toggle_delete_source_button_enabled()
+
+    def _toggle_delete_source_button_enabled(self):
+        self.gui.toggle_delete_sources_button_enabled(len(self.checked_sources) > 0)
 
     @pyqtSlot(int)
     def _on_main_queue_updated(self, num_items: int) -> None:

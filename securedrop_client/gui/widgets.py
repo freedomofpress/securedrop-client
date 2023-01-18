@@ -990,7 +990,7 @@ class SourceList(QListWidget):
                 del self.source_items[source_widget.source_uuid]
 
             if source_widget.source_uuid in self.controller.checked_sources:
-                self.controller.checked_sources.remove(source_widget.source_uuid)
+                self.controller.uncheck_source(source_widget.source_uuid)
 
             deleted_uuids.append(source_widget.source_uuid)
             source_widget.deleteLater()
