@@ -649,6 +649,8 @@ class MainView(QWidget):
         self.view_layout.addWidget(self.empty_conversation_view)
 
         self.sources_pane_holder = QWidget()
+        # TODO - remove this hard-coded width
+        self.sources_pane_holder.setMaximumWidth(540)
         self.sources_pane_holder.setObjectName("MainView_sources_pane_holder")
         self.sources_pane_layout = QVBoxLayout()
         self.sources_pane_layout.setContentsMargins(0, 0, 0, 0)
