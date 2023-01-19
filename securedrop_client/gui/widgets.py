@@ -1283,6 +1283,7 @@ class SourceWidget(QWidget):
     SOURCE_NAME_CSS = load_css("source_name.css")
     SOURCE_PREVIEW_CSS = load_css("source_preview.css")
     SOURCE_TIMESTAMP_CSS = load_css("source_timestamp.css")
+    SOURCE_CHECKBOX_CSS = load_css("source_checkbox.css")
 
     CONVERSATION_DELETED_TEXT = _("\u2014 All files and messages deleted for this source \u2014")
 
@@ -1344,6 +1345,8 @@ class SourceWidget(QWidget):
         self.paperclip_disabled.hide()
 
         self.checkbox = QCheckBox()
+        self.checkbox.setObjectName("SourceWidget_checkbox")
+        self.checkbox.setStyleSheet(self.SOURCE_CHECKBOX_CSS)
         self.checkbox.source_uuid = self.source.uuid
         self.checkbox.toggled.connect(controller.toggle_source)
 
