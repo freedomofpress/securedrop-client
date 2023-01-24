@@ -54,7 +54,7 @@ class TestExportFileDialog(unittest.TestCase):
             default_body in dialog_text, f'Expected "{default_body}" in "{dialog_text}"'
         )
 
-    @patch("securedrop_client.export.disk.Disk.status", export.Disk.StatusLUKSEncrypted)
+    @patch("securedrop_client.export.disk.Disk.status", export.Disk.StatusReachable)
     def test_requests_disk_passphrase_when_LUKS_encrypted_disk_found(self):
         passphrase_prompt = "Enter passphrase for USB drive"
         status_changed_emissions = QSignalSpy(self._disk.status_changed)

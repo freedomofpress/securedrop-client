@@ -20,7 +20,7 @@ class ExportService(QObject):
     export_failed = pyqtSignal(object)
     export_succeeded = pyqtSignal(object)
 
-    def __init__(self, responses=[Disk.StatusLUKSEncrypted]):
+    def __init__(self, responses=[Disk.StatusReachable]):
         super().__init__()
 
         self.responses = responses[:]
@@ -42,7 +42,7 @@ class ExportService(QObject):
             response = self.responses.pop(0)
             # The disk is unreachable unless it's LUKS-encrypted.
             # Note that using the Disk.Status type is merely for convenience and readability.
-            if response == Disk.StatusLUKSEncrypted:
+            if response == Disk.StatusReachable:
                 self.luks_encrypted_disk_found.emit()
             else:
                 reason = object()  # to comply with the Service API
@@ -100,10 +100,10 @@ class TestExportService(unittest.TestCase):
         client = ExportServiceClient()
         responses = [
             "not LUKS-encrypted",  # whatever
-            Disk.StatusLUKSEncrypted,
-            Disk.StatusLUKSEncrypted,
-            Disk.StatusUnreachable,  # not Disk.StatusLUKSEncrypted
-            Disk.StatusLUKSEncrypted,
+            Disk.StatusReachable,
+            Disk.StatusReachable,
+            Disk.StatusUnreachable,  # not Disk.StatusReachable
+            Disk.StatusReachable,
             # nothing else
         ]
         export_service = ExportService(responses)  # override default responses
@@ -165,9 +165,9 @@ class TestDisk(unittest.TestCase):
 
     def test_disk_status_tracks_export_service_responses_when_watched(self):
         responses = [
-            Disk.StatusLUKSEncrypted,
+            Disk.StatusReachable,
             Disk.StatusUnreachable,
-            Disk.StatusLUKSEncrypted,
+            Disk.StatusReachable,
         ]
         export_service = ExportService(responses)
 
@@ -205,7 +205,7 @@ class TestDisk(unittest.TestCase):
             "Expected exactly 1 query to the export service, and 1 response immediately after the disk started being watched.",  # noqa: E501
         )
         self.assertEqual(
-            Disk.StatusLUKSEncrypted,
+            Disk.StatusReachable,
             disk.status,
             "Expected disk status to track the last response, did not.",
         )
@@ -239,7 +239,7 @@ class TestDisk(unittest.TestCase):
             "Expected exactly a total of 3 queries, and 3 responses after the polling interval elapsed.",  # noqa: E501
         )
         self.assertEqual(
-            Disk.StatusLUKSEncrypted,
+            Disk.StatusReachable,
             disk.status,
             "Expected disk status to track the last response, did not.",
         )
@@ -258,9 +258,9 @@ class TestDisk(unittest.TestCase):
 
     def test_disk_status_stops_tracking_export_service_responses_when_not_watched(self):
         responses = [
-            Disk.StatusLUKSEncrypted,
+            Disk.StatusReachable,
             Disk.StatusUnreachable,
-            Disk.StatusLUKSEncrypted,
+            Disk.StatusReachable,
         ]
         export_service = ExportService(responses)
         POLLING_INTERVAL = 100  # milliseconds
@@ -295,7 +295,7 @@ class TestDisk(unittest.TestCase):
             "Expected exactly 1 query to the export service, and 1 response immediately after the disk started being watched.",  # noqa: E501
         )
         self.assertEqual(
-            Disk.StatusLUKSEncrypted,
+            Disk.StatusReachable,
             disk.status,
             "Expected disk status to track the last response, did not.",
         )
@@ -345,9 +345,9 @@ class TestDisk(unittest.TestCase):
 
         export_service.luks_encrypted_disk_found.emit()
         self.assertEqual(
-            Disk.StatusLUKSEncrypted,
+            Disk.StatusReachable,
             disk.status,
-            "Expected disk status to become Disk.StatusLUKSEncrypted, did not.",
+            "Expected disk status to become Disk.StatusReachable, did not.",
         )
         self.assertEqual(
             2,
@@ -357,7 +357,7 @@ class TestDisk(unittest.TestCase):
 
         export_service.luks_encrypted_disk_found.emit()
         self.assertEqual(
-            Disk.StatusLUKSEncrypted,
+            Disk.StatusReachable,
             disk.status,
             "Didn't expect any change in disk status.",
         )

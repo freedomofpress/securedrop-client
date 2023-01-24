@@ -209,7 +209,7 @@ class ExportDialog(ModalDialog):
     @pyqtSlot()
     def _on_disk_status_changed(self) -> None:
         disk_status = self._export_disk.status
-        if disk_status == Disk.StatusLUKSEncrypted:
+        if disk_status == Disk.StatusReachable:
             self._on_export_preflight_check_succeeded()
         elif disk_status == Disk.StatusUnreachable:
             self._on_export_preflight_check_failed()

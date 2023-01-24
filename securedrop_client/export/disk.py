@@ -29,7 +29,7 @@ class Disk(QObject):
 
     Status = NewType("Status", str)
     StatusUnknown = Status("unknown-isw32")
-    StatusLUKSEncrypted = Status("luks-encrypted-8563d")
+    StatusReachable = Status("luks-encrypted-8563d")
     StatusUnreachable = Status("unreachable-ofbu4")
 
     def __init__(
@@ -192,7 +192,7 @@ class _StatusCache(QStateMachine):
 
     @pyqtSlot()
     def _on_luks_encrypted_state_entered(self) -> None:
-        self._status = Disk.StatusLUKSEncrypted
+        self._status = Disk.StatusReachable
 
     @pyqtSlot()
     def _on_unreachable_state_entered(self) -> None:
