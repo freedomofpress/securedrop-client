@@ -53,9 +53,6 @@ class Printer(QObject):
         self._cache.clear_on(self._poller.paused.entered)
         self._cache.on_change_emit(self.status_changed)
 
-        # This is a blocking call, which is no good.
-        # self._poller.poll_by(lambda: self._printing_service.check_printer())
-        # Alternatively, by taking advantage of the printing service features to loosen coupling:
         self._printing_service.connect_signals(printer_check_requested=self._poller.polling.entered)
 
         self._poller.wait_on(self._printing_service.printer_not_found_ready)

@@ -49,9 +49,6 @@ class Disk(QObject):
         self._cache.clear_on(self._poller.paused.entered)
         self._cache.on_change_emit(self.status_changed)
 
-        # This is a blocking call, which is no good.
-        # self._poller.poll_by(lambda: self._export_service.check_disk())
-        # Alternatively, by taking advantage of the export service features to loosen coupling:
         self._export_service.connect_signals(disk_check_requested=self._poller.polling.entered)
 
         self._poller.wait_on(self._export_service.luks_encrypted_disk_found)
