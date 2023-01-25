@@ -5,14 +5,21 @@ Over time, this module could become the interface between
 the GUI and the controller.
 """
 from gettext import gettext as _
+from pathlib import Path
 from typing import Callable, Optional
 
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtWidgets import QAction, QDialog, QMenu
 
-from securedrop_client import state
+from securedrop_client import export, state
+from securedrop_client.conversation import Transcript as ConversationTranscript
 from securedrop_client.db import Source
+from securedrop_client.gui.conversation import ExportDevice as ConversationExportDevice
+from securedrop_client.gui.conversation import (
+    PrintTranscriptDialog as PrintConversationTranscriptDialog,
+)
 from securedrop_client.logic import Controller
+from securedrop_client.utils import safe_mkdir
 
 
 class DownloadConversation(QAction):
@@ -126,3 +133,50 @@ class DeleteConversationAction(QAction):
                 return
             self.controller.delete_conversation(self.source)
             self._state.remove_conversation_files(id)
+
+
+class PrintConversationAction(QAction):  # pragma: nocover
+    def __init__(
+        self,
+        controller: Controller,
+        source: Source,
+        export_service: Optional[export.Service] = None,
+    ) -> None:
+        """
+        Given some text and a reference to the controller, make something to display a file.
+        """
+        super().__init__()
+
+        self.controller = controller
+        self._source = source
+
+        if export_service is None:
+            # Note that injecting an export service that runs in a separate
+            # thread is greatly encouraged! But it is optional because strictly
+            # speaking it is not a dependency of this FileWidget.
+            export_service = export.Service()
+
+        self._export_device = ConversationExportDevice(controller, export_service)
+
+        self.triggered.connect(self._on_triggered)
+
+    def _on_triggered(self) -> None:
+        """
+        Called when the print conversation action is clicked.
+        """
+        file_path = (
+            Path(self.controller.data_dir)
+            .joinpath(self._source.journalist_filename)
+            .joinpath("conversation.txt")
+        )
+
+        transcript = ConversationTranscript(self._source)
+        safe_mkdir(file_path.parent)
+
+        with open(file_path, "w") as f:
+            f.write(str(transcript))
+
+            dialog = PrintConversationTranscriptDialog(
+                self._export_device, "conversation.txt", str(file_path)
+            )
+            dialog.exec()

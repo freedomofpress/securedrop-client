@@ -22,7 +22,6 @@ import html
 import logging
 from datetime import datetime
 from gettext import gettext as _
-from pathlib import Path
 from typing import Dict, List, Optional, Union  # noqa: F401
 from uuid import uuid4
 
@@ -62,7 +61,6 @@ from PyQt5.QtWidgets import (
 )
 
 from securedrop_client import export, state
-from securedrop_client.conversation import Transcript as ConversationTranscript
 from securedrop_client.db import (
     DraftReply,
     File,
@@ -77,6 +75,7 @@ from securedrop_client.gui.actions import (
     DeleteConversationAction,
     DeleteSourceAction,
     DownloadConversation,
+    PrintConversationAction,
 )
 from securedrop_client.gui.base import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.gui.conversation import DeleteConversationDialog
@@ -84,7 +83,7 @@ from securedrop_client.gui.source import DeleteSourceDialog
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_css, load_icon, load_image, load_movie
 from securedrop_client.storage import source_exists
-from securedrop_client.utils import humanize_filesize, safe_mkdir
+from securedrop_client.utils import humanize_filesize
 
 logger = logging.getLogger(__name__)
 
@@ -2184,53 +2183,6 @@ class ReplyWidget(SpeechBubble):
         self.color_bar.setStyleSheet("")
         self.color_bar.setObjectName("ReplyWidget_status_bar_failed")
         self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
-
-
-class PrintConversationAction(QAction):
-    def __init__(
-        self,
-        controller: Controller,
-        source: Source,
-        export_service: Optional[export.Service] = None,
-    ) -> None:
-        """
-        Given some text and a reference to the controller, make something to display a file.
-        """
-        super().__init__()
-
-        self.controller = controller
-        self._source = source
-
-        if export_service is None:
-            # Note that injecting an export service that runs in a separate
-            # thread is greatly encouraged! But it is optional because strictly
-            # speaking it is not a dependency of this FileWidget.
-            export_service = export.Service()
-
-        self._export_device = conversation.ExportDevice(controller, export_service)
-
-        self.triggered.connect(self._on_triggered)
-
-    def _on_triggered(self) -> None:
-        """
-        Called when the print conversation action is clicked.
-        """
-        file_path = (
-            Path(self.controller.data_dir)
-            .joinpath(self._source.journalist_filename)
-            .joinpath("conversation.txt")
-        )
-
-        transcript = ConversationTranscript(self._source)
-        safe_mkdir(file_path.parent)
-
-        with open(file_path, "w") as f:
-            f.write(str(transcript))
-
-            dialog = conversation.PrintFileDialog(
-                self._export_device, "conversation.txt", str(file_path)
-            )
-            dialog.exec()
 
 
 class FileWidget(QWidget):
