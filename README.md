@@ -201,14 +201,15 @@ securedrop-client
 
 Or [manually initialize](https://github.com/freedomofpress/securedrop-client/blob/HEAD/files/securedrop-client) the SecureDrop Client database.
 
-8. To run a different version of the client, first add a NetVM (`sys-firewall`) to `sd-app` via its Qubes Settings so you can clone the client repository, and then follow these steps:
+8. To run a different version of the client, say the version from a branch called `<branchname>`, first add a NetVM (`sys-firewall`) to `sd-app` via its Qubes Settings so you can clone the client repository, and then follow these steps:
 
 ```
-git clone git@github.com:freedomofpress/securedrop-client.git
+sudo apt-get install git virtualenv  # NB. won't persist across "sd-app" reboots
+git clone -b <branchname> https://github.com/freedomofpress/securedrop-client.git
 cd securedrop-client
 virtualenv --python=python3.9 .venv
 source .venv/bin/activate
-pip install --require-hashes -r requirements/dev-sdw-requirements.txt
+pip install --require-hashes -r requirements/dev-bullseye-requirements.txt
 ```
 
 9. Run the client
