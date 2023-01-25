@@ -22,7 +22,7 @@ import html
 import logging
 from datetime import datetime
 from gettext import gettext as _
-from os.path import Path
+from pathlib import Path
 from typing import Dict, List, Optional, Union  # noqa: F401
 from uuid import uuid4
 
@@ -62,6 +62,7 @@ from PyQt5.QtWidgets import (
 )
 
 from securedrop_client import export, state
+from securedrop_client.conversation import Transcript as ConversationTranscript
 from securedrop_client.db import (
     DraftReply,
     File,
@@ -2198,6 +2199,7 @@ class PrintConversationAction(QAction):
         super().__init__()
 
         self.controller = controller
+        self._source = source
 
         if export_service is None:
             # Note that injecting an export service that runs in a separate
@@ -2213,23 +2215,20 @@ class PrintConversationAction(QAction):
         """
         Called when the print conversation action is clicked.
         """
-        if not self.controller.downloaded_file_exists(self.file):
-            return
-
         file_path = (
             Path(self.controller.data_dir)
             .joinpath(self._source.journalist_filename)
             .joinpath("conversation.txt")
         )
 
-        transcript = conversation.Transcript(self._source)
+        transcript = ConversationTranscript(self._source)
         safe_mkdir(file_path.parent)
 
         with open(file_path, "w") as f:
             f.write(str(transcript))
 
             dialog = conversation.PrintFileDialog(
-                self._export_device, "conversation.txt", file_path
+                self._export_device, "conversation.txt", str(file_path)
             )
             dialog.exec()
 
@@ -3015,7 +3014,9 @@ class SourceConversationWrapper(QWidget):
         layout.setSpacing(0)
 
         # Create widgets
-        self.conversation_title_bar = SourceProfileShortWidget(source, controller, app_state)
+        self.conversation_title_bar = SourceProfileShortWidget(
+            source, controller, app_state, export_service
+        )
         self.conversation_view = ConversationView(source, controller, export_service)
         self.reply_box = ReplyBoxWidget(source, controller)
         self.deletion_indicator = SourceDeletionIndicator()
@@ -3434,7 +3435,11 @@ class SourceMenu(QMenu):
     SOURCE_MENU_CSS = load_css("source_menu.css")
 
     def __init__(
-        self, source: Source, controller: Controller, app_state: Optional[state.State]
+        self,
+        source: Source,
+        controller: Controller,
+        app_state: Optional[state.State],
+        export_service: Optional[export.Service] = None,
     ) -> None:
         super().__init__()
         self.source = source
@@ -3443,9 +3448,7 @@ class SourceMenu(QMenu):
         self.setStyleSheet(self.SOURCE_MENU_CSS)
 
         self.addAction(DownloadConversation(self, self.controller, app_state))
-        self.addAction(
-            PrintConversationAction(self, self.controller, self.source, export.getService())
-        )
+        self.addAction(PrintConversationAction(self.controller, self.source, export_service))
         self.addAction(
             DeleteConversationAction(
                 self.source, self, self.controller, DeleteConversationDialog, app_state
@@ -3461,7 +3464,11 @@ class SourceMenuButton(QToolButton):
     """
 
     def __init__(
-        self, source: Source, controller: Controller, app_state: Optional[state.State]
+        self,
+        source: Source,
+        controller: Controller,
+        app_state: Optional[state.State],
+        export_service: Optional[export.Service] = None,
     ) -> None:
         super().__init__()
         self.controller = controller
@@ -3472,7 +3479,7 @@ class SourceMenuButton(QToolButton):
         self.setIcon(load_icon("ellipsis.svg"))
         self.setIconSize(QSize(22, 33))  # Make it taller than the svg viewBox to increase hitbox
 
-        menu = SourceMenu(self.source, self.controller, app_state)
+        menu = SourceMenu(self.source, self.controller, app_state, export_service)
         self.setMenu(menu)
 
         self.setPopupMode(QToolButton.InstantPopup)
@@ -3513,7 +3520,11 @@ class SourceProfileShortWidget(QWidget):
     VERTICAL_MARGIN = 14
 
     def __init__(
-        self, source: Source, controller: Controller, app_state: Optional[state.State]
+        self,
+        source: Source,
+        controller: Controller,
+        app_state: Optional[state.State],
+        export_service: Optional[export.Service] = None,
     ) -> None:
         super().__init__()
 
@@ -3536,7 +3547,7 @@ class SourceProfileShortWidget(QWidget):
         )
         title = TitleLabel(self.source.journalist_designation)
         self.updated = LastUpdatedLabel(_(arrow.get(self.source.last_updated).format("MMM D")))
-        menu = SourceMenuButton(self.source, self.controller, app_state)
+        menu = SourceMenuButton(self.source, self.controller, app_state, export_service)
         header_layout.addWidget(title, alignment=Qt.AlignLeft)
         header_layout.addStretch()
         header_layout.addWidget(self.updated, alignment=Qt.AlignRight)
