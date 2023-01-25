@@ -117,8 +117,8 @@ class ExportDialog(ModalDialog):
 
         self._show_starting_instructions()
         self.start_animate_header()
-        self._export_disk.check_status_once_on(self.disk_status_check_requested)
         self._export_disk.export_on(self.file_export_requested)
+        self._export_disk.check_status_once_on(self.disk_status_check_requested)
         self.disk_status_check_requested.emit()
 
     def text(self) -> str:

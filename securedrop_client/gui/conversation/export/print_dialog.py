@@ -60,8 +60,8 @@ class PrintDialog(ModalDialog):
 
         self._show_starting_instructions()
         self.start_animate_header()
-        self._printer.check_status_once_on(self.printer_status_check_requested)
         self._printer.enqueue_job_on(self.file_printing_requested)
+        self._printer.check_status_once_on(self.printer_status_check_requested)
         self.printer_status_check_requested.emit()
 
     def text(self) -> str:
