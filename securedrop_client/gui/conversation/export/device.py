@@ -77,12 +77,14 @@ class Device(QObject):
         Run preflight checks to make sure the Export VM is configured correctly.
         """
         logger.info("Running export preflight check")
+        print("device: running export preflight check")
         self.export_preflight_check_requested.emit()
 
     def export_transcript(self, file_location: str, passphrase: str) -> None:
         """
         Send the transcript specified by file_location to the Export VM.
         """
+        print("device: export of transcript was requested")
         self.export_requested.emit([file_location], passphrase)
 
     def export_file_to_usb_drive(self, file_uuid: str, passphrase: str) -> None:

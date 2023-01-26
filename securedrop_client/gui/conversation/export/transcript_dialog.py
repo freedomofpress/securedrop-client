@@ -23,6 +23,7 @@ class TranscriptDialog(FileDialog):
         self.transcript_location = transcript_location
 
     def _export_transcript(self, checked: bool = False) -> None:
+        print("dialog: export started!")
         self.start_animate_activestate()
         self.cancel_button.setEnabled(False)
         self.passphrase_field.setDisabled(True)
@@ -31,7 +32,9 @@ class TranscriptDialog(FileDialog):
 
     @pyqtSlot()
     def _show_passphrase_request_message(self) -> None:
+        print("dialog: the USB drive was found! (lies)")
         self.continue_button.clicked.disconnect()
+        print("dialog: export will start after the 'Continue' button is clicked")
         self.continue_button.clicked.connect(self._export_transcript)
         self.header.setText(self.passphrase_header)
         self.continue_button.setText(_("SUBMIT"))
@@ -44,8 +47,10 @@ class TranscriptDialog(FileDialog):
 
     @pyqtSlot()
     def _show_passphrase_request_message_again(self) -> None:
+        print("dialog: the USB drive was found, again! (still lies)")
         self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self._export_transcript)
+        print("dialog: export will start after the 'Continue' button is clicked")
         self.header.setText(self.passphrase_header)
         self.error_details.setText(self.passphrase_error_message)
         self.continue_button.setText(_("SUBMIT"))
