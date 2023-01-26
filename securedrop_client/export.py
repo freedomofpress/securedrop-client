@@ -185,6 +185,7 @@ class Export(QObject):
             cls._add_virtual_file_to_archive(archive, cls.METADATA_FN, metadata)
 
             for filepath in filepaths:
+                print("export: file is being added to the archive")
                 cls._add_file_to_archive(archive, filepath)
 
         return archive_path
@@ -290,7 +291,18 @@ class Export(QObject):
 
         """
         metadata = self.PRINT_METADATA.copy()
+        print(f"export: the following files will be added to the archive: {filepaths}")
         archive_path = self._create_archive(archive_dir, self.PRINT_FN, metadata, filepaths)
+
+        print(f"export: archive was created in: {archive_path} << LOOK HERE")
+
+        # Feel free to increase this pause. (These are seconds.)
+        import time
+
+        time.sleep(15)
+
+        # Pretend the printing went well.
+        return
         status = self._export_archive(archive_path)
         if status:
             raise ExportError(status)
@@ -320,6 +332,10 @@ class Export(QObject):
         """
         Make sure the Export VM is started.
         """
+        # Pretend the printer is present.
+        self.printer_preflight_success.emit()
+        return
+
         with TemporaryDirectory() as temp_dir:
             try:
                 self._run_printer_preflight(temp_dir)

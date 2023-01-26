@@ -3400,6 +3400,7 @@ class SourceMenu(QMenu):
         self.setStyleSheet(self.SOURCE_MENU_CSS)
 
         self.addAction(DownloadConversation(self, self.controller, app_state))
+        print("menu: the 'Print Conversation Transcript' action was added")
         self.addAction(PrintConversationAction(self, self.controller, self.source, export_service))
         self.addAction(
             DeleteConversationAction(

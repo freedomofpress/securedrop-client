@@ -70,6 +70,7 @@ class Device(QObject):
         Run preflight checks to make sure the Export VM is configured correctly.
         """
         logger.info("Running printer preflight check")
+        print("device: running printer preflight check")
         self.print_preflight_check_requested.emit()
 
     def run_export_preflight_checks(self) -> None:
@@ -98,6 +99,7 @@ class Device(QObject):
         """
         Send the transcript specified by file_location to the Export VM.
         """
+        print("device: printing of transcript was requested")
         self.print_requested.emit([file_location])
 
     def print_file(self, file_uuid: str) -> None:

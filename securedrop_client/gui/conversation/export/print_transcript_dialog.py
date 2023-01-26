@@ -18,16 +18,19 @@ class PrintTranscriptDialog(PrintDialog):
 
     @pyqtSlot()
     def _on_print_preflight_check_succeeded(self) -> None:
+        print("dialog: the printer was found! (lies)")
         # If the continue button is disabled then this is the result of a background preflight check
         self.stop_animate_header()
         self.header_icon.update_image("printer.svg", svg_size=QSize(64, 64))
         self.header.setText(self.ready_header)
         if not self.continue_button.isEnabled():
+            print("dialog: printing will start after the 'Print' button is clicked")
             self.continue_button.clicked.disconnect()
             self.continue_button.clicked.connect(self._print_transcript)
 
             self.continue_button.setEnabled(True)
             self.continue_button.setFocus()
             return
+        print("dialog: printing started!")
 
         self._print_transcript()
