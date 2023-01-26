@@ -285,14 +285,18 @@ class ExportConversationAction(QAction):  # pragma: nocover
             f.write(str(transcript))
             # Let this context lapse to ensure the file contents
             # are written to disk.
+            print(f"transcript:\n{transcript}\n\n")
 
         downloaded_file_locations = [
             file.location(self.controller.data_dir)
             for file in self._source.files
             if self.controller.downloaded_file_exists(file, silence_errors=True)
         ]
+        print("action: downloaded files            :\n", downloaded_file_locations)
 
         file_locations = downloaded_file_locations + [transcript_location]
+
+        print("action: all files (incl. transcript):\n", file_locations)
 
         # Open the files to prevent them from being removed while
         # the archive is being created. Once the file objects go
@@ -304,6 +308,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
             ]
 
             file_count = len(files)
+            print("action: file count", file_count)
             if file_count == 1:
                 summary = "conversation.txt"
             else:

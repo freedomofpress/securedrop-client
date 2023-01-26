@@ -186,6 +186,7 @@ class Export(QObject):
 
             needs_disambiguation = len(filepaths) > 1
             for filepath in filepaths:
+                print("export: file is being added to the archive")
                 cls._add_file_to_archive(archive, filepath, disambiguate=needs_disambiguation)
 
         return archive_path
@@ -221,7 +222,9 @@ class Export(QObject):
         """
         filename = os.path.basename(filepath)
         arcname = os.path.join(cls.DISK_EXPORT_DIR, filename)
+        print(f"export:\n{filepath}\n{arcname}\n\n")
         if disambiguate:
+            print("  ^- should be disambiguated\n")
             (parent_path, _) = os.path.split(filepath)
             grand_parent_path, parent_name = os.path.split(parent_path)
             grand_parent_name = os.path.split(grand_parent_path)[1]
@@ -229,6 +232,7 @@ class Export(QObject):
             if filename == "conversation.txt":
                 arcname = os.path.join(parent_name, filename)
 
+        print("unambiguous name", arcname)
         archive.add(filepath, arcname=arcname, recursive=False)
 
     def _run_printer_preflight(self, archive_dir: str) -> None:
@@ -285,9 +289,19 @@ class Export(QObject):
             ExportError: Raised if the usb-test does not return a DISK_ENCRYPTED status.
         """
         metadata = self.DISK_METADATA.copy()
+        print(f"export: the following files will be added to the archive: {filepaths}")
         metadata[self.DISK_ENCRYPTION_KEY_NAME] = passphrase
         archive_path = self._create_archive(archive_dir, self.DISK_FN, metadata, filepaths)
 
+        print(f"export: archive was created in: {archive_path} << LOOK HERE")
+
+        # Feel free to increase this pause. (These are seconds.)
+        import time
+
+        time.sleep(15)
+
+        # Pretend the export went well.
+        return
         status = self._export_archive(archive_path)
         if status:
             raise ExportError(status)
@@ -311,6 +325,10 @@ class Export(QObject):
         """
         Run preflight checks to verify that the usb device is connected and luks-encrypted.
         """
+        # Pretend the USB drive is present.
+        self.preflight_check_call_success.emit()
+        return
+
         with TemporaryDirectory() as temp_dir:
             try:
                 logger.debug(

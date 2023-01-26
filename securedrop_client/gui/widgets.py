@@ -3388,6 +3388,7 @@ class SourceMenu(QMenu):
         self.addAction(ExportConversationTranscriptAction(self, self.controller, self.source))
         self.addAction(ExportConversationAction(self, self.controller, self.source))
         self.addAction(PrintConversationAction(self, self.controller, self.source))
+        print("menu: the 'Export Conversation' action was added")
         self.addAction(
             DeleteConversationAction(
                 self.source, self, self.controller, DeleteConversationDialog, app_state
