@@ -94,6 +94,12 @@ class Device(QObject):
 
         self.export_requested.emit([file_location], passphrase)
 
+    def print_transcript(self, file_location: str) -> None:
+        """
+        Send the transcript specified by file_location to the Export VM.
+        """
+        self.print_requested.emit([file_location])
+
     def print_file(self, file_uuid: str) -> None:
         """
         Send the file specified by file_uuid to the Export VM. If the file is missing, update the db

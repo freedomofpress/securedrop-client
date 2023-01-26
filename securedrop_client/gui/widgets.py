@@ -75,6 +75,7 @@ from securedrop_client.gui.actions import (
     DeleteConversationAction,
     DeleteSourceAction,
     DownloadConversation,
+    PrintConversationAction,
 )
 from securedrop_client.gui.base import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.gui.conversation import DeleteConversationDialog
@@ -2965,7 +2966,9 @@ class SourceConversationWrapper(QWidget):
         layout.setSpacing(0)
 
         # Create widgets
-        self.conversation_title_bar = SourceProfileShortWidget(source, controller, app_state)
+        self.conversation_title_bar = SourceProfileShortWidget(
+            source, controller, app_state, export_service
+        )
         self.conversation_view = ConversationView(source, controller, export_service)
         self.reply_box = ReplyBoxWidget(source, controller)
         self.deletion_indicator = SourceDeletionIndicator()
@@ -3384,7 +3387,11 @@ class SourceMenu(QMenu):
     SOURCE_MENU_CSS = load_css("source_menu.css")
 
     def __init__(
-        self, source: Source, controller: Controller, app_state: Optional[state.State]
+        self,
+        source: Source,
+        controller: Controller,
+        app_state: Optional[state.State],
+        export_service: Optional[export.Service] = None,
     ) -> None:
         super().__init__()
         self.source = source
@@ -3393,6 +3400,7 @@ class SourceMenu(QMenu):
         self.setStyleSheet(self.SOURCE_MENU_CSS)
 
         self.addAction(DownloadConversation(self, self.controller, app_state))
+        self.addAction(PrintConversationAction(self, self.controller, self.source, export_service))
         self.addAction(
             DeleteConversationAction(
                 self.source, self, self.controller, DeleteConversationDialog, app_state
@@ -3408,7 +3416,11 @@ class SourceMenuButton(QToolButton):
     """
 
     def __init__(
-        self, source: Source, controller: Controller, app_state: Optional[state.State]
+        self,
+        source: Source,
+        controller: Controller,
+        app_state: Optional[state.State],
+        export_service: Optional[export.Service] = None,
     ) -> None:
         super().__init__()
         self.controller = controller
@@ -3419,7 +3431,7 @@ class SourceMenuButton(QToolButton):
         self.setIcon(load_icon("ellipsis.svg"))
         self.setIconSize(QSize(22, 33))  # Make it taller than the svg viewBox to increase hitbox
 
-        menu = SourceMenu(self.source, self.controller, app_state)
+        menu = SourceMenu(self.source, self.controller, app_state, export_service)
         self.setMenu(menu)
 
         self.setPopupMode(QToolButton.InstantPopup)
@@ -3460,7 +3472,11 @@ class SourceProfileShortWidget(QWidget):
     VERTICAL_MARGIN = 14
 
     def __init__(
-        self, source: Source, controller: Controller, app_state: Optional[state.State]
+        self,
+        source: Source,
+        controller: Controller,
+        app_state: Optional[state.State],
+        export_service: Optional[export.Service] = None,
     ) -> None:
         super().__init__()
 
@@ -3483,7 +3499,7 @@ class SourceProfileShortWidget(QWidget):
         )
         title = TitleLabel(self.source.journalist_designation)
         self.updated = LastUpdatedLabel(_(arrow.get(self.source.last_updated).format("MMM D")))
-        menu = SourceMenuButton(self.source, self.controller, app_state)
+        menu = SourceMenuButton(self.source, self.controller, app_state, export_service)
         header_layout.addWidget(title, alignment=Qt.AlignLeft)
         header_layout.addStretch()
         header_layout.addWidget(self.updated, alignment=Qt.AlignRight)
