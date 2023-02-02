@@ -64,6 +64,30 @@ def test_Device_run_print_file(mocker, homedir, export_service):
         assert len(print_requested_emissions) == 1
 
 
+def test_Device_print_transcript(mocker, homedir, export_service):
+    gui = mocker.MagicMock(spec=Window)
+    with threads(3) as [sync_thread, main_queue_thread, file_download_queue_thread]:
+        controller = Controller(
+            "http://localhost",
+            gui,
+            no_session,
+            homedir,
+            None,
+            sync_thread=sync_thread,
+            main_queue_thread=main_queue_thread,
+            file_download_queue_thread=file_download_queue_thread,
+        )
+        device = Device(controller, export_service)
+        print_requested_emissions = QSignalSpy(device.print_requested)
+
+        filepath = "some/file/path"
+
+        device.print_transcript(filepath)
+
+        assert len(print_requested_emissions) == 1
+        assert print_requested_emissions[0] == [["some/file/path"]]
+
+
 def test_Device_print_file_file_missing(homedir, mocker, session, export_service):
     """
     If the file is missing from the data dir, is_downloaded should be set to False and the failure
