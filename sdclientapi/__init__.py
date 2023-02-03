@@ -2,7 +2,7 @@ import configparser
 import http
 import json
 import os
-from datetime import datetime
+from datetime import datetime  # noqa: F401
 from subprocess import PIPE, Popen, TimeoutExpired
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urljoin
@@ -479,7 +479,6 @@ class API:
         :returns: Updated submission object from the server.
         """
         if submission.source_uuid and submission.uuid is not None:
-
             path_query = "api/v1/sources/{}/submissions/{}".format(
                 submission.source_uuid, submission.uuid
             )
@@ -763,7 +762,6 @@ class API:
         :returns: A reply object
         """
         if source.uuid and reply_uuid is not None:
-
             path_query = "api/v1/sources/{}/replies/{}".format(source.uuid, reply_uuid)
             method = "GET"
 

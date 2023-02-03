@@ -7,7 +7,7 @@ def parse(date_string: str) -> Optional[datetime]:
     try:
         # ISO8061 and RFC3339
         # '2022-02-09T07:45:26.082728+00:00'
-        return datetime.fromisoformat(date_string)  # type: ignore
+        return datetime.fromisoformat(date_string)
     except ValueError:
         try:
             # '2022-02-09T07:45:26.082728Z'
