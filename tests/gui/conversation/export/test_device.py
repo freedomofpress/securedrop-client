@@ -262,3 +262,27 @@ def test_Device_export_file_to_usb_drive_when_orig_file_already_exists(
 
         assert len(export_requested_emissions) == 1
         controller.get_file.assert_called_with(file.uuid)
+
+
+def test_Device_export_transcript(mocker, homedir, export_service):
+    gui = mocker.MagicMock(spec=Window)
+    with threads(3) as [sync_thread, main_queue_thread, file_download_queue_thread]:
+        controller = Controller(
+            "http://localhost",
+            gui,
+            no_session,
+            homedir,
+            None,
+            sync_thread=sync_thread,
+            main_queue_thread=main_queue_thread,
+            file_download_queue_thread=file_download_queue_thread,
+        )
+        device = Device(controller, export_service)
+        export_requested_emissions = QSignalSpy(device.export_requested)
+
+        filepath = "some/file/path"
+
+        device.export_transcript(filepath, "passphrase")
+
+        assert len(export_requested_emissions) == 1
+        assert export_requested_emissions[0] == [["some/file/path"], "passphrase"]
