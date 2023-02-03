@@ -108,6 +108,19 @@ def export_dialog(mocker, homedir):
 
 
 @pytest.fixture(scope="function")
+def export_transcript_dialog(mocker, homedir):
+    mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
+
+    export_device = mocker.MagicMock(spec=conversation.ExportDevice)
+
+    dialog = conversation.ExportTranscriptDialog(
+        export_device, "conversation.txt", "/some/path/conversation.txt"
+    )
+
+    yield dialog
+
+
+@pytest.fixture(scope="function")
 def i18n():
     """
     Set up locale/language/gettext functions. This enables the use of _().
