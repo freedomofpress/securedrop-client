@@ -30,7 +30,7 @@ from securedrop_client.api_jobs.sources import (
 from securedrop_client.api_jobs.updatestar import UpdateStarJobError, UpdateStarJobTimeoutError
 from securedrop_client.api_jobs.uploads import SendReplyJobError, SendReplyJobTimeoutError
 from securedrop_client.app import threads
-from securedrop_client.logic import TIME_BETWEEN_SHOWING_LAST_SYNC_MS, APICallRunner, Controller
+from securedrop_client.logic import APICallRunner, Controller
 from tests import factory
 
 MAX_SIGNAL_WAITING_TIME = 50
