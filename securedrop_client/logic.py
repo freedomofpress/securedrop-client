@@ -429,7 +429,6 @@ class Controller(QObject):
             self.checked_sources.remove(checkbox.source_uuid)
 
         self._toggle_delete_source_button_enabled()
-        print(f"CHECKED sourced:  " + str(self.checked_sources))
 
     def uncheck_source(self, source_uuid: str):
         self.checked_sources.remove(source_uuid)

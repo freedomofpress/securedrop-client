@@ -72,7 +72,7 @@ class DeleteSourcesDialog(ModalDialog):
         self.sources = sources
 
         self.body.setText(self.make_body_text())
-        self.continue_button.setText(_("YES, DELETE ALL SOURCE ACCOUNT"))
+        self.continue_button.setText(_("YES, DELETE THESE SOURCE ACCOUNTS"))
         self.cancel_button.setDefault(True)
         self.cancel_button.setFocus()
         self.confirmation_label.setText(_("Are you sure this is what you want?"))
@@ -92,7 +92,7 @@ class DeleteSourcesDialog(ModalDialog):
             ),
             "</b></p>",
             "<p><b>",
-            _("When the entire account for all source are deleted:"),
+            _("When the entire accounts for these sources are deleted:"),
             "</b></p>",
             "<p><b>\u2219</b>&nbsp;",
             _("The sources will not be able to log in with their codename again."),
