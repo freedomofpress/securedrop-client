@@ -43,8 +43,8 @@ from PyQt5.QtGui import (
 )
 from PyQt5.QtWidgets import (
     QAction,
-    QGridLayout,
     QCheckBox,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QListWidget,
@@ -56,10 +56,10 @@ from PyQt5.QtWidgets import (
     QSizePolicy,
     QSpacerItem,
     QStatusBar,
+    QToolBar,
     QToolButton,
     QVBoxLayout,
     QWidget,
-    QToolBar,
 )
 
 from securedrop_client import state
@@ -991,11 +991,11 @@ class SourceList(QListWidget):
             if source_widget.source_uuid in self.source_items:
                 del self.source_items[source_widget.source_uuid]
 
-            if source_widget.source_uuid in self.controller.checked_sources:
-                self.controller.uncheck_source(source_widget.source_uuid)
-
             deleted_uuids.append(source_widget.source_uuid)
             source_widget.deleteLater()
+
+        # We may need disable the delete multiple sources button
+        self.controller.maybe_toggle_delete_sources_button_enabled()
 
         # Update the remaining widgets
         for i in range(self.count()):
@@ -1348,7 +1348,7 @@ class SourceWidget(QWidget):
         self.checkbox.setObjectName("SourceWidget_checkbox")
         self.checkbox.setStyleSheet(self.SOURCE_CHECKBOX_CSS)
         self.checkbox.source_uuid = self.source.uuid
-        self.checkbox.toggled.connect(controller.toggle_source)
+        self.checkbox.toggled.connect(controller.maybe_toggle_delete_sources_button_enabled)
 
         self.timestamp = QLabel()
         self.timestamp.setSizePolicy(retain_space)

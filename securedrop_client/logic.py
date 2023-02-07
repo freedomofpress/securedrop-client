@@ -30,6 +30,7 @@ import arrow
 import sdclientapi
 import sqlalchemy.orm.exc
 from PyQt5.QtCore import QObject, QProcess, QThread, QTimer, pyqtSignal, pyqtSlot
+from PyQt5.QtWidgets import QCheckBox
 from sdclientapi import AuthError, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm.session import sessionmaker
 
@@ -395,9 +396,6 @@ class Controller(QObject):
         # File data.
         self.data_dir = os.path.join(self.home, "data")
 
-        # uuids of sources with checkboxes checked
-        self.checked_sources: Set[str] = set()
-
         # Background sync to keep client up-to-date with server changes
         self.api_sync = ApiSync(
             self.api, self.session_maker, self.gpg, self.data_dir, self.sync_thread, state
@@ -421,21 +419,22 @@ class Controller(QObject):
         ):
             os.chmod(self.last_sync_filepath, 0o600)
 
-    def toggle_source(self):
-        checkbox = self.sender()
-        if checkbox.isChecked():
-            self.checked_sources.add(checkbox.source_uuid)
-        else:
-            self.checked_sources.remove(checkbox.source_uuid)
+    def get_checked_sources(self) -> List[str]:
+        """
+        Returns the list of sources that are checked in the UI.
+        """
+        source_items = self.gui.main_view.source_list.source_items
+        checked_source_uuids = []
+        for source_uuid, source_item in source_items.items():
+            source_item_widget = self.gui.main_view.source_list.itemWidget(source_item)
+            checkbox = source_item_widget.findChild(QCheckBox)
+            if checkbox.isChecked():
+                checked_source_uuids.append(source_uuid)
+        print("checked sources: ", checked_source_uuids)
+        return checked_source_uuids
 
-        self._toggle_delete_source_button_enabled()
-
-    def uncheck_source(self, source_uuid: str):
-        self.checked_sources.remove(source_uuid)
-        self._toggle_delete_source_button_enabled()
-
-    def _toggle_delete_source_button_enabled(self):
-        self.gui.toggle_delete_sources_button_enabled(len(self.checked_sources) > 0)
+    def maybe_toggle_delete_sources_button_enabled(self):
+        self.gui.toggle_delete_sources_button_enabled(len(self.get_checked_sources()) > 0)
 
     @pyqtSlot(int)
     def _on_main_queue_updated(self, num_items: int) -> None:
@@ -1070,11 +1069,11 @@ class Controller(QObject):
         synchronize the server records with the local state. If not,
         the failure handler will display an error.
         """
+        print(f"sources: {sources}")
         for source_uuid in sources:
             job = DeleteSourceJob(source_uuid)
             job.success_signal.connect(self.on_delete_source_success)
             job.failure_signal.connect(self.on_delete_source_failure)
-            self.uncheck_source(source_uuid)
 
             self.add_job.emit(job)
             self.source_deleted.emit(source_uuid)

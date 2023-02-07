@@ -16,7 +16,8 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from gettext import gettext as _, ngettext
+from gettext import gettext as _
+from gettext import ngettext
 from typing import List
 
 from securedrop_client.db import Source
