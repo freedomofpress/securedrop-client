@@ -29,6 +29,7 @@ QWidget {
     font-weight: 600;
     font-size: 12px;
     color: #d3d8ea;
+    background: transparent;
 }
 
 #ErrorStatusBar_vertical_bar {
