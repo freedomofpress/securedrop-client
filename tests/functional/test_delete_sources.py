@@ -3,10 +3,9 @@ Functional tests for deleting multiple sources in the SecureDrop client.
 """
 import pytest
 from flaky import flaky
-from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QCheckBox
 
-from tests.conftest import TIME_CLICK_ACTION, TIME_RENDER_CONV_VIEW, TIME_RENDER_SOURCE_LIST
+from tests.conftest import TIME_CLICK_ACTION, TIME_RENDER_SOURCE_LIST
 
 
 @flaky
