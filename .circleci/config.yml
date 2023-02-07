@@ -118,7 +118,7 @@ common-steps:
         make venv
         source .venv/bin/activate
         make requirements
-        git diff --ignore-matching-lines=# --exit-code
+        git diff --ignore-matching-lines=# --exit-code requirements/dev-${VERSION_CODENAME}-requirements.txt
 
   - &build_debian_package
     run:
