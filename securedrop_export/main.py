@@ -10,7 +10,7 @@ from securedrop_export.status import BaseStatus
 from securedrop_export.directory import safe_mkdir
 from securedrop_export.exceptions import ExportException
 
-from securedrop_export.disk import Service as ExportService
+from securedrop_export.disk import LegacyService as ExportService
 from securedrop_export.print import Service as PrintService
 
 from logging.handlers import TimedRotatingFileHandler, SysLogHandler
