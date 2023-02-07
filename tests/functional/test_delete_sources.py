@@ -16,6 +16,9 @@ def test_delete_sources(functional_test_logged_in_context, qtbot, mocker):
     """
     gui, controller = functional_test_logged_in_context
 
+    # no sources checked so delete button is disabled
+    assert not gui.main_view.sources_toolbar.delete_sources_action.isEnabled()
+
     def check_for_sources():
         assert len(list(gui.main_view.source_list.source_items.keys())) >= 2
 
@@ -33,6 +36,9 @@ def test_delete_sources(functional_test_logged_in_context, qtbot, mocker):
     qtbot.wait(TIME_CLICK_ACTION)
     qtbot.wait(TIME_CLICK_ACTION)
 
+    # two sources checked so delete button is enabled
+    assert gui.main_view.sources_toolbar.delete_sources_action.isEnabled()
+
     # Delete the selected sources
     # Note: The qtbot object cannot interact with QAction items (as used in the delete button/menu)
     # so we programatically delete the source rather than using the GUI via qtbot
@@ -44,3 +50,6 @@ def test_delete_sources(functional_test_logged_in_context, qtbot, mocker):
         assert gui.main_view.source_list.count() == source_count - 2
 
     qtbot.waitUntil(check_source_list, timeout=TIME_RENDER_SOURCE_LIST)
+
+    # checked sources removed so delete button is disabled
+    assert not gui.main_view.sources_toolbar.delete_sources_action.isEnabled()
