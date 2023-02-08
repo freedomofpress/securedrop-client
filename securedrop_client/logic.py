@@ -68,7 +68,7 @@ from securedrop_client.utils import check_dir_permissions
 logger = logging.getLogger(__name__)
 
 # 30 seconds between showing the time since the last sync
-TIME_BETWEEN_SHOWING_LAST_SYNC_MS = 1000 * 30
+LAST_SYNC_REFRESH_INTERVAL_MS = 1000 * 30
 
 
 def login_required(f):  # type: ignore [no-untyped-def]
@@ -406,7 +406,7 @@ class Controller(QObject):
         # Create a timer to show the time since the last sync
         self.show_last_sync_timer = QTimer()
         self.show_last_sync_timer.timeout.connect(self.show_last_sync)
-        self.show_last_sync_timer.start(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
+        self.show_last_sync_timer.start(LAST_SYNC_REFRESH_INTERVAL_MS)
         self.show_last_sync()
 
         # Path to the file containing the timestamp since the last sync with the server
