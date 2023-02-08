@@ -430,7 +430,6 @@ class Controller(QObject):
             checkbox = source_item_widget.findChild(QCheckBox)
             if checkbox.isChecked():
                 checked_source_uuids.append(source_uuid)
-        print("checked sources: ", checked_source_uuids)
         return checked_source_uuids
 
     def maybe_toggle_delete_sources_button_enabled(self):
@@ -1068,7 +1067,6 @@ class Controller(QObject):
         synchronize the server records with the local state. If not,
         the failure handler will display an error.
         """
-        print(f"sources: {sources}")
         for source_uuid in sources:
             job = DeleteSourceJob(source_uuid)
             job.success_signal.connect(self.on_delete_source_success)
