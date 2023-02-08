@@ -1,5 +1,5 @@
 # Doxygen output from "make docs"
-docs/
+docs/html/
 
 *.sqlite
 
