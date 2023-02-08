@@ -649,8 +649,7 @@ class MainView(QWidget):
         self.view_layout.addWidget(self.empty_conversation_view)
 
         self.sources_pane_holder = QWidget()
-        # TODO - remove this hard-coded width
-        self.sources_pane_holder.setMaximumWidth(540)
+        # self.sources_pane_holder.setMaximumWidth(540)
         self.sources_pane_holder.setObjectName("MainView_sources_pane_holder")
         self.sources_pane_layout = QVBoxLayout()
         self.sources_pane_layout.setContentsMargins(0, 0, 0, 0)
@@ -1347,7 +1346,6 @@ class SourceWidget(QWidget):
         self.checkbox = QCheckBox()
         self.checkbox.setObjectName("SourceWidget_checkbox")
         self.checkbox.setStyleSheet(self.SOURCE_CHECKBOX_CSS)
-        self.checkbox.source_uuid = self.source.uuid
         self.checkbox.toggled.connect(controller.maybe_toggle_delete_sources_button_enabled)
 
         self.timestamp = QLabel()
