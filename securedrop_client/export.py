@@ -378,3 +378,22 @@ class Export(QObject):
 
 
 Service = Export
+
+# Store a singleton service instance.
+_service = Service()
+
+
+def resetService() -> None:
+    """Replaces the existing sngleton service instance by a new one.
+
+    Get the instance by using getService().
+    """
+    global _service
+    _service = Service()
+
+
+def getService() -> Service:
+    """All calls to this function return the same singleton service instance.
+
+    Use resetService() to replace it by a new one."""
+    return _service
