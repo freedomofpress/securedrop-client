@@ -11,7 +11,7 @@ from typing import Callable, Optional
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtWidgets import QAction, QDialog, QMenu
 
-from securedrop_client import export, state
+from securedrop_client import state
 from securedrop_client.conversation import Transcript as ConversationTranscript
 from securedrop_client.db import Source
 from securedrop_client.gui.conversation import ExportDevice as ConversationExportDevice
@@ -144,7 +144,6 @@ class PrintConversationAction(QAction):  # pragma: nocover
         parent: QMenu,
         controller: Controller,
         source: Source,
-        export_service: Optional[export.Service] = None,
     ) -> None:
         """
         Allows printing of a conversation transcript.
@@ -156,13 +155,7 @@ class PrintConversationAction(QAction):  # pragma: nocover
         self.controller = controller
         self._source = source
 
-        if export_service is None:
-            # Note that injecting an export service that runs in a separate
-            # thread is greatly encouraged! But it is optional because strictly
-            # speaking it is not a dependency of this FileWidget.
-            export_service = export.Service()
-
-        self._export_device = ConversationExportDevice(controller, export_service)
+        self._export_device = ConversationExportDevice(controller)
 
         self.triggered.connect(self._on_triggered)
 
@@ -203,7 +196,6 @@ class ExportConversationAction(QAction):  # pragma: nocover
         parent: QMenu,
         controller: Controller,
         source: Source,
-        export_service: Optional[export.Service] = None,
     ) -> None:
         """
         Allows export of a conversation transcript.
@@ -215,13 +207,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
         self.controller = controller
         self._source = source
 
-        if export_service is None:
-            # Note that injecting an export service that runs in a separate
-            # thread is greatly encouraged! But it is optional because strictly
-            # speaking it is not a dependency of this FileWidget.
-            export_service = export.Service()
-
-        self._export_device = ConversationExportDevice(controller, export_service)
+        self._export_device = ConversationExportDevice(controller)
 
         self.triggered.connect(self._on_triggered)
 

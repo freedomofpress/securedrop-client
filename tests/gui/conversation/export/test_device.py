@@ -13,7 +13,11 @@ def no_session():
     pass
 
 
-def test_Device_run_printer_preflight_checks(homedir, mocker, source, export_service):
+def test_Device_run_printer_preflight_checks(homedir, mocker, source, mock_export_service):
+    mocker.patch(
+        "securedrop_client.gui.conversation.export.device.export.getService",
+        return_value=mock_export_service,
+    )
     gui = mocker.MagicMock(spec=Window)
     with threads(3) as [sync_thread, main_queue_thread, file_download_queue_thread]:
         controller = Controller(
@@ -26,7 +30,7 @@ def test_Device_run_printer_preflight_checks(homedir, mocker, source, export_ser
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_queue_thread,
         )
-        device = Device(controller, export_service)
+        device = Device(controller)
         print_preflight_check_requested_emissions = QSignalSpy(
             device.print_preflight_check_requested
         )
@@ -36,7 +40,11 @@ def test_Device_run_printer_preflight_checks(homedir, mocker, source, export_ser
         assert len(print_preflight_check_requested_emissions) == 1
 
 
-def test_Device_run_print_file(mocker, homedir, export_service):
+def test_Device_run_print_file(mocker, homedir, mock_export_service):
+    mocker.patch(
+        "securedrop_client.gui.conversation.export.device.export.getService",
+        return_value=mock_export_service,
+    )
     gui = mocker.MagicMock(spec=Window)
     with threads(3) as [sync_thread, main_queue_thread, file_download_queue_thread]:
         controller = Controller(
@@ -49,7 +57,7 @@ def test_Device_run_print_file(mocker, homedir, export_service):
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_queue_thread,
         )
-        device = Device(controller, export_service)
+        device = Device(controller)
         print_requested_emissions = QSignalSpy(device.print_requested)
         file = factory.File(source=factory.Source())
         mocker.patch("securedrop_client.logic.Controller.get_file", return_value=file)
@@ -64,7 +72,11 @@ def test_Device_run_print_file(mocker, homedir, export_service):
         assert len(print_requested_emissions) == 1
 
 
-def test_Device_print_transcript(mocker, homedir, export_service):
+def test_Device_print_transcript(mocker, homedir, mock_export_service):
+    mocker.patch(
+        "securedrop_client.gui.conversation.export.device.export.getService",
+        return_value=mock_export_service,
+    )
     gui = mocker.MagicMock(spec=Window)
     with threads(3) as [sync_thread, main_queue_thread, file_download_queue_thread]:
         controller = Controller(
@@ -77,7 +89,7 @@ def test_Device_print_transcript(mocker, homedir, export_service):
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_queue_thread,
         )
-        device = Device(controller, export_service)
+        device = Device(controller)
         print_requested_emissions = QSignalSpy(device.print_requested)
 
         filepath = "some/file/path"
@@ -88,7 +100,11 @@ def test_Device_print_transcript(mocker, homedir, export_service):
         assert print_requested_emissions[0] == [["some/file/path"]]
 
 
-def test_Device_print_file_file_missing(homedir, mocker, session, export_service):
+def test_Device_print_file_file_missing(homedir, mocker, session, mock_export_service):
+    mocker.patch(
+        "securedrop_client.gui.conversation.export.device.export.getService",
+        return_value=mock_export_service,
+    )
     """
     If the file is missing from the data dir, is_downloaded should be set to False and the failure
     should be communicated to the user.
@@ -105,7 +121,7 @@ def test_Device_print_file_file_missing(homedir, mocker, session, export_service
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_queue_thread,
         )
-        device = Device(controller, export_service)
+        device = Device(controller)
         file = factory.File(source=factory.Source())
         mocker.patch("securedrop_client.logic.Controller.get_file", return_value=file)
         warning_logger = mocker.patch("securedrop_client.logic.logger.warning")
@@ -119,8 +135,12 @@ def test_Device_print_file_file_missing(homedir, mocker, session, export_service
 
 
 def test_Device_print_file_when_orig_file_already_exists(
-    homedir, config, mocker, source, export_service
+    homedir, config, mocker, source, mock_export_service
 ):
+    mocker.patch(
+        "securedrop_client.gui.conversation.export.device.export.getService",
+        return_value=mock_export_service,
+    )
     """
     The signal `print_requested` should still be emitted if the original file already exists.
     """
@@ -136,7 +156,7 @@ def test_Device_print_file_when_orig_file_already_exists(
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_queue_thread,
         )
-        device = Device(controller, export_service)
+        device = Device(controller)
         file = factory.File(source=factory.Source())
         print_requested_emissions = QSignalSpy(device.print_requested)
         mocker.patch("securedrop_client.logic.Controller.get_file", return_value=file)
@@ -148,7 +168,11 @@ def test_Device_print_file_when_orig_file_already_exists(
         controller.get_file.assert_called_with(file.uuid)
 
 
-def test_Device_run_export_preflight_checks(homedir, mocker, source, export_service):
+def test_Device_run_export_preflight_checks(homedir, mocker, source, mock_export_service):
+    mocker.patch(
+        "securedrop_client.gui.conversation.export.device.export.getService",
+        return_value=mock_export_service,
+    )
     gui = mocker.MagicMock(spec=Window)
     with threads(3) as [sync_thread, main_queue_thread, file_download_queue_thread]:
         controller = Controller(
@@ -161,7 +185,7 @@ def test_Device_run_export_preflight_checks(homedir, mocker, source, export_serv
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_queue_thread,
         )
-        device = Device(controller, export_service)
+        device = Device(controller)
         export_preflight_check_requested_emissions = QSignalSpy(
             device.export_preflight_check_requested
         )
@@ -173,7 +197,11 @@ def test_Device_run_export_preflight_checks(homedir, mocker, source, export_serv
         assert len(export_preflight_check_requested_emissions) == 1
 
 
-def test_Device_export_file_to_usb_drive(homedir, mocker, export_service):
+def test_Device_export_file_to_usb_drive(homedir, mocker, mock_export_service):
+    mocker.patch(
+        "securedrop_client.gui.conversation.export.device.export.getService",
+        return_value=mock_export_service,
+    )
     """
     The signal `export_requested` should be emitted during export_file_to_usb_drive.
     """
@@ -189,7 +217,7 @@ def test_Device_export_file_to_usb_drive(homedir, mocker, export_service):
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_queue_thread,
         )
-        device = Device(controller, export_service)
+        device = Device(controller)
         export_requested_emissions = QSignalSpy(device.export_requested)
         file = factory.File(source=factory.Source())
         mocker.patch("securedrop_client.logic.Controller.get_file", return_value=file)
@@ -204,7 +232,13 @@ def test_Device_export_file_to_usb_drive(homedir, mocker, export_service):
         assert len(export_requested_emissions) == 1
 
 
-def test_Device_export_file_to_usb_drive_file_missing(homedir, mocker, session, export_service):
+def test_Device_export_file_to_usb_drive_file_missing(
+    homedir, mocker, session, mock_export_service
+):
+    mocker.patch(
+        "securedrop_client.gui.conversation.export.device.export.getService",
+        return_value=mock_export_service,
+    )
     """
     If the file is missing from the data dir, is_downloaded should be set to False and the failure
     should be communicated to the user.
@@ -221,7 +255,7 @@ def test_Device_export_file_to_usb_drive_file_missing(homedir, mocker, session, 
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_queue_thread,
         )
-        device = Device(controller, export_service)
+        device = Device(controller)
         file = factory.File(source=factory.Source())
         mocker.patch("securedrop_client.logic.Controller.get_file", return_value=file)
         warning_logger = mocker.patch("securedrop_client.logic.logger.warning")
@@ -235,8 +269,12 @@ def test_Device_export_file_to_usb_drive_file_missing(homedir, mocker, session, 
 
 
 def test_Device_export_file_to_usb_drive_when_orig_file_already_exists(
-    homedir, config, mocker, source, export_service
+    homedir, config, mocker, source, mock_export_service
 ):
+    mocker.patch(
+        "securedrop_client.gui.conversation.export.device.export.getService",
+        return_value=mock_export_service,
+    )
     """
     The signal `export_requested` should still be emitted if the original file already exists.
     """
@@ -252,7 +290,7 @@ def test_Device_export_file_to_usb_drive_when_orig_file_already_exists(
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_queue_thread,
         )
-        device = Device(controller, export_service)
+        device = Device(controller)
         export_requested_emissions = QSignalSpy(device.export_requested)
         file = factory.File(source=factory.Source())
         mocker.patch("securedrop_client.logic.Controller.get_file", return_value=file)
@@ -264,7 +302,11 @@ def test_Device_export_file_to_usb_drive_when_orig_file_already_exists(
         controller.get_file.assert_called_with(file.uuid)
 
 
-def test_Device_export_transcript(mocker, homedir, export_service):
+def test_Device_export_transcript(mocker, homedir, mock_export_service):
+    mocker.patch(
+        "securedrop_client.gui.conversation.export.device.export.getService",
+        return_value=mock_export_service,
+    )
     gui = mocker.MagicMock(spec=Window)
     with threads(3) as [sync_thread, main_queue_thread, file_download_queue_thread]:
         controller = Controller(
@@ -277,7 +319,7 @@ def test_Device_export_transcript(mocker, homedir, export_service):
             main_queue_thread=main_queue_thread,
             file_download_queue_thread=file_download_queue_thread,
         )
-        device = Device(controller, export_service)
+        device = Device(controller)
         export_requested_emissions = QSignalSpy(device.export_requested)
 
         filepath = "some/file/path"

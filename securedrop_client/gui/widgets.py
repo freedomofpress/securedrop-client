@@ -60,7 +60,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from securedrop_client import export, state
+from securedrop_client import state
 from securedrop_client.db import (
     DraftReply,
     File,
@@ -572,12 +572,10 @@ class MainView(QWidget):
         self,
         parent: Optional[QWidget],
         app_state: Optional[state.State] = None,
-        export_service: Optional[export.Service] = None,
     ) -> None:
         super().__init__(parent)
 
         self._state = app_state
-        self._export_service = export_service
 
         # Set id and styles
         self.setObjectName("MainView")
@@ -677,7 +675,7 @@ class MainView(QWidget):
                 )
             else:
                 conversation_wrapper = SourceConversationWrapper(
-                    source, self.controller, self._state, self._export_service
+                    source, self.controller, self._state
                 )
                 self.source_conversations[source.uuid] = conversation_wrapper
 
@@ -2213,7 +2211,6 @@ class FileWidget(QWidget):
         file_missing: pyqtBoundSignal,
         index: int,
         container_width: int,
-        export_service: Optional[export.Service] = None,
     ) -> None:
         """
         Given some text and a reference to the controller, make something to display a file.
@@ -2222,13 +2219,7 @@ class FileWidget(QWidget):
 
         self.controller = controller
 
-        if export_service is None:
-            # Note that injecting an export service that runs in a separate
-            # thread is greatly encouraged! But it is optional because strictly
-            # speaking it is not a dependency of this FileWidget.
-            export_service = export.Service()
-
-        self._export_device = conversation.ExportDevice(controller, export_service)
+        self._export_device = conversation.ExportDevice(controller)
 
         self.file = self.controller.get_file(file_uuid)
         self.uuid = file_uuid
@@ -2640,11 +2631,8 @@ class ConversationView(QWidget):
         self,
         source_db_object: Source,
         controller: Controller,
-        export_service: Optional[export.Service] = None,
     ) -> None:
         super().__init__()
-
-        self._export_service = export_service
 
         self.source = source_db_object
         self.source_uuid = source_db_object.uuid
@@ -2834,7 +2822,6 @@ class ConversationView(QWidget):
             self.controller.file_missing,
             index,
             self._scroll.widget().width(),
-            self._export_service,
         )
         self._scroll.add_widget_to_conversation(index, conversation_item, Qt.AlignLeft)
         self.current_messages[file.uuid] = conversation_item
@@ -2942,7 +2929,6 @@ class SourceConversationWrapper(QWidget):
         source: Source,
         controller: Controller,
         app_state: Optional[state.State] = None,
-        export_service: Optional[export.Service] = None,
     ) -> None:
         super().__init__()
 
@@ -2967,10 +2953,8 @@ class SourceConversationWrapper(QWidget):
         layout.setSpacing(0)
 
         # Create widgets
-        self.conversation_title_bar = SourceProfileShortWidget(
-            source, controller, app_state, export_service
-        )
-        self.conversation_view = ConversationView(source, controller, export_service)
+        self.conversation_title_bar = SourceProfileShortWidget(source, controller, app_state)
+        self.conversation_view = ConversationView(source, controller)
         self.reply_box = ReplyBoxWidget(source, controller)
         self.deletion_indicator = SourceDeletionIndicator()
         self.conversation_deletion_indicator = ConversationDeletionIndicator()
@@ -3392,7 +3376,6 @@ class SourceMenu(QMenu):
         source: Source,
         controller: Controller,
         app_state: Optional[state.State],
-        export_service: Optional[export.Service] = None,
     ) -> None:
         super().__init__()
         self.source = source
@@ -3401,8 +3384,8 @@ class SourceMenu(QMenu):
         self.setStyleSheet(self.SOURCE_MENU_CSS)
 
         self.addAction(DownloadConversation(self, self.controller, app_state))
-        self.addAction(ExportConversationAction(self, self.controller, self.source, export_service))
-        self.addAction(PrintConversationAction(self, self.controller, self.source, export_service))
+        self.addAction(ExportConversationAction(self, self.controller, self.source))
+        self.addAction(PrintConversationAction(self, self.controller, self.source))
         self.addAction(
             DeleteConversationAction(
                 self.source, self, self.controller, DeleteConversationDialog, app_state
@@ -3422,7 +3405,6 @@ class SourceMenuButton(QToolButton):
         source: Source,
         controller: Controller,
         app_state: Optional[state.State],
-        export_service: Optional[export.Service] = None,
     ) -> None:
         super().__init__()
         self.controller = controller
@@ -3433,7 +3415,7 @@ class SourceMenuButton(QToolButton):
         self.setIcon(load_icon("ellipsis.svg"))
         self.setIconSize(QSize(22, 33))  # Make it taller than the svg viewBox to increase hitbox
 
-        menu = SourceMenu(self.source, self.controller, app_state, export_service)
+        menu = SourceMenu(self.source, self.controller, app_state)
         self.setMenu(menu)
 
         self.setPopupMode(QToolButton.InstantPopup)
@@ -3478,7 +3460,6 @@ class SourceProfileShortWidget(QWidget):
         source: Source,
         controller: Controller,
         app_state: Optional[state.State],
-        export_service: Optional[export.Service] = None,
     ) -> None:
         super().__init__()
 
@@ -3501,7 +3482,7 @@ class SourceProfileShortWidget(QWidget):
         )
         title = TitleLabel(self.source.journalist_designation)
         self.updated = LastUpdatedLabel(_(arrow.get(self.source.last_updated).format("MMM D")))
-        menu = SourceMenuButton(self.source, self.controller, app_state, export_service)
+        menu = SourceMenuButton(self.source, self.controller, app_state)
         header_layout.addWidget(title, alignment=Qt.AlignLeft)
         header_layout.addStretch()
         header_layout.addWidget(self.updated, alignment=Qt.AlignRight)

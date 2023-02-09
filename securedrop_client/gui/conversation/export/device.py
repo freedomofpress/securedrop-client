@@ -34,11 +34,11 @@ class Device(QObject):
     print_succeeded = pyqtSignal()
     print_failed = pyqtSignal(object)
 
-    def __init__(self, controller: Controller, export_service: export.Service) -> None:
+    def __init__(self, controller: Controller) -> None:
         super().__init__()
 
         self._controller = controller
-        self._export_service = export_service
+        self._export_service = export.getService()
 
         self._export_service.connect_signals(
             self.export_preflight_check_requested,
