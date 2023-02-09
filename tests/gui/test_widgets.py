@@ -4351,7 +4351,7 @@ def test_DeleteSource_from_source_menu_when_user_is_loggedout(mocker):
 
     mocker.patch("securedrop_client.gui.source.DeleteSourceDialog", mock_delete_source_dialog)
     source_menu = SourceMenu(mock_source, mock_controller, None)
-    source_menu.actions()[2].trigger()
+    source_menu.actions()[3].trigger()
     mock_delete_source_dialog_instance.exec.assert_not_called()
 
 

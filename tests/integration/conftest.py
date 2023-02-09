@@ -11,7 +11,11 @@ from tests import factory
 
 
 @pytest.fixture(scope="function")
-def main_window(mocker, homedir):
+def main_window(mocker, homedir, mock_export_service):
+    mocker.patch(
+        "securedrop_client.gui.conversation.export.device.export.getService",
+        return_value=mock_export_service,
+    )
     # Setup
     app = QApplication([])
     gui = Window()
@@ -63,7 +67,11 @@ def main_window(mocker, homedir):
 
 
 @pytest.fixture(scope="function")
-def main_window_no_key(mocker, homedir):
+def main_window_no_key(mocker, homedir, mock_export_service):
+    mocker.patch(
+        "securedrop_client.gui.conversation.export.device.export.getService",
+        return_value=mock_export_service,
+    )
     # Setup
     app = QApplication([])
     gui = Window()
@@ -146,7 +154,7 @@ def modal_dialog(mocker, homedir):
 
 
 @pytest.fixture(scope="function")
-def export_service():
+def mock_export_service():
     """An export service that assumes the Qubes RPC calls are successful and skips them."""
     export_service = export.Service()
     # Ensure the export_service doesn't rely on Qubes OS:
@@ -159,9 +167,13 @@ def export_service():
 
 
 @pytest.fixture(scope="function")
-def print_dialog(mocker, homedir, export_service):
+def print_dialog(mocker, homedir, mock_export_service):
+    mocker.patch(
+        "securedrop_client.gui.conversation.export.device.export.getService",
+        return_value=mock_export_service,
+    )
     app = QApplication([])
-    gui = Window(export_service=export_service)
+    gui = Window()
     app.setActiveWindow(gui)
     gui.show()
     with threads(3) as [sync_thread, main_queue_thread, file_download_thread]:
@@ -181,7 +193,7 @@ def print_dialog(mocker, homedir, export_service):
         )
         controller.authenticated_user = factory.User()
         controller.qubes = False
-        export_device = conversation.ExportDevice(controller, export_service)
+        export_device = conversation.ExportDevice(controller)
         gui.setup(controller)
         gui.login_dialog.close()
         dialog = conversation.PrintFileDialog(export_device, "file_uuid", "file_name")
@@ -194,9 +206,13 @@ def print_dialog(mocker, homedir, export_service):
 
 
 @pytest.fixture(scope="function")
-def export_dialog(mocker, homedir, export_service):
+def export_dialog(mocker, homedir, mock_export_service):
+    mocker.patch(
+        "securedrop_client.gui.conversation.export.device.export.getService",
+        return_value=mock_export_service,
+    )
     app = QApplication([])
-    gui = Window(export_service=export_service)
+    gui = Window()
     app.setActiveWindow(gui)
     gui.show()
     with threads(3) as [sync_thread, main_queue_thread, file_download_thread]:
@@ -213,7 +229,7 @@ def export_dialog(mocker, homedir, export_service):
         )
         controller.authenticated_user = factory.User()
         controller.qubes = False
-        export_device = conversation.ExportDevice(controller, export_service)
+        export_device = conversation.ExportDevice(controller)
         gui.setup(controller)
         gui.login_dialog.close()
         dialog = conversation.ExportFileDialog(export_device, "file_uuid", "file_name")

@@ -11,10 +11,13 @@ from typing import Callable, Optional
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtWidgets import QAction, QDialog, QMenu
 
-from securedrop_client import export, state
+from securedrop_client import state
 from securedrop_client.conversation import Transcript as ConversationTranscript
 from securedrop_client.db import Source
 from securedrop_client.gui.conversation import ExportDevice as ConversationExportDevice
+from securedrop_client.gui.conversation import (
+    ExportTranscriptDialog as ExportConversationTranscriptDialog,
+)
 from securedrop_client.gui.conversation import (
     PrintTranscriptDialog as PrintConversationTranscriptDialog,
 )
@@ -141,7 +144,6 @@ class PrintConversationAction(QAction):  # pragma: nocover
         parent: QMenu,
         controller: Controller,
         source: Source,
-        export_service: Optional[export.Service] = None,
     ) -> None:
         """
         Allows printing of a conversation transcript.
@@ -153,13 +155,7 @@ class PrintConversationAction(QAction):  # pragma: nocover
         self.controller = controller
         self._source = source
 
-        if export_service is None:
-            # Note that injecting an export service that runs in a separate
-            # thread is greatly encouraged! But it is optional because strictly
-            # speaking it is not a dependency of this FileWidget.
-            export_service = export.Service()
-
-        self._export_device = ConversationExportDevice(controller, export_service)
+        self._export_device = ConversationExportDevice(controller)
 
         self.triggered.connect(self._on_triggered)
 
@@ -189,6 +185,58 @@ class PrintConversationAction(QAction):  # pragma: nocover
         # by the operating system.
         with open(file_path, "r") as f:
             dialog = PrintConversationTranscriptDialog(
+                self._export_device, "conversation.txt", str(file_path)
+            )
+            dialog.exec()
+
+
+class ExportConversationAction(QAction):  # pragma: nocover
+    def __init__(
+        self,
+        parent: QMenu,
+        controller: Controller,
+        source: Source,
+    ) -> None:
+        """
+        Allows export of a conversation transcript.
+        """
+        text = _("Export Conversation Transcript")
+
+        super().__init__(text, parent)
+
+        self.controller = controller
+        self._source = source
+
+        self._export_device = ConversationExportDevice(controller)
+
+        self.triggered.connect(self._on_triggered)
+
+    @pyqtSlot()
+    def _on_triggered(self) -> None:
+        """
+        (Re-)generates the conversation transcript and opens a confirmation dialog to export it,
+        in the manner of the existing ExportFileDialog.
+        """
+        file_path = (
+            Path(self.controller.data_dir)
+            .joinpath(self._source.journalist_filename)
+            .joinpath("conversation.txt")
+        )
+
+        transcript = ConversationTranscript(self._source)
+        safe_mkdir(file_path.parent)
+
+        with open(file_path, "w") as f:
+            f.write(str(transcript))
+            # Let this context lapse to ensure the file contents
+            # are written to disk.
+
+        # Open the file to prevent it from being removed while
+        # the archive is being created. Once the file object goes
+        # out of scope, any pending file removal will be performed
+        # by the operating system.
+        with open(file_path, "r") as f:
+            dialog = ExportConversationTranscriptDialog(
                 self._export_device, "conversation.txt", str(file_path)
             )
             dialog.exec()

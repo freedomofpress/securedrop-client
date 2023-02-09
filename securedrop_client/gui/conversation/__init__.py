@@ -7,3 +7,4 @@ from .export import Device as ExportDevice  # noqa: F401
 from .export import Dialog as ExportFileDialog  # noqa: F401
 from .export import PrintDialog as PrintFileDialog  # noqa: F401
 from .export import PrintTranscriptDialog  # noqa: F401
+from .export import TranscriptDialog as ExportTranscriptDialog  # noqa: F401

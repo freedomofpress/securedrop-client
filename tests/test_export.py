@@ -1,10 +1,38 @@
 import os
 import subprocess
+import unittest
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import pytest
 
+from securedrop_client import export
 from securedrop_client.export import Export, ExportError, ExportStatus
+
+
+class TestService(unittest.TestCase):
+    def tearDown(self):
+        # ensure any changes to the export.Service instance are reset
+        # export.resetService()
+        pass
+
+    def test_service_is_unique(self):
+        service = export.getService()
+        same_service = export.getService()  # Act.
+
+        self.assertTrue(
+            service is same_service,
+            "expected successive calls to getService to return the same service, got different services",  # noqa: E501
+        )
+
+    def test_service_can_be_reset(self):
+        service = export.getService()
+        export.resetService()  # Act.
+        different_service = export.getService()
+
+        self.assertTrue(
+            different_service is not service,
+            "expected resetService to reset the service, got same service after reset",
+        )
 
 
 def test_run_printer_preflight(mocker):

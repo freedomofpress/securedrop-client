@@ -20,11 +20,15 @@ from tests.conftest import (
 
 @flaky
 @pytest.mark.vcr()
-def test_export_dialog(functional_test_logged_in_context, qtbot, mocker):
+def test_export_dialog(functional_test_logged_in_context, qtbot, mocker, mock_export_service):
     """
     Download a file, export it, and verify that the export is complete by checking that the label of
     the export dialog's continue button is "DONE".
     """
+    mocker.patch(
+        "securedrop_client.gui.conversation.export.device.export.getService",
+        return_value=mock_export_service,
+    )
     gui, controller = functional_test_logged_in_context
 
     def check_for_sources():

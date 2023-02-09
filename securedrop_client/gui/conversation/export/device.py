@@ -34,11 +34,11 @@ class Device(QObject):
     print_succeeded = pyqtSignal()
     print_failed = pyqtSignal(object)
 
-    def __init__(self, controller: Controller, export_service: export.Service) -> None:
+    def __init__(self, controller: Controller) -> None:
         super().__init__()
 
         self._controller = controller
-        self._export_service = export_service
+        self._export_service = export.getService()
 
         self._export_service.connect_signals(
             self.export_preflight_check_requested,
@@ -78,6 +78,12 @@ class Device(QObject):
         """
         logger.info("Running export preflight check")
         self.export_preflight_check_requested.emit()
+
+    def export_transcript(self, file_location: str, passphrase: str) -> None:
+        """
+        Send the transcript specified by file_location to the Export VM.
+        """
+        self.export_requested.emit([file_location], passphrase)
 
     def export_file_to_usb_drive(self, file_uuid: str, passphrase: str) -> None:
         """

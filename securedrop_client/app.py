@@ -246,11 +246,11 @@ def start_app(args, qt_args) -> NoReturn:  # type: ignore [no-untyped-def]
         main_queue_thread,
         file_download_queue_thread,
     ]:
-        export_service = export.Service()
+        export_service = export.getService()
         export_service.moveToThread(export_service_thread)
         export_service_thread.start()
 
-        gui = Window(app_state, export_service)
+        gui = Window(app_state)
 
         controller = Controller(
             "http://localhost:8081/",
