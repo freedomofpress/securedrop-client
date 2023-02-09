@@ -1,41 +1,50 @@
 ---- MODULE Reply ----
-EXTENDS Sequences
+EXTENDS FiniteSets, Naturals, Sequences
 
-\* Reply states:
-VARIABLES DeletedLocally  \* dead
-VARIABLES Ready, DecryptionFailed, DownloadFailed, SendFailed  \* alive (terminal)
-VARIABLES SendPending, Sending, DownloadPending, Downloading, Downloaded  \* alive
+\* Reply model:
+Id == Nat
+SharedStates == {"Ready", "DeletedLocally"}
+InReply ==
+    [
+        id: Id,
+        type: {"in"},
+        state: {
+            "DownloadPending",
+            "Downloading",
+            "DownloadFailed",
+            "Downloaded",
+            "DecryptionFailed"
+        } \union SharedStates
+    ]
+OutReply ==
+    [
+        id: Id,
+        type: {"out"},
+        state: {
+            "SendPending",
+            "Sending",
+            "SendFailed"
+        } \union SharedStates
+    ]
+Reply == InReply \union OutReply
+VARIABLES pool
 
-\* Reply types:
-InReply == [type: {"in"}]  \* incoming
-OutReply == [type: {"out"}]  \* outgoing
-Replies == InReply \union OutReply
-
-\* RunnableQueue job states, sans prioritization:
+\* RunnableQueue job states, sans prioritization.  Current = Head(queue).
 VARIABLES queue, done
 
 vars == <<
-    DeletedLocally,
-    Ready, DecryptionFailed, DownloadFailed, SendFailed,
-    SendPending, Sending, DownloadPending, Downloading, Downloaded,
+    pool,
     queue, done
     >>
 
 TypeOK ==
-    /\ queue \in Seq(Replies)
-    /\ done \in Seq(Replies)
+    /\ \/ Cardinality(pool) = 0
+       \/ pool \in Reply
+    /\ queue \in Seq(Reply)
+    /\ done \in Seq(Reply)
 
 Init ==
-    /\ DeletedLocally = {}
-    /\ Ready = {}
-    /\ DecryptionFailed = {}
-    /\ DownloadFailed = {}
-    /\ SendFailed = {}
-    /\ SendPending = {}
-    /\ Sending = {}
-    /\ DownloadPending = {}
-    /\ Downloading = {}
-    /\ Downloaded = {}
+    /\ pool = {}
     /\ queue = <<>>
     /\ done = <<>>
 
