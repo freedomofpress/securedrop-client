@@ -17,7 +17,7 @@ from sqlalchemy.orm import attributes, scoped_session, sessionmaker
 
 from securedrop_client import db, logic, storage
 from securedrop_client.app import threads
-from securedrop_client.gui.format_helpers import format_datetime_local
+from securedrop_client.gui.datetime_helpers import format_datetime_local
 from securedrop_client.gui.source import DeleteSourceDialog
 from securedrop_client.gui.widgets import (
     ActivityStatusBar,
