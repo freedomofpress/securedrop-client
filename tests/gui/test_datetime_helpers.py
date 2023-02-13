@@ -1,14 +1,18 @@
 import datetime
-import pytz
 from dateutil import tz
 
-from securedrop_client.gui.datetime_helpers import localise_datetime, format_datetime_local, format_datetime_month_day_time
+from PyQt5.QtCore import QByteArray
+
+from securedrop_client.gui.datetime_helpers import (
+    localise_datetime,
+    format_datetime_local,
+    format_datetime_month_day_time
+)
 
 
-
-def test_format_datetime_month_day():
-    # Dates are shown in the source list as well as the conversation view. Changing the date format may result in UI
-    # issues - this test is a reminder to check both views!
+def test_format_datetime_month_day_time():
+    # Dates are shown in the source list as well as the conversation view. Changing the date format
+    # may result in UI issues - this test is a reminder to check both views!
     midnight_january_london = datetime.datetime(2023, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc)
     assert format_datetime_month_day_time(midnight_january_london) == "Jan 1, 00:00"
 
@@ -25,6 +29,7 @@ def test_format_datetime_local(mocker):
     mocker.patch("securedrop_client.gui.datetime_helpers.QTimeZone.systemTimeZoneId",
                  return_value=QByteArray(b"Pacific/Auckland"))
     evening_january_1_london = datetime.datetime(2023, 1, 1, 18, 0, 0, tzinfo=datetime.timezone.utc)
-    assert format_datetime_local(evening_january_1_london) == "Jan 2"
+    assert format_datetime_local(evening_january_1_london) == "Jan 2, 07:00"
+
 
 
