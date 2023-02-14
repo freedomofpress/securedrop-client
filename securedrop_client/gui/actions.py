@@ -4,6 +4,7 @@ The actions available to the journalist.
 Over time, this module could become the interface between
 the GUI and the controller.
 """
+from contextlib import ExitStack
 from gettext import gettext as _
 from pathlib import Path
 from typing import Callable, Optional
@@ -15,6 +16,7 @@ from securedrop_client import state
 from securedrop_client.conversation import Transcript as ConversationTranscript
 from securedrop_client.db import Source
 from securedrop_client.gui.conversation import ExportDevice as ConversationExportDevice
+from securedrop_client.gui.conversation import ExportDialog as ExportConversationDialog
 from securedrop_client.gui.conversation import (
     ExportTranscriptDialog as ExportConversationTranscriptDialog,
 )
@@ -238,5 +240,78 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
         with open(file_path, "r") as f:
             dialog = ExportConversationTranscriptDialog(
                 self._export_device, "conversation.txt", str(file_path)
+            )
+            dialog.exec()
+
+
+class ExportConversationAction(QAction):  # pragma: nocover
+    def __init__(
+        self,
+        parent: QMenu,
+        controller: Controller,
+        source: Source,
+    ) -> None:
+        """
+        Allows export of a conversation transcript.
+        """
+        text = _("Export Conversation")
+
+        super().__init__(text, parent)
+
+        self.controller = controller
+        self._source = source
+
+        self._export_device = ConversationExportDevice(controller)
+
+        self.triggered.connect(self._on_triggered)
+
+    @pyqtSlot()
+    def _on_triggered(self) -> None:
+        """
+        (Re-)generates the conversation transcript and opens a confirmation dialog to export it
+        alongside all the (attached) files that are downloaded, in the manner
+        of the existing ExportFileDialog.
+        """
+        transcript_location = (
+            Path(self.controller.data_dir)
+            .joinpath(self._source.journalist_filename)
+            .joinpath("conversation.txt")
+        )
+
+        transcript = ConversationTranscript(self._source)
+        safe_mkdir(transcript_location.parent)
+
+        with open(transcript_location, "w") as f:
+            f.write(str(transcript))
+            # Let this context lapse to ensure the file contents
+            # are written to disk.
+
+        downloaded_file_locations = [
+            file.location(self.controller.data_dir)
+            for file in self._source.files
+            if self.controller.downloaded_file_exists(file)
+        ]
+
+        file_locations = downloaded_file_locations + [transcript_location]
+
+        # Open the files to prevent them from being removed while
+        # the archive is being created. Once the file objects go
+        # out of scope, any pending file removal will be performed
+        # by the operating system.
+        with ExitStack() as stack:
+            files = [
+                stack.enter_context(open(file_location, "r")) for file_location in file_locations
+            ]
+
+            file_count = len(files)
+            if file_count == 1:
+                summary = "conversation.txt"
+            else:
+                summary = _("{file_count} files").format(file_count=file_count)
+
+            dialog = ExportConversationDialog(
+                self._export_device,
+                summary,
+                [str(file_location) for file_location in file_locations],
             )
             dialog.exec()

@@ -75,6 +75,7 @@ from securedrop_client.gui.actions import (
     DeleteConversationAction,
     DeleteSourceAction,
     DownloadConversation,
+    ExportConversationAction,
     ExportConversationTranscriptAction,
     PrintConversationAction,
 )
@@ -3385,6 +3386,7 @@ class SourceMenu(QMenu):
 
         self.addAction(DownloadConversation(self, self.controller, app_state))
         self.addAction(ExportConversationTranscriptAction(self, self.controller, self.source))
+        self.addAction(ExportConversationAction(self, self.controller, self.source))
         self.addAction(PrintConversationAction(self, self.controller, self.source))
         self.addAction(
             DeleteConversationAction(

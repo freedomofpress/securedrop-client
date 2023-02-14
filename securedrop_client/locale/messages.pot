@@ -91,6 +91,12 @@ msgstr ""
 msgid "Export Conversation Transcript"
 msgstr ""
 
+msgid "Export Conversation"
+msgstr ""
+
+msgid "{file_count} files"
+msgstr ""
+
 msgid "SecureDrop Client {}"
 msgstr ""
 
@@ -255,6 +261,9 @@ msgid_plural "{message_count} messages"
 msgstr[0] ""
 msgstr[1] ""
 
+msgid "SUBMIT"
+msgstr ""
+
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr ""
 
@@ -292,9 +301,6 @@ msgid "See your administrator for help."
 msgstr ""
 
 msgid "Remember to be careful when working with files outside of your Workstation machine."
-msgstr ""
-
-msgid "SUBMIT"
 msgstr ""
 
 msgid "DONE"

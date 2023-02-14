@@ -328,3 +328,34 @@ def test_Device_export_transcript(mocker, homedir, mock_export_service):
 
         assert len(export_requested_emissions) == 1
         assert export_requested_emissions[0] == [["some/file/path"], "passphrase"]
+
+
+def test_Device_export_files(mocker, homedir, mock_export_service):
+    mocker.patch(
+        "securedrop_client.gui.conversation.export.device.export.getService",
+        return_value=mock_export_service,
+    )
+    gui = mocker.MagicMock(spec=Window)
+    with threads(3) as [sync_thread, main_queue_thread, file_download_queue_thread]:
+        controller = Controller(
+            "http://localhost",
+            gui,
+            no_session,
+            homedir,
+            None,
+            sync_thread=sync_thread,
+            main_queue_thread=main_queue_thread,
+            file_download_queue_thread=file_download_queue_thread,
+        )
+        device = Device(controller)
+        export_requested_emissions = QSignalSpy(device.export_requested)
+
+        filepaths = ["some/file/path", "some/other/file/path"]
+
+        device.export_files(filepaths, "passphrase")
+
+        assert len(export_requested_emissions) == 1
+        assert export_requested_emissions[0] == [
+            ["some/file/path", "some/other/file/path"],
+            "passphrase",
+        ]
