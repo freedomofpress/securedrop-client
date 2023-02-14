@@ -190,7 +190,7 @@ class PrintConversationAction(QAction):  # pragma: nocover
             dialog.exec()
 
 
-class ExportConversationAction(QAction):  # pragma: nocover
+class ExportConversationTranscriptAction(QAction):  # pragma: nocover
     def __init__(
         self,
         parent: QMenu,

@@ -75,7 +75,7 @@ from securedrop_client.gui.actions import (
     DeleteConversationAction,
     DeleteSourceAction,
     DownloadConversation,
-    ExportConversationAction,
+    ExportConversationTranscriptAction,
     PrintConversationAction,
 )
 from securedrop_client.gui.base import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
@@ -3384,7 +3384,7 @@ class SourceMenu(QMenu):
         self.setStyleSheet(self.SOURCE_MENU_CSS)
 
         self.addAction(DownloadConversation(self, self.controller, app_state))
-        self.addAction(ExportConversationAction(self, self.controller, self.source))
+        self.addAction(ExportConversationTranscriptAction(self, self.controller, self.source))
         self.addAction(PrintConversationAction(self, self.controller, self.source))
         self.addAction(
             DeleteConversationAction(
