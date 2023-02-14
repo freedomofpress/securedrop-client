@@ -18,7 +18,7 @@ def format_datetime_month_day(date: datetime.datetime) -> str:
 
 def localise_datetime(date: datetime.datetime) -> datetime.datetime:
     """
-    Localise the datetime object to the timezone specified, otherwise use the system timezone
+    Localise the datetime object to system timezone
     """
     local_timezone = str(QTimeZone.systemTimeZoneId(), encoding="utf-8")
     return arrow.get(date).to(tz.gettz(local_timezone)).datetime
