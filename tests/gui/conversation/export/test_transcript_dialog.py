@@ -17,7 +17,9 @@ def test_TranscriptDialog_init(mocker):
 
 
 def test_TranscriptDialog_init_sanitizes_filename(mocker):
-    secure_qlabel = mocker.patch("securedrop_client.gui.conversation.export.dialog.SecureQLabel")
+    secure_qlabel = mocker.patch(
+        "securedrop_client.gui.conversation.export.file_dialog.SecureQLabel"
+    )
     mocker.patch("securedrop_client.gui.widgets.QVBoxLayout.addWidget")
     filename = '<script>alert("boom!");</script>'
 

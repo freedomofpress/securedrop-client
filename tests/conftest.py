@@ -97,7 +97,7 @@ def print_transcript_dialog(mocker, homedir):
 
 
 @pytest.fixture(scope="function")
-def export_dialog(mocker, homedir):
+def export_file_dialog(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
     export_device = mocker.MagicMock(spec=conversation.ExportDevice)

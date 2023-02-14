@@ -206,7 +206,7 @@ def print_dialog(mocker, homedir, mock_export_service):
 
 
 @pytest.fixture(scope="function")
-def export_dialog(mocker, homedir, mock_export_service):
+def export_file_dialog(mocker, homedir, mock_export_service):
     mocker.patch(
         "securedrop_client.gui.conversation.export.device.export.getService",
         return_value=mock_export_service,

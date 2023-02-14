@@ -129,9 +129,9 @@ def test_class_name_matches_css_object_name_for_print_dialog(print_dialog):
     assert "PrintDialog" == print_dialog.__class__.__name__
 
 
-def test_class_name_matches_css_object_name_for_export_dialog(export_dialog):
-    assert "ExportDialog" == export_dialog.__class__.__name__
-    assert "ExportDialog" in export_dialog.passphrase_form.objectName()
+def test_class_name_matches_css_object_name_for_export_file_dialog(export_file_dialog):
+    assert "FileDialog" == export_file_dialog.__class__.__name__
+    assert "FileDialog" in export_file_dialog.passphrase_form.objectName()
 
 
 def test_class_name_matches_css_object_name_for_modal_dialog(modal_dialog):
@@ -507,39 +507,45 @@ def test_styles_for_print_dialog(print_dialog):
         assert 15 == c.font().pixelSize()
 
 
-def test_styles_for_export_dialog(export_dialog):
-    assert 800 == export_dialog.minimumSize().width()
-    assert 800 == export_dialog.maximumSize().width()
-    assert 300 == export_dialog.minimumSize().height()
-    assert 800 == export_dialog.maximumSize().height()
-    assert "#ffffff" == export_dialog.palette().color(QPalette.Background).name()
-    assert 110 == export_dialog.header_icon.minimumSize().width()  # 80px + 30px margin
-    assert 110 == export_dialog.header_icon.maximumSize().width()  # 80px + 30px margin
-    assert 64 == export_dialog.header_icon.minimumSize().height()  # 64px + 0px margin
-    assert 64 == export_dialog.header_icon.maximumSize().height()  # 64px + 0px margin
-    assert 110 == export_dialog.header_spinner_label.minimumSize().width()  # 80px + 30px margin
-    assert 110 == export_dialog.header_spinner_label.maximumSize().width()  # 80px + 30px margin
-    assert 64 == export_dialog.header_spinner_label.minimumSize().height()  # 64px + 0px margin
-    assert 64 == export_dialog.header_spinner_label.maximumSize().height()  # 64px + 0px margin
-    assert 68 == export_dialog.header.minimumSize().height()  # 68px + 0px margin
-    assert 68 == export_dialog.header.maximumSize().height()  # 68px + 0px margin
-    assert "Montserrat" == export_dialog.header.font().family()
-    assert QFont.Bold == export_dialog.header.font().weight()
-    assert 24 == export_dialog.header.font().pixelSize()
-    assert "#2a319d" == export_dialog.header.palette().color(QPalette.Foreground).name()
-    assert (0, 0, 0, 0) == export_dialog.header.getContentsMargins()
-    assert 2 == export_dialog.header_line.minimumSize().height()  # 2px + 20px margin
-    assert 2 == export_dialog.header_line.maximumSize().height()  # 2px + 20px margin
+def test_styles_for_export_file_dialog(export_file_dialog):
+    assert 800 == export_file_dialog.minimumSize().width()
+    assert 800 == export_file_dialog.maximumSize().width()
+    assert 300 == export_file_dialog.minimumSize().height()
+    assert 800 == export_file_dialog.maximumSize().height()
+    assert "#ffffff" == export_file_dialog.palette().color(QPalette.Background).name()
+    assert 110 == export_file_dialog.header_icon.minimumSize().width()  # 80px + 30px margin
+    assert 110 == export_file_dialog.header_icon.maximumSize().width()  # 80px + 30px margin
+    assert 64 == export_file_dialog.header_icon.minimumSize().height()  # 64px + 0px margin
+    assert 64 == export_file_dialog.header_icon.maximumSize().height()  # 64px + 0px margin
+    assert (
+        110 == export_file_dialog.header_spinner_label.minimumSize().width()
+    )  # 80px + 30px margin
+    assert (
+        110 == export_file_dialog.header_spinner_label.maximumSize().width()
+    )  # 80px + 30px margin
+    assert 64 == export_file_dialog.header_spinner_label.minimumSize().height()  # 64px + 0px margin
+    assert 64 == export_file_dialog.header_spinner_label.maximumSize().height()  # 64px + 0px margin
+    assert 68 == export_file_dialog.header.minimumSize().height()  # 68px + 0px margin
+    assert 68 == export_file_dialog.header.maximumSize().height()  # 68px + 0px margin
+    assert "Montserrat" == export_file_dialog.header.font().family()
+    assert QFont.Bold == export_file_dialog.header.font().weight()
+    assert 24 == export_file_dialog.header.font().pixelSize()
+    assert "#2a319d" == export_file_dialog.header.palette().color(QPalette.Foreground).name()
+    assert (0, 0, 0, 0) == export_file_dialog.header.getContentsMargins()
+    assert 2 == export_file_dialog.header_line.minimumSize().height()  # 2px + 20px margin
+    assert 2 == export_file_dialog.header_line.maximumSize().height()  # 2px + 20px margin
     assert 38 == math.floor(255 * 0.15)  # sanity check
-    assert 38 == export_dialog.header_line.palette().color(QPalette.Background).rgba64().alpha8()
-    assert 42 == export_dialog.header_line.palette().color(QPalette.Background).red()
-    assert 49 == export_dialog.header_line.palette().color(QPalette.Background).green()
-    assert 157 == export_dialog.header_line.palette().color(QPalette.Background).blue()
+    assert (
+        38 == export_file_dialog.header_line.palette().color(QPalette.Background).rgba64().alpha8()
+    )
+    assert 42 == export_file_dialog.header_line.palette().color(QPalette.Background).red()
+    assert 49 == export_file_dialog.header_line.palette().color(QPalette.Background).green()
+    assert 157 == export_file_dialog.header_line.palette().color(QPalette.Background).blue()
 
-    assert "Montserrat" == export_dialog.body.font().family()
-    assert 16 == export_dialog.body.font().pixelSize()
-    assert "#302aa3" == export_dialog.body.palette().color(QPalette.Foreground).name()
-    window_buttons = export_dialog.layout().itemAt(4).widget()
+    assert "Montserrat" == export_file_dialog.body.font().family()
+    assert 16 == export_file_dialog.body.font().pixelSize()
+    assert "#302aa3" == export_file_dialog.body.palette().color(QPalette.Foreground).name()
+    window_buttons = export_file_dialog.layout().itemAt(4).widget()
     button_box = window_buttons.layout().itemAt(0).widget()
     button_box_children = button_box.findChildren(QPushButton)
     for c in button_box_children:
@@ -548,14 +554,14 @@ def test_styles_for_export_dialog(export_dialog):
         assert QFont.DemiBold - 1 == c.font().weight()
         assert 15 == c.font().pixelSize()
 
-    passphrase_children_qlabel = export_dialog.passphrase_form.findChildren(QLabel)
+    passphrase_children_qlabel = export_file_dialog.passphrase_form.findChildren(QLabel)
     for c in passphrase_children_qlabel:
         assert "Montserrat" == c.font().family() or "Source Sans Pro" == c.font().family()
         assert QFont.DemiBold - 1 == c.font().weight()
         assert 12 == c.font().pixelSize()
         assert "#2a319d" == c.palette().color(QPalette.Foreground).name()
 
-    form_children_qlineedit = export_dialog.passphrase_form.findChildren(QLineEdit)
+    form_children_qlineedit = export_file_dialog.passphrase_form.findChildren(QLineEdit)
     for c in form_children_qlineedit:
         assert 32 == c.minimumSize().height()  # 30px + 2px padding-bottom
         assert 32 == c.maximumSize().height()  # 30px + 2px padding-bottom

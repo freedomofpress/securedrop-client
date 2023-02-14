@@ -16,7 +16,7 @@ from securedrop_client.gui.base.checkbox import SDCheckBox
 from .device import Device
 
 
-class ExportDialog(ModalDialog):
+class FileDialog(ModalDialog):
 
     DIALOG_CSS = resource_string(__name__, "dialog.css").decode("utf-8")
 
@@ -90,7 +90,7 @@ class ExportDialog(ModalDialog):
 
         # Passphrase Form
         self.passphrase_form = QWidget()
-        self.passphrase_form.setObjectName("ExportDialog_passphrase_form")
+        self.passphrase_form.setObjectName("FileDialog_passphrase_form")
         passphrase_form_layout = QVBoxLayout()
         passphrase_form_layout.setContentsMargins(
             self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN
