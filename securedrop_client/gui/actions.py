@@ -289,7 +289,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
         downloaded_file_locations = [
             file.location(self.controller.data_dir)
             for file in self._source.files
-            if self.controller.downloaded_file_exists(file)
+            if self.controller.downloaded_file_exists(file, silence_errors=True)
         ]
 
         file_locations = downloaded_file_locations + [transcript_location]
