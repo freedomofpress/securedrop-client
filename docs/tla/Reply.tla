@@ -73,6 +73,12 @@ Enqueue(id) ==
             ])
         /\ UNCHANGED done
 
+Process ==
+    /\ Len(queue) > 0
+    /\ done' = Append(done, Head(queue))
+    /\ queue' = Tail(queue)
+    /\ UNCHANGED<<ids, pool>>
+
 Init ==
     /\ ids = {}
     /\ pool = <<>>
@@ -83,6 +89,7 @@ Next ==
     \/ \E id \in Replies:
         /\ id = Cardinality(ids)
         /\ Enqueue(id)
+    \/ Process
     \/ UNCHANGED vars
 
 Spec == Init /\ [][Next]_vars
