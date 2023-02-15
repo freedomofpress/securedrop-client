@@ -83,19 +83,20 @@ QueueNext ==
 
 \* --- REPLY STATES ---
 
+Trans(id, from, to) ==
+    /\ pool[id].state = from
+    /\ pool' = [pool EXCEPT ![id].state = to]
+
 DownloadPending(job) ==
-    /\ pool[job.id].state = "DownloadPending"
-    /\ pool' = [pool EXCEPT ![job.id].state = "Downloading"]
+    /\ Trans(job.id, "DownloadPending", "Downloading")
     /\ UNCHANGED<<done, ids, queue>>
 
 Downloading(job) ==
-    /\ pool[job.id].state = "Downloading"
-    /\ pool' = [pool EXCEPT ![job.id].state = "Downloaded"]
+    /\ Trans(job.id, "Downloading", "Downloaded")
     /\ UNCHANGED<<done, ids, queue>>
 
 Downloaded(job) ==
-    /\ pool[job.id].state = "Downloaded"
-    /\ pool' = [pool EXCEPT ![job.id].state = "Ready"]
+    /\ Trans(job.id, "Downloaded", "Ready")
     /\ QueueNext
     /\ UNCHANGED ids
 
