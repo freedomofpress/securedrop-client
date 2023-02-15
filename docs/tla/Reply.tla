@@ -6,6 +6,9 @@ CONSTANTS
 
 Replies == InReplies \union OutReplies
 
+
+\* ---- TYPES ----
+
 \* Reply model:
 Id == Nat
 SharedStates == {"Ready", "DeletedLocally"}
@@ -38,10 +41,8 @@ SendReplyJob == [id: Id, type: {"SendReply"}]
 Job == DownloadReplyJob \union SendReplyJob
 VARIABLES queue, done
 
-vars == <<
-    ids, pool,
-    queue, done
-    >>
+
+\* ---- INVARIANTS ----
 
 PoolOK ==
     /\ ids \subseteq Replies
@@ -54,6 +55,8 @@ TypeOK ==
     /\ PoolOK
     /\ QueueOK
 
+
+\* ---- QUEUE ACTIONS ----
 
 Enqueue(id) ==
     LET
@@ -77,6 +80,9 @@ QueueNext ==
     /\ done' = Append(done, Head(queue))
     /\ queue' = Tail(queue)
 
+
+\* --- REPLY STATES ---
+
 DownloadPending(job) ==
     /\ pool[job.id].state = "DownloadPending"
     /\ pool' = [pool EXCEPT ![job.id].state = "Downloading"]
@@ -92,6 +98,14 @@ Downloaded(job) ==
     /\ pool' = [pool EXCEPT ![job.id].state = "Ready"]
     /\ QueueNext
     /\ UNCHANGED ids
+
+
+\* ---- ACTIONS ----
+
+vars == <<
+    ids, pool,
+    queue, done
+    >>
 
 ProcessJob ==
     LET job == Head(queue)
