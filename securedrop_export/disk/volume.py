@@ -1,5 +1,6 @@
 from enum import Enum
 import os
+from typing import Optional
 
 
 class EncryptionScheme(Enum):
@@ -26,7 +27,7 @@ class Volume:
         device_name: str,
         mapped_name: str,
         encryption: EncryptionScheme,
-        mountpoint: str = None,
+        mountpoint: Optional[str] = None,
     ):
         self.device_name = device_name
         self.mapped_name = mapped_name

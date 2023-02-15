@@ -210,7 +210,7 @@ class TestCli:
 
     @mock.patch(
         "subprocess.check_output",
-        side_effect=subprocess.CalledProcessError("check_output", 1),
+        side_effect=subprocess.CalledProcessError(1, "check_output"),
     )
     def test_get_luks_volume_error(self, mocked_subprocess):
         with pytest.raises(ExportException) as ex:
@@ -277,7 +277,7 @@ class TestCli:
             self.cli.unlock_luks_volume(vol, key)
 
     @mock.patch(
-        "subprocess.Popen", side_effect=subprocess.CalledProcessError("1", "Popen")
+        "subprocess.Popen", side_effect=subprocess.CalledProcessError(1, "Popen")
     )
     def test_unlock_luks_volume_luksOpen_exception(self, mocked_subprocess):
         pd = Volume(

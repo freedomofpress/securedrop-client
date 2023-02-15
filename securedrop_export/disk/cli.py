@@ -44,7 +44,7 @@ class CLI:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
-            command_output = grep.stdout.readlines()
+            command_output = grep.stdout.readlines()  # type: ignore[union-attr]
 
             # The first word in each element of the command_output list is the device name
             attached_devices = [x.decode("utf8").split()[0] for x in command_output]
@@ -68,8 +68,9 @@ class CLI:
                     stderr=subprocess.PIPE,
                 )
 
-                # 0 for non-removable device, 1 for removable
-                is_removable = int(removable.decode("utf8").strip())
+                # removable is "0" for non-removable device, "1" for removable,
+                # convert that into a Python boolean
+                is_removable = bool(int(removable.decode("utf8").strip()))
 
             except subprocess.CalledProcessError:
                 # Not a removable device
@@ -116,7 +117,7 @@ class CLI:
             logger.error("Error checking device partitions")
             raise ExportException(sdstatus=Status.DEVICE_ERROR)
 
-    def _check_partitions(self, blkid: str) -> str:
+    def _check_partitions(self, blkid: str) -> bytes:
         try:
             logger.debug(f"Checking device partitions on {blkid}")
             device_and_partitions = subprocess.check_output(
@@ -382,7 +383,7 @@ class CLI:
         """
         Helper. Unmount volume
         """
-        if os.path.exists(volume.mountpoint):
+        if volume.mountpoint and os.path.exists(volume.mountpoint):
             logger.debug(f"Unmounting drive from {volume.mountpoint}")
             try:
                 subprocess.check_call(["sudo", "umount", volume.mountpoint])

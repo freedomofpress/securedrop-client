@@ -1,11 +1,10 @@
-import pkgutil
 import setuptools
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-version = pkgutil.get_data("securedrop_export", "VERSION").decode("utf-8")
-version = version.strip()
+with open("securedrop_export/VERSION") as f:
+    version = f.read().strip()
 
 setuptools.setup(
     name="securedrop-export",
@@ -23,14 +22,14 @@ setuptools.setup(
     package_data={
         "securedrop_export": ["VERSION"],
     },
-    classifiers=(
+    classifiers=[
         "Development Status :: 3 - Alpha",
         "Programming Language :: Python :: 3",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Intended Audience :: Developers",
         "Operating System :: OS Independent",
-    ),
+    ],
     entry_points={
         "console_scripts": ["send-to-usb = securedrop_export.main:entrypoint"]
     },

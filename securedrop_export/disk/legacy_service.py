@@ -37,6 +37,10 @@ class Service:
             raise ExportException(
                 sdstatus=LegacyStatus.LEGACY_USB_ENCRYPTION_NOT_SUPPORTED
             )
+        else:
+            # Unreachable, num_devices is a non-negative integer,
+            # and we handled all possible cases already
+            raise ValueError(f"unreachable: num_devices is negative: {num_devices}")
 
     def check_disk_format(self) -> LegacyStatus:
         """

@@ -3,6 +3,7 @@ import shutil
 import platform
 import logging
 import sys
+from typing import Optional
 
 from securedrop_export.archive import Archive, Metadata
 from securedrop_export.command import Command
@@ -143,8 +144,13 @@ def _start_service(submission: Archive) -> Status:
     elif submission.command is Command.CHECK_VOLUME:
         return ExportService(submission).check_disk_format()
 
+    # Unreachable
+    raise ValueError(
+        f"unreachable: unknown submission.command value: {submission.command}"
+    )
 
-def _exit_gracefully(submission: Archive, status: BaseStatus = None):
+
+def _exit_gracefully(submission: Archive, status: Optional[BaseStatus] = None):
     """
     Write status code, ensure file cleanup, and exit with return code 0.
     Non-zero exit values will cause the system to try alternative
@@ -170,7 +176,7 @@ def _exit_gracefully(submission: Archive, status: BaseStatus = None):
         sys.exit(0)
 
 
-def _write_status(status: BaseStatus):
+def _write_status(status: Optional[BaseStatus]):
     """
     Write string to stderr.
     """
