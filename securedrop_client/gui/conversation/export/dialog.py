@@ -7,13 +7,8 @@ from .device import Device
 from .file_dialog import FileDialog
 
 
-class Dialog(FileDialog):
-    """Adapts the dialog used to export files to allow exporting a conversation.
-
-    - Adjust the init arguments to export multiple files.
-    - Adds a method to allow all those files to be exported.
-    - Overrides the two slots that handles the export action to call said method.
-    """
+class ExportDialog(ModalDialog):
+    DIALOG_CSS = resource_string(__name__, "dialog.css").decode("utf-8")
 
     def __init__(self, device: Device, summary: str, file_locations: List[str]) -> None:
         super().__init__(device, "", summary)

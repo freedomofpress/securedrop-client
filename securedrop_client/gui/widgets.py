@@ -769,7 +769,6 @@ class MainView(QWidget):
 
 
 class EmptyConversationView(QWidget):
-
     MARGIN = 30
     NEWLINE_HEIGHT_PX = 35
 
@@ -2523,7 +2522,6 @@ class FileWidget(QWidget):
 
 
 class ConversationScrollArea(QScrollArea):
-
     MARGIN_BOTTOM = 28
     MARGIN_LEFT = 38
     MARGIN_RIGHT = 20
@@ -3304,7 +3302,6 @@ class ReplyTextEdit(QPlainTextEdit):
 
 
 class ReplyTextEditPlaceholder(QWidget):
-
     # These values are used to determine the width that can be taken up by
     # the source designation as the widget is initialized or the window is
     # resized.
