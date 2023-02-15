@@ -73,11 +73,40 @@ Enqueue(id) ==
             ])
         /\ UNCHANGED done
 
-Process ==
-    /\ Len(queue) > 0
+QueueNext ==
     /\ done' = Append(done, Head(queue))
     /\ queue' = Tail(queue)
-    /\ UNCHANGED<<ids, pool>>
+
+DownloadPending(job) ==
+    /\ pool[job.id].state = "DownloadPending"
+    /\ pool' = [pool EXCEPT ![job.id].state = "Downloading"]
+    /\ UNCHANGED<<done, ids, queue>>
+
+Downloading(job) ==
+    /\ pool[job.id].state = "Downloading"
+    /\ pool' = [pool EXCEPT ![job.id].state = "Downloaded"]
+    /\ UNCHANGED<<done, ids, queue>>
+
+Downloaded(job) ==
+    /\ pool[job.id].state = "Downloaded"
+    /\ pool' = [pool EXCEPT ![job.id].state = "Ready"]
+    /\ QueueNext
+    /\ UNCHANGED ids
+
+ProcessJob ==
+    LET job == Head(queue)
+    IN
+        \/ /\ job \in DownloadReplyJob
+           /\ \/ DownloadPending(job)
+              \/ Downloading(job)
+              \/ Downloaded(job)
+        \/ /\ job \in SendReplyJob
+           /\ QueueNext
+           /\ UNCHANGED<<ids, pool>>
+
+QueueRun ==
+    /\ Len(queue) > 0
+    /\ ProcessJob
 
 Init ==
     /\ ids = {}
@@ -89,7 +118,7 @@ Next ==
     \/ \E id \in Replies:
         /\ id = Cardinality(ids)
         /\ Enqueue(id)
-    \/ Process
+    \/ QueueRun
     \/ UNCHANGED vars
 
 Spec == Init /\ [][Next]_vars
