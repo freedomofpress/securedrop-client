@@ -342,7 +342,10 @@ class CLI:
         that cleanup happens even if export fails or only partially succeeds.
         """
         try:
-            target_path = os.path.join(device.mountpoint, submission_target_dirname)
+            # TODO: is it possible for device.mountpoint to be None here?
+            target_path = os.path.join(
+                device.mountpoint, submission_target_dirname  # type: ignore[arg-type]
+            )
             subprocess.check_call(["mkdir", target_path])
 
             export_data = os.path.join(submission_tmpdir, "export_data/")

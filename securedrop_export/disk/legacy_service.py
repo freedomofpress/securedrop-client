@@ -60,6 +60,9 @@ class Service:
                 # backwards compatibility, this is the only expected status
                 # at this stage
                 return LegacyStatus.LEGACY_USB_ENCRYPTED
+            else:
+                # FIXME: What should be returned if there is more than 1 connected device?
+                raise NotImplementedError("???")
 
         except ExportException as ex:
             logger.error(

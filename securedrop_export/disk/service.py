@@ -24,6 +24,8 @@ class Service:
         """
         Run export actions.
         """
+        # FIXME: is this supposed to be empty or abstract?
+        raise NotImplementedError("???")
 
     def scan_all_devices(self) -> Status:
         """

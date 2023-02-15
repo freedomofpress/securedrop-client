@@ -140,9 +140,11 @@ def _start_service(submission: Archive) -> Status:
     elif submission.command is Command.EXPORT:
         return ExportService(submission).export()
     elif submission.command is Command.CHECK_USBS:
-        return ExportService(submission).check_connected_devices()
+        # FIXME: this returns LegacyStatus, not Status
+        return ExportService(submission).check_connected_devices()  # type: ignore[return-value]
     elif submission.command is Command.CHECK_VOLUME:
-        return ExportService(submission).check_disk_format()
+        # FIXME: this returns LegacyStatus, not Status
+        return ExportService(submission).check_disk_format()  # type: ignore[return-value]
 
     # Unreachable
     raise ValueError(
