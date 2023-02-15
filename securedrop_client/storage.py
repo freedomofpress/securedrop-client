@@ -442,7 +442,6 @@ def __update_submissions(
     source_cache = SourceCache(session)
 
     for submission in remote_submissions:
-
         # If submission belongs to a locally-deleted source, skip it
         if submission.source_uuid in skip_uuids_deleted_source:
             logger.debug(
@@ -497,7 +496,6 @@ def __update_submissions(
     # check if we have left empty directories behind after deletion.
     deleted_submission_directory_names = set()
     for deleted_submission in local_submissions_by_uuid.values():
-
         deleted_submission_directory_names.add(deleted_submission.source.journalist_filename)
 
         # The local method could have deleted these files and submissions already
@@ -609,7 +607,6 @@ def update_replies(
     user_cache: Dict[str, User] = {}
     source_cache = SourceCache(session)
     for reply in remote_replies:
-
         # If the source account was just deleted locally (and is either deleted or scheduled
         # for deletion on the server), we don't want this reply
         if reply.source_uuid in skip_uuids_deleted_source:
@@ -991,7 +988,6 @@ def delete_local_conversation_by_source_uuid(session: Session, uuid: str, data_d
     """
     source = session.query(Source).filter_by(uuid=uuid).one_or_none()
     if source:
-
         # Delete all source files on disk
         logger.debug("Delete files on disk for source {} from local database.".format(uuid))
         delete_source_collection(source.journalist_filename, data_dir)
