@@ -395,11 +395,16 @@ def test__create_archive_with_multiple_export_files(mocker):
     export = Export()
     archive_path = None
     with TemporaryDirectory() as temp_dir, NamedTemporaryFile() as export_file_one, NamedTemporaryFile() as export_file_two:  # noqa
-        archive_path = export._create_archive(
-            temp_dir, "mock.sd-export", {}, [export_file_one.name, export_file_two.name]
-        )
-        assert archive_path == os.path.join(temp_dir, "mock.sd-export")
-        assert os.path.exists(archive_path)  # sanity check
+        transcript_path = os.path.join(temp_dir, "conversation.txt")
+        with open(transcript_path, "a+") as transcript:
+            archive_path = export._create_archive(
+                temp_dir,
+                "mock.sd-export",
+                {},
+                [export_file_one.name, export_file_two.name, transcript.name],
+            )
+            assert archive_path == os.path.join(temp_dir, "mock.sd-export")
+            assert os.path.exists(archive_path)  # sanity check
 
     assert not os.path.exists(archive_path)
 

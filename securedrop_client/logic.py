@@ -918,20 +918,21 @@ class Controller(QObject):
             logger.error("Could not emit reply_download_failed")
             logger.debug(f"Could not emit reply_download_failed: {e}")
 
-    def downloaded_file_exists(self, file: db.File) -> bool:
+    def downloaded_file_exists(self, file: db.File, silence_errors: bool = False) -> bool:
         """
         Check if the file specified by file_uuid exists. If it doesn't update the local db and
         GUI to show the file as not downloaded.
         """
         if not os.path.exists(file.location(self.data_dir)):
-            self.gui.update_error_status(
-                _("File does not exist in the data directory. Please try re-downloading.")
-            )
-            logger.warning(
-                "Cannot find file in {}. File does not exist.".format(
-                    os.path.dirname(file.filename)
+            if not silence_errors:
+                self.gui.update_error_status(
+                    _("File does not exist in the data directory. Please try re-downloading.")
                 )
-            )
+                logger.warning(
+                    "Cannot find file in {}. File does not exist.".format(
+                        os.path.dirname(file.filename)
+                    )
+                )
             missing_files = storage.update_missing_files(self.data_dir, self.session)
             for f in missing_files:
                 self.file_missing.emit(f.source.uuid, f.uuid, str(f))
