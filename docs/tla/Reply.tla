@@ -100,6 +100,15 @@ Downloaded(job) ==
     /\ QueueNext
     /\ UNCHANGED ids
 
+SendPending(job) ==
+    /\ Trans(job.id, "SendPending", "Sending")
+    /\ UNCHANGED<<done, ids, queue>>
+
+Sending(job) ==
+    /\ Trans(job.id, "Sending", "Ready")
+    /\ QueueNext
+    /\ UNCHANGED ids
+
 
 \* ---- ACTIONS ----
 
@@ -116,8 +125,8 @@ ProcessJob ==
               \/ Downloading(job)
               \/ Downloaded(job)
         \/ /\ job \in SendReplyJob
-           /\ QueueNext
-           /\ UNCHANGED<<ids, pool>>
+           /\ \/ SendPending(job)
+              \/ Sending(job)
 
 QueueRun ==
     /\ Len(queue) > 0
