@@ -7,6 +7,11 @@ CONSTANTS
 Replies == InReplies \union OutReplies
 
 
+\* ---- HELPERS ----
+
+Size(f) == Cardinality(DOMAIN f)
+
+
 \* ---- TYPES ----
 
 \* Reply model:
@@ -33,7 +38,7 @@ OutReply ==
         } \union SharedStates
     ]
 Reply == InReply \union OutReply
-VARIABLES ids, pool
+VARIABLES pool
 
 \* RunnableQueue, sans prioritization.  Current = Head(queue).
 DownloadReplyJob == [id: Id, type: {"DownloadReply"}]
@@ -45,8 +50,8 @@ VARIABLES queue, done
 \* ---- INVARIANTS ----
 
 PoolOK ==
-    /\ ids \subseteq Replies
-    /\ pool \in [ids -> Reply]
+    /\ DOMAIN pool \subseteq Replies
+    /\ pool \in [DOMAIN pool -> Reply]
 QueueOK ==
     /\ queue \in Seq(Job)
     /\ done \in Seq(Job)
@@ -64,7 +69,6 @@ Enqueue(id) ==
         state == IF id \in InReplies THEN "DownloadPending" ELSE "SendPending"
         job == IF id \in InReplies THEN "DownloadReply" ELSE "SendReply"
     IN
-        /\ ids' = ids \union {id}
         \* https://groups.google.com/g/tlaplus/c/-c7o7G9AS5M/m/Fi66-Um8CAAJ
         /\ pool' = pool @@ (id :> [
                 type |-> dir,
@@ -89,36 +93,33 @@ Trans(id, from, to) ==
 
 DownloadPending(job) ==
     /\ Trans(job.id, "DownloadPending", "Downloading")
-    /\ UNCHANGED<<done, ids, queue>>
+    /\ UNCHANGED<<done, queue>>
 
 Downloading(job) ==
     \/ /\ Trans(job.id, "Downloading", "Downloaded")
-       /\ UNCHANGED<<done, ids, queue>>
+       /\ UNCHANGED<<done, queue>>
     \/ /\ Trans(job.id, "DownloadPending", "DownloadFailed")
        /\ QueueNext
-       /\ UNCHANGED ids
 
 Downloaded(job) ==
     /\ \/ Trans(job.id, "Downloaded", "Ready")
        \/ Trans(job.id, "Downloaded", "DecryptionFailed")
     /\ QueueNext
-    /\ UNCHANGED ids
 
 SendPending(job) ==
     /\ Trans(job.id, "SendPending", "Sending")
-    /\ UNCHANGED<<done, ids, queue>>
+    /\ UNCHANGED<<done, queue>>
 
 Sending(job) ==
     /\ \/ Trans(job.id, "Sending", "Ready")
        \/ Trans(job.id, "Sending", "SendFailed")
     /\ QueueNext
-    /\ UNCHANGED ids
 
 
 \* ---- ACTIONS ----
 
 vars == <<
-    ids, pool,
+    pool,
     queue, done
     >>
 
@@ -139,14 +140,13 @@ QueueRun ==
     \/ UNCHANGED vars  \* nothing changes if there's nothing to do
 
 Init ==
-    /\ ids = {}
     /\ pool = <<>>
     /\ queue = <<>>
     /\ done = <<>>
 
 Next ==
     \/ \E id \in Replies:
-        /\ id = Cardinality(ids)
+        /\ id = Size(pool)
         /\ Enqueue(id)
     \/ QueueRun
 
