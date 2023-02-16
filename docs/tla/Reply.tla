@@ -20,6 +20,12 @@ Contains(q, id) == \E el \in Range(q): el.id = id
 \* Reply model:
 Id == Nat
 SharedStates == {"Ready", "DeletedLocally"}
+TerminalStates == {
+    "Ready",
+    "DownloadFailed",
+    "DecryptionFailed",
+    "SendFailed"
+    }
 InReply ==
     [
         type: {"in"},
@@ -149,6 +155,9 @@ QueueRun ==
        /\ ProcessJob
     \/ UNCHANGED vars  \* nothing changes if there's nothing to do
 
+
+\* ---- MODEL SETUP ----
+
 Init ==
     /\ pool = <<>>
     /\ queue = <<>>
@@ -161,4 +170,14 @@ Next ==
     \/ QueueRun
 
 Spec == Init /\ [][Next]_vars /\ WF_vars(Next)
+
+
+\* ---- PROPERTIES  ---
+
+PoolLiveness ==
+    <>[](\A r \in Range(pool): r.state \in TerminalStates)
+
+QueueLiveness ==
+    /\ <>[](Len(queue) = 0)
+    /\ <>[](Len(done) = Size(pool))
 ====
