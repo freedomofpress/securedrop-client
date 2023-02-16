@@ -12,7 +12,8 @@ class TestLogger(TestCase):
         self.assertEqual(logger1.qubes_log, logger2.qubes_log)
 
     def test_singleton_raises_exception_for_dev(self, mock_popen):
-        logger1 = securedrop_log.SecureDropLog('name', 'logvmname')
+        # No exception raised
+        securedrop_log.SecureDropLog('name', 'logvmname')
 
         with self.assertRaises(Exception):
-            logger2 = securedrop_log.SecureDropLog('name2', 'logvmname2')
+            securedrop_log.SecureDropLog('name2', 'logvmname2')
