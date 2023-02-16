@@ -9,7 +9,10 @@ Replies == InReplies \union OutReplies
 
 \* ---- HELPERS ----
 
+Range(f) == {f[x]: x \in DOMAIN f}
 Size(f) == Cardinality(DOMAIN f)
+
+Contains(q, id) == \E el \in Range(q): el.id = id
 
 
 \* ---- TYPES ----
@@ -49,16 +52,23 @@ VARIABLES queue, done
 
 \* ---- INVARIANTS ----
 
-PoolOK ==
+PoolTypeOK ==
     /\ DOMAIN pool \subseteq Replies
     /\ pool \in [DOMAIN pool -> Reply]
-QueueOK ==
+QueueTypeOK ==
     /\ queue \in Seq(Job)
     /\ done \in Seq(Job)
 
 TypeOK ==
-    /\ PoolOK
-    /\ QueueOK
+    /\ PoolTypeOK
+    /\ QueueTypeOK
+
+PoolAndQueueInSync ==
+    /\ \A job \in Range(queue): job.id \in DOMAIN pool
+    /\ \A job \in Range(done): job.id \in DOMAIN pool
+    /\ \A id \in DOMAIN pool:
+        \/ Contains(queue, id)
+        \/ Contains(done, id)
 
 
 \* ---- QUEUE ACTIONS ----
