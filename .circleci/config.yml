@@ -38,27 +38,12 @@ common-steps:
 
 version: 2
 jobs:
-  test:
-    docker:
-      - image: debian:buster
-    steps:
-      - checkout
-      - *run_tests
   test-bullseye:
     docker:
       - image: debian:bullseye
     steps:
       - checkout
       - *run_tests
-
-  build-buster:
-    docker:
-      - image: debian:buster
-    steps:
-      - checkout
-      - *install_packaging_dependencies
-      - *verify_requirements
-      - *build_debian_package
 
   build-bullseye:
     docker:
@@ -73,7 +58,5 @@ workflows:
   version: 2
   per_pr:
     jobs:
-      - test
       - test-bullseye
-      - build-buster
       - build-bullseye
