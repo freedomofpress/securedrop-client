@@ -134,8 +134,9 @@ ProcessJob ==
               \/ Sending(job)
 
 QueueRun ==
-    /\ Len(queue) > 0
-    /\ ProcessJob
+    \/ /\ Len(queue) > 0
+       /\ ProcessJob
+    \/ UNCHANGED vars  \* nothing changes if there's nothing to do
 
 Init ==
     /\ ids = {}
@@ -148,7 +149,6 @@ Next ==
         /\ id = Cardinality(ids)
         /\ Enqueue(id)
     \/ QueueRun
-    \/ UNCHANGED vars
 
-Spec == Init /\ [][Next]_vars
+Spec == Init /\ [][Next]_vars /\ WF_vars(Next)
 ====
