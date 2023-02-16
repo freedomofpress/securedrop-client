@@ -92,11 +92,15 @@ DownloadPending(job) ==
     /\ UNCHANGED<<done, ids, queue>>
 
 Downloading(job) ==
-    /\ Trans(job.id, "Downloading", "Downloaded")
-    /\ UNCHANGED<<done, ids, queue>>
+    \/ /\ Trans(job.id, "Downloading", "Downloaded")
+       /\ UNCHANGED<<done, ids, queue>>
+    \/ /\ Trans(job.id, "DownloadPending", "DownloadFailed")
+       /\ QueueNext
+       /\ UNCHANGED ids
 
 Downloaded(job) ==
-    /\ Trans(job.id, "Downloaded", "Ready")
+    /\ \/ Trans(job.id, "Downloaded", "Ready")
+       \/ Trans(job.id, "Downloaded", "DecryptionFailed")
     /\ QueueNext
     /\ UNCHANGED ids
 
@@ -105,7 +109,8 @@ SendPending(job) ==
     /\ UNCHANGED<<done, ids, queue>>
 
 Sending(job) ==
-    /\ Trans(job.id, "Sending", "Ready")
+    /\ \/ Trans(job.id, "Sending", "Ready")
+       \/ Trans(job.id, "Sending", "SendFailed")
     /\ QueueNext
     /\ UNCHANGED ids
 
