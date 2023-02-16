@@ -1,0 +1,9 @@
+[tool.mypy]
+python_version = "3.9"
+scripts_are_modules = true
+files = [
+    "*.py",
+    "securedrop-log",
+    "securedrop-log-saver",
+    "securedrop-redis-log",
+]

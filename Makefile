@@ -47,6 +47,19 @@ update-dev-only-dependencies:  ## Update dev-requirements.txt to pin to the late
 		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-requirements.txt requirements/requirements.in requirements/dev-requirements.in; \
 	done < 'requirements/dev-requirements.in'
 
+.PHONY: check
+check: flake8 mypy test
+
+.PHONY: flake8
+flake8: ## Run flake8 to lint Python files
+	flake8
+
+mypy: ## Type check Python files
+	mypy
+
+test: ## Run Python unit tests
+	python3 -m unittest
+
 # Explaination of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##
 # 2. Use sed-like syntax to remove the make targets

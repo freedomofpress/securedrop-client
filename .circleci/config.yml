@@ -2,10 +2,12 @@
 common-steps:
   - &run_tests
     run:
-      name: Run tests
+      name: Install requirements and run tests
       command: |
-        apt-get update && apt-get install -y python3
-        python3 -m unittest
+        apt-get update && apt-get install -y make python3-venv
+        make venv
+        source .venv/bin/activate
+        make check
 
   - &install_packaging_dependencies
     run:
