@@ -386,6 +386,11 @@ class TestProxyMethods(unittest.TestCase):
             p.on_save(fh, self.res)
             self.assertEqual(patched_run.call_args[0][0][0], "qvm-move-to-vm")
 
+    def test_is_json_content_type(self):
+        self.assertTrue(proxy.is_json_content_type("application/json"))
+        self.assertTrue(proxy.is_json_content_type("application/json; charset=utf-8"))
+        self.assertFalse(proxy.is_json_content_type("application/yaml"))
+
 
 class TestConfig(unittest.TestCase):
     def setUp(self):

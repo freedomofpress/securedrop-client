@@ -9,13 +9,21 @@ from typing import IO, Dict, Optional
 
 import furl  # type: ignore
 import requests
-import werkzeug
 import yaml
 
 import securedrop_proxy.version as version
 from securedrop_proxy import json
 
 logger = logging.getLogger(__name__)
+
+
+def is_json_content_type(value: str) -> bool:
+    """
+    Is the value of the content-type header JSON?
+
+    See <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type>
+    """
+    return value == "application/json" or value.startswith("application/json;")
 
 
 class Conf:
@@ -214,9 +222,7 @@ class Proxy:
     def handle_response(self) -> None:
         logger.debug("Handling response")
 
-        ctype = werkzeug.http.parse_options_header(self._presp.headers["content-type"])
-
-        if ctype[0] == "application/json":
+        if is_json_content_type(self._presp.headers["content-type"]):
             self.handle_json_response()
         else:
             self.handle_non_json_response()
