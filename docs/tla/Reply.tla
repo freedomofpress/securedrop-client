@@ -1,6 +1,7 @@
 ---- MODULE Reply ----
 EXTENDS FiniteSets, Naturals, Sequences, TLC
 CONSTANTS
+    JOB_RETRIES,
     InReplies,
     OutReplies
 
@@ -50,8 +51,8 @@ Reply == InReply \union OutReply
 VARIABLES pool
 
 \* RunnableQueue, sans prioritization.  Current = Head(queue).
-DownloadReplyJob == [id: Id, type: {"DownloadReply"}]
-SendReplyJob == [id: Id, type: {"SendReply"}]
+DownloadReplyJob == [id: Id, type: {"DownloadReply"}, ttl: Nat]
+SendReplyJob == [id: Id, type: {"SendReply"}, ttl: Nat]
 Job == DownloadReplyJob \union SendReplyJob
 VARIABLES queue, done
 
@@ -92,9 +93,21 @@ Enqueue(id) ==
             ])
         /\ queue' = Append(queue, [
                 id |-> id,
-                type |-> job
+                type |-> job,
+                ttl |-> JOB_RETRIES
             ])
         /\ UNCHANGED done
+
+Failed(job) == job.ttl = 0
+
+Retry(job) ==
+    /\ job.ttl > 0
+    /\ queue' = <<[
+        id |-> job.id,
+        type |-> job.type,
+        ttl |-> job.ttl - 1
+        ]>> \o Tail(queue)
+    /\ UNCHANGED<<done, pool>>
 
 QueueNext ==
     /\ done' = Append(done, Head(queue))
@@ -114,7 +127,9 @@ DownloadPending(job) ==
 Downloading(job) ==
     \/ /\ Trans(job.id, "Downloading", "Downloaded")
        /\ UNCHANGED<<done, queue>>
-    \/ /\ Trans(job.id, "DownloadPending", "DownloadFailed")
+    \/ Retry(job)
+    \/ /\ Failed(job)
+       /\ Trans(job.id, "DownloadPending", "DownloadFailed")
        /\ QueueNext
 
 Downloaded(job) ==
@@ -127,9 +142,12 @@ SendPending(job) ==
     /\ UNCHANGED<<done, queue>>
 
 Sending(job) ==
-    /\ \/ Trans(job.id, "Sending", "Ready")
-       \/ Trans(job.id, "Sending", "SendFailed")
-    /\ QueueNext
+    \/ /\ Trans(job.id, "Sending", "Ready")
+       /\ QueueNext
+    \/ Retry(job)
+    \/ /\ Failed(job)
+       /\ Trans(job.id, "Sending", "SendFailed")
+       /\ QueueNext
 
 
 \* ---- ACTIONS ----
