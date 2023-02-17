@@ -3,7 +3,8 @@ EXTENDS FiniteSets, Naturals, Sequences, TLC
 CONSTANTS
     JOB_RETRIES,
     InReplies,
-    OutReplies
+    OutReplies,
+    ToDelete
 
 Replies == InReplies \union OutReplies
 
@@ -20,13 +21,20 @@ Contains(q, id) == \E el \in Range(q): el.id = id
 
 \* Reply model:
 Id == Nat
-SharedStates == {"Ready", "DeletedLocally"}
+Deletion == {
+    "DeletePending",
+    "Deleting",
+    "DeletedLocally"
+}
+SharedStates == {"Ready"} \union Deletion
 TerminalStates == {
     "Ready",
     "DownloadFailed",
     "DecryptionFailed",
-    "SendFailed"
+    "SendFailed",
+    "DeletedLocally"
     }
+NULL == [type: {"NULL"}]
 InReply ==
     [
         type: {"in"},
@@ -47,13 +55,20 @@ OutReply ==
             "SendFailed"
         } \union SharedStates
     ]
-Reply == InReply \union OutReply
-VARIABLES pool
+Reply ==
+    NULL \union
+    InReply \union
+    OutReply
+VARIABLES pool, deleting
 
 \* RunnableQueue, sans prioritization.  Current = Head(queue).
+DeleteJob == [id: Id, type: {"Delete"}, ttl: Nat]  \* FIXME: DeleteConversationJob
 DownloadReplyJob == [id: Id, type: {"DownloadReply"}, ttl: Nat]
 SendReplyJob == [id: Id, type: {"SendReply"}, ttl: Nat]
-Job == DownloadReplyJob \union SendReplyJob
+Job ==
+    DeleteJob \union
+    DownloadReplyJob \union
+    SendReplyJob
 VARIABLES queue, done
 
 
@@ -70,15 +85,19 @@ TypeOK ==
     /\ PoolTypeOK
     /\ QueueTypeOK
 
-PoolAndQueueInSync ==
-    /\ \A job \in Range(queue): job.id \in DOMAIN pool
-    /\ \A job \in Range(done): job.id \in DOMAIN pool
-    /\ \A id \in DOMAIN pool:
-        \/ Contains(queue, id)
-        \/ Contains(done, id)
-
 
 \* ---- QUEUE ACTIONS ----
+
+Delete(id) ==
+    /\ id \in DOMAIN pool
+    /\ id \notin deleting
+    /\ deleting' = deleting \union {id}
+    /\ queue' = Append(queue, [
+            id |-> id,
+            type |-> "Delete",
+            ttl |-> JOB_RETRIES
+       ])
+    /\ UNCHANGED<<done, pool>>
 
 Enqueue(id) ==
     LET
@@ -116,9 +135,30 @@ QueueNext ==
 
 \* --- REPLY STATES ---
 
+Check(id, from) == pool[id].state = from
+
+Set(id, to) == pool' = [pool EXCEPT ![id].state = to]
+
 Trans(id, from, to) ==
-    /\ pool[id].state = from
-    /\ pool' = [pool EXCEPT ![id].state = to]
+    /\ Check(id, from)
+    /\ Set(id, to)
+
+DeleteInterrupt(job) ==
+    /\ pool[job.id].state \notin Deletion
+    /\ Set(job.id, "DeletePending")
+    /\ UNCHANGED<<done, queue>>
+
+DeletePending(job) ==
+    /\ Trans(job.id, "DeletePending", "Deleting")
+    /\ UNCHANGED<<done, queue>>
+
+Deleting(job) ==
+    \/ /\ pool' = [pool EXCEPT ![job.id] = [type |-> "NULL"]]
+       /\ QueueNext
+    \/ Retry(job)
+    \/ /\ Failed(job)
+       /\ Trans(job.id, "Deleting", "DeletedLocally")
+       /\ QueueNext
 
 DownloadPending(job) ==
     /\ Trans(job.id, "DownloadPending", "Downloading")
@@ -153,7 +193,7 @@ Sending(job) ==
 \* ---- ACTIONS ----
 
 vars == <<
-    pool,
+    pool, deleting,
     queue, done
     >>
 
@@ -167,16 +207,22 @@ ProcessJob ==
         \/ /\ job \in SendReplyJob
            /\ \/ SendPending(job)
               \/ Sending(job)
+        \/ /\ job \in DeleteJob
+           /\ \/ DeleteInterrupt(job)
+              \/ DeletePending(job)
+              \/ Deleting(job)
 
 QueueRun ==
     \/ /\ Len(queue) > 0
        /\ ProcessJob
+       /\ UNCHANGED deleting
     \/ UNCHANGED vars  \* nothing changes if there's nothing to do
 
 
 \* ---- MODEL SETUP ----
 
 Init ==
+    /\ deleting = {}
     /\ pool = <<>>
     /\ queue = <<>>
     /\ done = <<>>
@@ -185,7 +231,9 @@ Next ==
     \/ \E id \in Replies:
         /\ id = Size(pool)
         /\ Enqueue(id)
+        /\ UNCHANGED deleting
     \/ QueueRun
+    \/ \E id \in ToDelete: Delete(id)
 
 Spec == Init /\ [][Next]_vars /\ WF_vars(Next)
 
@@ -193,9 +241,10 @@ Spec == Init /\ [][Next]_vars /\ WF_vars(Next)
 \* ---- PROPERTIES  ---
 
 PoolLiveness ==
-    <>[](\A r \in Range(pool): r.state \in TerminalStates)
+    <>[](\A r \in Range(pool):
+        \/ r \in NULL
+        \/ r.state \in TerminalStates
+        )
 
-QueueLiveness ==
-    /\ <>[](Len(queue) = 0)
-    /\ <>[](Len(done) = Size(pool))
+QueueLiveness == <>[](Len(queue) = 0)
 ====
