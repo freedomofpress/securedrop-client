@@ -96,10 +96,6 @@ flake8==6.0.0 \
     --hash=sha256:3833794e27ff64ea4e9cf5d410082a8b97ff1a06c16aa3d2027339cd0f1195c7 \
     --hash=sha256:c61007e76655af75e6785a931f452915b371dc48f56efd765247c8fe68f2b181
     # via -r requirements/dev-requirements.in
-furl==2.0.0 \
-    --hash=sha256:f7e90e9f85ef3f2e64485f04c2a80b50af6133942812fd87a44d45305b079018 \
-    --hash=sha256:fdcaedc1fb19a63d7d875b0105b0a5b496dd0989330d454a42bcb401fa5454ec
-    # via -r requirements/requirements.in
 idna==3.2 \
     --hash=sha256:14475042e284991034cb48e06f6851428fb14c4dc953acd9be9a5e95c7b6dd7a \
     --hash=sha256:467fbad99067910785144ce333826c71fb0e63a425657295239737f7ecd125f3
@@ -234,12 +230,6 @@ mypy-extensions==0.4.3 \
     #   -r requirements/dev-requirements.in
     #   black
     #   mypy
-orderedmultidict==1.0 \
-    --hash=sha256:24e3b730cf84e4a6a68be5cc760864905cf66abc89851e724bd5b4e849eaa96b \
-    --hash=sha256:b89895ba6438038d0bdf88020ceff876cf3eae0d5c66a69b526fab31125db2c5
-    # via
-    #   -r requirements/requirements.in
-    #   furl
 packaging==22.0 \
     --hash=sha256:2198ec20bd4c017b8f9717e00f0c8714076fc2fd93816750ab48e2c41de2cfd3 \
     --hash=sha256:957e2148ba0e1a3b282772e791ef1d8083648bc131c8ab0c1feba110ce1146c3
@@ -314,9 +304,6 @@ six==1.11.0 \
     --hash=sha256:832dc0e10feb1aa2c68dcc57dbb658f1c7e65b9b61af69048abc87a2db00a0eb
     # via
     #   -r requirements/dev-requirements.in
-    #   -r requirements/requirements.in
-    #   furl
-    #   orderedmultidict
     #   vcrpy
 tomli==2.0.1 \
     --hash=sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc \

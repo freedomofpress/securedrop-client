@@ -1,13 +1,14 @@
 import http
 import logging
 import os
+import posixpath
 import subprocess
 import sys
 import tempfile
 import uuid
 from typing import IO, Dict, Optional
+from urllib.parse import ParseResult, urlparse
 
-import furl  # type: ignore
 import requests
 import werkzeug
 import yaml
@@ -57,11 +58,8 @@ class Proxy:
 
     @staticmethod
     def valid_path(path: str) -> bool:
-        u = furl.furl(path)
-
-        if u.host is not None:
-            return False
-        return True
+        """Check does not contain a hostname in the path"""
+        return urlparse(path).hostname is None
 
     def err_on_done(self):
         print(json.dumps(self.res.__dict__))
@@ -154,6 +152,25 @@ class Proxy:
 
         self.res = res
 
+    def normalize_path(self, parsed: ParseResult) -> ParseResult:
+        """
+        This is copied from the furl library
+        SPDX-License-Identifier: Unlicense
+
+        Example: '//a/./b/../c//' -> '/a/c/'
+        """
+        path = parsed.path
+        is_dir = path[-1] == "/"
+        path = posixpath.normpath(path)
+        if is_dir:
+            # Re-add the trailing /
+            path += "/"
+        if path.startswith("//"):
+            # https://bugs.python.org/issue636648
+            path = "/" + path.lstrip("/")
+
+        return parsed._replace(path=path)
+
     def prep_request(self) -> None:
 
         scheme = self.conf.scheme
@@ -167,16 +184,19 @@ class Proxy:
             self.simple_error(400, "Path provided in request did not look valid")
             raise ValueError("Path provided was invalid")
 
+        parsed = urlparse("{}://{}:{}/{}".format(scheme, host, port, path))
+        parsed = self.normalize_path(parsed)
+
+        # urlparse only errors on an invalid port if you examine it
+        # manually.
         try:
-            url = furl.furl("{}://{}:{}/{}".format(scheme, host, port, path))
-        except Exception as e:
-            logger.error(e)
+            _ = parsed.port
+        except ValueError as err:
+            logger.error(err)
             self.simple_error(500, "Proxy error while generating URL to request")
             raise ValueError("Error generating URL from provided values")
 
-        url.path.normalize()
-
-        preq = requests.Request(method, url.url)
+        preq = requests.Request(method, parsed.geturl())
         preq.headers = self.req.headers
         preq.data = self.req.body
         prep = preq.prepare()
