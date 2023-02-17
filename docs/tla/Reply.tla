@@ -4,7 +4,8 @@ CONSTANTS
     JOB_RETRIES,
     InReplies,
     OutReplies,
-    ToDelete
+    ForLocalDeletion,
+    ForRemoteDeletion
 
 Replies == InReplies \union OutReplies
 
@@ -21,19 +22,14 @@ Contains(q, id) == \E el \in Range(q): el.id = id
 
 \* Reply model:
 Id == Nat
-Deletion == {
-    "DeletePending",
-    "Deleting",
-    "DeletedLocally"
-}
+Deletion == {"DeletedLocally"}
 SharedStates == {"Ready"} \union Deletion
 TerminalStates == {
     "Ready",
     "DownloadFailed",
     "DecryptionFailed",
-    "SendFailed",
-    "DeletedLocally"
-    }
+    "SendFailed"
+    } \union Deletion
 NULL == [type: {"NULL"}]
 InReply ==
     [
@@ -60,6 +56,18 @@ Reply ==
     InReply \union
     OutReply
 VARIABLES pool, deleting
+
+CheckAlive(id) ==
+    /\ id \in DOMAIN pool
+    /\ pool[id] \notin NULL
+
+CheckState(id, from) ==
+    /\ CheckAlive(id)
+    /\ pool[id].state = from
+
+Set(id, to) == pool' = [pool EXCEPT ![id].state = to]
+
+Delete(id) == pool' = [pool EXCEPT ![id] = [type |-> "NULL"]]
 
 \* RunnableQueue, sans prioritization.  Current = Head(queue).
 DeleteJob == [id: Id, type: {"Delete"}, ttl: Nat]  \* FIXME: DeleteConversationJob
@@ -88,7 +96,7 @@ TypeOK ==
 
 \* ---- QUEUE ACTIONS ----
 
-Delete(id) ==
+LocalDelete(id) ==
     /\ id \in DOMAIN pool
     /\ id \notin deleting
     /\ deleting' = deleting \union {id}
@@ -98,6 +106,11 @@ Delete(id) ==
             ttl |-> JOB_RETRIES
        ])
     /\ UNCHANGED<<done, pool>>
+
+RemoteDelete(id) ==
+    /\ CheckAlive(id)
+    /\ Delete(id)
+    /\ UNCHANGED<<deleting, done, queue>>
 
 Enqueue(id) ==
     LET
@@ -135,30 +148,22 @@ QueueNext ==
 
 \* --- REPLY STATES ---
 
-Check(id, from) == pool[id].state = from
-
-Set(id, to) == pool' = [pool EXCEPT ![id].state = to]
-
 Trans(id, from, to) ==
-    /\ Check(id, from)
+    /\ CheckState(id, from)
     /\ Set(id, to)
 
 DeleteInterrupt(job) ==
     /\ pool[job.id].state \notin Deletion
-    /\ Set(job.id, "DeletePending")
+    /\ Set(job.id, "DeletedLocally")
     /\ UNCHANGED<<done, queue>>
 
-DeletePending(job) ==
-    /\ Trans(job.id, "DeletePending", "Deleting")
-    /\ UNCHANGED<<done, queue>>
-
-Deleting(job) ==
-    \/ /\ pool' = [pool EXCEPT ![job.id] = [type |-> "NULL"]]
+DeletedLocally(job) ==
+    \/ /\ Delete(job.id)
        /\ QueueNext
     \/ Retry(job)
     \/ /\ Failed(job)
-       /\ Trans(job.id, "Deleting", "DeletedLocally")
        /\ QueueNext
+       /\ UNCHANGED pool
 
 DownloadPending(job) ==
     /\ Trans(job.id, "DownloadPending", "Downloading")
@@ -200,6 +205,7 @@ vars == <<
 ProcessJob ==
     LET job == Head(queue)
     IN
+        IF CheckAlive(job.id) THEN
         \/ /\ job \in DownloadReplyJob
            /\ \/ DownloadPending(job)
               \/ Downloading(job)
@@ -209,8 +215,10 @@ ProcessJob ==
               \/ Sending(job)
         \/ /\ job \in DeleteJob
            /\ \/ DeleteInterrupt(job)
-              \/ DeletePending(job)
-              \/ Deleting(job)
+              \/ DeletedLocally(job)
+        ELSE
+        /\ QueueNext
+        /\ UNCHANGED pool
 
 QueueRun ==
     \/ /\ Len(queue) > 0
@@ -233,7 +241,8 @@ Next ==
         /\ Enqueue(id)
         /\ UNCHANGED deleting
     \/ QueueRun
-    \/ \E id \in ToDelete: Delete(id)
+    \/ \E id \in ForLocalDeletion: LocalDelete(id)
+    \/ \E id \in ForRemoteDeletion: RemoteDelete(id)
 
 Spec == Init /\ [][Next]_vars /\ WF_vars(Next)
 
