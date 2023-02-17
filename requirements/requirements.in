@@ -4,4 +4,3 @@ idna>=2.7
 pyyaml==5.4.1
 requests>=2.26.0
 urllib3>=1.26.5
-werkzeug>=0.16.0
