@@ -26,7 +26,7 @@ safety: ## Runs `safety check` to check python dependencies for vulnerabilities
 		done
 
 .PHONY: lint
-lint: isort-check black-check ## Run isort, black and flake8
+lint: check-isort check-black mypy ## Run isort, black and flake8 and mypy
 	@flake8 securedrop_proxy tests
 
 .PHONY: mypy
@@ -37,16 +37,16 @@ mypy: ## Run mypy static type checker
 black: ## Run black for file formatting
 	@black securedrop_proxy tests
 
-.PHONY: black-check
-black-check: ## Check Python source code formatting with black
+.PHONY: check-black
+check-black: ## Check Python source code formatting with black
 	@black --check --diff securedrop_proxy tests
 
 .PHONY: isort
 isort: ## Run isort for file formatting
 	@isort securedrop_proxy/*.py tests/*.py
 
-.PHONY: isort-check
-isort-check: ## Check isort for file formatting
+.PHONY: check-isort
+check-isort: ## Check isort for file formatting
 	@isort --check-only --diff securedrop_proxy/*.py tests/*.py
 
 .PHONY: sync-requirements

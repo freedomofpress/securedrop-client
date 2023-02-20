@@ -1,22 +1,67 @@
 ---
 common-steps:
-  - &run_tests
+  - &install_testing_dependencies
     run:
-      name: Install requirements and run tests
+      name: Install testing dependencies
       command: |
-        apt-get update && apt-get install -y make python3-venv
+        set -e
+        apt update && apt install -y git gnupg make python3-dev python3-venv
+
+  - &install_build_dependencies
+    run:
+      name: Install build dependencies
+      command: |
+        set -e
+        apt update && apt install -y git make sudo
+
+  - &run_unit_tests
+    run:
+      name: Install requirements and run unit tests
+      command: |
+        set -e
         make venv
         source .venv/bin/activate
-        make check
+        export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
+        make test
+
+  - &run_lint
+    run:
+      name: Run lint, type checking, code formatting
+      command: |
+        set -e
+        make venv
+        source .venv/bin/activate
+        make lint
+
+  - &check_security
+    run:
+      name: Run static analysis on source code to find security issues
+      command: |
+        set -e
+        make venv
+        source .venv/bin/activate
+        make bandit
+
+  - &check_python_dependencies_for_vulnerabilities
+    run:
+      name: Check Python dependencies for known vulnerabilities
+      command: |
+        set -e
+        make venv
+        source .venv/bin/activate
+        make safety
 
   - &install_packaging_dependencies
     run:
-      name: Install Debian packaging dependencies and download wheels
+      name: Install Debian packaging dependencies and download Python wheels
       command: |
-        apt-get update && apt-get install -y git git-lfs make sudo
+        set -x
         mkdir ~/packaging && cd ~/packaging
+        # local builds may not have an ssh url, so || true
+        git config --global --unset url.ssh://git@github.com.insteadof || true
         git clone https://github.com/freedomofpress/securedrop-debian-packaging.git
         cd securedrop-debian-packaging
+        apt-get update && apt-get install -y sudo make
         make install-deps
         PKG_DIR=~/project make requirements
 
@@ -29,48 +74,83 @@ common-steps:
         # previous run step), else return 0.
         git diff --quiet
 
-  - &make_source_tarball
-    run:
-      name: Tag and make source tarball
-      command: |
-        cd ~/project
-        ./update_version.sh 1000.0  # Dummy version number, doesn't matter what we put here
-        python3 setup.py sdist
-
   - &build_debian_package
     run:
       name: Build debian package
       command: |
         cd ~/packaging/securedrop-debian-packaging
         export PKG_VERSION=1000.0
-        export PKG_PATH=~/project
+        export PKG_PATH=~/project/
         make securedrop-proxy
 
-version: 2
+version: 2.1
+
 jobs:
-  build-bullseye:
-    docker:
-      - image: debian:bullseye
+  build:
+    parameters: &parameters
+      image:
+        type: string
+    docker: &docker
+      - image: debian:<< parameters.image >>
     steps:
+      - *install_build_dependencies
       - checkout
       - *install_packaging_dependencies
       - *verify_requirements
-      - *make_source_tarball
       - *build_debian_package
 
-  test-bullseye:
-    docker:
-      - image: debian:bullseye
+  unit-test:
+    parameters: *parameters
+    docker: *docker
     steps:
+      - *install_testing_dependencies
       - checkout
-      - *run_tests
+      - *run_unit_tests
+      - store_test_results:
+          path: test-results
+
+  lint:
+    parameters: *parameters
+    docker: *docker
+    steps:
+      - *install_testing_dependencies
+      - checkout
+      - *run_lint
+
+  check-security:
+    parameters: *parameters
+    docker: *docker
+    steps:
+      - *install_testing_dependencies
+      - checkout
+      - *check_security
+
+  check-python-security:
+    parameters: *parameters
+    docker: *docker
+    steps:
+      - *install_testing_dependencies
+      - checkout
+      - *check_python_dependencies_for_vulnerabilities
+
 
 workflows:
-  version: 2
   securedrop_proxy_ci:
-    jobs:
-      - test-bullseye
-      - build-bullseye
+    jobs: &jobs
+      - unit-test:
+          matrix: &matrix
+            parameters:
+              image:
+                - bullseye
+                - bookworm
+      - lint:
+          matrix: *matrix
+      - check-security:
+          matrix: *matrix
+      - check-python-security:
+          matrix: *matrix
+      - build:
+          matrix: *matrix
 
   nightly:
     triggers:
@@ -80,6 +160,4 @@ workflows:
             branches:
               only:
                 - main
-    jobs:
-      - test-bullseye
-      - build-bullseye
+    jobs: *jobs
