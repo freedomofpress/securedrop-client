@@ -1,10 +1,12 @@
 from logging import StreamHandler
 from subprocess import Popen, PIPE
 import threading
+from typing import Dict
 
 
 class Singleton(type):
-    _ins = {}
+    # TODO: Add a better typehint here
+    _ins: Dict = {}
     _lock = threading.Lock()
 
     def __call__(cls, *args, **kwargs):
