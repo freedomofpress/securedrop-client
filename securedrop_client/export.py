@@ -184,9 +184,13 @@ class Export(QObject):
         with tarfile.open(archive_path, "w:gz") as archive:
             cls._add_virtual_file_to_archive(archive, cls.METADATA_FN, metadata)
 
-            needs_disambiguation = len(filepaths) > 1
+            # When more than one file is added to the archive,
+            # extra care must be taken to prevent name collisions.
+            is_one_of_multiple_files = len(filepaths) > 1
             for filepath in filepaths:
-                cls._add_file_to_archive(archive, filepath, disambiguate=needs_disambiguation)
+                cls._add_file_to_archive(
+                    archive, filepath, prevent_name_collisions=is_one_of_multiple_files
+                )
 
         return archive_path
 
@@ -209,7 +213,7 @@ class Export(QObject):
         archive.addfile(tarinfo, filedata_bytes)
 
     def _add_file_to_archive(
-        cls, archive: tarfile.TarFile, filepath: str, disambiguate: bool = False
+        cls, archive: tarfile.TarFile, filepath: str, prevent_name_collisions: bool = False
     ) -> None:
         """
         Add the file to the archive. When the archive is extracted, the file should exist in a
@@ -221,7 +225,7 @@ class Export(QObject):
         """
         filename = os.path.basename(filepath)
         arcname = os.path.join(cls.DISK_EXPORT_DIR, filename)
-        if disambiguate:
+        if prevent_name_collisions:
             (parent_path, _) = os.path.split(filepath)
             grand_parent_path, parent_name = os.path.split(parent_path)
             grand_parent_name = os.path.split(grand_parent_path)[1]

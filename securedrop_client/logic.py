@@ -922,6 +922,9 @@ class Controller(QObject):
         """
         Check if the file specified by file_uuid exists. If it doesn't update the local db and
         GUI to show the file as not downloaded.
+
+        Logs are created when files don't exist, assuming that is an error. If that situation
+        is expected, such errors can be silenced via the silence_errors option.
         """
         if not os.path.exists(file.location(self.data_dir)):
             if not silence_errors:
