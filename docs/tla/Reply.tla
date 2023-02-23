@@ -61,6 +61,10 @@ CheckAlive(id) ==
     /\ id \in DOMAIN pool
     /\ pool[id] \notin NULL
 
+CheckAvailable(id) ==
+    /\ CheckAlive(id)
+    /\ pool[id].state \notin Deletion
+
 CheckState(id, from) ==
     /\ CheckAlive(id)
     /\ pool[id].state = from
@@ -153,7 +157,6 @@ Trans(id, from, to) ==
     /\ Set(id, to)
 
 DeleteInterrupt(job) ==
-    /\ pool[job.id].state \notin Deletion
     /\ Set(job.id, "DeletedLocally")
     /\ UNCHANGED<<done, queue>>
 
@@ -202,10 +205,24 @@ vars == <<
     queue, done
     >>
 
+FailureRecovery ==
+    \E id \in DOMAIN pool:
+        /\ CheckState(id, "SendFailed")
+        /\ pool' = [pool EXCEPT ![id] = [
+                state |-> "DownloadPending",
+                type |-> "in"
+            ]]
+        /\ queue' = Append(queue, [
+                id |-> id,
+                type |-> "DownloadReply",
+                ttl |-> JOB_RETRIES
+            ])
+        /\ UNCHANGED<<deleting, done>>
+
 ProcessJob ==
     LET job == Head(queue)
     IN
-        IF CheckAlive(job.id) THEN
+        IF CheckAvailable(job.id) THEN
         \/ /\ job \in DownloadReplyJob
            /\ \/ DownloadPending(job)
               \/ Downloading(job)
@@ -240,6 +257,7 @@ Next ==
         /\ id = Size(pool)
         /\ Enqueue(id)
         /\ UNCHANGED deleting
+    \/ FailureRecovery
     \/ QueueRun
     \/ \E id \in ForLocalDeletion: LocalDelete(id)
     \/ \E id \in ForRemoteDeletion: RemoteDelete(id)
@@ -257,3 +275,16 @@ PoolLiveness ==
 
 QueueLiveness == <>[](Len(queue) = 0)
 ====
+
+The following property DeletionWins does *not* hold, for example under the
+sequence SendReplyJob (fails) --> DeleteJob (succeeds) --> DownloadReplyJob
+(succeeds).
+
+ToBeDeleted == ForLocalDeletion \union ForRemoteDeletion
+
+IsDeleted(id) ==
+    \/ ~CheckAlive(id)
+    \/ ~CheckAvailable(id)
+
+DeletionWins ==
+    <>[](\A id \in ToBeDeleted: IsDeleted(id))
