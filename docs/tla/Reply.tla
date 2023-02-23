@@ -22,6 +22,7 @@ Contains(q, id) == \E el \in Range(q): el.id = id
 
 \* Reply model:
 Id == Nat
+DEAD == "DEAD"
 Deletion == {"DeletedLocally"}
 SharedStates == {"Ready"} \union Deletion
 TerminalStates == {
@@ -30,7 +31,7 @@ TerminalStates == {
     "DecryptionFailed",
     "SendFailed"
     } \union Deletion
-NULL == [type: {"NULL"}]
+DeadReply == [type: {DEAD}]
 InReply ==
     [
         type: {"in"},
@@ -52,26 +53,28 @@ OutReply ==
         } \union SharedStates
     ]
 Reply ==
-    NULL \union
+    DeadReply \union
     InReply \union
     OutReply
 VARIABLES pool, deleting
 
-CheckAlive(id) ==
+IsAlive(id) ==
     /\ id \in DOMAIN pool
-    /\ pool[id] \notin NULL
+    /\ pool[id] \notin DeadReply
 
-CheckAvailable(id) ==
-    /\ CheckAlive(id)
+IsAvailable(id) ==
+    /\ IsAlive(id)
     /\ pool[id].state \notin Deletion
 
-CheckState(id, from) ==
-    /\ CheckAlive(id)
+IsInState(id, from) ==
+    /\ IsAlive(id)
     /\ pool[id].state = from
 
 Set(id, to) == pool' = [pool EXCEPT ![id].state = to]
 
-Delete(id) == pool' = [pool EXCEPT ![id] = [type |-> "NULL"]]
+\* NB.  We can't do ![id] = DeadReply because the type DeadReply will be evaluated as the set
+\* {DeadReply}.
+Delete(id) == pool' = [pool EXCEPT ![id] = [type |-> DEAD]]
 
 \* RunnableQueue, sans prioritization.  Current = Head(queue).
 DeleteJob == [id: Id, type: {"Delete"}, ttl: Nat]  \* FIXME: DeleteConversationJob
@@ -112,7 +115,7 @@ LocalDelete(id) ==
     /\ UNCHANGED<<done, pool>>
 
 RemoteDelete(id) ==
-    /\ CheckAlive(id)
+    /\ IsAlive(id)
     /\ Delete(id)
     /\ UNCHANGED<<deleting, done, queue>>
 
@@ -153,7 +156,7 @@ QueueNext ==
 \* --- REPLY STATES ---
 
 Trans(id, from, to) ==
-    /\ CheckState(id, from)
+    /\ IsInState(id, from)
     /\ Set(id, to)
 
 DeleteInterrupt(job) ==
@@ -207,7 +210,7 @@ vars == <<
 
 FailureRecovery ==
     \E id \in DOMAIN pool:
-        /\ CheckState(id, "SendFailed")
+        /\ IsInState(id, "SendFailed")
         /\ pool' = [pool EXCEPT ![id] = [
                 state |-> "DownloadPending",
                 type |-> "in"
@@ -222,7 +225,7 @@ FailureRecovery ==
 ProcessJob ==
     LET job == Head(queue)
     IN
-        IF CheckAvailable(job.id) THEN
+        IF IsAvailable(job.id) THEN
         \/ /\ job \in DownloadReplyJob
            /\ \/ DownloadPending(job)
               \/ Downloading(job)
@@ -269,7 +272,7 @@ Spec == Init /\ [][Next]_vars /\ WF_vars(Next)
 
 PoolLiveness ==
     <>[](\A r \in Range(pool):
-        \/ r \in NULL
+        \/ r \in DeadReply
         \/ r.state \in TerminalStates
         )
 
@@ -283,8 +286,8 @@ sequence SendReplyJob (fails) --> DeleteJob (succeeds) --> DownloadReplyJob
 ToBeDeleted == ForLocalDeletion \union ForRemoteDeletion
 
 IsDeleted(id) ==
-    \/ ~CheckAlive(id)
-    \/ ~CheckAvailable(id)
+    \/ ~IsAlive(id)
+    \/ ~IsAvailable(id)
 
 DeletionWins ==
     <>[](\A id \in ToBeDeleted: IsDeleted(id))
