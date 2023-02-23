@@ -1,0 +1,7 @@
+states/
+
+*.out
+*.pc.tla
+*.png
+*.tla.dot*
+*_liveness.dot
