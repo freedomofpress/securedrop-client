@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import List
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
@@ -84,6 +85,12 @@ class Device(QObject):
         Send the transcript specified by file_location to the Export VM.
         """
         self.export_requested.emit([file_location], passphrase)
+
+    def export_files(self, file_locations: List[str], passphrase: str) -> None:
+        """
+        Send the files specified by file_locations to the Export VM.
+        """
+        self.export_requested.emit(file_locations, passphrase)
 
     def export_file_to_usb_drive(self, file_uuid: str, passphrase: str) -> None:
         """

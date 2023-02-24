@@ -74,7 +74,7 @@
     color: rgba(42, 49, 157, 0.4);
 }
 
-#ExportDialog_passphrase_form QLabel {
+#FileDialog_passphrase_form QLabel {
     font-family: 'Montserrat';
     font-weight: 500;
     font-size: 12px;
@@ -82,7 +82,7 @@
     padding-top: 6px;
 }
 
-#ExportDialog_passphrase_form QLineEdit {
+#FileDialog_passphrase_form QLineEdit {
     border-radius: 0px;
     min-height: 30px;
     max-height: 30px;

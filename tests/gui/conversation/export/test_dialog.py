@@ -1,37 +1,29 @@
 from securedrop_client.export import ExportError, ExportStatus
-from securedrop_client.gui.conversation import ExportFileDialog
+from securedrop_client.gui.conversation import ExportDialog
 from tests.helper import app  # noqa: F401
 
 
 def test_ExportDialog_init(mocker):
     _show_starting_instructions_fn = mocker.patch(
-        "securedrop_client.gui.conversation.ExportFileDialog._show_starting_instructions"
+        "securedrop_client.gui.conversation.ExportDialog._show_starting_instructions"
     )
 
-    export_dialog = ExportFileDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
+    export_dialog = ExportDialog(
+        mocker.MagicMock(), "3 files", ["mock.jpg", "memo.txt", "conversation.txt"]
+    )
 
     _show_starting_instructions_fn.assert_called_once_with()
     assert export_dialog.passphrase_form.isHidden()
 
 
-def test_ExportDialog_init_sanitizes_filename(mocker):
-    secure_qlabel = mocker.patch("securedrop_client.gui.conversation.export.dialog.SecureQLabel")
-    mocker.patch("securedrop_client.gui.widgets.QVBoxLayout.addWidget")
-    filename = '<script>alert("boom!");</script>'
-
-    ExportFileDialog(mocker.MagicMock(), "mock_uuid", filename)
-
-    secure_qlabel.assert_any_call(filename, wordwrap=False, max_length=260)
-
-
 def test_ExportDialog__show_starting_instructions(mocker, export_dialog):
     export_dialog._show_starting_instructions()
 
-    # file123.jpg comes from the export_dialog fixture
+    # "3 files" comes from the export_dialog fixture
     assert (
         export_dialog.header.text() == "Preparing to export:"
         "<br />"
-        '<span style="font-weight:normal">file123.jpg</span>'
+        '<span style="font-weight:normal">3 files</span>'
     )
     assert (
         export_dialog.body.text() == "<h2>Understand the risks before exporting files</h2>"
@@ -161,16 +153,17 @@ def test_ExportDialog__show_generic_error_message(mocker, export_dialog):
     assert not export_dialog.cancel_button.isHidden()
 
 
-def test_ExportDialog__export_file(mocker, export_dialog):
+def test_ExportDialog__export_files(mocker, export_dialog):
     device = mocker.MagicMock()
     device.export_file_to_usb_drive = mocker.MagicMock()
     export_dialog._device = device
     export_dialog.passphrase_field.text = mocker.MagicMock(return_value="mock_passphrase")
 
-    export_dialog._export_file()
+    export_dialog._export_files()
 
-    device.export_file_to_usb_drive.assert_called_once_with(
-        export_dialog.file_uuid, "mock_passphrase"
+    device.export_files.assert_called_once_with(
+        ["/some/path/file123.jpg", "/some/path/memo.txt", "/some/path/conversation.txt"],
+        "mock_passphrase",
     )
 
 

@@ -6,7 +6,7 @@ from gettext import gettext as _
 from PyQt5.QtCore import pyqtSlot
 
 from .device import Device
-from .dialog import ExportDialog as FileDialog
+from .file_dialog import FileDialog
 
 
 class TranscriptDialog(FileDialog):
