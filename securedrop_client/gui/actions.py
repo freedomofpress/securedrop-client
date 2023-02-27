@@ -150,7 +150,7 @@ class PrintConversationAction(QAction):  # pragma: nocover
         """
         Allows printing of a conversation transcript.
         """
-        text = _("Print Conversation Transcript")
+        text = _("Print All Messages")
 
         super().__init__(text, parent)
 
@@ -202,7 +202,7 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
         """
         Allows export of a conversation transcript.
         """
-        text = _("Export Conversation Transcript")
+        text = _("Export All Messages")
 
         super().__init__(text, parent)
 
@@ -254,7 +254,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
         """
         Allows export of a conversation transcript.
         """
-        text = _("Export Conversation")
+        text = _("Export All Files and Messages")
 
         super().__init__(text, parent)
 

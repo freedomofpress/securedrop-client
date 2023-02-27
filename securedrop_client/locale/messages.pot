@@ -85,13 +85,13 @@ msgstr ""
 msgid "Delete All Files and Messages"
 msgstr ""
 
-msgid "Print Conversation Transcript"
+msgid "Print All Messages"
 msgstr ""
 
-msgid "Export Conversation Transcript"
+msgid "Export All Messages"
 msgstr ""
 
-msgid "Export Conversation"
+msgid "Export All Files and Messages"
 msgstr ""
 
 msgid "{file_count} files"
@@ -190,6 +190,18 @@ msgid "Sign in"
 msgstr ""
 
 msgid " to compose or send a reply"
+msgstr ""
+
+msgid "MESSAGES"
+msgstr ""
+
+msgid "FILES"
+msgstr ""
+
+msgid "MESSAGES AND FILES"
+msgstr ""
+
+msgid "SOURCE ACCOUNT"
 msgstr ""
 
 msgid "Username"
