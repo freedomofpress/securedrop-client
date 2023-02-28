@@ -3401,7 +3401,7 @@ class SourceMenu(QMenu):
         conversation_section = self.addSection(_("MESSAGES AND FILES"))
         conversation_section.setFont(separator_font)
 
-        self.addAction(ExportConversationAction(self, self.controller, self.source))
+        self.addAction(ExportConversationAction(self, self.controller, self.source, app_state))
         self.addAction(
             DeleteConversationAction(
                 self.source, self, self.controller, DeleteConversationDialog, app_state

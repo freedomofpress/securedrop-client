@@ -256,6 +256,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
         parent: QMenu,
         controller: Controller,
         source: Source,
+        app_state: Optional[state.State] = None,
     ) -> None:
         """
         Allows export of a conversation transcript and all is files. Will download any file
@@ -267,6 +268,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
 
         self.controller = controller
         self._source = source
+        self._state = app_state
 
         self._export_device = ConversationExportDevice(controller)
 
@@ -281,6 +283,12 @@ class ExportConversationAction(QAction):  # pragma: nocover
         """
         if self.controller.api is None:
             self.controller.on_action_requiring_login()
+        else:
+            if self._state is not None:
+                id = self._state.selected_conversation
+                if id is None:
+                    return
+                self.controller.download_conversation(id)
 
         transcript_location = (
             Path(self.controller.data_dir)
