@@ -5,6 +5,7 @@ from securedrop_export.exceptions import ExportException
 from .cli import CLI
 from .legacy_status import Status as LegacyStatus
 from .status import Status as Status
+from .volume import MountedVolume
 
 logger = logging.getLogger(__name__)
 
@@ -94,16 +95,18 @@ class Service:
                 if self.cli.is_luks_volume(device):
                     volume = self.cli.get_luks_volume(device)
                     logger.info("Check if writable")
-                    if not volume.writable:
+                    if not isinstance(volume, MountedVolume):
                         logger.info("Not writable-will try unlocking")
                         volume = self.cli.unlock_luks_volume(
                             volume, self.submission.encryption_key
                         )
-                        volume = self.cli.mount_volume(volume)
+                        mounted_volume = self.cli.mount_volume(volume)
 
-                    logger.info(f"Export submission to {volume.mountpoint}")
+                    logger.info(f"Export submission to {mounted_volume.mountpoint}")
                     self.cli.write_data_to_device(
-                        self.submission.tmpdir, self.submission.target_dirname, volume
+                        self.submission.tmpdir,
+                        self.submission.target_dirname,
+                        mounted_volume,
                     )
                     # This is SUCCESS_EXPORT, but the 0.7.0 client is not expecting
                     # a return status from a successful export operation.

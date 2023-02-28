@@ -2,11 +2,11 @@ import logging
 import os
 import subprocess
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from securedrop_export.exceptions import ExportException
 
-from .volume import EncryptionScheme, Volume
+from .volume import EncryptionScheme, Volume, MountedVolume
 from .status import Status
 
 logger = logging.getLogger(__name__)
@@ -178,17 +178,19 @@ class CLI:
             logger.error("Failed to dump LUKS header")
             raise ExportException(sdstatus=Status.DEVICE_ERROR) from ex
 
-    def get_luks_volume(self, device: str) -> Volume:
+    def get_luks_volume(self, device: str) -> Union[Volume, MountedVolume]:
         """
         Given a string corresponding to a LUKS-partitioned volume, return a corresponding Volume
         object.
 
-        If LUKS volume is already mounted, existing mountpoint will be preserved.
-        If LUKS volume is unlocked but not mounted, volume will be mounted at _DEFAULT_MOUNTPOINT.
+        If LUKS volume is already mounted, existing mountpoint will be preserved and a
+        MountedVolume object will be returned.
+        If LUKS volume is unlocked but not mounted, volume will be mounted at _DEFAULT_MOUNTPOINT,
+        and a MountedVolume object will be returned.
 
-        If device is still locked, mountpoint will not be set. Once the decrpytion passphrase is
-        available, call unlock_luks_volume(), passing the Volume object and passphrase, to
-        unlock the volume.
+        If device is still locked, mountpoint will not be set, and a Volume object will be retuned.
+        Once the decrpytion passphrase is available, call unlock_luks_volume(), passing the Volume
+        object and passphrase to unlock the volume.
 
         Raise ExportException if errors are encountered.
         """
@@ -205,6 +207,7 @@ class CLI:
 
             # If the device has been unlocked, we can see if it's mounted and
             # use the existing mountpoint, or mount it ourselves.
+            # Either way, return a MountedVolume.
             if os.path.exists(os.path.join("/dev/mapper/", mapped_name)):
                 return self.mount_volume(luks_volume)
 
@@ -273,9 +276,9 @@ class CLI:
             logger.error(ex)
             raise ExportException(sdstatus=Status.ERROR_MOUNT) from ex
 
-    def mount_volume(self, volume: Volume) -> Volume:
+    def mount_volume(self, volume: Volume) -> MountedVolume:
         """
-        Given an unlocked LUKS volume, return a mounted LUKS volume.
+        Given an unlocked LUKS volume, return MountedVolume object.
 
         If volume is already mounted, mountpoint is not changed. Otherwise,
         volume is mounted at _DEFAULT_MOUNTPOINT.
@@ -289,23 +292,19 @@ class CLI:
         mountpoint = self._get_mountpoint(volume)
 
         if mountpoint:
-            logger.info("The device is already mounted")
-            if volume.mountpoint is not mountpoint:
-                logger.warning("Mountpoint was inaccurate, updating")
-
-            volume.mountpoint = mountpoint
-            return volume
+            logger.info("The device is already mounted--use existing mountpoint")
+            return MountedVolume.from_volume(volume, mountpoint)
 
         else:
             logger.info("Mount volume at default mountpoint")
             return self._mount_at_mountpoint(volume, self._DEFAULT_MOUNTPOINT)
 
-    def _mount_at_mountpoint(self, volume: Volume, mountpoint: str) -> Volume:
+    def _mount_at_mountpoint(self, volume: Volume, mountpoint: str) -> MountedVolume:
         """
         Mount a volume at the supplied mountpoint, creating the mountpoint directory and
         adjusting permissions (user:user) if need be. `mountpoint` must be a full path.
 
-        Return Volume object.
+        Return MountedVolume object.
         Raise ExportException if unable to mount volume at target mountpoint.
         """
         if not os.path.exists(mountpoint):
@@ -325,27 +324,26 @@ class CLI:
             subprocess.check_call(["sudo", "mount", mapped_device_path, mountpoint])
             subprocess.check_call(["sudo", "chown", "-R", "user:user", mountpoint])
 
-            volume.mountpoint = mountpoint
-
         except subprocess.CalledProcessError as ex:
             logger.error(ex)
             raise ExportException(sdstatus=Status.ERROR_MOUNT) from ex
 
-        return volume
+        return MountedVolume.from_volume(volume, mountpoint)
 
     def write_data_to_device(
-        self, submission_tmpdir: str, submission_target_dirname: str, device: Volume
+        self,
+        submission_tmpdir: str,
+        submission_target_dirname: str,
+        device: MountedVolume,
     ):
         """
         Move files to drive (overwrites files with same filename) and unmount drive.
         Drive is unmounted and files are cleaned up as part of the `finally` block to ensure
         that cleanup happens even if export fails or only partially succeeds.
         """
+
         try:
-            # TODO: is it possible for device.mountpoint to be None here?
-            target_path = os.path.join(
-                device.mountpoint, submission_target_dirname  # type: ignore[arg-type]
-            )
+            target_path = os.path.join(device.mountpoint, submission_target_dirname)
             subprocess.check_call(["mkdir", target_path])
 
             export_data = os.path.join(submission_tmpdir, "export_data/")
@@ -357,12 +355,13 @@ class CLI:
             )
 
         except (subprocess.CalledProcessError, OSError) as ex:
+            logger.error(ex)
             raise ExportException(sdstatus=Status.ERROR_EXPORT) from ex
 
         finally:
             self.cleanup_drive_and_tmpdir(device, submission_tmpdir)
 
-    def cleanup_drive_and_tmpdir(self, volume: Volume, submission_tmpdir: str):
+    def cleanup_drive_and_tmpdir(self, volume: MountedVolume, submission_tmpdir: str):
         """
         Post-export cleanup method. Unmount and lock drive and remove temporary
         directory. Currently called at end of `write_data_to_device()` to ensure
@@ -382,15 +381,14 @@ class CLI:
             logger.error("Error syncing filesystem")
             raise ExportException(sdstatus=Status.ERROR_EXPORT_CLEANUP) from ex
 
-    def _unmount_volume(self, volume: Volume) -> Volume:
+    def _unmount_volume(self, volume: MountedVolume) -> Volume:
         """
         Helper. Unmount volume
         """
-        if volume.mountpoint and os.path.exists(volume.mountpoint):
+        if os.path.exists(volume.mountpoint):
             logger.debug(f"Unmounting drive from {volume.mountpoint}")
             try:
                 subprocess.check_call(["sudo", "umount", volume.mountpoint])
-                volume.mountpoint = None
 
             except subprocess.CalledProcessError as ex:
                 logger.error("Error unmounting device")
@@ -398,7 +396,11 @@ class CLI:
         else:
             logger.info("Mountpoint does not exist; volume was already unmounted")
 
-        return volume
+        return Volume(
+            device_name=volume.device_name,
+            mapped_name=volume.mapped_name,
+            encryption=volume.encryption,
+        )
 
     def _close_luks_volume(self, unlocked_device: Volume) -> None:
         """

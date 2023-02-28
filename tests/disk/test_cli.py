@@ -4,7 +4,7 @@ from unittest import mock
 import subprocess
 
 from securedrop_export.disk.cli import CLI
-from securedrop_export.disk.volume import EncryptionScheme, Volume
+from securedrop_export.disk.volume import EncryptionScheme, Volume, MountedVolume
 from securedrop_export.exceptions import ExportException
 from securedrop_export.disk.status import Status
 
@@ -301,8 +301,9 @@ class TestCli:
             mapped_name=_PRETEND_LUKS_ID,
             encryption=EncryptionScheme.LUKS,
         )
-        self.cli.mount_volume(vol)
-        assert vol.mountpoint is self.cli._DEFAULT_MOUNTPOINT
+        mv = self.cli.mount_volume(vol)
+        assert isinstance(mv, MountedVolume)
+        assert mv.mountpoint is self.cli._DEFAULT_MOUNTPOINT
 
     @mock.patch("os.path.exists", return_value=True)
     @mock.patch(
@@ -319,6 +320,7 @@ class TestCli:
         )
         result = self.cli.mount_volume(md)
         assert result.mountpoint == "/dev/pretend/luks-id-123456"
+        assert isinstance(result, MountedVolume)
 
     @mock.patch("os.path.exists", return_value=True)
     @mock.patch("subprocess.check_output", return_value=b"\n")
@@ -329,7 +331,9 @@ class TestCli:
             mapped_name=_PRETEND_LUKS_ID,
             encryption=EncryptionScheme.LUKS,
         )
-        assert self.cli.mount_volume(md).mapped_name == _PRETEND_LUKS_ID
+        mv = self.cli.mount_volume(md)
+        assert mv.mapped_name == _PRETEND_LUKS_ID
+        assert isinstance(mv, MountedVolume)
 
     @mock.patch("subprocess.check_output", return_value=b"\n")
     @mock.patch(
@@ -361,8 +365,7 @@ class TestCli:
         )
 
         with pytest.raises(ExportException) as ex:
-            volume = self.cli._mount_at_mountpoint(md, self.cli._DEFAULT_MOUNTPOINT)
-            assert not volume.writable
+            self.cli._mount_at_mountpoint(md, self.cli._DEFAULT_MOUNTPOINT)
 
         assert ex.value.sdstatus is Status.ERROR_MOUNT
 
@@ -379,15 +382,14 @@ class TestCli:
         )
 
         with pytest.raises(ExportException) as ex:
-            volume = self.cli._mount_at_mountpoint(md, self.cli._DEFAULT_MOUNTPOINT)
-            assert not volume.writable
+            self.cli._mount_at_mountpoint(md, self.cli._DEFAULT_MOUNTPOINT)
 
         assert ex.value.sdstatus is Status.ERROR_MOUNT
 
     @mock.patch("os.path.exists", return_value=True)
     @mock.patch("subprocess.check_call", return_value=0)
     def test__unmount_volume(self, mocked_subprocess, mocked_mountpath):
-        mounted = Volume(
+        mounted = MountedVolume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
             mapped_name=_PRETEND_LUKS_ID,
             mountpoint=self.cli._DEFAULT_MOUNTPOINT,
@@ -395,7 +397,7 @@ class TestCli:
         )
 
         result = self.cli._unmount_volume(mounted)
-        assert result.mountpoint is None
+        assert not isinstance(result, MountedVolume)
 
     @mock.patch("os.path.exists", return_value=True)
     @mock.patch(
@@ -403,7 +405,7 @@ class TestCli:
         side_effect=subprocess.CalledProcessError(1, "check_call"),
     )
     def test__unmount_volume_error(self, mocked_subprocess, mocked_mountpath):
-        mounted = Volume(
+        mounted = MountedVolume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
             mapped_name=_PRETEND_LUKS_ID,
             mountpoint=self.cli._DEFAULT_MOUNTPOINT,
@@ -459,7 +461,7 @@ class TestCli:
         patch.return_value = mock.MagicMock()
         patch.start()
 
-        vol = Volume(
+        vol = MountedVolume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
             mapped_name=_PRETEND_LUKS_ID,
             mountpoint=self.cli._DEFAULT_MOUNTPOINT,
@@ -484,7 +486,7 @@ class TestCli:
         patch.return_value = mock.MagicMock()
         patch.start()
 
-        vol = Volume(
+        vol = MountedVolume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
             mapped_name=_PRETEND_LUKS_ID,
             mountpoint=self.cli._DEFAULT_MOUNTPOINT,
@@ -519,9 +521,9 @@ class TestCli:
         vol = Volume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
             mapped_name=_PRETEND_LUKS_ID,
-            mountpoint=self.cli._DEFAULT_MOUNTPOINT,
             encryption=EncryptionScheme.LUKS,
         )
+        mv = MountedVolume.from_volume(vol, mountpoint=self.cli._DEFAULT_MOUNTPOINT)
 
         close_patch = mock.patch.object(self.cli, "_close_luks_volume")
         remove_tmpdir_patch = mock.patch.object(self.cli, "_remove_temp_directory")
@@ -530,9 +532,9 @@ class TestCli:
         rm_tpdir_mock = remove_tmpdir_patch.start()
 
         # That was all setup. Here's our test
-        self.cli.cleanup_drive_and_tmpdir(vol, submission.tmpdir)
+        self.cli.cleanup_drive_and_tmpdir(mv, submission.tmpdir)
 
-        close_mock.assert_called_once_with(vol)
+        close_mock.assert_called_once()
         rm_tpdir_mock.assert_called_once_with(submission.tmpdir)
 
         # Undo patch changes

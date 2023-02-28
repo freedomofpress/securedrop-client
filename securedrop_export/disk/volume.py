@@ -1,6 +1,5 @@
 from enum import Enum
 import os
-from typing import Optional
 
 
 class EncryptionScheme(Enum):
@@ -27,11 +26,9 @@ class Volume:
         device_name: str,
         mapped_name: str,
         encryption: EncryptionScheme,
-        mountpoint: Optional[str] = None,
     ):
         self.device_name = device_name
         self.mapped_name = mapped_name
-        self.mountpoint = mountpoint
         self.encryption = encryption
 
     @property
@@ -46,10 +43,6 @@ class Volume:
             self._encryption = EncryptionScheme.UNKNOWN
 
     @property
-    def writable(self) -> bool:
-        return self.unlocked and self.mountpoint is not None
-
-    @property
     def unlocked(self) -> bool:
         return (
             self.mapped_name is not None
@@ -57,4 +50,31 @@ class Volume:
             and os.path.exists(
                 os.path.join(self.MAPPED_VOLUME_PREFIX, self.mapped_name)
             )
+        )
+
+
+class MountedVolume(Volume):
+    """
+    An unlocked and mounted Volume.
+    """
+
+    def __init__(
+        self,
+        device_name: str,
+        mapped_name: str,
+        encryption: EncryptionScheme,
+        mountpoint: str,
+    ):
+        super().__init__(
+            device_name=device_name, mapped_name=mapped_name, encryption=encryption
+        )
+        self.mountpoint = mountpoint
+
+    @classmethod
+    def from_volume(cls, vol: Volume, mountpoint: str):
+        return cls(
+            device_name=vol.device_name,
+            mapped_name=vol.mapped_name,
+            encryption=vol.encryption,
+            mountpoint=mountpoint,
         )

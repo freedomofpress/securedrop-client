@@ -4,7 +4,7 @@ from securedrop_export.archive import Archive
 
 from .cli import CLI
 from .status import Status
-from .volume import Volume
+from .volume import Volume, MountedVolume
 from securedrop_export.exceptions import ExportException
 
 
@@ -55,7 +55,7 @@ class Service:
                 self.volume = self.cli.get_luks_volume(target)
 
                 # See if it's unlocked and mounted
-                if self.volume.writable:
+                if isinstance(self.volume, MountedVolume):
                     logger.debug("LUKS device is already mounted")
                     return Status.DEVICE_WRITABLE
                 else:
@@ -85,7 +85,7 @@ class Service:
             try:
                 self.volume = self.cli.unlock_luks_volume(volume, passphrase)
 
-                if volume.writable:
+                if isinstance(volume, MountedVolume):
                     return Status.DEVICE_WRITABLE
                 else:
                     return Status.ERROR_UNLOCK_LUKS
@@ -98,7 +98,7 @@ class Service:
             logger.warning("Tried to unlock_device but no current volume detected.")
             return Status.NO_DEVICE_DETECTED
 
-    def write_to_device(self, volume: Volume, data: Archive) -> Status:
+    def write_to_device(self, volume: MountedVolume, data: Archive) -> Status:
         """
         Export data to volume. CLI unmounts and locks volume on completion, even
         if export was unsuccessful.
