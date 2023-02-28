@@ -61,8 +61,8 @@ class Service:
                 # at this stage
                 return LegacyStatus.LEGACY_USB_ENCRYPTED
             else:
-                # FIXME: What should be returned if there is more than 1 connected device?
-                raise NotImplementedError("???")
+                logger.error("Multiple partitions not supported")
+                return LegacyStatus.LEGACY_USB_ENCRYPTION_NOT_SUPPORTED
 
         except ExportException as ex:
             logger.error(

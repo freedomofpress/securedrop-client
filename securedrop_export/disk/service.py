@@ -20,13 +20,6 @@ class Service:
     def __init__(self, cli: CLI):
         self.cli = cli
 
-    def run(self, arg: str) -> Status:
-        """
-        Run export actions.
-        """
-        # FIXME: is this supposed to be empty or abstract?
-        raise NotImplementedError("???")
-
     def scan_all_devices(self) -> Status:
         """
         Check all connected devices and return current device

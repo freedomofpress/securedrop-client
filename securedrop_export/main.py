@@ -12,6 +12,7 @@ from securedrop_export.directory import safe_mkdir
 from securedrop_export.exceptions import ExportException
 
 from securedrop_export.disk import LegacyService as ExportService
+from securedrop_export.disk import LegacyStatus
 from securedrop_export.print import Service as PrintService
 
 from logging.handlers import TimedRotatingFileHandler, SysLogHandler
@@ -124,7 +125,7 @@ def _configure_logging():
         raise ExportException(sdstatus=Status.ERROR_LOGGING) from ex
 
 
-def _start_service(submission: Archive) -> Status:
+def _start_service(submission: Archive) -> LegacyStatus:
     """
     Start print or export service.
     """
@@ -140,14 +141,12 @@ def _start_service(submission: Archive) -> Status:
     elif submission.command is Command.EXPORT:
         return ExportService(submission).export()
     elif submission.command is Command.CHECK_USBS:
-        # FIXME: this returns LegacyStatus, not Status
-        return ExportService(submission).check_connected_devices()  # type: ignore[return-value]
+        return ExportService(submission).check_connected_devices()
     elif submission.command is Command.CHECK_VOLUME:
-        # FIXME: this returns LegacyStatus, not Status
-        return ExportService(submission).check_disk_format()  # type: ignore[return-value]
+        return ExportService(submission).check_disk_format()
 
     # Unreachable
-    raise ValueError(
+    raise ExportException(
         f"unreachable: unknown submission.command value: {submission.command}"
     )
 
