@@ -35,7 +35,7 @@ class DownloadConversation(QAction):
     ) -> None:
         self._controller = controller
         self._state = app_state
-        self._text = _("Download All Files")
+        self._text = _("Download All")
         super().__init__(self._text, parent)
         self.setShortcut(Qt.CTRL + Qt.Key_D)
         self.triggered.connect(self.on_triggered)
@@ -150,7 +150,7 @@ class PrintConversationAction(QAction):  # pragma: nocover
         """
         Allows printing of a conversation transcript.
         """
-        text = _("Print All Messages")
+        text = _("Print Transcript")
 
         super().__init__(text, parent)
 
@@ -205,7 +205,7 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
         """
         Allows export of a conversation transcript.
         """
-        text = _("Export All Messages")
+        text = _("Export Transcript")
 
         super().__init__(text, parent)
 
@@ -262,7 +262,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
         Allows export of a conversation transcript and all is files. Will download any file
         that wasn't already downloaded.
         """
-        text = _("Export All Files and Messages")
+        text = _("Export All")
 
         super().__init__(text, parent)
 

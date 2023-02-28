@@ -76,7 +76,7 @@ msgstr ""
 msgid "File: %(filename)s"
 msgstr ""
 
-msgid "Download All Files"
+msgid "Download All"
 msgstr ""
 
 msgid "Delete Source Account"
@@ -85,13 +85,13 @@ msgstr ""
 msgid "Delete All Files and Messages"
 msgstr ""
 
-msgid "Print All Messages"
+msgid "Print Transcript"
 msgstr ""
 
-msgid "Export All Messages"
+msgid "Export Transcript"
 msgstr ""
 
-msgid "Export All Files and Messages"
+msgid "Export All"
 msgstr ""
 
 msgid "{file_count} files"
@@ -192,13 +192,7 @@ msgstr ""
 msgid " to compose or send a reply"
 msgstr ""
 
-msgid "MESSAGES"
-msgstr ""
-
-msgid "FILES"
-msgstr ""
-
-msgid "MESSAGES AND FILES"
+msgid "FILES AND MESSAGES"
 msgstr ""
 
 msgid "SOURCE ACCOUNT"

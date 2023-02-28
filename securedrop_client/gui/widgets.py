@@ -3387,30 +3387,22 @@ class SourceMenu(QMenu):
         separator_font.setLetterSpacing(QFont.AbsoluteSpacing, 2)
         separator_font.setBold(True)
 
-        messages_section = self.addSection(_("MESSAGES"))
+        messages_section = self.addSection(_("FILES AND MESSAGES"))
         messages_section.setFont(separator_font)
 
+        self.addAction(DownloadConversation(self, self.controller, app_state))
+        self.addAction(ExportConversationAction(self, self.controller, self.source, app_state))
         self.addAction(ExportConversationTranscriptAction(self, self.controller, self.source))
         self.addAction(PrintConversationAction(self, self.controller, self.source))
 
-        files_section = self.addSection(_("FILES"))
-        files_section.setFont(separator_font)
+        source_section = self.addSection(_("SOURCE ACCOUNT"))
+        source_section.setFont(separator_font)
 
-        self.addAction(DownloadConversation(self, self.controller, app_state))
-
-        conversation_section = self.addSection(_("MESSAGES AND FILES"))
-        conversation_section.setFont(separator_font)
-
-        self.addAction(ExportConversationAction(self, self.controller, self.source, app_state))
         self.addAction(
             DeleteConversationAction(
                 self.source, self, self.controller, DeleteConversationDialog, app_state
             )
         )
-
-        source_section = self.addSection(_("SOURCE ACCOUNT"))
-        source_section.setFont(separator_font)
-
         self.addAction(DeleteSourceAction(self.source, self, self.controller, DeleteSourceDialog))
 
 
