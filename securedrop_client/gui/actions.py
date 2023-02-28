@@ -167,6 +167,9 @@ class PrintConversationAction(QAction):  # pragma: nocover
         (Re-)generates the conversation transcript and opens a confirmation dialog to print it,
         in the manner of the existing PrintDialog.
         """
+        if self.controller.api is None:
+            self.controller.on_action_requiring_login()
+
         file_path = (
             Path(self.controller.data_dir)
             .joinpath(self._source.journalist_filename)
@@ -219,6 +222,9 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
         (Re-)generates the conversation transcript and opens a confirmation dialog to export it,
         in the manner of the existing ExportFileDialog.
         """
+        if self.controller.api is None:
+            self.controller.on_action_requiring_login()
+
         file_path = (
             Path(self.controller.data_dir)
             .joinpath(self._source.journalist_filename)
@@ -252,7 +258,8 @@ class ExportConversationAction(QAction):  # pragma: nocover
         source: Source,
     ) -> None:
         """
-        Allows export of a conversation transcript.
+        Allows export of a conversation transcript and all is files. Will download any file
+        that wasn't already downloaded.
         """
         text = _("Export All Files and Messages")
 
@@ -272,6 +279,9 @@ class ExportConversationAction(QAction):  # pragma: nocover
         alongside all the (attached) files that are downloaded, in the manner
         of the existing ExportFileDialog.
         """
+        if self.controller.api is None:
+            self.controller.on_action_requiring_login()
+
         transcript_location = (
             Path(self.controller.data_dir)
             .joinpath(self._source.journalist_filename)
