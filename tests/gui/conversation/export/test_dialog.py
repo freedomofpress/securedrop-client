@@ -9,7 +9,7 @@ def test_ExportDialog_init(mocker):
     )
 
     export_dialog = ExportDialog(
-        mocker.MagicMock(), "3 files", ["mock.jpg", "memo.txt", "conversation.txt"]
+        mocker.MagicMock(), "3 files", ["mock.jpg", "memo.txt", "transcript.txt"]
     )
 
     _show_starting_instructions_fn.assert_called_once_with()
@@ -162,7 +162,7 @@ def test_ExportDialog__export_files(mocker, export_dialog):
     export_dialog._export_files()
 
     device.export_files.assert_called_once_with(
-        ["/some/path/file123.jpg", "/some/path/memo.txt", "/some/path/conversation.txt"],
+        ["/some/path/file123.jpg", "/some/path/memo.txt", "/some/path/transcript.txt"],
         "mock_passphrase",
     )
 

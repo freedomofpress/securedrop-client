@@ -170,7 +170,7 @@ class PrintConversationAction(QAction):  # pragma: nocover
         file_path = (
             Path(self.controller.data_dir)
             .joinpath(self._source.journalist_filename)
-            .joinpath("conversation.txt")
+            .joinpath("transcript.txt")
         )
 
         transcript = ConversationTranscript(self._source)
@@ -187,7 +187,7 @@ class PrintConversationAction(QAction):  # pragma: nocover
         # by the operating system.
         with open(file_path, "r") as f:
             dialog = PrintConversationTranscriptDialog(
-                self._export_device, "conversation.txt", str(file_path)
+                self._export_device, "transcript.txt", str(file_path)
             )
             dialog.exec()
 
@@ -222,7 +222,7 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
         file_path = (
             Path(self.controller.data_dir)
             .joinpath(self._source.journalist_filename)
-            .joinpath("conversation.txt")
+            .joinpath("transcript.txt")
         )
 
         transcript = ConversationTranscript(self._source)
@@ -239,7 +239,7 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
         # by the operating system.
         with open(file_path, "r") as f:
             dialog = ExportConversationTranscriptDialog(
-                self._export_device, "conversation.txt", str(file_path)
+                self._export_device, "transcript.txt", str(file_path)
             )
             dialog.exec()
 
@@ -287,7 +287,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
         transcript_location = (
             Path(self.controller.data_dir)
             .joinpath(self._source.journalist_filename)
-            .joinpath("conversation.txt")
+            .joinpath("transcript.txt")
         )
 
         transcript = ConversationTranscript(self._source)
@@ -317,7 +317,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
 
             file_count = len(files)
             if file_count == 1:
-                summary = "conversation.txt"
+                summary = "transcript.txt"
             else:
                 summary = _("all files and transcript")
 

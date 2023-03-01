@@ -8,7 +8,7 @@ def test_PrintTranscriptDialog_init(mocker):
         "securedrop_client.gui.conversation.PrintTranscriptDialog._show_starting_instructions"
     )
 
-    PrintTranscriptDialog(mocker.MagicMock(), "conversation.txt", "/some/path/conversation.txt")
+    PrintTranscriptDialog(mocker.MagicMock(), "transcript.txt", "/some/path/transcript.txt")
 
     _show_starting_instructions_fn.assert_called_once_with()
 
@@ -19,7 +19,7 @@ def test_PrintTranscriptDialog_init_sanitizes_filename(mocker):
     )
     filename = '<script>alert("boom!");</script>'
 
-    PrintTranscriptDialog(mocker.MagicMock(), filename, "/some/path/conversation.txt")
+    PrintTranscriptDialog(mocker.MagicMock(), filename, "/some/path/transcript.txt")
 
     secure_qlabel.assert_any_call(filename, wordwrap=False, max_length=260)
 
@@ -27,11 +27,11 @@ def test_PrintTranscriptDialog_init_sanitizes_filename(mocker):
 def test_PrintTranscriptDialog__show_starting_instructions(mocker, print_transcript_dialog):
     print_transcript_dialog._show_starting_instructions()
 
-    # conversation.txt comes from the print_transcript_dialog fixture
+    # transcript.txt comes from the print_transcript_dialog fixture
     assert (
         print_transcript_dialog.header.text() == "Preparing to print:"
         "<br />"
-        '<span style="font-weight:normal">conversation.txt</span>'
+        '<span style="font-weight:normal">transcript.txt</span>'
     )
     assert (
         print_transcript_dialog.body.text() == "<h2>Managing printout risks</h2>"

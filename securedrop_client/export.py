@@ -230,7 +230,7 @@ class Export(QObject):
             grand_parent_path, parent_name = os.path.split(parent_path)
             grand_parent_name = os.path.split(grand_parent_path)[1]
             arcname = os.path.join("export_data", grand_parent_name, parent_name, filename)
-            if filename == "conversation.txt":
+            if filename == "transcript.txt":
                 arcname = os.path.join("export_data", parent_name, filename)
 
         archive.add(filepath, arcname=arcname, recursive=False)
