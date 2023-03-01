@@ -1,28 +1,73 @@
+## Introduction
+
+This TLA+ module models (abstractions of) the following components of the
+SecureDrop Client:
+
+- the unified `securedrop_client.db.Reply` object proposed in
+  freedomofpress/securedrop-engineering#8; and
+- `securedrop_client.queue.RunnableQueue`, with respect to:
+    - `securedrop_client.api_jobs.downloads.DownloadReplyJob`;
+    - `securedrop_client.api_jobs.uploads.SendReplyJob`; and
+    - `securedrop_client.api_jobs.sources.DeleteConversationJob` as it pertains
+      to an individual `Reply` object.
+
+Specifically, this module models the scenarios possible under the following
+events, according to the parameters tunable in `Reply.cfg`:
+
+1. The Client attempts to send one or more replies.
+
+2. The Client attempts to download one or more replies, any of which may be a
+   reply that the Client previously failed to send.
+
+3. The Client attempts to delete one or more replies.
+
+4. The Client learns that one or more replies has been deleted on the server.
+
+Importantly, this model does not favor _desirable_ combinations or sequences of
+these events.  Instead, the model defines the rules for what is possible at each
+moment (tick) in time, and the resulting state-graph proves what is therefore
+possible across time.  Desirable and undesirable sequences have equal
+probabilistic weight[1], which lets the model check whether our rules---that is,
+both our intentions and our assumptions, across components---are valid and
+sufficient.
+
+[1]: https://groups.google.com/g/tlaplus/c/ZDe9ogog6mE/m/Ute2kcaCAQAJ
+
 ---- MODULE Reply ----
 EXTENDS FiniteSets, Naturals, Sequences, TLC
 CONSTANTS
     JOB_RETRIES,
-    InReplies,
-    OutReplies,
-    ForLocalDeletion,
-    ForRemoteDeletion
+    InReplies, OutReplies,
+    ForLocalDeletion, ForRemoteDeletion
 
 Replies == InReplies \union OutReplies
 
 
 \* ---- HELPERS ----
 
+\* Pythonically: {f[k] for k in f.keys()}, where f.keys() is equivalent to
+\* DOMAIN f.
 Range(f) == {f[x]: x \in DOMAIN f}
+
+\* Pythonically: len(f.keys()), where f.keys() is as above.
 Size(f) == Cardinality(DOMAIN f)
 
+\* Pythonically: id in q.
 Contains(q, id) == \E el \in Range(q): el.id = id
 
 
 \* ---- TYPES ----
 
-\* Reply model:
+\* The unified Reply model proposed in freedomofpress/securedrop-engineering#8.
+\* We have to build it up from primitive types...
 Id == Nat
 DEAD == "DEAD"
+\* ...through unions of allowed values.  Note that we union Deletion
+\* explicitly into both SharedStates and TerminalStates, because it's
+\* a testable feature of this model, not a necessary constraint, that
+\* the Deletion states are both shared (between incoming and outgoing replies)
+\* and possibly terminal (meaning that their persistence is not considered
+\* a stutter or deadlock).
 Deletion == {"DeletedLocally"}
 SharedStates == {"Ready"} \union Deletion
 TerminalStates == {
@@ -31,7 +76,12 @@ TerminalStates == {
     "DecryptionFailed",
     "SendFailed"
     } \union Deletion
+\* ...and into typed structs, which TLA+ will let us enforce with invariants.
+\* For example, a dead reply has only a type, nothing more, because we need
+\* a way to show a reply is "gone" even though we can't remove it from a
+\* function (mapping) once we've added it (https://stackoverflow.com/q/47115185)...
 DeadReply == [type: {DEAD}]
+\* ...while an incoming reply has both a type and set of possible states...
 InReply ==
     [
         type: {"in"},
@@ -43,6 +93,8 @@ InReply ==
             "DecryptionFailed"
         } \union SharedStates
     ]
+\* ...and an outgoing reply has both a type and a *different* (though
+\* intersecting)  set of possible states.
 OutReply ==
     [
         type: {"out"},
@@ -52,57 +104,101 @@ OutReply ==
             "SendFailed"
         } \union SharedStates
     ]
+\* Finally: dead, incoming, and outgoing replies all count as type Reply.
 Reply ==
     DeadReply \union
     InReply \union
     OutReply
-VARIABLES pool, deleting
+VARIABLES
+    \* The pool is our abstract database: the set of all Reply records we've
+    \* known about in this model run.
+    pool,
+    \* This is the set of IDs for which we've processed deletion operations in
+    \* this model run.  It's an implementation detail of the model only.
+    deleting
 
+\* A reply is alive if it (a) exists and (b) is not dead.
 IsAlive(id) ==
     /\ id \in DOMAIN pool
     /\ pool[id] \notin DeadReply
 
+\* A reply is available if it (a) is alive and (b) has not been locally deleted.
 IsAvailable(id) ==
     /\ IsAlive(id)
     /\ pool[id].state \notin Deletion
 
+\* Check whether the reply is (a) alive and (b) in the from-state.
 IsInState(id, from) ==
     /\ IsAlive(id)
     /\ pool[id].state = from
 
+\* Copy pool to pool', but move the value at `id` to the to-state.
 Set(id, to) == pool' = [pool EXCEPT ![id].state = to]
 
-\* NB.  We can't do ![id] = DeadReply because the type DeadReply will be evaluated as the set
-\* {DeadReply}.
+\* If the reply at `id` is in the from-state, move it to the to-state.
+Trans(id, from, to) ==
+    /\ IsInState(id, from)
+    /\ Set(id, to)
+
+\* Copy pool to pool', but replace the value at `id` with the dead reply.
+\*
+\* NB.  We can't do ![id] = DeadReply because the type DeadReply will be
+\* evaluated as the set {DeadReply}.
 Delete(id) == pool' = [pool EXCEPT ![id] = [type |-> DEAD]]
 
-\* RunnableQueue, sans prioritization.  Current = Head(queue).
-DeleteJob == [id: Id, type: {"Delete"}, ttl: Nat]  \* FIXME: DeleteConversationJob
+
+\* Abstract API jobs.  Jobs have an `id` (like Reply.id), a `type`, and a
+\* decrementing `ttl` for retry behavior.
+
+\* DeleteJob is an abstraction of
+\* securedrop_client.api_jobs.source.DeleteConversationJob to model its effects
+\* on an individual Reply object, since this model does not include the concepts
+\* of sources or conversations.
+DeleteJob == [id: Id, type: {"Delete"}, ttl: Nat]
 DownloadReplyJob == [id: Id, type: {"DownloadReply"}, ttl: Nat]
 SendReplyJob == [id: Id, type: {"SendReply"}, ttl: Nat]
 Job ==
     DeleteJob \union
     DownloadReplyJob \union
     SendReplyJob
-VARIABLES queue, done
+VARIABLES
+    \* The abstract RunnableQueue, sans prioritization
+    \* (https://learntla.com/topics/message-queues.html).  The current job is
+    \* Head(queue).
+    queue,
+    \* Completed jobs from `queue` are appended to `done`, so that we can prove
+    \* what's happened to them in each model run.
+    done
+
+\* A job is expired if its `ttl` (remaining retries) reaches 0.
+IsExpired(job) == job.ttl = 0
 
 
 \* ---- INVARIANTS ----
+\* By marking these operators as "INVARIANT" in "Reply.cfg", TLA+ will check
+\* that they're *always* true: at every moment (tick) in the model.
+\* Think of this as abstract runtime type-checking
+\* (https://learntla.com/core/invariants.html).  We have one invariant for each
+\* of our major data structures.
 
+\* The pool contains only records enumerated in the constant set Replies and
+\* of type Reply.
 PoolTypeOK ==
     /\ DOMAIN pool \subseteq Replies
     /\ pool \in [DOMAIN pool -> Reply]
+
+\* Both queues are sequences of type Job.
 QueueTypeOK ==
     /\ queue \in Seq(Job)
     /\ done \in Seq(Job)
 
-TypeOK ==
-    /\ PoolTypeOK
-    /\ QueueTypeOK
-
 
 \* ---- QUEUE ACTIONS ----
+\* These are actions because they modify the value of some variable x' at the
+\* next tick as well as check its value x at the current tick.
 
+\* The user initiated deletion of a reply.  If it exists, and if we haven't
+\* already started processing its deletion, enqueue a DeleteJob.
 LocalDelete(id) ==
     /\ id \in DOMAIN pool
     /\ id \notin deleting
@@ -114,11 +210,16 @@ LocalDelete(id) ==
        ])
     /\ UNCHANGED<<done, pool>>
 
+\* The server informed us of deletion of a reply.  If it's not dead and gone
+\* already, it is now: remote deletion supervenes on *whatever* else we might
+\* be doing, including local deletion.
 RemoteDelete(id) ==
     /\ IsAlive(id)
     /\ Delete(id)
     /\ UNCHANGED<<deleting, done, queue>>
 
+\* Create the job-record pair for `id`, based crudely on whether it's enumerated
+\* in the set of incoming or outgoing replies.
 Enqueue(id) ==
     LET
         dir == IF id \in InReplies THEN "in" ELSE "out"
@@ -137,10 +238,9 @@ Enqueue(id) ==
             ])
         /\ UNCHANGED done
 
-Failed(job) == job.ttl = 0
-
+\* If `job` isn't expired, we can retry it by resetting Head(queue) to `job`.
 Retry(job) ==
-    /\ job.ttl > 0
+    /\ ~IsExpired(job)
     /\ queue' = <<[
         id |-> job.id,
         type |-> job.type,
@@ -148,16 +248,19 @@ Retry(job) ==
         ]>> \o Tail(queue)
     /\ UNCHANGED<<done, pool>>
 
+\* If Head(queue) succeeded, move it to `done` and advance `queue`.
 QueueNext ==
     /\ done' = Append(done, Head(queue))
     /\ queue' = Tail(queue)
 
 
 \* --- REPLY STATES ---
-
-Trans(id, from, to) ==
-    /\ IsInState(id, from)
-    /\ Set(id, to)
+\* These actions reimplement the per-reply state machine first explicated in
+\* <https://gist.github.com/cfm/2ca373e7ac5e5397550d7db98289dc3d>.  Each
+\* state corresponds to an operator, which evaluates the conditions
+\* that govern its possible transitions and then applies one.  A state
+\* corresponding to an API job has an equal chance of succeeding versus failing
+\* up to JOB_RETRIES times.
 
 DeleteInterrupt(job) ==
     /\ Set(job.id, "DeletedLocally")
@@ -167,7 +270,7 @@ DeletedLocally(job) ==
     \/ /\ Delete(job.id)
        /\ QueueNext
     \/ Retry(job)
-    \/ /\ Failed(job)
+    \/ /\ IsExpired(job)
        /\ QueueNext
        /\ UNCHANGED pool
 
@@ -175,11 +278,12 @@ DownloadPending(job) ==
     /\ Trans(job.id, "DownloadPending", "Downloading")
     /\ UNCHANGED<<done, queue>>
 
+\* DownloadReplyJob in progress:
 Downloading(job) ==
     \/ /\ Trans(job.id, "Downloading", "Downloaded")
        /\ UNCHANGED<<done, queue>>
     \/ Retry(job)
-    \/ /\ Failed(job)
+    \/ /\ IsExpired(job)
        /\ Trans(job.id, "DownloadPending", "DownloadFailed")
        /\ QueueNext
 
@@ -192,22 +296,29 @@ SendPending(job) ==
     /\ Trans(job.id, "SendPending", "Sending")
     /\ UNCHANGED<<done, queue>>
 
+\* SendReplyJob in progress:
 Sending(job) ==
     \/ /\ Trans(job.id, "Sending", "Ready")
        /\ QueueNext
     \/ Retry(job)
-    \/ /\ Failed(job)
+    \/ /\ IsExpired(job)
        /\ Trans(job.id, "Sending", "SendFailed")
        /\ QueueNext
 
 
 \* ---- ACTIONS ----
+\* These actions are the heart of the model: how the per-reply state machine
+\* reimplemented above is processed for multiple replies, jobs, and their
+\* interactions and failure modes.
 
 vars == <<
     pool, deleting,
     queue, done
     >>
 
+\* Invoked for some reply `id` that has (a) apparently failed to send but (b)
+\* been reported by the server for downloading.  See also f0040bc and
+\* <https://github.com/freedomofpress/securedrop-client/issues/1493#issuecomment-1130898792>.
 FailureRecovery ==
     \E id \in DOMAIN pool:
         /\ IsInState(id, "SendFailed")
@@ -222,6 +333,8 @@ FailureRecovery ==
             ])
         /\ UNCHANGED<<deleting, done>>
 
+\* Run the state machine for the reply `id` specified by the current
+\* `job` at Head(queue).
 ProcessJob ==
     LET job == Head(queue)
     IN
@@ -240,6 +353,7 @@ ProcessJob ==
         /\ QueueNext
         /\ UNCHANGED pool
 
+\* Process the queue when non-empty.
 QueueRun ==
     \/ /\ Len(queue) > 0
        /\ ProcessJob
@@ -255,29 +369,48 @@ Init ==
     /\ queue = <<>>
     /\ done = <<>>
 
+\* On every tick, do one of the following, with equal probability to maximize
+\* the state-space:
 Next ==
+    \* (a) enqueue the next unprocessed reply enumerated in the constant set
+    \* Replies
     \/ \E id \in Replies:
         /\ id = Size(pool)
         /\ Enqueue(id)
         /\ UNCHANGED deleting
+    \* (b) (maybe) recover a reply that previously "failed" to send;
     \/ FailureRecovery
+    \* (c) run the queue; or
     \/ QueueRun
+    \* (d) initiate local or remote deletion from the constant sets
+    \* {Local,Reply}Deletion.
     \/ \E id \in ForLocalDeletion: LocalDelete(id)
     \/ \E id \in ForRemoteDeletion: RemoteDelete(id)
 
+\* Putting it all together, we start at Init and execute Next with weak fairness
+\* over the set of `vars`.
 Spec == Init /\ [][Next]_vars /\ WF_vars(Next)
 
 
 \* ---- PROPERTIES  ---
+\* By marking these operators as "PROPERTIES" in "Reply.cfg", TLA+ will check
+\* that they are true over the lifetime of the model run: the Temporal Logic of
+\* our Actions (https://learntla.com/core/temporal-logic.html).  As with our
+\* invariants, we have one property governing each of our major data structures.
 
+\* It is eventually always (thereafter, without regression) true that all
+\* replies are either dead or in a terminal state.
 PoolLiveness ==
     <>[](\A r \in Range(pool):
         \/ r \in DeadReply
         \/ r.state \in TerminalStates
         )
 
+\* It is eventually always (thereafter, without regression) true that all jobs
+\* have been processed.
 QueueLiveness == <>[](Len(queue) = 0)
 ====
+## Appendix
 
 The following property DeletionWins does *not* hold, for example under the
 sequence SendReplyJob (fails) --> DeleteJob (succeeds) --> DownloadReplyJob
