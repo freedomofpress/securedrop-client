@@ -319,7 +319,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
             if file_count == 1:
                 summary = "conversation.txt"
             else:
-                summary = _("{file_count} files").format(file_count=file_count)
+                summary = _("all files and transcript")
 
             dialog = ExportConversationDialog(
                 self._export_device,

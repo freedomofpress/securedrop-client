@@ -94,7 +94,7 @@ msgstr ""
 msgid "Export All"
 msgstr ""
 
-msgid "{file_count} files"
+msgid "all files and transcript"
 msgstr ""
 
 msgid "SecureDrop Client {}"
