@@ -1066,13 +1066,19 @@ class Controller(QObject):
     @login_required
     def download_conversation(self, id: state.ConversationId) -> None:
         files = self._state.conversation_files(id)
+        file_count = len(files)
+        download_count = 0
         for file in files:
             if not file.is_downloaded:
+                download_count += 1
                 job = FileDownloadJob(str(file.id), self.data_dir, self.gpg)
                 job.success_signal.connect(self.on_file_download_success)
                 job.failure_signal.connect(self.on_file_download_failure)
                 self.add_job.emit(job)
                 self.file_download_started.emit(file.id)
+        logger.debug(
+            f"Downloaded {download_count} files, {file_count - download_count} were already downloaded (total: {file_count} files)"  # noqa: E501
+        )
 
     @login_required
     def send_reply(self, source_uuid: str, reply_uuid: str, message: str) -> None:
