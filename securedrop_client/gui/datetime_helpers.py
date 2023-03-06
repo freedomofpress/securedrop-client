@@ -20,7 +20,7 @@ def localise_datetime(date: datetime.datetime) -> datetime.datetime:
     """
     Localise the datetime object to system timezone
     """
-    local_timezone = str(QTimeZone.systemTimeZoneId(), encoding="utf-8")
+    local_timezone = QTimeZone.systemTimeZoneId().data().decode("utf-8")
     return arrow.get(date).to(tz.gettz(local_timezone)).datetime
 
 
