@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import QAction, QDialog, QMenu
 from securedrop_client import state
 from securedrop_client.conversation import Transcript as ConversationTranscript
 from securedrop_client.db import Source
+from securedrop_client.gui.base import ModalDialog
 from securedrop_client.gui.conversation import ExportDevice as ConversationExportDevice
 from securedrop_client.gui.conversation import ExportDialog as ExportConversationDialog
 from securedrop_client.gui.conversation import (
@@ -282,8 +283,28 @@ class ExportConversationAction(QAction):  # pragma: nocover
                 id = self._state.selected_conversation
                 if id is None:
                     return
-                self.controller.download_conversation(id)
+                if self._state.selected_conversation_has_downloadable_files:
+                    dialog = ModalDialog(show_header=False)
+                    message = _(
+                        "<h2>Some files will not be exported</h2>"
+                        "Some files from this source have not yet been downloaded, and will not be exported."  # noqa: E501
+                        "<br /><br />"
+                        'To export the currently-downloaded files, click "Continue."'
+                    )
+                    dialog.body.setText(message)
+                    dialog.rejected.connect(self._on_confirmation_dialog_rejected)
+                    dialog.accepted.connect(self._on_confirmation_dialog_accepted)
+                    dialog.continue_button.setFocus()
+                    dialog.exec()
+                else:
+                    self._prepare_to_export()
 
+    def _prepare_to_export(self) -> None:
+        """
+        (Re-)generates the conversation transcript and opens a confirmation dialog to export it
+        alongside all the (attached) files that are downloaded, in the manner
+        of the existing ExportFileDialog.
+        """
         transcript_location = (
             Path(self.controller.data_dir)
             .joinpath(self._source.journalist_filename)
@@ -327,3 +348,9 @@ class ExportConversationAction(QAction):  # pragma: nocover
                 [str(file_location) for file_location in file_locations],
             )
             dialog.exec()
+
+    def _on_confirmation_dialog_accepted(self) -> None:
+        self._prepare_to_export()
+
+    def _on_confirmation_dialog_rejected(self) -> None:
+        pass
