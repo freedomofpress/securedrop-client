@@ -68,22 +68,22 @@ class DownloadJob(SingleObjectApiJob):
           os.stat.ST_SIZE).
 
         * The following times are reasonable estimations for how long it should take to fetch a
-          file over Tor according to Tor metrics given a recent three month period in 2019:
+          file over Tor according to Tor metrics given a recent three month period in 2022-2023:
 
-          50 KiB  (51200 bytes)   =  4   seconds  (  12800 bytes/second)
-          1  MiB  (1049000 bytes) =  7.5 seconds  (~139867 bytes/second)
+          50 KiB  (51200 bytes)   =  6   seconds  (8,533 bytes/second)
+          1  MiB  (1049000 bytes) =  15 seconds  (~ 69,905 bytes/second)
 
           For more information, see:
-          https://metrics.torproject.org/torperf.html?start=2019-05-02&end=2019-07-31&server=onion
+          https://metrics.torproject.org/torperf.html?start=2022-12-06&end=2023-03-06&server=onion
 
         * As you might expect, this method returns timeouts that are larger than the expected
           download time, which is why the rates below are slower than what you see above with the
-          Tor metrics, e.g. instead of setting TIMEOUT_BYTES_PER_SECOND to 139867 bytes/second, we
-          set it to 100000 bytes/second.
+          Tor metrics, e.g. instead of setting TIMEOUT_BYTES_PER_SECOND to 69905 bytes/second, we
+          set it to 50000 bytes/second.
 
         * Minimum timeout allowed is 25 seconds
         """
-        TIMEOUT_BYTES_PER_SECOND = 100_000.0
+        TIMEOUT_BYTES_PER_SECOND = 50_000.0
         TIMEOUT_ADJUSTMENT_FACTOR = 1.5
         TIMEOUT_BASE = 25
         timeout = math.ceil((size_in_bytes / TIMEOUT_BYTES_PER_SECOND) * TIMEOUT_ADJUSTMENT_FACTOR)
