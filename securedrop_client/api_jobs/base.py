@@ -81,6 +81,9 @@ class ApiJob(QueueJob):
                 if self.remaining_attempts == 0:
                     self.failure_signal.emit(e)
                     raise
+                # Timeout errors may mean the user should try changing Tor circuits
+                elif isinstance(e, RequestTimeoutError):
+                    logger.info("Encountered RequestTimeoutError, retrying API call")
             except Exception as e:
                 self.failure_signal.emit(e)
                 raise

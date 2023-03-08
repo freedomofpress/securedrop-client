@@ -1,3 +1,4 @@
+import math
 import os
 from typing import Tuple
 
@@ -569,7 +570,9 @@ def test_timeout_length_of_file_downloads(mocker, homedir, session, session_make
     half_MB_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=500000)
     MB_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=1000000)
     five_MB_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=5000000)
-    haf_GB_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=500000000)
+    half_GB_file = factory.File(
+        source=source, is_downloaded=None, is_decrypted=None, size=500000000
+    )
     GB_file = factory.File(source=source, is_downloaded=None, is_decrypted=None, size=1000000000)
     session.add(source)
     session.add(zero_byte_file)
@@ -579,7 +582,7 @@ def test_timeout_length_of_file_downloads(mocker, homedir, session, session_make
     session.add(half_MB_file)
     session.add(MB_file)
     session.add(five_MB_file)
-    session.add(haf_GB_file)
+    session.add(half_GB_file)
     session.add(GB_file)
     session.commit()
 
@@ -591,7 +594,7 @@ def test_timeout_length_of_file_downloads(mocker, homedir, session, session_make
     half_MB_file_job = FileDownloadJob(half_MB_file.uuid, os.path.join(homedir, "data"), gpg)
     MB_file_job = FileDownloadJob(MB_file.uuid, os.path.join(homedir, "data"), gpg)
     five_MB_file_job = FileDownloadJob(five_MB_file.uuid, os.path.join(homedir, "data"), gpg)
-    half_GB_file_job = FileDownloadJob(haf_GB_file.uuid, os.path.join(homedir, "data"), gpg)
+    half_GB_file_job = FileDownloadJob(half_GB_file.uuid, os.path.join(homedir, "data"), gpg)
     GB_file_job = FileDownloadJob(GB_file.uuid, os.path.join(homedir, "data"), gpg)
 
     zero_byte_file_timeout = zero_byte_file_job._get_realistic_timeout(zero_byte_file.size)
@@ -602,15 +605,43 @@ def test_timeout_length_of_file_downloads(mocker, homedir, session, session_make
     MB_file_timeout = MB_file_job._get_realistic_timeout(MB_file.size)
     five_MB_file_timeout = five_MB_file_job._get_realistic_timeout(five_MB_file.size)
     GB_file_timeout = GB_file_job._get_realistic_timeout(GB_file.size)
-    half_GB_file_timeout = half_GB_file_job._get_realistic_timeout(haf_GB_file.size)
+    half_GB_file_timeout = half_GB_file_job._get_realistic_timeout(half_GB_file.size)
 
-    # timeout = ceil((file_size/100000)*1.5)+25
-    assert zero_byte_file_timeout == 25
-    assert one_byte_file_timeout == 26
-    assert KB_file_timeout == 26
-    assert fifty_KB_file_timeout == 26
-    assert half_MB_file_timeout == 33
-    assert MB_file_timeout == 40
-    assert five_MB_file_timeout == 100
-    assert half_GB_file_timeout == 7525
-    assert GB_file_timeout == 15025
+    # timeout = ceil((file_size/TIMEOUT_BYTES_PER_SECOND)*1.5)+25, defined in DownloadJob
+    TIMEOUT_BYTES_PER_SECOND = 50_000
+
+    assert (
+        zero_byte_file_timeout
+        == (math.ceil(zero_byte_file.size / TIMEOUT_BYTES_PER_SECOND * 1.5)) + 25
+        == 25
+    )
+    assert (
+        one_byte_file_timeout
+        == (math.ceil(one_byte_file.size / TIMEOUT_BYTES_PER_SECOND * 1.5)) + 25
+        == 26
+    )
+    assert KB_file_timeout == (math.ceil(KB_file.size / TIMEOUT_BYTES_PER_SECOND * 1.5)) + 25 == 26
+    assert (
+        fifty_KB_file_timeout
+        == (math.ceil(fifty_KB_file.size / TIMEOUT_BYTES_PER_SECOND * 1.5)) + 25
+        == 27
+    )
+    assert (
+        half_MB_file_timeout
+        == (math.ceil(half_MB_file.size / TIMEOUT_BYTES_PER_SECOND * 1.5)) + 25
+        == 40
+    )
+    assert MB_file_timeout == (math.ceil(MB_file.size / TIMEOUT_BYTES_PER_SECOND * 1.5)) + 25 == 55
+    assert (
+        five_MB_file_timeout
+        == (math.ceil(five_MB_file.size / TIMEOUT_BYTES_PER_SECOND * 1.5)) + 25
+        == 175
+    )
+    assert (
+        half_GB_file_timeout
+        == (math.ceil(half_GB_file.size / TIMEOUT_BYTES_PER_SECOND * 1.5)) + 25
+        == 15025
+    )  # ~4:12
+    assert (
+        GB_file_timeout == (math.ceil(GB_file.size / TIMEOUT_BYTES_PER_SECOND * 1.5)) + 25 == 30025
+    )
