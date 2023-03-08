@@ -276,28 +276,25 @@ class ExportConversationAction(QAction):  # pragma: nocover
         alongside all the (attached) files that are downloaded, in the manner
         of the existing ExportFileDialog.
         """
-        if self.controller.api is None:
-            self.controller.on_action_requiring_login()
-        else:
-            if self._state is not None:
-                id = self._state.selected_conversation
-                if id is None:
-                    return
-                if self._state.selected_conversation_has_downloadable_files:
-                    dialog = ModalDialog(show_header=False)
-                    message = _(
-                        "<h2>Some files will not be exported</h2>"
-                        "Some files from this source have not yet been downloaded, and will not be exported."  # noqa: E501
-                        "<br /><br />"
-                        'To export the currently-downloaded files, click "Continue."'
-                    )
-                    dialog.body.setText(message)
-                    dialog.rejected.connect(self._on_confirmation_dialog_rejected)
-                    dialog.accepted.connect(self._on_confirmation_dialog_accepted)
-                    dialog.continue_button.setFocus()
-                    dialog.exec()
-                else:
-                    self._prepare_to_export()
+        if self._state is not None:
+            id = self._state.selected_conversation
+            if id is None:
+                return
+            if self._state.selected_conversation_has_downloadable_files:
+                dialog = ModalDialog(show_header=False)
+                message = _(
+                    "<h2>Some files will not be exported</h2>"
+                    "Some files from this source have not yet been downloaded, and will not be exported."  # noqa: E501
+                    "<br /><br />"
+                    'To export the currently-downloaded files, click "Continue."'
+                )
+                dialog.body.setText(message)
+                dialog.rejected.connect(self._on_confirmation_dialog_rejected)
+                dialog.accepted.connect(self._on_confirmation_dialog_accepted)
+                dialog.continue_button.setFocus()
+                dialog.exec()
+            else:
+                self._prepare_to_export()
 
     def _prepare_to_export(self) -> None:
         """
