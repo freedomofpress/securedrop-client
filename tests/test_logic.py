@@ -30,7 +30,7 @@ from securedrop_client.api_jobs.sources import (
 from securedrop_client.api_jobs.updatestar import UpdateStarJobError, UpdateStarJobTimeoutError
 from securedrop_client.api_jobs.uploads import SendReplyJobError, SendReplyJobTimeoutError
 from securedrop_client.app import threads
-from securedrop_client.logic import TIME_BETWEEN_SHOWING_LAST_SYNC_MS, APICallRunner, Controller
+from securedrop_client.logic import APICallRunner, Controller
 from tests import factory
 
 MAX_SIGNAL_WAITING_TIME = 50
@@ -179,7 +179,6 @@ def test_Controller_login(homedir, config, mocker, session_maker):
     co.call_api.assert_called_once_with(
         mock_api().authenticate, co.on_authenticate_success, co.on_authenticate_failure
     )
-    co.show_last_sync_timer.stop.assert_called_once_with()
 
 
 def test_Controller_login_offline_mode(homedir, config, mocker):
@@ -202,7 +201,6 @@ def test_Controller_login_offline_mode(homedir, config, mocker):
     co.gui.assert_has_calls([call.clear_clipboard(), call.show_main_window()])
     co.gui.hide_login.assert_called_once_with()
     co.update_sources.assert_called_once_with()
-    co.show_last_sync_timer.start.assert_called_once_with(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
 
 
 @pytest.mark.parametrize(
@@ -651,8 +649,6 @@ def test_Controller_show_last_sync(homedir, config, mocker, session_maker):
     """
     Ensure we get the last sync time when we show it.
     Using the `config` fixture to ensure the config is written to disk.
-    This should only happen if the user isn't logged in or the API queues are
-    paused (indicating network problems).
     """
     co = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir, None)
     co.get_last_sync = mocker.MagicMock()
@@ -661,7 +657,9 @@ def test_Controller_show_last_sync(homedir, config, mocker, session_maker):
     co.show_last_sync()
 
     assert co.get_last_sync.call_count == 1
-    co.gui.show_last_sync.assert_called_once_with(co.get_last_sync())
+    # gui.show_last_sync also called in Controller.__init__
+    assert co.gui.show_last_sync.call_count == 2
+    co.gui.show_last_sync.assert_called_with(co.get_last_sync())
 
 
 def test_Controller_update_sources(homedir, config, mocker):
@@ -1074,7 +1072,6 @@ def test_Controller_logout_success(homedir, config, mocker, session_maker):
     co.gui.logout.assert_called_once_with()
     msg = "Client logout successful"
     info_logger.assert_called_once_with(msg)
-    co.show_last_sync_timer.start.assert_called_once_with(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
 
 
 def test_Controller_logout_failure(homedir, config, mocker, session_maker):
@@ -2258,7 +2255,6 @@ def test_Controller_resume_queues(homedir, mocker, session_maker):
     co.show_last_sync_timer = mocker.MagicMock()
     co.resume_queues()
     co.api_job_queue.resume_queues.assert_called_once_with()
-    co.show_last_sync_timer.stop.assert_called_once_with()
 
 
 @pytest.mark.parametrize("exception", [RequestTimeoutError, ServerConnectionError])
@@ -2310,7 +2306,6 @@ def test_Controller_on_queue_paused(homedir, config, mocker, session_maker):
     mock_gui.update_error_status.assert_called_once_with(
         "The SecureDrop server cannot be reached. Trying to reconnect...", duration=0
     )
-    co.show_last_sync_timer.start.assert_called_once_with(TIME_BETWEEN_SHOWING_LAST_SYNC_MS)
 
 
 def test_Controller_call_update_star_success(homedir, config, mocker, session_maker, session):

@@ -131,33 +131,43 @@ class TopPane(QWidget):
         # Sync icon
         self.sync_icon = SyncIcon()
 
+        # Sync status bar with fixed width so that the left side of the
+        # activity status bar lines up with left pane
+        self.sync_status_bar = SyncStatusBar()
+        self.sync_status_bar.setFixedWidth(171)
+
         # Activity status bar
         self.activity_status_bar = ActivityStatusBar()
 
         # Error status bar
         self.error_status_bar = ErrorStatusBar()
 
-        # Create space the size of the status bar to keep the error status bar centered
-        spacer = QWidget()
+        # Create spacers the size of the sync icon and sync and activity status bars
+        # so that the error status bar is centered
+        sync_icon_spacer = QWidget()
+        sync_icon_spacer.setFixedWidth(42)
 
-        # Create space ths size of the sync icon to keep the error status bar centered
-        spacer2 = QWidget()
-        spacer2.setFixedWidth(42)
+        sync_status_bar_spacer = QWidget()
+        sync_status_bar_spacer.setFixedWidth(171)
+
+        activity_status_bar_spacer = QWidget()
 
         # Set height of top pane to 42 pixels
         self.setFixedHeight(42)
         self.sync_icon.setFixedHeight(42)
         self.activity_status_bar.setFixedHeight(42)
         self.error_status_bar.setFixedHeight(42)
-        spacer.setFixedHeight(42)
-        spacer2.setFixedHeight(42)
 
         # Add widgets to layout
         layout.addWidget(self.sync_icon, 1)
+        layout.addWidget(self.sync_status_bar, 1)
         layout.addWidget(self.activity_status_bar, 1)
+
         layout.addWidget(self.error_status_bar, 1)
-        layout.addWidget(spacer, 1)
-        layout.addWidget(spacer2, 1)
+
+        layout.addWidget(activity_status_bar_spacer, 1)
+        layout.addWidget(sync_status_bar_spacer, 1)
+        layout.addWidget(sync_icon_spacer, 1)
 
     def setup(self, controller: Controller) -> None:
         self.sync_icon.setup(controller)
@@ -170,6 +180,9 @@ class TopPane(QWidget):
     def set_logged_out(self) -> None:
         self.sync_icon.disable()
         self.setPalette(self.offline_palette)
+
+    def update_sync_status(self, message: str, duration: int) -> None:
+        self.sync_status_bar.update_message(message, duration)
 
     def update_activity_status(self, message: str, duration: int) -> None:
         self.activity_status_bar.update_message(message, duration)
@@ -277,6 +290,28 @@ class SyncIcon(QLabel):
         self.sync_animation.setScaledSize(QSize(24, 20))
         self.setMovie(self.sync_animation)
         self.sync_animation.start()
+
+
+class SyncStatusBar(QStatusBar):
+    """
+    A status bar for displaying messages about metadata sync activity to the user. Messages will be
+    displayed for a given duration or until the message updated with a new message.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        # Set css id
+        self.setObjectName("SyncStatusBar")
+
+        # Remove grip image at bottom right-hand corner
+        self.setSizeGripEnabled(False)
+
+    def update_message(self, message: str, duration: int) -> None:
+        """
+        Display a status message to the user.
+        """
+        self.showMessage(message, duration)
 
 
 class ActivityStatusBar(QStatusBar):

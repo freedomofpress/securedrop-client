@@ -190,7 +190,7 @@ def test_styles_for_top_pane(mocker, main_window):
     assert "Source Sans Pro" == activity_status_bar.font().family()
     assert QFont.Bold == activity_status_bar.font().weight()
     assert 12 == activity_status_bar.font().pixelSize()
-    assert "#ffffff" == activity_status_bar.palette().color(QPalette.Base).name()
+    assert "#000000" == activity_status_bar.palette().color(QPalette.Base).name()
     assert "#d3d8ea" == activity_status_bar.palette().color(QPalette.Foreground).name()
     error_status_bar = main_window.top_pane.error_status_bar
     assert "#ff3366" == error_status_bar.vertical_bar.palette().color(QPalette.Background).name()

@@ -176,9 +176,9 @@ class Window(QMainWindow):
         Display a message indicating the time of last sync with the server.
         """
         if updated_on:
-            self.update_activity_status(_("Last Refresh: {}").format(updated_on.humanize()))
+            self.update_sync_status(_("Last Refresh: {}").format(updated_on.humanize()))
         else:
-            self.update_activity_status(_("Last Refresh: never"))
+            self.update_sync_status(_("Last Refresh: never"))
 
     def set_logged_in_as(self, db_user: User) -> None:
         """
@@ -193,6 +193,13 @@ class Window(QMainWindow):
         """
         self.left_pane.set_logged_out()
         self.top_pane.set_logged_out()
+
+    def update_sync_status(self, message: str, duration: int = 0) -> None:
+        """
+        Display an activity status message to the user. Optionally, supply a duration
+        (in milliseconds), the default will continuously show the message.
+        """
+        self.top_pane.update_sync_status(message, duration)
 
     def update_activity_status(self, message: str, duration: int = 0) -> None:
         """
