@@ -8,6 +8,7 @@ from securedrop_client import db as database
 
 class TestConversationTranscript(unittest.TestCase):
     def setUp(self):
+
         source = database.Source(
             journalist_designation="happy-bird",
         )

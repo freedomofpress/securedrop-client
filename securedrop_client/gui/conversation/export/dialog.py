@@ -9,6 +9,7 @@ from .file_dialog import FileDialog
 
 class Dialog(FileDialog):
     """Adapts the dialog used to export files to allow exporting a conversation.
+
     - Adjust the init arguments to export multiple files.
     - Adds a method to allow all those files to be exported.
     - Overrides the two slots that handles the export action to call said method.

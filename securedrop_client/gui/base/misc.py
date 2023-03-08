@@ -149,6 +149,7 @@ class SvgLabel(QLabel):
 
 
 class SecureQLabel(QLabel):
+
     MAX_PREVIEW_LENGTH = 200
 
     def __init__(

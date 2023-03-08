@@ -824,6 +824,7 @@ class Controller(QObject):
     def _submit_download_job(
         self, object_type: Union[Type[db.Reply], Type[db.Message], Type[db.File]], uuid: str
     ) -> None:
+
         if object_type == db.Reply:
             job = ReplyDownloadJob(
                 uuid, self.data_dir, self.gpg
