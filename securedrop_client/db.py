@@ -21,6 +21,9 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import backref, relationship, scoped_session, sessionmaker
+from statemachine.mixins import MachineMixin
+
+from securedrop_client.statemachines import ReplyStateMachine  # noqa: F401
 
 convention = {
     "ix": "ix_%(column_0_label)s",
@@ -424,12 +427,18 @@ class File(Base):
         return False
 
 
-class Reply(Base):
+class Reply(MachineMixin, Base):
 
     __tablename__ = "replies"
     __table_args__ = (
         UniqueConstraint("source_id", "file_counter", name="uq_messages_source_id_file_counter"),
     )
+
+    state_machine_name = "ReplyStateMachine"
+    state_machine_attr = "sm"
+    state_field_name = "state"
+
+    state = Column(String(100), nullable=False)
 
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
