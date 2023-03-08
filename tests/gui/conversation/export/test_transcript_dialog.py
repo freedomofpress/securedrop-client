@@ -9,7 +9,7 @@ def test_TranscriptDialog_init(mocker):
     )
 
     export_transcript_dialog = ExportTranscriptDialog(
-        mocker.MagicMock(), "conversation.txt", "/some/path/conversation.txt"
+        mocker.MagicMock(), "transcript.txt", "/some/path/transcript.txt"
     )
 
     _show_starting_instructions_fn.assert_called_once_with()
@@ -23,7 +23,7 @@ def test_TranscriptDialog_init_sanitizes_filename(mocker):
     mocker.patch("securedrop_client.gui.widgets.QVBoxLayout.addWidget")
     filename = '<script>alert("boom!");</script>'
 
-    ExportTranscriptDialog(mocker.MagicMock(), filename, "/some/path/conversation.txt")
+    ExportTranscriptDialog(mocker.MagicMock(), filename, "/some/path/transcript.txt")
 
     secure_qlabel.assert_any_call(filename, wordwrap=False, max_length=260)
 
@@ -31,11 +31,11 @@ def test_TranscriptDialog_init_sanitizes_filename(mocker):
 def test_TranscriptDialog__show_starting_instructions(mocker, export_transcript_dialog):
     export_transcript_dialog._show_starting_instructions()
 
-    # conversation.txt comes from the export_transcript_dialog fixture
+    # transcript.txt comes from the export_transcript_dialog fixture
     assert (
         export_transcript_dialog.header.text() == "Preparing to export:"
         "<br />"
-        '<span style="font-weight:normal">conversation.txt</span>'
+        '<span style="font-weight:normal">transcript.txt</span>'
     )
     assert (
         export_transcript_dialog.body.text()
@@ -179,9 +179,7 @@ def test_TranscriptDialog__export_transcript(mocker, export_transcript_dialog):
 
     export_transcript_dialog._export_transcript()
 
-    device.export_transcript.assert_called_once_with(
-        "/some/path/conversation.txt", "mock_passphrase"
-    )
+    device.export_transcript.assert_called_once_with("/some/path/transcript.txt", "mock_passphrase")
 
 
 def test_TranscriptDialog__on_export_preflight_check_succeeded(mocker, export_transcript_dialog):

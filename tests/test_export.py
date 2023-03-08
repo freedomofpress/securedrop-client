@@ -395,7 +395,7 @@ def test__create_archive_with_multiple_export_files(mocker):
     export = Export()
     archive_path = None
     with TemporaryDirectory() as temp_dir, NamedTemporaryFile() as export_file_one, NamedTemporaryFile() as export_file_two:  # noqa
-        transcript_path = os.path.join(temp_dir, "conversation.txt")
+        transcript_path = os.path.join(temp_dir, "transcript.txt")
         with open(transcript_path, "a+") as transcript:
             archive_path = export._create_archive(
                 temp_dir,

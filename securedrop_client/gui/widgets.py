@@ -3383,11 +3383,21 @@ class SourceMenu(QMenu):
         self.controller = controller
 
         self.setStyleSheet(self.SOURCE_MENU_CSS)
+        separator_font = QFont()
+        separator_font.setLetterSpacing(QFont.AbsoluteSpacing, 2)
+        separator_font.setBold(True)
+
+        messages_section = self.addSection(_("FILES AND MESSAGES"))
+        messages_section.setFont(separator_font)
 
         self.addAction(DownloadConversation(self, self.controller, app_state))
+        self.addAction(ExportConversationAction(self, self.controller, self.source, app_state))
         self.addAction(ExportConversationTranscriptAction(self, self.controller, self.source))
-        self.addAction(ExportConversationAction(self, self.controller, self.source))
         self.addAction(PrintConversationAction(self, self.controller, self.source))
+
+        source_section = self.addSection(_("SOURCE ACCOUNT"))
+        source_section.setFont(separator_font)
+
         self.addAction(
             DeleteConversationAction(
                 self.source, self, self.controller, DeleteConversationDialog, app_state

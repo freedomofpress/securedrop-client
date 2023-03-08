@@ -90,7 +90,7 @@ def print_transcript_dialog(mocker, homedir):
     export_device = mocker.MagicMock(spec=conversation.ExportDevice)
 
     dialog = conversation.PrintTranscriptDialog(
-        export_device, "conversation.txt", "some/path/conversation.txt"
+        export_device, "transcript.txt", "some/path/transcript.txt"
     )
 
     yield dialog
@@ -105,7 +105,7 @@ def export_dialog(mocker, homedir):
     dialog = conversation.ExportDialog(
         export_device,
         "3 files",
-        ["/some/path/file123.jpg", "/some/path/memo.txt", "/some/path/conversation.txt"],
+        ["/some/path/file123.jpg", "/some/path/memo.txt", "/some/path/transcript.txt"],
     )
 
     yield dialog
@@ -129,7 +129,7 @@ def export_transcript_dialog(mocker, homedir):
     export_device = mocker.MagicMock(spec=conversation.ExportDevice)
 
     dialog = conversation.ExportTranscriptDialog(
-        export_device, "conversation.txt", "/some/path/conversation.txt"
+        export_device, "transcript.txt", "/some/path/transcript.txt"
     )
 
     yield dialog

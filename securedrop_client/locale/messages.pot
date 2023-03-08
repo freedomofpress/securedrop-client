@@ -76,7 +76,7 @@ msgstr ""
 msgid "File: %(filename)s"
 msgstr ""
 
-msgid "Download All Files"
+msgid "Download All"
 msgstr ""
 
 msgid "Delete Source Account"
@@ -85,16 +85,19 @@ msgstr ""
 msgid "Delete All Files and Messages"
 msgstr ""
 
-msgid "Print Conversation Transcript"
+msgid "Print Transcript"
 msgstr ""
 
-msgid "Export Conversation Transcript"
+msgid "Export Transcript"
 msgstr ""
 
-msgid "Export Conversation"
+msgid "Export All"
 msgstr ""
 
-msgid "{file_count} files"
+msgid "<h2>Some files will not be exported</h2>Some files from this source have not yet been downloaded, and will not be exported.<br /><br />To export the currently-downloaded files, click \"Continue.\""
+msgstr ""
+
+msgid "all files and transcript"
 msgstr ""
 
 msgid "SecureDrop Client {}"
@@ -190,6 +193,12 @@ msgid "Sign in"
 msgstr ""
 
 msgid " to compose or send a reply"
+msgstr ""
+
+msgid "FILES AND MESSAGES"
+msgstr ""
+
+msgid "SOURCE ACCOUNT"
 msgstr ""
 
 msgid "Username"
