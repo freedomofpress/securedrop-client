@@ -422,6 +422,37 @@ Note: One of the functional tests deletes a source, so you may need to add it ba
 7. Add a detached signature (with the release key) for the source tarball.
 8. Submit the source tarball and signature via PR into this [repository](https://github.com/freedomofpress/securedrop-builder) along with the debian changelog addition. This tarball and changelog will be used by the package builder.
 
+## Syncing guardian/main with freedomofpress/main
+1. enable force push to main in [repository settings](https://github.com/guardian/securedrop-client/settings/branches)
+2. fetch guardian fork main branch and make a backup in case something goes wrong
+```
+git fetch origin main
+git checkout -b main-backup origin/main
+git push origin main-backup
+```
+
+3. fetch freedom of the press' main branch 
+```
+git checkout fop/main
+git pull fop main
+```
+
+4. rebase and push
+```
+git checkout origin/main
+git rebase fop/main
+git push -f origin HEAD:main
+```
+
+5. after the above, HEAD is detached. Checkout main and reset to origin
+```
+git checkout main
+git fetch origin
+git reset --hard origin/main
+```
+
+6. disable force push to main in repository settings
+
 ## Debugging
 
 To use `pdb`, add these lines:
