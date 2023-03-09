@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.9.0
+* Add localisation for UI date formats (#1636)
+* Add status bar showing sync refresh information (#1604, #1613)
+* Update options to print and export source transcripts and full conversations (#1582, #1621, #1624, #1627, #1631)
+* Update download timeouts to allow for variations in Tor network performance (#1635)
+* Update and improve localization support (#1539, #1578, #1616, #1620)
+* Improve reply handling (#1486)
+* Update desktop entry to match freedesktop specifications (#1589, #1601)
+* Fix error status returned on successful export (#1594)
+* Fix handling of untrusted strings (#1559, #1560)
+* Add `pt_PT` and `zh_Hans` as supported languages (#1531)
+* (Dev) Refactor export code (#1541, #1524)
+* (Dev) Add support for Debian Bookworm (#1554, #1555, #1565, #1576, #1623)
+* (Dev) Update dependencies, safety checks, and exemptions (#1574, #1573, #1587, #1597, #1599, #1609, #1610, #1625)
+* (Dev) Miscellaneous developer documentation updates (#1557, #1590, #1622)
+* (Dev) Add PyQT5 type checking (#1611, #1619)
+* (Dev) Improve MacOS development environment support (#1592, #1603)
+* (Dev) Fix spelling errors (#1588)
+* (Dev) Update CI and build process to reference new `securedrop-builder` repo (#1586)
+* (Dev) Update project licence information (#1571)
+* (Dev) Improve functional test stability (#1525)
+* (Dev) Add CI job to verify testing and production dependencies are in sync (#1556)
+* (Dev) Improve logical organization of CI jobs (#1546)
+* (Dev) Remove support for Debian Buster (#1544)
+
 ## 0.8.1
 * Add experimental support for a custom timeout that allows the SecureDrop Client to retrieve a larger number of sources (#1552)
 
