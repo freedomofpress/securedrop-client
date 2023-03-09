@@ -21,6 +21,9 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import backref, relationship, scoped_session, sessionmaker
+from transitions import Machine
+
+from securedrop_client.statemachine import StateMachineMixin
 
 convention = {
     "ix": "ix_%(column_0_label)s",
@@ -424,12 +427,27 @@ class File(Base):
         return False
 
 
-class Reply(Base):
+PENDING = "Pending"
+SEND_PENDING = "SendPending"
+
+
+class Reply(Base, StateMachineMixin):
 
     __tablename__ = "replies"
     __table_args__ = (
         UniqueConstraint("source_id", "file_counter", name="uq_messages_source_id_file_counter"),
     )
+
+    machine = Machine(
+        model=None,
+        initial=None,
+        states=[PENDING, SEND_PENDING],
+        transitions=[
+            ["send_pending", PENDING, SEND_PENDING],
+        ],
+    )
+
+    state = Column(String(100), nullable=False)
 
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
@@ -481,6 +499,7 @@ class Reply(Base):
             raise TypeError("Cannot manually set file_counter")
         filename = kwargs["filename"]
         kwargs["file_counter"] = int(filename.split("-")[0])
+        self.state = PENDING
         super().__init__(**kwargs)
 
     def __str__(self) -> str:

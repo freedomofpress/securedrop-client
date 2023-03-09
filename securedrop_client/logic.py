@@ -61,6 +61,7 @@ from securedrop_client.api_jobs.uploads import (
     SendReplyJobTimeoutError,
 )
 from securedrop_client.crypto import GpgHelper
+from securedrop_client.db import Reply
 from securedrop_client.queue import ApiJobQueue
 from securedrop_client.sync import ApiSync
 from securedrop_client.utils import check_dir_permissions
@@ -377,6 +378,14 @@ class Controller(QObject):
         # Reference to the SqlAlchemy `sessionmaker` and `session`
         self.session_maker = session_maker
         self.session = session_maker()
+
+        r1 = Reply(filename="1-foo")
+        r2 = Reply(filename="2-foo")
+        print(r1.machine, r1.state)
+        print(r2.machine, r2.state)
+        r1.send_pending()
+        print(r1.machine, r1.state)
+        print(r2.machine, r2.state)
 
         # Queue that handles running API job
         self.api_job_queue = ApiJobQueue(
