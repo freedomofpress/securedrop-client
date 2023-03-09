@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Union  # noqa: F401
 from uuid import uuid4
 
+import sqlalchemy as sa
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
@@ -21,6 +22,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import backref, relationship, scoped_session, sessionmaker
+
+from securedrop_client.statemachines import StateConfig, StateMixin
 
 convention = {
     "ix": "ix_%(column_0_label)s",
@@ -424,12 +427,27 @@ class File(Base):
         return False
 
 
-class Reply(Base):
+PENDING = "Pending"
+SEND_PENDING = "SendPending"
+
+
+class Reply(Base, StateMixin):
 
     __tablename__ = "replies"
     __table_args__ = (
         UniqueConstraint("source_id", "file_counter", name="uq_messages_source_id_file_counter"),
     )
+
+    state_config = StateConfig(
+        initial=PENDING,
+        states=[PENDING, SEND_PENDING],
+        transitions=[
+            ["send_pending", PENDING, SEND_PENDING],
+        ],
+        status_attribute="state",
+    )
+
+    state = Column(String(100), nullable=False)
 
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
@@ -535,6 +553,9 @@ class Reply(Base):
             if seen_reply.journalist:
                 usernames[seen_reply.journalist.username] = seen_reply.journalist
         return usernames
+
+sa.event.listen(Reply, "init", Reply.init_state_machine)
+sa.event.listen(Reply, "load", Reply.init_state_machine)
 
 
 class DownloadErrorCodes(Enum):
