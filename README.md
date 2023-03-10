@@ -461,6 +461,7 @@ git push origin main-backup
 
 3. fetch freedom of the press' main branch 
 ```
+git fetch fop
 git checkout fop/main
 git pull fop main
 ```
