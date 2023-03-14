@@ -6,7 +6,7 @@ import tempfile
 from securedrop_export.exceptions import ExportException
 from securedrop_export.disk.legacy_status import Status as LegacyStatus
 from securedrop_export.disk.status import Status as Status
-from securedrop_export.disk.volume import Volume, EncryptionScheme
+from securedrop_export.disk.volume import Volume, MountedVolume, EncryptionScheme
 from securedrop_export.archive import Archive, Metadata
 from securedrop_export.disk.legacy_service import Service
 from securedrop_export.disk.cli import CLI
@@ -27,7 +27,7 @@ class TestExportService:
             mapped_name="fake-luks-id-123456",
             encryption=EncryptionScheme.LUKS,
         )
-        cls.mock_luks_volume_mounted = Volume(
+        cls.mock_luks_volume_mounted = MountedVolume(
             device_name=SAMPLE_OUTPUT_USB,
             mapped_name="fake-luks-id-123456",
             mountpoint="/media/usb",

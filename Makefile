@@ -51,7 +51,7 @@ update-dev-only-dependencies:  ## Update dev-requirements.txt to pin to the late
 	done < 'requirements/dev-bookworm-requirements.in'
 
 .PHONY: check
-check: lint semgrep test check-black ## Run linter and tests
+check: lint mypy semgrep test check-black ## Run linter and tests
 
 .PHONY: check-black
 check-black: ## Check Python source code formatting with black
@@ -65,6 +65,10 @@ test:  ## Run tests
 .PHONY: lint
 lint:  ## Run linter
 	flake8 securedrop_export/ tests/
+
+.PHONY: mypy
+mypy:  ## Type check Python files
+	mypy .
 
 .PHONY: black
 black: ## Format Python source code with black

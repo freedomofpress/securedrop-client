@@ -1,6 +1,6 @@
 from unittest import mock
 
-from securedrop_export.disk.volume import Volume, EncryptionScheme
+from securedrop_export.disk.volume import Volume, MountedVolume, EncryptionScheme
 
 
 class TestVolume:
@@ -34,23 +34,17 @@ class TestVolume:
 
         assert not volume.unlocked
 
+
+class TestMountedVolume:
     @mock.patch("os.path.exists", return_value=True)
-    def test_writable_false(self, mock_os_path):
-        vol = Volume(
-            device_name="dev/sda1",
-            mapped_name="pretend-luks-id",
+    def test_is_unlocked_true(self, mock_os_path):
+        volume = Volume(
+            device_name="/dev/sda1",
+            mapped_name="pretend-luks-mapper-id",
             encryption=EncryptionScheme.LUKS,
         )
 
-        assert not vol.writable
+        mounted_volume = MountedVolume.from_volume(volume, mountpoint="/media/usb")
 
-    @mock.patch("os.path.exists", return_value=True)
-    def test_writable(self, mock_os_path):
-        vol = Volume(
-            device_name="dev/sda1",
-            mapped_name="pretend-luks-id",
-            encryption=EncryptionScheme.LUKS,
-            mountpoint="/media/usb",
-        )
-
-        assert vol.writable
+        assert mounted_volume.unlocked
+        assert mounted_volume.mountpoint == "/media/usb"

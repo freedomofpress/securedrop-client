@@ -3,6 +3,7 @@ import shutil
 import platform
 import logging
 import sys
+from typing import Optional
 
 from securedrop_export.archive import Archive, Metadata
 from securedrop_export.command import Command
@@ -11,6 +12,7 @@ from securedrop_export.directory import safe_mkdir
 from securedrop_export.exceptions import ExportException
 
 from securedrop_export.disk import LegacyService as ExportService
+from securedrop_export.disk import LegacyStatus
 from securedrop_export.print import Service as PrintService
 
 from logging.handlers import TimedRotatingFileHandler, SysLogHandler
@@ -123,7 +125,7 @@ def _configure_logging():
         raise ExportException(sdstatus=Status.ERROR_LOGGING) from ex
 
 
-def _start_service(submission: Archive) -> Status:
+def _start_service(submission: Archive) -> LegacyStatus:
     """
     Start print or export service.
     """
@@ -143,8 +145,13 @@ def _start_service(submission: Archive) -> Status:
     elif submission.command is Command.CHECK_VOLUME:
         return ExportService(submission).check_disk_format()
 
+    # Unreachable
+    raise ExportException(
+        f"unreachable: unknown submission.command value: {submission.command}"
+    )
 
-def _exit_gracefully(submission: Archive, status: BaseStatus = None):
+
+def _exit_gracefully(submission: Archive, status: Optional[BaseStatus] = None):
     """
     Write status code, ensure file cleanup, and exit with return code 0.
     Non-zero exit values will cause the system to try alternative
@@ -170,7 +177,7 @@ def _exit_gracefully(submission: Archive, status: BaseStatus = None):
         sys.exit(0)
 
 
-def _write_status(status: BaseStatus):
+def _write_status(status: Optional[BaseStatus]):
     """
     Write string to stderr.
     """
