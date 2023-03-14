@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.9.0
+* Add transcript export and print (#1624)
+* Add batch export (#1627)
+* Add support for `pt_PT` and `zh_Hans` (#1531)
+* Adjusted expectations of Tor network speed to prevent undue download failures (#1635)
+* Localize dates shown in UI (#1636)
+* Improve messaging while messages are being retrieved (#1604, #1613)
+* Address unexpected behavior of sent replies after network connection failures (#1486)
+* Fix desktop entry to follow Freedesktop specification (#1589)
+* Remove untrusted strings from UI and production logs (#1559, #1560)
+* (Dev) Improve support for development on MacOS X (#1590, #1592, #1593, #1603)
+* (Dev) Fix developer-facing typos (#1588)
+* Correct license terms (#1571)
+
 ## 0.8.1
 * Add experimental support for a custom timeout that allows the SecureDrop Client to retrieve a larger number of sources (#1552)
 
