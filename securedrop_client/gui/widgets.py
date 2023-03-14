@@ -26,6 +26,7 @@ from typing import Dict, List, Optional, Union  # noqa: F401
 from uuid import uuid4
 
 import arrow
+from pkg_resources import resource_string
 import sqlalchemy.orm.exc
 from PyQt5.QtCore import QEvent, QObject, QSize, Qt, QTimer, pyqtBoundSignal, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import (
@@ -80,6 +81,7 @@ from securedrop_client.gui.actions import (
     DownloadConversation,
     ExportConversationAction,
     ExportConversationTranscriptAction,
+    ExportConversationsAction,
     PrintConversationAction,
 )
 from securedrop_client.gui.base import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
@@ -783,11 +785,12 @@ class MainView(QWidget):
         self.view_layout.addWidget(widget)
         widget.show()
 
-    def toggle_delete_sources_button_enabled(self, enabled: bool) -> None:
+    def toggle_source_list_actions_enabled(self, enabled: bool) -> None:
         """
-        Enable / disable the delete sources button.
+        Enable / disable the delete sources and export conversations button.
         """
         self.sources_toolbar.delete_sources_action.setEnabled(enabled)
+        self.sources_toolbar.export_conversations_action.setEnabled(enabled)
 
 
 class EmptyConversationView(QWidget):
@@ -881,11 +884,18 @@ class EmptyConversationView(QWidget):
 
 
 class SourceListToolbar(QToolBar):
+    # SOURCE_LIST_CSS = resource_string(__name__, "").decode("utf-8")
+    # SOURCE_LIST_CSS = load_css("source_list_toolbar.css")
+
     def setup(self, controller: Controller):
         self.setFixedHeight(30)
         self.controller = controller
+
         self.delete_sources_action = DeleteSourcesAction(self, self.controller, DeleteSourcesDialog)
         self.addAction(self.delete_sources_action)
+        self.export_conversations_action = ExportConversationsAction(self, self.controller)
+        self.addAction(self.export_conversations_action)
+        # self.setStyleSheet(self.SOURCE_LIST_CSS)
 
     def __init__(self):
         super().__init__()

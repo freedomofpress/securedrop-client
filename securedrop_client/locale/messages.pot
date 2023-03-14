@@ -103,6 +103,9 @@ msgstr ""
 msgid "all files and transcript"
 msgstr ""
 
+msgid "Export Conversations"
+msgstr ""
+
 msgid "SecureDrop Client {}"
 msgstr ""
 
