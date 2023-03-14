@@ -474,8 +474,9 @@ class ExportConversationsAction(QAction):  # pragma: nocover
                 stack.enter_context(open(file_location, "r")) for file_location in file_locations
             ]
 
-            file_count = len(files)
-            if file_count == 1:
+            if len(checked_sources) > 1:
+                summary = _("transcripts and files for {} sources").format(len(checked_sources))
+            elif len(files) == 1:
                 summary = "transcript.txt"
             else:
                 summary = _("all files and transcript")
