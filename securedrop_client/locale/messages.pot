@@ -14,7 +14,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.11.0\n"
+"Generated-By: Babel 2.12.1\n"
 
 msgid "{application_name} is already running"
 msgstr ""
@@ -101,6 +101,9 @@ msgid "<h2>Some files will not be exported</h2>Some files from this source have 
 msgstr ""
 
 msgid "all files and transcript"
+msgstr ""
+
+msgid "Export Conversations"
 msgstr ""
 
 msgid "SecureDrop Client {}"
