@@ -171,7 +171,7 @@ class Window(QMainWindow):
         """
         self.main_view.show_sources(sources)
 
-    def show_last_sync(self, updated_on):  # type: ignore [no-untyped-def]
+    def show_last_sync(self, updated_on):  # type: ignore[no-untyped-def]
         """
         Display a message indicating the time of last sync with the server.
         """

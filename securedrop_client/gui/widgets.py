@@ -224,7 +224,7 @@ class LeftPane(QWidget):
         layout.addWidget(self.user_profile)
         layout.addWidget(self.branding_barre)
 
-    def setup(self, window, controller: Controller) -> None:  # type: ignore [no-untyped-def]
+    def setup(self, window, controller: Controller) -> None:  # type: ignore[no-untyped-def]
         self.user_profile.setup(window, controller)
 
     def set_logged_in_as(self, db_user: User) -> None:
@@ -474,7 +474,7 @@ class UserProfile(QLabel):
         layout.addWidget(self.user_icon, alignment=Qt.AlignTop)
         layout.addWidget(self.user_button, alignment=Qt.AlignTop)
 
-    def setup(self, window, controller: Controller) -> None:  # type: ignore [no-untyped-def]
+    def setup(self, window, controller: Controller) -> None:  # type: ignore[no-untyped-def]
         self.controller = controller
         self.controller.update_authenticated_user.connect(self._on_update_authenticated_user)
         self.user_button.setup(controller)
@@ -586,7 +586,7 @@ class LoginButton(QPushButton):
         # Set click handler
         self.clicked.connect(self._on_clicked)
 
-    def setup(self, window) -> None:  # type: ignore [no-untyped-def]
+    def setup(self, window) -> None:  # type: ignore[no-untyped-def]
         """
         Store a reference to the GUI window object.
         """
@@ -707,7 +707,7 @@ class MainView(QWidget):
             # Get or create the SourceConversationWrapper
             if source.uuid in self.source_conversations:
                 conversation_wrapper = self.source_conversations[source.uuid]
-                conversation_wrapper.conversation_view.update_conversation(  # type: ignore [has-type]  # noqa: E501
+                conversation_wrapper.conversation_view.update_conversation(  # type: ignore[has-type]  # noqa: E501
                     source.collection
                 )
             else:
@@ -735,7 +735,7 @@ class MainView(QWidget):
             self.controller.session.refresh(source)
             self.controller.mark_seen(source)
             conversation_wrapper = self.source_conversations[source.uuid]
-            conversation_wrapper.conversation_view.update_conversation(  # type: ignore [has-type]
+            conversation_wrapper.conversation_view.update_conversation(  # type: ignore[has-type]
                 source.collection
             )
         except sqlalchemy.exc.InvalidRequestError as e:
@@ -1793,7 +1793,7 @@ class SpeechBubble(QWidget):
     TOP_MARGIN = 28
     BOTTOM_MARGIN = 0
 
-    def __init__(  # type: ignore [no-untyped-def]
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         message_uuid: str,
         text: str,
@@ -1993,7 +1993,7 @@ class MessageWidget(SpeechBubble):
     Represents an incoming message from the source.
     """
 
-    def __init__(  # type: ignore [no-untyped-def]
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         message_uuid: str,
         message: str,
@@ -2032,7 +2032,7 @@ class ReplyWidget(SpeechBubble):
 
     ERROR_BOTTOM_MARGIN = 20
 
-    def __init__(  # type: ignore [no-untyped-def]
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         controller: Controller,
         message_uuid: str,
@@ -3484,7 +3484,7 @@ class TitleLabel(QLabel):
 class LastUpdatedLabel(QLabel):
     """Time the conversation was last updated."""
 
-    def __init__(self, last_updated):  # type: ignore [no-untyped-def]
+    def __init__(self, last_updated):  # type: ignore[no-untyped-def]
         super().__init__(last_updated)
 
         # Set CSS id
