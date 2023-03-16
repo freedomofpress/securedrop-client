@@ -1,5 +1,6 @@
 import locale
 import unittest
+from contextlib import contextmanager
 from tempfile import TemporaryDirectory
 from unittest import mock
 from unittest.mock import MagicMock, Mock, patch
@@ -248,31 +249,37 @@ class TestDownloadConversation(unittest.TestCase):
         assert not action.isEnabled()
 
 
+@contextmanager
+def managed_locale():
+    """Ensure that the curent locale is restored when the context expires."""
+    loc, enc = locale.getlocale()
+    yield loc, enc
+    locale.setlocale(locale.LC_ALL, (loc, enc))
+
+
 class TestPrintConversationAction(unittest.TestCase):
     @patch("securedrop_client.gui.actions.PrintConversationTranscriptDialog")
     def test_trigger(self, _):
-        original_locale, original_encoding = locale.getdefaultlocale()
-        locale.setlocale(locale.LC_ALL, ("en_US", "latin-1"))
+        with managed_locale():
+            locale.setlocale(locale.LC_ALL, ("en_US", "latin-1"))
 
-        with TemporaryDirectory() as tmp_dir:
-            menu = QMenu()
-            controller = MagicMock(Controller, api=True, data_dir=tmp_dir)
-            source = MagicMock(Source, journalist_filename="mysterious-writer")
-            action = PrintConversationAction(menu, controller, source)
-            with patch("securedrop_client.gui.actions.ConversationTranscript") as transcript:
-                transcript.return_value.__str__ = Mock(
-                    return_value="☠ A string with unicode characters."
-                )
+            with TemporaryDirectory() as tmp_dir:
+                menu = QMenu()
+                controller = MagicMock(Controller, api=True, data_dir=tmp_dir)
+                source = MagicMock(Source, journalist_filename="mysterious-writer")
+                action = PrintConversationAction(menu, controller, source)
+                with patch("securedrop_client.gui.actions.ConversationTranscript") as transcript:
+                    transcript.return_value.__str__ = Mock(
+                        return_value="☠ A string with unicode characters."
+                    )
 
-                action._export_device.run_printer_preflight_checks = (
-                    lambda: action._export_device.print_preflight_check_succeeded.emit()
-                )
-                action._export_device.print_transcript = (
-                    lambda transcript: action._export_device.print_succeeded.emit()
-                )
+                    action._export_device.run_printer_preflight_checks = (
+                        lambda: action._export_device.print_preflight_check_succeeded.emit()
+                    )
+                    action._export_device.print_transcript = (
+                        lambda transcript: action._export_device.print_succeeded.emit()
+                    )
 
-                action.trigger()
+                    action.trigger()
 
-                assert True  # the transcript is written without errors
-
-        locale.setlocale(locale.LC_ALL, (original_locale, original_encoding))
+                    assert True  # the transcript is written without errors
