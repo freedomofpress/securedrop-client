@@ -177,7 +177,7 @@ class PrintConversationAction(QAction):  # pragma: nocover
         transcript = ConversationTranscript(self._source)
         safe_mkdir(file_path.parent)
 
-        with open(file_path, "w") as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             f.write(str(transcript))
             # Let this context lapse to ensure the file contents
             # are written to disk.
