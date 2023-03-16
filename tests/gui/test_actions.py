@@ -14,6 +14,7 @@ from securedrop_client.gui.actions import (
     DeleteConversationAction,
     DeleteSourceAction,
     DownloadConversation,
+    ExportConversationTranscriptAction,
     PrintConversationAction,
 )
 from securedrop_client.logic import Controller
@@ -268,6 +269,34 @@ class TestPrintConversationAction(unittest.TestCase):
                 controller = MagicMock(Controller, api=True, data_dir=tmp_dir)
                 source = MagicMock(Source, journalist_filename="mysterious-writer")
                 action = PrintConversationAction(menu, controller, source)
+                with patch("securedrop_client.gui.actions.ConversationTranscript") as transcript:
+                    transcript.return_value.__str__ = Mock(
+                        return_value="☠ A string with unicode characters."
+                    )
+
+                    action._export_device.run_printer_preflight_checks = (
+                        lambda: action._export_device.print_preflight_check_succeeded.emit()
+                    )
+                    action._export_device.print_transcript = (
+                        lambda transcript: action._export_device.print_succeeded.emit()
+                    )
+
+                    action.trigger()
+
+                    assert True  # the transcript is written without errors
+
+
+class TestExportConversationTranscriptAction(unittest.TestCase):
+    @patch("securedrop_client.gui.actions.ExportConversationTranscriptDialog")
+    def test_trigger(self, _):
+        with managed_locale():
+            locale.setlocale(locale.LC_ALL, ("en_US", "latin-1"))
+
+            with TemporaryDirectory() as tmp_dir:
+                menu = QMenu()
+                controller = MagicMock(Controller, api=True, data_dir=tmp_dir)
+                source = MagicMock(Source, journalist_filename="mysterious-writer")
+                action = ExportConversationTranscriptAction(menu, controller, source)
                 with patch("securedrop_client.gui.actions.ConversationTranscript") as transcript:
                     transcript.return_value.__str__ = Mock(
                         return_value="☠ A string with unicode characters."
