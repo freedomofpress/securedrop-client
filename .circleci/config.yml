@@ -7,6 +7,16 @@ common-steps:
         set -e
         apt update && apt install -y git gnupg libqt5x11extras5 make python3-tk python3-dev gnupg python3-venv sqlite3 xvfb
 
+  - &configure_locales
+    run:
+      name: Configure locales
+      command: |
+        set -e
+        apt update && apt install -y locales
+        echo "en_US ISO-8859-1" >> /etc/locale.gen
+        echo "en_US UTF-8" >> /etc/locale.gen
+        locale-gen
+
   - &install_build_dependencies
     run:
       name: Install build dependencies
@@ -152,6 +162,7 @@ jobs:
     docker: *docker
     steps:
       - *install_testing_dependencies
+      - *configure_locales
       - checkout
       - *run_unit_tests
       - store_test_results:
