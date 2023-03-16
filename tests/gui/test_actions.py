@@ -252,7 +252,7 @@ class TestPrintConversationAction(unittest.TestCase):
     @patch("securedrop_client.gui.actions.PrintConversationTranscriptDialog")
     def test_trigger(self, _):
         original_locale, original_encoding = locale.getdefaultlocale()
-        locale.setlocale(locale.LC_ALL, ("en_GB", "latin-1"))
+        locale.setlocale(locale.LC_ALL, ("en_US", "latin-1"))
 
         with TemporaryDirectory() as tmp_dir:
             menu = QMenu()
