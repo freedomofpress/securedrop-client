@@ -1,6 +1,8 @@
+import locale
 import unittest
+from tempfile import TemporaryDirectory
 from unittest import mock
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock, patch
 
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QDialog, QMenu
@@ -11,6 +13,7 @@ from securedrop_client.gui.actions import (
     DeleteConversationAction,
     DeleteSourceAction,
     DownloadConversation,
+    PrintConversationAction,
 )
 from securedrop_client.logic import Controller
 from tests import factory
@@ -243,3 +246,33 @@ class TestDownloadConversation(unittest.TestCase):
         action.setEnabled(False)
         action._on_selected_conversation_files_changed()
         assert not action.isEnabled()
+
+
+class TestPrintConversationAction(unittest.TestCase):
+    @patch("securedrop_client.gui.actions.PrintConversationTranscriptDialog")
+    def test_trigger(self, _):
+        original_locale, original_encoding = locale.getdefaultlocale()
+        locale.setlocale(locale.LC_ALL, ("en_US", "latin-1"))
+
+        with TemporaryDirectory() as tmp_dir:
+            menu = QMenu()
+            controller = MagicMock(Controller, api=True, data_dir=tmp_dir)
+            source = MagicMock(Source, journalist_filename="mysterious-writer")
+            action = PrintConversationAction(menu, controller, source)
+            with patch("securedrop_client.gui.actions.ConversationTranscript") as transcript:
+                transcript.return_value.__str__ = Mock(
+                    return_value="☠ A string with unicode characters."
+                )
+
+                action._export_device.run_printer_preflight_checks = (
+                    lambda: action._export_device.print_preflight_check_succeeded.emit()
+                )
+                action._export_device.print_transcript = (
+                    lambda transcript: action._export_device.print_succeeded.emit()
+                )
+
+                action.trigger()
+
+                assert True  # the transcript is written without errors
+
+        locale.setlocale(locale.LC_ALL, (original_locale, original_encoding))
