@@ -1128,7 +1128,7 @@ class ConversationDeletionIndicator(QWidget):
         self.setPalette(palette)
         self.setAutoFillBackground(True)
 
-        deletion_message = QLabel(_("Deleting files and messages..."))
+        deletion_message = QLabel(_("Deleting files and messages…"))
         deletion_message.setWordWrap(False)
 
         self.animation = load_movie("loading-cubes.gif")
@@ -1174,7 +1174,7 @@ class SourceDeletionIndicator(QWidget):
         self.setPalette(palette)
         self.setAutoFillBackground(True)
 
-        self.deletion_message = QLabel(_("Deleting source account..."))
+        self.deletion_message = QLabel(_("Deleting source account…"))
         self.deletion_message.setWordWrap(False)
 
         self.animation = load_movie("loading-cubes.gif")
@@ -3390,7 +3390,7 @@ class ReplyTextEditPlaceholder(QWidget):
 
     def update_label_width(self, width: int) -> None:
         if width > self.RESERVED_WIDTH:
-            # Ensure source designations are elided with "..." if needed per
+            # Ensure source designations are elided with "…" if needed per
             # current container size
             self.source_name_label.max_length = width - self.RESERVED_WIDTH
             self.source_name_label.setText(self.source_name)
