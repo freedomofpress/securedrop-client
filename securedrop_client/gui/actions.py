@@ -25,7 +25,6 @@ from securedrop_client.gui.conversation import (
     PrintTranscriptDialog as PrintConversationTranscriptDialog,
 )
 from securedrop_client.logic import Controller
-from securedrop_client.resources import load_css
 from securedrop_client.utils import safe_mkdir
 
 
@@ -123,7 +122,7 @@ class DeleteSourcesAction(QAction):
         self.setEnabled(False)  # disabled until sources are selected
 
     def trigger(self) -> None:
-        checked_sources = self.controller.get_checked_source_uuids()
+        checked_sources = self.controller.get_checked_sources()
 
         if self.controller.api is None:
             self.controller.on_action_requiring_login()
@@ -366,115 +365,6 @@ class ExportConversationAction(QAction):  # pragma: nocover
 
             file_count = len(files)
             if file_count == 1:
-                summary = "transcript.txt"
-            else:
-                summary = _("all files and transcript")
-
-            dialog = ExportConversationDialog(
-                self._export_device,
-                summary,
-                [str(file_location) for file_location in file_locations],
-            )
-            dialog.exec()
-
-    def _on_confirmation_dialog_accepted(self) -> None:
-        self._prepare_to_export()
-
-    def _on_confirmation_dialog_rejected(self) -> None:
-        pass
-
-
-class ExportConversationsAction(QAction):  # pragma: nocover
-    def __init__(self, parent: QMenu, controller: Controller) -> None:
-        """
-        Allows export of multiple conversations' transcripts and all their files.
-        """
-        text = _("Export Conversations")
-        super().__init__(text, parent)
-
-        self.setObjectName("ExportConversationsAction")
-
-        self.controller = controller
-
-        self._export_device = ConversationExportDevice(controller)
-
-        self.triggered.connect(self._on_triggered)
-
-        self.setEnabled(False)  # disabled until sources are selected
-
-    @pyqtSlot()
-    def _on_triggered(self) -> None:
-        """
-        (Re-)generates the conversation transcript and opens a confirmation dialog to export it
-        alongside all the (attached) files that are downloaded, in the manner
-        of the existing ExportFileDialog.
-        """
-        self._prepare_to_export()
-        return
-
-        # # TODO do we need a dialog?
-        # checked_sources = self.controller.get_checked_source_uuids()
-        # for source in self.checked_sources:
-
-        # if self._state is not None:
-        #     id = self._state.selected_conversation
-        #     # if id is None:
-        #     #     return
-        #     if self._state.selected_conversation_has_downloadable_files:
-        #         dialog = ModalDialog(show_header=False)
-        #         message = _(
-        #             "<h2>Some files will not be exported</h2>"
-        #             "Some files from this source have not yet been downloaded, and will not be exported."  # noqa: E501
-        #             "<br /><br />"
-        #             'To export the currently-downloaded files, click "Continue."'
-        #         )
-        #         dialog.body.setText(message)
-        #         dialog.rejected.connect(self._on_confirmation_dialog_rejected)
-        #         dialog.accepted.connect(self._on_confirmation_dialog_accepted)
-        #         dialog.continue_button.setFocus()
-        #         dialog.exec()
-        #     else:
-        #         self._prepare_to_export()
-
-    def _prepare_to_export(self) -> None:
-        """ """
-        file_locations = []
-        checked_sources = self.controller.get_checked_sources()
-        for source in checked_sources:
-            transcript_location = (
-                Path(self.controller.data_dir)
-                .joinpath(source.journalist_filename)
-                .joinpath("transcript.txt")
-            )
-
-            transcript = ConversationTranscript(source)
-            safe_mkdir(transcript_location.parent)
-
-            with open(transcript_location, "w") as f:
-                f.write(str(transcript))
-                # Let this context lapse to ensure the file contents
-                # are written to disk.
-
-            downloaded_file_locations = [
-                file.location(self.controller.data_dir)
-                for file in source.files
-                if self.controller.downloaded_file_exists(file, silence_errors=True)
-            ]
-
-            file_locations += downloaded_file_locations + [transcript_location]
-
-        # Open the files to prevent them from being removed while
-        # the archive is being created. Once the file objects go
-        # out of scope, any pending file removal will be performed
-        # by the operating system.
-        with ExitStack() as stack:
-            files = [
-                stack.enter_context(open(file_location, "r")) for file_location in file_locations
-            ]
-
-            if len(checked_sources) > 1:
-                summary = _("transcripts and files for {} sources").format(len(checked_sources))
-            elif len(files) == 1:
                 summary = "transcript.txt"
             else:
                 summary = _("all files and transcript")
