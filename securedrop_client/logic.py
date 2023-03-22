@@ -419,9 +419,9 @@ class Controller(QObject):
         ):
             os.chmod(self.last_sync_filepath, 0o600)
 
-    def get_checked_source_uuids(self) -> List[str]:
+    def get_checked_sources(self) -> List[str]:
         """
-        Returns the list of source ids that are checked in the UI.
+        Returns the list of sources that are checked in the UI.
         """
         source_items = self.gui.main_view.source_list.source_items
         checked_source_uuids = []
@@ -432,15 +432,8 @@ class Controller(QObject):
                 checked_source_uuids.append(source_uuid)
         return checked_source_uuids
 
-    def get_checked_sources(self) -> List[db.Source]:
-        """
-        Returns the list of sources that are checked in the UI.
-        """
-        checked_source_uuids = self.get_checked_source_uuids()
-        return self.session.query(db.Source).filter(db.Source.uuid.in_(checked_source_uuids)).all()
-
     def maybe_toggle_delete_sources_button_enabled(self):
-        self.gui.toggle_delete_sources_button_enabled(len(self.get_checked_source_uuids()) > 0)
+        self.gui.toggle_delete_sources_button_enabled(len(self.get_checked_sources()) > 0)
 
     @pyqtSlot(int)
     def _on_main_queue_updated(self, num_items: int) -> None:
@@ -848,6 +841,7 @@ class Controller(QObject):
     def _submit_download_job(
         self, object_type: Union[Type[db.Reply], Type[db.Message], Type[db.File]], uuid: str
     ) -> None:
+
         if object_type == db.Reply:
             job = ReplyDownloadJob(
                 uuid, self.data_dir, self.gpg
