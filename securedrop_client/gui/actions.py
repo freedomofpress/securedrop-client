@@ -286,7 +286,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
                     "<h2>Some files will not be exported</h2>"
                     "Some files from this source have not yet been downloaded, and will not be exported."  # noqa: E501
                     "<br /><br />"
-                    'To export the currently-downloaded files, click "Continue."'
+                    'To export the currently downloaded files, click "Continue."'
                 )
                 dialog.body.setText(message)
                 dialog.rejected.connect(self._on_confirmation_dialog_rejected)

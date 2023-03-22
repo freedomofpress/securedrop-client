@@ -94,7 +94,7 @@ msgstr ""
 msgid "Export All"
 msgstr ""
 
-msgid "<h2>Some files will not be exported</h2>Some files from this source have not yet been downloaded, and will not be exported.<br /><br />To export the currently-downloaded files, click \"Continue.\""
+msgid "<h2>Some files will not be exported</h2>Some files from this source have not yet been downloaded, and will not be exported.<br /><br />To export the currently downloaded files, click \"Continue.\""
 msgstr ""
 
 msgid "all files and transcript"
@@ -142,10 +142,10 @@ msgstr ""
 msgid "Send a response"
 msgstr ""
 
-msgid "Deleting files and messages..."
+msgid "Deleting files and messages…"
 msgstr ""
 
-msgid "Deleting source account..."
+msgid "Deleting source account…"
 msgstr ""
 
 msgid "— All files and messages deleted for this source —"
