@@ -440,7 +440,7 @@ class Controller(QObject):
         return self.session.query(db.Source).filter(db.Source.uuid.in_(checked_source_uuids)).all()
 
     def maybe_toggle_delete_sources_button_enabled(self):
-        self.gui.toggle_source_list_actions_enabled(len(self.get_checked_source_uuids()) > 0)
+        self.gui.toggle_delete_sources_button_enabled(len(self.get_checked_source_uuids()) > 0)
 
     @pyqtSlot(int)
     def _on_main_queue_updated(self, num_items: int) -> None:

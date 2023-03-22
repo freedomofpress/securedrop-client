@@ -229,5 +229,5 @@ class Window(QMainWindow):
         cb.clear()
         cb.clear(QClipboard.Selection)
 
-    def toggle_source_list_actions_enabled(self, enabled: bool):
-        self.main_view.toggle_source_list_actions_enabled(enabled)
+    def toggle_delete_sources_button_enabled(self, enabled: bool):
+        self.main_view.toggle_delete_sources_button_enabled(enabled)
