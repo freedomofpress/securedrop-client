@@ -22,6 +22,10 @@ class Device(QObject):
     export_preflight_check_succeeded = pyqtSignal()
     export_preflight_check_failed = pyqtSignal(object)
 
+    whistleflow_export_preflight_check_requested = pyqtSignal()
+    whistleflow_export_preflight_check_succeeded = pyqtSignal()
+    whistleflow_export_preflight_check_failed = pyqtSignal(object)
+
     export_requested = pyqtSignal(list, str)
     export_succeeded = pyqtSignal()
     export_failed = pyqtSignal(object)
@@ -66,12 +70,22 @@ class Device(QObject):
         self._export_service.print_call_failure.connect(self.print_failed)
         self._export_service.print_call_success.connect(self.print_succeeded)
 
+        self._export_service.whis
+
     def run_printer_preflight_checks(self) -> None:
         """
         Run preflight checks to make sure the Export VM is configured correctly.
         """
         logger.info("Running printer preflight check")
         self.print_preflight_check_requested.emit()
+
+
+    def run_whistleflow_preflight_checks(self) -> None:
+        """
+        Run preflight checks to make sure the whistleflow-view VM is configured correctly.
+        """
+        logger.info("Running whistleflow preflight check")
+        self.whistleflow_export_preflight_check_requested.emit()
 
     def run_export_preflight_checks(self) -> None:
         """
