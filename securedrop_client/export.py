@@ -78,6 +78,9 @@ class Export(QObject):
     print_call_failure = pyqtSignal(object)
     print_call_success = pyqtSignal()
 
+    whistleflow_preflight_check_call_failure = pyqtSignal(object)
+    whistleflow_preflight_check_call_success = pyqtSignal()
+
     def __init__(
         self,
         export_preflight_check_requested: Optional[pyqtBoundSignal] = None,
@@ -112,6 +115,11 @@ class Export(QObject):
             print_requested.connect(self.print)
         if print_preflight_check_requested is not None:
             print_preflight_check_requested.connect(self.run_printer_preflight)
+
+    def connect_whistleflow_signals(self, whistleflow_export_preflight_check_requested: Optional[pyqtBoundSignal]):
+        if whistleflow_export_preflight_check_requested is not None:
+            whistleflow_export_preflight_check_requested.connect(self.run_whistleflow_preflight_checks)
+
 
     def _export_archive(cls, archive_path: str) -> Optional[ExportStatus]:
         """
@@ -247,6 +255,9 @@ class Export(QObject):
         if status:
             raise ExportError(status)
 
+    def _run_whistleflow_view_test(self) -> None:
+        logger.info("Running dummy whistleflow view test")
+
     def _run_usb_test(self, archive_dir: str) -> None:
         """
         Run usb-test.
@@ -309,6 +320,25 @@ class Export(QObject):
         status = self._export_archive(archive_path)
         if status:
             raise ExportError(status)
+
+    @pyqtSlot()
+    def run_whistleflow_preflight_checks(self) -> None:
+        """
+        Run preflight checks to verify that the usb device is connected and luks-encrypted.
+        """
+        try:
+            logger.debug(
+                "beginning whistleflow preflight checks in thread {}".format(
+                    threading.current_thread().ident
+                )
+            )
+            self._run_whistleflow_view_test()
+
+            logger.debug("completed preflight checks: success")
+            self.whistleflow_preflight_check_call_success.emit()
+        except ExportError as e:
+            logger.debug("completed preflight checks: failure")
+            self.whistleflow_preflight_check_call_failure.emit(e)
 
     @pyqtSlot()
     def run_preflight_checks(self) -> None:
