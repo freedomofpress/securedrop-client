@@ -17,7 +17,6 @@ from .device import Device
 
 
 class WhistleflowDialog(ModalDialog):
-
     DIALOG_CSS = resource_string(__name__, "dialog.css").decode("utf-8")
 
     PASSPHRASE_LABEL_SPACING = 0.5
@@ -74,11 +73,48 @@ class WhistleflowDialog(ModalDialog):
             "identifies who they are. To protect your sources, please consider redacting files "
             "before working with them on network-connected computers."
         )
+        self.insert_usb_message = _(
+            "Please insert one of the export drives provisioned specifically "
+            "for the SecureDrop Workstation."
+        )
+        self.usb_error_message = _(
+            "Either the drive is not encrypted or there is something else wrong with it."
+        )
+        self.passphrase_error_message = _("The passphrase provided did not work. Please try again.")
         self.exporting_message = _("Exporting: {}").format(self.file_name)
         self.generic_error_message = _("See your administrator for help.")
         self.success_message = _(
             "Remember to be careful when working with files outside of your Workstation machine."
         )
+
+        # Passphrase Form
+        self.passphrase_form = QWidget()
+        self.passphrase_form.setObjectName("FileDialog_passphrase_form")
+        passphrase_form_layout = QVBoxLayout()
+        passphrase_form_layout.setContentsMargins(
+            self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN
+        )
+        self.passphrase_form.setLayout(passphrase_form_layout)
+        passphrase_label = SecureQLabel(_("Passphrase"))
+        font = QFont()
+        font.setLetterSpacing(QFont.AbsoluteSpacing, self.PASSPHRASE_LABEL_SPACING)
+        passphrase_label.setFont(font)
+        self.passphrase_field = PasswordEdit(self)
+        self.passphrase_field.setEchoMode(QLineEdit.Password)
+        effect = QGraphicsDropShadowEffect(self)
+        effect.setOffset(0, -1)
+        effect.setBlurRadius(4)
+        effect.setColor(QColor("#aaa"))
+        self.passphrase_field.setGraphicsEffect(effect)
+
+        check = SDCheckBox()
+        check.checkbox.stateChanged.connect(self.passphrase_field.on_toggle_password_Action)
+
+        passphrase_form_layout.addWidget(passphrase_label)
+        passphrase_form_layout.addWidget(self.passphrase_field)
+        passphrase_form_layout.addWidget(check, alignment=Qt.AlignRight)
+        self.body_layout.addWidget(self.passphrase_form)
+        self.passphrase_form.hide()
 
         self._show_starting_instructions()
         self.start_animate_header()
@@ -89,7 +125,7 @@ class WhistleflowDialog(ModalDialog):
         self.body.setText(self.starting_message)
         self.adjustSize()
 
-    def _send_to_whistleflow(selfself): -> None:
+    def _send_to_whistleflow(selfself) -> None:
         print("Sending to whistleflow")
 
     def _show_passphrase_request_message(self) -> None:

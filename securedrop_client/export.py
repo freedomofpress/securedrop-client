@@ -38,6 +38,11 @@ class ExportStatus(Enum):
     MISSING_PRINTER_URI = "ERROR_MISSING_PRINTER_URI"
 
 
+class ExportDestination(Enum):
+    USB = "USB"
+    EMAIL = "EMAIL"
+
+
 class Export(QObject):
     """
     This class sends files over to the Export VM so that they can be copied to a luks-encrypted USB
@@ -115,10 +120,13 @@ class Export(QObject):
         if print_preflight_check_requested is not None:
             print_preflight_check_requested.connect(self.run_printer_preflight)
 
-    def connect_whistleflow_signals(self, whistleflow_export_preflight_check_requested: Optional[pyqtBoundSignal]):
+    def connect_whistleflow_signals(
+        self, whistleflow_export_preflight_check_requested: Optional[pyqtBoundSignal]
+    ):
         if whistleflow_export_preflight_check_requested is not None:
-            whistleflow_export_preflight_check_requested.connect(self.run_whistleflow_preflight_checks)
-
+            whistleflow_export_preflight_check_requested.connect(
+                self.run_whistleflow_preflight_checks
+            )
 
     def _export_archive(cls, archive_path: str) -> Optional[ExportStatus]:
         """

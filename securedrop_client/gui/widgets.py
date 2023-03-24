@@ -72,6 +72,7 @@ from securedrop_client.db import (
     Source,
     User,
 )
+from securedrop_client.export import ExportDestination
 from securedrop_client.gui import conversation
 from securedrop_client.gui.actions import (
     DeleteConversationAction,
@@ -791,7 +792,6 @@ class MainView(QWidget):
 
 
 class EmptyConversationView(QWidget):
-
     MARGIN = 30
     NEWLINE_HEIGHT_PX = 35
 
@@ -2567,7 +2567,6 @@ class FileWidget(QWidget):
 
 
 class ConversationScrollArea(QScrollArea):
-
     MARGIN_BOTTOM = 28
     MARGIN_LEFT = 38
     MARGIN_RIGHT = 20
@@ -3348,7 +3347,6 @@ class ReplyTextEdit(QPlainTextEdit):
 
 
 class ReplyTextEditPlaceholder(QWidget):
-
     # These values are used to determine the width that can be taken up by
     # the source designation as the widget is initialized or the window is
     # resized.
@@ -3473,6 +3471,17 @@ class SourceMenu(QMenu):
         self.addAction(DownloadConversation(self, self.controller, app_state))
         self.addAction(ExportConversationAction(self, self.controller, self.source, app_state))
         self.addAction(ExportConversationTranscriptAction(self, self.controller, self.source))
+
+        self.addAction(
+            ExportConversationAction(
+                self, self.controller, self.source, app_state, destination=ExportDestination.EMAIL
+            )
+        )
+        self.addAction(
+            ExportConversationTranscriptAction(
+                self, self.controller, self.source, destination=ExportDestination.EMAIL
+            )
+        )
         self.addAction(PrintConversationAction(self, self.controller, self.source))
 
         source_section = self.addSection(_("SOURCE ACCOUNT"))
