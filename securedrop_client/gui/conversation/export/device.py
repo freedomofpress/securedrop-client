@@ -70,15 +70,12 @@ class Device(QObject):
         self._export_service.print_call_failure.connect(self.print_failed)
         self._export_service.print_call_success.connect(self.print_succeeded)
 
-        self._export_service.whis
-
     def run_printer_preflight_checks(self) -> None:
         """
         Run preflight checks to make sure the Export VM is configured correctly.
         """
         logger.info("Running printer preflight check")
         self.print_preflight_check_requested.emit()
-
 
     def run_whistleflow_preflight_checks(self) -> None:
         """

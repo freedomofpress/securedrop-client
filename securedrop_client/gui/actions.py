@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import QAction, QDialog, QMenu
 from securedrop_client import state
 from securedrop_client.conversation import Transcript as ConversationTranscript
 from securedrop_client.db import Source
+from securedrop_client.export import ExportDestination
 from securedrop_client.gui.base import ModalDialog
 from securedrop_client.gui.conversation import ExportDevice as ConversationExportDevice
 from securedrop_client.gui.conversation import ExportDialog as ExportConversationDialog
@@ -24,6 +25,7 @@ from securedrop_client.gui.conversation import (
 from securedrop_client.gui.conversation import (
     PrintTranscriptDialog as PrintConversationTranscriptDialog,
 )
+from securedrop_client.gui.conversation.export.whistleflow_dialog import WhistleflowDialog
 from securedrop_client.logic import Controller
 from securedrop_client.utils import safe_mkdir
 
@@ -229,16 +231,22 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
         parent: QMenu,
         controller: Controller,
         source: Source,
+        destination: Optional[ExportDestination] = ExportDestination.USB,
     ) -> None:
         """
         Allows export of a conversation transcript.
         """
-        text = _("Export Transcript")
+        text = (
+            _("Export Transcript to USB")
+            if destination == ExportDestination.USB
+            else _("Export Transcript to Email")
+        )
 
         super().__init__(text, parent)
 
         self.controller = controller
         self._source = source
+        self._destination = destination
 
         self._export_device = ConversationExportDevice(controller)
 
@@ -269,10 +277,14 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
         # out of scope, any pending file removal will be performed
         # by the operating system.
         with open(file_path, "r") as f:
-            dialog = ExportConversationTranscriptDialog(
-                self._export_device, "transcript.txt", str(file_path)
-            )
-            dialog.exec()
+            if self._destination == ExportDestination.USB:
+                dialog = ExportConversationTranscriptDialog(
+                    self._export_device, "transcript.txt", str(file_path)
+                )
+                dialog.exec()
+            else:  # ExportDestination.EMAIL
+                # dialog = ExportWhistleflowerConversationTranscriptDialog
+                pass
 
 
 class ExportConversationAction(QAction):  # pragma: nocover
@@ -282,18 +294,25 @@ class ExportConversationAction(QAction):  # pragma: nocover
         controller: Controller,
         source: Source,
         app_state: Optional[state.State] = None,
+        destination: Optional[ExportDestination] = ExportDestination.USB,
     ) -> None:
         """
         Allows export of a conversation transcript and all is files. Will download any file
         that wasn't already downloaded.
         """
-        text = _("Export All")
+
+        text = (
+            _("Export All to USB")
+            if destination == ExportDestination.USB
+            else _("Export All to Email")
+        )
 
         super().__init__(text, parent)
 
         self.controller = controller
         self._source = source
         self._state = app_state
+        self._destination = destination
 
         self._export_device = ConversationExportDevice(controller)
 
@@ -369,12 +388,20 @@ class ExportConversationAction(QAction):  # pragma: nocover
             else:
                 summary = _("all files and transcript")
 
-            dialog = ExportConversationDialog(
-                self._export_device,
-                summary,
-                [str(file_location) for file_location in file_locations],
-            )
-            dialog.exec()
+            if self._destination == ExportDestination.EMAIL:
+                whistleflow_dialog = WhistleflowDialog(
+                    self._export_device,
+                    summary,
+                    str(file_locations[0]),
+                )
+                whistleflow_dialog.exec()
+            else:
+                dialog = ExportConversationDialog(
+                    self._export_device,
+                    summary,
+                    [str(file_location) for file_location in file_locations],
+                )
+                dialog.exec()
 
     def _on_confirmation_dialog_accepted(self) -> None:
         self._prepare_to_export()
