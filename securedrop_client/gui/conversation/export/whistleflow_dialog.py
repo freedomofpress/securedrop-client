@@ -2,7 +2,8 @@
 A dialog that allows journalists to export sensitive files to a USB drive.
 """
 from gettext import gettext as _
-from typing import Optional
+import logging
+from typing import List, Optional
 
 from pkg_resources import resource_string
 from PyQt5.QtCore import QSize, Qt, pyqtSlot
@@ -16,6 +17,9 @@ from securedrop_client.gui.base.checkbox import SDCheckBox
 from .device import Device
 
 
+logger = logging.getLogger(__name__)
+
+
 class WhistleflowDialog(ModalDialog):
     DIALOG_CSS = resource_string(__name__, "dialog.css").decode("utf-8")
 
@@ -23,25 +27,27 @@ class WhistleflowDialog(ModalDialog):
     NO_MARGIN = 0
     FILENAME_WIDTH_PX = 260
 
-    def __init__(self, device: Device, file_uuid: str, file_name: str) -> None:
+    def __init__(self, device: Device, summary: str, file_locations: List[str]) -> None:
         super().__init__()
         self.setStyleSheet(self.DIALOG_CSS)
 
         self._device = device
-        self.file_uuid = file_uuid
+        self._file_locations = file_locations
         self.file_name = SecureQLabel(
-            file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
+            summary, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
         ).text()
         # Hold onto the error status we receive from the Export VM
         self.error_status: Optional[ExportStatus] = None
 
         # Connect device signals to slots
-        self._device.export_preflight_check_succeeded.connect(
+        self._device.whistleflow_export_preflight_check_succeeded.connect(
             self._on_export_preflight_check_succeeded
         )
-        self._device.export_preflight_check_failed.connect(self._on_export_preflight_check_failed)
-        self._device.export_succeeded.connect(self._on_export_succeeded)
-        self._device.export_failed.connect(self._on_export_failed)
+        self._device.whistleflow_export_preflight_check_failed.connect(
+            self._on_export_preflight_check_failed
+        )
+        self._device.export_completed.connect(self._on_export_succeeded)
+        self._device.whistleflow_export_failed.connect(self._on_export_failed)
 
         # Connect parent signals to slots
         self.continue_button.setEnabled(False)
@@ -87,35 +93,6 @@ class WhistleflowDialog(ModalDialog):
             "Remember to be careful when working with files outside of your Workstation machine."
         )
 
-        # Passphrase Form
-        self.passphrase_form = QWidget()
-        self.passphrase_form.setObjectName("FileDialog_passphrase_form")
-        passphrase_form_layout = QVBoxLayout()
-        passphrase_form_layout.setContentsMargins(
-            self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN
-        )
-        self.passphrase_form.setLayout(passphrase_form_layout)
-        passphrase_label = SecureQLabel(_("Passphrase"))
-        font = QFont()
-        font.setLetterSpacing(QFont.AbsoluteSpacing, self.PASSPHRASE_LABEL_SPACING)
-        passphrase_label.setFont(font)
-        self.passphrase_field = PasswordEdit(self)
-        self.passphrase_field.setEchoMode(QLineEdit.Password)
-        effect = QGraphicsDropShadowEffect(self)
-        effect.setOffset(0, -1)
-        effect.setBlurRadius(4)
-        effect.setColor(QColor("#aaa"))
-        self.passphrase_field.setGraphicsEffect(effect)
-
-        check = SDCheckBox()
-        check.checkbox.stateChanged.connect(self.passphrase_field.on_toggle_password_Action)
-
-        passphrase_form_layout.addWidget(passphrase_label)
-        passphrase_form_layout.addWidget(self.passphrase_field)
-        passphrase_form_layout.addWidget(check, alignment=Qt.AlignRight)
-        self.body_layout.addWidget(self.passphrase_form)
-        self.passphrase_form.hide()
-
         self._show_starting_instructions()
         self.start_animate_header()
         self._run_preflight()
@@ -125,33 +102,9 @@ class WhistleflowDialog(ModalDialog):
         self.body.setText(self.starting_message)
         self.adjustSize()
 
-    def _send_to_whistleflow(selfself) -> None:
+    def _send_to_whistleflow(self) -> None:
         print("Sending to whistleflow")
-
-    def _show_passphrase_request_message(self) -> None:
-        self.continue_button.clicked.disconnect()
-        self.continue_button.clicked.connect(self._export_file)
-        self.header.setText(self.passphrase_header)
-        self.continue_button.setText(_("SUBMIT"))
-        self.header_line.hide()
-        self.error_details.hide()
-        self.body.hide()
-        self.passphrase_field.setFocus()
-        self.passphrase_form.show()
-        self.adjustSize()
-
-    def _show_passphrase_request_message_again(self) -> None:
-        self.continue_button.clicked.disconnect()
-        self.continue_button.clicked.connect(self._export_file)
-        self.header.setText(self.passphrase_header)
-        self.error_details.setText(self.passphrase_error_message)
-        self.continue_button.setText(_("SUBMIT"))
-        self.header_line.hide()
-        self.body.hide()
-        self.error_details.show()
-        self.passphrase_field.setFocus()
-        self.passphrase_form.show()
-        self.adjustSize()
+        self._device.whistleflow_export_requested.emit(self._file_locations)
 
     def _show_success_message(self) -> None:
         self.continue_button.clicked.disconnect()
@@ -161,33 +114,8 @@ class WhistleflowDialog(ModalDialog):
         self.body.setText(self.success_message)
         self.cancel_button.hide()
         self.error_details.hide()
-        self.passphrase_form.hide()
+        # self.passphrase_form.hide()
         self.header_line.show()
-        self.body.show()
-        self.adjustSize()
-
-    def _show_insert_usb_message(self) -> None:
-        self.continue_button.clicked.disconnect()
-        self.continue_button.clicked.connect(self._run_preflight)
-        self.header.setText(self.insert_usb_header)
-        self.continue_button.setText(_("CONTINUE"))
-        self.body.setText(self.insert_usb_message)
-        self.error_details.hide()
-        self.passphrase_form.hide()
-        self.header_line.show()
-        self.body.show()
-        self.adjustSize()
-
-    def _show_insert_encrypted_usb_message(self) -> None:
-        self.continue_button.clicked.disconnect()
-        self.continue_button.clicked.connect(self._run_preflight)
-        self.header.setText(self.insert_usb_header)
-        self.error_details.setText(self.usb_error_message)
-        self.continue_button.setText(_("CONTINUE"))
-        self.body.setText(self.insert_usb_message)
-        self.passphrase_form.hide()
-        self.header_line.show()
-        self.error_details.show()
         self.body.show()
         self.adjustSize()
 
@@ -200,22 +128,21 @@ class WhistleflowDialog(ModalDialog):
             "{}: {}".format(self.error_status, self.generic_error_message)
         )
         self.error_details.hide()
-        self.passphrase_form.hide()
+        # self.passphrase_form.hide()
         self.header_line.show()
         self.body.show()
         self.adjustSize()
 
     @pyqtSlot()
     def _run_preflight(self) -> None:
-        # maybe something here
-        self._device.run_export_preflight_checks()
+        self._device.run_whistleflow_preflight_checks()
 
     @pyqtSlot()
     def _export_file(self, checked: bool = False) -> None:
         self.start_animate_activestate()
         self.cancel_button.setEnabled(False)
-        self.passphrase_field.setDisabled(True)
-        self._device.export_file_to_usb_drive(self.file_uuid, self.passphrase_field.text())
+        # self.passphrase_field.setDisabled(True)
+        self._device.export_files_to_whistleflow(self._file_locations)
 
     @pyqtSlot()
     def _on_export_preflight_check_succeeded(self) -> None:
@@ -236,7 +163,6 @@ class WhistleflowDialog(ModalDialog):
     def _on_export_preflight_check_failed(self, error: ExportError) -> None:
         self.stop_animate_header()
         self.header_icon.update_image("savetodisk.svg", QSize(64, 64))
-        self._update_dialog(error.status)
 
     @pyqtSlot()
     def _on_export_succeeded(self) -> None:
@@ -247,31 +173,5 @@ class WhistleflowDialog(ModalDialog):
     def _on_export_failed(self, error: ExportError) -> None:
         self.stop_animate_activestate()
         self.cancel_button.setEnabled(True)
-        self.passphrase_field.setDisabled(False)
-        self._update_dialog(error.status)
-
-    def _update_dialog(self, error_status: ExportStatus) -> None:
-        self.error_status = error_status
-        # If the continue button is disabled then this is the result of a background preflight check
-        if not self.continue_button.isEnabled():
-            self.continue_button.clicked.disconnect()
-            if self.error_status == ExportStatus.BAD_PASSPHRASE:
-                self.continue_button.clicked.connect(self._show_passphrase_request_message_again)
-            elif self.error_status == ExportStatus.USB_NOT_CONNECTED:
-                self.continue_button.clicked.connect(self._show_insert_usb_message)
-            elif self.error_status == ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR:
-                self.continue_button.clicked.connect(self._show_insert_encrypted_usb_message)
-            else:
-                self.continue_button.clicked.connect(self._show_generic_error_message)
-
-            self.continue_button.setEnabled(True)
-            self.continue_button.setFocus()
-        else:
-            if self.error_status == ExportStatus.BAD_PASSPHRASE:
-                self._show_passphrase_request_message_again()
-            elif self.error_status == ExportStatus.USB_NOT_CONNECTED:
-                self._show_insert_usb_message()
-            elif self.error_status == ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR:
-                self._show_insert_encrypted_usb_message()
-            else:
-                self._show_generic_error_message()
+        # self.passphrase_field.setDisabled(False)
+        logger.error(error.status)

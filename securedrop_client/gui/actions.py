@@ -283,6 +283,7 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
                 )
                 dialog.exec()
             else:  # ExportDestination.EMAIL
+                # TODO finish this
                 # dialog = ExportWhistleflowerConversationTranscriptDialog
                 pass
 
@@ -388,11 +389,11 @@ class ExportConversationAction(QAction):  # pragma: nocover
             else:
                 summary = _("all files and transcript")
 
-            if self._destination == ExportDestination.EMAIL:
+            if self._destination == ExportDestination.WHISTLEFLOW:
                 whistleflow_dialog = WhistleflowDialog(
                     self._export_device,
                     summary,
-                    str(file_locations[0]),
+                    [str(file_location) for file_location in file_locations],
                 )
                 whistleflow_dialog.exec()
             else:
