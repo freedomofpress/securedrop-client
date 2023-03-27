@@ -241,7 +241,7 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
         text = (
             _("Export Transcript to USB")
             if destination == ExportDestination.USB
-            else _("Export Transcript to Email")
+            else _("Export Transcript to Whistleflow View")
         )
 
         super().__init__(text, parent)
@@ -310,7 +310,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
         text = (
             _("Export All to USB")
             if destination == ExportDestination.USB
-            else _("Export All to Email")
+            else _("Export All to Whistleflow View")
         )
 
         super().__init__(text, parent)
