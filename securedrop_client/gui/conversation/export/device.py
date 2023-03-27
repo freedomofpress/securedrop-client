@@ -22,10 +22,6 @@ class Device(QObject):
     export_preflight_check_succeeded = pyqtSignal()
     export_preflight_check_failed = pyqtSignal(object)
 
-    whistleflow_export_preflight_check_requested = pyqtSignal()
-    whistleflow_export_preflight_check_succeeded = pyqtSignal()
-    whistleflow_export_preflight_check_failed = pyqtSignal(object)
-
     export_requested = pyqtSignal(list, str)
     export_succeeded = pyqtSignal()
     export_failed = pyqtSignal(object)
@@ -39,6 +35,14 @@ class Device(QObject):
     print_succeeded = pyqtSignal()
     print_failed = pyqtSignal(object)
 
+    whistleflow_export_preflight_check_requested = pyqtSignal()
+    whistleflow_export_preflight_check_succeeded = pyqtSignal()
+    whistleflow_export_preflight_check_failed = pyqtSignal(object)
+
+    whistleflow_export_requested = pyqtSignal(list)
+    whistleflow_export_succeeded = pyqtSignal()
+    whistleflow_export_failed = pyqtSignal(object)
+
     def __init__(self, controller: Controller) -> None:
         super().__init__()
 
@@ -50,6 +54,10 @@ class Device(QObject):
             self.export_requested,
             self.print_preflight_check_requested,
             self.print_requested,
+        )
+
+        self._export_service.connect_whistleflow_signals(
+            self.whistleflow_export_preflight_check_requested, self.whistleflow_export_requested
         )
 
         # Abstract the Export instance away from the GUI
@@ -69,6 +77,13 @@ class Device(QObject):
 
         self._export_service.print_call_failure.connect(self.print_failed)
         self._export_service.print_call_success.connect(self.print_succeeded)
+
+        self._export_service.whistleflow_preflight_check_call_success.connect(
+            self.whistleflow_export_preflight_check_succeeded
+        )
+        self._export_service.whistleflow_preflight_check_call_failure.connect(
+            self.whistleflow_export_preflight_check_failed
+        )
 
     def run_printer_preflight_checks(self) -> None:
         """
@@ -102,6 +117,12 @@ class Device(QObject):
         Send the files specified by file_locations to the Export VM.
         """
         self.export_requested.emit(file_locations, passphrase)
+
+    def export_files_to_whistleflow(self, file_locations: List[str]):
+        """
+        Send the files specified by file_locations to the Whistleflow View VM.
+        """
+        self.whistleflow_export_requested.emit(file_locations)
 
     def export_file_to_usb_drive(self, file_uuid: str, passphrase: str) -> None:
         """

@@ -3474,12 +3474,16 @@ class SourceMenu(QMenu):
 
         self.addAction(
             ExportConversationAction(
-                self, self.controller, self.source, app_state, destination=ExportDestination.EMAIL
+                self,
+                self.controller,
+                self.source,
+                app_state,
+                destination=ExportDestination.WHISTLEFLOW,
             )
         )
         self.addAction(
             ExportConversationTranscriptAction(
-                self, self.controller, self.source, destination=ExportDestination.EMAIL
+                self, self.controller, self.source, destination=ExportDestination.WHISTLEFLOW
             )
         )
         self.addAction(PrintConversationAction(self, self.controller, self.source))
