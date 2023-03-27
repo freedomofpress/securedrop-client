@@ -94,13 +94,13 @@ msgstr ""
 msgid "Export Transcript to USB"
 msgstr ""
 
-msgid "Export Transcript to Email"
+msgid "Export Transcript to Whistleflow View"
 msgstr ""
 
 msgid "Export All to USB"
 msgstr ""
 
-msgid "Export All to Email"
+msgid "Export All to Whistleflow View"
 msgstr ""
 
 msgid "<h2>Some files will not be exported</h2>Some files from this source have not yet been downloaded, and will not be exported.<br /><br />To export the currently-downloaded files, click \"Continue.\""
