@@ -284,10 +284,13 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
                     self._export_device, "transcript.txt", str(file_path)
                 )
                 dialog.exec()
-            else:  # ExportDestination.EMAIL
-                # TODO finish this
-                # dialog = ExportWhistleflowerConversationTranscriptDialog
-                pass
+            else:
+                whistleflow_dialog = WhistleflowDialog(
+                    self._export_device,
+                    "transcript.txt",
+                    [str(file_path)],
+                )
+                whistleflow_dialog.exec()
 
 
 class ExportConversationAction(QAction):  # pragma: nocover
