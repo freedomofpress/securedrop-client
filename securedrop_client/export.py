@@ -368,7 +368,7 @@ class Export(QObject):
         Raises:
             ExportError: Raised if the usb-test does not return a DISK_ENCRYPTED status.
         """
-        print("_run_whistleflow_export")
+        print("_run_whistleflow_export", filepaths)
         metadata = self.DISK_METADATA.copy()
         archive_path = self._create_archive(archive_dir, self.DISK_FN, metadata, filepaths)
 
