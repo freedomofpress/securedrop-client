@@ -48,6 +48,7 @@ class WhistleflowDialog(ModalDialog):
         )
         self._device.export_completed.connect(self._on_export_succeeded)
         self._device.whistleflow_export_failed.connect(self._on_export_failed)
+        self._device.whistleflow_export_succeeded.connect(self._.on_export_succeeded)
 
         # Connect parent signals to slots
         self.continue_button.setEnabled(False)

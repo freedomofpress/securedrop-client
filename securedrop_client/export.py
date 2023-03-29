@@ -71,6 +71,8 @@ class Export(QObject):
     DISK_ENCRYPTION_KEY_NAME = "encryption_key"
     DISK_EXPORT_DIR = "export_data"
 
+    WHISTLEFLOW_METADATA = {"device": "whistleflow-view"}
+
     # Set up signals for communication with the controller
     preflight_check_call_failure = pyqtSignal(object)
     preflight_check_call_success = pyqtSignal()
@@ -190,18 +192,14 @@ class Export(QObject):
         Clone of _export_archive which sends the archive to the Whistleflow VM.
         """
         print("_export_archive_to_whistleflow")
-        return None
 
         try:
             output = subprocess.check_output(
                 [
                     quote("qrexec-client-vm"),
-                    quote("--"),
-                    quote("sd-devices"),
-                    quote("qubes.OpenInVM"),
-                    quote("/usr/lib/qubes/qopen-in-vm"),
-                    quote("--view-only"),
-                    quote("--"),
+                    quote("whistleflow-view"),
+                    quote("qubes.Filecopy"),
+                    quote("/usr/lib/qubes/qfile-agent"),
                     quote(archive_path),
                 ],
                 stderr=subprocess.STDOUT,
@@ -369,7 +367,7 @@ class Export(QObject):
             ExportError: Raised if the usb-test does not return a DISK_ENCRYPTED status.
         """
         print("_run_whistleflow_export", filepaths)
-        metadata = self.DISK_METADATA.copy()
+        metadata = self.WHISTLEFLOW_METADATA.copy()
         archive_path = self._create_archive(archive_dir, self.DISK_FN, metadata, filepaths)
 
         status = self._export_archive_to_whistleflow(archive_path)
