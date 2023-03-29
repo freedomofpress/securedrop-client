@@ -78,6 +78,9 @@ class Device(QObject):
         self._export_service.print_call_failure.connect(self.print_failed)
         self._export_service.print_call_success.connect(self.print_succeeded)
 
+        self._export_service.whistleflow_export_call_success.connect(
+            self.whistleflow_export_succeeded
+        )
         self._export_service.whistleflow_preflight_check_call_success.connect(
             self.whistleflow_export_preflight_check_succeeded
         )
