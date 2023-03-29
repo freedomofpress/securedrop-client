@@ -103,12 +103,17 @@ source .venv/bin/activate
 ./run.sh
 ```
 
+For Wayland users, run with
+
+```
+QT_QPA_PLATFORM=wayland ./run.sh
+```
+
 Or, if you want to persist data across restarts, you will need to run the client with:
 
 ```
 ./run.sh --sdc-home /path/to/my/configuration/directory
 ```
-
 
 ### Developer environment on macOS
 
