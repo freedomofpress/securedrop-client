@@ -2,17 +2,15 @@
 A dialog that allows journalists to export sensitive files to a USB drive.
 """
 from gettext import gettext as _
+import datetime
 import logging
 from typing import List, Optional
 
 from pkg_resources import resource_string
 from PyQt5.QtCore import QSize, Qt, pyqtSlot
-from PyQt5.QtGui import QColor, QFont
-from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QLineEdit, QVBoxLayout, QWidget
 
 from securedrop_client.export import ExportError, ExportStatus
-from securedrop_client.gui.base import ModalDialog, PasswordEdit, SecureQLabel
-from securedrop_client.gui.base.checkbox import SDCheckBox
+from securedrop_client.gui.base import ModalDialog, SecureQLabel
 
 from .device import Device
 
@@ -48,7 +46,7 @@ class WhistleflowDialog(ModalDialog):
         )
         self._device.export_completed.connect(self._on_export_succeeded)
         self._device.whistleflow_export_failed.connect(self._on_export_failed)
-        self._device.whistleflow_export_succeeded.connect(self._.on_export_succeeded)
+        self._device.whistleflow_export_succeeded.connect(self._on_export_succeeded)
 
         # Connect parent signals to slots
         self.continue_button.setEnabled(False)
@@ -104,8 +102,8 @@ class WhistleflowDialog(ModalDialog):
         self.adjustSize()
 
     def _send_to_whistleflow(self) -> None:
-        print("Sending to whistleflow")
-        self._device.whistleflow_export_requested.emit(self._file_locations)
+        timestamp = datetime.datetime.now().isoformat()
+        self._device.whistleflow_export_requested.emit(_("export-{}.tar").format(timestamp), self._file_locations)
 
     def _show_success_message(self) -> None:
         self.continue_button.clicked.disconnect()
@@ -143,7 +141,7 @@ class WhistleflowDialog(ModalDialog):
         self.start_animate_activestate()
         self.cancel_button.setEnabled(False)
         # self.passphrase_field.setDisabled(True)
-        self._device.export_files_to_whistleflow(self._file_locations)
+        self._device.export_files_to_whistleflow(self.file_name, self._file_locations)
 
     @pyqtSlot()
     def _on_export_preflight_check_succeeded(self) -> None:

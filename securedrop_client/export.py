@@ -191,8 +191,6 @@ class Export(QObject):
         """
         Clone of _export_archive which sends the archive to the Whistleflow VM.
         """
-        print("_export_archive_to_whistleflow")
-
         try:
             output = subprocess.check_output(
                 [
@@ -357,7 +355,7 @@ class Export(QObject):
         if status:
             raise ExportError(status)
 
-    def _run_whistleflow_export(self, archive_dir: str, filepaths: List[str]) -> None:
+    def _run_whistleflow_export(self, archive_dir: str, filename: str, filepaths: List[str]) -> None:
         """
         Run disk-test.
 
@@ -369,7 +367,7 @@ class Export(QObject):
         """
         print("_run_whistleflow_export", filepaths)
         metadata = self.WHISTLEFLOW_METADATA.copy()
-        archive_path = self._create_archive(archive_dir, self.DISK_FN, metadata, filepaths)
+        archive_path = self._create_archive(archive_dir, filename, metadata, filepaths)
 
         status = self._export_archive_to_whistleflow(archive_path)
         if status:
@@ -466,8 +464,8 @@ class Export(QObject):
 
         self.export_completed.emit(filepaths)
 
-    @pyqtSlot(list)
-    def send_files_to_whistleflow(self, filepaths: List[str]) -> None:
+    @pyqtSlot(str, list)
+    def send_files_to_whistleflow(self, filename: str, filepaths: List[str]) -> None:
         """
         Clone of send_file_to_usb_device, but for Whistleflow.
         """
@@ -476,7 +474,7 @@ class Export(QObject):
                 logger.debug(
                     "beginning export from thread {}".format(threading.current_thread().ident)
                 )
-                self._run_whistleflow_export(temp_dir, filepaths)
+                self._run_whistleflow_export(temp_dir, filename, filepaths)
                 self.whistleflow_call_success.emit()
                 logger.debug("Export successful")
             except ExportError as e:

@@ -39,7 +39,7 @@ class Device(QObject):
     whistleflow_export_preflight_check_succeeded = pyqtSignal()
     whistleflow_export_preflight_check_failed = pyqtSignal(object)
 
-    whistleflow_export_requested = pyqtSignal(list)
+    whistleflow_export_requested = pyqtSignal(str, list)
     whistleflow_export_succeeded = pyqtSignal()
     whistleflow_export_failed = pyqtSignal(object)
 
@@ -78,7 +78,7 @@ class Device(QObject):
         self._export_service.print_call_failure.connect(self.print_failed)
         self._export_service.print_call_success.connect(self.print_succeeded)
 
-        self._export_service.whistleflow_export_call_success.connect(
+        self._export_service.whistleflow_call_success.connect(
             self.whistleflow_export_succeeded
         )
         self._export_service.whistleflow_preflight_check_call_success.connect(
@@ -121,11 +121,11 @@ class Device(QObject):
         """
         self.export_requested.emit(file_locations, passphrase)
 
-    def export_files_to_whistleflow(self, file_locations: List[str]):
+    def export_files_to_whistleflow(self, filename: str, file_locations: List[str]):
         """
         Send the files specified by file_locations to the Whistleflow View VM.
         """
-        self.whistleflow_export_requested.emit(file_locations)
+        self.whistleflow_export_requested.emit(filename, file_locations)
 
     def export_file_to_usb_drive(self, file_uuid: str, passphrase: str) -> None:
         """
