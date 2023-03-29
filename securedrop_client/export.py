@@ -197,6 +197,7 @@ class Export(QObject):
             output = subprocess.check_output(
                 [
                     quote("qrexec-client-vm"),
+                    quote("--"),
                     quote("whistleflow-view"),
                     quote("qubes.Filecopy"),
                     quote("/usr/lib/qubes/qfile-agent"),
