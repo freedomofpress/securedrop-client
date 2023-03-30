@@ -128,7 +128,7 @@ class Export(QObject):
         self,
         whistleflow_export_preflight_check_requested: Optional[pyqtBoundSignal],
         whistleflow_export_requested: Optional[pyqtBoundSignal],
-    ):
+    ) -> None:
         if whistleflow_export_preflight_check_requested is not None:
             whistleflow_export_preflight_check_requested.connect(
                 self.run_whistleflow_preflight_checks

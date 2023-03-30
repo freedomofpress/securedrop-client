@@ -882,13 +882,13 @@ class EmptyConversationView(QWidget):
 
 
 class SourceListToolbar(QToolBar):
-    def setup(self, controller: Controller):
+    def setup(self, controller: Controller) -> None:
         self.setFixedHeight(30)
         self.controller = controller
         self.delete_sources_action = DeleteSourcesAction(self, self.controller, DeleteSourcesDialog)
         self.addAction(self.delete_sources_action)
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.setObjectName("SourceListToolbar")
 

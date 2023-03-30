@@ -432,7 +432,7 @@ class Controller(QObject):
                 checked_source_uuids.append(source_uuid)
         return checked_source_uuids
 
-    def maybe_toggle_delete_sources_button_enabled(self):
+    def maybe_toggle_delete_sources_button_enabled(self) -> None:
         self.gui.toggle_delete_sources_button_enabled(len(self.get_checked_sources()) > 0)
 
     @pyqtSlot(int)
