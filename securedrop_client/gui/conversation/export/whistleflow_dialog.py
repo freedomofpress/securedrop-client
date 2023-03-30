@@ -1,5 +1,6 @@
 """
-A dialog that allows journalists to export sensitive files to a USB drive.
+A dialog that allows journalists to export conversations or transcripts to the
+Whistleflow View VM. This is a clone of FileDialog.
 """
 from gettext import gettext as _
 import datetime
@@ -7,7 +8,7 @@ import logging
 from typing import List, Optional
 
 from pkg_resources import resource_string
-from PyQt5.QtCore import QSize, Qt, pyqtSlot
+from PyQt5.QtCore import QSize, pyqtSlot
 
 from securedrop_client.export import ExportError, ExportStatus
 from securedrop_client.gui.base import ModalDialog, SecureQLabel
@@ -59,8 +60,6 @@ class WhistleflowDialog(ModalDialog):
         self.ready_header = _(
             "Ready to export:<br />" '<span style="font-weight:normal">{}</span>'
         ).format(self.file_name)
-        self.insert_usb_header = _("Insert encrypted USB drive")
-        self.passphrase_header = _("Enter passphrase for USB drive")
         self.success_header = _("Export successful")
         self.error_header = _("Export failed")
         self.starting_message = _(
@@ -78,15 +77,6 @@ class WhistleflowDialog(ModalDialog):
             "identifies who they are. To protect your sources, please consider redacting files "
             "before working with them on network-connected computers."
         )
-        self.insert_usb_message = _(
-            "Please insert one of the export drives provisioned specifically "
-            "for the SecureDrop Workstation."
-        )
-        self.usb_error_message = _(
-            "Either the drive is not encrypted or there is something else wrong with it."
-        )
-        self.passphrase_error_message = _("The passphrase provided did not work. Please try again.")
-        self.exporting_message = _("Exporting: {}").format(self.file_name)
         self.generic_error_message = _("See your administrator for help.")
         self.success_message = _(
             "Remember to be careful when working with files outside of your Workstation machine."
@@ -103,7 +93,9 @@ class WhistleflowDialog(ModalDialog):
 
     def _send_to_whistleflow(self) -> None:
         timestamp = datetime.datetime.now().isoformat()
-        self._device.whistleflow_export_requested.emit(_("export-{}.tar").format(timestamp), self._file_locations)
+        self._device.whistleflow_export_requested.emit(
+            "export-{}.tar".format(timestamp), self._file_locations
+        )
 
     def _show_success_message(self) -> None:
         self.continue_button.clicked.disconnect()
@@ -113,7 +105,6 @@ class WhistleflowDialog(ModalDialog):
         self.body.setText(self.success_message)
         self.cancel_button.hide()
         self.error_details.hide()
-        # self.passphrase_form.hide()
         self.header_line.show()
         self.body.show()
         self.adjustSize()
@@ -127,7 +118,6 @@ class WhistleflowDialog(ModalDialog):
             "{}: {}".format(self.error_status, self.generic_error_message)
         )
         self.error_details.hide()
-        # self.passphrase_form.hide()
         self.header_line.show()
         self.body.show()
         self.adjustSize()
@@ -140,7 +130,6 @@ class WhistleflowDialog(ModalDialog):
     def _export_file(self, checked: bool = False) -> None:
         self.start_animate_activestate()
         self.cancel_button.setEnabled(False)
-        # self.passphrase_field.setDisabled(True)
         self._device.export_files_to_whistleflow(self.file_name, self._file_locations)
 
     @pyqtSlot()
@@ -172,5 +161,4 @@ class WhistleflowDialog(ModalDialog):
     def _on_export_failed(self, error: ExportError) -> None:
         self.stop_animate_activestate()
         self.cancel_button.setEnabled(True)
-        # self.passphrase_field.setDisabled(False)
         logger.error(error.status)

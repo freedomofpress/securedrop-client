@@ -355,7 +355,9 @@ class Export(QObject):
         if status:
             raise ExportError(status)
 
-    def _run_whistleflow_export(self, archive_dir: str, filename: str, filepaths: List[str]) -> None:
+    def _run_whistleflow_export(
+        self, archive_dir: str, filename: str, filepaths: List[str]
+    ) -> None:
         """
         Run disk-test.
 
@@ -365,7 +367,6 @@ class Export(QObject):
         Raises:
             ExportError: Raised if the usb-test does not return a DISK_ENCRYPTED status.
         """
-        print("_run_whistleflow_export", filepaths)
         metadata = self.WHISTLEFLOW_METADATA.copy()
         archive_path = self._create_archive(archive_dir, filename, metadata, filepaths)
 
