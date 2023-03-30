@@ -119,7 +119,7 @@ class Device(QObject):
         """
         self.export_requested.emit(file_locations, passphrase)
 
-    def export_files_to_whistleflow(self, filename: str, file_locations: List[str]):
+    def export_files_to_whistleflow(self, filename: str, file_locations: List[str]) -> None:
         """
         Send the files specified by file_locations to the Whistleflow View VM.
         """
