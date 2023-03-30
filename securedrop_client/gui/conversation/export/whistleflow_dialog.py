@@ -2,9 +2,9 @@
 A dialog that allows journalists to export conversations or transcripts to the
 Whistleflow View VM. This is a clone of FileDialog.
 """
-from gettext import gettext as _
 import datetime
 import logging
+from gettext import gettext as _
 from typing import List, Optional
 
 from pkg_resources import resource_string
@@ -14,7 +14,6 @@ from securedrop_client.export import ExportError, ExportStatus
 from securedrop_client.gui.base import ModalDialog, SecureQLabel
 
 from .device import Device
-
 
 logger = logging.getLogger(__name__)
 
