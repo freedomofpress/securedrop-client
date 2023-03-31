@@ -24,7 +24,7 @@ import uuid
 from datetime import datetime
 from gettext import gettext as _
 from gettext import ngettext
-from typing import Dict, List, Optional, Set, Type, Union
+from typing import Dict, List, Optional, Type, Union
 
 import arrow
 import sdclientapi
@@ -432,7 +432,7 @@ class Controller(QObject):
                 checked_source_uuids.append(source_uuid)
         return checked_source_uuids
 
-    def maybe_toggle_delete_sources_button_enabled(self):
+    def maybe_toggle_delete_sources_button_enabled(self) -> None:
         self.gui.toggle_delete_sources_button_enabled(len(self.get_checked_sources()) > 0)
 
     @pyqtSlot(int)
@@ -841,7 +841,6 @@ class Controller(QObject):
     def _submit_download_job(
         self, object_type: Union[Type[db.Reply], Type[db.Message], Type[db.File]], uuid: str
     ) -> None:
-
         if object_type == db.Reply:
             job = ReplyDownloadJob(
                 uuid, self.data_dir, self.gpg

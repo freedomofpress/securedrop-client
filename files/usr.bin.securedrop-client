@@ -51,6 +51,7 @@
   /usr/bin/zenity mrix,
   /usr/lib/qubes-gpg-split/pipe-cat mrix,
   /usr/lib/qubes/qopen-in-vm mrix,
+  /usr/lib/qubes/qfile-agent mrix,
   /usr/share/drirc.d/ r,
   /usr/share/drirc.d/* r,
   /usr/share/icons/** r,

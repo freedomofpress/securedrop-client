@@ -14,7 +14,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.11.0\n"
+"Generated-By: Babel 2.12.1\n"
 
 msgid "{application_name} is already running"
 msgstr ""
@@ -91,10 +91,16 @@ msgstr ""
 msgid "Print Transcript"
 msgstr ""
 
-msgid "Export Transcript"
+msgid "Export Transcript to USB"
 msgstr ""
 
-msgid "Export All"
+msgid "Export Transcript to Whistleflow View"
+msgstr ""
+
+msgid "Export All to USB"
+msgstr ""
+
+msgid "Export All to Whistleflow View"
 msgstr ""
 
 msgid "<h2>Some files will not be exported</h2>Some files from this source have not yet been downloaded, and will not be exported.<br /><br />To export the currently-downloaded files, click \"Continue.\""

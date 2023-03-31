@@ -38,6 +38,11 @@ class ExportStatus(Enum):
     MISSING_PRINTER_URI = "ERROR_MISSING_PRINTER_URI"
 
 
+class ExportDestination(Enum):
+    USB = "USB"
+    WHISTLEFLOW = "WHISTLEFLOW"
+
+
 class Export(QObject):
     """
     This class sends files over to the Export VM so that they can be copied to a luks-encrypted USB
@@ -66,6 +71,8 @@ class Export(QObject):
     DISK_ENCRYPTION_KEY_NAME = "encryption_key"
     DISK_EXPORT_DIR = "export_data"
 
+    WHISTLEFLOW_METADATA = {"device": "whistleflow-view"}
+
     # Set up signals for communication with the controller
     preflight_check_call_failure = pyqtSignal(object)
     preflight_check_call_success = pyqtSignal()
@@ -77,6 +84,11 @@ class Export(QObject):
     printer_preflight_failure = pyqtSignal(object)
     print_call_failure = pyqtSignal(object)
     print_call_success = pyqtSignal()
+
+    whistleflow_preflight_check_call_failure = pyqtSignal(object)
+    whistleflow_preflight_check_call_success = pyqtSignal()
+    whistleflow_call_failure = pyqtSignal(object)
+    whistleflow_call_success = pyqtSignal()
 
     def __init__(
         self,
@@ -101,7 +113,6 @@ class Export(QObject):
         print_preflight_check_requested: Optional[pyqtBoundSignal] = None,
         print_requested: Optional[pyqtBoundSignal] = None,
     ) -> None:
-
         # This instance can optionally react to events to prevent
         # coupling it to dependent code.
         if export_preflight_check_requested is not None:
@@ -112,6 +123,18 @@ class Export(QObject):
             print_requested.connect(self.print)
         if print_preflight_check_requested is not None:
             print_preflight_check_requested.connect(self.run_printer_preflight)
+
+    def connect_whistleflow_signals(
+        self,
+        whistleflow_export_preflight_check_requested: Optional[pyqtBoundSignal],
+        whistleflow_export_requested: Optional[pyqtBoundSignal],
+    ) -> None:
+        if whistleflow_export_preflight_check_requested is not None:
+            whistleflow_export_preflight_check_requested.connect(
+                self.run_whistleflow_preflight_checks
+            )
+        if whistleflow_export_requested is not None:
+            whistleflow_export_requested.connect(self.send_files_to_whistleflow)
 
     def _export_archive(cls, archive_path: str) -> Optional[ExportStatus]:
         """
@@ -144,6 +167,38 @@ class Export(QObject):
                     quote("/usr/lib/qubes/qopen-in-vm"),
                     quote("--view-only"),
                     quote("--"),
+                    quote(archive_path),
+                ],
+                stderr=subprocess.STDOUT,
+            )
+            result = output.decode("utf-8").strip()
+
+            # No status is returned for successful `disk`, `printer-test`, and `print` calls.
+            # This will change in a future release of sd-export.
+            if result:
+                return ExportStatus(result)
+            else:
+                return None
+        except ValueError as e:
+            logger.debug(f"Export subprocess returned unexpected value: {e}")
+            raise ExportError(ExportStatus.UNEXPECTED_RETURN_STATUS)
+        except subprocess.CalledProcessError as e:
+            logger.error("Subprocess failed")
+            logger.debug(f"Subprocess failed: {e}")
+            raise ExportError(ExportStatus.CALLED_PROCESS_ERROR)
+
+    def _export_archive_to_whistleflow(cls, archive_path: str) -> Optional[ExportStatus]:
+        """
+        Clone of _export_archive which sends the archive to the Whistleflow VM.
+        """
+        try:
+            output = subprocess.check_output(
+                [
+                    quote("qrexec-client-vm"),
+                    quote("--"),
+                    quote("whistleflow-view"),
+                    quote("qubes.Filecopy"),
+                    quote("/usr/lib/qubes/qfile-agent"),
                     quote(archive_path),
                 ],
                 stderr=subprocess.STDOUT,
@@ -247,6 +302,10 @@ class Export(QObject):
         if status:
             raise ExportError(status)
 
+    def _run_whistleflow_view_test(self) -> None:
+        # TODO fill this in
+        logger.info("Running dummy whistleflow view test")
+
     def _run_usb_test(self, archive_dir: str) -> None:
         """
         Run usb-test.
@@ -296,6 +355,25 @@ class Export(QObject):
         if status:
             raise ExportError(status)
 
+    def _run_whistleflow_export(
+        self, archive_dir: str, filename: str, filepaths: List[str]
+    ) -> None:
+        """
+        Run disk-test.
+
+        Args:
+            archive_dir (str): The path to the directory in which to create the archive.
+
+        Raises:
+            ExportError: Raised if the usb-test does not return a DISK_ENCRYPTED status.
+        """
+        metadata = self.WHISTLEFLOW_METADATA.copy()
+        archive_path = self._create_archive(archive_dir, filename, metadata, filepaths)
+
+        status = self._export_archive_to_whistleflow(archive_path)
+        if status:
+            raise ExportError(status)
+
     def _run_print(self, archive_dir: str, filepaths: List[str]) -> None:
         """
         Create "printer" archive to send to Export VM.
@@ -309,6 +387,25 @@ class Export(QObject):
         status = self._export_archive(archive_path)
         if status:
             raise ExportError(status)
+
+    @pyqtSlot()
+    def run_whistleflow_preflight_checks(self) -> None:
+        """
+        Run preflight checks to verify that the usb device is connected and luks-encrypted.
+        """
+        try:
+            logger.debug(
+                "beginning whistleflow preflight checks in thread {}".format(
+                    threading.current_thread().ident
+                )
+            )
+            self._run_whistleflow_view_test()
+
+            logger.debug("completed preflight checks: success")
+            self.whistleflow_preflight_check_call_success.emit()
+        except ExportError as e:
+            logger.debug("completed preflight checks: failure")
+            self.whistleflow_preflight_check_call_failure.emit(e)
 
     @pyqtSlot()
     def run_preflight_checks(self) -> None:
@@ -365,6 +462,26 @@ class Export(QObject):
                 logger.error("Export failed")
                 logger.debug(f"Export failed: {e}")
                 self.export_usb_call_failure.emit(e)
+
+        self.export_completed.emit(filepaths)
+
+    @pyqtSlot(str, list)
+    def send_files_to_whistleflow(self, filename: str, filepaths: List[str]) -> None:
+        """
+        Clone of send_file_to_usb_device, but for Whistleflow.
+        """
+        with TemporaryDirectory() as temp_dir:
+            try:
+                logger.debug(
+                    "beginning export from thread {}".format(threading.current_thread().ident)
+                )
+                self._run_whistleflow_export(temp_dir, filename, filepaths)
+                self.whistleflow_call_success.emit()
+                logger.debug("Export successful")
+            except ExportError as e:
+                logger.error("Export failed")
+                logger.debug(f"Export failed: {e}")
+                self.whistleflow_call_failure.emit(e)
 
         self.export_completed.emit(filepaths)
 
