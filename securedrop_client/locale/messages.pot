@@ -14,7 +14,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.12.1\n"
+"Generated-By: Babel 2.11.0\n"
 
 msgid "{application_name} is already running"
 msgstr ""
@@ -95,6 +95,9 @@ msgid "Export Transcript to USB"
 msgstr ""
 
 msgid "Export Transcript to Whistleflow View"
+msgstr ""
+
+msgid "{}_transcript.txt"
 msgstr ""
 
 msgid "Export All to USB"
