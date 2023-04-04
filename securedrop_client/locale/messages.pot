@@ -249,7 +249,7 @@ msgstr ""
 msgid "YES, DELETE FILES AND MESSAGES"
 msgstr ""
 
-msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
+msgid "Would you like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
 msgstr ""
 
 msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
