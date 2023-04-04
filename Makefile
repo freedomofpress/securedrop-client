@@ -121,10 +121,7 @@ test-integration: ## Run the integration tests
 
 .PHONY: test-functional
 test-functional: ## Run the functional tests
-	@TEST_CMD="python -m pytest -v -n 4 --random-order-bucket global --random-order-seed=$(RANDOM_SEED) $(FTESTS)" ; \
-		if command -v xvfb-run > /dev/null; then \
-		xvfb-run --server-args="-screen 0, 1680x1050x24" -a $$TEST_CMD ; else \
-		$$TEST_CMD ; fi
+	@./test-functional.sh
 
 .PHONY: lint
 lint: ## Run the linters
