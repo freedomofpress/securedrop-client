@@ -40,6 +40,7 @@ CONSTANTS
     InReplies, OutReplies,
     ForLocalDeletion, ForRemoteDeletion
 
+ASSUME InReplies \intersect OutReplies = {}
 Replies == InReplies \union OutReplies
 
 
