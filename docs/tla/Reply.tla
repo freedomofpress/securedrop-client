@@ -341,16 +341,16 @@ ProcessJob ==
     LET job == Head(queue)
     IN
         IF IsAvailable(job.id) THEN
-        \/ /\ job \in DownloadReplyJob
-           /\ \/ DownloadPending(job)
-              \/ Downloading(job)
-              \/ Downloaded(job)
-        \/ /\ job \in SendReplyJob
-           /\ \/ SendPending(job)
-              \/ Sending(job)
-        \/ /\ job \in DeleteJob
-           /\ \/ DeleteInterrupt(job)
-              \/ DeletedLocally(job)
+            CASE job \in DownloadReplyJob ->
+                \/ DownloadPending(job)
+                \/ Downloading(job)
+                \/ Downloaded(job)
+            [] job \in SendReplyJob ->
+                \/ SendPending(job)
+                \/ Sending(job)
+            [] job \in DeleteJob ->
+                \/ DeleteInterrupt(job)
+                \/ DeletedLocally(job)
         ELSE
         /\ QueueNext
         /\ UNCHANGED pool
