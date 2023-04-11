@@ -61,7 +61,6 @@ Contains(q, id) == \E el \in Range(q): el.id = id
 \* The unified Reply model proposed in freedomofpress/securedrop-engineering#8.
 \* We have to build it up from primitive types...
 Id == Nat
-DEAD == "DEAD"
 \* ...through unions of allowed values.  Note that we union Deletion
 \* explicitly into both SharedStates and TerminalStates, because it's
 \* a testable feature of this model, not a necessary constraint, that
@@ -80,7 +79,7 @@ TerminalStates == {
 \* For example, a dead reply has only a type, nothing more, because we need
 \* a way to show a reply is "gone" even though we can't remove it from a
 \* function (mapping) once we've added it (https://stackoverflow.com/q/47115185)...
-DeadReply == [type: {DEAD}]
+DeadReply == [type |-> "DEAD"]
 \* ...while an incoming reply has both a type and set of possible states...
 InReply ==
     [
@@ -104,11 +103,12 @@ OutReply ==
             "SendFailed"
         } \union SharedStates
     ]
-\* Finally: dead, incoming, and outgoing replies all count as type Reply.
-Reply ==
-    DeadReply \union
-    InReply \union
-    OutReply
+\* Finally: incoming, outgoing, and dead replies all count as type Reply.
+Reply == UNION {
+    InReply,
+    OutReply,
+    {DeadReply}
+}
 VARIABLES
     \* The pool is our abstract database: the set of all Reply records we've
     \* known about in this model run.
@@ -120,7 +120,7 @@ VARIABLES
 \* A reply is alive if it (a) exists and (b) is not dead.
 IsAlive(id) ==
     /\ id \in DOMAIN pool
-    /\ pool[id] \notin DeadReply
+    /\ pool[id] \notin {DeadReply}
 
 \* A reply is available if it (a) is alive and (b) has not been locally deleted.
 IsAvailable(id) ==
@@ -141,10 +141,7 @@ Trans(id, from, to) ==
     /\ Set(id, to)
 
 \* Copy pool to pool', but replace the value at `id` with the dead reply.
-\*
-\* NB.  We can't do ![id] = DeadReply because the type DeadReply will be
-\* evaluated as the set {DeadReply}.
-Delete(id) == pool' = [pool EXCEPT ![id] = [type |-> DEAD]]
+Delete(id) == pool' = [pool EXCEPT ![id] = DeadReply]
 
 
 \* Abstract API jobs.  Jobs have an `id` (like Reply.id), a `type`, and a
@@ -407,7 +404,7 @@ Spec == Init /\ [][Next]_vars /\ WF_vars(Next)
 \* replies are either dead or in a terminal state.
 PoolLiveness ==
     <>[](\A r \in Range(pool):
-        \/ r \in DeadReply
+        \/ r \in {DeadReply}
         \/ r.state \in TerminalStates
         )
 
