@@ -184,8 +184,8 @@ IsExpired(job) == job.ttl = 0
 \* The pool contains only records enumerated in the constant set Replies and
 \* of type Reply.
 PoolTypeOK ==
-    /\ DOMAIN pool \subseteq Replies
-    /\ pool \in [DOMAIN pool -> Reply]
+    \E seen \in SUBSET Replies:
+        pool \in [seen -> Reply]
 
 \* Both queues are sequences of type Job.
 QueueTypeOK ==
