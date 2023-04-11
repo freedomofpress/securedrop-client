@@ -37,11 +37,10 @@ sufficient.
 EXTENDS FiniteSets, Naturals, Sequences, TLC
 CONSTANTS
     JOB_RETRIES,
-    InReplies, OutReplies,
+    NumReplies,
     ForLocalDeletion, ForRemoteDeletion
 
-ASSUME InReplies \intersect OutReplies = {}
-Replies == InReplies \union OutReplies
+Replies == 0..(NumReplies - 1)
 
 
 \* ---- HELPERS ----
@@ -219,25 +218,30 @@ RemoteDelete(id) ==
     /\ Delete(id)
     /\ UNCHANGED<<deleting, done, queue>>
 
-\* Create the job-record pair for `id`, based crudely on whether it's enumerated
-\* in the set of incoming or outgoing replies.
+\* Create the job-record pair for `id`, chosen at random to be either an
+\* incoming or an outgoing reply.  `pool` is updated via syntactic sugar
+\* like <https://groups.google.com/g/tlaplus/c/-c7o7G9AS5M/m/Fi66-Um8CAAJ>.
 Enqueue(id) ==
-    LET
-        dir == IF id \in InReplies THEN "in" ELSE "out"
-        state == IF id \in InReplies THEN "DownloadPending" ELSE "SendPending"
-        job == IF id \in InReplies THEN "DownloadReply" ELSE "SendReply"
-    IN
-        \* https://groups.google.com/g/tlaplus/c/-c7o7G9AS5M/m/Fi66-Um8CAAJ
-        /\ pool' = pool @@ (id :> [
-                type |-> dir,
-                state |-> state
-            ])
-        /\ queue' = Append(queue, [
+    \/ /\ queue' = Append(queue, [
                 id |-> id,
-                type |-> job,
+                type |-> "DownloadReply",
                 ttl |-> JOB_RETRIES
             ])
-        /\ UNCHANGED done
+       /\ pool' = pool @@ (id :> [
+                type |-> "in",
+                state |-> "DownloadPending"
+            ])
+       /\ UNCHANGED done
+    \/ /\ queue' = Append(queue, [
+                id |-> id,
+                type |-> "SendReply",
+                ttl |-> JOB_RETRIES
+            ])
+       /\ pool' = pool @@ (id :> [
+                type |-> "out",
+                state |-> "SendPending"
+            ])
+       /\ UNCHANGED done
 
 \* If `job` isn't expired, we can retry it by resetting Head(queue) to `job`.
 Retry(job) ==
