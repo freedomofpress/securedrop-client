@@ -113,8 +113,8 @@ VARIABLES
     \* The pool is our abstract database: the set of all Reply records we've
     \* known about in this model run.
     pool,
-    \* This is the set of IDs for which we've processed deletion operations in
-    \* this model run.  It's an implementation detail of the model only.
+    \* Auxiliary: the set of IDs for which we've processed deletion operations
+    \* in this model run.
     deleting
 
 \* A reply is alive if it (a) exists and (b) is not dead.
@@ -163,8 +163,8 @@ VARIABLES
     \* (https://learntla.com/topics/message-queues.html).  The current job is
     \* Head(queue).
     queue,
-    \* Completed jobs from `queue` are appended to `done`, so that we can prove
-    \* what's happened to them in each model run.
+    \* Auxiliary: completed jobs from `queue` are appended to `done`, so that we
+    \* can prove what's happened to them in each model run.
     done
 
 \* A job is expired if its `ttl` (remaining retries) reaches 0.
