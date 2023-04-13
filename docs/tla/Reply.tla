@@ -357,7 +357,7 @@ ProcessJob ==
 
 \* Process the queue when non-empty.
 QueueRun ==
-    \/ /\ Len(queue) > 0
+    \/ /\ queue # <<>>
        /\ ProcessJob
        /\ UNCHANGED deleting
     \/ UNCHANGED vars  \* nothing changes if there's nothing to do
@@ -410,7 +410,7 @@ PoolLiveness ==
 
 \* It is eventually always (thereafter, without regression) true that all jobs
 \* have been processed.
-QueueLiveness == <>[](Len(queue) = 0)
+QueueLiveness == <>[](queue = <<>>)
 ====
 ## Appendix
 
