@@ -26,7 +26,6 @@ from securedrop_client.gui.conversation import (
     PrintTranscriptDialog as PrintConversationTranscriptDialog,
 )
 from securedrop_client.gui.conversation.export.whistleflow_dialog import WhistleflowDialog
-from securedrop_client.gui.widgets import SourceListToolbar
 from securedrop_client.logic import Controller
 from securedrop_client.utils import safe_mkdir
 
@@ -112,7 +111,7 @@ class DeleteSourcesAction(QAction):
 
     def __init__(
         self,
-        parent: SourceListToolbar,
+        parent: 'SourceListToolbar',
         controller: Controller,
         confirmation_dialog: Callable[[List[str]], QDialog],
     ) -> None:
