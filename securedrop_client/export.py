@@ -237,7 +237,7 @@ class Export(QObject):
         archive_path = os.path.join(archive_dir, archive_fn)
 
         with tarfile.open(archive_path, "w:gz") as archive:
-            if (metadata):
+            if metadata:
                 cls._add_virtual_file_to_archive(archive, cls.METADATA_FN, metadata)
 
             # When more than one file is added to the archive,
