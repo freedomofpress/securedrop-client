@@ -71,7 +71,7 @@ class Export(QObject):
     DISK_ENCRYPTION_KEY_NAME = "encryption_key"
     DISK_EXPORT_DIR = "export_data"
 
-    WHISTLEFLOW_METADATA = {"device": "whistleflow-view"}
+    WHISTLEFLOW_METADATA = {}
 
     # Set up signals for communication with the controller
     preflight_check_call_failure = pyqtSignal(object)
@@ -237,7 +237,8 @@ class Export(QObject):
         archive_path = os.path.join(archive_dir, archive_fn)
 
         with tarfile.open(archive_path, "w:gz") as archive:
-            cls._add_virtual_file_to_archive(archive, cls.METADATA_FN, metadata)
+            if metadata:
+                cls._add_virtual_file_to_archive(archive, cls.METADATA_FN, metadata)
 
             # When more than one file is added to the archive,
             # extra care must be taken to prevent name collisions.
