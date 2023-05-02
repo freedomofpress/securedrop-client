@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.1
+  * Updated certifi to 2022.12.7 (#107)
+  * Drop furl dependency (#105, #111)
+  * Replace werkzeug dependency with basic string checks (#110, 115)
+
 ## 0.4.0
 
   * Reject JSON with duplicate keys (TOB-SDW-014) (#98)
