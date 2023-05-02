@@ -21,6 +21,9 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import backref, relationship, scoped_session, sessionmaker
+from transitions import Machine
+
+from securedrop_client.statemachine import StateMachineMixin
 
 convention = {
     "ix": "ix_%(column_0_label)s",
@@ -424,12 +427,67 @@ class File(Base):
         return False
 
 
-class Reply(Base):
-
+class Reply(Base, StateMachineMixin):
     __tablename__ = "replies"
     __table_args__ = (
         UniqueConstraint("source_id", "file_counter", name="uq_messages_source_id_file_counter"),
     )
+
+    # Shared states:
+    PENDING = "Pending"
+    READY = "Ready"
+    DELETED_LOCALLY = "DeletedLocally"
+
+    # Incoming states:
+    DOWNLOAD_PENDING = "DownloadPending"
+    DOWNLOADING = "Downloading"
+    DOWNLOAD_FAILED = "DownloadFailed"
+    DOWNLOADED = "Downloaded"
+    DECRYPTION_FAILED = "DecryptionFailed"
+
+    # Outgoing states:
+    SEND_PENDING = "SendPending"
+    SENDING = "Sending"
+    SEND_FAILED = "SendFailed"
+
+    machine = Machine(
+        model=None,
+        initial=None,
+        states=[
+            # Shared states:
+            PENDING,
+            READY,
+            DELETED_LOCALLY,
+            # Incoming states:
+            DOWNLOAD_PENDING,
+            DOWNLOADING,
+            DOWNLOAD_FAILED,
+            DOWNLOADED,
+            DECRYPTION_FAILED,
+            # Outgoing states:
+            SEND_PENDING,
+            SENDING,
+            SEND_FAILED,
+        ],
+        transitions=[
+            # Shared transitions:
+            ["deleted_locally", "*", DELETED_LOCALLY],
+            # Incoming transitions:
+            ["download_queued", [PENDING, SEND_FAILED], DOWNLOAD_PENDING],
+            ["downloading", DOWNLOAD_PENDING, DOWNLOADING],
+            ["downloaded", DOWNLOADING, DOWNLOADED],
+            ["download_failed", DOWNLOADING, DOWNLOAD_FAILED],
+            ["decrypted", DOWNLOADED, READY],
+            ["decryption_failed", DOWNLOADED, DECRYPTION_FAILED],
+            # Outgoing transitions:
+            ["send_queued", PENDING, SEND_PENDING],
+            ["sending", SEND_PENDING, SENDING],
+            ["sent", SENDING, READY],
+            ["send_failed", SENDING, SEND_FAILED],
+        ],
+    )
+
+    state = Column(String(100), nullable=False, default=PENDING)
 
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), unique=True, nullable=False)
@@ -445,25 +503,8 @@ class Reply(Base):
     file_counter = Column(Integer, nullable=False)
     size = Column(Integer)
 
-    # This is whether the reply has been downloaded in the local database.
-    is_downloaded = Column(Boolean(name="is_downloaded"), default=False)
-
     content = Column(
         Text,
-        CheckConstraint(
-            "CASE WHEN is_downloaded = 0 THEN content IS NULL ELSE 1 END",
-            name="replies_compare_download_vs_content",
-        ),
-    )
-
-    # This tracks if the file had been successfully decrypted after download.
-    is_decrypted = Column(
-        Boolean(name="is_decrypted"),
-        CheckConstraint(
-            "CASE WHEN is_downloaded = 0 THEN is_decrypted IS NULL ELSE 1 END",
-            name="replies_compare_is_downloaded_vs_is_decrypted",
-        ),
-        nullable=True,
     )
 
     download_error_id = Column(Integer, ForeignKey("downloaderrors.id"))
@@ -495,7 +536,7 @@ class Reply(Base):
             return "<Reply not yet available>"
 
     def __repr__(self) -> str:
-        return "<Reply {}: {}>".format(self.uuid, self.filename)
+        return "<Reply ({}) {}: {}>".format(self.state, self.uuid, self.filename)
 
     def location(self, data_dir: str) -> str:
         """
