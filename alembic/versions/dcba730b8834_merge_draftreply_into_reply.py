@@ -17,11 +17,59 @@ depends_on = None
 
 
 def upgrade():
+    op.execute(
+        """INSERT INTO replies (
+            id,
+            uuid,
+            source_id,
+            journalist_id,
+            file_counter,
+            content,
+            state
+            )
+        SELECT
+            id,
+            uuid,
+            source_id,
+            journalist_id,
+            file_counter,
+            content,
+            CASE send_status_id
+                WHEN 1 THEN 'Ready'
+                WHEN 2 THEN 'SendFailed'
+            END
+        FROM draftreplies"""
+    )
+
     op.drop_table("replysendstatuses")
     op.drop_table("draftreplies")
 
 
 def downgrade():
+    op.execute(
+        """INSERT INTO draftreplies (
+            id,
+            uuid,
+            source_id,
+            journalist_id,
+            file_counter,
+            content,
+            send_status_id
+            )
+        SELECT
+            id,
+            uuid,
+            source_id,
+            journalist_id,
+            file_counter,
+            content,
+            CASE state
+                WHEN 'Ready' THEN 1
+                WHEN 'SendFailed' THEN 2
+            END
+        FROM replies"""
+    )
+
     op.create_table(
         "draftreplies",
         sa.Column("id", sa.INTEGER(), nullable=False),
