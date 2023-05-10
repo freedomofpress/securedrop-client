@@ -430,7 +430,7 @@ class File(Base):
 class Reply(Base, StateMachineMixin):
     __tablename__ = "replies"
     __table_args__ = (
-        UniqueConstraint("source_id", "file_counter", name="uq_messages_source_id_file_counter"),
+        UniqueConstraint("source_id", "filename", name="uq_replies_source_id_filename"),
     )
 
     # Shared states:

@@ -687,9 +687,7 @@ def update_replies(
                 update_draft_replies(
                     session,
                     draft_reply_db_object.source.id,
-                    draft_reply_db_object.timestamp,
-                    draft_reply_db_object.file_counter,
-                    nr.file_counter,
+                    source.interaction_count,
                     commit=False,
                 )
                 session.delete(draft_reply_db_object)
@@ -761,50 +759,27 @@ def update_missing_files(data_dir: str, session: Session) -> List[File]:
 def update_draft_replies(
     session: Session,
     source_id: int,
-    timestamp: datetime,
-    old_file_counter: int,
-    new_file_counter: int,
+    source_clock: int,
     commit: bool = True,
 ) -> None:
     """
-    When we confirm a sent reply R, if there are drafts that were sent after it,
-    we need to reposition them to ensure that they appear _after_ the confirmed
-    replies. We do this by updating the file_counter stored on the drafts sent
-    after reply R.
-
-    Example:
-        1. Reply Q, has file_counter=2
-        2. User adds DraftReply R, it has file_counter=2
-        3. User adds DraftReply S, it has file_counter=2 and
-           timestamp(S) > timestamp(R).
-        4. DraftReply R saved on server with file_counter=4 (this can happen as other
-           journalist can be sending replies), it is converted to Reply R locally.
-        5. We must now update file_counter on DraftReply S such that it appears
-           after Reply R in the conversation view.
-
     Args:
         session (Session): The SQLAlchemy session object to be used.
-        source_id (int): this is the ID of the source that the reply R corresponds to.
-        timestamp (datetime): this is the timestamp of the draft that corresponds to
-            reply R.
-        old_file_counter (int): this is the file_counter of the draft that
-            corresponds to reply R.
-        new_file_counter (int): this is the file_counter of the reply R confirmed
-            as successfully sent from the server.
+        source_id (int): the ID of the source whose clock has been updated.
+        source_clock (int): the current clock value of the source, aka its interaction_count.
     """
-    for draft_reply in (
-        session.query(DraftReply)
+    for reply in (
+        session.query(Reply)
         .filter(
             and_(
-                DraftReply.source_id == source_id,
-                DraftReply.timestamp > timestamp,
-                DraftReply.file_counter <= old_file_counter,
+                Reply.state != Reply.READY,
+                Reply.file_counter < source_clock,
             )
         )
         .all()
     ):
-        draft_reply.file_counter = new_file_counter
-        session.add(draft_reply)
+        reply.file_counter = source_clock
+        session.add(reply)
     if commit:
         session.commit()
 

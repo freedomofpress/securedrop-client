@@ -106,10 +106,10 @@ class SendReplyJob(SingleObjectApiJob):
                 commit=False,
             )
 
-            # Add reply to replies table and increase the source interaction count by 1 and delete
+            # Add reply to replies table, set the source interaction count, and delete
             # the draft reply.
             session.add(reply_db_object)
-            source.interaction_count = source.interaction_count + 1
+            source.interaction_count = interaction_count
             session.add(source)
 
             session.delete(draft_reply_db_object)
