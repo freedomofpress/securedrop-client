@@ -9,10 +9,7 @@ from sqlalchemy.orm.session import Session
 from securedrop_client.api_jobs.base import SingleObjectApiJob
 from securedrop_client.crypto import GpgHelper
 from securedrop_client.db import (
-    DraftReply,
     Reply,
-    ReplySendStatus,
-    ReplySendStatusCodes,
     Source,
     User,
 )
@@ -33,39 +30,27 @@ class SendReplyJob(SingleObjectApiJob):
         """
         Override ApiJob.
 
-        Encrypt the reply and send it to the server. If the call is successful, add it to the local
-        database and return the reply uuid string. Otherwise raise a SendReplyJobException so that
-        we can return the reply uuid.
+        Encrypt the reply and send it to the server. If the call is successful,
+        update the local Reply and return its UUID. Otherwise raise a
+        SendReplyJobException with the UUID.
         """
 
         try:
-            # If the reply has already made it to the server but we didn't get a 201 response back,
-            # then a reply with self.reply_uuid will exist in the replies table.
-            reply_db_object = session.query(Reply).filter_by(uuid=self.reply_uuid).one_or_none()
-            if reply_db_object:
+            reply = session.query(Reply).filter_by(uuid=self.reply_uuid).one_or_none()
+
+            # If `reply` was deleted locally, then do not send the message to
+            # the source.
+            if not reply:
+                raise Exception("Reply {} does not exist".format(self.reply_uuid))
+
+            # If `reply` made it to the server, but we didn't get a 201
+            # response back, we might have already fetched it successfully.
+            if reply.state == Reply.READY:
                 logger.debug("Reply {} has already been sent successfully".format(self.reply_uuid))
-                return reply_db_object.uuid
+                return reply.uuid
 
-            # If the draft does not exist because it was deleted locally then do not send the
-            # message to the source.
-            draft_reply_db_object = (
-                session.query(DraftReply).filter_by(uuid=self.reply_uuid).one_or_none()
-            )
-            if not draft_reply_db_object:
-                raise Exception("Draft reply {} does not exist".format(self.reply_uuid))
-            draft_reply_db_object.sending_pid = os.getpid()
-            session.commit()
-
-            # If the source was deleted locally then do not send the message and delete the draft.
-            source = session.query(Source).filter_by(uuid=self.source_uuid).one_or_none()
-            if not source:
-                session.delete(draft_reply_db_object)
-                session.commit()
-                raise Exception("Source {} does not exists".format(self.source_uuid))
-
-            # If the account of the sender no longer exists then do not send the reply. Keep the
-            # draft reply so that the failed reply associated with the deleted account can be
-            # displayed.
+            # If the sender's account no longer exists, then do not send `reply`.  Raising an
+            # exception here will mark (and display) it as failed.
             sender = (
                 session.query(User).filter_by(uuid=api_client.token_journalist_uuid).one_or_none()
             )
@@ -73,49 +58,30 @@ class SendReplyJob(SingleObjectApiJob):
                 raise Exception("Sender of reply {} has been deleted".format(self.reply_uuid))
 
             # Send the draft reply to the source
+            reply.sending()
+            session.commit()
             encrypted_reply = self.gpg.encrypt_to_source(self.source_uuid, self.message)
             sdk_reply = self._make_call(encrypted_reply, api_client)
 
-            # Create a new reply object with an updated filename and file counter
-            interaction_count = source.interaction_count + 1
-            filename = "{}-{}-reply.gpg".format(interaction_count, source.journalist_designation)
+            # Update the reply object
+            reply.filename = sdk_reply.filename
+            reply.file_counter = int(reply.filename.split("-")[0])
+            reply.sent()
 
-            reply_db_object = Reply(
-                uuid=self.reply_uuid,
-                source_id=source.id,
-                filename=filename,
-                journalist_id=sender.id,
-                content=self.message,
-                is_downloaded=True,
-                is_decrypted=True,
-            )
-            new_file_counter = int(sdk_reply.filename.split("-")[0])
-            reply_db_object.file_counter = new_file_counter
-            reply_db_object.filename = sdk_reply.filename
-
-            # Update following draft replies for the same source to reflect the new reply count
-            draft_file_counter = draft_reply_db_object.file_counter
-            draft_timestamp = draft_reply_db_object.timestamp
+            # Update the source and the rest of its pending replies:
+            reply.source.interaction_count = reply.file_counter
+            session.add(reply.source)
 
             update_draft_replies(
                 session,
-                source.id,
-                draft_timestamp,
-                draft_file_counter,
-                new_file_counter,
+                reply.source.id,
+                reply.file_counter,
                 commit=False,
             )
 
-            # Add reply to replies table, set the source interaction count, and delete
-            # the draft reply.
-            session.add(reply_db_object)
-            source.interaction_count = interaction_count
-            session.add(source)
-
-            session.delete(draft_reply_db_object)
             session.commit()
 
-            return reply_db_object.uuid
+            return reply.uuid
         except (RequestTimeoutError, ServerConnectionError) as e:
             message = "Failed to send reply for source {id} due to Exception: {error}".format(
                 id=self.source_uuid, error=e
@@ -133,14 +99,8 @@ class SendReplyJob(SingleObjectApiJob):
 
     def _set_status_to_failed(self, session: Session) -> None:
         try:  # If draft exists, we set it to failed.
-            draft_reply_db_object = session.query(DraftReply).filter_by(uuid=self.reply_uuid).one()
-            reply_status = (
-                session.query(ReplySendStatus)
-                .filter_by(name=ReplySendStatusCodes.FAILED.value)
-                .one()
-            )
-            draft_reply_db_object.send_status_id = reply_status.id
-            session.add(draft_reply_db_object)
+            reply = session.query(Reply).filter_by(uuid=self.reply_uuid).one()
+            reply.send_failed()
             session.commit()
         except SQLAlchemyError as e:
             logger.info(f"SQL error when setting reply {self.reply_uuid} as failed, skipping")

@@ -168,41 +168,8 @@ class Controller(QObject):
 
     """
     This signal indicates that a reply was successfully sent and received by the server.
-
-    Emits:
-        str: the reply's source UUID
-        str: the reply UUID
-        str: the content of the reply
     """
-    reply_succeeded = pyqtSignal(str, str, str)
-
-    """
-    This signal indicates that a reply was not successfully sent or received by the server.
-
-    Emits:
-        str: the reply UUID
-    """
-    reply_failed = pyqtSignal(str)
-
-    """
-    This signal indicates that a reply has been successfully downloaded.
-
-    Emits:
-        str: the reply's source UUID
-        str: the reply UUID
-        str: the content of the reply
-    """
-    reply_ready = pyqtSignal(str, str, str)
-
-    """
-    This signal indicates an error while downloading a reply.
-
-    Emits:
-        str: the reply's source UUID
-        str: the reply UUID
-        str: the content of the reply
-    """
-    reply_download_failed = pyqtSignal(str, str, str)
+    reply_state_changed = pyqtSignal(str, str, str)
 
     """
     This signal indicates that a message has been successfully downloaded.
@@ -744,7 +711,7 @@ class Controller(QObject):
                         files.append(item.uuid)
                     elif isinstance(item, db.Message):
                         messages.append(item.uuid)
-                    elif isinstance(item, db.Reply):
+                    elif isinstance(item, db.Reply) and item.state == db.Reply.READY:
                         replies.append(item.uuid)
                 except sqlalchemy.exc.InvalidRequestError as e:
                     logger.debug(e)
@@ -826,11 +793,9 @@ class Controller(QObject):
     ) -> None:
 
         if object_type == db.Reply:
-            job = ReplyDownloadJob(
-                uuid, self.data_dir, self.gpg
-            )  # type: Union[ReplyDownloadJob, MessageDownloadJob, FileDownloadJob]
-            job.success_signal.connect(self.on_reply_download_success)
-            job.failure_signal.connect(self.on_reply_download_failure)
+            job = ReplyDownloadJob(uuid, self.data_dir, self.gpg)
+            job.success_signal.connect(self.on_reply_download_succeeded)
+            job.failure_signal.connect(self.on_reply_download_failed)
         elif object_type == db.Message:
             job = MessageDownloadJob(uuid, self.data_dir, self.gpg)
             job.success_signal.connect(self.on_message_download_success)
@@ -886,17 +851,19 @@ class Controller(QObject):
                     f"Download of reply {reply.uuid} failed since client start; not retrying."
                 )
             else:
+                reply.download_queued()
                 self._submit_download_job(type(reply), reply.uuid)
+                self.session.commit()
 
-    def on_reply_download_success(self, uuid: str) -> None:
+    # FROM: ReplyDownloadJob
+    def on_reply_download_succeeded(self, uuid: str) -> None:
         """
         Called when a reply has downloaded.
         """
-        self.session.commit()  # Needed to flush stale data.
-        reply = storage.get_reply(self.session, uuid)
-        self.reply_ready.emit(reply.source.uuid, reply.uuid, reply.content)
+        self._reply_state_changed(uuid)
 
-    def on_reply_download_failure(self, exception: DownloadException) -> None:
+    # FROM: ReplyDownloadJob
+    def on_reply_download_failed(self, exception: DownloadException) -> None:
         """
         Called when a reply fails to download.
         """
@@ -905,13 +872,7 @@ class Controller(QObject):
             logger.warning("Failure due to checksum mismatch, retrying {}".format(exception.uuid))
             self._submit_download_job(exception.object_type, exception.uuid)
 
-        self.session.commit()
-        try:
-            reply = storage.get_reply(self.session, exception.uuid)
-            self.reply_download_failed.emit(reply.source.uuid, reply.uuid, str(reply))
-        except Exception as e:
-            logger.error("Could not emit reply_download_failed")
-            logger.debug(f"Could not emit reply_download_failed: {e}")
+        self._reply_state_changed(exception.uuid)
 
     def downloaded_file_exists(self, file: db.File, silence_errors: bool = False) -> bool:
         """
@@ -1091,45 +1052,40 @@ class Controller(QObject):
             self.update_sources()  # Refresh source list to remove deleted source widget
             return
 
-        # Before we send the reply, add the draft to the database with a PENDING
-        # reply send status.
-        reply_status = (
-            self.session.query(db.ReplySendStatus)
-            .filter_by(name=db.ReplySendStatusCodes.PENDING.value)
-            .one()
-        )
-        draft_reply = db.DraftReply(
+        # Before we send the reply, add it to the database as pending.
+        reply = db.Reply(
+            db.Reply.SEND_PENDING,
             uuid=reply_uuid,
-            timestamp=datetime.utcnow(),
             source_id=source.id,
             journalist_id=self.authenticated_user.id,
             file_counter=source.interaction_count,
+            filename=reply_uuid,
             content=message,
-            send_status_id=reply_status.id,
         )
-        self.session.add(draft_reply)
+        self.session.add(reply)
         self.session.commit()
 
         job = SendReplyJob(source_uuid, reply_uuid, message, self.gpg)
-        job.success_signal.connect(self.on_reply_success)
-        job.failure_signal.connect(self.on_reply_failure)
-
+        job.success_signal.connect(self.on_reply_send_succeeded)
+        job.failure_signal.connect(self.on_reply_send_failed)
         self.add_job.emit(job)
 
-    def on_reply_success(self, reply_uuid: str) -> None:
-        logger.info(f"{reply_uuid} sent successfully")
-        self.session.commit()
-        reply = storage.get_reply(self.session, reply_uuid)
-        self.reply_succeeded.emit(reply.source.uuid, reply_uuid, reply.content)
+    # FROM: SendReplyJob
+    def on_reply_send_succeeded(self, reply_uuid: str) -> None:
+        self._reply_state_changed(reply_uuid)
 
-    def on_reply_failure(
+    # FROM: SendReplyJob
+    def on_reply_send_failed(
         self, exception: Union[SendReplyJobError, SendReplyJobTimeoutError]
     ) -> None:
-        logger.debug("{} failed to send".format(exception.reply_uuid))
-
-        # only emit failure signal for non-timeout errors
         if isinstance(exception, SendReplyJobError):
-            self.reply_failed.emit(exception.reply_uuid)
+            self._reply_state_changed(exception.reply_uuid)
+
+    # VIA
+    def _reply_state_changed(self, reply_uuid: str) -> None:
+        self.session.commit()
+        reply = storage.get_reply(self.session, reply_uuid)
+        self.reply_state_changed.emit(reply.source.uuid, reply.uuid, reply.content)
 
     def get_file(self, file_uuid: str) -> db.File:
         file = storage.get_file(self.session, file_uuid)
@@ -1149,6 +1105,6 @@ class Controller(QObject):
         if the application quit mid-job or mid-queue).  Without this signal, the reply
         won't be shown as failed in the GUI until the application is restarted.
         """
-        failed_replies = storage.mark_all_pending_drafts_as_failed(self.session)
+        failed_replies = storage.mark_all_pending_replies_as_failed(self.session)
         for failed_reply in failed_replies:
-            self.reply_failed.emit(failed_reply.uuid)
+            self._reply_state_changed(failed_reply.uuid)

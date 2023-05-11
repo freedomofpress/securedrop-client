@@ -41,12 +41,9 @@ from securedrop_client.db import (
     DeletedConversation,
     DeletedSource,
     DeletedUser,
-    DraftReply,
     File,
     Message,
     Reply,
-    ReplySendStatus,
-    ReplySendStatusCodes,
     SeenFile,
     SeenMessage,
     SeenReply,
@@ -103,9 +100,9 @@ def get_local_files(session: Session) -> List[File]:
 
 def get_local_replies(session: Session) -> List[Reply]:
     """
-    Return all reply objects from the local database that are successful.
+    Return all non-outgoing reply objects from the local database.
     """
-    return session.query(Reply).all()
+    return session.query(Reply).filter(Reply.is_outgoing == False).all()
 
 
 def get_remote_data(api: API) -> Tuple[List[SDKSource], List[SDKSubmission], List[SDKReply]]:
@@ -673,27 +670,12 @@ def update_replies(
                 source_id=source.id,
                 filename=reply.filename,
                 size=reply.size,
+                state=Reply.DOWNLOAD_PENDING,  # by definition
             )
             session.add(nr)
             session.flush()
 
             add_seen_reply_records(nr.id, reply.seen_by, session)
-
-            # All replies fetched from the server have succeeded in being sent,
-            # so we should delete the corresponding draft locally if it exists.
-            try:
-                draft_reply_db_object = session.query(DraftReply).filter_by(uuid=reply.uuid).one()
-
-                update_draft_replies(
-                    session,
-                    draft_reply_db_object.source.id,
-                    source.interaction_count,
-                    commit=False,
-                )
-                session.delete(draft_reply_db_object)
-
-            except NoResultFound:
-                pass  # No draft locally stored corresponding to this reply.
 
             logger.debug("Added new reply {}".format(reply.uuid))
 
@@ -816,24 +798,9 @@ def find_new_messages(session: Session) -> List[Message]:
 
 def find_new_replies(session: Session) -> List[Reply]:
     """
-    Find replies to process. Those replies are those where one of the following
-    conditions is true:
-
-    * The reply has not yet been downloaded.
-    * The reply has not yet had decryption attempted.
-    * Decryption previously failed on a reply.
+    Find incoming replies that have not yet been downloaded.
     """
-    q = (
-        session.query(Reply)
-        .join(Source)
-        .filter(
-            or_(
-                Reply.is_downloaded == False,  # noqa: E712
-                Reply.is_decrypted == False,  # noqa: E712
-                Reply.is_decrypted == None,  # noqa: E711
-            )
-        )
-    )
+    q = session.query(Reply).join(Source).filter(Reply.is_incoming)
     q = q.order_by(desc(Source.last_updated))
     return q.all()
 
@@ -995,7 +962,7 @@ def _delete_source_collection_from_db(session: Session, source: Source) -> None:
 
     is_local_db_modified = False
 
-    for table in {DraftReply, File, Message, Reply}:
+    for table in {File, Message, Reply}:
         try:
             query = session.query(table).filter_by(source_id=source.id)
             if len(query.all()) > 0:
@@ -1053,32 +1020,18 @@ def get_reply(session: Session, uuid: str) -> Reply:
     return session.query(Reply).filter_by(uuid=uuid).one()
 
 
-def mark_all_pending_drafts_as_failed(session: Session) -> List[DraftReply]:
+def mark_all_pending_replies_as_failed(session: Session) -> List[Reply]:
     """
-    Mark as failed those pending replies that originate from other sessions (PIDs).
+    Mark as failed replies that have not yet been sent.
     """
-    pending_status = (
-        session.query(ReplySendStatus).filter_by(name=ReplySendStatusCodes.PENDING.value).one()
-    )
-    failed_status = (
-        session.query(ReplySendStatus).filter_by(name=ReplySendStatusCodes.FAILED.value).one()
-    )
-
-    pending_drafts = (
-        session.query(DraftReply)
-        .filter(
-            DraftReply.send_status == pending_status,
-            DraftReply.sending_pid.isnot(os.getpid()),
-        )
-        .all()
-    )
-    logger.debug(f"Found {len(pending_drafts)} pending replies not being processed in this session")
-    for pending_draft in pending_drafts:
-        pending_draft.send_status = failed_status
+    pending = session.query(Reply).filter(Reply.state == Reply.SEND_PENDING).all()
+    logger.debug(f"Found {len(pending)} pending replies")
+    for reply in pending:
+        reply.send_failed()
 
     session.commit()
 
-    return pending_drafts
+    return pending
 
 
 def clear_download_errors(session: Session) -> None:

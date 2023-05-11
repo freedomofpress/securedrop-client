@@ -62,11 +62,9 @@ from PyQt5.QtWidgets import (
 
 from securedrop_client import state
 from securedrop_client.db import (
-    DraftReply,
     File,
     Message,
     Reply,
-    ReplySendStatusCodes,
     Source,
     User,
 )
@@ -917,13 +915,11 @@ class SourceList(QListWidget):
 
     def setup(self, controller: Controller) -> None:
         self.controller = controller
-        self.controller.reply_succeeded.connect(self.set_snippet)
         self.controller.message_ready.connect(self.set_snippet)
-        self.controller.reply_ready.connect(self.set_snippet)
         self.controller.file_ready.connect(self.set_snippet)
         self.controller.file_missing.connect(self.set_snippet)
         self.controller.message_download_failed.connect(self.set_snippet)
-        self.controller.reply_download_failed.connect(self.set_snippet)
+        self.controller.reply_state_changed.connect(self.set_snippet)
 
     def update_sources(self, sources: List[Source]) -> List[str]:
         """
@@ -1797,8 +1793,6 @@ class SpeechBubble(QWidget):
         self,
         message_uuid: str,
         text: str,
-        update_signal,
-        download_error_signal,
         index: int,
         container_width: int,
         authenticated_user: Optional[User] = None,
@@ -1873,14 +1867,38 @@ class SpeechBubble(QWidget):
         if self.failed_to_decrypt:
             self.set_failed_to_decrypt_styles()
 
-        # Connect signals to slots
-        update_signal.connect(self._update_text)
-        download_error_signal.connect(self._on_download_error)
-
         # Set checkmark tooltip to the default seen_by list
         self.update_seen_by_list(self.seen_by)
 
         self.adjust_width(container_width)
+
+    @property
+    def update_signal(self):
+        return self._update_signal
+
+    @update_signal.setter
+    def update_signal(self, signal):
+        """
+        Let subclasses set an update signal without needing to know
+        what it's connected to.  Set an instance attribute just to
+        avoid a NameError.
+        """
+        self._update_signal = signal
+        signal.connect(self._update_text)
+
+    @property
+    def download_error_signal(self):
+        return self._download_error_signal
+
+    @download_error_signal.setter
+    def download_error_signal(self, signal):
+        """
+        Let subclasses set a download signal without needing to know
+        what it's connected to.  Set an instance attribute just to
+        avoid a NameError.
+        """
+        self._download_error_signal = signal
+        signal.connect(self._on_download_error)
 
     def adjust_width(self, container_width: int) -> None:
         """
@@ -2007,13 +2025,13 @@ class MessageWidget(SpeechBubble):
         super().__init__(
             message_uuid,
             message,
-            update_signal,
-            download_error_signal,
             index,
             container_width,
             authenticated_user,
             failed_to_decrypt,
         )
+        self.update_signal = update_signal
+        self.download_error_signal = download_error_signal
 
         # Setting the message bubble's layout direction left to right for the check mark
         # to appear in the required position.
@@ -2027,6 +2045,10 @@ class ReplyWidget(SpeechBubble):
     Represents a reply to a source.
     """
 
+    reply_ready = pyqtSignal(str, str, str)
+    reply_download_failed = pyqtSignal(str, str, str)
+    reply_send_failed = pyqtSignal(str, str, str)
+
     MESSAGE_CSS = load_css("speech_bubble_message.css")
     STATUS_BAR_CSS = load_css("speech_bubble_status_bar.css")
 
@@ -2035,36 +2057,32 @@ class ReplyWidget(SpeechBubble):
     def __init__(  # type: ignore[no-untyped-def]
         self,
         controller: Controller,
-        message_uuid: str,
-        message: str,
-        reply_status: str,
-        update_signal,
-        download_error_signal,
-        message_succeeded_signal,
-        message_failed_signal,
+        reply: Reply,
         index: int,
         container_width: int,
         sender: User,
         sender_is_current_user: bool,
         authenticated_user: Optional[User] = None,
-        failed_to_decrypt: bool = False,
     ) -> None:
+        self.controller = controller
+        self.reply = reply
+
         super().__init__(
-            message_uuid,
-            message,
-            update_signal,
-            download_error_signal,
+            reply.uuid,
+            str(reply),
             index,
             container_width,
             authenticated_user,
-            failed_to_decrypt,
+            failed_to_decrypt=reply.state == Reply.DECRYPTION_FAILED,
         )
-        self.controller = controller
-        self.status = reply_status
-        self.uuid = message_uuid
+        self.update_signal = self.reply_ready
+        self.download_failed_signal = self.reply_download_failed
+        self.controller.reply_state_changed.connect(self._on_reply_state_changed)
+
         self._sender = sender
         self._sender_is_current_user = sender_is_current_user
-        self.failed_to_decrypt = failed_to_decrypt
+        # Override superclass attribute with our property:
+        self.failed_to_decrypt = self._failed_to_decrypt
 
         self.error = QWidget()
         error_layout = QHBoxLayout()
@@ -2088,9 +2106,6 @@ class ReplyWidget(SpeechBubble):
 
         self.check_mark.show()
 
-        update_signal.connect(self._on_reply_success)
-        message_succeeded_signal.connect(self._on_reply_success)
-        message_failed_signal.connect(self._on_reply_failure)
         self.controller.update_authenticated_user.connect(self._on_update_authenticated_user)
         self.controller.authentication_state.connect(self._on_authentication_changed)
 
@@ -2099,6 +2114,10 @@ class ReplyWidget(SpeechBubble):
             self.sender_icon.initials = self._sender.initials
             self.sender_icon.setToolTip(self._sender.fullname)
         self._update_styles()
+
+    @property
+    def _failed_to_decrypt(self) -> bool:
+        return self.reply.state == Reply.DECRYPTION_FAILED
 
     @property
     def sender_is_current_user(self) -> bool:
@@ -2147,36 +2166,31 @@ class ReplyWidget(SpeechBubble):
             logger.debug("The sender was deleted.")
 
     @pyqtSlot(str, str, str)
-    def _on_reply_success(self, source_uuid: str, uuid: str, content: str) -> None:
-        """
-        Conditionally update this ReplyWidget's state if and only if the message_uuid of the emitted
-        signal matches the uuid of this widget.
-        """
-        if self.uuid == uuid:
-            self.status = "SUCCEEDED"  # TODO: Add and use success status in db.ReplySendStatusCodes
-            self.failed_to_decrypt = False
-            self._update_styles()
+    def _on_reply_state_changed(self, source_uuid: str, uuid: str, content: str) -> None:
+        """Map Reply.state values to the per-event signals expected by MessageWidget."""
+        if not self.uuid == uuid:  # TODO: explain signal/discard pattern
+            return
 
-    @pyqtSlot(str)
-    def _on_reply_failure(self, uuid: str) -> None:
-        """
-        Conditionally update this ReplyWidget's state if and only if the message_uuid of the emitted
-        signal matches the uuid of this widget.
-        """
-        if self.uuid == uuid:
-            self.status = ReplySendStatusCodes.FAILED.value
-            self.failed_to_decrypt = False
-            self._update_styles()
+        if self.reply.state == Reply.READY:
+            self.reply_ready.emit(self.reply.source.uuid, self.reply.uuid, self.reply.content)
+        elif self.reply.state == Reply.DOWNLOAD_FAILED:
+            self.reply_download_failed.emit(
+                self.reply.source.uuid, self.reply.uuid, self.reply.content
+            )
+        elif self.reply.state == Reply.SEND_FAILED:
+            self.reply_send_failed.emit(self.reply.source.uuid, self.reply.uuid, self.reply.content)
+
+        self._update_styles()
 
     def _update_styles(self) -> None:
-        if self.failed_to_decrypt:
+        if self.reply.state == Reply.DECRYPTION_FAILED:
             self.set_failed_to_decrypt_styles()
-        elif self.status == ReplySendStatusCodes.PENDING.value:
-            self.set_pending_styles()
-            self.check_mark.hide()
-        elif self.status == ReplySendStatusCodes.FAILED.value:
+        elif self.reply.state == Reply.SEND_FAILED:
             self.set_failed_styles()
             self.error.show()
+            self.check_mark.hide()
+        elif self.reply.is_outgoing:
+            self.set_pending_styles()
             self.check_mark.hide()
         else:
             self.set_normal_styles()
@@ -2733,7 +2747,7 @@ class ConversationView(QWidget):
         try:
             draft_reply_exists = False
             for item in self.source.collection:
-                if isinstance(item, DraftReply):
+                if isinstance(item, Reply) and item.is_outgoing():
                     draft_reply_exists = True
                     continue
                 item_widget = self.current_messages.get(item.uuid)
@@ -2827,7 +2841,7 @@ class ConversationView(QWidget):
                 # add a new item to be displayed.
                 if isinstance(conversation_item, Message):
                     self.add_message(conversation_item, index)
-                elif isinstance(conversation_item, (DraftReply, Reply)):
+                elif isinstance(conversation_item, Reply):
                     self.add_reply(conversation_item, conversation_item.journalist, index)
                 else:
                     self.add_file(conversation_item, index)
@@ -2898,15 +2912,10 @@ class ConversationView(QWidget):
         self.current_messages[message.uuid] = conversation_item
         self.conversation_updated.emit()
 
-    def add_reply(self, reply: Union[DraftReply, Reply], sender: User, index: int) -> None:
+    def add_reply(self, reply: Reply, sender: User, index: int) -> None:
         """
         Add a reply from a journalist to the source.
         """
-        try:
-            send_status = reply.send_status.name
-        except AttributeError:
-            send_status = "SUCCEEDED"  # TODO: Add and use success status in db.ReplySendStatusCodes
-
         if (
             self.controller.authenticated_user
             and self.controller.authenticated_user.id == reply.journalist_id
@@ -2917,19 +2926,12 @@ class ConversationView(QWidget):
 
         conversation_item = ReplyWidget(
             self.controller,
-            reply.uuid,
-            str(reply),
-            send_status,
-            self.controller.reply_ready,
-            self.controller.reply_download_failed,
-            self.controller.reply_succeeded,
-            self.controller.reply_failed,
+            reply,
             index,
             self._scroll.widget().width(),
             sender,
             sender_is_current_user,
             self.controller.authenticated_user,
-            failed_to_decrypt=getattr(reply, "download_error", None) is not None,
         )
         # Connect the on_update_authenticated_user pyqtSlot to the update_authenticated_user signal.
         self.controller.update_authenticated_user.connect(

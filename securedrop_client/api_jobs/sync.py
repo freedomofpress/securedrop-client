@@ -8,7 +8,7 @@ from sqlalchemy.orm.session import Session
 
 from securedrop_client import state
 from securedrop_client.api_jobs.base import ApiJob
-from securedrop_client.db import DeletedUser, DraftReply, User
+from securedrop_client.db import DeletedUser, Reply, User
 from securedrop_client.storage import get_remote_data, update_local_storage
 
 logger = logging.getLogger(__name__)
@@ -111,25 +111,27 @@ class MetadataSyncJob(ApiJob):
             if account.deleted and not deleted_user_id:
                 continue
 
-            # Get draft replies sent by the user who's account is about to be deleted.
-            draft_replies = session.query(DraftReply).filter_by(journalist_id=account.id).all()
+            # Get unsent replies originating from the user whose account is about to be deleted.
+            replies = (
+                session.query(Reply).filter_by(is_outgoing=True, journalist_id=account.id).all()
+            )
 
             # Create a local "deleted" user account if there is no "deleted" user account locally or
             # on the server and we are about to delete a user.
-            if draft_replies and not account.deleted and not deleted_user_id:
+            if replies and not account.deleted and not deleted_user_id:
                 deleted_user = DeletedUser()
                 session.add(deleted_user)
                 session.commit()  # commit so that we can retrieve the generated `id`
                 deleted_user_id = deleted_user.id
                 logger.debug(f"Creating DeletedUser with uuid='{deleted_user.uuid}'")
 
-            # Re-associate draft replies
-            for reply in draft_replies:
+            # Re-associate unsent replies.
+            for reply in replies:
                 reply.journalist_id = deleted_user_id
-                logger.debug(f"DraftReply with uuid='{reply.uuid}' re-associated to DeletedUser")
+                logger.debug(f"Reply with uuid='{reply.uuid}' re-associated to DeletedUser")
 
-            # Ensure re-associated draft replies are committed to the db before deleting the account
-            if draft_replies:
+            # Ensure re-associated replies are committed before deleting the account.
+            if replies:
                 session.commit()
 
             session.delete(account)

@@ -5,6 +5,7 @@ Stores and provides read/write access to the internal state of the SecureDrop Cl
 
 Note: the Graphical User Interface MUST NOT write state, except in QActions.
 """
+import logging
 from typing import Dict, List, Optional
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
@@ -12,6 +13,9 @@ from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 from securedrop_client.database import Database
 
 from .domain import ConversationId, File, FileId, SourceId
+
+
+logger = logging.getLogger(__name__)
 
 
 class State(QObject):

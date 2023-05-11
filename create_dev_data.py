@@ -15,16 +15,6 @@ db.Base.metadata.create_all(bind=session.get_bind())
 with open(os.path.join(sdc_home, Config.CONFIG_NAME), "w") as f:
     f.write(json.dumps({"journalist_key_fingerprint": "65A1B5FF195B56353CC63DFFCC40EF1228271441"}))
 
-for reply_send_status in db.ReplySendStatusCodes:
-    try:
-        reply_status = (
-            session.query(db.ReplySendStatus).filter_by(name=reply_send_status.value).one()
-        )
-    except NoResultFound:
-        reply_status = db.ReplySendStatus(reply_send_status.value)
-        session.add(reply_status)
-        session.commit()
-
 for download_error in db.DownloadErrorCodes:
     try:
         download_error = session.query(db.DownloadError).filter_by(name=download_error.name).one()

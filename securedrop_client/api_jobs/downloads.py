@@ -153,6 +153,7 @@ class DownloadJob(SingleObjectApiJob):
                     .filter_by(name=DownloadErrorCodes.CHECKSUM_ERROR.name)
                     .one()
                 )
+                db_object.is_downloaded = False
                 db_object.download_error = download_error
                 session.commit()
                 exception = DownloadChecksumMismatchException(
@@ -262,6 +263,7 @@ class ReplyDownloadJob(DownloadJob):
         # TODO: Once https://github.com/freedomofpress/securedrop-sdk/issues/108 is implemented, we
         # will want to pass the default request timeout to download_reply instead of setting it on
         # the api object directly.
+        db_object.downloading()
         api.default_request_timeout = 20
         return api.download_reply(sdk_object)
 

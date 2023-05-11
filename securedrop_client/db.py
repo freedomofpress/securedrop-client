@@ -16,10 +16,12 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    case,
     create_engine,
     text,
 )
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref, relationship, scoped_session, sessionmaker
 from transitions import Machine
 
@@ -122,7 +124,6 @@ class Source(Base):
         collection.extend(self.messages)
         collection.extend(self.files)
         collection.extend(self.replies)
-        collection.extend(self.draftreplies)
         # Push pending replies to the end of the collection, then sort by
         # file_counter, then by timestamp (the latter used only for draft replies).
         collection.sort(
@@ -436,7 +437,6 @@ class Reply(Base, StateMachineMixin):
     # Shared states:
     PENDING = "Pending"
     READY = "Ready"
-    DELETED_LOCALLY = "DeletedLocally"
 
     # Incoming states:
     DOWNLOAD_PENDING = "DownloadPending"
@@ -457,7 +457,6 @@ class Reply(Base, StateMachineMixin):
             # Shared states:
             PENDING,
             READY,
-            DELETED_LOCALLY,
             # Incoming states:
             DOWNLOAD_PENDING,
             DOWNLOADING,
@@ -471,10 +470,13 @@ class Reply(Base, StateMachineMixin):
         ],
         transitions=[
             # Shared transitions:
-            ["deleted_locally", "*", DELETED_LOCALLY],
             # Incoming transitions:
-            ["download_queued", [PENDING, SEND_FAILED], DOWNLOAD_PENDING],
-            ["downloading", DOWNLOAD_PENDING, DOWNLOADING],
+            [
+                "download_queued",
+                [PENDING, DOWNLOAD_PENDING, SENDING, SEND_FAILED],
+                DOWNLOAD_PENDING,
+            ],
+            ["downloading", [DOWNLOAD_PENDING, DOWNLOADING], DOWNLOADING],
             ["downloaded", DOWNLOADING, DOWNLOADED],
             ["download_failed", DOWNLOADING, DOWNLOAD_FAILED],
             ["decrypted", DOWNLOADED, READY],
@@ -483,8 +485,10 @@ class Reply(Base, StateMachineMixin):
             ["send_queued", PENDING, SEND_PENDING],
             ["sending", SEND_PENDING, SENDING],
             ["sent", SENDING, READY],
-            ["send_failed", SENDING, SEND_FAILED],
+            ["send_failed", [SEND_PENDING, SENDING], SEND_FAILED],
         ],
+        queued=True,
+        send_event=True,
     )
 
     state = Column(String(100), nullable=False, default=PENDING)
@@ -517,11 +521,13 @@ class Reply(Base, StateMachineMixin):
         onupdate=datetime.datetime.utcnow,
     )
 
-    def __init__(self, **kwargs: Any) -> None:
-        if "file_counter" in kwargs:
-            raise TypeError("Cannot manually set file_counter")
-        filename = kwargs["filename"]
-        kwargs["file_counter"] = int(filename.split("-")[0])
+    def __init__(self, state, **kwargs: Any) -> None:
+        kwargs["state"] = state
+
+        if "file_counter" not in kwargs:
+            filename = kwargs["filename"]
+            kwargs["file_counter"] = int(filename.split("-")[0])
+
         super().__init__(**kwargs)
 
     def __str__(self) -> str:
@@ -576,6 +582,75 @@ class Reply(Base, StateMachineMixin):
             if seen_reply.journalist:
                 usernames[seen_reply.journalist.username] = seen_reply.journalist
         return usernames
+
+    @hybrid_property
+    def is_incoming(self) -> bool:
+        return self.state in [
+            Reply.DOWNLOAD_PENDING,
+            Reply.DOWNLOADING,
+            Reply.DOWNLOAD_FAILED,
+            Reply.DOWNLOADED,
+            Reply.DECRYPTION_FAILED,
+        ]
+
+    @is_incoming.expression
+    def is_incoming(cls):
+        return case(
+            {
+                Reply.DOWNLOAD_PENDING: True,
+                Reply.DOWNLOADING: True,
+                Reply.DOWNLOAD_FAILED: True,
+                Reply.DOWNLOADED: True,
+                Reply.DECRYPTION_FAILED: True,
+            },
+            value=cls.state,
+            else_=False,
+        )
+
+    @hybrid_property
+    def is_outgoing(self) -> bool:
+        return self.state in [Reply.SEND_PENDING, Reply.SENDING, Reply.SEND_FAILED]
+
+    @is_outgoing.expression
+    def is_outgoing(cls):
+        return case(
+            {
+                Reply.SEND_PENDING: True,
+                Reply.SENDING: True,
+                Reply.SEND_FAILED: True,
+            },
+            value=cls.state,
+            else_=False,
+        )
+
+    @property
+    def is_downloaded(self):
+        return self.state in [
+            Reply.DOWNLOADED,
+            Reply.DECRYPTION_FAILED,
+            Reply.READY,
+        ]
+
+    @is_downloaded.setter
+    def is_downloaded(self, is_downloaded):
+        if is_downloaded:
+            self.downloaded()
+        else:
+            self.download_failed()
+
+    @property
+    def is_decrypted(self):
+        return self.state == Reply.READY
+
+    @is_decrypted.setter
+    def is_decrypted(self, is_decrypted):
+        if is_decrypted:
+            self.decrypted()
+        else:
+            self.decryption_failed()
+
+    def after_state_change(self):
+        pass
 
 
 class DownloadErrorCodes(Enum):
