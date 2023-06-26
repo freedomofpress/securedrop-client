@@ -102,7 +102,6 @@ class TestMain(unittest.TestCase):
                                "path_query": "" }"""
 
         def on_save(self, fh, res):
-
             subprocess.run(["cp", fh.name, "/tmp/{}".format(self.fn)])
 
             res.headers["X-Origin-Content-Type"] = res.headers["Content-Type"]

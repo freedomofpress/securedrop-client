@@ -74,7 +74,6 @@ class Proxy:
         sys.exit(1)
 
     def read_conf(self, conf_path: str) -> None:
-
         if not os.path.isfile(conf_path):
             self.simple_error(500, "Configuration file does not exist at {}".format(conf_path))
             self.err_on_done()
@@ -180,7 +179,6 @@ class Proxy:
         return parsed._replace(path=path)
 
     def prep_request(self) -> None:
-
         scheme = self.conf.scheme
         host = self.conf.host
         port = self.conf.port
@@ -212,7 +210,6 @@ class Proxy:
         self._prepared_request = prep
 
     def handle_json_response(self) -> None:
-
         res = Response(self._presp.status_code)
 
         res.headers = dict(self._presp.headers)
@@ -221,7 +218,6 @@ class Proxy:
         self.res = res
 
     def handle_non_json_response(self) -> None:
-
         res = Response(self._presp.status_code)
 
         # Create a NamedTemporaryFile, we don't want
@@ -255,9 +251,7 @@ class Proxy:
         self.res.headers = dict(self.res.headers)
 
     def proxy(self) -> None:
-
         try:
-
             self.prep_request()
             # To confirm that we have a prepared request before the proxy call
             assert self._prepared_request
