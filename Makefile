@@ -19,12 +19,14 @@ safety: ## Runs `safety check` to check python dependencies for vulnerabilities
 			|| exit 1; \
 		done
 
+# Helper, not to be used directly
 .PHONY: sync-requirements
 sync-requirements:  ## Update dev-requirements.txt to pin to the same versions of prod dependencies
 	if test -f "requirements/dev-bullseye-requirements.txt"; then rm -r requirements/dev-bullseye-requirements.txt; fi
 	if test -f "requirements/dev-bookworm-requirements.txt"; then rm -r requirements/dev-bookworm-requirements.txt; fi
 	$(MAKE) dev-requirements
 
+# Helper, not to be used directly
 .PHONY: dev-requirements
 dev-requirements:  ## Update dev-*requirements.txt files if pinned versions do not comply with the dependency specifications in dev-*requirements.in
 	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-bullseye-requirements.txt requirements/dev-bullseye-requirements.in
@@ -44,10 +46,10 @@ update-dependency:  ## Add or upgrade a package to the latest version that compl
 update-dev-only-dependencies:  ## Update dev-requirements.txt to pin to the latest versions of dev-only dependencies that comply with the dependency specifications in dev-requirements.in
 	$(MAKE) sync-requirements
 	@while read line; do \
-		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-bullseye-requirements.txt requirements/requirements.in requirements/dev-bullseye-requirements.in; \
+		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-bullseye-requirements.txt requirements/dev-bullseye-requirements.in; \
 	done < 'requirements/dev-bullseye-requirements.in'
 	@while read line; do \
-		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-bookworm-requirements.txt requirements/requirements.in requirements/dev-bookworm-requirements.in; \
+		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-bookworm-requirements.txt requirements/dev-bookworm-requirements.in; \
 	done < 'requirements/dev-bookworm-requirements.in'
 
 .PHONY: check

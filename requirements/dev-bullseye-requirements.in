@@ -1,3 +1,6 @@
+# include prod requirements
+-r requirements.in
+
 black
 flake8
 pip-tools
