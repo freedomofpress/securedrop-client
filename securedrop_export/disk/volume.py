@@ -12,7 +12,6 @@ class EncryptionScheme(Enum):
 
 
 class Volume:
-
     MAPPED_VOLUME_PREFIX = "/dev/mapper/"
 
     """

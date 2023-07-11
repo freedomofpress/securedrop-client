@@ -8,7 +8,6 @@ from securedrop_export import directory
 
 
 class TestDirectory:
-
     _REL_TRAVERSAL = "../../../whee"
     _SAFE_RELPATH = "./hi"
     _SAFE_RELPATH2 = "yay/a/path"

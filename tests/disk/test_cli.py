@@ -89,7 +89,6 @@ class TestCli:
         "subprocess.Popen", side_effect=subprocess.CalledProcessError(1, "Popen")
     )
     def test_get_connected_devices_error(self, mocked_subprocess):
-
         with pytest.raises(ExportException):
             self.cli.get_connected_devices()
 
@@ -108,7 +107,6 @@ class TestCli:
 
     @mock.patch("subprocess.check_output", return_value=_SAMPLE_OUTPUT_MULTI_PART)
     def test_get_partitioned_device_multi_partition(self, mocked_call):
-
         with pytest.raises(ExportException) as ex:
             self.cli.get_partitioned_device(_SAMPLE_OUTPUT_MULTI_PART)
 
@@ -126,7 +124,6 @@ class TestCli:
         side_effect=subprocess.CalledProcessError(1, "check_output"),
     )
     def test_get_partitioned_device_multi_partition_error(self, mocked_call):
-
         # Make sure we wrap CalledProcessError and throw our own exception
         with pytest.raises(ExportException) as ex:
             self.cli.get_partitioned_device(_DEFAULT_USB_DEVICE)
@@ -135,7 +132,6 @@ class TestCli:
 
     @mock.patch("subprocess.check_call", return_value=0)
     def test_is_luks_volume_true(self, mocked_call):
-
         # `sudo cryptsetup isLuks` returns 0 if true
         assert self.cli.is_luks_volume(_SAMPLE_OUTPUT_ONE_PART)
 
@@ -144,7 +140,6 @@ class TestCli:
         side_effect=subprocess.CalledProcessError(1, "check_call"),
     )
     def test_is_luks_volume_false(self, mocked_subprocess):
-
         # `sudo cryptsetup isLuks` returns 1 if false; CalledProcessError is thrown
         assert not self.cli.is_luks_volume(_SAMPLE_OUTPUT_ONE_PART)
 
@@ -160,7 +155,6 @@ class TestCli:
         "subprocess.check_output", return_value=b"corrupted-or-invalid-header\n"
     )
     def test__get_luks_name_from_headers_error_invalid(self, mocked_subprocess):
-
         with pytest.raises(ExportException) as ex:
             self.cli._get_luks_name_from_headers(_DEFAULT_USB_DEVICE)
 
@@ -168,7 +162,6 @@ class TestCli:
 
     @mock.patch("subprocess.check_output", return_value=b"\n")
     def test__get_luks_name_from_headers_error_no_header(self, mocked_subprocess):
-
         with pytest.raises(ExportException) as ex:
             self.cli._get_luks_name_from_headers(_DEFAULT_USB_DEVICE)
 
@@ -178,7 +171,6 @@ class TestCli:
     def test__get_luks_name_from_headers_error_nothing_returned(
         self, mocked_subprocess
     ):
-
         with pytest.raises(ExportException) as ex:
             self.cli._get_luks_name_from_headers(_DEFAULT_USB_DEVICE)
 

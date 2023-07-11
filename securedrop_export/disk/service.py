@@ -50,7 +50,6 @@ class Service:
 
             # See if it's a LUKS drive
             if self.cli.is_luks_volume(target):
-
                 # Returns Volume or throws ExportException
                 self.volume = self.cli.get_luks_volume(target)
 

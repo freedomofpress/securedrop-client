@@ -54,7 +54,6 @@ class TestMain:
 
     @pytest.mark.parametrize("invalid_status", ["foo", ";ls", "&& echo 0", None])
     def test_write_status_error(self, invalid_status, capsys):
-
         with pytest.raises(ValueError):
             _write_status(Status(invalid_status))
 
