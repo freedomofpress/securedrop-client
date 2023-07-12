@@ -8,7 +8,7 @@ markupsafe>=1.1
 pathlib2==2.3.2
 python-dateutil==2.7.5
 python-editor==1.0.3
-requests>=2.26.0
+requests>=2.31.0
 securedrop-sdk==0.4.0
 six==1.11.0
 sqlalchemy==1.3.3
