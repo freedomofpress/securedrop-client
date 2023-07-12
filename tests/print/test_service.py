@@ -265,7 +265,6 @@ class TestPrint:
 
     @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_NO_PRINTER)
     def test__check_printer_setup_error_no_printer(self, mock_output):
-
         with pytest.raises(ExportException) as ex:
             self.service._check_printer_setup()
         assert ex.value.sdstatus is Status.ERROR_PRINTER_NOT_FOUND
@@ -277,7 +276,6 @@ class TestPrint:
         + SAMPLE_OUTPUT_LASERJET_PRINTER,
     )
     def test__check_printer_setup_error_too_many_printers(self, mock_output):
-
         with pytest.raises(ExportException) as ex:
             self.service._check_printer_setup()
         assert ex.value.sdstatus is Status.ERROR_MULTIPLE_PRINTERS_FOUND
@@ -286,7 +284,6 @@ class TestPrint:
         "subprocess.check_output", return_value=SAMPLE_OUTPUT_UNSUPPORTED_PRINTER
     )
     def test__check_printer_setup_error_unsupported_printer(self, mock_output):
-
         with pytest.raises(ExportException) as ex:
             self.service._check_printer_setup()
         assert ex.value.sdstatus is Status.ERROR_PRINTER_NOT_SUPPORTED
@@ -296,7 +293,6 @@ class TestPrint:
         side_effect=subprocess.CalledProcessError(1, "check_output"),
     )
     def test__check_printer_setup_error_checking_printer(self, mock_output):
-
         with pytest.raises(ExportException) as ex:
             self.service._check_printer_setup()
         assert ex.value.sdstatus is Status.ERROR_UNKNOWN

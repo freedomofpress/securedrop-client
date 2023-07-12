@@ -2,7 +2,6 @@ from securedrop_export.status import BaseStatus
 
 
 class Status(BaseStatus):
-
     LEGACY_ERROR_GENERIC = "ERROR_GENERIC"
 
     # Legacy USB preflight related

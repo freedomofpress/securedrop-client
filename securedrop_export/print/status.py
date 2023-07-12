@@ -2,7 +2,6 @@ from securedrop_export.status import BaseStatus
 
 
 class Status(BaseStatus):
-
     # Printer preflight related errors
     ERROR_MULTIPLE_PRINTERS_FOUND = "ERROR_MULTIPLE_PRINTERS_FOUND"
     ERROR_PRINTER_NOT_FOUND = "ERROR_PRINTER_NOT_FOUND"

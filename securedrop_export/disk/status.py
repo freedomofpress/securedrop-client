@@ -2,7 +2,6 @@ from securedrop_export.status import BaseStatus
 
 
 class Status(BaseStatus):
-
     NO_DEVICE_DETECTED = "NO_DEVICE_DETECTED"
     INVALID_DEVICE_DETECTED = (
         "INVALID_DEVICE_DETECTED"  # Multi partitioned, not encrypted, etc
