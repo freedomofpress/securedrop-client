@@ -56,8 +56,7 @@ jobs:
       - run:
           name: Wait for server to be up and for test sources to load
           command: |
-            dockerize -wait tcp://127.0.0.1:8080 -timeout 30m
-            sleep 30
+            dockerize -wait http://127.0.0.1:8080 -timeout 30m
       - run:
           name: Remove VCR cassettes and run tests against latest API
           command: |
