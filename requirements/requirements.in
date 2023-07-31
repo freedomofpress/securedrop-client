@@ -1,4 +1,4 @@
-certifi>=2022.12.07
+certifi>=2023.7.22
 charset-normalizer>=2.0.4
 idna>=2.7
 pyyaml==5.4.1
