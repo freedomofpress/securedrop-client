@@ -2,6 +2,7 @@
 -r requirements.in
 
 black
+certifi>=2023.07.22
 flake8
 pip-tools
 pytest
