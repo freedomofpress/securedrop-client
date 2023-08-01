@@ -22,8 +22,8 @@ jobs:
     working_directory: ~/project
     machine:
       enabled: true
-      # TODO: why is this using Ubuntu instead of Debian?
-      image: ubuntu-2004:202010-01
+      # TODO: This should be migrated to a Debian container as part of moving to GitHub Actions
+      image: ubuntu-2004:2023.07.1
     environment:
       DOCKER_API_VERSION: 1.23
     steps:
@@ -31,7 +31,6 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            (cd $(pyenv root); git pull)
             pyenv install 3.9
             pyenv global 3.9
             make venv
@@ -45,14 +44,14 @@ jobs:
             cd securedrop
             NUM_SOURCES=5 make dev
           background: true
-      - run:  # As suggested in https://discuss.circleci.com/t/prevent-race-conditions-by-waiting-for-services-with-dockerize/11215
+      - run:  # We use dockerize to wait until the dev server is listening and we're ready to run tests
           name: Install dockerize
           command: |
             wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz &&
             sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz &&
             rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
           environment:
-            DOCKERIZE_VERSION: v0.6.1
+            DOCKERIZE_VERSION: v0.7.0
       - run:
           name: Wait for server to be up and for test sources to load
           command: |
