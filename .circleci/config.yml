@@ -22,8 +22,7 @@ jobs:
     working_directory: ~/project
     machine:
       enabled: true
-      # Because we are running Docker inside this job, we need a machine type.
-      # CircleCI does not currently offer Debian machine images.
+      # TODO: This should be migrated to a Debian container as part of moving to GitHub Actions
       image: ubuntu-2004:2023.07.1
     environment:
       DOCKER_API_VERSION: 1.23
