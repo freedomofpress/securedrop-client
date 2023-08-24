@@ -1,9 +1,0 @@
-black
-coverage
-flake8
-isort
-mypy
-pip-tools
-types-PyYAML
-types-requests
-vcrpy
