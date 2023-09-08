@@ -1155,7 +1155,6 @@ def test_create_client_dir_permissions(tmpdir, mocker, session_maker):
 
 
 def test_Controller_download_conversation(homedir, config, session, mocker, session_maker):
-
     app_state = state.State()
     gui = mocker.MagicMock()
     co = Controller("http://localhost", gui, session_maker, homedir, app_state)

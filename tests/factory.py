@@ -40,7 +40,6 @@ def User(**attrs):
 
 
 def Source(**attrs):
-
     with open(os.path.join(os.path.dirname(__file__), "files", "test-key.gpg.pub.asc")) as f:
         pub_key = f.read()
 

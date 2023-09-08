@@ -45,7 +45,6 @@ def make_session_maker(home: str) -> scoped_session:
 
 
 class User(Base):
-
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
@@ -94,7 +93,6 @@ class DeletedUser(User):
 
 
 class Source(Base):
-
     __tablename__ = "sources"
 
     id = Column(Integer, primary_key=True)
@@ -200,7 +198,6 @@ class DeletedSource(Base):
 
 
 class Message(Base):
-
     __tablename__ = "messages"
     __table_args__ = (
         UniqueConstraint("source_id", "file_counter", name="uq_messages_source_id_file_counter"),
@@ -321,7 +318,6 @@ class Message(Base):
 
 
 class File(Base):
-
     __tablename__ = "files"
     __table_args__ = (
         UniqueConstraint("source_id", "file_counter", name="uq_messages_source_id_file_counter"),
@@ -425,7 +421,6 @@ class File(Base):
 
 
 class Reply(Base):
-
     __tablename__ = "replies"
     __table_args__ = (
         UniqueConstraint("source_id", "file_counter", name="uq_messages_source_id_file_counter"),
@@ -574,7 +569,6 @@ class DownloadError(Base):
 
 
 class DraftReply(Base):
-
     __tablename__ = "draftreplies"
 
     id = Column(Integer, primary_key=True)
@@ -646,7 +640,6 @@ class DraftReply(Base):
 
 
 class ReplySendStatus(Base):
-
     __tablename__ = "replysendstatuses"
 
     id = Column(Integer, primary_key=True)

@@ -10,7 +10,6 @@ from .device import Device
 
 
 class PrintDialog(ModalDialog):
-
     FILENAME_WIDTH_PX = 260
 
     def __init__(self, device: Device, file_uuid: str, file_name: str) -> None:
