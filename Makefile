@@ -242,3 +242,9 @@ $(POT): securedrop_client
 		$^
 	@sed -i -e '/^"POT-Creation-Date/d' ${POT}
 
+.PHONY: verify-mo
+verify-mo: ## Verify that all gettext machine objects (.mo) are reproducible from their catalogs (.po).
+	@scripts/reproduce-mo.py ${LOCALE_DIR}/*
+	@git diff --quiet "${LOCALE_DIR}/**/*.mo"
+	@# All good; now clean up.
+	@git restore "${LOCALE_DIR}/**/*.po"
