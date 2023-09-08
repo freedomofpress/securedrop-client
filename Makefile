@@ -58,19 +58,27 @@ semgrep-local:
 
 .PHONY: black
 black: ## Format Python source code with black
-	@black ./
+	@black \
+		./ \
+		scripts/*.py
 
 .PHONY: check-black
 check-black: ## Check Python source code formatting with black
-	@black --check --diff ./
+	@black --check --diff \
+		./ \
+		scripts/*.py
 
 .PHONY: isort
 isort: ## Run isort to organize Python imports
-	@isort --skip-glob .venv ./
+	@isort --skip-glob .venv \
+		./ \
+		scripts/*.py
 
 .PHONY: check-isort
 check-isort: ## Check Python import organization with isort
-	@isort --skip-glob .venv --check-only --diff ./
+	@isort --skip-glob .venv --check-only --diff \
+		./ scripts \
+		/*.py
 
 .PHONY: mypy
 mypy: ## Run static type checker
@@ -80,6 +88,7 @@ mypy: ## Run static type checker
 		--show-error-codes \
 		--warn-unreachable \
 		--warn-unused-ignores \
+		scripts/*.py \
 		securedrop_client \
 		*.py
 
