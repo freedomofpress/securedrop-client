@@ -24,7 +24,7 @@ import uuid
 from datetime import datetime
 from gettext import gettext as _
 from gettext import ngettext
-from typing import Dict, List, Optional, Type, Union
+from typing import Dict, List, Optional, Type, Union  # noqa: F401
 
 import arrow
 import sdclientapi
