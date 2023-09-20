@@ -1,6 +1,7 @@
 -r requirements.in
 babel
 black
+diffoscope
 flake8
 flaky
 isort

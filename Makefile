@@ -244,7 +244,6 @@ $(POT): securedrop_client
 
 .PHONY: verify-mo
 verify-mo: ## Verify that all gettext machine objects (.mo) are reproducible from their catalogs (.po).
-	@scripts/reproduce-mo.py ${LOCALE_DIR}/*
-	@git diff --quiet "${LOCALE_DIR}/**/*.mo"
+	@scripts/verify-mo.py ${LOCALE_DIR}/*
 	@# All good; now clean up.
 	@git restore "${LOCALE_DIR}/**/*.po"
