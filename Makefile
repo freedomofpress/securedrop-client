@@ -162,7 +162,19 @@ check: clean check-black check-isort semgrep bandit lint mypy test-random test-i
 .PHONY: dev-requirements
 dev-requirements:  ## Update dev-*requirements.txt files if pinned versions do not comply with the dependency specifications in dev-*requirements.in
 	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-bullseye-requirements.txt requirements/dev-bullseye-requirements.in
+ifneq ($(VERSION_CODENAME), bookworm)
+	docker run \
+		--interactive \
+		--name dev-requirements \
+		--rm \
+		--tty \
+		--volume "${PWD}":/srv \
+		--workdir /srv \
+		python:3.11-bookworm \
+		bash -c "pip install pip-tools && pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-bookworm-requirements.txt requirements/dev-bookworm-requirements.in"
+else
 	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-bookworm-requirements.txt requirements/dev-bookworm-requirements.in
+endif
 	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-sdw-requirements.txt requirements/dev-sdw-requirements.in
 
 .PHONY: update-dev-dependencies
