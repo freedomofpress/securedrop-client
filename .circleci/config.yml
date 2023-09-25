@@ -5,7 +5,7 @@ common-steps:
       name: Install testing dependencies
       command: |
         set -e
-        apt update && apt install -y git gnupg libqt5x11extras5 make python3-tk python3-dev gnupg python3-venv sqlite3 xvfb
+        apt update && apt install -y git gnupg libarchive13 libmagic1 libqt5x11extras5 make python3-tk python3-dev gnupg python3-venv sqlite3 xvfb
 
   - &configure_locales
     run:
