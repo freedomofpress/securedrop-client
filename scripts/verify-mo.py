@@ -65,22 +65,8 @@ class CatalogVerifier:
         traceback: Optional[TracebackType],
     ) -> None:
         """Clean up."""
+
         self.mo_target.unlink(missing_ok=True)
-
-    @property
-    def diffoscope_args(self) -> Iterator[str]:
-        """Build up a diffoscope invocation that removes false positives from the msgunfmt diff."""
-        yield f"diffoscope {self.mo.fpath} {self.mo_target}"
-        yield "--diff-mask '^$'"  # tell diffoscope to mask empty lines
-        for stray in self.strays:
-            yield f"--diff-mask {shlex.quote(stray)}"  # tell diffoscope to mask strays
-        yield "| grep -Fv '[masked]'"  # ignore things we've masked
-        yield "| grep -E '│ (-|\+)msg(id|str)'"  # ignore context; we only care about real diffs
-
-    @property
-    def diffoscope_cmd(self) -> str:
-        """Return `diffoscope_args` as a string."""
-        return " ".join(self.diffoscope_args)
 
     @property
     def strays(self) -> Set[str]:
@@ -100,6 +86,40 @@ class CatalogVerifier:
 
         return fuzzy | obsolete
 
+    def diffoscope_args(self, a: Path, b: Path, filtered: bool = True) -> Iterator[str]:
+        """Build up a diffoscope invocation that (with `filtered`) removes
+        false positives from the msgunfmt diff."""
+
+        yield f"diffoscope {a} {b}"
+
+        if not filtered:
+            return
+
+        yield "--diff-mask '^$'"  # tell diffoscope to mask empty lines
+        for stray in self.strays:
+            yield f"--diff-mask {shlex.quote(stray)}"  # tell diffoscope to mask strays
+        yield "| grep -Fv '[masked]'"  # ignore things we've masked
+        yield "| grep -E '│ (-|\+)msg(id|str)'"  # ignore context; we only care about real diffs
+
+    def diffoscope_call(
+        self, a: Path, b: Path, filtered: bool = True
+    ) -> subprocess.CompletedProcess:
+        """Call diffoscope and return the subprocess.CompletedProcess result
+        for further processing, *without* first checking whether it was
+        succesful."""
+
+        cmd = " ".join(self.diffoscope_args(a, b, filtered))
+
+        # We silence Bandit and Semgrep warnings on `shell=True`
+        # because we want to inherit the Python virtual environment
+        # in which we're invoked.
+        return subprocess.run(  # nosec B602 nosemgrep: python.lang.security.audit.subprocess-shell-true.subprocess-shell-true
+            cmd,
+            capture_output=True,
+            env=os.environ,
+            shell=True,
+        )
+
     def reproduce(self) -> None:
         """Overwrite metadata .mo → .po.  Then rewrite the entire file .po →
         .mo."""
@@ -113,15 +133,17 @@ class CatalogVerifier:
     def verify(self) -> None:
         """Run diffoscope for this catalog and error if there's any unmasked
         diff."""
-        # We silence Bandit and Semgrep warnings on `shell=True`
-        # because we want to inherit the Python virtual environment
-        # in which we're invoked.
-        result = subprocess.run(  # nosec B602 nosemgrep: python.lang.security.audit.subprocess-shell-true.subprocess-shell-true
-            self.diffoscope_cmd,
-            capture_output=True,
-            env=os.environ,
-            shell=True,
-        )
+
+        # Without filtering, diffoscope should return either 0 (no differences)
+        # or 1 (differences); anything else is an error.
+        test = self.diffoscope_call(Path(self.mo.fpath), Path(self.mo_target), filtered=False)
+        if test.returncode not in [0, 1]:
+            test.check_returncode()
+
+        # With filtering, since diffoscope will return 1 on differences
+        # (pre-filtering), and grep will return 1 on *no* differences
+        # (post-filtering), we can't count on result.returncode here.
+        result = self.diffoscope_call(Path(self.mo.fpath), Path(self.mo_target))
         print(f"--> Verifying {self.path}: {result.args}")
         if len(result.stdout) > 0:
             raise Exception(result.stdout.decode("utf-8"))
