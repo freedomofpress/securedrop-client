@@ -137,7 +137,7 @@ common-steps:
         export VERSION_CODENAME=$(~/project/scripts/codename)
         make venv
         source .venv/bin/activate
-        make requirements
+        make requirements/requirements.txt requirements/dev-${VERSION_CODENAME}-requirements.txt
         git diff --exit-code requirements/dev-${VERSION_CODENAME}-requirements.txt
 
   - &build_debian_package
