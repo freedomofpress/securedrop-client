@@ -159,9 +159,8 @@ bandit: ## Run bandit with medium level excluding test-related folders
 .PHONY: check
 check: clean check-black check-isort semgrep bandit lint mypy test-random test-integration test-functional ## Run the full CI test suite
 
-.PHONY: dev-requirements
-dev-requirements:  ## Update dev-*requirements.txt files if pinned versions do not comply with the dependency specifications in dev-*requirements.in
-	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-bullseye-requirements.txt requirements/dev-bullseye-requirements.in
+.PHONY: requirements/dev-bookworm-requirements.txt
+requirements/dev-bookworm-requirements.txt: requirements/dev-bookworm-requirements.in
 ifneq ($(VERSION_CODENAME), bookworm)
 	docker run \
 		--interactive \
@@ -171,10 +170,31 @@ ifneq ($(VERSION_CODENAME), bookworm)
 		--volume "${PWD}":/srv \
 		--workdir /srv \
 		python:3.11-bookworm \
-		bash -c "pip install pip-tools && pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-bookworm-requirements.txt requirements/dev-bookworm-requirements.in"
+		bash -c "pip install pip-tools && pip-compile --allow-unsafe --generate-hashes --output-file $@ $<"
 else
-	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-bookworm-requirements.txt requirements/dev-bookworm-requirements.in
+	pip-compile --allow-unsafe --generate-hashes --output-file $@ $<
 endif
+
+.PHONY: requirements/dev-bullseye-requirements.txt
+requirements/dev-bullseye-requirements.txt: requirements/dev-bullseye-requirements.in
+ifneq ($(VERSION_CODENAME), bullseye)
+	docker run \
+		--interactive \
+		--name dev-requirements \
+		--rm \
+		--tty \
+		--volume "${PWD}":/srv \
+		--workdir /srv \
+		python:3.11-bullseye \
+		bash -c "pip install pip-tools && pip-compile --allow-unsafe --generate-hashes --output-file $@ $<"
+else
+	pip-compile --allow-unsafe --generate-hashes --output-file $@ $<
+endif
+
+.PHONY: dev-requirements
+dev-requirements:  ## Update dev-*requirements.txt files if pinned versions do not comply with the dependency specifications in dev-*requirements.in
+	$(MAKE) requirements/dev-bookworm-requirements.txt
+	$(MAKE) requirements/dev-bullseye-requirements.txt
 	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-sdw-requirements.txt requirements/dev-sdw-requirements.in
 
 .PHONY: update-dev-dependencies
@@ -184,9 +204,13 @@ update-dev-dependencies:  ## Update dev requirements in case there are newer ver
 	if test -f "requirements/dev-sdw-requirements.txt"; then rm -r requirements/dev-sdw-requirements.txt; fi
 	$(MAKE) dev-requirements
 
+.PHONY: requirements/requirements.txt
+requirements/requirements.txt: requirements/requirements.in
+	pip-compile --generate-hashes --output-file $@ $<
+
 .PHONY: requirements
 requirements:  ## Update *requirements.txt files if pinned versions do not comply with the dependency specifications in *requirements.in
-	pip-compile --generate-hashes --output-file requirements/requirements.txt requirements/requirements.in
+	$(MAKE) requirements/requirements.txt
 	$(MAKE) dev-requirements
 
 # Explanation of the below shell command should it ever break.
