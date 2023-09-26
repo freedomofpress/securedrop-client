@@ -101,7 +101,6 @@ class Export(QObject):
         print_preflight_check_requested: Optional[pyqtBoundSignal] = None,
         print_requested: Optional[pyqtBoundSignal] = None,
     ) -> None:
-
         # This instance can optionally react to events to prevent
         # coupling it to dependent code.
         if export_preflight_check_requested is not None:

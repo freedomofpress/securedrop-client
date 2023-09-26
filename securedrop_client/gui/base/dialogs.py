@@ -37,7 +37,6 @@ from securedrop_client.resources import load_movie
 
 
 class ModalDialog(QDialog):
-
     DIALOG_CSS = resource_string(__name__, "dialogs.css").decode("utf-8")
     BUTTON_CSS = resource_string(__name__, "dialog_button.css").decode("utf-8")
     ERROR_DETAILS_CSS = resource_string(__name__, "dialog_message.css").decode("utf-8")
