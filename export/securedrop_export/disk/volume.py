@@ -17,8 +17,8 @@ class Volume:
 
     """
     A volume on a removable device.
-    Volumes have a device name ("/dev/sdX"), a mapped name ("/dev/mapper/xxx"), an encryption
-    scheme, and a mountpoint if they are mounted.
+    Volumes have a device name ("/dev/sdX"), and may have a mapped name
+    ("/dev/mapper/xxx"), an encryption scheme, and a mountpoint.
     """
 
     def __init__(
@@ -46,6 +46,7 @@ class Volume:
     def unlocked(self) -> bool:
         return (
             self.mapped_name is not None
+            and self.encryption is not None
             and self.encryption is not EncryptionScheme.UNKNOWN
             and os.path.exists(
                 os.path.join(self.MAPPED_VOLUME_PREFIX, self.mapped_name)

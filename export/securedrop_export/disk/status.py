@@ -7,10 +7,13 @@ class Status(BaseStatus):
         "INVALID_DEVICE_DETECTED"  # Multi partitioned, not encrypted, etc
     )
     MULTI_DEVICE_DETECTED = "MULTI_DEVICE_DETECTED"  # Not currently supported
+    UKNOWN_DEVICE_DETECTED = (
+        "UNKNOWN_DEVICE_DETECTED"  # Badly-formatted USB or VeraCrypt/TC
+    )
 
-    DEVICE_LOCKED = "DEVICE_LOCKED"  # One device detected, and it's locked
+    DEVICE_LOCKED = "DEVICE_LOCKED"  # One valid device detected, and it's locked
     DEVICE_WRITABLE = (
-        "DEVICE_WRITABLE"  # One device detected, and it's unlocked (and mounted)
+        "DEVICE_WRITABLE"  # One valid device detected, and it's unlocked (and mounted)
     )
 
     ERROR_UNLOCK_LUKS = "ERROR_UNLOCK_LUKS"
