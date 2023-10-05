@@ -9,6 +9,7 @@ class EncryptionScheme(Enum):
 
     UNKNOWN = 0
     LUKS = 1
+    VERACRYPT = 2
 
 
 class Volume:
