@@ -4,7 +4,7 @@ from typing import List
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from securedrop_client import export
+from securedrop_client.export import Export
 from securedrop_client.logic import Controller
 
 logger = logging.getLogger(__name__)
@@ -19,27 +19,32 @@ class Device(QObject):
     """
 
     export_preflight_check_requested = pyqtSignal()
-    export_preflight_check_succeeded = pyqtSignal()
-    export_preflight_check_failed = pyqtSignal(object)
-
-    export_requested = pyqtSignal(list, str)
-    export_succeeded = pyqtSignal()
-    export_failed = pyqtSignal(object)
-    export_completed = pyqtSignal(list)
-
     print_preflight_check_requested = pyqtSignal()
-    print_preflight_check_succeeded = pyqtSignal()
-    print_preflight_check_failed = pyqtSignal(object)
 
-    print_requested = pyqtSignal(list)
-    print_succeeded = pyqtSignal()
+    # Emit ExportStatus
+    export_preflight_check_succeeded = pyqtSignal(object)
+    export_succeeded = pyqtSignal(object)
+
+    print_preflight_check_succeeded = pyqtSignal(object)
+    print_succeeded = pyqtSignal(object)
+
+    # Emit ExportError(status=ExportStatus)
+    export_preflight_check_failed = pyqtSignal(object)
+    export_failed = pyqtSignal(object)
+
+    print_preflight_check_failed = pyqtSignal(object)
     print_failed = pyqtSignal(object)
 
-    def __init__(self, controller: Controller) -> None:
+    # Emit List[str] filepaths
+    export_requested = pyqtSignal(list, str)
+    export_completed = pyqtSignal(list)
+    print_requested = pyqtSignal(list)
+
+    def __init__(self, controller: Controller, export_service: Export) -> None:
         super().__init__()
 
         self._controller = controller
-        self._export_service = export.getService()
+        self._export_service = export_service
 
         self._export_service.connect_signals(
             self.export_preflight_check_requested,
@@ -103,6 +108,7 @@ class Device(QObject):
         logger.info("Exporting file in: {}".format(os.path.dirname(file_location)))
 
         if not self._controller.downloaded_file_exists(file):
+            logger.warning(f"Cannot find file in {file_location}")
             return
 
         self.export_requested.emit([file_location], passphrase)
@@ -123,6 +129,7 @@ class Device(QObject):
         logger.info("Printing file in: {}".format(os.path.dirname(file_location)))
 
         if not self._controller.downloaded_file_exists(file):
+            logger.warning(f"Cannot find file in {file_location}")
             return
 
         self.print_requested.emit([file_location])

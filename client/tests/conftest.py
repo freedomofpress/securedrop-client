@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 from configparser import ConfigParser
 from datetime import datetime
+from typing import List
 from uuid import uuid4
 
 import pytest
@@ -22,6 +23,7 @@ from securedrop_client.db import (
     Source,
     make_session_maker,
 )
+from securedrop_client.export import ExportStatus
 from securedrop_client.gui import conversation
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
@@ -167,17 +169,39 @@ def homedir(i18n):
     yield tmpdir
 
 
+class MockExportService(export.Service):
+    """An export service that assumes the Qubes RPC calls are successful and skips them."""
+
+    def __init__(self, unlocked: bool):
+        super().__init__()
+        if unlocked:
+            self.preflight_response = ExportStatus.DEVICE_WRITABLE
+        else:
+            self.preflight_response = ExportStatus.DEVICE_LOCKED
+
+    def run_preflight_checks(self) -> None:
+        self.preflight_check_call_success.emit(self.preflight_response)
+
+    def send_file_to_usb_device(self, filepaths: List[str], passphrase: str) -> None:
+        self.export_usb_call_success.emit(ExportStatus.SUCCESS_EXPORT)
+        self.export_completed.emit(filepaths)
+
+    def run_printer_preflight(self) -> None:
+        self.printer_preflight_success.emit(ExportStatus.PRINT_PREFLIGHT_SUCCESS)
+
+    def print(self, filepaths: List[str]) -> None:
+        self.print_call_success.emit(ExportStatus.PRINT_SUCCESS)
+        self.export_completed.emit(filepaths)
+
+
 @pytest.fixture(scope="function")
 def mock_export_service():
-    """An export service that assumes the Qubes RPC calls are successful and skips them."""
-    export_service = export.Service()
-    # Ensure the export_service doesn't rely on Qubes OS:
-    export_service._run_disk_test = lambda dir: None
-    export_service._run_usb_test = lambda dir: None
-    export_service._run_disk_export = lambda dir, paths, passphrase: None
-    export_service._run_printer_preflight = lambda dir: None
-    export_service._run_print = lambda dir, paths: None
-    return export_service
+    return MockExportService(unlocked=False)
+
+
+@pytest.fixture(scope="function")
+def mock_export_service_unlocked_device():
+    return MockExportService(unlocked=True)
 
 
 @pytest.fixture(scope="function")

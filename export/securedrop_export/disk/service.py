@@ -1,24 +1,23 @@
 import logging
 
-from securedrop_export.archive import Archive
-
 from .cli import CLI
 from .status import Status
-from .volume import Volume, MountedVolume
+from .volume import MountedVolume, Volume
+from securedrop_export.archive import Archive
 from securedrop_export.exceptions import ExportException
-
 
 logger = logging.getLogger(__name__)
 
 
 class Service:
     """
-    Checks that can be performed against the device(s).
+    Actions that can be performed against USB device(s).
     This is the "API" portion of the export workflow.
     """
 
-    def __init__(self, cli: CLI):
+    def __init__(self, submission: Archive, cli: CLI = CLI()):
         self.cli = cli
+        self.submission = submission
 
     def scan_all_devices(self) -> Status:
         """
@@ -26,89 +25,55 @@ class Service:
         status.
         """
         try:
-            all_devices = self.cli.get_connected_devices()
-            number_devices = len(all_devices)
-
-            if number_devices == 0:
-                return Status.NO_DEVICE_DETECTED
-            elif number_devices > 1:
-                return Status.MULTI_DEVICE_DETECTED
+            volume = self.cli.get_volume()
+            if isinstance(volume, MountedVolume):
+                return Status.DEVICE_WRITABLE
+            elif isinstance(volume, Volume):
+                return Status.DEVICE_LOCKED
             else:
-                return self.scan_single_device(all_devices[0])
+                # Above will return MountedVolume, Volume, or raise error;
+                # this shouldn't be reachable
+                raise ExportException(sdstatus=Status.DEVICE_ERROR)
 
         except ExportException as ex:
-            logger.error(ex)
-            return Status.DEVICE_ERROR  # Could not assess devices
+            logger.debug(ex)
+            status = ex.sdstatus if ex.sdstatus is not None else Status.DEVICE_ERROR
+            logger.error(f"Encountered {status.value} while checking volumes")
+            return status
 
-    def scan_single_device(self, blkid: str) -> Status:
+    def export(self) -> Status:
         """
-        Given a string representing a single block device, see if it
-        is a suitable export target and return information about its state.
+        Export material to USB drive.
         """
         try:
-            target = self.cli.get_partitioned_device(blkid)
-
-            # See if it's a LUKS drive
-            if self.cli.is_luks_volume(target):
-                # Returns Volume or throws ExportException
-                self.volume = self.cli.get_luks_volume(target)
-
-                # See if it's unlocked and mounted
-                if isinstance(self.volume, MountedVolume):
-                    logger.debug("LUKS device is already mounted")
-                    return Status.DEVICE_WRITABLE
+            volume = self.cli.get_volume()
+            if isinstance(volume, MountedVolume):
+                logger.debug("Mounted volume detected, exporting files")
+                self.cli.write_data_to_device(
+                    volume, self.submission.tmpdir, self.submission.target_dirname
+                )
+                return Status.SUCCESS_EXPORT
+            elif isinstance(volume, Volume):
+                if self.submission.encryption_key is not None:
+                    logger.debug("Volume is locked, try unlocking")
+                    mv = self.cli.unlock_volume(volume, self.submission.encryption_key)
+                    if isinstance(mv, MountedVolume):
+                        logger.debug("Export to device")
+                        # Exports then locks the drive.
+                        # If the export succeeds but the drive is in use, will raise
+                        # exception.
+                        self.cli.write_data_to_device(
+                            mv, self.submission.tmpdir, self.submission.target_dirname
+                        )
+                        return Status.SUCCESS_EXPORT
+                    else:
+                        raise ExportException(sdstatus=Status.ERROR_UNLOCK_GENERIC)
                 else:
-                    # Prompt for passphrase
+                    logger.info("Volume is locked and no key has been provided")
                     return Status.DEVICE_LOCKED
-            else:
-                # Might be VeraCrypt, might be madness
-                logger.info("LUKS drive not found")
-
-                # Currently we don't support anything other than LUKS.
-                # In future, we will support TC/VC volumes as well
-                return Status.INVALID_DEVICE_DETECTED
 
         except ExportException as ex:
-            logger.error(ex)
-            if ex.sdstatus:
-                return ex.sdstatus
-            else:
-                return Status.DEVICE_ERROR
-
-    def unlock_device(self, passphrase: str, volume: Volume) -> Status:
-        """
-        Given provided passphrase, unlock target volume. Currently,
-        LUKS volumes are supported.
-        """
-        if volume:
-            try:
-                self.volume = self.cli.unlock_luks_volume(volume, passphrase)
-
-                if isinstance(volume, MountedVolume):
-                    return Status.DEVICE_WRITABLE
-                else:
-                    return Status.ERROR_UNLOCK_LUKS
-
-            except ExportException as ex:
-                logger.error(ex)
-                return Status.ERROR_UNLOCK_LUKS
-        else:
-            # Trying to unlock devices before having an active device
-            logger.warning("Tried to unlock_device but no current volume detected.")
-            return Status.NO_DEVICE_DETECTED
-
-    def write_to_device(self, volume: MountedVolume, data: Archive) -> Status:
-        """
-        Export data to volume. CLI unmounts and locks volume on completion, even
-        if export was unsuccessful.
-        """
-        try:
-            self.cli.write_data_to_device(data.tmpdir, data.target_dirname, volume)
-            return Status.SUCCESS_EXPORT
-
-        except ExportException as ex:
-            logger.error(ex)
-            if ex.sdstatus:
-                return ex.sdstatus
-            else:
-                return Status.ERROR_EXPORT
+            logger.debug(ex)
+            status = ex.sdstatus if ex.sdstatus is not None else Status.ERROR_EXPORT
+            logger.error(f"Enountered {status.value} while trying to export")
+            return status

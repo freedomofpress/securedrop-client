@@ -188,7 +188,7 @@ def test_TranscriptDialog__on_export_preflight_check_succeeded(mocker, export_tr
     export_transcript_dialog.continue_button.clicked = mocker.MagicMock()
     mocker.patch.object(export_transcript_dialog.continue_button, "isEnabled", return_value=False)
 
-    export_transcript_dialog._on_export_preflight_check_succeeded()
+    export_transcript_dialog._on_export_preflight_check_succeeded(ExportStatus.DEVICE_LOCKED)
 
     export_transcript_dialog._show_passphrase_request_message.assert_not_called()
     export_transcript_dialog.continue_button.clicked.connect.assert_called_once_with(
@@ -202,7 +202,7 @@ def test_TranscriptDialog__on_export_preflight_check_succeeded_when_continue_ena
     export_transcript_dialog._show_passphrase_request_message = mocker.MagicMock()
     export_transcript_dialog.continue_button.setEnabled(True)
 
-    export_transcript_dialog._on_export_preflight_check_succeeded()
+    export_transcript_dialog._on_export_preflight_check_succeeded(ExportStatus.DEVICE_LOCKED)
 
     export_transcript_dialog._show_passphrase_request_message.assert_called_once_with()
 
@@ -211,7 +211,7 @@ def test_TranscriptDialog__on_export_preflight_check_succeeded_enabled_after_pre
     mocker, export_transcript_dialog
 ):
     assert not export_transcript_dialog.continue_button.isEnabled()
-    export_transcript_dialog._on_export_preflight_check_succeeded()
+    export_transcript_dialog._on_export_preflight_check_succeeded(ExportStatus.DEVICE_LOCKED)
     assert export_transcript_dialog.continue_button.isEnabled()
 
 
@@ -235,7 +235,7 @@ def test_TranscriptDialog__on_export_preflight_check_failed(mocker, export_trans
 def test_TranscriptDialog__on_export_succeeded(mocker, export_transcript_dialog):
     export_transcript_dialog._show_success_message = mocker.MagicMock()
 
-    export_transcript_dialog._on_export_succeeded()
+    export_transcript_dialog._on_export_succeeded(ExportStatus.SUCCESS_EXPORT)
 
     export_transcript_dialog._show_success_message.assert_called_once_with()
 
@@ -258,14 +258,14 @@ def test_TranscriptDialog__update_dialog_when_status_is_USB_NOT_CONNECTED(
     mocker.patch.object(export_transcript_dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    export_transcript_dialog._update_dialog(ExportStatus.USB_NOT_CONNECTED)
+    export_transcript_dialog._update_dialog(ExportStatus.NO_DEVICE_DETECTED)
     export_transcript_dialog.continue_button.clicked.connect.assert_called_once_with(
         export_transcript_dialog._show_insert_usb_message
     )
 
     # When the continue button is enabled, ensure next instructions are shown
     mocker.patch.object(export_transcript_dialog.continue_button, "isEnabled", return_value=True)
-    export_transcript_dialog._update_dialog(ExportStatus.USB_NOT_CONNECTED)
+    export_transcript_dialog._update_dialog(ExportStatus.NO_DEVICE_DETECTED)
     export_transcript_dialog._show_insert_usb_message.assert_called_once_with()
 
 
@@ -278,14 +278,14 @@ def test_TranscriptDialog__update_dialog_when_status_is_BAD_PASSPHRASE(
     mocker.patch.object(export_transcript_dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    export_transcript_dialog._update_dialog(ExportStatus.BAD_PASSPHRASE)
+    export_transcript_dialog._update_dialog(ExportStatus.ERROR_UNLOCK_LUKS)
     export_transcript_dialog.continue_button.clicked.connect.assert_called_once_with(
         export_transcript_dialog._show_passphrase_request_message_again
     )
 
     # When the continue button is enabled, ensure next instructions are shown
     mocker.patch.object(export_transcript_dialog.continue_button, "isEnabled", return_value=True)
-    export_transcript_dialog._update_dialog(ExportStatus.BAD_PASSPHRASE)
+    export_transcript_dialog._update_dialog(ExportStatus.ERROR_UNLOCK_LUKS)
     export_transcript_dialog._show_passphrase_request_message_again.assert_called_once_with()
 
 
@@ -298,14 +298,14 @@ def test_TranscriptDialog__update_dialog_when_status_DISK_ENCRYPTION_NOT_SUPPORT
     mocker.patch.object(export_transcript_dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    export_transcript_dialog._update_dialog(ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR)
+    export_transcript_dialog._update_dialog(ExportStatus.INVALID_DEVICE_DETECTED)
     export_transcript_dialog.continue_button.clicked.connect.assert_called_once_with(
         export_transcript_dialog._show_insert_encrypted_usb_message
     )
 
     # When the continue button is enabled, ensure next instructions are shown
     mocker.patch.object(export_transcript_dialog.continue_button, "isEnabled", return_value=True)
-    export_transcript_dialog._update_dialog(ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR)
+    export_transcript_dialog._update_dialog(ExportStatus.INVALID_DEVICE_DETECTED)
     export_transcript_dialog._show_insert_encrypted_usb_message.assert_called_once_with()
 
 
