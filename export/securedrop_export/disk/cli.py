@@ -26,8 +26,9 @@ class CLI:
 
     # Default mountpoint (unless drive is already mounted manually by the user)
     _DEFAULT_MOUNTPOINT = "/media/usb"
+    _DEFAULT_VC_CONTAINER_NAME = "vc-volume"
 
-    def get_connected_devices(self) -> List[str]:
+    def _get_connected_devices(self) -> List[str]:
         """
         List all block devices attached to VM that are disks and not partitions.
         Return list of all removable connected block devices.
@@ -85,7 +86,49 @@ class CLI:
         logger.info(f"{len(usb_devices)} connected")
         return usb_devices
 
-    def get_partitioned_device(self, blkid: str) -> str:
+    def get_all_volumes(self) -> [Volume]:
+        """
+        Returns a list of all currently-attached removable Volumes that are
+        export device candidates, attempting to get as far towards export process
+        as possible (i.e. probing if device is already unlocked and/or mounted,
+        and mounting it if appropriate.)
+
+        Caller must handle ExportException.
+        """
+        volumes = []
+        removable_devices = self._get_connected_devices()
+        try:
+            for item in removable_devices:
+                blkid = self._get_partitioned_device(item)
+                if self.is_luks_volume(blkid):
+                    logger.debug("LUKS volume detected. Checking if unlocked.")
+                    volumes.append(self._get_luks_volume(blkid))
+                else:
+                    try:
+                        logger.debug(
+                            "Not a LUKS volume. Checking if unlocked VeraCrypt."
+                        )
+                        volumes.append(
+                            self._attempt_get_unlocked_veracrypt_volume(blkid)
+                        )
+                    except ExportException:
+                        logger.info("Device is not an unlocked Veracrypt drive.")
+                        volumes.append(
+                            Volume(
+                                device_name=blkid,
+                                encryption=EncryptionScheme.UNKNOWN,
+                                mapped_name=None,
+                            )
+                        )
+
+            return volumes
+
+        except ExportException as ex:
+            logger.error(f"get_all_volumes failed: {ex.sdstatus.value}")
+            logger.debug(ex)
+            raise
+
+    def _get_partitioned_device(self, blkid: str) -> str:
         """
         Given a string representing a block device, return string that includes correct partition
         (such as "/dev/sda" or "/dev/sda1").
@@ -181,7 +224,7 @@ class CLI:
             logger.error("Failed to dump LUKS header")
             raise ExportException(sdstatus=Status.DEVICE_ERROR) from ex
 
-    def get_luks_volume(self, device: str) -> Union[Volume, MountedVolume]:
+    def _get_luks_volume(self, device: str) -> Union[Volume, MountedVolume]:
         """
         Given a string corresponding to a LUKS-partitioned volume, return a corresponding Volume
         object.
@@ -212,7 +255,7 @@ class CLI:
             # use the existing mountpoint, or mount it ourselves.
             # Either way, return a MountedVolume.
             if os.path.exists(os.path.join("/dev/mapper/", mapped_name)):
-                return self.mount_volume(luks_volume)
+                return self._mount_volume(luks_volume)
 
             # It's still locked
             else:
@@ -263,50 +306,56 @@ class CLI:
         except subprocess.CalledProcessError as ex:
             raise ExportException(sdstatus=Status.DEVICE_ERROR) from ex
 
-    def attempt_get_unlocked_veracrypt_volume(self, device: str) -> MountedVolume:
+    def _get_dev_mapper_entries(self) -> [str]:
         """
-        Look for an unlocked VeraCrypt volume in /dev/mapper.
-        Raise ExportException on error.
+        Helper function to return a list of entries in /dev/mapper/
+        (excluding `system` and `dmroot`).
         """
-
-        # See if there's a volume in /dev/mapper that is already-unlocked TrueCrypt volume
         try:
             ls = subprocess.check_output(
                 ["ls", "/dev/mapper/"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
             results = ls.decode().rstrip().split("\n")
 
-            # If there are no mapped devices, bail
-            if len(results) <= len(self._DEVMAPPER_SYSTEM):
-                raise ExportException(sdstatus=Status.DEVICE_ERROR)
+            return [r for r in results if r not in self._DEVMAPPER_SYSTEM]
 
-            for entry in results:
-                if entry not in self._DEVMAPPER_SYSTEM:
-                    res = subprocess.check_output(
-                        [
-                            "lsblk",
-                            "--noheadings",
-                            "-o",
-                            "NAME,TYPE,MOUNTPOINT",
-                            f"/dev/mapper/{entry}",
-                        ]
+        except subprocess.CalledProcessError as ex:
+            logger.error(f"Error checking entries in /dev/mapper: {ex}")
+            raise ExportException(sdstatus=Status.DEVICE_ERROR) from ex
+
+    def _attempt_get_unlocked_veracrypt_volume(self, device_name: str) -> MountedVolume:
+        """
+        Looks for an already-unlocked VeraCrypt volume in /dev/mapper and see if the
+        device ID matches given device name.
+        Raises ExportException on error.
+        """
+        try:
+            for entry in self._get_dev_mapper_entries():
+                res = subprocess.check_output(
+                    [
+                        "lsblk",
+                        "--noheadings",
+                        "-o",
+                        "NAME,TYPE,MOUNTPOINT",
+                        f"/dev/mapper/{entry}",
+                    ]
+                )
+                name, crypt_type, mountpoint = (
+                    res.decode().rstrip().split()
+                )  # Space-separated
+
+                # Notes for our future selves: there is also a `tcrypt-system` identifier.
+                # It *should* only be used for FDE with TrueCrypt, not for a non-bootable drive.
+                if crypt_type == "tcrypt" and name == device_name:
+                    vol = Volume(
+                        device_name=name,
+                        mapped_name=entry,
+                        encryption=EncryptionScheme.VERACRYPT,
                     )
-                    name, crypt_type, mountpoint = (
-                        res.decode().rstrip().split()
-                    )  # Space-separated
-
-                    # Notes for our future selves: there is also a `tcrypt-system` identifier.
-                    # It *should* only be used for FDE with TrueCrypt, not for a non-bootable drive.
-                    if crypt_type == "tcrypt" and name == device:
-                        vol = Volume(
-                            device_name=name,
-                            mapped_name=entry,
-                            encryption=EncryptionScheme.VERACRYPT,
-                        )
-                        if mountpoint:
-                            return MountedVolume.from_volume(vol)
-                        else:
-                            return self.mount_volume(vol)
+                    if mountpoint:
+                        return MountedVolume.from_volume(vol, mountpoint)
+                    else:
+                        return self._mount_at_mountpoint(vol, self._DEFAULT_MOUNTPOINT)
 
         except subprocess.CalledProcessError as e:
             logger.error(e)
@@ -316,7 +365,7 @@ class CLI:
         self, volume: Volume, encryption_key: str
     ) -> MountedVolume:
         """
-        Attempt to unlock and mount a VeraCrypt drive at the default mountpoint.
+        Attempt to unlock and mount a presumed-Veracrypt drive at the default mountpoint.
         """
         try:
             with subprocess.Popen(
@@ -328,7 +377,7 @@ class CLI:
                     "tcrypt",
                     "--veracrypt",
                     f"{volume.device_name}",
-                    self._DEFAULT_MOUNTPOINT,
+                    f"{self._DEFAULT_VC_CONTAINER_NAME}",
                 ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -337,12 +386,13 @@ class CLI:
                 rc = p.returncode
 
                 if rc == 0:
-                    return MountedVolume(
-                        device_name=volume.device_name,
-                        mapped_name=volume.mapped_name,
-                        encryption=EncryptionScheme.VERACRYPT,
-                        mountpoint=self._DEFAULT_MOUNTPOINT,
-                    )
+                    volume.encryption = EncryptionScheme.VERACRYPT
+
+                    # Mapped name is /dev/mapper/${self._DEFAULT_VC_CONTAINER_NAME}, since
+                    # the /dev/mapper entry isn't derived from the header like a LUKS drive
+                    volume.mapped_name = self._DEFAULT_VC_CONTAINER_NAME
+
+                    return self._mount_volume(volume)
 
                 else:
                     # Something was wrong and we could not unlock.
@@ -356,7 +406,7 @@ class CLI:
             # more granular about what the problem is. But basically, unlocking didn't work.
             logger.error("Unlocking failed. Bad passphrase, or unsuitable volume.")
             logger.error(error)
-            raise ExportException(sdstatus=Status.ERROR_UNLOCK_GENERIC)  # todo
+            raise ExportException(sdstatus=Status.ERROR_UNLOCK_GENERIC)
 
     def _get_mountpoint(self, volume: Volume) -> Optional[str]:
         """
@@ -374,7 +424,7 @@ class CLI:
             logger.error(ex)
             raise ExportException(sdstatus=Status.ERROR_MOUNT) from ex
 
-    def mount_volume(self, volume: Volume) -> MountedVolume:
+    def _mount_volume(self, volume: Volume) -> MountedVolume:
         """
         Given an unlocked LUKS volume, return MountedVolume object.
 
@@ -422,11 +472,11 @@ class CLI:
             subprocess.check_call(["sudo", "mount", mapped_device_path, mountpoint])
             subprocess.check_call(["sudo", "chown", "-R", "user:user", mountpoint])
 
+            return MountedVolume.from_volume(volume, mountpoint)
+
         except subprocess.CalledProcessError as ex:
             logger.error(ex)
             raise ExportException(sdstatus=Status.ERROR_MOUNT) from ex
-
-        return MountedVolume.from_volume(volume, mountpoint)
 
     def write_data_to_device(
         self,
@@ -509,6 +559,21 @@ class CLI:
             try:
                 subprocess.check_call(
                     ["sudo", "cryptsetup", "luksClose", unlocked_device.mapped_name]
+                )
+
+            except subprocess.CalledProcessError as ex:
+                logger.error("Error closing device")
+                raise ExportException(sdstatus=Status.DEVICE_ERROR) from ex
+
+    def _close_veracrypt_volume(self, unlocked_device: MountedVolume) -> None:
+        """
+        Helper. Close VeraCrypt volume.
+        """
+        if os.path.exists(os.path.join("/dev/mapper", unlocked_device.mapped_name)):
+            logger.debug("Locking luks volume {}".format(unlocked_device))
+            try:
+                subprocess.check_call(
+                    ["sudo", "cryptsetup", "close", unlocked_device.mapped_name]
                 )
 
             except subprocess.CalledProcessError as ex:

@@ -11,8 +11,7 @@ from securedrop_export.status import BaseStatus
 from securedrop_export.directory import safe_mkdir
 from securedrop_export.exceptions import ExportException
 
-from securedrop_export.disk import LegacyService as ExportService
-from securedrop_export.disk import LegacyStatus
+from securedrop_export.disk import Service as ExportService
 from securedrop_export.print import Service as PrintService
 
 from logging.handlers import TimedRotatingFileHandler, SysLogHandler
@@ -125,7 +124,7 @@ def _configure_logging():
         raise ExportException(sdstatus=Status.ERROR_LOGGING) from ex
 
 
-def _start_service(submission: Archive) -> LegacyStatus:
+def _start_service(submission: Archive) -> Status:
     """
     Start print or export service.
     """
@@ -140,10 +139,11 @@ def _start_service(submission: Archive) -> LegacyStatus:
     # Export routines
     elif submission.command is Command.EXPORT:
         return ExportService(submission).export()
-    elif submission.command is Command.CHECK_USBS:
-        return ExportService(submission).check_connected_devices()
-    elif submission.command is Command.CHECK_VOLUME:
-        return ExportService(submission).check_disk_format()
+    elif (
+        submission.command is Command.CHECK_USBS
+        or submission.command is Command.CHECK_VOLUME
+    ):
+        return ExportService(submission).scan_all_devices()
 
     # Unreachable
     raise ExportException(
