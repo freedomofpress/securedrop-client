@@ -6,6 +6,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 
 from securedrop_client import export
 from securedrop_client.logic import Controller
+from securedrop_client.export_status import ExportStatus
 
 logger = logging.getLogger(__name__)
 
@@ -19,21 +20,26 @@ class Device(QObject):
     """
 
     export_preflight_check_requested = pyqtSignal()
-    export_preflight_check_succeeded = pyqtSignal()
-    export_preflight_check_failed = pyqtSignal(object)
-
-    export_requested = pyqtSignal(list, str)
-    export_succeeded = pyqtSignal()
-    export_failed = pyqtSignal(object)
-    export_completed = pyqtSignal(list)
-
     print_preflight_check_requested = pyqtSignal()
-    print_preflight_check_succeeded = pyqtSignal()
-    print_preflight_check_failed = pyqtSignal(object)
 
-    print_requested = pyqtSignal(list)
-    print_succeeded = pyqtSignal()
+    # Emit ExportStatus
+    export_preflight_check_succeeded = pyqtSignal(object)
+    export_succeeded = pyqtSignal(object)
+
+    print_preflight_check_succeeded = pyqtSignal(object)
+    print_succeeded = pyqtSignal(object)
+
+    # Emit ExportError(status: ExportStatus)
+    export_preflight_check_failed = pyqtSignal(object)
+    export_failed = pyqtSignal(object)
+
+    print_preflight_check_failed = pyqtSignal(object)
     print_failed = pyqtSignal(object)
+
+    # Emit List[str] filepaths
+    export_requested = pyqtSignal(list, str)
+    export_completed = pyqtSignal(list)
+    print_requested = pyqtSignal(list)
 
     def __init__(self, controller: Controller) -> None:
         super().__init__()

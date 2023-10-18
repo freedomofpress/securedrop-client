@@ -132,7 +132,7 @@ def test_send_file_to_usb_device(mocker):
     export.export_usb_call_success.emit = mocker.MagicMock()
     export.export_completed = mocker.MagicMock()
     export.export_completed.emit = mocker.MagicMock()
-    _run_disk_export = mocker.patch.object(export, "_build_archive_and_export")
+    _run_disk_export = mocker.patch.object(export, "_build_archive_and_export", return_value=ExportStatus.SUCCESS_EXPORT)
     mocker.patch("os.path.exists", return_value=True)
 
     metadata = export.DISK_METADATA
@@ -143,7 +143,7 @@ def test_send_file_to_usb_device(mocker):
     _run_disk_export.assert_called_once_with(
         metadata=metadata, filename=export.DISK_FN, filepaths=["path1", "path2"]
     )
-    export.export_usb_call_success.emit.assert_called_once_with()
+    export.export_usb_call_success.emit.assert_called_once_with(ExportStatus.SUCCESS_EXPORT)
     export.export_completed.emit.assert_called_once_with(["path1", "path2"])
 
 
@@ -189,14 +189,14 @@ def test_run_usb_preflight_checks(mocker):
 
     export.preflight_check_call_success = mocker.MagicMock()
     export.preflight_check_call_success.emit = mocker.MagicMock()
-    _run_export = mocker.patch.object(export, "_build_archive_and_export")
+    _run_export = mocker.patch.object(export, "_build_archive_and_export", return_value=ExportStatus.DEVICE_LOCKED)
 
     export.run_preflight_checks()
 
     _run_export.assert_called_once_with(
         metadata=export.USB_TEST_METADATA, filename=export.USB_TEST_FN
     )
-    export.preflight_check_call_success.emit.assert_called_once_with()
+    export.preflight_check_call_success.emit.assert_called_once_with(ExportStatus.DEVICE_LOCKED)
 
 
 def test_run_usb_preflight_checks_error(mocker):

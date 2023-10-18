@@ -144,7 +144,7 @@ def test_PrintTranscriptDialog__on_print_preflight_check_failed_when_status_is_P
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
     print_transcript_dialog._on_print_preflight_check_failed(
-        ExportError(ExportStatus.PRINTER_NOT_FOUND)
+        ExportError(ExportStatus.ERROR_PRINTER_NOT_FOUND)
     )
     print_transcript_dialog.continue_button.clicked.connect.assert_called_once_with(
         print_transcript_dialog._show_insert_usb_message
@@ -153,7 +153,7 @@ def test_PrintTranscriptDialog__on_print_preflight_check_failed_when_status_is_P
     # When the continue button is enabled, ensure next instructions are shown
     mocker.patch.object(print_transcript_dialog.continue_button, "isEnabled", return_value=True)
     print_transcript_dialog._on_print_preflight_check_failed(
-        ExportError(ExportStatus.PRINTER_NOT_FOUND)
+        ExportError(ExportStatus.ERROR_PRINTER_NOT_FOUND)
     )
     print_transcript_dialog._show_insert_usb_message.assert_called_once_with()
 
@@ -168,12 +168,12 @@ def test_PrintTranscriptDialog__on_print_preflight_check_failed_when_status_is_M
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
     print_transcript_dialog._on_print_preflight_check_failed(
-        ExportError(ExportStatus.MISSING_PRINTER_URI)
+        ExportError(ExportStatus.ERROR_PRINTER_URI)
     )
     print_transcript_dialog.continue_button.clicked.connect.assert_called_once_with(
         print_transcript_dialog._show_generic_error_message
     )
-    assert print_transcript_dialog.error_status == ExportStatus.MISSING_PRINTER_URI
+    assert print_transcript_dialog.error_status == ExportStatus.ERROR_PRINTER_URI
 
     # When the continue button is enabled, ensure next instructions are shown
     mocker.patch.object(print_transcript_dialog.continue_button, "isEnabled", return_value=True)
@@ -181,7 +181,7 @@ def test_PrintTranscriptDialog__on_print_preflight_check_failed_when_status_is_M
         ExportError(ExportStatus.MISSING_PRINTER_URI)
     )
     print_transcript_dialog._show_generic_error_message.assert_called_once_with()
-    assert print_transcript_dialog.error_status == ExportStatus.MISSING_PRINTER_URI
+    assert print_transcript_dialog.error_status == ExportStatus.ERROR_PRINTER_URI
 
 
 def test_PrintTranscriptDialog__on_print_preflight_check_failed_when_status_is_CALLED_PROCESS_ERROR(
