@@ -43,13 +43,15 @@ def test_run_printer_preflight(mocker):
 
     export = Export()
     mocker.patch.object(
-        export, "_build_archive_and_export", return_value=ExportStatus.PREFLIGHT_SUCCESS
+        export, "_build_archive_and_export", return_value=ExportStatus.PRINT_PREFLIGHT_SUCCESS
     )
     export.printer_preflight_success = mocker.MagicMock()
     export.printer_preflight_success.emit = mocker.MagicMock()
 
     export.run_printer_preflight()
-    export.printer_preflight_success.emit.assert_called_once_with()
+    export.printer_preflight_success.emit.assert_called_once_with(
+        ExportStatus.PRINT_PREFLIGHT_SUCCESS
+    )
 
 
 def test_run_printer_preflight_error(mocker):
@@ -87,7 +89,7 @@ def test_print(mocker):
     mock_qrexec_call.assert_called_once_with(
         metadata=export.PRINT_METADATA, filename=export.PRINT_FN, filepaths=["path1", "path2"]
     )
-    export.print_call_success.emit.assert_called_once_with()
+    export.print_call_success.emit.assert_called_once_with(ExportStatus.PRINT_SUCCESS)
     export.export_completed.emit.assert_called_once_with(["path1", "path2"])
 
 
@@ -132,7 +134,9 @@ def test_send_file_to_usb_device(mocker):
     export.export_usb_call_success.emit = mocker.MagicMock()
     export.export_completed = mocker.MagicMock()
     export.export_completed.emit = mocker.MagicMock()
-    _run_disk_export = mocker.patch.object(export, "_build_archive_and_export", return_value=ExportStatus.SUCCESS_EXPORT)
+    _run_disk_export = mocker.patch.object(
+        export, "_build_archive_and_export", return_value=ExportStatus.SUCCESS_EXPORT
+    )
     mocker.patch("os.path.exists", return_value=True)
 
     metadata = export.DISK_METADATA
@@ -189,7 +193,9 @@ def test_run_usb_preflight_checks(mocker):
 
     export.preflight_check_call_success = mocker.MagicMock()
     export.preflight_check_call_success.emit = mocker.MagicMock()
-    _run_export = mocker.patch.object(export, "_build_archive_and_export", return_value=ExportStatus.DEVICE_LOCKED)
+    _run_export = mocker.patch.object(
+        export, "_build_archive_and_export", return_value=ExportStatus.DEVICE_LOCKED
+    )
 
     export.run_preflight_checks()
 
