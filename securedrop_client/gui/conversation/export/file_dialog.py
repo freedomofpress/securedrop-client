@@ -9,9 +9,10 @@ from PyQt5.QtCore import QSize, Qt, pyqtSlot
 from PyQt5.QtGui import QColor, QFont
 from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QLineEdit, QVBoxLayout, QWidget
 
-from securedrop_client.export import ExportError, ExportStatus
+from securedrop_client.export import ExportError
 from securedrop_client.gui.base import ModalDialog, PasswordEdit, SecureQLabel
 from securedrop_client.gui.base.checkbox import SDCheckBox
+from securedrop_client.export_status import ExportStatus
 
 from .device import Device
 
@@ -246,16 +247,17 @@ class FileDialog(ModalDialog):
         self.passphrase_field.setDisabled(False)
         self._update_dialog(error.status)
 
+    # FIXME: need to account for new ExportStatus results as well
     def _update_dialog(self, error_status: ExportStatus) -> None:
         self.error_status = error_status
         # If the continue button is disabled then this is the result of a background preflight check
         if not self.continue_button.isEnabled():
             self.continue_button.clicked.disconnect()
-            if self.error_status == ExportStatus.BAD_PASSPHRASE:
+            if self.error_status == ExportStatus.ERROR_UNLOCK_LUKS: # todo: for now
                 self.continue_button.clicked.connect(self._show_passphrase_request_message_again)
-            elif self.error_status == ExportStatus.USB_NOT_CONNECTED:
+            elif self.error_status == ExportStatus.NO_DEVICE_DETECTED: # fka USB_NOT_CONNECTED
                 self.continue_button.clicked.connect(self._show_insert_usb_message)
-            elif self.error_status == ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR:
+            elif self.error_status == ExportStatus.INVALID_DEVICE_DETECTED: # fka DISK_ENCRYPTION_NOT_SUPPORTED_ERROR
                 self.continue_button.clicked.connect(self._show_insert_encrypted_usb_message)
             else:
                 self.continue_button.clicked.connect(self._show_generic_error_message)
@@ -263,11 +265,11 @@ class FileDialog(ModalDialog):
             self.continue_button.setEnabled(True)
             self.continue_button.setFocus()
         else:
-            if self.error_status == ExportStatus.BAD_PASSPHRASE:
+            if self.error_status == ExportStatus.ERROR_UNLOCK_LUKS:
                 self._show_passphrase_request_message_again()
-            elif self.error_status == ExportStatus.USB_NOT_CONNECTED:
+            elif self.error_status == ExportStatus.NO_DEVICE_DETECTED:
                 self._show_insert_usb_message()
-            elif self.error_status == ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR:
+            elif self.error_status == ExportStatus.INVALID_DEVICE_DETECTED:
                 self._show_insert_encrypted_usb_message()
             else:
                 self._show_generic_error_message()

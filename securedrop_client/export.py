@@ -49,17 +49,21 @@ class Export(QObject):
     DISK_ENCRYPTION_KEY_NAME = "encryption_key"
     DISK_EXPORT_DIR = "export_data"
 
-    # Set up signals for communication with the controller
-    preflight_check_call_failure = pyqtSignal(object)
-    preflight_check_call_success = pyqtSignal()
-    export_usb_call_failure = pyqtSignal(object)
-    export_usb_call_success = pyqtSignal()
-    export_completed = pyqtSignal(list)
+    # Set up signals for communication with the controller #
+    # Emit ExportStatus
+    preflight_check_call_success = pyqtSignal(object)
+    export_usb_call_success = pyqtSignal(object)
+    printer_preflight_success = pyqtSignal(object)
+    print_call_success = pyqtSignal(object)
 
-    printer_preflight_success = pyqtSignal()
+    # Emit ExportError(status=ExportStatus)
+    export_usb_call_failure = pyqtSignal(object)
+    preflight_check_call_failure = pyqtSignal(object)
     printer_preflight_failure = pyqtSignal(object)
     print_call_failure = pyqtSignal(object)
-    print_call_success = pyqtSignal()
+
+    # Emit List[str] of filepaths
+    export_completed = pyqtSignal(list)
 
     def __init__(
         self,
@@ -238,12 +242,12 @@ class Export(QObject):
                 "beginning preflight checks in thread {}".format(threading.current_thread().ident)
             )
 
-            self._build_archive_and_export(
+            status = self._build_archive_and_export(
                 metadata=self.USB_TEST_METADATA, filename=self.USB_TEST_FN
             )
 
             logger.debug("completed preflight checks: success")
-            self.preflight_check_call_success.emit()  # fixme: emit status
+            self.preflight_check_call_success.emit(status)
         except ExportError as e:
             logger.debug("completed preflight checks: failure")
             self.preflight_check_call_failure.emit(e)
@@ -254,11 +258,10 @@ class Export(QObject):
         Make sure the Export VM is started.
         """
         try:
-            self._build_archive_and_export(
+            status = self._build_archive_and_export(
                 metadata=self.PRINTER_PREFLIGHT_METADATA, filename=self.PRINTER_PREFLIGHT_FN
             )
-            # todo: emit result
-            self.printer_preflight_success.emit()
+            self.printer_preflight_success.emit(status)
         except ExportError as e:
             logger.error("Export failed")
             logger.debug(f"Export failed: {e}")
@@ -278,12 +281,12 @@ class Export(QObject):
             # Edit metadata template to include passphrase
             metadata = self.DISK_METADATA.copy()
             metadata[self.DISK_ENCRYPTION_KEY_NAME] = passphrase
-            self._build_archive_and_export(
+            status = self._build_archive_and_export(
                 metadata=metadata, filename=self.DISK_FN, filepaths=filepaths
             )
 
-            self.export_usb_call_success.emit()  # todo: emit result
-            logger.debug("Export successful")
+            self.export_usb_call_success.emit(status)
+            logger.debug(f"Status {status}")
         except ExportError as e:
             logger.error("Export failed")
             logger.debug(f"Export failed: {e}")
@@ -303,11 +306,11 @@ class Export(QObject):
             logger.debug(
                 "beginning printer from thread {}".format(threading.current_thread().ident)
             )
-            self._build_archive_and_export(
+            status = self._build_archive_and_export(
                 metadata=self.PRINT_METADATA, filename=self.PRINT_FN, filepaths=filepaths
             )
-            self.print_call_success.emit()  # todo: emit result
-            logger.debug("Print successful")
+            self.print_call_success.emit(status)
+            logger.debug(f"Status {status}")
         except ExportError as e:
             logger.error("Export failed")
             logger.debug(f"Export failed: {e}")

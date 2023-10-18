@@ -250,14 +250,14 @@ def test_ExportDialog__update_dialog_when_status_is_USB_NOT_CONNECTED(mocker, ex
     mocker.patch.object(export_file_dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    export_file_dialog._update_dialog(ExportStatus.USB_NOT_CONNECTED)
+    export_file_dialog._update_dialog(ExportStatus.NO_DEVICE_DETECTED)
     export_file_dialog.continue_button.clicked.connect.assert_called_once_with(
         export_file_dialog._show_insert_usb_message
     )
 
     # When the continue button is enabled, ensure next instructions are shown
     mocker.patch.object(export_file_dialog.continue_button, "isEnabled", return_value=True)
-    export_file_dialog._update_dialog(ExportStatus.USB_NOT_CONNECTED)
+    export_file_dialog._update_dialog(ExportStatus.NO_DEVICE_DETECTED)
     export_file_dialog._show_insert_usb_message.assert_called_once_with()
 
 
@@ -268,14 +268,14 @@ def test_ExportDialog__update_dialog_when_status_is_BAD_PASSPHRASE(mocker, expor
     mocker.patch.object(export_file_dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    export_file_dialog._update_dialog(ExportStatus.BAD_PASSPHRASE)
+    export_file_dialog._update_dialog(ExportStatus.ERROR_UNLOCK_LUKS)
     export_file_dialog.continue_button.clicked.connect.assert_called_once_with(
         export_file_dialog._show_passphrase_request_message_again
     )
 
     # When the continue button is enabled, ensure next instructions are shown
     mocker.patch.object(export_file_dialog.continue_button, "isEnabled", return_value=True)
-    export_file_dialog._update_dialog(ExportStatus.BAD_PASSPHRASE)
+    export_file_dialog._update_dialog(ExportStatus.ERROR_UNLOCK_LUKS)
     export_file_dialog._show_passphrase_request_message_again.assert_called_once_with()
 
 
@@ -288,14 +288,14 @@ def test_ExportDialog__update_dialog_when_status_DISK_ENCRYPTION_NOT_SUPPORTED_E
     mocker.patch.object(export_file_dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    export_file_dialog._update_dialog(ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR)
+    export_file_dialog._update_dialog(ExportStatus.INVALID_DEVICE_DETECTED)
     export_file_dialog.continue_button.clicked.connect.assert_called_once_with(
         export_file_dialog._show_insert_encrypted_usb_message
     )
 
     # When the continue button is enabled, ensure next instructions are shown
     mocker.patch.object(export_file_dialog.continue_button, "isEnabled", return_value=True)
-    export_file_dialog._update_dialog(ExportStatus.DISK_ENCRYPTION_NOT_SUPPORTED_ERROR)
+    export_file_dialog._update_dialog(ExportStatus.INVALID_DEVICE_DETECTED)
     export_file_dialog._show_insert_encrypted_usb_message.assert_called_once_with()
 
 
