@@ -10,9 +10,9 @@ from PyQt5.QtGui import QColor, QFont
 from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QLineEdit, QVBoxLayout, QWidget
 
 from securedrop_client.export import ExportError
+from securedrop_client.export_status import ExportStatus
 from securedrop_client.gui.base import ModalDialog, PasswordEdit, SecureQLabel
 from securedrop_client.gui.base.checkbox import SDCheckBox
-from securedrop_client.export_status import ExportStatus
 
 from .device import Device
 
@@ -212,22 +212,35 @@ class FileDialog(ModalDialog):
         self.start_animate_activestate()
         self.cancel_button.setEnabled(False)
         self.passphrase_field.setDisabled(True)
+
+        # TODO: If the drive is already unlocked, the passphrase field will be empty.
+        # This is ok, but could violate expectations. The password should be passed
+        # via qrexec in future, to avoid writing it to even a temporary file at all.
         self._device.export_file_to_usb_drive(self.file_uuid, self.passphrase_field.text())
 
-    @pyqtSlot()
-    def _on_export_preflight_check_succeeded(self) -> None:
+    @pyqtSlot(object)
+    def _on_export_preflight_check_succeeded(self, result: ExportStatus) -> None:
         # If the continue button is disabled then this is the result of a background preflight check
         self.stop_animate_header()
         self.header_icon.update_image("savetodisk.svg", QSize(64, 64))
         self.header.setText(self.ready_header)
         if not self.continue_button.isEnabled():
             self.continue_button.clicked.disconnect()
-            self.continue_button.clicked.connect(self._show_passphrase_request_message)
+            # What we do depends on what the result of the last dialog was
+            if result == ExportStatus.DEVICE_WRITABLE:
+                # Skip password prompt, we're there
+                self.continue_button.clicked.connect(self._export_file)
+            else:  # result == ExportStatus.DEVICE_LOCKED
+                self.continue_button.clicked.connect(self._show_passphrase_request_message)
             self.continue_button.setEnabled(True)
             self.continue_button.setFocus()
             return
 
-        self._show_passphrase_request_message()
+        # Skip passphrase prompt if device is unlocked
+        if result == ExportStatus.DEVICE_WRITABLE:
+            self._export_file()
+        else:
+            self._show_passphrase_request_message()
 
     @pyqtSlot(object)
     def _on_export_preflight_check_failed(self, error: ExportError) -> None:
@@ -235,8 +248,8 @@ class FileDialog(ModalDialog):
         self.header_icon.update_image("savetodisk.svg", QSize(64, 64))
         self._update_dialog(error.status)
 
-    @pyqtSlot()
-    def _on_export_succeeded(self) -> None:
+    @pyqtSlot(object)
+    def _on_export_succeeded(self, status: ExportStatus) -> None:
         self.stop_animate_activestate()
         self._show_success_message()
 
@@ -247,17 +260,18 @@ class FileDialog(ModalDialog):
         self.passphrase_field.setDisabled(False)
         self._update_dialog(error.status)
 
-    # FIXME: need to account for new ExportStatus results as well
     def _update_dialog(self, error_status: ExportStatus) -> None:
         self.error_status = error_status
         # If the continue button is disabled then this is the result of a background preflight check
         if not self.continue_button.isEnabled():
             self.continue_button.clicked.disconnect()
-            if self.error_status == ExportStatus.ERROR_UNLOCK_LUKS: # todo: for now
+            if self.error_status == ExportStatus.ERROR_UNLOCK_LUKS:
                 self.continue_button.clicked.connect(self._show_passphrase_request_message_again)
-            elif self.error_status == ExportStatus.NO_DEVICE_DETECTED: # fka USB_NOT_CONNECTED
+            elif self.error_status == ExportStatus.NO_DEVICE_DETECTED:  # fka USB_NOT_CONNECTED
                 self.continue_button.clicked.connect(self._show_insert_usb_message)
-            elif self.error_status == ExportStatus.INVALID_DEVICE_DETECTED: # fka DISK_ENCRYPTION_NOT_SUPPORTED_ERROR
+            elif (
+                self.error_status == ExportStatus.INVALID_DEVICE_DETECTED
+            ):  # fka DISK_ENCRYPTION_NOT_SUPPORTED_ERROR
                 self.continue_button.clicked.connect(self._show_insert_encrypted_usb_message)
             else:
                 self.continue_button.clicked.connect(self._show_generic_error_message)
