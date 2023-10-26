@@ -188,7 +188,7 @@ def test_TranscriptDialog__on_export_preflight_check_succeeded(mocker, export_tr
     export_transcript_dialog.continue_button.clicked = mocker.MagicMock()
     mocker.patch.object(export_transcript_dialog.continue_button, "isEnabled", return_value=False)
 
-    export_transcript_dialog._on_export_preflight_check_succeeded()
+    export_transcript_dialog._on_export_preflight_check_succeeded(ExportStatus.DEVICE_LOCKED)
 
     export_transcript_dialog._show_passphrase_request_message.assert_not_called()
     export_transcript_dialog.continue_button.clicked.connect.assert_called_once_with(
@@ -202,7 +202,7 @@ def test_TranscriptDialog__on_export_preflight_check_succeeded_when_continue_ena
     export_transcript_dialog._show_passphrase_request_message = mocker.MagicMock()
     export_transcript_dialog.continue_button.setEnabled(True)
 
-    export_transcript_dialog._on_export_preflight_check_succeeded()
+    export_transcript_dialog._on_export_preflight_check_succeeded(ExportStatus.DEVICE_LOCKED)
 
     export_transcript_dialog._show_passphrase_request_message.assert_called_once_with()
 
@@ -211,7 +211,7 @@ def test_TranscriptDialog__on_export_preflight_check_succeeded_enabled_after_pre
     mocker, export_transcript_dialog
 ):
     assert not export_transcript_dialog.continue_button.isEnabled()
-    export_transcript_dialog._on_export_preflight_check_succeeded()
+    export_transcript_dialog._on_export_preflight_check_succeeded(ExportStatus.DEVICE_LOCKED)
     assert export_transcript_dialog.continue_button.isEnabled()
 
 
@@ -235,7 +235,7 @@ def test_TranscriptDialog__on_export_preflight_check_failed(mocker, export_trans
 def test_TranscriptDialog__on_export_succeeded(mocker, export_transcript_dialog):
     export_transcript_dialog._show_success_message = mocker.MagicMock()
 
-    export_transcript_dialog._on_export_succeeded()
+    export_transcript_dialog._on_export_succeeded(ExportStatus.SUCCESS_EXPORT)
 
     export_transcript_dialog._show_success_message.assert_called_once_with()
 

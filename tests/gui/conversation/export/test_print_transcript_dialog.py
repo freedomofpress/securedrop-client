@@ -158,7 +158,7 @@ def test_PrintTranscriptDialog__on_print_preflight_check_failed_when_status_is_P
     print_transcript_dialog._show_insert_usb_message.assert_called_once_with()
 
 
-def test_PrintTranscriptDialog__on_print_preflight_check_failed_when_status_is_MISSING_PRINTER_URI(
+def test_PrintTranscriptDialog__on_print_preflight_check_failed_when_status_is_ERROR_PRINTER_URI(
     mocker, print_transcript_dialog
 ):
     print_transcript_dialog._show_generic_error_message = mocker.MagicMock()
@@ -178,7 +178,7 @@ def test_PrintTranscriptDialog__on_print_preflight_check_failed_when_status_is_M
     # When the continue button is enabled, ensure next instructions are shown
     mocker.patch.object(print_transcript_dialog.continue_button, "isEnabled", return_value=True)
     print_transcript_dialog._on_print_preflight_check_failed(
-        ExportError(ExportStatus.MISSING_PRINTER_URI)
+        ExportError(ExportStatus.ERROR_PRINTER_URI)
     )
     print_transcript_dialog._show_generic_error_message.assert_called_once_with()
     assert print_transcript_dialog.error_status == ExportStatus.ERROR_PRINTER_URI
