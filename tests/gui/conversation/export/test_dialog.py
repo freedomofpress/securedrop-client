@@ -173,7 +173,7 @@ def test_ExportDialog__on_export_preflight_check_succeeded(mocker, export_dialog
     export_dialog.continue_button.clicked = mocker.MagicMock()
     mocker.patch.object(export_dialog.continue_button, "isEnabled", return_value=False)
 
-    export_dialog._on_export_preflight_check_succeeded()
+    export_dialog._on_export_preflight_check_succeeded(ExportStatus.PRINT_PREFLIGHT_SUCCESS)
 
     export_dialog._show_passphrase_request_message.assert_not_called()
     export_dialog.continue_button.clicked.connect.assert_called_once_with(
@@ -187,16 +187,27 @@ def test_ExportDialog__on_export_preflight_check_succeeded_when_continue_enabled
     export_dialog._show_passphrase_request_message = mocker.MagicMock()
     export_dialog.continue_button.setEnabled(True)
 
-    export_dialog._on_export_preflight_check_succeeded()
+    export_dialog._on_export_preflight_check_succeeded(ExportStatus.DEVICE_LOCKED)
 
     export_dialog._show_passphrase_request_message.assert_called_once_with()
+
+
+def test_ExportDialog__on_export_preflight_check_succeeded_continue_enabled_and_device_unlocked(
+    mocker, export_dialog
+):
+    export_dialog._export_file = mocker.MagicMock()
+    export_dialog.continue_button.setEnabled(True)
+
+    export_dialog._on_export_preflight_check_succeeded(ExportStatus.DEVICE_WRITABLE)
+
+    export_dialog._export_file.assert_called_once_with()
 
 
 def test_ExportDialog__on_export_preflight_check_succeeded_enabled_after_preflight_success(
     mocker, export_dialog
 ):
     assert not export_dialog.continue_button.isEnabled()
-    export_dialog._on_export_preflight_check_succeeded()
+    export_dialog._on_export_preflight_check_succeeded(ExportStatus.DEVICE_LOCKED)
     assert export_dialog.continue_button.isEnabled()
 
 
@@ -220,7 +231,7 @@ def test_ExportDialog__on_export_preflight_check_failed(mocker, export_dialog):
 def test_ExportDialog__on_export_succeeded(mocker, export_dialog):
     export_dialog._show_success_message = mocker.MagicMock()
 
-    export_dialog._on_export_succeeded()
+    export_dialog._on_export_succeeded(ExportStatus.SUCCESS_EXPORT)
 
     export_dialog._show_success_message.assert_called_once_with()
 
