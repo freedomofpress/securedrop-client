@@ -182,11 +182,25 @@ def test_ExportDialog__on_export_preflight_check_succeeded(mocker, export_file_d
     export_file_dialog.continue_button.clicked = mocker.MagicMock()
     mocker.patch.object(export_file_dialog.continue_button, "isEnabled", return_value=False)
 
-    export_file_dialog._on_export_preflight_check_succeeded()
+    export_file_dialog._on_export_preflight_check_succeeded(ExportStatus.DEVICE_LOCKED)
 
     export_file_dialog._show_passphrase_request_message.assert_not_called()
     export_file_dialog.continue_button.clicked.connect.assert_called_once_with(
         export_file_dialog._show_passphrase_request_message
+    )
+
+
+def test_ExportDialog__on_export_preflight_check_succeeded_device_unlocked(mocker, export_file_dialog):
+    export_file_dialog._export_file = mocker.MagicMock()
+    export_file_dialog.continue_button = mocker.MagicMock()
+    export_file_dialog.continue_button.clicked = mocker.MagicMock()
+    mocker.patch.object(export_file_dialog.continue_button, "isEnabled", return_value=False)
+
+    export_file_dialog._on_export_preflight_check_succeeded(ExportStatus.DEVICE_WRITABLE)
+
+    export_file_dialog._export_file.assert_not_called()
+    export_file_dialog.continue_button.clicked.connect.assert_called_once_with(
+        export_file_dialog._export_file
     )
 
 
@@ -196,16 +210,27 @@ def test_ExportDialog__on_export_preflight_check_succeeded_when_continue_enabled
     export_file_dialog._show_passphrase_request_message = mocker.MagicMock()
     export_file_dialog.continue_button.setEnabled(True)
 
-    export_file_dialog._on_export_preflight_check_succeeded()
+    export_file_dialog._on_export_preflight_check_succeeded(ExportStatus.DEVICE_LOCKED)
 
     export_file_dialog._show_passphrase_request_message.assert_called_once_with()
+
+
+def test_ExportDialog__on_export_preflight_check_succeeded_unlocked_device_when_continue_enabled(
+    mocker, export_file_dialog
+):
+    export_file_dialog._export_file = mocker.MagicMock()
+    export_file_dialog.continue_button.setEnabled(True)
+
+    export_file_dialog._on_export_preflight_check_succeeded(ExportStatus.DEVICE_WRITABLE)
+
+    export_file_dialog._export_file.assert_called_once_with()
 
 
 def test_ExportDialog__on_export_preflight_check_succeeded_enabled_after_preflight_success(
     mocker, export_file_dialog
 ):
     assert not export_file_dialog.continue_button.isEnabled()
-    export_file_dialog._on_export_preflight_check_succeeded()
+    export_file_dialog._on_export_preflight_check_succeeded(ExportStatus.DEVICE_LOCKED)
     assert export_file_dialog.continue_button.isEnabled()
 
 
@@ -229,7 +254,7 @@ def test_ExportDialog__on_export_preflight_check_failed(mocker, export_file_dial
 def test_ExportDialog__on_export_succeeded(mocker, export_file_dialog):
     export_file_dialog._show_success_message = mocker.MagicMock()
 
-    export_file_dialog._on_export_succeeded()
+    export_file_dialog._on_export_succeeded(ExportStatus.SUCCESS_EXPORT)
 
     export_file_dialog._show_success_message.assert_called_once_with()
 
